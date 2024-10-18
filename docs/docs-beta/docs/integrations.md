@@ -1,5 +1,0 @@
----
-title: "Integrations"
----
-
-# Integrations

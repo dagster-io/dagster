@@ -5,7 +5,9 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
 
-export function useResolveRunTarget(run: RunTableRunFragment): {
+export function useResolveRunTarget(
+  run: Pick<RunTableRunFragment, 'pipelineName' | 'repositoryOrigin' | 'pipelineSnapshotId'>,
+): {
   isJob: boolean;
   repoAddressGuess: RepoAddress | null;
 } {

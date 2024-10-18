@@ -197,7 +197,7 @@ from third_party_api import (
 
 from dagster import (
     AssetExecutionContext,
-    PipesResult,
+    PipesExecutionResult,
     PipesTempFileContextInjector,
     PipesTempFileMessageReader,
     asset,
@@ -206,7 +206,7 @@ from dagster import (
 
 
 @asset
-def some_pipes_asset(context: AssetExecutionContext) -> Iterator[PipesResult]:
+def some_pipes_asset(context: AssetExecutionContext) -> Iterator[PipesExecutionResult]:
     with open_pipes_session(
         context=context,
         extras={"foo": "bar"},
@@ -279,7 +279,7 @@ with open_dagster_pipes(
 
     # ... business logic
 
-    # Creates a `MaterializationResult` on the orchestration side. Notice no value for the asset is
+    # Creates a `MaterializeResult` on the orchestration side. Notice no value for the asset is
     # included. Pipes only supports reporting that a materialization occurred and associated
     # metadata.
     pipes.report_asset_materialization(

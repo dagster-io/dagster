@@ -6,15 +6,18 @@ models:
 
     columns:
       - name: customer_id
+        tags: ["primary_key"]
         description: This is a unique identifier for a customer
         tests:
           - unique
           - not_null
 
       - name: first_name
+        tags: ["pii"]
         description: Customer's first name. PII.
 
       - name: last_name
+        tags: ["pii"]
         description: Customer's last name. PII.
 
       - name: first_order

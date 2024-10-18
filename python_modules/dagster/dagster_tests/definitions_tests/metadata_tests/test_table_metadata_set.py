@@ -12,7 +12,9 @@ def error_on_warning():
 
 
 def test_table_metadata_set() -> None:
-    column_schema = TableSchema(columns=[TableColumn("foo", "str")])
+    column_schema = TableSchema(
+        columns=[TableColumn("foo", "str", tags={"pii": "", "introduced": "v2"})]
+    )
     table_metadata = TableMetadataSet(column_schema=column_schema)
 
     dict_table_metadata = dict(table_metadata)

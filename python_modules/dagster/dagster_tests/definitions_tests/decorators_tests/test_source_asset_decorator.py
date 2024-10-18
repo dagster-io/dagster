@@ -112,7 +112,7 @@ def test_tags():
 
     assert asset1.tags == tags
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="Found invalid tag keys"):
 
         @observable_source_asset(tags={"a%": "b"})
         def asset1(): ...
@@ -126,7 +126,7 @@ def test_multi_observable_source_asset_tags():
 
     assert assets.tags_by_key[AssetKey("asset1")] == tags
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="Found invalid tag keys"):
 
         @multi_observable_source_asset(specs=[AssetSpec("asset1", tags={"a%": "b"})])
         def assets(): ...

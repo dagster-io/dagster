@@ -26,3 +26,7 @@ export type RunTagValuesQuery = {
       }
     | null;
 };
+
+export const RunTagKeysQueryVersion = '833a405f7cb8f30c0901bc8a272edb51ac5281ebdf563e3017eace5d6976b2a9';
+
+export const RunTagValuesQueryVersion = '0c0a9998c215bb801eb0adcd5449c0ac4cf1e8efbc6d0fcc5fb6d76fcc95cb92';

@@ -96,7 +96,7 @@ def test_resolve_missing_key():
     with pytest.raises(check.CheckError, match="No metadata found"):
         pending_repo.reconstruct_repository_definition(
             repository_load_data=RepositoryLoadData(
-                cached_data_by_key={
+                cacheable_asset_data={
                     "a": [
                         AssetsDefinitionCacheableData(
                             keys_by_input_name={"upstream": AssetKey("upstream")},
@@ -119,7 +119,7 @@ def test_resolve_wrong_data():
     ):
         pending_repo.reconstruct_repository_definition(
             repository_load_data=RepositoryLoadData(
-                cached_data_by_key={
+                cacheable_asset_data={
                     "a": [
                         AssetsDefinitionCacheableData(
                             keys_by_input_name={"upstream": AssetKey("upstream")},

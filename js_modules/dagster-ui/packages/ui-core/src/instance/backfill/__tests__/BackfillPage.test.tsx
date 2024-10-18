@@ -20,7 +20,8 @@ import {
   mockViewportClientRect,
   restoreViewportClientRect,
 } from '../../../testing/mocking';
-import {BACKFILL_DETAILS_QUERY, BackfillPage} from '../BackfillPage';
+import {BackfillPage} from '../BackfillPage';
+import {BACKFILL_DETAILS_QUERY} from '../useBackfillDetailsQuery';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../../graph/asyncGraphLayout', () => ({}));

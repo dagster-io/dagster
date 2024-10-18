@@ -234,13 +234,13 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
             id=record.id,
             evaluationId=record.evaluation_id,
             numRequested=evaluation_with_run_ids.evaluation.true_subset.size,
-            numSkipped=evaluation.legacy_num_skipped(),
-            numDiscarded=evaluation.legacy_num_discarded(),
+            numSkipped=0,
+            numDiscarded=0,
             rulesWithRuleEvaluations=rules_with_rule_evaluations,
             timestamp=record.timestamp,
             runIds=evaluation_with_run_ids.run_ids,
             rules=sorted(rules, key=lambda rule: rule.className),
-            assetKey=GrapheneAssetKey(path=record.asset_key.path),
+            assetKey=GrapheneAssetKey(path=record.key.path),
         )
 
 

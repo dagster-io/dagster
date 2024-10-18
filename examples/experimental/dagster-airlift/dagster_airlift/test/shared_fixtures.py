@@ -2,11 +2,11 @@ import os
 import signal
 import subprocess
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Callable, Generator
+from typing import Any, Callable, Generator, List, Optional
 
-import mock
 import pytest
 import requests
 from dagster._core.test_utils import environ
@@ -18,7 +18,7 @@ from dagster._time import get_current_timestamp
 # Sets up the airflow environment for testing. Running at localhost:8080.
 # Callsites are expected to provide implementations for dags_dir fixture.
 ####################################################################################################
-def _airflow_is_ready():
+def _airflow_is_ready() -> bool:
     try:
         response = requests.get("http://localhost:8080")
         return response.status_code == 200
@@ -58,29 +58,44 @@ def reserialize_fixture(airflow_instance: None) -> Callable[[], None]:
     return _reserialize_dags
 
 
-@pytest.fixture(name="airflow_instance")
-def airflow_instance_fixture(setup: None) -> Generator[subprocess.Popen, None, None]:
+@contextmanager
+def stand_up_airflow(
+    env: Any = {},
+    airflow_cmd: List[str] = ["airflow", "standalone"],
+    cwd: Optional[Path] = None,
+    stdout_channel: Optional[int] = None,
+) -> Generator[subprocess.Popen, None, None]:
     process = subprocess.Popen(
-        ["airflow", "standalone"],
-        env=os.environ,  # since we have some temp vars in the env right now
+        airflow_cmd,
+        cwd=cwd,
+        env=env,  # since we have some temp vars in the env right now
         shell=False,
         preexec_fn=os.setsid,  # noqa  # fuck it we ball
+        stdout=stdout_channel,
     )
-    # Give airflow a second to stand up
-    time.sleep(5)
-    initial_time = get_current_timestamp()
+    try:
+        # Give airflow a second to stand up
+        time.sleep(5)
+        initial_time = get_current_timestamp()
 
-    airflow_ready = False
-    while get_current_timestamp() - initial_time < 60:
-        if _airflow_is_ready():
-            airflow_ready = True
-            break
-        time.sleep(1)
+        airflow_ready = False
+        while get_current_timestamp() - initial_time < 60:
+            if _airflow_is_ready():
+                airflow_ready = True
+                break
+            time.sleep(1)
 
-    assert airflow_ready, "Airflow did not start within 30 seconds..."
-    yield process
-    # Kill process group, since process.kill and process.terminate do not work.
-    os.killpg(process.pid, signal.SIGKILL)
+        assert airflow_ready, "Airflow did not start within 30 seconds..."
+        yield process
+    finally:
+        # Kill process group, since process.kill and process.terminate do not work.
+        os.killpg(process.pid, signal.SIGKILL)
+
+
+@pytest.fixture(name="airflow_instance")
+def airflow_instance_fixture(setup: None) -> Generator[subprocess.Popen, None, None]:
+    with stand_up_airflow(env=os.environ) as process:
+        yield process
 
 
 ####################################################################################################
@@ -104,51 +119,42 @@ def setup_dagster_home() -> Generator[str, None, None]:
             yield tmpdir
 
 
+@pytest.fixture(name="dagster_dev_cmd")
+def dagster_dev_cmd(dagster_defs_path: str) -> List[str]:
+    """Return the command used to stand up dagster dev."""
+    return ["dagster", "dev", "-f", dagster_defs_path, "-p", "3333"]
+
+
 @pytest.fixture(name="dagster_dev")
-def setup_dagster(dagster_home: str, dagster_defs_path: str) -> Generator[Any, None, None]:
+def setup_dagster(dagster_home: str, dagster_dev_cmd: List[str]) -> Generator[Any, None, None]:
     """Stands up a dagster instance using the dagster dev CLI. dagster_defs_path must be provided
     by a fixture included in the callsite.
     """
     process = subprocess.Popen(
-        ["dagster", "dev", "-f", dagster_defs_path, "-p", "3333"],
+        dagster_dev_cmd,
         env=os.environ.copy(),
         shell=False,
         preexec_fn=os.setsid,  # noqa
     )
-    # Give dagster a second to stand up
-    time.sleep(5)
+    try:
+        # Give dagster a second to stand up
+        time.sleep(5)
 
-    dagster_ready = False
-    initial_time = get_current_timestamp()
-    while get_current_timestamp() - initial_time < 60:
-        if _dagster_is_ready():
-            dagster_ready = True
-            break
-        time.sleep(1)
+        dagster_ready = False
+        initial_time = get_current_timestamp()
+        while get_current_timestamp() - initial_time < 60:
+            if _dagster_is_ready():
+                dagster_ready = True
+                break
+            time.sleep(1)
 
-    assert dagster_ready, "Dagster did not start within 30 seconds..."
-    yield process
-    os.killpg(process.pid, signal.SIGKILL)
+        assert dagster_ready, "Dagster did not start within 30 seconds..."
+        yield process
+    finally:
+        os.killpg(process.pid, signal.SIGKILL)
 
 
 ####################################################################################################
 # MISCELLANEOUS FIXTURES
 # Fixtures that are useful across contexts.
 ####################################################################################################
-
-VAR_DICT = {}
-
-
-def dummy_get_var(key: str) -> str:
-    return VAR_DICT[key]
-
-
-def dummy_set_var(key: str, value: str, session: Any) -> None:
-    return VAR_DICT.update({key: value})
-
-
-@pytest.fixture
-def mock_airflow_variable():
-    with mock.patch("airflow.models.Variable.get", side_effect=dummy_get_var):
-        with mock.patch("airflow.models.Variable.set", side_effect=dummy_set_var):
-            yield

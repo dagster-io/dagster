@@ -1,33 +1,20 @@
-from typing import TYPE_CHECKING, Iterator, List, Mapping, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, List, Optional, Sequence
 
-import dagster._check as check
-from dagster import AssetKey
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.code_location import CodeLocation
-from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.external_data import ExternalAssetCheck
-from dagster._core.storage.asset_check_execution_record import (
-    AssetCheckExecutionRecord,
-    AssetCheckExecutionRecordStatus,
-    AssetCheckExecutionResolvedStatus,
+from dagster import (
+    AssetKey,
+    _check as check,
 )
-from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
-from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.events import ASSET_CHECK_EVENTS, DagsterEventType
+from dagster._core.loader import LoadingContext
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from dagster._core.storage.dagster_run import RunRecord
 
-from dagster_graphql.implementation.fetch_assets import repository_iter
 from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
 
 if TYPE_CHECKING:
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneAssetCheckHandle
     from dagster_graphql.schema.util import ResolveInfo
-
-
-def asset_checks_iter(
-    context: WorkspaceRequestContext,
-) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetCheck]]:
-    for location, repository in repository_iter(context):
-        for external_check in repository.external_repository_data.external_asset_checks or []:
-            yield (location, repository, external_check)
 
 
 def has_asset_checks(
@@ -36,69 +23,57 @@ def has_asset_checks(
 ) -> bool:
     return any(
         external_check.asset_key == asset_key
-        for _, _, external_check in asset_checks_iter(graphene_info.context)
+        for external_check in graphene_info.context.asset_graph.asset_checks
     )
 
 
-# fetch all statuses at once in order to batch the run query
-def get_asset_check_execution_statuses_by_id(
-    instance: DagsterInstance, executions: Sequence[AssetCheckExecutionRecord]
-) -> Mapping[int, AssetCheckExecutionResolvedStatus]:
-    planned_status_executions = [
-        e for e in executions if e.status == AssetCheckExecutionRecordStatus.PLANNED
-    ]
-    if planned_status_executions:
-        planned_status_run_ids = list({e.run_id for e in planned_status_executions})
-        planned_execution_runs_by_run_id = {
-            r.run_id: r
-            for r in instance.get_runs(filters=RunsFilter(run_ids=planned_status_run_ids))
-        }
-    else:
-        planned_execution_runs_by_run_id = {}
-
-    def _status_for_execution(
-        execution: AssetCheckExecutionRecord,
-    ) -> AssetCheckExecutionResolvedStatus:
-        record_status = execution.status
-
-        if record_status == AssetCheckExecutionRecordStatus.SUCCEEDED:
-            return AssetCheckExecutionResolvedStatus.SUCCEEDED
-        elif record_status == AssetCheckExecutionRecordStatus.FAILED:
-            return AssetCheckExecutionResolvedStatus.FAILED
-        # Asset checks stay in PLANNED status until the evaluation event arrives. Check if the run is
-        # still active, and if not, return the actual status.
-        elif record_status == AssetCheckExecutionRecordStatus.PLANNED:
-            run = planned_execution_runs_by_run_id.get(execution.run_id)
-
-            if not run:
-                # The run was deleted before it finished
-                return AssetCheckExecutionResolvedStatus.SKIPPED
-            elif run.is_finished:
-                if run.status == DagsterRunStatus.FAILURE:
-                    return AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-                else:
-                    return AssetCheckExecutionResolvedStatus.SKIPPED
-            else:
-                return AssetCheckExecutionResolvedStatus.IN_PROGRESS
-
-        else:
-            check.failed(f"Unexpected status {record_status}")
-
-    return {e.id: _status_for_execution(e) for e in executions}
-
-
 def fetch_asset_check_executions(
-    instance: DagsterInstance, asset_check_key: AssetCheckKey, limit: int, cursor: Optional[str]
+    loading_context: LoadingContext,
+    asset_check_key: AssetCheckKey,
+    limit: int,
+    cursor: Optional[str],
 ) -> List[GrapheneAssetCheckExecution]:
-    executions = instance.event_log_storage.get_asset_check_execution_history(
+    check_records = loading_context.instance.event_log_storage.get_asset_check_execution_history(
         check_key=asset_check_key,
         limit=limit,
         cursor=int(cursor) if cursor else None,
     )
-    statuses = get_asset_check_execution_statuses_by_id(instance, executions)
 
-    res = []
-    for execution in executions:
-        res.append(GrapheneAssetCheckExecution(execution, statuses[execution.id]))
+    RunRecord.prepare(
+        loading_context,
+        [r.run_id for r in check_records if r.status == AssetCheckExecutionRecordStatus.PLANNED],
+    )
 
-    return res
+    return [GrapheneAssetCheckExecution(check_record) for check_record in check_records]
+
+
+def get_asset_checks_for_run_id(
+    graphene_info: "ResolveInfo", run_id: str
+) -> Sequence["GrapheneAssetCheckHandle"]:
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneAssetCheckHandle
+
+    check.str_param(run_id, "run_id")
+
+    records = graphene_info.context.instance.all_logs(run_id, of_type=ASSET_CHECK_EVENTS)
+
+    asset_check_keys = set(
+        [
+            record.get_dagster_event().asset_check_evaluation_data.asset_check_key
+            for record in records
+            if record.is_dagster_event
+            and record.get_dagster_event().event_type == DagsterEventType.ASSET_CHECK_EVALUATION
+        ]
+        + [
+            record.get_dagster_event().asset_check_planned_data.asset_check_key
+            for record in records
+            if record.is_dagster_event
+            and record.get_dagster_event().event_type
+            == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED
+        ]
+    )
+    return [
+        GrapheneAssetCheckHandle(handle=asset_check_key)
+        for asset_check_key in sorted(
+            asset_check_keys, key=lambda key: key.name + "".join(key.asset_key.path)
+        )
+    ]

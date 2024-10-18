@@ -9,15 +9,15 @@ import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
 import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionContainer';
 import {LaunchpadType} from './types';
-import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadAllowedRoot.types';
 import {gql, useQuery} from '../apollo-client';
+import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadAllowedRoot.types';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {lazy} from '../util/lazy';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 
 const LaunchpadStoredSessionsContainer = lazy(() => import('./LaunchpadStoredSessionsContainer'));

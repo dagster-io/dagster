@@ -22,7 +22,7 @@ export const CronTag = (props: Props) => {
 };
 
 const Container = styled.div`
-  .bp4-popover2-target {
+  .bp5-popover-target {
     max-width: 100%;
 
     :focus {

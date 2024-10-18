@@ -55,19 +55,17 @@ export const CodeLocationsPageContent = () => {
           <ReloadAllButton />
         </Box>
       </Box>
-      <RepositoryLocationsList
-        loading={loading}
-        codeLocations={filtered}
-        searchValue={searchValue}
-      />
       {activeFiltersJsx.length ? (
-        <Box
-          flex={{direction: 'row', alignItems: 'center', gap: 4}}
-          padding={{top: 8, horizontal: 24}}
-        >
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}} padding={{horizontal: 24}}>
           {activeFiltersJsx}
         </Box>
       ) : null}
+      <RepositoryLocationsList
+        loading={loading}
+        codeLocations={filtered}
+        isFilteredView={!!activeFiltersJsx.length}
+        searchValue={searchValue}
+      />
     </>
   );
 };

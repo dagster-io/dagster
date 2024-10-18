@@ -7,7 +7,7 @@ import {usePartitionNameForPipeline} from '../assets/usePartitionNameForPipeline
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {LoadingSpinner} from '../ui/Loading';
-import {useRepository} from '../workspace/WorkspaceContext';
+import {useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 
 interface Props {

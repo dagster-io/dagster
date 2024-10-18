@@ -4,7 +4,7 @@ define GET_MAKEFILE_DIR
 $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))) | sed 's:/*$$::')
 endef
 
-MAKEFILE_DIR := $(GET_MAKEFILE_DIR)
+export MAKEFILE_DIR := $(GET_MAKEFILE_DIR)
 export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
 export AIRFLOW_HOME := $(MAKEFILE_DIR)/.airflow_home
 export DBT_PROJECT_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
@@ -22,33 +22,39 @@ dev_install:
 	uv pip install -e ../../../dagster-airlift
 	uv pip install -e .
 
-# make airflow home and dagster home directories within current directory, set up env vars, and then
-# set up airflow environment.
-setup_local_env:
-	make wipe && \
-	mkdir -p $$AIRFLOW_HOME && \
-	mkdir -p $$DAGSTER_HOME && \
-	chmod +x ../../scripts/airflow_setup.sh && \
-	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/airflow_dags && \
-	make dbt_setup
+setup_local_env: 
+	$(MAKE) wipe
+	mkdir -p $(AIRFLOW_HOME)
+	mkdir -p $(DAGSTER_HOME)
+	chmod +x ../../scripts/airflow_setup.sh
+	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/airflow_dags
+	$(MAKE) dbt_setup
+
+not_proxied:
+	chmod +x ../../scripts/find_and_replace_in_yaml_dir.sh
+	../../scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/airflow_dags/proxied_state True False
+
+proxied: 
+	chmod +x ../../scripts/find_and_replace_in_yaml_dir.sh
+	../../scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/airflow_dags/proxied_state False True
 
 run_airflow:
 	airflow standalone
 
-run_complete:
-	dagster dev -m dbt_example.dagster_defs.complete -p 3333
-
 run_peer:
 	dagster dev -m dbt_example.dagster_defs.peer -p 3333
 
-run_observe:
+run_observe: not_proxied
 	dagster dev -m dbt_example.dagster_defs.observe -p 3333
 
-run_migrate:
+run_migrate: proxied
 	dagster dev -m dbt_example.dagster_defs.migrate -p 3333
 
+run_complete:
+	dagster dev -m dbt_example.dagster_defs.complete -p 3333
+
 wipe: ## Wipe out all the files created by the Makefile
-	rm -rf $$AIRFLOW_HOME $$DAGSTER_HOME
+	rm -rf $(AIRFLOW_HOME) $(DAGSTER_HOME)
 
 wipe_dagster: ## Wipe out all the files created by the Makefile
 	rm -rf $$DAGSTER_HOME

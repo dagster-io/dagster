@@ -6,6 +6,7 @@ import {GroupNodeNameAndRepo, useGroupNodeContextMenu} from './CollapsedGroupNod
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
+import {SVGRelativeContainerForSafari} from '../graph/SVGComponents';
 
 export const ExpandedGroupNode = ({
   group,
@@ -30,7 +31,7 @@ export const ExpandedGroupNode = ({
     preferredJobName,
   });
   return (
-    <div style={{position: 'relative', width: '100%', height: '100%'}}>
+    <SVGRelativeContainerForSafari>
       <ContextMenuWrapper menu={menu} stopPropagation>
         <GroupNodeHeaderBox
           $minimal={minimal}
@@ -54,11 +55,17 @@ export const ExpandedGroupNode = ({
         </GroupNodeHeaderBox>
       </ContextMenuWrapper>
       {dialog}
-    </div>
+    </SVGRelativeContainerForSafari>
   );
 };
 
-export const GroupOutline = styled.div<{$minimal: boolean}>`
+export const GroupOutline = ({minimal}: {minimal: boolean}) => (
+  <SVGRelativeContainerForSafari>
+    <GroupOutlineBox $minimal={minimal} />
+  </SVGRelativeContainerForSafari>
+);
+
+const GroupOutlineBox = styled.div<{$minimal: boolean}>`
   inset: 0;
   top: 60px;
   position: absolute;

@@ -65,6 +65,13 @@ Instead of this:
 dagster dev -m your_module_name.definitions
 ```
 
+You can also include multiple modules at a time using the `pyproject.toml` file, where each module will be loaded as a code location:
+
+```toml
+[tool.dagster]
+modules = [{ type = "module", name = "foo" }, { type = "module", name = "bar" }]
+```
+
 ---
 
 </TabItem>

@@ -695,24 +695,24 @@
     "statusCode": 302
   },
   {
-      "source": "/dagster-cloud",
-      "destination": "/dagster-plus",
-      "statusCode": 302
+    "source": "/dagster-cloud",
+    "destination": "/dagster-plus",
+    "statusCode": 302
   },
   {
-      "source": "/dagster-cloud/managing-deployments/setting-up-alerts",
-      "destination": "/dagster-plus/managing-deployments/alerts",
-      "statusCode": 302
+    "source": "/dagster-cloud/managing-deployments/setting-up-alerts",
+    "destination": "/dagster-plus/managing-deployments/alerts",
+    "statusCode": 302
   },
   {
-      "source": "/dagster-cloud/managing-deployments/dagster-cloud-cli",
-      "destination": "/dagster-plus/managing-deployments/dagster-plus-cli",
-      "statusCode": 302
+    "source": "/dagster-cloud/managing-deployments/dagster-cloud-cli",
+    "destination": "/dagster-plus/managing-deployments/dagster-plus-cli",
+    "statusCode": 302
   },
   {
-      "source": "/dagster-cloud/:slug*",
-      "destination": "/dagster-plus/:slug*",
-      "statusCode": 302
+    "source": "/dagster-cloud/:slug*",
+    "destination": "/dagster-plus/:slug*",
+    "statusCode": 302
   },
   {
     "source": "/guides/dagster-pipes/:slug*",
@@ -742,6 +742,21 @@
   {
     "source": "/_apidocs/libraries/dagster-airflow",
     "destination": "/integrations/airflow",
+    "statusCode": 302
+  },
+  {
+    "source": "/integrations/great-expectations",
+    "destination": "https://dagster.io/blog/ensuring-data-quality-with-dagster-and-great-expectations",
+    "statusCode": 302
+  },
+  {
+    "source": "/guides/dagster/airbyte-ingestion-as-code",
+    "destination": "/integrations/airbyte",
+    "statusCode": 302
+  },
+  {
+    "source": "/integrations/databricks",
+    "destination": "/concepts/dagster-pipes/databricks",
     "statusCode": 302
   }
 ]

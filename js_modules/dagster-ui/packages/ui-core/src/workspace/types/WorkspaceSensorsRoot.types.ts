@@ -40,3 +40,5 @@ export type WorkspaceSensorsQuery = {
       }
     | {__typename: 'RepositoryNotFoundError'};
 };
+
+export const WorkspaceSensorsQueryVersion = '2c8ef3f0111c4524514ff762d542810e95d429cc421e60893a3a4bbb39bb9849';

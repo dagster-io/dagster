@@ -21,7 +21,7 @@ with open_dagster_pipes(
 
     # ... business logic
 
-    # Creates a `MaterializationResult` on the orchestration side. Notice no value for the asset is
+    # Creates a `MaterializeResult` on the orchestration side. Notice no value for the asset is
     # included. Pipes only supports reporting that a materialization occurred and associated
     # metadata.
     pipes.report_asset_materialization(

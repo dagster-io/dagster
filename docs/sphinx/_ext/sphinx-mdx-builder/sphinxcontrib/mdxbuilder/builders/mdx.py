@@ -71,6 +71,7 @@ class MdxBuilder(Builder):
                 f.write(self.writer.output)
         except (IOError, OSError) as err:
             logger.warning(f"error writing file {outfilename}: {err}")
+            raise err
 
     def finish(self):
         pass

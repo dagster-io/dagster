@@ -33,3 +33,5 @@ export type AssetJobPartitionSetsQuery = {
         }>;
       };
 };
+
+export const AssetJobPartitionSetsQueryVersion = '43286e824ac1f7d1b30c6744ad472c034d8ed257675a720ac53bcf929e0bc7f7';

@@ -5,7 +5,7 @@ import os
 import sys
 import threading
 import zlib
-from typing import Any, Callable, Optional, cast
+from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, cast
 
 import click
 
@@ -21,19 +21,26 @@ from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._core.execution.context_creation_job import create_context_free_log_manager
+from dagster._core.execution.retries import RetryState
 from dagster._core.execution.run_cancellation_thread import start_run_cancellation_thread
 from dagster._core.execution.run_metrics_thread import (
     DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
     start_run_metrics_thread,
     stop_run_metrics_thread,
 )
+from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     JobPythonOrigin,
     get_python_environment_entry_point,
 )
-from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.tags import (
+    RUN_METRIC_TAGS,
+    RUN_METRICS_POLLING_INTERVAL_TAG,
+    RUN_METRICS_PYTHON_RUNTIME_TAG,
+)
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
@@ -49,7 +56,7 @@ from dagster._utils.tags import get_boolean_tag_value
 
 
 @click.group(name="api", hidden=True)
-def api_cli():
+def api_cli() -> None:
     """[INTERNAL] These commands are intended to support internal use cases. Users should generally
     not invoke these commands interactively.
     """
@@ -63,7 +70,7 @@ def api_cli():
     ),
 )
 @click.argument("input_json", type=click.STRING)
-def execute_run_command(input_json):
+def execute_run_command(input_json: str) -> None:
     with capture_interrupts():
         args = deserialize_value(input_json, ExecuteRunArgs)
 
@@ -85,11 +92,11 @@ def execute_run_command(input_json):
 
 
 def _should_start_metrics_thread(dagster_run: DagsterRun) -> bool:
-    return get_boolean_tag_value(dagster_run.tags.get("dagster/run_metrics"))
+    return any(get_boolean_tag_value(dagster_run.tags.get(tag)) for tag in RUN_METRIC_TAGS)
 
 
 def _enable_python_runtime_metrics(dagster_run: DagsterRun) -> bool:
-    return get_boolean_tag_value(dagster_run.tags.get("dagster/python_runtime_metrics"))
+    return get_boolean_tag_value(dagster_run.tags.get(RUN_METRICS_PYTHON_RUNTIME_TAG))
 
 
 def _metrics_polling_interval(
@@ -98,7 +105,7 @@ def _metrics_polling_interval(
     try:
         return float(
             dagster_run.tags.get(
-                "dagster/run_metrics_polling_interval_seconds",
+                RUN_METRICS_POLLING_INTERVAL_TAG,
                 DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
             )
         )
@@ -136,14 +143,12 @@ def _execute_run_command_body(
         f"Run with id '{run_id}' does not include an origin.",
     )
 
-    start_metric_thread = _should_start_metrics_thread(dagster_run)
-    if start_metric_thread:
+    if _should_start_metrics_thread(dagster_run):
         logger = logging.getLogger("run_metrics")
         polling_interval = _metrics_polling_interval(dagster_run, logger=logger)
         metrics_thread, metrics_thread_shutdown_event = start_run_metrics_thread(
             instance,
             dagster_run,
-            container_metrics_enabled=True,
             python_metrics_enabled=_enable_python_runtime_metrics(dagster_run),
             polling_interval=polling_interval,
             logger=logger,
@@ -176,29 +181,48 @@ def _execute_run_command_body(
         # relies on core_execute_run writing failures to the event log before raising
         run_worker_failed = True
     finally:
-        if metrics_thread and metrics_thread_shutdown_event:
-            stopped = stop_run_metrics_thread(metrics_thread, metrics_thread_shutdown_event)
-            if not stopped:
-                instance.report_engine_event("Metrics thread did not shutdown properly")
-
-        if instance.should_start_background_run_thread:
-            cancellation_thread_shutdown_event = check.not_none(cancellation_thread_shutdown_event)
-            cancellation_thread = check.not_none(cancellation_thread)
-            cancellation_thread_shutdown_event.set()
-            if cancellation_thread.is_alive():
-                cancellation_thread.join(timeout=15)
-                if cancellation_thread.is_alive():
-                    instance.report_engine_event(
-                        "Cancellation thread did not shutdown gracefully",
-                        dagster_run,
-                    )
-
-        instance.report_engine_event(
-            f"Process for run exited (pid: {pid}).",
+        _shutdown_threads(
+            instance,
             dagster_run,
+            metrics_thread,
+            metrics_thread_shutdown_event,
+            cancellation_thread,
+            cancellation_thread_shutdown_event,
         )
 
     return 1 if (run_worker_failed and set_exit_code_on_failure) else 0
+
+
+def _shutdown_threads(
+    instance: DagsterInstance,
+    dagster_run: DagsterRun,
+    metrics_thread: Optional[threading.Thread],
+    metrics_thread_shutdown_event: Optional[threading.Event],
+    cancellation_thread: Optional[threading.Thread],
+    cancellation_thread_shutdown_event: Optional[threading.Event],
+):
+    pid = os.getpid()
+    if metrics_thread and metrics_thread_shutdown_event:
+        stopped = stop_run_metrics_thread(metrics_thread, metrics_thread_shutdown_event)
+        if not stopped:
+            instance.report_engine_event("Metrics thread did not shutdown properly")
+
+    if instance.should_start_background_run_thread:
+        cancellation_thread_shutdown_event = check.not_none(cancellation_thread_shutdown_event)
+        cancellation_thread = check.not_none(cancellation_thread)
+        cancellation_thread_shutdown_event.set()
+        if cancellation_thread.is_alive():
+            cancellation_thread.join(timeout=15)
+            if cancellation_thread.is_alive():
+                instance.report_engine_event(
+                    "Cancellation thread did not shutdown gracefully",
+                    dagster_run,
+                )
+
+    instance.report_engine_event(
+        f"Process for run exited (pid: {pid}).",
+        dagster_run,
+    )
 
 
 @api_cli.command(
@@ -209,7 +233,7 @@ def _execute_run_command_body(
     ),
 )
 @click.argument("input_json", type=click.STRING)
-def resume_run_command(input_json):
+def resume_run_command(input_json: str) -> None:
     with capture_interrupts():
         args = deserialize_value(input_json, ResumeRunArgs)
 
@@ -235,7 +259,7 @@ def _resume_run_command_body(
     instance: DagsterInstance,
     write_stream_fn: Callable[[DagsterEvent], Any],
     set_exit_code_on_failure: bool,
-):
+) -> int:
     if instance.should_start_background_run_thread:
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
             instance, run_id
@@ -251,14 +275,12 @@ def _resume_run_command_body(
         f"Run with id '{run_id}' does not include an origin.",
     )
 
-    start_metric_thread = _should_start_metrics_thread(dagster_run)
-    if start_metric_thread:
+    if _should_start_metrics_thread(dagster_run):
         logger = logging.getLogger("run_metrics")
         polling_interval = _metrics_polling_interval(dagster_run, logger=logger)
         metrics_thread, metrics_thread_shutdown_event = start_run_metrics_thread(
             instance,
             dagster_run,
-            container_metrics_enabled=True,
             python_metrics_enabled=_enable_python_runtime_metrics(dagster_run),
             polling_interval=polling_interval,
             logger=logger,
@@ -293,38 +315,33 @@ def _resume_run_command_body(
         # relies on core_execute_run writing failures to the event log before raising
         run_worker_failed = True
     finally:
-        if metrics_thread and metrics_thread_shutdown_event:
-            stopped = stop_run_metrics_thread(metrics_thread, metrics_thread_shutdown_event)
-            if not stopped:
-                instance.report_engine_event("Metrics thread did not shutdown properly")
-
-        if instance.should_start_background_run_thread:
-            cancellation_thread_shutdown_event = check.not_none(cancellation_thread_shutdown_event)
-            cancellation_thread = check.not_none(cancellation_thread)
-            cancellation_thread_shutdown_event.set()
-            if cancellation_thread.is_alive():
-                cancellation_thread.join(timeout=15)
-                if cancellation_thread.is_alive():
-                    instance.report_engine_event(
-                        "Cancellation thread did not shutdown gracefully",
-                        dagster_run,
-                    )
-        instance.report_engine_event(
-            f"Process for job exited (pid: {pid}).",
+        _shutdown_threads(
+            instance,
             dagster_run,
+            metrics_thread,
+            metrics_thread_shutdown_event,
+            cancellation_thread,
+            cancellation_thread_shutdown_event,
         )
 
     return 1 if (run_worker_failed and set_exit_code_on_failure) else 0
 
 
-def get_step_stats_by_key(instance, dagster_run, step_keys_to_execute):
+def get_step_stats_by_key(
+    instance: DagsterInstance, dagster_run: DagsterRun, step_keys_to_execute: Sequence[str]
+) -> Mapping[str, RunStepKeyStatsSnapshot]:
     # When using the k8s executor, there whould only ever be one step key
     step_stats = instance.get_run_step_stats(dagster_run.run_id, step_keys=step_keys_to_execute)
     step_stats_by_key = {step_stat.step_key: step_stat for step_stat in step_stats}
     return step_stats_by_key
 
 
-def verify_step(instance, dagster_run, retry_state, step_keys_to_execute):
+def verify_step(
+    instance: DagsterInstance,
+    dagster_run: DagsterRun,
+    retry_state: RetryState,
+    step_keys_to_execute: Sequence[str],
+) -> bool:
     step_stats_by_key = get_step_stats_by_key(instance, dagster_run, step_keys_to_execute)
 
     for step_key in step_keys_to_execute:
@@ -387,17 +404,18 @@ def verify_step(instance, dagster_run, retry_state, step_keys_to_execute):
     type=click.STRING,
     envvar="DAGSTER_COMPRESSED_EXECUTE_STEP_ARGS",
 )
-def execute_step_command(input_json, compressed_input_json):
+def execute_step_command(input_json: Optional[str], compressed_input_json: Optional[str]) -> None:
     with capture_interrupts():
-        check.invariant(
-            bool(input_json) != bool(compressed_input_json),
-            "Must provide one of input_json or compressed_input_json",
-        )
+        if input_json and not compressed_input_json:
+            normalized_input_json = input_json
+        elif compressed_input_json and not input_json:
+            normalized_input_json = zlib.decompress(
+                base64.b64decode(compressed_input_json.encode())
+            ).decode()
+        else:
+            check.failed("Must provide one of input_json or compressed_input_json")
 
-        if compressed_input_json:
-            input_json = zlib.decompress(base64.b64decode(compressed_input_json.encode())).decode()
-
-        args = deserialize_value(input_json, ExecuteStepArgs)
+        args = deserialize_value(normalized_input_json, ExecuteStepArgs)
 
         with get_instance_for_cli(instance_ref=args.instance_ref) as instance:
             dagster_run = check.not_none(
@@ -421,7 +439,7 @@ def execute_step_command(input_json, compressed_input_json):
 
 def _execute_step_command_body(
     args: ExecuteStepArgs, instance: DagsterInstance, dagster_run: DagsterRun
-):
+) -> Iterator[DagsterEvent]:
     single_step_key = (
         args.step_keys_to_execute[0]
         if args.step_keys_to_execute and len(args.step_keys_to_execute) == 1
@@ -434,9 +452,7 @@ def _execute_step_command_body(
         )
 
         location_name = (
-            dagster_run.external_job_origin.location_name
-            if dagster_run.external_job_origin
-            else None
+            dagster_run.remote_job_origin.location_name if dagster_run.remote_job_origin else None
         )
 
         instance.inject_env_vars(location_name)
@@ -452,12 +468,22 @@ def _execute_step_command_body(
             step_key=single_step_key,
         )
 
+        if dagster_run.is_finished or dagster_run.status == DagsterRunStatus.CANCELING:
+            # This can happen if a run was terminated while a step was still starting up, and the
+            # termination signal wasn't propagated to the step process
+            yield instance.report_engine_event(
+                f"Skipping step execution for {single_step_key} since the run is in status {dagster_run.status}",
+                dagster_run,
+                step_key=single_step_key,
+            )
+            return
+
         if args.should_verify_step:
             success = verify_step(
                 instance,
                 dagster_run,
                 check.not_none(args.known_state).get_retry_state(),
-                args.step_keys_to_execute,
+                check.not_none(args.step_keys_to_execute),
             )
             if not success:
                 return
@@ -675,25 +701,25 @@ def _execute_step_command_body(
     envvar="DAGSTER_ENABLE_SERVER_METRICS",
 )
 def grpc_command(
-    port=None,
-    socket=None,
-    host=None,
-    max_workers=None,
-    heartbeat=False,
-    heartbeat_timeout=30,
-    lazy_load_user_code=False,
-    fixed_server_id=None,
-    log_level="INFO",
-    log_format="colored",
-    use_python_environment_entry_point=False,
-    container_image=None,
-    container_context=None,
-    location_name=None,
+    port: Optional[int],
+    socket: Optional[str],
+    host: str,
+    max_workers: Optional[int],
+    heartbeat: bool = False,
+    heartbeat_timeout: int = 30,
+    lazy_load_user_code: bool = False,
+    fixed_server_id: Optional[str] = None,
+    log_level: str = "INFO",
+    log_format: str = "colored",
+    use_python_environment_entry_point: Optional[bool] = False,
+    container_image: Optional[str] = None,
+    container_context: Optional[str] = None,
+    location_name: Optional[str] = None,
     instance_ref=None,
-    inject_env_vars_from_instance=False,
-    enable_metrics=False,
-    **kwargs,
-):
+    inject_env_vars_from_instance: bool = False,
+    enable_metrics: bool = False,
+    **kwargs: Any,
+) -> None:
     check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
 
     check.invariant(
@@ -838,7 +864,9 @@ def grpc_command(
     is_flag=True,
     help="Whether to connect to the gRPC server over SSL",
 )
-def grpc_health_check_command(port=None, socket=None, host="localhost", use_ssl=False):
+def grpc_health_check_command(
+    port: Optional[int], socket: Optional[str], host: str, use_ssl: bool
+) -> None:
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
             "You must pass a valid --port/-p on Windows: --socket/-s not supported."

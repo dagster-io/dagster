@@ -135,6 +135,7 @@ export type PreviousRunsForScheduleQuery = {
           hasReExecutePermission: boolean;
           hasTerminatePermission: boolean;
           hasDeletePermission: boolean;
+          hasRunMetricsEnabled: boolean;
           mode: string;
           rootRunId: string | null;
           parentRunId: string | null;
@@ -161,3 +162,7 @@ export type PreviousRunsForScheduleQuery = {
         }>;
       };
 };
+
+export const ScheduleRootQueryVersion = 'b54dfb64f816baa5c52c4676dcbd3808477130cab5237a5b96b988ec002adafc';
+
+export const PreviousRunsForScheduleQueryVersion = '0ffc329d3c65a2f7a29553bd3a72f8e8adb4b3a10944221b4a3c68335fad1d31';

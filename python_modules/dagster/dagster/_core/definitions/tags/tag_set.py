@@ -1,6 +1,6 @@
-from typing import Any, cast
+from typing import Any, Literal, cast
 
-from typing_extensions import TypeVar, get_args
+from typing_extensions import TypeVar, get_args, get_origin
 
 from dagster import _check as check
 from dagster._core.definitions.metadata.metadata_set import NamespacedKVSet
@@ -30,12 +30,20 @@ class NamespacedTagSet(NamespacedKVSet):
         for field_name, field in model_fields(self).items():
             annotation_type = field.annotation
 
-            is_optional_str = is_closed_python_optional_type(annotation_type) and str in get_args(
-                annotation_type
+            is_optional = is_closed_python_optional_type(annotation_type)
+            is_optional_str = is_optional and str in get_args(annotation_type)
+            is_optional_literal = (
+                is_optional and get_origin(get_args(annotation_type)[0]) == Literal
             )
-            if not (is_optional_str or annotation_type is str):
+            if not (
+                is_optional_str
+                or annotation_type is str
+                or is_optional_literal
+                or annotation_type is Literal
+            ):
                 check.failed(
-                    f"Type annotation for field '{field_name}' is not str or Optional[str]"
+                    f"Type annotation for field '{field_name}' is not str, Optional[str], Literal, "
+                    f"or Optional[Literal]. Is {annotation_type}."
                 )
         super().__init__(*args, **kwargs)
 

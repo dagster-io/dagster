@@ -9,6 +9,7 @@ import {
   Tag,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
@@ -46,7 +47,13 @@ export const ScheduleDetails = (props: {
   return (
     <>
       <PageHeader
-        title={<Heading>{name}</Heading>}
+        title={
+          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+            <Link to="/automation">Automation</Link>
+            <span>/</span>
+            {name}
+          </Heading>
+        }
         tags={
           <Tag icon="schedule">
             Schedule in <RepositoryLink repoAddress={repoAddress} />

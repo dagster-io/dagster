@@ -19,20 +19,13 @@ body:
         Thank you for contributing to improve Dagster.
         If you have a change ready to submit, you do not need to create an issue.
         Instead, you can open a [pull request](https://github.com/dagster-io/dagster/pulls).
-  - type: input
-    attributes:
-      label: Dagster version
-      description: What Dagster version are you using?
-      placeholder: "Copy and paste the output from `dagster --version`."
-    validations:
-      required: true
   - type: textarea
     attributes:
       label: What's the issue?
       description: Provide a brief description of the issue.
       placeholder: |
         Please provide a brief description of the issue and the context in which it happened.
-
+        
         When possible, add error logs, screenshots or video links that display the issue.
     validations:
       required: true
@@ -46,6 +39,13 @@ body:
       label: How to reproduce?
       description: How can we reproduce the issue?
       placeholder: Please provide a reproducible guide of how to create the issue.
+  - type: input
+    attributes:
+      label: Dagster version
+      description: What Dagster version are you using?
+      placeholder: "Copy and paste the output from `dagster --version`."
+    validations:
+      required: true
   - type: dropdown
     attributes:
       label: Deployment type
@@ -89,4 +89,8 @@ body:
     attributes:
       label: Message from the maintainers
       description: This form field should be ignored. This is to include a footer message on the generated issue.
-      value: Impacted by this issue? Give it a 👍! We factor engagement into prioritization.
+      value: >
+        Impacted by this issue? Give it a 👍! We factor engagement into prioritization.
+        
+        By submitting this issue, you agree to follow Dagster's
+        [Code of Conduct](https://github.com/dagster-io/dagster/blob/master/.github/CODE_OF_CONDUCT.md).

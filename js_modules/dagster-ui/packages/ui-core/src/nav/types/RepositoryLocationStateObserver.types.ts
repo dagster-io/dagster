@@ -17,3 +17,5 @@ export type LocationStateChangeSubscription = {
     };
   };
 };
+
+export const LocationStateChangeSubscriptionVersion = 'd6cb6b73be1c484a2f592e60be15fb89b344e385f703ce2c92516e2779df8217';

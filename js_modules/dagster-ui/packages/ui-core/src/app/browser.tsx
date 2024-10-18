@@ -23,7 +23,9 @@ export const useCopyToClipboard = () => {
     }
 
     return () => {
-      node.current && document.body.removeChild(node.current);
+      if (node.current) {
+        document.body.removeChild(node.current);
+      }
     };
   }, [clipboardAPI]);
 

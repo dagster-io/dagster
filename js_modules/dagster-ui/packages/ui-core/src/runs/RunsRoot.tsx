@@ -165,10 +165,7 @@ export const RunsRoot = () => {
               error.networkError.statusCode === 400
             );
             return (
-              <Box
-                flex={{direction: 'column', gap: 32}}
-                padding={{vertical: 8, left: 24, right: 12}}
-              >
+              <Box flex={{direction: 'column', gap: 32}} padding={{vertical: 8, horizontal: 24}}>
                 {actionBar()}
                 <NonIdealState
                   icon="warning"

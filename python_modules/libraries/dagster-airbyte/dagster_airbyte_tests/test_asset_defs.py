@@ -34,12 +34,14 @@ def test_assets(schema_prefix, auto_materialize_policy, monkeypatch):
     destination_tables = ["foo", "bar"]
     if schema_prefix:
         destination_tables = [schema_prefix + t for t in destination_tables]
+    connection_id = "12345"
     ab_assets = build_airbyte_assets(
-        "12345",
+        connection_id=connection_id,
         destination_tables=destination_tables,
         asset_key_prefix=["some", "prefix"],
         auto_materialize_policy=auto_materialize_policy,
     )
+    ab_assets_name = f"airbyte_sync_{connection_id.replace('-', '_')}"
 
     assert ab_assets[0].keys == {AssetKey(["some", "prefix", t]) for t in destination_tables}
     assert len(ab_assets[0].op.output_defs) == 2
@@ -82,7 +84,7 @@ def test_assets(schema_prefix, auto_materialize_policy, monkeypatch):
 
     materializations = [
         event.event_specific_data.materialization
-        for event in res.events_for_node("airbyte_sync_12345")
+        for event in res.events_for_node(ab_assets_name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 3
@@ -125,8 +127,9 @@ def test_assets_with_normalization(
         destination_tables = [schema_prefix + t for t in destination_tables]
 
     bar_normalization_tables = {schema_prefix + "bar_baz", schema_prefix + "bar_qux"}
+    connection_id = "12345"
     ab_assets = build_airbyte_assets(
-        "12345",
+        connection_id=connection_id,
         destination_tables=destination_tables,
         normalization_tables={destination_tables[1]: bar_normalization_tables},
         asset_key_prefix=["some", "prefix"],
@@ -134,6 +137,7 @@ def test_assets_with_normalization(
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
     )
+    ab_assets_name = f"airbyte_sync_{connection_id.replace('-', '_')}"
 
     assert all(spec.freshness_policy == freshness_policy for spec in ab_assets[0].specs)
 
@@ -182,7 +186,7 @@ def test_assets_with_normalization(
 
     materializations = [
         event.event_specific_data.materialization
-        for event in res.events_for_node("airbyte_sync_12345")
+        for event in res.events_for_node(ab_assets_name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 5
@@ -213,13 +217,15 @@ def test_assets_cloud() -> None:
     )
     ab_url = ab_resource.api_base_url
 
+    connection_id = "12345"
     ab_assets = build_airbyte_assets(
-        "12345",
+        connection_id=connection_id,
         destination_tables=["foo", "bar"],
         normalization_tables={"bar": {"bar_baz", "bar_qux"}},
         asset_key_prefix=["some", "prefix"],
         group_name="foo",
     )
+    ab_assets_name = f"airbyte_sync_{connection_id.replace('-', '_')}"
 
     with responses.RequestsMock() as rsps:
         rsps.add(
@@ -251,7 +257,7 @@ def test_assets_cloud() -> None:
 
         materializations = [
             event.event_specific_data.materialization
-            for event in res.events_for_node("airbyte_sync_12345")
+            for event in res.events_for_node(ab_assets_name)
             if event.event_type_value == "ASSET_MATERIALIZATION"
             and isinstance(event.event_specific_data, StepMaterializationData)
         ]
@@ -302,3 +308,53 @@ def test_built_airbyte_asset_with_downstream_asset():
     assert len(downstream_of_ab.input_names) == 2
     assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.is_nothing
     assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.is_nothing
+
+
+def test_built_airbyte_asset_relation_identifier():
+    destination_tables = ["foo", "bar"]
+
+    ab_assets = build_airbyte_assets(
+        "12345",
+        destination_tables=destination_tables,
+        normalization_tables={"foo": {"baz"}},
+    )
+
+    # Check relation identifier metadata is added correctly to asset def
+    assets_def = ab_assets[0]
+    for metadata in assets_def.metadata_by_key.values():
+        assert metadata.get("dagster/relation_identifier") is None
+
+    ab_assets = build_airbyte_assets(
+        "12345",
+        destination_tables=destination_tables,
+        destination_database="test_database",
+        destination_schema="test_schema",
+    )
+
+    relation_identifiers = {"test_database.test_schema.foo", "test_database.test_schema.bar"}
+
+    # Check relation identifier metadata is added correctly to asset def
+    assets_def = ab_assets[0]
+    for key, metadata in assets_def.metadata_by_key.items():
+        # Extract the table name from the asset key
+        table_name = key.path[-1]
+        assert metadata["dagster/relation_identifier"] in relation_identifiers
+        assert table_name in metadata["dagster/relation_identifier"]
+
+    ab_assets = build_airbyte_assets(
+        "12345",
+        destination_tables=destination_tables,
+        destination_database="test_database",
+        destination_schema="test_schema",
+        normalization_tables={"foo": {"baz"}},
+    )
+
+    relation_identifiers.add("test_database.test_schema.foo.baz")
+
+    # Check relation identifier metadata is added correctly to asset def
+    assets_def = ab_assets[0]
+    for key, metadata in assets_def.metadata_by_key.items():
+        # Extract the table name from the asset key
+        table_name = key.path[-1]
+        assert metadata["dagster/relation_identifier"] in relation_identifiers
+        assert table_name in metadata["dagster/relation_identifier"]

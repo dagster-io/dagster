@@ -72,9 +72,9 @@ def code_location_fixture(workspace):
     return workspace.get_code_location("repo_loc")
 
 
-@pytest.fixture(name="external_job", scope="module")
-def external_job_fixture(code_location):
-    return code_location.get_repository("repo").get_full_external_job("conditional_fail_job")
+@pytest.fixture(name="remote_job", scope="module")
+def remote_job_fixture(code_location):
+    return code_location.get_repository("repo").get_full_job("conditional_fail_job")
 
 
 @pytest.fixture(name="failed_run", scope="module")
@@ -96,13 +96,13 @@ def test_create_reexecuted_run_from_failure(
     instance: DagsterInstance,
     workspace,
     code_location,
-    external_job,
+    remote_job,
     failed_run,
 ):
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
         code_location=code_location,
-        external_job=external_job,
+        remote_job=remote_job,
         strategy=ReexecutionStrategy.FROM_FAILURE,
     )
 
@@ -120,13 +120,13 @@ def test_create_reexecuted_run_from_failure(
 def test_create_reexecuted_run_from_failure_tags(
     instance: DagsterInstance,
     code_location,
-    external_job,
+    remote_job,
     failed_run,
 ):
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
         code_location=code_location,
-        external_job=external_job,
+        remote_job=remote_job,
         strategy=ReexecutionStrategy.FROM_FAILURE,
     )
 
@@ -136,7 +136,7 @@ def test_create_reexecuted_run_from_failure_tags(
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
         code_location=code_location,
-        external_job=external_job,
+        remote_job=remote_job,
         strategy=ReexecutionStrategy.FROM_FAILURE,
         use_parent_run_tags=True,
     )
@@ -147,7 +147,7 @@ def test_create_reexecuted_run_from_failure_tags(
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
         code_location=code_location,
-        external_job=external_job,
+        remote_job=remote_job,
         strategy=ReexecutionStrategy.FROM_FAILURE,
         use_parent_run_tags=True,
         extra_tags={"fizz": "not buzz!!"},
@@ -158,12 +158,12 @@ def test_create_reexecuted_run_from_failure_tags(
 
 
 def test_create_reexecuted_run_all_steps(
-    instance: DagsterInstance, workspace, code_location, external_job, failed_run
+    instance: DagsterInstance, workspace, code_location, remote_job, failed_run
 ):
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
         code_location=code_location,
-        external_job=external_job,
+        remote_job=remote_job,
         strategy=ReexecutionStrategy.ALL_STEPS,
     )
 

@@ -2,7 +2,7 @@ import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {AppTopNav} from '../AppTopNav/AppTopNav';
 import {workspaceWithNoJobs} from '../__fixtures__/useJobStateForNav.fixtures';
 
@@ -28,6 +28,6 @@ describe('AppTopNav', () => {
     expect(screen.getByText('Overview').closest('a')).toHaveAttribute('href', '/overview');
     expect(screen.getByText('Runs').closest('a')).toHaveAttribute('href', '/runs');
     expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/assets');
-    expect(screen.getByText('Deployment').closest('a')).toHaveAttribute('href', '/locations');
+    expect(screen.getByText('Deployment').closest('a')).toHaveAttribute('href', '/deployment');
   });
 });

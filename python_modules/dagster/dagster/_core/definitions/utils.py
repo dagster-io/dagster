@@ -1,7 +1,6 @@
 import keyword
 import os
 import re
-import warnings
 from glob import glob
 from typing import (
     TYPE_CHECKING,
@@ -10,21 +9,17 @@ from typing import (
     Iterable,
     List,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
     Tuple,
     TypeVar,
-    Union,
     cast,
 )
 
 import yaml
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._core.storage.tags import check_reserved_tags
 from dagster._core.utils import is_valid_email
 from dagster._utils.warnings import deprecation_warning
 from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
@@ -158,128 +153,6 @@ def struct_to_string(name: str, **kwargs: object) -> str:
     # Sort the kwargs to ensure consistent representations across Python versions
     props_str = ", ".join([_kv_str(key, value) for key, value in sorted(kwargs.items())])
     return f"{name}({props_str})"
-
-
-class NormalizedTags(NamedTuple):
-    tags: Mapping[str, str]
-
-    def with_normalized_tags(self, normalized_tags: "NormalizedTags") -> "NormalizedTags":
-        return NormalizedTags({**self.tags, **normalized_tags.tags})
-
-
-def normalize_tags(
-    tags: Union[NormalizedTags, Optional[Mapping[str, Any]]],
-    allow_reserved_tags: bool = True,
-    warn_on_deprecated_tags: bool = True,
-    warning_stacklevel: int = 4,
-) -> NormalizedTags:
-    """Normalizes JSON-object tags into string tags and warns on deprecated tags.
-
-    New tags properties should _not_ use this function, because it doesn't hard error on tags that
-    are no longer supported.
-    """
-    if isinstance(tags, NormalizedTags):
-        return tags
-
-    valid_tags: Dict[str, str] = {}
-    invalid_tag_keys = []
-    for key, value in check.opt_mapping_param(tags, "tags", key_type=str).items():
-        if not isinstance(value, str):
-            valid = False
-            err_reason = f'Could not JSON encode value "{value}"'
-            str_val = None
-            try:
-                str_val = seven.json.dumps(value)
-                err_reason = f'JSON encoding "{str_val}" of value "{value}" is not equivalent to original value'
-
-                valid = seven.json.loads(str_val) == value
-            except Exception:
-                pass
-
-            if not valid:
-                raise DagsterInvalidDefinitionError(
-                    f'Invalid value for tag "{key}", {err_reason}. Tag values must be strings '
-                    "or meet the constraint that json.loads(json.dumps(value)) == value."
-                )
-
-            valid_tags[key] = str_val  # type: ignore  # (possible none)
-        else:
-            valid_tags[key] = value
-
-        if not is_valid_definition_tag_key(key):
-            invalid_tag_keys.append(key)
-
-    if invalid_tag_keys:
-        invalid_tag_keys_sample = invalid_tag_keys[: min(5, len(invalid_tag_keys))]
-        if warn_on_deprecated_tags:
-            warnings.warn(
-                f"Non-compliant tag keys like {invalid_tag_keys_sample} are deprecated. {VALID_DEFINITION_TAG_KEY_EXPLANATION}",
-                category=DeprecationWarning,
-                stacklevel=warning_stacklevel,
-            )
-
-    if not allow_reserved_tags:
-        check_reserved_tags(valid_tags)
-
-    return NormalizedTags(valid_tags)
-
-
-# Inspired by allowed Kubernetes labels:
-# https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
-
-# We allow in some cases for users to specify multi-level namespaces for tags,
-# right now we only allow this for the `dagster/kind` namespace, which is how asset kinds are
-# encoded under the hood.
-VALID_NESTED_NAMESPACES_TAG_KEYS = r"dagster/kind/"
-VALID_DEFINITION_TAG_KEY_REGEX_STR = (
-    r"^([A-Za-z0-9_.-]{1,63}/|" + VALID_NESTED_NAMESPACES_TAG_KEYS + r")?[A-Za-z0-9_.-]{1,63}$"
-)
-VALID_DEFINITION_TAG_KEY_REGEX = re.compile(VALID_DEFINITION_TAG_KEY_REGEX_STR)
-VALID_DEFINITION_TAG_KEY_EXPLANATION = (
-    "Allowed characters: alpha-numeric, '_', '-', '.'. "
-    "Tag keys can also contain a namespace section, separated by a '/'. Each section "
-    "must have <= 63 characters."
-)
-
-VALID_DEFINITION_TAG_VALUE_REGEX_STR = r"^[A-Za-z0-9_.-]{0,63}$"
-VALID_DEFINITION_TAG_VALUE_REGEX = re.compile(VALID_DEFINITION_TAG_VALUE_REGEX_STR)
-
-
-def is_valid_definition_tag_key(key: str) -> bool:
-    return bool(VALID_DEFINITION_TAG_KEY_REGEX.match(key))
-
-
-def is_valid_definition_tag_value(key: str) -> bool:
-    return bool(VALID_DEFINITION_TAG_VALUE_REGEX.match(key))
-
-
-def validate_tags_strict(tags: Optional[Mapping[str, str]]) -> Optional[Mapping[str, str]]:
-    if tags is None:
-        return tags
-
-    for key, value in tags.items():
-        validate_tag_strict(key, value)
-
-    return tags
-
-
-def validate_tag_strict(key: str, value: str) -> None:
-    if not isinstance(key, str):
-        raise DagsterInvalidDefinitionError("Tag keys must be strings")
-
-    if not isinstance(value, str):
-        raise DagsterInvalidDefinitionError("Tag values must be strings")
-
-    if not is_valid_definition_tag_key(key):
-        raise DagsterInvalidDefinitionError(
-            f"Invalid tag key: {key}. {VALID_DEFINITION_TAG_KEY_EXPLANATION}"
-        )
-
-    if not is_valid_definition_tag_value(value):
-        raise DagsterInvalidDefinitionError(
-            f"Invalid tag value: {value}, for key: {key}. Allowed characters: alpha-numeric, '_', '-', '.'. "
-            "Must have <= 63 characters."
-        )
 
 
 def validate_asset_owner(owner: str, key: "AssetKey") -> None:

@@ -2,9 +2,9 @@ import * as React from 'react';
 
 import {LogsProviderLogs} from './LogsProvider';
 import {RunContext} from './RunContext';
+import {gql} from '../apollo-client';
 import {RunFragment} from './types/RunFragments.types';
 import {RunMetadataProviderMessageFragment} from './types/RunMetadataProvider.types';
-import {gql} from '../apollo-client';
 import {StepEventStatus} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 

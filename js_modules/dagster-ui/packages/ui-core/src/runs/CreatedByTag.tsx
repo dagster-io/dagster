@@ -1,11 +1,12 @@
 import {Box, Tag} from '@dagster-io/ui-components';
 import {memo} from 'react';
 import {Link} from 'react-router-dom';
+import {UserDisplay} from 'shared/runs/UserDisplay.oss';
+import styled from 'styled-components';
 
 import {DagsterTag} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTagsFragment} from './types/RunTagsFragment.types';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TagActionsPopover} from '../ui/TagActions';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -18,11 +19,13 @@ type Props = {
 
 export const CreatedByTagCell = memo(({repoAddress, tags, onAddTag}: Props) => {
   return (
-    <Box flex={{direction: 'column', alignItems: 'flex-start'}}>
+    <CreatedByTagCellWrapper flex={{direction: 'column', alignItems: 'flex-start'}}>
       <CreatedByTag repoAddress={repoAddress} tags={tags} onAddTag={onAddTag} />
-    </Box>
+    </CreatedByTagCellWrapper>
   );
 });
+
+export const CreatedByTagCellWrapper = styled(Box)``;
 
 type TagType =
   | {
@@ -68,8 +71,6 @@ const pluckTagFromList = (tags: RunTagsFragment[]): TagType => {
 };
 
 export const CreatedByTag = ({repoAddress, tags, onAddTag}: Props) => {
-  const {UserDisplay} = useLaunchPadHooks();
-
   const plucked = pluckTagFromList(tags);
 
   if (plucked.type === 'manual') {

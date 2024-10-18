@@ -53,3 +53,5 @@ export type ScheduleAssetSelectionQuery = {
       }
     | {__typename: 'ScheduleNotFoundError'};
 };
+
+export const ScheduleAssetSelectionQueryVersion = 'ff337e4645f6881b8240ef02dc13ef8dcdee46de71badedd37eb811bab741b87';

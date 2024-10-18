@@ -1,4 +1,5 @@
 from dagster import AssetKey, asset, sensor
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 
 
 def test_coerce_to_asset_selection():
@@ -33,3 +34,21 @@ def test_jobless_sensor_uses_eval_fn_name():
         pass
 
     assert my_sensor.name == "my_sensor"
+
+
+def test_sensor_tags():
+    @sensor(tags={"foo": "bar"})
+    def my_sensor():
+        pass
+
+    # auto-serialized to JSON
+    assert my_sensor.tags == {"foo": "bar"}
+
+
+def test_sensor_metadata():
+    @sensor(metadata={"foo": "bar"})
+    def my_sensor():
+        pass
+
+    # auto-serialized to JSON
+    assert my_sensor.metadata["foo"] == MetadataValue.text("bar")

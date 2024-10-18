@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import TYPE_CHECKING, Dict, Generic, Iterable, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Dict, Generic, Iterable, Optional, Tuple, Type, TypeVar
 
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._utils.aiodataloader import DataLoader
+from dagster._utils.aiodataloader import BlockingDataLoader, DataLoader
 
 TResult = TypeVar("TResult")
 TKey = TypeVar("TKey")
@@ -55,22 +55,29 @@ class LoadingContext(ABC):
 
     @property
     @abstractmethod
-    def loaders(self) -> Dict[Type, DataLoader]:
+    def loaders(self) -> Dict[Type, Tuple[DataLoader, BlockingDataLoader]]:
         raise NotImplementedError()
 
-    def get_loader_for(self, ttype: Type["InstanceLoadableBy"]) -> DataLoader:
+    def get_loaders_for(
+        self, ttype: Type["InstanceLoadableBy"]
+    ) -> Tuple[DataLoader, BlockingDataLoader]:
         if ttype not in self.loaders:
             if not issubclass(ttype, InstanceLoadableBy):
                 check.failed(f"{ttype} is not Loadable")
 
-            self.loaders[ttype] = DataLoader(
-                batch_load_fn=partial(
-                    ttype._batch_load,  # noqa
-                    instance=self.instance,
-                ),
+            batch_load_fn = partial(ttype._batch_load, instance=self.instance)  # noqa
+            blocking_batch_load_fn = partial(ttype._blocking_batch_load, instance=self.instance)  # noqa
+
+            self.loaders[ttype] = (
+                DataLoader(batch_load_fn=batch_load_fn),
+                BlockingDataLoader(batch_load_fn=blocking_batch_load_fn),
             )
 
         return self.loaders[ttype]
+
+    def clear_loaders(self) -> None:
+        for ttype in self.loaders:
+            del self.loaders[ttype]
 
 
 # Expected there may be other "Loadable" base classes based on what is needed to load.
@@ -80,18 +87,28 @@ class InstanceLoadableBy(ABC, Generic[TKey]):
     """Make An object Loadable by ID of type TKey using a DagsterInstance."""
 
     @classmethod
-    @abstractmethod
     async def _batch_load(
-        cls,
-        keys: Iterable[TKey],
-        instance: "DagsterInstance",
+        cls, keys: Iterable[TKey], instance: "DagsterInstance"
     ) -> Iterable[Optional[Self]]:
+        return cls._blocking_batch_load(keys, instance)
+
+    @classmethod
+    @abstractmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[TKey], instance: "DagsterInstance"
+    ) -> Iterable[Optional[Self]]:
+        # There is no good way of turning an async function into a sync one that
+        # will allow us to execute that sync function inside of a broader async context.
+        #
+        # In the spirit of allowing incremental migration from a fully-sync pattern to
+        # an async one, we provide two separate functions here to allow sync and async
+        # calls to coexist.
         raise NotImplementedError()
 
     @classmethod
-    async def gen(cls, context: LoadingContext, id: TKey) -> Self:
+    async def gen(cls, context: LoadingContext, id: TKey) -> Optional[Self]:
         """Fetch an object by its id."""
-        loader = context.get_loader_for(cls)
+        loader, _ = context.get_loaders_for(cls)
         return await loader.load(id)
 
     @classmethod
@@ -99,5 +116,41 @@ class InstanceLoadableBy(ABC, Generic[TKey]):
         cls, context: LoadingContext, ids: Iterable[TKey]
     ) -> Iterable[Optional[Self]]:
         """Fetch N objects by their id."""
-        loader = context.get_loader_for(cls)
+        loader, _ = context.get_loaders_for(cls)
         return await loader.load_many(ids)
+
+    @classmethod
+    def blocking_get(cls, context: LoadingContext, id: TKey) -> Optional[Self]:
+        """Fetch an object by its id."""
+        _, blocking_loader = context.get_loaders_for(cls)
+        return blocking_loader.blocking_load(id)
+
+    @classmethod
+    def blocking_get_many(cls, context: LoadingContext, ids: Iterable[TKey]) -> Iterable[Self]:
+        """Fetch N objects by their id."""
+        # in the future, can consider priming the non-blocking loader with the results of this
+        # sync call
+        _, blocking_loader = context.get_loaders_for(cls)
+        return list(filter(None, blocking_loader.blocking_load_many(ids)))
+
+    @classmethod
+    def prepare(cls, context: LoadingContext, ids: Iterable[TKey]) -> None:
+        """Ensure the provided ids will be fetched on the next blocking query."""
+        _, blocking_loader = context.get_loaders_for(cls)
+        blocking_loader.prepare(ids)
+
+
+class LoadingContextForTest(LoadingContext):
+    """Loading context intended to be used in unit tests that would not otherwise construct a LoadingContext."""
+
+    def __init__(self, instance: "DagsterInstance"):
+        self._instance = instance
+        self._loaders = {}
+
+    @property
+    def instance(self) -> "DagsterInstance":
+        return self._instance
+
+    @property
+    def loaders(self) -> Dict[Type, Tuple[DataLoader, BlockingDataLoader]]:
+        return self._loaders

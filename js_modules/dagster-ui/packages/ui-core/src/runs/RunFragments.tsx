@@ -17,6 +17,7 @@ export const RUN_FRAGMENT = gql`
     hasReExecutePermission
     hasTerminatePermission
     hasDeletePermission
+    hasRunMetricsEnabled
     status
     mode
     tags {

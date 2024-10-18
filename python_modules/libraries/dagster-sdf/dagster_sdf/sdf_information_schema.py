@@ -217,6 +217,7 @@ class SdfInformationSchema(IHaveNew):
                             get_output_dir(self.target_dir, self.environment),
                         ),
                         metadata=metadata,
+                        kinds={"sdf"},
                         skippable=True,
                     )
                 )

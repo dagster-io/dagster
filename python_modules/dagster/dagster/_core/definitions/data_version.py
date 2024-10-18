@@ -17,6 +17,7 @@ from typing_extensions import Final
 
 from dagster import _check as check
 from dagster._annotations import deprecated, experimental
+from dagster._core.loader import LoadingContext
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -381,12 +382,14 @@ class CachingStaleStatusResolver:
         self,
         instance: "DagsterInstance",
         asset_graph: Union["BaseAssetGraph", Callable[[], "BaseAssetGraph"]],
+        loading_context: LoadingContext,
         instance_queryer: Optional["CachingInstanceQueryer"] = None,
     ):
         from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 
         self._instance = instance
         self._instance_queryer = instance_queryer
+        self._loading_context = loading_context
         if isinstance(asset_graph, BaseAssetGraph):
             self._asset_graph = asset_graph
             self._asset_graph_load_fn = None
@@ -518,18 +521,7 @@ class CachingStaleStatusResolver:
         partition_deps = self._get_partition_dependencies(key=key)
         for dep_key in sorted(partition_deps):
             dep_asset = self.asset_graph.get(dep_key.asset_key)
-            if (
-                self._instance.use_transitive_stale_causes
-                and self._get_status(key=dep_key) == StaleStatus.STALE
-            ):
-                yield StaleCause(
-                    key,
-                    StaleCauseCategory.DATA,
-                    "stale dependency",
-                    dep_key,
-                    self._get_stale_causes(key=dep_key),
-                )
-            elif provenance:
+            if provenance:
                 if not provenance.has_input_asset(dep_key.asset_key):
                     yield StaleCause(
                         key,
@@ -621,7 +613,9 @@ class CachingStaleStatusResolver:
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
         if self._instance_queryer is None:
-            self._instance_queryer = CachingInstanceQueryer(self._instance, self.asset_graph)
+            self._instance_queryer = CachingInstanceQueryer(
+                self._instance, self.asset_graph, self._loading_context
+            )
         return self._instance_queryer
 
     @cached_method
@@ -683,14 +677,6 @@ class CachingStaleStatusResolver:
     def _get_latest_data_version_record(
         self, key: "AssetKeyPartitionKey"
     ) -> Optional["EventLogRecord"]:
-        # If an asset record is cached, all of its ancestors have already been cached.
-        if (
-            key.partition_key is None
-            and not self.asset_graph.get(key.asset_key).is_external
-            and not self.instance_queryer.has_cached_asset_record(key.asset_key)
-        ):
-            ancestors = self.asset_graph.get_ancestor_asset_keys(key.asset_key, include_self=True)
-            self.instance_queryer.prefetch_asset_records(ancestors)
         return self.instance_queryer.get_latest_materialization_or_observation_record(
             asset_partition=key
         )

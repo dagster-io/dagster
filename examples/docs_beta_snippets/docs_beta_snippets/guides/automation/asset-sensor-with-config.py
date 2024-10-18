@@ -8,8 +8,10 @@ class MyConfig(dg.Config):
 @dg.asset
 def daily_sales_data(context: dg.AssetExecutionContext):
     context.log.info("Asset to watch")
-    # highlight-next-line
+    # highlight-start
+    # Materialization metadata
     yield dg.MaterializeResult(metadata={"specific_property": "value"})
+    # highlight-end
 
 
 @dg.asset
@@ -30,8 +32,8 @@ def daily_sales_data_sensor(context: dg.SensorEvaluationContext, asset_event):
         asset_event.dagster_event.event_specific_data.materialization
     )
 
-    # Example custom logic: Check if the asset metadata has a specific property
     # highlight-start
+    # Custom logic that checks if the asset metadata has a specific property
     if "specific_property" in materialization.metadata:
         yield dg.RunRequest(
             run_key=context.cursor,

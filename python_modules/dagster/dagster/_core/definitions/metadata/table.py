@@ -114,7 +114,7 @@ _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
 # ########################
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(skip_when_empty_fields={"tags"})
 class TableColumn(
     NamedTuple(
         "TableColumn",
@@ -123,6 +123,7 @@ class TableColumn(
             ("type", PublicAttr[str]),
             ("description", PublicAttr[Optional[str]]),
             ("constraints", PublicAttr[TableColumnConstraints]),
+            ("tags", PublicAttr[Mapping[str, str]]),
         ],
     )
 ):
@@ -138,6 +139,7 @@ class TableColumn(
         description (Optional[str]): Description of this column. Defaults to `None`.
         constraints (Optional[TableColumnConstraints]): Column-level constraints.
             If unspecified, column is nullable with no constraints.
+        tags (Optional[Mapping[str, str]]): Tags for filtering or organizing columns.
     """
 
     def __new__(
@@ -146,6 +148,7 @@ class TableColumn(
         type: str = "string",  # noqa: A002
         description: Optional[str] = None,
         constraints: Optional[TableColumnConstraints] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ):
         return super(TableColumn, cls).__new__(
             cls,
@@ -158,6 +161,7 @@ class TableColumn(
                 TableColumnConstraints,
                 default=_DEFAULT_TABLE_COLUMN_CONSTRAINTS,
             ),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
         )
 
 
@@ -207,7 +211,7 @@ class TableSchema(
                         type = "string",
                         description = "Foo description",
                         constraints = TableColumnConstraints(
-                            required = True,
+                            nullable = False,
                             other = [
                                 "starts with the letter 'a'",
                             ],

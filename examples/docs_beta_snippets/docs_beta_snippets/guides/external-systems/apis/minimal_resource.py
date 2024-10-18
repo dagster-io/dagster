@@ -3,7 +3,10 @@ import requests
 import dagster as dg
 
 
+# highlight-start
+# Use ConfigurableResource to define the resource
 class SunResource(dg.ConfigurableResource):
+    # highlight-end
     @property
     def query_string(self) -> str:
         latittude = "37.615223"

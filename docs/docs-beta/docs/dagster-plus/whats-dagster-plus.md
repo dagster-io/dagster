@@ -10,7 +10,7 @@ Dagster+ is a managed orchestration platform built on top of Dagster's open sour
 
 Dagster+ is built to be the most performant, reliable, and cost effective way for data engineering teams to run Dagster in production. Dagster+ is also great for students, researchers, or individuals who want to explore Dagster with minimal overhead.
 
-Dagster+ comes in two flavors: a fully [Serverless](/dagster-plus/deployment/serverless) offering and a [Hybrid](/dagster-plus/deployment/hybrid) offering. In both cases, Dagster+ does the hard work of managing your data orchestration control plane. Compared to a [Dagster open source deployment](/guides/deployment/), Dagster+ manages:
+Dagster+ comes in two flavors: a fully [Serverless](/dagster-plus/deployment/serverless) offering and a [Hybrid](/dagster-plus/deployment/hybrid) offering. In both cases, Dagster+ does the hard work of managing your data orchestration control plane. Compared to a [Dagster open source deployment](/guides/), Dagster+ manages:
 
 - Dagster's web UI at https://dagster.plus
 - Metadata stores for data cataloging and cost insights
@@ -33,5 +33,5 @@ Ready to [get started](/dagster-plus/getting-started)?
 - Learn more about Dagster+ [pricing and plan types](https://dagster.io/pricing) or [contact the Dagster team](https://dagster.io/contact)
 - Dagster+ includes support, [click here](https://dagster.io/support) to learn more.
 - Dagster+ is HIPAA compliant, SOC 2 Type II certified, and meets GDPR requirements. Learn more about Dagster+[ security](https://dagster.io/security).
-- Migrate [from a Dagster open source deployment to Dagster+](/guides/deployment/self-hosted-to-dagster-plus)
+- Migrate [from a Dagster open source deployment to Dagster+](/guides/self-hosted-to-dagster-plus)
 - Dagster+ [status page](https://dagstercloud.statuspage.io/)

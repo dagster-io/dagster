@@ -60,6 +60,7 @@ from dagster._core.definitions.multi_dimensional_partitions import MultiPartitio
 from dagster._core.definitions.partition import PartitionKeyRange, StaticPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
     PartitionKeysTimeWindowPartitionsSubset,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
@@ -82,9 +83,7 @@ from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
-from dagster._core.remote_representation.external_data import (
-    external_partitions_definition_from_def,
-)
+from dagster._core.remote_representation.external_data import PartitionsSnap
 from dagster._core.remote_representation.origin import (
     InProcessCodeLocationOrigin,
     RemoteJobOrigin,
@@ -127,7 +126,7 @@ def create_and_delete_test_runs(instance: DagsterInstance, run_ids: Sequence[str
             create_run_for_test(
                 instance,
                 run_id=run_id,
-                external_job_origin=RemoteJobOrigin(
+                remote_job_origin=RemoteJobOrigin(
                     RemoteRepositoryOrigin(
                         InProcessCodeLocationOrigin(
                             LoadableTargetOrigin(
@@ -3266,7 +3265,7 @@ class TestEventLogStorage:
 
         partitions_def = DailyPartitionsDefinition("2023-01-01")
         partitions_subset = (
-            external_partitions_definition_from_def(partitions_def)
+            PartitionsSnap.from_def(partitions_def)
             .get_partitions_definition()
             .subset_with_partition_keys(
                 partitions_def.get_partition_keys_in_range(
@@ -3327,7 +3326,7 @@ class TestEventLogStorage:
 
         partitions_def = DailyPartitionsDefinition("2023-01-01")
         partitions_subset = (
-            external_partitions_definition_from_def(partitions_def)
+            PartitionsSnap.from_def(partitions_def)
             .get_partitions_definition()
             .subset_with_partition_keys(
                 partitions_def.get_partition_keys_in_range(
@@ -3497,7 +3496,7 @@ class TestEventLogStorage:
 
         partitions_def = DailyPartitionsDefinition("2023-01-01")
         partitions_subset = (
-            external_partitions_definition_from_def(partitions_def)
+            PartitionsSnap.from_def(partitions_def)
             .get_partitions_definition()
             .subset_with_partition_keys(
                 partitions_def.get_partition_keys_in_range(
@@ -6014,3 +6013,31 @@ class TestEventLogStorage:
                 )
                 == set()
             )
+
+    def test_get_updated_asset_status_cache_values(
+        self, instance: DagsterInstance, storage: EventLogStorage
+    ):
+        partition_defs_by_key = {
+            AssetKey("hourly"): HourlyPartitionsDefinition("2020-01-01-00:00"),
+            AssetKey("daily"): DailyPartitionsDefinition("2020-01-01"),
+            AssetKey("static"): StaticPartitionsDefinition(["a", "b", "c"]),
+        }
+
+        assert storage.get_asset_status_cache_values(partition_defs_by_key) == [
+            None,
+            None,
+            None,
+        ]
+
+        instance.report_runless_asset_event(
+            AssetMaterialization(asset_key="hourly", partition="2020-01-01-00:00")
+        )
+        instance.report_runless_asset_event(
+            AssetMaterialization(asset_key="daily", partition="2020-01-01"),
+        )
+        instance.report_runless_asset_event(AssetMaterialization(asset_key="static", partition="a"))
+
+        partition_defs = list(partition_defs_by_key.values())
+        for i, value in enumerate(storage.get_asset_status_cache_values(partition_defs_by_key)):
+            assert value is not None
+            assert len(value.deserialize_materialized_partition_subsets(partition_defs[i])) == 1

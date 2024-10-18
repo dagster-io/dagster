@@ -36,6 +36,7 @@ export type LaunchPartitionBackfillMutation = {
     | {__typename: 'InvalidSubsetError'}
     | {__typename: 'LaunchBackfillSuccess'; backfillId: string}
     | {__typename: 'NoModeProvidedError'}
+    | {__typename: 'PartitionKeysNotFoundError'; message: string}
     | {__typename: 'PartitionSetNotFoundError'; message: string}
     | {__typename: 'PipelineNotFoundError'; message: string}
     | {__typename: 'PresetNotFoundError'; message: string}
@@ -94,3 +95,5 @@ export type LaunchPartitionBackfillMutation = {
     | {__typename: 'RunConflict'; message: string}
     | {__typename: 'UnauthorizedError'; message: string};
 };
+
+export const LaunchPartitionBackfillVersion = '07bf7523e7b8696598d621aad89a48f25e173a3955ab84dd60a745c21aff2d9b';

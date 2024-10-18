@@ -28,7 +28,7 @@ import {MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 interface AssetEventsTableProps {

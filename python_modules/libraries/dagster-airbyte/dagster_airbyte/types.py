@@ -6,10 +6,14 @@ from dagster._core.definitions.metadata.table import TableSchema
 class AirbyteTableMetadata:
     def __init__(
         self,
+        raw_table_name: str,
         schema: TableSchema,
         normalization_tables: Optional[Mapping[str, "AirbyteTableMetadata"]] = None,
     ):
-        """Contains metadata about an Airbyte table, including its schema and any created normalization tables."""
+        """Contains metadata about an Airbyte table, including its destination raw table name,
+        schema and any created normalization tables.
+        """
+        self.raw_table_name = raw_table_name
         self.schema = schema
         self.normalization_tables = normalization_tables or dict()
 

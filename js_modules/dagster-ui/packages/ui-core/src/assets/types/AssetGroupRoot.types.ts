@@ -14,3 +14,5 @@ export type AssetGroupMetadataQuery = {
     autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
   }>;
 };
+
+export const AssetGroupMetadataQueryVersion = '260d747ab8d454c1fe55a5a5fa6e11a548a301ea44740566c0c43756cca363eb';

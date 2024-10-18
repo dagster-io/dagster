@@ -2462,3 +2462,11 @@ export type LaunchAssetCheckUpstreamQuery = {
     assetMaterializations: Array<{__typename: 'MaterializationEvent'; runId: string}>;
   }>;
 };
+
+export const LaunchAssetLoaderQueryVersion = 'ae6a5d5eaf00ec9eeefaf3e7dc85a7710eb3647608aa00e3ded59877a289d645';
+
+export const LaunchAssetLoaderJobQueryVersion = '112371f3f0c11b7467940b71e83cba8abf678aed019820af94fdee4f99531841';
+
+export const LaunchAssetLoaderResourceQueryVersion = '8576f24034a63da1480b19a7c66dc2af2f5d532aa2ba294ffe7bef5ca92e1366';
+
+export const LaunchAssetCheckUpstreamQueryVersion = 'afb78499f0bf86942fc7f1ff7261c34caec2bd1e4aabb05c95a2db6acc811aaa';

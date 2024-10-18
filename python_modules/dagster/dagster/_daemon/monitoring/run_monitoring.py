@@ -16,7 +16,7 @@ from dagster._core.storage.dagster_run import (
     RunsFilter,
 )
 from dagster._core.storage.tags import MAX_RUNTIME_SECONDS_TAG
-from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._time import get_current_timestamp
 from dagster._utils import DebugCrashFlags
@@ -102,7 +102,7 @@ def count_resume_run_attempts(instance: DagsterInstance, run_id: str) -> int:
 
 def monitor_started_run(
     instance: DagsterInstance,
-    workspace: IWorkspace,
+    workspace: BaseWorkspaceRequestContext,
     run_record: RunRecord,
     logger: logging.Logger,
 ) -> None:
@@ -137,7 +137,10 @@ def monitor_started_run(
                 # Return rather than immediately checking for a timeout, since we only just resumed
                 return
             else:
-                if instance.run_launcher.supports_resume_run:
+                if (
+                    instance.run_launcher.supports_resume_run
+                    and instance.run_monitoring_max_resume_run_attempts > 0
+                ):
                     msg = (
                         f"Detected run worker status {check_health_result}. Marking run"
                         f" {run.run_id} as failed, because it has surpassed the configured maximum"
@@ -153,7 +156,9 @@ def monitor_started_run(
                 instance.report_run_failed(run, msg)
                 # Return rather than immediately checking for a timeout, since we just failed
                 return
-    check_run_timeout(instance, run_record, logger)
+    check_run_timeout(
+        instance, run_record, logger, float(instance.run_monitoring_max_runtime_seconds)
+    )
 
 
 def execute_run_monitoring_iteration(
@@ -205,15 +210,22 @@ def execute_run_monitoring_iteration(
 
 
 def check_run_timeout(
-    instance: DagsterInstance, run_record: RunRecord, logger: logging.Logger
+    instance: DagsterInstance,
+    run_record: RunRecord,
+    logger: logging.Logger,
+    default_timeout_seconds: float,
 ) -> None:
+    # Also allow dagster/max_runtime_seconds to match the global setting
     max_time_str = run_record.dagster_run.tags.get(
-        MAX_RUNTIME_SECONDS_TAG,
+        MAX_RUNTIME_SECONDS_TAG, run_record.dagster_run.tags.get("dagster/max_runtime_seconds")
     )
-    if not max_time_str:
-        return
+    if max_time_str:
+        max_time = float(max_time_str)
+    else:
+        max_time = default_timeout_seconds
 
-    max_time = float(max_time_str)
+    if not max_time:
+        return
 
     if (
         run_record.start_time is not None

@@ -1,6 +1,7 @@
 import json
 import sys
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 from pprint import pformat
 from typing import Any, Dict, Mapping, Optional, Union
 
@@ -43,6 +44,8 @@ def cast_polars_single_value_to_dagster_table_types(val: Any):
     elif isinstance(val, (list, dict)):
         # default=str because sometimes the object can be a list of datetimes or something like this
         return json.dumps(val, default=str)
+    elif isinstance(val, Decimal):
+        return float(val)
     else:
         return val
 

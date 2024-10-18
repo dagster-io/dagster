@@ -1,7 +1,5 @@
 import React from 'react';
 
-import {SearchResult} from '../search/types';
-
 type FeatureContext = {
   canSeeMaterializeAction: boolean;
   canSeeWipeMaterializationAction: boolean;
@@ -14,10 +12,6 @@ type FeatureContext = {
 export const CloudOSSContext = React.createContext<{
   isBranchDeployment: boolean;
   featureContext: FeatureContext;
-  useAugmentSearchResults: () => (
-    results: SearchResult[],
-    searchContext: 'catalog' | 'global',
-  ) => SearchResult[];
 }>({
   isBranchDeployment: false,
   featureContext: {
@@ -28,5 +22,4 @@ export const CloudOSSContext = React.createContext<{
     canSeeExecuteChecksAction: true,
     canSeeBackfillCoordinatorLogs: false,
   },
-  useAugmentSearchResults: () => (results) => results,
 });

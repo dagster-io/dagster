@@ -44,7 +44,7 @@ Dagster+ Pro users can create teams of users and assign default permission sets.
 
 With the exception of the **Organization Admin** role, user and team roles are set on a per-deployment basis.
 
-Organization Admins have access to the entire organization, including all [deployments](/dagster-plus/deployment/deployment-types), [code locations](/dagster-plus/deployment/code-locations), and [Branch Deployments](/dagster-plus/deployment/branch-deployments).
+Organization Admins have access to the entire organization, including all [deployments](/todo), [code locations](/dagster-plus/deployment/code-locations), and [Branch Deployments](/dagster-plus/deployment/branch-deployments).
 
 | Level              | Plan      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -117,22 +117,22 @@ TODO: add picture previously at "/images/dagster-cloud/user-token-management/cod
 | Start and stop [schedules](/concepts/schedules)                          | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Start and stop [schedules](/concepts/sensors)                            | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Wipe assets                                                              | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Launch and cancel [schedules](/guides/ingestion-transformation/backfill) | ❌     | ✅       | ✅     | ✅    | ✅                       |
+| Launch and cancel [schedules](/guides/backfill) | ❌     | ✅       | ✅     | ✅    | ✅                       |
 | Add dynamic partitions                                                   | ❌     | ❌       | ✅     | ✅    | ✅                       |
 
 ### Deployments
 
 Deployment settings are accessed in the UI by navigating to **user menu (your icon) > Organization Settings > Deployments**.
 
-|                                                                                              | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
-| -------------------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| View [deployments](/dagster-plus/deployment/deployment-types)                                | ✅     | ✅       | ✅     | ✅    | ✅                       |
-| Modify [deployment](/dagster-plus/deployment/deployment-types) settings                      | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Create, edit, delete [environment variables](/dagster-plus/deployment/environment-variables) | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| View [environment variable](/dagster-plus/deployment/environment-variables) values           | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Export [environment variables](/dagster-plus/deployment/environment-variables)               | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Create and delete [deployments](/dagster-plus/deployment/deployment-types)                   | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Create [Branch Deployments](/dagster-plus/deployment/branch-deployments)                     | ❌     | ❌       | ✅     | ✅    | ✅                       |
+|                                                                                              | Viewer | Launcher  | Editor | Admin | Organization <br/> admin     |
+|----------------------------------------------------------------------------------------------|-------|-----------|--------|-------|-------------------------------|
+| View [deployments](/todo)                                           | ✅     | ✅         | ✅      | ✅     | ✅                             |
+| Modify [deployment](/todo) settings                                 | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| Create, edit, delete [environment variables](/dagster-plus/deployment/environment-variables) | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| View [environment variable](/dagster-plus/deployment/environment-variables)  values          | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| Export [environment variables](/dagster-plus/deployment/environment-variables)               | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| Create and delete [deployments](/todo)                              | ❌     | ❌         | ❌      | ❌     | ✅                             |
+| Create [Branch Deployments](/dagster-plus/deployment/branch-deployments)                     | ❌     | ❌         | ✅      | ✅     | ✅                             |
 
 ### Code locations
 

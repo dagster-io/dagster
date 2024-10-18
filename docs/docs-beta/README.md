@@ -116,4 +116,30 @@ To build the site for production:
 yarn build
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+This command generates static content into the `build` directory and can be served using any static contents hosting service. This also checks for any broken links in the documentation.
+
+## Deployment
+
+This site is built and deployed using Vercel.
+
+### API Documentation
+
+API documentation is built in Vercel by overriding the _Build Command_ to the following:
+
+```sh
+yarn sync-api-docs && yarn build
+```
+
+This runs the `scripts/vercel-sync-api-docs.sh` script which builds the MDX files using the custom `sphinx-mdx-builder`, and copies the resulting MDX files to `docs/api`.
+
+## Search
+
+Algolia search is used for search results on the website, as configured in `docusaurus.config.ts`.
+
+The following environment variables must be configured in Vercel:
+
+- `ALGOLIA_APP_ID`
+- `ALGOLIA_API_KEY`
+- `ALGOLIA_INDEX_NAME`
+
+These variables are not loaded when `process.env.ENV === 'development'`.

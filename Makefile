@@ -13,7 +13,7 @@ install_prettier:
 	npm install -g prettier
 
 install_pyright:
-	uv pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes'
+	pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes'
 
 rebuild_pyright:
 	python scripts/run-pyright.py --all --rebuild

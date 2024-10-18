@@ -38,7 +38,9 @@ def test_will_be_requested_static_partitioned() -> None:
     state = state.with_requested_asset_partitions([AssetKeyPartitionKey(AssetKey("A"), "1")])
     state, result = state.evaluate("B")
     assert result.true_subset.size == 1
-    assert result.true_subset.asset_partitions == {AssetKeyPartitionKey(AssetKey("B"), "1")}
+    assert result.true_subset.expensively_compute_asset_partitions() == {
+        AssetKeyPartitionKey(AssetKey("B"), "1")
+    }
 
     # two requested parents
     state = state.with_requested_asset_partitions(

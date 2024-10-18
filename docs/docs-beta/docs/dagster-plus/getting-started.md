@@ -23,7 +23,7 @@ The remaining steps depend on your deployment type.
 
 We recommend following the steps in Dagster+ to add a new project.
 
-[comment]: <> (TODO: Screenshot of Dagster+ serverless Nux)
+![Screenshot of Dagster+ serverless NUX](/img/placeholder.svg)
 
 The Dagster+ on-boarding will guide you through:
 - creating a Git repository containing your Dagster code

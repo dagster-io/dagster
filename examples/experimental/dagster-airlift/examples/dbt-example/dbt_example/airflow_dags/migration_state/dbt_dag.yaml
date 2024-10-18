@@ -1,3 +1,0 @@
-tasks:
-  - id: build_dbt_models
-    migrated: True 

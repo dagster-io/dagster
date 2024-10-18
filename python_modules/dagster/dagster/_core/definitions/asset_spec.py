@@ -1,9 +1,19 @@
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence, Set
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Iterable,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+)
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental_param
+from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -16,12 +26,12 @@ from dagster._core.definitions.utils import (
     resolve_automation_condition,
     validate_asset_owner,
     validate_group_name,
-    validate_tags_strict,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.internal_init import IHasInternalInit
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
@@ -70,8 +80,14 @@ class AssetExecutionType(Enum):
     MATERIALIZATION = "MATERIALIZATION"
 
 
+def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
+    if kinds is not None and len(kinds) > 3:
+        raise DagsterInvalidDefinitionError("Assets can have at most three kinds currently.")
+
+
 @experimental_param(param="owners")
 @experimental_param(param="tags")
+@experimental_param(param="kinds")
 class AssetSpec(
     NamedTuple(
         "_AssetSpec",
@@ -122,6 +138,8 @@ class AssetSpec(
             e.g. `team:finops`.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
+        kinds: (Optional[Set[str]]): A list of strings representing the kinds of the asset. These
+            will be made visible in the Dagster UI.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
     """
@@ -140,6 +158,7 @@ class AssetSpec(
         automation_condition: Optional[AutomationCondition] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        kinds: Optional[Set[str]] = None,
         # TODO: FOU-243
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
@@ -155,9 +174,15 @@ class AssetSpec(
         for owner in owners:
             validate_asset_owner(owner, key)
 
-        kind_tags = {tag_key for tag_key in (tags or {}).keys() if tag_key.startswith(KIND_PREFIX)}
-        if kind_tags is not None and len(kind_tags) > 2:
-            raise DagsterInvalidDefinitionError("Assets can have at most two kinds currently.")
+        tags_with_kinds = {
+            **(normalize_tags(tags or {}, strict=True)),
+            **{f"{KIND_PREFIX}{kind}": "" for kind in kinds or []},
+        }
+
+        kind_tags = {
+            tag_key for tag_key in tags_with_kinds.keys() if tag_key.startswith(KIND_PREFIX)
+        }
+        validate_kind_tags(kind_tags)
 
         return super().__new__(
             cls,
@@ -179,7 +204,7 @@ class AssetSpec(
                 AutomationCondition,
             ),
             owners=owners,
-            tags=validate_tags_strict(tags) or {},
+            tags=tags_with_kinds,
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
@@ -199,6 +224,7 @@ class AssetSpec(
         automation_condition: Optional[AutomationCondition],
         owners: Optional[Sequence[str]],
         tags: Optional[Mapping[str, str]],
+        kinds: Optional[Set[str]],
         auto_materialize_policy: Optional[AutoMaterializePolicy],
         partitions_def: Optional[PartitionsDefinition],
     ) -> "AssetSpec":
@@ -215,6 +241,7 @@ class AssetSpec(
             automation_condition=automation_condition,
             owners=owners,
             tags=tags,
+            kinds=kinds,
             partitions_def=partitions_def,
         )
 
@@ -238,3 +265,98 @@ class AssetSpec(
     @cached_property
     def kinds(self) -> Set[str]:
         return {tag[len(KIND_PREFIX) :] for tag in self.tags if tag.startswith(KIND_PREFIX)}
+
+    @public
+    def with_io_manager_key(self, io_manager_key: str) -> "AssetSpec":
+        """Returns a copy of this AssetSpec with an extra metadata value that dictates which I/O
+        manager to use to load the contents of this asset in downstream computations.
+
+        Args:
+            io_manager_key (str): The I/O manager key. This will be used as the value for the
+                "dagster/io_manager_key" metadata key.
+
+        Returns:
+            AssetSpec
+        """
+        return self._replace(
+            metadata={**self.metadata, SYSTEM_METADATA_KEY_IO_MANAGER_KEY: io_manager_key}
+        )
+
+
+def replace_attributes(
+    spec: AssetSpec,
+    *,
+    key: CoercibleToAssetKey = ...,
+    deps: Optional[Iterable["CoercibleToAssetDep"]] = ...,
+    description: Optional[str] = ...,
+    metadata: Optional[Mapping[str, Any]] = ...,
+    skippable: bool = ...,
+    group_name: Optional[str] = ...,
+    code_version: Optional[str] = ...,
+    freshness_policy: Optional[FreshnessPolicy] = ...,
+    automation_condition: Optional[AutomationCondition] = ...,
+    owners: Optional[Sequence[str]] = ...,
+    tags: Optional[Mapping[str, str]] = ...,
+    kinds: Optional[Set[str]] = ...,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
+    partitions_def: Optional[PartitionsDefinition] = ...,
+) -> "AssetSpec":
+    """Returns a new AssetSpec with the specified attributes replaced."""
+    current_tags_without_kinds = {
+        tag_key: tag_value
+        for tag_key, tag_value in spec.tags.items()
+        if not tag_key.startswith(KIND_PREFIX)
+    }
+    return spec.dagster_internal_init(
+        key=key if key is not ... else spec.key,
+        deps=deps if deps is not ... else spec.deps,
+        description=description if description is not ... else spec.description,
+        metadata=metadata if metadata is not ... else spec.metadata,
+        skippable=skippable if skippable is not ... else spec.skippable,
+        group_name=group_name if group_name is not ... else spec.group_name,
+        code_version=code_version if code_version is not ... else spec.code_version,
+        freshness_policy=freshness_policy if freshness_policy is not ... else spec.freshness_policy,
+        automation_condition=automation_condition
+        if automation_condition is not ...
+        else spec.automation_condition,
+        owners=owners if owners is not ... else spec.owners,
+        tags=tags if tags is not ... else current_tags_without_kinds,
+        kinds=kinds if kinds is not ... else spec.kinds,
+        auto_materialize_policy=auto_materialize_policy
+        if auto_materialize_policy is not ...
+        else spec.auto_materialize_policy,
+        partitions_def=partitions_def if partitions_def is not ... else spec.partitions_def,
+    )
+
+
+def merge_attributes(
+    spec: AssetSpec,
+    *,
+    deps: Iterable["CoercibleToAssetDep"] = ...,
+    metadata: Mapping[str, Any] = ...,
+    owners: Sequence[str] = ...,
+    tags: Mapping[str, str] = ...,
+    kinds: Set[str] = ...,
+) -> "AssetSpec":
+    """Returns a new AssetSpec with the specified attributes merged with the current attributes."""
+    current_tags_without_kinds = {
+        tag_key: tag_value
+        for tag_key, tag_value in spec.tags.items()
+        if not tag_key.startswith(KIND_PREFIX)
+    }
+    return spec.dagster_internal_init(
+        key=spec.key,
+        deps=[*spec.deps, *(deps if deps is not ... else [])],
+        description=spec.description,
+        metadata={**spec.metadata, **(metadata if metadata is not ... else {})},
+        skippable=spec.skippable,
+        group_name=spec.group_name,
+        code_version=spec.code_version,
+        freshness_policy=spec.freshness_policy,
+        automation_condition=spec.automation_condition,
+        owners=[*spec.owners, *(owners if owners is not ... else [])],
+        tags={**current_tags_without_kinds, **(tags if tags is not ... else {})},
+        kinds={*spec.kinds, *(kinds if kinds is not ... else {})},
+        auto_materialize_policy=spec.auto_materialize_policy,
+        partitions_def=spec.partitions_def,
+    )

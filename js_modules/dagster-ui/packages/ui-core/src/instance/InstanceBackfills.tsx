@@ -6,12 +6,12 @@ import {
   Spinner,
 } from '@dagster-io/ui-components';
 
+import {gql} from '../apollo-client';
 import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from './backfill/BackfillTable';
 import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,
 } from './types/InstanceBackfills.types';
-import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {
@@ -42,6 +42,10 @@ const labelForBackfillStatus = (key: BulkActionStatus) => {
       return 'Failed';
     case BulkActionStatus.REQUESTED:
       return 'In progress';
+    case BulkActionStatus.COMPLETED_SUCCESS:
+      return 'Success';
+    case BulkActionStatus.COMPLETED_FAILED:
+      return 'Failed';
   }
 };
 

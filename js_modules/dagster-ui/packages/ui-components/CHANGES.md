@@ -1,3 +1,30 @@
+# 1.1.4 (October 11, 2024)
+
+- Add onBlur prop to TokenizingField
+- Remove node globals rollup plugin
+- Eliminate defaultProps
+- Bump rollup from 2.79.1 to 2.79.2
+- Bump React to 18.3.1
+- Migrate Blueprint 4 to 5
+
+# 1.1.3 (September 25, 2024)
+
+- Revert Rollup upgrade
+
+# 1.1.2 (September 25, 2024)
+
+- Upgrade to Rollup 4
+- Expose all icons from icon-svgs directory
+
+## 1.1.1 (September 24, 2024)
+
+- Add `DateRangePickerWrapper` export
+
+## 1.1.0 (September 10, 2024)
+
+- Add `VirtualizedTable` export
+- A whole lot of stuff, including switching from Inter/Inconsolata to Geist fonts.
+
 ## 1.0.9 (June 12, 2023)
 
 - Upgrade to Storybook 7

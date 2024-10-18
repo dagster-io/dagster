@@ -48,7 +48,7 @@ services:
     expose:
       - "3000"
     entrypoint:
-      - ${WEBSERVER_PACKAGE}
+      - dagster-webserver
       - -h
       - "0.0.0.0"
       - -p

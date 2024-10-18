@@ -13,6 +13,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import Self
+
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
@@ -25,6 +27,11 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition, default_job_io_manager
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
+from dagster._core.definitions.metadata.metadata_value import (
+    CodeLocationReconstructionMetadataValue,
+    MetadataValue,
+)
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
@@ -42,7 +49,7 @@ from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
-from dagster._record import IHaveNew, record_custom
+from dagster._record import IHaveNew, copy, record_custom
 from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -256,6 +263,7 @@ def _create_repository_using_definitions_args(
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: Optional[Iterable[AssetsDefinition]] = None,
+    metadata: Optional[RawMetadataMapping] = None,
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
     # First, dedupe all definition types.
     sensors = dedupe_object_refs(sensors)
@@ -284,6 +292,7 @@ def _create_repository_using_definitions_args(
         default_executor_def=executor_def,
         default_logger_defs=loggers,
         _top_level_resources=resource_defs,
+        metadata=metadata,
     )
     def created_repo():
         return [
@@ -375,6 +384,10 @@ class Definitions(IHaveNew):
             Default loggers for jobs. Individual jobs
             can define their own loggers by setting them explictly.
 
+        metadata (Optional[MetadataMapping]):
+            Arbitrary metadata for the Definitions. Not displayed in the UI but accessible on
+            the Definitions instance at runtime.
+
     Example usage:
 
     .. code-block:: python
@@ -399,21 +412,6 @@ class Definitions(IHaveNew):
 
     A Python module is loadable by Dagster tools if there is a top-level variable
     that is an instance of :py:class:`Definitions`.
-
-    Before the introduction of :py:class:`Definitions`,
-    :py:func:`@repository <repository>` was the API for organizing defintions.
-    :py:class:`Definitions` provides a few conveniences for dealing with resources
-    that do not apply to old-style :py:func:`@repository <repository>` declarations:
-
-    * It takes a dictionary of top-level resources which are automatically bound
-      (via :py:func:`with_resources <with_resources>`) to any asset passed to it.
-      If you need to apply different resources to different assets, use legacy
-      :py:func:`@repository <repository>` and use
-      :py:func:`with_resources <with_resources>` as before.
-    * The resources dictionary takes raw Python objects, not just instances
-      of :py:class:`ResourceDefinition`. If that raw object inherits from
-      :py:class:`IOManager`, it gets coerced to an :py:class:`IOManagerDefinition`.
-      Any other object is coerced to a :py:class:`ResourceDefinition`.
     """
 
     assets: Optional[
@@ -431,6 +429,7 @@ class Definitions(IHaveNew):
     # passed here instead of AssetChecksDefinitions: https://github.com/dagster-io/dagster/issues/22064.
     # After we fix the bug, we should remove AssetsDefinition from the set of accepted types.
     asset_checks: Optional[Iterable[AssetsDefinition]] = None
+    metadata: Mapping[str, MetadataValue]
 
     def __new__(
         cls,
@@ -446,6 +445,7 @@ class Definitions(IHaveNew):
         executor: Optional[Union[ExecutorDefinition, Executor]] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: Optional[Iterable[AssetsDefinition]] = None,
+        metadata: Optional[RawMetadataMapping] = None,
     ):
         return super().__new__(
             cls,
@@ -457,6 +457,7 @@ class Definitions(IHaveNew):
             executor=executor,
             loggers=loggers,
             asset_checks=asset_checks,
+            metadata=normalize_metadata(check.opt_mapping_param(metadata, "metadata")),
         )
 
     @public
@@ -606,6 +607,7 @@ class Definitions(IHaveNew):
             executor=self.executor,
             loggers=self.loggers,
             asset_checks=self.asset_checks,
+            metadata=self.metadata,
         )
 
     def get_asset_graph(self) -> AssetGraph:
@@ -657,6 +659,7 @@ class Definitions(IHaveNew):
         sensors = []
         jobs = []
         asset_checks = []
+        metadata = {}
 
         resources = {}
         resource_key_indexes: Dict[str, int] = {}
@@ -671,6 +674,7 @@ class Definitions(IHaveNew):
             schedules.extend(def_set.schedules or [])
             sensors.extend(def_set.sensors or [])
             jobs.extend(def_set.jobs or [])
+            metadata.update(def_set.metadata)
 
             for resource_key, resource_value in (def_set.resources or {}).items():
                 if resource_key in resources and resources[resource_key] is not resource_value:
@@ -708,6 +712,7 @@ class Definitions(IHaveNew):
             executor=executor,
             loggers=loggers,
             asset_checks=asset_checks,
+            metadata=metadata,
         )
 
     @public
@@ -716,3 +721,32 @@ class Definitions(IHaveNew):
         """Returns an AssetSpec object for every asset contained inside the Definitions object."""
         asset_graph = self.get_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
+
+    @experimental
+    def with_reconstruction_metadata(self, reconstruction_metadata: Mapping[str, str]) -> Self:
+        """Add reconstruction metadata to the Definitions object. This is typically used to cache data
+        loaded from some external API that is computed during initialization of a code server.
+        The cached data is then made available on the DefinitionsLoadContext during
+        reconstruction of the same code location context (such as a run worker), allowing use of the
+        cached data to avoid additional external API queries. Values are expected to be serialized
+        in advance and must be strings.
+        """
+        check.mapping_param(reconstruction_metadata, "reconstruction_metadata", key_type=str)
+        for k, v in reconstruction_metadata.items():
+            if not isinstance(v, str):
+                raise DagsterInvariantViolationError(
+                    f"Reconstruction metadata values must be strings. State-representing values are"
+                    f" expected to be serialized before being passed as reconstruction metadata."
+                    f" Got for key {k}:\n\n{v}"
+                )
+        normalized_metadata = {
+            k: CodeLocationReconstructionMetadataValue(v)
+            for k, v in reconstruction_metadata.items()
+        }
+        return copy(
+            self,
+            metadata={
+                **(self.metadata or {}),
+                **normalized_metadata,
+            },
+        )

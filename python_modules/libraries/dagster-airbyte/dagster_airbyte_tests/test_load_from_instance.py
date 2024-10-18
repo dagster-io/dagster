@@ -16,7 +16,6 @@ from dagster import (
 )
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.context.init import build_init_resource_context
@@ -26,6 +25,8 @@ from dagster_airbyte import AirbyteCloudResource, AirbyteResource, airbyte_resou
 from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
 
 from dagster_airbyte_tests.utils import (
+    get_destination_with_database_and_schema_json,
+    get_destination_without_database_and_schema_json,
     get_instance_connections_json,
     get_instance_operations_json,
     get_instance_workspaces_json,
@@ -51,6 +52,7 @@ def airbyte_instance_fixture(request):
 
 @pytest.mark.skipif(sys.version_info >= (3, 12), reason="something with py3.12 and sqlite")
 @responses.activate
+@pytest.mark.parametrize("with_destination_database_and_schema", [True, False])
 @pytest.mark.parametrize("use_normalization_tables", [True, False])
 @pytest.mark.parametrize(
     "connection_to_group_fn, connection_meta_to_group_fn",
@@ -67,6 +69,7 @@ def airbyte_instance_fixture(request):
     "connection_to_auto_materialize_policy_fn", [None, lambda _: AutoMaterializePolicy.lazy()]
 )
 def test_load_from_instance(
+    with_destination_database_and_schema,
     use_normalization_tables,
     connection_to_group_fn,
     connection_meta_to_group_fn,
@@ -108,6 +111,14 @@ def test_load_from_instance(
         method=responses.POST,
         url=base_url + "/operations/list",
         json=get_instance_operations_json(),
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=base_url + "/destinations/get",
+        json=get_destination_with_database_and_schema_json()
+        if with_destination_database_and_schema
+        else get_destination_without_database_and_schema_json(),
         status=200,
     )
     if connection_to_group_fn:
@@ -154,6 +165,9 @@ def test_load_from_instance(
         assert len(ab_assets) == 0
         return
 
+    # Check metadata is added correctly to asset def
+    assets_def = ab_assets[0]
+
     tables = {
         "dagster_releases",
         "dagster_tags",
@@ -176,18 +190,22 @@ def test_load_from_instance(
         tables = {
             connection_to_asset_key_fn(
                 AirbyteConnectionMetadata(
-                    "Github <> snowflake-ben", "", use_normalization_tables, []
+                    "Github <> snowflake-ben",
+                    "",
+                    use_normalization_tables,
+                    [],
+                    get_destination_with_database_and_schema_json()
+                    if with_destination_database_and_schema
+                    else get_destination_without_database_and_schema_json(),
                 ),
                 t,
             ).path[0]
             for t in tables
         }
 
-    # Check schema metadata is added correctly to asset def
-
     assert any(
-        out.metadata.get("table_schema")
-        == MetadataValue.table_schema(
+        metadata.get("dagster/column_schema")
+        == (
             TableSchema(
                 columns=[
                     TableColumn(name="commit", type="['null', 'object']"),
@@ -199,13 +217,13 @@ def test_load_from_instance(
                 ]
             )
         )
-        for out in ab_assets[0].node_def.output_defs
+        for key, metadata in assets_def.metadata_by_key.items()
     )
     # Check schema metadata works for normalization tables too
     if use_normalization_tables:
         assert any(
-            out.metadata.get("table_schema")
-            == MetadataValue.table_schema(
+            metadata.get("dagster/column_schema")
+            == (
                 TableSchema(
                     columns=[
                         TableColumn(name="sha", type="['null', 'string']"),
@@ -213,16 +231,57 @@ def test_load_from_instance(
                     ]
                 )
             )
-            for out in ab_assets[0].node_def.output_defs
+            for key, metadata in assets_def.metadata_by_key.items()
         )
 
-    assert ab_assets[0].keys == {AssetKey(t) for t in tables}
+    relation_identifiers = {
+        "test_database.test_schema.releases",
+        "test_database.test_schema.tags",
+        "test_database.test_schema.teams",
+        "test_database.test_schema.array_test",
+        "test_database.test_schema.unknown_test",
+    } | (
+        {
+            "test_database.test_schema.releases.assets",
+            "test_database.test_schema.releases.author",
+            "test_database.test_schema.tags.commit",
+            "test_database.test_schema.releases.foo",
+            "test_database.test_schema.array_test.author",
+        }
+        if use_normalization_tables
+        else set()
+    )
+
+    for key, metadata in assets_def.metadata_by_key.items():
+        if with_destination_database_and_schema:
+            # Extract the table name from the asset key
+            table_name = (
+                key.path[-1]
+                .replace("dagster_", "")
+                .replace("G_", "")
+                .replace("_test", "")
+                .split("_")[-1]
+            )
+            assert metadata["dagster/relation_identifier"] in relation_identifiers
+            assert table_name in metadata["dagster/relation_identifier"]
+        else:
+            assert not metadata.get("dagster/relation_identifier")
+
+    assert assets_def.keys == {AssetKey(t) for t in tables}
     assert all(
         [
-            ab_assets[0].specs_by_key[AssetKey(t)].group_name
+            assets_def.specs_by_key[AssetKey(t)].group_name
             == (
                 connection_meta_to_group_fn(
-                    AirbyteConnectionMetadata("GitHub <> snowflake-ben", "", False, [])
+                    AirbyteConnectionMetadata(
+                        "GitHub <> snowflake-ben",
+                        "",
+                        False,
+                        [],
+                        get_destination_with_database_and_schema_json()
+                        if with_destination_database_and_schema
+                        else get_destination_without_database_and_schema_json(),
+                    )
                 )
                 if connection_meta_to_group_fn
                 else (
@@ -234,17 +293,17 @@ def test_load_from_instance(
             for t in tables
         ]
     )
-    assert len(ab_assets[0].op.output_defs) == len(tables)
+    assert len(assets_def.op.output_defs) == len(tables)
 
     expected_freshness_policy = TEST_FRESHNESS_POLICY if connection_to_freshness_policy_fn else None
-    freshness_policies = {spec.key: spec.freshness_policy for spec in ab_assets[0].specs}
+    freshness_policies = {spec.key: spec.freshness_policy for spec in assets_def.specs}
     assert all(freshness_policies[key] == expected_freshness_policy for key in freshness_policies)
 
     expected_auto_materialize_policy = (
         AutoMaterializePolicy.lazy() if connection_to_auto_materialize_policy_fn else None
     )
     auto_materialize_policies_by_key = {
-        spec.key: spec.auto_materialize_policy for spec in ab_assets[0].specs
+        spec.key: spec.auto_materialize_policy for spec in assets_def.specs
     }
     if expected_auto_materialize_policy:
         assert auto_materialize_policies_by_key
@@ -276,7 +335,7 @@ def test_load_from_instance(
 
     materializations = [
         event.event_specific_data.materialization  # type: ignore[attr-defined]
-        for event in res.events_for_node("airbyte_sync_87b7f")
+        for event in res.events_for_node("airbyte_sync_87b7fe85_a22c_420e_8d74_b30e7ede77df")
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == len(tables)

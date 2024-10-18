@@ -58,8 +58,8 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     const filteredFilters = selectedFilter
       ? []
       : search
-      ? filters.filter((filter) => filter.name.toLowerCase().includes(search.toLowerCase()))
-      : filters;
+        ? filters.filter((filter) => filter.name.toLowerCase().includes(search.toLowerCase()))
+        : filters;
 
     const results: Record<string, {label: JSX.Element; key: string; value: any}[]> = {};
     if (search) {
@@ -437,7 +437,7 @@ export const FilterDropdownMenuItem = React.memo(
 );
 
 const StyledMenuItem = styled(MenuItem)`
-  &.bp4-active:focus {
+  &.bp5-active:focus {
     box-shadow: initial;
   }
 `;
@@ -455,12 +455,12 @@ const PopoverStyle = createGlobalStyle`
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
-    .bp4-popover2-content {
+    .bp5-popover-content {
       border-radius: 8px;
     }
   }
   
-  .bp4-overlay-content {
+  .bp5-overlay-content {
     max-width: 100%;
   }
 `;

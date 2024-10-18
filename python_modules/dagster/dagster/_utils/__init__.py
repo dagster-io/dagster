@@ -30,6 +30,7 @@ from typing import (
     Generator,
     Generic,
     Hashable,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -298,25 +299,25 @@ def make_hashable(value: Any) -> Any:
         return value
 
 
-def get_prop_or_key(elem, key):
+def get_prop_or_key(elem: object, key: str) -> object:
     if isinstance(elem, Mapping):
         return elem.get(key)
     else:
         return getattr(elem, key)
 
 
-def list_pull(alist, key):
+def list_pull(alist: Iterable[object], key: str) -> Sequence[object]:
     return list(map(lambda elem: get_prop_or_key(elem, key), alist))
 
 
-def all_none(kwargs):
+def all_none(kwargs: Mapping[object, object]) -> bool:
     for value in kwargs.values():
         if value is not None:
             return False
     return True
 
 
-def check_script(path, return_code=0):
+def check_script(path: str, return_code: int = 0) -> None:
     try:
         subprocess.check_output([sys.executable, path])
     except subprocess.CalledProcessError as exc:
@@ -326,7 +327,9 @@ def check_script(path, return_code=0):
         raise
 
 
-def check_cli_execute_file_job(path, pipeline_fn_name, env_file=None):
+def check_cli_execute_file_job(
+    path: str, pipeline_fn_name: str, env_file: Optional[str] = None
+) -> None:
     from dagster._core.test_utils import instance_for_test
 
     with instance_for_test():
@@ -419,23 +422,23 @@ def ensure_file(path: str) -> str:
     return path
 
 
-def touch_file(path):
+def touch_file(path: str) -> None:
     ensure_dir(os.path.dirname(path))
     with open(path, "a", encoding="utf8"):
         os.utime(path, None)
 
 
 def _termination_handler(
-    should_stop_event,  # multiprocessing.Event
+    should_stop_event: threading.Event,
     is_done_event: threading.Event,
-):
+) -> None:
     should_stop_event.wait()
     if not is_done_event.is_set():
         # if we should stop but are not yet done, interrupt the MainThread
         send_interrupt()
 
 
-def send_interrupt():
+def send_interrupt() -> None:
     if seven.IS_WINDOWS:
         # This will raise a KeyboardInterrupt in python land - meaning this wont be able to
         # interrupt things like sleep()
@@ -453,7 +456,9 @@ def send_interrupt():
 # Reading for the curious:
 #  * https://stackoverflow.com/questions/35772001/how-to-handle-the-signal-in-python-on-windows-machine
 #  * https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
-def start_termination_thread(should_stop_event, is_done_event: threading.Event):
+def start_termination_thread(
+    should_stop_event: threading.Event, is_done_event: threading.Event
+) -> None:
     check.inst_param(should_stop_event, "should_stop_event", ttype=type(multiprocessing.Event()))
 
     int_thread = threading.Thread(
@@ -641,14 +646,14 @@ def process_is_alive(pid: int) -> bool:
         return True
 
 
-def compose(*args):
+def compose(*args: Callable[[object], object]) -> Callable[[object], object]:
     """Compose python functions args such that compose(f, g)(x) is equivalent to f(g(x))."""  # noqa: D402
     # reduce using functional composition over all the arguments, with the identity function as
     # initializer
     return functools.reduce(lambda f, g: lambda x: f(g(x)), args, lambda x: x)
 
 
-def dict_without_keys(ddict, *keys):
+def dict_without_keys(ddict: Mapping[K, V], *keys: K) -> Dict[K, V]:
     return {key: value for key, value in ddict.items() if key not in set(keys)}
 
 
@@ -658,7 +663,7 @@ class Counter:
         self._counts = {}
         super(Counter, self).__init__()
 
-    def increment(self, key: str):
+    def increment(self, key: str) -> None:
         with self._lock:
             self._counts[key] = self._counts.get(key, 0) + 1
 
@@ -690,13 +695,13 @@ def traced(func: T_Callable) -> T_Callable:
     return cast(T_Callable, inner)
 
 
-def get_terminate_signal():
+def get_terminate_signal() -> signal.Signals:
     if sys.platform == "win32":
         return signal.SIGTERM
     return signal.SIGKILL
 
 
-def get_run_crash_explanation(prefix: str, exit_code: int):
+def get_run_crash_explanation(prefix: str, exit_code: int) -> str:
     # As per https://docs.python.org/3/library/subprocess.html#subprocess.CompletedProcess.returncode
     # negative exit code means a posix signal
     if exit_code < 0 and -exit_code in [signal.value for signal in Signals]:
@@ -774,7 +779,7 @@ def normalize_to_repository(
         return None
 
 
-def xor(a, b):
+def xor(a: object, b: object) -> bool:
     return bool(a) != bool(b)
 
 

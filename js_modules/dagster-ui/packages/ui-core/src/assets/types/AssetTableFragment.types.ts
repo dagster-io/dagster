@@ -11,10 +11,14 @@ export type AssetTableDefinitionFragment = {
   isMaterializable: boolean;
   isObservable: boolean;
   isExecutable: boolean;
+  isPartitioned: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
+  hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
+  jobNames: Array<string>;
   kinds: Array<string>;
+  assetKey: {__typename: 'AssetKey'; path: Array<string>};
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -23,6 +27,10 @@ export type AssetTableDefinitionFragment = {
       type: Types.PartitionDefinitionType;
       dynamicPartitionsDefinitionName: string | null;
     }>;
+  } | null;
+  autoMaterializePolicy: {
+    __typename: 'AutoMaterializePolicy';
+    policyType: Types.AutoMaterializePolicyType;
   } | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
@@ -49,10 +57,14 @@ export type AssetTableFragment = {
     isMaterializable: boolean;
     isObservable: boolean;
     isExecutable: boolean;
+    isPartitioned: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
+    hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
+    jobNames: Array<string>;
     kinds: Array<string>;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
@@ -61,6 +73,10 @@ export type AssetTableFragment = {
         type: Types.PartitionDefinitionType;
         dynamicPartitionsDefinitionName: string | null;
       }>;
+    } | null;
+    autoMaterializePolicy: {
+      __typename: 'AutoMaterializePolicy';
+      policyType: Types.AutoMaterializePolicyType;
     } | null;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}

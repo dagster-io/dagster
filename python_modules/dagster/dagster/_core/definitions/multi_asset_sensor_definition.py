@@ -1133,6 +1133,11 @@ class MultiAssetSensorDefinition(SensorDefinition):
             status can be overridden from the Dagster UI or via the GraphQL API.
         request_assets (Optional[AssetSelection]): (Experimental) an asset selection to launch a run
             for if the sensor condition is met. This can be provided instead of specifying a job.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
+            be used for searching and filtering in the UI.
+        metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the
+            sensor. Values will be normalized to typed `MetadataValue` objects.
+
     """
 
     def __init__(
@@ -1148,6 +1153,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         request_assets: Optional[AssetSelection] = None,
         required_resource_keys: Optional[Set[str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        metadata: Optional[Mapping[str, object]] = None,
     ):
         resource_arg_names: Set[str] = {
             arg.name for arg in get_resource_args(asset_materialization_fn)
@@ -1254,6 +1261,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
             default_status=default_status,
             asset_selection=request_assets,
             required_resource_keys=combined_required_resource_keys,
+            tags=tags,
+            metadata=metadata,
         )
 
     def __call__(self, *args, **kwargs) -> AssetMaterializationFunctionReturn:

@@ -5,7 +5,7 @@ import {RunRequestFragment} from './types/RunRequestFragment.types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {testId} from '../testing/testId';
 import {AnchorButton} from '../ui/AnchorButton';
-import {useRepository} from '../workspace/WorkspaceContext';
+import {useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 

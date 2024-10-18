@@ -1,7 +1,11 @@
-import {useCallback, useEffect, useMemo} from 'react';
+import {useEffect, useMemo} from 'react';
 
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
-import {AutomaterializationEvaluationHistoryTable} from './AutomaterializationEvaluationHistoryTable';
+import {
+  AutomaterializationEvaluationHistoryTable,
+  AutomaterializationTickStatusDisplay,
+  AutomaterializationTickStatusDisplayMappings,
+} from './AutomaterializationEvaluationHistoryTable';
 import {
   AssetDaemonTickFragment,
   AssetDaemonTicksQuery,
@@ -16,36 +20,28 @@ const PAGE_SIZE = 15;
 
 interface Props {
   setSelectedTick: (tick: AssetDaemonTickFragment | null) => void;
-  setTableView: (view: 'evaluations' | 'runs') => void;
   setTimerange: (range?: [number, number]) => void;
   setParentStatuses: (statuses?: InstigationTickStatus[]) => void;
+  actionBarComponents?: React.ReactNode;
 }
 
 export const InstanceAutomaterializationEvaluationHistoryTable = ({
   setSelectedTick,
-  setTableView,
   setTimerange,
   setParentStatuses,
+  actionBarComponents,
 }: Props) => {
-  const [statuses, setStatuses] = useQueryPersistedState<Set<InstigationTickStatus>>({
-    queryKey: 'statuses',
-    decode: useCallback(({statuses}: {statuses?: string}) => {
-      return new Set<InstigationTickStatus>(
-        statuses
-          ? JSON.parse(statuses)
-          : [
-              InstigationTickStatus.STARTED,
-              InstigationTickStatus.SUCCESS,
-              InstigationTickStatus.FAILURE,
-              InstigationTickStatus.SKIPPED,
-            ],
-      );
-    }, []),
-    encode: useCallback((raw: Set<InstigationTickStatus>) => {
-      return {statuses: JSON.stringify(Array.from(raw))};
-    }, []),
+  const [tickStatus, setTickStatus] = useQueryPersistedState<AutomaterializationTickStatusDisplay>({
+    queryKey: 'status',
+    defaults: {status: AutomaterializationTickStatusDisplay.ALL},
   });
 
+  const statuses = useMemo(
+    () =>
+      AutomaterializationTickStatusDisplayMappings[tickStatus] ||
+      AutomaterializationTickStatusDisplayMappings[AutomaterializationTickStatusDisplay.ALL],
+    [tickStatus],
+  );
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     AssetDaemonTicksQuery,
     AssetDaemonTicksQueryVariables
@@ -102,9 +98,9 @@ export const InstanceAutomaterializationEvaluationHistoryTable = ({
       ticks={queryResult.data?.autoMaterializeTicks || []}
       paginationProps={paginationProps}
       setSelectedTick={setSelectedTick}
-      setStatuses={setStatuses}
-      setTableView={setTableView}
-      statuses={statuses}
+      tickStatus={tickStatus}
+      setTickStatus={setTickStatus}
+      actionBarComponents={actionBarComponents}
     />
   );
 };

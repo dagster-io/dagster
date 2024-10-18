@@ -16,13 +16,16 @@ class SunResource(dg.ConfigurableResource):
         return data["results"]["sunrise"]
 
 
-# highlight-start
 @dg.asset
+# highlight-start
+# Provide the resource to the asset
 def sfo_sunrise(context: dg.AssetExecutionContext, sun_resource: SunResource) -> None:
+    # highlight-end
     sunrise = sun_resource.sunrise()
     context.log.info(f"Sunrise in San Francisco is at {sunrise}.")
 
 
+# highlight-start
+# Include the resource in the Definitions object
 defs = dg.Definitions(assets=[sfo_sunrise], resources={"sun_resource": SunResource()})
-
 # highlight-end

@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {CaptionText, LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
-import {buildPipelineSelector} from './WorkspaceContext';
+import {buildPipelineSelector} from './WorkspaceContext/util';
 import {RepoAddress} from './types';
 import {SingleJobQuery, SingleJobQueryVariables} from './types/VirtualizedJobRow.types';
 import {workspacePathFromAddress} from './workspacePath';
@@ -148,7 +148,7 @@ const RowGrid = styled(Box)`
 const ScheduleSensorTagContainer = styled.div`
   width: 100%;
 
-  > .bp4-popover2-target {
+  > .bp5-popover-target {
     width: 100%;
   }
 `;

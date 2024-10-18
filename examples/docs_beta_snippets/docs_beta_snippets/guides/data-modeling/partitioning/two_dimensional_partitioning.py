@@ -31,8 +31,8 @@ def daily_regional_sales_data(context: dg.AssetExecutionContext) -> None:
         }
     )
 
-    os.makedirs("daily_regional_sales", exist_ok=True)
-    filename = f"daily_regional_sales/sales_{context.partition_key}.csv"
+    os.makedirs("data/daily_regional_sales", exist_ok=True)
+    filename = f"data/daily_regional_sales/sales_{context.partition_key}.csv"
     df.to_csv(filename, index=False)
 
     context.log.info(f"Daily sales data written to {filename}")
@@ -49,7 +49,7 @@ def daily_regional_sales_summary(context):
     date = keys_by_dimension["date"]
     region = keys_by_dimension["region"]
 
-    filename = f"daily_regional_sales/sales_{context.partition_key}.csv"
+    filename = f"data/daily_regional_sales/sales_{context.partition_key}.csv"
     df = pd.read_csv(filename)
 
     # Summarize daily sales
@@ -66,7 +66,6 @@ def daily_regional_sales_summary(context):
 daily_regional_sales_job = dg.define_asset_job(
     name="daily_regional_sales_job",
     selection=[daily_regional_sales_data, daily_regional_sales_summary],
-    partitions_def=two_dimensional_partitions,
 )
 
 

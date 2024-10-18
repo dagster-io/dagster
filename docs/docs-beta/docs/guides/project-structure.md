@@ -10,12 +10,6 @@ Refer to the project scaffolding tutorial to learn how to create a new Dagster p
 
 There are many ways to structure your Dagster project, and it can be difficult to know where to start. In this guide, we will walk you through our recommendations for how to organize your Dagster project. As your project grows, you are welcome to deviate from these recommendations.
 
-## What you'll learn
-
-- How to restructure your project as your code base grows
-- How to combine multiple `Definitions` objects using `Definitions.merge`
-- How to integrate external projects like dbt or Sling into your codebase
-
 ## Your initial project structure
 
 When you first scaffold your project using the Dagster command-line tool, an `assets.py` and `definitions.py` are created in the root of your project.

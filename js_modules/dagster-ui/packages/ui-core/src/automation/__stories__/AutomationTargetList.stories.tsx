@@ -15,7 +15,7 @@ import {
   buildStartKansasSuccess,
   buildStartLouisianaError,
 } from '../../sensors/__fixtures__/SensorState.fixtures';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {AutomationTargetList} from '../AutomationTargetList';
 

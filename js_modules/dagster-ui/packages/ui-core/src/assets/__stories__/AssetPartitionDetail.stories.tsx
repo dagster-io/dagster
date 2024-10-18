@@ -3,7 +3,7 @@ import {Box} from '@dagster-io/ui-components';
 
 import {createAppCache} from '../../app/AppCache';
 import {RunStatus, buildStaleCause} from '../../graphql/types';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {
   AssetPartitionDetail,
   AssetPartitionDetailEmpty,

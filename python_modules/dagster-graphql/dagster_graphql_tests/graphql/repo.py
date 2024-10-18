@@ -87,6 +87,9 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
@@ -102,7 +105,7 @@ from dagster._core.definitions.sensor_definition import RunRequest, SensorDefini
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.log_manager import coerce_valid_log_level
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
@@ -177,7 +180,7 @@ def get_main_workspace(instance: DagsterInstance) -> Iterator[WorkspaceRequestCo
 
 
 @contextmanager
-def get_main_external_repo(instance: DagsterInstance) -> Iterator[ExternalRepository]:
+def get_main_remote_repo(instance: DagsterInstance) -> Iterator[RemoteRepository]:
     with get_main_workspace(instance) as workspace:
         location = workspace.get_code_location(main_repo_location_name())
         yield location.get_repository(main_repo_name())
@@ -697,6 +700,7 @@ def materialization_job():
                             name="foo",
                             type="integer",
                             constraints=TableColumnConstraints(unique=True),
+                            tags={"foo": "bar"},
                         ),
                         TableColumn(name="bar", type="string"),
                     ],
@@ -862,7 +866,7 @@ def retry_multi_output_job():
     no_output.alias("grandchild_fail")(passthrough.alias("child_fail")(fail))
 
 
-@job(tags={"foo": "bar"})
+@job(tags={"foo": "bar"}, run_tags={"baz": "quux"})
 def tagged_job():
     @op
     def simple_op():
@@ -1055,8 +1059,10 @@ def define_schedules():
         cron_schedule="@daily",
         job_name="no_config_job",
         execution_timezone="US/Central",
+        tags={"foo": "bar"},
+        metadata={"foo": "bar"},
     )
-    def timezone_schedule(_context):
+    def timezone_schedule_with_tags_and_metadata(_context):
         return {}
 
     tagged_job_schedule = ScheduleDefinition(
@@ -1115,7 +1121,7 @@ def define_schedules():
         tagged_job_schedule,
         tagged_job_override_schedule,
         tags_error_schedule,
-        timezone_schedule,
+        timezone_schedule_with_tags_and_metadata,
         invalid_config_schedule,
         running_in_code_schedule,
         composite_cron_schedule,
@@ -1127,8 +1133,8 @@ def define_schedules():
 
 
 def define_sensors():
-    @sensor(job_name="no_config_job")
-    def always_no_config_sensor(_):
+    @sensor(job_name="no_config_job", tags={"foo": "bar"}, metadata={"foo": "bar"})
+    def always_no_config_sensor_with_tags_and_metadata(_):
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},
@@ -1191,6 +1197,13 @@ def define_sensors():
             tags={"test": "1234"},
         )
 
+    @sensor(job_name="no_config_job", default_status=DefaultSensorStatus.STOPPED)
+    def stopped_in_code_sensor(_):
+        return RunRequest(
+            run_key=None,
+            tags={"test": "1234"},
+        )
+
     @sensor(job_name="no_config_job")
     def logging_sensor(context):
         context.log.info("hello hello")
@@ -1236,11 +1249,13 @@ def define_sensors():
 
     auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_auto_materialize_sensor",
-        asset_selection=AssetSelection.assets("fresh_diamond_bottom"),
+        asset_selection=AssetSelection.assets(
+            "fresh_diamond_bottom", "asset_with_automation_condition"
+        ),
     )
 
     return [
-        always_no_config_sensor,
+        always_no_config_sensor_with_tags_and_metadata,
         always_error_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
@@ -1248,6 +1263,7 @@ def define_sensors():
         multi_no_config_sensor,
         custom_interval_sensor,
         running_in_code_sensor,
+        stopped_in_code_sensor,
         logging_sensor,
         update_cursor_sensor,
         run_status,
@@ -1760,10 +1776,8 @@ def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
 
 @multi_asset(
     specs=[
-        AssetSpec(
-            key="first_kinds_key", tags={"dagster/kind/python": "", "dagster/kind/airflow": ""}
-        ),
-        AssetSpec(key="second_kinds_key", tags={"dagster/kind/python": ""}),
+        AssetSpec(key="first_kinds_key", kinds={"python", "airflow"}),
+        AssetSpec(key="second_kinds_key", kinds={"python"}),
     ],
 )
 def multi_asset_with_kinds():
@@ -1781,6 +1795,10 @@ def multi_asset_with_kinds():
 )
 def asset_with_compute_storage_kinds():
     return 1
+
+
+@asset(automation_condition=AutomationCondition.eager())
+def asset_with_automation_condition() -> None: ...
 
 
 fresh_diamond_assets_job = define_asset_job(
@@ -2098,6 +2116,7 @@ def define_assets():
         ungrouped_asset_5,
         multi_asset_with_kinds,
         asset_with_compute_storage_kinds,
+        asset_with_automation_condition,
     ]
 
 

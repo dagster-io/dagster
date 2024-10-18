@@ -18,6 +18,7 @@ import {
 import reject from 'lodash/reject';
 import {useEffect, useMemo, useState} from 'react';
 import {useHistory} from 'react-router-dom';
+import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {partitionCountString} from './AssetNodePartitionCounts';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
@@ -60,7 +61,6 @@ import {
   LaunchPartitionBackfillMutationVariables,
 } from '../instance/backfill/types/BackfillUtils.types';
 import {fetchTagsAndConfigForAssetJob} from '../launchpad/ConfigFetch';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
 import {
   DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
@@ -76,7 +76,7 @@ import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation
 import {DagsterTag} from '../runs/RunTag';
 import {testId} from '../testing/testId';
 import {ToggleableSection} from '../ui/ToggleableSection';
-import {useFeatureFlagForCodeLocation} from '../workspace/WorkspaceContext';
+import {useFeatureFlagForCodeLocation} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 
 const MISSING_FAILED_STATUSES = [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED];
@@ -178,8 +178,8 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     target.type === 'job'
       ? partitionedAssets[0]
       : target.type === 'pureWithAnchorAsset'
-      ? partitionedAssets.find(itemWithAssetKey(target.anchorAssetKey))
-      : null;
+        ? partitionedAssets.find(itemWithAssetKey(target.anchorAssetKey))
+        : null;
 
   const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
 
@@ -215,7 +215,6 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   const client = useApolloClient();
   const history = useHistory();
 
-  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
   const launchAsBackfill =
     ['pureWithAnchorAsset', 'pureAll'].includes(target.type) ||
@@ -224,15 +223,21 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   const backfillPolicyVaries = assets.some((a) => a.backfillPolicy !== assets[0]?.backfillPolicy);
 
   useEffect(() => {
-    !canLaunchWithRangesAsTags && setLaunchWithRangesAsTags(false);
+    if (!canLaunchWithRangesAsTags) {
+      setLaunchWithRangesAsTags(false);
+    }
   }, [canLaunchWithRangesAsTags]);
 
   useEffect(() => {
-    launchWithRangesAsTags && setMissingFailedOnly(false);
+    if (launchWithRangesAsTags) {
+      setMissingFailedOnly(false);
+    }
   }, [launchWithRangesAsTags]);
 
   useEffect(() => {
-    ['pureWithAnchorAsset', 'pureAll'].includes(target.type) && setMissingFailedOnly(false);
+    if (['pureWithAnchorAsset', 'pureAll'].includes(target.type)) {
+      setMissingFailedOnly(false);
+    }
   }, [target]);
 
   const onLaunch = async () => {
@@ -325,17 +330,17 @@ const LaunchAssetChoosePartitionsDialogBody = ({
             },
           }
         : target.type === 'pureAll'
-        ? {
-            tags,
-            assetSelection: assets.map(asAssetKeyInput),
-            allPartitions: true,
-          }
-        : {
-            tags,
-            assetSelection: assets.map(asAssetKeyInput),
-            partitionNames: keysFiltered,
-            fromFailure: false,
-          };
+          ? {
+              tags,
+              assetSelection: assets.map(asAssetKeyInput),
+              allPartitions: true,
+            }
+          : {
+              tags,
+              assetSelection: assets.map(asAssetKeyInput),
+              partitionNames: keysFiltered,
+              fromFailure: false,
+            };
 
     const {data: launchBackfillData} = await client.mutate<
       LaunchPartitionBackfillMutation,

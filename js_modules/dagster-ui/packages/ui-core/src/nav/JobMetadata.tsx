@@ -13,6 +13,7 @@ import {Link} from 'react-router-dom';
 
 import {LatestRunTag} from './LatestRunTag';
 import {ScheduleOrSensorTag} from './ScheduleOrSensorTag';
+import {gql, useQuery} from '../apollo-client';
 import {
   JobMetadataAssetNodeFragment,
   JobMetadataFragment,
@@ -20,7 +21,6 @@ import {
   JobMetadataQueryVariables,
   RunMetadataFragment,
 } from './types/JobMetadata.types';
-import {gql, useQuery} from '../apollo-client';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AutomaterializeDaemonStatusTag} from '../assets/AutomaterializeDaemonStatusTag';
 import {DagsterTag} from '../runs/RunTag';

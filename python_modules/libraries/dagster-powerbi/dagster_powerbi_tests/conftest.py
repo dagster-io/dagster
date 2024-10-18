@@ -2,7 +2,7 @@ from typing import Iterator
 
 import pytest
 import responses
-from dagster_powerbi.resource import BASE_API_URL
+from dagster_powerbi.resource import BASE_API_URL, generate_data_source_id
 from dagster_powerbi.translator import PowerBIContentData, PowerBIContentType, PowerBIWorkspaceData
 
 SAMPLE_DASH = {
@@ -60,6 +60,27 @@ SAMPLE_SEMANTIC_MODEL = {
     "queryScaleOutSettings": {"autoSyncReadOnlyReplicas": True, "maxReadOnlyReplicas": 0},
 }
 
+
+OTHER_SAMPLE_SEMANTIC_MODEL = {
+    "id": "ae9c85a1-7b33-4223-9590-76bde70f9a20",
+    "name": "Second Workspace Sample",
+    "webUrl": "https://app.powerbi.com/groups/a2122b8f-d7e1-42e8-be2b-a5e636ca3221/datasets/8e9c85a1-7b33-4223-9590-76bde70f9a20",
+    "addRowsAPIEnabled": False,
+    "configuredBy": "ben@elementl.com",
+    "isRefreshable": True,
+    "isEffectiveIdentityRequired": False,
+    "isEffectiveIdentityRolesRequired": False,
+    "isOnPremGatewayRequired": True,
+    "targetStorageMode": "Abf",
+    "createdDate": "2024-07-23T23:44:55.707Z",
+    "createReportEmbedURL": "https://app.powerbi.com/reportEmbed?config=eyJjbHVzdGVyVXJsIjoiaHR0cHM6Ly9XQUJJLVdFU1QtVVMtRS1QUklNQVJZLXJlZGlyZWN0LmFuYWx5c2lzLndpbmRvd3MubmV0IiwiZW1iZWRGZWF0dXJlcyI6eyJ1c2FnZU1ldHJpY3NWTmV4dCI6dHJ1ZX19",
+    "qnaEmbedURL": "https://app.powerbi.com/qnaEmbed?config=eyJjbHVzdGVyVXJsIjoiaHR0cHM6Ly9XQUJJLVdFU1QtVVMtRS1QUklNQVJZLXJlZGlyZWN0LmFuYWx5c2lzLndpbmRvd3MubmV0IiwiZW1iZWRGZWF0dXJlcyI6eyJ1c2FnZU1ldHJpY3NWTmV4dCI6dHJ1ZX19",
+    "upstreamDatasets": [],
+    "users": [],
+    "queryScaleOutSettings": {"autoSyncReadOnlyReplicas": True, "maxReadOnlyReplicas": 0},
+}
+
+
 SAMPLE_DATA_SOURCES = [
     {
         "datasourceType": "File",
@@ -70,7 +91,6 @@ SAMPLE_DATA_SOURCES = [
     {
         "datasourceType": "File",
         "connectionDetails": {"path": "c:\\users\\mimyersm\\desktop\\sales & marketing datas.xlsx"},
-        "datasourceId": "46c83f90-3eaa-4658-b716-2307bc56e74d",
         "gatewayId": "40800873-8e0d-4152-86e3-e6edeb2a738c",
     },
 ]
@@ -79,6 +99,11 @@ SAMPLE_DATA_SOURCES = [
 @pytest.fixture(name="workspace_id")
 def workspace_id_fixture() -> str:
     return "a2122b8f-d7e1-42e8-be2b-a5e636ca3221"
+
+
+@pytest.fixture(name="second_workspace_id")
+def second_workspace_id_fixture() -> str:
+    return "c5322b8a-d7e1-42e8-be2b-a5e636ca3221"
 
 
 @pytest.fixture(
@@ -92,7 +117,11 @@ def workspace_data_fixture(workspace_id: str) -> PowerBIWorkspaceData:
     sample_semantic_model = SAMPLE_SEMANTIC_MODEL.copy()
 
     sample_data_sources = SAMPLE_DATA_SOURCES
-    sample_semantic_model["sources"] = [ds["datasourceId"] for ds in sample_data_sources]
+    data_sources = [
+        ds if "datasourceId" in ds else {"datasourceId": generate_data_source_id(ds), **ds}
+        for ds in sample_data_sources
+    ]
+    sample_semantic_model["sources"] = [ds["datasourceId"] for ds in data_sources]
 
     return PowerBIWorkspaceData(
         workspace_id=workspace_id,
@@ -115,7 +144,7 @@ def workspace_data_fixture(workspace_id: str) -> PowerBIWorkspaceData:
             ds["datasourceId"]: PowerBIContentData(
                 content_type=PowerBIContentType.DATA_SOURCE, properties=ds
             )
-            for ds in sample_data_sources
+            for ds in data_sources
         },
     )
 
@@ -161,3 +190,40 @@ def workspace_data_api_mocks_fixture(workspace_id: str) -> Iterator[responses.Re
         )
 
         yield response
+
+
+@pytest.fixture(
+    name="second_workspace_data_api_mocks",
+)
+def second_workspace_data_api_mocks_fixture(
+    second_workspace_id: str, workspace_data_api_mocks: responses.RequestsMock
+) -> Iterator[responses.RequestsMock]:
+    workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{BASE_API_URL}/groups/{second_workspace_id}/dashboards",
+        json={"value": []},
+        status=200,
+    )
+
+    workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{BASE_API_URL}/groups/{second_workspace_id}/reports",
+        json={"value": []},
+        status=200,
+    )
+
+    workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{BASE_API_URL}/groups/{second_workspace_id}/datasets",
+        json={"value": [OTHER_SAMPLE_SEMANTIC_MODEL]},
+        status=200,
+    )
+
+    workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{BASE_API_URL}/groups/{second_workspace_id}/datasets/{OTHER_SAMPLE_SEMANTIC_MODEL['id']}/datasources",
+        json={"value": []},
+        status=200,
+    )
+
+    yield workspace_data_api_mocks

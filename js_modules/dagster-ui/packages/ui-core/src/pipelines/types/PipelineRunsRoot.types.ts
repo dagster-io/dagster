@@ -33,6 +33,7 @@ export type PipelineRunsRootQuery = {
           hasReExecutePermission: boolean;
           hasTerminatePermission: boolean;
           hasDeletePermission: boolean;
+          hasRunMetricsEnabled: boolean;
           mode: string;
           rootRunId: string | null;
           parentRunId: string | null;
@@ -59,3 +60,5 @@ export type PipelineRunsRootQuery = {
         }>;
       };
 };
+
+export const PipelineRunsRootQueryVersion = '3ed2a4c2669f29ed627eb12c6d95beb7d7c6d87a4914938ff83da8f174c61695';

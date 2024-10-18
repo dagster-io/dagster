@@ -22,3 +22,5 @@ export type SingleBackfillQuery = {
       }
     | {__typename: 'PythonError'};
 };
+
+export const SingleBackfillQueryVersion = 'c2b27d4666926a1c0bfd0c7cfabf9840c67e33a0a374651ee8e52bdec395aa56';

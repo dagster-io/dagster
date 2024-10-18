@@ -26,6 +26,7 @@ query PipelineSnapshotQueryBySnapshotID($snapshotId: String!) {
             modes { name }
             solidHandles { handleID }
             tags { key value }
+            runTags { key value }
         }
         ... on PipelineSnapshotNotFoundError {
             snapshotId
@@ -47,6 +48,7 @@ query PipelineSnapshotQueryByActivePipelineName($activePipelineSelector: Pipelin
             modes { name }
             solidHandles { handleID }
             tags { key value }
+            runTags { key value }
         }
         ... on PipelineSnapshotNotFoundError {
             snapshotId
@@ -107,7 +109,7 @@ def test_fetch_snapshot_or_error_by_active_pipeline_name_success(
         SNAPSHOT_OR_ERROR_QUERY_BY_PIPELINE_NAME,
         {
             "activePipelineSelector": {
-                "pipelineName": "csv_hello_world",
+                "pipelineName": "tagged_job",
                 "repositoryName": main_repo_name(),
                 "repositoryLocationName": main_repo_location_name(),
             }
@@ -117,7 +119,9 @@ def test_fetch_snapshot_or_error_by_active_pipeline_name_success(
     assert not result.errors
     assert result.data
     assert result.data["pipelineSnapshotOrError"]["__typename"] == "PipelineSnapshot"
-    assert result.data["pipelineSnapshotOrError"]["name"] == "csv_hello_world"
+    assert result.data["pipelineSnapshotOrError"]["name"] == "tagged_job"
+    assert result.data["pipelineSnapshotOrError"]["tags"] == [{"key": "foo", "value": "bar"}]
+    assert result.data["pipelineSnapshotOrError"]["runTags"] == [{"key": "baz", "value": "quux"}]
 
     snapshot.assert_match(pretty_dump(result.data))
 

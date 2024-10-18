@@ -14,11 +14,11 @@ import {useEffect, useReducer, useRef} from 'react';
 
 import {NavigationBlock} from './NavigationBlock';
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION} from './RunUtils';
+import {useMutation} from '../apollo-client';
 import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
-import {useMutation} from '../apollo-client';
 import {ReexecutionStrategy} from '../graphql/types';
 
 interface Props {

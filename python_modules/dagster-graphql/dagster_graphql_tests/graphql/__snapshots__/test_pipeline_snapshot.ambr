@@ -30,9 +30,6 @@
           "key": "Nothing"
         },
         {
-          "key": "PoorMansDataFrame"
-        },
-        {
           "key": "String"
         }
       ],
@@ -42,25 +39,30 @@
           "name": "default"
         }
       ],
-      "name": "csv_hello_world",
-      "pipelineSnapshotId": "9d2930f7c072c5a01688d84b725c49d4ae718c65",
+      "name": "tagged_job",
+      "pipelineSnapshotId": "c3320c44d5fa6c508dfda564e67bc67747b9891c",
+      "runTags": [
+        {
+          "key": "baz",
+          "value": "quux"
+        }
+      ],
       "solidHandles": [
         {
-          "handleID": "sum_op"
-        },
-        {
-          "handleID": "sum_sq_op"
+          "handleID": "simple_op"
         }
       ],
       "solids": [
         {
-          "name": "sum_op"
-        },
-        {
-          "name": "sum_sq_op"
+          "name": "simple_op"
         }
       ],
-      "tags": []
+      "tags": [
+        {
+          "key": "foo",
+          "value": "bar"
+        }
+      ]
     }
   }
   '''
@@ -108,6 +110,7 @@
       ],
       "name": "noop_job",
       "pipelineSnapshotId": "dbc0d71fefa48d56ff94e517235980f1bbf0d8e8",
+      "runTags": [],
       "solidHandles": [
         {
           "handleID": "noop_op"

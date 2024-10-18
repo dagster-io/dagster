@@ -1,5 +1,6 @@
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
+import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {
   ExecuteChecksButtonAssetNodeFragment,
@@ -9,7 +10,6 @@ import {gql} from '../../apollo-client';
 import {CloudOSSContext} from '../../app/CloudOSSContext';
 import {usePermissionsForLocation} from '../../app/Permissions';
 import {AssetCheckCanExecuteIndividually, ExecutionParams} from '../../graphql/types';
-import {useLaunchPadHooks} from '../../launchpad/LaunchpadHooksContext';
 
 export const ExecuteChecksButton = ({
   assetNode,
@@ -26,7 +26,6 @@ export const ExecuteChecksButton = ({
   const [launching, setLaunching] = useState(false);
   const {permissions, disabledReasons} = usePermissionsForLocation(repository.location.name);
 
-  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
   const launchable = checks.filter(
     (c) => c.canExecuteIndividually === AssetCheckCanExecuteIndividually.CAN_EXECUTE,
@@ -41,10 +40,10 @@ export const ExecuteChecksButton = ({
   const disabledReason = !permissions.canLaunchPipelineExecution
     ? disabledReasons.canLaunchPipelineExecution
     : checks.length > 0 && launchable.length === 0
-    ? 'This check cannot execute without materializing the asset.'
-    : checks.length === 0
-    ? 'No checks are defined on this asset.'
-    : '';
+      ? 'This check cannot execute without materializing the asset.'
+      : checks.length === 0
+        ? 'No checks are defined on this asset.'
+        : '';
 
   const {
     featureContext: {canSeeExecuteChecksAction},

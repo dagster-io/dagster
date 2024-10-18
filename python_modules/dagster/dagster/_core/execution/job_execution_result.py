@@ -1,4 +1,4 @@
-from typing import Any, Dict, Sequence, cast
+from typing import Any, ContextManager, Dict, Sequence, cast
 
 import dagster._check as check
 from dagster._annotations import public
@@ -6,7 +6,7 @@ from dagster._core.definitions import JobDefinition, NodeHandle
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.context.system import StepExecutionContext
+from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.execution.plan.utils import build_resources_for_manager
@@ -26,7 +26,13 @@ class JobExecutionResult(ExecutionResult):
     execution.
     """
 
-    def __init__(self, job_def, reconstruct_context, event_list, dagster_run):
+    def __init__(
+        self,
+        job_def: JobDefinition,
+        reconstruct_context: ContextManager[PlanExecutionContext],
+        event_list: Sequence[DagsterEvent],
+        dagster_run: DagsterRun,
+    ):
         self._job_def = job_def
         self._reconstruct_context = reconstruct_context
         self._context = None
@@ -114,7 +120,9 @@ class JobExecutionResult(ExecutionResult):
             ):
                 found = True
                 output = compute_step_event.step_output_data
-                step = self._context.execution_plan.get_step_by_key(compute_step_event.step_key)
+                step = self._context.execution_plan.get_executable_step_by_key(
+                    check.not_none(compute_step_event.step_key)
+                )
                 dagster_type = (
                     self.job_def.get_node(handle).output_def_named(output_name).dagster_type
                 )

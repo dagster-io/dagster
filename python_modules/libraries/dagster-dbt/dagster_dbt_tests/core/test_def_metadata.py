@@ -2,12 +2,33 @@ import os
 from typing import Any, Dict
 
 import pytest
-from dagster import AssetExecutionContext
+from dagster import AssetExecutionContext, AssetKey
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resource import DbtCliResource
+from dagster_dbt.metadata_set import DbtMetadataSet
 
 pytestmark: pytest.MarkDecorator = pytest.mark.derived_metadata
+
+
+def test_materialization_type(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def my_dbt_assets(): ...
+
+    materialization_types_by_key = {
+        spec.key: DbtMetadataSet.extract(spec.metadata).materialization_type
+        for spec in my_dbt_assets.specs
+    }
+    assert materialization_types_by_key == {
+        AssetKey(["stg_orders"]): "view",
+        AssetKey(["stg_customers"]): "view",
+        AssetKey(["orders"]): "table",
+        AssetKey(["customers"]): "table",
+        AssetKey(["raw_customers"]): "seed",
+        AssetKey(["raw_orders"]): "seed",
+        AssetKey(["raw_payments"]): "seed",
+        AssetKey(["stg_payments"]): "view",
+    }
 
 
 def test_storage_address(

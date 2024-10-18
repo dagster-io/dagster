@@ -16,7 +16,7 @@ import {
 } from '../../graphql/types';
 import {InstanceWarningQuery} from '../../instance/types/useDaemonStatus.types';
 import {INSTANCE_WARNING_QUERY} from '../../instance/useDaemonStatus';
-import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 
 const buildRepo = ({
   name,

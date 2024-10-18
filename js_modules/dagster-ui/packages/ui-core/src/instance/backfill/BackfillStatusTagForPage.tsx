@@ -39,6 +39,10 @@ export const BackfillStatusTagForPage = ({backfill}: {backfill: BackfillState}) 
       return errorState('Failed');
     case BulkActionStatus.COMPLETED:
       return <Tag intent="success">Completed</Tag>;
+    case BulkActionStatus.COMPLETED_SUCCESS:
+      return <Tag intent="success">Succeeded</Tag>;
+    case BulkActionStatus.COMPLETED_FAILED:
+      return errorState('Failed');
     default:
       return <Tag>{status}</Tag>;
   }

@@ -116,7 +116,7 @@ When the code location is loaded and the schedule is turned on, it will automati
 
 #### Option 1: Use hardcoded parameters
 
-In our example, we expect the source tables to be updated no less than every two hours. We'll use the <PyObject object="build_freshness_checks_for_non_partitioned_assets" /> function to produce a set of asset checks that fail if an asset’s `last_updated_timestamp` is more than two hours before the current time:
+In our example, we expect the source tables to be updated no less than every two hours. We'll use the <PyObject object="build_last_update_freshness_checks" /> function to produce a set of asset checks that fail if an asset’s `last_updated_timestamp` is more than two hours before the current time:
 
 ```python file=/concepts/assets/asset_checks/source_data_freshness_in_pieces.py startafter=start_freshness_checks_marker endbefore=end_freshness_checks_marker
 from datetime import timedelta

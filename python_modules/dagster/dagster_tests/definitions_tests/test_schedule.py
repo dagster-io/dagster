@@ -6,6 +6,7 @@ from dagster import DagsterInvalidDefinitionError, ScheduleDefinition, build_sch
 from dagster._core.definitions.decorators.op_decorator import op
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.run_config import RunConfig
+from dagster._core.definitions.run_request import RunRequest
 
 
 def test_default_name():
@@ -135,3 +136,32 @@ def test_coerce_graph_def_to_job():
 
     assert isinstance(my_schedule.job, JobDefinition)
     assert my_schedule.job.name == "bar"
+
+
+def test_tag_transfer_to_run_request():
+    tags_and_exec_fn_schedule = ScheduleDefinition(
+        cron_schedule="@daily",
+        job_name="the_job",
+        tags={"foo": "bar"},
+        execution_fn=lambda _: RunRequest(),
+    )
+
+    tags_and_no_exec_fn_schedule = ScheduleDefinition(
+        cron_schedule="@daily",
+        job_name="the_job",
+        tags={"foo": "bar"},
+    )
+
+    execution_time = datetime(year=2019, month=2, day=27)
+    context_with_time = build_schedule_context(scheduled_execution_time=execution_time)
+
+    # If no defined execution function, tags should be transferred to the run request (backcompat)
+    assert (
+        tags_and_no_exec_fn_schedule.evaluate_tick(context_with_time).run_requests[0].tags["foo"]
+        == "bar"
+    )
+
+    # If an execution function is defined, tags should not be transferred to the run request
+    assert (
+        "foo" not in tags_and_exec_fn_schedule.evaluate_tick(context_with_time).run_requests[0].tags
+    )
