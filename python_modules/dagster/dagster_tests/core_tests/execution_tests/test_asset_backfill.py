@@ -16,10 +16,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from dagster import (
+    AssetCheckResult,
     AssetIn,
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    BackfillPolicy,
     DagsterInstance,
     DagsterRunStatus,
     DailyPartitionsDefinition,
@@ -33,6 +35,7 @@ from dagster import (
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
     asset,
+    asset_check,
     materialize,
     multi_asset,
 )
@@ -1795,3 +1798,46 @@ def test_asset_backfill_multiple_partition_ranges():
         "fake_id", asset_backfill_data, asset_graph, instance, assets_by_repo_name
     )
     assert asset_backfill_data.requested_subset == asset_backfill_data.target_subset
+
+
+def test_asset_backfill_with_asset_check():
+    instance = DagsterInstance.ephemeral()
+    partitions_def = DailyPartitionsDefinition("2023-10-01")
+
+    @asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def foo():
+        pass
+
+    @asset_check(asset=foo)
+    def foo_check():
+        return AssetCheckResult(passed=True)
+
+    assets_by_repo_name = {"repo": [foo, foo_check]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    target_partitions_subset = partitions_def.empty_subset().with_partition_key_range(
+        partitions_def, PartitionKeyRange("2023-11-01", "2023-11-03")
+    )
+    asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
+        asset_graph_subset=AssetGraphSubset(
+            partitions_subsets_by_asset_key={foo.key: target_partitions_subset}
+        ),
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_timestamp=create_datetime(2023, 12, 5, 0, 0, 0).timestamp(),
+    )
+    assert set(asset_backfill_data.target_subset.iterate_asset_partitions()) == {
+        AssetKeyPartitionKey(foo.key, "2023-11-01"),
+        AssetKeyPartitionKey(foo.key, "2023-11-02"),
+        AssetKeyPartitionKey(foo.key, "2023-11-03"),
+    }
+
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="fake_id",
+        asset_backfill_data=asset_backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+    assert len(result.run_requests) == 1
+    run_request = result.run_requests[0]
+    assert run_request.asset_selection == [foo.key]
+    assert run_request.asset_check_keys == [foo_check.check_key]
