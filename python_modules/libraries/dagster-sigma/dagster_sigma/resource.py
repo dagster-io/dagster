@@ -5,7 +5,6 @@ from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Type
-from typing import Any, Dict, List, Mapping, Optional, Type, cast
 
 import requests
 from dagster import ConfigurableResource
