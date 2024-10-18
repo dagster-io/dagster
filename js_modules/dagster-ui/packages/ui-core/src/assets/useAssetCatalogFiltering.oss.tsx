@@ -12,9 +12,9 @@ import {useFilters} from '../ui/BaseFilters';
 import {FilterObject} from '../ui/BaseFilters/useFilter';
 import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
 import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
-import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
 import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
+import {useDefinitionTagFilter, useTagsForAssets} from '../ui/Filters/useDefinitionTagFilter';
 import {useAssetKindsForAssets, useKindFilter} from '../ui/Filters/useKindFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -81,10 +81,10 @@ export function useAssetCatalogFiltering<
     setKinds,
   });
 
-  const tags = useAssetTagsForAssets(assets);
+  const tags = useTagsForAssets(assets);
 
-  const tagsFilter = useAssetTagFilter({
-    allAssetTags: tags,
+  const tagsFilter = useDefinitionTagFilter({
+    allTags: tags,
     tags: filters.selectAllFilters.includes('tags') ? tags : filters.tags,
     setTags: setAssetTags,
   });
