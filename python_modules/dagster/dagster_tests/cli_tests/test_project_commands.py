@@ -76,6 +76,29 @@ def test_scaffold_code_location_command_succeeds():
         assert origins[0].loadable_target_origin.module_name == "my_dagster_code.definitions"
 
 
+def test_scaffold_code_location_command_exclude_succeeds():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(
+            scaffold_code_location_command,
+            # NOTE: wildcard is not working, need to fix
+            [
+                "--name",
+                "my_dagster_code",
+                "--excludes",
+                "setup.cfg",
+                "--excludes",
+                "setup.py",
+                "--excludes",
+                "tests",
+            ],
+        )
+        assert result.exit_code == 0
+        assert not os.path.exists("my_dagster_code/setup.cfg")
+        assert not os.path.exists("my_dagster_code/setup.py")
+        assert not os.path.exists("my_dagster_code/tests/")
+
+
 def test_from_example_command_fails_when_example_not_available():
     runner = CliRunner()
     with runner.isolated_filesystem():
