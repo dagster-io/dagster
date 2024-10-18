@@ -278,6 +278,14 @@ To use a PostgreSQL database (<PyObject module="dagster_postgres" object="Dagste
 # Postgres storage can be set using either credentials or a connection string.  This requires that
 # the `dagster-postgres` library be installed and a database configured with UTC timezone.
 
+# Dagster Postgres config also accepts a `schema` string to specify the Postgres schema in
+# which Dagster's storage tables should be created.
+
+# Schema may also be specified in a connection URI as a `schema` query parameter.  (Note:
+# While `schema` as a Postgres connection URI query parameter throws an error by default,
+# Dagster storage config pulls out any `schema` query string parameter and uses it
+# internally before passing the rest of the connection URI along.)
+
 # this config manually sets the Postgres credentials
 storage:
   postgres:
