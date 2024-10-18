@@ -18,6 +18,12 @@ from mlflow.exceptions import MlflowException
 
 CONFIG_SCHEMA = {
     "experiment_name": Field(StringSource, is_required=True, description="MlFlow experiment name."),
+    "run_name": Field(
+        Noneable(StringSource),
+        default_value=None,
+        is_required=False,
+        description="MLFlow run name."
+    ),
     "mlflow_tracking_uri": Field(
         Noneable(StringSource),
         default_value=None,
@@ -73,11 +79,12 @@ class MlFlow(metaclass=MlflowMeta):
     def __init__(self, context):
         # Context associated attributes
         self.log = context.log
-        self.run_name = context.dagster_run.job_name
         self.dagster_run_id = context.run_id
+        job_name = context.dagster_run.job_name
 
         # resource config attributes
         resource_config = context.resource_config
+        self.run_name = resource_config.get("run_name", job_name)
         self.tracking_uri = resource_config.get("mlflow_tracking_uri")
         if self.tracking_uri:
             mlflow.set_tracking_uri(self.tracking_uri)
