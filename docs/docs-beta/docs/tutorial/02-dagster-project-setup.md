@@ -93,6 +93,28 @@ In this guide we will use a simplified project structure to focus on core Dagste
     echo > definitions.py
   ```
 
+## Materializing the Assets
+
+At this point your project should look like this. 
+
+```
+dagster-etl-tutorial/
+├── etl_tutorial/
+│   └── definitions.py
+├── data/
+│   └── products.csv
+│   └── sales_data.csv
+│   └── sales_reps.csv
+│   └── sample_request/
+│       └── request.json
+├── pyproject.toml
+├── setup.cfg
+├── setup.py
+```
+The project structure shouldnt change much from here and we are at the right point to run dagster locally and see what our asset graph looks like and materialze them. 
+
+
+
 ## What you've learned
 
 - Set up a Python virtual environment and installed Dagster
