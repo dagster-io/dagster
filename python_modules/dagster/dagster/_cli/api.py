@@ -85,6 +85,7 @@ def execute_run_command(input_json: str) -> None:
                 instance,
                 send_to_buffer,
                 set_exit_code_on_failure=args.set_exit_code_on_failure or False,
+                job_origin=args.job_origin,
             )
 
             if return_code != 0:
@@ -125,6 +126,7 @@ def _execute_run_command_body(
     instance: DagsterInstance,
     write_stream_fn: Callable[[DagsterEvent], Any],
     set_exit_code_on_failure: bool,
+    job_origin: Optional[JobPythonOrigin],
 ) -> int:
     if instance.should_start_background_run_thread:
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
@@ -136,11 +138,6 @@ def _execute_run_command_body(
     dagster_run = check.not_none(
         instance.get_run_by_id(run_id),
         f"Run with id '{run_id}' not found for run execution.",
-    )
-
-    check.not_none(
-        dagster_run.job_code_origin,
-        f"Run with id '{run_id}' does not include an origin.",
     )
 
     if _should_start_metrics_thread(dagster_run):
@@ -156,7 +153,9 @@ def _execute_run_command_body(
     else:
         metrics_thread, metrics_thread_shutdown_event = None, None
 
-    recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
+    recon_job = recon_job_from_origin(
+        job_origin or cast(JobPythonOrigin, dagster_run.job_code_origin)
+    )
 
     pid = os.getpid()
     instance.report_engine_event(
@@ -248,6 +247,7 @@ def resume_run_command(input_json: str) -> None:
                 instance,
                 send_to_buffer,
                 set_exit_code_on_failure=args.set_exit_code_on_failure or False,
+                job_origin=args.job_origin,
             )
 
             if return_code != 0:
@@ -259,6 +259,7 @@ def _resume_run_command_body(
     instance: DagsterInstance,
     write_stream_fn: Callable[[DagsterEvent], Any],
     set_exit_code_on_failure: bool,
+    job_origin: Optional[JobPythonOrigin],
 ) -> int:
     if instance.should_start_background_run_thread:
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
@@ -269,10 +270,6 @@ def _resume_run_command_body(
     dagster_run = check.not_none(
         instance.get_run_by_id(run_id),  # type: ignore
         f"Run with id '{run_id}' not found for run execution.",
-    )
-    check.not_none(
-        dagster_run.job_code_origin,
-        f"Run with id '{run_id}' does not include an origin.",
     )
 
     if _should_start_metrics_thread(dagster_run):
@@ -288,7 +285,9 @@ def _resume_run_command_body(
     else:
         metrics_thread, metrics_thread_shutdown_event = None, None
 
-    recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
+    recon_job = recon_job_from_origin(
+        job_origin or cast(JobPythonOrigin, dagster_run.job_code_origin)
+    )
 
     pid = os.getpid()
     instance.report_engine_event(
@@ -429,6 +428,7 @@ def execute_step_command(input_json: Optional[str], compressed_input_json: Optio
                 args,
                 instance,
                 dagster_run,
+                job_origin=args.job_origin,
             ):
                 buff.append(serialize_value(event))
 
@@ -438,7 +438,10 @@ def execute_step_command(input_json: Optional[str], compressed_input_json: Optio
 
 
 def _execute_step_command_body(
-    args: ExecuteStepArgs, instance: DagsterInstance, dagster_run: DagsterRun
+    args: ExecuteStepArgs,
+    instance: DagsterInstance,
+    dagster_run: DagsterRun,
+    job_origin: JobPythonOrigin,
 ) -> Iterator[DagsterEvent]:
     single_step_key = (
         args.step_keys_to_execute[0]
@@ -496,7 +499,7 @@ def _execute_step_command_body(
             repository_load_data = None
 
         recon_job = (
-            recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
+            recon_job_from_origin(job_origin or cast(JobPythonOrigin, dagster_run.job_code_origin))
             .with_repository_load_data(repository_load_data)
             .get_subset(
                 op_selection=dagster_run.resolved_op_selection,
