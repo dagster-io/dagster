@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import NamedTuple, Optional, Sequence
+from typing import NamedTuple, Optional, Sequence, Tuple, Union
 
 import click
 import requests
@@ -124,7 +124,8 @@ def scaffold_repository_command(name: str):
     default=[],
     help="Exclude file patterns from the project template",
 )
-def scaffold_code_location_command(name: str, excludes: list):
+def scaffold_code_location_command(name: str, excludes: Union[Tuple, list]):
+    excludes = list(excludes)
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
         click.echo(

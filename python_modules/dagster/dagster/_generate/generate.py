@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import os
 import posixpath
 
@@ -8,7 +6,7 @@ import jinja2
 
 from dagster.version import __version__ as dagster_version
 
-IGNORE_PATTERN_LIST : list[str] = [
+IGNORE_PATTERN_LIST: list[str] = [
     "__pycache__",
     ".pytest_cache",
     "*.egg-info",
