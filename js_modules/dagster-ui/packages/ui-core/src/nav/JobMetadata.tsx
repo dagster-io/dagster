@@ -87,7 +87,7 @@ export const JobMetadata = (props: Props) => {
         <JobScheduleOrSensorTag job={metadata.job} repoAddress={repoAddress} />
       ) : null}
       <LatestRunTag pipelineName={pipelineName} repoAddress={repoAddress} />
-      {metadata.assetNodes && metadata.assetNodes.some((a) => !!a.autoMaterializePolicy) && (
+      {metadata.assetNodes && metadata.assetNodes.some((a) => !!a.automationCondition) && (
         <AutomaterializeDaemonStatusTag />
       )}
       {metadata.runsForAssetScan ? (
@@ -214,7 +214,7 @@ export const JOB_METADATA_QUERY = gql`
 
   fragment JobMetadataAssetNode on AssetNode {
     id
-    autoMaterializePolicy {
+    automationCondition {
       __typename
     }
     assetKey {

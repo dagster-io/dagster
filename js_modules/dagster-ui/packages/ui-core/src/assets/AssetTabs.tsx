@@ -40,7 +40,7 @@ export type AssetTabConfigInput = {
   definition:
     | {
         isMaterializable: boolean;
-        autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null | undefined;
+        automationCondition: {__typename: 'AutomationCondition'} | null | undefined;
         partitionDefinition: {__typename: 'PartitionDefinition'} | null | undefined;
       }
     | null
@@ -94,7 +94,7 @@ export const buildAssetTabMap = (input: AssetTabConfigInput) => {
       title: 'Automation',
       to: buildAssetViewParams({...params, view: 'automation'}),
       disabled: !definition,
-      hidden: !definition?.autoMaterializePolicy,
+      hidden: !definition?.automationCondition,
     } as AssetTabConfig,
   };
 };

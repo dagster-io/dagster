@@ -2626,6 +2626,16 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert condition["label"] == "eager"
         assert "(in_latest_time_window)" in condition["expandedLabel"]
 
+        custom_automation_condition_asset = [
+            a
+            for a in result.data["assetNodes"]
+            if a["id"] == 'test.test_repo.["asset_with_custom_automation_condition"]'
+        ]
+        assert len(custom_automation_condition_asset) == 1
+        condition = custom_automation_condition_asset[0]["automationCondition"]
+        assert condition["label"] is None
+        assert condition["expandedLabel"] == ["(some_custom_name)", "SINCE", "(handled)"]
+
     def test_tags(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
             graphql_context,
