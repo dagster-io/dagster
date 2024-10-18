@@ -20,12 +20,12 @@ def run_declarative_automation_perf_simulation(instance: DagsterInstance) -> Non
     assets = build_assets(
         id="perf_test",
         layer_configs=[
-            AssetLayerConfig(100, 0, hourly_partitions_def),
-            AssetLayerConfig(200, 2, hourly_partitions_def, n_checks_per_asset=1),
-            AssetLayerConfig(200, 4, hourly_partitions_def, n_checks_per_asset=2),
-            AssetLayerConfig(200, 4, daily_partitions_def, n_checks_per_asset=2),
-            AssetLayerConfig(200, 2, daily_partitions_def),
+            AssetLayerConfig(50, 0, hourly_partitions_def),
+            AssetLayerConfig(100, 2, hourly_partitions_def, n_checks_per_asset=1),
+            AssetLayerConfig(100, 4, hourly_partitions_def, n_checks_per_asset=2),
+            AssetLayerConfig(100, 4, daily_partitions_def, n_checks_per_asset=2),
             AssetLayerConfig(100, 2, daily_partitions_def),
+            AssetLayerConfig(50, 2, daily_partitions_def),
         ],
         automation_condition=AutomationCondition.eager()
         & AutomationCondition.all_deps_blocking_checks_passed(),
