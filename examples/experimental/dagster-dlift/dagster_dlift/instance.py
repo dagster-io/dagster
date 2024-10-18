@@ -1,4 +1,4 @@
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 import requests
 
@@ -31,12 +31,18 @@ class DbtCloudInstance:
     def get_metadata_api_url(self) -> str:
         return f"https://{self.account_prefix}.metadata.{self.region}.dbt.com/graphql"
 
+    def ensure_valid_response(self, response: requests.Response) -> requests.Response:
+        if response.status_code != 200:
+            raise Exception(f"Failed to connect to dbt cloud: {response.text}")
+        return response
+
     def query_discovery_api(self, query: str, variables: Mapping[str, Any]):
         session = self.get_session()
         response = session.post(
             f"{self.get_metadata_api_url()}/graphql",
             json={"query": query, "variables": variables},
         )
+        print(response)
         return response
 
     def test_connection(self) -> None:
@@ -46,3 +52,11 @@ class DbtCloudInstance:
         )
         if response.status_code != 200:
             raise Exception(f"Failed to connect to dbt cloud: {response.text}")
+
+    def list_environment_ids(self) -> Sequence[int]:
+        session = self.get_session()
+        response = self.ensure_valid_response(
+            session.get(f"{self.get_general_api_url()}/environments/")
+        )
+        data = response.json()["data"]
+        return [environment["id"] for environment in data]

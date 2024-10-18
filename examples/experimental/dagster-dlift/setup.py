@@ -42,6 +42,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
+    requires=[f"dagster{pin}"],
     packages=find_packages(exclude=["dagster_dlift_tests*", "examples*"]),
     zip_safe=False,
 )
