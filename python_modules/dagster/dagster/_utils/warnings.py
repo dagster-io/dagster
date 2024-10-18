@@ -8,11 +8,36 @@ from dagster._core.decorator_utils import Decoratable, apply_context_manager_dec
 
 T = TypeVar("T")
 
+_warnings_on = ContextVar("_warnings_on", default=True)
+
+# ########################
+# ##### SUPERSEDED
+# ########################
+
+
+class SupersessionWarning(FutureWarning):
+    pass
+
+
+def supersession_warning(
+    subject: str,
+    additional_warn_text: Optional[str] = None,
+    stacklevel: int = 3,
+):
+    if not _warnings_on.get():
+        return
+
+    warnings.warn(
+        f"{subject} is superseded and it's usage is discouraged."
+        + ((" " + additional_warn_text) if additional_warn_text else ""),
+        category=SupersessionWarning,
+        stacklevel=stacklevel,
+    )
+
+
 # ########################
 # ##### DEPRECATED
 # ########################
-
-_warnings_on = ContextVar("_warnings_on", default=True)
 
 
 def normalize_renamed_param(
@@ -145,6 +170,7 @@ def disable_dagster_warnings() -> Iterator[None]:
             token = _warnings_on.set(False)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=DeprecationWarning)
+                warnings.simplefilter("ignore", category=SupersessionWarning)
                 warnings.simplefilter("ignore", category=ExperimentalWarning)
                 yield
         finally:
