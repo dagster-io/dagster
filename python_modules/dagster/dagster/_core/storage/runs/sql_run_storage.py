@@ -301,7 +301,9 @@ class SqlRunStorage(RunStorage):
             )
 
         if filters.exclude_subruns:
-            if self.has_backfill_id_column():
+            if self.has_built_index(
+                "backfill_id_run_table_migration"
+            ):  # placeholder migration name
                 query = query.where(RunsTable.c.backfill_id.is_(None))
             else:
                 runs_in_backfills = db_select([RunTagsTable.c.run_id]).where(
