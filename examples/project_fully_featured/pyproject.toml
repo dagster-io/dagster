@@ -1,3 +1,49 @@
+[project]
+name = "project_fully_featured"
+description = "Example fully featured Dagster project."
+version = "1!0+dev"
+authors = [
+    {name = "Dagster Labs", email="hello@dagsterlabs.com"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+]
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "aiobotocore",
+    "dagster",
+    "dagster-aws",
+    "dagster-dbt",
+    "dagster-pandas",
+    "dagster-postgres",
+    "dagster-pyspark",
+    "dagster-slack",
+    "dbt-duckdb",
+    "dbt-snowflake",
+    "duckdb!=0.3.3, <= 6.0.0",  # missing wheels
+    "gcsfs",
+    "fsspec",
+    "mock",
+    "pandas",
+    "pyarrow>=4.0.0",
+    "pyspark",
+    "requests",
+    "s3fs",
+    "scipy",
+    "scikit-learn",
+    "snowflake-sqlalchemy<1.5.2",
+    "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+tests = ["mypy", "pylint", "pytest"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -5,3 +51,10 @@ build-backend = "setuptools.build_meta"
 [tool.dagster]
 module_name = "project_fully_featured.definitions"
 code_location_name = "project_fully_featured"
+
+[tool.setuptools.package-data]
+project_fully_featured = ["hacker_news_dbt/*"]
+
+[tool.setuptools.packages.find]
+exclude = ["project_fully_featured_tests"]
+where = ["project_fully_featured"]

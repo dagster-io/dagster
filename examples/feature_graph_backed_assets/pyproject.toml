@@ -1,3 +1,27 @@
+[project]
+name = "feature_graph_backed_assets"
+version = "0.1.0"
+license = "Apache-2.0"
+description = "Dagster example of op and graph-backed assets."
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "dagster",
+    "pandas",
+]
+
+[project.urls]
+url = "https://github.com/dagster-io/dagster/tree/master/examples/feature_graph_backed_assets"
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -5,3 +29,6 @@ build-backend = "setuptools.build_meta"
 [tool.dagster]
 module_name = "feature_graph_backed_assets.definitions"
 code_location_name = "feature_graph_backed_assets"
+
+[tool.setuptools.packages.find]
+exclude = ["feature_graph_backed_assets_tests"]

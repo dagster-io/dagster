@@ -1,3 +1,23 @@
+[project]
+name = "assets_pandas_type_metadata"
+version = "0.1.0"
+description = "Example Dagster project demonstrating pandas type metadata."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "dagster",
+    "dagster-pandera",
+    "jupyterlab",
+    "matplotlib",
+    "pandas",
+    "pandera",
+    "pyarrow",
+    "seaborn",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -5,3 +25,6 @@ build-backend = "setuptools.build_meta"
 [tool.dagster]
 module_name = "assets_pandas_type_metadata.definitions"
 code_location_name = "assets_pandas_type_metadata"
+
+[tool.setuptools.packages.find]
+exclude = ["assets_pandas_type_metadata_tests"]

@@ -1,3 +1,27 @@
+[project]
+name = "quickstart_snowflake"
+version = "0.1.0"
+description = "Dagster project for Snowflake quickstart."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "boto3",
+    "dagster",
+    # snowflake-connector-python[pandas] is included by dagster-snowflake-pandas but it does
+    # not get included during pex dependency resolution, so we directly add this dependency
+    "dagster-cloud",
+    "dagster-snowflake-pandas",
+    "matplotlib",
+    "pandas",
+    "snowflake-connector-python[pandas]",
+    "textblob",
+    "tweepy",
+    "wordcloud",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+        
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -5,3 +29,6 @@ build-backend = "setuptools.build_meta"
 [tool.dagster]
 module_name = "quickstart_snowflake.definitions"
 code_location_name = "quickstart_snowflake"
+
+[tool.setuptools.packages.find]
+exclude = ["quickstart_snowflake_tests"]

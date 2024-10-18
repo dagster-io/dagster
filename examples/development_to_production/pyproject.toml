@@ -1,3 +1,33 @@
+[project]
+name = "development_to_production"
+version = "1!0+dev"
+authors = [
+    {name = "Dagster Labs", email = "hello@dagsterlabs.com"}
+]
+description = "Dagster example of local development and production deployment."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "dagster",
+    "dagster-snowflake",
+    "dagster-snowflake-pandas",
+    "pandas",
+    "requests",
+]
+
+[project.urls]
+url = "https://github.com/dagster-io/dagster/tree/master/examples/development_to_production"
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"

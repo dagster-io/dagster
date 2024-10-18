@@ -1,3 +1,28 @@
+[project]
+name = "assets_smoke_test"
+version = "0.1.0"
+description = "Example Dagster project demonstrating assets smoke tests."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "dagster",
+    "dagster-dbt",
+    "dagster-pandas",
+    "dagster-snowflake",
+    "dagster-snowflake-pandas",
+    "dbt-snowflake",
+    "pandas",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+test = [
+    # cant build psycopg2 in buildkite
+    # something about the 1.8.0 dependency setup to avoid psycopg2-binary on linux
+    # seems to prevent that dependency from being used even if explicitly added
+    "dbt-postgres<1.8.0"
+]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -5,3 +30,9 @@ build-backend = "setuptools.build_meta"
 [tool.dagster]
 module_name = "assets_smoke_test.definitions"
 code_location_name = "assets_smoke_test"
+
+[tool.setuptools.packages.find]
+exclude = ["assets_smoke_test_tests"]
+
+[tool.setuptools.package-data]
+assets_smoke_test = ["dbt_project/*"]
