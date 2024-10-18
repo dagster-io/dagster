@@ -543,10 +543,14 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Reference',
-      link: {type: 'doc', id: 'api/index'},
+      link: {type: 'doc', id: 'reference/index'},
       collapsible: false,
       collapsed: false,
       items: [
+        {
+          type: 'doc',
+          id: 'reference/api-lifecycle',
+        },
         {
           type: 'category',
           label: 'Configuration',
