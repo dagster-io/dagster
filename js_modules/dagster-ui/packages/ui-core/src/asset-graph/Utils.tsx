@@ -292,7 +292,7 @@ export const itemWithAssetKey = (key: {path: string[]}) => {
 
 export const isGroupId = (str: string) => /^[^@:]+@[^@:]+:.+$/.test(str);
 
-export const groupIdForNode = (node: GraphNode) =>
+export const groupIdForNode = (node: Pick<GraphNode, 'definition'>) =>
   [
     node.definition.repository.name,
     '@',

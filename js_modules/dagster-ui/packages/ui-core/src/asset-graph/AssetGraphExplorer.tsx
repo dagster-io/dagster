@@ -50,10 +50,10 @@ import {
 } from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
+import {useAssetGraphLayout} from '../asset-graph-layout-v2/useAssetGraphLayoutV2';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
-import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {AssetGroupSelector} from '../graphql/types';
 import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
@@ -226,7 +226,7 @@ const AssetGraphExplorerWithData = ({
   });
   const focusGroupIdAfterLayoutRef = React.useRef('');
 
-  const {layout, loading, async} = useAssetLayout(
+  const {layout, loading, async} = useAssetGraphLayout(
     assetGraphData,
     expandedGroups,
     useMemo(() => ({direction}), [direction]),
