@@ -200,6 +200,7 @@ def get_workspace_load_target(kwargs: ClickArgMapping) -> WorkspaceLoadTarget:
                 attribute=check.opt_str_elem(kwargs, "attribute"),
                 working_directory=working_directory,
                 location_name=None,
+                assets_directory=None,
             )
         else:
             # multiple modules
@@ -217,6 +218,7 @@ def get_workspace_load_target(kwargs: ClickArgMapping) -> WorkspaceLoadTarget:
                         attribute=None,
                         working_directory=working_directory,
                         location_name=None,
+                        assets_directory=None,
                     )
                     for module_name in module_names
                 ]
