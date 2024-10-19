@@ -481,7 +481,7 @@ export const AssetNodeOverview = ({
 
     if (
       attributes.every((props) => isEmptyChildren(props.children)) &&
-      !cachedOrLiveAssetNode.autoMaterializePolicy
+      !cachedOrLiveAssetNode.automationCondition
     ) {
       return (
         <SectionEmptyState
