@@ -20,7 +20,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
-from dagster._core.loader import InstanceLoadableBy
+from dagster._core.loader import InstanceLoadableBy, LoadingContext
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
@@ -41,7 +41,6 @@ from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleDefinition
     from dagster._core.definitions.sensor_definition import SensorDefinition
-    from dagster._core.instance import DagsterInstance
     from dagster._core.remote_representation.external import RemoteSchedule, RemoteSensor
     from dagster._core.remote_representation.origin import RemoteJobOrigin
     from dagster._core.scheduler.instigation import InstigatorState
@@ -643,12 +642,12 @@ class RunRecord(
 
     @classmethod
     def _blocking_batch_load(
-        cls, keys: Iterable[str], instance: "DagsterInstance"
+        cls, keys: Iterable[str], context: LoadingContext
     ) -> Iterable[Optional["RunRecord"]]:
         result_map: Dict[str, Optional[RunRecord]] = {run_id: None for run_id in keys}
 
         # this should be replaced with an async DB call
-        records = instance.get_run_records(RunsFilter(run_ids=list(result_map.keys())))
+        records = context.instance.get_run_records(RunsFilter(run_ids=list(result_map.keys())))
 
         for record in records:
             result_map[record.dagster_run.run_id] = record

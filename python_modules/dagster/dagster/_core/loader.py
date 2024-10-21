@@ -58,6 +58,10 @@ class LoadingContext(ABC):
     def loaders(self) -> Dict[Type, Tuple[DataLoader, BlockingDataLoader]]:
         raise NotImplementedError()
 
+    @staticmethod
+    def ephemeral(instance: "DagsterInstance") -> "LoadingContext":
+        return EphemeralLoadingContext(instance)
+
     def get_loaders_for(
         self, ttype: Type["InstanceLoadableBy"]
     ) -> Tuple[DataLoader, BlockingDataLoader]:
@@ -65,8 +69,8 @@ class LoadingContext(ABC):
             if not issubclass(ttype, InstanceLoadableBy):
                 check.failed(f"{ttype} is not Loadable")
 
-            batch_load_fn = partial(ttype._batch_load, instance=self.instance)  # noqa
-            blocking_batch_load_fn = partial(ttype._blocking_batch_load, instance=self.instance)  # noqa
+            batch_load_fn = partial(ttype._batch_load, context=self)  # noqa
+            blocking_batch_load_fn = partial(ttype._blocking_batch_load, context=self)  # noqa
 
             self.loaders[ttype] = (
                 DataLoader(batch_load_fn=batch_load_fn),
@@ -80,6 +84,22 @@ class LoadingContext(ABC):
             del self.loaders[ttype]
 
 
+class EphemeralLoadingContext(LoadingContext):
+    """Loading context that can be constructed for short-lived method resolution."""
+
+    def __init__(self, instance: "DagsterInstance"):
+        self._instance = instance
+        self._loaders = {}
+
+    @property
+    def instance(self) -> "DagsterInstance":
+        return self._instance
+
+    @property
+    def loaders(self) -> Dict[Type, Tuple[DataLoader, BlockingDataLoader]]:
+        return self._loaders
+
+
 # Expected there may be other "Loadable" base classes based on what is needed to load.
 
 
@@ -88,14 +108,14 @@ class InstanceLoadableBy(ABC, Generic[TKey]):
 
     @classmethod
     async def _batch_load(
-        cls, keys: Iterable[TKey], instance: "DagsterInstance"
+        cls, keys: Iterable[TKey], context: "LoadingContext"
     ) -> Iterable[Optional[Self]]:
-        return cls._blocking_batch_load(keys, instance)
+        return cls._blocking_batch_load(keys, context)
 
     @classmethod
     @abstractmethod
     def _blocking_batch_load(
-        cls, keys: Iterable[TKey], instance: "DagsterInstance"
+        cls, keys: Iterable[TKey], context: "LoadingContext"
     ) -> Iterable[Optional[Self]]:
         # There is no good way of turning an async function into a sync one that
         # will allow us to execute that sync function inside of a broader async context.
