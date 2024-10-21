@@ -57,6 +57,6 @@ def best_effort_render_liquid_sql(model_name: str, filename: str, sql: str) -> s
                 f" in file `{filename}`"
                 " contains Liquid variables or conditions. Upstream dependencies are parsed as best-effort."
             )
-        return template.render({} if analysis.variables else None)
+        return template.render({})
     except SyntaxError:
         return sql

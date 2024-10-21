@@ -2,8 +2,9 @@ import itertools
 import logging
 import re
 from pathlib import Path
+import sys
 from typing import Any, Iterator, Literal, Mapping, Optional, Sequence, Tuple, cast
-
+import traceback
 from dagster import AssetKey
 from dagster._annotations import experimental, public
 from sqlglot import exp, parse_one, to_table
