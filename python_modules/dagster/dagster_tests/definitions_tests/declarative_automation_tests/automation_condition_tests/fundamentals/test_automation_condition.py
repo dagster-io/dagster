@@ -23,31 +23,33 @@ from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils
 )
 
 
-def test_missing_unpartitioned() -> None:
+@pytest.mark.asyncio
+async def test_missing_unpartitioned() -> None:
     state = AutomationConditionScenarioState(
         one_asset, automation_condition=AutomationCondition.missing()
     )
 
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 1
     original_value_hash = result.value_hash
 
     # still true
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 1
     assert result.value_hash == original_value_hash
 
     # after a run of A it's now False
-    state, result = state.with_runs(run_request("A")).evaluate("A")
+    state, result = await state.with_runs(run_request("A")).evaluate("A")
     assert result.true_subset.size == 0
     assert result.value_hash != original_value_hash
 
     # if we evaluate from scratch, it's also False
-    _, result = state.without_cursor().evaluate("A")
+    _, result = await state.without_cursor().evaluate("A")
     assert result.true_subset.size == 0
 
 
-def test_missing_time_partitioned() -> None:
+@pytest.mark.asyncio
+async def test_missing_time_partitioned() -> None:
     state = (
         AutomationConditionScenarioState(
             one_asset, automation_condition=AutomationCondition.missing()
@@ -57,22 +59,22 @@ def test_missing_time_partitioned() -> None:
         .with_current_time_advanced(days=6, minutes=1)
     )
 
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 6
 
     # still true
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 6
 
     # after two runs of A those partitions are now False
-    state, result = state.with_runs(
+    state, result = await state.with_runs(
         run_request("A", day_partition_key(time_partitions_start_datetime, 1)),
         run_request("A", day_partition_key(time_partitions_start_datetime, 3)),
     ).evaluate("A")
     assert result.true_subset.size == 4
 
     # if we evaluate from scratch, they're still False
-    _, result = state.without_cursor().evaluate("A")
+    _, result = await state.without_cursor().evaluate("A")
     assert result.true_subset.size == 4
 
 

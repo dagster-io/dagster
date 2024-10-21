@@ -1,3 +1,4 @@
+import pytest
 from dagster import AutomationCondition
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -11,39 +12,41 @@ from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils
 )
 
 
-def test_in_progress_unpartitioned() -> None:
+@pytest.mark.asyncio
+async def test_in_progress_unpartitioned() -> None:
     state = AutomationConditionScenarioState(
         one_asset, automation_condition=AutomationCondition.in_progress()
     )
 
     # no run in progress
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 0
 
     # run now in progress
     state = state.with_in_progress_run_for_asset("A")
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 1
 
     # run completes
     state = state.with_in_progress_runs_completed()
-    _, result = state.evaluate("A")
+    _, result = await state.evaluate("A")
     assert result.true_subset.size == 0
 
 
-def test_in_progress_static_partitioned() -> None:
+@pytest.mark.asyncio
+async def test_in_progress_static_partitioned() -> None:
     state = AutomationConditionScenarioState(
         one_asset, automation_condition=AutomationCondition.in_progress()
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     # no run in progress
-    state, result = state.evaluate("A")
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 0
 
     # now in progress
     state = state.with_in_progress_run_for_asset("A", partition_key="1")
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 1
     assert result.true_subset.expensively_compute_asset_partitions() == {
         AssetKeyPartitionKey(AssetKey("A"), "1")
@@ -51,7 +54,7 @@ def test_in_progress_static_partitioned() -> None:
 
     # run completes
     state = state.with_in_progress_runs_completed()
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 0
 
     # now both in progress
@@ -62,10 +65,10 @@ def test_in_progress_static_partitioned() -> None:
         "A",
         partition_key="2",
     )
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 2
 
     # both runs complete
     state = state.with_in_progress_runs_completed()
-    _, result = state.evaluate("A")
+    _, result = await state.evaluate("A")
     assert result.true_subset.size == 0

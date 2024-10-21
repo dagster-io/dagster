@@ -26,6 +26,7 @@ one_parent_daily = one_parent.with_asset_properties(partitions_def=daily_partiti
 two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_partitions)
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ["expected_value_hash", "condition", "scenario_spec", "materialize_A"],
     [
@@ -51,16 +52,16 @@ two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_parti
         ("7f852ab7408c67e0830530d025505a37", SC.missing(), one_parent_daily, False),
     ],
 )
-def test_value_hash(
+async def test_value_hash(
     condition: SC, scenario_spec: ScenarioSpec, expected_value_hash: str, materialize_A: bool
 ) -> None:
     state = AutomationConditionScenarioState(
         scenario_spec, automation_condition=condition
     ).with_current_time("2024-01-01T00:00")
 
-    state, _ = state.evaluate("downstream")
+    state, _ = await state.evaluate("downstream")
     if materialize_A:
         state = state.with_runs(run_request("A"))
 
-    state, result = state.evaluate("downstream")
+    state, result = await state.evaluate("downstream")
     assert result.value_hash == expected_value_hash

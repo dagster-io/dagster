@@ -1,3 +1,4 @@
+import pytest
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.operands import NewlyRequestedCondition
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -13,7 +14,8 @@ from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils
 )
 
 
-def test_requested_previous_tick() -> None:
+@pytest.mark.asyncio
+async def test_requested_previous_tick() -> None:
     false_condition, _ = get_hardcoded_condition()
     hardcoded_condition, true_set = get_hardcoded_condition()
     state = AutomationConditionScenarioState(
@@ -29,24 +31,24 @@ def test_requested_previous_tick() -> None:
         return result.child_results[0].child_results[0]
 
     # was not requested on the previous tick, as there was no tick
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert get_result(result).true_subset.size == 0
 
     # still was not requested on the previous tick
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert get_result(result).true_subset.size == 0
 
     # now we ensure that the asset does get requested this tick
     true_set.add(AssetKeyPartitionKey(AssetKey("A")))
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     # requested this tick, not the previous tick
     assert get_result(result).true_subset.size == 0
     true_set.remove(AssetKeyPartitionKey(AssetKey("A")))
 
     # requested on the previous tick
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert get_result(result).true_subset.size == 1
 
     # requested two ticks ago
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert get_result(result).true_subset.size == 0

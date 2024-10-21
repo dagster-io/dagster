@@ -33,14 +33,13 @@ class DownstreamConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
     def requires_cursor(self) -> bool:
         return False
 
-    def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
-        child_result = self.operand.evaluate(
-            context.for_child_condition(
-                child_condition=self.operand,
-                child_index=0,
-                candidate_subset=context.candidate_subset,
-            )
-        )
+    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
+        child_result = await context.for_child_condition(
+            child_condition=self.operand,
+            child_index=0,
+            candidate_subset=context.candidate_subset,
+        ).evaluate_async()
+
         return AutomationResult(
             context=context, true_subset=child_result.true_subset, child_results=[child_result]
         )
@@ -82,7 +81,7 @@ class AnyDownstreamConditionsCondition(BuiltinAutomationCondition[AssetKey]):
             if not condition.has_rule_condition
         }
 
-    def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
+    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
         ignored_conditions = self._get_ignored_conditions(context)
         downstream_conditions = self._get_validated_downstream_conditions(
             context.asset_graph.get_downstream_automation_conditions(asset_key=context.key)
@@ -95,15 +94,13 @@ class AnyDownstreamConditionsCondition(BuiltinAutomationCondition[AssetKey]):
         ):
             if downstream_condition in ignored_conditions:
                 continue
-            child_condition = DownstreamConditionWrapperCondition(
-                downstream_keys=list(sorted(asset_keys)), operand=downstream_condition
-            )
-            child_context = context.for_child_condition(
-                child_condition=child_condition,
+            child_result = await context.for_child_condition(
+                child_condition=DownstreamConditionWrapperCondition(
+                    downstream_keys=list(sorted(asset_keys)), operand=downstream_condition
+                ),
                 child_index=i,
                 candidate_subset=context.candidate_subset,
-            )
-            child_result = child_condition.evaluate(child_context)
+            ).evaluate_async()
 
             child_results.append(child_result)
             true_subset = true_subset.compute_union(child_result.true_subset)
