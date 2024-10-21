@@ -64,7 +64,7 @@ class AutomationConditionScenarioState(ScenarioState):
             for asset_key, aps in ap_by_key.items()
         }
 
-    def evaluate(
+    async def evaluate(
         self, asset: CoercibleToAssetKey
     ) -> Tuple["AutomationConditionScenarioState", AutomationResult]:
         asset_key = AssetKey.from_coercible(asset)
@@ -100,7 +100,7 @@ class AutomationConditionScenarioState(ScenarioState):
             )  # type: ignore
             context = AutomationContext.create(key=asset_key, evaluator=evaluator)
 
-            full_result = asset_condition.evaluate(context)
+            full_result = await asset_condition.evaluate(context)  # type: ignore
             new_state = dataclasses.replace(self, condition_cursor=full_result.get_new_cursor())
             result = full_result.child_results[0] if self.ensure_empty_result else full_result
 
