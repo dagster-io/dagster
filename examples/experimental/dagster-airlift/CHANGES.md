@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.0.27
+
+### New
+
+- Airlift CLI: You can now proxy airlift state in your airflow directory by calling `dagster-airlift proxy scaffold` from within your Airflow codebase (airflow must be installed, and `AIRFLOW_HOME` must be set)
+- `dagster-airlift[in-airflow]` no longer has a direct pin on airflow itself. Instead we rely on users installing their own 2.0.0 or greater version of Airflow.
+- Dag-level mapping has been introduced. Using the `assets_with_dag_mappings` API, you can map individual assets to an entire DAG, and those assets will receive materializations on successful runs of that DAG. See the tutorial section on dag-level mapping for more.
+- Python 3.12 is now explicitly supported.
+- Time-windowed partitioned assets mapped to Airflow will now automatically receive partitioned materializations corresponding to the `execution_date` in airflow. See the tutorial section on partitioning for more.
+
+### Tutorial
+
+- Tutorial section on dealing with changing airflow
+- Tutorial section on partitioning
+- Tutorial section on dag-level mapping
+- The tutorial has been changed to use `assets_with_task_mappings` instead of `task_defs` to maintain a consistent API across integrations.
+
+### Breaking Changes
+
+- Proxy operators now makes the assumption that all assets mapped to a given airflow task must be launchable within a single run (this works out of the box on Dagster 1.8 or greater).
+- The `dagster_operator_klass` method has been removed, and the base class has changed. Instead of overriding `BaseProxyToDagsterOperator`, users will now subclass `BaseProxyTaskToDagsterOperator`, and use the `build_from_task_fn` argument:
+
+```python
+proxying_to_dagster(
+  ...,
+  # This method is implemented by default, but can be overridden.
+  build_from_task_fn=MyCustomOperator.build_from_task,
+)
+```
+
 ## 0.0.26
 
 ### New
