@@ -221,8 +221,7 @@ export const GlobalAutomaterializationContent = () => {
             />
           ) : flagLegacyRunsPage ? (
             <AutomaterializeRunHistoryTable setTableView={setTableView} />
-          )
-          : (
+          ) : (
             <Box margin={{top: 32}} border="top">
               <RunsFeedTableWithFilters
                 filter={RUNS_FILTER}

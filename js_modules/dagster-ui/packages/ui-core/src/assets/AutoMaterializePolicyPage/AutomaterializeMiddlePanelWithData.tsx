@@ -209,8 +209,7 @@ export const AutomaterializeMiddlePanelWithData = ({
           </Box>
           {flagLegacyRunsPage ? (
             <AutomaterializeRunsTable runIds={selectedEvaluation.runIds} />
-          )
-          : (
+          ) : (
             <RunsFeedTableWithFilters filter={runsFilter} />
           )}
           <Box border="bottom" padding={{vertical: 12}}>

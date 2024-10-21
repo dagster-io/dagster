@@ -127,8 +127,7 @@ export const ScheduleRoot = (props: Props) => {
                 schedule={scheduleOrError}
                 tabs={tabs}
               />
-            )
-            : (
+            ) : (
               <RunsFeedTableWithFilters filter={runsFilter} />
             )}
           </Page>
