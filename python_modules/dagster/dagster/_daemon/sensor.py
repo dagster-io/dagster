@@ -371,11 +371,6 @@ def execute_sensor_iteration(
     all_sensor_states = {
         sensor_state.selector_id: sensor_state
         for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
-        if not (  # filter out sensors state handled by asset daemon
-            sensor_state.sensor_instigator_data
-            and sensor_state.sensor_instigator_data.sensor_type
-            and sensor_state.sensor_instigator_data.sensor_type.is_handled_by_asset_daemon
-        )
     }
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SENSOR)

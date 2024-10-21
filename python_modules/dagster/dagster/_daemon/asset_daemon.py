@@ -493,15 +493,10 @@ class AssetDaemon(DagsterDaemon):
             if not eligible_sensors_and_repos:
                 return
 
-            all_auto_materialize_states = {
+            all_sensor_states = {
                 sensor_state.selector_id: sensor_state
                 for sensor_state in instance.all_instigator_state(
                     instigator_type=InstigatorType.SENSOR
-                )
-                if (
-                    sensor_state.sensor_instigator_data
-                    and sensor_state.sensor_instigator_data.sensor_type
-                    and sensor_state.sensor_instigator_data.sensor_type.is_handled_by_asset_daemon
                 )
             }
 
@@ -517,13 +512,11 @@ class AssetDaemon(DagsterDaemon):
                         self._logger.info(
                             "Translating legacy cursor into a new cursor for each new automation policy sensor"
                         )
-                        all_auto_materialize_states = (
-                            self._create_initial_sensor_cursors_from_raw_cursor(
-                                instance,
-                                eligible_sensors_and_repos,
-                                all_auto_materialize_states,
-                                pre_sensor_cursor,
-                            )
+                        all_sensor_states = self._create_initial_sensor_cursors_from_raw_cursor(
+                            instance,
+                            eligible_sensors_and_repos,
+                            all_sensor_states,
+                            pre_sensor_cursor,
                         )
 
                     set_has_migrated_to_sensors(instance)
@@ -533,8 +526,8 @@ class AssetDaemon(DagsterDaemon):
                     self._logger.info(
                         "Renaming any states corresponding to the legacy default name"
                     )
-                    all_auto_materialize_states = self._copy_default_auto_materialize_sensor_states(
-                        instance, all_auto_materialize_states
+                    all_sensor_states = self._copy_default_auto_materialize_sensor_states(
+                        instance, all_sensor_states
                     )
                     set_has_migrated_sensor_names(instance)
 
@@ -543,7 +536,7 @@ class AssetDaemon(DagsterDaemon):
             for sensor, repo in eligible_sensors_and_repos:
                 selector_id = sensor.selector_id
                 if sensor.get_current_instigator_state(
-                    all_auto_materialize_states.get(selector_id)
+                    all_sensor_states.get(selector_id)
                 ).is_running:
                     sensors_and_repos.append((sensor, repo))
 
@@ -554,12 +547,12 @@ class AssetDaemon(DagsterDaemon):
                     None,
                 )  # Represents that there's a single set of ticks with no underlying sensor
             )
-            all_auto_materialize_states = {}
+            all_sensor_states = {}
 
         for sensor, repo in sensors_and_repos:
             if sensor:
                 selector_id = sensor.selector.get_id()
-                auto_materialize_state = all_auto_materialize_states.get(selector_id)
+                auto_materialize_state = all_sensor_states.get(selector_id)
             else:
                 selector_id = None
                 auto_materialize_state = None
@@ -617,7 +610,7 @@ class AssetDaemon(DagsterDaemon):
         self,
         instance: DagsterInstance,
         sensors_and_repos: Sequence[Tuple[RemoteSensor, RemoteRepository]],
-        all_auto_materialize_states: Mapping[str, InstigatorState],
+        all_sensor_states: Mapping[str, InstigatorState],
         pre_sensor_cursor: AssetDaemonCursor,
     ) -> Mapping[str, InstigatorState]:
         start_status = (
@@ -645,7 +638,7 @@ class AssetDaemon(DagsterDaemon):
                 ),
             )
 
-            if all_auto_materialize_states.get(sensor.selector_id):
+            if all_sensor_states.get(sensor.selector_id):
                 instance.update_instigator_state(new_auto_materialize_state)
             else:
                 instance.add_instigator_state(new_auto_materialize_state)
@@ -657,16 +650,21 @@ class AssetDaemon(DagsterDaemon):
     def _copy_default_auto_materialize_sensor_states(
         self,
         instance: DagsterInstance,
-        all_auto_materialize_states: Mapping[str, InstigatorState],
+        all_sensor_states: Mapping[str, InstigatorState],
     ) -> Mapping[str, InstigatorState]:
         """Searches for sensors named `default_auto_materialize_sensor` and copies their state
         to a sensor in the same repository named `default_automation_condition_sensor`.
         """
-        result = dict(all_auto_materialize_states)
+        result = dict(all_sensor_states)
 
-        for instigator_state in all_auto_materialize_states.values():
-            # only migrate instigators with the name "default_auto_materialize_sensor"
-            if instigator_state.origin.instigator_name != "default_auto_materialize_sensor":
+        for instigator_state in all_sensor_states.values():
+            # only migrate instigators with the name "default_auto_materialize_sensor" and are
+            # handled by the asset daemon
+            if instigator_state.origin.instigator_name != "default_auto_materialize_sensor" and (
+                instigator_state.sensor_instigator_data
+                and instigator_state.sensor_instigator_data.sensor_type
+                and instigator_state.sensor_instigator_data.sensor_type.is_handled_by_asset_daemon
+            ):
                 continue
             new_sensor_origin = instigator_state.origin._replace(
                 instigator_name="default_automation_condition_sensor"
@@ -679,7 +677,7 @@ class AssetDaemon(DagsterDaemon):
             )
             new_sensor_selector_id = new_sensor_origin.get_selector().get_id()
             result[new_sensor_selector_id] = new_auto_materialize_state
-            if all_auto_materialize_states.get(new_sensor_selector_id):
+            if all_sensor_states.get(new_sensor_selector_id):
                 instance.update_instigator_state(new_auto_materialize_state)
             else:
                 instance.add_instigator_state(new_auto_materialize_state)
