@@ -930,7 +930,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
 
         partition_set_origin = RemotePartitionSetOrigin(
             repository_origin=repository.get_remote_origin(),
-            partition_set_name="foo_partition",
+            partition_set_name="foo_partition_set",
         )
         for _ in range(3):
             _create_run(graphql_context, job_name="foo")
