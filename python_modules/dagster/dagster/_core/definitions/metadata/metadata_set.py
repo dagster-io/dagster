@@ -93,6 +93,14 @@ class NamespacedKVSet(ABC, DagsterModel):
                 namespace, key = splits
                 if namespace == cls.namespace() and key in model_fields(cls):
                     kwargs[key] = cls._extract_value(field_name=key, value=value)
+                elif namespace == cls.namespace() and key in cls.current_key_by_legacy_key():
+                    current_key = cls.current_key_by_legacy_key()[key]
+                    if f"{cls.namespace()}/{current_key}" not in values:
+                        # Only extract the value from the backcompat key if the new
+                        # key is not present
+                        kwargs[current_key] = cls._extract_value(
+                            field_name=current_key, value=value
+                        )
 
         return cls(**kwargs)
 
@@ -101,6 +109,11 @@ class NamespacedKVSet(ABC, DagsterModel):
     def _extract_value(cls, field_name: str, value: Any) -> Any:
         """Based on type annotation, potentially coerce the value to the expected type."""
         ...
+
+    @classmethod
+    def current_key_by_legacy_key(cls) -> Mapping[str, str]:
+        """Return a mapping of each legacy key to its current key."""
+        return {}
 
 
 class NamespacedMetadataSet(NamespacedKVSet):
@@ -178,6 +191,10 @@ class TableMetadataSet(NamespacedMetadataSet):
     @classmethod
     def namespace(cls) -> str:
         return "dagster"
+
+    @classmethod
+    def current_key_by_legacy_key(cls) -> Mapping[str, str]:
+        return {"relation_identifier": "table_name"}
 
 
 class UriMetadataSet(NamespacedMetadataSet):
