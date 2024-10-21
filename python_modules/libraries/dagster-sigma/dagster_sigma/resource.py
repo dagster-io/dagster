@@ -108,25 +108,50 @@ class SigmaOrganization(ConfigurableResource):
                 response.raise_for_status()
                 return await response.json()
 
+    async def _fetch_json_async_paginated_entries(
+        self, endpoint: str, query_params: Optional[Dict[str, Any]] = None, limit: int = 1000
+    ) -> List[Dict[str, Any]]:
+        entries = []
+
+        query_params_with_limit = {
+            **(query_params or {}),
+            "limit": limit,
+        }
+        result = await self._fetch_json_async(endpoint, query_params=query_params)
+        entries.extend(result["entries"])
+
+        while result.get("hasMore"):
+            next_page = result["nextPage"]
+            query_params_with_limit_and_page = {
+                **query_params_with_limit,
+                "page": next_page,
+            }
+            result = await self._fetch_json_async(
+                endpoint, query_params=query_params_with_limit_and_page
+            )
+            entries.extend(result["entries"])
+
+        return entries
+
     @cached_method
     async def _fetch_workbooks(self) -> List[Dict[str, Any]]:
-        return (await self._fetch_json_async("workbooks"))["entries"]
+        return await self._fetch_json_async_paginated_entries("workbooks")
 
     @cached_method
     async def _fetch_datasets(self) -> List[Dict[str, Any]]:
-        return (await self._fetch_json_async("datasets"))["entries"]
+        return await self._fetch_json_async_paginated_entries("datasets")
 
     @cached_method
     async def _fetch_pages_for_workbook(self, workbook_id: str) -> List[Dict[str, Any]]:
-        return (await self._fetch_json_async(f"workbooks/{workbook_id}/pages"))["entries"]
+        return await self._fetch_json_async_paginated_entries(f"workbooks/{workbook_id}/pages")
 
     @cached_method
     async def _fetch_elements_for_page(
         self, workbook_id: str, page_id: str
     ) -> List[Dict[str, Any]]:
-        return (await self._fetch_json_async(f"workbooks/{workbook_id}/pages/{page_id}/elements"))[
-            "entries"
-        ]
+        return await self._fetch_json_async_paginated_entries(
+            f"workbooks/{workbook_id}/pages/{page_id}/elements"
+        )
 
     @cached_method
     async def _fetch_lineage_for_element(self, workbook_id: str, element_id: str) -> Dict[str, Any]:
@@ -364,9 +389,10 @@ class SigmaOrganization(ConfigurableResource):
         Returns:
             Definitions: The set of assets representing the Sigma content in the organization.
         """
-        return SigmaOrganizationDefsLoader(
-            organization=self, translator_cls=dagster_sigma_translator
-        ).build_defs()
+        with self.process_config_and_initialize_cm() as initialized_organization:
+            return SigmaOrganizationDefsLoader(
+                organization=initialized_organization, translator_cls=dagster_sigma_translator
+            ).build_defs()
 
 
 @dataclass

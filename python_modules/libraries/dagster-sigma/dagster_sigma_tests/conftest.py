@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import Any, Dict, Iterator, List
+from typing import Any, Dict, Iterator, List, Optional
 
 import pytest
 import responses as request_responses
@@ -29,12 +29,24 @@ def sigma_auth_fixture() -> str:
     return fake_access_token
 
 
-def _build_paginated_response(items: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _build_paginated_response(
+    items: List[Dict[str, Any]], slice_start: Optional[int] = None, slice_end: Optional[int] = None
+) -> Dict[str, Any]:
+    has_more = False
+    next_page = None
+    items_to_return = items
+
+    if slice_start is not None or slice_end is not None:
+        items_to_return = items[slice_start:slice_end]
+    if slice_end is not None and slice_end < len(items):
+        has_more = True
+        next_page = slice_end
+
     return {
-        "entries": items,
-        "hasMore": False,
+        "entries": items_to_return,
+        "hasMore": has_more,
         "total": len(items),
-        "nextPage": None,
+        "nextPage": next_page,
     }
 
 
@@ -108,41 +120,44 @@ def sigma_sample_data_fixture(responses: aioresponses) -> None:
         body=json.dumps(_build_paginated_response([{"pageId": "qwMyyHBCuC", "name": "Page 1"}])),
         status=200,
     )
+    elements = [
+        {
+            "elementId": "_MuHPbskp0",
+            "type": "table",
+            "name": "sample elementl",
+            "columns": [
+                "Order Id",
+                "Customer Id",
+                "workbook renamed date",
+                "Modified Date",
+            ],
+            "vizualizationType": "levelTable",
+        },
+        {
+            "elementId": "V29pknzHb6",
+            "type": "visualization",
+            "name": "Count of Order Date by Status",
+            "columns": [
+                "Order Id",
+                "Customer Id",
+                "Order Date",
+                "Status",
+                "Modified Date",
+                "Count of Order Date",
+            ],
+            "vizualizationType": "bar",
+        },
+    ]
     responses.add(
         method=hdrs.METH_GET,
         url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages/qwMyyHBCuC/elements",
-        body=json.dumps(
-            _build_paginated_response(
-                [
-                    {
-                        "elementId": "_MuHPbskp0",
-                        "type": "table",
-                        "name": "sample elementl",
-                        "columns": [
-                            "Order Id",
-                            "Customer Id",
-                            "workbook renamed date",
-                            "Modified Date",
-                        ],
-                        "vizualizationType": "levelTable",
-                    },
-                    {
-                        "elementId": "V29pknzHb6",
-                        "type": "visualization",
-                        "name": "Count of Order Date by Status",
-                        "columns": [
-                            "Order Id",
-                            "Customer Id",
-                            "Order Date",
-                            "Status",
-                            "Modified Date",
-                            "Count of Order Date",
-                        ],
-                        "vizualizationType": "bar",
-                    },
-                ]
-            )
-        ),
+        body=json.dumps(_build_paginated_response(elements, 0, 1)),
+        status=200,
+    )
+    responses.add(
+        method=hdrs.METH_GET,
+        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages/qwMyyHBCuC/elements",
+        body=json.dumps(_build_paginated_response(elements, 1, 2)),
         status=200,
     )
     responses.add(
