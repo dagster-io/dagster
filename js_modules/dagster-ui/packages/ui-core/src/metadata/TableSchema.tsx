@@ -13,6 +13,7 @@ import {Spacing} from '@dagster-io/ui-components/src/components/types';
 import {createContext, useContext, useState} from 'react';
 
 import {MetadataEntryLabelOnly} from './MetadataEntry';
+import {OverflowingTagCollection} from './OverflowingTagCollection';
 import {TableSchemaFragment} from './types/TableSchemaFragment.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
@@ -121,7 +122,21 @@ export const TableSchema = ({
           {rows.map((column) => (
             <tr key={column.name}>
               <td>
-                <Mono>{column.name}</Mono>
+                <Box
+                  flex={{
+                    direction: 'row',
+                    gap: 8,
+                    alignItems: 'center',
+                    display: 'flex',
+                    wrap: 'wrap',
+                  }}
+                  style={{
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Mono>{column.name}</Mono>
+                  <OverflowingTagCollection tags={column.tags} />
+                </Box>
               </td>
               <td>
                 <Box flex={{wrap: 'wrap', gap: 4, alignItems: 'center'}}>
