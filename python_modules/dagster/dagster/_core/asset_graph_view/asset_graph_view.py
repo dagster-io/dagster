@@ -32,6 +32,7 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.loader import LoadingContext
 from dagster._time import get_current_datetime
 from dagster._utils.aiodataloader import DataLoader
+from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
@@ -170,6 +171,7 @@ class AssetGraphView(LoadingContext):
         else:
             return None
 
+    @cached_method
     def get_full_subset(self, *, key: T_EntityKey) -> EntitySubset[T_EntityKey]:
         partitions_def = self._get_partitions_def(key)
         value = (
@@ -183,6 +185,7 @@ class AssetGraphView(LoadingContext):
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
+    @cached_method
     def get_empty_subset(self, *, key: T_EntityKey) -> EntitySubset[T_EntityKey]:
         partitions_def = self._get_partitions_def(key)
         value = partitions_def.empty_subset() if partitions_def else False
@@ -476,6 +479,7 @@ class AssetGraphView(LoadingContext):
                 key=key, asset_partitions=missing_asset_partitions
             )
 
+    @cached_method
     async def compute_run_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:
         return await _dispatch(
             key=key,
@@ -483,6 +487,7 @@ class AssetGraphView(LoadingContext):
             asset_method=self._compute_run_in_progress_asset_subset,
         )
 
+    @cached_method
     async def compute_backfill_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:
         async def get_empty_subset(key: EntityKey) -> EntitySubset:
             return self.get_empty_subset(key=key)
@@ -494,6 +499,7 @@ class AssetGraphView(LoadingContext):
             asset_method=self._compute_backfill_in_progress_asset_subset,
         )
 
+    @cached_method
     async def compute_execution_failed_subset(self, *, key: EntityKey) -> EntitySubset:
         return await _dispatch(
             key=key,
@@ -501,6 +507,7 @@ class AssetGraphView(LoadingContext):
             asset_method=self._compute_execution_failed_asset_subset,
         )
 
+    @cached_method
     async def compute_missing_subset(
         self, *, key: EntityKey, from_subset: EntitySubset
     ) -> EntitySubset:
@@ -619,6 +626,7 @@ class AssetGraphView(LoadingContext):
         else:
             return self.get_full_subset(key=key)
 
+    @cached_method
     async def compute_updated_since_temporal_context_subset(
         self, *, key: EntityKey, temporal_context: TemporalContext
     ) -> EntitySubset:
