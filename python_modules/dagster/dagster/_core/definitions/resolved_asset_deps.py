@@ -105,7 +105,7 @@ def resolve_similar_asset_names(
         # If the asset key provided has no prefix and the upstream key has
         # the same name but a prefix of any length
         no_prefix_but_is_match_with_prefix = (
-            len(target_asset_key) == 1 and asset_key.path[-1] == target_asset_key.path[-1]
+            len(target_asset_key.path) == 1 and asset_key.path[-1] == target_asset_key.path[-1]
         )
 
         matches_slashes_turned_to_prefix_gaps = asset_key.path == target_asset_key_split

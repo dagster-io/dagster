@@ -36,7 +36,7 @@ def jaffle_shop_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 # start_downstream_asset
 @asset(
     compute_kind="python",
-    deps=get_asset_key_for_model([jaffle_shop_dbt_assets], "customers"),
+    deps=[get_asset_key_for_model([jaffle_shop_dbt_assets], "customers")],
 )
 def order_count_chart(context: AssetExecutionContext):
     # read the contents of the customers table into a Pandas DataFrame
