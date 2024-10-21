@@ -58,7 +58,7 @@ export const BackfillRunsTab = ({
   backfill: BackfillDetailsBackfillFragment;
   view: 'timeline' | 'list' | 'both';
 }) => {
-  const {flagRunsFeed} = useFeatureFlags();
+  const {flagLegacyRunsPage} = useFeatureFlags();
 
   const [_view, setView] = useQueryPersistedState<'timeline' | 'list'>({
     defaults: {view: 'timeline'},
@@ -154,7 +154,13 @@ export const BackfillRunsTab = ({
       annotations={annotations}
       actionBarComponents={actionBarComponents}
     />
-  ) : flagRunsFeed ? (
+  ) : flagLegacyRunsPage ? (
+    <ExecutionRunTable
+      filter={filter}
+      actionBarComponents={actionBarComponents}
+      belowActionBarComponents={belowActionBarComponents}
+    />
+  ) : (
     <RunsFeedTableWithFilters
       filter={filter}
       actionBarComponents={actionBarComponents}
@@ -169,12 +175,6 @@ export const BackfillRunsTab = ({
           No runs have been launched.
         </Box>
       )}
-    />
-  ) : (
-    <ExecutionRunTable
-      filter={filter}
-      actionBarComponents={actionBarComponents}
-      belowActionBarComponents={belowActionBarComponents}
     />
   );
 };

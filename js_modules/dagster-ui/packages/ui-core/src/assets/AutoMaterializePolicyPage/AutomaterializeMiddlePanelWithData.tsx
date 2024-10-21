@@ -53,7 +53,7 @@ export const AutomaterializeMiddlePanelWithData = ({
   specificPartitionData,
   selectedPartition,
 }: Props) => {
-  const {flagRunsFeed} = useFeatureFlags();
+  const {flagLegacyRunsPage} = useFeatureFlags();
   const evaluation = selectedEvaluation?.evaluation;
   const rootEvaluationNode = useMemo(
     () => evaluation?.evaluationNodes.find((node) => node.uniqueId === evaluation.rootUniqueId),
@@ -203,14 +203,14 @@ export const AutomaterializeMiddlePanelWithData = ({
           <Box
             border="bottom"
             padding={{vertical: 12}}
-            margin={flagRunsFeed ? {top: 12} : {vertical: 12}}
+            margin={flagLegacyRunsPage ? {vertical: 12} : {top: 12}}
           >
             <Subtitle2>Runs launched ({selectedEvaluation.runIds.length})</Subtitle2>
           </Box>
-          {flagRunsFeed ? (
-            <RunsFeedTableWithFilters filter={runsFilter} />
-          ) : (
+          {flagLegacyRunsPage ? (
             <AutomaterializeRunsTable runIds={selectedEvaluation.runIds} />
+          ) : (
+            <RunsFeedTableWithFilters filter={runsFilter} />
           )}
           <Box border="bottom" padding={{vertical: 12}}>
             <Subtitle2>Policy evaluation</Subtitle2>
