@@ -149,11 +149,13 @@ def test_async_cached_method() -> None:
 
     obj1 = MyClass(4)
     assert obj1.calls == []
-    assert asyncio.run(obj1.my_method(arg1="a")) == ("a", 4)
+    a_result = asyncio.run(obj1.my_method(arg1="a"))
+    assert a_result == ("a", 4)
     assert obj1.calls == ["a"]
-    assert asyncio.run(obj1.my_method(arg1="a")) == ("a", 4)
-    assert asyncio.run(obj1.my_method(arg1="b")) == ("b", 4)
-    assert asyncio.run(obj1.my_method(arg1="a")) == ("a", 4)
+    assert asyncio.run(obj1.my_method(arg1="a")) is a_result
+    b_result = asyncio.run(obj1.my_method(arg1="b"))
+    assert b_result == ("b", 4)
+    assert asyncio.run(obj1.my_method(arg1="a")) is a_result
     assert obj1.calls == ["a", "b"]
 
     async def run_my_method_a_bunch() -> List[Tuple]:
