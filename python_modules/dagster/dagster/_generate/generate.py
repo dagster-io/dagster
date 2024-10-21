@@ -1,13 +1,13 @@
 import os
 import posixpath
-from typing import Optional
+from typing import List, Optional
 
 import click
 import jinja2
 
 from dagster.version import __version__ as dagster_version
 
-IGNORE_PATTERN_LIST: list[str] = [
+IGNORE_PATTERN_LIST: List[str] = [
     "__pycache__",
     ".pytest_cache",
     "*.egg-info",
@@ -35,7 +35,7 @@ def generate_repository(path: str):
     click.echo(f"Generated files for Dagster repository in {path}.")
 
 
-def generate_project(path: str, excludes: Optional[list[str]] = None):
+def generate_project(path: str, excludes: Optional[List[str]] = None):
     if not excludes:
         excludes = []
 
@@ -59,7 +59,7 @@ def _render_templates(
     name_placeholder: str,
     project_template_path: str,
     skip_mkdir: bool = False,
-    excludes: list[str] = [],
+    excludes: List[str] = [],
 ):
     normalized_path = os.path.normpath(path)
     code_location_name = os.path.basename(normalized_path).replace("-", "_")
@@ -120,7 +120,7 @@ def _render_templates(
                 f.write("\n")
 
 
-def _should_skip_file(path: str, excludes: list[str] = IGNORE_PATTERN_LIST):
+def _should_skip_file(path: str, excludes: List[str] = IGNORE_PATTERN_LIST):
     """Given a file path `path` in a source template, returns whether or not the file should be skipped
     when generating destination files.
 
