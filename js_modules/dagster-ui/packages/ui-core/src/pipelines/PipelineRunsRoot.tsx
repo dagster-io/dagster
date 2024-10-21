@@ -65,7 +65,7 @@ export const PipelineRunsRoot = (props: Props) => {
   if (flagLegacyRunsPage) {
     return <PipelineRunsRootOld {...props} />;
   } else {
-    return <PipelineRunsFeedRoot {...props} />;;
+    return <PipelineRunsFeedRoot {...props} />;
   }
 };
 

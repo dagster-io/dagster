@@ -217,8 +217,7 @@ export const SensorPageAutomaterialize = (props: Props) => {
                   filterTags={runTableFilter.tags!}
                   setTableView={setTableView}
                 />
-              )
-              : (
+              ) : (
                 <RunsFeedTableWithFilters
                   filter={runTableFilter}
                   actionBarComponents={tableViewSwitch}

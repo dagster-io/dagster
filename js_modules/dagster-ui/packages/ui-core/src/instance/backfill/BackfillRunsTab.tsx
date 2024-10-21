@@ -160,8 +160,7 @@ export const BackfillRunsTab = ({
       actionBarComponents={actionBarComponents}
       belowActionBarComponents={belowActionBarComponents}
     />
-  )
-  : (
+  ) : (
     <RunsFeedTableWithFilters
       filter={filter}
       actionBarComponents={actionBarComponents}
