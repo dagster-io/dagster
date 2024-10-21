@@ -49,6 +49,7 @@ def generate_project(path: str, excludes: Optional[List[str]] = None):
             os.path.dirname(__file__), "templates", PROJECT_NAME_PLACEHOLDER
         ),
         skip_mkdir=True,
+        excludes=excludes,
     )
 
     click.echo(f"Generated files for Dagster project in {path}.")

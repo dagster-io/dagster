@@ -117,14 +117,13 @@ def scaffold_repository_command(name: str):
 )
 @click.pass_context
 def scaffold_code_location_command(context, name: str):
-    context.invoke(scaffold_command, name=name, excludes=["README.md"])
-
     click.echo(
         click.style(
             "WARNING: This command is deprecated. Use `dagster project scaffold --excludes README.md` instead.",
             fg="yellow",
         )
     )
+    context.invoke(scaffold_command, name=name, excludes=["README.md"])
 
 
 # end deprecated commands
