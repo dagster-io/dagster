@@ -149,7 +149,7 @@ export const JobsPageContent = () => {
             title="No jobs"
             description={
               repoBuckets.length
-                ? 'No jobs were found match your filters'
+                ? 'No jobs were found that match your filters'
                 : 'No jobs were found in your definitions'
             }
           />
