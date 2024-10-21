@@ -29,8 +29,7 @@ $ dagster project scaffold --name example-dagster-project
 │   ├── __init__.py
 │   └── test_assets.py
 ├── pyproject.toml
-├── setup.cfg
-└── setup.py
+
 ```
 
 This is a great structure as you are first getting started, however, as you begin to introduce more assets, jobs, resources, sensors, and utility code, you may find that your Python files are growing too large to manage.

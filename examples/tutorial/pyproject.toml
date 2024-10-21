@@ -1,3 +1,23 @@
+[project]
+name = "tutorial"
+version = "0.1.0"
+description = "Dagster project for tutorial."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "dagster",
+    "dagster_duckdb_pandas",
+    "dagster_duckdb",
+    "dagster-cloud",
+    "Faker==18.4.0",
+    "matplotlib",
+    "pandas",
+    "requests",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -5,3 +25,6 @@ build-backend = "setuptools.build_meta"
 [tool.dagster]
 module_name = "tutorial.definitions"
 code_location_name = "tutorial"
+
+[tool.setuptools.packages.find]
+exclude = ["tutorial_tests"]

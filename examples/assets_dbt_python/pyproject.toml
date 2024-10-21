@@ -1,3 +1,27 @@
+[project]
+name = "assets_dbt_python"
+version = "0.1.0"
+description = "Example Dagster project demonstrating dbt."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "boto3",
+    "dagster",
+    "dagster-cloud",
+    "dagster-dbt",
+    "dagster-duckdb",
+    "dagster-duckdb-pandas",
+    "dbt-core",
+    "dbt-duckdb",
+    "numpy",
+    "packaging<22.0", # packaging v22 has build compatibility issues with dbt as of 2022-12-07
+    "pandas",
+    "scipy",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -5,3 +29,9 @@ build-backend = "setuptools.build_meta"
 [tool.dagster]
 module_name = "assets_dbt_python.definitions"
 code_location_name = "assets_dbt_python"
+
+[tool.setuptools.packages.find]
+exclude = ["assets_dbt_python_tests"]
+
+[tool.setuptools.package-data]
+assets_dbt_python = ["dbt-project/**/*"]

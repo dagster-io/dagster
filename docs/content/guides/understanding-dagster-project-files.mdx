@@ -27,8 +27,6 @@ The following demonstrates a Dagster project using the default project skeleton,
 │   └──  definitions.py
 ├── my_dagster_project_tests
 ├── pyproject.toml
-├── setup.cfg
-├── setup.py
 └── tox.ini
 ```
 
@@ -133,8 +131,8 @@ Let's take a look at what each of these files and directories does:
     <tr>
       <td>pyproject.toml</td>
       <td>
-        A file that specifies package core metadata in a static, tool-agnostic
-        way.
+        A file that specifies package configuration in a static, tool-agnostic
+        format.
         <br />
         <br />
         This file includes a <code>tool.dagster</code> section which references the
@@ -150,16 +148,10 @@ Let's take a look at what each of these files and directories does:
         <a href="https://peps.python.org/pep-0518/">
           PEP-518
         </a>{" "}
-        and meant to replace <code>setup.py</code>, but we may still include a{" "}
-        <code>setup.py</code> for compatibility with tools that do not use this
+        and meant to replace <code>setup.py</code>, but we may still include {" "}
+        <code>setup.cfg</code> and {" "}
+        <code>setup.py</code> files for compatibility with tools that do not use this
         spec.
-      </td>
-    </tr>
-    <tr>
-      <td>setup.py</td>
-      <td>
-        A build script with Python package dependencies for your new project as
-        a package. Use this file to specify dependencies.
         <br /><br />
         <strong>Note</strong>: If using Dagster+, add <code>dagster-cloud</code> as a dependency.
       </td>
@@ -169,6 +161,13 @@ Let's take a look at what each of these files and directories does:
       <td>
         An ini file that contains option defaults for <code>setup.py</code>{" "}
         commands.
+      </td>
+    </tr>
+    <tr>
+      <td>setup.py</td>
+      <td>
+        A optional build script for your new project that specifies Python package dependencies
+        and project setup. Some developers and tooling may work best with this file.
       </td>
     </tr>
   </tbody>
@@ -303,8 +302,6 @@ For local development, a project with a single code location might look like thi
 ├── my_dagster_project_tests
 ├── dagster.yaml      ## optional, used for instance settings
 ├── pyproject.toml    ## optional, used to define the project as a module
-├── setup.cfg
-├── setup.py
 └── tox.ini
 ```
 
@@ -325,8 +322,6 @@ For local development, a project with multiple code locations might look like th
 ├── my_dagster_project_tests
 ├── dagster.yaml      ## optional, used for instance settings
 ├── pyproject.toml
-├── setup.cfg
-├── setup.py
 ├── tox.ini
 └── workspace.yaml    ## defines multiple code locations
 ```
@@ -352,8 +347,6 @@ A Dagster project deployed to your infrastructure might look like this:
 ├── my_dagster_project_tests
 ├── dagster.yaml      ## optional, used for instance settings
 ├── pyproject.toml
-├── setup.cfg
-├── setup.py
 ├── tox.ini
 └── workspace.yaml    ## defines multiple code locations
 ```
@@ -380,8 +373,6 @@ For a Dagster+ Serverless deployment, a project might look like this:
 ├── dagster_cloud.yaml         ## defines code locations
 ├── deployment_settings.yaml   ## optional, defines settings for full deployments
 ├── pyproject.toml
-├── setup.cfg
-├── setup.py
 └── tox.ini
 ```
 
@@ -404,8 +395,6 @@ For a Dagster+ Hybrid deployment, a project might look like this:
 ├── dagster_cloud.yaml          ## defines code locations
 ├── deployment_settings.yaml    ## optional, defines settings for full deployments
 ├── pyproject.toml
-├── setup.cfg
-├── setup.py
 └── tox.ini
 ```
 

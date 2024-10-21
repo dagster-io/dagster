@@ -1,3 +1,27 @@
+[project]
+name = "project_analytics"
+version = "0.1.0"
+description = "Dagster project for Pypi."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "dagster",
+    "dagster-cloud",
+    "dagster-dbt",
+    "dagster-duckdb-pandas",
+    "dagster-gcp",
+    "dagster-gcp-pandas",
+    "dagster-hex",
+    "dagster-pandas",
+    "dbt-bigquery",
+    "dbt-duckdb",
+    "google-cloud-bigquery",
+    "psycopg2-binary",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -23,3 +47,6 @@ extend-ignore = [
   "TID252"
 
 ]
+
+[tool.setuptools.packages.find]
+exclude = ["dagster_pypi_tests"]

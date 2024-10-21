@@ -1,28 +1,27 @@
 [project]
-name = "quickstart_aws"
+name = "{{ repo_name }}"
 version = "0.1.0"
-description = "Dagster project for AWS quickstart."
+description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.8,<3.13"
 dependencies = [
     "dagster",
-    "dagster-aws",
     "dagster-cloud",
-    "matplotlib",
-    "pandas",
-    "wordcloud",
 ]
 
 [project.optional-dependencies]
-dev = ["dagster-webserver", "pytest"]
+dev = [
+    "dagster-webserver", 
+    "pytest",
+]
 
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
-module_name = "quickstart_aws.definitions"
-code_location_name = "quickstart_aws"
+module_name = "{{ repo_name }}.definitions"
+code_location_name = "{{ repo_name }}"
 
 [tool.setuptools.packages.find]
-exclude = ["quickstart_aws_tests"]
+exclude=["{{ repo_name }}_tests"]
