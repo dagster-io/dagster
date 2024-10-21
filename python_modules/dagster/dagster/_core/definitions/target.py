@@ -100,6 +100,9 @@ class AutomationTarget(
             if isinstance(coercible, AssetsDefinition):
                 asset_selection = AssetSelection.assets(coercible)
                 assets_defs = [coercible]
+            elif isinstance(coercible, AssetSelection):
+                asset_selection = coercible
+                assets_defs = []
             elif is_coercible_to_asset_selection(coercible):
                 asset_selection = AssetSelection.from_coercible(coercible)
                 assets_defs = (
