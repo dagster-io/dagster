@@ -475,3 +475,29 @@ def test_bigint_migration(conn_string):
             with instance.schedule_storage.connect() as conn:
                 assert len(_get_integer_id_tables(conn)) == 0
                 _assert_autoincrement_id(conn)
+
+
+def test_add_backfill_id_column(conn_string):
+    new_columns = {"backfill_id"}
+
+    hostname, port = _reconstruct_from_file(
+        conn_string,
+        # use an old snapshot, it has the bulk actions table but not the new columns
+        file_relative_path(
+            __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table.sql"
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname, port=port)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert get_columns(instance, "runs") & new_columns == set()
+
+            instance.upgrade()
+            assert new_columns <= get_columns(instance, "runs")
