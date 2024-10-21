@@ -364,9 +364,10 @@ class SigmaOrganization(ConfigurableResource):
         Returns:
             Definitions: The set of assets representing the Sigma content in the organization.
         """
-        return SigmaOrganizationDefsLoader(
-            organization=self, translator_cls=dagster_sigma_translator
-        ).build_defs()
+        with self.process_config_and_initialize_cm() as initialized_organization:
+            return SigmaOrganizationDefsLoader(
+                organization=initialized_organization, translator_cls=dagster_sigma_translator
+            ).build_defs()
 
 
 @dataclass
