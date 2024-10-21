@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import logging
 from collections import defaultdict
@@ -102,13 +103,16 @@ class AutomationConditionEvaluator:
         self.logger.info("Done prefetching asset records.")
 
     def evaluate(self) -> Tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
+        return asyncio.run(self.async_evaluate())
+
+    async def async_evaluate(
+        self,
+    ) -> Tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
         self.prefetch()
         num_conditions = len(self.entity_keys)
         num_evaluated = 0
-        for entity_key in self.asset_graph.toposorted_entity_keys:
-            if entity_key not in self.entity_keys:
-                continue
 
+        async def _evaluate_entity_async(entity_key: EntityKey) -> int:
             self.logger.debug(
                 f"Evaluating {entity_key.to_user_string()} ({num_evaluated+1}/{num_conditions})"
             )
@@ -132,7 +136,17 @@ class AutomationConditionEvaluator:
                 f"requested ({requested_str}) "
                 f"({format(result.end_timestamp - result.start_timestamp, '.3f')} seconds)"
             )
-            num_evaluated += 1
+            return 1
+
+        for topo_level in self.asset_graph.toposorted_entity_keys_by_level:
+            coroutines = [
+                _evaluate_entity_async(entity_key)
+                for entity_key in topo_level
+                if entity_key in self.entity_keys
+            ]
+            gathered = await asyncio.gather(*coroutines)
+            num_evaluated += sum(gathered)
+
         return list(self.current_results_by_key.values()), [
             v for v in self.request_subsets_by_key.values() if not v.is_empty
         ]
