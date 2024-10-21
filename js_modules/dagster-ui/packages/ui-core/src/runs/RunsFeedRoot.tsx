@@ -1,6 +1,6 @@
 import {Box, Checkbox, Colors, tokenToString} from '@dagster-io/ui-components';
 import partition from 'lodash/partition';
-import {useCallback, useMemo} from 'react';
+import {useCallback, useEffect, useMemo} from 'react';
 
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunsFeedError} from './RunsFeedError';
@@ -9,6 +9,7 @@ import {useRunsFeedTabs, useSelectedRunsFeedTab} from './RunsFeedTabs';
 import {
   RunFilterToken,
   RunFilterTokenType,
+  isCreatedByTag,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
   useRunsFilterInput,
@@ -36,11 +37,18 @@ const filters: RunFilterTokenType[] = [
   'status',
 ];
 
-export function useIncludeRunsFromBackfillsOption() {
+export function useIncludeRunsFromBackfillsOption(filterTokens: RunFilterToken[]) {
   const [value, setValue] = useQueryPersistedState<boolean>({
     queryKey: 'show_runs_within_backfills',
     defaults: {show_runs_within_backfills: false},
   });
+
+  const someCreatedByTag = filterTokens.some(isCreatedByTag);
+  useEffect(() => {
+    if (someCreatedByTag && value) {
+      setValue(false);
+    }
+  }, [someCreatedByTag, value]);
 
   return {
     value,
@@ -48,6 +56,7 @@ export function useIncludeRunsFromBackfillsOption() {
     element: (
       <Checkbox
         label={<span>Show runs within backfills</span>}
+        disabled={someCreatedByTag}
         checked={value}
         onChange={() => {
           setValue(!value);
@@ -104,7 +113,7 @@ export const RunsFeedRoot = () => {
     enabledFilters: filters,
   });
 
-  const includeRunsFromBackfills = useIncludeRunsFromBackfillsOption();
+  const includeRunsFromBackfills = useIncludeRunsFromBackfillsOption(mutableTokens);
   const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(
     filter,
     includeRunsFromBackfills.value,

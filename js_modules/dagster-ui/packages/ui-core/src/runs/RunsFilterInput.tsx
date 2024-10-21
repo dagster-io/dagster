@@ -167,12 +167,16 @@ const StatusFilterValues = Object.keys(RunStatus).map((x) => ({
   value: x,
   match: [x],
 }));
+
 const CREATED_BY_TAGS = [
   DagsterTag.Automaterialize,
   DagsterTag.SensorName,
   DagsterTag.ScheduleName,
   DagsterTag.User,
 ];
+
+export const isCreatedByTag = ({token, value}: RunFilterToken) =>
+  token === 'tag' && CREATED_BY_TAGS.includes(value.split('=')[0] as DagsterTag);
 
 // Exclude these tags from the "tag" filter because they're already being fetched by other filters.
 const tagsToExclude = [...CREATED_BY_TAGS, DagsterTag.Backfill, DagsterTag.Partition];
@@ -516,23 +520,11 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       return x.value!;
     },
     state: useMemo(() => {
-      return new Set(
-        tokens
-          .filter(
-            ({token, value}) =>
-              token === 'tag' && CREATED_BY_TAGS.includes(value.split('=')[0] as DagsterTag),
-          )
-          .map(({value}) => tagValueToFilterObject(value)),
-      );
+      return new Set(tokens.filter(isCreatedByTag).map(({value}) => tagValueToFilterObject(value)));
     }, [tokens]),
     onStateChanged: (values) => {
       onChange([
-        ...tokens.filter((token) => {
-          if (token.token !== 'tag') {
-            return true;
-          }
-          return !CREATED_BY_TAGS.includes(token.value.split('=')[0] as DagsterTag);
-        }),
+        ...tokens.filter((token) => !isCreatedByTag(token)),
         ...Array.from(values).map((value) => ({
           token: 'tag' as const,
           value: `${value.type}=${value.value}`,
