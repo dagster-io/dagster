@@ -16,7 +16,7 @@ from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils
 
 def test_failed_unpartitioned() -> None:
     state = AutomationConditionScenarioState(
-        one_asset, automation_condition=AutomationCondition.failed()
+        one_asset, automation_condition=AutomationCondition.execution_failed()
     )
 
     # no failed partitions
@@ -36,7 +36,7 @@ def test_failed_unpartitioned() -> None:
 
 def test_in_progress_static_partitioned() -> None:
     state = AutomationConditionScenarioState(
-        one_asset, automation_condition=AutomationCondition.failed()
+        one_asset, automation_condition=AutomationCondition.execution_failed()
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     # no failed_runs

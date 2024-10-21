@@ -56,8 +56,8 @@ def workspace_fixture(instance_module_scoped) -> Iterator[WorkspaceProcessContex
         yield workspace_context
 
 
-@pytest.fixture(name="external_repo", scope="module")
-def external_repo_fixture(
+@pytest.fixture(name="remote_repo", scope="module")
+def remote_repo_fixture(
     workspace_context: WorkspaceProcessContext,
 ) -> Iterator[RemoteRepository]:
     yield cast(

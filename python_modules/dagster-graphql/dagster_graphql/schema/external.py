@@ -311,11 +311,11 @@ class GrapheneRepository(graphene.ObjectType):
             [
                 GrapheneSchedule(
                     schedule,
-                    repository,
+                    repository.handle,
                     batch_loader.get_schedule_state(schedule.name),
                     batch_loader,
                 )
-                for schedule in repository.get_external_schedules()
+                for schedule in repository.get_schedules()
             ],
             key=lambda schedule: schedule.name,
         )
@@ -326,11 +326,11 @@ class GrapheneRepository(graphene.ObjectType):
         return [
             GrapheneSensor(
                 sensor,
-                repository,
+                repository.handle,
                 batch_loader.get_sensor_state(sensor.name),
                 batch_loader,
             )
-            for sensor in sorted(repository.get_external_sensors(), key=lambda sensor: sensor.name)
+            for sensor in sorted(repository.get_sensors(), key=lambda sensor: sensor.name)
             if not sensorType or sensor.sensor_type == sensorType
         ]
 
@@ -338,7 +338,7 @@ class GrapheneRepository(graphene.ObjectType):
         return [
             GraphenePipeline(pipeline)
             for pipeline in sorted(
-                self.get_repository(graphene_info).get_all_external_jobs(),
+                self.get_repository(graphene_info).get_all_jobs(),
                 key=lambda pipeline: pipeline.name,
             )
         ]
@@ -347,7 +347,7 @@ class GrapheneRepository(graphene.ObjectType):
         return [
             GrapheneJob(pipeline)
             for pipeline in sorted(
-                self.get_repository(graphene_info).get_all_external_jobs(),
+                self.get_repository(graphene_info).get_all_jobs(),
                 key=lambda pipeline: pipeline.name,
             )
         ]
@@ -361,7 +361,7 @@ class GrapheneRepository(graphene.ObjectType):
     def resolve_partitionSets(self, graphene_info: ResolveInfo):
         return (
             GraphenePartitionSet(self._handle, partition_set)
-            for partition_set in self.get_repository(graphene_info).get_external_partition_sets()
+            for partition_set in self.get_repository(graphene_info).get_partition_sets()
         )
 
     def resolve_displayMetadata(self, graphene_info: ResolveInfo):
@@ -383,7 +383,7 @@ class GrapheneRepository(graphene.ObjectType):
         base_deployment_context = graphene_info.context.get_base_deployment_context()
         if base_deployment_context is not None:
             # then we are in a branch deployment
-            asset_graph_differ = AssetGraphDiffer.from_external_repositories(
+            asset_graph_differ = AssetGraphDiffer.from_remote_repositories(
                 code_location_name=self._handle.location_name,
                 repository_name=self._handle.repository_name,
                 branch_workspace=graphene_info.context,
@@ -415,16 +415,16 @@ class GrapheneRepository(graphene.ObjectType):
         for asset_node_snap in self.get_repository(graphene_info).get_asset_node_snaps():
             if not asset_node_snap.group_name:
                 continue
-            external_assets = groups.setdefault(asset_node_snap.group_name, [])
-            external_assets.append(asset_node_snap)
+            asset_node_snaps = groups.setdefault(asset_node_snap.group_name, [])
+            asset_node_snaps.append(asset_node_snap)
 
         return [
             GrapheneAssetGroup(
                 f"{self._handle.location_name}-{self._handle.repository_name}-{group_name}",
                 group_name,
-                [external_node.asset_key for external_node in external_nodes],
+                [external_node.asset_key for external_node in asset_node_snaps],
             )
-            for group_name, external_nodes in groups.items()
+            for group_name, asset_node_snaps in groups.items()
         ]
 
     def resolve_allTopLevelResourceDetails(self, graphene_info) -> List[GrapheneResourceDetails]:
@@ -432,10 +432,10 @@ class GrapheneRepository(graphene.ObjectType):
             GrapheneResourceDetails(
                 location_name=self._handle.location_name,
                 repository_name=self._handle.repository_name,
-                external_resource=resource,
+                remote_resource=resource,
             )
             for resource in sorted(
-                self.get_repository(graphene_info).get_external_resources(),
+                self.get_repository(graphene_info).get_resources(),
                 key=lambda resource: resource.name,
             )
             if resource.is_top_level

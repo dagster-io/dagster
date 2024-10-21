@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence, Set
 
 import dlt
 import duckdb
@@ -23,6 +23,7 @@ from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import Pipeline
+from dlt.common.destination import Destination
 from dlt.extract.resource import DltResource
 
 from dagster_embedded_elt_tests.dlt_tests.dlt_test_sources.duckdb_with_transformer import (
@@ -575,15 +576,22 @@ def test_with_owner_replacements(dlt_pipeline: Pipeline) -> None:
 
 
 def test_with_tag_replacements(dlt_pipeline: Pipeline) -> None:
-    expected_tags = {
+    custom_tags = {
         "customized": "tag",
+    }
+
+    expected_tags = {
+        **custom_tags,
         **build_kind_tag("dlt"),
-        **build_kind_tag("duckdb"),
+        **build_kind_tag("test"),
     }
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_tags(self, _) -> Optional[Mapping[str, str]]:
             return expected_tags
+
+        def get_kinds(self, resource: DltResource, destination: Destination) -> Set[str]:
+            return {"dlt", "test"}
 
     @dlt_assets(
         dlt_source=dlt_source(),

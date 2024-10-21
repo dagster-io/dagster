@@ -294,7 +294,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
                 # where it is defined.
                 # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
                 "dagster._core.remote_representation.code_location.sync_get_streaming_external_repositories_data_grpc"
-            ) as external_repository_mock:
+            ) as remote_repository_mock:
 
                 @repository
                 def new_repo():
@@ -302,7 +302,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
 
                 new_repo_data = RepositorySnap.from_def(new_repo)
 
-                external_repository_mock.return_value = {"new_repo": new_repo_data}
+                remote_repository_mock.return_value = {"new_repo": new_repo_data}
 
                 cli_command_mock.return_value = ListRepositoriesResponse(
                     repository_symbols=[],
@@ -319,7 +319,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
                 )
 
                 assert cli_command_mock.call_count == 1
-                assert external_repository_mock.call_count == 1
+                assert remote_repository_mock.call_count == 1
 
                 repositories = result.data["reloadRepositoryLocation"]["locationOrLoadError"][
                     "repositories"

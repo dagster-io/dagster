@@ -32,10 +32,18 @@ def _checks_with_attributes(
     checks_defs: Sequence[AssetChecksDefinition],
     asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[AssetChecksDefinition]:
-    modified_checks = []
     if asset_key_prefix:
         modified_checks, _ = prefix_assets(checks_defs, asset_key_prefix, [], None)
-        return cast(Sequence[AssetChecksDefinition], modified_checks)
+        return [
+            AssetChecksDefinition.create(
+                keys_by_input_name=c.keys_by_input_name,
+                node_def=c.op,
+                check_specs_by_output_name=c.check_specs_by_output_name,
+                resource_defs=c.resource_defs,
+                can_subset=c.can_subset,
+            )
+            for c in modified_checks
+        ]
     else:
         return checks_defs
 

@@ -116,12 +116,20 @@ def test_file_message_reader(tmp_path_factory, capsys):
     log_path_1 = os.path.join(logs_dir, "test_1.log")
     log_path_2 = os.path.join(logs_dir, "test_2.log")
 
+    log_path_3 = os.path.join(logs_dir, "test_3.log")
+
     log_reader_1 = PipesFileLogReader(
         path=log_path_1,
         target_stream=sys.stdout,
     )
     log_reader_2 = PipesFileLogReader(
         path=log_path_2,
+        target_stream=sys.stderr,
+    )
+
+    # this one is used to test delayed PipesLogReader submission
+    log_reader_3 = PipesFileLogReader(
+        path=log_path_3,
         target_stream=sys.stderr,
     )
 
@@ -157,6 +165,10 @@ def test_file_message_reader(tmp_path_factory, capsys):
                 with open(log_path_2, "a") as file:
                     file.write(message + "\n")
 
+            def log_line_3(message: str):
+                with open(log_path_3, "a") as file:
+                    file.write(message + "\n")
+
             log_line_1("Hello 1")
 
             log_event(json.dumps(_make_message(method="opened", params={})))
@@ -189,6 +201,12 @@ def test_file_message_reader(tmp_path_factory, capsys):
             log_line_2("Hello 2")
             log_line_2("Bye 2")
 
+            log_line_3("Hello 3")
+
+            reader.add_log_reader(log_reader_3)
+
+            log_line_3("Bye 3")
+
         return session.get_results()
 
     result = materialize([my_asset])
@@ -203,8 +221,12 @@ def test_file_message_reader(tmp_path_factory, capsys):
     assert mat.materialization.tags[DATA_VERSION_TAG] == "alpha"
 
     captured = capsys.readouterr()
+
     assert "Hello 1" in captured.out
     assert "Bye 1" in captured.out
 
     assert "Hello 2" in captured.err
     assert "Bye 2" in captured.err
+
+    assert "Hello 3" in captured.err
+    assert "Bye 3" in captured.err

@@ -1,17 +1,7 @@
 import datetime
 import logging
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-)
+from typing import TYPE_CHECKING, AbstractSet, Dict, Mapping, Optional, Sequence, Tuple
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
@@ -40,7 +30,7 @@ class AutomationConditionEvaluator:
         instance: DagsterInstance,
         asset_graph: BaseAssetGraph,
         cursor: AssetDaemonCursor,
-        allow_backfills: bool,
+        emit_backfills: bool,
         default_condition: Optional[AutomationCondition] = None,
         evaluation_time: Optional[datetime.datetime] = None,
         logger: logging.Logger = logging.getLogger("dagster.automation"),
@@ -69,14 +59,12 @@ class AutomationConditionEvaluator:
         self.legacy_respect_materialization_data_versions = (
             _instance.auto_materialize_respect_materialization_data_versions
         )
-        self.allow_backfills = allow_backfills or _instance.da_request_backfills()
+        self.emit_backfills = emit_backfills or _instance.da_request_backfills()
 
         self.legacy_expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
         self.legacy_data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
 
-        self._execution_set_extras: Dict[EntityKey, List[EntitySubset[EntityKey]]] = defaultdict(
-            list
-        )
+        self.request_subsets_by_key: Dict[EntityKey, EntitySubset] = {}
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":
@@ -145,7 +133,9 @@ class AutomationConditionEvaluator:
                 f"({format(result.end_timestamp - result.start_timestamp, '.3f')} seconds)"
             )
             num_evaluated += 1
-        return list(self.current_results_by_key.values()), list(self._get_entity_subsets())
+        return list(self.current_results_by_key.values()), [
+            v for v in self.request_subsets_by_key.values() if not v.is_empty
+        ]
 
     def evaluate_entity(self, key: EntityKey) -> None:
         # evaluate the condition of this asset
@@ -154,11 +144,21 @@ class AutomationConditionEvaluator:
 
         # update dictionaries to keep track of this result
         self.current_results_by_key[key] = result
+        self._add_request_subset(result.true_subset)
 
         if isinstance(key, AssetKey):
             self.legacy_expected_data_time_by_key[key] = result.compute_legacy_expected_data_time()
             # handle cases where an entity must be materialized with others
             self._handle_execution_set(result)
+
+    def _add_request_subset(self, subset: EntitySubset) -> None:
+        """Adds the provided subset to the dictionary tracking what we will request on this tick."""
+        if subset.key not in self.request_subsets_by_key:
+            self.request_subsets_by_key[subset.key] = subset
+        else:
+            self.request_subsets_by_key[subset.key] = self.request_subsets_by_key[
+                subset.key
+            ].compute_union(subset)
 
     def _handle_execution_set(self, result: AutomationResult[AssetKey]) -> None:
         # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
@@ -177,7 +177,9 @@ class AutomationConditionEvaluator:
                 # evaluated it may have had a different requested subset. however, because
                 # all these neighbors must be executed as a unit, we need to union together
                 # the subset of all required neighbors
-                neighbor_true_subset = result.true_subset.compute_mapped_subset(neighbor_key)
+                neighbor_true_subset = result.true_subset.compute_mapped_subset(
+                    neighbor_key, direction="up"
+                )
                 if neighbor_key in self.current_results_by_key:
                     self.current_results_by_key[
                         neighbor_key
@@ -185,20 +187,4 @@ class AutomationConditionEvaluator:
                         neighbor_true_subset.convert_to_serializable_subset()
                     )
 
-                self._execution_set_extras[neighbor_key].append(neighbor_true_subset)
-
-    def _get_entity_subsets(self) -> Iterable[EntitySubset[EntityKey]]:
-        subsets_by_key = {
-            key: result.true_subset
-            for key, result in self.current_results_by_key.items()
-            if not result.true_subset.is_empty
-        }
-        # add in any additional asset partitions we need to request to abide by execution
-        # set rules
-        for key, extras in self._execution_set_extras.items():
-            new_value = subsets_by_key.get(key) or self.asset_graph_view.get_empty_subset(key=key)
-            for extra in extras:
-                new_value = new_value.compute_union(extra)
-            subsets_by_key[key] = new_value
-
-        return subsets_by_key.values()
+                self._add_request_subset(neighbor_true_subset)

@@ -43,6 +43,7 @@ from dagster_graphql.implementation.execution.backfill import (
     cancel_partition_backfill as cancel_partition_backfill,
     create_and_launch_partition_backfill as create_and_launch_partition_backfill,
     resume_partition_backfill as resume_partition_backfill,
+    retry_partition_backfill as retry_partition_backfill,
 )
 from dagster_graphql.implementation.utils import assert_permission, assert_permission_for_location
 
@@ -115,7 +116,7 @@ def terminate_pipeline_execution(
     run = record.dagster_run
     graphene_run = GrapheneRun(record)
 
-    location_name = run.external_job_origin.location_name if run.external_job_origin else None
+    location_name = run.remote_job_origin.location_name if run.remote_job_origin else None
 
     if location_name:
         if not graphene_info.context.has_permission_for_location(
@@ -201,7 +202,7 @@ def delete_pipeline_run(
         assert_permission(graphene_info, Permissions.DELETE_PIPELINE_RUN)
         return GrapheneRunNotFoundError(run_id)
 
-    location_name = run.external_job_origin.location_name if run.external_job_origin else None
+    location_name = run.remote_job_origin.location_name if run.remote_job_origin else None
     if location_name:
         assert_permission_for_location(
             graphene_info, Permissions.DELETE_PIPELINE_RUN, location_name

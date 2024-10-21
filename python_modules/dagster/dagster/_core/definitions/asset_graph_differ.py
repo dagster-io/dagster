@@ -82,7 +82,7 @@ class AssetDefinitionDiffDetails:
     metadata: Optional[DictDiff[str]] = None
 
 
-def _get_external_repo_from_context(
+def _get_remote_repo_from_context(
     context: BaseWorkspaceRequestContext, code_location_name: str, repository_name: str
 ) -> Optional[RemoteRepository]:
     """Returns the ExternalRepository specified by the code location name and repository name
@@ -134,7 +134,7 @@ class AssetGraphDiffer:
             self._branch_asset_graph_load_fn = branch_asset_graph
 
     @classmethod
-    def from_external_repositories(
+    def from_remote_repositories(
         cls,
         code_location_name: str,
         repository_name: str,
@@ -154,14 +154,14 @@ class AssetGraphDiffer:
         check.inst_param(branch_workspace, "branch_workspace", BaseWorkspaceRequestContext)
         check.inst_param(base_workspace, "base_workspace", BaseWorkspaceRequestContext)
 
-        branch_repo = _get_external_repo_from_context(
+        branch_repo = _get_remote_repo_from_context(
             branch_workspace, code_location_name, repository_name
         )
         if branch_repo is None:
             raise DagsterInvariantViolationError(
                 f"Repository {repository_name} does not exist in code location {code_location_name} for the branch deployment."
             )
-        base_repo = _get_external_repo_from_context(
+        base_repo = _get_remote_repo_from_context(
             base_workspace, code_location_name, repository_name
         )
         return AssetGraphDiffer(

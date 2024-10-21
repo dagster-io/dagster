@@ -33,7 +33,6 @@ from dagster._core.definitions.metadata import (
     TableMetadataSet,
     TableSchema,
 )
-from dagster._core.definitions.tags import build_kind_tag
 from dagster._record import IHaveNew, record_custom
 
 from dagster_sdf.asset_utils import exists_in_selected, get_info_schema_dir, get_output_dir
@@ -218,9 +217,7 @@ class SdfInformationSchema(IHaveNew):
                             get_output_dir(self.target_dir, self.environment),
                         ),
                         metadata=metadata,
-                        tags={
-                            **build_kind_tag("sdf"),
-                        },
+                        kinds={"sdf"},
                         skippable=True,
                     )
                 )

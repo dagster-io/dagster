@@ -87,9 +87,9 @@ def test_sensors_start_all(gen_sensor_args):
             assert result.output == "Started all sensors for repository bar\n"
 
 
-def test_check_repo_and_sensorr_no_external_sensors():
+def test_check_repo_and_sensorr_no_remote_sensors():
     repository = mock.MagicMock(spec=RemoteRepository)
-    repository.get_external_sensors.return_value = []
+    repository.get_sensors.return_value = []
     instance = mock.MagicMock(spec=DagsterInstance)
     with pytest.raises(click.UsageError, match="There are no sensors defined for repository"):
         check_repo_and_scheduler(repository, instance)
@@ -98,7 +98,7 @@ def test_check_repo_and_sensorr_no_external_sensors():
 def test_check_repo_and_scheduler_dagster_home_not_set():
     with environ({"DAGSTER_HOME": ""}):
         repository = mock.MagicMock(spec=RemoteRepository)
-        repository.get_external_sensors.return_value = [mock.MagicMock()]
+        repository.get_sensors.return_value = [mock.MagicMock()]
         instance = mock.MagicMock(spec=DagsterInstance)
 
         with pytest.raises(

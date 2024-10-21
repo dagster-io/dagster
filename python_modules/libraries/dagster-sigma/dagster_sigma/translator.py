@@ -4,7 +4,6 @@ from typing import AbstractSet, Any, Dict, List, Optional
 from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn
-from dagster._core.definitions.tags import build_kind_tag
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
@@ -87,9 +86,7 @@ class DagsterSigmaTranslator:
         return AssetSpec(
             key=self.get_workbook_key(data),
             metadata=metadata,
-            tags={
-                **build_kind_tag("sigma"),
-            },
+            kinds={"sigma"},
             deps={self.get_dataset_key(dataset) for dataset in datasets},
             owners=[data.owner_email] if data.owner_email else None,
         )
@@ -113,9 +110,7 @@ class DagsterSigmaTranslator:
         return AssetSpec(
             key=self.get_dataset_key(data),
             metadata=metadata,
-            tags={
-                **build_kind_tag("sigma"),
-            },
+            kinds={"sigma"},
             deps={AssetKey(input_name.lower().split(".")) for input_name in data.inputs},
             description=data.properties.get("description"),
         )

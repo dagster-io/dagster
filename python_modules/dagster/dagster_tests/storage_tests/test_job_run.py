@@ -51,7 +51,7 @@ def test_queued_job_origin_check():
     DagsterRun(
         job_name="foo",
         status=DagsterRunStatus.QUEUED,
-        external_job_origin=fake_job_origin,
+        remote_job_origin=fake_job_origin,
         job_code_origin=fake_code_origin,
     )
 

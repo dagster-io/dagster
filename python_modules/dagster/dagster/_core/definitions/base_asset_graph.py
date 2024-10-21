@@ -265,29 +265,29 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             "downstream": {node.key: node.child_entity_keys for node in self.nodes},
         }
 
-    @cached_property
+    @property
     def all_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {node.key for node in self.asset_nodes}
+        return set(self._asset_nodes_by_key)
 
     @cached_property
     def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {node.key for node in self.asset_nodes if node.is_materializable}
+        return {key for key, node in self._asset_nodes_by_key.items() if node.is_materializable}
 
     @cached_property
     def observable_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {node.key for node in self.asset_nodes if node.is_observable}
+        return {key for key, node in self._asset_nodes_by_key.items() if node.is_observable}
 
     @cached_property
     def external_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {node.key for node in self.asset_nodes if node.is_external}
+        return {key for key, node in self._asset_nodes_by_key.items() if node.is_external}
 
     @cached_property
     def executable_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {node.key for node in self.asset_nodes if node.is_executable}
+        return {key for key, node in self._asset_nodes_by_key.items() if node.is_executable}
 
     @cached_property
     def unexecutable_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {node.key for node in self.asset_nodes if not node.is_executable}
+        return {key for key, node in self._asset_nodes_by_key.items() if not node.is_executable}
 
     @cached_property
     def toposorted_asset_keys(self) -> Sequence[AssetKey]:

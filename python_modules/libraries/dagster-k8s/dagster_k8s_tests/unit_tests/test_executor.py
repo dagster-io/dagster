@@ -21,7 +21,7 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteStepArgs
-from dagster._utils.hosted_user_process import external_job_from_recon_job
+from dagster._utils.hosted_user_process import remote_job_from_recon_job
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import _K8S_EXECUTOR_CONFIG_SCHEMA, K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
@@ -435,7 +435,7 @@ def test_step_handler(kubeconfig_file, k8s_instance):
                 repository_name="bar_repo",
                 code_location=location,
             )
-            fake_external_job = external_job_from_recon_job(
+            fake_remote_job = remote_job_from_recon_job(
                 recon_job,
                 op_selection=None,
                 repository_handle=repo_handle,
@@ -443,7 +443,7 @@ def test_step_handler(kubeconfig_file, k8s_instance):
             run = create_run_for_test(
                 k8s_instance,
                 job_name="bar",
-                external_job_origin=fake_external_job.get_remote_origin(),
+                remote_job_origin=fake_remote_job.get_remote_origin(),
                 job_code_origin=recon_job.get_python_origin(),
             )
             list(

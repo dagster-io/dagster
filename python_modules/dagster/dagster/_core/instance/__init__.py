@@ -1141,7 +1141,7 @@ class DagsterInstance(DynamicPartitionsStore):
         parent_run_id: Optional[str] = None,
         op_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        external_job_origin: Optional["RemoteJobOrigin"] = None,
+        remote_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
     ) -> DagsterRun:
@@ -1198,7 +1198,7 @@ class DagsterInstance(DynamicPartitionsStore):
                 job_def.get_job_snapshot_id(),
             ),
             parent_job_snapshot=job_def.get_parent_job_snapshot(),
-            external_job_origin=external_job_origin,
+            remote_job_origin=remote_job_origin,
             job_code_origin=job_code_origin,
             asset_graph=job_def.asset_layer.asset_graph,
         )
@@ -1220,7 +1220,7 @@ class DagsterInstance(DynamicPartitionsStore):
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         asset_check_selection: Optional[AbstractSet["AssetCheckKey"]] = None,
         op_selection: Optional[Sequence[str]] = None,
-        external_job_origin: Optional["RemoteJobOrigin"] = None,
+        remote_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
     ) -> DagsterRun:
         # https://github.com/dagster-io/dagster/issues/2403
@@ -1278,7 +1278,7 @@ class DagsterInstance(DynamicPartitionsStore):
             parent_run_id=parent_run_id,
             job_snapshot_id=job_snapshot_id,
             execution_plan_snapshot_id=execution_plan_snapshot_id,
-            external_job_origin=external_job_origin,
+            remote_job_origin=remote_job_origin,
             job_code_origin=job_code_origin,
             has_repository_load_data=execution_plan_snapshot is not None
             and execution_plan_snapshot.repository_load_data is not None,
@@ -1475,7 +1475,7 @@ class DagsterInstance(DynamicPartitionsStore):
         asset_check_selection: Optional[AbstractSet["AssetCheckKey"]],
         resolved_op_selection: Optional[AbstractSet[str]],
         op_selection: Optional[Sequence[str]],
-        external_job_origin: Optional["RemoteJobOrigin"],
+        remote_job_origin: Optional["RemoteJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
         asset_graph: Optional["BaseAssetGraph"],
     ) -> DagsterRun:
@@ -1532,7 +1532,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         # op_selection is a sequence of selection queries assigned by the user.
         # *Most* callers expand the op_selection into an explicit set of
-        # resolved_op_selection via accessing external_job.resolved_op_selection
+        # resolved_op_selection via accessing remote_job.resolved_op_selection
         # but not all do. Some (launch execution mutation in graphql and backfill run
         # creation, for example) actually pass the solid *selection* into the
         # resolved_op_selection parameter, but just as a frozen set, rather than
@@ -1582,11 +1582,11 @@ class DagsterInstance(DynamicPartitionsStore):
         #
         # There are cases (notably in _logged_execute_job with Reconstructable jobs)
         # where job_code_origin and is not. In some cloud test cases only
-        # external_job_origin is passed But they are almost always passed together.
+        # remote_job_origin is passed But they are almost always passed together.
         # If these are not set the created run will never be able to be relaunched from
         # the information just in the run or in another process.
 
-        check.opt_inst_param(external_job_origin, "external_job_origin", RemoteJobOrigin)
+        check.opt_inst_param(remote_job_origin, "remote_job_origin", RemoteJobOrigin)
         check.opt_inst_param(job_code_origin, "job_code_origin", JobPythonOrigin)
 
         dagster_run = self._construct_run_with_snapshots(
@@ -1605,7 +1605,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_snapshot=job_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
             parent_job_snapshot=parent_job_snapshot,
-            external_job_origin=external_job_origin,
+            remote_job_origin=remote_job_origin,
             job_code_origin=job_code_origin,
         )
 
@@ -1621,7 +1621,7 @@ class DagsterInstance(DynamicPartitionsStore):
         *,
         parent_run: DagsterRun,
         code_location: "CodeLocation",
-        external_job: "RemoteJob",
+        remote_job: "RemoteJob",
         strategy: "ReexecutionStrategy",
         extra_tags: Optional[Mapping[str, Any]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
@@ -1633,7 +1633,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
         check.inst_param(code_location, "code_location", CodeLocation)
-        check.inst_param(external_job, "external_job", RemoteJob)
+        check.inst_param(remote_job, "remote_job", RemoteJob)
         check.inst_param(strategy, "strategy", ReexecutionStrategy)
         check.opt_mapping_param(extra_tags, "extra_tags", key_type=str)
         check.opt_mapping_param(run_config, "run_config", key_type=str)
@@ -1643,7 +1643,7 @@ class DagsterInstance(DynamicPartitionsStore):
         root_run_id = parent_run.root_run_id or parent_run.run_id
         parent_run_id = parent_run.run_id
 
-        # these can differ from external_job.tags if tags were added at launch time
+        # these can differ from remote_job.tags if tags were added at launch time
         parent_run_tags = (
             {key: val for key, val in parent_run.tags.items() if key != RUN_FAILURE_REASON_TAG}
             if use_parent_run_tags
@@ -1651,7 +1651,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         tags = merge_dicts(
-            external_job.tags,
+            remote_job.tags,
             parent_run_tags,
             extra_tags or {},
             {
@@ -1677,8 +1677,8 @@ class DagsterInstance(DynamicPartitionsStore):
         else:
             raise DagsterInvariantViolationError(f"Unknown reexecution strategy: {strategy}")
 
-        external_execution_plan = code_location.get_external_execution_plan(
-            external_job,
+        remote_execution_plan = code_location.get_execution_plan(
+            remote_job,
             run_config,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
@@ -1695,16 +1695,16 @@ class DagsterInstance(DynamicPartitionsStore):
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
-            job_snapshot=external_job.job_snapshot,
-            execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-            parent_job_snapshot=external_job.parent_job_snapshot,
+            job_snapshot=remote_job.job_snapshot,
+            execution_plan_snapshot=remote_execution_plan.execution_plan_snapshot,
+            parent_job_snapshot=remote_job.parent_job_snapshot,
             op_selection=parent_run.op_selection,
             asset_selection=parent_run.asset_selection,
             asset_check_selection=parent_run.asset_check_selection,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
             asset_graph=code_location.get_repository(
-                external_job.repository_handle.repository_name
+                remote_job.repository_handle.repository_name
             ).asset_graph,
         )
 
@@ -2620,7 +2620,7 @@ class DagsterInstance(DynamicPartitionsStore):
             )
 
         check.not_none(
-            run.external_job_origin,
+            run.remote_job_origin,
             "External pipeline origin must be set for submitted runs",
         )
         check.not_none(
@@ -2756,21 +2756,21 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Scheduler
 
-    def start_schedule(self, external_schedule: "RemoteSchedule") -> "InstigatorState":
-        return self._scheduler.start_schedule(self, external_schedule)  # type: ignore
+    def start_schedule(self, remote_schedule: "RemoteSchedule") -> "InstigatorState":
+        return self._scheduler.start_schedule(self, remote_schedule)  # type: ignore
 
     def stop_schedule(
         self,
         schedule_origin_id: str,
         schedule_selector_id: str,
-        external_schedule: Optional["RemoteSchedule"],
+        remote_schedule: Optional["RemoteSchedule"],
     ) -> "InstigatorState":
         return self._scheduler.stop_schedule(  # type: ignore
-            self, schedule_origin_id, schedule_selector_id, external_schedule
+            self, schedule_origin_id, schedule_selector_id, remote_schedule
         )
 
-    def reset_schedule(self, external_schedule: "RemoteSchedule") -> "InstigatorState":
-        return self._scheduler.reset_schedule(self, external_schedule)  # type: ignore
+    def reset_schedule(self, remote_schedule: "RemoteSchedule") -> "InstigatorState":
+        return self._scheduler.reset_schedule(self, remote_schedule)  # type: ignore
 
     def scheduler_debug_info(self) -> "SchedulerDebugInfo":
         from dagster._core.definitions.run_request import InstigatorType
@@ -2800,7 +2800,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Schedule / Sensor Storage
 
-    def start_sensor(self, external_sensor: "RemoteSensor") -> "InstigatorState":
+    def start_sensor(self, remote_sensor: "RemoteSensor") -> "InstigatorState":
         from dagster._core.definitions.run_request import InstigatorType
         from dagster._core.scheduler.instigation import (
             InstigatorState,
@@ -2809,23 +2809,23 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         stored_state = self.get_instigator_state(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
+            remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
         )
 
-        computed_state = external_sensor.get_current_instigator_state(stored_state)
+        computed_state = remote_sensor.get_current_instigator_state(stored_state)
         if computed_state.is_running:
             return computed_state
 
         if not stored_state:
             return self.add_instigator_state(
                 InstigatorState(
-                    external_sensor.get_remote_origin(),
+                    remote_sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.RUNNING,
                     SensorInstigatorData(
-                        min_interval=external_sensor.min_interval_seconds,
+                        min_interval=remote_sensor.min_interval_seconds,
                         last_sensor_start_timestamp=get_current_timestamp(),
-                        sensor_type=external_sensor.sensor_type,
+                        sensor_type=remote_sensor.sensor_type,
                     ),
                 )
             )
@@ -2841,7 +2841,7 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         instigator_origin_id: str,
         selector_id: str,
-        external_sensor: Optional["RemoteSensor"],
+        remote_sensor: Optional["RemoteSensor"],
     ) -> "InstigatorState":
         from dagster._core.definitions.run_request import InstigatorType
         from dagster._core.scheduler.instigation import (
@@ -2852,8 +2852,8 @@ class DagsterInstance(DynamicPartitionsStore):
 
         stored_state = self.get_instigator_state(instigator_origin_id, selector_id)
         computed_state: InstigatorState
-        if external_sensor:
-            computed_state = external_sensor.get_current_instigator_state(stored_state)
+        if remote_sensor:
+            computed_state = remote_sensor.get_current_instigator_state(stored_state)
         else:
             computed_state = check.not_none(stored_state)
 
@@ -2861,28 +2861,28 @@ class DagsterInstance(DynamicPartitionsStore):
             return computed_state
 
         if not stored_state:
-            assert external_sensor
+            assert remote_sensor
             return self.add_instigator_state(
                 InstigatorState(
-                    external_sensor.get_remote_origin(),
+                    remote_sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.STOPPED,
                     SensorInstigatorData(
-                        min_interval=external_sensor.min_interval_seconds,
-                        sensor_type=external_sensor.sensor_type,
+                        min_interval=remote_sensor.min_interval_seconds,
+                        sensor_type=remote_sensor.sensor_type,
                     ),
                 )
             )
         else:
             return self.update_instigator_state(stored_state.with_status(InstigatorStatus.STOPPED))
 
-    def reset_sensor(self, external_sensor: "RemoteSensor") -> "InstigatorState":
+    def reset_sensor(self, remote_sensor: "RemoteSensor") -> "InstigatorState":
         """If the given sensor has a default sensor status, then update the status to
         `InstigatorStatus.DECLARED_IN_CODE` in instigator storage.
 
         Args:
             instance (DagsterInstance): The current instance.
-            external_sensor (ExternalSensor): The sensor to reset.
+            remote_sensor (ExternalSensor): The sensor to reset.
         """
         from dagster._core.definitions.run_request import InstigatorType
         from dagster._core.scheduler.instigation import (
@@ -2892,19 +2892,19 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         stored_state = self.get_instigator_state(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
+            remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
         )
         new_status = InstigatorStatus.DECLARED_IN_CODE
 
         if not stored_state:
             new_instigator_data = SensorInstigatorData(
-                min_interval=external_sensor.min_interval_seconds,
-                sensor_type=external_sensor.sensor_type,
+                min_interval=remote_sensor.min_interval_seconds,
+                sensor_type=remote_sensor.sensor_type,
             )
 
             reset_state = self.add_instigator_state(
                 state=InstigatorState(
-                    external_sensor.get_remote_origin(),
+                    remote_sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
                     new_status,
                     new_instigator_data,

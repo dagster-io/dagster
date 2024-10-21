@@ -1,4 +1,14 @@
-from dagster import AutomationCondition
+import datetime
+
+from dagster import (
+    AssetMaterialization,
+    AutomationCondition,
+    DagsterInstance,
+    Definitions,
+    asset,
+    asset_check,
+    evaluate_automation_conditions,
+)
 
 from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -113,3 +123,66 @@ def test_on_cron_hourly_partitioned() -> None:
     state = state.with_runs(run_request("A", "2020-02-02-01:00"))
     state, result = state.evaluate("B")
     assert result.true_subset.size == 1
+
+
+def test_on_cron_on_asset_check() -> None:
+    @asset
+    def A() -> None: ...
+
+    @asset_check(asset=A, automation_condition=AutomationCondition.on_cron("@hourly"))
+    def foo_check() -> ...: ...
+
+    current_time = datetime.datetime(2024, 8, 16, 4, 35)
+    defs = Definitions(assets=[A], asset_checks=[foo_check])
+    instance = DagsterInstance.ephemeral()
+
+    # hasn't passed a cron tick
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=current_time
+    )
+    assert result.total_requested == 0
+
+    # now passed a cron tick, but parent hasn't been updated
+    current_time += datetime.timedelta(minutes=30)
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 0
+
+    # now parent is updated, so fire
+    current_time += datetime.timedelta(minutes=1)
+    instance.report_runless_asset_event(AssetMaterialization("A"))
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 1
+
+    # don't keep firing
+    current_time += datetime.timedelta(minutes=1)
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 0
+
+    # ...even if the parent is updated again
+    current_time += datetime.timedelta(minutes=1)
+    instance.report_runless_asset_event(AssetMaterialization("A"))
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 0
+
+    # new tick passes...
+    current_time += datetime.timedelta(hours=1)
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 0
+
+    # and parent is updated
+    current_time += datetime.timedelta(minutes=1)
+    instance.report_runless_asset_event(AssetMaterialization("A"))
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 1

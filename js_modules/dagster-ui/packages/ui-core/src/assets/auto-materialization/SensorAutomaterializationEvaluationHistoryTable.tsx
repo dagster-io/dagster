@@ -24,18 +24,18 @@ interface Props {
   repoAddress: RepoAddress;
   sensor: SensorFragment;
   setSelectedTick: (tick: AssetDaemonTickFragment | null) => void;
-  setTableView: (view: 'evaluations' | 'runs') => void;
   setTimerange: (range?: [number, number]) => void;
   setParentStatuses: (statuses?: InstigationTickStatus[]) => void;
+  actionBarComponents?: React.ReactNode;
 }
 
 export const SensorAutomaterializationEvaluationHistoryTable = ({
   repoAddress,
   sensor,
   setSelectedTick,
-  setTableView,
   setTimerange,
   setParentStatuses,
+  actionBarComponents,
 }: Props) => {
   const [tickStatus, setTickStatus] = useQueryPersistedState<AutomaterializationTickStatusDisplay>({
     queryKey: 'status',
@@ -117,7 +117,7 @@ export const SensorAutomaterializationEvaluationHistoryTable = ({
       setSelectedTick={setSelectedTick}
       tickStatus={tickStatus}
       setTickStatus={setTickStatus}
-      setTableView={setTableView}
+      actionBarComponents={actionBarComponents}
     />
   );
 };

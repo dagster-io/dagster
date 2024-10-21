@@ -102,6 +102,21 @@ def to_seconds(dt: datetime) -> float:
 
 
 class GithubClient:
+    """A client for interacting with the GitHub API.
+
+    This client handles authentication and provides methods for making requests
+    to the GitHub API using an authenticated session.
+
+    Attributes:
+        client (requests.Session): The HTTP session used for making requests.
+        app_id (int): The GitHub App ID.
+        app_private_rsa_key (str): The private RSA key for the GitHub App.
+        default_installation_id (Optional[int]): The default installation ID for the GitHub App.
+        hostname (Optional[str]): The GitHub hostname, defaults to None.
+        installation_tokens (Dict[Any, Any]): A dictionary to store installation tokens.
+        app_token (Dict[str, Any]): A dictionary to store the app token.
+    """
+
     def __init__(
         self,
         client: requests.Session,
@@ -147,7 +162,23 @@ class GithubClient:
         ):
             self.__set_app_token()
 
+    @public
     def get_installations(self, headers: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Retrieve the list of installations for the authenticated GitHub App.
+
+        This method makes a GET request to the GitHub API to fetch the installations
+        associated with the authenticated GitHub App. It ensures that the app token
+        is valid and includes it in the request headers.
+
+        Args:
+            headers (Optional[Dict[str, Any]]): Optional headers to include in the request.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the installations data.
+
+        Raises:
+            requests.exceptions.HTTPError: If the request to the GitHub API fails.
+        """
         if headers is None:
             headers = {}
         self.__check_app_token()
@@ -201,6 +232,25 @@ class GithubClient:
         headers: Optional[Dict[str, Any]] = None,
         installation_id: Optional[int] = None,
     ) -> Dict[str, Any]:
+        """Execute a GraphQL query against the GitHub API.
+
+        This method sends a POST request to the GitHub API with the provided GraphQL query
+        and optional variables. It ensures that the appropriate installation token is included
+        in the request headers.
+
+        Args:
+            query (str): The GraphQL query string to be executed.
+            variables (Optional[Dict[str, Any]]): Optional variables to include in the query.
+            headers (Optional[Dict[str, Any]]): Optional headers to include in the request.
+            installation_id (Optional[int]): The installation ID to use for authentication.
+
+        Returns:
+            Dict[str, Any]: The response data from the GitHub API.
+
+        Raises:
+            RuntimeError: If no installation ID is provided and no default installation ID is set.
+            requests.exceptions.HTTPError: If the request to the GitHub API fails.
+        """
         if headers is None:
             headers = {}
         if installation_id is None:
@@ -239,6 +289,24 @@ class GithubClient:
         body: str,
         installation_id: Optional[int] = None,
     ) -> Dict[str, Any]:
+        """Create a new issue in the specified GitHub repository.
+
+        This method first retrieves the repository ID using the provided repository name
+        and owner, then creates a new issue in that repository with the given title and body.
+
+        Args:
+            repo_name (str): The name of the repository where the issue will be created.
+            repo_owner (str): The owner of the repository where the issue will be created.
+            title (str): The title of the issue.
+            body (str): The body content of the issue.
+            installation_id (Optional[int]): The installation ID to use for authentication.
+
+        Returns:
+            Dict[str, Any]: The response data from the GitHub API containing the created issue details.
+
+        Raises:
+            RuntimeError: If there are errors in the response from the GitHub API.
+        """
         res = self.execute(
             query=GET_REPO_ID_QUERY,
             variables={"repo_name": repo_name, "repo_owner": repo_owner},
@@ -264,6 +332,25 @@ class GithubClient:
         target: str,
         installation_id=None,
     ) -> Dict[str, Any]:
+        """Create a new reference (branch) in the specified GitHub repository.
+
+        This method first retrieves the repository ID and the source reference (branch or tag)
+        using the provided repository name, owner, and source reference. It then creates a new
+        reference (branch) in that repository with the given target name.
+
+        Args:
+            repo_name (str): The name of the repository where the reference will be created.
+            repo_owner (str): The owner of the repository where the reference will be created.
+            source (str): The source reference (branch or tag) from which the new reference will be created.
+            target (str): The name of the new reference (branch) to be created.
+            installation_id (Optional[int]): The installation ID to use for authentication.
+
+        Returns:
+            Dict[str, Any]: The response data from the GitHub API containing the created reference details.
+
+        Raises:
+            RuntimeError: If there are errors in the response from the GitHub API.
+        """
         res = self.execute(
             query=GET_REPO_AND_REF_QUERY,
             variables={
@@ -300,6 +387,30 @@ class GithubClient:
         draft: Optional[bool] = None,
         installation_id: Optional[int] = None,
     ) -> Dict[str, Any]:
+        """Create a new pull request in the specified GitHub repository.
+
+        This method creates a pull request from the head reference (branch) to the base reference (branch)
+        in the specified repositories. It uses the provided title and body for the pull request description.
+
+        Args:
+            base_repo_name (str): The name of the base repository where the pull request will be created.
+            base_repo_owner (str): The owner of the base repository.
+            base_ref_name (str): The name of the base reference (branch) to which the changes will be merged.
+            head_repo_name (str): The name of the head repository from which the changes will be taken.
+            head_repo_owner (str): The owner of the head repository.
+            head_ref_name (str): The name of the head reference (branch) from which the changes will be taken.
+            title (str): The title of the pull request.
+            body (Optional[str]): The body content of the pull request. Defaults to None.
+            maintainer_can_modify (Optional[bool]): Whether maintainers can modify the pull request. Defaults to None.
+            draft (Optional[bool]): Whether the pull request is a draft. Defaults to None.
+            installation_id (Optional[int]): The installation ID to use for authentication.
+
+        Returns:
+            Dict[str, Any]: The response data from the GitHub API containing the created pull request details.
+
+        Raises:
+            RuntimeError: If there are errors in the response from the GitHub API.
+        """
         base = self.execute(
             query=GET_REPO_ID_QUERY,
             variables={"repo_name": base_repo_name, "repo_owner": base_repo_owner},
@@ -328,6 +439,22 @@ class GithubClient:
 
 
 class GithubResource(ConfigurableResource):
+    """A resource configuration class for GitHub integration.
+
+    This class provides configuration fields for setting up a GitHub Application,
+    including the application ID, private RSA key, installation ID, and hostname.
+
+    Attributes:
+        github_app_id (int): The GitHub Application ID. For more information, see
+            https://developer.github.com/apps/.
+        github_app_private_rsa_key (str): The private RSA key text for the GitHub Application.
+            For more information, see https://developer.github.com/apps/.
+        github_installation_id (Optional[int]): The GitHub Application Installation ID.
+            Defaults to None. For more information, see https://developer.github.com/apps/.
+        github_hostname (Optional[str]): The GitHub hostname. Defaults to `api.github.com`.
+            For more information, see https://developer.github.com/apps/.
+    """
+
     github_app_id: int = Field(
         description="Github Application ID, for more info see https://developer.github.com/apps/",
     )
@@ -358,6 +485,16 @@ class GithubResource(ConfigurableResource):
 
     @public
     def get_client(self) -> GithubClient:
+        """Instantiate and return a GitHub client.
+
+        This method creates a new instance of `GithubClient` using the configuration
+        attributes of the `GithubResource` instance. The client is initialized with
+        an authenticated session and the necessary credentials for interacting with
+        the GitHub API.
+
+        Returns:
+            GithubClient: An instance of `GithubClient` configured with the current resource settings.
+        """
         return GithubClient(
             client=requests.Session(),
             app_id=self.github_app_id,

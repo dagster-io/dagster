@@ -143,32 +143,32 @@ export function optionsForExecuteButton(
       disabledReason: assets.some((a) => !a.hasMaterializePermission)
         ? 'You do not have permission to materialize assets'
         : assets.every((a) => !a.isExecutable)
-        ? 'External assets cannot be materialized'
-        : assets.every((a) => a.isObservable)
-        ? 'Observable assets cannot be materialized'
-        : materializable.length === 0
-        ? 'No executable assets selected.'
-        : null,
+          ? 'External assets cannot be materialized'
+          : assets.every((a) => a.isObservable)
+            ? 'Observable assets cannot be materialized'
+            : materializable.length === 0
+              ? 'No executable assets selected.'
+              : null,
       icon: <Icon name="materialization" />,
       label: isSelection
         ? `Materialize selected${countIfPluralOrNotAll(materializable, assets)}${ellipsis}`
         : materializable.length > 1 && !skipAllTerm
-        ? `Materialize all${countIfNotAll(materializable, assets)}${ellipsis}`
-        : `Materialize${countIfNotAll(materializable, assets)}${ellipsis}`,
+          ? `Materialize all${countIfNotAll(materializable, assets)}${ellipsis}`
+          : `Materialize${countIfNotAll(materializable, assets)}${ellipsis}`,
     },
     observeOption: {
       assetKeys: observable.map((a) => a.assetKey),
       disabledReason: assets.some((a) => !a.hasMaterializePermission)
         ? 'You do not have permission to observe assets'
         : observable.length === 0
-        ? 'Assets do not have observation functions'
-        : null,
+          ? 'Assets do not have observation functions'
+          : null,
       icon: <Icon name="observation" />,
       label: isSelection
         ? `Observe selected${countIfPluralOrNotAll(observable, assets)}`
         : observable.length > 1 && !skipAllTerm
-        ? `Observe all${countIfNotAll(observable, assets)}`
-        : `Observe${countIfNotAll(observable, assets)}`,
+          ? `Observe all${countIfNotAll(observable, assets)}`
+          : `Observe${countIfNotAll(observable, assets)}`,
     },
   };
 }

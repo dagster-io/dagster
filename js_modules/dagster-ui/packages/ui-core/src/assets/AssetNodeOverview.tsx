@@ -610,6 +610,7 @@ export const AssetNodeOverview = ({
                 value={{
                   assetKey: cachedOrLiveAssetNode.assetKey,
                   materializationMetadataEntries: materialization?.metadataEntries,
+                  definitionMetadataEntries: assetNode?.metadataEntries,
                 }}
               >
                 <TableSchema

@@ -12,6 +12,7 @@ import medallion_silver from './kindtag-images/medallion-silver-color.svg';
 import notebook from './kindtag-images/notebook.svg';
 import pdf from './kindtag-images/pdf.svg';
 import seed from './kindtag-images/seed.svg';
+import sigma from './kindtag-images/sigma.svg';
 import source from './kindtag-images/source.svg';
 import table from './kindtag-images/table.svg';
 import task from './kindtag-images/task.svg';
@@ -203,6 +204,7 @@ export type KnownTagType =
   | 'postgres'
   | 'postgresql'
   | 'stripe'
+  | 'sigma'
   | 'hightouch'
   | 'census'
   | 'hex'
@@ -456,6 +458,11 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   stripe: {
     icon: stripe,
     content: 'Stripe',
+  },
+  sigma: {
+    icon: sigma,
+    content: 'Sigma',
+    blackAndWhite: true,
   },
   hightouch: {
     icon: hightouch,

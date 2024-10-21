@@ -277,8 +277,8 @@ const defineYamlMode = () => {
                 parentContainer === ContainerType.List
                   ? stream.match(/^[^,\]]+/)
                   : parentContainer === ContainerType.Dict
-                  ? stream.match(/^[^,\}]+/)
-                  : stream.match(/^.+$/);
+                    ? stream.match(/^[^,\}]+/)
+                    : stream.match(/^.+$/);
             }
             const value = match ? match[0]! : '';
             if (value.match(RegExps.VARIABLE)) {

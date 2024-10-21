@@ -1,5 +1,67 @@
 # Changelog
 
+## 1.8.12 (core) / 0.24.12 (libraries)
+
+### New
+
+- The `AutomationCondition.eager()`, `AutomationCondition.missing()`, and `AutomationCondition.on_cron` conditions are now compatible with asset checks.
+- Added `AssetSelection.materializable()`, which returns only assets that are materializable in an existing selection.
+- Added a new `AutomationCondition.all_deps_blocking_checks_passed` condition, which can be used to prevent materialization when any upstream blocking checks have failed.
+- Added a `code_version` parameter to the `@graph_asset` decorator.
+- If a `LaunchPartitionBackfill` mutation is submitted to GQL with invalid partition keys, it will now return an early `PartitionKeysNotFoundError`.
+- `AssetSelection.checks_for_assets` now accepts `AssetKey`s and string asset keys, in addition to `AssetsDefinition`s.
+- [ui] Added a search bar to partitions tab on the asset details page.
+- [ui] Restored docked left nav behavior for wide viewports.
+- [dagster-aws] `get_objects` now has a `since_last_modified` that enables only fetching objects modified after a given timestamp.
+- [dagster-aws] New AWS EMR Dagster Pipes client (`dagster_aws.pipes.PipesEMRCLient` ) for running and monitoring AWS EMR jobs from Dagster.
+- [dagster-looker] Pinned the looker-sdk dependency below 24.18.0 to avoid this issue: https://github.com/looker-open-source/sdk-codegen/issues/1518.
+
+### Bugfixes
+
+- Fixed an issue which could cause incorrect evaluation results when using self-dependent partition mappings with `AutomationConditions` that operate over dependencies.
+- [ui] Fixed an issue where the breadcumb on asset pages would flicker nonstop.
+- [dagster-embedded-elt] Fixed extraction of metadata for dlt assets whose source and destination identifiers differ.
+- [dagster-databricks] Fixed a permissioning gap that existed with the `DatabricksPySparkStepLauncher`, so that permissions are now set correctly for non-admin users.
+- [dagster-dbt] Fixed an issue where column metadata generated with `fetch_column_metadata` did not work properly for models imported through dbt dependencies.
+
+### Documentation
+
+- [dagster-k8s] `DagsterK8sPipesClient.run` now shows up in API docs.
+
+### Dagster Plus
+
+- [ui] Fixed a bug in the catalog UI where owners filters were not applied correctly.
+- [ui] Fixed width of the column lineage dropdown selector on the asset page.
+- [ui] Column lineage now correctly renders when set on asset definition metadata
+- [ui] Fixed Settings link on the list of deployments, for users in the legacy navigation flag.
+
+## 1.8.11 (core) / 0.24.11 (libraries)
+
+### New
+
+- [experimental] AutomationCondition.eager() will now only launch runs for missing partitions which become missing _after_ the condition has been added to the asset. This avoids situations in which the eager policy kicks off a large amount of work when added to an asset with many missing historical static/dynamic partitions.
+- [experimental] Added a new AutomationCondition.asset_matches() condition, which can apply a condition against an arbitrary asset in the graph.
+- [experimental] Added the ability to specify multiple kinds for an asset with the kinds parameter.
+- [dagster-github] Added `create_pull_request` method on `GithubClient` that enables creating a pull request.
+- [dagster-github] Added `create_ref` method on `GithubClient` that enables creating a new branch.
+- [dagster-embedded-elt] dlt assets now generate column metadata for child tables.
+- [dagster-embedded-elt] dlt assets can now fetch row count metadata with `dlt.run(...).fetch_row_count()` for both partitioned and non-partitioned assets. Thanks [@kristianandre](https://github.com/kristianandre)!
+- [dagster-airbyte] relation identifier metadata is now attached to Airbyte assets.
+- [dagster-embedded-elt] relation identifier metadata is now attached to sling assets.
+- [dagster-embedded-elt] relation identifier metadata is now attached to dlt assets.
+
+### Bugfixes
+
+- `PartitionedConfig` objects can now return a `RunConfig` without causing a crash.
+- Corrected the `AssetIn.__new__` typing for the dagster_type argument.
+- [dagster-embedded-elt] dlt assets now generate correct column metadata after the first materialization.
+- [dagster-embedded-elt] Sling's `fetch_row_count()` method now works for databases returning uppercase column names. Thanks [@kristianandre](https://github.com/kristianandre)!
+- [dagster-gcp] Ensure blob download is flushed to temporary file for `GCSFileManager.read` operations. Thanks [@ollie-bell](https://github.com/ollie-bell)!
+
+### Dagster Plus
+
+- Fixed a bug in the catalog UI where owners filters were not applied correctly.
+
 ## 1.8.10 (core) / 0.24.10 (libraries)
 
 ### New

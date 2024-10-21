@@ -1,5 +1,6 @@
 import pytest
 from dagster import (
+    AssetChecksDefinition,
     AssetKey,
     Definitions,
     asset_check,
@@ -23,6 +24,7 @@ def test_load_asset_checks_from_modules():
 
     checks = load_asset_checks_from_modules([checks_module])
     assert len(checks) == 1
+    assert all(isinstance(check, AssetChecksDefinition) for check in checks)
 
     asset_check_1_key = next(iter(asset_check_1.check_keys))
 
@@ -49,6 +51,7 @@ def test_load_asset_checks_from_modules_prefix():
 
     checks = load_asset_checks_from_modules([checks_module], asset_key_prefix="foo")
     assert len(checks) == 1
+    assert all(isinstance(check, AssetChecksDefinition) for check in checks)
 
     check_key = next(iter(checks[0].check_keys))
     assert check_key.asset_key == AssetKey(["foo", "asset_1"])
@@ -76,6 +79,7 @@ def check_in_current_module():
 def test_load_asset_checks_from_current_module():
     checks = load_asset_checks_from_current_module(asset_key_prefix="foo")
     assert len(checks) == 1
+    assert all(isinstance(check, AssetChecksDefinition) for check in checks)
     check_key = next(iter(checks[0].check_keys))
     assert check_key.name == "check_in_current_module"
     assert check_key.asset_key == AssetKey(["foo", "asset_1"])
@@ -100,6 +104,7 @@ def test_load_asset_checks_from_package(load_fns):
 
     checks = checks_load_fn(checks_module, asset_key_prefix="foo")
     assert len(checks) == 2
+    assert all(isinstance(check, AssetChecksDefinition) for check in checks)
     check_key_0 = next(iter(checks[0].check_keys))
     assert check_key_0.name == "asset_check_1"
     assert check_key_0.asset_key == AssetKey(["foo", "asset_1"])

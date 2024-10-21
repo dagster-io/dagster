@@ -305,7 +305,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     global_concurrency_limits_counter.update_counters_with_launched_item(run)
 
                 location_name = (
-                    run.external_job_origin.location_name if run.external_job_origin else None
+                    run.remote_job_origin.location_name if run.remote_job_origin else None
                 )
                 if location_name and location_name in paused_location_names:
                     to_remove.append(run)
@@ -366,7 +366,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         # Very old (pre 0.10.0) runs and programatically submitted runs may not have an
         # attached code location name
-        location_name = run.external_job_origin.location_name if run.external_job_origin else None
+        location_name = run.remote_job_origin.location_name if run.remote_job_origin else None
 
         if location_name and self._is_location_pausing_dequeues(location_name, now):
             self._logger.info(

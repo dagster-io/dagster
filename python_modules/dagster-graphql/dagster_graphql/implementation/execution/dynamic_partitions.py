@@ -44,7 +44,7 @@ def _repository_contains_dynamic_partitions_def(
             repository = repo_loc.get_repository(repository_selector.repository_name)
             found_partitions_defs = [
                 asset_node_snap.partitions
-                for asset_node_snap in repository.external_repository_data.asset_nodes
+                for asset_node_snap in repository.repository_snap.asset_nodes
                 if asset_node_snap.partitions
             ]
             return any(

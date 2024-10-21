@@ -1,6 +1,7 @@
 import os
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 from functools import cached_property
 from queue import Queue
 from typing import (
@@ -295,6 +296,8 @@ class PipesSession:
             indicating the location from which the external process should load context data.
         message_reader_params (PipesParams): Parameters yielded by the message reader, indicating
             the location to which the external process should write messages.
+        created_at (datetime): The time at which the session was created. Useful as cutoff for
+            reading logs.
     """
 
     context_data: PipesContextData
@@ -302,6 +305,7 @@ class PipesSession:
     context_injector_params: PipesParams
     message_reader_params: PipesParams
     context: OpExecutionContext
+    created_at: datetime = field(default_factory=datetime.now)
 
     @cached_property
     def default_remote_invocation_info(self) -> Dict[str, str]:
@@ -332,9 +336,9 @@ class PipesSession:
             "dagster/job": self.context.job_name,
         }
 
-        if self.context.dagster_run.external_job_origin:
+        if self.context.dagster_run.remote_job_origin:
             tags["dagster/code-location"] = (
-                self.context.dagster_run.external_job_origin.repository_origin.code_location_origin.location_name
+                self.context.dagster_run.remote_job_origin.repository_origin.code_location_origin.location_name
             )
 
         if user := self.context.get_tag("dagster/user"):

@@ -11,7 +11,6 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
-from dagster._core.definitions.tags import build_kind_tag
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -158,7 +157,8 @@ class DagsterPowerBITranslator:
             key=self.get_dashboard_asset_key(data),
             deps=report_keys,
             metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
-            tags={**PowerBITagSet(asset_type="dashboard"), **build_kind_tag("powerbi")},
+            tags={**PowerBITagSet(asset_type="dashboard")},
+            kinds={"powerbi"},
         )
 
     def get_report_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -174,7 +174,8 @@ class DagsterPowerBITranslator:
             key=self.get_report_asset_key(data),
             deps=[dataset_key] if dataset_key else None,
             metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
-            tags={**PowerBITagSet(asset_type="report"), **build_kind_tag("powerbi")},
+            tags={**PowerBITagSet(asset_type="report")},
+            kinds={"powerbi"},
         )
 
     def get_semantic_model_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -192,7 +193,8 @@ class DagsterPowerBITranslator:
             key=self.get_semantic_model_asset_key(data),
             deps=source_keys,
             metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
-            tags={**PowerBITagSet(asset_type="semantic_model"), **build_kind_tag("powerbi")},
+            tags={**PowerBITagSet(asset_type="semantic_model")},
+            kinds={"powerbi"},
         )
 
     def get_data_source_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -210,5 +212,6 @@ class DagsterPowerBITranslator:
     def get_data_source_spec(self, data: PowerBIContentData) -> AssetSpec:
         return AssetSpec(
             key=self.get_data_source_asset_key(data),
-            tags={**PowerBITagSet(asset_type="data_source"), **build_kind_tag("powerbi")},
+            tags={**PowerBITagSet(asset_type="data_source")},
+            kinds={"powerbi"},
         )

@@ -12,6 +12,7 @@ import React, {useDeferredValue, useMemo} from 'react';
 
 import {ExecutionTimeline} from './ExecutionTimeline';
 import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
+import {useFeatureFlags} from '../../app/Flags';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -22,6 +23,7 @@ import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useTimelineRange} from '../../overview/OverviewTimelineRoot';
 import {RunTable} from '../../runs/RunTable';
 import {DagsterTag} from '../../runs/RunTag';
+import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {
   RunFilterTokenType,
   runsFilterForSearchTokens,
@@ -34,6 +36,9 @@ import {useRunsForTimeline} from '../../runs/useRunsForTimeline';
 import {StickyTableContainer} from '../../ui/StickyTableContainer';
 
 const BACKFILL_RUNS_HOUR_WINDOW_KEY = 'dagster.backfill-run-timeline-hour-window';
+
+const BACKFILL_TAGS = [DagsterTag.Backfill];
+
 const PAGE_SIZE = 25;
 
 const filters: RunFilterTokenType[] = [
@@ -53,6 +58,8 @@ export const BackfillRunsTab = ({
   backfill: BackfillDetailsBackfillFragment;
   view: 'timeline' | 'list' | 'both';
 }) => {
+  const {flagRunsFeed} = useFeatureFlags();
+
   const [_view, setView] = useQueryPersistedState<'timeline' | 'list'>({
     defaults: {view: 'timeline'},
     queryKey: 'view',
@@ -146,6 +153,22 @@ export const BackfillRunsTab = ({
       rangeMs={rangeMs}
       annotations={annotations}
       actionBarComponents={actionBarComponents}
+    />
+  ) : flagRunsFeed ? (
+    <RunsFeedTableWithFilters
+      filter={filter}
+      actionBarComponents={actionBarComponents}
+      belowActionBarComponents={belowActionBarComponents}
+      hideTags={BACKFILL_TAGS}
+      emptyState={() => (
+        <Box
+          padding={{vertical: 24}}
+          border="top-and-bottom"
+          flex={{direction: 'column', alignItems: 'center'}}
+        >
+          No runs have been launched.
+        </Box>
+      )}
     />
   ) : (
     <ExecutionRunTable

@@ -124,8 +124,8 @@ export const AssetPartitions = ({
         idx === 1 && focusedDimensionKeys[0]
           ? [selectionRangeWithSingleKey(focusedDimensionKeys[0], selections[0]!.dimension)]
           : timeDimensionIdx !== -1 && idx !== timeDimensionIdx
-          ? selections[timeDimensionIdx]!.selectedRanges
-          : undefined,
+            ? selections[timeDimensionIdx]!.selectedRanges
+            : undefined,
       ),
     );
   }, [assetHealth, selections, timeDimensionIdx, focusedDimensionKeys]);

@@ -6,6 +6,7 @@ import {SCHEDULE_ASSET_SELECTIONS_QUERY} from './ScheduleAssetSelectionsQuery';
 import {ScheduleDetails} from './ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
+import {gql, useQuery} from '../apollo-client';
 import {
   ScheduleAssetSelectionQuery,
   ScheduleAssetSelectionQueryVariables,
@@ -17,16 +18,18 @@ import {
   ScheduleRootQueryVariables,
 } from './types/ScheduleRoot.types';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
-import {gql, useQuery} from '../apollo-client';
+import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable} from '../instigation/TickHistory';
 import {RunTable} from '../runs/RunTable';
 import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
 import {DagsterTag} from '../runs/RunTag';
+import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
 import {Loading} from '../ui/Loading';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -41,6 +44,7 @@ export const ScheduleRoot = (props: Props) => {
 
   const {repoAddress} = props;
   const {scheduleName} = useParams<{scheduleName: string}>();
+  const {flagRunsFeed} = useFeatureFlags();
 
   useDocumentTitle(`Schedule: ${scheduleName}`);
 
@@ -82,6 +86,16 @@ export const ScheduleRoot = (props: Props) => {
       ? selectionQueryResult.data.scheduleOrError.assetSelection
       : null;
 
+  const runsFilter: RunsFilter = React.useMemo(
+    () => ({
+      tags: [
+        {key: DagsterTag.ScheduleName, value: scheduleName},
+        {key: DagsterTag.RepositoryLabelTag, value: repoAddressAsTag(repoAddress)},
+      ],
+    }),
+    [repoAddress, scheduleName],
+  );
+
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
       {({scheduleOrError, instance}) => {
@@ -107,6 +121,8 @@ export const ScheduleRoot = (props: Props) => {
             ) : null}
             {selectedTab === 'ticks' ? (
               <TicksTable tabs={tabs} repoAddress={repoAddress} name={scheduleOrError.name} />
+            ) : flagRunsFeed ? (
+              <RunsFeedTableWithFilters filter={runsFilter} />
             ) : (
               <SchedulePreviousRuns
                 repoAddress={repoAddress}

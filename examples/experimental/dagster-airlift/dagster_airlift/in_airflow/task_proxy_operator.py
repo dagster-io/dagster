@@ -23,6 +23,10 @@ class BaseProxyTaskToDagsterOperator(BaseDagsterAssetsOperator):
             ):
                 yield asset_node
 
+    @classmethod
+    def build_from_task(cls, task: BaseOperator) -> "BaseProxyTaskToDagsterOperator":
+        return build_dagster_task(task, cls)
+
 
 class DefaultProxyTaskToDagsterOperator(BaseProxyTaskToDagsterOperator):
     """The default task proxying operator - which opens a blank session and expects the dagster URL to be set in the environment.
@@ -37,13 +41,15 @@ class DefaultProxyTaskToDagsterOperator(BaseProxyTaskToDagsterOperator):
 
 
 def build_dagster_task(
-    original_task: BaseOperator, dagster_operator_klass: Type[BaseProxyTaskToDagsterOperator]
+    original_task: BaseOperator,
+    dagster_operator_klass: Type[BaseProxyTaskToDagsterOperator],
 ) -> BaseProxyTaskToDagsterOperator:
     return instantiate_dagster_operator(original_task, dagster_operator_klass)
 
 
 def instantiate_dagster_operator(
-    original_task: BaseOperator, dagster_operator_klass: Type[BaseProxyTaskToDagsterOperator]
+    original_task: BaseOperator,
+    dagster_operator_klass: Type[BaseProxyTaskToDagsterOperator],
 ) -> BaseProxyTaskToDagsterOperator:
     """Instantiates a DagsterOperator as a copy of the provided airflow task.
 
@@ -63,7 +69,19 @@ def instantiate_dagster_operator(
     base_operator_args, base_operator_args_with_defaults = get_params(BaseOperator.__init__)
     init_kwargs = {}
 
-    ignore_args = ["kwargs", "args", "dag"]
+    ignore_args = [
+        # These don't make sense in context to copy
+        "kwargs",
+        "args",
+        "dag",
+        # The weight rule stored on the base operator is a private subclass of PriorityWeightStrategy,
+        # which satisfies the type signature of the constructor, but fails the validation process in
+        # the constructor. See https://github.com/apache/airflow/blob/2b15e9f26fee27b6c1fbc8167d0e0558198ffa7a/airflow/task/priority_strategy.py#L127
+        # for more details.
+        # We could likely add custom handling here to support the parameter.
+        # For now, we ignore it, as it's currently an experimental feature in Airflow.
+        "weight_rule",
+    ]
     for arg in base_operator_args:
         if arg in ignore_args or getattr(original_task, arg, None) is None:
             continue
@@ -72,6 +90,8 @@ def instantiate_dagster_operator(
         if kwarg in ignore_args or getattr(original_task, kwarg, None) is None:
             continue
         init_kwargs[kwarg] = getattr(original_task, kwarg, default)
+
+    # Make sure that the operator overrides take precedence.
 
     return dagster_operator_klass(**init_kwargs)
 

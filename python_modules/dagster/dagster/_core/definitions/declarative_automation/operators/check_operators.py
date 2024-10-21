@@ -16,25 +16,22 @@ from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
-@whitelist_for_serdes
 @record
-class ChecksCondition(BuiltinAutomationCondition[AssetKey]):
+class ChecksAutomationCondition(BuiltinAutomationCondition[AssetKey]):
     operand: AutomationCondition[AssetCheckKey]
 
     blocking_only: bool = False
 
     @property
     @abstractmethod
-    def base_description(self) -> str: ...
+    def base_name(self) -> str: ...
 
     @property
-    def description(self) -> str:
-        description = f"{self.base_description} "
+    def name(self) -> str:
+        name = self.base_name
         if self.blocking_only:
-            description += "blocking checks"
-        if self.blocking_only:
-            description += "checks"
-        return description
+            name += "(blocking_only=True)"
+        return name
 
     @property
     def requires_cursor(self) -> bool:
@@ -52,13 +49,9 @@ class ChecksCondition(BuiltinAutomationCondition[AssetKey]):
 
 @whitelist_for_serdes
 @record
-class AnyChecksCondition(ChecksCondition):
+class AnyChecksCondition(ChecksAutomationCondition):
     @property
-    def base_description(self) -> str:
-        return "Any"
-
-    @property
-    def name(self) -> str:
+    def base_name(self) -> str:
         return "ANY_CHECKS_MATCH"
 
     def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
@@ -85,13 +78,9 @@ class AnyChecksCondition(ChecksCondition):
 
 @whitelist_for_serdes
 @record
-class AllChecksCondition(ChecksCondition):
+class AllChecksCondition(ChecksAutomationCondition):
     @property
-    def base_description(self) -> str:
-        return "All"
-
-    @property
-    def name(self) -> str:
+    def base_name(self) -> str:
         return "ALL_CHECKS_MATCH"
 
     def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:

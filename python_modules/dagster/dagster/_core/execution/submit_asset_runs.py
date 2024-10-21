@@ -7,7 +7,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterInvalidSubsetError, DagsterUserCodeProcessError
@@ -22,12 +22,12 @@ EXECUTION_PLAN_CREATION_RETRIES = 1
 
 
 class RunRequestExecutionData(NamedTuple):
-    external_job: RemoteJob
-    external_execution_plan: RemoteExecutionPlan
+    remote_job: RemoteJob
+    remote_execution_plan: RemoteExecutionPlan
 
 
 def _get_implicit_job_name_for_assets(
-    asset_graph: RemoteAssetGraph, asset_keys: Sequence[AssetKey]
+    asset_graph: RemoteWorkspaceAssetGraph, asset_keys: Sequence[AssetKey]
 ) -> Optional[str]:
     job_names = set(asset_graph.get_materialization_job_names(asset_keys[0]))
     for asset_key in asset_keys[1:]:
@@ -54,7 +54,7 @@ def _get_execution_plan_entity_keys(
 
 
 def _get_job_execution_data_from_run_request(
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     run_request: RunRequest,
     instance: DagsterInstance,
     workspace: BaseWorkspaceRequestContext,
@@ -90,10 +90,10 @@ def _get_job_execution_data_from_run_request(
 
     if pipeline_selector not in run_request_execution_data_cache:
         code_location = workspace.get_code_location(handle.location_name)
-        external_job = code_location.get_external_job(pipeline_selector)
+        remote_job = code_location.get_job(pipeline_selector)
 
-        external_execution_plan = code_location.get_external_execution_plan(
-            external_job,
+        remote_execution_plan = code_location.get_execution_plan(
+            remote_job,
             {},
             step_keys_to_execute=None,
             known_state=None,
@@ -101,8 +101,8 @@ def _get_job_execution_data_from_run_request(
         )
 
         run_request_execution_data_cache[pipeline_selector] = RunRequestExecutionData(
-            external_job,
-            external_execution_plan,
+            remote_job,
+            remote_execution_plan,
         )
 
     return run_request_execution_data_cache[pipeline_selector]
@@ -167,7 +167,7 @@ def _create_asset_run(
 
         if not should_retry:
             execution_plan_entity_keys = _get_execution_plan_entity_keys(
-                check.not_none(execution_data).external_execution_plan.execution_plan_snapshot
+                check.not_none(execution_data).remote_execution_plan.execution_plan_snapshot
             )
 
             if not all(
@@ -189,14 +189,14 @@ def _create_asset_run(
                 should_retry = True
 
         if not should_retry:
-            external_job = check.not_none(execution_data).external_job
-            external_execution_plan = check.not_none(execution_data).external_execution_plan
+            remote_job = check.not_none(execution_data).remote_job
+            remote_execution_plan = check.not_none(execution_data).remote_execution_plan
 
             run = instance.create_run(
-                job_snapshot=external_job.job_snapshot,
-                execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-                parent_job_snapshot=external_job.parent_job_snapshot,
-                job_name=external_job.name,
+                job_snapshot=remote_job.job_snapshot,
+                execution_plan_snapshot=remote_execution_plan.execution_plan_snapshot,
+                parent_job_snapshot=remote_job.parent_job_snapshot,
+                job_name=remote_job.name,
                 run_id=run_id,
                 resolved_op_selection=None,
                 op_selection=None,
@@ -206,8 +206,8 @@ def _create_asset_run(
                 root_run_id=None,
                 parent_run_id=None,
                 status=DagsterRunStatus.NOT_STARTED,
-                external_job_origin=external_job.get_remote_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
                 asset_selection=frozenset(run_request.asset_selection)
                 if run_request.asset_selection
                 else None,

@@ -443,10 +443,10 @@ class ISolidDefinitionMixin:
                 remote_node
                 for remote_node in ext_repo.asset_graph.asset_nodes
                 if (
-                    (remote_node.priority_node_snap.node_definition_name == self.solid_def_name)
+                    (remote_node.asset_node_snap.node_definition_name == self.solid_def_name)
                     or (
-                        remote_node.priority_node_snap.graph_name
-                        and remote_node.priority_node_snap.graph_name == self.solid_def_name
+                        remote_node.asset_node_snap.graph_name
+                        and remote_node.asset_node_snap.graph_name == self.solid_def_name
                     )
                 )
             ]
@@ -461,7 +461,7 @@ class ISolidDefinitionMixin:
                     remote_node=remote_node,
                     asset_checks_loader=asset_checks_loader,
                     # base_deployment_context will be None if we are not in a branch deployment
-                    asset_graph_differ=AssetGraphDiffer.from_external_repositories(
+                    asset_graph_differ=AssetGraphDiffer.from_remote_repositories(
                         code_location_name=location.name,
                         repository_name=ext_repo.name,
                         branch_workspace=graphene_info.context,

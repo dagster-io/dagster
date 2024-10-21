@@ -2,11 +2,11 @@ import {useCallback} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION, handleLaunchResult} from './RunUtils';
+import {useMutation} from '../apollo-client';
 import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
-import {useMutation} from '../apollo-client';
 import {ExecutionParams, ReexecutionStrategy} from '../graphql/types';
 import {showLaunchError} from '../launchpad/showLaunchError';
 

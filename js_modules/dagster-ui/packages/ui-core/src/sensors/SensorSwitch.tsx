@@ -20,6 +20,7 @@ import {
   displaySensorMutationErrors,
 } from './SensorMutations';
 import {SENSOR_STATE_QUERY} from './SensorStateQuery';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {
   SetSensorCursorMutation,
   SetSensorCursorMutationVariables,
@@ -32,7 +33,6 @@ import {
 } from './types/SensorMutations.types';
 import {SensorStateQuery, SensorStateQueryVariables} from './types/SensorStateQuery.types';
 import {SensorSwitchFragment} from './types/SensorSwitch.types';
-import {gql, useMutation, useQuery} from '../apollo-client';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
@@ -275,7 +275,7 @@ const parseRunStatusSensorCursor = (cursor: string | null) => {
     const cursorPayload = JSON.parse(cursor);
     const timestamp = cursorPayload.record_timestamp || cursorPayload.update_timestamp;
     return timestamp ? new Date(timestamp).getTime() : null;
-  } catch (e) {
+  } catch {
     return null;
   }
 };

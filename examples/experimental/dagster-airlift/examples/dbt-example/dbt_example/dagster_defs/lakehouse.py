@@ -1,8 +1,9 @@
 from pathlib import Path
 from typing import List, Optional, Sequence
 
-from dagster import AssetKey, AssetSpec, Definitions, multi_asset
+from dagster import AssetKey, AssetSpec, multi_asset
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -25,10 +26,10 @@ def specs_from_lakehouse(
     ]
 
 
-def defs_from_lakehouse(
-    *, specs: Sequence[AssetSpec], csv_path: Path, duckdb_path: Path, columns: List[str]
-) -> Definitions:
-    @multi_asset(specs=specs)
+def lakehouse_assets_def(
+    *, csv_path: Path, duckdb_path: Path, columns: List[str]
+) -> AssetsDefinition:
+    @multi_asset(specs=specs_from_lakehouse(csv_path=csv_path))
     def _multi_asset() -> None:
         load_csv_to_duckdb(
             csv_path=csv_path,
@@ -36,7 +37,7 @@ def defs_from_lakehouse(
             columns=columns,
         )
 
-    return Definitions(assets=[_multi_asset])
+    return _multi_asset
 
 
 def lakehouse_existence_check(csv_path: Path, duckdb_path: Path) -> AssetChecksDefinition:
@@ -45,17 +46,4 @@ def lakehouse_existence_check(csv_path: Path, duckdb_path: Path) -> AssetChecksD
         duckdb_path=duckdb_path,
         table_name=id_from_path(csv_path),
         schema="lakehouse",
-    )
-
-
-def lakehouse_existence_check_defs(csv_path: Path, duckdb_path: Path) -> Definitions:
-    return Definitions(
-        asset_checks=[
-            build_table_existence_check(
-                target_key=lakehouse_asset_key(csv_path=csv_path),
-                duckdb_path=duckdb_path,
-                table_name=id_from_path(csv_path),
-                schema="lakehouse",
-            )
-        ]
     )

@@ -771,6 +771,10 @@
           {
             "title": "dagster_cloud.yaml",
             "path": "/dagster-plus/managing-deployments/dagster-cloud-yaml"
+          },
+          {
+            "title": "API Limits",
+            "path": "/dagster-plus/references/limits"
           }
         ]
       }
@@ -1529,6 +1533,10 @@
             "path": "/_apidocs/libraries/dagster-postgres"
           },
           {
+            "title": "PowerBI (dagster-powerbi)",
+            "path": "/_apidocs/libraries/dagster-powerbi"
+          },
+          {
             "title": "Prometheus (dagster-prometheus)",
             "path": "/_apidocs/libraries/dagster-prometheus"
           },
@@ -1563,6 +1571,10 @@
           {
             "title": "SSH / SFTP (dagster-ssh)",
             "path": "/_apidocs/libraries/dagster-ssh"
+          },
+          {
+            "title": "Tableau (dagster-tableau)",
+            "path": "/_apidocs/libraries/dagster-tableau"
           },
           {
             "title": "Twilio (dagster-twilio)",

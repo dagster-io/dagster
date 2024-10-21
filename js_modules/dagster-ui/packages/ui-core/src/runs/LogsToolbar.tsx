@@ -276,7 +276,11 @@ const StructuredLogToolbar = ({
 
       // When changing log level filters, update localStorage with the selected levels
       // so that it persists as the default.
-      enabled ? allEnabledFilters.add(level) : allEnabledFilters.delete(level);
+      if (enabled) {
+        allEnabledFilters.add(level);
+      } else {
+        allEnabledFilters.delete(level);
+      }
       setStoredLogLevels(Array.from(allEnabledFilters));
 
       // Then, update the querystring.
@@ -300,7 +304,9 @@ const StructuredLogToolbar = ({
       }, 2000);
     }
     return () => {
-      token && clearTimeout(token);
+      if (token) {
+        clearTimeout(token);
+      }
     };
   }, [copyIcon]);
 

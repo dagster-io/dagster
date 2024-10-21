@@ -14,7 +14,7 @@ description: Partitioned assets and jobs enable launching backfills, where each 
   documentation.
 </Note>
 
-A [asset definition](/concepts/assets/software-defined-assets) can represent a collection of _partitions_ that can be tracked and materialized independently. In many ways, each partition functions like its own mini-asset, but they all share a common materialization function and dependencies. Typically, each partition will correspond to a separate file or a slice of a table in a database.
+An [asset definition](/concepts/assets/software-defined-assets) can represent a collection of _partitions_ that can be tracked and materialized independently. In many ways, each partition functions like its own mini-asset, but they all share a common materialization function and dependencies. Typically, each partition will correspond to a separate file or a slice of a table in a database.
 
 A common use is for each partition to represent all the records in a data set that fall within a particular time window, e.g. hourly, daily or monthly. Alternatively, each partition can represent a region, a customer, an experiment - any dimension along which you want to be able to materialize and monitor independently. An asset can also be partitioned along multiple dimensions, e.g. by region and by hour.
 

@@ -8,11 +8,11 @@ import {extractGraphsForRepo} from './extractGraphsForRepo';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
+import {useQuery} from '../apollo-client';
 import {
   WorkspaceGraphsQuery,
   WorkspaceGraphsQueryVariables,
 } from './types/WorkspaceGraphsQuery.types';
-import {useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';

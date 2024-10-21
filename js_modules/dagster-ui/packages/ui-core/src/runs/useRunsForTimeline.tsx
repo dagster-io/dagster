@@ -7,6 +7,7 @@ import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {overlap} from './batchRunsForTimeline';
 import {fetchPaginatedBucketData, fetchPaginatedData} from './fetchPaginatedBucketData';
 import {getAutomationForRun} from './getAutomationForRun';
+import {QueryResult, gql, useApolloClient} from '../apollo-client';
 import {
   CompletedRunTimelineQuery,
   CompletedRunTimelineQueryVariables,
@@ -17,7 +18,6 @@ import {
   OngoingRunTimelineQueryVariables,
   RunTimelineFragment,
 } from './types/useRunsForTimeline.types';
-import {QueryResult, gql, useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';

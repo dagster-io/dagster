@@ -71,8 +71,8 @@ def workspace_fixture(
         yield workspace
 
 
-@pytest.fixture(name="external_repo", scope="session")
-def external_repo_fixture(workspace_context: WorkspaceProcessContext) -> RemoteRepository:
+@pytest.fixture(name="remote_repo", scope="session")
+def remote_repo_fixture(workspace_context: WorkspaceProcessContext) -> RemoteRepository:
     return next(
         iter(workspace_context.create_request_context().get_code_location_entries().values())
     ).code_location.get_repository(  # type: ignore  # (possible none)
