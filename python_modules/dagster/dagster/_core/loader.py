@@ -60,7 +60,7 @@ class LoadingContext(ABC):
 
     @staticmethod
     def ephemeral(instance: "DagsterInstance") -> "LoadingContext":
-        return EphemeralLoadingContext(instance)
+        return LoadingContextForTest(instance)
 
     def get_loaders_for(
         self, ttype: Type["InstanceLoadableBy"]
@@ -82,22 +82,6 @@ class LoadingContext(ABC):
     def clear_loaders(self) -> None:
         for ttype in self.loaders:
             del self.loaders[ttype]
-
-
-class EphemeralLoadingContext(LoadingContext):
-    """Loading context that can be constructed for short-lived method resolution."""
-
-    def __init__(self, instance: "DagsterInstance"):
-        self._instance = instance
-        self._loaders = {}
-
-    @property
-    def instance(self) -> "DagsterInstance":
-        return self._instance
-
-    @property
-    def loaders(self) -> Dict[Type, Tuple[DataLoader, BlockingDataLoader]]:
-        return self._loaders
 
 
 # Expected there may be other "Loadable" base classes based on what is needed to load.
