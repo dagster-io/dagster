@@ -975,3 +975,27 @@ def test_to_config_dict_combined_with_cached_method() -> None:
     obj = ConfigWithCachedMethod(a_string="bar")
     obj.a_string_cached()
     assert obj._convert_to_config_dictionary() == {"a_string": "bar"}  # noqa: SLF001
+
+
+def test_aliases() -> None:
+    class ConfigWithAlias(ConfigurableResource):
+        field_name: Optional[Mapping[str, str]] = Field(
+            alias="alias_name",
+            default=None,
+        )
+
+    @op
+    def echo_config(my_resource: ConfigWithAlias):
+        return my_resource.field_name
+
+    @job
+    def echo_job():
+        echo_config()
+
+    result = echo_job.execute_in_process(resources={"my_resource": ConfigWithAlias()})
+    assert result.success
+    assert result.output_for_node("echo_config") is None
+
+    d = {"test": "test"}
+    result = echo_job.execute_in_process(resources={"my_resource": ConfigWithAlias(alias_name=d)})
+    assert result.output_for_node("echo_config") == d
