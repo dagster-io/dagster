@@ -47,6 +47,9 @@ run_peer:
 run_observe: not_proxied
 	dagster dev -m dbt_example.dagster_defs.observe -p 3333
 
+run_observe_with_check: not_proxied
+	dagster dev -m dbt_example.dagster_defs.observe_with_check -p 3333
+
 run_migrate: proxied
 	dagster dev -m dbt_example.dagster_defs.migrate -p 3333
 

@@ -198,6 +198,7 @@ export type KnownTagType =
   | 'wandb'
   | 'databricks'
   | 'airflow'
+  | 'airliftmapped'
   | 'airtable'
   | 'omni'
   | 'datadog'
@@ -434,6 +435,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   airflow: {
     icon: airflow,
     content: 'Airflow',
+  },
+  airliftmapped: {
+    icon: airflow,
+    content: 'Mapped',
   },
   airtable: {
     icon: airtable,

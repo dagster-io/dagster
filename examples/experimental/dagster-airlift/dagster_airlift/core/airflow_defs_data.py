@@ -6,7 +6,10 @@ from dagster import AssetKey, AssetSpec, Definitions
 from dagster._record import record
 
 from dagster_airlift.core.airflow_instance import AirflowInstance
-from dagster_airlift.core.serialization.compute import AirliftMetadataMappingInfo
+from dagster_airlift.core.serialization.compute import (
+    AirliftMetadataMappingInfo,
+    build_airlift_metadata_mapping_info,
+)
 from dagster_airlift.core.serialization.serialized_data import DagHandle, TaskHandle
 from dagster_airlift.core.utils import (
     dag_handles_for_spec,
@@ -29,7 +32,7 @@ class AirflowDefinitionsData:
 
     @cached_property
     def mapping_info(self) -> AirliftMetadataMappingInfo:
-        return AirliftMetadataMappingInfo(asset_specs=list(self.mapped_defs.get_all_asset_specs()))
+        return build_airlift_metadata_mapping_info(self.mapped_defs)
 
     @cached_property
     def all_asset_specs_by_key(self) -> Mapping[AssetKey, AssetSpec]:
