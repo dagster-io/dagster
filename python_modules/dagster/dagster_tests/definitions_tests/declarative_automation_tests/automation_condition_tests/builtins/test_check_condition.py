@@ -65,9 +65,10 @@ def get_hardcoded_condition():
     return HardcodedCondition(), true_set
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("is_any", [True, False])
 @pytest.mark.parametrize("blocking_only", [True, False])
-def test_check_operators_partitioned(is_any: bool, blocking_only: bool) -> None:
+async def test_check_operators_partitioned(is_any: bool, blocking_only: bool) -> None:
     inner_condition, true_set = get_hardcoded_condition()
     condition = (
         AutomationCondition.any_checks_match(inner_condition, blocking_only=blocking_only)
@@ -79,25 +80,26 @@ def test_check_operators_partitioned(is_any: bool, blocking_only: bool) -> None:
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     # no checks true
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 0
 
     true_set.add(AssetCheckKey(AssetKey("A"), "a1"))
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     if is_any:
         assert result.true_subset.size == 2
     else:
         assert result.true_subset.size == (2 if blocking_only else 0)
 
     true_set.add(AssetCheckKey(AssetKey("A"), "a2"))
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     if is_any:
         assert result.true_subset.size == 2
     else:
         assert result.true_subset.size == 2
 
 
-def test_any_checks_match_basic() -> None:
+@pytest.mark.asyncio
+async def test_any_checks_match_basic() -> None:
     # always true
     true_condition = AutomationCondition.cron_tick_passed(
         "* * * * *"
@@ -110,11 +112,11 @@ def test_any_checks_match_basic() -> None:
     state = AutomationConditionScenarioState(downstream_of_check, automation_condition=condition)
 
     # there is an upstream check for C
-    state, result = state.evaluate("C")
+    state, result = await state.evaluate("C")
     assert result.true_subset.size == 1
 
     # there is no upstream check for D
-    state, result = state.evaluate("D")
+    state, result = await state.evaluate("D")
     assert result.true_subset.size == 0
 
 
