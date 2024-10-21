@@ -12,6 +12,7 @@ from dagster_looker.lkml.dagster_looker_lkml_translator import (
 from dagster_looker_tests.looker_projects import (
     test_exception_derived_table_path,
     test_extensions,
+    test_liquid_path,
     test_refinements,
     test_retail_demo_path,
 )
@@ -295,6 +296,21 @@ def test_asset_deps_exception_derived_table(caplog: pytest.LogCaptureFixture) ->
         " in file `exception_derived_table.view.lkml`."
         " The upstream dependencies for the view will be omitted."
     ) in caplog.text
+
+
+def test_liquid(caplog: pytest.LogCaptureFixture) -> None:
+    [spec] = build_looker_asset_specs(project_dir=test_liquid_path)
+
+    assert spec.key == AssetKey(["view", "liquid_derived_table"])
+    # assert not spec.deps
+    assert (
+        "SQL for view `liquid_derived_table`"
+        " in file `liquid_derived_table.view.lkml`"
+        " contains Liquid variables or conditions. Upstream dependencies are parsed as best-effort."
+    ) in caplog.text
+    assert {dep.asset_key for dep in spec.deps} == {
+        AssetKey(["looker-private-demo", "retail", "us_stores"]),
+    }
 
 
 def test_refinement_views(caplog: pytest.LogCaptureFixture):
