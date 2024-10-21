@@ -8,13 +8,11 @@ import {
   Spinner,
   Subheading,
   TextInput,
-  TextInputContainer,
   Tooltip,
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 import {useMemo, useState} from 'react';
-import styled from 'styled-components';
 
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';
@@ -268,14 +266,13 @@ export const AssetPartitions = ({
                 padding={{horizontal: 24, vertical: 8}}
               >
                 <Box style={{display: 'flex', flex: 1}}>
-                  <StyledTextInputWrapper>
-                    <TextInput
-                      icon="search"
-                      value={searchValue}
-                      onChange={(e) => setSearchValue(e.target.value)}
-                      placeholder="Filter by name…"
-                    />
-                  </StyledTextInputWrapper>
+                  <TextInput
+                    fill
+                    icon="search"
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    placeholder="Filter by name…"
+                  />
                 </Box>
                 <div>
                   {selection.dimension.name !== 'default' && (
@@ -421,15 +418,3 @@ function getSort(sortTypes: Array<SortType>, idx: number, definitionType: Partit
       : SortType.CREATION
     : sortTypes[idx]!;
 }
-
-const StyledTextInputWrapper = styled.div`
-  width: 100%;
-
-  ${TextInputContainer} {
-    width: 100%;
-  }
-
-  input {
-    width: 100%;
-  }
-`;
