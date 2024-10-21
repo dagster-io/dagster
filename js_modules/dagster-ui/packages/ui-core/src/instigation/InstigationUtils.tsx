@@ -115,6 +115,7 @@ export const HISTORY_TICK_FRAGMENT = gql`
     cursor
     instigationType
     skipReason
+    requestedAssetMaterializationCount
     runIds
     runs {
       id
