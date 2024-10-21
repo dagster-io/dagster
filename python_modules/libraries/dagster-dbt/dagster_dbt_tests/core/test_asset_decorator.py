@@ -651,6 +651,23 @@ def test_with_group_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> N
         assert expected_specs_by_key[asset_key].group_name == expected_group
 
 
+def test_with_code_version_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+    expected_code_version = "customized_code_version"
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_code_version(self, _: Mapping[str, Any]) -> Optional[str]:
+            return expected_code_version
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(): ...
+
+    for code_version in my_dbt_assets.code_versions_by_key.values():
+        assert code_version == expected_code_version
+
+
 def test_with_freshness_policy_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     expected_freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
 
