@@ -1,7 +1,6 @@
 # type: ignore
 
 from dagster import repository
-
 from src.jobs import hello_world_job
 
 
