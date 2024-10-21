@@ -115,8 +115,9 @@ def scaffold_repository_command(name: str):
     type=click.STRING,
     help="Name of the new Dagster code location",
 )
-def scaffold_code_location_command(name: str):
-    scaffold_command(name, excludes="README.md")
+@click.pass_context
+def scaffold_code_location_command(context, name: str):
+    context.invoke(scaffold_command, name=name, excludes=["README.md"])
 
     click.echo(
         click.style(

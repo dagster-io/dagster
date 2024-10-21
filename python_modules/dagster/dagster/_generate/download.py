@@ -30,6 +30,7 @@ AVAILABLE_EXAMPLES = [
     "deploy_ecs",
     "deploy_k8s",
     "development_to_production",
+    "etl_tutorial",
     "feature_graph_backed_assets",
     "project_analytics",
     "project_dagster_university_start",
