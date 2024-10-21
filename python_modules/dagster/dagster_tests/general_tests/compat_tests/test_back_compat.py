@@ -1218,8 +1218,8 @@ def test_add_backfill_id_column():
                 "update_timestamp",
                 "start_time",
                 "end_time",
+                "backfill_id",
             } == set(columns)
-            assert "backfill_id" in columns
 
             # test downgrade
             instance._run_storage._alembic_downgrade(rev="284a732df317")
