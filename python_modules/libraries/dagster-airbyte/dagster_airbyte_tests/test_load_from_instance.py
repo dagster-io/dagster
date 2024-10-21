@@ -234,7 +234,7 @@ def test_load_from_instance(
             for key, metadata in assets_def.metadata_by_key.items()
         )
 
-    relation_identifiers = {
+    table_names = {
         "test_database.test_schema.releases",
         "test_database.test_schema.tags",
         "test_database.test_schema.teams",
@@ -262,10 +262,10 @@ def test_load_from_instance(
                 .replace("_test", "")
                 .split("_")[-1]
             )
-            assert metadata["dagster/relation_identifier"] in relation_identifiers
-            assert table_name in metadata["dagster/relation_identifier"]
+            assert metadata["dagster/table_name"] in table_names
+            assert table_name in metadata["dagster/table_name"]
         else:
-            assert not metadata.get("dagster/relation_identifier")
+            assert not metadata.get("dagster/table_name")
 
     assert assets_def.keys == {AssetKey(t) for t in tables}
     assert all(

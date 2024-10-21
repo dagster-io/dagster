@@ -67,7 +67,7 @@ import {
   TableSchema,
   TableSchemaAssetContext,
   isCanonicalCodeSourceEntry,
-  isCanonicalRelationIdentifierEntry,
+  isCanonicalTableNameEntry,
   isCanonicalUriEntry,
 } from '../metadata/TableSchema';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -294,9 +294,7 @@ export const AssetNodeOverview = ({
   const nonSystemTags = filteredTags?.filter((tag) => !isSystemTag(tag));
   const systemTags = filteredTags?.filter(isSystemTag);
 
-  const relationIdentifierMetadata = assetNode?.metadataEntries?.find(
-    isCanonicalRelationIdentifierEntry,
-  );
+  const tableNameMetadata = assetNode?.metadataEntries?.find(isCanonicalTableNameEntry);
   const uriMetadata = assetNode?.metadataEntries?.find(isCanonicalUriEntry);
 
   const codeSource = assetNode?.metadataEntries?.find((m) => isCanonicalCodeSourceEntry(m)) as
@@ -370,12 +368,12 @@ export const AssetNodeOverview = ({
           ))}
       </AttributeAndValue>
       <AttributeAndValue label="Storage">
-        {(relationIdentifierMetadata || uriMetadata || storageKindTag) && (
+        {(tableNameMetadata || uriMetadata || storageKindTag) && (
           <Box flex={{direction: 'column', gap: 4}} style={{minWidth: 0}}>
-            {relationIdentifierMetadata && (
+            {tableNameMetadata && (
               <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                <MiddleTruncate text={relationIdentifierMetadata.text} />
-                <CopyButton value={relationIdentifierMetadata.text} />
+                <MiddleTruncate text={tableNameMetadata.text} />
+                <CopyButton value={tableNameMetadata.text} />
               </Box>
             )}
             {uriMetadata && (

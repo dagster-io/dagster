@@ -52,9 +52,8 @@ export const isCanonicalCodeSourceEntry = (
 ): m is CodeReferencesMetadataEntry =>
   m && m.__typename === 'CodeReferencesMetadataEntry' && m.label === 'dagster/code_references';
 
-export const isCanonicalRelationIdentifierEntry = (
-  m: MetadataEntryLabelOnly,
-): m is TextMetadataEntry => m && m.label === 'dagster/relation_identifier';
+export const isCanonicalTableNameEntry = (m: MetadataEntryLabelOnly): m is TextMetadataEntry =>
+  m && (m.label === 'dagster/relation_identifier' || m.label === 'dagster/table_name');
 
 export const isCanonicalUriEntry = (
   m: MetadataEntryLabelOnly,

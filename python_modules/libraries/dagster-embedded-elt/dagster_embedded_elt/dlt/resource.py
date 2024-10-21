@@ -151,9 +151,9 @@ class DagsterDltResource(ConfigurableResource):
                 break
 
         destination_name: Optional[str] = base_metadata.get("destination_name")
-        relation_identifier = None
+        table_name = None
         if destination_name and schema:
-            relation_identifier = ".".join([destination_name, schema, normalized_table_name])
+            table_name = ".".join([destination_name, schema, normalized_table_name])
 
         child_table_names = [
             name
@@ -171,7 +171,7 @@ class DagsterDltResource(ConfigurableResource):
             **base_metadata,
             **TableMetadataSet(
                 column_schema=table_schema,
-                relation_identifier=relation_identifier,
+                table_name=table_name,
             ),
         }
 
