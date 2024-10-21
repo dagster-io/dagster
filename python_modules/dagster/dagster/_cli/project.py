@@ -5,11 +5,7 @@ from typing import NamedTuple, Optional, Sequence, Tuple, Union
 import click
 import requests
 
-from dagster._generate import (
-    download_example_from_github,
-    generate_project,
-    generate_repository,
-)
+from dagster._generate import download_example_from_github, generate_project, generate_repository
 from dagster._generate.download import AVAILABLE_EXAMPLES
 from dagster.version import __version__ as dagster_version
 
@@ -74,7 +70,9 @@ def check_if_pypi_package_conflict_exists(project_name: str) -> PackageConflictC
 
     return PackageConflictCheckResult(request_error_msg=None, conflict_exists=False)
 
+
 # start deprecated commands
+
 
 @project_cli.command(
     name="scaffold-repository",
@@ -126,7 +124,8 @@ def scaffold_code_location_command(name: str):
             fg="yellow",
         )
     )
-    
+
+
 # end deprecated commands
 
 
@@ -183,7 +182,9 @@ def _check_and_error_on_package_conflicts(project_name: str) -> None:
     default=False,
     help="Controls whether the project name can conflict with an existing PyPI package.",
 )
-def scaffold_command(name: str, excludes: Union[Tuple, list], ignore_package_conflict: bool=False):
+def scaffold_command(
+    name: str, excludes: Union[Tuple, list], ignore_package_conflict: bool = False
+):
     excludes = list(excludes)
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
