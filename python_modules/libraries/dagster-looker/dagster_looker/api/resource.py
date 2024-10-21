@@ -30,7 +30,7 @@ from dagster_looker.api.dagster_looker_api_translator import (
 )
 
 if TYPE_CHECKING:
-    from looker_sdk.sdk.api40.models import LookmlModelExplore
+    from looker_sdk.sdk.api40.models import Dashboard, LookmlModelExplore
 
 
 logger = get_dagster_logger("dagster_looker")
@@ -85,13 +85,14 @@ class LookerResource(ConfigurableResource):
         Returns:
             Definitions: A Definitions object which will contain return the Looker structures as assets.
         """
-        return LookerApiDefsLoader(
-            looker_resource=self,
-            translator=dagster_looker_translator
-            if dagster_looker_translator is not None
-            else DagsterLookerApiTranslator(),
-            request_start_pdt_builds=request_start_pdt_builds or [],
-        ).build_defs()
+        with self.process_config_and_initialize_cm() as initialized_resource:
+            return LookerApiDefsLoader(
+                looker_resource=initialized_resource,
+                translator=dagster_looker_translator
+                if dagster_looker_translator is not None
+                else DagsterLookerApiTranslator(),
+                request_start_pdt_builds=request_start_pdt_builds or [],
+            ).build_defs()
 
 
 @dataclass(frozen=True)
@@ -211,18 +212,27 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             )
         )
 
+        def fetch_dashboard(dashboard_id: str) -> Optional[Tuple[str, "Dashboard"]]:
+            try:
+                dashboard = sdk.dashboard(dashboard_id=dashboard_id)
+                return (check.not_none(dashboard.id), dashboard)
+            except:
+                logger.warning(f"Failed to fetch dashboard '{dashboard_id}'.")
+
         with ThreadPoolExecutor(max_workers=None) as executor:
             dashboards_by_id = dict(
-                list(
-                    executor.map(
-                        lambda dashboard: (dashboard.id, sdk.dashboard(dashboard_id=dashboard.id)),
+                [
+                    dashboard
+                    for dashboard in executor.map(
+                        lambda dashboard: fetch_dashboard(dashboard.id),
                         (
                             dashboard
                             for dashboard in dashboards
                             if dashboard.id and not dashboard.hidden
                         ),
                     )
-                )
+                    if dashboard is not None
+                ]
             )
 
         # Get explore names from models
