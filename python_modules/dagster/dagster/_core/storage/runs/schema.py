@@ -44,6 +44,7 @@ RunsTable = db.Table(
     # columns in favor of DateTime / Timestamp columns.
     db.Column("start_time", db.Float),
     db.Column("end_time", db.Float),
+    db.Column("backfill_id", db.String(255)),
 )
 
 # Secondary Index migration table, used to track data migrations, both for event_logs and runs.

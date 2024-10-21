@@ -1175,6 +1175,75 @@ def test_add_primary_keys():
             assert daemon_heartbeats_id_count == daemon_heartbeats_row_count
 
 
+def test_add_backfill_id_column():
+    src_dir = file_relative_path(
+        __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        columns = get_sqlite3_columns(db_path, "runs")
+        assert {
+            "id",
+            "run_id",
+            "snapshot_id",
+            "pipeline_name",
+            "mode",
+            "status",
+            "run_body",
+            "partition",
+            "partition_set",
+            "create_timestamp",
+            "update_timestamp",
+            "start_time",
+            "end_time",
+        } == set(columns)
+        assert "backfill_id" not in columns
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+
+            columns = get_sqlite3_columns(db_path, "runs")
+            assert {
+                "id",
+                "run_id",
+                "snapshot_id",
+                "pipeline_name",
+                "mode",
+                "status",
+                "run_body",
+                "partition",
+                "partition_set",
+                "create_timestamp",
+                "update_timestamp",
+                "start_time",
+                "end_time",
+                "backfill_id",
+            } == set(columns)
+
+            # test downgrade
+            instance._run_storage._alembic_downgrade(rev="284a732df317")
+
+            assert get_current_alembic_version(db_path) == "284a732df317"
+            columns = get_sqlite3_columns(db_path, "runs")
+            assert {
+                "id",
+                "run_id",
+                "snapshot_id",
+                "pipeline_name",
+                "mode",
+                "status",
+                "run_body",
+                "partition",
+                "partition_set",
+                "create_timestamp",
+                "update_timestamp",
+                "start_time",
+                "end_time",
+            } == set(columns)
+            assert "backfill_id" not in columns
+
+
 # Prior to 0.10.0, it was possible to have `Materialization` events with no asset key.
 # `AssetMaterialization` is _supposed_ to runtime-check for null `AssetKey`, but it doesn't, so we
 # can deserialize a `Materialization` with a null asset key directly to an `AssetMaterialization`.
