@@ -3,6 +3,7 @@ from functools import lru_cache
 from typing import Any, Optional, Tuple, Union
 
 import sqlalchemy as db
+import sqlalchemy.engine.url as _url
 from alembic.command import downgrade, stamp, upgrade
 from alembic.config import Config
 from alembic.runtime.environment import EnvironmentContext
@@ -14,7 +15,21 @@ from typing_extensions import TypeAlias
 
 from dagster._utils import file_relative_path
 
-create_engine = db.create_engine  # exported
+
+def create_engine(url: Union[str, _url.URL], **kwargs):
+    url = _url.make_url(url)
+    if schema_param := url.query.get("schema"):
+        url_without_schema = url.difference_update_query(["schema"])
+        return db.create_engine(
+            url_without_schema,
+            **kwargs,
+            # set default schema (when table's schema attribute is `None`) to the
+            # `schema` param from the URI
+            # https://docs.sqlalchemy.org/en/20/core/connections.html#translation-of-schema-names
+            schema_translate_map={None: schema_param},
+        )
+    else:
+        return db.create_engine(url, **kwargs)
 
 
 ALEMBIC_SCRIPTS_LOCATION = "dagster:_core/storage/alembic"
