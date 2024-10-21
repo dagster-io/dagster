@@ -116,11 +116,11 @@ def _build_airbyte_asset_defn_metadata(
     for table in destination_tables:
         internal_deps[table] = set(upstream_assets or [])
 
-    relation_identifiers: Dict[str, str] = {}
+    table_names: Dict[str, str] = {}
     for table in destination_tables:
         if destination_database and destination_schema and table:
-            # Use the destination raw table name to create the relation identifier
-            relation_identifiers[table] = ".".join(
+            # Use the destination raw table name to create the table name
+            table_names[table] = ".".join(
                 [
                     destination_database,
                     destination_schema,
@@ -129,7 +129,7 @@ def _build_airbyte_asset_defn_metadata(
             )
             if normalization_tables and normalization_raw_table_names_by_table:
                 for normalization_table in normalization_tables.get(table, set()):
-                    relation_identifiers[normalization_table] = ".".join(
+                    table_names[normalization_table] = ".".join(
                         [
                             destination_database,
                             destination_schema,
@@ -156,7 +156,7 @@ def _build_airbyte_asset_defn_metadata(
                 table: {
                     **TableMetadataSet(
                         column_schema=schema_by_table_name.get(table),
-                        relation_identifier=relation_identifiers.get(table),
+                        table_name=table_names.get(table),
                     ),
                 }
                 for table in tables
@@ -302,15 +302,13 @@ def build_airbyte_assets(
         chain([destination_tables], normalization_tables.values() if normalization_tables else [])
     )
 
-    relation_identifiers: Dict[str, str] = {}
+    table_names: Dict[str, str] = {}
     for table in destination_tables:
         if destination_database and destination_schema and table:
-            relation_identifiers[table] = ".".join(
-                [destination_database, destination_schema, table]
-            )
+            table_names[table] = ".".join([destination_database, destination_schema, table])
             if normalization_tables:
                 for normalization_table in normalization_tables.get(table, set()):
-                    relation_identifiers[normalization_table] = ".".join(
+                    table_names[normalization_table] = ".".join(
                         [
                             destination_database,
                             destination_schema,
@@ -328,7 +326,7 @@ def build_airbyte_assets(
                 {
                     **TableMetadataSet(
                         column_schema=schema_by_table_name.get(table),
-                        relation_identifier=relation_identifiers.get(table),
+                        table_name=table_names.get(table),
                     ),
                 }
             ),

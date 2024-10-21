@@ -29,7 +29,7 @@ def metadata_for_table(
 ) -> RawMetadataMapping:
     metadata: Dict[str, MetadataValue] = {"connector_url": MetadataValue.url(connector_url)}
     column_schema = None
-    relation_identifier = None
+    table_name = None
     if table_data.get("columns"):
         columns = check.dict_elem(table_data, "columns")
         table_columns = sorted(
@@ -46,9 +46,9 @@ def metadata_for_table(
             metadata["column_info"] = MetadataValue.json(columns)
 
     if database and schema and table:
-        relation_identifier = ".".join([database, schema, table])
+        table_name = ".".join([database, schema, table])
     metadata = {
-        **TableMetadataSet(column_schema=column_schema, relation_identifier=relation_identifier),
+        **TableMetadataSet(column_schema=column_schema, table_name=table_name),
         **metadata,
     }
 

@@ -110,7 +110,7 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
 
     assert repos_materialization.metadata["dagster/row_count"] == IntMetadataValue(3)
 
-    assert repos_materialization.metadata["dagster/relation_identifier"] == TextMetadataValue(
+    assert repos_materialization.metadata["dagster/table_name"] == TextMetadataValue(
         text="duckdb.pipeline.repos"
     )
 

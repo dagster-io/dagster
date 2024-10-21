@@ -469,7 +469,7 @@ def default_metadata_from_dbt_resource_props(
         **DbtMetadataSet(materialization_type=materialization_type),
         **TableMetadataSet(
             column_schema=column_schema,
-            relation_identifier=relation_name,
+            table_name=relation_name,
         ),
     }
 
