@@ -20,6 +20,8 @@ If you haven't already, complete the [Quick Start](/getting-started/quickstart) 
 - Running a pipeline by materializing assets
 - Adding schedules, sensors, and partitions to your assets
 
+[Add image for what the completed global asset graph looks like]
+
 ## Step 1: Set up your Dagster environment
 
 First, set up a new Dagster project.
@@ -42,46 +44,61 @@ First, set up a new Dagster project.
 3. Install Dagster and the required dependencies:
 
    ```bash title="Install Dagster and dependencies"
-   pip install dagster dagster-webserver pandas
+   pip install dagster dagster-webserver pandas dagster-duckdb
    ```
 
-## Step 2: Copying Data Files
+## Step 2: Copying Project Scaffold
 
-Next we will get the raw data for the project. 
+Next we will get the raw data for the project. As well as the project scaffold, Dagster has several pre-built scaffolds you can install depending on your use case. You can see the full up to date list by running. `dagster project list-examples`
 
-1. Create a new folder for the raw data:
+Use the project scaffold command for this project. 
 
-   ```bash title="Create the data directory"
-   mkdir data
-   cd data
+   ```bash title="ETL Project Scaffold"
+      dagster project from-example --getting_started_etl_tutorial
    ```
 
-2. Copy the raw csv files:
+The project should have this structure. 
 
-   ```bash title="Copy the csv files"
-   curl -L -o products.csv https://raw.githubusercontent.com/dagster-io/dagster/refs/heads/master/examples/docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/data/products.csv
+```
+dagster-etl-tutorial/
+├── etl_tutorial/
+│   └── definitions.py
+├── data/
+│   └── products.csv
+│   └── sales_data.csv
+│   └── sales_reps.csv
+│   └── sample_request/
+│       └── request.json
+├── pyproject.toml
+├── setup.cfg
+├── setup.py
+```
 
-   curl -L -o sales_reps.csv https://raw.githubusercontent.com/dagster-io/dagster/refs/heads/master/examples/docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/data/sales_reps.csv
+## Dagster Project Structure
 
-   curl -L -o sales_data.csv https://raw.githubusercontent.com/dagster-io/dagster/refs/heads/master/examples/docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/data/sales_data.csv  
-   ```
-3. Copy Sample Request json file
+In the root directory there are three configuration files that are common in Python package management. These manage dependencies and identifies the Dagster modules in the project. The etl_tutorial folder is where our Dagster definition for this code location exists. The data directory is where the raw data for the project is stored and we will reference these files in our software-defined assets. 
 
-   ```bash title="Create the sample request"
-   mkdir sample_request
-   cd sample_request
-   curl -L -o request.json https://raw.githubusercontent.com/dagster-io/dagster/refs/heads/master/examples/docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/data/sample_request/request.json
-   
-   # navigating back to the root directory
-   cd../..
-   ```
+
+### File/Directory Descriptions
+
+- **etl_tutorial/**: This is a Python module that contains your Dagster code. It is the main directory where you will define your assets, jobs, schedules, sensors, and resources.
+
+  - **definitions.py**: This file is typically used to define jobs, schedules, and sensors. It organizes the various components of your Dagster project. This allows Dagster to load the definitions in a module.
+
+- **pyproject.toml**: This file is used to specify build system requirements and package metadata for Python projects. It is part of the Python packaging ecosystem.
+
+- **setup.cfg**: This file is used for configuration of your Python package. It can include metadata about the package, dependencies, and other configuration options.
+
+- **setup.py**: This script is used to build and distribute your Python package. It is a standard file in Python projects for specifying package details.
+
 
 
 ## What you've learned
 
 - Set up a Python virtual environment and installed Dagster
-- Copied raw data for project
+- Setup project scaffold
+- How a Dagster project is structured and what these files do 
 
 ## Next steps
 
-- Continue this tutorial with [setting up your dagster project ](/tutorial/dagster-project-setup)
+- Continue this tutorial with [your first asset](/tutorial/02-your-first-asset)

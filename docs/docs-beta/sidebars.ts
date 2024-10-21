@@ -12,9 +12,9 @@ const sidebars: SidebarsConfig = {
       label: 'Tutorial',
       collapsed: false,
       items: [
-        'tutorial/01-etl-tutorial-introduction',
-        'tutorial/02-dagster-project-setup',
-        'tutorial/03-your-first-asset',
+        'tutorial/etl-tutorial-introduction',
+        'tutorial/your-first-asset',
+        'tutorial/asset-dependencies-and-checks',
       ],
     },
     {
