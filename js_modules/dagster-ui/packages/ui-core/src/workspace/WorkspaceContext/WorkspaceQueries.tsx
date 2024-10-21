@@ -92,6 +92,10 @@ export const LOCATION_WORKSPACE_QUERY = gql`
     isJob
     isAssetJob
     pipelineSnapshotId
+    tags {
+      key
+      value
+    }
   }
 
   fragment WorkspaceSchedule on Schedule {
@@ -106,11 +110,19 @@ export const LOCATION_WORKSPACE_QUERY = gql`
       status
       ...BasicInstigationStateFragment
     }
+    tags {
+      key
+      value
+    }
   }
 
   fragment WorkspaceSensor on Sensor {
     id
     name
+    tags {
+      key
+      value
+    }
     targets {
       mode
       pipelineName

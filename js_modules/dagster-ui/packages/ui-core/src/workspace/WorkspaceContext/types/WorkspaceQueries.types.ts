@@ -61,6 +61,7 @@ export type LocationWorkspaceQuery = {
                   isJob: boolean;
                   isAssetJob: boolean;
                   pipelineSnapshotId: string;
+                  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
                 }>;
                 schedules: Array<{
                   __typename: 'Schedule';
@@ -78,12 +79,14 @@ export type LocationWorkspaceQuery = {
                     hasStartPermission: boolean;
                     hasStopPermission: boolean;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 sensors: Array<{
                   __typename: 'Sensor';
                   id: string;
                   name: string;
                   sensorType: Types.SensorType;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
                   sensorState: {
                     __typename: 'InstigationState';
@@ -172,6 +175,7 @@ export type WorkspaceLocationNodeFragment = {
             isJob: boolean;
             isAssetJob: boolean;
             pipelineSnapshotId: string;
+            tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
           }>;
           schedules: Array<{
             __typename: 'Schedule';
@@ -189,12 +193,14 @@ export type WorkspaceLocationNodeFragment = {
               hasStartPermission: boolean;
               hasStopPermission: boolean;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           sensors: Array<{
             __typename: 'Sensor';
             id: string;
             name: string;
             sensorType: Types.SensorType;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
             sensorState: {
               __typename: 'InstigationState';
@@ -263,6 +269,7 @@ export type WorkspaceLocationFragment = {
       isJob: boolean;
       isAssetJob: boolean;
       pipelineSnapshotId: string;
+      tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
     }>;
     schedules: Array<{
       __typename: 'Schedule';
@@ -280,12 +287,14 @@ export type WorkspaceLocationFragment = {
         hasStartPermission: boolean;
         hasStopPermission: boolean;
       };
+      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
     }>;
     sensors: Array<{
       __typename: 'Sensor';
       id: string;
       name: string;
       sensorType: Types.SensorType;
+      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
       targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
       sensorState: {
         __typename: 'InstigationState';
@@ -335,6 +344,7 @@ export type WorkspaceRepositoryFragment = {
     isJob: boolean;
     isAssetJob: boolean;
     pipelineSnapshotId: string;
+    tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
   }>;
   schedules: Array<{
     __typename: 'Schedule';
@@ -352,12 +362,14 @@ export type WorkspaceRepositoryFragment = {
       hasStartPermission: boolean;
       hasStopPermission: boolean;
     };
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   }>;
   sensors: Array<{
     __typename: 'Sensor';
     id: string;
     name: string;
     sensorType: Types.SensorType;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
     targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
     sensorState: {
       __typename: 'InstigationState';
@@ -402,6 +414,7 @@ export type WorkspacePipelineFragment = {
   isJob: boolean;
   isAssetJob: boolean;
   pipelineSnapshotId: string;
+  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
 };
 
 export type WorkspaceScheduleFragment = {
@@ -420,6 +433,7 @@ export type WorkspaceScheduleFragment = {
     hasStartPermission: boolean;
     hasStopPermission: boolean;
   };
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
 };
 
 export type WorkspaceSensorFragment = {
@@ -427,6 +441,7 @@ export type WorkspaceSensorFragment = {
   id: string;
   name: string;
   sensorType: Types.SensorType;
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
   sensorState: {
     __typename: 'InstigationState';
@@ -470,6 +485,6 @@ export type LocationStatusEntryFragment = {
   versionKey: string;
 };
 
-export const LocationWorkspaceQueryVersion = '611c0706fbdde2c2159648e1a0d70a2ab23f79b7ef4e8bfc9a3ee4e50ff6dad2';
+export const LocationWorkspaceQueryVersion = '976247550d8a8226d9b5afcb03dbb9e2c8daa5b1691f9bfe09dcc12be7a67425';
 
 export const CodeLocationStatusQueryVersion = 'f92885e073b8b4b9bd588bf248df7b06025e2a1f6e74c082233ac7863f5eef8e';

@@ -17,7 +17,7 @@ import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
-import {doesFilterArrayMatchValueArray} from '../ui/Filters/useAssetTagFilter';
+import {doesFilterArrayMatchValueArray} from '../ui/Filters/useDefinitionTagFilter';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
