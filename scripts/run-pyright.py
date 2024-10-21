@@ -55,6 +55,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--coverage",
+    type=str,
+    default=None,
+    help="Get type completeness coverage for the given module.",
+)
+
+parser.add_argument(
     "--env",
     "-e",
     type=str,
@@ -133,6 +140,7 @@ class Params(TypedDict):
     update_pins: bool
     venv_python: str
     skip_typecheck: bool
+    type_coverage: Optional[str]
 
 
 class Position(TypedDict):
@@ -244,6 +252,7 @@ def get_params(args: argparse.Namespace) -> Params:
         no_cache=args.no_cache,
         venv_python=venv_python,
         skip_typecheck=args.skip_typecheck,
+        type_coverage=args.coverage,
     )
 
 
@@ -412,11 +421,10 @@ def update_pinned_requirements(env: str) -> None:
 def run_pyright(
     env: str,
     paths: Optional[Sequence[str]],
-    rebuild: bool,
-    unannotated: bool,
-    pinned_deps: bool,
-    venv_python: str,
+    params: Params,
 ) -> RunResult:
+    unannotated = params["unannotated"]
+    coverage = params["type_coverage"]
     with temp_pyright_config_file(env, unannotated) as config_path:
         base_pyright_cmd = " ".join(
             [
@@ -426,10 +434,11 @@ def run_pyright(
                 "--level=warning",
                 "--warnings",  # Error on warnings
             ]
+            + (["--verifytypes", coverage] if coverage else [])
         )
         shell_cmd = " \\\n".join([base_pyright_cmd, *[f"    {p}" for p in paths or []]])
-        print(f"Running pyright for environment `{env}`...")
-        print(f"  {shell_cmd}")
+        print(f"Running pyright for environment `{env}`...", file=sys.stderr)
+        print(f"  {shell_cmd}", file=sys.stderr)
         result = subprocess.run(shell_cmd, capture_output=True, shell=True, text=True, check=False)
         try:
             json_result = json.loads(result.stdout)
@@ -455,7 +464,7 @@ def temp_pyright_config_file(env: str, unannotated: bool) -> Iterator[str]:
         config["exclude"] += load_path_file(exclude_path)
     config["analyzeUnannotatedFunctions"] = unannotated
     temp_config_path = f"pyrightconfig-{env}.json"
-    print("Creating temporary pyright config file at", temp_config_path)
+    print("Creating temporary pyright config file at", temp_config_path, file=sys.stderr)
     try:
         with open(temp_config_path, "w", encoding="utf-8") as f:
             json.dump(config, f)
@@ -581,18 +590,24 @@ if __name__ == "__main__":
         print("Successfully built environments. Skipping typecheck.")
     elif len(env_path_map) == 0:
         print("No paths to analyze. Skipping typecheck.")
+    elif params["type_coverage"]:
+        assert len(env_path_map) == 1, "type coverage can only be run in a single environment"
+        result = run_pyright(
+            env,
+            paths=env_path_map[env],
+            params=params,
+        )
+        print(result["output"]["typeCompleteness"]["completenessScore"])
     elif not params["skip_typecheck"]:
         run_results = [
             run_pyright(
                 env,
                 paths=env_path_map[env],
-                rebuild=params["rebuild"],
-                unannotated=params["unannotated"],
-                pinned_deps=params["update_pins"],
-                venv_python=params["venv_python"],
+                params=params,
             )
             for env in env_path_map
         ]
+        print(run_results[0]["returncode"])
         merged_result = reduce(merge_pyright_results, run_results)
         print_output(merged_result, params["json"])
         sys.exit(merged_result["returncode"])
