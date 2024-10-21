@@ -2,7 +2,7 @@ import datetime
 import os
 import sys
 from contextlib import contextmanager
-from typing import AbstractSet, Mapping, Sequence, cast
+from typing import AbstractSet, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
 import pytest
@@ -37,7 +37,9 @@ from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._time import get_current_datetime
 
 
-def get_code_location_origin(filename: str) -> InProcessCodeLocationOrigin:
+def get_code_location_origin(
+    filename: str, location_name: Optional[str] = None
+) -> InProcessCodeLocationOrigin:
     return InProcessCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
@@ -46,7 +48,7 @@ def get_code_location_origin(filename: str) -> InProcessCodeLocationOrigin:
             ),
             working_directory=os.getcwd(),
         ),
-        location_name=filename,
+        location_name=location_name or filename,
     )
 
 
@@ -521,3 +523,54 @@ def test_backfill_with_runs_and_checks() -> None:
             assert len(backfills) == 0
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 0
+
+
+def test_toggle_user_code() -> None:
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
+                "class": "SyncInMemoryRunLauncher",
+            },
+        }
+    ) as instance, get_threadpool_executor() as executor:
+        user_code_target = InProcessTestWorkspaceLoadTarget(
+            [get_code_location_origin("simple_user_code", location_name="simple")]
+        )
+        non_user_code_target = InProcessTestWorkspaceLoadTarget(
+            [get_code_location_origin("simple_non_user_code", location_name="simple")]
+        )
+
+        # start off with non user code target, just do the setup once
+        with create_test_daemon_workspace_context(
+            workspace_load_target=non_user_code_target, instance=instance
+        ) as context:
+            _setup_instance(context)
+
+        time = get_current_datetime()
+        # toggle back and forth between target types
+        for target in [non_user_code_target, user_code_target, non_user_code_target]:
+            with create_test_daemon_workspace_context(
+                workspace_load_target=target, instance=instance
+            ) as context:
+                time += datetime.timedelta(seconds=35)
+                with freeze_time(time):
+                    # first tick, nothing happened
+                    _execute_ticks(context, executor)
+                    runs = _get_runs_for_latest_ticks(context)
+                    assert len(runs) == 0
+
+                time += datetime.timedelta(seconds=35)
+                with freeze_time(time):
+                    # second tick, root gets updated
+                    instance.report_runless_asset_event(AssetMaterialization("root"))
+                    _execute_ticks(context, executor)
+                    runs = _get_runs_for_latest_ticks(context)
+                    assert runs[0].asset_selection == {AssetKey("downstream")}
+
+                time += datetime.timedelta(seconds=35)
+                with freeze_time(time):
+                    # third tick, don't kick off again
+                    _execute_ticks(context, executor)
+                    runs = _get_runs_for_latest_ticks(context)
+                    assert len(runs) == 0
