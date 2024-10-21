@@ -18,8 +18,9 @@ from typing import (
 )
 
 from dagster_pipes import (
-    DAGSTER_PIPES_CONTEXT_ENV_VAR,
-    DAGSTER_PIPES_MESSAGES_ENV_VAR,
+    PIPES_CONTEXT_KEY,
+    PIPES_DATA_ENV_VAR,
+    PIPES_MESSAGE_WRITER_PARAMS_KEY,
     PIPES_METADATA_TYPE_INFER,
     Method,
     PipesContextData,
@@ -399,12 +400,14 @@ class PipesSession:
         responsibility to decide how to pass these parameters to the external environment.
 
         Returns:
-            Mapping[str, str]: Parameters to pass to the external process and their corresponding
+            Mapping[str, Any]: Parameters to pass to the external process and their corresponding
             values that must be passed by the context injector.
         """
         return {
-            DAGSTER_PIPES_CONTEXT_ENV_VAR: self.context_injector_params,
-            DAGSTER_PIPES_MESSAGES_ENV_VAR: self.message_reader_params,
+            PIPES_DATA_ENV_VAR: {
+                PIPES_CONTEXT_KEY: self.context_injector_params,
+                PIPES_MESSAGE_WRITER_PARAMS_KEY: self.message_reader_params,
+            }
         }
 
     @public

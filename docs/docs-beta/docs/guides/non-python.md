@@ -49,11 +49,7 @@ When the asset is materialized, the stdout and stderr will be captured automatic
 
 ## Step 3: Send and receive data from the script
 
-To send context to your script or emit events back to Dagster, you can use environment variables provided by the `PipesSubprocessClient`.
-
-
-- `DAGSTER_PIPES_CONTEXT` - Input context
-- `DAGSTER_PIPES_MESSAGES` - Output context
+To send context to your script or emit events back to Dagster, you can use the `PIPES_DATA` environment variable expected by `dagster_pipes.PipesEnvParamsLoader`.
 
 Create a new file with the following helper functions that read the environment variables, decode the data, and write messages back to Dagster:
 
