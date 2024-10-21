@@ -3,13 +3,8 @@ from pathlib import Path
 import pytest
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.utils import make_new_run_id
-from dagster_k8s.pipes import (
-    _DEV_NULL_MESSAGE_WRITER,
-    _detect_current_namespace,
-    build_pod_body,
-    get_pod_name,
-)
-from dagster_pipes import DAGSTER_PIPES_CONTEXT_ENV_VAR, DAGSTER_PIPES_MESSAGES_ENV_VAR
+from dagster_k8s.pipes import _detect_current_namespace, build_pod_body, get_pod_name
+from dagster_pipes import PIPES_DATA_ENV_VAR
 
 
 @pytest.fixture
@@ -196,8 +191,7 @@ def test_pod_building_pipes_session_env_overrides(test_image):
         image=None,
         command=None,
         env_vars={
-            DAGSTER_PIPES_CONTEXT_ENV_VAR: "context-var",
-            DAGSTER_PIPES_MESSAGES_ENV_VAR: "pipes-message-var",
+            PIPES_DATA_ENV_VAR: "pipes-data",
         },
         base_pod_spec={
             "init_containers": [
@@ -229,26 +223,15 @@ def test_pod_building_pipes_session_env_overrides(test_image):
         for container in pod.spec.init_containers + pod.spec.containers
     } == {
         "init": [
-            {"name": "DAGSTER_PIPES_CONTEXT", "value": "context-var", "value_from": None},
-            {
-                "name": "DAGSTER_PIPES_MESSAGES",
-                "value": _DEV_NULL_MESSAGE_WRITER,
-                "value_from": None,
-            },
+            {"name": "PIPES_DATA", "value": "pipes-data", "value_from": None},
         ],
         "main": [
             {"name": "from_spec", "value": "spec", "value_from": None},
             {"name": "collide", "value": "spec", "value_from": None},
-            {"name": "DAGSTER_PIPES_CONTEXT", "value": "context-var", "value_from": None},
-            {"name": "DAGSTER_PIPES_MESSAGES", "value": "pipes-message-var", "value_from": None},
+            {"name": "PIPES_DATA", "value": "pipes-data", "value_from": None},
         ],
         "second": [
-            {"name": "DAGSTER_PIPES_CONTEXT", "value": "context-var", "value_from": None},
-            {
-                "name": "DAGSTER_PIPES_MESSAGES",
-                "value": _DEV_NULL_MESSAGE_WRITER,
-                "value_from": None,
-            },
+            {"name": "PIPES_DATA", "value": "pipes-data", "value_from": None},
         ],
     }
 
@@ -260,8 +243,7 @@ def test_pod_building_pipes_session_env_overrides_with_custom_pipes_message_writ
         image=None,
         command=None,
         env_vars={
-            DAGSTER_PIPES_CONTEXT_ENV_VAR: "context-var",
-            DAGSTER_PIPES_MESSAGES_ENV_VAR: "pipes-message-var",
+            PIPES_DATA_ENV_VAR: "pipes-data",
         },
         base_pod_spec={
             "init_containers": [
@@ -283,7 +265,7 @@ def test_pod_building_pipes_session_env_overrides_with_custom_pipes_message_writ
                     "name": "second",
                     "image": test_image,
                     "env": [
-                        {"name": "DAGSTER_PIPES_MESSAGES", "value": "custom"},
+                        {"name": "PIPES_DATA", "value": "custom"},
                     ],
                 },
             ],
@@ -296,22 +278,15 @@ def test_pod_building_pipes_session_env_overrides_with_custom_pipes_message_writ
         for container in pod.spec.init_containers + pod.spec.containers
     } == {
         "init": [
-            {"name": "DAGSTER_PIPES_CONTEXT", "value": "context-var", "value_from": None},
-            {
-                "name": "DAGSTER_PIPES_MESSAGES",
-                "value": _DEV_NULL_MESSAGE_WRITER,
-                "value_from": None,
-            },
+            {"name": "PIPES_DATA", "value": "pipes-data", "value_from": None},
         ],
         "main": [
             {"name": "from_spec", "value": "spec", "value_from": None},
             {"name": "collide", "value": "spec", "value_from": None},
-            {"name": "DAGSTER_PIPES_CONTEXT", "value": "context-var", "value_from": None},
-            {"name": "DAGSTER_PIPES_MESSAGES", "value": "pipes-message-var", "value_from": None},
+            {"name": "PIPES_DATA", "value": "pipes-data", "value_from": None},
         ],
         "second": [
-            {"name": "DAGSTER_PIPES_MESSAGES", "value": "custom", "value_from": None},
-            {"name": "DAGSTER_PIPES_CONTEXT", "value": "context-var", "value_from": None},
+            {"name": "PIPES_DATA", "value": "pipes-data", "value_from": None},
         ],
     }
 

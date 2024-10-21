@@ -28,10 +28,11 @@ from dagster._core.pipes.utils import (
     open_pipes_session,
 )
 from dagster_pipes import (
-    DAGSTER_PIPES_CONTEXT_ENV_VAR,
-    DAGSTER_PIPES_MESSAGES_ENV_VAR,
+    PIPES_DATA_ENV_VAR,
+    PIPES_MESSAGE_WRITER_PARAMS_KEY,
     PipesDefaultMessageWriter,
     PipesExtras,
+    decode_env_var,
     encode_env_var,
 )
 
@@ -52,7 +53,7 @@ def get_pod_name(run_id: str, op_name: str):
 
 DEFAULT_CONTAINER_NAME = "dagster-pipes-execution"
 _NAMESPACE_SECRET_PATH = Path("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
-_DEV_NULL_MESSAGE_WRITER = encode_env_var({"path": "/dev/null"})
+_DEV_NULL_MESSAGE_WRITER_PARAMS = {"path": "/dev/null"}
 
 
 class PipesK8sPodLogsMessageReader(PipesMessageReader):
@@ -386,33 +387,34 @@ def build_pod_body(
     # Extend the env variables for the first container
     containers[0]["env"].extend({"name": k, "value": v} for k, v in env_vars.items())
 
-    if DAGSTER_PIPES_CONTEXT_ENV_VAR in env_vars:
+    # special handling for pipes data env var
+    # if it is set, we need to add it to the other containers
+    # and special defaults for message writers in other containers
+    if PIPES_DATA_ENV_VAR in env_vars:
         # Add the dagster context to the remaining containers
         for container in containers[1:] + init_containers:
             if "env" not in container:
                 container["env"] = []
 
-            container["env"].append(
-                {
-                    "name": DAGSTER_PIPES_CONTEXT_ENV_VAR,
-                    "value": env_vars[DAGSTER_PIPES_CONTEXT_ENV_VAR],
-                }
-            )
-
             for env_var in container["env"]:
-                # If the user configures DAGSTER_PIPES_MESSAGES env var, don't replace it as
-                # they may want to configure writing messages to a file and store it somewhere
-                # or pass it within a container through a shared volume.
-                if env_var["name"] == DAGSTER_PIPES_MESSAGES_ENV_VAR:
+                # If the env var is already set for some reason, don't override it
+                if env_var["name"] == PIPES_DATA_ENV_VAR:
                     break
             else:
-                # Default to writing messages to /dev/null within the pipes session so that
-                # they don't need to do anything special if the want to read the pipes context
-                # by using `with open_dagster_pipes()`.
+                original_value = decode_env_var(env_vars[PIPES_DATA_ENV_VAR])
+
+                if PIPES_MESSAGE_WRITER_PARAMS_KEY not in original_value:
+                    # Default to writing messages to /dev/null within the pipes session so that
+                    # they don't need to do anything special if the want to read the pipes context
+                    # by using `with open_dagster_pipes()`.
+                    original_value[PIPES_MESSAGE_WRITER_PARAMS_KEY] = (
+                        _DEV_NULL_MESSAGE_WRITER_PARAMS
+                    )
+
                 container["env"].append(
                     {
-                        "name": DAGSTER_PIPES_MESSAGES_ENV_VAR,
-                        "value": _DEV_NULL_MESSAGE_WRITER,
+                        "name": PIPES_DATA_ENV_VAR,
+                        "value": encode_env_var(original_value),
                     }
                 )
 

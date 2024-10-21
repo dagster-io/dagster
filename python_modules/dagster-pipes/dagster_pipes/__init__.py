@@ -769,6 +769,10 @@ class PipesBufferedStreamMessageWriterChannel(PipesMessageWriterChannel):
 DAGSTER_PIPES_CONTEXT_ENV_VAR = "DAGSTER_PIPES_CONTEXT"
 DAGSTER_PIPES_MESSAGES_ENV_VAR = "DAGSTER_PIPES_MESSAGES"
 
+PIPES_DATA_ENV_VAR = "PIPES_DATA"
+PIPES_CONTEXT_KEY = "context"
+PIPES_MESSAGE_WRITER_PARAMS_KEY = "message_writer"
+
 
 class PipesMappingParamsLoader(PipesParamsLoader):
     """Params loader that extracts params from a Mapping provided at init time."""
@@ -776,17 +780,27 @@ class PipesMappingParamsLoader(PipesParamsLoader):
     def __init__(self, mapping: Mapping[str, str]):
         self._mapping = mapping
 
+        if DAGSTER_PIPES_CONTEXT_ENV_VAR in self._mapping:
+            self._deprecation_message = f"{DAGSTER_PIPES_CONTEXT_ENV_VAR} and {DAGSTER_PIPES_MESSAGES_ENV_VAR} are deprecated. Use {PIPES_DATA_ENV_VAR} instead."
+
     def is_dagster_pipes_process(self) -> bool:
         # use the presence of DAGSTER_PIPES_CONTEXT to discern if we are in a pipes process
-        return DAGSTER_PIPES_CONTEXT_ENV_VAR in self._mapping
+
+        return PIPES_DATA_ENV_VAR in self._mapping or DAGSTER_PIPES_CONTEXT_ENV_VAR in self._mapping
 
     def load_context_params(self) -> PipesParams:
-        raw_value = self._mapping[DAGSTER_PIPES_CONTEXT_ENV_VAR]
-        return decode_param(raw_value)
+        return (
+            decode_param(self._mapping[PIPES_DATA_ENV_VAR])[PIPES_CONTEXT_KEY]
+            if PIPES_DATA_ENV_VAR in self._mapping
+            else decode_param(self._mapping[DAGSTER_PIPES_CONTEXT_ENV_VAR])
+        )
 
     def load_messages_params(self) -> PipesParams:
-        raw_value = self._mapping[DAGSTER_PIPES_MESSAGES_ENV_VAR]
-        return decode_param(raw_value)
+        return (
+            decode_param(self._mapping[PIPES_DATA_ENV_VAR])[PIPES_MESSAGE_WRITER_PARAMS_KEY]
+            if PIPES_DATA_ENV_VAR in self._mapping
+            else decode_param(self._mapping[DAGSTER_PIPES_MESSAGES_ENV_VAR])
+        )
 
 
 class PipesEnvVarParamsLoader(PipesMappingParamsLoader):
@@ -802,17 +816,25 @@ def _env_var_to_cli_argument(env_var: str) -> str:
 
 DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT = _env_var_to_cli_argument(DAGSTER_PIPES_CONTEXT_ENV_VAR)
 DAGSTER_PIPES_MESSAGES_CLI_ARGUMENT = _env_var_to_cli_argument(DAGSTER_PIPES_MESSAGES_ENV_VAR)
+PIPES_DATA_CLI_ARGUMENT = _env_var_to_cli_argument(PIPES_DATA_ENV_VAR)
 
 DAGSTER_PIPES_CLI_PARSER = argparse.ArgumentParser(description="Dagster Pipes CLI interface")
 DAGSTER_PIPES_CLI_PARSER.add_argument(
     DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT,
     type=str,
-    help="Argument with base64 encoded and zlib-compressed JSON string containing the Pipes context",
+    help="Argument with base64 encoded and zlib-compressed JSON string containing the Pipes context. "
+    "Deprecated, use `--pipes-data` instead.",
 )
 DAGSTER_PIPES_CLI_PARSER.add_argument(
     DAGSTER_PIPES_MESSAGES_CLI_ARGUMENT,
     type=str,
-    help="Argument with base64 encoded and zlib-compressed JSON string containing the Pipes messages",
+    help="Argument with base64 encoded and zlib-compressed JSON string containing the Pipes messages. "
+    "Deprecated, use `--pipes-data` instead.",
+)
+DAGSTER_PIPES_CLI_PARSER.add_argument(
+    PIPES_DATA_CLI_ARGUMENT,
+    type=str,
+    help="Argument with base64 encoded and zlib-compressed JSON string containing Pipes bootstrap data.",
 )
 
 
@@ -823,16 +845,27 @@ class PipesCliArgsParamsLoader(PipesParamsLoader):
         self.parser = DAGSTER_PIPES_CLI_PARSER
 
     def is_dagster_pipes_process(self) -> bool:
-        # use the presence of --dagster-pipes-context to discern if we are in a pipes process
-        return DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT in sys.argv
+        if DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT in sys.argv:
+            self._deprecation_message = f"{DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT} and {DAGSTER_PIPES_MESSAGES_CLI_ARGUMENT} are deprecated. Use {PIPES_DATA_CLI_ARGUMENT} instead."
+
+        # use the presence of --pipes-data to discern if we are in a pipes process
+        return PIPES_DATA_CLI_ARGUMENT in sys.argv or DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT in sys.argv
 
     def load_context_params(self) -> PipesParams:
         args, _ = self.parser.parse_known_args()
-        return decode_param(args.dagster_pipes_context)
+        return (
+            decode_param(args.pipes_data)[PIPES_CONTEXT_KEY]
+            if args.pipes_data is not None
+            else decode_param(args.dagster_pipes_context)
+        )
 
     def load_messages_params(self) -> PipesParams:
         args, _ = self.parser.parse_known_args()
-        return decode_param(args.dagster_pipes_messages)
+        return (
+            decode_param(args.pipes_data)[PIPES_MESSAGE_WRITER_PARAMS_KEY]
+            if args.pipes_data is not None
+            else decode_param(args.dagster_pipes_messages)
+        )
 
 
 # ########################
@@ -1085,6 +1118,9 @@ class PipesContext:
         self._logger = _PipesLogger(self)
         self._materialized_assets: Set[str] = set()
         self._closed: bool = False
+
+        if hasattr(params_loader, "_deprecation_message"):
+            self.log.warning(params_loader._deprecation_message)  # type: ignore  # noqa
 
     def __enter__(self) -> "PipesContext":
         return self
