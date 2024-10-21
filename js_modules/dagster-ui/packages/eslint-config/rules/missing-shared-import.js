@@ -7,13 +7,13 @@ module.exports = createRule({
     type: 'problem',
     docs: {
       description:
-        'Disallow importing files using the shared/ path when the file does not end with ".oss.ts", ".oss.tsx", or ".oss.js".',
+        'Disallow importing files using the shared/ path when the import does not end with ".oss"',
       category: 'Best Practices',
       recommended: false,
     },
     messages: {
       invalidSharedImport:
-        'Imports using the "shared/" path must reference a file ending with ".oss.ts", ".oss.tsx", or ".oss.js".',
+        'Imports using the "shared/" path must reference an import ending with ".oss"',
     },
     fixable: 'code', // Enable autofixing
     schema: [], // no options
