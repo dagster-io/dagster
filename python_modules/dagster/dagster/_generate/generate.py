@@ -1,20 +1,21 @@
-from __future__ import annotations
-
 import os
 import posixpath
+from typing import Optional
 
 import click
 import jinja2
 
 from dagster.version import __version__ as dagster_version
 
-IGNORE_PATTERN_LIST : list[str] = [
+IGNORE_PATTERN_LIST: list[str] = [
     "__pycache__",
     ".pytest_cache",
     "*.egg-info",
     ".DS_Store",
     "tox.ini",
 ]
+
+PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
 
 
 def generate_repository(path: str):
@@ -34,8 +35,9 @@ def generate_repository(path: str):
     click.echo(f"Generated files for Dagster repository in {path}.")
 
 
-def generate_project(path: str):
-    PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
+def generate_project(path: str, excludes: Optional[list[str]] = None):
+    if not excludes:
+        excludes = []
 
     click.echo(f"Creating a Dagster project at {path}.")
 
