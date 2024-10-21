@@ -39,6 +39,18 @@ def test_table_name() -> None:
     AssetMaterialization(asset_key="a", metadata=dict_table_metadata)
 
 
+def test_legacy_table_name() -> None:
+    table_metadata = TableMetadataSet.extract(
+        {"dagster/relation_identifier": "my_database.my_schema.my_table"}
+    )
+    assert table_metadata.table_name == "my_database.my_schema.my_table"
+
+    table_metadata = TableMetadataSet.extract(
+        {"dagster/table_name": "real value", "dagster/relation_identifier": "redundant"}
+    )
+    assert table_metadata.table_name == "real value"
+
+
 def test_row_count() -> None:
     table_metadata = TableMetadataSet(row_count=67)
 
