@@ -279,6 +279,7 @@ class DbtCliInvocation:
     @public
     def stream(
         self,
+        fetch_additional_metadata: bool = True,
     ) -> (
         "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
     ):
@@ -307,10 +308,11 @@ class DbtCliInvocation:
                 def my_dbt_assets(context, dbt: DbtCliResource):
                     yield from dbt.cli(["run"], context=context).stream()
         """
-        return DbtEventIterator(
-            self._stream_asset_events(),
-            self,
-        )
+        iterator = DbtEventIterator(self._stream_asset_events(), self, set())
+        if fetch_additional_metadata:
+            iterator = iterator.fetch_column_metadata().fetch_row_counts()
+
+        return iterator
 
     @public
     def stream_raw_events(self) -> Iterator[DbtCliEventMessage]:
