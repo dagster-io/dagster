@@ -2,6 +2,7 @@ import graphene
 
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GraphenePythonError
+from dagster_graphql.schema.launched_by import GrapheneLaunchedBy
 from dagster_graphql.schema.util import non_null_list
 
 
@@ -17,6 +18,7 @@ class GrapheneRunsFeedEntry(graphene.Interface):
     assetCheckSelection = graphene.List(
         graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
     )
+    launchedBy = graphene.NonNull(GrapheneLaunchedBy)
 
     class Meta:
         name = "RunsFeedEntry"
