@@ -37,7 +37,6 @@ export const useDefinitionTagFilter = ({
     state: memoizedState ?? emptyArray,
     onStateChanged: (values) => {
       const nextTags = Array.from(values);
-      console.log({nextTags});
       setTags?.(nextTags);
     },
     canSelectAll: false,
