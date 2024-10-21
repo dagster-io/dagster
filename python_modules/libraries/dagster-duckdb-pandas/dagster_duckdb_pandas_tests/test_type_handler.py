@@ -125,7 +125,7 @@ def test_io_manager_asset_metadata(tmp_path) -> None:
     assert len(mats) == 1
     mat = mats[0]
 
-    assert mat.materialization.metadata["dagster/relation_identifier"] == MetadataValue.text(
+    assert mat.materialization.metadata["dagster/table_name"] == MetadataValue.text(
         f"{db_file}.custom_schema.my_pandas_df"
     )
 

@@ -106,7 +106,7 @@ def test_load_from_project(
     # Check metadata is added correctly to asset def
     assets_def = ab_assets[0]
 
-    relation_identifiers = {
+    table_names = {
         "AIRBYTE.BEN_DEMO.releases",
         "AIRBYTE.BEN_DEMO.tags",
         "AIRBYTE.BEN_DEMO.teams",
@@ -133,8 +133,8 @@ def test_load_from_project(
             .replace("_test", "")
             .split("_")[-1]
         )
-        assert metadata["dagster/relation_identifier"] in relation_identifiers
-        assert table_name in metadata["dagster/relation_identifier"]
+        assert metadata["dagster/table_name"] in table_names
+        assert table_name in metadata["dagster/table_name"]
 
     assert assets_def.keys == {AssetKey(t) for t in tables}
     assert all(

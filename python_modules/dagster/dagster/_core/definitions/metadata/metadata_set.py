@@ -165,7 +165,7 @@ class TableMetadataSet(NamespacedMetadataSet):
             outputs for the table.
         row_count (Optional[int]): The number of rows in the table.
         partition_row_count (Optional[int]): The number of rows in the materialized or observed partition.
-        relation_identifier (Optional[str]): A unique identifier for the table/view, typically fully qualified.
+        table_name (Optional[str]): A unique identifier for the table/view, typically fully qualified.
             For example, `my_database.my_schema.my_table`.
     """
 
@@ -173,7 +173,7 @@ class TableMetadataSet(NamespacedMetadataSet):
     column_lineage: Optional[TableColumnLineage] = None
     row_count: Optional[int] = None
     partition_row_count: Optional[int] = None
-    relation_identifier: Optional[str] = None
+    table_name: Optional[str] = None
 
     @classmethod
     def namespace(cls) -> str:

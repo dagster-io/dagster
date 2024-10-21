@@ -405,15 +405,15 @@ class SlingResource(ConfigurableResource):
 
                 object_key = stream.get("config", {}).get("object")
                 destination_stream_name = object_key or stream["name"]
-                relation_identifier = None
+                table_name = None
                 if destination_name and destination_stream_name:
-                    relation_identifier = ".".join([destination_name, destination_stream_name])
+                    table_name = ".".join([destination_name, destination_stream_name])
 
                 metadata = {
                     "elapsed_time": end_time - start_time,
                     "stream_name": stream["name"],
                     **TableMetadataSet(
-                        relation_identifier=relation_identifier,
+                        table_name=table_name,
                     ),
                 }
 

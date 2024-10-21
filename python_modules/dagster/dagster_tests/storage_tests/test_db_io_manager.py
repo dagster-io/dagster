@@ -25,8 +25,8 @@ resource_config = {
 }
 
 
-def mock_relation_identifier(*args, **kwargs) -> str:
-    return "relation_identifier"
+def mock_table_name(*args, **kwargs) -> str:
+    return "table_name"
 
 
 class IntHandler(DbTypeHandler[int]):
@@ -81,7 +81,7 @@ def test_asset_out():
         spec=DbClient,
         get_select_statement=MagicMock(return_value=""),
         connect=connect_mock,
-        get_relation_identifier=mock_relation_identifier,
+        get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
@@ -117,7 +117,7 @@ def test_asset_out_columns():
         spec=DbClient,
         get_select_statement=MagicMock(return_value=""),
         connect=connect_mock,
-        get_relation_identifier=mock_relation_identifier,
+        get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
@@ -159,7 +159,7 @@ def test_asset_out_partitioned():
         spec=DbClient,
         get_select_statement=MagicMock(return_value=""),
         connect=connect_mock,
-        get_relation_identifier=mock_relation_identifier,
+        get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
@@ -218,7 +218,7 @@ def test_asset_out_static_partitioned():
         spec=DbClient,
         get_select_statement=MagicMock(return_value=""),
         connect=connect_mock,
-        get_relation_identifier=mock_relation_identifier,
+        get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
@@ -270,7 +270,7 @@ def test_asset_out_multiple_static_partitions():
         spec=DbClient,
         get_select_statement=MagicMock(return_value=""),
         connect=connect_mock,
-        get_relation_identifier=mock_relation_identifier,
+        get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
@@ -323,7 +323,7 @@ def test_different_output_and_input_types():
         spec=DbClient,
         get_select_statement=MagicMock(return_value=""),
         connect=connect_mock,
-        get_relation_identifier=mock_relation_identifier,
+        get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[int_handler, str_handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
@@ -361,7 +361,7 @@ def test_non_asset_out():
         spec=DbClient,
         get_select_statement=MagicMock(return_value=""),
         connect=connect_mock,
-        get_relation_identifier=mock_relation_identifier,
+        get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     output_context = build_output_context(
@@ -399,7 +399,7 @@ def test_asset_schema_defaults():
     db_client = MagicMock(
         spec=DbClient,
         get_select_statement=MagicMock(return_value=""),
-        get_relation_identifier=mock_relation_identifier,
+        get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
 
@@ -561,7 +561,7 @@ def test_default_load_type():
     db_client = MagicMock(
         spec=DbClient,
         get_select_statement=MagicMock(return_value=""),
-        get_relation_identifier=mock_relation_identifier,
+        get_table_name=mock_table_name,
     )
     manager = DbIOManager(
         type_handlers=[handler],

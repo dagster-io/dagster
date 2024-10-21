@@ -78,8 +78,8 @@ class DbClient(Generic[T]):
     def get_select_statement(table_slice: TableSlice) -> str: ...
 
     @staticmethod
-    def get_relation_identifier(table_slice: TableSlice) -> Optional[str]:
-        """Returns a string which is set as the dagster/relation_identifier metadata value for an
+    def get_table_name(table_slice: TableSlice) -> Optional[str]:
+        """Returns a string which is set as the dagster/table_name metadata value for an
         emitted asset. This value should be the fully qualified name of the table, including the
         schema and database, if applicable.
         """
@@ -171,11 +171,7 @@ class DbIOManager(IOManager):
         # don't fail if it errors because the user has already attached it.
         try:
             context.add_output_metadata(
-                dict(
-                    TableMetadataSet(
-                        relation_identifier=self._db_client.get_relation_identifier(table_slice)
-                    )
-                )
+                dict(TableMetadataSet(table_name=self._db_client.get_table_name(table_slice)))
             )
         except DagsterInvalidMetadata:
             pass

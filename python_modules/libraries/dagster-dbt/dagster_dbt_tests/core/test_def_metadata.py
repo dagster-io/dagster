@@ -44,21 +44,20 @@ def test_storage_address(
     }
 
     assert all(
-        storage_address_meta.relation_identifier
-        for storage_address_meta in storage_address_metas.values()
+        storage_address_meta.table_name for storage_address_meta in storage_address_metas.values()
     )
     jaffle_shop_duckdb_dbfile_name = os.getenv("DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_NAME")
     # spot check a few storage addresses
     assert (
-        storage_address_metas["customers"].relation_identifier
+        storage_address_metas["customers"].table_name
         == f"{jaffle_shop_duckdb_dbfile_name}.dev.customers"
     )
     assert (
-        storage_address_metas["raw_customers"].relation_identifier
+        storage_address_metas["raw_customers"].table_name
         == f"{jaffle_shop_duckdb_dbfile_name}.dev.raw_customers"
     )
     assert (
-        storage_address_metas["stg_orders"].relation_identifier
+        storage_address_metas["stg_orders"].table_name
         == f"{jaffle_shop_duckdb_dbfile_name}.dev.stg_orders"
     )
 
@@ -76,18 +75,17 @@ def test_storage_address_alias(
     }
 
     assert all(
-        storage_address_meta.relation_identifier
-        for storage_address_meta in storage_address_metas.values()
+        storage_address_meta.table_name for storage_address_meta in storage_address_metas.values()
     )
 
     jaffle_shop_duckdb_dbfile_name = os.getenv("DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_NAME")
     # test that we can have tables with dots in their names, from
     # user-defined aliases
     assert (
-        storage_address_metas["customers"].relation_identifier
+        storage_address_metas["customers"].table_name
         == f"{jaffle_shop_duckdb_dbfile_name}.main.dagster.customers"
     )
     assert (
-        storage_address_metas["orders"].relation_identifier
+        storage_address_metas["orders"].table_name
         == f"{jaffle_shop_duckdb_dbfile_name}.main.dagster.orders"
     )
