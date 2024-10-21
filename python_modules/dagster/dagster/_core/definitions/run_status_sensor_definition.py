@@ -441,6 +441,8 @@ def run_failure_sensor(
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
     monitor_all_repositories: bool = False,
+    tags: Optional[Mapping[str, str]] = None,
+    metadata: Optional[Mapping[str, object]] = None,
 ) -> Callable[
     [RunFailureSensorEvaluationFn],
     SensorDefinition,
@@ -490,6 +492,8 @@ def run_failure_sensor(
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
     monitor_all_repositories: Optional[bool] = None,
+    tags: Optional[Mapping[str, str]] = None,
+    metadata: Optional[Mapping[str, object]] = None,
 ) -> Union[
     SensorDefinition,
     Callable[
@@ -513,7 +517,7 @@ def run_failure_sensor(
             Defaults to None, which means the alert will be sent when any job in the current
             repository fails.
         monitor_all_code_locations (bool): If set to True, the sensor will monitor all runs in the
-            Dagster instance. If set to True, an error will be raised if you also specify
+            Dagster deployment. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
             (deprecated in favor of monitored_jobs) The jobs in the current repository that will be
@@ -528,6 +532,10 @@ def run_failure_sensor(
         monitor_all_repositories (bool): (deprecated in favor of monitor_all_code_locations) If set to True,
             the sensor will monitor all runs in the Dagster instance. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
+            be used for searching and filtering in the UI.
+        metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the
+            sensor. Values will be normalized to typed `MetadataValue` objects.
     """
 
     def inner(
@@ -557,6 +565,8 @@ def run_failure_sensor(
             default_status=default_status,
             request_job=request_job,
             request_jobs=request_jobs,
+            tags=tags,
+            metadata=metadata,
         )
         @functools.wraps(fn)
         def _run_failure_sensor(*args, **kwargs) -> Any:
@@ -596,12 +606,16 @@ class RunStatusSensorDefinition(SensorDefinition):
             The jobs in the current repository that will be monitored by this sensor. Defaults to
             None, which means the alert will be sent when any job in the repository fails.
         monitor_all_code_locations (bool): If set to True, the sensor will monitor all runs in the
-            Dagster instance. If set to True, an error will be raised if you also specify
+            Dagster deployment. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
             execute if yielded from the sensor.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
+            be used for searching and filtering in the UI.
+        metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the
+            sensor. Values will be normalized to typed `MetadataValue` objects.
         request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
             A list of jobs to be executed if RunRequests are yielded from the sensor.
     """
@@ -629,6 +643,8 @@ class RunStatusSensorDefinition(SensorDefinition):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         request_job: Optional[ExecutableDefinition] = None,
         request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        metadata: Optional[Mapping[str, object]] = None,
         required_resource_keys: Optional[Set[str]] = None,
     ):
         from dagster._core.definitions.selector import (
@@ -812,14 +828,14 @@ class RunStatusSensorDefinition(SensorDefinition):
                     not job_match
                     and
                     # the job has a repository (not manually executed)
-                    dagster_run.external_job_origin
+                    dagster_run.remote_job_origin
                     and
                     # the job belongs to the current code location
-                    dagster_run.external_job_origin.repository_origin.code_location_origin.location_name
+                    dagster_run.remote_job_origin.repository_origin.code_location_origin.location_name
                     == code_location_name
                     and
                     # the job belongs to the current repository
-                    dagster_run.external_job_origin.repository_origin.repository_name
+                    dagster_run.remote_job_origin.repository_origin.repository_name
                     == context.repository_name
                 ):
                     if monitored_jobs:
@@ -832,14 +848,14 @@ class RunStatusSensorDefinition(SensorDefinition):
                     not job_match
                     and
                     # the job has a repository (not manually executed)
-                    dagster_run.external_job_origin
+                    dagster_run.remote_job_origin
                 ):
                     # check if the run is one of the jobs specified by JobSelector or RepositorySelector (ie in another repo)
                     # make a JobSelector for the run in question
-                    external_repository_origin = dagster_run.external_job_origin.repository_origin
+                    remote_repository_origin = dagster_run.remote_job_origin.repository_origin
                     run_job_selector = JobSelector(
-                        location_name=external_repository_origin.code_location_origin.location_name,
-                        repository_name=external_repository_origin.repository_name,
+                        location_name=remote_repository_origin.code_location_origin.location_name,
+                        repository_name=remote_repository_origin.repository_name,
                         job_name=dagster_run.job_name,
                     )
                     if run_job_selector in other_repo_jobs:
@@ -847,8 +863,8 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                     # make a RepositorySelector for the run in question
                     run_repo_selector = RepositorySelector(
-                        location_name=external_repository_origin.code_location_origin.location_name,
-                        repository_name=external_repository_origin.repository_name,
+                        location_name=remote_repository_origin.code_location_origin.location_name,
+                        repository_name=remote_repository_origin.repository_name,
                     )
                     if run_repo_selector in other_repos:
                         job_match = True
@@ -954,6 +970,8 @@ class RunStatusSensorDefinition(SensorDefinition):
             job=request_job,
             jobs=request_jobs,
             required_resource_keys=combined_required_resource_keys,
+            tags=tags,
+            metadata=metadata,
         )
 
     def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
@@ -1022,6 +1040,8 @@ def run_status_sensor(
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
     monitor_all_repositories: Optional[bool] = None,
+    tags: Optional[Mapping[str, str]] = None,
+    metadata: Optional[Mapping[str, object]] = None,
 ) -> Callable[
     [RunStatusSensorEvaluationFunction],
     RunStatusSensorDefinition,
@@ -1042,7 +1062,7 @@ def run_status_sensor(
             Jobs in the current code locations that will be monitored by this sensor. Defaults to None, which means the alert will
             be sent when any job in the code location matches the requested run_status. Jobs in external repositories can be monitored by using
             RepositorySelector or JobSelector.
-        monitor_all_code_locations (Optional[bool]): If set to True, the sensor will monitor all runs in the Dagster instance.
+        monitor_all_code_locations (Optional[bool]): If set to True, the sensor will monitor all runs in the Dagster deployment.
             If set to True, an error will be raised if you also specify monitored_jobs or job_selection.
             Defaults to False.
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
@@ -1058,6 +1078,10 @@ def run_status_sensor(
         monitor_all_repositories (Optional[bool]): (deprecated in favor of monitor_all_code_locations) If set to True, the sensor will monitor all runs in the Dagster instance.
             If set to True, an error will be raised if you also specify monitored_jobs or job_selection.
             Defaults to False.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
+            be used for searching and filtering in the UI.
+        metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the
+            sensor. Values will be normalized to typed `MetadataValue` objects.
     """
 
     def inner(
@@ -1091,6 +1115,8 @@ def run_status_sensor(
             default_status=default_status,
             request_job=request_job,
             request_jobs=request_jobs,
+            tags=tags,
+            metadata=metadata,
         )
 
     return inner

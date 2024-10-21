@@ -17,7 +17,6 @@ import {Link} from 'react-router-dom';
 import {AllIndividualEventsButton} from './AllIndividualEventsButton';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
-import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
 import {ChangedReasonsTag} from './ChangedReasons';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {StaleReasonsTag} from './Stale';
@@ -40,7 +39,7 @@ import {ChangeReason, RunStatus, StaleStatus} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partitionKey: string}) => {
@@ -209,10 +208,10 @@ export const AssetPartitionDetail = ({
     currentRun?.status === RunStatus.STARTED
       ? 'that targets this partition has started .'
       : currentRun?.status === RunStatus.STARTING
-      ? 'that targets this partition is starting.'
-      : currentRun?.status === RunStatus.QUEUED
-      ? 'that targets this partition is queued.'
-      : undefined;
+        ? 'that targets this partition is starting.'
+        : currentRun?.status === RunStatus.QUEUED
+          ? 'that targets this partition is queued.'
+          : undefined;
 
   const repositoryOrigin = latestEventRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin
@@ -372,10 +371,6 @@ export const AssetPartitionDetail = ({
           repoAddress={repoAddress}
           showDescriptions
         />
-      </Box>
-      <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-        <Subheading>Source data</Subheading>
-        <AssetMaterializationUpstreamData timestamp={latest?.timestamp} assetKey={assetKey} />
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
         <Subheading>Tags</Subheading>

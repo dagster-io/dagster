@@ -68,3 +68,5 @@ export type SingleSensorQuery = {
     | {__typename: 'SensorNotFoundError'}
     | {__typename: 'UnauthorizedError'};
 };
+
+export const SingleSensorQueryVersion = 'dbda5ba47d4ba10f8c527c9a7cd45fba0811276441a17a8ac6f173ed588f025b';

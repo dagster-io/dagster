@@ -99,7 +99,11 @@ def instance():
                 "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
                 "class": "TestRunLauncher",
             },
-            "run_monitoring": {"enabled": True, "max_resume_run_attempts": 3},
+            "run_monitoring": {
+                "enabled": True,
+                "max_resume_run_attempts": 3,
+                "max_runtime_seconds": 750,
+            },
         },
     ) as instance:
         yield instance
@@ -295,6 +299,12 @@ def test_long_running_termination(
                 status=DagsterRunStatus.STARTING,
                 tags={MAX_RUNTIME_SECONDS_TAG: "500"},
             )
+            too_long_run_other_tag_value = create_run_for_test(
+                instance,
+                job_name="foo",
+                status=DagsterRunStatus.STARTING,
+                tags={"dagster/max_runtime_seconds": "500"},
+            )
             okay_run = create_run_for_test(
                 instance,
                 job_name="foo",
@@ -307,6 +317,7 @@ def test_long_running_termination(
         started_time = initial + datetime.timedelta(seconds=1)
         with freeze_time(started_time):
             report_started_event(instance, too_long_run, started_time.timestamp())
+            report_started_event(instance, too_long_run_other_tag_value, started_time.timestamp())
             report_started_event(instance, okay_run, started_time.timestamp())
             report_started_event(instance, run_no_tag, started_time.timestamp())
 
@@ -314,6 +325,13 @@ def test_long_running_termination(
         assert too_long_record is not None
         assert too_long_record.dagster_run.status == DagsterRunStatus.STARTED
         assert too_long_record.start_time == started_time.timestamp()
+
+        too_long_other_tag_value_record = instance.get_run_record_by_id(
+            too_long_run_other_tag_value.run_id
+        )
+        assert too_long_other_tag_value_record is not None
+        assert too_long_other_tag_value_record.dagster_run.status == DagsterRunStatus.STARTED
+        assert too_long_other_tag_value_record.start_time == started_time.timestamp()
 
         okay_record = instance.get_run_record_by_id(okay_run.run_id)
         assert okay_record is not None
@@ -361,6 +379,41 @@ def test_long_running_termination(
             event = run_failure_events[0].dagster_event
             assert event
             assert event.message == "Exceeded maximum runtime of 500 seconds."
+
+            monitor_started_run(instance, workspace, too_long_other_tag_value_record, logger)
+            run = instance.get_run_by_id(too_long_other_tag_value_record.dagster_run.run_id)
+            assert run
+            assert len(run_launcher.termination_calls) == 2
+            run = instance.get_run_by_id(too_long_other_tag_value_record.dagster_run.run_id)
+            assert run
+            assert run.status == DagsterRunStatus.FAILURE
+
+            run_failure_events = instance.all_logs(
+                too_long_other_tag_value_record.dagster_run.run_id,
+                of_type=DagsterEventType.RUN_FAILURE,
+            )
+            assert len(run_failure_events) == 1
+            event = run_failure_events[0].dagster_event
+            assert event
+            assert event.message == "Exceeded maximum runtime of 500 seconds."
+
+        # Wait long enough for the instance default to kick in
+        eval_time = started_time + datetime.timedelta(seconds=751)
+        with freeze_time(eval_time):
+            # Still overridden to 1000 so no problem
+            monitor_started_run(instance, workspace, okay_record, logger)
+            run = instance.get_run_by_id(okay_record.dagster_run.run_id)
+            assert run
+            # no new termination calls
+            assert len(run_launcher.termination_calls) == 2
+
+            monitor_started_run(instance, workspace, no_tag_record, logger)
+            run = instance.get_run_by_id(no_tag_record.dagster_run.run_id)
+            assert run
+            assert len(run_launcher.termination_calls) == 3
+            run = instance.get_run_by_id(no_tag_record.dagster_run.run_id)
+            assert run
+            assert run.status == DagsterRunStatus.FAILURE
 
 
 @pytest.mark.parametrize("failure_case", ["fail_termination", "termination_exception"])

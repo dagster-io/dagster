@@ -1,3 +1,4 @@
+import functools
 from unittest.mock import Mock
 
 import dagster._check as check
@@ -12,6 +13,7 @@ from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,
     assert_permission,
     assert_permission_for_location,
+    capture_error,
     check_permission,
     require_permission_check,
 )
@@ -102,6 +104,27 @@ class EndpointWithRequiredPermissionCheck:
     @require_permission_check(Permissions.LAUNCH_PIPELINE_EXECUTION)
     def mutate(self, graphene_info, **_kwargs):
         assert_permission(graphene_info, Permissions.LAUNCH_PIPELINE_EXECUTION)
+
+
+def decorator_with_attribute(fn):
+    @functools.wraps(fn)
+    def _fn(*args, **kwargs):
+        return fn(*args, **kwargs)
+
+    fn.my_attribute = True
+
+    return _fn
+
+
+def test_decorators_wrap_attributes():
+    class EndpointWithAttributeSet:
+        @capture_error
+        @check_permission(Permissions.LAUNCH_PARTITION_BACKFILL)
+        @decorator_with_attribute
+        def mutate(self, graphene_info, **_kwargs):
+            pass
+
+    assert EndpointWithAttributeSet.mutate.__wrapped__.__wrapped__.__wrapped__.my_attribute is True
 
 
 class EndpointMissingRequiredPermissionCheck:

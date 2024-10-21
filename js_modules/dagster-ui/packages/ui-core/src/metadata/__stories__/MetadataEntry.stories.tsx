@@ -58,6 +58,13 @@ const MetadataTableSchema: TableSchemaMetadataEntry['schema'] = {
         unique: true,
         other: [],
       },
+      tags: [
+        {
+          __typename: 'DefinitionTag',
+          key: 'foo',
+          value: 'bar',
+        },
+      ],
     },
     {
       __typename: 'TableColumn',
@@ -70,6 +77,7 @@ const MetadataTableSchema: TableSchemaMetadataEntry['schema'] = {
         unique: false,
         other: [],
       },
+      tags: [],
     },
     {
       __typename: 'TableColumn',
@@ -82,6 +90,7 @@ const MetadataTableSchema: TableSchemaMetadataEntry['schema'] = {
         unique: false,
         other: [],
       },
+      tags: [],
     },
   ],
 };

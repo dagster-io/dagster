@@ -53,7 +53,7 @@ export const CodeLinkProtocolSelect = ({}) => {
       <Select<string>
         popoverProps={{
           position: 'bottom-left',
-          modifiers: {offset: {enabled: true, offset: '-12px, 8px'}},
+          modifiers: {offset: {enabled: true, options: {offset: [-12, 8]}}},
         }}
         activeItem={isCustom ? '' : codeLinkProtocol.protocol}
         inputProps={{style: {width: '300px'}}}

@@ -1,4 +1,0 @@
-tasks:
-  - id: some_task 
-    migrated: True 
-    extra_key: extra_value

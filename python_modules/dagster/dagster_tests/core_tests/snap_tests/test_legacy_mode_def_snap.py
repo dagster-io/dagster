@@ -1,5 +1,5 @@
 from dagster import job, logger, resource
-from dagster._core.snap import JobSnapshot
+from dagster._core.snap import JobSnap
 from dagster._core.snap.mode import ModeDefSnap
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
@@ -35,7 +35,7 @@ def test_mode_snap(snapshot):
     def a_job():
         pass
 
-    job_snapshot = JobSnapshot.from_job_def(a_job)
+    job_snapshot = JobSnap.from_job_def(a_job)
     assert len(job_snapshot.mode_def_snaps) == 1
     mode_def_snap = job_snapshot.mode_def_snaps[0]
 

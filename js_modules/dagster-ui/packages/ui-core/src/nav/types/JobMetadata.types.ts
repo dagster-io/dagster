@@ -137,3 +137,5 @@ export type RunMetadataFragment = {
     key: {__typename: 'AssetKey'; path: Array<string>};
   }>;
 };
+
+export const JobMetadataQueryVersion = 'e44915164a1174b291978e4bee269eb293e3953dc6d5fa5831a731b2533e1bf5';

@@ -4,14 +4,11 @@ import {cache as mockedCache} from 'idb-lru-cache';
 
 import {Asset, buildAsset, buildAssetConnection} from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
-import {
-  ASSET_CATALOG_TABLE_QUERY,
-  ASSET_CATALOG_TABLE_QUERY_VERSION,
-  useAllAssets,
-} from '../AssetsCatalogTable';
+import {ASSET_CATALOG_TABLE_QUERY, useAllAssets} from '../AssetsCatalogTable';
 import {
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
+  AssetCatalogTableQueryVersion,
 } from '../types/AssetsCatalogTable.types';
 
 jest.mock('idb-lru-cache', () => {
@@ -91,7 +88,7 @@ describe('useAllAssets', () => {
     (mockedCache as any)().get.mockResolvedValueOnce({
       value: {
         data: [buildAsset()],
-        version: ASSET_CATALOG_TABLE_QUERY_VERSION,
+        version: AssetCatalogTableQueryVersion,
       },
     });
     const mock = createMock({

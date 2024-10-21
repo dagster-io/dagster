@@ -76,3 +76,5 @@ export type WorkspaceGraphsQuery = {
       }
     | {__typename: 'RepositoryNotFoundError'};
 };
+
+export const WorkspaceGraphsQueryVersion = 'ccbef870f327b56beb0d781a476c8afbbc22ff2621181c8576861daaf7667ecf';

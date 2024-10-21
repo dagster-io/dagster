@@ -20,11 +20,11 @@ import styled from 'styled-components';
 import {RunRequestTable} from './DryRunRequestTable';
 import {DynamicPartitionRequests} from './DynamicPartitionRequests';
 import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
+import {gql, useMutation} from '../apollo-client';
 import {
   SensorDryRunMutation,
   SensorDryRunMutationVariables,
 } from './types/SensorDryRunDialog.types';
-import {gql, useMutation} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -242,8 +242,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
                   {sensorExecutionData?.evaluationResult?.cursor?.length
                     ? sensorExecutionData?.evaluationResult.cursor
                     : error
-                    ? 'Error'
-                    : 'None'}
+                      ? 'Error'
+                      : 'None'}
                 </pre>
                 {error ||
                 (currentCursor ?? '') ===
@@ -258,8 +258,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
                         {cursorState === 'Persisting'
                           ? 'Persisting'
                           : cursorState === 'Persisted'
-                          ? 'Persisted'
-                          : 'Persist computed cursor value'}
+                            ? 'Persisted'
+                            : 'Persist computed cursor value'}
                       </span>
                     </Button>
                     {cursorState === 'Persisted' ? (

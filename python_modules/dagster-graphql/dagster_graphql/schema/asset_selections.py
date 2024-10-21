@@ -1,13 +1,14 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Sequence
 
 import graphene
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.handle import RepositoryHandle
 
-from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
+from dagster_graphql.implementation.fetch_assets import get_asset
 from dagster_graphql.implementation.utils import capture_error
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
-from dagster_graphql.schema.util import non_null_list
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.roots.assets import GrapheneAssetConnection
@@ -19,33 +20,40 @@ class GrapheneAssetSelection(graphene.ObjectType):
     assets = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneAsset")
     assetsOrError = graphene.NonNull("dagster_graphql.schema.roots.assets.GrapheneAssetsOrError")
 
-    def __init__(self, asset_selection: AssetSelection, external_repository: ExternalRepository):
+    def __init__(
+        self,
+        asset_selection: AssetSelection,
+        repository_handle: RepositoryHandle,
+    ):
         self._asset_selection = asset_selection
-        self._external_repository = external_repository
+        self._repository_handle = repository_handle
+        self._resolved_keys = None
 
-    def resolve_assetSelectionString(self, _graphene_info):
+    def resolve_assetSelectionString(self, _graphene_info) -> str:
         return str(self._asset_selection)
 
-    def resolve_assetKeys(self, _graphene_info):
-        asset_graph = self._external_repository.asset_graph
+    def resolve_assetKeys(self, graphene_info: ResolveInfo):
         return [
             GrapheneAssetKey(path=asset_key.path)
-            for asset_key in self._asset_selection.resolve(asset_graph)
+            for asset_key in self._get_resolved_and_sorted_keys(graphene_info)
         ]
 
-    def _get_assets(self, graphene_info):
-        from dagster_graphql.schema.pipelines.pipeline import GrapheneAsset
-
-        asset_graph = self._external_repository.asset_graph
-        asset_nodes_by_asset_key = get_asset_nodes_by_asset_key(graphene_info)
-
+    def _get_assets(self, graphene_info: ResolveInfo):
         return [
-            GrapheneAsset(key=asset_key, definition=asset_nodes_by_asset_key.get(asset_key))
-            for asset_key in self._asset_selection.resolve(asset_graph)
+            get_asset(graphene_info, asset_key)
+            for asset_key in self._get_resolved_and_sorted_keys(graphene_info)
         ]
 
-    def resolve_assets(self, graphene_info):
+    def resolve_assets(self, graphene_info: ResolveInfo):
         return self._get_assets(graphene_info)
+
+    def _get_resolved_and_sorted_keys(self, graphene_info: ResolveInfo) -> Sequence[AssetKey]:
+        """Use this to maintain stability in ordering."""
+        if self._resolved_keys is None:
+            repo = graphene_info.context.get_repository(self._repository_handle)
+            self._resolved_keys = sorted(self._asset_selection.resolve(repo.asset_graph), key=str)
+
+        return self._resolved_keys
 
     @capture_error
     def resolve_assetsOrError(self, graphene_info) -> "GrapheneAssetConnection":

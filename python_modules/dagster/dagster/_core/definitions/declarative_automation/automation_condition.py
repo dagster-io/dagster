@@ -1,15 +1,20 @@
 import datetime
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import TYPE_CHECKING, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Generic, Mapping, Optional, Sequence
 
 from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import experimental, public
-from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.asset_graph_view.entity_subset import EntitySubset
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.asset_key import (
+    AssetCheckKey,
+    AssetKey,
+    CoercibleToAssetKey,
+    T_EntityKey,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
     AutomationConditionCursor,
@@ -21,7 +26,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._record import copy
+from dagster._record import copy, record
 from dagster._serdes.serdes import is_whitelisted_for_serdes_object
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
@@ -32,30 +37,13 @@ if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.automation_context import (
         AutomationContext,
     )
-    from dagster._core.definitions.declarative_automation.operands import (
-        CodeVersionChangedCondition,
-        CronTickPassedCondition,
-        FailedAutomationCondition,
-        InLatestTimeWindowCondition,
-        InProgressAutomationCondition,
-        MissingAutomationCondition,
-        NewlyRequestedCondition,
-        NewlyUpdatedCondition,
-        WillBeRequestedCondition,
-    )
-    from dagster._core.definitions.declarative_automation.operators import (
-        AllDepsCondition,
-        AndAutomationCondition,
-        AnyDepsCondition,
-        AnyDownstreamConditionsCondition,
-        NewlyTrueCondition,
-        NotAutomationCondition,
-        OrAutomationCondition,
-        SinceCondition,
+    from dagster._core.definitions.declarative_automation.operators import AndAutomationCondition
+    from dagster._core.definitions.declarative_automation.operators.dep_operators import (
+        DepsAutomationCondition,
     )
 
 
-class AutomationCondition(ABC):
+class AutomationCondition(ABC, Generic[T_EntityKey]):
     """An AutomationCondition represents a condition of an asset that impacts whether it should be
     automatically executed. For example, you can have a condition which becomes true whenever the
     code version of the asset is changed, or whenever an upstream dependency is updated.
@@ -105,14 +93,12 @@ class AutomationCondition(ABC):
         return ""
 
     @property
-    def label(self) -> Optional[str]:
-        """User-provided label subjectively describing the purpose of this condition in the broader evaluation tree."""
-        return None
-
-    @property
     def name(self) -> str:
         """Formal name of this specific condition, generally aligning with its static constructor."""
         return self.__class__.__name__
+
+    def get_label(self) -> Optional[str]:
+        return None
 
     def get_node_snapshot(self, unique_id: str) -> AutomationConditionNodeSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
@@ -120,7 +106,7 @@ class AutomationCondition(ABC):
             class_name=self.__class__.__name__,
             description=self.description,
             unique_id=unique_id,
-            label=self.label,
+            label=self.get_label(),
             name=self.name,
         )
 
@@ -128,7 +114,7 @@ class AutomationCondition(ABC):
         self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
     ) -> AutomationConditionSnapshot:
         """Returns a serializable snapshot of the entire AutomationCondition tree."""
-        unique_id = self.get_unique_id(parent_unique_id=parent_unique_id, index=index)
+        unique_id = self.get_node_unique_id(parent_unique_id=parent_unique_id, index=index)
         node_snapshot = self.get_node_snapshot(unique_id)
         children = [
             child.get_snapshot(parent_unique_id=unique_id, index=i)
@@ -136,23 +122,26 @@ class AutomationCondition(ABC):
         ]
         return AutomationConditionSnapshot(node_snapshot=node_snapshot, children=children)
 
-    def get_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
+    def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
         """Returns a unique identifier for this condition within the broader condition tree."""
-        parts = [str(parent_unique_id), str(index), self.__class__.__name__, self.description]
+        parts = [str(parent_unique_id), str(index), self.name]
         return non_secure_md5_hash_str("".join(parts).encode())
 
-    def get_hash(
-        self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
-    ) -> int:
-        """Generates a hash based off of the unique ids of all children."""
-        unique_id = self.get_unique_id(parent_unique_id=parent_unique_id, index=index)
-        hashes = [hash(unique_id)]
-        for i, child in enumerate(self.children):
-            hashes.append(child.get_hash(parent_unique_id=unique_id, index=i))
-        return hash(tuple(hashes))
+    def get_unique_id(
+        self, *, parent_node_unique_id: Optional[str] = None, index: Optional[int] = None
+    ) -> str:
+        """Returns a unique identifier for the entire subtree."""
+        node_unique_id = self.get_node_unique_id(
+            parent_unique_id=parent_node_unique_id, index=index
+        )
+        child_unique_ids = [
+            child.get_unique_id(parent_node_unique_id=node_unique_id, index=i)
+            for i, child in enumerate(self.children)
+        ]
+        return non_secure_md5_hash_str("".join([node_unique_id, *child_unique_ids]).encode())
 
     def __hash__(self) -> int:
-        return self.get_hash()
+        return hash(self.get_unique_id())
 
     @property
     def has_rule_condition(self) -> bool:
@@ -175,10 +164,14 @@ class AutomationCondition(ABC):
         return AutoMaterializePolicy.from_automation_condition(self)
 
     @abstractmethod
-    def evaluate(self, context: "AutomationContext") -> "AutomationResult":
+    def evaluate(
+        self, context: "AutomationContext[T_EntityKey]"
+    ) -> "AutomationResult[T_EntityKey]":
         raise NotImplementedError()
 
-    def __and__(self, other: "AutomationCondition") -> "AndAutomationCondition":
+    def __and__(
+        self, other: "AutomationCondition[T_EntityKey]"
+    ) -> "AndAutomationCondition[T_EntityKey]":
         from dagster._core.definitions.declarative_automation.operators import (
             AndAutomationCondition,
         )
@@ -188,7 +181,9 @@ class AutomationCondition(ABC):
             return AndAutomationCondition(operands=[*self.operands, other])
         return AndAutomationCondition(operands=[self, other])
 
-    def __or__(self, other: "AutomationCondition") -> "OrAutomationCondition":
+    def __or__(
+        self, other: "AutomationCondition[T_EntityKey]"
+    ) -> "BuiltinAutomationCondition[T_EntityKey]":
         from dagster._core.definitions.declarative_automation.operators import OrAutomationCondition
 
         # group OrAutomationConditions together
@@ -196,19 +191,16 @@ class AutomationCondition(ABC):
             return OrAutomationCondition(operands=[*self.operands, other])
         return OrAutomationCondition(operands=[self, other])
 
-    def __invert__(self) -> "NotAutomationCondition":
+    def __invert__(self) -> "BuiltinAutomationCondition[T_EntityKey]":
         from dagster._core.definitions.declarative_automation.operators import (
             NotAutomationCondition,
         )
 
         return NotAutomationCondition(operand=self)
 
-    @public
-    def with_label(self, label: Optional[str]) -> Self:
-        """Returns a copy of this AutomationCondition with a human-readable label."""
-        return copy(self, label=label)
-
-    def since(self, reset_condition: "AutomationCondition") -> "SinceCondition":
+    def since(
+        self, reset_condition: "AutomationCondition[T_EntityKey]"
+    ) -> "BuiltinAutomationCondition[T_EntityKey]":
         """Returns an AutomationCondition that is true if this condition has become true since the
         last time the reference condition became true.
         """
@@ -216,35 +208,51 @@ class AutomationCondition(ABC):
 
         return SinceCondition(trigger_condition=self, reset_condition=reset_condition)
 
-    def since_last_handled(self) -> "SinceCondition":
-        """Returns an AutomationCondition that is true if this condition has become true since the
-        last time this asset partition was requested or updated.
-        """
-        with disable_dagster_warnings():
-            return self.since(
-                (
-                    AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
-                ).with_label("handled")
-            )
-
-    def newly_true(self) -> "NewlyTrueCondition":
+    def newly_true(self) -> "BuiltinAutomationCondition[T_EntityKey]":
         """Returns an AutomationCondition that is true only on the tick that this condition goes
-        from false to true for a given asset partition.
+        from false to true for a given target.
         """
         from dagster._core.definitions.declarative_automation.operators import NewlyTrueCondition
 
         return NewlyTrueCondition(operand=self)
 
+    def since_last_handled(self: "AutomationCondition") -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if this condition has become true since the
+        target was last requested or updated, and since the last time this target's condition was modified.
+        """
+        with disable_dagster_warnings():
+            return self.since(
+                (
+                    AutomationCondition.newly_requested()
+                    | AutomationCondition.newly_updated()
+                    | AutomationCondition.initial_evaluation()
+                ).with_label("handled")
+            )
+
     @public
     @experimental
     @staticmethod
-    def any_deps_match(condition: "AutomationCondition") -> "AnyDepsCondition":
-        """Returns an AutomationCondition that is true for an asset partition if at least one partition
-        of any of its dependencies evaluate to True for the given condition.
+    def asset_matches(
+        key: "CoercibleToAssetKey", condition: "AutomationCondition[AssetKey]"
+    ) -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if this condition is true for the given key."""
+        from dagster._core.definitions.declarative_automation.operators import (
+            EntityMatchesCondition,
+        )
+
+        asset_key = AssetKey.from_coercible(key)
+        return EntityMatchesCondition(key=asset_key, operand=condition)
+
+    @public
+    @experimental
+    @staticmethod
+    def any_deps_match(condition: "AutomationCondition") -> "DepsAutomationCondition":
+        """Returns an AutomationCondition that is true for a if at least one partition
+        of the any of the target's dependencies evaluate to True for the given condition.
 
         Args:
             condition (AutomationCondition): The AutomationCondition that will be evaluated against
-                this asset's dependencies.
+                this target's dependencies.
         """
         from dagster._core.definitions.declarative_automation.operators import AnyDepsCondition
 
@@ -253,13 +261,13 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def all_deps_match(condition: "AutomationCondition") -> "AllDepsCondition":
-        """Returns an AutomationCondition that is true for an asset partition if at least one partition
-        of all of its dependencies evaluate to True for the given condition.
+    def all_deps_match(condition: "AutomationCondition") -> "DepsAutomationCondition":
+        """Returns an AutomationCondition that is true for a if at least one partition
+        of the all of the target's dependencies evaluate to True for the given condition.
 
         Args:
             condition (AutomationCondition): The AutomationCondition that will be evaluated against
-                this asset's dependencies.
+                this target's dependencies.
         """
         from dagster._core.definitions.declarative_automation.operators import AllDepsCondition
 
@@ -268,10 +276,46 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def missing() -> "MissingAutomationCondition":
-        """Returns an AutomationCondition that is true for an asset partition if it has never been
-        materialized or observed.
+    def any_checks_match(
+        condition: "AutomationCondition[AssetCheckKey]", blocking_only: bool = False
+    ) -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true for if at least one of the target's
+        checks evaluate to True for the given condition.
+
+        Args:
+            condition (AutomationCondition): The AutomationCondition that will be evaluated against
+                this asset's checks.
+            blocking_only (bool): Determines if this condition will only be evaluated against blocking
+                checks. Defaults to False.
         """
+        from dagster._core.definitions.declarative_automation.operators import AnyChecksCondition
+
+        return AnyChecksCondition(operand=condition, blocking_only=blocking_only)
+
+    @public
+    @experimental
+    @staticmethod
+    def all_checks_match(
+        condition: "AutomationCondition[AssetCheckKey]", blocking_only: bool = False
+    ) -> "BuiltinAutomationCondition[AssetKey]":
+        """Returns an AutomationCondition that is true for an asset partition if all of its checks
+        evaluate to True for the given condition.
+
+        Args:
+            condition (AutomationCondition): The AutomationCondition that will be evaluated against
+                this asset's checks.
+            blocking_only (bool): Determines if this condition will only be evaluated against blocking
+                checks. Defaults to False.
+        """
+        from dagster._core.definitions.declarative_automation.operators import AllChecksCondition
+
+        return AllChecksCondition(operand=condition, blocking_only=blocking_only)
+
+    @public
+    @experimental
+    @staticmethod
+    def missing() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if the target has not been executed."""
         from dagster._core.definitions.declarative_automation.operands import (
             MissingAutomationCondition,
         )
@@ -281,32 +325,87 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def in_progress() -> "InProgressAutomationCondition":
-        """Returns an AutomationCondition that is true for an asset partition if it is part of an in-progress run."""
+    def run_in_progress() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if the target is part of an in-progress run."""
         from dagster._core.definitions.declarative_automation.operands import (
-            InProgressAutomationCondition,
+            RunInProgressAutomationCondition,
         )
 
-        return InProgressAutomationCondition()
+        return RunInProgressAutomationCondition()
 
     @public
     @experimental
     @staticmethod
-    def failed() -> "FailedAutomationCondition":
-        """Returns an AutomationCondition that is true for an asset partition if its latest run failed."""
+    def backfill_in_progress() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if the target is part of an in-progress backfill."""
         from dagster._core.definitions.declarative_automation.operands import (
-            FailedAutomationCondition,
+            BackfillInProgressAutomationCondition,
         )
 
-        return FailedAutomationCondition()
+        return BackfillInProgressAutomationCondition()
+
+    @public
+    @experimental
+    @staticmethod
+    def execution_failed() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if the latest execution of the target failed."""
+        from dagster._core.definitions.declarative_automation.operands import (
+            ExecutionFailedAutomationCondition,
+        )
+
+        return ExecutionFailedAutomationCondition()
+
+    @public
+    @experimental
+    @staticmethod
+    def in_progress() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true for an asset partition if it is part of an
+        in-progress run or backfill.
+        """
+        return (
+            AutomationCondition.run_in_progress() | AutomationCondition.backfill_in_progress()
+        ).with_label("in_progress")
+
+    @public
+    @experimental
+    @staticmethod
+    def check_passed() -> "BuiltinAutomationCondition[AssetCheckKey]":
+        """Returns an AutomationCondition that is true for an asset check if it has evaluated against
+        the latest materialization of an asset and passed.
+        """
+        from dagster._core.definitions.declarative_automation.operands import CheckResultCondition
+
+        return CheckResultCondition(passed=True)
+
+    @public
+    @experimental
+    @staticmethod
+    def check_failed() -> "BuiltinAutomationCondition[AssetCheckKey]":
+        """Returns an AutomationCondition that is true for an asset check if it has evaluated against
+        the latest materialization of an asset and failed.
+        """
+        from dagster._core.definitions.declarative_automation.operands import CheckResultCondition
+
+        return CheckResultCondition(passed=False)
+
+    @public
+    @experimental
+    @staticmethod
+    def initial_evaluation() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true on the first evaluation of the expression."""
+        from dagster._core.definitions.declarative_automation.operands import (
+            InitialEvaluationCondition,
+        )
+
+        return InitialEvaluationCondition()
 
     @public
     @experimental
     @staticmethod
     def in_latest_time_window(
         lookback_delta: Optional[datetime.timedelta] = None,
-    ) -> "InLatestTimeWindowCondition":
-        """Returns an AutomationCondition that is true for an asset partition when it is within the latest
+    ) -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true when the target it is within the latest
         time window.
 
         Args:
@@ -324,8 +423,8 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def will_be_requested() -> "WillBeRequestedCondition":
-        """Returns an AutomationCondition that is true for an asset partition if it will be requested this tick."""
+    def will_be_requested() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if the target will be requested this tick."""
         from dagster._core.definitions.declarative_automation.operands import (
             WillBeRequestedCondition,
         )
@@ -335,8 +434,8 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def newly_updated() -> "NewlyUpdatedCondition":
-        """Returns an AutomationCondition that is true for an asset partition if it has been updated since the previous tick."""
+    def newly_updated() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if the target has been updated since the previous tick."""
         from dagster._core.definitions.declarative_automation.operands import NewlyUpdatedCondition
 
         return NewlyUpdatedCondition()
@@ -344,8 +443,8 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def newly_requested() -> "NewlyRequestedCondition":
-        """Returns an AutomationCondition that is true for an asset partition if it was requested on the previous tick."""
+    def newly_requested() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if the target was requested on the previous tick."""
         from dagster._core.definitions.declarative_automation.operands import (
             NewlyRequestedCondition,
         )
@@ -355,11 +454,11 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def code_version_changed() -> "CodeVersionChangedCondition":
-        """Returns an AutomationCondition that is true for an asset partition if its asset's code
-        version has been changed since the previous tick.
+    def code_version_changed() -> "BuiltinAutomationCondition[AssetKey]":
+        """Returns an AutomationCondition that is true if the target's code version has been changed
+        since the previous tick.
         """
-        from dagster._core.definitions.declarative_automation.operands import (
+        from dagster._core.definitions.declarative_automation.operands.operands import (
             CodeVersionChangedCondition,
         )
 
@@ -370,28 +469,29 @@ class AutomationCondition(ABC):
     @staticmethod
     def cron_tick_passed(
         cron_schedule: str, cron_timezone: str = "UTC"
-    ) -> "CronTickPassedCondition":
-        """Returns an AutomationCondition that is true for all asset partitions whenever a cron tick of the provided schedule is passed."""
+    ) -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is whenever a cron tick of the provided schedule is passed."""
         from dagster._core.definitions.declarative_automation.operands import (
             CronTickPassedCondition,
         )
 
-        return CronTickPassedCondition(
-            cron_schedule=cron_schedule, cron_timezone=cron_timezone
-        ).with_label(f"cron_tick_passed({cron_schedule}, {cron_timezone})")
+        return CronTickPassedCondition(cron_schedule=cron_schedule, cron_timezone=cron_timezone)
 
     @experimental
     @staticmethod
-    def newly_missing() -> "AutomationCondition":
-        """Returns an AutomationCondition that is true on the tick that an asset partition becomes missing."""
+    def newly_missing() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true on the tick that the target becomes missing."""
         with disable_dagster_warnings():
             return AutomationCondition.missing().newly_true().with_label("newly_missing")
 
     @experimental
     @staticmethod
-    def any_deps_updated() -> "AnyDepsCondition":
-        """Returns an AutomationCondition that is true for any asset partition with at least one
-        dependency that has updated since the previous tick, or will be requested on this tick.
+    def any_deps_updated() -> "DepsAutomationCondition":
+        """Returns an AutomationCondition that is true if the target has at least one dependency
+        that has updated since the previous tick, or will be requested on this tick.
+
+        Will ignore parent updates if the run that updated the parent also plans to update
+        the asset or check that this condition is applied to.
         """
         with disable_dagster_warnings():
             return AutomationCondition.any_deps_match(
@@ -400,9 +500,9 @@ class AutomationCondition(ABC):
 
     @experimental
     @staticmethod
-    def any_deps_missing() -> "AnyDepsCondition":
-        """Returns an AutomationCondition that is true for any asset partition with at least one
-        dependency that is missing, and will not be requested on this tick.
+    def any_deps_missing() -> "DepsAutomationCondition":
+        """Returns an AutomationCondition that is true if the target has at least one dependency
+        that is missing, and will not be requested on this tick.
         """
         with disable_dagster_warnings():
             return AutomationCondition.any_deps_match(
@@ -411,9 +511,9 @@ class AutomationCondition(ABC):
 
     @experimental
     @staticmethod
-    def any_deps_in_progress() -> "AnyDepsCondition":
-        """Returns an AutomationCondition that is true for any asset partition with at least one
-        dependency that is in progress.
+    def any_deps_in_progress() -> "DepsAutomationCondition":
+        """Returns an AutomationCondition that is true if the target has at least one dependency
+        that is in progress.
         """
         with disable_dagster_warnings():
             return AutomationCondition.any_deps_match(AutomationCondition.in_progress()).with_label(
@@ -422,11 +522,30 @@ class AutomationCondition(ABC):
 
     @experimental
     @staticmethod
+    def all_deps_blocking_checks_passed() -> "DepsAutomationCondition":
+        """Returns an AutomationCondition that is true for any partition where all upstream
+        blocking checks have passed, or will be requested on this tick.
+
+        In-tick requests are allowed to enable creating runs that target both a parent with
+        blocking checks and a child. Even though the checks have not currently passed, if
+        they fail within the run, the run machinery will prevent the child from being
+        materialized.
+        """
+        with disable_dagster_warnings():
+            return AutomationCondition.all_deps_match(
+                AutomationCondition.all_checks_match(
+                    AutomationCondition.check_passed() | AutomationCondition.will_be_requested(),
+                    blocking_only=True,
+                ).with_label("all_blocking_checks_passed")
+            ).with_label("all_deps_blocking_checks_passed")
+
+    @experimental
+    @staticmethod
     def all_deps_updated_since_cron(
         cron_schedule: str, cron_timezone: str = "UTC"
-    ) -> "AllDepsCondition":
-        """Returns an AutomatonCondition that is true for any asset partition where all of its
-        dependencies have updated since the latest tick of the provided cron schedule.
+    ) -> "DepsAutomationCondition":
+        """Returns an AutomatonCondition that is true if all of the target's dependencies have
+        updated since the latest tick of the provided cron schedule.
         """
         with disable_dagster_warnings():
             return AutomationCondition.all_deps_match(
@@ -439,15 +558,15 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def eager() -> "AutomationCondition":
-        """Returns an AutomationCondition which will cause missing asset partitions to be
-        materialized, and will materialize asset partitions whenever their parents are updated.
+    def eager() -> "AndAutomationCondition":
+        """Returns an AutomationCondition which will cause a target to be executed if any of
+        its dependencies update, and will execute missing partitions if they become missing
+        after this condition is applied to the target.
+
+        This will not execute targets that have any missing or in progress dependencies, or
+        are currently in progress.
 
         For time partitioned assets, only the latest time partition will be considered.
-
-        This will never evaluate to true if the asset has any upstream partitions which are missing
-        or part of an in progress run, and will never evaluate to true if the provided asset partition
-        is already part of an in progress run.
         """
         with disable_dagster_warnings():
             return (
@@ -463,9 +582,9 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AutomationCondition":
-        """Returns an AutomationCondition which will cause asset partitions to be materialized
-        on a given cron schedule, after all of their dependencies have been updated since the latest
+    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AndAutomationCondition":
+        """Returns an AutomationCondition which will cause a target to be executed on a given
+        cron schedule, after all of its dependencies have been updated since the latest
         tick of that cron schedule.
 
         For time partitioned assets, only the latest time partition will be considered.
@@ -482,7 +601,30 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def any_downstream_conditions() -> "AnyDownstreamConditionsCondition":
+    def on_missing() -> "AndAutomationCondition":
+        """Returns an AutomationCondition which will execute partitions of the target that
+        are added after this condition is applied to the asset.
+
+        This will not execute targets that have any missing dependencies.
+
+        For time partitioned assets, only the latest time partition will be considered.
+        """
+        with disable_dagster_warnings():
+            return (
+                AutomationCondition.in_latest_time_window()
+                & (
+                    AutomationCondition.missing()
+                    .newly_true()
+                    .since_last_handled()
+                    .with_label("missing_since_last_handled")
+                )
+                & ~AutomationCondition.any_deps_missing()
+            ).with_label("on_missing")
+
+    @public
+    @experimental
+    @staticmethod
+    def any_downstream_conditions() -> "BuiltinAutomationCondition":
         """Returns an AutomationCondition which represents the union of all distinct downstream conditions."""
         from dagster._core.definitions.declarative_automation.operators import (
             AnyDownstreamConditionsCondition,
@@ -491,13 +633,28 @@ class AutomationCondition(ABC):
         return AnyDownstreamConditionsCondition()
 
 
-class AutomationResult:
+@record
+class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
+    """Base class for AutomationConditions provided by the core dagster framework."""
+
+    label: Optional[str] = None
+
+    def get_label(self) -> Optional[str]:
+        return self.label
+
+    @public
+    def with_label(self, label: Optional[str]) -> Self:
+        """Returns a copy of this AutomationCondition with a human-readable label."""
+        return copy(self, label=label)
+
+
+class AutomationResult(Generic[T_EntityKey]):
     """The result of evaluating an AutomationCondition."""
 
     def __init__(
         self,
         context: "AutomationContext",
-        true_slice: AssetSlice,
+        true_subset: EntitySubset[T_EntityKey],
         cursor: Optional[str] = None,
         child_results: Optional[Sequence["AutomationResult"]] = None,
         **kwargs,
@@ -507,7 +664,7 @@ class AutomationResult:
         )
 
         self._context = check.inst_param(context, "context", AutomationContext)
-        self._true_slice = check.inst_param(true_slice, "true_slice", AssetSlice)
+        self._true_subset = check.inst_param(true_subset, "true_subset", EntitySubset)
         self._child_results = check.opt_sequence_param(
             child_results, "child_results", of_type=AutomationResult
         )
@@ -535,19 +692,15 @@ class AutomationResult:
         self._extra_state = check.opt_str_param(cursor, "cursor") or structured_cursor
 
         # used to enable the evaluator class to modify the evaluation in some edge cases
-        self._serializable_evaluation_override: Optional[AutomationConditionEvaluation] = None
+        self._serializable_subset_override: Optional[SerializableEntitySubset] = None
 
     @property
-    def asset_key(self) -> AssetKey:
-        return self._true_slice.asset_key
+    def key(self) -> T_EntityKey:
+        return self._true_subset.key
 
     @property
-    def true_slice(self) -> AssetSlice:
-        return self._true_slice
-
-    @property
-    def true_subset(self) -> AssetSubset:
-        return self.true_slice.convert_to_valid_asset_subset()
+    def true_subset(self) -> EntitySubset[T_EntityKey]:
+        return self._true_subset
 
     @property
     def start_timestamp(self) -> float:
@@ -577,9 +730,9 @@ class AutomationResult:
         components: Sequence[str] = [
             self.condition_unique_id,
             self.condition.description,
-            _compute_subset_value_str(self.true_subset),
+            _compute_subset_value_str(self.get_serializable_subset()),
             _compute_subset_value_str(
-                self._context.candidate_slice.convert_to_valid_asset_subset()
+                self._context.candidate_subset.convert_to_serializable_subset()
             ),
             *(_compute_subset_with_metadata_value_str(swm) for swm in self._subsets_with_metadata),
             *(child_result.value_hash for child_result in self._child_results),
@@ -592,21 +745,21 @@ class AutomationResult:
         if not self.condition.requires_cursor:
             return None
         return AutomationConditionNodeCursor(
-            true_subset=self.true_subset,
+            true_subset=self.get_serializable_subset(),
             candidate_subset=get_serializable_candidate_subset(
-                self._context.candidate_slice.convert_to_valid_asset_subset()
+                self._context.candidate_subset.convert_to_serializable_subset()
             ),
             subsets_with_metadata=self._subsets_with_metadata,
             extra_state=self._extra_state,
         )
 
     @cached_property
-    def _serializable_evaluation(self) -> AutomationConditionEvaluation:
+    def serializable_evaluation(self) -> AutomationConditionEvaluation:
         return AutomationConditionEvaluation(
             condition_snapshot=self.condition.get_node_snapshot(self.condition_unique_id),
-            true_subset=self.true_subset,
+            true_subset=self.get_serializable_subset(),
             candidate_subset=get_serializable_candidate_subset(
-                self._context.candidate_slice.convert_to_valid_asset_subset()
+                self._context.candidate_subset.convert_to_serializable_subset()
             ),
             subsets_with_metadata=self._subsets_with_metadata,
             start_timestamp=self._start_timestamp,
@@ -616,18 +769,11 @@ class AutomationResult:
             ],
         )
 
-    @property
-    def serializable_evaluation(self) -> AutomationConditionEvaluation:
-        """Serializable representation of the evaluation of this condition."""
-        return self._serializable_evaluation_override or self._serializable_evaluation
-
-    def set_internal_serializable_evaluation_override(
-        self, override: AutomationConditionEvaluation
-    ) -> None:
+    def set_internal_serializable_subset_override(self, override: SerializableEntitySubset) -> None:
         """Internal method for handling edge cases in which the serializable evaluation must be
         updated after evaluation completes.
         """
-        self._serializable_evaluation_override = override
+        self._serializable_subset_override = override
 
     def get_child_node_cursors(self) -> Mapping[str, AutomationConditionNodeCursor]:
         node_cursors = {self.condition_unique_id: self.node_cursor} if self.node_cursor else {}
@@ -644,8 +790,35 @@ class AutomationResult:
             result_value_hash=self.value_hash,
         )
 
+    def get_serializable_subset(self) -> SerializableEntitySubset:
+        return (
+            self.true_subset.convert_to_serializable_subset() or self._serializable_subset_override
+        )
 
-def _compute_subset_value_str(subset: AssetSubset) -> str:
+    def compute_legacy_expected_data_time(self) -> Optional[datetime.datetime]:
+        from dagster._core.definitions.freshness_based_auto_materialize import (
+            get_expected_data_time_for_asset_key,
+        )
+
+        legacy_context = self._context._legacy_context  # noqa
+        if legacy_context:
+            return get_expected_data_time_for_asset_key(
+                legacy_context, will_materialize=not self.true_subset.is_empty
+            )
+        return None
+
+    def pprint(self, indent=0) -> str:
+        ret = f"AutomationResult(label={self.condition.name}, description={self.condition.description}, true={self.true_subset})"
+        for child in self.child_results:
+            nindent = indent + 4
+            ret += f"\n{' '*nindent}{child.pprint(indent=nindent)}"
+        return ret
+
+    def __repr__(self) -> str:
+        return self.pprint()
+
+
+def _compute_subset_value_str(subset: SerializableEntitySubset) -> str:
     """Computes a unique string representing a given AssetSubsets. This string will be equal for
     equivalent AssetSubsets.
     """
@@ -661,7 +834,7 @@ def _compute_subset_value_str(subset: AssetSubset) -> str:
             ]
         )
     else:
-        return str(list(sorted(subset.asset_partitions)))
+        return str(list(sorted(subset.subset_value.get_partition_keys())))
 
 
 def _compute_subset_with_metadata_value_str(subset_with_metadata: AssetSubsetWithMetadata):

@@ -19,9 +19,9 @@ from dagster import (
 from dagster._config.pythonic_config import Config, infer_schema_from_config_class
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster._utils.tags import normalize_tags
 
 from dagstermill.factory import _clean_path_for_windows, execute_notebook
 
@@ -175,7 +175,7 @@ def define_dagstermill_asset(
         io_manager_key, "io_manager_key", default="output_notebook_io_manager"
     )
 
-    user_tags = normalize_tags(op_tags).tags
+    user_tags = normalize_tags(op_tags)
     if op_tags is not None:
         check.invariant(
             "notebook_path" not in op_tags,

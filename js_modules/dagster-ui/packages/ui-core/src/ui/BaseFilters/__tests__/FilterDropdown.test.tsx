@@ -128,22 +128,22 @@ describe('FilterDropdown Accessibility', () => {
 
     await userEvent.keyboard(nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Type').closest('a')).toHaveClass('bp4-active');
+      expect(screen.getByText('Type').closest('a')).toHaveClass('bp5-active');
     });
 
     await userEvent.keyboard(nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Status').closest('a')).toHaveClass('bp4-active');
+      expect(screen.getByText('Status').closest('a')).toHaveClass('bp5-active');
     });
 
     await userEvent.keyboard(prevKey);
     await waitFor(() => {
-      expect(screen.getByText('Type').closest('a')).toHaveClass('bp4-active');
+      expect(screen.getByText('Type').closest('a')).toHaveClass('bp5-active');
     });
 
     await userEvent.keyboard(nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Status').closest('a')).toHaveClass('bp4-active');
+      expect(screen.getByText('Status').closest('a')).toHaveClass('bp5-active');
     });
 
     await userEvent.keyboard(nextKey);
@@ -151,12 +151,12 @@ describe('FilterDropdown Accessibility', () => {
 
     await userEvent.keyboard(nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Type').closest('a')).toHaveClass('bp4-active');
+      expect(screen.getByText('Type').closest('a')).toHaveClass('bp5-active');
     });
 
     await userEvent.keyboard(nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Status').closest('a')).toHaveClass('bp4-active');
+      expect(screen.getByText('Status').closest('a')).toHaveClass('bp5-active');
     });
 
     await userEvent.keyboard(enterKey);
@@ -168,7 +168,7 @@ describe('FilterDropdown Accessibility', () => {
     await userEvent.keyboard(nextKey);
     await userEvent.keyboard(nextKey);
 
-    expect(screen.getByText('Inactive').closest('a')).toHaveClass('bp4-active');
+    expect(screen.getByText('Inactive').closest('a')).toHaveClass('bp5-active');
     await userEvent.keyboard(enterKey);
 
     await waitFor(() => {

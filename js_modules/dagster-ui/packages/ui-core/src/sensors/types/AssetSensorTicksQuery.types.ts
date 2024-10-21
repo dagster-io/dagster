@@ -63,3 +63,5 @@ export type AssetSensorTicksQuery = {
     | {__typename: 'SensorNotFoundError'}
     | {__typename: 'UnauthorizedError'};
 };
+
+export const AssetSensorTicksQueryVersion = 'ee952c7c0076a23f9d5940ad472a6b580989c0d241dc598dbefa5bf3734673d0';

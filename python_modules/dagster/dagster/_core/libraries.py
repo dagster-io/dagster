@@ -8,8 +8,10 @@ class DagsterLibraryRegistry:
     _libraries: Dict[str, str] = {"dagster": __version__}
 
     @classmethod
-    def register(cls, name: str, version: str):
-        check_dagster_package_version(name, version)
+    def register(cls, name: str, version: str, *, is_dagster_package: bool = True):
+        if is_dagster_package:
+            check_dagster_package_version(name, version)
+
         cls._libraries[name] = version
 
     @classmethod

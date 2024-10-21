@@ -1,7 +1,8 @@
 import {AssetKeyTagCollection} from './AssetTagCollections';
+import {assetKeysForRun} from './RunUtils';
+import {gql, useQuery} from '../apollo-client';
 import {RunAssetsQuery, RunAssetsQueryVariables} from './types/RunAssetTags.types';
 import {RunFragment} from './types/RunFragments.types';
-import {gql, useQuery} from '../apollo-client';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 
 export const RunAssetTags = (props: {run: RunFragment}) => {
@@ -18,9 +19,9 @@ export const RunAssetTags = (props: {run: RunFragment}) => {
     return null;
   }
 
-  return (
-    <AssetKeyTagCollection useTags assetKeys={data.pipelineRunOrError.assets.map((a) => a.key)} />
-  );
+  const assetKeys = skip ? assetKeysForRun(run) : data.pipelineRunOrError.assets.map((a) => a.key);
+
+  return <AssetKeyTagCollection useTags assetKeys={assetKeys} />;
 };
 
 const RUN_ASSETS_QUERY = gql`

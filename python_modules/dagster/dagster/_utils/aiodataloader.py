@@ -49,16 +49,71 @@ def iscoroutinefunctionorpartial(
 Loader = namedtuple("Loader", "key,future")
 
 
-class DataLoader(Generic[KeyT, ReturnT]):
+class _BaseDataLoader(Generic[KeyT, ReturnT]):
+    def __init__(
+        self,
+        batch_load_fn: Callable[[Iterable[KeyT]], Coroutine[Any, Any, Iterable[ReturnT]]],
+        max_batch_size: Optional[int] = None,
+    ):
+        self.max_batch_size = max_batch_size
+
+
+class BlockingDataLoader(Generic[KeyT, ReturnT]):
+    """Currently, the cache is not shared between blocking and non-blocking DataLoaders, as it is
+    challenging to drive the event loop properly while managing a shared cache.
+    """
+
+    def __init__(
+        self,
+        batch_load_fn: Callable[[Iterable[KeyT]], Iterable[ReturnT]],
+        get_cache_key: Optional[Callable[[KeyT], Union[CacheKeyT, KeyT]]] = None,
+        max_batch_size: Optional[int] = None,
+    ):
+        self._cache = {}
+        self._to_query = {}
+
+        self.get_cache_key = get_cache_key or (lambda x: x)
+
+        self.batch_load_fn = batch_load_fn
+        self.max_batch_size = max_batch_size
+
+    def prepare(self, keys: Iterable[KeyT]) -> None:
+        # ensure that the provided keys will be fetched as a unit in the next fetch
+        for key in keys:
+            cache_key = self.get_cache_key(key)
+            if cache_key not in self._cache:
+                self._to_query[cache_key] = key
+
+    def blocking_load(self, key: KeyT) -> ReturnT:
+        """Loads the provided key synchronously, pulling from the cache if possible."""
+        self.prepare([key])
+
+        if self._to_query:
+            for chunk in get_chunks(
+                list(self._to_query.values()),
+                self.max_batch_size or len(self._to_query),
+            ):
+                # uses independent event loop from the async system
+                chunk_results = self.batch_load_fn(chunk)
+                for k, v in zip(chunk, chunk_results):
+                    self._cache[self.get_cache_key(k)] = v
+
+        self._to_query = {}
+        return self._cache[self.get_cache_key(key)]
+
+    def blocking_load_many(self, keys: Iterable[KeyT]) -> Iterable[ReturnT]:
+        self.prepare(keys)
+        return [self.blocking_load(key) for key in keys]
+
+
+class DataLoader(_BaseDataLoader[KeyT, ReturnT]):
     batch: bool = True
     max_batch_size: Optional[int] = None
     cache: Optional[bool] = True
 
     def __init__(
         self,
-        batch_load_fn: Optional[
-            Callable[[Iterable[KeyT]], Coroutine[Any, Any, Iterable[ReturnT]]]
-        ] = None,
+        batch_load_fn: Callable[[Iterable[KeyT]], Coroutine[Any, Any, Iterable[ReturnT]]],
         batch: Optional[bool] = None,
         max_batch_size: Optional[int] = None,
         cache: Optional[bool] = None,
@@ -66,10 +121,9 @@ class DataLoader(Generic[KeyT, ReturnT]):
         cache_map: Optional[MutableMapping[Union[CacheKeyT, KeyT], "Future[ReturnT]"]] = None,
         loop: Optional[AbstractEventLoop] = None,
     ):
-        self._loop = loop or get_event_loop()
+        self._loop = loop
 
-        if batch_load_fn is not None:
-            self.batch_load_fn = batch_load_fn
+        self.batch_load_fn = batch_load_fn
 
         assert iscoroutinefunctionorpartial(
             self.batch_load_fn
@@ -100,6 +154,8 @@ class DataLoader(Generic[KeyT, ReturnT]):
         self._cache = cache_map if cache_map is not None else {}
         self._queue: List[Loader] = []
 
+        super().__init__(batch_load_fn, max_batch_size)
+
     @property
     def loop(self) -> AbstractEventLoop:
         # ensure a good error is thrown if the event loop has changed since instantiation,
@@ -107,6 +163,11 @@ class DataLoader(Generic[KeyT, ReturnT]):
 
         # it might be possible to instead update the event loop if there is no work in flight,
         # unclear if there are valid uses cases for that
+
+        if self._loop is None:
+            # lazily initialize the loop to allow for cases where this object is constructed
+            # outside the context of an event loop (e.g. unit tests)
+            self._loop = get_event_loop()
 
         if self._loop != get_event_loop():
             raise Exception(

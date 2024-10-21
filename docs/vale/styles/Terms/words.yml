@@ -7,8 +7,6 @@ ignorecase: false
 action:
   name: replace
 swap:
-  "(?:e-mail|Email|E-mail)": email
-  above: preceding
   check box: checkbox
   click on: click|click in|click the
   drop-down: dropdown

@@ -21,7 +21,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypeVar
+from typing_extensions import TypeAlias, TypeVar
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated, deprecated_param, public
@@ -31,7 +31,7 @@ from dagster._core.definitions.dynamic_partitions_request import (
     DeleteDynamicPartitionsRequest,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.utils import normalize_tags
+from dagster._core.definitions.run_config import RunConfig, convert_config_input
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidDeserializationVersionError,
@@ -43,6 +43,7 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import xor
 from dagster._utils.cached_method import cached_method
+from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import normalize_renamed_param
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
@@ -60,6 +61,8 @@ T_PartitionsDefinition = TypeVar(
 # "..." is an invalid substring in partition keys
 # The other escape characters are characters that may not display in the Dagster UI.
 INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v", "\0"]
+
+PartitionConfigFn: TypeAlias = Callable[[str], Union[RunConfig, Mapping[str, Any]]]
 
 
 @deprecated(breaking_version="2.0", additional_warn_text="Use string partition keys instead.")
@@ -588,9 +591,9 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         self,
         partitions_def: T_PartitionsDefinition,
         run_config_for_partition_fn: Optional[Callable[[Partition], Mapping[str, Any]]] = None,
-        decorated_fn: Optional[Callable[..., Mapping[str, Any]]] = None,
+        decorated_fn: Optional[Callable[..., Union[RunConfig, Mapping[str, Any]]]] = None,
         tags_for_partition_fn: Optional[Callable[[Partition[Any]], Mapping[str, str]]] = None,
-        run_config_for_partition_key_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
+        run_config_for_partition_key_fn: Optional[PartitionConfigFn] = None,
         tags_for_partition_key_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
     ):
         self._partitions = check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
@@ -646,8 +649,8 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
     @property
     def run_config_for_partition_key_fn(
         self,
-    ) -> Optional[Callable[[str], Mapping[str, Any]]]:
-        """Optional[Callable[[str], Mapping[str, Any]]]: A function that accepts a partition key
+    ) -> Optional[PartitionConfigFn]:
+        """Optional[Callable[[str], Union[RunConfig, Mapping[str, Any]]]]: A function that accepts a partition key
         and returns a dictionary representing the config to attach to runs for that partition.
         """
         return self._run_config_for_partition_key_fn
@@ -706,7 +709,10 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
             run_config = self._run_config_for_partition_key_fn(partition_key)
         else:
             check.failed("Unreachable.")  # one of the above funcs always defined
-        return copy.deepcopy(run_config)
+        normalized_run_config = convert_config_input(
+            run_config
+        )  # convert any RunConfig to plain dict
+        return copy.deepcopy(normalized_run_config)
 
     # Assumes partition key already validated
     def get_tags_for_partition_key(
@@ -715,7 +721,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         job_name: Optional[str] = None,
     ) -> Mapping[str, str]:
         from dagster._core.remote_representation.external_data import (
-            external_partition_set_name_for_job_name,
+            partition_set_snap_name_for_job_name,
         )
 
         # _tags_for_partition_fn is deprecated, we can remove this branching logic in 2.0
@@ -725,14 +731,14 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
             user_tags = self._tags_for_partition_key_fn(partition_key)
         else:
             user_tags = {}
-        user_tags = normalize_tags(user_tags, allow_reserved_tags=False).tags
+        user_tags = normalize_tags(user_tags, allow_private_system_tags=False)
 
         system_tags = {
             **self.partitions_def.get_tags_for_partition_key(partition_key),
             # `PartitionSetDefinition` has been deleted but we still need to attach this special tag in
             # order for reexecution against partitions to work properly.
             **(
-                {PARTITION_SET_TAG: external_partition_set_name_for_job_name(job_name)}
+                {PARTITION_SET_TAG: partition_set_snap_name_for_job_name(job_name)}
                 if job_name
                 else {}
             ),
@@ -761,7 +767,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         else:
             hardcoded_config = config if config else {}
             return cls(
-                partitions_def,
+                partitions_def,  # type: ignore # ignored for update, fix me!
                 run_config_for_partition_key_fn=lambda _: cast(Mapping, hardcoded_config),
             )
 
@@ -784,7 +790,7 @@ def static_partitioned_config(
     partition_keys: Sequence[str],
     tags_for_partition_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
     tags_for_partition_key_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
-) -> Callable[[Callable[[str], Mapping[str, Any]]], PartitionedConfig[StaticPartitionsDefinition]]:
+) -> Callable[[PartitionConfigFn], PartitionedConfig[StaticPartitionsDefinition]]:
     """Creates a static partitioned config for a job.
 
     The provided partition_keys is a static list of strings identifying the set of partitions. The
@@ -820,7 +826,7 @@ def static_partitioned_config(
     )
 
     def inner(
-        fn: Callable[[str], Mapping[str, Any]],
+        fn: PartitionConfigFn,
     ) -> PartitionedConfig[StaticPartitionsDefinition]:
         return PartitionedConfig(
             partitions_def=StaticPartitionsDefinition(partition_keys),
@@ -835,7 +841,7 @@ def static_partitioned_config(
 def partitioned_config(
     partitions_def: PartitionsDefinition,
     tags_for_partition_key_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
-) -> Callable[[Callable[[str], Mapping[str, Any]]], PartitionedConfig]:
+) -> Callable[[PartitionConfigFn], PartitionedConfig]:
     """Creates a partitioned config for a job given a PartitionsDefinition.
 
     The partitions_def provides the set of partitions, which may change over time
@@ -855,7 +861,7 @@ def partitioned_config(
     """
     check.opt_callable_param(tags_for_partition_key_fn, "tags_for_partition_key_fn")
 
-    def inner(fn: Callable[[str], Mapping[str, Any]]) -> PartitionedConfig:
+    def inner(fn: PartitionConfigFn) -> PartitionedConfig:
         return PartitionedConfig(
             partitions_def=partitions_def,
             run_config_for_partition_key_fn=fn,
@@ -875,7 +881,7 @@ def dynamic_partitioned_config(
     partition_fn: Callable[[Optional[datetime]], Sequence[str]],
     tags_for_partition_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
     tags_for_partition_key_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
-) -> Callable[[Callable[[str], Mapping[str, Any]]], PartitionedConfig]:
+) -> Callable[[PartitionConfigFn], PartitionedConfig]:
     """Creates a dynamic partitioned config for a job.
 
     The provided partition_fn returns a list of strings identifying the set of partitions, given
@@ -905,7 +911,7 @@ def dynamic_partitioned_config(
         "tags_for_partition_fn",
     )
 
-    def inner(fn: Callable[[str], Mapping[str, Any]]) -> PartitionedConfig:
+    def inner(fn: PartitionConfigFn) -> PartitionedConfig:
         return PartitionedConfig(
             partitions_def=DynamicPartitionsDefinition(partition_fn),
             run_config_for_partition_key_fn=fn,
@@ -1337,6 +1343,6 @@ class AllPartitionsSubset(
         return self.partitions_def.empty_subset()
 
     def to_serializable_subset(self) -> PartitionsSubset:
-        return self.partitions_def.subset_with_partition_keys(
-            self.get_partition_keys()
+        return self.partitions_def.subset_with_all_partitions(
+            current_time=self.current_time, dynamic_partitions_store=self.dynamic_partitions_store
         ).to_serializable_subset()

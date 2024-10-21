@@ -30,7 +30,7 @@ jobs:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: '["docs/docs-beta/docs"]'
-          vale_flags: "--config=docs/.vale.ini"
+          vale_flags: "--config=docs/.vale.ini --minAlertLevel=warning"
           fail_on_error: true
           reporter: github-pr-review
 

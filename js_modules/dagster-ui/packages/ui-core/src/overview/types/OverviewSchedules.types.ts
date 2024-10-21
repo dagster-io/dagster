@@ -89,3 +89,5 @@ export type OverviewSchedulesQuery = {
     };
   };
 };
+
+export const OverviewSchedulesQueryVersion = '04a2e4a6537d8d9de9aecfb08bb82bebf73767cf1858b3eddd0c063779129c39';

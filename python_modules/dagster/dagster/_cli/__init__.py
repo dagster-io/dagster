@@ -4,6 +4,7 @@ from dagster._cli.api import api_cli
 from dagster._cli.asset import asset_cli
 from dagster._cli.code_server import code_server_cli
 from dagster._cli.debug import debug_cli
+from dagster._cli.definitions import definitions_cli
 from dagster._cli.dev import dev_command
 from dagster._cli.instance import instance_cli
 from dagster._cli.job import job_cli
@@ -27,6 +28,7 @@ def create_dagster_cli():
         "project": project_cli,
         "dev": dev_command,
         "code-server": code_server_cli,
+        "definitions": definitions_cli,
     }
 
     @click.group(

@@ -32,10 +32,10 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
           REF_NAME: ${{ github.ref_name }}
         if: |
-          github.event_name == 'pull_request' || 
+          github.event_name == 'pull_request' ||
           (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/docs-prod')))
         run: |
-          BRANCH_PREVIEW_SUBDOMAIN=$(echo "${HEAD_REF:-$REF_NAME}" | sed -e 's/[^a-zA-Z0-9-]/-/g; s/^-*//; s/-*$//')
+          BRANCH_PREVIEW_SUBDOMAIN=$(echo "${HEAD_REF:-$REF_NAME}" | sed -e 's/[^a-zA-Z0-9-]/-/g; s/^-*//; s/-*$//' | head -c 63)
           echo "$BRANCH_PREVIEW_SUBDOMAIN"
           echo "BRANCH_PREVIEW_SUBDOMAIN=$BRANCH_PREVIEW_SUBDOMAIN" >> "${GITHUB_ENV}"
 
@@ -80,7 +80,7 @@ jobs:
       - name: Publish Preview to Vercel
         uses: amondnet/vercel-action@v25
         if: |
-          github.event_name == 'pull_request' || 
+          github.event_name == 'pull_request' ||
           (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/docs-prod')))
         with:
           github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}

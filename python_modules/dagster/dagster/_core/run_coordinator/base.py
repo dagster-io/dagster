@@ -5,14 +5,14 @@ from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
 
 if TYPE_CHECKING:
-    from dagster._core.workspace.context import IWorkspace
+    from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 
 class SubmitRunContext(NamedTuple):
     """Context available within a run coordinator's submit_run method."""
 
     dagster_run: DagsterRun
-    workspace: "IWorkspace"
+    workspace: "BaseWorkspaceRequestContext"
 
     def get_request_header(self, key: str) -> Optional[str]:
         from dagster._core.workspace.context import WorkspaceRequestContext
@@ -37,7 +37,7 @@ class RunCoordinator(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         Args:
             context (SubmitRunContext): information about the submission - every run coordinator
             will need the PipelineRun, and some run coordinators may need information from the
-            IWorkspace from which the run was launched.
+            WorkspaceRequestContext from which the run was launched.
 
         Returns:
             PipelineRun: The queued run

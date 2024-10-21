@@ -14,11 +14,7 @@ import {useCallback, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
-import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
-import {
-  LocationStatusEntryFragment,
-  WorkspaceDisplayMetadataFragment,
-} from './types/WorkspaceQueries.types';
+import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {
@@ -29,6 +25,10 @@ import {
   buildReloadFnForLocation,
   useRepositoryLocationReload,
 } from '../nav/useRepositoryLocationReload';
+import {
+  LocationStatusEntryFragment,
+  WorkspaceDisplayMetadataFragment,
+} from './WorkspaceContext/types/WorkspaceQueries.types';
 
 export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragment[]}) => {
   const copy = useCopyToClipboard();
@@ -64,7 +64,7 @@ const ImageNameBox = styled(Box)`
   color: ${Colors.textLight()};
   font-size: 12px;
 
-  .bp4-popover2-target {
+  .bp5-popover-target {
     overflow: hidden;
   }
 `;
@@ -117,7 +117,7 @@ export const LocationStatus = (props: {
     );
   }
 
-  if (locationOrError?.updatedTimestamp !== locationStatus.updateTimestamp) {
+  if (locationOrError?.versionKey !== locationStatus.versionKey) {
     return (
       <Tag minimal intent="primary">
         Loading…
@@ -133,7 +133,7 @@ export const LocationStatus = (props: {
             Failed
           </Tag>
           <ButtonLink onClick={() => setShowDialog(true)}>
-            <span style={{fontSize: '14px'}}>View error</span>
+            <span style={{fontSize: '12px'}}>View error</span>
           </ButtonLink>
         </Box>
         <RepositoryLocationNonBlockingErrorDialog

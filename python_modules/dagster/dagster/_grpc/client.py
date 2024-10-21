@@ -417,12 +417,12 @@ class DagsterGrpcClient:
 
     def external_repository(
         self,
-        external_repository_origin: RemoteRepositoryOrigin,
+        remote_repository_origin: RemoteRepositoryOrigin,
         defer_snapshots: bool = False,
     ) -> str:
         check.inst_param(
-            external_repository_origin,
-            "external_repository_origin",
+            remote_repository_origin,
+            "remote_repository_origin",
             RemoteRepositoryOrigin,
         )
 
@@ -430,7 +430,7 @@ class DagsterGrpcClient:
             "ExternalRepository",
             api_pb2.ExternalRepositoryRequest,
             # rename this param name
-            serialized_repository_python_origin=serialize_value(external_repository_origin),
+            serialized_repository_python_origin=serialize_value(remote_repository_origin),
             defer_snapshots=defer_snapshots,
         )
 
@@ -438,25 +438,25 @@ class DagsterGrpcClient:
 
     def external_job(
         self,
-        external_repository_origin: RemoteRepositoryOrigin,
+        remote_repository_origin: RemoteRepositoryOrigin,
         job_name: str,
     ) -> api_pb2.ExternalJobReply:
         check.inst_param(
-            external_repository_origin,
-            "external_repository_origin",
+            remote_repository_origin,
+            "remote_repository_origin",
             RemoteRepositoryOrigin,
         )
 
         return self._query(
             "ExternalJob",
             api_pb2.ExternalJobRequest,
-            serialized_repository_origin=serialize_value(external_repository_origin),
+            serialized_repository_origin=serialize_value(remote_repository_origin),
             job_name=job_name,
         )
 
     def streaming_external_repository(
         self,
-        external_repository_origin: RemoteRepositoryOrigin,
+        remote_repository_origin: RemoteRepositoryOrigin,
         defer_snapshots: bool = False,
         timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT,
     ) -> Iterator[dict]:
@@ -464,7 +464,7 @@ class DagsterGrpcClient:
             "StreamingExternalRepository",
             api_pb2.ExternalRepositoryRequest,
             # Rename parameter
-            serialized_repository_python_origin=serialize_value(external_repository_origin),
+            serialized_repository_python_origin=serialize_value(remote_repository_origin),
             defer_snapshots=defer_snapshots,
             timeout=timeout,
         ):
@@ -475,7 +475,7 @@ class DagsterGrpcClient:
 
     async def gen_streaming_external_repository(
         self,
-        external_repository_origin: RemoteRepositoryOrigin,
+        remote_repository_origin: RemoteRepositoryOrigin,
         defer_snapshots: bool = False,
         timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT,
     ) -> AsyncIterable[dict]:
@@ -483,7 +483,7 @@ class DagsterGrpcClient:
             "StreamingExternalRepository",
             api_pb2.ExternalRepositoryRequest,
             # Rename parameter
-            serialized_repository_python_origin=serialize_value(external_repository_origin),
+            serialized_repository_python_origin=serialize_value(remote_repository_origin),
             defer_snapshots=defer_snapshots,
             timeout=timeout,
         ):

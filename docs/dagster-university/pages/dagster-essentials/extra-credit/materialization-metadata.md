@@ -80,7 +80,7 @@ Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This
 
    Let’s break down what’s happening here:
 
-   - Rather than returning nothing, we'll return some information about the materialization that happened with the `MaterializationResult` class.
+   - Rather than returning nothing, we'll return some information about the materialization that happened with the `MaterializeResult` class.
    - The `metadata` parameter accepts a `dict`, where the key is the label or name of the metadata and the value is the data itself. In this case, the key is `Number of records`. The value in this example is everything after `Number of records`.
    - Using `MetadataValue.int`, the value of the `num_rows` variable is typed as an integer. This tells Dagster to render the data as an integer.
 

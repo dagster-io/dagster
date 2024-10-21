@@ -3,7 +3,7 @@ from typing import NamedTuple, Sequence
 import dagster._check as check
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
-from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
+from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import serialize_value, whitelist_for_serdes
 
@@ -21,7 +21,7 @@ class DebugRunPayload(
             ("version", str),
             ("dagster_run", DagsterRun),
             ("event_list", Sequence[EventLogEntry]),
-            ("job_snapshot", JobSnapshot),
+            ("job_snapshot", JobSnap),
             ("execution_plan_snapshot", ExecutionPlanSnapshot),
         ],
     )
@@ -31,7 +31,7 @@ class DebugRunPayload(
         version: str,
         dagster_run: DagsterRun,
         event_list: Sequence[EventLogEntry],
-        job_snapshot: JobSnapshot,
+        job_snapshot: JobSnap,
         execution_plan_snapshot: ExecutionPlanSnapshot,
     ):
         return super(DebugRunPayload, cls).__new__(
@@ -39,7 +39,7 @@ class DebugRunPayload(
             version=check.str_param(version, "version"),
             dagster_run=check.inst_param(dagster_run, "dagster_run", DagsterRun),
             event_list=check.sequence_param(event_list, "event_list", EventLogEntry),
-            job_snapshot=check.inst_param(job_snapshot, "job_snapshot", JobSnapshot),
+            job_snapshot=check.inst_param(job_snapshot, "job_snapshot", JobSnap),
             execution_plan_snapshot=check.inst_param(
                 execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot
             ),

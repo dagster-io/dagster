@@ -2,7 +2,7 @@
 
 extends: existence
 message: "Remove or comment out TODOs."
-level: error
+level: suggestion 
 scope: text
 ignorecase: true
 tokens: 

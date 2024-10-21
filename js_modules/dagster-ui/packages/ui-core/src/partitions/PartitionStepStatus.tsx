@@ -166,12 +166,12 @@ const assetPartitionStatusToSquareColor = (state: AssetPartitionStatus[]): Statu
     state.includes(AssetPartitionStatus.MISSING)
     ? 'SUCCESS-MISSING'
     : state.includes(AssetPartitionStatus.MATERIALIZED)
-    ? 'SUCCESS'
-    : state.includes(AssetPartitionStatus.FAILED) && state.includes(AssetPartitionStatus.MISSING)
-    ? 'FAILURE-MISSING'
-    : state.includes(AssetPartitionStatus.FAILED)
-    ? 'FAILURE'
-    : 'MISSING';
+      ? 'SUCCESS'
+      : state.includes(AssetPartitionStatus.FAILED) && state.includes(AssetPartitionStatus.MISSING)
+        ? 'FAILURE-MISSING'
+        : state.includes(AssetPartitionStatus.FAILED)
+          ? 'FAILURE'
+          : 'MISSING';
 };
 
 interface PartitionPerOpStatusProps extends PartitionStepStatusBaseProps {

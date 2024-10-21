@@ -243,7 +243,9 @@ const RunWithData = ({
 
         // When only one step is selected, set the compute log key as well.
         const matchingLogKey = matchingComputeLogKeyFromStepKey(metadata.logCaptureSteps, stepKey);
-        matchingLogKey && setComputeLogFileKey(matchingLogKey);
+        if (matchingLogKey) {
+          setComputeLogFileKey(matchingLogKey);
+        }
       }
     }
 

@@ -107,53 +107,52 @@ Now we’re ready to create the asset!
    At this point, the `airport_trips` asset should look like this:
     
    ```python
-    @asset(
-        deps=["location_metrics"],
-    )
-    def airport_trips(database: DuckDBResource) -> MaterializeResult:
-        """
-            A chart of where trips from the airport go
-        """
+   @asset(
+       deps=["location_metrics"],
+   )
+   def airport_trips(database: DuckDBResource) -> MaterializeResult:
+       """
+           A chart of where trips from the airport go
+       """
 
-        query = """
-            select
-                zone,
-                destination_borough,
-                trips
-            from location_metrics
-            where from_airport
-        """
+       query = """
+           select
+               zone,
+               destination_borough,
+               trips
+           from location_metrics
+           where from_airport
+       """
+       with database.get_connection() as conn:
+           airport_trips = conn.execute(query).fetch_df()
 
-        with database.get_connection() as conn:
-            airport_trips = conn.execute(query).fetch_df()
+       fig = px.bar(
+           airport_trips,
+           x="zone",
+           y="trips",
+           color="destination_borough",
+           barmode="relative",
+           labels={
+               "zone": "Zone",
+               "trips": "Number of Trips",
+               "destination_borough": "Destination Borough"
+           },
+       )
 
-        fig = px.bar(
-            airport_trips,
-            x="zone",
-            y="trips",
-            color="destination_borough",
-            barmode="relative",
-            labels={
-                "zone": "Zone",
-                "trips": "Number of Trips",
-                "destination_borough": "Destination Borough"
-            },
-        )
+       pio.write_image(fig, constants.AIRPORT_TRIPS_FILE_PATH)
 
-        pio.write_image(fig, constants.AIRPORT_TRIPS_FILE_PATH)
-
-        with open(constants.AIRPORT_TRIPS_FILE_PATH, 'rb') as file:
-            image_data = file.read()
+       with open(constants.AIRPORT_TRIPS_FILE_PATH, 'rb') as file:
+           image_data = file.read()
 
         # Convert the image data to base64
-        base64_data = base64.b64encode(image_data).decode('utf-8')
-        md_content = f"![Image](data:image/jpeg;base64,{base64_data})"
+       base64_data = base64.b64encode(image_data).decode('utf-8')
+       md_content = f"![Image](data:image/jpeg;base64,{base64_data})"
 
-        return MaterializeResult(
-            metadata={
-                "preview": MetadataValue.md(md_content)
-            }
-        )
+       return MaterializeResult(
+           metadata={
+               "preview": MetadataValue.md(md_content)
+           }
+       )
    ```
 
 5. Reload your code location to see the new `airport_trips` asset within the `metrics` group. Notice how the asset graph links the dependency between the `location_metrics` dbt asset and the new `airport_trips` chart asset:

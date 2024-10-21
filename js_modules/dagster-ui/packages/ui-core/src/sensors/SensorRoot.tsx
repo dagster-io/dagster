@@ -7,13 +7,13 @@ import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
 import {SensorPageAutomaterialize} from './SensorPageAutomaterialize';
 import {SensorPreviousRuns} from './SensorPreviousRuns';
+import {gql, useQuery} from '../apollo-client';
 import {
   SensorAssetSelectionQuery,
   SensorAssetSelectionQueryVariables,
   SensorRootQuery,
   SensorRootQueryVariables,
 } from './types/SensorRoot.types';
-import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';

@@ -102,3 +102,7 @@ export type ConfigPartitionSelectionQuery = {
     | {__typename: 'PartitionSetNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const ConfigPartitionForAssetJobQueryVersion = '367eaeeb62b9e2339ab6c07a1e315310fd1a095b7ba7c8fa7a1e51282ca84796';
+
+export const ConfigPartitionSelectionQueryVersion = '54bfeba0e497a1ee185cf7d7fa251ce81cffdf97a3f234b5022f3c619e29ebd5';

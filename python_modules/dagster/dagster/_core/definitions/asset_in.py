@@ -53,7 +53,7 @@ class AssetIn(
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         input_manager_key: Optional[str] = None,
         partition_mapping: Optional[PartitionMapping] = None,
-        dagster_type: Union[DagsterType, Type[NoValueSentinel]] = NoValueSentinel,
+        dagster_type: Union[DagsterType, Type] = NoValueSentinel,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]

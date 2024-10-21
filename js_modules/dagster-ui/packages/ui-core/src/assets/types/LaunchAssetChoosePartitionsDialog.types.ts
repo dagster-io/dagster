@@ -35,3 +35,5 @@ export type LaunchAssetWarningsQuery = {
     runLauncher: {__typename: 'RunLauncher'; name: string} | null;
   };
 };
+
+export const LaunchAssetWarningsQueryVersion = '1924efd011a8fa46372d16674bca736ef10e46d3aff77430b0bd24461359813e';

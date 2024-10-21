@@ -4,7 +4,11 @@ import styled from 'styled-components';
 
 import {HourCycle} from '../app/time/HourCycle';
 import {TimeContext} from '../app/time/TimeContext';
-import {DEFAULT_TIME_FORMAT, TimeFormat} from '../app/time/TimestampFormat';
+import {
+  DEFAULT_TIME_FORMAT,
+  DEFAULT_TOOLTIP_TIME_FORMAT,
+  TimeFormat,
+} from '../app/time/TimestampFormat';
 import {timestampToString} from '../app/time/timestampToString';
 
 interface Props {
@@ -16,7 +20,13 @@ interface Props {
 }
 
 export const TimestampDisplay = (props: Props) => {
-  const {timestamp, timezone, timeFormat, hourCycle, tooltipTimeFormat} = props;
+  const {
+    timestamp,
+    timezone,
+    timeFormat = DEFAULT_TIME_FORMAT,
+    hourCycle,
+    tooltipTimeFormat = DEFAULT_TOOLTIP_TIME_FORMAT,
+  } = props;
   const {
     timezone: [userTimezone],
     hourCycle: [userHourCycle],
@@ -55,11 +65,6 @@ export const TimestampDisplay = (props: Props) => {
       ) : null}
     </span>
   );
-};
-
-TimestampDisplay.defaultProps = {
-  timeFormat: DEFAULT_TIME_FORMAT,
-  tooltipTimeFormat: {showSeconds: false, showTimezone: true},
 };
 
 const TabularNums = styled.span`

@@ -18,3 +18,5 @@ export type InstanceRunQueueConfigQuery = {
     } | null;
   };
 };
+
+export const InstanceRunQueueConfigVersion = '51de03303f49487cecbfbcd9a6624b8999779a88412c035aced402cb295e40c5';

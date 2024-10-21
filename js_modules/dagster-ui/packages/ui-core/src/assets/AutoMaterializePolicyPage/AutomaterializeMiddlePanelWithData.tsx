@@ -29,9 +29,11 @@ import {
   GetEvaluationsSpecificPartitionQuery,
 } from './types/GetEvaluationsQuery.types';
 import {gql, useQuery} from '../../apollo-client';
+import {useFeatureFlags} from '../../app/Flags';
 import {formatElapsedTimeWithMsec} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
-import {DimensionPartitionKeys} from '../../graphql/types';
+import {DimensionPartitionKeys, RunsFilter} from '../../graphql/types';
+import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 const emptyArray: any[] = [];
@@ -51,6 +53,7 @@ export const AutomaterializeMiddlePanelWithData = ({
   specificPartitionData,
   selectedPartition,
 }: Props) => {
+  const {flagRunsFeed} = useFeatureFlags();
   const evaluation = selectedEvaluation?.evaluation;
   const rootEvaluationNode = useMemo(
     () => evaluation?.evaluationNodes.find((node) => node.uniqueId === evaluation.rootUniqueId),
@@ -155,6 +158,11 @@ export const AutomaterializeMiddlePanelWithData = ({
     return [];
   }, [partitionKeys]);
 
+  const runsFilter: RunsFilter = useMemo(
+    () => ({runIds: selectedEvaluation ? selectedEvaluation.runIds : []}),
+    [selectedEvaluation],
+  );
+
   return (
     <Box flex={{direction: 'column', grow: 1}}>
       <Box
@@ -192,10 +200,18 @@ export const AutomaterializeMiddlePanelWithData = ({
               </Box>
             </div>
           </Box>
-          <Box border="bottom" padding={{vertical: 12}} margin={{vertical: 12}}>
+          <Box
+            border="bottom"
+            padding={{vertical: 12}}
+            margin={flagRunsFeed ? {top: 12} : {vertical: 12}}
+          >
             <Subtitle2>Runs launched ({selectedEvaluation.runIds.length})</Subtitle2>
           </Box>
-          <AutomaterializeRunsTable runIds={selectedEvaluation.runIds} />
+          {flagRunsFeed ? (
+            <RunsFeedTableWithFilters filter={runsFilter} />
+          ) : (
+            <AutomaterializeRunsTable runIds={selectedEvaluation.runIds} />
+          )}
           <Box border="bottom" padding={{vertical: 12}}>
             <Subtitle2>Policy evaluation</Subtitle2>
           </Box>
@@ -260,8 +276,8 @@ export const AutomaterializeMiddlePanelWithData = ({
               !selectedEvaluation.isLegacy
                 ? selectedEvaluation.evaluationNodes
                 : selectedPartition && specificPartitionData?.assetConditionEvaluationForPartition
-                ? specificPartitionData.assetConditionEvaluationForPartition.evaluationNodes
-                : selectedEvaluation.evaluation.evaluationNodes
+                  ? specificPartitionData.assetConditionEvaluationForPartition.evaluationNodes
+                  : selectedEvaluation.evaluation.evaluationNodes
             }
             isLegacyEvaluation={selectedEvaluation.isLegacy}
             rootUniqueId={selectedEvaluation.evaluation.rootUniqueId}

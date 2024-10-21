@@ -7,19 +7,20 @@ from dagster_duckdb import DuckDBResource
 
 
 def test_resource(tmp_path):
-    df = pd.DataFrame({"a": [1, 2, 3], "b": [5, 6, 7]})
+    sample_df = pd.DataFrame({"a": [1, 2, 3], "b": [5, 6, 7]})
 
     @asset
     def create_table(duckdb: DuckDBResource):
+        my_df = sample_df  # noqa: F841
         with duckdb.get_connection() as conn:
-            conn.execute("CREATE TABLE my_table AS SELECT * FROM df")
+            conn.execute("CREATE TABLE my_table AS SELECT * FROM my_df")
 
     @asset
     def read_table(duckdb: DuckDBResource):
         with duckdb.get_connection() as conn:
             res = conn.execute("SELECT * FROM my_table").fetchdf()
 
-            assert res.equals(df)
+            assert res.equals(sample_df)
 
     materialize(
         [create_table, read_table],

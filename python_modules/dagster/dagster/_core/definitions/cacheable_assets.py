@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._config.field_utils import compute_fields_hash
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -16,6 +15,8 @@ from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceAddable
 from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.errors import SerializationError
+from dagster._serdes.serdes import serialize_value
 from dagster._utils import hash_collection
 
 
@@ -63,9 +64,9 @@ class AssetsDefinitionCacheableData(
     ):
         extra_metadata = check.opt_nullable_mapping_param(extra_metadata, "extra_metadata")
         try:
-            # check that the value is JSON serializable
-            seven.dumps(extra_metadata)
-        except TypeError:
+            # check that the value can pass through the serdes layer
+            serialize_value(extra_metadata)
+        except SerializationError:
             check.failed("Value for `extra_metadata` is not JSON serializable.")
 
         return super().__new__(

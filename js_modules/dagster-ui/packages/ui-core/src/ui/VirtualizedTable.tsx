@@ -73,14 +73,15 @@ export const RowCell = ({
   <CellBox
     padding={12}
     flex={{direction: 'column', justifyContent: 'flex-start'}}
-    style={{overflow: 'hidden', ...(style || {})}}
+    style={{...(style || {})}}
     border="right"
   >
     {children}
   </CellBox>
 );
 
-const CellBox = styled(Box)`
+export const CellBox = styled(Box)`
+  overflow: hidden;
   :first-child {
     padding-left: 24px;
   }
@@ -122,17 +123,4 @@ export const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   right: 0;
   top: 0;
   overflow: hidden;
-`;
-
-type DynamicRowContainerProps = {$start: number};
-
-export const DynamicRowContainer = styled.div.attrs<DynamicRowContainerProps>(({$start}) => ({
-  style: {
-    transform: `translateY(${$start}px)`,
-  },
-}))<DynamicRowContainerProps>`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
 `;

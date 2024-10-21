@@ -6,7 +6,6 @@ import image from '@rollup/plugin-image';
 import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
 import url from '@rollup/plugin-url';
-import nodeGlobals from 'rollup-plugin-node-globals';
 import polyfills from 'rollup-plugin-polyfill-node';
 import styles from 'rollup-plugin-styles';
 
@@ -47,7 +46,6 @@ export default {
     }),
     commonjs(),
     polyfills(),
-    nodeGlobals(),
     resolve({extensions, preferBuiltins: false}),
   ],
   external: [

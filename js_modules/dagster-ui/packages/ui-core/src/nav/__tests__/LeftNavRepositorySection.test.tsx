@@ -10,7 +10,7 @@ import {
   HIDDEN_REPO_KEYS,
   WorkspaceContext,
   WorkspaceProvider,
-} from '../../workspace/WorkspaceContext';
+} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {DUNDER_REPO_NAME} from '../../workspace/buildRepoAddress';
 import {LeftNavRepositorySection} from '../LeftNavRepositorySection';
 import {

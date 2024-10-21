@@ -372,9 +372,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             "dagster/op": step_key,
             "dagster/run-id": execute_step_args.run_id,
         }
-        if dagster_run.external_job_origin:
+        if dagster_run.remote_job_origin:
             labels["dagster/code-location"] = (
-                dagster_run.external_job_origin.repository_origin.code_location_origin.location_name
+                dagster_run.remote_job_origin.repository_origin.code_location_origin.location_name
             )
         per_op_override = per_step_k8s_config.get(step_key, {})
 

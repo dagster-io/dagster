@@ -14,7 +14,10 @@ export const RunTargetLink = ({
   repoAddress,
 }: {
   isJob: boolean;
-  run: RunTableRunFragment;
+  run: Pick<
+    RunTableRunFragment,
+    'pipelineName' | 'assetSelection' | 'stepKeysToExecute' | 'assetCheckSelection'
+  >;
   repoAddress: RepoAddress | null;
 }) => {
   return isHiddenAssetGroupJob(run.pipelineName) ? (

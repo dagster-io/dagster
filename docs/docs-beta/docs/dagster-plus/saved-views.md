@@ -19,7 +19,7 @@ In this guide, you'll learn how to create, access, and share catalog views with 
 <summary>Prerequisites</summary>
 
 - **Organization Admin**, **Admin**, or **Editor** permissions on Dagster+
-- Familiarity with [Assets](/concepts/assets) and [Asset metadata](/guides/data-modeling/metadata)
+- Familiarity with [Assets](/concepts/assets) and [Asset metadata](/guides/metadata)
 
 </details>
 

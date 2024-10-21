@@ -120,9 +120,10 @@ def _build_column_lineage_metadata(
             dialect=sql_dialect,
         )
 
+    package_name = dbt_resource_props["package_name"]
     node_sql_path = target_path.joinpath(
         "compiled",
-        manifest["metadata"]["project_name"],
+        package_name,
         dbt_resource_props["original_file_path"],
     )
     optimized_node_ast = cast(

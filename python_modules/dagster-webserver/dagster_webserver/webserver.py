@@ -47,7 +47,10 @@ mimetypes.init()
 T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
 
 
-class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
+class DagsterWebserver(
+    GraphQLServer[BaseWorkspaceRequestContext],
+    Generic[T_IWorkspaceProcessContext],
+):
     _process_context: T_IWorkspaceProcessContext
     _uses_app_path_prefix: bool
 
@@ -145,7 +148,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             return PlainTextResponse("Invalid Path", status_code=400)
 
         # get ipynb content from grpc call
-        notebook_content = context.get_external_notebook_data(code_location_name, nb_path)
+        notebook_content = context.get_notebook_data(code_location_name, nb_path)
         check.inst_param(notebook_content, "notebook_content", bytes)
 
         # parse content to HTML

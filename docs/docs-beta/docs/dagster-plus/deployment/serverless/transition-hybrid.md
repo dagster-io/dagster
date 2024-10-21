@@ -10,12 +10,6 @@ After utilizing a Dagster+ [Serverless](/dagster-plus/deployment/serverless) dep
 Transitioning from Serverless to Hybrid requires some downtime, as your Dagster+ deployment won't have an agent to execute user code.
 :::
 
-## What you'll learn
-
-- How to deactivate your Serverless agent
-- How to create a Hybrid agent
-- How to confirm that the Hybrid agent was set up successfully
-
 <details>
   <summary>Prerequisites</summary>
 

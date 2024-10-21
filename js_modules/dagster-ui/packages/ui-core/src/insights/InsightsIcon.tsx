@@ -1,9 +1,9 @@
 // eslint-disable-next-line no-restricted-imports
 import {Colors, Icon, IconName, IconNames, IconWrapper} from '@dagster-io/ui-components';
 
-import {KNOWN_TAGS, extractIconSrc} from '../graph/OpTags';
+import {KNOWN_TAGS, KnownTagType, extractIconSrc} from '../graph/OpTags';
 
-type IntegrationIconName = keyof typeof KNOWN_TAGS;
+type IntegrationIconName = KnownTagType;
 export type InsightsIconType = IconName | IntegrationIconName;
 
 interface InsightsIconProps {

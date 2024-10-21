@@ -1,0 +1,189 @@
+.airflow_home
+.dagster_home
+customers.csv
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+mlruns/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+
+# Flask stuff:
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# dotenv
+.env
+.envrc
+
+# virtualenv
+.direnv/
+.venv
+venv/
+ENV/
+Pipfile
+Pipfile.lock
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# ruff
+.ruff_cache/
+
+# mypy
+.mypy_cache/
+
+tags
+!python_modules/dagster/dagster/_core/definitions/tags
+
+.pytest_cache
+.DS_Store
+
+docs/_build
+python_modules/dagster/docs/_build
+
+dagit_run_logs
+
+python_modules/libraries/dagster-aws/dagster_aws/ecs/config.yaml
+
+python_modules/dagster-webserver/node_modules/
+python_modules/dagster-webserver/yarn.lock
+
+# old dagit stuff
+python_modules/dagit/node_modules/
+python_modules/dagit/yarn.lock
+js_modules/dagit
+
+# Gatsby stuff
+docs/gatsby/**/node_modules/
+docs/gatsby/**/_build
+docs/gatsby/**/public
+# Next stuff
+docs/next/.mdx-data
+docs/next/public/sitemap.xml
+# Data
+data
+# Don't ignore data folders in examples
+!examples/*/data
+!examples/**/**/data
+
+# Dask
+dask-worker-space
+
+# PyCharm IDE Config files
+.idea/
+
+# Codemod bookmarks
+.codemod.bookmark
+
+# Examples outputs
+examples/docs_snippets/docs_snippets/**/**/output/
+examples/docs_snippets/docs_snippets/**/**/output/
+examples/**/**/example.db
+
+# Telemetry instance id
+.telemetry
+
+test_results.xml
+
+# GitHub Codespaces
+pythonenv*/
+
+# Vim project-local settings
+.vim
+
+# DuckDB
+*.duckdb
+
+# PyRight config
+pyrightconfig*
+
+# Scripts working directory
+scripts/.build
+
+# dbt .user files
+.user.yml
+
+# output files
+**/**.o
+
+perf_harness/airflow_dags/proxied_state/*
+**/**perf_output.txt

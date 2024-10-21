@@ -6,3 +6,4 @@ packages/core/src/graphql/* linguist-generated=true
 packages/core/src/**/types/* linguist-generated=true
 packages/ui-core/src/graphql/* linguist-generated=true
 packages/ui-core/src/**/types/* linguist-generated=true
+packages/ui-core/client.json linguist-generated=true

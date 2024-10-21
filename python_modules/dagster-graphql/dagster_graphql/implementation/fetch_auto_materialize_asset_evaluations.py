@@ -60,7 +60,7 @@ def fetch_auto_materialize_asset_evaluations(
     return _get_graphene_records_from_evaluations(
         graphene_info,
         schedule_storage.get_auto_materialize_asset_evaluations(
-            asset_key=asset_key,
+            key=asset_key,
             limit=limit,
             cursor=int(cursor) if cursor else None,
         ),

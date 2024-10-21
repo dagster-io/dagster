@@ -12,7 +12,7 @@ import {
 import {useMemo, useState} from 'react';
 import * as yaml from 'yaml';
 
-import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
+import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 
 export const CodeLocationMenu = ({
   locationNode,

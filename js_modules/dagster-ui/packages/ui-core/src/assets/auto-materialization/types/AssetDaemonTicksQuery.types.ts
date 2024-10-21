@@ -68,3 +68,5 @@ export type AssetDaemonTicksQuery = {
     }>;
   }>;
 };
+
+export const AssetDaemonTicksQueryVersion = '399ac77e660d40eba32c2ab06db2a2936a71e660d93ec108364eec1fdfc16788';

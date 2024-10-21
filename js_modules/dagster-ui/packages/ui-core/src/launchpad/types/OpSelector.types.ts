@@ -169,3 +169,5 @@ export type OpSelectorQuery = {
         }>;
       };
 };
+
+export const OpSelectorQueryVersion = 'f1b601d74e6ffb2854418109f56c90bc7feb37cbabd9a4b60dd7075aa45fcadf';

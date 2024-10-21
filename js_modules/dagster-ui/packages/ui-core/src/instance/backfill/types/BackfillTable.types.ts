@@ -2,6 +2,20 @@
 
 import * as Types from '../../../graphql/types';
 
+export type PartitionSetForBackfillTableFragment = {
+  __typename: 'PartitionSet';
+  id: string;
+  name: string;
+  mode: string;
+  pipelineName: string;
+  repositoryOrigin: {
+    __typename: 'RepositoryOrigin';
+    id: string;
+    repositoryName: string;
+    repositoryLocationName: string;
+  };
+};
+
 export type BackfillTableFragment = {
   __typename: 'PartitionBackfill';
   id: string;
@@ -18,14 +32,14 @@ export type BackfillTableFragment = {
   partitionSet: {
     __typename: 'PartitionSet';
     id: string;
+    mode: string;
     name: string;
     pipelineName: string;
-    mode: string;
     repositoryOrigin: {
       __typename: 'RepositoryOrigin';
+      id: string;
       repositoryName: string;
       repositoryLocationName: string;
-      id: string;
     };
   } | null;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
@@ -40,18 +54,4 @@ export type BackfillTableFragment = {
       error: {__typename: 'PythonError'; message: string; stack: Array<string>};
     }>;
   } | null;
-};
-
-export type PartitionSetForBackfillTableFragment = {
-  __typename: 'PartitionSet';
-  id: string;
-  name: string;
-  mode: string;
-  pipelineName: string;
-  repositoryOrigin: {
-    __typename: 'RepositoryOrigin';
-    id: string;
-    repositoryName: string;
-    repositoryLocationName: string;
-  };
 };

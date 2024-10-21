@@ -89,6 +89,8 @@ class TestMaterializations(ExecutingGraphQLContextTestMatrix):
         assert entry["schema"]["columns"]
         assert entry["schema"]["columns"][0]["constraints"]
         assert entry["schema"]["constraints"]
+        assert entry["schema"]["columns"]
+        assert entry["schema"]["columns"][0]["tags"]
 
         entry = mat["metadataEntries"][14]
         assert entry["__typename"] == "JobMetadataEntry"

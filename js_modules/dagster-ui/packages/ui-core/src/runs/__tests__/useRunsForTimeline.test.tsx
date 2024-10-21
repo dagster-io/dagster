@@ -25,11 +25,11 @@ import {
 } from '../../graphql/types';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {ONE_HOUR_S, getHourlyBuckets} from '../HourlyDataCache/HourlyDataCache';
+import {CompletedRunTimelineQueryVersion} from '../types/useRunsForTimeline.types';
 import {
   COMPLETED_RUN_TIMELINE_QUERY,
   FUTURE_TICKS_QUERY,
   ONGOING_RUN_TIMELINE_QUERY,
-  QUERY_VERSION,
   useRunsForTimeline,
 } from '../useRunsForTimeline';
 
@@ -576,7 +576,7 @@ describe('useRunsForTimeline', () => {
     const startHour = Math.floor(start / ONE_HOUR_S);
     mockedCache.get.mockResolvedValue({
       value: {
-        version: QUERY_VERSION,
+        version: CompletedRunTimelineQueryVersion,
         cache: new Map([
           [
             startHour,

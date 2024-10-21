@@ -1,0 +1,5 @@
+tasks:
+  - id: load_iris 
+    proxied: True 
+  - id: build_dbt_models
+    proxied: True

@@ -17,6 +17,7 @@ export type RunActionButtonsTestQuery = {
         hasReExecutePermission: boolean;
         hasTerminatePermission: boolean;
         hasDeletePermission: boolean;
+        hasRunMetricsEnabled: boolean;
         status: Types.RunStatus;
         mode: string;
         rootRunId: string | null;
@@ -75,3 +76,5 @@ export type RunActionButtonsTestQuery = {
       }
     | {__typename: 'RunNotFoundError'};
 };
+
+export const RunActionButtonsTestQueryVersion = 'd85a7e0201a27eb36be5a7471d2724fe5a68b7257e6635f54f120fc40f8169c0';

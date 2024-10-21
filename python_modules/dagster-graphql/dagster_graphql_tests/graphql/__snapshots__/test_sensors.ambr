@@ -3,8 +3,14 @@
   dict({
     '__typename': 'Sensor',
     'assetSelection': None,
+    'metadataEntries': list([
+      dict({
+        'label': 'foo',
+        'text': 'bar',
+      }),
+    ]),
     'minIntervalSeconds': 30,
-    'name': 'always_no_config_sensor',
+    'name': 'always_no_config_sensor_with_tags_and_metadata',
     'nextTick': None,
     'sensorState': dict({
       'runs': list([
@@ -15,6 +21,12 @@
       ]),
     }),
     'sensorType': 'STANDARD',
+    'tags': list([
+      dict({
+        'key': 'foo',
+        'value': 'bar',
+      }),
+    ]),
     'targets': list([
       dict({
         'mode': 'default',
@@ -49,7 +61,7 @@
     dict({
       'description': None,
       'minIntervalSeconds': 30,
-      'name': 'always_no_config_sensor',
+      'name': 'always_no_config_sensor_with_tags_and_metadata',
       'sensorState': dict({
         'runs': list([
         ]),
@@ -357,6 +369,26 @@
         dict({
           'mode': 'default',
           'pipelineName': 'single_asset_job',
+          'solidSelection': None,
+        }),
+      ]),
+    }),
+    dict({
+      'description': None,
+      'minIntervalSeconds': 30,
+      'name': 'stopped_in_code_sensor',
+      'sensorState': dict({
+        'runs': list([
+        ]),
+        'runsCount': 0,
+        'status': 'STOPPED',
+        'ticks': list([
+        ]),
+      }),
+      'targets': list([
+        dict({
+          'mode': 'default',
+          'pipelineName': 'no_config_job',
           'solidSelection': None,
         }),
       ]),

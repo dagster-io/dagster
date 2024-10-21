@@ -22,18 +22,18 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.asset_daemon_context import (
-    build_run_requests,
-    build_run_requests_with_backfill_policies,
-)
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_selection import KeysAssetSelection
+from dagster._core.definitions.automation_tick_evaluation_context import (
+    build_run_requests_from_asset_partitions,
+    build_run_requests_with_backfill_policies,
+)
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph, RemoteWorkspaceAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
@@ -66,7 +66,6 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
-from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_current_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -626,7 +625,9 @@ def create_asset_backfill_data_from_asset_partitions(
     )
 
 
-def _get_unloadable_location_names(context: IWorkspace, logger: logging.Logger) -> Sequence[str]:
+def _get_unloadable_location_names(
+    context: BaseWorkspaceRequestContext, logger: logging.Logger
+) -> Sequence[str]:
     location_entries_by_name = {
         location_entry.origin.location_name: location_entry
         for location_entry in context.get_code_location_entries().values()
@@ -718,7 +719,7 @@ def _submit_runs_and_update_backfill_in_chunks(
     workspace_process_context: IWorkspaceProcessContext,
     backfill_id: str,
     asset_backfill_iteration_result: AssetBackfillIterationResult,
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     logger: logging.Logger,
     run_tags: Mapping[str, str],
     instance_queryer: CachingInstanceQueryer,
@@ -869,7 +870,7 @@ def _check_target_partitions_subset_is_valid(
 def _check_validity_and_deserialize_asset_backfill_data(
     workspace_context: BaseWorkspaceRequestContext,
     backfill: "PartitionBackfill",
-    asset_graph: BaseAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     instance_queryer: CachingInstanceQueryer,
     logger: logging.Logger,
 ) -> Optional[AssetBackfillData]:
@@ -936,7 +937,10 @@ def execute_asset_backfill_iteration(
 
     backfill_start_datetime = datetime_from_timestamp(backfill.backfill_timestamp)
     instance_queryer = CachingInstanceQueryer(
-        instance=instance, asset_graph=asset_graph, evaluation_time=backfill_start_datetime
+        instance=instance,
+        asset_graph=asset_graph,
+        loading_context=workspace_context,
+        evaluation_time=backfill_start_datetime,
     )
 
     previous_asset_backfill_data = _check_validity_and_deserialize_asset_backfill_data(
@@ -1032,9 +1036,15 @@ def execute_asset_backfill_iteration(
             # failure, or cancellation). Since the AssetBackfillData object stores materialization states
             # per asset partition, the daemon continues to update the backfill data until all runs have
             # finished in order to display the final partition statuses in the UI.
-            updated_backfill: PartitionBackfill = updated_backfill.with_status(
-                BulkActionStatus.COMPLETED
-            )
+            if (
+                updated_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets
+                > 0
+            ):
+                updated_backfill = updated_backfill.with_status(BulkActionStatus.COMPLETED_FAILED)
+            else:
+                updated_backfill: PartitionBackfill = updated_backfill.with_status(
+                    BulkActionStatus.COMPLETED_SUCCESS
+                )
             instance.update_backfill(updated_backfill)
 
         new_materialized_partitions = (
@@ -1173,7 +1183,7 @@ def get_canceling_asset_backfill_iteration_data(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
     instance_queryer: CachingInstanceQueryer,
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     backfill_start_timestamp: float,
 ) -> Iterable[Optional[AssetBackfillData]]:
     """For asset backfills in the "canceling" state, fetch the asset backfill data with the updated
@@ -1211,7 +1221,7 @@ def get_canceling_asset_backfill_iteration_data(
 def get_asset_backfill_iteration_materialized_partitions(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     instance_queryer: CachingInstanceQueryer,
 ) -> Iterable[Optional[AssetGraphSubset]]:
     """Returns the partitions that have been materialized by the backfill.
@@ -1260,7 +1270,7 @@ def get_asset_backfill_iteration_materialized_partitions(
 def _get_failed_and_downstream_asset_partitions(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     instance_queryer: CachingInstanceQueryer,
     backfill_start_timestamp: float,
 ) -> AssetGraphSubset:
@@ -1319,11 +1329,11 @@ def _asset_graph_subset_to_str(
     asset_subsets = asset_graph_subset.iterate_asset_subsets(asset_graph)
     for subset in asset_subsets:
         if subset.is_partitioned:
-            partitions_def = asset_graph.get(subset.asset_key).partitions_def
+            partitions_def = asset_graph.get(subset.key).partitions_def
             partition_ranges_str = _partition_subset_str(subset.subset_value, partitions_def)
-            return_str += f"- {subset.asset_key.to_user_string()}: {{{partition_ranges_str}}}\n"
+            return_str += f"- {subset.key.to_user_string()}: {{{partition_ranges_str}}}\n"
         else:
-            return_str += f"- {subset.asset_key.to_user_string()}\n"
+            return_str += f"- {subset.key.to_user_string()}\n"
 
     return return_str
 
@@ -1331,7 +1341,7 @@ def _asset_graph_subset_to_str(
 def execute_asset_backfill_iteration_inner(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     instance_queryer: CachingInstanceQueryer,
     backfill_start_timestamp: float,
     logger: logging.Logger,
@@ -1486,7 +1496,7 @@ def execute_asset_backfill_iteration_inner(
             )
         # When any of the assets do not have backfill policies, we fall back to the default behavior of
         # backfilling them partition by partition.
-        run_requests = build_run_requests(
+        run_requests = build_run_requests_from_asset_partitions(
             asset_partitions=asset_partitions_to_request,
             asset_graph=asset_graph,
             run_tags={},
@@ -1519,7 +1529,7 @@ def can_run_with_parent(
     parent: AssetKeyPartitionKey,
     candidate: AssetKeyPartitionKey,
     candidates_unit: Iterable[AssetKeyPartitionKey],
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     target_subset: AssetGraphSubset,
     asset_partitions_to_request_map: Mapping[AssetKey, AbstractSet[Optional[str]]],
 ) -> Tuple[bool, str]:
@@ -1554,7 +1564,10 @@ def can_run_with_parent(
             False,
             f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} have different backfill policies so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key} is materialized.",
         )
-    if parent_node.priority_repository_handle is not candidate_node.priority_repository_handle:
+    if (
+        parent_node.resolve_to_singular_repo_scoped_node().repository_handle
+        != candidate_node.resolve_to_singular_repo_scoped_node().repository_handle
+    ):
         return (
             False,
             f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} are in different code locations so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key.to_user_string()} is materialized.",
@@ -1607,7 +1620,7 @@ def can_run_with_parent(
 
 
 def should_backfill_atomic_asset_partitions_unit(
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     candidates_unit: Iterable[AssetKeyPartitionKey],
     asset_partitions_to_request: AbstractSet[AssetKeyPartitionKey],
     target_subset: AssetGraphSubset,

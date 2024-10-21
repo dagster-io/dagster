@@ -7,11 +7,17 @@ from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 
 
-def invoke_materialize(select: str, partition: Optional[str] = None):
+def invoke_materialize(
+    select: str,
+    partition: Optional[str] = None,
+    partition_range: Optional[str] = None,
+):
     runner = CliRunner()
     options = ["-f", file_relative_path(__file__, "assets.py"), "--select", select]
     if partition:
         options.extend(["--partition", partition])
+    if partition_range:
+        options.extend(["--partition-range", partition_range])
     return runner.invoke(asset_materialize_command, options)
 
 
@@ -119,6 +125,52 @@ def test_conflicting_partitions():
         result = invoke_materialize("partitioned_asset,differently_partitioned_asset", "one")
         assert "There is no PartitionsDefinition shared by all the provided assets" in str(
             result.exception
+        )
+
+
+def test_partition_and_partition_range_options():
+    with instance_for_test():
+        result = invoke_materialize(
+            "single_run_partitioned_asset",
+            partition="2020-01-01",
+            partition_range="2020-01-01...2020-01-03",
+        )
+        assert (
+            "Cannot specify both --partition and --partition-range options. Use only one."
+            in str(result.exception)
+        )
+
+
+def test_partition_range_invalid_format():
+    with instance_for_test():
+        result = invoke_materialize(
+            "single_run_partitioned_asset",
+            partition_range="2020-01-01",
+        )
+        assert "Invalid partition range format. Expected <start>...<end>." in str(result.exception)
+
+
+def test_partition_range_single_run_backfill_policy():
+    with instance_for_test() as instance:
+        result = invoke_materialize(
+            "single_run_partitioned_asset",
+            partition_range="2020-01-01...2020-01-03",
+        )
+        assert "RUN_SUCCESS" in result.output
+        partitions = instance.get_materialized_partitions(AssetKey("single_run_partitioned_asset"))
+        for partition in ["2020-01-01", "2020-01-02", "2020-01-03"]:
+            assert partition in partitions
+
+
+def test_partition_range_multi_run_backfill_policy():
+    with instance_for_test():
+        result = invoke_materialize(
+            "multi_run_partitioned_asset",
+            partition_range="2020-01-01...2020-01-03",
+        )
+        assert (
+            "Provided partition range, but not all assets have a single-run backfill policy."
+            in str(result.exception)
         )
 
 

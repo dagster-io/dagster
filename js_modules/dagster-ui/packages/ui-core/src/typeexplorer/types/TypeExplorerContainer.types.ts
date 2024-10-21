@@ -1297,3 +1297,5 @@ export type TypeExplorerContainerQuery = {
     | {__typename: 'PipelineNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const TypeExplorerContainerQueryVersion = '6beecfab311124e730a6430cc0411ba20dc4cb207f73f3d00f7552d2d94d9670';

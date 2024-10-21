@@ -42,7 +42,6 @@ setup(
         f"dagster{pin}",
         "packaging",
         "requests",
-        "pydantic>=1.10.0,<2.9.0",
     ],
     extras_require={},
     zip_safe=False,

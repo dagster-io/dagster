@@ -42,7 +42,7 @@ from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus
 from dagster._core.remote_representation.origin import RemoteJobOrigin
 from dagster._core.snap import (
     ExecutionPlanSnapshot,
-    JobSnapshot,
+    JobSnap,
     create_execution_plan_snapshot_id,
     create_job_snapshot_id,
 )
@@ -80,6 +80,7 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_subquery,
 )
 from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
@@ -295,6 +296,12 @@ class SqlRunStorage(RunStorage):
             query = query.where(
                 RunsTable.c.create_timestamp < filters.created_before.replace(tzinfo=None)
             )
+
+        if filters.exclude_subruns:
+            runs_in_backfills = db_select([RunTagsTable.c.run_id]).where(
+                RunTagsTable.c.key == BACKFILL_ID_TAG
+            )
+            query = query.where(RunsTable.c.run_id.notin_(runs_in_backfills))
 
         return query
 
@@ -559,8 +566,8 @@ class SqlRunStorage(RunStorage):
         check.str_param(job_snapshot_id, "job_snapshot_id")
         return self._has_snapshot_id(job_snapshot_id)
 
-    def add_job_snapshot(self, job_snapshot: JobSnapshot, snapshot_id: Optional[str] = None) -> str:
-        check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
+    def add_job_snapshot(self, job_snapshot: JobSnap, snapshot_id: Optional[str] = None) -> str:
+        check.inst_param(job_snapshot, "job_snapshot", JobSnap)
         check.opt_str_param(snapshot_id, "snapshot_id")
 
         if not snapshot_id:
@@ -572,7 +579,7 @@ class SqlRunStorage(RunStorage):
             snapshot_type=SnapshotType.PIPELINE,
         )
 
-    def get_job_snapshot(self, job_snapshot_id: str) -> JobSnapshot:
+    def get_job_snapshot(self, job_snapshot_id: str) -> JobSnap:
         check.str_param(job_snapshot_id, "job_snapshot_id")
         return self._get_snapshot(job_snapshot_id)  # type: ignore  # (allowed to return None?)
 
@@ -638,7 +645,7 @@ class SqlRunStorage(RunStorage):
 
         return bool(row)
 
-    def _get_snapshot(self, snapshot_id: str) -> Optional[JobSnapshot]:
+    def _get_snapshot(self, snapshot_id: str) -> Optional[JobSnap]:
         query = db_select([SnapshotsTable.c.snapshot_body]).where(
             SnapshotsTable.c.snapshot_id == snapshot_id
         )
@@ -831,6 +838,93 @@ class SqlRunStorage(RunStorage):
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(DaemonHeartbeatsTable.delete())
 
+    def _backfills_query(self, filters: Optional[BulkActionsFilter] = None):
+        query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
+        if filters and filters.tags:
+            # Backfills do not have a corresponding tags table. However, all tags that are on a backfill are
+            # applied to the runs the backfill launches. So we can query for runs that match the tags and
+            # are also part of a backfill to find the backfills that match the tags.
+
+            backfills_with_tags_query = db_select([RunTagsTable.c.value]).where(
+                RunTagsTable.c.key == BACKFILL_ID_TAG
+            )
+
+            for i, (key, value) in enumerate(filters.tags.items()):
+                run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
+                backfills_with_tags_query = backfills_with_tags_query.where(
+                    db.and_(
+                        RunTagsTable.c.run_id == run_tags_alias.c.run_id,
+                        run_tags_alias.c.key == key,
+                        (run_tags_alias.c.value == value)
+                        if isinstance(value, str)
+                        else run_tags_alias.c.value.in_(value),
+                    ),
+                )
+
+            query = query.where(BulkActionsTable.c.key.in_(db_subquery(backfills_with_tags_query)))
+
+        if filters and filters.job_name:
+            run_tags_table = RunTagsTable
+
+            runs_in_backfill_with_job_name = run_tags_table.join(
+                RunsTable,
+                db.and_(
+                    RunTagsTable.c.run_id == RunsTable.c.run_id,
+                    RunTagsTable.c.key == BACKFILL_ID_TAG,
+                    RunsTable.c.pipeline_name == filters.job_name,
+                ),
+            )
+
+            backfills_with_job_name_query = db_select([RunTagsTable.c.value]).select_from(
+                runs_in_backfill_with_job_name
+            )
+            query = query.where(
+                BulkActionsTable.c.key.in_(db_subquery(backfills_with_job_name_query))
+            )
+        if filters and filters.statuses:
+            query = query.where(
+                BulkActionsTable.c.status.in_([status.value for status in filters.statuses])
+            )
+        if filters and filters.created_after:
+            query = query.where(BulkActionsTable.c.timestamp > filters.created_after)
+        if filters and filters.created_before:
+            query = query.where(BulkActionsTable.c.timestamp < filters.created_before)
+        if filters and filters.backfill_ids:
+            query = query.where(BulkActionsTable.c.key.in_(filters.backfill_ids))
+        return query
+
+    def _add_cursor_limit_to_backfills_query(
+        self, query, cursor: Optional[str] = None, limit: Optional[int] = None
+    ):
+        if limit:
+            query = query.limit(limit)
+        if cursor:
+            cursor_query = db_select([BulkActionsTable.c.id]).where(
+                BulkActionsTable.c.key == cursor
+            )
+            query = query.where(BulkActionsTable.c.id < cursor_query)
+
+        return query
+
+    def _apply_backfill_tags_filter_to_results(
+        self, backfills: Sequence[PartitionBackfill], tags: Mapping[str, Union[str, Sequence[str]]]
+    ) -> Sequence[PartitionBackfill]:
+        if not tags:
+            return backfills
+
+        def _matches_backfill(
+            backfill: PartitionBackfill, tags: Mapping[str, Union[str, Sequence[str]]]
+        ) -> bool:
+            for key, value in tags.items():
+                if isinstance(value, str):
+                    if backfill.tags.get(key) != value:
+                        return False
+                elif backfill.tags.get(key) not in value:
+                    return False
+            return True
+
+        return [backfill for backfill in backfills if _matches_backfill(backfill, tags)]
+
     def get_backfills(
         self,
         filters: Optional[BulkActionsFilter] = None,
@@ -844,26 +938,45 @@ class SqlRunStorage(RunStorage):
             raise DagsterInvariantViolationError(
                 "Cannot provide status and filters to get_backfills. Please use filters rather than status."
             )
-        if status or (filters and filters.statuses):
-            statuses = [status] if status else (filters.statuses if filters else None)
-            assert statuses
-            query = query.where(
-                BulkActionsTable.c.status.in_([status.value for status in statuses])
-            )
-        if cursor:
-            cursor_query = db_select([BulkActionsTable.c.id]).where(
-                BulkActionsTable.c.key == cursor
-            )
-            query = query.where(BulkActionsTable.c.id < cursor_query)
-        if filters and filters.created_after:
-            query = query.where(BulkActionsTable.c.timestamp > filters.created_after)
-        if filters and filters.created_before:
-            query = query.where(BulkActionsTable.c.timestamp < filters.created_before)
-        if limit:
-            query = query.limit(limit)
+
+        if status is not None:
+            filters = BulkActionsFilter(statuses=[status])
+
+        query = self._backfills_query(filters=filters)
+        query = self._add_cursor_limit_to_backfills_query(query, cursor=cursor, limit=limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
         rows = self.fetchall(query)
-        return deserialize_values((row["body"] for row in rows), PartitionBackfill)
+        backfill_candidates = deserialize_values((row["body"] for row in rows), PartitionBackfill)
+
+        if filters and filters.tags:
+            # runs can have more tags than the backfill that launched them. Since we filtered tags by
+            # querying for runs with those tags, we need to do an additional check that the backfills
+            # also have the requested tags
+            backfill_candidates = self._apply_backfill_tags_filter_to_results(
+                backfill_candidates, filters.tags
+            )
+        return backfill_candidates
+
+    def get_backfills_count(self, filters: Optional[BulkActionsFilter] = None) -> int:
+        check.opt_inst_param(filters, "filters", BulkActionsFilter)
+        if filters and filters.tags:
+            # runs can have more tags than the backfill that launched them. Since we filtered tags by
+            # querying for runs with those tags, we need to do an additional check that the backfills
+            # also have the requested tags. This requires fetching the backfills from the db and filtering them
+            query = self._backfills_query(filters=filters)
+            rows = self.fetchall(query)
+            backfill_candidates = deserialize_values(
+                (row["body"] for row in rows), PartitionBackfill
+            )
+            return len(
+                self._apply_backfill_tags_filter_to_results(backfill_candidates, filters.tags)
+            )
+
+        subquery = db_subquery(self._backfills_query(filters=filters))
+        query = db_select([db.func.count().label("count")]).select_from(subquery)
+        row = self.fetchone(query)
+        count = row["count"] if row else 0
+        return count
 
     def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
         check.str_param(backfill_id, "backfill_id")
@@ -956,7 +1069,7 @@ GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"
 
 def defensively_unpack_execution_plan_snapshot_query(
     logger: logging.Logger, row: Sequence[Any]
-) -> Optional[Union[ExecutionPlanSnapshot, JobSnapshot]]:
+) -> Optional[Union[ExecutionPlanSnapshot, JobSnap]]:
     # minimal checking here because sqlalchemy returns a different type based on what version of
     # SqlAlchemy you are using
 
@@ -980,7 +1093,7 @@ def defensively_unpack_execution_plan_snapshot_query(
         return None
 
     try:
-        return deserialize_value(decoded_str, (ExecutionPlanSnapshot, JobSnapshot))
+        return deserialize_value(decoded_str, (ExecutionPlanSnapshot, JobSnap))
     except JSONDecodeError:
         _warn("Could not parse json in snapshot table.")
         return None

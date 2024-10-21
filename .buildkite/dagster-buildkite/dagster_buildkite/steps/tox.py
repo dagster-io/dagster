@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.step_builder import BuildkiteQueue, CommandStepBuilder
-from dagster_buildkite.utils import CommandStep, make_buildkite_section_header
+from dagster_buildkite.utils import UV_PIN, CommandStep, make_buildkite_section_header
 
 _COMMAND_TYPE_TO_EMOJI_MAP = {
     "pytest": ":pytest:",
@@ -51,7 +51,7 @@ def build_tox_step(
     commands = [
         *(extra_commands_pre or []),
         f"cd {root_dir}",
-        'pip install --force-reinstall "uv==0.2.*"',
+        f'pip install --force-reinstall "{UV_PIN}"',
         f"echo -e {shlex.quote(buildkite_section_header)}",
         tox_command,
         *(extra_commands_post or []),

@@ -8,11 +8,11 @@ export type MetadataTableRow = {key: string; label?: React.ReactNode; value: Rea
 
 interface Props {
   rows: (MetadataTableRow | null | undefined)[];
-  spacing: 0 | 2 | 4;
+  spacing?: 0 | 2 | 4;
 }
 
 export const MetadataTable = (props: Props) => {
-  const {rows, spacing} = props;
+  const {rows, spacing = 4} = props;
 
   return (
     <StyledTable>
@@ -40,17 +40,13 @@ export const MetadataTable = (props: Props) => {
   );
 };
 
-MetadataTable.defaultProps = {
-  spacing: 4,
-};
-
 export const StyledTable = styled.table`
   border-spacing: 0;
   td {
     vertical-align: top;
   }
 
-  td .bp4-control {
+  td .bp5-control {
     margin-bottom: 0;
   }
 `;

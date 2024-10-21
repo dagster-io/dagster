@@ -50,3 +50,7 @@ export type ReportEventMutation = {
       }
     | {__typename: 'UnauthorizedError'; message: string};
 };
+
+export const ReportEventPartitionDefinitionQueryVersion = 'e306421344493a9986106de14bca90ec554505d6f1965991ba502725edc41c95';
+
+export const ReportEventMutationVersion = '80b4987cdf27ec8fac25eb6b98b996bd4fdeb4cbfff605d647da5d4bb8244cb0';

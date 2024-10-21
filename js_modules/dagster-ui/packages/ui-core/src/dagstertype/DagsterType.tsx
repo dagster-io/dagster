@@ -2,8 +2,8 @@ import {Box, FontFamily} from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
 import styled from 'styled-components';
 
-import {DagsterTypeFragment} from './types/DagsterType.types';
 import {gql} from '../apollo-client';
+import {DagsterTypeFragment} from './types/DagsterType.types';
 import {gqlTypePredicate} from '../app/Util';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {TableSchema} from '../metadata/TableSchema';

@@ -139,6 +139,11 @@ def execute_posix_tail(path, stream):
 
         yield (tail_process.pid, watcher_process.pid)
     finally:
+        # The posix tail process has default interval check 1s, which may lead to missing logs on stdout/stderr.
+        # Allow users to add delay before killing tail process.
+        # More here: https://github.com/dagster-io/dagster/issues/23336
+        time.sleep(float(os.getenv("DAGSTER_COMPUTE_LOG_TAIL_WAIT_AFTER_FINISH", "0")))
+
         if tail_process:
             _clean_up_subprocess(tail_process)
 

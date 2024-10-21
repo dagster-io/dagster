@@ -9,8 +9,8 @@ import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
-import {AssetNodeFragment} from './types/AssetNode.types';
 import {gql} from '../apollo-client';
+import {AssetNodeFragment} from './types/AssetNode.types';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
@@ -25,10 +25,10 @@ import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 interface Props {
   definition: AssetNodeFragment;
   selected: boolean;
-  computeKindTagsFilter?: StaticSetFilter<string>;
+  kindFilter?: StaticSetFilter<string>;
 }
 
-export const AssetNode = React.memo(({definition, selected}: Props) => {
+export const AssetNode = React.memo(({definition, selected, kindFilter}: Props) => {
   const {liveData} = useAssetLiveData(definition.assetKey);
   return (
     <AssetInsetForHoverEffect>
@@ -69,6 +69,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
               key={kind}
               kind={kind}
               style={{position: 'relative', paddingTop: 7, margin: 0}}
+              currentPageFilter={kindFilter}
             />
           ))}
         </Box>

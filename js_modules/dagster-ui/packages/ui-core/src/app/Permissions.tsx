@@ -1,11 +1,11 @@
 import * as React from 'react';
 
+import {gql, useQuery} from '../apollo-client';
 import {
   PermissionFragment,
   PermissionsQuery,
   PermissionsQueryVariables,
 } from './types/Permissions.types';
-import {gql, useQuery} from '../apollo-client';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in
 // extractPermissions is handled correctly
@@ -104,6 +104,7 @@ export const extractPermissions = (
     canToggleAutoMaterialize: permissionOrFallback('toggle_auto_materialize'),
     canEditConcurrencyLimit: permissionOrFallback('edit_concurrency_limit'),
     canEditWorkspace: permissionOrFallback('edit_workspace'),
+    canUpdateSensorCursor: permissionOrFallback('update_sensor_cursor'),
   };
 };
 

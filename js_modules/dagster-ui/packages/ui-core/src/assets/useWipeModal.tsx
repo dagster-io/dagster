@@ -28,18 +28,19 @@ export function useWipeModal(
         onComplete={refresh}
       />
     ),
-    dropdownOptions: canSeeWipeMaterializationAction
-      ? [
-          <MenuDivider key="wipe-divider" />,
-          <MenuItem
-            key="wipe"
-            text="Wipe materializations"
-            icon={<Icon name="delete" color={Colors.accentRed()} />}
-            disabled={!canWipeAssets}
-            intent="danger"
-            onClick={() => setShowing(true)}
-          />,
-        ]
-      : ([] as JSX.Element[]),
+    dropdownOptions:
+      opts && canSeeWipeMaterializationAction
+        ? [
+            <MenuDivider key="wipe-divider" />,
+            <MenuItem
+              key="wipe"
+              text="Wipe materializations"
+              icon={<Icon name="delete" color={Colors.accentRed()} />}
+              disabled={!canWipeAssets}
+              intent="danger"
+              onClick={() => setShowing(true)}
+            />,
+          ]
+        : ([] as JSX.Element[]),
   };
 }

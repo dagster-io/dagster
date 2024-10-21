@@ -37,7 +37,6 @@ def build_dlt_asset_specs(
 
     """
     dagster_dlt_translator = dagster_dlt_translator or DagsterDltTranslator()
-    destination_type = dlt_pipeline.destination.destination_name
     return [
         AssetSpec(
             key=dagster_dlt_translator.get_asset_key(dlt_source_resource),
@@ -54,10 +53,8 @@ def build_dlt_asset_specs(
                 META_KEY_TRANSLATOR: dagster_dlt_translator,
             },
             owners=dagster_dlt_translator.get_owners(dlt_source_resource),
-            tags={
-                "dagster/storage_kind": destination_type,
-                **dagster_dlt_translator.get_tags(dlt_source_resource),
-            },
+            tags=dagster_dlt_translator.get_tags(dlt_source_resource),
+            kinds=dagster_dlt_translator.get_kinds(dlt_source_resource, dlt_pipeline.destination),
         )
         for dlt_source_resource in dlt_source.selected_resources.values()
     ]
@@ -144,7 +141,6 @@ def dlt_assets(
     return multi_asset(
         name=name,
         group_name=group_name,
-        compute_kind="dlt",
         can_subset=True,
         partitions_def=partitions_def,
         specs=build_dlt_asset_specs(

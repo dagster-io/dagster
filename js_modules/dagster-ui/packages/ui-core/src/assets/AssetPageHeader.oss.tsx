@@ -72,21 +72,25 @@ export const AssetPageHeader = ({
   return (
     <PageHeader
       title={
-        <Box flex={{alignItems: 'center', gap: 4}} style={{maxWidth: '600px', marginBottom: 4}}>
+        <Box flex={{alignItems: 'center', gap: 4}} style={{maxWidth: '600px'}}>
           <Title>
             <BreadcrumbsWithSlashes
               items={breadcrumbs}
-              currentBreadcrumbRenderer={({text}) => (
-                <TruncatedHeading>
-                  {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                </TruncatedHeading>
+              currentBreadcrumbRenderer={({text, href}) => (
+                <span key={href}>
+                  <TruncatedHeading>
+                    {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
+                  </TruncatedHeading>
+                </span>
               )}
               breadcrumbRenderer={({text, href}) => (
-                <TruncatedHeading>
-                  <BreadcrumbLink to={href || '#'}>
-                    {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                  </BreadcrumbLink>
-                </TruncatedHeading>
+                <span key={href}>
+                  <TruncatedHeading>
+                    <BreadcrumbLink to={href || '#'}>
+                      {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
+                    </BreadcrumbLink>
+                  </TruncatedHeading>
+                </span>
               )}
               $numHeaderBreadcrumbs={headerBreadcrumbs.length}
               popoverProps={{
@@ -149,7 +153,7 @@ export const AssetGlobalLineageLink = () => (
 
 export const AssetGlobalLineageButton = () => (
   <AnchorButton intent="primary" icon={<Icon name="lineage" />} to="/asset-groups">
-    View lineage
+    View asset lineage
   </AnchorButton>
 );
 

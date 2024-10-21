@@ -3,8 +3,8 @@ import styled from 'styled-components';
 
 import {Description} from './Description';
 import {SectionHeader, SectionItemContainer} from './SidebarComponents';
-import {SidebarResourcesSectionFragment} from './types/SidebarResourcesSection.types';
 import {gql} from '../apollo-client';
+import {SidebarResourcesSectionFragment} from './types/SidebarResourcesSection.types';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 
 const NO_DESCRIPTION = '';

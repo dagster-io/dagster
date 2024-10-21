@@ -3,7 +3,7 @@ import {IconName} from '@dagster-io/ui-components';
 import {
   WorkspaceRepositorySchedule,
   WorkspaceRepositorySensor,
-} from '../workspace/WorkspaceContext';
+} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 export type LeftNavItemType = {

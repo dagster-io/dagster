@@ -40,3 +40,5 @@ export type WorkspaceSchedulesQuery = {
       }
     | {__typename: 'RepositoryNotFoundError'};
 };
+
+export const WorkspaceSchedulesQueryVersion = '213cb3c1a2ffd6d9a6fbe20cd58eab746d53b6ab04d7d498c3c4f1f9d4a850d3';

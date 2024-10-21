@@ -70,3 +70,5 @@ export type AssetLiveRunLogsSubscription = {
         >;
       };
 };
+
+export const AssetLiveRunLogsSubscriptionVersion = '4b78f566975bdd949f6d1fde8de10b6db89a2db3fe678cc5033fedfc16f0ba12';

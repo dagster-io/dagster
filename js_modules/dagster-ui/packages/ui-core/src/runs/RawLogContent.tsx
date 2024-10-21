@@ -21,7 +21,9 @@ export const RawLogContent = React.memo((props: Props) => {
   const timer = React.useRef<number>();
   const [showScrollToTop, setShowScrollToTop] = React.useState(false);
   const scrollToTop = () => {
-    contentContainer.current && contentContainer.current.scrollToTop();
+    if (contentContainer.current) {
+      contentContainer.current.scrollToTop();
+    }
   };
   const cancelHideWarning = () => {
     if (timer.current) {
@@ -156,7 +158,9 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
       });
     }
     if (this.props.isSelected && !_props.isSelected) {
-      this.container.current && this.container.current.focus();
+      if (this.container.current) {
+        this.container.current.focus();
+      }
     }
   }
 
@@ -169,9 +173,13 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
     const {scrollHeight, scrollTop, offsetHeight} = this.container.current;
     const position = scrollTop / (scrollHeight - offsetHeight);
     if (this.container.current.scrollTop < this.lastScroll) {
-      onScrollUp && onScrollUp(position);
+      if (onScrollUp) {
+        onScrollUp(position);
+      }
     } else {
-      onScrollDown && onScrollDown(position);
+      if (onScrollDown) {
+        onScrollDown(position);
+      }
     }
     this.lastScroll = this.container.current.scrollTop;
   };

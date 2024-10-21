@@ -9,6 +9,9 @@ from dagster._serdes.serdes import whitelist_for_serdes
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
+    )
     from dagster._core.definitions.source_asset import SourceAsset
 
 
@@ -39,6 +42,7 @@ class AssetCheckSpec(
                 bool,
             ),
             ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
+            ("automation_condition", Optional["AutomationCondition[AssetCheckKey]"]),
         ],
     )
 ):
@@ -70,8 +74,12 @@ class AssetCheckSpec(
         additional_deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
         blocking: bool = False,
         metadata: Optional[Mapping[str, Any]] = None,
+        automation_condition: Optional["AutomationCondition[AssetCheckKey]"] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationCondition,
+        )
 
         asset_key = AssetKey.from_coercible_or_definition(asset)
 
@@ -94,6 +102,9 @@ class AssetCheckSpec(
             additional_deps=additional_asset_deps,
             blocking=check.bool_param(blocking, "blocking"),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
+            automation_condition=check.opt_inst_param(
+                automation_condition, "automation_condition", AutomationCondition
+            ),
         )
 
     def get_python_identifier(self) -> str:

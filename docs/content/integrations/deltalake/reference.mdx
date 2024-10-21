@@ -359,7 +359,7 @@ defs = Definitions(
 
 ## Configuring storage backends
 
-The deltalake library comes with support for many storage backends out fo the box. WHich exact storage is to be used, is derived from the URL of a storage location.
+The deltalake library comes with support for many storage backends out of the box. Which exact storage is to be used, is derived from the URL of a storage location.
 
 ### S3 compatible storages
 
@@ -403,7 +403,7 @@ aws dynamodb create-table --table-name delta_rs_lock_table \
 
 <TabItem name="Cloudflare R2 storage">
 
-Couldflare R2 storage has build in support for atomic copy operations. This can be leveraged by sending additional headers with the copy requrests.
+Cloudflare R2 storage has built-in support for atomic copy operations. This can be leveraged by sending additional headers with the copy requests.
 
 ```py
 from dagster_deltalake import S3Config
@@ -415,7 +415,7 @@ config = S3Config(copy_if_not_exists="header: cf-copy-destination-if-none-match:
 
 </TabGroup>
 
-In cases where non-AWS S3 implementations are used, the endpoint URL or the S§ service needs to be provided.
+In cases where non-AWS S3 implementations are used, the endpoint URL or the S3 service needs to be provided.
 
 ```py
 config = S3Config(endpoint="https://<my-s3-endpoint-url>")
@@ -423,7 +423,7 @@ config = S3Config(endpoint="https://<my-s3-endpoint-url>")
 
 ### Working with locally running storage (emulators)
 
-A common pattern for e.g. integration tests is to run a storage emulator like Azurite, Localstack, o.a. If not configures to use TLS, we need to configure the http client, to allow for http traffic.
+A common pattern for e.g. integration tests is to run a storage emulator like Azurite, Localstack, o.a. If not configured to use TLS, we need to configure the http client, to allow for http traffic.
 
 ```py
 config = AzureConfig(use_emulator=True, client=ClientConfig(allow_http=True))

@@ -23,3 +23,5 @@ export type InstigationStatesQuery = {
       }
     | {__typename: 'PythonError'; message: string; stack: Array<string>};
 };
+
+export const InstigationStatesQueryVersion = '98c41676dfb3c489e46455a3c2716e375050c9bed2d73e74c765453f2c63d0da';

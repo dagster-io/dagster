@@ -9,7 +9,7 @@ last_update:
 # Build your first ETL pipeline
 
 Welcome to this hands-on tutorial where you'll learn how to build an ETL pipeline with Dagster while exploring key parts of Dagster.
-If you haven't already, complete the [Quick Start](/tutorial/quick-start) tutorial to get familiar with Dagster.
+If you haven't already, complete the [Quick Start](/getting-started/quickstart) tutorial to get familiar with Dagster.
 
 ## What you'll learn
 

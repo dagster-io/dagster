@@ -178,7 +178,7 @@ def validate_selector_config(
     if config_value == {}:
         return _validate_empty_selector_config(context)
 
-    # Now we ensure that the used-provided config has only a a single entry
+    # Now we ensure that the used-provided config has only a single entry
     # and then continue the validation pass
 
     if not isinstance(config_value, dict):

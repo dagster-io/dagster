@@ -5,8 +5,8 @@ import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation import ExternalPartitionSet, RepositoryHandle
-from dagster._core.remote_representation.external_data import ExternalPartitionExecutionErrorData
+from dagster._core.remote_representation import RemotePartitionSet, RepositoryHandle
+from dagster._core.remote_representation.external_data import PartitionExecutionErrorSnap
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunPartitionData, RunsFilter
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
@@ -46,15 +46,15 @@ def get_partition_sets_or_error(
     repository = location.get_repository(repository_selector.repository_name)
     partition_sets = [
         partition_set
-        for partition_set in repository.get_external_partition_sets()
+        for partition_set in repository.get_partition_sets()
         if partition_set.job_name == pipeline_name
     ]
 
     return GraphenePartitionSets(
         results=[
             GraphenePartitionSet(
-                external_repository_handle=repository.handle,
-                external_partition_set=partition_set,
+                repository_handle=repository.handle,
+                remote_partition_set=partition_set,
             )
             for partition_set in sorted(
                 partition_sets,
@@ -80,12 +80,12 @@ def get_partition_set(
     check.str_param(partition_set_name, "partition_set_name")
     location = graphene_info.context.get_code_location(repository_selector.location_name)
     repository = location.get_repository(repository_selector.repository_name)
-    partition_sets = repository.get_external_partition_sets()
+    partition_sets = repository.get_partition_sets()
     for partition_set in partition_sets:
         if partition_set.name == partition_set_name:
             return GraphenePartitionSet(
-                external_repository_handle=repository.handle,
-                external_partition_set=partition_set,
+                repository_handle=repository.handle,
+                remote_partition_set=partition_set,
             )
 
     return GraphenePartitionSetNotFoundError(partition_set_name)
@@ -94,17 +94,17 @@ def get_partition_set(
 def get_partition_by_name(
     graphene_info: ResolveInfo,
     repository_handle: RepositoryHandle,
-    partition_set: ExternalPartitionSet,
+    partition_set: RemotePartitionSet,
     partition_name: str,
 ) -> "GraphenePartition":
     from dagster_graphql.schema.partition_sets import GraphenePartition
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-    check.inst_param(partition_set, "partition_set", ExternalPartitionSet)
+    check.inst_param(partition_set, "partition_set", RemotePartitionSet)
     check.str_param(partition_name, "partition_name")
     return GraphenePartition(
-        external_repository_handle=repository_handle,
-        external_partition_set=partition_set,
+        repository_handle=repository_handle,
+        remote_partition_set=partition_set,
         partition_name=partition_name,
     )
 
@@ -122,11 +122,11 @@ def get_partition_config(
     check.str_param(job_name, "job_name")
     check.str_param(partition_name, "partition_name")
 
-    result = graphene_info.context.get_external_partition_config(
+    result = graphene_info.context.get_partition_config(
         repository_handle, job_name, partition_name, graphene_info.context.instance
     )
 
-    if isinstance(result, ExternalPartitionExecutionErrorData):
+    if isinstance(result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return GraphenePartitionRunConfig(yaml=dump_run_config_yaml(result.run_config))
@@ -146,7 +146,7 @@ def get_partition_tags(
     check.str_param(job_name, "job_name")
     check.str_param(partition_name, "partition_name")
 
-    result = graphene_info.context.get_external_partition_tags(
+    result = graphene_info.context.get_partition_tags(
         repository_handle,
         job_name,
         partition_name,
@@ -154,7 +154,7 @@ def get_partition_tags(
         selected_asset_keys=selected_asset_keys,
     )
 
-    if isinstance(result, ExternalPartitionExecutionErrorData):
+    if isinstance(result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return GraphenePartitionTags(
@@ -168,7 +168,7 @@ def get_partition_tags(
 
 def get_partitions(
     repository_handle: RepositoryHandle,
-    partition_set: ExternalPartitionSet,
+    partition_set: RemotePartitionSet,
     partition_names: Sequence[str],
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
@@ -177,15 +177,15 @@ def get_partitions(
     from dagster_graphql.schema.partition_sets import GraphenePartition, GraphenePartitions
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-    check.inst_param(partition_set, "partition_set", ExternalPartitionSet)
+    check.inst_param(partition_set, "partition_set", RemotePartitionSet)
 
     partition_names = apply_cursor_limit_reverse(partition_names, cursor, limit, reverse)
 
     return GraphenePartitions(
         results=[
             GraphenePartition(
-                external_partition_set=partition_set,
-                external_repository_handle=repository_handle,
+                remote_partition_set=partition_set,
+                repository_handle=repository_handle,
                 partition_name=partition_name,
             )
             for partition_name in partition_names
@@ -195,20 +195,20 @@ def get_partitions(
 
 def get_partition_set_partition_statuses(
     graphene_info: ResolveInfo,
-    external_partition_set: ExternalPartitionSet,
+    remote_partition_set: RemotePartitionSet,
     partition_names: Sequence[str],
 ) -> Sequence["GraphenePartitionStatus"]:
-    check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
+    check.inst_param(remote_partition_set, "remote_partition_set", RemotePartitionSet)
 
-    repository_handle = external_partition_set.repository_handle
-    partition_set_name = external_partition_set.name
+    repository_handle = remote_partition_set.repository_handle
+    partition_set_name = remote_partition_set.name
 
     run_partition_data = graphene_info.context.instance.run_storage.get_run_partition_data(
         runs_filter=RunsFilter(
             statuses=[status for status in DagsterRunStatus if status != DagsterRunStatus.CANCELED],
             tags={
                 PARTITION_SET_TAG: partition_set_name,
-                REPOSITORY_LABEL_TAG: repository_handle.get_external_origin().get_label(),
+                REPOSITORY_LABEL_TAG: repository_handle.get_remote_origin().get_label(),
             },
         )
     )
@@ -288,7 +288,7 @@ def partition_status_counts_from_run_partition_data(
 
 def get_partition_set_partition_runs(
     graphene_info: ResolveInfo,
-    partition_set: ExternalPartitionSet,
+    partition_set: RemotePartitionSet,
     partition_names: Sequence[str],
 ) -> Sequence["GraphenePartitionRun"]:
     from dagster_graphql.schema.partition_sets import GraphenePartitionRun

@@ -65,3 +65,5 @@ export type TickHistoryQuery = {
         }>;
       };
 };
+
+export const TickHistoryQueryVersion = '4dff0791129120937abefb56bf6b21102cd3b67f81f7285763f01d6467f850e8';

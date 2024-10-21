@@ -102,6 +102,7 @@ export type SearchSecondaryQuery = {
             id: string;
             computeKind: string | null;
             groupName: string;
+            kinds: Array<string>;
             owners: Array<
               | {__typename: 'TeamAssetOwner'; team: string}
               | {__typename: 'UserAssetOwner'; email: string}
@@ -128,6 +129,7 @@ export type SearchAssetFragment = {
     id: string;
     computeKind: string | null;
     groupName: string;
+    kinds: Array<string>;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
@@ -140,3 +142,7 @@ export type SearchAssetFragment = {
     };
   } | null;
 };
+
+export const SearchPrimaryQueryVersion = '5d98265169496aabdee190894e504f0dd6205c3a8be462c5eac2a6c9c0c75f4a';
+
+export const SearchSecondaryQueryVersion = '39a75cb3ec146190c7dab171af1761a0f63a080aa8dbf379066223a6ac4af7e9';

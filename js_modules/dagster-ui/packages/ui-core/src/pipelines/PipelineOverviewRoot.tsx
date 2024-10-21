@@ -1,7 +1,7 @@
 import {useCallback, useMemo} from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';
+import {PipelineExplorerContainer} from 'shared/pipelines/PipelineExplorerRoot.oss';
 
-import {PipelineExplorerContainer} from './PipelineExplorerRoot';
 import {
   ExplorerPath,
   explorerPathFromString,
@@ -13,7 +13,7 @@ import {useTrackPageView} from '../app/analytics';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 

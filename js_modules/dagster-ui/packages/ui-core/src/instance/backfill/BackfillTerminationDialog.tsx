@@ -2,9 +2,9 @@ import {Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-component
 import {useMemo, useState} from 'react';
 
 import {SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY} from './BackfillRow';
+import {BackfillTerminationDialogBackfillFragment} from './types/BackfillFragments.types';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {
-  BackfillTerminationDialogBackfillFragment,
   CancelBackfillMutation,
   CancelBackfillMutationVariables,
 } from './types/BackfillTerminationDialog.types';
@@ -114,15 +114,6 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     </>
   );
 };
-
-export const BACKFILL_TERMINATION_DIALOG_BACKFILL_FRAGMENT = gql`
-  fragment BackfillTerminationDialogBackfillFragment on PartitionBackfill {
-    id
-    status
-    isAssetBackfill
-    numCancelable
-  }
-`;
 
 const CANCEL_BACKFILL_MUTATION = gql`
   mutation CancelBackfill($backfillId: String!) {

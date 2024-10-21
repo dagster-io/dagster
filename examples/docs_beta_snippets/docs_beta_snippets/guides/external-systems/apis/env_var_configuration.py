@@ -18,14 +18,19 @@ class SunResource(dg.ConfigurableResource):
 
 
 # highlight-start
+# Define the home_sunrise asset and use the sun_resource
 @dg.asset
 def home_sunrise(context: dg.AssetExecutionContext, sun_resource: SunResource) -> None:
     sunrise = sun_resource.sunrise()
     context.log.info(f"Sunrise at home is at {sunrise}.")
 
 
+# highlight-end
+
 defs = dg.Definitions(
     assets=[home_sunrise],
+    # highlight-start
+    # Update the configuration to use environment variables
     resources={
         "sun_resource": SunResource(
             latitude=dg.EnvVar("HOME_LATITUDE"),
@@ -33,6 +38,5 @@ defs = dg.Definitions(
             time_zone=dg.EnvVar("HOME_TIMEZONE"),
         )
     },
+    # highlight-end
 )
-
-# highlight-end

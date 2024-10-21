@@ -940,8 +940,8 @@ def partitionshop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
 With the variables defined, we can now reference `min_date` and `max_date` in our SQL and configure the dbt model as incremental. Here, we define an incremental run to operate on rows with `order_date` that is between our `min_date` and `max_date`.
 
 ```sql
--- Configure the model as incremental
-{{ config(materialized='incremental') }}
+-- Configure the model as incremental, use a unique_key and the delete+insert strategy to ensure the pipeline is idempotent.
+{{ config(materialized='incremental', unique_key='order_date', incremental_strategy="delete+insert") }}
 
 select * from {{ ref('my_model') }}
 

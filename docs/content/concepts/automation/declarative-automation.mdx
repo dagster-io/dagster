@@ -1,6 +1,6 @@
 ---
 title: "Declarative Automation | Dagster Docs"
-description: "Dagster can automatically materialize assets when criteria are met, enabling a declarative approach to asset materialization."
+description: "Dagster can automatically execute assets or checks when criteria are met, enabling a declarative approach to automation."
 ---
 
 # Declarative Automation
@@ -9,11 +9,9 @@ description: "Dagster can automatically materialize assets when criteria are met
   This feature is currently <strong>experimental</strong>.
 </Note>
 
-Dagster can automatically materialize assets when criteria are met, enabling a declarative approach to asset materialization. Instead of defining explicit workflows to materialize assets, you describe the conditions under which they should be materialized and let the system kick off runs in response.
+Dagster can automatically execute assets or checks when criteria are met, enabling a declarative approach to automation. Instead of defining explicit workflows and schedules, you describe the conditions under which they should be executed, and the system executes runs in response.
 
-For example, you have an asset that's scheduled to execute every day at midnight. Instead of executing whether there's new data or not, you can use Declarative Automation to materialize the asset only after its parent has been updated.
-
-Declarative Automation includes pre-built conditions to handle common use cases, such as executing on a periodic schedule or whenever an upstream dependency updates, but conditions can also be customized.
+Declarative Automation includes pre-built conditions to handle common use cases, such as executing on a periodic schedule or whenever an upstream dependency updates, but conditions can be customized in a fine-grained manner, allowing precise control over when work gets executed.
 
 ---
 
@@ -22,7 +20,7 @@ Declarative Automation includes pre-built conditions to handle common use cases,
 Using Declarative Automation helps you:
 
 - Ensure you're working with the most up-to-date data
-- Optimize resource usage by only materializing assets when needed
+- Optimize resource usage by only materializing assets or executing checks when needed
 - Simplify how your team understands their assets by consolidating all asset logic to a single location
 - Avoid thinking about specific workflow boundaries, such as a [schedule accounting for timezones or Daylight Savings Time](/concepts/automation/schedules/customizing-executing-timezones)
 
@@ -40,14 +38,14 @@ Before continuing, you should be familiar with:
 
 ## How it works
 
-Declarative Automation is an automation method that kicks off runs when criteria are met. This method contains two main components:
+Declarative Automation is an automation method that executes runs when conditions are met. This method contains two main components:
 
-- **An automation condition (<PyObject object="AutomationCondition" />**), which represents when an individual asset should be executed.
+- **An automation condition (<PyObject object="AutomationCondition" />**), which represents when an individual asset or check should be executed.
 - **A sensor (<PyObject object="AutomationConditionSensorDefinition" />**), which evaluates each <PyObject object="AutomationCondition" /> and launches runs in response to their status.
 
 ### Automation conditions
 
-Automation conditions describe the conditions under which an asset should be executed. Dagster provides two pre-built conditions:
+Automation conditions describe the conditions under which work should be executed. Dagster provides three pre-built conditions:
 
 <table
   className="table"
@@ -75,6 +73,31 @@ Automation conditions describe the conditions under which an asset should be exe
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td>
+        <strong>AutomationCondition.on_cron(cron_schedule)</strong>
+      </td>
+      <td>
+        This condition will materialize an asset on a provided cron schedule,
+        after all of its parents have been updated
+      </td>
+      <td>
+        Regularly updating an asset without worrying about the specifics of how
+        its parents update
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>AutomationCondition.on_missing()</strong>
+      </td>
+      <td>
+        This condition will materialize an asset if all its dependencies have
+        been updated, but the asset itself has not.
+      </td>
+      <td>
+        Filling in partitioned assets as soon as upstream data is available.
+      </td>
+    </tr>
     <tr>
       <td>
         <strong>AutomationCondition.eager()</strong>
@@ -106,23 +129,10 @@ Automation conditions describe the conditions under which an asset should be exe
         </ul>
       </td>
     </tr>
-    <tr>
-      <td>
-        <strong>AutomationCondition.on_cron(cron_schedule)</strong>
-      </td>
-      <td>
-        This condition will materialize an asset once per cron schedule tick,
-        after all of its parents have been updated since the tick
-      </td>
-      <td>
-        Regularly updating an asset without worrying about the specifics of how
-        its parents update
-      </td>
-    </tr>
   </tbody>
 </table>
 
-Automation conditions can be set on the <PyObject object="asset" decorator /> decorator or on an <PyObject object="AssetSpec" />:
+With assets, automation conditions can be set on the <PyObject object="asset" decorator /> decorator or on an <PyObject object="AssetSpec" />:
 
 ```python
 from dagster import AssetSpec, AutomationCondition, asset
@@ -133,11 +143,29 @@ def my_eager_asset(): ...
 AssetSpec("my_cron_asset", automation_condition=AutomationCondition.on_cron("@daily"))
 ```
 
+The same is true for asset checks:
+
+```python
+from dagster import AssetCheckResult, AssetCheckSpec, AutomationCondition, asset_check
+
+
+@asset_check(asset=..., automation_condition=AutomationCondition.cron_tick_passed("@daily"))
+def expensive_check() -> AssetCheckResult:
+    return AssetCheckResult(passed=True)
+
+
+AssetCheckSpec(
+    "expensive_check",
+    asset=...,
+    automation_condition=AutomationCondition.cron_tick_passed("@daily"),
+)
+```
+
 The core <PyObject object="AutomationCondition" /> framework is extremely flexible, allowing you to build custom conditions from the ground up. Refer to the [Customizing automation conditions guide](/concepts/automation/declarative-automation/customizing-automation-conditions) for more information.
 
 ### Sensors
 
-When automation conditions for an asset are met, a sensor will kick off a run to materialize the asset. This sensor, named `default_automation_condition_sensor`, will be available for each code location and monitor all assets within that location. To use multiple sensors or change the properties of the default sensor, refer to the <PyObject object="AutomationConditionSensorDefinition" /> documentation.
+When automation conditions for an asset are met, a sensor will execute a run to materialize the asset. This sensor, named `default_automation_condition_sensor`, will be available for each code location and monitor all assets within that location. To use multiple sensors or change the properties of the default sensor, refer to the <PyObject object="AutomationConditionSensorDefinition" /> documentation.
 
 For an automation condition sensor to run, it must be turned on and an active [`dagster-daemon` process](/deployment/dagster-daemon) must be running. If you used [`dagster dev` to start the Dagster UI/webserver](/guides/running-dagster-locally), the daemon process will be automatically launched alongside the webserver.
 

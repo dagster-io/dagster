@@ -1,6 +1,6 @@
 import {useContext} from 'react';
 
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 export function useRepositoryLocationForAddress(repoAddress: RepoAddress | null) {

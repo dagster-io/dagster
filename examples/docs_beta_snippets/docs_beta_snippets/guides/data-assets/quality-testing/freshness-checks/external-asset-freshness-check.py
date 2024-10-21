@@ -16,14 +16,19 @@ def hourly_sales(snowflake: dg_snowflake.SnowflakeResource):
         )
         return dg.ObserveResult(
             asset_key=table_name,
+            # highlight-start
+            # Emit the asset's last update time as metadata
             metadata={
                 "dagster/last_updated_timestamp": dg.MetadataValue.timestamp(
                     freshness_results[table_name]
                 )
             },
+            # highlight-end
         )
 
 
+# highlight-start
+# Define a schedule to run the freshness check
 freshness_check_schedule = dg.ScheduleDefinition(
     job=dg.define_asset_job(
         "hourly_sales_observation_job",
@@ -33,12 +38,15 @@ freshness_check_schedule = dg.ScheduleDefinition(
     # but a short cadence makes it easier to play around with this example.
     cron_schedule="* * * * *",
 )
+# highlight-end
 
-
+# highlight-start
+# Define the freshness check
 hourly_sales_freshness_check = dg.build_last_update_freshness_checks(
     assets=[hourly_sales],
     lower_bound_delta=timedelta(hours=1),
 )
+# highlight-end
 
 
 defs = dg.Definitions(

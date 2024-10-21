@@ -74,19 +74,21 @@ def add_new_event(
     include_metadata: bool = True,
 ):
     klass = AssetMaterialization if is_materialization else AssetObservation
-    metadata = (
-        {
-            "dagster/last_updated_timestamp": TimestampMetadataValue(
-                get_current_timestamp() if not override_timestamp else override_timestamp
-            )
-        }
+    last_updated_timestamp = (
+        override_timestamp
+        if override_timestamp is not None
+        else get_current_timestamp()
         if not is_materialization
         else None
     )
     instance.report_runless_asset_event(
         klass(
             asset_key=asset_key,
-            metadata=metadata if include_metadata else None,
+            metadata={
+                "dagster/last_updated_timestamp": TimestampMetadataValue(last_updated_timestamp)
+            }
+            if last_updated_timestamp and include_metadata
+            else None,
             partition=partition_key,
         )
     )

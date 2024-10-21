@@ -33,8 +33,8 @@ export const ScheduleAndSensorDialog = ({
     scheduleCount && sensorCount
       ? 'Schedules and sensors'
       : scheduleCount
-      ? 'Schedules'
-      : 'Sensors';
+        ? 'Schedules'
+        : 'Sensors';
 
   return (
     <Dialog

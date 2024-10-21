@@ -23,7 +23,7 @@ wipe: ## Wipe out all the files created by the Makefile
 
 airflow_install:
 	pip install uv && \
-	uv pip install dagster-airlift[in-airflow] && \
+	uv pip install dagster-airlift[in-airflow,dbt,tutorial] && \
 	uv pip install -e $(MAKEFILE_DIR)
 
 airflow_setup:
@@ -41,13 +41,10 @@ airflow_run:
 dagster_run:
 	dagster dev -m tutorial_example.dagster_defs.definitions -p 3000
 
+backfill_today:
+	airflow dags backfill rebuild_customers_list --start-date $(shell date +"%Y-%m-%d")
+
 
 update_readme_snippets:
-	python ../../scripts/update_readme_snippets.py \
-		$(MAKEFILE_DIR)/README.md \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/peer.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/observe.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/migrate.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/standalone.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/migrate_with_check.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/peer_with_check.py
+	python ../../scripts/update_readme_snippets.py $(MAKEFILE_DIR)/README.md
+

@@ -1,10 +1,14 @@
 import {ErrorBoundary, MainContent} from '@dagster-io/ui-components';
 import {memo, useEffect, useRef} from 'react';
 import {Switch, useLocation} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetsOverviewRoot} from 'shared/assets/AssetsOverviewRoot.oss';
 
+import {featureEnabled} from './Flags';
 import {Route} from './Route';
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
+import {RunsFeedBackfillPage} from '../instance/backfill/RunsFeedBackfillPage';
+import RunsFeedRoot from '../runs/RunsFeedRoot';
 import {lazy} from '../util/lazy';
 
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
@@ -13,7 +17,7 @@ const MergedAutomationRoot = lazy(() => import('../automation/MergedAutomationRo
 const FallthroughRoot = lazy(() =>
   import('shared/app/FallthroughRoot.oss').then((mod) => ({default: mod.FallthroughRoot})),
 );
-const AssetsGroupsGlobalGraphRoot = lazy(() => import('../assets/AssetsGroupsGlobalGraphRoot'));
+const AssetsGlobalGraphRoot = lazy(() => import('../assets/AssetsGlobalGraphRoot'));
 const CodeLocationsPage = lazy(() => import('../instance/CodeLocationsPage'));
 const InstanceConfig = lazy(() => import('../instance/InstanceConfig'));
 const InstanceConcurrencyPage = lazy(() => import('../instance/InstanceConcurrency'));
@@ -39,7 +43,7 @@ export const ContentRoot = memo(() => {
       <ErrorBoundary region="page" resetErrorOnChange={[pathname]}>
         <Switch>
           <Route path="/asset-groups(/?.*)">
-            <AssetsGroupsGlobalGraphRoot />
+            <AssetsGlobalGraphRoot />
           </Route>
           <Route path="/assets(/?.*)">
             <AssetFeatureProvider>
@@ -49,12 +53,31 @@ export const ContentRoot = memo(() => {
               />
             </AssetFeatureProvider>
           </Route>
-          <Route path="/runs" exact>
-            <RunsRoot />
-          </Route>
-          <Route path="/runs/scheduled" exact>
-            <ScheduledRunListRoot />
-          </Route>
+          {featureEnabled(FeatureFlag.flagRunsFeed)
+            ? // This is somewhat hacky but the Routes can't be wrapped by a fragment otherwise the Switch statement
+              // stops working
+              [
+                <Route path="/runs/b/:backfillId" key="1">
+                  <RunsFeedBackfillPage />
+                </Route>,
+                <Route path={['/runs', '/runs/scheduled']} exact key="2">
+                  <RunsFeedRoot />
+                </Route>,
+              ]
+            : [
+                <Route path="/runs-feed/b/:backfillId" key="3">
+                  <RunsFeedBackfillPage />
+                </Route>,
+                <Route path={['/runs-feed', '/runs-feed/scheduled']} exact key="4">
+                  <RunsFeedRoot />
+                </Route>,
+                <Route path="/runs" exact key="5">
+                  <RunsRoot />
+                </Route>,
+                <Route path="/runs/scheduled" exact key="6">
+                  <ScheduledRunListRoot />
+                </Route>,
+              ]}
           <Route path="/runs/:runId" exact>
             <RunRoot />
           </Route>

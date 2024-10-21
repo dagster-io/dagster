@@ -1,3 +1,5 @@
+import logging
+import math
 import os
 import sys
 import time
@@ -18,14 +20,14 @@ from dagster._core.executor.step_delegating.step_handler.base import StepHandler
 from dagster._core.instance import DagsterInstance
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._time import get_current_datetime
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.step import ExecutionStep
 
-DEFAULT_SLEEP_SECONDS = float(
-    os.environ.get("DAGSTER_STEP_DELEGATING_EXECUTOR_SLEEP_SECONDS", "1.0")
-)
+
+def _default_sleep_seconds():
+    return float(os.environ.get("DAGSTER_STEP_DELEGATING_EXECUTOR_SLEEP_SECONDS", "1.0"))
 
 
 class StepDelegatingExecutor(Executor):
@@ -58,7 +60,7 @@ class StepDelegatingExecutor(Executor):
 
         self._sleep_seconds = cast(
             float,
-            check.opt_float_param(sleep_seconds, "sleep_seconds", default=DEFAULT_SLEEP_SECONDS),
+            check.opt_float_param(sleep_seconds, "sleep_seconds", default=_default_sleep_seconds()),
         )
         self._check_step_health_interval_seconds = cast(
             int,
@@ -69,41 +71,27 @@ class StepDelegatingExecutor(Executor):
         self._should_verify_step = should_verify_step
 
         self._event_cursor: Optional[str] = None
-        self._pop_events_offset = int(os.getenv("DAGSTER_EXECUTOR_POP_EVENTS_OFFSET", "0"))
 
-        if self._pop_events_offset:
-            # ensure that the offset can never result in looping over the same events over and
-            # over again if every event is from this run
-            self._pop_events_limit = self._pop_events_offset + 1
-        else:
-            self._pop_events_limit = int(os.getenv("DAGSTER_EXECUTOR_POP_EVENTS_LIMIT", "1000"))
+        self._pop_events_limit = int(os.getenv("DAGSTER_EXECUTOR_POP_EVENTS_LIMIT", "1000"))
 
     @property
     def retries(self):
         return self._retries
 
+    def _get_pop_events_offset(self, instance: DagsterInstance):
+        if "DAGSTER_EXECUTOR_POP_EVENTS_OFFSET" in os.environ:
+            return int(os.environ["DAGSTER_EXECUTOR_POP_EVENTS_OFFSET"])
+        return instance.event_log_storage.default_run_scoped_event_tailer_offset()
+
     def _pop_events(
         self, instance: DagsterInstance, run_id: str, seen_storage_ids: Set[int]
     ) -> Sequence[DagsterEvent]:
-        adjusted_cursor = self._event_cursor
-
-        if self._pop_events_offset > 0 and self._event_cursor:
-            cursor_obj = EventLogCursor.parse(self._event_cursor)
-            check.invariant(
-                cursor_obj.is_id_cursor(),
-                "Applying a tailer offset only works with an id-based cursor",
-            )
-            adjusted_cursor = EventLogCursor.from_storage_id(
-                cursor_obj.storage_id() - self._pop_events_offset
-            ).to_string()
-
         conn = instance.get_records_for_run(
             run_id,
-            adjusted_cursor,
+            self._event_cursor,
             of_type=set(DagsterEventType),
             limit=self._pop_events_limit,
         )
-        self._event_cursor = conn.cursor
 
         dagster_events = [
             record.event_log_entry.dagster_event
@@ -111,7 +99,41 @@ class StepDelegatingExecutor(Executor):
             if record.event_log_entry.dagster_event and record.storage_id not in seen_storage_ids
         ]
 
-        seen_storage_ids.update(record.storage_id for record in conn.records)
+        returned_storage_ids = {record.storage_id for record in conn.records}
+
+        pop_events_offset = self._get_pop_events_offset(instance)
+
+        if not pop_events_offset:
+            self._event_cursor = conn.cursor
+        elif (
+            len(returned_storage_ids) == self._pop_events_limit
+            and returned_storage_ids <= seen_storage_ids
+        ):
+            # Start the next cursor halfway through the returned list
+            desired_next_storage_id = conn.records[
+                math.ceil(self._pop_events_limit / 2) - 1
+            ].storage_id
+            self._event_cursor = EventLogCursor.from_storage_id(desired_next_storage_id).to_string()
+
+            logging.getLogger("dagster").warn(
+                f"Event tailer query returned a list of {self._pop_events_limit} storage IDs that had already been returned before. Setting the cursor to {desired_next_storage_id} to ensure it advances."
+            )
+        else:
+            cursor_obj = EventLogCursor.parse(conn.cursor)
+            check.invariant(
+                cursor_obj.is_id_cursor(),
+                "Applying a tailer offset only works with an id-based cursor",
+            )
+            # Apply offset for next query (while also making sure that the cursor doesn't backtrack)
+            current_cursor_storage_id = (
+                EventLogCursor.parse(self._event_cursor).storage_id() if self._event_cursor else 0
+            )
+            new_storage_id = max(
+                current_cursor_storage_id, cursor_obj.storage_id() - pop_events_offset
+            )
+            self._event_cursor = EventLogCursor.from_storage_id(new_storage_id).to_string()
+
+        seen_storage_ids.update(returned_storage_ids)
 
         return dagster_events
 
@@ -209,6 +231,7 @@ class StepDelegatingExecutor(Executor):
                                     step_handler_context.get_step_context(step.key),
                                     f"Including step {step.key} in the new run since it is not"
                                     f" currently running: {health_check.unhealthy_reason}",
+                                    EngineEventData(),
                                 )
                                 should_retry_step = True
 
@@ -312,17 +335,18 @@ class StepDelegatingExecutor(Executor):
                                         )
                                     )
                                     if not health_check_result.is_healthy:
-                                        DagsterEvent.step_failure_event(
-                                            step_context=step_context,
-                                            step_failure_data=StepFailureData(
-                                                error=None,
-                                                user_failure_data=None,
-                                            ),
-                                            message=(
-                                                f"Step {step.key} failed health check:"
-                                                f" {health_check_result.unhealthy_reason}"
-                                            ),
+                                        health_check_error = SerializableErrorInfo(
+                                            message=f"Step {step.key} failed health check: {health_check_result.unhealthy_reason}",
+                                            stack=[],
+                                            cls_name=None,
                                         )
+
+                                        self.get_failure_or_retry_event_after_crash(
+                                            step_context,
+                                            health_check_error,
+                                            active_execution.get_known_state(),
+                                        )
+
                                 except Exception:
                                     serializable_error = serializable_error_info_from_exc_info(
                                         sys.exc_info()

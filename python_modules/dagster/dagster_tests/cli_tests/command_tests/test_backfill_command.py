@@ -132,7 +132,7 @@ def test_backfill_tags_job(backfill_args_context: BackfillCommandTestContext):
         assert run.tags.get("foo") == "bar"
 
 
-def valid_external_job_backfill_cli_args():
+def valid_remote_job_backfill_cli_args():
     qux_job_args = [
         "-w",
         file_relative_path(__file__, "repository_file.yaml"),
@@ -151,7 +151,7 @@ def valid_external_job_backfill_cli_args():
     ]
 
 
-@pytest.mark.parametrize("job_cli_args", valid_external_job_backfill_cli_args())
+@pytest.mark.parametrize("job_cli_args", valid_remote_job_backfill_cli_args())
 def test_job_backfill_command_cli(job_cli_args):
     with instance_for_test():
         runner = CliRunner()

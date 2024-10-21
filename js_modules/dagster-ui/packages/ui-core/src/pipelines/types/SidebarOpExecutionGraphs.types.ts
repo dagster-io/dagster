@@ -35,3 +35,5 @@ export type SidebarOpGraphsQuery = {
     | {__typename: 'PipelineNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const SidebarOpGraphsQueryVersion = '3feca8de1ac2e1f479a0a6b88b76e731da4162cb717f7174e5f232527cc6ce52';

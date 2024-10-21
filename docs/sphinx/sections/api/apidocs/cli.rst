@@ -11,6 +11,10 @@ Dagster CLI
    :prog: dagster debug
    :nested:
 
+.. click:: dagster._cli.definitions:definitions_validate_command
+   :prog: dagster definitions validate
+   :nested:
+
 .. click:: dagster._cli.dev:dev_command
    :prog: dagster dev
    :nested:

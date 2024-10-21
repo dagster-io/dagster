@@ -20,7 +20,7 @@ const convertSingleCronString = (cronSchedule: string, longTimezone?: string) =>
       let shortTimezone: string | null;
       try {
         shortTimezone = timezoneAbbreviation(longTimezone);
-      } catch (e) {
+      } catch {
         // Failed to extract a timezone abbreviation. Skip rendering the timezone.
         shortTimezone = null;
       }

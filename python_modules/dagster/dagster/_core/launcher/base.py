@@ -1,19 +1,21 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
+
+if TYPE_CHECKING:
+    from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 
 class LaunchRunContext(NamedTuple):
     """Context available within a run launcher's launch_run call."""
 
     dagster_run: DagsterRun
-    workspace: Optional[IWorkspace]
+    workspace: Optional["BaseWorkspaceRequestContext"]
 
     @property
     def job_code_origin(self) -> Optional[JobPythonOrigin]:
@@ -24,7 +26,7 @@ class ResumeRunContext(NamedTuple):
     """Context available within a run launcher's resume_run call."""
 
     dagster_run: DagsterRun
-    workspace: Optional[IWorkspace]
+    workspace: Optional["BaseWorkspaceRequestContext"]
     resume_attempt_number: Optional[int] = None
 
     @property
@@ -67,7 +69,7 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         Args:
             context (LaunchRunContext): information about the launch - every run launcher
             will need the PipelineRun, and some run launchers may need information from the
-            IWorkspace from which the run was launched.
+            BaseWorkspaceRequestContext from which the run was launched.
         """
 
     @abstractmethod

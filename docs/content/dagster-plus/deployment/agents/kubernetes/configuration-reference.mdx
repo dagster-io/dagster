@@ -73,23 +73,40 @@ locations:
             config_map:
               name: test-volume-configmap
         server_k8s_config: # Raw kubernetes config for code servers launched by the agent
-          pod_spec_config:
+          pod_spec_config: # Config for the code server pod spec
             node_selector:
               disktype: standard
-          container_config:
+          pod_template_spec_metadata: # Metadata for the code server pod
+            annotations:
+              mykey: myvalue
+          deployment_metadata: # Metadata for the code server deployment
+            annotations:
+              mykey: myvalue
+          service_metadata: # Metadata for the code server service
+            annotations:
+              mykey: myvalue
+          container_config: # Config for the main dagster container in the code server pod
             resources:
               limits:
                 cpu: 100m
                 memory: 128Mi
         run_k8s_config: # Raw kubernetes config for runs launched by the agent
-          pod_spec_config:
+          pod_spec_config: # Config for the run's PodSpec
             node_selector:
               disktype: ssd
-          container_config:
+          container_config: # Config for the main dagster container in the run pod
             resources:
               limits:
                 cpu: 500m
                 memory: 1024Mi
+          pod_template_spec_metadata: # Metadata for the run pod
+            annotations:
+              mykey: myvalue
+          job_spec_config: # Config for the Kubernetes job for the run
+            ttl_seconds_after_finished: 7200
+          job_metadata: # Metadata for the Kubernetes job for the run
+            annotations:
+              mykey: myvalue
 ```
 
 ### Environment variables and secrets

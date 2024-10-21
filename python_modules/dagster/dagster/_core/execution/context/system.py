@@ -5,6 +5,7 @@ in the user_context module.
 """
 
 from abc import ABC, abstractmethod
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -205,6 +206,14 @@ class IStepContext(IPlanContext):
     def node_handle(self) -> "NodeHandle":
         raise NotImplementedError()
 
+    @property
+    def op_retry_policy(self) -> Optional[RetryPolicy]:
+        # Currently this pulls the retry policy directly from the definition object -
+        # the retry policy would need to be moved to JobSnapshot or ExecutionPlanSnapshot
+        # in order for the run worker to be able to handle retries without direct
+        # access to user code
+        return self.job.get_definition().get_retry_policy_for_handle(self.node_handle)
+
 
 class PlanOrchestrationContext(IPlanContext):
     """Context for the orchestration of a run.
@@ -324,7 +333,7 @@ class PlanExecutionContext(IPlanContext):
         self,
         step: ExecutionStep,
         known_state: Optional["KnownExecutionState"] = None,
-    ) -> IStepContext:
+    ) -> "StepExecutionContext":
         # TODO: refactoring to build up reasonable layer of prefetching -- 2024-04-27 schrockn
         # if is_step_in_asset_graph_layer(step, self.job_def):
         # ... prefetch input asset version info
@@ -363,18 +372,6 @@ class PlanExecutionContext(IPlanContext):
         return self._log_manager
 
     @property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:
-        from dagster._core.definitions.job_definition import JobDefinition
-
-        job_def = self._execution_data.job_def
-        if not isinstance(job_def, JobDefinition):
-            check.failed(
-                "Can only call 'partitions_def', when using jobs, not legacy pipelines",
-            )
-        partitions_def = job_def.partitions_def
-        return partitions_def
-
-    @property
     def has_partitions(self) -> bool:
         tags = self._plan_data.dagster_run.tags
         return bool(
@@ -385,68 +382,6 @@ class PlanExecutionContext(IPlanContext):
                 and tags.get(ASSET_PARTITION_RANGE_END_TAG)
             )
         )
-
-    @property
-    def partition_key(self) -> str:
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiPartitionsDefinition,
-            get_multipartition_key_from_tags,
-        )
-
-        if not self.has_partitions:
-            raise DagsterInvariantViolationError(
-                "Cannot access partition_key for a non-partitioned run"
-            )
-
-        tags = self._plan_data.dagster_run.tags
-        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
-            return get_multipartition_key_from_tags(tags)
-        elif PARTITION_NAME_TAG in tags:
-            return tags[PARTITION_NAME_TAG]
-        else:
-            range_start = tags[ASSET_PARTITION_RANGE_START_TAG]
-            range_end = tags[ASSET_PARTITION_RANGE_END_TAG]
-
-            if range_start != range_end:
-                raise DagsterInvariantViolationError(
-                    "Cannot access partition_key for a partitioned run with a range of partitions."
-                    " Call partition_key_range instead."
-                )
-            else:
-                if isinstance(self.partitions_def, MultiPartitionsDefinition):
-                    return self.partitions_def.get_partition_key_from_str(cast(str, range_start))
-                return cast(str, range_start)
-
-    @property
-    def asset_partition_key_range(self) -> PartitionKeyRange:
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiPartitionsDefinition,
-            get_multipartition_key_from_tags,
-        )
-
-        if not self.has_partitions:
-            raise DagsterInvariantViolationError(
-                "Cannot access partition_key for a non-partitioned run"
-            )
-
-        tags = self._plan_data.dagster_run.tags
-        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
-            multipartition_key = get_multipartition_key_from_tags(tags)
-            return PartitionKeyRange(multipartition_key, multipartition_key)
-        elif PARTITION_NAME_TAG in tags:
-            partition_key = tags[PARTITION_NAME_TAG]
-            return PartitionKeyRange(partition_key, partition_key)
-        else:
-            partition_key_range_start = tags[ASSET_PARTITION_RANGE_START_TAG]
-            if partition_key_range_start is not None:
-                if isinstance(self.partitions_def, MultiPartitionsDefinition):
-                    return PartitionKeyRange(
-                        self.partitions_def.get_partition_key_from_str(partition_key_range_start),
-                        self.partitions_def.get_partition_key_from_str(
-                            tags[ASSET_PARTITION_RANGE_END_TAG]
-                        ),
-                    )
-            return PartitionKeyRange(partition_key_range_start, tags[ASSET_PARTITION_RANGE_END_TAG])
 
     @property
     def has_partition_key(self) -> bool:
@@ -954,6 +889,100 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             output_keys.add(asset_key)
         return output_keys
 
+    @cached_property
+    def run_partitions_def(self) -> Optional[PartitionsDefinition]:
+        job_def_partitions_def = self.job_def.partitions_def
+        if job_def_partitions_def is not None:
+            return job_def_partitions_def
+
+        # In the case where a job targets assets with different PartitionsDefinitions,
+        # job_def.partitions_def will be None, but the assets targeted in this step might still be
+        # partitioned. All assets within a step are expected to either have the same partitions_def
+        # or no partitions_def. Get the partitions_def from one of the assets that has one.
+        return self.asset_partitions_def
+
+    @cached_property
+    def asset_partitions_def(self) -> Optional[PartitionsDefinition]:
+        """If the current step is executing a partitioned asset, returns the PartitionsDefinition
+        for that asset. If there are one or more partitioned assets executing in the step, they're
+        expected to all have the same PartitionsDefinition.
+        """
+        asset_layer = self.job_def.asset_layer
+        assets_def = asset_layer.assets_def_for_node(self.node_handle) if asset_layer else None
+        if assets_def is not None:
+            for asset_key in assets_def.keys:
+                partitions_def = self.job_def.asset_layer.get(asset_key).partitions_def
+                if partitions_def is not None:
+                    return partitions_def
+
+        return None
+
+    @property
+    def partition_key(self) -> str:
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            MultiPartitionsDefinition,
+            get_multipartition_key_from_tags,
+        )
+
+        if not self.has_partitions:
+            raise DagsterInvariantViolationError(
+                "Cannot access partition_key for a non-partitioned run"
+            )
+
+        tags = self._plan_data.dagster_run.tags
+        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
+            return get_multipartition_key_from_tags(tags)
+        elif PARTITION_NAME_TAG in tags:
+            return tags[PARTITION_NAME_TAG]
+        else:
+            range_start = tags[ASSET_PARTITION_RANGE_START_TAG]
+            range_end = tags[ASSET_PARTITION_RANGE_END_TAG]
+
+            if range_start != range_end:
+                raise DagsterInvariantViolationError(
+                    "Cannot access partition_key for a partitioned run with a range of partitions."
+                    " Call partition_key_range instead."
+                )
+            else:
+                if isinstance(self.run_partitions_def, MultiPartitionsDefinition):
+                    return self.run_partitions_def.get_partition_key_from_str(
+                        cast(str, range_start)
+                    )
+                return cast(str, range_start)
+
+    @property
+    def partition_key_range(self) -> PartitionKeyRange:
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            MultiPartitionsDefinition,
+            get_multipartition_key_from_tags,
+        )
+
+        if not self.has_partitions:
+            raise DagsterInvariantViolationError(
+                "Cannot access partition_key for a non-partitioned run"
+            )
+
+        tags = self._plan_data.dagster_run.tags
+        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
+            multipartition_key = get_multipartition_key_from_tags(tags)
+            return PartitionKeyRange(multipartition_key, multipartition_key)
+        elif PARTITION_NAME_TAG in tags:
+            partition_key = tags[PARTITION_NAME_TAG]
+            return PartitionKeyRange(partition_key, partition_key)
+        else:
+            partition_key_range_start = tags[ASSET_PARTITION_RANGE_START_TAG]
+            if partition_key_range_start is not None:
+                if isinstance(self.run_partitions_def, MultiPartitionsDefinition):
+                    return PartitionKeyRange(
+                        self.run_partitions_def.get_partition_key_from_str(
+                            partition_key_range_start
+                        ),
+                        self.run_partitions_def.get_partition_key_from_str(
+                            tags[ASSET_PARTITION_RANGE_END_TAG]
+                        ),
+                    )
+            return PartitionKeyRange(partition_key_range_start, tags[ASSET_PARTITION_RANGE_END_TAG])
+
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.job_def.asset_layer
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
@@ -999,11 +1028,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             upstream_asset_partitions_def = asset_layer.get(upstream_asset_key).partitions_def
 
             if upstream_asset_partitions_def is not None:
-                partitions_def = assets_def.partitions_def if assets_def else None
+                partitions_def = self.asset_partitions_def if assets_def else None
                 partitions_subset = (
                     partitions_def.empty_subset().with_partition_key_range(
                         partitions_def,
-                        self.asset_partition_key_range,
+                        self.partition_key_range,
                         dynamic_partitions_store=self.instance,
                     )
                     if partitions_def
@@ -1030,7 +1059,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     and mapped_partitions_result.required_but_nonexistent_partition_keys
                 ):
                     raise DagsterInvariantViolationError(
-                        f"Partition key range {self.asset_partition_key_range} in"
+                        f"Partition key range {self.partition_key_range} in"
                         f" {self.node_handle.name} depends on invalid partition keys"
                         f" {mapped_partitions_result.required_but_nonexistent_partition_keys} in"
                         f" upstream asset {upstream_asset_key}"
@@ -1067,7 +1096,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def asset_partition_key_range_for_output(self, output_name: str) -> PartitionKeyRange:
         if self._partitions_def_for_output(output_name) is not None:
-            return self.asset_partition_key_range
+            return self.partition_key_range
 
         check.failed("The output has no asset partitions")
 
@@ -1116,12 +1145,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def partition_time_window(self) -> TimeWindow:
-        asset_layer = self.job_def.asset_layer
-        partitions_def = self.job_def.partitions_def
-        if asset_layer:
-            assets_def = asset_layer.assets_def_for_node(self.node_handle)
-            if assets_def:
-                partitions_def = assets_def.partitions_def
+        partitions_def = self.run_partitions_def
 
         if partitions_def is None:
             raise DagsterInvariantViolationError("Partitions definition is not defined")
@@ -1137,7 +1161,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition], partitions_def
             ).time_window_for_partition_key(self.partition_key)
         elif self.has_partition_key_range:
-            partition_key_range = self.asset_partition_key_range
+            partition_key_range = self.partition_key_range
             partitions_def = cast(
                 Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition], partitions_def
             )

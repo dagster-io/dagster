@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from typing import NamedTuple, Optional, Sequence
+from typing import Dict, List, NamedTuple, Optional, Sequence
 
 import tomli
 
@@ -24,7 +24,8 @@ class WorkspaceLoadTarget(ABC):
 
 
 class CompositeTarget(
-    NamedTuple("CompositeTarget", [("targets", Sequence[WorkspaceLoadTarget])]), WorkspaceLoadTarget
+    NamedTuple("CompositeTarget", [("targets", Sequence[WorkspaceLoadTarget])]),
+    WorkspaceLoadTarget,
 ):
     def create_origins(self):
         origins = []
@@ -40,21 +41,80 @@ class WorkspaceFileTarget(
         return location_origins_from_yaml_paths(self.paths)
 
 
-def get_origins_from_toml(path: str) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
+def validate_dagster_block_for_module_name_or_modules(dagster_block):
+    module_name_present = "module_name" in dagster_block and isinstance(
+        dagster_block.get("module_name"), str
+    )
+    modules_present = "modules" in dagster_block and isinstance(dagster_block.get("modules"), list)
+
+    if module_name_present and modules_present:
+        # Here we have the check only for list; to be a bit more forgiving in comparison to 'is_valid_modules_list' in case it's an empty list next to 'module_name' existance
+        if len(dagster_block["modules"]) > 0:
+            raise ValueError(
+                "Only one of 'module_name' or 'modules' should be specified, not both."
+            )
+
+    if modules_present and len(dagster_block.get("modules")) == 0:
+        raise ValueError("'modules' list should not be empty if specified.")
+
+    return True
+
+
+def is_valid_modules_list(modules: List[Dict[str, str]]) -> bool:
+    # Could be skipped theorectically, but double check maybe useful, if this functions finds it's way elsewhere
+    if not isinstance(modules, list):
+        raise ValueError("Modules should be a list.")
+
+    for index, item in enumerate(modules):
+        if not isinstance(item, dict):
+            raise ValueError(f"Item at index {index} is not a dictionary.")
+        if "type" not in item:
+            raise ValueError(f"Dictionary at index {index} does not contain the key 'type'.")
+        if not isinstance(item["type"], str):
+            raise ValueError(f"The 'type' value in dictionary at index {index} is not a string.")
+        if "name" not in item:
+            raise ValueError(f"Dictionary at index {index} does not contain the key 'name'.")
+        if not isinstance(item["name"], str):
+            raise ValueError(f"The 'name' value in dictionary at index {index} is not a string.")
+
+    return True
+
+
+def get_origins_from_toml(
+    path: str,
+) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
     with open(path, "rb") as f:
         data = tomli.load(f)
         if not isinstance(data, dict):
             return []
 
         dagster_block = data.get("tool", {}).get("dagster", {})
+
+        if "module_name" in dagster_block or "modules" in dagster_block:
+            assert validate_dagster_block_for_module_name_or_modules(dagster_block) is True
+
         if "module_name" in dagster_block:
             return ModuleTarget(
-                module_name=dagster_block["module_name"],
+                module_name=dagster_block.get("module_name"),
                 attribute=None,
                 working_directory=os.getcwd(),
                 location_name=dagster_block.get("code_location_name"),
             ).create_origins()
-        return []
+        elif "modules" in dagster_block and is_valid_modules_list(dagster_block.get("modules")):
+            origins = []
+            for module in dagster_block.get("modules"):
+                if module.get("type") == "module":
+                    origins.extend(
+                        ModuleTarget(
+                            module_name=module.get("name"),
+                            attribute=None,
+                            working_directory=os.getcwd(),
+                            location_name=dagster_block.get("code_location_name"),
+                        ).create_origins()
+                    )
+            return origins
+        else:
+            return []
 
 
 class PyProjectFileTarget(NamedTuple("PyProjectFileTarget", [("path", str)]), WorkspaceLoadTarget):

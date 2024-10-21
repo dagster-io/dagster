@@ -1,0 +1,7 @@
+tasks:
+  - id: load_raw_customers
+    proxied: True 
+  - id: build_dbt_models
+    proxied: True 
+  - id: export_customers
+    proxied: True 

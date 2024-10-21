@@ -59,3 +59,5 @@ export type SingleJobQuery = {
     | {__typename: 'PipelineNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const SingleJobQueryVersion = '5ff8f070e59507f5369f1a19abb9a72cfa12439ab04a08dc340866885f6e4702';

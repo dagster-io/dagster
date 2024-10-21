@@ -56,13 +56,13 @@ The columns in the following table are as follows:
 
 ---
 
-- **README.md**
+- `README.md`
 - Python
 - A description and starter guide for the Dagster project.
 
 ---
 
-- **dagster_university/**
+- `dagster_university/`
 - Dagster
 - A Python module that will contain your Dagster code. This directory also contains the following:
   - `__init__.py` - This file includes a `Definitions` object that defines that is loaded in your project, such as assets and sensors. This allows Dagster to load the definitions in a module. We’ll discuss this topic, and this file, later in this course.
@@ -70,49 +70,49 @@ The columns in the following table are as follows:
 
 ---
 
-- **dagster_university/**init**.py**
+- `dagster_university/__init__.py`
 - Dagster
 - Each Python module has an `__init__.py`. This root-level `__init__.py` is specifically used to import and combine the different aspects of your Dagster project. This is called defining your Code Location. You’ll learn more about this in a future lesson.
 
 ---
 
-- **dagster_university/assets/constants.py**
+- `dagster_university/assets/constants.py`
 - Dagster U
 - A pre-made file with some string constants that you’ll reference for convenience.
 
 ---
 
-- **dagster_university_tests/**
+- `dagster_university_tests/`
 - Dagster
 - A Python module that contains unit tests for `dagster_university`
 
 ---
 
-- **data/**
+- `data/`
 - Dagster U
 - This directory (and directories within it) is where you’ll store the data assets you’ll make during this course. In production settings, this could be Amazon S3 or a data warehouse.
 
 ---
 
-- **.env**
+- `.env`
 - Python
 - A text file containing pre-configured environment variables. We’ll talk more about this file in Lesson 6, when we cover connecting to external services.
 
 ---
 
-- **pyproject.toml**
+- `pyproject.toml`
 - Python
 - A file that specifies package core metadata in a static, tool-agnostic way. This file includes a `tool.dagster` section which references the Python module with your Dagster definitions defined and discoverable at the top level. This allows you to use the `dagster dev` command to load your Dagster code without any parameters.
 
 ---
 
-- **setup.py**
+- `setup.py`
 - Python
 - A build script with Python package dependencies for your new project as a package. This file is used to specify dependencies.
 
 ---
 
-- **setup.cfg**
+- `setup.cfg`
 - Python
 - A file that contains option defaults for `setup.py` commands.
 

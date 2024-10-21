@@ -1,12 +1,12 @@
 import {CursorHistoryControls} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {gql} from '../apollo-client';
 import {SensorFragment} from './types/SensorFragment.types';
 import {
   PreviousRunsForSensorQuery,
   PreviousRunsForSensorQueryVariables,
 } from './types/SensorPreviousRuns.types';
-import {gql} from '../apollo-client';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {RunTable} from '../runs/RunTable';
 import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';

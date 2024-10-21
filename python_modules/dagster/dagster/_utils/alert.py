@@ -30,7 +30,7 @@ def _default_failure_email_body(context: "RunFailureSensorContext") -> str:
     )
 
 
-def _default_failure_email_subject(context) -> str:
+def _default_failure_email_subject(context: "RunFailureSensorContext") -> str:
     return f"Dagster Run Failed: {context.dagster_run.job_name}"
 
 
@@ -55,7 +55,7 @@ def send_email_via_ssl(
     smtp_host: str,
     smtp_port: int,
     smtp_user: str,
-):
+) -> None:
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
         server.login(smtp_user, email_password)
@@ -70,7 +70,7 @@ def send_email_via_starttls(
     smtp_host: str,
     smtp_port: int,
     smtp_user: str,
-):
+) -> None:
     context = ssl.create_default_context()
     with smtplib.SMTP(smtp_host, smtp_port) as server:
         server.starttls(context=context)
@@ -150,7 +150,7 @@ def make_email_on_run_failure_sensor(
             be sent when any job in the repository fails. To monitor jobs in external repositories,
             use RepositorySelector and JobSelector.
         monitor_all_code_locations (bool): If set to True, the sensor will monitor all runs in the
-            Dagster instance. If set to True, an error will be raised if you also specify
+            Dagster deployment. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, JobDefinition,  RepositorySelector, JobSelector]]]):
             (deprecated in favor of monitored_jobs) The jobs that will be monitored by this failure

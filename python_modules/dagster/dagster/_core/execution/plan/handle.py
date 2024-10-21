@@ -50,7 +50,7 @@ class UnresolvedStepHandle(NamedTuple("_UnresolvedStepHandle", [("node_handle", 
             node_handle=check.inst_param(node_handle, "node_handle", NodeHandle),
         )
 
-    def to_key(self):
+    def to_key(self) -> str:
         return f"{self.node_handle}[?]"
 
     def resolve(self, map_key) -> "ResolvedFromDynamicStepHandle":

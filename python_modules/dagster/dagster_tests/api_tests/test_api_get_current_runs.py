@@ -23,7 +23,7 @@ def test_launch_run_grpc():
             res = deserialize_value(
                 api_client.start_run(
                     ExecuteExternalJobArgs(
-                        job_origin=job_handle.get_external_origin(),
+                        job_origin=job_handle.get_remote_origin(),
                         run_id=run_id,
                         instance_ref=instance.get_ref(),
                     )

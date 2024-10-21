@@ -9,3 +9,6 @@ def get_saved_path(result: ExecuteInProcessResult, asset_name: str) -> str:
     )
     assert isinstance(path, str)
     return path
+
+
+DEPRECATED_STORAGE_METADATA_STRING = "dagster-polars storage metadata"

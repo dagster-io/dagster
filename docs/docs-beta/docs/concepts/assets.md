@@ -1,5 +1,6 @@
 ---
 title: Assets
+unlisted: true
 ---
 
 # Assets

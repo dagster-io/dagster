@@ -26,12 +26,14 @@ from dagster import (
     op,
 )
 from dagster._core.definitions import materialize
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     AssetExecutionType,
 )
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
+from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
 from dagster._core.definitions.events import (
     AssetMaterialization,
@@ -47,7 +49,7 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
 )
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external_data import external_repository_data_from_def
+from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import (
@@ -90,7 +92,7 @@ def get_code_location_origin(
 
 def _get_code_location_origin_from_repository(repository: RepositoryDefinition, location_name: str):
     attribute_name = (
-        f"_asset_daemon_target_{create_snapshot_id(external_repository_data_from_def(repository))}"
+        f"_asset_daemon_target_{create_snapshot_id(RepositorySnap.from_def(repository))}"
     )
 
     if attribute_name not in globals():
@@ -120,6 +122,7 @@ class ScenarioSpec:
     """A construct for declaring and modifying a desired Definitions object."""
 
     asset_specs: Sequence[Union[AssetSpec, MultiAssetSpec]]
+    check_specs: Sequence[AssetCheckSpec] = field(default_factory=list)
     current_time: datetime.datetime = field(default_factory=lambda: get_current_datetime())
     sensors: Sequence[SensorDefinition] = field(default_factory=list)
     additional_repo_specs: Sequence["ScenarioSpec"] = field(default_factory=list)
@@ -185,6 +188,14 @@ class ScenarioSpec:
                             **{k: v for k, v in spec._asdict().items() if k in params},
                         )
                     )
+        for check_spec in self.check_specs:
+
+            @asset_check(
+                asset=check_spec.asset_key, name=check_spec.key.name, blocking=check_spec.blocking
+            )
+            def _check(): ...
+
+            assets.append(_check)
 
         return assets
 
@@ -407,22 +418,22 @@ class ScenarioState:
         return self
 
     def start_sensor(self, sensor_name: str) -> Self:
-        with self._get_external_sensor(sensor_name) as sensor:
+        with self._get_remote_sensor(sensor_name) as sensor:
             self.instance.start_sensor(sensor)
         return self
 
     def stop_sensor(self, sensor_name: str) -> Self:
-        with self._get_external_sensor(sensor_name) as sensor:
-            self.instance.stop_sensor(sensor.get_external_origin_id(), sensor.selector_id, sensor)
+        with self._get_remote_sensor(sensor_name) as sensor:
+            self.instance.stop_sensor(sensor.get_remote_origin_id(), sensor.selector_id, sensor)
         return self
 
     @contextmanager
-    def _get_external_sensor(self, sensor_name):
+    def _get_remote_sensor(self, sensor_name):
         with self._create_workspace_context() as workspace_context:
             workspace = workspace_context.create_request_context()
             sensor = next(
                 iter(workspace.get_code_location("test_location").get_repositories().values())
-            ).get_external_sensor(sensor_name)
+            ).get_sensor(sensor_name)
             assert sensor
             yield sensor
 

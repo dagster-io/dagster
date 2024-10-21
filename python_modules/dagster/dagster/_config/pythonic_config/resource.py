@@ -470,12 +470,32 @@ class ConfigurableResourceFactory(
             build_init_resource_context(
                 config=post_process_config(
                     self._config_schema.config_type, self._convert_to_config_dictionary()
-                ).value
-            )
+                ).value,
+            ),
+            nested_resources=self.nested_resources,
         )
 
+    @contextlib.contextmanager
+    def process_config_and_initialize_cm(self) -> Generator[TResValue, None, None]:
+        """Context which initializes this resource, fully processing its config and yielding the
+        prepared resource value.
+        """
+        from dagster._config.post_process import post_process_config
+
+        with self.from_resource_context_cm(
+            build_init_resource_context(
+                config=post_process_config(
+                    self._config_schema.config_type, self._convert_to_config_dictionary()
+                ).value
+            ),
+            nested_resources=self.nested_resources,
+        ) as out:
+            yield out
+
     @classmethod
-    def from_resource_context(cls, context: InitResourceContext) -> TResValue:
+    def from_resource_context(
+        cls, context: InitResourceContext, nested_resources: Optional[Mapping[str, Any]] = None
+    ) -> TResValue:
         """Creates a new instance of this resource from a populated InitResourceContext.
         Useful when creating a resource from a function-based resource, for backwards
         compatibility purposes.
@@ -499,12 +519,14 @@ class ConfigurableResourceFactory(
             "Use from_resource_context_cm for resources which have custom teardown behavior,"
             " e.g. overriding yield_for_execution or teardown_after_execution",
         )
-        return cls(**context.resource_config or {})._initialize_and_run(context)  # noqa: SLF001
+        return cls(  # noqa: SLF001
+            **{**(context.resource_config or {}), **(nested_resources or {})}
+        )._initialize_and_run(context)
 
     @classmethod
     @contextlib.contextmanager
     def from_resource_context_cm(
-        cls, context: InitResourceContext
+        cls, context: InitResourceContext, nested_resources: Optional[Mapping[str, Any]] = None
     ) -> Generator[TResValue, None, None]:
         """Context which generates a new instance of this resource from a populated InitResourceContext.
         Useful when creating a resource from a function-based resource, for backwards
@@ -523,9 +545,9 @@ class ConfigurableResourceFactory(
                     yield my_resource
 
         """
-        with cls(**context.resource_config or {})._initialize_and_run_cm(  # noqa: SLF001
-            context
-        ) as value:
+        with cls(  # noqa: SLF001
+            **{**(context.resource_config or {}), **(nested_resources or {})}
+        )._initialize_and_run_cm(context) as value:
             yield value
 
 

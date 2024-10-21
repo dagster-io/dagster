@@ -14,7 +14,7 @@ from dagster_test.test_project import (
     get_test_project_docker_image,
     get_test_project_environments_path,
     get_test_project_recon_job,
-    get_test_project_workspace_and_external_job,
+    get_test_project_workspace_and_remote_job,
 )
 
 from dagster_docker_tests import IS_BUILDKITE, docker_postgres_instance
@@ -78,7 +78,7 @@ def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selec
         repository_load_data = recon_job.repository.get_definition().repository_load_data
         recon_job = recon_job.with_repository_load_data(repository_load_data)
 
-        with get_test_project_workspace_and_external_job(
+        with get_test_project_workspace_and_remote_job(
             instance,
             "demo_job_docker",
             container_image=docker_image,
@@ -87,15 +87,15 @@ def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selec
             workspace,
             orig_job,
         ):
-            external_job = ReOriginatedExternalJobForTest(
+            remote_job = ReOriginatedExternalJobForTest(
                 orig_job, container_image=docker_image, filename=filename
             )
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_external_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
                 repository_load_data=repository_load_data,
                 asset_selection=frozenset(asset_selection) if asset_selection else None,
             )
@@ -158,18 +158,18 @@ def test_container_context_on_job(aws_env):
                 }
             },
         )
-        with get_test_project_workspace_and_external_job(
+        with get_test_project_workspace_and_remote_job(
             instance, "demo_job_docker", container_image=docker_image
         ) as (
             workspace,
             orig_job,
         ):
-            external_job = ReOriginatedExternalJobForTest(orig_job, container_image=docker_image)
+            remote_job = ReOriginatedExternalJobForTest(orig_job, container_image=docker_image)
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_external_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
                 job_code_origin=recon_job.get_python_origin(),
             )
 
@@ -225,19 +225,19 @@ def test_recovery(aws_env):
         }
     ) as instance:
         recon_job = get_test_project_recon_job("demo_slow_job_docker", docker_image)
-        with get_test_project_workspace_and_external_job(
+        with get_test_project_workspace_and_remote_job(
             instance, "demo_slow_job_docker", container_image=docker_image
         ) as (
             workspace,
             orig_job,
         ):
-            external_job = ReOriginatedExternalJobForTest(orig_job, container_image=docker_image)
+            remote_job = ReOriginatedExternalJobForTest(orig_job, container_image=docker_image)
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_external_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
             )
 
             instance.launch_run(run.run_id, workspace)

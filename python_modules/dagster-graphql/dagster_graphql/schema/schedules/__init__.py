@@ -113,12 +113,12 @@ class GrapheneStopRunningScheduleMutation(graphene.Mutation):
     ):
         if id:
             cid = CompoundID.from_string(id)
-            schedule_origin_id = cid.external_origin_id
+            schedule_origin_id = cid.remote_origin_id
             schedule_selector_id = cid.selector_id
         elif schedule_origin_id and CompoundID.is_valid_string(schedule_origin_id):
             # cross-push handle if InstigationState.id being passed through as origin id
             cid = CompoundID.from_string(schedule_origin_id)
-            schedule_origin_id = cid.external_origin_id
+            schedule_origin_id = cid.remote_origin_id
             schedule_selector_id = cid.selector_id
         elif schedule_origin_id is None or schedule_selector_id is None:
             raise DagsterInvariantViolationError(

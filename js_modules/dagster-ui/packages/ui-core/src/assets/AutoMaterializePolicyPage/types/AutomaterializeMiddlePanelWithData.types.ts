@@ -21,3 +21,5 @@ export type FullPartitionsQuery = {
       }
     | {__typename: 'AssetNotFoundError'};
 };
+
+export const FullPartitionsQueryVersion = 'bfe939600c7396798b3c92b0e8335e639c9d76479c1cecaabc309a83c8f7ca4d';

@@ -3,9 +3,7 @@ title: '[TOPIC] example reference'
 description: ''
 ---
 
-# [TOPIC] examples
-
-This reference contains a variety of examples using Dagster [TOPIC]. Each example contains:
+This reference contains a variety of examples using Dagster. Each example contains:
 
 - A summary
 - Additional notes

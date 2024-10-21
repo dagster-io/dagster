@@ -5,13 +5,13 @@ from urllib.parse import urlparse
 import dagster._check as check
 
 
-def is_loopback(host):
+def is_loopback(host: str) -> bool:
     addr_info = socket.getaddrinfo(host, None, socket.AF_INET, socket.SOCK_STREAM)[0]
     sockaddr = addr_info[4][0]
     return struct.unpack("!I", socket.inet_aton(sockaddr))[0] >> (32 - 8) == 127
 
 
-def is_local_uri(address):
+def is_local_uri(address: str) -> bool:
     """Determine if an address (full URI, DNS or IP) is local.
 
     Args:

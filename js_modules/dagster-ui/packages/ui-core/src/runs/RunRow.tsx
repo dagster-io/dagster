@@ -24,7 +24,6 @@ export const RunRow = ({
   checked,
   onToggleChecked,
   additionalColumns,
-  additionalActionsForRun,
   isHighlighted,
   hideCreatedBy,
 }: {
@@ -35,7 +34,6 @@ export const RunRow = ({
   checked?: boolean;
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];
-  additionalActionsForRun?: (run: RunTableRunFragment) => React.ReactNode[];
   isHighlighted?: boolean;
   hideCreatedBy?: boolean;
 }) => {
@@ -46,7 +44,9 @@ export const RunRow = ({
       const {checked} = e.target;
       const shiftKey =
         e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
-      onToggleChecked && onToggleChecked({checked, shiftKey});
+      if (onToggleChecked) {
+        onToggleChecked({checked, shiftKey});
+      }
     }
   };
 
@@ -124,11 +124,7 @@ export const RunRow = ({
       </td>
       {additionalColumns}
       <td>
-        <RunActionsMenu
-          run={run}
-          onAddTag={onAddTag}
-          additionalActionsForRun={additionalActionsForRun}
-        />
+        <RunActionsMenu run={run} onAddTag={onAddTag} />
       </td>
       <QueuedRunCriteriaDialog
         run={run}

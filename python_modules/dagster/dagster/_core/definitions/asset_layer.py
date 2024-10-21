@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, AbstractSet, Dict, Iterable, Mapping, NamedTup
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_key import AssetKey, AssetKeyOrCheckKey
+from dagster._core.definitions.asset_key import AssetKey, EntityKey
 from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.errors import DagsterInvariantViolationError
@@ -214,7 +214,7 @@ class AssetLayer(NamedTuple):
 
     def downstream_dep_assets_and_checks(
         self, node_handle: NodeHandle, output_name: str
-    ) -> Set[AssetKeyOrCheckKey]:
+    ) -> Set[EntityKey]:
         """Given the node handle of an op within a graph-backed asset and an output name,
         returns the asset keys dependent on that output.
 
@@ -247,15 +247,13 @@ class AssetLayer(NamedTuple):
         assets_def = self.assets_defs_by_node_handle[node_handle]
         return {
             key
-            for key in check.not_none(
-                assets_def.computation
-            ).asset_or_check_keys_by_dep_op_output_handle[
+            for key in check.not_none(assets_def.computation).entity_keys_by_dep_op_output_handle[
                 NodeOutputHandle(node_handle=node_handle.pop(), output_name=output_name)
             ]
         }
 
     def upstream_dep_op_handles(self, asset_key: AssetKey) -> AbstractSet[NodeHandle]:
         computation = check.not_none(self.asset_graph.get(asset_key).assets_def.computation)
-        op_handles_in_assets_def = computation.dep_op_handles_by_asset_or_check_key[asset_key]
+        op_handles_in_assets_def = computation.dep_op_handles_by_entity_key[asset_key]
         outer_node_handle = NodeHandle(self.outer_node_names_by_asset_key[asset_key], parent=None)
         return {outer_node_handle.with_child(op_handle) for op_handle in op_handles_in_assets_def}

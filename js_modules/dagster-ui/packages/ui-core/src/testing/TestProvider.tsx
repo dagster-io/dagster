@@ -9,7 +9,7 @@ import {PermissionsContext, PermissionsFromJSON, extractPermissions} from '../ap
 import {WebSocketContext, WebSocketContextType} from '../app/WebSocketProvider';
 import {AnalyticsContext} from '../app/analytics';
 import {PermissionFragment} from '../app/types/Permissions.types';
-import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../workspace/WorkspaceContext/WorkspaceContext';
 
 const typeDefs = loader('../graphql/schema.graphql');
 

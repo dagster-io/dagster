@@ -14,6 +14,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
@@ -366,6 +367,13 @@ class OutputContext:
             )
 
         return result
+
+    @public
+    @property
+    def asset_spec(self) -> AssetSpec:
+        """The ``AssetSpec`` that is being stored as an output."""
+        asset_key = self.asset_key
+        return self.step_context.job_def.asset_layer.get(asset_key).to_asset_spec()
 
     @property
     def step_context(self) -> "StepExecutionContext":

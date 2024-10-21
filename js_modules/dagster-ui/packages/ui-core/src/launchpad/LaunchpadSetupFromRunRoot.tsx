@@ -2,11 +2,11 @@ import {Redirect, useParams} from 'react-router-dom';
 
 import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
+import {gql, useQuery} from '../apollo-client';
 import {
   ConfigForRunQuery,
   ConfigForRunQueryVariables,
 } from './types/LaunchpadSetupFromRunRoot.types';
-import {gql, useQuery} from '../apollo-client';
 import {
   IExecutionSession,
   applyCreateSession,
@@ -17,7 +17,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 

@@ -1,29 +1,24 @@
 from typing import Iterable, Iterator, List, Mapping, Optional, Tuple, cast
 
 from dagster import _check as check
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.selector import RepositorySelector
-from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.code_location import CodeLocation
-from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.external_data import ExternalAssetCheck
+from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation.external_data import AssetCheckNodeSnap
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
-    AssetCheckExecutionResolvedStatus,
+    AssetCheckExecutionRecordStatus,
     AssetCheckInstanceSupport,
 )
-from dagster._core.storage.event_log.base import AssetRecord
+from dagster._core.storage.dagster_run import RunRecord
 from dagster._core.workspace.context import WorkspaceRequestContext
 from packaging import version
 
-from dagster_graphql.implementation.fetch_asset_checks import asset_checks_iter
 from dagster_graphql.schema.asset_checks import (
     AssetChecksOrErrorUnion,
     GrapheneAssetCheck,
     GrapheneAssetCheckCanExecuteIndividually,
-    GrapheneAssetCheckExecution,
     GrapheneAssetCheckNeedsAgentUpgradeError,
     GrapheneAssetCheckNeedsMigrationError,
     GrapheneAssetCheckNeedsUserCodeUpgrade,
@@ -44,17 +39,24 @@ class AssetChecksLoader:
 
     def _get_external_checks(
         self, pipeline: Optional[GraphenePipelineSelector]
-    ) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetCheck]]:
+    ) -> Iterator[Tuple[CodeLocation, RemoteRepository, AssetCheckNodeSnap]]:
         if pipeline is None:
-            yield from asset_checks_iter(self._context)
+            entries = self._context.get_code_location_entries().values()
+            for entry in entries:
+                code_loc = entry.code_location
+                if code_loc:
+                    for repo in code_loc.get_repositories().values():
+                        for check in repo.get_asset_check_node_snaps():
+                            yield (code_loc, repo, check)
+
         else:
             job_name = cast(str, pipeline.pipelineName)
             repo_sel = RepositorySelector.from_graphql_input(pipeline)
             location = self._context.get_code_location(repo_sel.location_name)
             repo = location.get_repository(repo_sel.repository_name)
-            external_asset_nodes = repo.get_external_asset_checks(job_name=job_name)
-            for external_asset_node in external_asset_nodes:
-                yield (location, repo, external_asset_node)
+            asset_check_node_snaps = repo.get_asset_check_node_snaps(job_name=job_name)
+            for snap in asset_check_node_snaps:
+                yield (location, repo, snap)
 
     def _fetch_checks(
         self, limit_per_asset: Optional[int], pipeline: Optional[GraphenePipelineSelector]
@@ -81,7 +83,7 @@ class AssetChecksLoader:
                 f"Unexpected asset check support status {asset_check_support}",
             )
 
-        external_checks_by_asset_key: Mapping[AssetKey, List[ExternalAssetCheck]] = {}
+        external_checks_by_asset_key: Mapping[AssetKey, List[AssetCheckNodeSnap]] = {}
         errors: Mapping[AssetKey, GrapheneAssetCheckNeedsUserCodeUpgrade] = {}
 
         for location, _, external_check in self._get_external_checks(pipeline=pipeline):
@@ -110,13 +112,21 @@ class AssetChecksLoader:
                     :limit_per_asset
                 ]
 
+        # prefetch the checks and prepare the runs that will be needed to resolve their statuses
+        # note: this would not be necessary if this was async
         all_check_keys = [
             external_check.key
             for external_checks in external_checks_by_asset_key.values()
             for external_check in external_checks
         ]
-        execution_loader = AssetChecksExecutionForLatestMaterializationLoader(
-            self._context.instance, check_keys=all_check_keys
+        check_records = AssetCheckExecutionRecord.blocking_get_many(self._context, all_check_keys)
+        RunRecord.prepare(
+            self._context,
+            [
+                r.run_id
+                for r in check_records
+                if r.status == AssetCheckExecutionRecordStatus.PLANNED
+            ],
         )
 
         asset_graph = self._context.asset_graph
@@ -141,7 +151,6 @@ class AssetChecksLoader:
                         GrapheneAssetCheck(
                             asset_check=external_check,
                             can_execute_individually=can_execute_individually,
-                            execution_loader=execution_loader,
                         )
                     )
                 graphene_checks[asset_key] = GrapheneAssetChecks(checks=graphene_checks_for_asset)
@@ -169,128 +178,3 @@ class AssetChecksLoader:
         )
 
         return self._checks[asset_key]
-
-
-def _execution_targets_latest_materialization(
-    instance: DagsterInstance,
-    asset_record: Optional[AssetRecord],
-    execution: AssetCheckExecutionRecord,
-    resolved_status: AssetCheckExecutionResolvedStatus,
-) -> bool:
-    # always show in progress checks
-    if resolved_status == AssetCheckExecutionResolvedStatus.IN_PROGRESS:
-        return True
-
-    latest_materialization = (
-        asset_record.asset_entry.last_materialization_record if asset_record else None
-    )
-
-    if not latest_materialization:
-        # asset hasn't been materialized yet, so no reason to hide the check
-        return True
-
-    # If the check is executed in the same run as the materialization, then show it.
-    # This is a workaround to support the 'stage then promote' graph asset pattern,
-    # where checks happen before a materialization.
-    latest_materialization_run_id = latest_materialization.event_log_entry.run_id
-    if latest_materialization_run_id == execution.run_id:
-        return True
-
-    if resolved_status in [
-        AssetCheckExecutionResolvedStatus.SUCCEEDED,
-        AssetCheckExecutionResolvedStatus.FAILED,
-    ]:
-        evaluation = cast(
-            AssetCheckEvaluation,
-            check.not_none(check.not_none(execution.event).dagster_event).event_specific_data,
-        )
-        if not evaluation.target_materialization_data:
-            # check ran before the materialization was created
-            return False
-
-        # if the check matches the latest materialization, then show it
-        return (
-            evaluation.target_materialization_data.storage_id == latest_materialization.storage_id
-        )
-
-    # in this case the evaluation didn't complete, so we don't have target_materialization_data
-    elif resolved_status in [
-        AssetCheckExecutionResolvedStatus.EXECUTION_FAILED,
-        AssetCheckExecutionResolvedStatus.SKIPPED,
-    ]:
-        # As a last ditch effort, check if the check's run was launched after the materialization's
-        latest_materialization_run_record = instance.get_run_record_by_id(
-            latest_materialization_run_id
-        )
-        execution_run_record = instance.get_run_record_by_id(execution.run_id)
-        return bool(
-            latest_materialization_run_record
-            and execution_run_record
-            and execution_run_record.create_timestamp
-            > latest_materialization_run_record.create_timestamp
-        )
-
-    else:
-        check.failed(f"Unexpected check status {resolved_status}")
-
-
-class AssetChecksExecutionForLatestMaterializationLoader:
-    def __init__(self, instance: DagsterInstance, check_keys: List[AssetCheckKey]):
-        self._instance = instance
-        self._check_keys = check_keys
-        self._executions: Optional[
-            Mapping[AssetCheckKey, Optional[GrapheneAssetCheckExecution]]
-        ] = None
-
-    def _fetch_executions(self) -> Mapping[AssetCheckKey, Optional[GrapheneAssetCheckExecution]]:
-        from dagster_graphql.implementation.fetch_asset_checks import (
-            get_asset_check_execution_statuses_by_id,
-        )
-
-        latest_executions_by_check_key = (
-            self._instance.event_log_storage.get_latest_asset_check_execution_by_key(
-                self._check_keys
-            )
-        )
-        statuses_by_execution_id = get_asset_check_execution_statuses_by_id(
-            self._instance, list(latest_executions_by_check_key.values())
-        )
-        asset_records_by_asset_key = {
-            record.asset_entry.asset_key: record
-            for record in self._instance.get_asset_records(
-                list({ck.asset_key for ck in self._check_keys})
-            )
-        }
-
-        self._executions = {}
-        for check_key in self._check_keys:
-            execution = latest_executions_by_check_key.get(check_key)
-            if not execution:
-                self._executions[check_key] = None
-            else:
-                resolved_status = statuses_by_execution_id[execution.id]
-                self._executions[check_key] = (
-                    GrapheneAssetCheckExecution(execution, resolved_status)
-                    if _execution_targets_latest_materialization(
-                        instance=self._instance,
-                        asset_record=asset_records_by_asset_key.get(check_key.asset_key),
-                        execution=execution,
-                        resolved_status=resolved_status,
-                    )
-                    else None
-                )
-
-        return self._executions
-
-    def get_execution_for_latest_materialization(
-        self, check_key: AssetCheckKey
-    ) -> Optional[GrapheneAssetCheckExecution]:
-        if self._executions is None:
-            self._executions = self._fetch_executions()
-
-        check.invariant(
-            check_key in self._executions,
-            f"Check key {check_key} not included in this loader.",
-        )
-
-        return self._executions[check_key]

@@ -4,7 +4,8 @@ import {Redirect, Switch} from 'react-router-dom';
 
 import {Route} from './Route';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
 import {workspacePath, workspacePipelinePath} from '../workspace/workspacePath';
 
 export const BaseFallthroughRoot = () => {

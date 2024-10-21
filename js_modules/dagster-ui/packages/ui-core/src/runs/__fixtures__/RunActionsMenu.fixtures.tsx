@@ -9,7 +9,7 @@ import {
   buildRun,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
-import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {PIPELINE_ENVIRONMENT_QUERY} from '../RunActionsMenu';
 import {
   PipelineEnvironmentQuery,
@@ -34,6 +34,7 @@ export const buildRunActionsMenuFragment = ({hasReExecutePermission}: RunConfigI
     canTerminate: true,
     hasDeletePermission: true,
     hasReExecutePermission,
+    hasRunMetricsEnabled: true,
     hasTerminatePermission: true,
     mode: 'default',
     rootRunId: 'abcdef12',

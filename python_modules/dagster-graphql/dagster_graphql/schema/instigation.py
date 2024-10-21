@@ -358,13 +358,13 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
         repository = code_location.get_repository(self._selector.repository_name)
 
         if isinstance(self._selector, SensorSelector):
-            if not repository.has_external_sensor(self._selector.sensor_name):
+            if not repository.has_sensor(self._selector.sensor_name):
                 raise UserFacingGraphQLError(
                     GrapheneSensorNotFoundError(self._selector.sensor_name)
                 )
             sensor_data: Union[SensorExecutionData, SerializableErrorInfo]
             try:
-                sensor_data = code_location.get_external_sensor_execution_data(
+                sensor_data = code_location.get_sensor_execution_data(
                     name=self._selector.sensor_name,
                     instance=graphene_info.context.instance,
                     repository_handle=repository.handle,
@@ -378,7 +378,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                 sensor_data = serializable_error_info_from_exc_info(sys.exc_info())
             return GrapheneTickEvaluation(sensor_data)
         else:
-            if not repository.has_external_schedule(self._selector.schedule_name):
+            if not repository.has_schedule(self._selector.schedule_name):
                 raise UserFacingGraphQLError(
                     GrapheneScheduleNotFoundError(self._selector.schedule_name)
                 )
@@ -387,18 +387,18 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                     "No tick timestamp provided when attempting to dry-run schedule"
                     f" {self._selector.schedule_name}."
                 )
-            external_schedule = repository.get_external_schedule(self._selector.schedule_name)
-            timezone_str = external_schedule.execution_timezone
+            schedule = repository.get_schedule(self._selector.schedule_name)
+            timezone_str = schedule.execution_timezone
             if not timezone_str:
                 timezone_str = "UTC"
 
-            next_tick_datetime = next(external_schedule.execution_time_iterator(self.timestamp))
+            next_tick_datetime = next(schedule.execution_time_iterator(self.timestamp))
             schedule_data: Union[ScheduleExecutionData, SerializableErrorInfo]
             try:
-                schedule_data = code_location.get_external_schedule_execution_data(
+                schedule_data = code_location.get_schedule_execution_data(
                     instance=graphene_info.context.instance,
                     repository_handle=repository.handle,
-                    schedule_name=external_schedule.name,
+                    schedule_name=schedule.name,
                     scheduled_execution_time=TimestampWithTimezone(
                         next_tick_datetime.timestamp(),
                         timezone_str,
@@ -577,7 +577,7 @@ class GrapheneInstigationState(graphene.ObjectType):
             batch_loader, "batch_loader", RepositoryScopedBatchLoader
         )
         cid = CompoundID(
-            external_origin_id=instigator_state.instigator_origin_id,
+            remote_origin_id=instigator_state.instigator_origin_id,
             selector_id=instigator_state.selector_id,
         )
         super().__init__(

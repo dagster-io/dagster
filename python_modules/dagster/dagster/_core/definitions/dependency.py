@@ -35,11 +35,12 @@ from dagster._core.definitions.input import (
 )
 from dagster._core.definitions.output import OutputDefinition
 from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.definitions.utils import DEFAULT_OUTPUT, normalize_tags, struct_to_string
+from dagster._core.definitions.utils import DEFAULT_OUTPUT, struct_to_string
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer
@@ -147,7 +148,7 @@ class Node(ABC):
             "graph_definition",
             GraphDefinition,
         )
-        self._additional_tags = normalize_tags(tags).tags
+        self._additional_tags = normalize_tags(tags)
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
 

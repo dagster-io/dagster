@@ -37,7 +37,7 @@ setup(
     python_requires=">=3.8,<3.13",
     install_requires=[
         "boto3",
-        "boto3-stubs-lite[ecs,glue]",
+        "boto3-stubs-lite[ecs,glue,emr,emr-serverless]",
         f"dagster{pin}",
         "packaging",
         "requests",
@@ -45,9 +45,12 @@ setup(
     extras_require={
         "redshift": ["psycopg2-binary"],
         "pyspark": ["dagster-pyspark"],
+        "stubs": [
+            "boto3-stubs-lite[s3,logs,ecs,glue,emr-serverless,emr]",
+        ],
         "test": [
             "botocore!=1.32.1",
-            "moto[s3,server,glue]>=2.2.8,<5.0",
+            "moto[s3,server,glue,emrserverless,logs]>=2.2.8,<5.0",
             "requests-mock",
             "xmltodict==0.12.0",  # pinned until moto>=3.1.9 (https://github.com/spulec/moto/issues/5112)
         ],

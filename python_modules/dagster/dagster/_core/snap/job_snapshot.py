@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence, Union, cast
 
 from dagster import _check as check
 from dagster._config import (
@@ -47,16 +47,17 @@ from dagster._core.snap.node import (
     build_node_defs_snapshot,
 )
 from dagster._core.utils import toposort_flatten
+from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import create_snapshot_id, deserialize_value, whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer
+from dagster._serdes.serdes import RecordSerializer
 
 
-def create_job_snapshot_id(snapshot: "JobSnapshot") -> str:
-    check.inst_param(snapshot, "snapshot", JobSnapshot)
+def create_job_snapshot_id(snapshot: "JobSnap") -> str:
+    check.inst_param(snapshot, "snapshot", JobSnap)
     return create_snapshot_id(snapshot)
 
 
-class JobSnapshotSerializer(NamedTupleSerializer["JobSnapshot"]):
+class JobSnapSerializer(RecordSerializer["JobSnap"]):
     # v0
     # v1:
     #     - lineage added
@@ -68,6 +69,8 @@ class JobSnapshotSerializer(NamedTupleSerializer["JobSnapshot"]):
     #     - add kwargs so that if future versions add new args, this version of deserialization will
     #     be able to ignore them. previously, new args would be passed to old versions and cause
     #     deserialization errors.
+    # v5:
+    #     - run_tags added
     def before_unpack(
         self,
         context,
@@ -79,6 +82,8 @@ class JobSnapshotSerializer(NamedTupleSerializer["JobSnapshot"]):
             unpacked_dict["metadata"] = []
         if unpacked_dict.get("lineage_snapshot") is None:
             unpacked_dict["lineage_snapshot"] = None
+        if unpacked_dict.get("run_tags") is None:
+            unpacked_dict["run_tags"] = None
         return unpacked_dict
 
 
@@ -87,80 +92,71 @@ class JobSnapshotSerializer(NamedTupleSerializer["JobSnapshot"]):
 # serialization.
 @whitelist_for_serdes(
     storage_name="PipelineSnapshot",
-    serializer=JobSnapshotSerializer,
+    serializer=JobSnapSerializer,
     skip_when_empty_fields={"metadata"},
+    skip_when_none_fields={"run_tags"},
     field_serializers={"metadata": MetadataFieldSerializer},
     storage_field_names={"node_defs_snapshot": "solid_definitions_snapshot"},
 )
-class JobSnapshot(
-    NamedTuple(
-        "_JobSnapshot",
-        [
-            ("name", str),
-            ("description", Optional[str]),
-            ("tags", Mapping[str, Any]),
-            ("config_schema_snapshot", ConfigSchemaSnapshot),
-            ("dagster_type_namespace_snapshot", DagsterTypeNamespaceSnapshot),
-            ("node_defs_snapshot", NodeDefsSnapshot),
-            ("dep_structure_snapshot", DependencyStructureSnapshot),
-            ("mode_def_snaps", Sequence[ModeDefSnap]),
-            ("lineage_snapshot", Optional["JobLineageSnapshot"]),
-            ("graph_def_name", str),
-            ("metadata", Mapping[str, MetadataValue]),
-        ],
-    )
-):
+@record_custom
+class JobSnap(IHaveNew):
+    name: str
+    description: Optional[str]
+    tags: Mapping[str, Any]
+    # It is important that run_tags is nullable to distinguish in host code between
+    # snapshots from older code servers where run_tags does not exist as a field (and is
+    # therefore None) vs snapshots from newer code servers where run_tags is always set, if
+    # sometimes empty. In the None case, we need to set run_tags to tags (at the level of
+    # ExternalJob) to maintain backcompat.
+    run_tags: Optional[Mapping[str, Any]]
+    config_schema_snapshot: ConfigSchemaSnapshot
+    dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot
+    node_defs_snapshot: NodeDefsSnapshot
+    dep_structure_snapshot: DependencyStructureSnapshot
+    mode_def_snaps: Sequence[ModeDefSnap]
+    lineage_snapshot: Optional["JobLineageSnap"]
+    graph_def_name: str
+    metadata: Mapping[str, MetadataValue]
+
     def __new__(
         cls,
         name: str,
         description: Optional[str],
         tags: Optional[Mapping[str, Any]],
+        run_tags: Optional[Mapping[str, Any]],
         config_schema_snapshot: ConfigSchemaSnapshot,
         dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
         node_defs_snapshot: NodeDefsSnapshot,
         dep_structure_snapshot: DependencyStructureSnapshot,
         mode_def_snaps: Sequence[ModeDefSnap],
-        lineage_snapshot: Optional["JobLineageSnapshot"],
+        lineage_snapshot: Optional["JobLineageSnap"],
         graph_def_name: str,
         metadata: Optional[Mapping[str, RawMetadataValue]],
     ):
-        return super(JobSnapshot, cls).__new__(
+        return super().__new__(
             cls,
-            name=check.str_param(name, "name"),
-            description=check.opt_str_param(description, "description"),
-            tags=check.opt_mapping_param(tags, "tags"),
-            config_schema_snapshot=check.inst_param(
-                config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
-            ),
-            dagster_type_namespace_snapshot=check.inst_param(
-                dagster_type_namespace_snapshot,
-                "dagster_type_namespace_snapshot",
-                DagsterTypeNamespaceSnapshot,
-            ),
-            node_defs_snapshot=check.inst_param(
-                node_defs_snapshot, "node_defs_snapshot", NodeDefsSnapshot
-            ),
-            dep_structure_snapshot=check.inst_param(
-                dep_structure_snapshot, "dep_structure_snapshot", DependencyStructureSnapshot
-            ),
-            mode_def_snaps=check.sequence_param(
-                mode_def_snaps, "mode_def_snaps", of_type=ModeDefSnap
-            ),
-            lineage_snapshot=check.opt_inst_param(
-                lineage_snapshot, "lineage_snapshot", JobLineageSnapshot
-            ),
-            graph_def_name=check.str_param(graph_def_name, "graph_def_name"),
+            name=name,
+            description=description,
+            tags=tags or {},
+            run_tags=run_tags,
+            config_schema_snapshot=config_schema_snapshot,
+            dagster_type_namespace_snapshot=dagster_type_namespace_snapshot,
+            node_defs_snapshot=node_defs_snapshot,
+            dep_structure_snapshot=dep_structure_snapshot,
+            mode_def_snaps=mode_def_snaps,
+            lineage_snapshot=lineage_snapshot,
+            graph_def_name=graph_def_name,
             metadata=normalize_metadata(
                 check.opt_mapping_param(metadata, "metadata", key_type=str)
             ),
         )
 
     @classmethod
-    def from_job_def(cls, job_def: JobDefinition) -> "JobSnapshot":
+    def from_job_def(cls, job_def: JobDefinition) -> "JobSnap":
         check.inst_param(job_def, "job_def", JobDefinition)
         lineage = None
         if job_def.op_selection_data:
-            lineage = JobLineageSnapshot(
+            lineage = JobLineageSnap(
                 parent_snapshot_id=create_job_snapshot_id(
                     cls.from_job_def(job_def.op_selection_data.parent_job_def)
                 ),
@@ -168,7 +164,7 @@ class JobSnapshot(
                 resolved_op_selection=job_def.op_selection_data.resolved_op_selection,
             )
         if job_def.asset_selection_data:
-            lineage = JobLineageSnapshot(
+            lineage = JobLineageSnap(
                 parent_snapshot_id=create_job_snapshot_id(
                     cls.from_job_def(job_def.asset_selection_data.parent_job_def)
                 ),
@@ -176,10 +172,11 @@ class JobSnapshot(
                 asset_check_selection=job_def.asset_selection_data.asset_check_selection,
             )
 
-        return JobSnapshot(
+        return JobSnap(
             name=job_def.name,
             description=job_def.description,
             tags=job_def.tags,
+            run_tags=job_def.run_tags if job_def.has_separately_defined_run_tags else None,
             metadata=job_def.metadata,
             config_schema_snapshot=build_config_schema_snapshot(job_def),
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(job_def),
@@ -400,32 +397,10 @@ def construct_config_type_from_snap(
         "resolved_op_selection": "solids_to_execute",
     },
 )
-class JobLineageSnapshot(
-    NamedTuple(
-        "_JobLineageSnapshot",
-        [
-            ("parent_snapshot_id", str),
-            ("op_selection", Optional[Sequence[str]]),
-            ("resolved_op_selection", Optional[AbstractSet[str]]),
-            ("asset_selection", Optional[AbstractSet[AssetKey]]),
-            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        parent_snapshot_id: str,
-        op_selection: Optional[Sequence[str]] = None,
-        resolved_op_selection: Optional[AbstractSet[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
-    ):
-        check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
-        return super(JobLineageSnapshot, cls).__new__(
-            cls,
-            check.str_param(parent_snapshot_id, parent_snapshot_id),
-            op_selection,
-            resolved_op_selection,
-            asset_selection,
-            asset_check_selection,
-        )
+@record
+class JobLineageSnap:
+    parent_snapshot_id: str
+    op_selection: Optional[Sequence[str]] = None
+    resolved_op_selection: Optional[AbstractSet[str]] = None
+    asset_selection: Optional[AbstractSet[AssetKey]] = None
+    asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None

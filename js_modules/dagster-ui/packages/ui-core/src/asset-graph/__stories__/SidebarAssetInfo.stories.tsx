@@ -18,7 +18,7 @@ import {
   buildSolidDefinition,
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {SIDEBAR_ASSET_QUERY, SidebarAssetInfo} from '../SidebarAssetInfo';
 import {GraphNode} from '../Utils';
 import {SidebarAssetQuery} from '../types/SidebarAssetInfo.types';
@@ -69,7 +69,6 @@ const buildSidebarQueryMock = (
       assetNodeOrError: buildAssetNode({
         id: 'test.py.repo.["asset1"]',
         description: null,
-        metadataEntries: [],
         jobNames: ['test_job'],
         assetKey: {
           path: ['asset1'],

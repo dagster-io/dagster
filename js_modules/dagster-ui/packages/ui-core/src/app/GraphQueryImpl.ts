@@ -58,7 +58,9 @@ class GraphTraverser<T extends GraphQueryItem> {
       item.inputs.forEach((input) =>
         input.dependsOn.forEach((d) => {
           const item = this.itemNamed(d.solid.name);
-          item && callback(item);
+          if (item) {
+            callback(item);
+          }
         }),
       );
 
@@ -70,7 +72,9 @@ class GraphTraverser<T extends GraphQueryItem> {
       item.outputs.forEach((output) =>
         output.dependedBy.forEach((d) => {
           const item = this.itemNamed(d.solid.name);
-          item && callback(item);
+          if (item) {
+            callback(item);
+          }
         }),
       );
 

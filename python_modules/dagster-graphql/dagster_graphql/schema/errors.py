@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Set
 
 import dagster._check as check
 import graphene
@@ -449,6 +449,21 @@ class GraphenePartitionSetNotFoundError(graphene.ObjectType):
         super().__init__()
         self.partition_set_name = check.str_param(partition_set_name, "partition_set_name")
         self.message = f"Partition set {self.partition_set_name} could not be found."
+
+
+class GraphenePartitionKeysNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "PartitionKeysNotFoundError"
+
+    partition_keys = non_null_list(graphene.String)
+
+    def __init__(self, partition_keys: Set[str]):
+        super().__init__()
+        self.partition_keys = check.list_param(
+            sorted(partition_keys), "partition_keys", of_type=str
+        )
+        self.message = f"Partition keys `{self.partition_keys}` could not be found."
 
 
 class GrapheneRepositoryNotFoundError(graphene.ObjectType):

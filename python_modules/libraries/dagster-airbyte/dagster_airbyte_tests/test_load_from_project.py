@@ -1,5 +1,6 @@
 import pytest
 import responses
+import yaml
 from dagster import AssetKey, build_init_resource_context, materialize, with_resources
 from dagster._utils import file_relative_path
 from dagster_airbyte import AirbyteResource, airbyte_resource, load_assets_from_airbyte_project
@@ -83,25 +84,70 @@ def test_load_from_project(
         else set()
     )
 
+    with open(
+        file_relative_path(
+            __file__, "./test_airbyte_project/destinations/snowflake_ben/configuration.yaml"
+        ),
+        encoding="utf-8",
+    ) as f:
+        destination_data = yaml.safe_load(f.read())
+
     if connection_to_asset_key_fn:
         tables = {
             connection_to_asset_key_fn(
                 AirbyteConnectionMetadata(
-                    "Github <> snowflake-ben", "", use_normalization_tables, []
+                    "Github <> snowflake-ben", "", use_normalization_tables, [], destination_data
                 ),
                 t,
             ).path[0]
             for t in tables
         }
 
-    assert ab_assets[0].keys == {AssetKey(t) for t in tables}
+    # Check metadata is added correctly to asset def
+    assets_def = ab_assets[0]
+
+    relation_identifiers = {
+        "AIRBYTE.BEN_DEMO.releases",
+        "AIRBYTE.BEN_DEMO.tags",
+        "AIRBYTE.BEN_DEMO.teams",
+        "AIRBYTE.BEN_DEMO.array_test",
+        "AIRBYTE.BEN_DEMO.unknown_test",
+    } | (
+        {
+            "AIRBYTE.BEN_DEMO.releases.assets",
+            "AIRBYTE.BEN_DEMO.releases.author",
+            "AIRBYTE.BEN_DEMO.tags.commit",
+            "AIRBYTE.BEN_DEMO.releases.foo",
+            "AIRBYTE.BEN_DEMO.array_test.author",
+        }
+        if use_normalization_tables
+        else set()
+    )
+
+    for key, metadata in assets_def.metadata_by_key.items():
+        # Extract the table name from the asset key
+        table_name = (
+            key.path[-1]
+            .replace("dagster_", "")
+            .replace("G_", "")
+            .replace("_test", "")
+            .split("_")[-1]
+        )
+        assert metadata["dagster/relation_identifier"] in relation_identifiers
+        assert table_name in metadata["dagster/relation_identifier"]
+
+    assert assets_def.keys == {AssetKey(t) for t in tables}
     assert all(
         [
-            ab_assets[0].group_names_by_key.get(AssetKey(t))
+            assets_def.group_names_by_key.get(AssetKey(t))
             == (
                 connection_meta_to_group_fn(
                     AirbyteConnectionMetadata(
-                        "GitHub <> snowflake-ben", "", use_normalization_tables, []
+                        "GitHub <> snowflake-ben",
+                        "",
+                        use_normalization_tables,
+                        [],
+                        destination_data,
                     )
                 )
                 if connection_meta_to_group_fn
@@ -114,7 +160,7 @@ def test_load_from_project(
             for t in tables
         ]
     )
-    assert len(ab_assets[0].op.output_defs) == len(tables)
+    assert len(assets_def.op.output_defs) == len(tables)
 
     responses.add(
         method=responses.POST,
@@ -152,7 +198,7 @@ def test_load_from_project(
 
     materializations = [
         event.event_specific_data.materialization
-        for event in res.events_for_node("airbyte_sync_87b7f")
+        for event in res.events_for_node("airbyte_sync_87b7fe85_a22c_420e_8d74_b30e7ede77df")
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == len(tables)

@@ -3,6 +3,7 @@ from typing import Optional, Sequence
 import dagster._check as check
 from dagster import AssetDep, AssetKey, AssetSpec
 from dagster._annotations import experimental
+from dagster._core.storage.tags import KIND_PREFIX
 
 from dagster_dbt.asset_utils import build_dbt_multi_asset_args
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
@@ -60,6 +61,7 @@ def build_dbt_asset_specs(
         asset_out.to_spec(
             key=check.inst(asset_out.key, AssetKey),
             deps=[AssetDep(asset=dep) for dep in internal_asset_deps.get(output_name, set())],
+            additional_tags={f"{KIND_PREFIX}dbt": ""},
         )
         # Allow specs to be represented as external assets by adhering to external asset invariants.
         ._replace(

@@ -94,7 +94,7 @@ export const navLinks = (config: Config): AppNavLinkType[] => {
     ),
   };
 
-  if (featureEnabled(FeatureFlag.flagSettingsPage)) {
+  if (!featureEnabled(FeatureFlag.flagLegacyNav)) {
     const jobs =
       jobState === 'has-jobs'
         ? {

@@ -12,3 +12,5 @@ export type PartitionSubsetListQuery = {
   __typename: 'Query';
   truePartitionsForAutomationConditionEvaluationNode: Array<string>;
 };
+
+export const PartitionSubsetListQueryVersion = 'a99c32a24510b715ad4a4d31421bdd663549665193b4a40bfee5e8238b586313';

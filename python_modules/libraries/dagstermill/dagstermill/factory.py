@@ -21,7 +21,6 @@ from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.system import StepExecutionContext
@@ -31,6 +30,7 @@ from dagster._serdes import pack_value
 from dagster._seven import get_system_temp_directory
 from dagster._utils import mkdir_p, safe_tempfile_path
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.tags import normalize_tags
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
@@ -413,7 +413,7 @@ def define_dagstermill_op(
     default_description = f"This op is backed by the notebook at {notebook_path}"
     description = check.opt_str_param(description, "description", default=default_description)
 
-    user_tags = normalize_tags(tags).tags
+    user_tags = normalize_tags(tags)
     if tags is not None:
         check.invariant(
             "notebook_path" not in tags,

@@ -4,7 +4,6 @@ import {Link} from 'react-router-dom';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetLineageElements} from './AssetLineageElements';
-import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
 import {RunlessEventTag} from './RunlessEventTag';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {isRunlessEvent} from './isRunlessEvent';
@@ -19,7 +18,7 @@ import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 export const AssetEventDetail = ({
@@ -147,13 +146,6 @@ export const AssetEventDetail = ({
           showDescriptions
         />
       </Box>
-
-      {event.__typename === 'MaterializationEvent' && (
-        <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-          <Subheading>Source data</Subheading>
-          <AssetMaterializationUpstreamData timestamp={event.timestamp} assetKey={assetKey} />
-        </Box>
-      )}
 
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
         <Subheading>Tags</Subheading>

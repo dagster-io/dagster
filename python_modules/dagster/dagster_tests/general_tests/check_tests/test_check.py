@@ -9,6 +9,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generic,
     Iterable,
     List,
     Literal,
@@ -1587,7 +1588,6 @@ def _check({name}):
     {lazy_import_str}
     return {body}
 """
-    # print(fn) # debug output
     return eval_ctx.compile_fn(fn, "_check")
 
 
@@ -1598,6 +1598,15 @@ class SubFoo(Foo): ...
 
 
 class Bar: ...
+
+
+T = TypeVar("T")
+
+
+class Gen(Generic[T]): ...
+
+
+class SubGen(Gen[str]): ...
 
 
 BUILD_CASES = [
@@ -1634,8 +1643,8 @@ BUILD_CASES = [
     (Optional[Set[str]], [{"a", "b"}], [{1, 2}]),
     (Optional[Dict[str, int]], [{"a": 1}], [{1: "a"}]),
     (Optional[Mapping[str, int]], [{"a": 1}], [{1: "a"}]),
-    (PublicAttr[Optional[Mapping[str, int]]], [{"a": 1}], [{1: "a"}]),
-    (PublicAttr[Bar], [Bar()], [Foo()]),
+    (PublicAttr[Optional[Mapping[str, int]]], [{"a": 1}], [{1: "a"}]),  # type: ignore  # ignored for update, fix me!
+    (PublicAttr[Bar], [Bar()], [Foo()]),  # type: ignore  # ignored for update, fix me!
     (Annotated[Bar, None], [Bar()], [Foo()]),
     (Annotated["Bar", None], [Bar()], [Foo()]),
     (List[Annotated[Bar, None]], [[Bar()], []], [[Foo()]]),
@@ -1656,9 +1665,14 @@ BUILD_CASES = [
     # fwd refs
     ("Foo", [Foo()], [Bar()]),
     (Optional["Foo"], [Foo()], [Bar()]),
-    (PublicAttr[Optional["Foo"]], [None], [Bar()]),
+    (PublicAttr[Optional["Foo"]], [None], [Bar()]),  # type: ignore  # ignored for update, fix me!
     (Mapping[str, Optional["Foo"]], [{"foo": Foo()}], [{"bar": Bar()}]),
     (Mapping[str, Optional["Foo"]], [{"foo": Foo()}], [{"bar": Bar()}]),
+    (Gen, [Gen()], [Bar()]),
+    (Gen[str], [Gen()], [Bar()]),
+    (SubGen, [SubGen()], [Bar()]),
+    (Sequence[SubGen], [[SubGen()]], [[Bar()]]),
+    (Sequence[Gen[str]], [[Gen()]], [[Bar()]]),
 ]
 
 

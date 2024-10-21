@@ -3,7 +3,7 @@ import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router-dom';
 
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {RunActionsMenu} from '../RunActionsMenu';
 import {
   buildMockRootWorkspaceQuery,
@@ -67,7 +67,7 @@ describe('RunActionsMenu', () => {
       });
 
       // Blueprint doesn't actually set `disabled` on the button element.
-      expect(reExecutionButton.classList.contains('bp4-disabled')).toBe(true);
+      expect(reExecutionButton.classList.contains('bp5-disabled')).toBe(true);
     });
   });
 });

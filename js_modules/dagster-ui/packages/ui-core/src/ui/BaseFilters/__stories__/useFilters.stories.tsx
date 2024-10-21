@@ -1,6 +1,6 @@
 import {Box, CustomTooltipProvider} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
-import {useMemo} from 'react';
+import {useMemo, useState} from 'react';
 
 import {TruncatedTextWithFullTextOnHover} from '../../../nav/getLeftNavItemsForOption';
 import {FilterDropdown} from '../FilterDropdown';
@@ -15,6 +15,7 @@ export default {
 } as Meta;
 
 const TestComponent = () => {
+  const [userState, setUserState] = useState<Set<any>>(new Set());
   const userFilter = useStaticSetFilter({
     name: 'User',
     icon: 'account_circle',
@@ -29,6 +30,8 @@ const TestComponent = () => {
       value('today'),
       value('yesterday'),
     ],
+    state: userState,
+    onStateChanged: setUserState,
     getKey: (value) => value,
     renderLabel: ({value, isActive}) => (
       <span style={{color: isActive ? 'green' : undefined}}>
@@ -38,6 +41,7 @@ const TestComponent = () => {
     getStringValue: (value) => value,
   });
 
+  const [testState, setTestState] = useState<Set<any>>(new Set());
   const testFilter = useStaticSetFilter({
     name: 'Test set filter',
     icon: 'account_tree',
@@ -49,6 +53,8 @@ const TestComponent = () => {
       value('today'),
       value('yesterday'),
     ],
+    state: testState,
+    onStateChanged: setTestState,
     getKey: (value) => value,
     renderLabel: ({value, isActive}) => (
       <span style={{color: isActive ? 'green' : undefined}}>
@@ -58,11 +64,14 @@ const TestComponent = () => {
     getStringValue: (value) => value,
   });
 
+  const [deploymentState, setDeploymentState] = useState<Set<any>>(new Set());
   const deploymentFilter = useStaticSetFilter({
     name: 'Deployment',
     icon: 'workspaces',
     allValues: [value('prod'), value('dev'), value('staging')],
     getStringValue: (value) => value,
+    state: deploymentState,
+    onStateChanged: setDeploymentState,
     renderLabel: ({value}) => (
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
         <div

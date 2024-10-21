@@ -308,7 +308,9 @@ export function CustomTimeRangeFilterDialog({
               setEndDate(endDate ? endDate.clone().endOf('day') : null);
             }}
             onFocusChange={(focusedInput) => {
-              focusedInput && setFocusedInput(focusedInput);
+              if (focusedInput) {
+                setFocusedInput(focusedInput);
+              }
             }}
             startDate={startDate}
             endDate={endDate}

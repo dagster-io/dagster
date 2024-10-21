@@ -1,0 +1,3 @@
+tasks:
+  - id: asset_one_weekly
+    proxied: False 

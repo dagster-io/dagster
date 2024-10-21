@@ -26,12 +26,12 @@ def test_monitor_source_asset_sensor(executor):
     ):
         asset_sensor_repo = repos["asset_sensor_repo"]
         with freeze_time(freeze_datetime):
-            the_sensor = asset_sensor_repo.get_external_sensor("monitor_source_asset_sensor")
+            the_sensor = asset_sensor_repo.get_sensor("monitor_source_asset_sensor")
             instance.start_sensor(the_sensor)
 
             evaluate_sensors(workspace_ctx, executor)
 
-            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            ticks = instance.get_ticks(the_sensor.get_remote_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
@@ -46,7 +46,7 @@ def test_monitor_source_asset_sensor(executor):
 
             evaluate_sensors(workspace_ctx, executor)
 
-            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            ticks = instance.get_ticks(the_sensor.get_remote_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 2
             validate_tick(
                 ticks[0],

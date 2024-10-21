@@ -24,6 +24,7 @@ export type PreviousRunsForSensorQuery = {
           hasReExecutePermission: boolean;
           hasTerminatePermission: boolean;
           hasDeletePermission: boolean;
+          hasRunMetricsEnabled: boolean;
           mode: string;
           rootRunId: string | null;
           parentRunId: string | null;
@@ -50,3 +51,5 @@ export type PreviousRunsForSensorQuery = {
         }>;
       };
 };
+
+export const PreviousRunsForSensorQueryVersion = '11280246962f31faf7d5e8a479dd3e97bdfe074bb64a56a76ff436eda018d5b6';

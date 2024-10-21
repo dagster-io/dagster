@@ -68,3 +68,5 @@ export type PartitionHealthQuery = {
       }
     | {__typename: 'AssetNotFoundError'};
 };
+
+export const PartitionHealthQueryVersion = '4f37a772c8f0e07cf2d76c18915a2a9c393fa8ea6a7b2ad355b80a225c8fe2af';

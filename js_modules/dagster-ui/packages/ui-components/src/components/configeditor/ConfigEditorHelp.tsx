@@ -1,9 +1,9 @@
 import {memo} from 'react';
 import styled from 'styled-components';
 
-import {ConfigEditorHelpContext} from './types/ConfigEditorHelpContext';
 import {Colors} from '../Color';
 import {ConfigTypeSchema, TypeData} from '../ConfigTypeSchema';
+import {ConfigEditorHelpContext} from './types/ConfigEditorHelpContext';
 import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
 
 interface ConfigEditorHelpProps {

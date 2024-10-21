@@ -124,16 +124,11 @@ dbt_project = DbtProject(
 dbt_project.prepare_if_dev()
 ```
 
-Invoking `dbt_project.prepare_if_dev()` prepares your dbt project for local development by creating the `manifest.json` at run time in `dagster dev`.
+Generating the `manifest.json` file for a dbt project is time-consuming, so it's best to avoid doing so every time this Python module is imported. Thus, in production deployments of Dagster, you'll typically have the CI/CD system that packages up your code generate your `manifest.json`.
 
-To disable this behavior during local development, remove `dbt_project.prepare_if_dev()`.
+However, in development, you typically want changes made to files in your dbt project to be immediately reflected in the Dagster UI without needing to regenerate the manifest.
 
-Based on whether `dbt_project.prepare_if_dev()` and `dagster dev` are used, either:
-
-1. **This code generates the `manifest.json` for you.** This is the easiest option during development, because you never need to worry about the file being out-of-date with your dbt project. But generating the file can be time-consuming when you have a large dbt project, so it's generally recommended to go with the second option when you're deploying your dbt project to production.
-2. **This code leaves it up to you to generate the `manifest.json` file on your own, and this code just reads it.** This option allows you to only generate it once every time you deploy, rather than every time the code in this module gets executed.
-
-In this tutorial, we're going with the first option: We run `dagster dev` and use `dbt_project.prepare_if_dev()` to prepare the dbt project and create the manifest.
+`dbt_project.prepare_if_dev()` helps with this – it re-generates your `manifest.json` at the time Dagster imports your code, _but_ only if it's being imported by the `dagster dev` command.
 
 Once you've got a `manifest.json` file, it's time to define your Dagster assets using it. The following code, in your project's `assets.py`, does this:
 

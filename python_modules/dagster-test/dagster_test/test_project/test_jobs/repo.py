@@ -17,6 +17,7 @@ from dagster import (
     IntSource,
     List,
     Output,
+    RetryPolicy,
     RetryRequested,
     file_relative_path,
     graph,
@@ -133,6 +134,9 @@ def apply_platform_settings(
         "factor": IntSource,
         "should_segfault": Field(bool, is_required=False, default_value=False),
     },
+    retry_policy=RetryPolicy(
+        max_retries=2,
+    ),
 )
 def multiply_the_word(context, word: str) -> str:
     if context.op_config.get("should_segfault"):

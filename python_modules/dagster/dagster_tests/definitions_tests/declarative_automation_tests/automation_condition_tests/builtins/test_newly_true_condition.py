@@ -1,5 +1,4 @@
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.declarative_automation.operators import NewlyTrueCondition
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from dagster_tests.definitions_tests.declarative_automation_tests.automation_condition_tests.builtins.test_dep_condition import (
@@ -16,7 +15,7 @@ from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils
 def test_newly_true_condition() -> None:
     inner_condition, true_set = get_hardcoded_condition()
 
-    condition = NewlyTrueCondition(operand=inner_condition)
+    condition = inner_condition.newly_true()
     state = AutomationConditionScenarioState(one_asset, automation_condition=condition)
 
     # nothing true

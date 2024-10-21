@@ -49,7 +49,7 @@ resources = {
 }
 
 defs = Definitions(
-    assets=[dbt_project_assets, *forecasting_assets],
+    assets=[dbt_project_assets, *forecasting_assets, *raw_data_assets],
     resources=resources,
     asset_checks=all_assets_checks,
     schedules=[

@@ -112,7 +112,7 @@ module.exports = {
     'react/prop-types': 'off',
     'react/display-name': 'off',
     'react/react-in-jsx-scope': 'off',
-    '@typescript-eslint/ban-types': [
+    '@typescript-eslint/no-restricted-types': [
       'error',
       {
         types: {
@@ -139,6 +139,7 @@ module.exports = {
     '@typescript-eslint/no-non-null-assertion': 'off',
     '@typescript-eslint/prefer-interface': 'off',
     '@typescript-eslint/no-empty-interface': 'off',
+    '@typescript-eslint/no-empty-object-type': ['error', {allowInterfaces: 'with-single-extends'}],
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'warn',
   },

@@ -74,7 +74,7 @@ export const ProductTour = ({
 
   return (
     <Popover
-      popoverClassName="bp4-dark"
+      popoverClassName="bp5-dark"
       isOpen={canShow}
       placement={position as Placement}
       modifiers={{

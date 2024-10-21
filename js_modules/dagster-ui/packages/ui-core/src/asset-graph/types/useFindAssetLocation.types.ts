@@ -28,3 +28,5 @@ export type AssetForNavigationQuery = {
       }
     | {__typename: 'AssetNotFoundError'};
 };
+
+export const AssetForNavigationQueryVersion = 'eb695ab88044ddd7068ea0dc1e2482eaba1fcb11b83de11050ff52f55e83ed3d';

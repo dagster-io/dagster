@@ -2,6 +2,7 @@
 import {Intent} from '@blueprintjs/core';
 import {useCallback, useMemo, useReducer} from 'react';
 
+import {ApolloClient, ApolloError, gql, useApolloClient, useQuery} from '../apollo-client';
 import {
   ReloadRepositoryLocationMutation,
   ReloadRepositoryLocationMutationVariables,
@@ -10,7 +11,6 @@ import {
   RepositoryLocationStatusQuery,
   RepositoryLocationStatusQueryVariables,
 } from './types/useRepositoryLocationReload.types';
-import {ApolloClient, ApolloError, gql, useApolloClient, useQuery} from '../apollo-client';
 import {showSharedToaster} from '../app/DomUtils';
 import {useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';

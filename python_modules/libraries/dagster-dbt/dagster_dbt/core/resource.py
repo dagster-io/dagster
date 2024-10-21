@@ -82,8 +82,7 @@ class DbtCliResource(ConfigurableResource):
             `dbt_project.yml`. See https://docs.getdbt.com/reference/dbt_project.yml for more
             information.
         global_config_flags (List[str]): A list of global flags configuration to pass to the dbt CLI
-            invocation. See https://docs.getdbt.com/reference/global-configs for a full list of
-            configuration.
+            invocation. Invoke `dbt --help` to see a full list of global flags.
         profiles_dir (Optional[str]): The path to the directory containing your dbt `profiles.yml`.
             By default, the current working directory is used, which is the dbt project directory.
             See https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
@@ -379,7 +378,8 @@ class DbtCliResource(ConfigurableResource):
 
         # If the dbt adapter is DuckDB, set the access mode to READ_ONLY, since DuckDB only allows
         # simultaneous connections for read-only access.
-        try:
+
+        if config.credentials and config.credentials.__class__.__name__ == "DuckDBCredentials":
             from dbt.adapters.duckdb.credentials import DuckDBCredentials
 
             if isinstance(config.credentials, DuckDBCredentials):
@@ -390,12 +390,6 @@ class DbtCliResource(ConfigurableResource):
                 # working directory may not be the same as the dbt project directory
                 with pushd(self.project_dir):
                     config.credentials.path = os.fspath(Path(config.credentials.path).absolute())
-
-        except ImportError:
-            logger.warning(
-                "An error was encountered when creating a handle to the dbt adapter in Dagster.",
-                exc_info=True,
-            )
 
         cleanup_event_logger()
 
@@ -627,6 +621,9 @@ class DbtCliResource(ConfigurableResource):
             # See https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles#advanced-customizing-a-profile-directory
             # for more information.
             **({"DBT_PROFILES_DIR": self.profiles_dir} if self.profiles_dir else {}),
+            # The DBT_PROJECT_DIR environment variable is set to the path containing the dbt project
+            # See https://docs.getdbt.com/reference/dbt_project.yml for more information.
+            **({"DBT_PROJECT_DIR": self.project_dir} if self.project_dir else {}),
         }
 
         selection_args: List[str] = []
@@ -680,8 +677,10 @@ class DbtCliResource(ConfigurableResource):
                 adapter = self._initialize_adapter(cli_vars)
 
             except:
-                # defer exceptions until they can be raised in the runtime context of the invocation
-                pass
+                logger.warning(
+                    "An error was encountered when creating a handle to the dbt adapter in Dagster.",
+                    exc_info=True,
+                )
 
             return DbtCliInvocation.run(
                 args=full_dbt_args,

@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping, Optional, Sequence
+from typing import Any, Iterable, Mapping, Optional, Sequence, Set
 
 from dagster import AssetKey, AutoMaterializePolicy, AutomationCondition
 from dagster._annotations import public
+from dlt.common.destination import Destination
 from dlt.extract.resource import DltResource
 
 
@@ -149,3 +150,18 @@ class DagsterDltTranslator:
                 dlt resource.
         """
         return {}
+
+    @public
+    def get_kinds(self, resource: DltResource, destination: Destination) -> Set[str]:
+        """A method that takes in a dlt resource and returns the kinds which should be
+        attached. Defaults to the destination type and "dlt".
+
+        This method can be overriden to provide custom kinds for a dlt resource.
+
+        Args:
+            resource (DltResource): dlt resource
+
+        Returns:
+            Set[str]: The kinds of the asset.
+        """
+        return {"dlt", destination.destination_name}

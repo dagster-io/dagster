@@ -1,7 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Meta} from '@storybook/react';
 
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import RunsRoot from '../RunsRoot';
 import {RunsRootMock} from '../__fixtures__/RunsRoot.fixtures';
 

@@ -143,3 +143,9 @@ export type FutureTicksQuery = {
         }>;
       };
 };
+
+export const OngoingRunTimelineQueryVersion = '055420e85ba799b294bab52c01d3f4a4470580606a40483031c35777d88d527f';
+
+export const CompletedRunTimelineQueryVersion = 'a551b5ebeb919ea7ea4ca74385d3711d6a7e4f0e4042c04ab43bf9b939f4975c';
+
+export const FutureTicksQueryVersion = '9b947053273ecaa20ef19df02f0aa8e6f33b8a1628175987670e3c73a350e640';

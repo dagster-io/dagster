@@ -14,7 +14,9 @@ from dagster import (
     io_manager,
 )
 from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.definitions.tags import has_kind
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.instance_for_test import environ
 from dagster_fivetran import FivetranResource
@@ -28,6 +30,7 @@ from dagster_fivetran_tests.utils import (
     DEFAULT_CONNECTOR_ID,
     DEFAULT_CONNECTOR_ID_2,
     get_complex_sample_connector_schema_config,
+    get_sample_columns_response,
     get_sample_connector_response,
     get_sample_connectors_response,
     get_sample_connectors_response_multiple,
@@ -39,7 +42,9 @@ from dagster_fivetran_tests.utils import (
 
 
 @responses.activate
-@pytest.mark.parametrize("connector_to_group_fn", [None, lambda x: f"{x[0]}_group"])
+@pytest.mark.parametrize(
+    "connector_to_group_fn", [None, lambda x: f"{x[0]}_group"], ids=("default", "custom")
+)
 @pytest.mark.parametrize("filter_connector", [True, False])
 @pytest.mark.parametrize(
     "connector_to_asset_key_fn",
@@ -47,6 +52,7 @@ from dagster_fivetran_tests.utils import (
         None,
         lambda conn, name: AssetKey([*conn.name.split("."), *name.split(".")]),
     ],
+    ids=("default", "custom"),
 )
 @pytest.mark.parametrize("multiple_connectors", [True, False])
 @pytest.mark.parametrize("destination_ids", [None, [], ["some_group"]])
@@ -79,68 +85,67 @@ def test_load_from_instance(
         b64_encoded_auth_str = base64.b64encode(b"some_key:some_secret").decode("utf-8")
         expected_auth_header = {"Authorization": f"Basic {b64_encoded_auth_str}"}
 
-        with responses.RequestsMock() as rsps:
-            rsps.add(
-                method=rsps.GET,
-                url=ft_resource.api_base_url + "groups",
-                json=get_sample_groups_response(),
-                status=200,
-                match=[matchers.header_matcher(expected_auth_header)],
-            )
-            rsps.add(
-                method=rsps.GET,
-                url=ft_resource.api_base_url + "destinations/some_group",
-                json=(get_sample_destination_details_response()),
-                status=200,
-                match=[matchers.header_matcher(expected_auth_header)],
-            )
-            rsps.add(
-                method=rsps.GET,
-                url=ft_resource.api_base_url + "groups/some_group/connectors",
-                json=(
-                    get_sample_connectors_response_multiple()
-                    if multiple_connectors
-                    else get_sample_connectors_response()
-                ),
-                status=200,
-                match=[matchers.header_matcher(expected_auth_header)],
-            )
-            rsps.add(
-                rsps.GET,
-                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas",
-                json=get_complex_sample_connector_schema_config(),
-            )
-            if multiple_connectors:
-                rsps.add(
-                    rsps.GET,
-                    f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID_2}/schemas",
-                    json=get_complex_sample_connector_schema_config("_xyz1", "_abc"),
-                    match=[matchers.header_matcher(expected_auth_header)],
-                )
+        responses.add(
+            method=responses.GET,
+            url=ft_resource.api_base_url + "groups",
+            json=get_sample_groups_response(),
+            status=200,
+            match=[matchers.header_matcher(expected_auth_header)],
+        )
+        responses.add(
+            method=responses.GET,
+            url=ft_resource.api_base_url + "destinations/some_group",
+            json=(get_sample_destination_details_response()),
+            status=200,
+            match=[matchers.header_matcher(expected_auth_header)],
+        )
+        responses.add(
+            method=responses.GET,
+            url=ft_resource.api_base_url + "groups/some_group/connectors",
+            json=(
+                get_sample_connectors_response_multiple()
+                if multiple_connectors
+                else get_sample_connectors_response()
+            ),
+            status=200,
+            match=[matchers.header_matcher(expected_auth_header)],
+        )
 
-            if connector_to_group_fn:
-                ft_cacheable_assets = load_assets_from_fivetran_instance(
-                    ft_resource,
-                    connector_to_group_fn=connector_to_group_fn,
-                    connector_filter=(lambda _: False) if filter_connector else None,
-                    connector_to_asset_key_fn=connector_to_asset_key_fn,
-                    connector_to_io_manager_key_fn=(lambda _: "test_io_manager"),
-                    poll_interval=10,
-                    poll_timeout=600,
-                )
-            else:
-                ft_cacheable_assets = load_assets_from_fivetran_instance(
-                    ft_resource,
-                    connector_filter=(lambda _: False) if filter_connector else None,
-                    connector_to_asset_key_fn=connector_to_asset_key_fn,
-                    io_manager_key="test_io_manager",
-                    poll_interval=10,
-                    poll_timeout=600,
-                )
-            ft_assets = ft_cacheable_assets.build_definitions(
-                ft_cacheable_assets.compute_cacheable_data()
+        responses.add(
+            responses.GET,
+            f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas",
+            json=get_complex_sample_connector_schema_config(),
+        )
+        if multiple_connectors:
+            responses.add(
+                responses.GET,
+                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID_2}/schemas",
+                json=get_complex_sample_connector_schema_config("_xyz1", "_abc"),
             )
-            ft_assets = with_resources(ft_assets, {"test_io_manager": test_io_manager})
+
+        if connector_to_group_fn:
+            ft_cacheable_assets = load_assets_from_fivetran_instance(
+                ft_resource,
+                connector_to_group_fn=connector_to_group_fn,
+                connector_filter=(lambda _: False) if filter_connector else None,
+                connector_to_asset_key_fn=connector_to_asset_key_fn,
+                connector_to_io_manager_key_fn=(lambda _: "test_io_manager"),
+                poll_interval=10,
+                poll_timeout=600,
+            )
+        else:
+            ft_cacheable_assets = load_assets_from_fivetran_instance(
+                ft_resource,
+                connector_filter=(lambda _: False) if filter_connector else None,
+                connector_to_asset_key_fn=connector_to_asset_key_fn,
+                io_manager_key="test_io_manager",
+                poll_interval=10,
+                poll_timeout=600,
+            )
+        ft_assets = ft_cacheable_assets.build_definitions(
+            ft_cacheable_assets.compute_cacheable_data()
+        )
+        ft_assets = with_resources(ft_assets, {"test_io_manager": test_io_manager})
         if filter_connector:
             assert len(ft_assets) == 0
             return
@@ -190,32 +195,28 @@ def test_load_from_instance(
 
         all_assets = [downstream_asset] + ft_assets  # type: ignore
 
-        if destination_ids:
-            # if destination_ids is truthy then we should skip the API call to get groups
-            assert not any(
-                map(lambda call: call.url == ft_resource.api_base_url + "groups", rsps.calls)
-            )
-
         # Check schema metadata is added correctly to asset def
         assets_def = ft_assets[0]
+
         assert any(
             metadata.get("dagster/column_schema")
             == (
                 TableSchema(
                     columns=[
-                        TableColumn(name="column_1", type="any"),
-                        TableColumn(name="column_2", type="any"),
-                        TableColumn(name="column_3", type="any"),
+                        TableColumn(name="column_1", type=""),
+                        TableColumn(name="column_2", type=""),
+                        TableColumn(name="column_3", type=""),
                     ]
                 )
             )
             for key, metadata in assets_def.metadata_by_key.items()
-        )
+        ), str(assets_def.metadata_by_key)
+
         for key, metadata in assets_def.metadata_by_key.items():
             assert metadata.get("dagster/relation_identifier") == (
                 "example_database." + ".".join(key.path[-2:])
             )
-            assert assets_def.tags_by_key[key]["dagster/storage_kind"] == "snowflake"
+            assert has_kind(assets_def.tags_by_key[key], "snowflake")
 
         assert ft_assets[0].keys == tables
         assert all(
@@ -234,44 +235,75 @@ def test_load_from_instance(
         # Kick off a run to materialize all assets
         final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
 
-        with responses.RequestsMock() as rsps:
-            api_prefixes = [(f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}", tuple())]
-            if multiple_connectors:
-                api_prefixes.append(
-                    (f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID_2}", ("_xyz1", "_abc"))
-                )
-            # for api_prefix in api_prefixes:
-            for api_prefix, schema_args in api_prefixes:
-                rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
-                rsps.add(rsps.POST, f"{api_prefix}/force", json=get_sample_sync_response())
-
-                # connector schema
-                rsps.add(
-                    rsps.GET,
-                    f"{api_prefix}/schemas",
-                    # json=get_complex_sample_connector_schema_config(),
-                    json=get_complex_sample_connector_schema_config(*schema_args),
-                )
-                # initial state
-                rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
-                # n polls before updating
-                for _ in range(2):
-                    rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
-                # final state will be updated
-                rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
-
-            result = materialize(all_assets)
-            asset_materializations = [
-                event
-                for event in result.events_for_node("fivetran_sync_some_connector")
-                if event.event_type_value == "ASSET_MATERIALIZATION"
-            ]
-            assert len(asset_materializations) == 3
-            asset_keys = set(
-                mat.event_specific_data.materialization.asset_key  # type: ignore
-                for mat in asset_materializations
+        api_prefixes = [(f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}", tuple())]
+        if multiple_connectors:
+            api_prefixes.append(
+                (f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID_2}", ("_xyz1", "_abc"))
             )
-            assert asset_keys == tables
 
-            # Validate IO manager is called to retrieve the xyz asset which our downstream asset depends on
-            assert load_calls == [xyz_asset_key]
+        for api_prefix, schema_args in api_prefixes:
+            responses.add(responses.PATCH, api_prefix, json=get_sample_update_response())
+            responses.add(responses.POST, f"{api_prefix}/force", json=get_sample_sync_response())
+
+            # connector schema
+            responses.add(
+                responses.GET,
+                f"{api_prefix}/schemas",
+                # json=get_complex_sample_connector_schema_config(),
+                json=get_complex_sample_connector_schema_config(*schema_args),
+            )
+            # initial state
+            responses.add(responses.GET, api_prefix, json=get_sample_connector_response())
+            # n polls before updating
+            for _ in range(2):
+                responses.add(responses.GET, api_prefix, json=get_sample_connector_response())
+            # final state will be updated
+            responses.add(
+                responses.GET, api_prefix, json=get_sample_connector_response(data=final_data)
+            )
+
+            for schema, table in [
+                ("schema_1", "table_1"),
+                ("schema_1", "table_2"),
+                ("schema_2", "table_1"),
+            ]:
+                responses.add(
+                    responses.GET,
+                    f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas/{schema}/tables/{table}/columns",
+                    json=get_sample_columns_response(),
+                )
+                if multiple_connectors:
+                    responses.add(
+                        responses.GET,
+                        f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID_2}/schemas/{schema}/tables/{table}/columns",
+                        json=get_sample_columns_response(),
+                    )
+        result = materialize(all_assets)
+        asset_materializations = [
+            event
+            for event in result.events_for_node("fivetran_sync_some_connector")
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 3
+
+        # Check that we correctly pull runtime schema metadata from the API
+        for mat in asset_materializations:
+            schema = mat.materialization.metadata.get("dagster/column_schema")
+            assert schema == MetadataValue.table_schema(
+                TableSchema(
+                    columns=[
+                        TableColumn(name="column_1", type=""),
+                        TableColumn(name="column_2_renamed", type=""),
+                        TableColumn(name="column_3", type=""),
+                    ]
+                )
+            ), f"{mat.asset_key} {schema}"
+
+        asset_keys = set(
+            mat.event_specific_data.materialization.asset_key  # type: ignore
+            for mat in asset_materializations
+        )
+        assert asset_keys == tables
+
+        # Validate IO manager is called to retrieve the xyz asset which our downstream asset depends on
+        assert load_calls == [xyz_asset_key]

@@ -368,7 +368,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
                 #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
         """
-        return self._step_execution_context.asset_partition_key_range
+        return self._step_execution_context.partition_key_range
 
     @public
     @property

@@ -18,7 +18,7 @@ interface Props<TData> {
 export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
   const {refreshState, tab} = props;
 
-  const {flagSettingsPage} = useFeatureFlags();
+  const {flagLegacyNav, flagRunsFeed} = useFeatureFlags();
 
   const automaterialize = useAutomaterializeDaemonStatus();
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
@@ -32,11 +32,11 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
           <TabLink id="asset-health" title="Asset health" to="/overview/asset-health" />
         )}
         {/* These are flagged individually because the links must be children of `Tabs`: */}
-        {flagSettingsPage ? null : <TabLink id="jobs" title="Jobs" to="/overview/jobs" />}
-        {flagSettingsPage ? null : (
+        {flagLegacyNav ? <TabLink id="jobs" title="Jobs" to="/overview/jobs" /> : null}
+        {flagLegacyNav ? (
           <TabLink id="schedules" title="Schedules" to="/overview/schedules" />
-        )}
-        {flagSettingsPage ? null : <TabLink id="sensors" title="Sensors" to="/overview/sensors" />}
+        ) : null}
+        {flagLegacyNav ? <TabLink id="sensors" title="Sensors" to="/overview/sensors" /> : null}
         {automaterializeSensorsFlagState === 'has-global-amp' ? (
           <TabLink
             id="amp"
@@ -64,10 +64,12 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
           />
         ) : null}
         <TabLink id="resources" title="Resources" to="/overview/resources" />
-        <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
+        {flagRunsFeed ? null : (
+          <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
+        )}
       </Tabs>
       {refreshState ? (
-        <Box padding={{bottom: 8}}>
+        <Box style={{alignSelf: 'center'}}>
           <QueryRefreshCountdown refreshState={refreshState} />
         </Box>
       ) : null}

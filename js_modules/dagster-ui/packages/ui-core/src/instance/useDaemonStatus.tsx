@@ -2,11 +2,11 @@ import {useMemo} from 'react';
 
 import {StatusAndMessage} from './DeploymentStatusType';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
-import {InstanceWarningQuery, InstanceWarningQueryVariables} from './types/useDaemonStatus.types';
 import {gql, useQuery} from '../apollo-client';
+import {InstanceWarningQuery, InstanceWarningQueryVariables} from './types/useDaemonStatus.types';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {InstigationStatus} from '../graphql/types';
-import {useRepositoryOptions} from '../workspace/WorkspaceContext';
+import {useRepositoryOptions} from '../workspace/WorkspaceContext/util';
 
 export const useDaemonStatus = (skip = false): StatusAndMessage | null => {
   const {options} = useRepositoryOptions();

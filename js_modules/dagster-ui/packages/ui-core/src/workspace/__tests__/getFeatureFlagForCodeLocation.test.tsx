@@ -1,6 +1,6 @@
 import {buildFeatureFlag, buildWorkspaceLocationEntry} from '../../graphql/types';
-import {getFeatureFlagForCodeLocation} from '../WorkspaceContext';
-import {WorkspaceLocationNodeFragment} from '../types/WorkspaceQueries.types';
+import {WorkspaceLocationNodeFragment} from '../WorkspaceContext/types/WorkspaceQueries.types';
+import {getFeatureFlagForCodeLocation} from '../WorkspaceContext/util';
 
 describe('getFeatureFlagForCodeLocation', () => {
   const locationEntries: WorkspaceLocationNodeFragment[] = [

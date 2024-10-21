@@ -3,7 +3,7 @@ import {Box} from '@dagster-io/ui-components';
 
 import {createAppCache} from '../../app/AppCache';
 import {StorybookProvider} from '../../testing/StorybookProvider';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {AssetEventDetail, AssetEventDetailEmpty} from '../AssetEventDetail';
 import {
   BasicObservationEvent,

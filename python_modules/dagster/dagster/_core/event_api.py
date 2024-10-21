@@ -134,6 +134,10 @@ class EventLogRecord(NamedTuple):
         return self.event_log_entry.asset_observation
 
     @property
+    def asset_event(self) -> Optional[Union[AssetMaterialization, AssetObservation]]:
+        return self.asset_materialization or self.asset_observation
+
+    @property
     def event_type(self) -> DagsterEventType:
         return check.not_none(
             self.event_log_entry.dagster_event,

@@ -70,7 +70,7 @@ def test_wait_for_pod(cluster_provider, namespace):
         )
 
         with pytest.raises(
-            DagsterK8sError, match="Timed out while waiting for pod to become ready"
+            DagsterK8sError, match="Timed out while waiting for pod to get to status READY"
         ):
             api_client.core_api.create_namespaced_pod(
                 body=construct_pod_manifest("sayhi3", 'sleep 5; echo "hello world"'),

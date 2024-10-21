@@ -63,15 +63,15 @@ def poll_for_pid(instance, run_id, timeout=20):
 def test_terminate_kills_subproc():
     with instance_for_test() as instance:
         with get_managed_grpc_server_workspace(instance) as workspace:
-            external_job = (
+            remote_job = (
                 workspace.get_code_location("test")
                 .get_repository("sleepy_repo")
-                .get_full_external_job("sleepy_job")
+                .get_full_job("sleepy_job")
             )
             dagster_run = instance.create_run_for_job(
                 job_def=sleepy_job,
-                external_job_origin=external_job.get_external_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
             )
 
             run_id = dagster_run.run_id

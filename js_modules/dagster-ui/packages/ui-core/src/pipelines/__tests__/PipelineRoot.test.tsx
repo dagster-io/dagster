@@ -5,7 +5,6 @@ import {RecoilRoot} from 'recoil';
 import {TestPermissionsProvider} from '../../testing/TestPermissions';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../../workspace/repoAddressAsString';
-import {JobFeatureProvider} from '../JobFeatureContext';
 import {PipelineRoot} from '../PipelineRoot';
 
 jest.mock('../../launchpad/LaunchpadAllowedRoot', () => ({
@@ -53,11 +52,9 @@ describe('PipelineRoot', () => {
   it('renders overview by default', async () => {
     render(
       <RecoilRoot>
-        <JobFeatureProvider>
-          <MemoryRouter initialEntries={[path]}>
-            <PipelineRoot repoAddress={repoAddress} />
-          </MemoryRouter>
-        </JobFeatureProvider>
+        <MemoryRouter initialEntries={[path]}>
+          <PipelineRoot repoAddress={repoAddress} />
+        </MemoryRouter>
       </RecoilRoot>,
     );
 
@@ -74,13 +71,11 @@ describe('PipelineRoot', () => {
 
     render(
       <RecoilRoot>
-        <JobFeatureProvider>
-          <TestPermissionsProvider locationOverrides={locationPermissions}>
-            <MemoryRouter initialEntries={[`${path}/playground`]}>
-              <PipelineRoot repoAddress={repoAddress} />
-            </MemoryRouter>
-          </TestPermissionsProvider>
-        </JobFeatureProvider>
+        <TestPermissionsProvider locationOverrides={locationPermissions}>
+          <MemoryRouter initialEntries={[`${path}/playground`]}>
+            <PipelineRoot repoAddress={repoAddress} />
+          </MemoryRouter>
+        </TestPermissionsProvider>
       </RecoilRoot>,
     );
 
@@ -97,13 +92,11 @@ describe('PipelineRoot', () => {
 
     render(
       <RecoilRoot>
-        <JobFeatureProvider>
-          <TestPermissionsProvider locationOverrides={locationPermissions}>
-            <MemoryRouter initialEntries={[`${path}/playground`]}>
-              <PipelineRoot repoAddress={repoAddress} />
-            </MemoryRouter>
-          </TestPermissionsProvider>
-        </JobFeatureProvider>
+        <TestPermissionsProvider locationOverrides={locationPermissions}>
+          <MemoryRouter initialEntries={[`${path}/playground`]}>
+            <PipelineRoot repoAddress={repoAddress} />
+          </MemoryRouter>
+        </TestPermissionsProvider>
       </RecoilRoot>,
     );
 

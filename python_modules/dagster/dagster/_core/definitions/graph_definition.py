@@ -54,7 +54,6 @@ from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.output import OutputDefinition, OutputMapping
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ResourceRequirement
-from dagster._core.definitions.utils import NormalizedTags
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._core.types.dagster_type import (
@@ -219,7 +218,7 @@ class GraphDefinition(NodeDefinition):
         input_mappings: Optional[Sequence[InputMapping]] = None,
         output_mappings: Optional[Sequence[OutputMapping]] = None,
         config: Optional[ConfigMapping] = None,
-        tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         node_input_source_assets: Optional[Mapping[str, Mapping[str, "SourceAsset"]]] = None,
         input_assets: Optional[
             Mapping[str, Mapping[str, Union["AssetsDefinition", "SourceAsset"]]]
@@ -613,7 +612,7 @@ class GraphDefinition(NodeDefinition):
         config: Optional[
             Union["RunConfig", ConfigMapping, Mapping[str, object], "PartitionedConfig"]
         ] = None,
-        tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
@@ -623,6 +622,7 @@ class GraphDefinition(NodeDefinition):
         partitions_def: Optional["PartitionsDefinition"] = None,
         asset_layer: Optional["AssetLayer"] = None,
         input_values: Optional[Mapping[str, object]] = None,
+        run_tags: Optional[Mapping[str, object]] = None,
         _asset_selection_data: Optional[AssetSelectionData] = None,
     ) -> "JobDefinition":
         """Make this graph in to an executable Job by providing remaining components required for execution.
@@ -652,11 +652,15 @@ class GraphDefinition(NodeDefinition):
                 values that can parameterize the job, as well as a function for mapping those
                 values to the base config. The values provided will be viewable and editable in the
                 Dagster UI, so be careful with secrets.
-            tags (Optional[Mapping[str, Any]]):
-                Arbitrary information that will be attached to the execution of the Job.
-                Values that are not strings will be json encoded and must meet the criteria that
-                `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
-                values provided at invocation time.
+            tags (Optional[Mapping[str, object]]): A set of key-value tags that annotate the job and can
+                be used for searching and filtering in the UI. Values that are not already strings will
+                be serialized as JSON. If `run_tags` is not set, then the content of `tags` will also be
+                automatically appended to the tags of any runs of this job.
+            run_tags (Optional[Mapping[str, object]]):
+                A set of key-value tags that will be automatically attached to runs launched by this
+                job. Values that are not already strings will be serialized as JSON. These tag values
+                may be overwritten by tag values provided at invocation time. If `run_tags` is set, then
+                `tags` are not automatically appended to the tags of any runs of this job.
             metadata (Optional[Mapping[str, RawMetadataValue]]):
                 Arbitrary information that will be attached to the JobDefinition and be viewable in the Dagster UI.
                 Keys must be strings, and values must be python primitive types or one of the provided
@@ -684,7 +688,6 @@ class GraphDefinition(NodeDefinition):
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
         wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
-
         return JobDefinition.dagster_internal_init(
             name=name,
             description=description or self.description,
@@ -695,6 +698,7 @@ class GraphDefinition(NodeDefinition):
             config=config,
             partitions_def=partitions_def,
             tags=tags,
+            run_tags=run_tags,
             metadata=metadata,
             hook_defs=hooks,
             op_retry_policy=op_retry_policy,

@@ -44,13 +44,14 @@ from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import OutputDefinition, OutputMapping
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.utils import NormalizedTags, check_valid_name, normalize_tags
+from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
 from dagster._utils import is_named_tuple_instance
+from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
@@ -581,7 +582,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
 
     @public
     def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation[T_NodeDefinition]":
-        tags = normalize_tags(tags).tags
+        tags = normalize_tags(tags)
         return PendingNodeInvocation(
             node_def=self.node_def,
             given_alias=self.given_alias,
@@ -622,7 +623,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
         description: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
-        tags: Union[NormalizedTags, Optional[Mapping[str, Any]]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
@@ -648,7 +649,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
             description=description,
             resource_defs=resource_defs,
             config=config,
-            tags=NormalizedTags(self.tags or {}).with_normalized_tags(tags),
+            tags=normalize_tags({**(self.tags or {}), **(tags or {})}),
             logger_defs=logger_defs,
             executor_def=executor_def,
             hooks=job_hooks,

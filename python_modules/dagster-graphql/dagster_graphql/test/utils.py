@@ -7,7 +7,7 @@ from typing import Any, Dict, Iterator, Mapping, Optional, Sequence
 import dagster._check as check
 import graphene
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
@@ -157,7 +157,7 @@ def define_out_of_process_workspace(
     )
 
 
-def infer_repository(graphql_context: WorkspaceRequestContext) -> ExternalRepository:
+def infer_repository(graphql_context: WorkspaceRequestContext) -> RemoteRepository:
     if len(graphql_context.code_locations) == 1:
         # This is to account for having a single in process repository
         code_location = graphql_context.code_locations[0]

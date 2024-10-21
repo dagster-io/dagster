@@ -27,3 +27,5 @@ export type SingleConcurrencyKeyQuery = {
     };
   };
 };
+
+export const SingleConcurrencyKeyQueryVersion = 'fd72bd62ac87f3c72ec589610c7c52398643740f1f2904b04e1e293b08daf763';

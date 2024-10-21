@@ -47,7 +47,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
        The `partition_by` value will be used in `delta_write_options` of `pl.DataFrame.write_delta` and `pyarrow_options` of `pl.scan_detla`).
        When using a one-dimensional `PartitionsDefinition`, it should be a single string like "column`. When using a `MultiPartitionsDefinition`,
        it should be a dict with dimension to column names mapping, like `{"dimension": "column"}`.
-     - Supports writing/reading custom metadata to/from `.dagster_polars_metadata/<version>.json` file in the DeltaLake table directory.
+     - **Deprecated, will be removed in 0.25.0**: writing/reading custom metadata to/from `.dagster_polars_metadata/<version>.json` file in the DeltaLake table directory.
 
     Install `dagster-polars[delta]` to use this IOManager.
 

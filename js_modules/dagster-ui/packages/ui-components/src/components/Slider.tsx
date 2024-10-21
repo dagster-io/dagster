@@ -30,29 +30,29 @@ export const MultiSlider = ({fillColor = Colors.accentGray(), ...rest}: MultiSli
 MultiSlider.Handle = BlueprintMultiSlider.Handle;
 
 export const SliderStyles = css<{$fillColor: string}>`
-  .bp4-slider-track {
+  .bp5-slider-track {
     height: 8px;
-    .bp4-slider-progress {
+    .bp5-slider-progress {
       background-color: ${(p) => p.$fillColor};
       opacity: 0.4;
       height: 8px;
     }
-    .bp4-slider-progress.bp4-intent-primary {
+    .bp5-slider-progress.bp5-intent-primary {
       background-color: ${(p) => p.$fillColor};
       opacity: 1;
       height: 8px;
     }
   }
-  &.bp4-vertical {
+  &.bp5-vertical {
     width: 20px;
     min-width: 20px;
   }
-  &.bp4-vertical .bp4-slider-track,
-  &.bp4-vertical .bp4-slider-track .bp4-slider-progress {
+  &.bp5-vertical .bp5-slider-track,
+  &.bp5-vertical .bp5-slider-track .bp5-slider-progress {
     height: initial;
     width: 8px;
   }
-  .bp4-slider-handle {
+  .bp5-slider-handle {
     width: 18px;
     height: 18px;
     border-radius: 50%;
@@ -64,7 +64,7 @@ export const SliderStyles = css<{$fillColor: string}>`
       box-shadow: ${Colors.shadowDefault()} 0px 2px 12px 0px;
     }
 
-    .bp4-slider-label {
+    .bp5-slider-label {
       background: ${Colors.accentBlue()};
       box-shadow: 0 1px 4px ${Colors.shadowDefault()};
       padding: 4px 8px;

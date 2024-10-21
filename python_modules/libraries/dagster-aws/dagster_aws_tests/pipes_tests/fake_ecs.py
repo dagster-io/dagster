@@ -24,6 +24,8 @@ class SimulatedTaskRun:
 
 
 class LocalECSMockClient:
+    CONTAINER_NAME = "test-container"
+
     def __init__(self, ecs_client: boto3.client, cloudwatch_client: boto3.client):  # pyright: ignore (reportGeneralTypeIssues)
         self.ecs_client = ecs_client
         self.cloudwatch_client = cloudwatch_client
@@ -59,6 +61,16 @@ class LocalECSMockClient:
 
     def run_task(self, **kwargs):
         response = self.ecs_client.run_task(**kwargs)
+
+        # inject container name in case it's missing
+        response["tasks"][0]["containers"] = response["tasks"][0].get("containers") or []
+
+        if len(response["tasks"][0]["containers"]) == 0:
+            response["tasks"][0]["containers"].append({})
+
+        response["tasks"][0]["containers"][0]["name"] = (
+            response["tasks"][0]["containers"][0].get("name") or self.CONTAINER_NAME
+        )
 
         task_arn = response["tasks"][0]["taskArn"]
         task_definition_arn = response["tasks"][0]["taskDefinitionArn"]
@@ -109,6 +121,8 @@ class LocalECSMockClient:
             created_at=created_at,
             runtime_id=str(uuid.uuid4()),
         )
+
+        self._create_cloudwatch_streams(task_arn)
 
         return response
 
@@ -179,16 +193,11 @@ class LocalECSMockClient:
         else:
             raise RuntimeError(f"Task {task} was not found")
 
-    def _upload_logs_to_cloudwatch(self, task: str):
+    def _create_cloudwatch_streams(self, task: str):
         simulated_task = self._task_runs[task]
-
-        if simulated_task.logs_uploaded:
-            return
 
         log_group = simulated_task.log_group
         log_stream = simulated_task.log_stream
-
-        stdout, stderr = self._task_runs[task].popen.communicate()
 
         try:
             self.cloudwatch_client.create_log_group(
@@ -205,6 +214,17 @@ class LocalECSMockClient:
         except self.cloudwatch_client.exceptions.ResourceAlreadyExistsException:
             pass
 
+    def _upload_logs_to_cloudwatch(self, task: str):
+        simulated_task = self._task_runs[task]
+
+        if simulated_task.logs_uploaded:
+            return
+
+        log_group = simulated_task.log_group
+        log_stream = simulated_task.log_stream
+
+        stdout, stderr = self._task_runs[task].popen.communicate()
+
         for out in [stderr, stdout]:
             for line in out.decode().split("\n"):
                 if line:
@@ -214,7 +234,7 @@ class LocalECSMockClient:
                         logEvents=[{"timestamp": int(time.time() * 1000), "message": str(line)}],
                     )
 
-        time.sleep(0.01)
+        time.sleep(0.1)
 
         simulated_task.logs_uploaded = True
 

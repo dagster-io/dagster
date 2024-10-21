@@ -63,3 +63,5 @@ export type ScheduleDryRunMutation = {
       }
     | {__typename: 'ScheduleNotFoundError'; scheduleName: string};
 };
+
+export const ScheduleDryRunMutationVersion = 'e3302c9049fc8be5d14fb6bd6d56198083c086c239018f3d564ae9987c28f11b';

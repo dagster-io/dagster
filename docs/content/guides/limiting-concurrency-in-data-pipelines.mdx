@@ -396,6 +396,8 @@ height={1638}
   storages.
 </Note>
 
+#### For specific ops/assets
+
 Limits can be specified on the Dagster instance using the special op tag `dagster/concurrency_key`. If this instance limit would be exceeded by launching an op/asset, then the op/asset will be queued.
 
 For example, to globally limit the number of running ops touching Redshift to two, the op/asset must be first tagged with the global concurrency key:
@@ -420,6 +422,8 @@ To specify limits on the number of ops/assets tagged with a particular concurren
 - To specify a global concurrency limit using the Dagster UI, navigate to the **Concurrency limits** tab on the Deployment page.
 
 The concurrency key should match the name that the op/asset is tagged with. For example, if the op/asset is tagged with `dagster/concurrency_key: redshift`, then the concurrency key should be `redshift`.
+
+#### For all ops/assets
 
 A default concurrency limit can be configured for the instance, for any concurrency keys that do not have an explicit limit set:
 

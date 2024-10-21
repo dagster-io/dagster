@@ -23,7 +23,6 @@ import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
 import {RunConfigDialog} from './RunConfigDialog';
 import {doneStatuses, failedStatuses} from './RunStatuses';
-import {DagsterTag} from './RunTag';
 import {RunTags} from './RunTags';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
@@ -31,8 +30,8 @@ import {TerminationDialog} from './TerminationDialog';
 import {
   PipelineEnvironmentQuery,
   PipelineEnvironmentQueryVariables,
+  RunActionsMenuRunFragment,
 } from './types/RunActionsMenu.types';
-import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {gql, useLazyQuery} from '../apollo-client';
@@ -44,17 +43,17 @@ import {ReexecutionStrategy} from '../graphql/types';
 import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {AnchorButton} from '../ui/AnchorButton';
 import {MenuLink} from '../ui/MenuLink';
-import {isThisThingAJob} from '../workspace/WorkspaceContext';
+import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 import {workspacePipelineLinkForRun} from '../workspace/workspacePath';
 
 interface Props {
-  run: RunTableRunFragment;
-  additionalActionsForRun?: (run: RunTableRunFragment) => React.ReactNode[];
+  run: RunActionsMenuRunFragment;
   onAddTag?: (token: RunFilterToken) => void;
+  anchorLabel?: React.ReactNode;
 }
 
-export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRun}: Props) => {
+export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
     'none' | 'terminate' | 'delete' | 'config' | 'tags' | 'metrics'
@@ -92,8 +91,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
   const pipelineRun =
     data?.pipelineRunOrError?.__typename === 'Run' ? data?.pipelineRunOrError : null;
   const runConfigYaml = pipelineRun?.runConfigYaml;
-  const runMetricsEnabled = run.tags.some((t) => t.key === DagsterTag.RunMetrics);
-
+  const runMetricsEnabled = run.hasRunMetricsEnabled;
   const repoMatch = useRepositoryForRunWithParentSnapshot(pipelineRun);
   const jobError = useJobAvailabilityErrorForRun({
     ...run,
@@ -128,7 +126,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
   return (
     <>
       <JoinedButtons>
-        <AnchorButton to={`/runs/${run.id}`}>View run</AnchorButton>
+        <AnchorButton to={`/runs/${run.id}`}>{anchorLabel ?? 'View run'}</AnchorButton>
         <Popover
           content={
             <Menu>
@@ -212,7 +210,6 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
                     onClick={() => setVisibleDialog('terminate')}
                   />
                 )}
-                {additionalActionsForRun?.(run)}
                 <MenuDivider />
               </>
               <MenuExternalLink
@@ -308,12 +305,13 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
 });
 
 interface RunBulkActionsMenuProps {
-  selected: RunTableRunFragment[];
+  selected: RunActionsMenuRunFragment[];
   clearSelection: () => void;
+  notice?: React.ReactNode;
 }
 
 export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) => {
-  const {selected, clearSelection} = props;
+  const {selected, clearSelection, notice} = props;
   const {refetch} = React.useContext(RunsQueryRefetchContext);
 
   const [visibleDialog, setVisibleDialog] = React.useState<
@@ -392,6 +390,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
         disabled={disabled || selected.length === 0}
         content={
           <Menu>
+            {notice}
             {canTerminateAny ? (
               <MenuItem
                 icon="cancel"
@@ -487,6 +486,40 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
 const OPEN_LAUNCHPAD_UNKNOWN =
   'Launchpad is unavailable because the pipeline is not present in the current repository.';
 
+export const RUN_ACTIONS_MENU_RUN_FRAGMENT = gql`
+  fragment RunActionsMenuRunFragment on Run {
+    id
+    assetSelection {
+      ... on AssetKey {
+        path
+      }
+    }
+    assetCheckSelection {
+      name
+      assetKey {
+        path
+      }
+    }
+    tags {
+      key
+      value
+    }
+    hasReExecutePermission
+    hasTerminatePermission
+    hasDeletePermission
+    canTerminate
+    mode
+    status
+    pipelineName
+    pipelineSnapshotId
+    repositoryOrigin {
+      repositoryName
+      repositoryLocationName
+    }
+    hasRunMetricsEnabled
+  }
+`;
+
 // Avoid fetching envYaml and parentPipelineSnapshotId on load in Runs page, they're slow.
 export const PIPELINE_ENVIRONMENT_QUERY = gql`
   query PipelineEnvironmentQuery($runId: ID!) {
@@ -503,6 +536,7 @@ export const PIPELINE_ENVIRONMENT_QUERY = gql`
           repositoryName
           repositoryLocationName
         }
+        hasRunMetricsEnabled
       }
     }
   }

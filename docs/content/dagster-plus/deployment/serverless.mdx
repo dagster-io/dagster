@@ -32,6 +32,7 @@ Serverless is subject to the following limitations:
 - Runs receive 4 vCPU cores, 16 GB of RAM and 128 GB of ephemeral disk
 - Code locations receive 0.25 vCPU cores and 1 GB of RAM
 - All Serverless jobs run in the United States
+- Infrastructure cannot be customized or extended, such as using additional containers
 
 Pro customers may request a quota increase by [contacting Sales](mailto:sales@dagsterlabs.com).
 
@@ -50,6 +51,16 @@ If you are a GitHub user, our GitHub integration is the fastest way to get start
 
 When you create a new Dagster+ organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitHub integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/managing-deployments/branch-deployments) using the Serverless agent.
 
+<Note>
+<strong>If you are importing a Dagster project that's in an existing GitHub repo:</strong>
+
+- The repo will need to allow the [Workflow permission](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository) for `Read and write permissions`. Workflow permissions settings can be found in GitHub's `Settings` > `Actions` > `General` > `Workflow permissions`. In GitHub Enterprise, these permissions [are controlled at the Organization level](https://github.com/orgs/community/discussions/57244).
+
+- An initial commit will need to be able to be merged directly to the repo's `main` branch to automatically add the GitHub Actions workflow files. If [branch protection rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#about-branch-protection-rules) require changes be done through a pull request, it will prevent the automatic setup completing.
+  - You can temporarily disable the branch protection rules and then re-enable them after the automatic setup completes. Alternatively, you can manually set up the GitHub Actions workflows. You can use our ­­[dagster-cloud-serverless-quickstart​​​­ r​​​epo](https://github.com/dagster-io/dagster-cloud-serverless-quickstart) as a template and its [README](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/README.md) as a guide​​.
+
+</Note>
+
 ### With Gitlab
 
 If you are a Gitlab user, our Gitlab integration is the fastest way to get started. It uses a Gitlab app to set up a repo containing skeleton code and CI/CD configuration consistent with Dagster+'s best practices with a single click.
@@ -62,16 +73,28 @@ If you don't want to use our GitHub/Gitlab integrations, we offer a powerful CLI
 
 First, [create a new project](https://docs.dagster.io/getting-started/create-new-project#create-a-new-project) with the Dagster open-source CLI.
 
+The below example uses our [quickstart_etl example project](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl). For more info about the examples, visit the [Dagster GitHub repository](https://github.com/dagster-io/dagster/tree/master/examples).
+
 ```shell
 pip install dagster
 dagster project from-example \
   --name my-dagster-project \
-  --example assets_modern_data_stack
+  --example quickstart_etl
 ```
 
 <Note>
-  Once scaffolded, add <code>dagster-cloud</code> as a dependency in your{" "}
-  <code>setup.py</code> file.
+  If using a different project, ensure that <code>dagster-cloud</code> is included as a dependency in your{" "}
+  <code>setup.py</code> or <code>requirements.txt</code> file.
+
+For example, in `my-dagster-project/setup.py`:
+
+```python
+install_requires=[
+    "dagster",
+    "dagster-cloud",    # add this line
+    ...
+```
+
 </Note>
 
 Next, install the [`dagster-cloud` CLI](/dagster-plus/managing-deployments/dagster-plus-cli) and log in to your org. **Note**: The CLI requires a recent version of Python 3 and Docker.
@@ -83,21 +106,13 @@ dagster-cloud configure
 
 You can also configure the `dagster-cloud` tool noninteractively; see [the CLI docs](/dagster-plus/managing-deployments/dagster-plus-cli#environment-variables-and-cli-options) for more information.
 
-Add `dagster-cloud` as a dependency to `my-dagster-project/setup.py`:
-
-```python
-install_requires=[
-    "dagster",
-    "dagster-cloud",    # add this line
-    "dagster-airbyte",
-```
-
 Finally, deploy your project with Dagster+ Serverless:
 
 ```shell
 dagster-cloud serverless deploy-python-executable ./my-dagster-project \
   --location-name example \
-  --package-name assets_modern_data_stack
+  --package-name quickstart_etl \
+  --python-version 3.12
 ```
 
 **Note:** Windows users should use the `deploy` command instead of `deploy-python-executable`.
@@ -194,7 +209,7 @@ To build and upload the image, use the command line:
    $ dagster-cloud serverless upload-base-image local-image:tag
 
    ...
-   To use the uploaded image run: dagster-cloud deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
+   To use the uploaded image run: dagster-cloud serverless deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
    ```
 
 3. To use a Docker image you have published to Dagster+, use the `--base-image-tag` tag printed out by the above command.
@@ -333,9 +348,9 @@ To avoid this behavior, you can:
 
 ---
 
-## Whitelisting Dagster's IP addresses
+## Whitelisting / Allowlisting Dagster's IP addresses
 
-Serverless code will make requests from one of the following IP addresses. You may need to whitelist them for services your code interacts with.
+Serverless code will make requests from one of the following IP addresses. You may need to whitelist / allowlist them for services your code interacts with.
 
 ```plain
 34.216.9.66

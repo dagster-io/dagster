@@ -49,7 +49,6 @@ def sdf_assets(
         specs=specs,
         name=name,
         required_resource_keys=required_resource_keys,
-        compute_kind="sdf",
         partitions_def=partitions_def,
         can_subset=True,
         op_tags=op_tags,

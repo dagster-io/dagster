@@ -54,3 +54,5 @@ export type OverviewJobsQuery = {
         }>;
       };
 };
+
+export const OverviewJobsQueryVersion = 'd3bc0af22121e31483422a5681cf80671a6cdae56da120acd353c042c07fc45b';

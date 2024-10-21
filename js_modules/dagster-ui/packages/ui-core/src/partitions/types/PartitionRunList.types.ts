@@ -31,6 +31,7 @@ export type PartitionRunListQuery = {
           hasReExecutePermission: boolean;
           hasTerminatePermission: boolean;
           hasDeletePermission: boolean;
+          hasRunMetricsEnabled: boolean;
           mode: string;
           rootRunId: string | null;
           parentRunId: string | null;
@@ -57,3 +58,5 @@ export type PartitionRunListQuery = {
         }>;
       };
 };
+
+export const PartitionRunListQueryVersion = '259838c720999c3fe679ef5c302d5cfb62a970202ee03cdd6cd25ac3dea45046';

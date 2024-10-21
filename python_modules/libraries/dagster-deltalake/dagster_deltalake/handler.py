@@ -27,11 +27,12 @@ from deltalake.schema import (
     Schema,
 )
 from deltalake.table import FilterLiteralType, _filters_to_expression
+from typing_extensions import TypeAlias
 
 from dagster_deltalake.io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
 
 T = TypeVar("T")
-ArrowTypes = Union[pa.Table, pa.RecordBatchReader]
+ArrowTypes: TypeAlias = Union[pa.Table, pa.RecordBatchReader]
 
 
 class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):

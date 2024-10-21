@@ -21,7 +21,7 @@ import {
   buildAssetNode,
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {AssetView} from '../AssetView';
 import {
   AssetViewDefinitionNonSDA,

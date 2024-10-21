@@ -1,0 +1,3 @@
+packages:
+  - local: ../jaffle_shop
+sha1_hash: d3c6b8add4fdc078f8ec5f965c7a976f447e5852

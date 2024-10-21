@@ -1,8 +1,7 @@
 import {Button, Dialog, DialogFooter} from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 
-import {BackfillStepStatusDialogBackfillFragment} from './types/BackfillStepStatusDialog.types';
-import {gql} from '../../apollo-client';
+import {BackfillStepStatusDialogBackfillFragment} from './types/BackfillFragments.types';
 import {PartitionPerOpStatus} from '../../partitions/PartitionStepStatus';
 import {usePartitionStepQuery} from '../../partitions/usePartitionStepQuery';
 import {DagsterTag} from '../../runs/RunTag';
@@ -61,21 +60,6 @@ export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
     </Dialog>
   );
 };
-
-export const BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT = gql`
-  fragment BackfillStepStatusDialogBackfillFragment on PartitionBackfill {
-    id
-    partitionNames
-    partitionSet {
-      name
-      pipelineName
-      repositoryOrigin {
-        repositoryName
-        repositoryLocationName
-      }
-    }
-  }
-`;
 
 interface ContentProps {
   backfill: BackfillStepStatusDialogBackfillFragment;

@@ -1,9 +1,9 @@
 import os
 from datetime import datetime
 from enum import Enum
-from typing import List, NamedTuple, Optional, Set
+from typing import List, Optional, Set
 
-from dagster import _check as check
+from dagster._record import record
 
 
 def get_max_concurrency_limit_value() -> int:
@@ -15,37 +15,14 @@ class ConcurrencySlotStatus(Enum):
     CLAIMED = "CLAIMED"
 
 
-class ConcurrencyClaimStatus(
-    NamedTuple(
-        "_ConcurrencyClaimStatus",
-        [
-            ("concurrency_key", str),
-            ("slot_status", ConcurrencySlotStatus),
-            ("priority", Optional[int]),
-            ("assigned_timestamp", Optional[datetime]),
-            ("enqueued_timestamp", Optional[datetime]),
-            ("sleep_interval", Optional[float]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        concurrency_key: str,
-        slot_status: ConcurrencySlotStatus,
-        priority: Optional[int] = None,
-        assigned_timestamp: Optional[datetime] = None,
-        enqueued_timestamp: Optional[datetime] = None,
-        sleep_interval: Optional[float] = None,
-    ):
-        return super(ConcurrencyClaimStatus, cls).__new__(
-            cls,
-            check.str_param(concurrency_key, "concurrency_key"),
-            check.inst_param(slot_status, "slot_status", ConcurrencySlotStatus),
-            check.opt_int_param(priority, "priority"),
-            check.opt_inst_param(assigned_timestamp, "assigned_timestamp", datetime),
-            check.opt_inst_param(enqueued_timestamp, "enqueued_timestamp", datetime),
-            check.opt_float_param(sleep_interval, "sleep_interval"),
-        )
+@record
+class ConcurrencyClaimStatus:
+    concurrency_key: str
+    slot_status: ConcurrencySlotStatus
+    priority: Optional[int] = None
+    assigned_timestamp: Optional[datetime] = None
+    enqueued_timestamp: Optional[datetime] = None
+    sleep_interval: Optional[float] = None
 
     @property
     def is_claimed(self):
@@ -76,78 +53,27 @@ class ConcurrencyClaimStatus(
         )
 
 
-class PendingStepInfo(
-    NamedTuple(
-        "_PendingStepInfo",
-        [
-            ("run_id", str),
-            ("step_key", str),
-            ("enqueued_timestamp", datetime),
-            ("assigned_timestamp", Optional[datetime]),
-            ("priority", Optional[int]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        run_id: int,
-        step_key: str,
-        enqueued_timestamp: datetime,
-        assigned_timestamp: Optional[datetime],
-        priority: Optional[int],
-    ):
-        return super(PendingStepInfo, cls).__new__(
-            cls,
-            check.str_param(run_id, "run_id"),
-            check.str_param(step_key, "step_key"),
-            check.inst_param(enqueued_timestamp, "enqueued_timestamp", datetime),
-            check.opt_inst_param(assigned_timestamp, "assigned_timestamp", datetime),
-            check.opt_int_param(priority, "priority"),
-        )
+@record
+class PendingStepInfo:
+    run_id: str
+    step_key: str
+    enqueued_timestamp: datetime
+    assigned_timestamp: Optional[datetime]
+    priority: Optional[int]
 
 
-class ClaimedSlotInfo(
-    NamedTuple(
-        "_ClaimedSlotInfo",
-        [
-            ("run_id", str),
-            ("step_key", str),
-        ],
-    )
-):
-    def __new__(cls, run_id: int, step_key: str):
-        return super(ClaimedSlotInfo, cls).__new__(
-            cls,
-            check.str_param(run_id, "run_id"),
-            check.str_param(step_key, "step_key"),
-        )
+@record
+class ClaimedSlotInfo:
+    run_id: str
+    step_key: str
 
 
-class ConcurrencyKeyInfo(
-    NamedTuple(
-        "_ConcurrencyKeyInfo",
-        [
-            ("concurrency_key", str),
-            ("slot_count", int),
-            ("claimed_slots", List[ClaimedSlotInfo]),
-            ("pending_steps", List[PendingStepInfo]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        concurrency_key: str,
-        slot_count: int,
-        claimed_slots: List[ClaimedSlotInfo],
-        pending_steps: List[PendingStepInfo],
-    ):
-        return super(ConcurrencyKeyInfo, cls).__new__(
-            cls,
-            check.str_param(concurrency_key, "concurrency_key"),
-            check.int_param(slot_count, "slot_count"),
-            check.list_param(claimed_slots, "claimed_slots", of_type=ClaimedSlotInfo),
-            check.list_param(pending_steps, "pending_steps", of_type=PendingStepInfo),
-        )
+@record
+class ConcurrencyKeyInfo:
+    concurrency_key: str
+    slot_count: int
+    claimed_slots: List[ClaimedSlotInfo]
+    pending_steps: List[PendingStepInfo]
 
     ###################################################
     # Fields that we need to keep around for backcompat

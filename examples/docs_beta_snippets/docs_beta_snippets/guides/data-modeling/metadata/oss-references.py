@@ -15,6 +15,7 @@ def another_asset(): ...
 assets = dg.with_source_code_references([my_asset, another_asset])
 
 defs = dg.Definitions(
+    # highlight-start
     assets=dg.link_code_references_to_git(
         assets_defs=assets,
         git_url="https://github.com/dagster-io/dagster",
@@ -24,7 +25,8 @@ defs = dg.Definitions(
             file_anchor_path_in_repository="src/repo.py",
         ),
     )
-    # only link to github in production. link locally otherwise
+    # Only link to GitHub in production. link locally otherwise
+    # highlight-end
     if bool(os.getenv("IS_PRODUCTION"))
     else assets
 )

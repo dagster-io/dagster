@@ -205,15 +205,15 @@ def two_tier_job_def_fixture(request):
 def _create_run(
     instance: DagsterInstance, workspace: WorkspaceRequestContext, job_def: JobDefinition
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test")
         .get_repository("concurrency_repo")
-        .get_full_external_job(job_def.name)
+        .get_full_job(job_def.name)
     )
     run = instance.create_run_for_job(
         job_def=job_def,
-        external_job_origin=external_job.get_external_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
     run = instance.get_run_by_id(run.run_id)
     assert run

@@ -1,10 +1,11 @@
+import datetime
+
+import pytest
 from dagster import AutoMaterializePolicy, AutomationCondition, Definitions, asset
+from dagster._check.functions import CheckError
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.remote_representation.external_data import (
-    ExternalRepositoryData,
-    external_repository_data_from_def,
-)
+from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
 
@@ -91,7 +92,7 @@ def test_serialize_definitions_with_asset_condition() -> None:
     assert isinstance(serialized, str)
 
     serialized = serialize_value(
-        external_repository_data_from_def(Definitions(assets=[my_asset]).get_repository_def())
+        RepositorySnap.from_def(Definitions(assets=[my_asset]).get_repository_def())
     )
     assert isinstance(serialized, str)
 
@@ -100,7 +101,7 @@ def test_serialize_definitions_with_user_code_asset_condition() -> None:
     class MyAutomationCondition(AutomationCondition):
         def evaluate(self, context: AutomationContext) -> AutomationResult:
             return AutomationResult(
-                context, context.asset_graph_view.get_asset_slice(asset_key=context.asset_key)
+                context, context.asset_graph_view.get_full_subset(key=context.key)
             )
 
     automation_condition = AutomationCondition.eager() | MyAutomationCondition()
@@ -110,12 +111,12 @@ def test_serialize_definitions_with_user_code_asset_condition() -> None:
         return 0
 
     serialized = serialize_value(
-        external_repository_data_from_def(Definitions(assets=[my_asset]).get_repository_def())
+        RepositorySnap.from_def(Definitions(assets=[my_asset]).get_repository_def())
     )
     assert isinstance(serialized, str)
     deserialized = deserialize_value(serialized)
-    assert isinstance(deserialized, ExternalRepositoryData)
-    external_assets = deserialized.external_asset_graph_data
+    assert isinstance(deserialized, RepositorySnap)
+    external_assets = deserialized.asset_nodes
     assert len(external_assets) == 1
     automation_condition = external_assets[0].automation_condition
     # it does not make its way onto the ExternalAssetNode
@@ -135,5 +136,41 @@ def test_label_automation_condition() -> None:
     not_missing_and_not_in_progress = (not_missing & not_in_progress).with_label("Blah")
     assert not_missing_and_not_in_progress.label == "Blah"
     assert not_missing_and_not_in_progress.get_node_snapshot("").label == "Blah"
-    assert not_missing_and_not_in_progress.children[0].label == "Not missing"
-    assert not_missing_and_not_in_progress.children[1].label == "Not in progress"
+    assert not_missing_and_not_in_progress.children[0].get_label() == "Not missing"
+    assert not_missing_and_not_in_progress.children[1].get_label() == "Not in progress"
+
+
+def test_without_automation_condition() -> None:
+    a = AutomationCondition.in_latest_time_window()
+    b = AutomationCondition.any_deps_match(AutomationCondition.in_progress())
+    c = ~AutomationCondition.any_deps_in_progress()
+
+    orig = a & b & c
+
+    # simple cases
+    assert orig.without(a) == b & c
+    assert orig.without(b) == a & c
+    assert orig.without(c) == a & b
+
+    # ensure works if using different instances of the same operands
+    assert orig.without(AutomationCondition.in_latest_time_window()) == b & c
+    assert orig.without(~AutomationCondition.any_deps_in_progress()) == a & b
+
+    # make sure it errors if an invalid condition is passed
+    with pytest.raises(CheckError, match="Condition not found"):
+        orig.without(AutomationCondition.in_progress())
+
+    with pytest.raises(CheckError, match="Condition not found"):
+        orig.without(
+            AutomationCondition.any_deps_match(
+                AutomationCondition.in_progress() | AutomationCondition.missing()
+            )
+        )
+
+    with pytest.raises(CheckError, match="Condition not found"):
+        orig.without(
+            AutomationCondition.in_latest_time_window(lookback_delta=datetime.timedelta(hours=3))
+        )
+
+    with pytest.raises(CheckError, match="fewer than 2 operands"):
+        orig.without(a).without(b)

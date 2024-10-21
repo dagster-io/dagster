@@ -27,3 +27,4 @@ test_time_partition_freshness_multiple_assets_defs_path = projects_path.joinpath
 )
 test_dagster_dbt_mixed_freshness_path = projects_path.joinpath("test_dagster_dbt_mixed_freshness")
 test_jaffle_with_profile_vars_path = projects_path.joinpath("test_jaffle_with_profile_vars")
+test_dependencies_path = projects_path.joinpath("test_dagster_dbt_dependencies")
