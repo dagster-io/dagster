@@ -27,13 +27,13 @@ setup_local_env:
 run_airflow:
 	airflow standalone
 
-run_dagster_mapped:
+run_dagster_mapped: 
 	dagster dev -m kitchen_sink.dagster_defs.mapped_defs -p 3333
 
-run_dagster_automapped:
+run_dagster_automapped: 
 	dagster dev -m kitchen_sink.dagster_defs.automapped_defs -p 3333
 
-run_observation_defs:
+run_observation_defs: 
 	dagster dev -m kitchen_sink.dagster_defs.observation_defs -p 3333
 
 wipe: ## Wipe out all the files created by the Makefile
