@@ -874,6 +874,32 @@ def test_multi_asset_check(
         assert asset_graph.get_execution_set_asset_and_check_keys(key) == {key}
 
 
+def test_check_deps(asset_graph_from_assets: Callable[..., BaseAssetGraph]) -> None:
+    @asset
+    def A() -> None: ...
+
+    one = AssetCheckSpec(name="one", asset="A", additional_deps=["B", "C"])
+    two = AssetCheckSpec(name="two", asset="B", additional_deps=["C", "D"])
+    three = AssetCheckSpec(name="three", asset="B")
+
+    @multi_asset_check(specs=[one, two, three])
+    def multi_check(): ...
+
+    asset_graph = asset_graph_from_assets([A, multi_check])
+
+    assert asset_graph.get(one.key).parent_entity_keys == {
+        AssetKey("A"),
+        AssetKey("B"),
+        AssetKey("C"),
+    }
+    assert asset_graph.get(two.key).parent_entity_keys == {
+        AssetKey("B"),
+        AssetKey("C"),
+        AssetKey("D"),
+    }
+    assert asset_graph.get(three.key).parent_entity_keys == {AssetKey("B")}
+
+
 def test_cross_code_location_partition_mapping() -> None:
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-01-01-00:00"))
     def a(): ...
