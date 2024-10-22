@@ -2,7 +2,7 @@ from typing import Any, Mapping, Sequence
 
 import requests
 
-from dagster_dlift.gql_queries import VERIFICATION_QUERY
+from dagster_dlift.gql_queries import GET_DBT_MODELS_QUERY, VERIFICATION_QUERY
 
 ENVIRONMENTS_SUBPATH = "environments/"
 
@@ -63,6 +63,17 @@ class DbtCloudInstance:
             for environment in self.make_access_api_request(ENVIRONMENTS_SUBPATH)["data"]
         ]
 
+    def get_environment_id_by_name(self, environment_name: str) -> int:
+        return next(
+            iter(
+                [
+                    environment["id"]
+                    for environment in self.make_access_api_request(ENVIRONMENTS_SUBPATH)["data"]
+                    if environment["name"] == environment_name
+                ]
+            )
+        )
+
     def verify_connections(self) -> None:
         # Verifies connection to both the access and discovery APIs.
         for environment_id in self.list_environment_ids():
@@ -78,3 +89,26 @@ class DbtCloudInstance:
                 raise Exception(
                     f"Failed to verify connection to environment {environment_id}. Response: {response}"
                 )
+
+    def get_dbt_models(self, environment_id: int) -> Sequence[Mapping[str, Any]]:
+        models = []
+        page_size = 100
+        start_cursor = 0
+        while response := self.make_discovery_api_query(
+            GET_DBT_MODELS_QUERY,
+            {"environmentId": environment_id, "first": page_size, "after": start_cursor},
+        ):
+            models.extend(
+                [
+                    model["node"]
+                    for model in response["data"]["environment"]["definition"]["models"]["edges"]
+                ]
+            )
+            if not response["data"]["environment"]["definition"]["models"]["pageInfo"][
+                "hasNextPage"
+            ]:
+                break
+            start_cursor = response["data"]["environment"]["definition"]["models"]["pageInfo"][
+                "endCursor"
+            ]
+        return models
