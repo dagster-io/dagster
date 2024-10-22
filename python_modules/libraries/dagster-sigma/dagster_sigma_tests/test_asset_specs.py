@@ -47,7 +47,9 @@ def test_load_assets_organization_data(sigma_auth_token: str, sigma_sample_data:
 
 
 @responses.activate
-def test_load_assets_organization_data_translator(sigma_auth_token: str, sigma_sample_data: None) -> None:
+def test_load_assets_organization_data_translator(
+    sigma_auth_token: str, sigma_sample_data: None
+) -> None:
     with instance_for_test() as _instance:
         repository_def = repository_def_from_pointer(
             CodePointer.from_python_file(
