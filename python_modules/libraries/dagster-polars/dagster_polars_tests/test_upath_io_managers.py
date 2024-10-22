@@ -177,6 +177,35 @@ def test_polars_upath_io_manager_input_dict_eager(
             partition_key=partition_key,
         )
 
+
+def test_polars_upath_io_manager_input_dict_optional_eager(
+    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
+    manager, df = io_manager_and_df
+    partition_keys = ["a", "b", "missing"]
+
+    @asset(io_manager_def=manager, partitions_def=StaticPartitionsDefinition(partition_keys))
+    def upstream(context: AssetExecutionContext) -> Optional[pl.DataFrame]:
+        return (
+            None
+            if context.partition_key == "missing"
+            else df.with_columns(pl.lit(context.partition_key).alias("partition"))
+        )
+
+    @asset(io_manager_def=manager)
+    def downstream(upstream: Dict[str, Optional[pl.DataFrame]]) -> pl.DataFrame:
+        dfs = []
+        for df in upstream.values():
+            assert isinstance(df, pl.DataFrame)
+            dfs.append(df)
+        return pl.concat(dfs)
+
+    for partition_key in partition_keys:
+        materialize(
+            [upstream],
+            partition_key=partition_key,
+        )
+
     materialize(
         [upstream.to_source_asset(), downstream],
     )
@@ -193,6 +222,39 @@ def test_polars_upath_io_manager_input_dict_lazy(
 
     @asset(io_manager_def=manager)
     def downstream(upstream: Dict[str, pl.LazyFrame]) -> pl.DataFrame:
+        dfs = []
+        for df in upstream.values():
+            assert isinstance(df, pl.LazyFrame)
+            dfs.append(df)
+        return pl.concat(dfs).collect()
+
+    for partition_key in ["a", "b"]:
+        materialize(
+            [upstream],
+            partition_key=partition_key,
+        )
+
+    materialize(
+        [upstream.to_source_asset(), downstream],
+    )
+
+
+def test_polars_upath_io_manager_input_dict_optional_lazy(
+    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
+    manager, df = io_manager_and_df
+    partition_keys = ["a", "b", "missing"]
+
+    @asset(io_manager_def=manager, partitions_def=StaticPartitionsDefinition(partition_keys))
+    def upstream(context: AssetExecutionContext) -> Optional[pl.DataFrame]:
+        return (
+            None
+            if context.partition_key == "missing"
+            else df.with_columns(pl.lit(context.partition_key).alias("partition"))
+        )
+
+    @asset(io_manager_def=manager)
+    def downstream(upstream: Dict[str, Optional[pl.LazyFrame]]) -> pl.DataFrame:
         dfs = []
         for df in upstream.values():
             assert isinstance(df, pl.LazyFrame)

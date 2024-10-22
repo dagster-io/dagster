@@ -115,6 +115,7 @@ def dagster_type():
 def test_pandera_schema_to_dagster_type(schema):
     dagster_type = pandera_schema_to_dagster_type(schema)
     assert isinstance(dagster_type, DagsterType)
+    assert dagster_type.typing_type == pd.DataFrame
     assert len(dagster_type.metadata) == 1
     schema_metadata = dagster_type.metadata["schema"]
     assert isinstance(schema_metadata, TableSchemaMetadataValue)
