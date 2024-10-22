@@ -42,6 +42,7 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, Runs
 from dagster._core.storage.event_log.migration import migrate_event_log_data
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
+from dagster._core.storage.runs.migration import migrate_run_backfill_id
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
@@ -1224,6 +1225,10 @@ def test_add_backfill_id_column():
             )
 
             instance.upgrade()
+            # sqlite storage .from_local runs the migrations on instantiation. This means the data migration
+            # doesn't get run when we call instance.upgrade. So we manually run the migration here to test that
+            # it works
+            migrate_run_backfill_id(instance.run_storage)
 
             columns = get_sqlite3_columns(db_path, "runs")
             assert {
