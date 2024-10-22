@@ -1225,7 +1225,7 @@ def test_add_backfill_id_column():
             )
 
             instance.upgrade()
-            # sqlite storage .from_local runs the migrations on instantiation. This means the data migration
+            # TODO: sqlite storage .from_local runs the migrations on instantiation. This means the data migration
             # doesn't get run when we call instance.upgrade. So we manually run the migration here to test that
             # it works
             migrate_run_backfill_id(instance.run_storage)
