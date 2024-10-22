@@ -21,7 +21,6 @@ import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
 import {AnalyticsContext, dummyAnalytics} from './analytics';
 import {migrateLocalStorageKeys} from './migrateLocalStorageKeys';
-import {TimeProvider} from './time/TimeContext';
 import {
   ApolloClient,
   ApolloLink,
@@ -30,6 +29,7 @@ import {
   InMemoryCache,
   split,
 } from '../apollo-client';
+import {TimeProvider} from './time/TimeContext';
 import {AssetLiveDataProvider} from '../asset-data/AssetLiveDataProvider';
 import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
 import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';

@@ -156,8 +156,9 @@ def get_asset_node_definition_collisions(
     repos: Dict[AssetKey, List[GrapheneRepository]] = defaultdict(list)
 
     for remote_asset_node in graphene_info.context.asset_graph.asset_nodes:
-        for repo_handle, asset_node_snap in remote_asset_node.repo_node_pairs:
-            if asset_node_snap.asset_key in asset_keys:
+        if remote_asset_node.key in asset_keys:
+            for info in remote_asset_node.repo_scoped_asset_infos:
+                asset_node_snap = info.asset_node.asset_node_snap
                 is_defined = (
                     asset_node_snap.node_definition_name
                     or asset_node_snap.graph_name
@@ -166,7 +167,7 @@ def get_asset_node_definition_collisions(
                 if not is_defined:
                     continue
 
-                repos[asset_node_snap.asset_key].append(GrapheneRepository(repo_handle))
+                repos[asset_node_snap.asset_key].append(GrapheneRepository(info.handle))
 
     results: List[GrapheneAssetNodeDefinitionCollision] = []
     for asset_key in repos.keys():
@@ -189,7 +190,7 @@ def _graphene_asset_node(
 ):
     from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
-    handle = remote_node.priority_repository_handle
+    handle = remote_node.resolve_to_singular_repo_scoped_node().repository_handle
     base_deployment_context = graphene_info.context.get_base_deployment_context()
 
     return GrapheneAssetNode(

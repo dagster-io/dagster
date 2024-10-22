@@ -66,7 +66,7 @@ export const OpJobPartitionsView = React.memo(
     }, [cacheKey, currentQueryResult]);
     const queryResult = currentQueryResult.data
       ? currentQueryResult
-      : cachedResult ?? currentQueryResult;
+      : (cachedResult ?? currentQueryResult);
     const {data, loading} = queryResult;
 
     if (!data) {

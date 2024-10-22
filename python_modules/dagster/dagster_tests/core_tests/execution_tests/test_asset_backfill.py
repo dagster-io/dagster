@@ -41,7 +41,7 @@ from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.decorators.repository_decorator import repository
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.selector import (
     PartitionRangeSelector,
     PartitionsByAssetSelector,
@@ -255,7 +255,7 @@ def _get_instance_queryer(
 def _single_backfill_iteration(
     backfill_id,
     backfill_data,
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     instance,
     assets_by_repo_name,
 ) -> AssetBackfillData:
@@ -463,7 +463,7 @@ def test_do_not_rerequest_while_existing_run_in_progress():
 
 def make_backfill_data(
     some_or_all: str,
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     instance: DagsterInstance,
     current_time: datetime.datetime,
 ) -> AssetBackfillData:
@@ -486,7 +486,7 @@ def make_backfill_data(
 
 
 def make_random_subset(
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     instance: DagsterInstance,
     evaluation_time: datetime.datetime,
 ) -> AssetGraphSubset:
@@ -520,7 +520,7 @@ def make_random_subset(
 
 def make_subset_from_partition_keys(
     partition_keys: Sequence[str],
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     instance: DagsterInstance,
     evaluation_time: datetime.datetime,
 ) -> AssetGraphSubset:
@@ -543,7 +543,7 @@ def make_subset_from_partition_keys(
 
 def get_asset_graph(
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
-) -> RemoteAssetGraph:
+) -> RemoteWorkspaceAssetGraph:
     assets_defs_by_key = {
         key: assets_def
         for assets in assets_by_repo_name.values()
@@ -567,7 +567,7 @@ def get_asset_graph(
 def execute_asset_backfill_iteration_consume_generator(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     instance: DagsterInstance,
 ) -> AssetBackfillIterationResult:
     counter = Counter()
@@ -592,7 +592,7 @@ def execute_asset_backfill_iteration_consume_generator(
 
 
 def run_backfill_to_completion(
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
     backfill_data: AssetBackfillData,
     fail_asset_partitions: Iterable[AssetKeyPartitionKey],
@@ -742,7 +742,7 @@ def _requested_asset_partitions_in_run_request(
 
 def remote_asset_graph_from_assets_by_repo_name(
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
-) -> RemoteAssetGraph:
+) -> RemoteWorkspaceAssetGraph:
     repos = []
     for repo_name, assets in assets_by_repo_name.items():
 
@@ -752,7 +752,7 @@ def remote_asset_graph_from_assets_by_repo_name(
 
         repos.append(repo)
 
-    return RemoteAssetGraph.from_workspace_snapshot(mock_workspace_from_repos(repos))
+    return mock_workspace_from_repos(repos).asset_graph
 
 
 @pytest.mark.parametrize(

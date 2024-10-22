@@ -75,8 +75,6 @@ height={1654}
 
 ### External assets with dependencies
 
-External assets can depend only on other external assets.
-
 Dependencies are defined by using the `deps` argument of <PyObject object="AssetSpec" />. This enables Dagster to model entire graphs of assets scheduled and orchestrated by other systems.
 
 In the following example, we have two assets: `raw_logs` and `processed_logs`. The `processed_logs` asset is produced by a scheduled computation in another orchestration system. Using external assets allows you to model both assets in Dagster.

@@ -9,8 +9,8 @@ import {
   AssetMaterializationUpstreamTable,
   TimeSinceWithOverdueColor,
 } from './AssetMaterializationUpstreamData';
-import {OverduePopoverQuery, OverduePopoverQueryVariables} from './types/OverdueTag.types';
 import {gql, useQuery} from '../apollo-client';
+import {OverduePopoverQuery, OverduePopoverQueryVariables} from './types/OverdueTag.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {timestampToString} from '../app/time/timestampToString';
 import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
@@ -166,8 +166,8 @@ const OverdueLineagePopoverContent = ({
             ? `The latest materialization contains all data up to ${maxLagMinutesStr} before ${lastEvaluationStr}. `
             : `The latest materialization${derivedStr} is ${lagMinutesStr} old. `
           : cronSchedule
-          ? `The latest materialization${derivedStr} was ${lagMinutesStr} old on ${lastEvaluationStr}. `
-          : `The latest materialization${derivedStr} is ${lagMinutesStr} old. `}
+            ? `The latest materialization${derivedStr} was ${lagMinutesStr} old on ${lastEvaluationStr}. `
+            : `The latest materialization${derivedStr} is ${lagMinutesStr} old. `}
 
         {hasUpstreams
           ? `The asset's freshness policy requires it to be derived from data ${policyStr}`
@@ -232,8 +232,8 @@ export const freshnessPolicyDescription = (
     maximumLagMinutes % (24 * 60) === 0
       ? `${maximumLagMinutes / (24 * 60)} day${maximumLagMinutes / (24 * 60) !== 1 ? 's' : ''}`
       : maximumLagMinutes % 30 === 0
-      ? `${maximumLagMinutes / 60} hour${maximumLagMinutes / 60 !== 1 ? 's' : ''}`
-      : `${maximumLagMinutes} min`;
+        ? `${maximumLagMinutes / 60} hour${maximumLagMinutes / 60 !== 1 ? 's' : ''}`
+        : `${maximumLagMinutes} min`;
 
   if (format === 'short') {
     if (cronDesc) {

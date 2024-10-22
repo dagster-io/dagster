@@ -5,17 +5,17 @@ from dagster_looker import (
     LookerStructureType,
 )
 
-from dagster import AssetSpec, EnvVar
+import dagster as dg
 
 resource = LookerResource(
-    client_id=EnvVar("LOOKERSDK_CLIENT_ID"),
-    client_secret=EnvVar("LOOKERSDK_CLIENT_SECRET"),
-    base_url=EnvVar("LOOKERSDK_HOST_URL"),
+    client_id=dg.EnvVar("LOOKERSDK_CLIENT_ID"),
+    client_secret=dg.EnvVar("LOOKERSDK_CLIENT_SECRET"),
+    base_url=dg.EnvVar("LOOKERSDK_HOST_URL"),
 )
 
 
 class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
-    def get_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
+    def get_asset_spec(self, looker_structure: LookerStructureData) -> dg.AssetSpec:
         asset_spec = super().get_asset_spec(looker_structure)
 
         # Add a team owner for all Looker assets

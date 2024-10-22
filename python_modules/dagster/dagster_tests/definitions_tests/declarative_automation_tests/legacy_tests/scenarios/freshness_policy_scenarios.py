@@ -65,7 +65,10 @@ freshness_policy_scenarios = {
         unevaluated_runs=[run([f"asset{i}" for i in range(1, 6)])],
         evaluation_delta=datetime.timedelta(minutes=35),
         # need to run assets 1, 2 and 3 as they're all part of the same non-subsettable multi asset
-        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset5"])],
+        # run 4 as it is eager and downstream of 1
+        expected_run_requests=[
+            run_request(asset_keys=["asset1", "asset2", "asset3", "asset4", "asset5"])
+        ],
         expected_evaluations=[
             AssetEvaluationSpec.from_single_rule(
                 "asset2",

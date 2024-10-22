@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 import pytest
 from dagster import Config, DagsterInstance, Field, job, op
@@ -8,6 +8,7 @@ from dagster._config.field import resolve_to_config_type
 from dagster._config.snap import ConfigSchemaSnapshot, snap_from_config_type
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.remote_representation import InProcessCodeLocationOrigin
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -46,13 +47,18 @@ def test_with_spaces():
     assert yaml_str == "a: with spaces\n"
 
 
-def _external_repository_for_function(instance: DagsterInstance, fn):
-    return _external_repository_for_module(instance, fn.__module__, fn.__name__)
+def _remote_repository_for_function(
+    instance: DagsterInstance, fn: Callable[..., Any]
+) -> RemoteRepository:
+    return _remote_repository_for_module(instance, fn.__module__, fn.__name__)
 
 
-def _external_repository_for_module(
-    instance: DagsterInstance, module_name, attribute=None, repository_name="__repository__"
-):
+def _remote_repository_for_module(
+    instance: DagsterInstance,
+    module_name: str,
+    attribute: Optional[str] = None,
+    repository_name="__repository__",
+) -> RemoteRepository:
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
         module_name=module_name,
@@ -82,8 +88,8 @@ def trivial_job_defs():
 def test_print_root(
     instance,
 ) -> None:
-    external_repository = _external_repository_for_function(instance, trivial_job_defs)
-    external_a_job: RemoteJob = external_repository.get_full_job("a_job")
+    repo = _remote_repository_for_function(instance, trivial_job_defs)
+    external_a_job: RemoteJob = repo.get_full_job("a_job")
     root_config_key = external_a_job.root_config_key
     assert root_config_key
     root_type = external_a_job.config_schema_snapshot.get_config_snap(root_config_key)
@@ -113,8 +119,8 @@ def job_def_with_config():
 def test_print_root_op_config(
     instance,
 ) -> None:
-    external_repository = _external_repository_for_function(instance, job_def_with_config)
-    external_a_job: RemoteJob = external_repository.get_full_job("a_job")
+    repo = _remote_repository_for_function(instance, job_def_with_config)
+    external_a_job: RemoteJob = repo.get_full_job("a_job")
     root_config_key = external_a_job.root_config_key
     assert root_config_key
     root_type = external_a_job.config_schema_snapshot.get_config_snap(root_config_key)
@@ -148,13 +154,13 @@ def job_def_with_complex_config():
 
 
 def test_print_root_complex_op_config(instance) -> None:
-    external_repository = _external_repository_for_function(instance, job_def_with_complex_config)
-    external_a_job: RemoteJob = external_repository.get_full_job("a_job")
-    root_config_key = external_a_job.root_config_key
+    repo = _remote_repository_for_function(instance, job_def_with_complex_config)
+    a_job = repo.get_full_job("a_job")
+    root_config_key = a_job.root_config_key
     assert root_config_key
-    root_type = external_a_job.config_schema_snapshot.get_config_snap(root_config_key)
+    root_type = a_job.config_schema_snapshot.get_config_snap(root_config_key)
     assert (
-        default_values_yaml_from_type_snap(external_a_job.config_schema_snapshot, root_type)
+        default_values_yaml_from_type_snap(a_job.config_schema_snapshot, root_type)
         == """ops:
   an_op:
     config:

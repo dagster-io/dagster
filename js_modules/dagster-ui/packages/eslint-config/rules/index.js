@@ -6,6 +6,7 @@ const rules = {
   'no-oss-imports': require('./no-oss-imports'),
   'no-apollo-client': require('./no-apollo-client'),
   'no-react-router-route': require('./no-react-router-route'),
+  'missing-shared-import': require('./missing-shared-import'),
 };
 
 module.exports = {
@@ -18,6 +19,7 @@ module.exports = {
         [`${projectName}/no-oss-imports`]: 'error',
         [`${projectName}/no-apollo-client`]: 'error',
         [`${projectName}/no-react-router-route`]: 'error',
+        [`${projectName}/missing-shared-import`]: 'error',
       },
     },
   },

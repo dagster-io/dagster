@@ -1066,8 +1066,8 @@ class GrapheneQuery(graphene.ObjectType):
                 dynamic_partitions_loader=dynamic_partitions_loader,
                 # base_deployment_context will be None if we are not in a branch deployment
                 asset_graph_differ=AssetGraphDiffer.from_remote_repositories(
-                    code_location_name=remote_node.priority_repository_handle.location_name,
-                    repository_name=remote_node.priority_repository_handle.repository_name,
+                    code_location_name=remote_node.resolve_to_singular_repo_scoped_node().repository_handle.location_name,
+                    repository_name=remote_node.resolve_to_singular_repo_scoped_node().repository_handle.repository_name,
                     branch_workspace=graphene_info.context,
                     base_workspace=base_deployment_context,
                 )
@@ -1164,7 +1164,7 @@ class GrapheneQuery(graphene.ObjectType):
 
         # Build mapping of asset key to the step keys required to generate the asset
         step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {
-            remote_node.key: remote_node.priority_node_snap.op_names
+            remote_node.key: remote_node.resolve_to_singular_repo_scoped_node().asset_node_snap.op_names
             for remote_node in remote_nodes
             if remote_node
         }

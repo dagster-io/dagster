@@ -150,7 +150,9 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
             onClick={() => {
               indexedDB.databases().then((databases) => {
                 databases.forEach((db) => {
-                  db.name && indexedDB.deleteDatabase(db.name);
+                  if (db.name) {
+                    indexedDB.deleteDatabase(db.name);
+                  }
                 });
               });
               showCustomAlert({

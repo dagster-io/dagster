@@ -166,7 +166,6 @@ export type AssetPartitionDetailQuery = {
                         unique: boolean;
                         other: Array<string>;
                       };
-                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -189,7 +188,6 @@ export type AssetPartitionDetailQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -365,7 +363,6 @@ export type AssetPartitionDetailQuery = {
                         unique: boolean;
                         other: Array<string>;
                       };
-                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -388,7 +385,6 @@ export type AssetPartitionDetailQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -447,6 +443,6 @@ export type AssetPartitionStaleQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetPartitionDetailQueryVersion = 'a4ac5bb0f9ddbeda637f54b1d0937386f0e86e3ef17e7d59e51d4d9f9bf9aff6';
+export const AssetPartitionDetailQueryVersion = '28870c41f2273a0902fce19339a88df2c306e167d833832f21b4945e26035d10';
 
 export const AssetPartitionStaleQueryVersion = '4215f4014e9d7592142e1775c4b07377703e913389396f9ca14dc6bb779ce764';

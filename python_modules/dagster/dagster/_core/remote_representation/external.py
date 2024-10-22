@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime
 from functools import cached_property
 from threading import RLock
@@ -13,6 +14,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Union,
 )
 
@@ -20,6 +22,7 @@ import dagster._check as check
 from dagster import AssetSelection
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
@@ -37,6 +40,7 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     SensorType,
 )
+from dagster._core.errors import DagsterError
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
@@ -83,9 +87,11 @@ from dagster._utils.schedules import schedule_execution_time_iterator
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_key import EntityKey
-    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+    from dagster._core.definitions.remote_asset_graph import RemoteRepositoryAssetGraph
     from dagster._core.scheduler.instigation import InstigatorState
     from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
+
+_empty_set = frozenset()
 
 
 class RemoteRepository:
@@ -372,13 +378,15 @@ class RemoteRepository:
             else self._asset_jobs.get(job_name, [])
         )
 
+    @cached_property
+    def _asset_snaps_by_key(self) -> Mapping[AssetKey, AssetNodeSnap]:
+        mapping = {}
+        for asset_snap in self.repository_snap.asset_nodes:
+            mapping[asset_snap.asset_key] = asset_snap
+        return mapping
+
     def get_asset_node_snap(self, asset_key: AssetKey) -> Optional[AssetNodeSnap]:
-        matching = [
-            asset_node
-            for asset_node in self.repository_snap.asset_nodes
-            if asset_node.asset_key == asset_key
-        ]
-        return matching[0] if matching else None
+        return self._asset_snaps_by_key.get(asset_key)
 
     def get_asset_check_node_snaps(
         self, job_name: Optional[str] = None
@@ -392,11 +400,11 @@ class RemoteRepository:
         return self.handle.display_metadata
 
     @cached_property
-    def asset_graph(self) -> "RemoteAssetGraph":
+    def asset_graph(self) -> "RemoteRepositoryAssetGraph":
         """Returns a repository scoped RemoteAssetGraph."""
-        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+        from dagster._core.definitions.remote_asset_graph import RemoteRepositoryAssetGraph
 
-        return RemoteAssetGraph.from_remote_repository(self)
+        return RemoteRepositoryAssetGraph.build(self)
 
     def get_partition_names_for_asset_job(
         self,
@@ -440,6 +448,72 @@ class RemoteRepository:
                 "There is no PartitionsDefinition shared by all the provided assets."
                 f" {len(unique_partitions_defs)} unique PartitionsDefinitions."
             )
+
+    @cached_property
+    def _sensor_mappings(
+        self,
+    ) -> Tuple[
+        Mapping[str, Sequence["RemoteSensor"]],
+        Mapping[AssetKey, Sequence["RemoteSensor"]],
+    ]:
+        asset_key_mapping = defaultdict(list)
+        job_name_mapping = defaultdict(list)
+        for sensor in self.get_sensors():
+            for target in sensor.get_targets():
+                job_name_mapping[target.job_name].append(sensor)
+
+            if sensor and sensor.asset_selection:
+                try:
+                    keys = sensor.asset_selection.resolve(self.asset_graph)
+                    for key in keys:
+                        asset_key_mapping[key].append(sensor)
+                except DagsterError:
+                    pass
+
+        return job_name_mapping, asset_key_mapping
+
+    @property
+    def _sensors_by_job_name(self) -> Mapping[str, Sequence["RemoteSensor"]]:
+        return self._sensor_mappings[0]
+
+    @property
+    def _sensors_by_asset_key(self) -> Mapping[AssetKey, Sequence["RemoteSensor"]]:
+        return self._sensor_mappings[1]
+
+    @cached_property
+    def _schedules_by_job_name(self) -> Mapping[str, Sequence["RemoteSchedule"]]:
+        mapping = defaultdict(list)
+        for schedule in self.get_schedules():
+            mapping[schedule.job_name].append(schedule)
+
+        return mapping
+
+    def get_sensors_targeting(self, asset_key: AssetKey) -> AbstractSet["RemoteSensor"]:
+        asset_snap = self.get_asset_node_snap(asset_key)
+        if not asset_snap:
+            return _empty_set
+
+        sensors = set()
+        if asset_key in self._sensors_by_asset_key:
+            sensors.update(self._sensors_by_asset_key[asset_key])
+
+        for job_name in asset_snap.job_names:
+            if job_name != IMPLICIT_ASSET_JOB_NAME and job_name in self._sensors_by_job_name:
+                sensors.update(self._sensors_by_job_name[job_name])
+
+        return sensors
+
+    def get_schedules_targeting(self, asset_key: AssetKey) -> AbstractSet["RemoteSchedule"]:
+        asset_snap = self.get_asset_node_snap(asset_key)
+        if not asset_snap:
+            return _empty_set
+
+        schedules = set()
+        for job_name in asset_snap.job_names:
+            if job_name != IMPLICIT_ASSET_JOB_NAME and job_name in self._schedules_by_job_name:
+                schedules.update(self._schedules_by_job_name[job_name])
+
+        return schedules
 
 
 class RemoteJob(RepresentedJob):

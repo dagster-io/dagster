@@ -99,8 +99,8 @@ export const TargetPartitionsDisplay = ({
       {targetPartitionCount === 0
         ? '-'
         : targetPartitionCount === 1
-        ? '1 partition'
-        : `${targetPartitionCount} partitions`}
+          ? '1 partition'
+          : `${targetPartitionCount} partitions`}
     </div>
   );
 };

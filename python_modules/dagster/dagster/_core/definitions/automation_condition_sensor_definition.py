@@ -17,6 +17,8 @@ from dagster._core.definitions.sensor_definition import (
 from dagster._core.definitions.utils import check_valid_name
 from dagster._utils.tags import normalize_tags
 
+EMIT_BACKFILLS_METADATA_KEY = "dagster/emit_backfills"
+
 
 def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: SensorEvaluationContext):
     from dagster._core.definitions.automation_tick_evaluation_context import (
@@ -41,7 +43,7 @@ def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: Sensor
         observe_run_tags={},
         auto_observe_asset_keys=set(),
         asset_selection=sensor_def.asset_selection,
-        allow_backfills=sensor_def.allow_backfills,
+        emit_backfills=sensor_def.emit_backfills,
         default_condition=sensor_def.default_condition,
         logger=context.log,
     ).evaluate()
@@ -79,6 +81,8 @@ class AutomationConditionSensorDefinition(SensorDefinition):
             sensor. The actual interval will be longer if the sensor evaluation takes longer than
             the provided interval.
         description (Optional[str]): A human-readable description of the sensor.
+        emit_backfills (bool): If set to True, will emit a backfill on any tick where more than one partition
+            of any single asset is requested, rather than individual runs. Defaults to False.
     """
 
     def __init__(
@@ -92,17 +96,12 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         metadata: Optional[Mapping[str, object]] = None,
+        emit_backfills: bool = False,
         **kwargs,
     ):
         self._user_code = kwargs.get("user_code", False)
-        self._allow_backfills = check.opt_bool_param(
-            kwargs.get("allow_backfills"), "allow_backfills", default=False
-        )
-        check.param_invariant(
-            not (self._allow_backfills and not self._user_code),
-            "allow_backfills",
-            "Setting `allow_backfills` for a non-user-code AutomationConditionSensorDefinition is not supported.",
-        )
+        check.bool_param(emit_backfills, "emit_backfills")
+
         self._default_condition = check.opt_inst_param(
             kwargs.get("default_condition"), "default_condition", AutomationCondition
         )
@@ -113,6 +112,10 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         )
 
         self._run_tags = normalize_tags(run_tags)
+
+        # only store this value in the metadata if it's True
+        if emit_backfills:
+            metadata = {**(metadata or {}), EMIT_BACKFILLS_METADATA_KEY: True}
 
         super().__init__(
             name=check_valid_name(name),
@@ -138,8 +141,8 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         return cast(AssetSelection, super().asset_selection)
 
     @property
-    def allow_backfills(self) -> bool:
-        return self._allow_backfills
+    def emit_backfills(self) -> bool:
+        return EMIT_BACKFILLS_METADATA_KEY in self.metadata
 
     @property
     def default_condition(self) -> Optional[AutomationCondition]:

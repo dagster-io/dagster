@@ -2,11 +2,11 @@
 import React from 'react';
 
 import {AssetKey} from './types';
+import {gql, useQuery} from '../apollo-client';
 import {
   AssetOverviewMetadataEventsQuery,
   AssetOverviewMetadataEventsQueryVariables,
 } from './types/useLatestPartitionEvents.types';
-import {gql, useQuery} from '../apollo-client';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {usePredicateChangeSignal} from '../hooks/usePredicateChangeSignal';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';

@@ -16,8 +16,8 @@ import {createGlobalStyle} from 'styled-components';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
-import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/InstanceConfig.types';
 import {gql, useQuery} from '../apollo-client';
+import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/InstanceConfig.types';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,

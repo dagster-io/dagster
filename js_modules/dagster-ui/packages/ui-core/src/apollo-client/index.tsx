@@ -9,6 +9,7 @@ import {
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export * from '@apollo/client';
+export * from '@apollo/client/link/error';
 
 interface ExtendedQueryOptions<TData = any, TVariables extends OperationVariables = any>
   extends QueryHookOptions<TData, TVariables> {

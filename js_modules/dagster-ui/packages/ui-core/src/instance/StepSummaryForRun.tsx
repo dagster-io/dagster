@@ -3,11 +3,11 @@ import qs from 'qs';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
+import {gql, useQuery} from '../apollo-client';
 import {
   StepSummaryForRunQuery,
   StepSummaryForRunQueryVariables,
 } from './types/StepSummaryForRun.types';
-import {gql, useQuery} from '../apollo-client';
 import {StepEventStatus} from '../graphql/types';
 import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
 

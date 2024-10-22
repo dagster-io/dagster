@@ -119,7 +119,9 @@ export const PartitionSubsetList = ({
                     <Row $height={size} $start={start} key={key}>
                       <MenuItem
                         onClick={() => {
-                          selectPartition && selectPartition(partitionKey);
+                          if (selectPartition) {
+                            selectPartition(partitionKey);
+                          }
                         }}
                         text={
                           <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>

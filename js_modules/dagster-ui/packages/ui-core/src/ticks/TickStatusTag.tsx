@@ -14,23 +14,31 @@ import {
 import {useMemo, useState} from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus} from '../graphql/types';
 import {HistoryTickFragment} from '../instigation/types/InstigationUtils.types';
 
+export type TickResultType = 'runs' | 'materializations';
+
+type PropsForMaterializations = {
+  tick: Pick<HistoryTickFragment, 'status' | 'requestedAssetMaterializationCount' | 'error'>;
+  tickResultType: 'materializations';
+  isStuckStarted?: boolean;
+};
+
+type PropsForRuns = {
+  tick: Pick<HistoryTickFragment, 'status' | 'skipReason' | 'runIds' | 'runKeys' | 'error'>;
+  tickResultType: 'runs';
+  isStuckStarted?: boolean;
+};
+
 export const TickStatusTag = ({
   tick,
+  tickResultType,
   isStuckStarted,
-}: {
-  tick:
-    | Pick<AssetDaemonTickFragment, 'status' | 'error' | 'requestedAssetMaterializationCount'>
-    | Pick<HistoryTickFragment, 'status' | 'skipReason' | 'runIds' | 'runKeys' | 'error'>;
-  isStuckStarted?: boolean;
-}) => {
+}: PropsForMaterializations | PropsForRuns) => {
   const [showErrors, setShowErrors] = useState(false);
   const tag = useMemo(() => {
-    const isAssetDaemonTick = 'requestedAssetMaterializationCount' in tick;
-    const requestedItem = isAssetDaemonTick ? 'materialization' : 'run';
+    const requestedItem = tickResultType === 'materializations' ? 'materialization' : 'run';
     switch (tick.status) {
       case InstigationTickStatus.STARTED:
         return (
@@ -42,7 +50,11 @@ export const TickStatusTag = ({
         const tag = (
           <BaseTag
             fillColor={Colors.backgroundLighter()}
-            label={isAssetDaemonTick ? '0 materializations requested' : '0 runs requested'}
+            label={
+              tickResultType === 'materializations'
+                ? '0 materializations requested'
+                : '0 runs requested'
+            }
           />
         );
         if ('runKeys' in tick && tick.runKeys.length) {
@@ -77,9 +89,10 @@ export const TickStatusTag = ({
           </Box>
         );
       case InstigationTickStatus.SUCCESS:
-        const count = isAssetDaemonTick
-          ? tick.requestedAssetMaterializationCount
-          : tick.runIds.length;
+        const count =
+          tickResultType === 'materializations'
+            ? tick.requestedAssetMaterializationCount
+            : tick.runIds.length;
         const successTag = (
           <Tag intent="success">
             {count} {requestedItem}
@@ -98,7 +111,7 @@ export const TickStatusTag = ({
         }
         return successTag;
     }
-  }, [isStuckStarted, tick]);
+  }, [isStuckStarted, tick, tickResultType]);
 
   return (
     <>

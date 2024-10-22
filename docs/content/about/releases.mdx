@@ -23,11 +23,21 @@ The "experimental" marker allows us to offer new APIs to users and rapidly itera
 
 Experimental APIs may change or disappear within any release, but we try to avoid breaking them within minor releases if they have been around for a long time.
 
+### Superseded APIs
+
+The "superseded" marker indicates that we recommend avoiding an API, usually because there's a preferred option that should be used instead.
+
+Like non-deprecated public stable APIs, deprecated public stable APIs will not break within any major release after 1.0.
+
+Superseded APIs do not have a known scheduled removal point, but we recommend avoiding them in new code.
+
 ### Deprecated APIs
 
 The "deprecated" marker indicates that we recommend avoiding an API, usually because there's a preferred option that should be used instead.
 
 Like non-deprecated public stable APIs, deprecated public stable APIs will not break within any major release after 1.0.
+
+Unlike superseded APIs, deprecated APIs have a known scheduled removal point. We will provide guidance on when to expect the removal.
 
 ---
 

@@ -97,7 +97,7 @@ export const layoutAssetGraph = (
 ): AssetGraphLayout => {
   try {
     return layoutAssetGraphImpl(graphData, opts);
-  } catch (e) {
+  } catch {
     try {
       return layoutAssetGraphImpl(graphData, {
         ...opts,
@@ -105,7 +105,7 @@ export const layoutAssetGraph = (
           ranker: 'longest-path',
         },
       });
-    } catch (e) {
+    } catch {
       return layoutAssetGraphImpl(graphData, {...opts, overrides: {ranker: 'network-simplex'}});
     }
   }

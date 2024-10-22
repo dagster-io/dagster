@@ -48,7 +48,7 @@ export class HourlyDataCache<T> {
         });
         this.loadCacheFromIndexedDB();
         this.clearOldEntries();
-      } catch (e) {}
+      } catch {}
     }
   }
 

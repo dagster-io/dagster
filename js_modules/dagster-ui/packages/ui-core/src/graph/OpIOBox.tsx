@@ -57,7 +57,9 @@ export const OpIOBox = ({
       onMouseEnter={() => onHighlightEdges(edges)}
       onMouseLeave={() => onHighlightEdges([])}
       onClick={(e) => {
-        jumpTargetOp && onDoubleClick(jumpTargetOp);
+        if (jumpTargetOp) {
+          onDoubleClick(jumpTargetOp);
+        }
         e.stopPropagation();
       }}
       onDoubleClick={(e) => e.stopPropagation()}

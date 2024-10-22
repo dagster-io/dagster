@@ -5,8 +5,8 @@ import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
-import {InstanceHealthQuery, InstanceHealthQueryVariables} from './types/InstanceHealthPage.types';
 import {gql, useQuery} from '../apollo-client';
+import {InstanceHealthQuery, InstanceHealthQueryVariables} from './types/InstanceHealthPage.types';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,

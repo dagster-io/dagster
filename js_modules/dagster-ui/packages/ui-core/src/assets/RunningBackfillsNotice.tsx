@@ -2,11 +2,11 @@ import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
+import {gql, useQuery} from '../apollo-client';
 import {
   RunningBackfillsNoticeQuery,
   RunningBackfillsNoticeQueryVariables,
 } from './types/RunningBackfillsNotice.types';
-import {gql, useQuery} from '../apollo-client';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 
@@ -26,8 +26,8 @@ export const RunningBackfillsNotice = ({assetSelection}: {assetSelection: AssetK
     [assetSelection],
   );
 
-  const runningBackfillCount = runningBackfills.filter(
-    (r) => r.assetSelection?.some((a) => assetSelectionTokens.has(tokenForAssetKey(a))),
+  const runningBackfillCount = runningBackfills.filter((r) =>
+    r.assetSelection?.some((a) => assetSelectionTokens.has(tokenForAssetKey(a))),
   ).length;
 
   if (runningBackfillCount === 0) {

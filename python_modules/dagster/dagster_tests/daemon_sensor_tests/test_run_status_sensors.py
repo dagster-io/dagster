@@ -648,11 +648,11 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
         with instance_with_sensors(overrides=storage_config_fn(temp_dir)) as (
             instance,
             workspace_context,
-            external_repo,
+            remote_repo,
         ):
             # start sensor
             with freeze_time(freeze_datetime):
-                failure_sensor = external_repo.get_sensor("my_run_failure_sensor")
+                failure_sensor = remote_repo.get_sensor("my_run_failure_sensor")
                 instance.start_sensor(failure_sensor)
 
                 evaluate_sensors(workspace_context, executor)
@@ -672,7 +672,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                 time.sleep(1)
 
             with freeze_time(freeze_datetime):
-                remote_job = external_repo.get_full_job("hanging_job")
+                remote_job = remote_repo.get_full_job("hanging_job")
                 # start run 1
                 run1 = instance.create_run_for_job(
                     hanging_job,
@@ -749,10 +749,10 @@ def test_run_failure_sensor_empty_run_records(
         with instance_with_sensors(overrides=storage_config_fn(temp_dir)) as (
             instance,
             workspace_context,
-            external_repo,
+            remote_repo,
         ):
             with freeze_time(freeze_datetime):
-                failure_sensor = external_repo.get_sensor("my_run_failure_sensor")
+                failure_sensor = remote_repo.get_sensor("my_run_failure_sensor")
                 instance.start_sensor(failure_sensor)
 
                 evaluate_sensors(workspace_context, executor)

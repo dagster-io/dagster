@@ -15,8 +15,8 @@ import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from './GraphN
 import {ExplorerPath} from './PipelinePathUtils';
 import {SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarContainerOverview';
 import {SidebarRoot} from './SidebarRoot';
-import {GraphExplorerFragment, GraphExplorerSolidHandleFragment} from './types/GraphExplorer.types';
 import {gql} from '../apollo-client';
+import {GraphExplorerFragment, GraphExplorerSolidHandleFragment} from './types/GraphExplorer.types';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {Route} from '../app/Route';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';

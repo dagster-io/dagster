@@ -1,9 +1,9 @@
 import {TYPE_EXPLORER_FRAGMENT, TypeExplorer} from './TypeExplorer';
+import {gql, useQuery} from '../apollo-client';
 import {
   TypeExplorerContainerQuery,
   TypeExplorerContainerQueryVariables,
 } from './types/TypeExplorerContainer.types';
-import {gql, useQuery} from '../apollo-client';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext/util';

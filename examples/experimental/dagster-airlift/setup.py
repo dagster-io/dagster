@@ -31,10 +31,12 @@ AIRFLOW_REQUIREMENTS = [
     "connexion<3.0.0",
 ]
 
+CLI_REQUIREMENTS = ["click", "structlog"]
+
 
 setup(
     name="dagster-airlift",
-    version="0.0.26",
+    version="0.0.27",
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
@@ -55,17 +57,20 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_airlift_tests*", "examples*"]),
+    requires=CLI_REQUIREMENTS,
     extras_require={
         "core": [
             f"dagster{pin}",
+            *CLI_REQUIREMENTS,
         ],
         # [in-airflow] doesn't directly have a dependency on airflow because Airflow cannot be installed via setup.py reliably. Instead, users need to install from a constraints
         # file as recommended by the Airflow project.
-        "in-airflow": [],
+        "in-airflow": CLI_REQUIREMENTS,
         # [tutorial] includes additional dependencies needed to run the tutorial. Namely, the dagster-webserver and the constrained airflow packages.
         "tutorial": [
             "dagster-webserver",
             *AIRFLOW_REQUIREMENTS,
+            *CLI_REQUIREMENTS,
         ],
         "mwaa": [
             "boto3>=1.18.0"
@@ -79,7 +84,13 @@ setup(
             "boto3",
             "dagster-webserver",
             *AIRFLOW_REQUIREMENTS,
+            *CLI_REQUIREMENTS,
         ],
+    },
+    entry_points={
+        "console_scripts": [
+            "dagster-airlift = dagster_airlift.cli:cli",
+        ]
     },
     zip_safe=False,
 )

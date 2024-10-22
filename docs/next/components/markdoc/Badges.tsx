@@ -27,6 +27,14 @@ export const Deprecated = () => {
   );
 };
 
+export const Superseded = () => {
+  return (
+    <div className="superseded-tag">
+      <span className="hidden">(</span>Superseded<span className="hidden">)</span>
+    </div>
+  );
+};
+
 export const Legacy = () => {
   return (
     <div className="legacy-tag">

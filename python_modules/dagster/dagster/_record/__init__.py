@@ -144,7 +144,6 @@ def _namedtuple_record_transform(
         _NAMED_TUPLE_BASE_NEW_FIELD: nt_new,
         _REMAPPING_FIELD: field_to_new_mapping or {},
         _ORIGINAL_CLASS_FIELD: cls,
-        "__bool__": _true,
         "__reduce__": _reduce,
         # functools doesn't work, so manually update_wrapper
         "__module__": cls.__module__,
@@ -190,6 +189,10 @@ def _namedtuple_record_transform(
         # MRO resolving to the wrong NT base
         new_class_dict["__new__"] = generated_new
         new_class_dict["_make"] = base._make
+
+    # make it so instances of records with no fields still evaluate to true
+    if len(field_set) < 1:
+        new_class_dict["__bool__"] = _true
 
     new_type = type(
         cls.__name__,

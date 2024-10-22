@@ -245,6 +245,7 @@ def make_instance(
                     - timedelta(
                         seconds=1
                     ),  # Ensure that the task ends before the full "dag" completes.
+                    logical_date=dag_run.logical_date,
                 )
                 for task_id in dag_and_task_structure[dag_run.dag_id]
             ]

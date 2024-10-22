@@ -1,7 +1,4 @@
 /* eslint-disable */
-
-const fs = require('fs');
-const path = require('path');
 const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
 
 const createRule = ESLintUtils.RuleCreator((name) => name);

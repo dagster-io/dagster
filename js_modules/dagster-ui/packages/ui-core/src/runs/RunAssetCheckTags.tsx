@@ -1,7 +1,7 @@
 import {AssetCheckTagCollection} from './AssetTagCollections';
+import {gql, useQuery} from '../apollo-client';
 import {RunAssetChecksQuery, RunAssetChecksQueryVariables} from './types/RunAssetCheckTags.types';
 import {RunFragment} from './types/RunFragments.types';
-import {gql, useQuery} from '../apollo-client';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 
 export const RunAssetCheckTags = (props: {run: RunFragment}) => {

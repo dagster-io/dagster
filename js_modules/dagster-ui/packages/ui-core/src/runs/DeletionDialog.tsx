@@ -14,8 +14,8 @@ import {useEffect, useReducer, useRef} from 'react';
 
 import {NavigationBlock} from './NavigationBlock';
 import {DELETE_MUTATION} from './RunUtils';
-import {DeleteMutation, DeleteMutationVariables} from './types/RunUtils.types';
 import {useMutation} from '../apollo-client';
+import {DeleteMutation, DeleteMutationVariables} from './types/RunUtils.types';
 
 export interface Props {
   isOpen: boolean;

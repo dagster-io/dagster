@@ -34,7 +34,6 @@ from dagster._core.remote_representation.external_data import (
     SensorExecutionErrorSnap as SensorExecutionErrorSnap,
     SensorSnap as SensorSnap,
     TargetSnap as TargetSnap,
-    external_job_data_from_def as external_job_data_from_def,
 )
 from dagster._core.remote_representation.handle import (
     JobHandle as JobHandle,

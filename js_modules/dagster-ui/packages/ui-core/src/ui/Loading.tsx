@@ -33,7 +33,9 @@ export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<
     }
 
     return () => {
-      timer && clearTimeout(timer);
+      if (timer) {
+        clearTimeout(timer);
+      }
     };
   }, [isLoading]);
 

@@ -9,6 +9,8 @@ from dagster._annotations import experimental, public
 from sqlglot import exp, parse_one, to_table
 from sqlglot.optimizer import Scope, build_scope, optimize
 
+from dagster_looker.lkml.liquid_utils import best_effort_render_liquid_sql
+
 LookMLStructureType = Literal["dashboard", "explore", "table", "view"]
 
 logger = logging.getLogger("dagster_looker")
@@ -111,8 +113,11 @@ def build_deps_for_looker_view(
 
     upstream_sqlglot_tables: Sequence[exp.Table] = []
     try:
+        rendered_liquid_sql = best_effort_render_liquid_sql(
+            lookml_view_props["name"], lookml_view_path.name, derived_table_sql
+        )
         optimized_derived_table_ast = optimize(
-            parse_one(sql=derived_table_sql, dialect=sql_dialect),
+            parse_one(sql=rendered_liquid_sql, dialect=sql_dialect),
             dialect=sql_dialect,
             validate_qualify_columns=False,
         )

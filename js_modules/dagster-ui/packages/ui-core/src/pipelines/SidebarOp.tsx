@@ -4,6 +4,7 @@ import {ExplorerPath} from './PipelinePathUtils';
 import {SIDEBAR_OP_DEFINITION_FRAGMENT, SidebarOpDefinition} from './SidebarOpDefinition';
 import {SidebarOpExecutionGraphs} from './SidebarOpExecutionGraphs';
 import {SIDEBAR_OP_INVOCATION_FRAGMENT, SidebarOpInvocation} from './SidebarOpInvocation';
+import {gql, useQuery} from '../apollo-client';
 import {
   SidebarGraphOpQuery,
   SidebarGraphOpQueryVariables,
@@ -11,7 +12,6 @@ import {
   SidebarPipelineOpQuery,
   SidebarPipelineOpQueryVariables,
 } from './types/SidebarOp.types';
-import {gql, useQuery} from '../apollo-client';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {LoadingSpinner} from '../ui/Loading';
 import {RepoAddress} from '../workspace/types';

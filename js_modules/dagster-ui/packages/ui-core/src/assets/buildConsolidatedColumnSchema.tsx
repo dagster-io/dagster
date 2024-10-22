@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
 
-import {AssetColumnLineageQuery} from './lineage/types/useColumnLineageDataForAssets.types';
 import {isCanonicalColumnSchemaEntry} from '../metadata/TableSchema';
+import {AssetColumnLineageQuery} from './lineage/types/useColumnLineageDataForAssets.types';
 
 type AssetDefinitionWithMetadata = AssetColumnLineageQuery['assetNodes'][0];
 

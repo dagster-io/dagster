@@ -43,6 +43,7 @@ from dagster_graphql.implementation.execution.backfill import (
     cancel_partition_backfill as cancel_partition_backfill,
     create_and_launch_partition_backfill as create_and_launch_partition_backfill,
     resume_partition_backfill as resume_partition_backfill,
+    retry_partition_backfill as retry_partition_backfill,
 )
 from dagster_graphql.implementation.utils import assert_permission, assert_permission_for_location
 

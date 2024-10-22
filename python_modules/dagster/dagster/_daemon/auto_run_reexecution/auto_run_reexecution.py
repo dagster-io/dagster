@@ -131,9 +131,9 @@ def retry_run(
         )
         return
 
-    external_repo = code_location.get_repository(repo_name)
+    repo = code_location.get_repository(repo_name)
 
-    if not external_repo.has_job(failed_run.job_name):
+    if not repo.has_job(failed_run.job_name):
         instance.report_engine_event(
             f"Could not find job {failed_run.job_name} in repository {repo_name}, unable"
             " to retry the run. It was likely renamed or deleted.",

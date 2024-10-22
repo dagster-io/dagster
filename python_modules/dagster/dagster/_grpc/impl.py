@@ -43,6 +43,7 @@ from dagster._core.execution.api import create_execution_plan, execute_run_itera
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.remote_representation.external_data import (
+    JobDataSnap,
     PartitionConfigSnap,
     PartitionExecutionErrorSnap,
     PartitionExecutionParamSnap,
@@ -52,7 +53,6 @@ from dagster._core.remote_representation.external_data import (
     RemoteJobSubsetResult,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
-    external_job_data_from_def,
     job_name_for_partition_set_snap_name,
 )
 from dagster._core.remote_representation.origin import CodeLocationOrigin
@@ -287,7 +287,7 @@ def get_external_pipeline_subset_result(
             asset_selection=asset_selection,
             asset_check_selection=asset_check_selection,
         )
-        job_data_snap = external_job_data_from_def(
+        job_data_snap = JobDataSnap.from_job_def(
             definition, include_parent_snapshot=include_parent_snapshot
         )
         return RemoteJobSubsetResult(success=True, job_data_snap=job_data_snap)

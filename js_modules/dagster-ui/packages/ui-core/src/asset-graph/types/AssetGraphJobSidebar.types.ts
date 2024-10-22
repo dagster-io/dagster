@@ -137,7 +137,6 @@ export type AssetGraphSidebarQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -160,7 +159,6 @@ export type AssetGraphSidebarQuery = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -1317,4 +1315,4 @@ export type AssetGraphSidebarQuery = {
       };
 };
 
-export const AssetGraphSidebarQueryVersion = 'db12802c12e34ed859e599ec42b780d87f9749397e933ec6ce5d609bf8f310d6';
+export const AssetGraphSidebarQueryVersion = '78297700fcddf38c7f95b5aeb73ff1a55ddf05b4a53d7a85388831ca520ec5f8';

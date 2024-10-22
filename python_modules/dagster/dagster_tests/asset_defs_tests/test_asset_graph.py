@@ -42,6 +42,7 @@ from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.test_utils import freeze_time, instance_for_test, mock_workspace_from_repos
+from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime, get_current_datetime
 
 
@@ -55,7 +56,7 @@ def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
         repository_handle=RepositoryHandle.for_test(location_name="fake", repository_name="repo"),
         instance=DagsterInstance.ephemeral(),
     )
-    return RemoteAssetGraph.from_remote_repository(remote_repo)
+    return remote_repo.asset_graph
 
 
 @pytest.fixture(
@@ -873,6 +874,32 @@ def test_multi_asset_check(
         assert asset_graph.get_execution_set_asset_and_check_keys(key) == {key}
 
 
+def test_check_deps(asset_graph_from_assets: Callable[..., BaseAssetGraph]) -> None:
+    @asset
+    def A() -> None: ...
+
+    one = AssetCheckSpec(name="one", asset="A", additional_deps=["B", "C"])
+    two = AssetCheckSpec(name="two", asset="B", additional_deps=["C", "D"])
+    three = AssetCheckSpec(name="three", asset="B")
+
+    @multi_asset_check(specs=[one, two, three])
+    def multi_check(): ...
+
+    asset_graph = asset_graph_from_assets([A, multi_check])
+
+    assert asset_graph.get(one.key).parent_entity_keys == {
+        AssetKey("A"),
+        AssetKey("B"),
+        AssetKey("C"),
+    }
+    assert asset_graph.get(two.key).parent_entity_keys == {
+        AssetKey("B"),
+        AssetKey("C"),
+        AssetKey("D"),
+    }
+    assert asset_graph.get(three.key).parent_entity_keys == {AssetKey("B")}
+
+
 def test_cross_code_location_partition_mapping() -> None:
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-01-01-00:00"))
     def a(): ...
@@ -888,11 +915,22 @@ def test_cross_code_location_partition_mapping() -> None:
     def repo_b():
         return [b]
 
-    asset_graph = RemoteAssetGraph.from_workspace_snapshot(
-        mock_workspace_from_repos([repo_a, repo_b])
-    )
+    asset_graph = mock_workspace_from_repos([repo_a, repo_b]).asset_graph
 
     assert isinstance(
         asset_graph.get_partition_mapping(key=b.key, parent_asset_key=a.key),
         TimeWindowPartitionMapping,
     )
+
+
+def test_serdes() -> None:
+    @asset
+    def a(): ...
+
+    @repository
+    def repo():
+        return [a]
+
+    asset_graph = mock_workspace_from_repos([repo]).asset_graph
+    for node in asset_graph.asset_nodes:
+        assert node == deserialize_value(serialize_value(node))

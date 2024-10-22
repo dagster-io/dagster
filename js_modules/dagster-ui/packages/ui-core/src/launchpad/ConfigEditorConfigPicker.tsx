@@ -16,6 +16,7 @@ import {
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {gql, useQuery} from '../apollo-client';
 import {
   ConfigEditorGeneratorPipelineFragment,
   ConfigEditorPipelinePresetFragment,
@@ -25,7 +26,6 @@ import {
   ConfigPartitionsQueryVariables,
   PartitionSetForConfigEditorFragment,
 } from './types/ConfigEditorConfigPicker.types';
-import {gql, useQuery} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';

@@ -1,6 +1,6 @@
 import {invocationsOfPlannedDynamicStep, replacePlannedIndex} from './DynamicStepSupport';
-import {ExecutionPlanToGraphFragment} from './types/toGraphQueryItems.types';
 import {gql} from '../apollo-client';
+import {ExecutionPlanToGraphFragment} from './types/toGraphQueryItems.types';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {StepKind} from '../graphql/types';
 import {IStepMetadata, IStepState} from '../runs/RunMetadataProvider';

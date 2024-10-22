@@ -48,6 +48,11 @@ class TaskHandle(NamedTuple):
     task_id: str
 
 
+@whitelist_for_serdes
+class DagHandle(NamedTuple):
+    dag_id: str
+
+
 ###################################################################################################
 # Serialized data that scopes to airflow DAGs and tasks.
 ###################################################################################################
@@ -67,9 +72,16 @@ class SerializedDagData:
 
 @whitelist_for_serdes
 @record
-class KeyScopedDataItem:
+class KeyScopedTaskHandles:
     asset_key: AssetKey
     mapped_tasks: AbstractSet[TaskHandle]
+
+
+@whitelist_for_serdes
+@record
+class KeyScopedDagHandles:
+    asset_key: AssetKey
+    mapped_dags: AbstractSet[DagHandle]
 
 
 ###################################################################################################
@@ -85,9 +97,14 @@ class KeyScopedDataItem:
 @record
 class SerializedAirflowDefinitionsData:
     instance_name: str
-    key_scoped_data_items: List[KeyScopedDataItem]
+    key_scoped_task_handles: List[KeyScopedTaskHandles]
+    key_scoped_dag_handles: List[KeyScopedDagHandles]
     dag_datas: Mapping[str, SerializedDagData]
 
     @cached_property
     def all_mapped_tasks(self) -> Dict[AssetKey, AbstractSet[TaskHandle]]:
-        return {item.asset_key: item.mapped_tasks for item in self.key_scoped_data_items}
+        return {item.asset_key: item.mapped_tasks for item in self.key_scoped_task_handles}
+
+    @cached_property
+    def all_mapped_dags(self) -> Dict[AssetKey, AbstractSet[DagHandle]]:
+        return {item.asset_key: item.mapped_dags for item in self.key_scoped_dag_handles}

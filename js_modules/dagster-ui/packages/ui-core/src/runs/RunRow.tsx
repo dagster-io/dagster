@@ -44,7 +44,9 @@ export const RunRow = ({
       const {checked} = e.target;
       const shiftKey =
         e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
-      onToggleChecked && onToggleChecked({checked, shiftKey});
+      if (onToggleChecked) {
+        onToggleChecked({checked, shiftKey});
+      }
     }
   };
 

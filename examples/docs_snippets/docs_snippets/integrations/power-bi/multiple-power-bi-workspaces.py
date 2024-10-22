@@ -1,11 +1,11 @@
 from dagster_powerbi import PowerBIServicePrincipal, PowerBIWorkspace
 
-from dagster import Definitions, EnvVar
+import dagster as dg
 
 credentials = PowerBIServicePrincipal(
-    client_id=EnvVar("POWER_BI_CLIENT_ID"),
-    client_secret=EnvVar("POWER_BI_CLIENT_SECRET"),
-    tenant_id=EnvVar("POWER_BI_TENANT_ID"),
+    client_id=dg.EnvVar("POWER_BI_CLIENT_ID"),
+    client_secret=dg.EnvVar("POWER_BI_CLIENT_SECRET"),
+    tenant_id=dg.EnvVar("POWER_BI_TENANT_ID"),
 )
 
 sales_team_workspace = PowerBIWorkspace(
@@ -20,7 +20,7 @@ marketing_team_workspace = PowerBIWorkspace(
 
 # We use Definitions.merge to combine the definitions from both workspaces
 # into a single set of definitions to load
-defs = Definitions.merge(
+defs = dg.Definitions.merge(
     sales_team_workspace.build_defs(),
     marketing_team_workspace.build_defs(),
 )

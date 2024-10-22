@@ -37,10 +37,10 @@ const Wrapper = ({
               selectedRanges: selection.selectedRanges,
             })
           : selection === null
-          ? 'null'
-          : selection === undefined
-          ? 'undefined'
-          : ''}
+            ? 'null'
+            : selection === undefined
+              ? 'undefined'
+              : ''}
       </div>
     </>
   );

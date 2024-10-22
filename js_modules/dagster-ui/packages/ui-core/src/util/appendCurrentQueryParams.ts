@@ -5,7 +5,7 @@ export function appendCurrentQueryParams(url: string): string {
 
   try {
     inputUrl = new URL(url, base);
-  } catch (error) {
+  } catch {
     throw new Error(`Invalid URL provided: ${url}`);
   }
 

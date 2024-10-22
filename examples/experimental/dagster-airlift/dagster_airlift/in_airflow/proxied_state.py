@@ -23,20 +23,29 @@ class TaskProxiedState(NamedTuple):
 
 
 class DagProxiedState(NamedTuple):
+    proxied: Optional[bool]
     tasks: Dict[str, TaskProxiedState]
 
     @staticmethod
-    def from_dict(dag_dict: Dict[str, Sequence[Dict[str, Any]]]) -> "DagProxiedState":
-        if "tasks" not in dag_dict:
+    def from_dict(dag_dict: Dict[str, Any]) -> "DagProxiedState":
+        if "tasks" not in dag_dict and "proxied" not in dag_dict:
             raise Exception(
-                f"Expected a 'tasks' key in the dag dictionary. Instead; got: {dag_dict}"
+                f"Expected a 'tasks' or 'proxied' top-level key in the dag dictionary. Instead; got: {dag_dict}"
             )
-        task_list = dag_dict["tasks"]
+        if "tasks" in dag_dict and "proxied" in dag_dict:
+            raise Exception(
+                f"Expected only one of 'tasks' or 'proxied' top-level keys in the dag dictionary. Instead; got: {dag_dict}"
+            )
         task_proxied_states = {}
-        for task_dict in task_list:
-            task_state = TaskProxiedState.from_dict(task_dict)
-            task_proxied_states[task_state.task_id] = task_state
-        return DagProxiedState(tasks=task_proxied_states)
+        if "tasks" in dag_dict:
+            task_list: Sequence[Dict[str, Any]] = dag_dict["tasks"]
+            for task_dict in task_list:
+                task_state = TaskProxiedState.from_dict(task_dict)
+                task_proxied_states[task_state.task_id] = task_state
+        dag_proxied_state: Optional[bool] = dag_dict.get("proxied")
+        if dag_proxied_state not in [True, False, None]:
+            raise Exception("Expected 'proxied' key to be a boolean or None")
+        return DagProxiedState(tasks=task_proxied_states, proxied=dag_proxied_state)
 
     def to_dict(self) -> Dict[str, Sequence[Dict[str, Any]]]:
         return {"tasks": [task_state.to_dict() for task_state in self.tasks.values()]}
@@ -45,6 +54,24 @@ class DagProxiedState(NamedTuple):
         if task_id not in self.tasks:
             return False
         return self.tasks[task_id].proxied
+
+    @property
+    def dag_proxies_at_task_level(self) -> bool:
+        """Dags can proxy on either a task-by-task basis, or for the entire dag at once.
+        We use the proxied state to determine which is the case for a given dag. If the dag's proxied state
+        is None, then we assume the dag proxies at the task level. If the dag's proxied state is a boolean,
+        then we assume the dag proxies at the dag level.
+        """
+        return self.proxied is None
+
+    @property
+    def dag_proxies_at_dag_level(self) -> bool:
+        """Dags can proxy on either a task-by-task basis, or for the entire dag at once.
+        We use the proxied state to determine which is the case for a given dag. If the dag's proxied state
+        is None, then we assume the dag proxies at the task level. If the dag's proxied state is a boolean,
+        then we assume the dag proxies at the dag level.
+        """
+        return self.proxied is not None
 
 
 class AirflowProxiedState(NamedTuple):
@@ -59,6 +86,22 @@ class AirflowProxiedState(NamedTuple):
 
     def dag_has_proxied_state(self, dag_id: str) -> bool:
         return self.get_proxied_dict_for_dag(dag_id) is not None
+
+    def dag_proxies_at_task_level(self, dag_id: str) -> bool:
+        """Dags can proxy on either a task-by-task basis, or for the entire dag at once.
+        We use the proxied state to determine which is the case for a given dag. If the dag's proxied state
+        is None, then we assume the dag proxies at the task level. If the dag's proxied state is a boolean,
+        then we assume the dag proxies at the dag level.
+        """
+        return self.dags[dag_id].dag_proxies_at_task_level
+
+    def dag_proxies_at_dag_level(self, dag_id: str) -> bool:
+        """Dags can proxy on either a task-by-task basis, or for the entire dag at once.
+        We use the proxied state to determine which is the case for a given dag. If the dag's proxied state
+        is None, then we assume the dag proxies at the task level. If the dag's proxied state is a boolean,
+        then we assume the dag proxies at the dag level.
+        """
+        return self.dags[dag_id].dag_proxies_at_dag_level
 
     def get_proxied_dict_for_dag(
         self, dag_id: str

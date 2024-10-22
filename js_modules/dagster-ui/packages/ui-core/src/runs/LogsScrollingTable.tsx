@@ -63,9 +63,13 @@ export const LogsScrollingTable = (props: Props) => {
       pinToBottom.current = shouldPin;
     };
 
-    parent && parent.addEventListener('scroll', onScroll);
+    if (parent) {
+      parent.addEventListener('scroll', onScroll);
+    }
     return () => {
-      parent && parent.removeEventListener('scroll', onScroll);
+      if (parent) {
+        parent.removeEventListener('scroll', onScroll);
+      }
     };
   }, [virtualizer]);
 

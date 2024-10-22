@@ -6,6 +6,7 @@ import styled from 'styled-components';
 import {AssetLink} from './AssetLink';
 import {asAssetKeyInput} from './asInput';
 import {AssetKey} from './types';
+import {gql, useQuery} from '../apollo-client';
 import {
   BackfillPreviewQuery,
   BackfillPreviewQueryVariables,
@@ -14,7 +15,6 @@ import {
   BackfillPolicyForLaunchAssetFragment,
   PartitionDefinitionForLaunchAssetFragment,
 } from './types/LaunchAssetExecutionButton.types';
-import {gql, useQuery} from '../apollo-client';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {TargetPartitionsDisplay} from '../instance/backfill/TargetPartitionsDisplay';
 import {testId} from '../testing/testId';

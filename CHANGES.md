@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.8.12 (core) / 0.24.12 (libraries)
+
+### New
+
+- The `AutomationCondition.eager()`, `AutomationCondition.missing()`, and `AutomationCondition.on_cron` conditions are now compatible with asset checks.
+- Added `AssetSelection.materializable()`, which returns only assets that are materializable in an existing selection.
+- Added a new `AutomationCondition.all_deps_blocking_checks_passed` condition, which can be used to prevent materialization when any upstream blocking checks have failed.
+- Added a `code_version` parameter to the `@graph_asset` decorator.
+- If a `LaunchPartitionBackfill` mutation is submitted to GQL with invalid partition keys, it will now return an early `PartitionKeysNotFoundError`.
+- `AssetSelection.checks_for_assets` now accepts `AssetKey`s and string asset keys, in addition to `AssetsDefinition`s.
+- [ui] Added a search bar to partitions tab on the asset details page.
+- [ui] Restored docked left nav behavior for wide viewports.
+- [dagster-aws] `get_objects` now has a `since_last_modified` that enables only fetching objects modified after a given timestamp.
+- [dagster-aws] New AWS EMR Dagster Pipes client (`dagster_aws.pipes.PipesEMRCLient` ) for running and monitoring AWS EMR jobs from Dagster.
+- [dagster-looker] Pinned the looker-sdk dependency below 24.18.0 to avoid this issue: https://github.com/looker-open-source/sdk-codegen/issues/1518.
+
+### Bugfixes
+
+- Fixed an issue which could cause incorrect evaluation results when using self-dependent partition mappings with `AutomationConditions` that operate over dependencies.
+- [ui] Fixed an issue where the breadcumb on asset pages would flicker nonstop.
+- [dagster-embedded-elt] Fixed extraction of metadata for dlt assets whose source and destination identifiers differ.
+- [dagster-databricks] Fixed a permissioning gap that existed with the `DatabricksPySparkStepLauncher`, so that permissions are now set correctly for non-admin users.
+- [dagster-dbt] Fixed an issue where column metadata generated with `fetch_column_metadata` did not work properly for models imported through dbt dependencies.
+
+### Documentation
+
+- [dagster-k8s] `DagsterK8sPipesClient.run` now shows up in API docs.
+
+### Dagster Plus
+
+- [ui] Fixed a bug in the catalog UI where owners filters were not applied correctly.
+- [ui] Fixed width of the column lineage dropdown selector on the asset page.
+- [ui] Column lineage now correctly renders when set on asset definition metadata
+- [ui] Fixed Settings link on the list of deployments, for users in the legacy navigation flag.
+
 ## 1.8.11 (core) / 0.24.11 (libraries)
 
 ### New

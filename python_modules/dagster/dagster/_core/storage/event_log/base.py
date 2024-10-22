@@ -147,10 +147,23 @@ class AssetRecord(
         return [records_by_key.get(key) for key in keys]
 
 
-class AssetCheckSummaryRecord(NamedTuple):
-    asset_check_key: AssetCheckKey
-    last_check_execution_record: Optional[AssetCheckExecutionRecord]
-    last_run_id: Optional[str]
+class AssetCheckSummaryRecord(
+    NamedTuple(
+        "_AssetCheckSummaryRecord",
+        [
+            ("asset_check_key", AssetCheckKey),
+            ("last_check_execution_record", Optional[AssetCheckExecutionRecord]),
+            ("last_run_id", Optional[str]),
+        ],
+    ),
+    InstanceLoadableBy[AssetCheckKey],
+):
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[AssetCheckKey], instance: DagsterInstance
+    ) -> Iterable[Optional["AssetCheckSummaryRecord"]]:
+        records_by_key = instance.event_log_storage.get_asset_check_summary_records(list(keys))
+        return [records_by_key[key] for key in keys]
 
 
 class PlannedMaterializationInfo(NamedTuple):

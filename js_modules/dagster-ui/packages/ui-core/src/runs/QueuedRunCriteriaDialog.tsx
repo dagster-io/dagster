@@ -17,12 +17,12 @@ import {Link} from 'react-router-dom';
 import * as yaml from 'yaml';
 
 import {QUEUED_RUN_CRITERIA_QUERY} from './QueuedRunCriteriaQuery';
+import {useQuery} from '../apollo-client';
 import {
   QueuedRunCriteriaQuery,
   QueuedRunCriteriaQueryVariables,
 } from './types/QueuedRunCriteriaQuery.types';
 import {RunFragment} from './types/RunFragments.types';
-import {useQuery} from '../apollo-client';
 import {useRunQueueConfig} from '../instance/useRunQueueConfig';
 import {StructuredContentTable} from '../metadata/MetadataEntry';
 import {numberFormatter} from '../ui/formatters';
@@ -91,7 +91,7 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
             // can be {"applyLimitPerUniqueValue": bool}
             isPlainObject(limit.value)),
       );
-    } catch (err) {
+    } catch {
       return undefined;
     }
   }, [runQueueConfig, runTagMap]);

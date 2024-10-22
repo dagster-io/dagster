@@ -70,7 +70,9 @@ export const LaunchButton = ({config, runCount}: LaunchButtonProps) => {
     disabled: config.disabled,
   });
   const onClick = () => {
-    status === LaunchButtonStatus.Ready && onConfigSelected(config);
+    if (status === LaunchButtonStatus.Ready) {
+      onConfigSelected(config);
+    }
   };
   return (
     <ShortcutHandler

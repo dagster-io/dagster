@@ -1,8 +1,8 @@
 import {FontFamily, Heading, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
-import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotNav.types';
 import {gql, useQuery} from '../apollo-client';
+import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotNav.types';
 import {ExplorerPath, explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
 import {useActivePipelineForName} from '../workspace/WorkspaceContext/util';

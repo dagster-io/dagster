@@ -3,11 +3,11 @@ import {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {SidebarSection} from './SidebarComponents';
+import {gql, useQuery} from '../apollo-client';
 import {
   SidebarOpGraphsQuery,
   SidebarOpGraphsQueryVariables,
 } from './types/SidebarOpExecutionGraphs.types';
-import {gql, useQuery} from '../apollo-client';
 import {AssetValueGraph, AssetValueGraphData} from '../assets/AssetValueGraph';
 import {StepStatusDot} from '../gantt/GanttStatusPanel';
 import {linkToRunEvent} from '../runs/RunUtils';

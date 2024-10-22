@@ -1,10 +1,10 @@
 import {useMemo} from 'react';
 
+import {gql, useQuery} from '../apollo-client';
 import {
   AssetJobPartitionSetsQuery,
   AssetJobPartitionSetsQueryVariables,
 } from './types/usePartitionNameForPipeline.types';
-import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {RepoAddress} from '../workspace/types';
 

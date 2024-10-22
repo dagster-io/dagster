@@ -7,8 +7,8 @@ import {OpIOBox, metadataForIO} from './OpIOBox';
 import {IOpTag, OpTags} from './OpTags';
 import {OpLayout} from './asyncGraphLayout';
 import {Edge, position} from './common';
-import {OpNodeDefinitionFragment, OpNodeInvocationFragment} from './types/OpNode.types';
 import {gql} from '../apollo-client';
+import {OpNodeDefinitionFragment, OpNodeInvocationFragment} from './types/OpNode.types';
 import {withMiddleTruncation} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
@@ -344,8 +344,8 @@ const NodeContainer = styled.div<{
       p.$selected
         ? `2px dashed ${NodeHighlightColors.Border}`
         : p.$secondaryHighlight
-        ? `2px solid ${Colors.accentBlue()}55`
-        : `2px solid ${Colors.keylineDefault()}`};
+          ? `2px solid ${Colors.accentBlue()}55`
+          : `2px solid ${Colors.keylineDefault()}`};
 
     border-width: ${(p) => (p.$minified ? '3px' : '2px')};
     border-radius: 8px;

@@ -1,13 +1,11 @@
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Set, Union, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union, cast
 
 import graphene
 from dagster import (
     AssetKey,
-    DagsterError,
     _check as check,
 )
 from dagster._core.definitions.asset_graph_differ import AssetDefinitionChangeType, AssetGraphDiffer
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import (
     NULL_DATA_VERSION,
@@ -16,7 +14,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph, RemoteAssetNode
+from dagster._core.definitions.remote_asset_graph import RemoteAssetNode, RemoteWorkspaceAssetNode
 from dagster._core.definitions.selector import JobSelector
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.errors import DagsterInvariantViolationError
@@ -326,8 +324,9 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         self._remote_node = check.inst_param(remote_node, "remote_node", RemoteAssetNode)
 
-        self._asset_node_snap = remote_node.priority_node_snap
-        self._repository_handle = remote_node.priority_repository_handle
+        repo_scoped_node = remote_node.resolve_to_singular_repo_scoped_node()
+        self._asset_node_snap = repo_scoped_node.asset_node_snap
+        self._repository_handle = repo_scoped_node.repository_handle
         self._repository_selector = self._repository_handle.to_selector()
 
         self._stale_status_loader = check.opt_inst_param(
@@ -846,53 +845,49 @@ class GrapheneAssetNode(graphene.ObjectType):
             return GrapheneAutomationCondition(self._asset_node_snap.automation_condition)
         return None
 
-    def _sensor_targets_asset(
-        self, sensor: RemoteSensor, asset_graph: RemoteAssetGraph, job_names: Set[str]
-    ) -> bool:
-        asset_key = self._asset_node_snap.asset_key
-
-        if sensor.asset_selection is not None:
-            try:
-                asset_selection = sensor.asset_selection.resolve(asset_graph)
-            except DagsterError:
-                return False
-
-            if asset_key in asset_selection:
-                return True
-
-        return any(target.job_name in job_names for target in sensor.get_targets())
-
     def resolve_targetingInstigators(self, graphene_info: ResolveInfo) -> Sequence[GrapheneSensor]:
-        repo = graphene_info.context.get_repository(self._repository_selector)
-        sensors = repo.get_sensors()
-        schedules = repo.get_schedules()
-
-        asset_graph = repo.asset_graph
-
-        job_names = {
-            job_name
-            for job_name in self._asset_node_snap.job_names
-            if not job_name == IMPLICIT_ASSET_JOB_NAME
-        }
+        if isinstance(self._remote_node, RemoteWorkspaceAssetNode):
+            # global nodes have saved references to their targeting instigators
+            schedules = [
+                graphene_info.context.get_schedule(schedule_handle)
+                for schedule_handle in self._remote_node.get_targeting_schedule_handles()
+            ]
+            sensors = [
+                graphene_info.context.get_sensor(sensor_handle)
+                for sensor_handle in self._remote_node.get_targeting_sensor_handles()
+            ]
+        else:
+            # fallback to using the repository
+            repo = graphene_info.context.get_repository(self._repository_selector)
+            schedules = repo.get_schedules_targeting(self._asset_node_snap.asset_key)
+            sensors = repo.get_sensors_targeting(self._asset_node_snap.asset_key)
 
         results = []
         for sensor in sensors:
-            if not self._sensor_targets_asset(sensor, asset_graph, job_names):
-                continue
-
             sensor_state = graphene_info.context.instance.get_instigator_state(
                 sensor.get_remote_origin_id(),
                 sensor.selector_id,
             )
-            results.append(GrapheneSensor(sensor, repo, sensor_state))
+            results.append(
+                GrapheneSensor(
+                    sensor,
+                    sensor.handle.repository_handle,
+                    sensor_state,
+                )
+            )
 
         for schedule in schedules:
-            if schedule.job_name in job_names:
-                schedule_state = graphene_info.context.instance.get_instigator_state(
-                    schedule.get_remote_origin_id(),
-                    schedule.selector_id,
+            schedule_state = graphene_info.context.instance.get_instigator_state(
+                schedule.get_remote_origin_id(),
+                schedule.selector_id,
+            )
+            results.append(
+                GrapheneSchedule(
+                    schedule,
+                    schedule.handle.repository_handle,
+                    schedule_state,
                 )
-                results.append(GrapheneSchedule(schedule, repo, schedule_state))
+            )
 
         return results
 

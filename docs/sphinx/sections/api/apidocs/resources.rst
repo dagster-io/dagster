@@ -24,6 +24,11 @@ The following classes are used as part of the new `Pythonic resources system <ht
 
 .. autofunction:: with_resources
 
+Utilities
+---------
+
+.. autoclass:: EnvVar
+
 Legacy resource system
 ----------------------
 

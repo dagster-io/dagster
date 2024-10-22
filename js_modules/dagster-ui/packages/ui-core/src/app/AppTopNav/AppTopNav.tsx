@@ -58,8 +58,14 @@ export const AppTopNavLogo = () => {
   const navButton = React.useRef<null | HTMLButtonElement>(null);
 
   const onToggle = React.useCallback(() => {
-    navButton.current && navButton.current.focus();
-    nav.isOpen ? nav.close() : nav.open();
+    if (navButton.current) {
+      navButton.current.focus();
+    }
+    if (nav.isOpen) {
+      nav.close();
+    } else {
+      nav.open();
+    }
   }, [nav]);
 
   const onKeyDown = React.useCallback(

@@ -256,10 +256,11 @@ def get_assets_latest_info(
     for asset_key in step_keys_by_asset.keys():
         asset_node = asset_nodes[asset_key]
         if asset_node:
+            handle = asset_node.resolve_to_singular_repo_scoped_node().repository_handle
             node_id = get_unique_asset_id(
                 asset_key,
-                asset_node.priority_repository_handle.repository_name,
-                asset_node.priority_repository_handle.location_name,
+                handle.repository_name,
+                handle.location_name,
             )
         else:
             node_id = get_unique_asset_id(asset_key)
@@ -327,9 +328,9 @@ def validate_pipeline_config(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_job = get_remote_job_or_raise(graphene_info, selector)
-    ensure_valid_config(external_job, run_config)
-    return GraphenePipelineConfigValidationValid(pipeline_name=external_job.name)
+    remote_job = get_remote_job_or_raise(graphene_info, selector)
+    ensure_valid_config(remote_job, run_config)
+    return GraphenePipelineConfigValidationValid(pipeline_name=remote_job.name)
 
 
 def get_execution_plan(
@@ -341,11 +342,11 @@ def get_execution_plan(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_job = get_remote_job_or_raise(graphene_info, selector)
-    ensure_valid_config(external_job, run_config)
+    remote_job = get_remote_job_or_raise(graphene_info, selector)
+    ensure_valid_config(remote_job, run_config)
     return GrapheneExecutionPlan(
-        graphene_info.context.get_external_execution_plan(
-            remote_job=external_job,
+        graphene_info.context.get_execution_plan(
+            remote_job=remote_job,
             run_config=run_config,
             step_keys_to_execute=None,
             known_state=None,

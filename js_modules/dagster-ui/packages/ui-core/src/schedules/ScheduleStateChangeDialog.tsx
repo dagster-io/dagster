@@ -12,13 +12,13 @@ import {
 import {useEffect} from 'react';
 
 import {START_SCHEDULE_MUTATION, STOP_SCHEDULE_MUTATION} from './ScheduleMutations';
+import {useMutation} from '../apollo-client';
 import {
   StartThisScheduleMutation,
   StartThisScheduleMutationVariables,
   StopScheduleMutation,
   StopScheduleMutationVariables,
 } from './types/ScheduleMutations.types';
-import {useMutation} from '../apollo-client';
 import {
   OpenWithIntent,
   useInstigationStateReducer,

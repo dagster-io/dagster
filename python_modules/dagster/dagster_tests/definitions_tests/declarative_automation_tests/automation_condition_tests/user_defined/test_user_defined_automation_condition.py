@@ -1,8 +1,13 @@
 import logging
 
-from dagster import AutomationCondition, DagsterInstance, asset, evaluate_automation_conditions
-from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
-from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster import (
+    AutomationCondition,
+    AutomationContext,
+    AutomationResult,
+    DagsterInstance,
+    asset,
+    evaluate_automation_conditions,
+)
 
 
 def test_cursoring() -> None:

@@ -1,7 +1,7 @@
 import datetime
 import time
 from abc import ABC
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 import requests
 from dagster import _check as check
@@ -243,10 +243,11 @@ class AirflowInstance:
                 f"Failed to fetch dag runs for {dag_ids}. Status code: {response.status_code}, Message: {response.text}"
             )
 
-    def trigger_dag(self, dag_id: str) -> str:
+    def trigger_dag(self, dag_id: str, logical_date: Optional[datetime.datetime] = None) -> str:
+        params = {} if not logical_date else {"logical_date": logical_date.isoformat()}
         response = self.auth_backend.get_session().post(
             f"{self.get_api_url()}/dags/{dag_id}/dagRuns",
-            json={},
+            json=params,
         )
         if response.status_code != 200:
             raise DagsterError(

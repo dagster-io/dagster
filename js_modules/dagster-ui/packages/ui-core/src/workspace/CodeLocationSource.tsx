@@ -57,7 +57,7 @@ export const extractRepoURL = (metadata: Metadata[]): RepoURLType => {
   let url = null;
   try {
     url = new URL(metadataWithURL.value);
-  } catch (e) {
+  } catch {
     // Not a URL. Just show the string, don't try to link it.
   }
 

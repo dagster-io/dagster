@@ -148,7 +148,7 @@ class DagsterWebserver(
             return PlainTextResponse("Invalid Path", status_code=400)
 
         # get ipynb content from grpc call
-        notebook_content = context.get_external_notebook_data(code_location_name, nb_path)
+        notebook_content = context.get_notebook_data(code_location_name, nb_path)
         check.inst_param(notebook_content, "notebook_content", bytes)
 
         # parse content to HTML

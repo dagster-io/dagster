@@ -31,7 +31,7 @@ const ConfirmationDialog = ({
   onClose,
 }: ConfirmationDialogProps) => {
   return (
-    <Dialog icon={title ? icon ?? 'info' : icon} onClose={onClose} title={title} isOpen={open}>
+    <Dialog icon={title ? (icon ?? 'info') : icon} onClose={onClose} title={title} isOpen={open}>
       <DialogBody>{description}</DialogBody>
       <DialogFooter topBorder>
         <Button onClick={onClose}>Cancel</Button>

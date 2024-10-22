@@ -262,7 +262,9 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
   // since we would just be animating endlessly with no new logs.
   React.useEffect(() => {
     if (scale === 0 || lostWebsocket || exitedAt) {
-      animationRequest.current && cancelAnimationFrame(animationRequest.current);
+      if (animationRequest.current) {
+        cancelAnimationFrame(animationRequest.current);
+      }
     }
 
     // Set the final timestamp.
@@ -276,7 +278,9 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
   React.useEffect(() => {
     animationRequest.current = requestAnimationFrame(animate);
     return () => {
-      animationRequest.current && cancelAnimationFrame(animationRequest.current);
+      if (animationRequest.current) {
+        cancelAnimationFrame(animationRequest.current);
+      }
     };
   }, [animate]);
 

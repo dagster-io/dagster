@@ -178,8 +178,8 @@ def test_external_diamond_toposort():
             attribute="create_diamond_job",
             working_directory=None,
         ).create_single_location(instance) as repo_location:
-            external_repo = next(iter(repo_location.get_repositories().values()))
-            remote_job = next(iter(external_repo.get_all_jobs()))
+            repo = next(iter(repo_location.get_repositories().values()))
+            remote_job = next(iter(repo.get_all_jobs()))
             assert remote_job.node_names_in_topological_order == [
                 "A_source",
                 "A",

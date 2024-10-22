@@ -42,7 +42,7 @@ The updated asset should look similar to the following code. Click **View answer
 ```python {% obfuscated="true" %}
 from dagster import asset, AssetExecutionContext
 from dagster_duckdb import DuckDBResource
-from ..partitions import monthly_partitions
+from ..partitions import monthly_partition
 
 @asset(
   deps=["taxi_trips_file"],

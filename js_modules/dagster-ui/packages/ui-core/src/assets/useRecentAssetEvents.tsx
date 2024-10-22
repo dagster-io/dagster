@@ -3,8 +3,8 @@ import {useMemo} from 'react';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey, AssetViewParams} from './types';
-import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
 import {gql, useQuery} from '../apollo-client';
+import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
 /**
@@ -26,8 +26,8 @@ export function getXAxisForParams(
     params.partition !== undefined
       ? 'partition'
       : params.time !== undefined || params.asOf
-      ? 'time'
-      : xAxisDefault;
+        ? 'time'
+        : xAxisDefault;
 
   return xAxis;
 }

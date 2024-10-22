@@ -29,7 +29,7 @@ export class CacheManager<TQuery> {
     this.key = `${KEY_PREFIX}${key}`;
     try {
       this.cache = cache<string, CacheData<TQuery>>({dbName: this.key, maxCount: 1});
-    } catch (e) {}
+    } catch {}
   }
 
   async get(version: number | string): Promise<TQuery | undefined> {

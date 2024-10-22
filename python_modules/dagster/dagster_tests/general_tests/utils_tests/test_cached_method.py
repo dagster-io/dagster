@@ -1,7 +1,9 @@
 # mypy: disable-error-code=annotation-unchecked
 
+import asyncio
 import gc
-from typing import Dict, NamedTuple, Tuple
+import random
+from typing import Dict, List, NamedTuple, Tuple
 
 import objgraph
 from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
@@ -131,3 +133,38 @@ def test_scenario_documented_in_cached_method_doc_block() -> None:
     # only one entry
     assert len(obj.__dict__) == 1
     assert len(obj.__dict__[CACHED_METHOD_CACHE_FIELD][MyClass.a_method.__name__]) == 1
+
+
+def test_async_cached_method() -> None:
+    class MyClass:
+        def __init__(self, attr1) -> None:
+            self._attr1 = attr1
+            self.calls = []
+
+        @cached_method
+        async def my_method(self, arg1) -> Tuple:
+            self.calls.append(arg1)
+            await asyncio.sleep(0.25 * random.random())
+            return (arg1, self._attr1)
+
+    obj1 = MyClass(4)
+    assert obj1.calls == []
+    a_result = asyncio.run(obj1.my_method(arg1="a"))
+    assert a_result == ("a", 4)
+    assert obj1.calls == ["a"]
+    assert asyncio.run(obj1.my_method(arg1="a")) is a_result
+    b_result = asyncio.run(obj1.my_method(arg1="b"))
+    assert b_result == ("b", 4)
+    assert asyncio.run(obj1.my_method(arg1="a")) is a_result
+    assert obj1.calls == ["a", "b"]
+
+    async def run_my_method_a_bunch() -> List[Tuple]:
+        return await asyncio.gather(*[obj1.my_method(arg1="a") for i in range(100)])
+
+    assert asyncio.run(run_my_method_a_bunch()) == [("a", 4)] * 100
+    assert obj1.calls == ["a", "b"]
+
+    obj2 = MyClass(5)
+    assert asyncio.run(obj2.my_method(arg1="a")) == ("a", 5)
+    assert asyncio.run(obj2.my_method(arg1="b")) == ("b", 5)
+    assert obj2.calls == ["a", "b"]

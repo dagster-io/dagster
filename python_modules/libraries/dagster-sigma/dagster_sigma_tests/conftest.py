@@ -1,17 +1,26 @@
+import json
 import uuid
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterator, List, Optional
 
 import pytest
-import responses
+import responses as request_responses
+from aiohttp import hdrs
+from aioresponses import aioresponses
 from dagster_sigma import SigmaBaseUrl
+
+
+@pytest.fixture(name="responses")
+def mock_responses() -> Iterator[aioresponses]:
+    with aioresponses() as m:
+        yield m
 
 
 @pytest.fixture(name="sigma_auth_token")
 def sigma_auth_fixture() -> str:
     fake_access_token: str = uuid.uuid4().hex
 
-    responses.add(
-        method=responses.POST,
+    request_responses.add(
+        method=request_responses.POST,
         url=f"{SigmaBaseUrl.AWS_US.value}/v2/auth/token",
         json={"access_token": fake_access_token},
         status=200,
@@ -20,12 +29,24 @@ def sigma_auth_fixture() -> str:
     return fake_access_token
 
 
-def _build_paginated_response(items: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _build_paginated_response(
+    items: List[Dict[str, Any]], slice_start: Optional[int] = None, slice_end: Optional[int] = None
+) -> Dict[str, Any]:
+    has_more = False
+    next_page = None
+    items_to_return = items
+
+    if slice_start is not None or slice_end is not None:
+        items_to_return = items[slice_start:slice_end]
+    if slice_end is not None and slice_end < len(items):
+        has_more = True
+        next_page = slice_end
+
     return {
-        "entries": items,
-        "hasMore": False,
+        "entries": items_to_return,
+        "hasMore": has_more,
         "total": len(items),
-        "nextPage": None,
+        "nextPage": next_page,
     }
 
 
@@ -57,204 +78,247 @@ SAMPLE_DATASET_DATA = {
 
 
 @pytest.fixture(name="lineage_warn")
-def lineage_warn_fixture() -> None:
-    responses.replace(
-        method_or_response=responses.GET,
-        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/lineage/elements/_MuHPbskp0",
-        status=400,
-    )
+def lineage_warn_fixture(responses: aioresponses) -> None:
+    # clear out the existing response
+    url_to_warn = "https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/lineage/elements/_MuHPbskp0"
+    key_to_del = None
+    for key, response in responses._matches.items():  # noqa: SLF001
+        if str(response.url_or_pattern) == url_to_warn:
+            key_to_del = key
+
+    assert key_to_del
+    del responses._matches[key_to_del]  # noqa: SLF001
+
+    # failed responses don't get cached
+    for _ in range(2):
+        responses.add(
+            method=hdrs.METH_GET,
+            url=url_to_warn,
+            status=400,
+        )
 
 
 @pytest.fixture(name="sigma_sample_data")
-def sigma_sample_data_fixture() -> None:
+def sigma_sample_data_fixture(responses: aioresponses) -> None:
     # Single workbook, dataset
     responses.add(
-        method=responses.GET,
+        method=hdrs.METH_GET,
         url="https://aws-api.sigmacomputing.com/v2/workbooks",
-        json=_build_paginated_response([SAMPLE_WORKBOOK_DATA]),
+        body=json.dumps(_build_paginated_response([SAMPLE_WORKBOOK_DATA])),
         status=200,
     )
     responses.add(
-        method=responses.GET,
+        method=hdrs.METH_GET,
         url="https://aws-api.sigmacomputing.com/v2/datasets",
-        json=_build_paginated_response([SAMPLE_DATASET_DATA]),
+        body=json.dumps(_build_paginated_response([SAMPLE_DATASET_DATA])),
         status=200,
     )
 
     responses.add(
-        method=responses.GET,
+        method=hdrs.METH_GET,
         url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages",
-        json=_build_paginated_response([{"pageId": "qwMyyHBCuC", "name": "Page 1"}]),
+        body=json.dumps(_build_paginated_response([{"pageId": "qwMyyHBCuC", "name": "Page 1"}])),
         status=200,
     )
+    elements = [
+        {
+            "elementId": "_MuHPbskp0",
+            "type": "table",
+            "name": "sample elementl",
+            "columns": [
+                "Order Id",
+                "Customer Id",
+                "workbook renamed date",
+                "Modified Date",
+            ],
+            "vizualizationType": "levelTable",
+        },
+        {
+            "elementId": "V29pknzHb6",
+            "type": "visualization",
+            "name": "Count of Order Date by Status",
+            "columns": [
+                "Order Id",
+                "Customer Id",
+                "Order Date",
+                "Status",
+                "Modified Date",
+                "Count of Order Date",
+            ],
+            "vizualizationType": "bar",
+        },
+    ]
     responses.add(
-        method=responses.GET,
+        method=hdrs.METH_GET,
         url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages/qwMyyHBCuC/elements",
-        json=_build_paginated_response(
-            [
-                {
-                    "elementId": "_MuHPbskp0",
-                    "type": "table",
-                    "name": "sample elementl",
-                    "columns": [
-                        "Order Id",
-                        "Customer Id",
-                        "workbook renamed date",
-                        "Modified Date",
-                    ],
-                    "vizualizationType": "levelTable",
-                },
-                {
-                    "elementId": "V29pknzHb6",
-                    "type": "visualization",
-                    "name": "Count of Order Date by Status",
-                    "columns": [
-                        "Order Id",
-                        "Customer Id",
-                        "Order Date",
-                        "Status",
-                        "Modified Date",
-                        "Count of Order Date",
-                    ],
-                    "vizualizationType": "bar",
-                },
-            ]
-        ),
+        body=json.dumps(_build_paginated_response(elements, 0, 1)),
         status=200,
     )
     responses.add(
-        method=responses.GET,
+        method=hdrs.METH_GET,
+        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages/qwMyyHBCuC/elements",
+        body=json.dumps(_build_paginated_response(elements, 1, 2)),
+        status=200,
+    )
+    responses.add(
+        method=hdrs.METH_GET,
         url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/lineage/elements/_MuHPbskp0",
-        json={
-            "dependencies": {
-                "qy_ARjTKcT": {
-                    "nodeId": "qy_ARjTKcT",
-                    "type": "sheet",
-                    "name": "sample elementl",
-                    "elementId": "_MuHPbskp0",
+        body=json.dumps(
+            {
+                "dependencies": {
+                    "qy_ARjTKcT": {
+                        "nodeId": "qy_ARjTKcT",
+                        "type": "sheet",
+                        "name": "sample elementl",
+                        "elementId": "_MuHPbskp0",
+                    },
+                    "inode-Iq557kfHN8KRu76HdGSWi": {
+                        "nodeId": "inode-Iq557kfHN8KRu76HdGSWi",
+                        "type": "dataset",
+                        "name": "Orders Dataset",
+                    },
                 },
-                "inode-Iq557kfHN8KRu76HdGSWi": {
-                    "nodeId": "inode-Iq557kfHN8KRu76HdGSWi",
-                    "type": "dataset",
-                    "name": "Orders Dataset",
-                },
-            },
-            "edges": [
-                {"source": "inode-Iq557kfHN8KRu76HdGSWi", "target": "qy_ARjTKcT", "type": "source"}
-            ],
-        },
+                "edges": [
+                    {
+                        "source": "inode-Iq557kfHN8KRu76HdGSWi",
+                        "target": "qy_ARjTKcT",
+                        "type": "source",
+                    }
+                ],
+            }
+        ),
         status=200,
     )
     responses.add(
-        method=responses.GET,
+        method=hdrs.METH_GET,
         url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/elements/_MuHPbskp0/columns",
-        json=_build_paginated_response(
-            [
-                {"columnId": "inode-Iq557kfHN8KRu76HdGSWi/Order Id", "label": "Order Id"},
-                {"columnId": "inode-Iq557kfHN8KRu76HdGSWi/Customer Id", "label": "Customer Id"},
-                {
-                    "columnId": "inode-Iq557kfHN8KRu76HdGSWi/Order Date",
-                    "label": "workbook renamed date",
-                },
-                {"columnId": "inode-Iq557kfHN8KRu76HdGSWi/Modified Date", "label": "Modified Date"},
-            ]
+        body=json.dumps(
+            _build_paginated_response(
+                [
+                    {"columnId": "inode-Iq557kfHN8KRu76HdGSWi/Order Id", "label": "Order Id"},
+                    {"columnId": "inode-Iq557kfHN8KRu76HdGSWi/Customer Id", "label": "Customer Id"},
+                    {
+                        "columnId": "inode-Iq557kfHN8KRu76HdGSWi/Order Date",
+                        "label": "workbook renamed date",
+                    },
+                    {
+                        "columnId": "inode-Iq557kfHN8KRu76HdGSWi/Modified Date",
+                        "label": "Modified Date",
+                    },
+                ]
+            )
         ),
         status=200,
     )
     responses.add(
-        method=responses.GET,
+        method=hdrs.METH_GET,
         url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/lineage/elements/V29pknzHb6",
-        json={
-            "dependencies": {
-                "SBvQYKT6ui": {
-                    "nodeId": "SBvQYKT6ui",
-                    "type": "sheet",
-                    "name": "Count of Order Date by Status",
-                    "elementId": "V29pknzHb6",
+        body=json.dumps(
+            {
+                "dependencies": {
+                    "SBvQYKT6ui": {
+                        "nodeId": "SBvQYKT6ui",
+                        "type": "sheet",
+                        "name": "Count of Order Date by Status",
+                        "elementId": "V29pknzHb6",
+                    },
+                    "inode-Iq557kfHN8KRu76HdGSWi": {
+                        "nodeId": "inode-Iq557kfHN8KRu76HdGSWi",
+                        "type": "dataset",
+                        "name": "Orders Dataset",
+                    },
                 },
-                "inode-Iq557kfHN8KRu76HdGSWi": {
-                    "nodeId": "inode-Iq557kfHN8KRu76HdGSWi",
-                    "type": "dataset",
-                    "name": "Orders Dataset",
-                },
-            },
-            "edges": [
-                {"source": "inode-Iq557kfHN8KRu76HdGSWi", "target": "SBvQYKT6ui", "type": "source"}
-            ],
-        },
-        status=200,
-    )
-    responses.add(
-        method=responses.GET,
-        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/elements/V29pknzHb6/columns",
-        json=_build_paginated_response(
-            [
-                {"columnId": "inode-Iq557kfHN8KRu76HdGSWi/Order Id", "label": "Order Id"},
-                {"columnId": "inode-Iq557kfHN8KRu76HdGSWi/Customer Id", "label": "Customer Id"},
-                {"columnId": "inode-Iq557kfHN8KRu76HdGSWi/Order Date", "label": "Order Date"},
-                {"columnId": "inode-Iq557kfHN8KRu76HdGSWi/Status", "label": "Status"},
-                {"columnId": "inode-Iq557kfHN8KRu76HdGSWi/Modified Date", "label": "Modified Date"},
-                {"columnId": "VBKAHQgx58", "label": "Count of Order Date"},
-            ]
+                "edges": [
+                    {
+                        "source": "inode-Iq557kfHN8KRu76HdGSWi",
+                        "target": "SBvQYKT6ui",
+                        "type": "source",
+                    }
+                ],
+            }
         ),
         status=200,
     )
     responses.add(
-        method=responses.GET,
+        method=hdrs.METH_GET,
+        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/elements/V29pknzHb6/columns",
+        body=json.dumps(
+            _build_paginated_response(
+                [
+                    {"columnId": "inode-Iq557kfHN8KRu76HdGSWi/Order Id", "label": "Order Id"},
+                    {"columnId": "inode-Iq557kfHN8KRu76HdGSWi/Customer Id", "label": "Customer Id"},
+                    {"columnId": "inode-Iq557kfHN8KRu76HdGSWi/Order Date", "label": "Order Date"},
+                    {"columnId": "inode-Iq557kfHN8KRu76HdGSWi/Status", "label": "Status"},
+                    {
+                        "columnId": "inode-Iq557kfHN8KRu76HdGSWi/Modified Date",
+                        "label": "Modified Date",
+                    },
+                    {"columnId": "VBKAHQgx58", "label": "Count of Order Date"},
+                ]
+            )
+        ),
+        status=200,
+    )
+    responses.add(
+        method=hdrs.METH_GET,
         url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/queries",
-        json=_build_paginated_response(
-            [
-                {
-                    "elementId": "_MuHPbskp0",
-                    "name": "sample elementl",
-                    "sql": 'select ORDER_ID_7 "Order Id", CUSTOMER_ID_8 "Customer Id", CAST_DATE_TO_DATETIME_9 "workbook renamed date", CAST_DATE_TO_DATETIME_11 "Modified Date" from (select ORDER_ID ORDER_ID_7, CUSTOMER_ID CUSTOMER_ID_8, ORDER_DATE::timestamp_ltz CAST_DATE_TO_DATETIME_9, ORDER_DATE::timestamp_ltz CAST_DATE_TO_DATETIME_11 from (select * from TESTDB.JAFFLE_SHOP.STG_ORDERS STG_ORDERS limit 1000) Q1) Q2 limit 1000\n\n-- Sigma \u03a3 {"request-id":"69ac9a35-64b3-4840-a53d-3aed43a575ec","email":"ben@dagsterlabs.com"}',
-                },
-                {
-                    "elementId": "V29pknzHb6",
-                    "name": "Count of Order Date by Status",
-                    "sql": 'with Q1 as (select ORDER_ID, CUSTOMER_ID, STATUS, ORDER_DATE::timestamp_ltz CAST_DATE_TO_DATETIME_5, ORDER_DATE::timestamp_ltz CAST_DATE_TO_DATETIME_6 from TESTDB.JAFFLE_SHOP.STG_ORDERS STG_ORDERS) select STATUS_10 "Status", COUNT_22 "Count of Order Date", ORDER_ID_7 "Order Id", CUSTOMER_ID_8 "Customer Id", CAST_DATE_TO_DATETIME_7 "Order Date", CAST_DATE_TO_DATETIME_8 "Modified Date" from (select Q3.ORDER_ID_7 ORDER_ID_7, Q3.CUSTOMER_ID_8 CUSTOMER_ID_8, Q3.CAST_DATE_TO_DATETIME_7 CAST_DATE_TO_DATETIME_7, Q3.STATUS_10 STATUS_10, Q3.CAST_DATE_TO_DATETIME_8 CAST_DATE_TO_DATETIME_8, Q6.COUNT_22 COUNT_22, Q6.STATUS_11 STATUS_11 from (select ORDER_ID ORDER_ID_7, CUSTOMER_ID CUSTOMER_ID_8, CAST_DATE_TO_DATETIME_6 CAST_DATE_TO_DATETIME_7, STATUS STATUS_10, CAST_DATE_TO_DATETIME_5 CAST_DATE_TO_DATETIME_8 from Q1 Q2 order by STATUS_10 asc limit 1000) Q3 left join (select count(CAST_DATE_TO_DATETIME_7) COUNT_22, STATUS_10 STATUS_11 from (select CAST_DATE_TO_DATETIME_6 CAST_DATE_TO_DATETIME_7, STATUS STATUS_10 from Q1 Q4) Q5 group by STATUS_10) Q6 on equal_null(Q3.STATUS_10, Q6.STATUS_11)) Q8 order by STATUS_10 asc limit 1000\n\n-- Sigma \u03a3 {"request-id":"69ac9a35-64b3-4840-a53d-3aed43a575ec","email":"ben@dagsterlabs.com"}',
-                },
-            ]
+        body=json.dumps(
+            _build_paginated_response(
+                [
+                    {
+                        "elementId": "_MuHPbskp0",
+                        "name": "sample elementl",
+                        "sql": 'select ORDER_ID_7 "Order Id", CUSTOMER_ID_8 "Customer Id", CAST_DATE_TO_DATETIME_9 "workbook renamed date", CAST_DATE_TO_DATETIME_11 "Modified Date" from (select ORDER_ID ORDER_ID_7, CUSTOMER_ID CUSTOMER_ID_8, ORDER_DATE::timestamp_ltz CAST_DATE_TO_DATETIME_9, ORDER_DATE::timestamp_ltz CAST_DATE_TO_DATETIME_11 from (select * from TESTDB.JAFFLE_SHOP.STG_ORDERS STG_ORDERS limit 1000) Q1) Q2 limit 1000\n\n-- Sigma \u03a3 {"request-id":"69ac9a35-64b3-4840-a53d-3aed43a575ec","email":"ben@dagsterlabs.com"}',
+                    },
+                    {
+                        "elementId": "V29pknzHb6",
+                        "name": "Count of Order Date by Status",
+                        "sql": 'with Q1 as (select ORDER_ID, CUSTOMER_ID, STATUS, ORDER_DATE::timestamp_ltz CAST_DATE_TO_DATETIME_5, ORDER_DATE::timestamp_ltz CAST_DATE_TO_DATETIME_6 from TESTDB.JAFFLE_SHOP.STG_ORDERS STG_ORDERS) select STATUS_10 "Status", COUNT_22 "Count of Order Date", ORDER_ID_7 "Order Id", CUSTOMER_ID_8 "Customer Id", CAST_DATE_TO_DATETIME_7 "Order Date", CAST_DATE_TO_DATETIME_8 "Modified Date" from (select Q3.ORDER_ID_7 ORDER_ID_7, Q3.CUSTOMER_ID_8 CUSTOMER_ID_8, Q3.CAST_DATE_TO_DATETIME_7 CAST_DATE_TO_DATETIME_7, Q3.STATUS_10 STATUS_10, Q3.CAST_DATE_TO_DATETIME_8 CAST_DATE_TO_DATETIME_8, Q6.COUNT_22 COUNT_22, Q6.STATUS_11 STATUS_11 from (select ORDER_ID ORDER_ID_7, CUSTOMER_ID CUSTOMER_ID_8, CAST_DATE_TO_DATETIME_6 CAST_DATE_TO_DATETIME_7, STATUS STATUS_10, CAST_DATE_TO_DATETIME_5 CAST_DATE_TO_DATETIME_8 from Q1 Q2 order by STATUS_10 asc limit 1000) Q3 left join (select count(CAST_DATE_TO_DATETIME_7) COUNT_22, STATUS_10 STATUS_11 from (select CAST_DATE_TO_DATETIME_6 CAST_DATE_TO_DATETIME_7, STATUS STATUS_10 from Q1 Q4) Q5 group by STATUS_10) Q6 on equal_null(Q3.STATUS_10, Q6.STATUS_11)) Q8 order by STATUS_10 asc limit 1000\n\n-- Sigma \u03a3 {"request-id":"69ac9a35-64b3-4840-a53d-3aed43a575ec","email":"ben@dagsterlabs.com"}',
+                    },
+                ]
+            )
         ),
         status=200,
     )
 
     responses.add(
-        method=responses.GET,
+        method=hdrs.METH_GET,
         url="https://aws-api.sigmacomputing.com/v2/members",
-        json=_build_paginated_response(
-            [
-                {
-                    "organizationId": "4d55c33f-dbb8-4426-9d70-97742e01f002",
-                    "memberId": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
-                    "memberType": "admin",
-                    "firstName": "Ben",
-                    "lastName": "Pankow",
-                    "email": "ben@dagsterlabs.com",
-                    "profileImgUrl": None,
-                    "createdBy": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
-                    "updatedBy": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
-                    "createdAt": "2024-09-12T20:44:19.736Z",
-                    "updatedAt": "2024-09-12T20:44:19.736Z",
-                    "homeFolderId": "bd7e1b16-dad3-45d4-91e7-5687be2819cc",
-                    "userKind": "internal",
-                },
-                {
-                    "organizationId": "4d55c33f-dbb8-4426-9d70-97742e01f002",
-                    "memberId": "SigmaSchedulerRobot",
-                    "memberType": "admin",
-                    "firstName": "Scheduler",
-                    "lastName": "User",
-                    "email": "scheduler-robot@sigmacomputing.com",
-                    "profileImgUrl": None,
-                    "createdBy": "SigmaSchedulerRobot",
-                    "updatedBy": "SigmaSchedulerRobot",
-                    "createdAt": "2024-09-12T20:44:20.182Z",
-                    "updatedAt": "2024-09-12T20:44:20.182Z",
-                    "homeFolderId": "4537ec2e-ced7-4aa6-b511-ed0437e0165f",
-                    "userKind": "internal",
-                },
-            ]
+        body=json.dumps(
+            _build_paginated_response(
+                [
+                    {
+                        "organizationId": "4d55c33f-dbb8-4426-9d70-97742e01f002",
+                        "memberId": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
+                        "memberType": "admin",
+                        "firstName": "Ben",
+                        "lastName": "Pankow",
+                        "email": "ben@dagsterlabs.com",
+                        "profileImgUrl": None,
+                        "createdBy": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
+                        "updatedBy": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
+                        "createdAt": "2024-09-12T20:44:19.736Z",
+                        "updatedAt": "2024-09-12T20:44:19.736Z",
+                        "homeFolderId": "bd7e1b16-dad3-45d4-91e7-5687be2819cc",
+                        "userKind": "internal",
+                    },
+                    {
+                        "organizationId": "4d55c33f-dbb8-4426-9d70-97742e01f002",
+                        "memberId": "SigmaSchedulerRobot",
+                        "memberType": "admin",
+                        "firstName": "Scheduler",
+                        "lastName": "User",
+                        "email": "scheduler-robot@sigmacomputing.com",
+                        "profileImgUrl": None,
+                        "createdBy": "SigmaSchedulerRobot",
+                        "updatedBy": "SigmaSchedulerRobot",
+                        "createdAt": "2024-09-12T20:44:20.182Z",
+                        "updatedAt": "2024-09-12T20:44:20.182Z",
+                        "homeFolderId": "4537ec2e-ced7-4aa6-b511-ed0437e0165f",
+                        "userKind": "internal",
+                    },
+                ]
+            )
         ),
         status=200,
     )

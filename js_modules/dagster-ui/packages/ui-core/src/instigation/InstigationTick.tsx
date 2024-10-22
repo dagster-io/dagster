@@ -9,8 +9,8 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 
-import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/InstigationTick.types';
 import {gql, useQuery} from '../apollo-client';
+import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/InstigationTick.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {RunTable} from '../runs/RunTable';
 import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';

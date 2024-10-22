@@ -69,7 +69,6 @@ const buildSidebarQueryMock = (
       assetNodeOrError: buildAssetNode({
         id: 'test.py.repo.["asset1"]',
         description: null,
-        metadataEntries: [],
         jobNames: ['test_job'],
         assetKey: {
           path: ['asset1'],

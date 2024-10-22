@@ -5,7 +5,7 @@ import dagster._check as check
 import graphene
 from dagster import DefaultScheduleStatus
 from dagster._core.remote_representation import RemoteSchedule
-from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._time import get_current_timestamp
 
@@ -66,12 +66,11 @@ class GrapheneSchedule(graphene.ObjectType):
     def __init__(
         self,
         remote_schedule: RemoteSchedule,
-        remote_repository: RemoteRepository,
+        repository_handle: RepositoryHandle,
         schedule_state: Optional[InstigatorState],
         batch_loader: Optional[RepositoryScopedBatchLoader] = None,
     ):
         self._remote_schedule = check.inst_param(remote_schedule, "remote_schedule", RemoteSchedule)
-        self._remote_repository = remote_repository
 
         # optional run loader, provided by a parent graphene object (e.g. GrapheneRepository)
         # that instantiates multiple schedules
@@ -98,7 +97,7 @@ class GrapheneSchedule(graphene.ObjectType):
             description=remote_schedule.description,
             assetSelection=GrapheneAssetSelection(
                 asset_selection=remote_schedule.asset_selection,
-                remote_repository=self._remote_repository,
+                repository_handle=repository_handle,
             )
             if remote_schedule.asset_selection
             else None,

@@ -208,7 +208,7 @@ def test_update_repo_stats_dynamic_partitions(caplog):
         cleanup_telemetry_logger()
 
 
-def test_get_stats_from_external_repo_partitions(instance):
+def test_get_stats_from_remote_repo_partitions(instance):
     @asset(partitions_def=StaticPartitionsDefinition(["foo", "bar"]))
     def asset1(): ...
 
@@ -218,16 +218,16 @@ def test_get_stats_from_external_repo_partitions(instance):
     @asset
     def asset3(): ...
 
-    external_repo = RemoteRepository(
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(Definitions(assets=[asset1, asset2, asset3]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_partitioned_assets_in_repo"] == "2"
 
 
-def test_get_stats_from_external_repo_multi_partitions(instance):
+def test_get_stats_from_remote_repo_multi_partitions(instance):
     @asset(
         partitions_def=MultiPartitionsDefinition(
             {
@@ -238,32 +238,32 @@ def test_get_stats_from_external_repo_multi_partitions(instance):
     )
     def multi_partitioned_asset(): ...
 
-    external_repo = RemoteRepository(
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(Definitions(assets=[multi_partitioned_asset]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_multi_partitioned_assets_in_repo"] == "1"
     assert stats["num_partitioned_assets_in_repo"] == "1"
 
 
-def test_get_stats_from_external_repo_source_assets(instance):
+def test_get_stats_from_remote_repo_source_assets(instance):
     source_asset1 = SourceAsset("source_asset1")
 
     @asset
     def asset1(): ...
 
-    external_repo = RemoteRepository(
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(Definitions(assets=[source_asset1, asset1]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_source_assets_in_repo"] == "1"
 
 
-def test_get_stats_from_external_repo_observable_source_assets(instance):
+def test_get_stats_from_remote_repo_observable_source_assets(instance):
     source_asset1 = SourceAsset("source_asset1")
 
     @observable_source_asset
@@ -272,37 +272,37 @@ def test_get_stats_from_external_repo_observable_source_assets(instance):
     @asset
     def asset1(): ...
 
-    external_repo = RemoteRepository(
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(assets=[source_asset1, source_asset2, asset1]).get_repository_def()
         ),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_source_assets_in_repo"] == "2"
     assert stats["num_observable_source_assets_in_repo"] == "1"
 
 
-def test_get_stats_from_external_repo_freshness_policies(instance):
+def test_get_stats_from_remote_repo_freshness_policies(instance):
     @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
     def asset1(): ...
 
     @asset
     def asset2(): ...
 
-    external_repo = RemoteRepository(
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(Definitions(assets=[asset1, asset2]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_assets_with_freshness_policies_in_repo"] == "1"
 
 
 # TODO: FOU-243
 @pytest.mark.skip("obsolete EAGER vs. LAZY distinction")
-def test_get_status_from_external_repo_auto_materialize_policy(instance):
+def test_get_status_from_remote_repo_auto_materialize_policy(instance):
     @asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
     def asset1(): ...
 
@@ -312,33 +312,33 @@ def test_get_status_from_external_repo_auto_materialize_policy(instance):
     @asset(auto_materialize_policy=AutoMaterializePolicy.eager())
     def asset3(): ...
 
-    external_repo = RemoteRepository(
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(Definitions(assets=[asset1, asset2, asset3]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_assets_with_eager_auto_materialize_policies_in_repo"] == "1"
     assert stats["num_assets_with_lazy_auto_materialize_policies_in_repo"] == "1"
 
 
-def test_get_stats_from_external_repo_code_versions(instance):
+def test_get_stats_from_remote_repo_code_versions(instance):
     @asset(code_version="hello")
     def asset1(): ...
 
     @asset
     def asset2(): ...
 
-    external_repo = RemoteRepository(
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(Definitions(assets=[asset1, asset2]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_assets_with_code_versions_in_repo"] == "1"
 
 
-def test_get_stats_from_external_repo_code_checks(instance):
+def test_get_stats_from_remote_repo_code_checks(instance):
     @asset
     def my_asset(): ...
 
@@ -351,7 +351,7 @@ def test_get_stats_from_external_repo_code_checks(instance):
     @asset
     def my_other_asset(): ...
 
-    external_repo = RemoteRepository(
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[my_asset, my_other_asset], asset_checks=[my_check, my_check_2]
@@ -360,28 +360,28 @@ def test_get_stats_from_external_repo_code_checks(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_asset_checks"] == "2"
     assert stats["num_assets_with_checks"] == "1"
 
 
-def test_get_stats_from_external_repo_dbt(instance):
+def test_get_stats_from_remote_repo_dbt(instance):
     @asset(compute_kind="dbt")
     def asset1(): ...
 
     @asset
     def asset2(): ...
 
-    external_repo = RemoteRepository(
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(Definitions(assets=[asset1, asset2]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_dbt_assets_in_repo"] == "1"
 
 
-def test_get_stats_from_external_repo_resources(instance):
+def test_get_stats_from_remote_repo_resources(instance):
     class MyResource(ConfigurableResource):
         foo: str
 
@@ -395,7 +395,7 @@ def test_get_stats_from_external_repo_resources(instance):
     @asset
     def asset1(my_resource: MyResource, custom_resource: CustomResource): ...
 
-    external_repo = RemoteRepository(
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1],
@@ -408,14 +408,14 @@ def test_get_stats_from_external_repo_resources(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["dagster_resources"] == [
         {"module_name": "dagster_tests", "class_name": "MyResource"}
     ]
     assert stats["has_custom_resources"] == "True"
 
 
-def test_get_stats_from_external_repo_io_managers(instance):
+def test_get_stats_from_remote_repo_io_managers(instance):
     class MyIOManager(ConfigurableIOManager):
         foo: str
 
@@ -441,7 +441,7 @@ def test_get_stats_from_external_repo_io_managers(instance):
     @asset
     def asset1(): ...
 
-    external_repo = RemoteRepository(
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1],
@@ -454,14 +454,14 @@ def test_get_stats_from_external_repo_io_managers(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["dagster_resources"] == [
         {"module_name": "dagster_tests", "class_name": "MyIOManager"}
     ]
     assert stats["has_custom_resources"] == "True"
 
 
-def test_get_stats_from_external_repo_functional_resources(instance):
+def test_get_stats_from_remote_repo_functional_resources(instance):
     @dagster_maintained_resource
     @resource(config_schema={"foo": str})
     def my_resource():
@@ -474,7 +474,7 @@ def test_get_stats_from_external_repo_functional_resources(instance):
     @asset(required_resource_keys={"my_resource", "custom_resource"})
     def asset1(): ...
 
-    external_repo = RemoteRepository(
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1],
@@ -487,14 +487,14 @@ def test_get_stats_from_external_repo_functional_resources(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["dagster_resources"] == [
         {"module_name": "dagster_tests", "class_name": "my_resource"}
     ]
     assert stats["has_custom_resources"] == "True"
 
 
-def test_get_stats_from_external_repo_functional_io_managers(instance):
+def test_get_stats_from_remote_repo_functional_io_managers(instance):
     @dagster_maintained_io_manager
     @io_manager(config_schema={"foo": str})
     def my_io_manager():
@@ -507,7 +507,7 @@ def test_get_stats_from_external_repo_functional_io_managers(instance):
     @asset
     def asset1(): ...
 
-    external_repo = RemoteRepository(
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1],
@@ -520,15 +520,15 @@ def test_get_stats_from_external_repo_functional_io_managers(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["dagster_resources"] == [
         {"module_name": "dagster_tests", "class_name": "my_io_manager"}
     ]
     assert stats["has_custom_resources"] == "True"
 
 
-def test_get_stats_from_external_repo_pipes_client(instance):
-    external_repo = RemoteRepository(
+def test_get_stats_from_remote_repo_pipes_client(instance):
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(
                 resources={
@@ -539,14 +539,14 @@ def test_get_stats_from_external_repo_pipes_client(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["dagster_resources"] == [
         {"module_name": "dagster", "class_name": "PipesSubprocessClient"}
     ]
     assert stats["has_custom_resources"] == "False"
 
 
-def test_get_stats_from_external_repo_delayed_resource_configuration(instance):
+def test_get_stats_from_remote_repo_delayed_resource_configuration(instance):
     class MyResource(ConfigurableResource):
         foo: str
 
@@ -583,7 +583,7 @@ def test_get_stats_from_external_repo_delayed_resource_configuration(instance):
     @asset(required_resource_keys={"my_other_resource"})
     def asset2(): ...
 
-    external_repo = RemoteRepository(
+    remote_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1, asset2],
@@ -598,7 +598,7 @@ def test_get_stats_from_external_repo_delayed_resource_configuration(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_remote_repo(external_repo)
+    stats = get_stats_from_remote_repo(remote_repo)
     assert stats["dagster_resources"] == [
         {"module_name": "dagster_tests", "class_name": "MyIOManager"},
         {"module_name": "dagster_tests", "class_name": "my_io_manager"},

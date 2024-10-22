@@ -1,8 +1,8 @@
+import {gql, useQuery} from '../apollo-client';
 import {
   AssetGraphSidebarQuery,
   AssetGraphSidebarQueryVariables,
 } from './types/AssetGraphJobSidebar.types';
-import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PipelineSelector} from '../graphql/types';
 import {NonIdealPipelineQueryResult} from '../pipelines/NonIdealPipelineQueryResult';
