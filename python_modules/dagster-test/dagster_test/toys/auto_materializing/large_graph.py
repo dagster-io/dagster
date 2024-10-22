@@ -2,16 +2,21 @@ import itertools
 from typing import List, NamedTuple, Optional, Sequence
 
 from dagster import (
+    AssetCheckResult,
+    AssetCheckSpec,
+    AssetKey,
     AssetsDefinition,
+    AutoMaterializePolicy,
     AutomationCondition,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    MaterializeResult,
     PartitionsDefinition,
     StaticPartitionsDefinition,
     asset,
     repository,
 )
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.warnings import disable_dagster_warnings
 
 
@@ -19,17 +24,18 @@ class AssetLayerConfig(NamedTuple):
     n_assets: int
     n_upstreams_per_asset: int = 0
     partitions_def: Optional[PartitionsDefinition] = None
+    n_checks_per_asset: int = 0
 
 
 def build_assets(
     id: str,
     layer_configs: Sequence[AssetLayerConfig],
-    automation_condition: Optional[AutomationCondition],
+    automation_condition: Optional[AutomationCondition] = AutomationCondition.eager(),
 ) -> List[AssetsDefinition]:
     layers = []
 
     with disable_dagster_warnings():
-        for layer_num, layer_config in enumerate(layer_configs):
+        for layer_config in layer_configs:
             parent_index = 0
             layer = []
             for i in range(layer_config.n_assets):
@@ -44,15 +50,30 @@ def build_assets(
                 else:
                     non_argument_deps = set()
 
+                name = f"{id}_{len(layers)}_{i}"
+
                 @asset(
                     partitions_def=layer_config.partitions_def,
-                    name=f"{id}_{len(layers)}_{i}",
+                    name=name,
                     automation_condition=automation_condition,
                     non_argument_deps=non_argument_deps,
-                    group_name=f"g{layer_num}",
+                    check_specs=[
+                        AssetCheckSpec(
+                            name=f"check{k}",
+                            asset=AssetKey(name),
+                            automation_condition=automation_condition,
+                        )
+                        for k in range(layer_config.n_checks_per_asset)
+                    ],
                 )
-                def _asset():
-                    pass
+                def _asset(context: AssetExecutionContext) -> MaterializeResult:
+                    return MaterializeResult(
+                        asset_key=context.asset_key,
+                        check_results=[
+                            AssetCheckResult(check_name=key.name, passed=True)
+                            for key in context.selected_asset_check_keys
+                        ],
+                    )
 
                 layer.append(_asset)
             layers.append(layer)
