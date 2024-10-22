@@ -24,10 +24,9 @@ from dagster_polars import (
     LazyFramePartitions,
     PolarsDeltaIOManager,
     PolarsParquetIOManager,
-    StorageMetadata,
 )
 
-from dagster_polars_tests.utils import DEPRECATED_STORAGE_METADATA_STRING, get_saved_path
+from dagster_polars_tests.utils import get_saved_path
 
 
 def test_polars_upath_io_manager_stats_metadata(
@@ -252,86 +251,6 @@ def test_polars_upath_io_manager_output_optional_lazy(
     materialize(
         [upstream, downstream],
     )
-
-
-IO_MANAGERS_SUPPORTING_STORAGE_METADATA = (
-    PolarsParquetIOManager,
-    PolarsDeltaIOManager,
-)
-
-
-def check_skip_storage_metadata_test(io_manager_def: BasePolarsUPathIOManager):
-    if not isinstance(io_manager_def, IO_MANAGERS_SUPPORTING_STORAGE_METADATA):
-        pytest.skip(f"Only {IO_MANAGERS_SUPPORTING_STORAGE_METADATA} support storage metadata")
-
-
-@pytest.fixture
-def metadata() -> StorageMetadata:
-    return {"a": 1, "b": "2", "c": [1, 2, 3], "d": {"e": 1}, "f": [1, 2, 3, {"g": 1}]}
-
-
-def test_upath_io_manager_storage_metadata_lazy(
-    io_manager_and_lazy_df: Tuple[BasePolarsUPathIOManager, pl.LazyFrame], metadata: StorageMetadata
-):
-    io_manager_def, df = io_manager_and_lazy_df
-    check_skip_storage_metadata_test(io_manager_def)
-
-    @asset(io_manager_def=io_manager_def)
-    def upstream() -> Tuple[pl.LazyFrame, StorageMetadata]:
-        return df, metadata
-
-    @asset(io_manager_def=io_manager_def)
-    def downstream(upstream: Tuple[pl.LazyFrame, StorageMetadata]) -> None:
-        loaded_df, upstream_metadata = upstream
-        assert upstream_metadata == metadata
-        pl_testing.assert_frame_equal(loaded_df.collect(), df.collect())
-
-    with pytest.warns(match=DEPRECATED_STORAGE_METADATA_STRING):
-        materialize(
-            [upstream, downstream],
-        )
-
-
-def test_upath_io_manager_storage_metadata_optional_lazy_exists(
-    io_manager_and_lazy_df: Tuple[BasePolarsUPathIOManager, pl.LazyFrame], metadata: StorageMetadata
-):
-    io_manager_def, df = io_manager_and_lazy_df
-    check_skip_storage_metadata_test(io_manager_def)
-
-    @asset(io_manager_def=io_manager_def)
-    def upstream() -> Optional[Tuple[pl.LazyFrame, StorageMetadata]]:
-        return df, metadata
-
-    @asset(io_manager_def=io_manager_def)
-    def downstream(upstream: Optional[Tuple[pl.LazyFrame, StorageMetadata]]) -> None:
-        assert upstream is not None
-        df, upstream_metadata = upstream
-        assert upstream_metadata == metadata
-
-    with pytest.warns(match=DEPRECATED_STORAGE_METADATA_STRING):
-        materialize(
-            [upstream, downstream],
-        )
-
-
-def test_upath_io_manager_storage_metadata_optional_lazy_missing(
-    io_manager_and_lazy_df: Tuple[BasePolarsUPathIOManager, pl.LazyFrame], metadata: StorageMetadata
-):
-    io_manager_def, df = io_manager_and_lazy_df
-    check_skip_storage_metadata_test(io_manager_def)
-
-    @asset(io_manager_def=io_manager_def)
-    def upstream() -> Optional[Tuple[pl.LazyFrame, StorageMetadata]]:
-        return None
-
-    @asset(io_manager_def=io_manager_def)
-    def downstream(upstream: Optional[Tuple[pl.LazyFrame, StorageMetadata]]) -> None:
-        assert upstream is None
-
-    with pytest.warns(match=DEPRECATED_STORAGE_METADATA_STRING):
-        materialize(
-            [upstream, downstream],
-        )
 
 
 def test_upath_io_manager_multi_partitions_definition_load_multiple_partitions(
