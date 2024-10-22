@@ -507,6 +507,32 @@ def test_infer_output_dagster_type_empty():
     assert my_asset.op.outs["result"].dagster_type.display_name == "Any"
 
 
+def test_asset_with_docstring_description():
+    @asset
+    def asset1():
+        """Docstring."""
+        pass
+
+    assert asset1.op.description == "Docstring."
+
+
+def test_asset_with_parameter_description():
+    @asset(description="parameter")
+    def asset1():
+        pass
+
+    assert asset1.op.description == "parameter"
+
+
+def test_asset_with_docstring_and_parameter_description():
+    @asset(description="parameter")
+    def asset1():
+        """Docstring."""
+        pass
+
+    assert asset1.op.description == "parameter"
+
+
 def test_invoking_simple_assets():
     @asset
     def no_input_asset():
