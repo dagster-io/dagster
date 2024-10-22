@@ -6,7 +6,7 @@ from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import AbstractSet, Any, Callable, Dict, Iterator, List, Mapping, Optional, Type
+from typing import AbstractSet, Any, Callable, Dict, Iterator, List, Mapping, Optional, Type, Union
 
 import aiohttp
 import dagster._check as check
@@ -427,6 +427,18 @@ def load_sigma_asset_specs(
         )
 
 
+def _get_translator_spec_assert_keys_match(
+    translator: DagsterSigmaTranslator, data: Union[SigmaDataset, SigmaWorkbook]
+) -> AssetSpec:
+    key = translator.get_asset_key(data)
+    spec = translator.get_asset_spec(key, data)
+    check.invariant(
+        spec.key == key,
+        f"Key on AssetSpec returned by {translator.__class__.__name__}.get_asset_spec {spec.key} does not match input key {key}",
+    )
+    return spec
+
+
 @dataclass
 class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganizationData]):
     organization: SigmaOrganization
@@ -442,7 +454,7 @@ class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganization
     def defs_from_state(self, state: SigmaOrganizationData) -> Definitions:
         translator = self.translator_cls(state)
         asset_specs = [
-            *[translator.get_workbook_spec(workbook) for workbook in state.workbooks],
-            *[translator.get_dataset_spec(dataset) for dataset in state.datasets],
+            _get_translator_spec_assert_keys_match(translator, obj)
+            for obj in [*state.workbooks, *state.datasets]
         ]
         return Definitions(assets=asset_specs)
