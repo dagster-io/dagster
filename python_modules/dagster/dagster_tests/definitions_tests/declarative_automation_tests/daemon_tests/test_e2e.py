@@ -3,7 +3,7 @@ import os
 import sys
 import time
 from contextlib import contextmanager
-from typing import AbstractSet, Mapping, Optional, Sequence, cast
+from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
 import pytest
@@ -90,13 +90,16 @@ def _setup_instance(context: WorkspaceProcessContext) -> None:
 
 
 @contextmanager
-def get_workspace_request_context(filenames: Sequence[str]):
+def get_workspace_request_context(
+    filenames: Sequence[str], overrides: Optional[Dict[str, Any]] = None
+):
     with instance_for_test(
         overrides={
             "run_launcher": {
                 "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                 "class": "SyncInMemoryRunLauncher",
             },
+            **(overrides or {}),
         }
     ) as instance:
         target = InProcessTestWorkspaceLoadTarget(
@@ -672,5 +675,31 @@ def test_500_eager_assets_user_code(capsys) -> None:
             assert latest_ticks[0].status == TickStatus.SKIPPED
 
     # more specific check
-    for line in capsys.readouterr():
-        assert "RESOURCE_EXHAUSTED" not in line
+    assert "RESOURCE_EXHAUSTED" not in capsys.readouterr().out
+
+
+def test_fail_if_not_use_sensors(capsys) -> None:
+    with get_workspace_request_context(
+        ["simple_user_code"], overrides={"auto_materialize": {"use_sensors": False}}
+    ) as context, get_threadpool_executor() as executor:
+        _execute_ticks(context, executor)
+        latest_ticks = _get_latest_ticks(context.create_request_context())
+        assert len(latest_ticks) == 1
+        # no failure
+        assert latest_ticks[0].status == TickStatus.FAILURE
+        assert (
+            "Cannot evaluate an AutomationConditionSensorDefinition if the instance setting `auto_materialize: use_sensors` is set to False"
+            in capsys.readouterr().out
+        )
+
+
+def test_simple_old_code_server() -> None:
+    with get_grpc_workspace_request_context(
+        "old_code_server_simulation"
+    ) as context, get_threadpool_executor() as executor:
+        time = datetime.datetime(2024, 8, 16, 1, 35)
+        with freeze_time(time):
+            # initial evaluation
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1

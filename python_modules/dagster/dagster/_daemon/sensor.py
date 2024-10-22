@@ -37,10 +37,11 @@ from dagster._core.definitions.dynamic_partitions_request import (
 )
 from dagster._core.definitions.run_request import DagsterRunReaction, InstigatorType, RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorType
 from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterError,
+    DagsterInvalidInvocationError,
     DagsterUserCodeUnreachableError,
 )
 from dagster._core.execution.backfill import PartitionBackfill
@@ -786,6 +787,15 @@ def _evaluate_sensor(
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
 ):
     instance = workspace_process_context.instance
+    if (
+        remote_sensor.sensor_type == SensorType.AUTOMATION
+        and not instance.auto_materialize_use_sensors
+    ):
+        raise DagsterInvalidInvocationError(
+            "Cannot evaluate an AutomationConditionSensorDefinition if the instance setting "
+            "`auto_materialize: use_sensors` is set to False. Update your configuration to prevent this error.",
+        )
+
     context.logger.info(f"Checking for new runs for sensor: {remote_sensor.name}")
     code_location = _get_code_location_for_sensor(workspace_process_context, remote_sensor)
     repository_handle = remote_sensor.handle.repository_handle
