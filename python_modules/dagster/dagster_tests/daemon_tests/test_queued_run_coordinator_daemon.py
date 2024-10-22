@@ -1135,11 +1135,58 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == set()
 
+    @pytest.mark.parametrize(
+        "run_coordinator_config",
+        [
+            {
+                "block_op_concurrency_limited_runs": {
+                    "enabled": True,
+                    "op_concurrency_slot_buffer": 0,
+                }
+            },
+        ],
+    )
+    def test_concurrency_buffer_with_default_slot(
+        self,
+        concurrency_limited_workspace_context,
+        daemon,
+        instance,
+        caplog,
+    ):
+        run_id_1, run_id_2, run_id_3 = [make_new_run_id() for _ in range(3)]
+        workspace = concurrency_limited_workspace_context.create_request_context()
+        remote_job = self.get_concurrency_job(workspace)
+        foo_key = AssetKey(["prefix", "foo_limited_asset"])
+
+        self.submit_run(
+            instance, remote_job, workspace, run_id=run_id_1, asset_selection=set([foo_key])
+        )
+
+        # foo is not configured; relying on the default limit of 1
+        assert "foo" not in instance.event_log_storage.get_concurrency_keys()
+
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
+        caplog.text.count("is blocked by global concurrency limits") == 0
+
+        # the global concurrency counter has initialized the concurrency configuration
+        assert "foo" in instance.event_log_storage.get_concurrency_keys()
+
+        self.submit_run(
+            instance, remote_job, workspace, run_id=run_id_2, asset_selection=set([foo_key])
+        )
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == {run_id_1}
+        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1
+
 
 class TestQueuedRunCoordinatorDaemon(QueuedRunCoordinatorDaemonTests):
     @pytest.fixture
     def instance(self, run_coordinator_config):
         overrides = {
+            "concurrency": {
+                "default_op_concurrency_limit": 1,
+            },
             "run_coordinator": {
                 "module": "dagster._core.run_coordinator",
                 "class": "QueuedRunCoordinator",
