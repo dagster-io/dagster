@@ -143,10 +143,10 @@ class RepositoryDefinition:
         return self._repository_load_data
 
     @experimental
-    def with_reconstruction_metadata(
+    def replace_reconstruction_metadata(
         self, reconstruction_metadata: Mapping[str, str]
     ) -> "RepositoryDefinition":
-        """Add reconstruction metadata to this RepositoryDefinition object."""
+        """Modifies the repository load data to include the provided reconstruction metadata."""
         check.mapping_param(reconstruction_metadata, "reconstruction_metadata", key_type=str)
         if not reconstruction_metadata:
             return self
@@ -166,7 +166,7 @@ class RepositoryDefinition:
             self._name,
             repository_data=self._repository_data,
             description=self._description,
-            metadata={**self._metadata, **normalized_metadata},
+            metadata=self._metadata,
             repository_load_data=self._repository_load_data.replace_reconstruction_metadata(
                 normalized_metadata
             )

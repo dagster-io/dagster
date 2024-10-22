@@ -18,7 +18,6 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    cast,
     overload,
 )
 
@@ -706,17 +705,14 @@ def repository_def_from_target_def(
     target: object,
     load_type: "DefinitionsLoadType",
     repository_load_data: Optional["RepositoryLoadData"] = None,
+    set_new_context: bool = True,
 ) -> None: ...
 
 
-def repository_def_from_target_def(
-    target: object,
-    load_type: "DefinitionsLoadType",
-    repository_load_data: Optional["RepositoryLoadData"] = None,
+def _repository_def_from_target_def_inner(
+    target: object, repository_load_data: Optional["RepositoryLoadData"]
 ) -> Optional["RepositoryDefinition"]:
     from dagster._core.definitions.assets import AssetsDefinition
-    from dagster._core.definitions.definitions_class import Definitions
-    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
@@ -726,11 +722,46 @@ def repository_def_from_target_def(
         RepositoryDefinition,
     )
     from dagster._core.definitions.source_asset import SourceAsset
+
+    if isinstance(target, (JobDefinition, GraphDefinition)):
+        # consider including job name in generated repo name
+        return RepositoryDefinition(
+            name=get_ephemeral_repository_name(target.name),
+            repository_data=CachingRepositoryData.from_list([target]),
+        )
+    elif isinstance(target, list) and all(
+        isinstance(item, (AssetsDefinition, SourceAsset)) for item in target
+    ):
+        return RepositoryDefinition(
+            name=SINGLETON_REPOSITORY_NAME,
+            repository_data=CachingRepositoryData.from_list(target),
+        )
+    elif isinstance(target, RepositoryDefinition):
+        return target
+    elif isinstance(target, PendingRepositoryDefinition):
+        # must load repository from scratch
+        if repository_load_data is None:
+            return target.compute_repository_definition()
+        # can use the cached data to more efficiently load data
+        else:
+            return target.reconstruct_repository_definition(repository_load_data)
+    return None
+
+
+def repository_def_from_target_def(
+    target: object,
+    load_type: "DefinitionsLoadType",
+    repository_load_data: Optional["RepositoryLoadData"] = None,
+    set_new_context: bool = True,
+) -> Optional["RepositoryDefinition"]:
+    from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
     from dagster._utils.test.definitions import LazyDefinitions
 
-    DefinitionsLoadContext.set(
-        DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
-    )
+    if set_new_context:
+        DefinitionsLoadContext.set(
+            DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
+        )
 
     # LazyDefinitions is a private test utility
     if isinstance(target, LazyDefinitions):
@@ -740,37 +771,14 @@ def repository_def_from_target_def(
         # reassign to handle both repository and pending repo case
         target = target.get_inner_repository()
 
-    repo_def: Optional[RepositoryDefinition] = None
-    # special case - we can wrap a single job in a repository
-    if isinstance(target, (JobDefinition, GraphDefinition)):
-        # consider including job name in generated repo name
-        repo_def = RepositoryDefinition(
-            name=get_ephemeral_repository_name(target.name),
-            repository_data=CachingRepositoryData.from_list([target]),
-        )
-    elif isinstance(target, list) and all(
-        isinstance(item, (AssetsDefinition, SourceAsset)) for item in target
-    ):
-        repo_def = RepositoryDefinition(
-            name=SINGLETON_REPOSITORY_NAME,
-            repository_data=CachingRepositoryData.from_list(target),
-        )
-    elif isinstance(target, RepositoryDefinition):
-        repo_def = target
-    elif isinstance(target, PendingRepositoryDefinition):
-        # must load repository from scratch
-        if repository_load_data is None:
-            repo_def = target.compute_repository_definition()
-        # can use the cached data to more efficiently load data
-        else:
-            repo_def = target.reconstruct_repository_definition(repository_load_data)
-
-    if repo_def:
-        return repo_def.with_reconstruction_metadata(
+    repo_def = _repository_def_from_target_def_inner(target, repository_load_data)
+    return (
+        repo_def.replace_reconstruction_metadata(
             DefinitionsLoadContext.get().get_pending_reconstruction_metadata()
         )
-
-    return None
+        if repo_def
+        else None
+    )
 
 
 def repository_def_from_pointer(
@@ -785,7 +793,9 @@ def repository_def_from_pointer(
         DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
     )
     target = def_from_pointer(pointer)
-    repo_def = repository_def_from_target_def(target, load_type, repository_load_data)
+    repo_def = repository_def_from_target_def(
+        target, load_type, repository_load_data, set_new_context=False
+    )
     if not repo_def:
         raise DagsterInvariantViolationError(
             f"CodePointer ({pointer.describe()}) must resolve to a "
@@ -793,6 +803,6 @@ def repository_def_from_pointer(
             f"Received a {type(target)}"
         )
 
-    return cast(RepositoryDefinition, repo_def).with_reconstruction_metadata(
+    return check.inst(repo_def, RepositoryDefinition).replace_reconstruction_metadata(
         DefinitionsLoadContext.get().get_pending_reconstruction_metadata()
     )

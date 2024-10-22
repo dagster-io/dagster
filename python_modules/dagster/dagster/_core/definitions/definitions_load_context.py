@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Generic, Mapping, Optional, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Mapping, Optional, TypeVar, cast
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterInvariantViolationError
@@ -58,10 +58,6 @@ class DefinitionsLoadContext:
     @classmethod
     def set(cls, instance: "DefinitionsLoadContext") -> None:
         """Get the current DefinitionsLoadContext."""
-        current_pending_metadata = (
-            cls._instance.get_pending_reconstruction_metadata() if cls._instance else {}
-        )
-        instance.replace_pending_reconstruction_metadata(current_pending_metadata)
         cls._instance = instance
 
     @property
@@ -71,9 +67,6 @@ class DefinitionsLoadContext:
 
     def add_to_pending_reconstruction_metadata(self, key: str, metadata: Any) -> None:
         self._pending_reconstruction_metadata[key] = metadata
-
-    def replace_pending_reconstruction_metadata(self, metadata: Dict[str, Any]) -> None:
-        self._pending_reconstruction_metadata = metadata
 
     def get_pending_reconstruction_metadata(self) -> Any:
         return self._pending_reconstruction_metadata
