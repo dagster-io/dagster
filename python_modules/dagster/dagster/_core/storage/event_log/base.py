@@ -126,6 +126,12 @@ class AssetEntry(
             return None
         return self.last_materialization_record.storage_id
 
+    @property
+    def last_observation_storage_id(self) -> Optional[int]:
+        if self.last_observation_record is None:
+            return None
+        return self.last_observation_record.storage_id
+
 
 class AssetRecord(
     NamedTuple("_NamedTuple", [("storage_id", int), ("asset_entry", AssetEntry)]),

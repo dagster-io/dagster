@@ -29,6 +29,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     get_time_partitions_def,
 )
+from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.loader import LoadingContext
 from dagster._time import get_current_datetime
 from dagster._utils.aiodataloader import DataLoader
@@ -210,20 +211,42 @@ class AssetGraphView(LoadingContext):
         return EntitySubset(self, key=subset.key, value=_ValidatedEntitySubsetValue(subset.value))
 
     def get_asset_subset_from_asset_partitions(
-        self, key: AssetKey, asset_partitions: AbstractSet[AssetKeyPartitionKey]
+        self,
+        key: AssetKey,
+        asset_partitions: AbstractSet[AssetKeyPartitionKey],
+        validate: bool = False,
     ) -> EntitySubset[AssetKey]:
         check.invariant(
             all(akpk.asset_key == key for akpk in asset_partitions),
             "All asset partitions must match input asset key.",
         )
+        partitions_def = self._get_partitions_def(key)
         partition_keys = {
             akpk.partition_key for akpk in asset_partitions if akpk.partition_key is not None
         }
-        partitions_def = self._get_partitions_def(key)
         value = (
             partitions_def.subset_with_partition_keys(partition_keys)
             if partitions_def
             else bool(asset_partitions)
+        )
+        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+
+    def get_asset_subset_from_partitions(
+        self, key: AssetKey, partition_keys: AbstractSet[str]
+    ) -> EntitySubset[AssetKey]:
+        partitions_def = check.inst(
+            self._get_partitions_def(key),
+            PartitionsDefinition,
+            "Unpartitioned assets not supported",
+        )
+        value = partitions_def.subset_with_partition_keys(
+            [
+                pk
+                for pk in partition_keys
+                if partitions_def.validate_partition_key(
+                    pk, current_time=self.effective_dt, dynamic_partitions_store=self._queryer
+                )
+            ]
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
@@ -600,16 +623,117 @@ class AssetGraphView(LoadingContext):
             ),
         )
 
-    async def _compute_updated_since_cursor_subset(
-        self, key: AssetKey, cursor: Optional[int]
+    @cached_method
+    async def _compute_materialized_between_cursors_subset(
+        self, *, key: AssetKey, after_cursor: int, before_cursor: int
     ) -> EntitySubset[AssetKey]:
-        value = self._queryer.get_asset_subset_updated_after_cursor(
-            asset_key=key, after_cursor=cursor
-        ).value
-        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+        from dagster._core.storage.event_log.base import AssetRecord
 
-    async def _compute_updated_since_time_subset(
-        self, key: AssetCheckKey, time: datetime
+        asset_record = await AssetRecord.gen(self, key)
+        if not asset_record:
+            return self.get_empty_subset(key=key)
+
+        partitions_def = self._get_partitions_def(key)
+        last_materialization_id = asset_record.asset_entry.last_materialization_storage_id
+
+        # check if there are any materializations since the previous cursor
+        if last_materialization_id and last_materialization_id > after_cursor:
+            if partitions_def is not None:
+                # for partitioned assets, there's an explicit instance method
+                partitions = self.instance.event_log_storage.get_materialized_partitions(
+                    asset_key=key, after_cursor=after_cursor, before_cursor=before_cursor
+                )
+                return self.get_asset_subset_from_partitions(key, partitions)
+            else:
+                if last_materialization_id <= before_cursor:
+                    # was materialized between the cursors
+                    return self.get_full_subset(key=key)
+                else:
+                    # need to explicitly query
+                    result = self.instance.fetch_materializations(
+                        AssetRecordsFilter(
+                            asset_key=key,
+                            after_storage_id=after_cursor,
+                            before_storage_id=before_cursor,
+                        ),
+                        limit=1,
+                    )
+                    return (
+                        self.get_full_subset(key=key)
+                        if len(result.records) > 0
+                        else self.get_empty_subset(key=key)
+                    )
+        else:
+            # definitely no materializations in between the cursors
+            return self.get_empty_subset(key=key)
+
+    @cached_method
+    async def _compute_data_version_updated_between_cursors_subset(
+        self, *, key: AssetKey, after_cursor: int, before_cursor: int
+    ) -> EntitySubset[AssetKey]:
+        from dagster._core.storage.event_log.base import AssetRecord
+
+        # in some cases, we can skip the expensive fetch based off of information on the asset record
+        if self.instance.event_log_storage.asset_records_have_last_observation:
+            asset_record = await AssetRecord.gen(self, key)
+            last_observation = (
+                asset_record.asset_entry.last_observation_record if asset_record else None
+            )
+            skip_fetch = last_observation is not None and last_observation.storage_id < after_cursor
+        else:
+            skip_fetch = False
+
+        partitions_def = self._get_partitions_def(key)
+
+        partitions = set()
+        if partitions_def is not None:
+            if not skip_fetch:
+                result = None
+                while result is None or result.has_more:
+                    result = self.instance.fetch_observations(
+                        AssetRecordsFilter(
+                            asset_key=key,
+                            after_storage_id=after_cursor,
+                            before_storage_id=before_cursor,
+                        ),
+                        limit=1000,
+                    )
+                    partitions.update({obs.partition_key for obs in result.records})
+
+            if len(partitions) > 0:
+                # note: there is a small chance that a partition could be observed within that time range, but
+                # not have its data version updated, and then observed again after the time range, leading to
+                # a false positive here. this is a pre-existing issue that will be ignored for now
+                updated_partitions = (
+                    self.instance.event_log_storage.get_updated_data_version_partitions(
+                        asset_key=key, partitions=partitions, since_storage_id=after_cursor
+                    )
+                )
+                return self.get_asset_subset_from_partitions(key, updated_partitions)
+        else:
+            
+
+    @cached_method
+    async def _compute_updated_between_cursors_subset(
+        self, *, key: AssetKey, after_cursor: int, before_cursor: int
+    ) -> EntitySubset[AssetKey]:
+        materialized_subset = await self._compute_materialized_between_cursors_subset(
+            key=key, after_cursor=after_cursor, before_cursor=before_cursor
+        )
+        if self.asset_graph.get(key).is_materializable:
+            return materialized_subset
+        else:
+            # only need to compute this for non-materializable assets
+            data_version_updated_subset = (
+                await self._compute_data_version_updated_between_cursors_subset(
+                    key=key, after_cursor=after_cursor, before_cursor=before_cursor
+                )
+            )
+
+            return materialized_subset.compute_union(data_version_updated_subset)
+
+    async def _compute_updated_between_times_subset(
+        self, key: AssetCheckKey, start_time: datetime, end_time: datetime
     ) -> EntitySubset[AssetCheckKey]:
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
@@ -621,23 +745,28 @@ class AssetGraphView(LoadingContext):
             record is None
             or record.event is None
             or record.event.dagster_event_type != DagsterEventType.ASSET_CHECK_EVALUATION
-            or record.event.timestamp < time.timestamp()
+            or record.event.timestamp < start_time.timestamp()
+            or record.event.timestamp > end_time.timestamp()
         ):
             return self.get_empty_subset(key=key)
         else:
             return self.get_full_subset(key=key)
 
     @cached_method
-    async def compute_updated_since_temporal_context_subset(
-        self, *, key: EntityKey, temporal_context: TemporalContext
+    async def compute_updated_between_temporal_contexts_subset(
+        self, *, key: EntityKey, after_context: TemporalContext, before_context: TemporalContext
     ) -> EntitySubset:
         return await _dispatch(
             key=key,
             check_method=functools.partial(
-                self._compute_updated_since_time_subset, time=temporal_context.effective_dt
+                self._compute_updated_between_times_subset,
+                after_time=start_context.effective_dt,
+                before_time=end_context.effective_dt,
             ),
             asset_method=functools.partial(
-                self._compute_updated_since_cursor_subset, cursor=temporal_context.last_event_id
+                self._compute_updated_between_cursors_subset,
+                start_cursor=start_context.last_event_id or 0,
+                end_cursor=end_context.last_event_id or 0,
             ),
         )
 
