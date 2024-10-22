@@ -10,9 +10,14 @@ from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil.parser import isoparse
 
 
-def _clean_asset_name(name: str) -> str:
+def _coerce_input_to_valid_name(name: str) -> str:
     """Cleans an input to be a valid Dagster asset name."""
     return re.sub(r"[^A-Za-z0-9_]+", "_", name)
+
+
+def asset_key_from_table_name(table_name: str) -> AssetKey:
+    """Converts a reference to a table in a Sigma query to a Dagster AssetKey."""
+    return AssetKey([_coerce_input_to_valid_name(part) for part in table_name.split(".")])
 
 
 def _inode_from_url(url: str) -> str:
@@ -73,7 +78,7 @@ class DagsterSigmaTranslator:
 
     def get_asset_key(self, data: Union[SigmaDataset, SigmaWorkbook]) -> AssetKey:
         """Get the AssetKey for a Sigma object, such as a workbook or dataset."""
-        return AssetKey(_clean_asset_name(data.properties["name"]))
+        return AssetKey(_coerce_input_to_valid_name(data.properties["name"]))
 
     def get_asset_spec(
         self, asset_key: AssetKey, data: Union[SigmaDataset, SigmaWorkbook]
@@ -116,6 +121,9 @@ class DagsterSigmaTranslator:
                 key=asset_key,
                 metadata=metadata,
                 kinds={"sigma"},
-                deps={AssetKey(input_name.lower().split(".")) for input_name in data.inputs},
+                deps={
+                    asset_key_from_table_name(input_table_name.lower())
+                    for input_table_name in data.inputs
+                },
                 description=data.properties.get("description"),
             )
