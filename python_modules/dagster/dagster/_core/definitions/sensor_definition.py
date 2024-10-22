@@ -1,3 +1,4 @@
+import functools
 import inspect
 import logging
 from collections import defaultdict
@@ -242,6 +243,10 @@ class SensorEvaluationContext:
     @property
     def sensor_name(self) -> str:
         return check.not_none(self._sensor_name, "Only valid when sensor name provided")
+
+    @functools.cached_property
+    def caching_dynamic_partitions_loader(self):
+        return CachingDynamicPartitionsLoader(self.instance) if self.instance_ref else None
 
     def merge_resources(self, resources_dict: Mapping[str, Any]) -> "SensorEvaluationContext":
         """Merge the specified resources into this context.
@@ -1030,10 +1035,6 @@ class SensorDefinition(IHasInternalInit):
                 *_run_requests_with_base_asset_jobs(run_requests, context, asset_selection)
             ]
 
-        dynamic_partitions_store = (
-            CachingDynamicPartitionsLoader(context.instance) if context.instance_ref else None
-        )
-
         # Run requests may contain an invalid target, or a partition key that does not exist.
         # We will resolve these run requests, applying the target and partition config/tags.
         resolved_run_requests = []
@@ -1072,7 +1073,7 @@ class SensorDefinition(IHasInternalInit):
                     run_request.with_resolved_tags_and_config(
                         target_definition=selected_job,
                         current_time=None,
-                        dynamic_partitions_store=dynamic_partitions_store,
+                        dynamic_partitions_store=context.caching_dynamic_partitions_loader,
                         dynamic_partitions_requests=dynamic_partitions_requests,
                     )
                 )
