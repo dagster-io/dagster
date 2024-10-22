@@ -58,10 +58,6 @@ class LoadingContext(ABC):
     def loaders(self) -> Dict[Type, Tuple[DataLoader, BlockingDataLoader]]:
         raise NotImplementedError()
 
-    @staticmethod
-    def ephemeral(instance: "DagsterInstance") -> "LoadingContext":
-        return LoadingContextForTest(instance)
-
     def get_loaders_for(
         self, ttype: Type["InstanceLoadableBy"]
     ) -> Tuple[DataLoader, BlockingDataLoader]:

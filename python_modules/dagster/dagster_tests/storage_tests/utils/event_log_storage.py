@@ -83,7 +83,7 @@ from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
-from dagster._core.loader import LoadingContext
+from dagster._core.loader import LoadingContextForTest
 from dagster._core.remote_representation.external_data import PartitionsSnap
 from dagster._core.remote_representation.origin import (
     InProcessCodeLocationOrigin,
@@ -6025,7 +6025,7 @@ class TestEventLogStorage:
         }
 
         assert storage.get_asset_status_cache_values(
-            partition_defs_by_key, LoadingContext.ephemeral(instance)
+            partition_defs_by_key, LoadingContextForTest(instance)
         ) == [
             None,
             None,
@@ -6043,7 +6043,7 @@ class TestEventLogStorage:
         partition_defs = list(partition_defs_by_key.values())
         for i, value in enumerate(
             storage.get_asset_status_cache_values(
-                partition_defs_by_key, LoadingContext.ephemeral(instance)
+                partition_defs_by_key, LoadingContextForTest(instance)
             ),
         ):
             assert value is not None
