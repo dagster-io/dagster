@@ -70,14 +70,20 @@ class GlobalOpConcurrencyLimitsCounter:
     def _fetch_concurrency_info(self, instance: DagsterInstance, queued_runs: Sequence[DagsterRun]):
         # fetch all the concurrency slot information for the root concurrency keys of all the queued
         # runs
-        all_concurrency_keys = set()
+        all_run_concurrency_keys = set()
+
+        configured_concurrency_keys = instance.event_log_storage.get_concurrency_keys()
         for run in queued_runs:
             if run.run_op_concurrency:
-                all_concurrency_keys.update(run.run_op_concurrency.root_key_counts.keys())
+                all_run_concurrency_keys.update(run.run_op_concurrency.root_key_counts.keys())
 
-        for key in all_concurrency_keys:
+        for key in all_run_concurrency_keys:
             if key is None:
                 continue
+
+            if key not in configured_concurrency_keys:
+                instance.event_log_storage.initialize_concurrency_limit_to_default(key)
+
             self._concurrency_info_by_key[key] = instance.event_log_storage.get_concurrency_info(
                 key
             )
