@@ -112,9 +112,9 @@ class AutomationConditionEvaluator:
         num_conditions = len(self.entity_keys)
         num_evaluated = 0
 
-        async def _evaluate_entity_async(entity_key: EntityKey) -> int:
+        async def _evaluate_entity_async(entity_key: EntityKey, offset: int):
             self.logger.debug(
-                f"Evaluating {entity_key.to_user_string()} ({num_evaluated+1}/{num_conditions})"
+                f"Evaluating {entity_key.to_user_string()} ({num_evaluated+offset}/{num_conditions})"
             )
 
             try:
@@ -136,16 +136,15 @@ class AutomationConditionEvaluator:
                 f"requested ({requested_str}) "
                 f"({format(result.end_timestamp - result.start_timestamp, '.3f')} seconds)"
             )
-            return 1
 
         for topo_level in self.asset_graph.toposorted_entity_keys_by_level:
             coroutines = [
-                _evaluate_entity_async(entity_key)
+                _evaluate_entity_async(entity_key, num_evaluated)
                 for entity_key in topo_level
                 if entity_key in self.entity_keys
             ]
-            gathered = await asyncio.gather(*coroutines)
-            num_evaluated += sum(gathered)
+            await asyncio.gather(*coroutines)
+            num_evaluated += len(coroutines)
 
         return list(self.current_results_by_key.values()), [
             v for v in self.request_subsets_by_key.values() if not v.is_empty
