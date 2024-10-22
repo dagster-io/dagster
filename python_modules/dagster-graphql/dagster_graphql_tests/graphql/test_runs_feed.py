@@ -3,6 +3,7 @@ from typing import Mapping, Optional
 
 import pytest
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.remote_representation.external_data import partition_set_snap_name_for_job_name
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import BACKFILL_ID_TAG
@@ -930,7 +931,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
 
         partition_set_origin = RemotePartitionSetOrigin(
             repository_origin=repository.get_remote_origin(),
-            partition_set_name="foo_partition",
+            partition_set_name=partition_set_snap_name_for_job_name("foo"),
         )
         for _ in range(3):
             _create_run(graphql_context, job_name="foo")
@@ -942,7 +943,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
 
         partition_set_origin = RemotePartitionSetOrigin(
             repository_origin=repository.get_remote_origin(),
-            partition_set_name="bar_partition",
+            partition_set_name=partition_set_snap_name_for_job_name("bar"),
         )
         for _ in range(3):
             _create_run(graphql_context, job_name="bar")
