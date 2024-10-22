@@ -148,6 +148,9 @@ class RepositoryDefinition:
     ) -> "RepositoryDefinition":
         """Add reconstruction metadata to this RepositoryDefinition object."""
         check.mapping_param(reconstruction_metadata, "reconstruction_metadata", key_type=str)
+        if not reconstruction_metadata:
+            return self
+
         for k, v in reconstruction_metadata.items():
             if not isinstance(v, str):
                 raise DagsterInvariantViolationError(
