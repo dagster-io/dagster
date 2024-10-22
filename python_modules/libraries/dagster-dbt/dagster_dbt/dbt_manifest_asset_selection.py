@@ -45,6 +45,25 @@ class DbtManifestAssetSelection(AssetSelection, arbitrary_types_allowed=True):
     dagster_dbt_translator: DagsterDbtTranslator
     exclude: str
 
+    def __eq__(self, other):
+        if not isinstance(other, DbtManifestAssetSelection):
+            return False
+
+        self_metadata = self.manifest.get("metadata")
+        other_metadata = other.manifest.get("metadata")
+
+        if not self_metadata or not other_metadata:
+            return super().__eq__(other)
+
+        # Compare metadata only since it uniquely identifies the manifest and the
+        # full manifest dictionary can be large
+        return (
+            self_metadata == other_metadata
+            and self.select == other.select
+            and self.dagster_dbt_translator == other.dagster_dbt_translator
+            and self.exclude == other.exclude
+        )
+
     @classmethod
     def build(
         cls,

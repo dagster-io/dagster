@@ -648,6 +648,15 @@ class OperandListAssetSelection(AssetSelection):
             )
         )
 
+    def __eq__(self, other):
+        if not isinstance(other, OperandListAssetSelection):
+            return False
+
+        num_operands = len(self.operands)
+        return len(other.operands) == num_operands and all(
+            self.operands[i] == other.operands[i] for i in range(num_operands)
+        )
+
     def needs_parentheses_when_operand(self) -> bool:
         return True
 
