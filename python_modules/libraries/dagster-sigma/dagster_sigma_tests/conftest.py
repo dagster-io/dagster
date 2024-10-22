@@ -120,6 +120,12 @@ def sigma_sample_data_fixture(responses: aioresponses) -> None:
         body=json.dumps(_build_paginated_response([{"pageId": "qwMyyHBCuC", "name": "Page 1"}])),
         status=200,
     )
+    responses.add(
+        method=hdrs.METH_GET,
+        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/materialization-schedules",
+        body=json.dumps(_build_paginated_response([{"sheetId": "qwMyyHBCuC"}])),
+        status=200,
+    )
     elements = [
         {
             "elementId": "_MuHPbskp0",
