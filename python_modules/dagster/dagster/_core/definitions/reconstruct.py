@@ -18,6 +18,7 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
@@ -739,30 +740,37 @@ def repository_def_from_target_def(
         # reassign to handle both repository and pending repo case
         target = target.get_inner_repository()
 
+    repo_def: Optional[RepositoryDefinition] = None
     # special case - we can wrap a single job in a repository
     if isinstance(target, (JobDefinition, GraphDefinition)):
         # consider including job name in generated repo name
-        return RepositoryDefinition(
+        repo_def = RepositoryDefinition(
             name=get_ephemeral_repository_name(target.name),
             repository_data=CachingRepositoryData.from_list([target]),
         )
     elif isinstance(target, list) and all(
         isinstance(item, (AssetsDefinition, SourceAsset)) for item in target
     ):
-        return RepositoryDefinition(
+        repo_def = RepositoryDefinition(
             name=SINGLETON_REPOSITORY_NAME,
             repository_data=CachingRepositoryData.from_list(target),
         )
     elif isinstance(target, RepositoryDefinition):
-        return target
+        repo_def = target
     elif isinstance(target, PendingRepositoryDefinition):
         # must load repository from scratch
         if repository_load_data is None:
-            return target.compute_repository_definition()
+            repo_def = target.compute_repository_definition()
         # can use the cached data to more efficiently load data
-        return target.reconstruct_repository_definition(repository_load_data)
-    else:
-        return None
+        else:
+            repo_def = target.reconstruct_repository_definition(repository_load_data)
+
+    if repo_def:
+        return repo_def.with_reconstruction_metadata(
+            DefinitionsLoadContext.get().get_pending_reconstruction_metadata()
+        )
+
+    return None
 
 
 def repository_def_from_pointer(
@@ -771,6 +779,7 @@ def repository_def_from_pointer(
     repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> "RepositoryDefinition":
     from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
 
     DefinitionsLoadContext.set(
         DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
@@ -783,4 +792,7 @@ def repository_def_from_pointer(
             "RepositoryDefinition, JobDefinition, or JobDefinition. "
             f"Received a {type(target)}"
         )
-    return repo_def
+
+    return cast(RepositoryDefinition, repo_def).with_reconstruction_metadata(
+        DefinitionsLoadContext.get().get_pending_reconstruction_metadata()
+    )
