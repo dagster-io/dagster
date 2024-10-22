@@ -11,6 +11,6 @@ from dagster_sigma.translator import (
 )
 
 # Move back to version.py and edit setup.py once we are ready to publish.
-__version__ = "0.0.12"
+__version__ = "0.0.13"
 
 DagsterLibraryRegistry.register("dagster-sigma", __version__)
