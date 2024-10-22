@@ -194,7 +194,7 @@ def test_reconstruct_from_origin():
     assert recon_job.repository.container_context == origin.repository_origin.container_context
 
 
-def test_reconstructable_memoize():
+def test_reconstructable_memoize() -> None:
     recon_job = reconstructable(some_job)
 
     # warm the cache
