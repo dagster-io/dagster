@@ -23,7 +23,7 @@ def upgrade():
     if "runs" in has_tables:
         columns = [x.get("name") for x in inspector.get_columns("runs")]
         if "backfill_id" not in columns:
-            op.add_column(sa.Column("backfill_id", sa.String(255), nullable=True))
+            op.add_column("runs", sa.Column("backfill_id", sa.String(255), nullable=True))
 
 
 def downgrade():
@@ -32,4 +32,4 @@ def downgrade():
     if "runs" in has_tables:
         columns = [x.get("name") for x in inspector.get_columns("runs")]
         if "backfill_id" in columns:
-            op.drop_column("backfill_id")
+            op.drop_column("runs", "backfill_id")
