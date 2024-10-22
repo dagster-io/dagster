@@ -38,7 +38,8 @@ setup(
     install_requires=[
         f"dagster{pin}",
         "pyjwt[crypto]",
-        "tableauserverclient",
+        # Datasources endpoint were added in 0.32
+        "tableauserverclient>=0.32",
     ],
     include_package_data=True,
     python_requires=">=3.8,<3.13",
