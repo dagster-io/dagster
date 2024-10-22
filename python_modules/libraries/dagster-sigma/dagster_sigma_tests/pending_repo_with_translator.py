@@ -1,4 +1,5 @@
 from dagster import AssetSpec, EnvVar, define_asset_job
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.env import environ
 from dagster_sigma import (
@@ -7,7 +8,7 @@ from dagster_sigma import (
     SigmaOrganization,
     load_sigma_asset_specs,
 )
-from dagster_sigma.translator import SigmaDataset, SigmaWorkbook
+from dagster_sigma.translator import SigmaDataset
 
 fake_client_id = "fake_client_id"
 fake_client_secret = "fake_client_secret"
@@ -16,12 +17,8 @@ with environ({"SIGMA_CLIENT_ID": fake_client_id, "SIGMA_CLIENT_SECRET": fake_cli
     fake_token = "fake_token"
 
     class MyCoolTranslator(DagsterSigmaTranslator):
-        def get_dataset_spec(self, data: SigmaDataset) -> AssetSpec:
-            spec = super().get_dataset_spec(data)
-            return spec._replace(key=spec.key.with_prefix("my_prefix"))
-
-        def get_workbook_spec(self, data: SigmaWorkbook) -> AssetSpec:
-            spec = super().get_workbook_spec(data)
+        def get_asset_spec(self, asset_key: AssetKey, data: SigmaDataset) -> AssetSpec:
+            spec = super().get_asset_spec(asset_key, data)
             return spec._replace(key=spec.key.with_prefix("my_prefix"))
 
     resource = SigmaOrganization(

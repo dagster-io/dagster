@@ -1,5 +1,5 @@
 import re
-from typing import AbstractSet, Any, Dict, List, Optional
+from typing import AbstractSet, Any, Dict, List, Optional, Union
 
 from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
@@ -71,46 +71,51 @@ class DagsterSigmaTranslator:
     def organization_data(self) -> SigmaOrganizationData:
         return self._context
 
-    def get_workbook_key(self, data: SigmaWorkbook) -> AssetKey:
+    def get_asset_key(self, data: Union[SigmaDataset, SigmaWorkbook]) -> AssetKey:
+        """Get the AssetKey for a Sigma object, such as a workbook or dataset."""
         return AssetKey(_clean_asset_name(data.properties["name"]))
 
-    def get_workbook_spec(self, data: SigmaWorkbook) -> AssetSpec:
-        metadata = {
-            "dagster_sigma/web_url": MetadataValue.url(data.properties["url"]),
-            "dagster_sigma/version": data.properties["latestVersion"],
-            "dagster_sigma/created_at": MetadataValue.timestamp(
-                isoparse(data.properties["createdAt"])
-            ),
-        }
-        datasets = [self._context.get_datasets_by_inode()[inode] for inode in data.datasets]
-        return AssetSpec(
-            key=self.get_workbook_key(data),
-            metadata=metadata,
-            kinds={"sigma"},
-            deps={self.get_dataset_key(dataset) for dataset in datasets},
-            owners=[data.owner_email] if data.owner_email else None,
-        )
+    def get_asset_spec(
+        self, asset_key: AssetKey, data: Union[SigmaDataset, SigmaWorkbook]
+    ) -> AssetSpec:
+        """Get the AssetSpec for a Sigma object, such as a workbook or dataset. The key of the returned
+        spec must match the input asset_key.
+        """
+        if isinstance(data, SigmaWorkbook):
+            metadata = {
+                "dagster_sigma/web_url": MetadataValue.url(data.properties["url"]),
+                "dagster_sigma/version": data.properties["latestVersion"],
+                "dagster_sigma/created_at": MetadataValue.timestamp(
+                    isoparse(data.properties["createdAt"])
+                ),
+            }
+            datasets = [self._context.get_datasets_by_inode()[inode] for inode in data.datasets]
+            return AssetSpec(
+                key=asset_key,
+                metadata=metadata,
+                kinds={"sigma"},
+                deps={self.get_asset_key(dataset) for dataset in datasets},
+                owners=[data.owner_email] if data.owner_email else None,
+            )
+        elif isinstance(data, SigmaDataset):
+            metadata = {
+                "dagster_sigma/web_url": MetadataValue.url(data.properties["url"]),
+                "dagster_sigma/created_at": MetadataValue.timestamp(
+                    isoparse(data.properties["createdAt"])
+                ),
+                **TableMetadataSet(
+                    column_schema=TableSchema(
+                        columns=[
+                            TableColumn(name=column_name) for column_name in sorted(data.columns)
+                        ]
+                    )
+                ),
+            }
 
-    def get_dataset_key(self, data: SigmaDataset) -> AssetKey:
-        return AssetKey(_clean_asset_name(data.properties["name"]))
-
-    def get_dataset_spec(self, data: SigmaDataset) -> AssetSpec:
-        metadata = {
-            "dagster_sigma/web_url": MetadataValue.url(data.properties["url"]),
-            "dagster_sigma/created_at": MetadataValue.timestamp(
-                isoparse(data.properties["createdAt"])
-            ),
-            **TableMetadataSet(
-                column_schema=TableSchema(
-                    columns=[TableColumn(name=column_name) for column_name in sorted(data.columns)]
-                )
-            ),
-        }
-
-        return AssetSpec(
-            key=self.get_dataset_key(data),
-            metadata=metadata,
-            kinds={"sigma"},
-            deps={AssetKey(input_name.lower().split(".")) for input_name in data.inputs},
-            description=data.properties.get("description"),
-        )
+            return AssetSpec(
+                key=asset_key,
+                metadata=metadata,
+                kinds={"sigma"},
+                deps={AssetKey(input_name.lower().split(".")) for input_name in data.inputs},
+                description=data.properties.get("description"),
+            )
