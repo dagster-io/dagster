@@ -319,10 +319,12 @@ def build_caching_repository_data_from_list(
     assets_without_keys = [ad for ad in assets_defs if not ad.keys]
     asset_graph = AssetGraph.from_assets(
         [
-            *assets_defs_by_key.values(),
+            # Ensure that the same AssetsDefinition doesn't need to be considered twice by the graph if
+            # it produces multiple asset keys
+            *set(assets_defs_by_key.values()),
             *assets_without_keys,
             *asset_checks_defs,
-            *source_assets_by_key.values(),
+            *source_assets_by_key.values(),  # only ever one key per source asset so no need to dedupe
         ]
     )
     if assets_defs or asset_checks_defs or source_assets:
