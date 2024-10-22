@@ -104,6 +104,38 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         default_condition (Optional[AutomationCondition]): (experimental) If provided, this condition will
             be used for any selected assets or asset checks which do not have an automation condition defined.
             Requires `use_user_code_server` to be set to `True`.
+
+    Examples:
+        .. code-block:: python
+
+            import dagster as dg
+
+            # automation condition sensor that defaults to running
+            defs1 = dg.Definitions(
+                assets=...,
+                sensors=[
+                    dg.AutomationConditionSensorDefinition(
+                        name="automation_condition_sensor",
+                        default_status=dg.DefaultSensorStatus.RUNNING,
+                    ),
+                ]
+            )
+
+            # one automation condition sensor per group
+            defs2 = dg.Definitions(
+                assets=...,
+                sensors=[
+                    dg.AutomationConditionSensorDefinition(
+                        name="raw_data_automation_condition_sensor",
+                        target=dg.AssetSelection.groups("raw_data"),
+                    ),
+                    dg.AutomationConditionSensorDefinition(
+                        name="ml_automation_condition_sensor",
+                        target=dg.AssetSelection.groups("machine_learning"),
+                    ),
+                ]
+            )
+
     """
 
     def __init__(
