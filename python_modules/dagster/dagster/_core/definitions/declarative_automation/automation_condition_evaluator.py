@@ -139,8 +139,8 @@ class AutomationConditionEvaluator:
 
         for topo_level in self.asset_graph.toposorted_entity_keys_by_level:
             coroutines = [
-                _evaluate_entity_async(entity_key, num_evaluated)
-                for entity_key in topo_level
+                _evaluate_entity_async(entity_key, offset)
+                for offset, entity_key in enumerate(topo_level)
                 if entity_key in self.entity_keys
             ]
             await asyncio.gather(*coroutines)
