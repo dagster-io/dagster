@@ -8,6 +8,8 @@ AWS
 AWS Athena
 AWS CloudWatch
 AWS Glue
+AWS EMR
+AWS EMR Serverless
 AWS Lambda
 AWS Redshift
 AWS Secrets Manager
