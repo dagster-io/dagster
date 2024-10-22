@@ -40,6 +40,7 @@ class SigmaWorkbook:
     datasets: AbstractSet[str]
     direct_table_deps: AbstractSet[str]
     owner_email: Optional[str]
+    materialization_schedules: Optional[List[Dict[str, Any]]]
 
 
 @whitelist_for_serdes
