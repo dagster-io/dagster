@@ -106,6 +106,7 @@ interface FetchLocationDataParams
   >;
 }
 
+const UNLOADED_CACHED_DATA = {};
 export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   const {localCacheIdPrefix} = useContext(AppContext);
   const client = useApolloClient();
@@ -113,15 +114,17 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   const clearCachedData = useClearCachedData();
   const getData = useGetData();
 
-  const [locationEntryData, setLocationEntryData] = useState<
-    Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>
-  >({});
+  const [locationEntryData, setLocationEntryData] =
+    useState<Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>>(
+      UNLOADED_CACHED_DATA,
+    );
 
   const previousLocationVersionsRef = useRef<Record<string, string>>({});
 
   const {locationStatuses, loading: loadingLocationStatuses} =
     useCodeLocationStatuses(localCacheIdPrefix);
 
+  const loadingCachedData = UNLOADED_CACHED_DATA === locationEntryData;
   const loading =
     loadingLocationStatuses ||
     !Object.keys(locationStatuses).every((locationName) => locationEntryData[locationName]);
@@ -139,6 +142,9 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   }, [localCacheIdPrefix, getCachedData]);
 
   useEffect(() => {
+    if (loadingCachedData) {
+      return;
+    }
     const params: RefreshLocationsIfNeededParams = {
       locationStatuses,
       locationEntryData,
@@ -149,7 +155,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
       previousLocationVersionsRef,
     };
     refreshLocationsIfNeeded(params);
-  }, [locationStatuses, locationEntryData, client, localCacheIdPrefix, getData, loading]);
+  }, [locationStatuses, locationEntryData, client, localCacheIdPrefix, getData, loadingCachedData]);
 
   useEffect(() => {
     if (loading) {
