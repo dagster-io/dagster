@@ -88,7 +88,7 @@ Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This
 
    ```python
    import pandas as pd
-   from dagster import asset, MetadataValue
+   from dagster import asset, MetadataValue, MaterializeResult
 
    @asset(
        partitions_def=monthly_partition,
