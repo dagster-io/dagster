@@ -1306,6 +1306,7 @@ class AssetCheckNodeSnap(IHaveNew):
     blocking: bool
     additional_asset_keys: Sequence[AssetKey]
     automation_condition: Optional[AutomationCondition]
+    automation_condition_snapshot: Optional[AutomationConditionSnapshot]
 
     def __new__(
         cls,
@@ -1317,6 +1318,7 @@ class AssetCheckNodeSnap(IHaveNew):
         blocking: bool = False,
         additional_asset_keys: Optional[Sequence[AssetKey]] = None,
         automation_condition: Optional[AutomationCondition] = None,
+        automation_condition_snapshot: Optional[AutomationConditionSnapshot] = None,
     ):
         return super().__new__(
             cls,
@@ -1328,6 +1330,7 @@ class AssetCheckNodeSnap(IHaveNew):
             blocking=blocking,
             additional_asset_keys=additional_asset_keys or [],
             automation_condition=automation_condition,
+            automation_condition_snapshot=automation_condition_snapshot,
         )
 
     @property
@@ -1483,11 +1486,6 @@ class AssetNodeSnap(IHaveNew):
             # job, and no source assets could be part of any job
             is_source = len(job_names or []) == 0
 
-        if auto_materialize_policy and auto_materialize_policy.asset_condition:
-            # do not include automation conditions containing user-defined info on the ExternalAssetNode
-            if not auto_materialize_policy.asset_condition.is_serializable:
-                auto_materialize_policy = None
-
         return super().__new__(
             cls,
             asset_key=asset_key,
@@ -1514,7 +1512,7 @@ class AssetNodeSnap(IHaveNew):
             execution_set_identifier=execution_set_identifier,
             required_top_level_resources=required_top_level_resources or [],
             auto_materialize_policy=auto_materialize_policy,
-            automation_condition_snapshot=None,
+            automation_condition_snapshot=automation_condition_snapshot,
             backfill_policy=backfill_policy,
             auto_observe_interval_minutes=auto_observe_interval_minutes,
             owners=owners or [],
@@ -1599,6 +1597,9 @@ def asset_check_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[Ass
     asset_check_node_snaps: List[AssetCheckNodeSnap] = []
     for check_key, job_names in job_names_by_check_key.items():
         spec = repo.asset_graph.get_check_spec(check_key)
+        automation_condition, automation_condition_snapshot = resolve_automation_condition_args(
+            spec.automation_condition
+        )
         asset_check_node_snaps.append(
             AssetCheckNodeSnap(
                 name=check_key.name,
@@ -1608,7 +1609,8 @@ def asset_check_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[Ass
                 job_names=job_names,
                 blocking=spec.blocking,
                 additional_asset_keys=[dep.asset_key for dep in spec.additional_deps],
-                automation_condition=spec.automation_condition,
+                automation_condition=automation_condition,
+                automation_condition_snapshot=automation_condition_snapshot,
             )
         )
 
@@ -1688,6 +1690,9 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
             ) and isinstance(partition_mapping, builtin_partition_mapping_types):
                 partition_mappings[pk] = partition_mapping
 
+        automation_condition, automation_condition_snapshot = resolve_automation_condition_args(
+            asset_node.automation_condition
+        )
         asset_node_snaps.append(
             AssetNodeSnap(
                 asset_key=key,
@@ -1723,7 +1728,10 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 is_observable=asset_node.is_observable,
                 execution_set_identifier=repo.asset_graph.get_execution_set_identifier(key),
                 required_top_level_resources=required_top_level_resources,
-                auto_materialize_policy=asset_node.auto_materialize_policy,
+                auto_materialize_policy=automation_condition.as_auto_materialize_policy()
+                if automation_condition
+                else None,
+                automation_condition_snapshot=automation_condition_snapshot,
                 backfill_policy=asset_node.backfill_policy,
                 auto_observe_interval_minutes=asset_node.auto_observe_interval_minutes,
                 owners=asset_node.owners,
@@ -1823,3 +1831,17 @@ def active_presets_from_job_def(job_def: JobDefinition) -> Sequence[PresetSnap]:
                 tags={},
             )
         ]
+
+
+def resolve_automation_condition_args(
+    automation_condition: Optional[AutomationCondition],
+) -> Tuple[Optional[AutomationCondition], Optional[AutomationConditionSnapshot]]:
+    if automation_condition is None:
+        return None, None
+    elif automation_condition.is_serializable:
+        # to avoid serializing too much data, only store the full condition if
+        # it is available
+        return automation_condition, None
+    else:
+        # for non-serializable conditions, only include the snapshot
+        return None, automation_condition.get_snapshot()
