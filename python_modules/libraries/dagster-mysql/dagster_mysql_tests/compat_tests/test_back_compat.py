@@ -549,7 +549,7 @@ def test_add_backfill_id_column(conn_string):
                 )
             }
             assert backfill_ids[run_not_in_backfill_pre_migration.run_id] is None
-            assert backfill_ids[run_in_backfill_pre_migration.run_id] is None
+            assert backfill_ids[run_in_backfill_pre_migration.run_id] == "backfillid"
             assert backfill_ids[run_not_in_backfill_post_migration.run_id] is None
             assert backfill_ids[run_in_backfill_post_migration.run_id] == "backfillid"
 

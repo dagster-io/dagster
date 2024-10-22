@@ -13,7 +13,12 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunR
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.schema import BulkActionsTable, RunsTable, RunTagsTable
 from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
+from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
+    PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+    REPOSITORY_LABEL_TAG,
+)
 from dagster._serdes import deserialize_value
 
 RUN_PARTITIONS = "run_partitions"
@@ -22,6 +27,7 @@ RUN_START_END = (  # was run_start_end, but renamed to overwrite bad timestamps 
 )
 RUN_REPO_LABEL_TAGS = "run_repo_label_tags"
 BULK_ACTION_TYPES = "bulk_action_types"
+RUN_BACKFILL_ID = "run_backfill_id"
 
 PrintFn: TypeAlias = Callable[[Any], None]
 MigrationFn: TypeAlias = Callable[[RunStorage, Optional[PrintFn]], None]
@@ -31,6 +37,7 @@ REQUIRED_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
     RUN_PARTITIONS: lambda: migrate_run_partition,
     RUN_REPO_LABEL_TAGS: lambda: migrate_run_repo_tags,
     BULK_ACTION_TYPES: lambda: migrate_bulk_actions,
+    RUN_BACKFILL_ID: lambda: migrate_run_backfill_id,
 }
 # for `dagster instance reindex`, optionally run for better read performance
 OPTIONAL_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
@@ -259,3 +266,36 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn: Optional[PrintFn] = 
                     .where(BulkActionsTable.c.id == storage_id)
                 )
                 cursor = storage_id
+
+
+def migrate_run_backfill_id(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
+    """Utility method to add a backfill_id column to the runs table and populate it with the backfill_id of the run."""
+    if print_fn:
+        print_fn("Querying run storage.")
+
+    for run in chunked_run_iterator(storage, print_fn):
+        if BACKFILL_ID_TAG not in run.tags:
+            continue
+
+        add_backfill_id(
+            run_storage=storage, run_id=run.run_id, backfill_id=run.tags[BACKFILL_ID_TAG]
+        )
+
+
+def add_backfill_id(run_storage: RunStorage, run_id: str, backfill_id) -> None:
+    from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
+
+    check.str_param(run_id, "run_id")
+    check.inst_param(run_storage, "run_storage", RunStorage)
+
+    if not isinstance(run_storage, SqlRunStorage):
+        return
+
+    with run_storage.connect() as conn:
+        conn.execute(
+            RunsTable.update()
+            .where(RunsTable.c.run_id == run_id)
+            .values(
+                backfill_id=backfill_id,
+            )
+        )
