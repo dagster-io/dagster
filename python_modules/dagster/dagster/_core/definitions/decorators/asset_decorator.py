@@ -134,7 +134,6 @@ def _validate_hidden_non_argument_dep_param(
 
 @experimental_param(param="resource_defs")
 @experimental_param(param="io_manager_def")
-@experimental_param(param="automation_condition")
 @experimental_param(param="backfill_policy")
 @experimental_param(param="owners")
 @experimental_param(param="tags")
@@ -146,8 +145,13 @@ def _validate_hidden_non_argument_dep_param(
 )
 @deprecated_param(
     param="auto_materialize_policy",
-    breaking_version="1.9.0",
+    breaking_version="1.10.0",
     additional_warn_text="use `automation_condition` instead.",
+)
+@deprecated_param(
+    param="freshness_policy",
+    breaking_version="1.10.0",
+    additional_warn_text="use freshness checks instead.",
 )
 def asset(
     compute_fn: Optional[Callable[..., Any]] = None,

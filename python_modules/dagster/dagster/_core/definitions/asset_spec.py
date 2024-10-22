@@ -13,7 +13,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental_param, public
+from dagster._annotations import PublicAttr, deprecated_param, experimental_param, public
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -88,6 +88,11 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
 @experimental_param(param="owners")
 @experimental_param(param="tags")
 @experimental_param(param="kinds")
+@deprecated_param(
+    param="freshness_policy",
+    breaking_version="1.10.0",
+    additional_warn_text="use freshness checks instead.",
+)
 class AssetSpec(
     NamedTuple(
         "_AssetSpec",
