@@ -147,8 +147,8 @@ class LatestRunExecutedWithRootTargetCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "executed_with_root_target"
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset:
-        return context.asset_graph_view.compute_latest_run_executed_with_subset(
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+        return await context.asset_graph_view.compute_latest_run_executed_with_subset(
             from_subset=context.candidate_subset, target=context.root_context.key
         )
 
