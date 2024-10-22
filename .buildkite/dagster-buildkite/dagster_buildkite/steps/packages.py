@@ -13,6 +13,7 @@ from dagster_buildkite.utils import (
     has_dagster_airlift_changes,
     has_storage_test_fixture_changes,
     network_buildkite_container,
+    skip_if_not_dlift_commit,
 )
 
 
@@ -384,6 +385,19 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/experimental/dagster-dlift",
         name=":dbt: Dbt Cloud-Lift",
+    ),
+    # Runs against live dbt cloud instance, we only want to run on commits and on the
+    # nightly build
+    PackageSpec(
+        "examples/experimental/dagster-dlift/kitchen-sink",
+        skip_if=skip_if_not_dlift_commit,
+        name=":dbt: :sink: Dbt Cloud-Lift Kitchen Sink",
+        env_vars=[
+            "KS_DBT_CLOUD_ACCOUNT_ID",
+            "KS_DBT_CLOUD_TOKEN",
+            "KS_DBT_CLOUD_ACCESS_URL",
+            "KS_DBT_CLOUD_DISCOVERY_API_URL",
+        ],
     ),
 ]
 
