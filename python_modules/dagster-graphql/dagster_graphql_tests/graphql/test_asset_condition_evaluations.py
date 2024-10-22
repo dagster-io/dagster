@@ -165,8 +165,7 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["autoMaterializeTicks"]) == 1
         tick = result.data["autoMaterializeTicks"][0]
         assert (
-            tick["autoMaterializeAssetEvaluationId"]
-            == success_2.tick_data.auto_materialize_evaluation_id
+            tick["autoMaterializeAssetEvaluationId"] == success_2.automation_condition_evaluation_id
         )
 
         result = execute_dagster_graphql(
@@ -186,7 +185,7 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         assert ticks[0]["timestamp"] == success_1.timestamp
         assert (
             ticks[0]["autoMaterializeAssetEvaluationId"]
-            == success_1.tick_data.auto_materialize_evaluation_id
+            == success_1.automation_condition_evaluation_id
         )
 
         cursor = ticks[0]["id"]

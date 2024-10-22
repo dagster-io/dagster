@@ -266,7 +266,9 @@ class AssetDaemonScenarioState(ScenarioState):
     def evaluate_tick_daemon(self):
         with freeze_time(self.current_time):
             run_requests, cursor, _ = self._evaluate_tick_daemon()
-        new_state = self.with_serialized_cursor(serialize_value(cursor))
+        new_state = self.with_serialized_cursor(serialize_value(cursor)).with_current_time_advanced(
+            seconds=1
+        )
         return new_state, run_requests
 
     def evaluate_tick(self, label: Optional[str] = None) -> "AssetDaemonScenarioState":
