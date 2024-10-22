@@ -36,11 +36,13 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         network=None,
         networks=None,
         container_kwargs=None,
+        termination_timeout_seconds=None,
     ):
         self._inst_data = inst_data
         self.image = image
         self.registry = registry
         self.env_vars = env_vars
+        self.termination_timeout_seconds = termination_timeout_seconds
 
         validate_docker_config(network, networks, container_kwargs)
 
@@ -216,7 +218,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             )
             return False
 
-        container.stop()
+        container.stop(timeout=self.termination_timeout_seconds)
 
         return True
 
