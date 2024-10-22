@@ -316,6 +316,14 @@ def has_storage_test_fixture_changes():
     )
 
 
+def skip_if_not_dlift_commit():
+    return (
+        None
+        if any("dagster-dlift" in str(path) for path in ChangedFiles.all)
+        else "Not a dlift commit"
+    )
+
+
 def skip_if_no_helm_changes():
     if message_contains("NO_SKIP"):
         return None

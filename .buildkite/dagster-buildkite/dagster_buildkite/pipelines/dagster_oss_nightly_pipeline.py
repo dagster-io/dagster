@@ -42,6 +42,16 @@ def build_dagster_oss_nightly_steps() -> List[BuildkiteStep]:
                 ],
                 pytest_extra_cmds=k8s_extra_cmds,
             ),
+            PackageSpec(
+                "examples/experimental/dagster-dlift/kitchen-sink",
+                name="dbt-cloud-live-tests",
+                env_vars=[
+                    "KS_DBT_CLOUD_ACCOUNT_ID",
+                    "KS_DBT_CLOUD_TOKEN",
+                    "KS_DBT_CLOUD_ACCESS_URL",
+                    "KS_DBT_CLOUD_DISCOVERY_API_URL",
+                ],
+            ),
         ]
     )
 
