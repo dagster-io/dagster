@@ -11,7 +11,11 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Tutorial',
       collapsed: false,
-      items: ['tutorial/tutorial-etl'],
+      items: [
+        'tutorial/etl-tutorial-introduction',
+        'tutorial/your-first-asset',
+        'tutorial/asset-dependencies-and-checks',
+      ],
     },
     {
       type: 'category',
