@@ -430,7 +430,9 @@ class BaseTableauWorkspace(ConfigurableResource):
             Definitions: A Definitions object which will build and return the Power BI content.
         """
         return TableauDefsLoader(
-            workspace=self, translator_cls=dagster_tableau_translator, refreshable_workbook_ids=refreshable_workbook_ids or []
+            workspace=self,
+            translator_cls=dagster_tableau_translator,
+            refreshable_workbook_ids=refreshable_workbook_ids or [],
         ).build_defs()
 
 
@@ -537,7 +539,7 @@ class TableauDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
         def _assets(tableau: BaseTableauWorkspace):
             with tableau.get_client() as client:
                 refreshed_workbooks = set()
-                for refreshable_workbook_id in self._refreshable_workbook_ids:
+                for refreshable_workbook_id in self.refreshable_workbook_ids:
                     refreshed_workbooks.add(client.refresh_and_poll(refreshable_workbook_id))
                 for view_id, view_content_data in [
                     *workspace_data.sheets_by_id.items(),
