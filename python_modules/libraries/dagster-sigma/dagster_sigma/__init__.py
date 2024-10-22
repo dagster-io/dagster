@@ -3,6 +3,7 @@ from dagster._core.libraries import DagsterLibraryRegistry
 from dagster_sigma.resource import (
     SigmaBaseUrl as SigmaBaseUrl,
     SigmaOrganization as SigmaOrganization,
+    load_sigma_asset_specs as load_sigma_asset_specs,
 )
 from dagster_sigma.translator import (
     DagsterSigmaTranslator as DagsterSigmaTranslator,

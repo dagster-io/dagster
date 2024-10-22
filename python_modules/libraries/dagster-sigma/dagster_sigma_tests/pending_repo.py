@@ -1,7 +1,7 @@
 from dagster import EnvVar, asset, define_asset_job
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.env import environ
-from dagster_sigma import SigmaBaseUrl, SigmaOrganization
+from dagster_sigma import SigmaBaseUrl, SigmaOrganization, load_sigma_asset_specs
 
 fake_client_id = "fake_client_id"
 fake_client_secret = "fake_client_secret"
@@ -18,8 +18,7 @@ with environ({"SIGMA_CLIENT_ID": fake_client_id, "SIGMA_CLIENT_SECRET": fake_cli
     def my_materializable_asset():
         pass
 
-    sigma_defs = resource.build_defs()
-    defs = Definitions.merge(
-        Definitions(assets=[my_materializable_asset], jobs=[define_asset_job("all_asset_job")]),
-        sigma_defs,
+    sigma_specs = load_sigma_asset_specs(resource)
+    defs = Definitions(
+        assets=[my_materializable_asset, *sigma_specs], jobs=[define_asset_job("all_asset_job")]
     )

@@ -3,15 +3,19 @@ import contextlib
 import urllib.parse
 import warnings
 from collections import defaultdict
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
 from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Type
 
 import aiohttp
+import dagster._check as check
 import requests
 from aiohttp.client_exceptions import ClientResponseError
 from dagster import ConfigurableResource
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
+from dagster._config.pythonic_config.resource import ResourceDependency
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._utils.cached_method import cached_method
@@ -61,6 +65,9 @@ class SigmaOrganization(ConfigurableResource):
         default=False,
         description="Whether to warn rather than raise when lineage data cannot be fetched for an element.",
     )
+    translator: ResourceDependency[Type[DagsterSigmaTranslator]] = Field(
+        default=DagsterSigmaTranslator
+    )
 
     _api_token: Optional[str] = PrivateAttr(None)
 
@@ -89,7 +96,10 @@ class SigmaOrganization(ConfigurableResource):
         return self._api_token
 
     async def _fetch_json_async(
-        self, endpoint: str, method: str = "GET", query_params: Optional[Dict[str, Any]] = None
+        self,
+        endpoint: str,
+        method: str = "GET",
+        query_params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         url = f"{self.base_url}/v2/{endpoint}"
         if query_params:
@@ -376,6 +386,10 @@ class SigmaOrganization(ConfigurableResource):
         return SigmaOrganizationData(workbooks=workbooks, datasets=datasets)
 
     @public
+    @deprecated(
+        breaking_version="1.9.0",
+        additional_warn_text="Use dagster_sigma.load_sigma_asset_specs instead",
+    )
     def build_defs(
         self,
         dagster_sigma_translator: Type[DagsterSigmaTranslator] = DagsterSigmaTranslator,
@@ -389,10 +403,27 @@ class SigmaOrganization(ConfigurableResource):
         Returns:
             Definitions: The set of assets representing the Sigma content in the organization.
         """
-        with self.process_config_and_initialize_cm() as initialized_organization:
-            return SigmaOrganizationDefsLoader(
-                organization=initialized_organization, translator_cls=dagster_sigma_translator
-            ).build_defs()
+        return Definitions(assets=load_sigma_asset_specs(self))
+
+
+def load_sigma_asset_specs(organization: SigmaOrganization) -> Sequence[AssetSpec]:
+    """Returns a list of AssetSpecs representing the Sigma content in the organization.
+
+    Args:
+        organization (SigmaOrganization): The Sigma organization to fetch assets from.
+
+    Returns:
+        List[AssetSpec]: The set of assets representing the Sigma content in the organization.
+    """
+    with organization.process_config_and_initialize_cm() as initialized_organization:
+        return check.is_list(
+            SigmaOrganizationDefsLoader(
+                organization=initialized_organization, translator_cls=organization.translator
+            )
+            .build_defs()
+            .assets,
+            AssetSpec,
+        )
 
 
 @dataclass
