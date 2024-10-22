@@ -52,8 +52,8 @@ This example creates a replication configuration in a `replication.yaml` file:
 ```yaml
 # replication.yaml
 
-SOURCE: MY_POSTGRES
-TARGET: MY_SNOWFLAKE
+source: MY_POSTGRES
+target: MY_SNOWFLAKE
 
 defaults:
   mode: full-refresh
@@ -75,8 +75,8 @@ This example creates a replication configuration using Python:
 
 ```python file=/integrations/embedded_elt/replication_config.py
 replication_config = {
-    "SOURCE": "MY_POSTGRES",
-    "TARGET": "MY_DUCKDB",
+    "source": "MY_POSTGRES",
+    "target": "MY_DUCKDB",
     "defaults": {"mode": "full-refresh", "object": "{stream_schema}_{stream_table}"},
     "streams": {
         "public.accounts": None,
