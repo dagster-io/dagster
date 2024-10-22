@@ -274,7 +274,7 @@ def migrate_run_backfill_id(storage: RunStorage, print_fn: Optional[PrintFn] = N
         print_fn("Querying run storage.")
 
     for run in chunked_run_iterator(storage, print_fn):
-        if BACKFILL_ID_TAG not in run.tags:
+        if run.tags.get(BACKFILL_ID_TAG) is None:
             continue
 
         add_backfill_id(
