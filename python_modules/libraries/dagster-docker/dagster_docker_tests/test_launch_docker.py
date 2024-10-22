@@ -192,6 +192,7 @@ def test_terminate_launched_docker_run(aws_env):
     launcher_config = {
         "env_vars": aws_env,
         "network": "container:test-postgres-db-docker",
+        "container_kwargs": {"stop_timeout": 15},
     }
 
     if IS_BUILDKITE:
@@ -199,11 +200,14 @@ def test_terminate_launched_docker_run(aws_env):
     else:
         find_local_test_image(docker_image)
 
-    run_config = merge_yamls(
-        [
-            os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
-        ]
-    )
+    run_config = {
+        **merge_yamls(
+            [
+                os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
+            ]
+        ),
+        "ops": {"hanging_op": {"config": {"cleanup_delay": 10}}},
+    }
 
     with docker_postgres_instance(
         overrides={
