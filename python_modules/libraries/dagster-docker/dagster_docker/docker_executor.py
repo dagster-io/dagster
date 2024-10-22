@@ -203,6 +203,12 @@ class DockerStepHandler(StepHandler):
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         step_key = step_keys_to_execute[0]
 
+        container_kwargs = {**container_context.container_kwargs}
+        if "stop_timeout" in container_kwargs:
+            # This should work, but does not due to https://github.com/docker/docker-py/issues/3168
+            # Pull it out and apply it in the terminate() method instead
+            del container_kwargs["stop_timeout"]
+
         env_vars = dict([parse_env_var(env_var) for env_var in container_context.env_vars])
         env_vars["DAGSTER_RUN_JOB_NAME"] = step_handler_context.dagster_run.job_name
         env_vars["DAGSTER_RUN_STEP_KEY"] = step_key
@@ -213,7 +219,7 @@ class DockerStepHandler(StepHandler):
             network=container_context.networks[0] if len(container_context.networks) else None,
             command=execute_step_args.get_command_args(),
             environment=env_vars,
-            **container_context.container_kwargs,
+            **container_kwargs,
         )
 
     def launch_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
@@ -311,4 +317,6 @@ class DockerStepHandler(StepHandler):
 
         container = client.containers.get(container_name)
 
-        container.stop()
+        stop_timeout = container_context.container_kwargs.get("stop_timeout")
+
+        container.stop(timeout=stop_timeout)
