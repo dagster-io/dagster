@@ -65,8 +65,8 @@ class LoadingContext(ABC):
             if not issubclass(ttype, InstanceLoadableBy):
                 check.failed(f"{ttype} is not Loadable")
 
-            batch_load_fn = partial(ttype._batch_load, instance=self.instance)  # noqa
-            blocking_batch_load_fn = partial(ttype._blocking_batch_load, instance=self.instance)  # noqa
+            batch_load_fn = partial(ttype._batch_load, context=self)  # noqa
+            blocking_batch_load_fn = partial(ttype._blocking_batch_load, context=self)  # noqa
 
             self.loaders[ttype] = (
                 DataLoader(batch_load_fn=batch_load_fn),
@@ -88,14 +88,14 @@ class InstanceLoadableBy(ABC, Generic[TKey]):
 
     @classmethod
     async def _batch_load(
-        cls, keys: Iterable[TKey], instance: "DagsterInstance"
+        cls, keys: Iterable[TKey], context: "LoadingContext"
     ) -> Iterable[Optional[Self]]:
-        return cls._blocking_batch_load(keys, instance)
+        return cls._blocking_batch_load(keys, context)
 
     @classmethod
     @abstractmethod
     def _blocking_batch_load(
-        cls, keys: Iterable[TKey], instance: "DagsterInstance"
+        cls, keys: Iterable[TKey], context: "LoadingContext"
     ) -> Iterable[Optional[Self]]:
         # There is no good way of turning an async function into a sync one that
         # will allow us to execute that sync function inside of a broader async context.
