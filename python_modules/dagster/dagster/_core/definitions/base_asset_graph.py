@@ -238,8 +238,8 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def nodes(self) -> Iterable[BaseEntityNode]:
         return [*self._asset_nodes_by_key.values(), *self._asset_check_nodes_by_key.values()]
 
-    def has(self, asset_key: AssetKey) -> bool:
-        return asset_key in self._asset_nodes_by_key
+    def has(self, key: EntityKey) -> bool:
+        return key in self._asset_nodes_by_key or key in self._asset_check_nodes_by_key
 
     @overload
     def get(self, key: AssetKey) -> T_AssetNode: ...
