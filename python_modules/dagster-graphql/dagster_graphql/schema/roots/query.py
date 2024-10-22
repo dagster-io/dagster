@@ -30,6 +30,7 @@ from dagster_graphql.implementation.external import (
     fetch_repositories,
     fetch_repository,
     fetch_workspace,
+    get_remote_job_or_raise,
 )
 from dagster_graphql.implementation.fetch_asset_checks import fetch_asset_check_executions
 from dagster_graphql.implementation.fetch_asset_condition_evaluations import (
@@ -61,7 +62,6 @@ from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_sets_or_error,
 )
 from dagster_graphql.implementation.fetch_pipelines import (
-    get_job_or_error,
     get_job_snapshot_or_error_from_job_selector,
     get_job_snapshot_or_error_from_snap_or_selector,
     get_job_snapshot_or_error_from_snapshot_id,
@@ -162,6 +162,7 @@ from dagster_graphql.schema.permissions import GraphenePermission
 from dagster_graphql.schema.pipelines.config_result import GraphenePipelineConfigValidationResult
 from dagster_graphql.schema.pipelines.pipeline import (
     GrapheneEventConnectionOrError,
+    GraphenePipeline,
     GrapheneRunOrError,
 )
 from dagster_graphql.schema.pipelines.snapshot import GraphenePipelineSnapshotOrError
@@ -794,9 +795,8 @@ class GrapheneQuery(graphene.ObjectType):
 
     @capture_error
     def resolve_pipelineOrError(self, graphene_info: ResolveInfo, params: GraphenePipelineSelector):
-        return get_job_or_error(
-            graphene_info,
-            pipeline_selector_from_graphql(params),
+        return GraphenePipeline(
+            get_remote_job_or_raise(graphene_info, pipeline_selector_from_graphql(params))
         )
 
     def resolve_pipelineRunsOrError(

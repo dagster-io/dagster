@@ -25,6 +25,7 @@ from dagster_graphql.schema.inputs import GrapheneScheduleSelector
 from dagster_graphql.schema.instigation import GrapheneInstigationState
 from dagster_graphql.schema.schedules.schedules import (
     GrapheneSchedule,
+    GrapheneScheduleNotFoundError,
     GrapheneScheduleOrError,
     GrapheneSchedules,
     GrapheneSchedulesOrError,
@@ -64,7 +65,12 @@ class GrapheneScheduleStateResult(graphene.ObjectType):
 
 class GrapheneScheduleMutationResult(graphene.Union):
     class Meta:
-        types = (GraphenePythonError, GrapheneUnauthorizedError, GrapheneScheduleStateResult)
+        types = (
+            GraphenePythonError,
+            GrapheneUnauthorizedError,
+            GrapheneScheduleStateResult,
+            GrapheneScheduleNotFoundError,
+        )
         name = "ScheduleMutationResult"
 
 
