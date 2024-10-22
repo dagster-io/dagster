@@ -8,7 +8,7 @@ def get_defs() -> dg.Definitions:
         assets=simple_defs.assets,
         sensors=[
             dg.AutomationConditionSensorDefinition(
-                name="the_sensor", asset_selection="*", user_code=True
+                name="the_sensor", asset_selection="*", use_user_code_server=True
             )
         ],
     )

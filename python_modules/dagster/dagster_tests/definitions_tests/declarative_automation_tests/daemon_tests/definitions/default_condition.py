@@ -16,7 +16,7 @@ defs = dg.Definitions(
             name="all_assets",
             asset_selection=dg.AssetSelection.all(),
             default_condition=dg.AutomationCondition.cron_tick_passed("*/5 * * * *"),
-            user_code=True,
+            use_user_code_server=True,
         )
     ],
 )
