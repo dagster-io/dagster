@@ -8,6 +8,7 @@ from dagster import (
     asset,
     asset_check,
     evaluate_automation_conditions,
+    observable_source_asset,
 )
 
 from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
@@ -186,3 +187,42 @@ def test_on_cron_on_asset_check() -> None:
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
     assert result.total_requested == 1
+
+
+def test_on_cron_on_observable_source() -> None:
+    @observable_source_asset(automation_condition=AutomationCondition.on_cron("@hourly"))
+    def obs() -> None: ...
+
+    @asset(deps=[obs], automation_condition=AutomationCondition.on_cron("@hourly"))
+    def mat() -> None: ...
+
+    current_time = datetime.datetime(2024, 8, 16, 4, 35)
+    defs = Definitions(assets=[obs, mat])
+    instance = DagsterInstance.ephemeral()
+
+    # hasn't passed a cron tick
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=current_time
+    )
+    assert result.total_requested == 0
+
+    # now passed a cron tick, kick off both
+    current_time += datetime.timedelta(minutes=30)
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 2
+
+    # don't kick off again
+    current_time += datetime.timedelta(minutes=1)
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 0
+
+    # next hour, kick off again
+    current_time += datetime.timedelta(hours=1)
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 2

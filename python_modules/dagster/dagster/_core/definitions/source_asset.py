@@ -21,6 +21,9 @@ from dagster._core.definitions.data_version import (
     DataVersion,
     DataVersionsByPartition,
 )
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey, Output
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
@@ -215,6 +218,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     _node_def: Optional[OpDefinition]  # computed lazily
     auto_observe_interval_minutes: Optional[float]
     freshness_policy: Optional[FreshnessPolicy]
+    automation_condition: Optional[AutomationCondition]
     tags: Mapping[str, str]
 
     def __init__(
@@ -232,6 +236,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         *,
         auto_observe_interval_minutes: Optional[float] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
+        automation_condition: Optional[AutomationCondition] = None,
         tags: Optional[Mapping[str, str]] = None,
         # This is currently private because it is necessary for source asset observation functions,
         # but we have not yet decided on a final API for associated one or more ops with a source
@@ -285,6 +290,9 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         self.freshness_policy = check.opt_inst_param(
             freshness_policy, "freshness_policy", FreshnessPolicy
         )
+        self.automation_condition = check.opt_inst_param(
+            automation_condition, "automation_condition", AutomationCondition
+        )
 
     @staticmethod
     def dagster_internal_init(
@@ -301,6 +309,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         op_tags: Optional[Mapping[str, Any]],
         auto_observe_interval_minutes: Optional[float],
         freshness_policy: Optional[FreshnessPolicy],
+        automation_condition: Optional[AutomationCondition],
         tags: Optional[Mapping[str, str]],
         _required_resource_keys: Optional[AbstractSet[str]],
     ) -> "SourceAsset":
@@ -317,6 +326,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
             op_tags=op_tags,
             auto_observe_interval_minutes=auto_observe_interval_minutes,
             freshness_policy=freshness_policy,
+            automation_condition=automation_condition,
             tags=tags,
             _required_resource_keys=_required_resource_keys,
         )
@@ -444,6 +454,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
                 freshness_policy=self.freshness_policy,
                 tags=self.tags,
                 op_tags=self.op_tags,
+                automation_condition=self.automation_condition,
                 _required_resource_keys=self._required_resource_keys,
             )
 
@@ -471,6 +482,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
                 tags=self.tags,
                 freshness_policy=self.freshness_policy,
                 op_tags=self.op_tags,
+                automation_condition=self.automation_condition,
                 _required_resource_keys=self._required_resource_keys,
             )
 
