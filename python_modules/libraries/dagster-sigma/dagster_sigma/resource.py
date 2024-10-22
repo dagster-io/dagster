@@ -290,14 +290,16 @@ class SigmaOrganization(ConfigurableResource):
         for more information.
         """
         workbook_id = check.not_none(workbook_spec.metadata.get("dagster_sigma/workbook_id"))
-        materialization_schedules = check.not_none(
-            workbook_spec.metadata.get("dagster_sigma/materialization_schedules")
+        materialization_schedules = check.is_dict(
+            cast(
+                JsonMetadataValue,
+                check.not_none(
+                    workbook_spec.metadata.get("dagster_sigma/materialization_schedules")
+                ),
+            ).value
         )
 
-        materialization_sheets = {
-            schedule["sheetId"]
-            for schedule in (cast(JsonMetadataValue, materialization_schedules).value)
-        }
+        materialization_sheets = {schedule["sheetId"] for schedule in materialization_schedules}
 
         asyncio.run(self._run_materializations_for_workbook(workbook_id, materialization_sheets))
         yield (AssetMaterialization(asset_key=workbook_spec.key))

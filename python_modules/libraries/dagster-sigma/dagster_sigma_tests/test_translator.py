@@ -21,6 +21,7 @@ def test_workbook_translation() -> None:
         properties=SAMPLE_WORKBOOK_DATA,
         datasets={SAMPLE_DATASET_INODE},
         owner_email="ben@dagsterlabs.com",
+        materialization_schedules=None,
     )
 
     sample_dataset = SigmaDataset(properties=SAMPLE_DATASET_DATA, columns=set(), inputs=set())
