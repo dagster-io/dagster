@@ -139,6 +139,9 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   }, [localCacheIdPrefix, getCachedData]);
 
   useEffect(() => {
+    if (loading) {
+      return;
+    }
     const params: RefreshLocationsIfNeededParams = {
       locationStatuses,
       locationEntryData,
