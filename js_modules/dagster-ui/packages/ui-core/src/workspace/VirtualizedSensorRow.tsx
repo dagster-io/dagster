@@ -284,14 +284,15 @@ export const SENSOR_TYPE_META: Record<
   },
   [SensorType.AUTO_MATERIALIZE]: {
     name: 'Automation condition sensor',
-    icon: 'auto_materialize_policy',
+    icon: 'automation_condition',
     description:
-      'Auto-materialize sensors trigger runs based on auto-materialize policies defined on assets.',
+      'Automation condition sensors trigger runs based on conditions defined on assets or checks.',
   },
   [SensorType.AUTOMATION]: {
     name: 'Automation condition sensor',
-    icon: 'auto_materialize_policy',
-    description: 'Automation sensors trigger runs based on conditions defined on assets.',
+    icon: 'automation_condition',
+    description:
+      'Automation condition sensors trigger runs based on conditions defined on assets or checks.',
   },
   [SensorType.FRESHNESS_POLICY]: {
     name: 'Freshness policy sensor',
