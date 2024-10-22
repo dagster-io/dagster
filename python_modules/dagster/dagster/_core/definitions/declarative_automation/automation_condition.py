@@ -161,7 +161,8 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         """Returns an AutoMaterializePolicy which contains this condition."""
         from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
-        return AutoMaterializePolicy.from_automation_condition(self)
+        with disable_dagster_warnings():
+            return AutoMaterializePolicy.from_automation_condition(self)
 
     @abstractmethod
     def evaluate(
