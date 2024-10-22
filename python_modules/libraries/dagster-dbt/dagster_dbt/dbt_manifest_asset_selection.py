@@ -7,6 +7,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._record import record
 
 from dagster_dbt.asset_utils import get_asset_check_key_for_test, is_non_asset_node
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
@@ -18,7 +19,8 @@ from dagster_dbt.utils import (
 )
 
 
-class DbtManifestAssetSelection(AssetSelection, arbitrary_types_allowed=True):
+@record
+class DbtManifestAssetSelection(AssetSelection):
     """Defines a selection of assets from a dbt manifest wrapper and a dbt selection string.
 
     Args:
