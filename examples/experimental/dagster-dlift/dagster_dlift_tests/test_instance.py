@@ -1,10 +1,11 @@
 import pytest
 from dagster_dlift.cloud_instance import ENVIRONMENTS_SUBPATH
-from dagster_dlift.gql_queries import VERIFICATION_QUERY
+from dagster_dlift.gql_queries import GET_DBT_MODELS_QUERY, VERIFICATION_QUERY
 from dagster_dlift.test.instance_fake import (
     DbtCloudInstanceFake,
     ExpectedAccessApiRequest,
     ExpectedDiscoveryApiRequest,
+    build_model_response,
 )
 
 
@@ -52,3 +53,36 @@ def test_verification() -> None:
         },
     )
     fake_instance.verify_connections()
+
+
+def test_get_models() -> None:
+    """Test that we can get models from the instance, even if they are paginated."""
+    expected_unique_id_dep_graph = {
+        "model.jaffle_shop.customers": {
+            "model.jaffle_shop.stg_customers",
+            "model.jaffle_shop.stg_orders",
+        },
+        "model.jaffle_shop.stg_customers": set(),
+        "model.jaffle_shop.stg_orders": set(),
+    }
+    fake_instance = DbtCloudInstanceFake(
+        access_api_responses={},
+        discovery_api_responses={
+            ExpectedDiscoveryApiRequest(
+                query=GET_DBT_MODELS_QUERY,
+                variables={"environmentId": 1, "first": 100, "after": idx},
+            ): build_model_response(
+                unique_id=unique_id,
+                parents=parents,
+                has_next_page=True if idx < len(expected_unique_id_dep_graph) - 1 else False,
+                start_cursor=idx,
+            )
+            for idx, (unique_id, parents) in enumerate(expected_unique_id_dep_graph.items())
+        },
+    )
+    models = fake_instance.get_dbt_models(1)
+    assert len(models) == len(expected_unique_id_dep_graph)
+    assert {model["uniqueId"] for model in models} == set(expected_unique_id_dep_graph.keys())
+    assert {
+        model["uniqueId"]: {parent["uniqueId"] for parent in model["parents"]} for model in models
+    } == expected_unique_id_dep_graph
