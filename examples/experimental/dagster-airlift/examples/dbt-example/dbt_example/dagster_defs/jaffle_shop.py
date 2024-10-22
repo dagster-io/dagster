@@ -22,5 +22,10 @@ def jaffle_shop_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
 
+jaffle_shop_external_assets = [
+    spec._replace(code_version=None, skippable=False) for spec in jaffle_shop_assets.specs
+]
+
+
 def jaffle_shop_resource() -> DbtCliResource:
     return DbtCliResource(project_dir=dbt_project_path())
