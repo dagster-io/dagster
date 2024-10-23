@@ -52,7 +52,7 @@ helm --namespace dagster-cloud install agent --install dagster-cloud/dagster-clo
 You can use Helm to do rolling upgrades of your Dagster+ agent. The version of the agent doesn't need to be the same as the version of Dagster used in your projects. The Dagster+ control plane is upgraded automatically but is backwards compatible with older versions of the agent.
 
 :::tip
-We recommend upgrading your Dagster+ agent every 6 months. The version of your agent is visible on the "Deployments", "Agents" tab, eg https://your-org.dagster.plus/deployment/health. The current version of the agent matches the most [recent Dagster release](https://github.com/dagster-io/dagster/releases).
+We recommend upgrading your Dagster+ agent every 6 months. The version of your agent is visible on the "Deployments", "Agents" tab https://your-org.dagster.plus/deployment/health. The current version of the agent matches the most [recent Dagster release](https://github.com/dagster-io/dagster/releases).
 :::
 
 ```yaml
@@ -386,11 +386,7 @@ If you want completely separate environments with their own asset graph, run his
 </TabItem>
 </Tabs>
 
-### Request resources such as CPU, memory, or GPUs
-
-:::note
-This guide shows how to request more resources for the Dagster run of an asset. If your Dagster asset uses the [Kubernetes pipes client](/todo) you should instead request resources like [this](https://github.com/dagster-io/hooli-data-eng-pipelines/blob/master/hooli_data_eng/assets/forecasting/__init__.py#L257-L288).
-:::
+### Request resources such as CPU, memory, or GPU
 
 :::tip
 Dagster+ makes it easy to monitor CPU and memory used by code location servers and individual runs. Follow [this guide](/todo) for details.
@@ -445,6 +441,16 @@ The default behavior in Dagster+ is to create one pod for a run. Each asset targ
 Another option is to launch a pod for each asset by telling Dagster to use the Kubernetes job executor. In this case, you can specify resources for each individual asset.
 
 <CodeExample filePath="dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_asset.py" language="python" title="Request resources for an asset" />
+
+</TabItem>
+
+<TabItem value="pipes" label="Resources if using kubernetes pipes">
+
+Dagster can launch and manage existing Docker images as Kubernetes jobs using the [Dagster kubernetes pipes integration](/integrations/kubernetes). To request resources for these jobs by supplying the appropriate Kubernetes pod spec.
+
+<CodeExample filePath="dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_pipes.py" language="python" title="Request resources for a k8s pipes asset" />
+
+
 
 </TabItem>
 </Tabs>
