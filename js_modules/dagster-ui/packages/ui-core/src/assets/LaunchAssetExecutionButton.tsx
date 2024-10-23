@@ -527,35 +527,36 @@ async function stateForLaunchingAssets(
     };
   }
 
-  const resourceResult = await client.query<
-    LaunchAssetLoaderResourceQuery,
-    LaunchAssetLoaderResourceQueryVariables
-  >({
-    query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
-    variables: {
-      pipelineName: jobName,
-      repositoryName: assets[0]!.repository.name,
-      repositoryLocationName: assets[0]!.repository.location.name,
-    },
-  });
-  const pipeline = resourceResult.data.pipelineOrError;
-  if (pipeline.__typename !== 'Pipeline') {
-    return {type: 'error', error: pipeline.message};
-  }
-  const requiredResourceKeys = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
-  const resources = pipeline.modes[0]!.resources.filter((r) =>
-    requiredResourceKeys.includes(r.name),
-  );
-  const anyResourcesHaveRequiredConfig = resources.some((r) => r.configField?.isRequired);
-  const anyAssetsHaveRequiredConfig = assets.some((a) => a.configField?.isRequired);
-
   // Note: If a partition definition is present and we're launching a user-defined job,
   // we assume that any required config will be provided by a PartitionedConfig function
   // attached to the job. Otherwise backfills won't work and you'll know to add one!
-  const assumeConfigPresent = partitionDefinition && !isHiddenAssetGroupJob(jobName);
+  const configAssumedPresent = partitionDefinition && !isHiddenAssetGroupJob(jobName);
+  const configRequired = assets.some((a) => a.configField?.isRequired);
+  let needLaunchpad = false;
 
-  const needLaunchpad =
-    !assumeConfigPresent && (anyAssetsHaveRequiredConfig || anyResourcesHaveRequiredConfig);
+  if (configAssumedPresent) {
+    needLaunchpad = false;
+  } else if (configRequired) {
+    needLaunchpad = true;
+  } else {
+    const requiredResourceKeys = assets.flatMap((a) =>
+      a.requiredResources.map((r) => r.resourceKey),
+    );
+    if (requiredResourceKeys.length) {
+      const {error, requiredConfigPresent} = await checkIfResourcesRequireConfig({
+        client,
+        jobName,
+        repoAddress,
+        requiredResourceKeys,
+      });
+      if (error) {
+        return {type: 'error', error};
+      }
+      if (requiredConfigPresent) {
+        needLaunchpad = true;
+      }
+    }
+  }
 
   if (needLaunchpad || forceLaunchpad) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
@@ -935,3 +936,42 @@ export const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
     }
   }
 `;
+
+async function checkIfResourcesRequireConfig({
+  client,
+  jobName,
+  repoAddress,
+  requiredResourceKeys,
+}: {
+  client: ApolloClient<any>;
+  jobName: string;
+  repoAddress: RepoAddress;
+  requiredResourceKeys: string[];
+}) {
+  const resourceResult = await client.query<
+    LaunchAssetLoaderResourceQuery,
+    LaunchAssetLoaderResourceQueryVariables
+  >({
+    query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
+    variables: {
+      pipelineName: jobName,
+      repositoryName: repoAddress.name,
+      repositoryLocationName: repoAddress.location,
+    },
+  });
+  const pipeline = resourceResult.data.pipelineOrError;
+  if (pipeline.__typename !== 'Pipeline') {
+    return {
+      error: pipeline.message,
+      requiredConfigPresent: false,
+    };
+  }
+
+  const resources = pipeline.modes[0]!.resources.filter((r) =>
+    requiredResourceKeys.includes(r.name),
+  );
+  return {
+    error: null,
+    requiredConfigPresent: resources.some((r) => r.configField?.isRequired),
+  };
+}
