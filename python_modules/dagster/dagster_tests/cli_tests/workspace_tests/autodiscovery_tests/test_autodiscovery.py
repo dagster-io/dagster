@@ -202,9 +202,32 @@ def test_double_defs_in_file() -> None:
     dagster_defs_path = file_relative_path(__file__, "double_defs.py")
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Cannot have more than one Definitions object defined at module scope",
+        match="Cannot have more than one Definitions object defined at module scope. Found Definitions objects: double_defs.defs, double_defs.double_defs",
     ):
         loadable_targets_from_python_file(dagster_defs_path)
+
+
+def test_local_directory_module_multiple_defs() -> None:
+    # this is testing that modules that *can* be resolved using the current working directory
+    # for local python modules instead of installed packages will succeed.
+
+    # pytest will insert the current directory onto the path when the current directory does is not
+    # a module
+    assert not os.path.exists(file_relative_path(__file__, "__init__.py"))
+    assert os.path.dirname(__file__) in sys.path
+
+    if "autodiscover_in_module_multiple" in sys.modules:
+        del sys.modules["autodiscover_in_module_multiple"]
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Cannot have more than one Definitions object defined at module scope. Found Definitions objects: autodiscover_in_module_multiple.defs, autodiscover_in_module_multiple.defs1, autodiscover_in_module_multiple.defs2",
+    ):
+        loadable_targets_from_python_module(
+            "autodiscover_in_module_multiple",
+            working_directory=os.path.dirname(__file__),
+            remove_from_path_fn=_current_test_directory_paths,
+        )
 
 
 def _current_test_directory_paths():
