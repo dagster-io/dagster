@@ -59,7 +59,8 @@ def test_translator_semantic_model(workspace_data: PowerBIWorkspaceData) -> None
     assert asset_spec.metadata == {
         "dagster-powerbi/web_url": MetadataValue.url(
             "https://app.powerbi.com/groups/a2122b8f-d7e1-42e8-be2b-a5e636ca3221/datasets/8e9c85a1-7b33-4223-9590-76bde70f9a20"
-        )
+        ),
+        "dagster-powerbi/id": "8e9c85a1-7b33-4223-9590-76bde70f9a20",
     }
     assert asset_spec.tags == {
         "dagster-powerbi/asset_type": "semantic_model",
