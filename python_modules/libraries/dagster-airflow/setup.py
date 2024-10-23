@@ -34,7 +34,6 @@ setup(
     python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
-        "docker>=5.0.3,<6.0.0",
         "lazy_object_proxy",
         "setuptools<71.0.0",
         "pendulum",
