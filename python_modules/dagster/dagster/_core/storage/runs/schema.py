@@ -121,6 +121,22 @@ BulkActionsTable = db.Table(
     db.Column("body", db.Text),
     db.Column("action_type", db.String(32)),
     db.Column("selector_id", db.Text),
+    db.Column("job_name", db.Text, nullable=True),
+)
+
+BackfillTagsTable = db.Table(
+    "backfill_tags",
+    RunStorageSqlMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("backfill_id", db.String(255)),
+    db.Column("key", db.Text),
+    db.Column("value", db.Text),
+    db.Column("bulk_actions_storage_id", db.BigInteger),
 )
 
 InstanceInfo = db.Table(

@@ -1309,11 +1309,52 @@ def test_add_runs_by_backfill_id_idx():
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs.db")
-
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             assert "idx_runs_by_backfill_id" not in get_sqlite3_indexes(db_path, "runs")
             instance.upgrade()
             assert "idx_runs_by_backfill_id" in get_sqlite3_indexes(db_path, "runs")
+            
+def test_add_backfill_tags():
+    src_dir = file_relative_path(
+        __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        assert "backfill_tags" not in get_sqlite3_tables(db_path)
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+            assert "backfill_tags" in get_sqlite3_tables(db_path)
+
+            # test downgrade
+            instance._run_storage._alembic_downgrade(rev="63d7a8ec641a")
+            assert get_current_alembic_version(db_path) == "63d7a8ec641a"
+            assert "backfill_tags" in get_sqlite3_tables(db_path)
+
+
+def test_add_bulk_actions_job_name_column():
+    src_dir = file_relative_path(
+        __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        backfill_columns = get_sqlite3_columns(db_path, "bulk_actions")
+        assert "job_name" not in backfill_columns
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+
+            backfill_columns = get_sqlite3_columns(db_path, "bulk_actions")
+            assert "job_name" in backfill_columns
+
+            # test downgrade
+            instance._run_storage._alembic_downgrade(rev="63d7a8ec641a")
+
+            assert get_current_alembic_version(db_path) == "63d7a8ec641a"
+            backfill_columns = get_sqlite3_columns(db_path, "bulk_actions")
+            assert "job_name" not in backfill_columns
 
 
 # Prior to 0.10.0, it was possible to have `Materialization` events with no asset key.
