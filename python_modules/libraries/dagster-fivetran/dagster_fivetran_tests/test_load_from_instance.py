@@ -213,7 +213,7 @@ def test_load_from_instance(
         ), str(assets_def.metadata_by_key)
 
         for key, metadata in assets_def.metadata_by_key.items():
-            assert metadata.get("dagster/relation_identifier") == (
+            assert metadata.get("dagster/table_name") == (
                 "example_database." + ".".join(key.path[-2:])
             )
             assert has_kind(assets_def.tags_by_key[key], "snowflake")

@@ -473,7 +473,7 @@ def test_subset_with_run_config(
     }
 
 
-def test_relation_identifier(
+def test_table_name(
     csv_to_sqlite_dataworks_replication: SlingReplicationParam,
     path_to_temp_sqlite_db: str,
 ):
@@ -501,5 +501,5 @@ def test_relation_identifier(
     asset_materializations = res.get_asset_materialization_events()
     assert len(asset_materializations) == 1
     assert asset_materializations[0].materialization.metadata[
-        "dagster/relation_identifier"
+        "dagster/table_name"
     ] == TextMetadataValue(text="SLING_SQLITE.main.orders")
