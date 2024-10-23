@@ -1,12 +1,26 @@
 import asyncio
 import contextlib
+import time
 import urllib.parse
 import warnings
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Type, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import aiohttp
 import dagster._check as check
@@ -18,6 +32,8 @@ from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
+from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
@@ -100,6 +116,7 @@ class SigmaOrganization(ConfigurableResource):
         endpoint: str,
         method: str = "GET",
         query_params: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         url = f"{self.base_url}/v2/{endpoint}"
         if query_params:
@@ -114,6 +131,7 @@ class SigmaOrganization(ConfigurableResource):
                     "Authorization": f"Bearer {self.api_token}",
                     **SIGMA_PARTNER_ID_TAG,
                 },
+                json=json,
             ) as response:
                 response.raise_for_status()
                 return await response.json()
@@ -156,6 +174,14 @@ class SigmaOrganization(ConfigurableResource):
         return await self._fetch_json_async_paginated_entries(f"workbooks/{workbook_id}/pages")
 
     @cached_method
+    async def _fetch_materialization_schedules_for_workbook(
+        self, workbook_id: str
+    ) -> List[Dict[str, Any]]:
+        return await self._fetch_json_async_paginated_entries(
+            f"workbooks/{workbook_id}/materialization-schedules"
+        )
+
+    @cached_method
     async def _fetch_elements_for_page(
         self, workbook_id: str, page_id: str
     ) -> List[Dict[str, Any]]:
@@ -190,6 +216,93 @@ class SigmaOrganization(ConfigurableResource):
                 warnings.warn(f"{msg} {e}")
             else:
                 raise
+
+    async def _begin_workbook_materialization(self, workbook_id: str, sheet_id: str) -> str:
+        output = await self._fetch_json_async(
+            f"workbooks/{workbook_id}/materializations",
+            method="POST",
+            json={"sheetId": sheet_id},
+        )
+        return output["materializationId"]
+
+    async def _fetch_materialization_status(
+        self, workbook_id: str, materialization_id: str
+    ) -> Dict[str, Any]:
+        return await self._fetch_json_async(
+            f"workbooks/{workbook_id}/materializations/{materialization_id}"
+        )
+
+    async def _run_materializations_for_workbook(
+        self, workbook_id: str, sheet_ids: AbstractSet[str]
+    ) -> None:
+        materialization_id_to_sheet = dict(
+            zip(
+                await asyncio.gather(
+                    *[
+                        self._begin_workbook_materialization(workbook_id, sheet_id)
+                        for sheet_id in sheet_ids
+                    ]
+                ),
+                sheet_ids,
+            )
+        )
+        remaining_materializations = set(materialization_id_to_sheet.keys())
+
+        successful_sheets = set()
+        failed_sheets = set()
+
+        while remaining_materializations:
+            materialization_statuses = await asyncio.gather(
+                *[
+                    self._fetch_materialization_status(workbook_id, materialization_id)
+                    for materialization_id in remaining_materializations
+                ]
+            )
+            for status in materialization_statuses:
+                if status["status"] not in ("pending", "building"):
+                    remaining_materializations.remove(status["materializationId"])
+                    if status["status"] == "ready":
+                        successful_sheets.add(
+                            materialization_id_to_sheet[status["materializationId"]]
+                        )
+                    else:
+                        failed_sheets.add(materialization_id_to_sheet[status["materializationId"]])
+
+            time.sleep(5)
+
+        if failed_sheets:
+            if successful_sheets:
+                raise Exception(
+                    f"Materializations for sheets {', '.join(failed_sheets)} failed for workbook {workbook_id}"
+                    f", materializations for sheets {', '.join(successful_sheets)} succeeded."
+                )
+            else:
+                raise Exception(
+                    f"Materializations for sheets {', '.join(failed_sheets)} failed for workbook {workbook_id}"
+                )
+
+    def run_materializations_for_workbook(
+        self, workbook_spec: AssetSpec
+    ) -> Iterator[AssetMaterialization]:
+        """Runs all scheduled materializations for a workbook.
+
+        See https://help.sigmacomputing.com/docs/materialization#create-materializations-in-workbooks
+        for more information.
+        """
+        workbook_id = check.not_none(workbook_spec.metadata.get("dagster_sigma/workbook_id"))
+        materialization_schedules = check.is_dict(
+            cast(
+                JsonMetadataValue,
+                check.not_none(
+                    workbook_spec.metadata.get("dagster_sigma/materialization_schedules")
+                ),
+            ).value
+        )
+
+        materialization_sheets = {schedule["sheetId"] for schedule in materialization_schedules}
+
+        asyncio.run(self._run_materializations_for_workbook(workbook_id, materialization_sheets))
+        yield (AssetMaterialization(asset_key=workbook_spec.key))
 
     @cached_method
     async def _fetch_dataset_upstreams_by_inode(self) -> Mapping[str, AbstractSet[str]]:
@@ -353,10 +466,14 @@ class SigmaOrganization(ConfigurableResource):
                 if item.get("type") == "dataset":
                     workbook_deps.add(item["nodeId"])
 
+        materialization_schedules = await self._fetch_materialization_schedules_for_workbook(
+            raw_workbook_data["workbookId"]
+        )
         return SigmaWorkbook(
             properties=raw_workbook_data,
             datasets=workbook_deps,
             owner_email=None,
+            materialization_schedules=materialization_schedules,
         )
 
     @cached_method
@@ -406,26 +523,6 @@ class SigmaOrganization(ConfigurableResource):
         return Definitions(assets=load_sigma_asset_specs(self))
 
 
-def load_sigma_asset_specs(organization: SigmaOrganization) -> Sequence[AssetSpec]:
-    """Returns a list of AssetSpecs representing the Sigma content in the organization.
-
-    Args:
-        organization (SigmaOrganization): The Sigma organization to fetch assets from.
-
-    Returns:
-        List[AssetSpec]: The set of assets representing the Sigma content in the organization.
-    """
-    with organization.process_config_and_initialize_cm() as initialized_organization:
-        return check.is_list(
-            SigmaOrganizationDefsLoader(
-                organization=initialized_organization, translator_cls=organization.translator
-            )
-            .build_defs()
-            .assets,
-            AssetSpec,
-        )
-
-
 def _get_translator_spec_assert_keys_match(
     translator: DagsterSigmaTranslator, data: Union[SigmaDataset, SigmaWorkbook]
 ) -> AssetSpec:
@@ -436,6 +533,55 @@ def _get_translator_spec_assert_keys_match(
         f"Key on AssetSpec returned by {translator.__class__.__name__}.get_asset_spec {spec.key} does not match input key {key}",
     )
     return spec
+
+
+T = TypeVar("T", bound=AssetSpec)
+
+
+class SigmaAssetSpecs(Sequence[T]):
+    def __init__(self, inner_list: List[T]) -> None:
+        self._specs = inner_list
+
+    def __len__(self) -> int:
+        return len(self._specs)
+
+    def __getitem__(self, index: int) -> T:
+        return self._specs[index]
+
+    def materializable_workbooks(self) -> "Tuple[SigmaAssetSpecs[T], SigmaAssetSpecs[T]]":
+        materializable_workbook_specs = []
+        non_materializable_workbook_specs = []
+
+        for spec in self._specs:
+            if spec.metadata.get("dagster_sigma/materialization_schedules"):
+                materializable_workbook_specs.append(spec)
+            else:
+                non_materializable_workbook_specs.append(spec)
+        return SigmaAssetSpecs(materializable_workbook_specs), SigmaAssetSpecs(
+            non_materializable_workbook_specs
+        )
+
+
+def load_sigma_asset_specs(organization: SigmaOrganization) -> SigmaAssetSpecs[AssetSpec]:
+    """Returns a list of AssetSpecs representing the Sigma content in the organization.
+
+    Args:
+        organization (SigmaOrganization): The Sigma organization to fetch assets from.
+
+    Returns:
+        List[AssetSpec]: The set of assets representing the Sigma content in the organization.
+    """
+    with organization.process_config_and_initialize_cm() as initialized_organization:
+        return SigmaAssetSpecs(
+            check.is_list(
+                SigmaOrganizationDefsLoader(
+                    organization=initialized_organization, translator_cls=organization.translator
+                )
+                .build_defs()
+                .assets,
+                AssetSpec,
+            )
+        )
 
 
 @dataclass
