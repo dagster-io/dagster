@@ -1,7 +1,7 @@
 """add bulk_actions job_name column and backfill_tags table
 
 Revision ID: 16e3655b4d9b
-Revises: 63d7a8ec641a
+Revises: 1aca709bba64
 Create Date: 2024-10-23 13:13:13.390846
 
 """
@@ -12,7 +12,7 @@ from sqlalchemy.dialects import sqlite
 
 # revision identifiers, used by Alembic.
 revision = "16e3655b4d9b"
-down_revision = "63d7a8ec641a"
+down_revision = "1aca709bba64"
 branch_labels = None
 depends_on = None
 
