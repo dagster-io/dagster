@@ -507,6 +507,7 @@ class GraphenePartitionDefinition(graphene.ObjectType):
     type = graphene.NonNull(GraphenePartitionDefinitionType)
     dimensionTypes = non_null_list(GrapheneDimensionDefinitionType)
     name = graphene.Field(graphene.String)
+    fmt = graphene.Field(graphene.String)
 
     class Meta:
         name = "PartitionDefinition"
@@ -560,6 +561,11 @@ class GraphenePartitionDefinition(graphene.ObjectType):
             name=(
                 partition_def_data.name
                 if isinstance(partition_def_data, DynamicPartitionsSnap)
+                else None
+            ),
+            fmt=(
+                partition_def_data.fmt
+                if isinstance(partition_def_data, TimeWindowPartitionsSnap)
                 else None
             ),
         )

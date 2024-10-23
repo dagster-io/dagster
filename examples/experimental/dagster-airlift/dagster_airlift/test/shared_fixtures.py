@@ -126,7 +126,15 @@ def dagster_dev_cmd(dagster_defs_path: str) -> List[str]:
 
 
 @pytest.fixture(name="dagster_dev")
-def setup_dagster(dagster_home: str, dagster_dev_cmd: List[str]) -> Generator[Any, None, None]:
+def setup_dagster(
+    airflow_instance: None, dagster_home: str, dagster_dev_cmd: List[str]
+) -> Generator[Any, None, None]:
+    with stand_up_dagster(dagster_dev_cmd) as process:
+        yield process
+
+
+@contextmanager
+def stand_up_dagster(dagster_dev_cmd: List[str]) -> Generator[subprocess.Popen, None, None]:
     """Stands up a dagster instance using the dagster dev CLI. dagster_defs_path must be provided
     by a fixture included in the callsite.
     """
