@@ -14,7 +14,6 @@ import requests
 from aiohttp.client_exceptions import ClientResponseError
 from dagster import ConfigurableResource
 from dagster._annotations import deprecated, public
-from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
@@ -64,9 +63,6 @@ class SigmaOrganization(ConfigurableResource):
     warn_on_lineage_fetch_error: bool = Field(
         default=False,
         description="Whether to warn rather than raise when lineage data cannot be fetched for an element.",
-    )
-    translator: ResourceDependency[Type[DagsterSigmaTranslator]] = Field(
-        default=DagsterSigmaTranslator
     )
 
     _api_token: Optional[str] = PrivateAttr(None)
@@ -403,10 +399,13 @@ class SigmaOrganization(ConfigurableResource):
         Returns:
             Definitions: The set of assets representing the Sigma content in the organization.
         """
-        return Definitions(assets=load_sigma_asset_specs(self))
+        return Definitions(assets=load_sigma_asset_specs(self, dagster_sigma_translator))
 
 
-def load_sigma_asset_specs(organization: SigmaOrganization) -> Sequence[AssetSpec]:
+def load_sigma_asset_specs(
+    organization: SigmaOrganization,
+    dagster_sigma_translator: Type[DagsterSigmaTranslator] = DagsterSigmaTranslator,
+) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Sigma content in the organization.
 
     Args:
@@ -418,7 +417,7 @@ def load_sigma_asset_specs(organization: SigmaOrganization) -> Sequence[AssetSpe
     with organization.process_config_and_initialize_cm() as initialized_organization:
         return check.is_list(
             SigmaOrganizationDefsLoader(
-                organization=initialized_organization, translator_cls=organization.translator
+                organization=initialized_organization, translator_cls=dagster_sigma_translator
             )
             .build_defs()
             .assets,
