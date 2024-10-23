@@ -39,7 +39,7 @@ interface Props {
 
 export const SensorPageAutomaterialize = (props: Props) => {
   const {repoAddress, sensor, loading, daemonStatus} = props;
-  const {flagRunsFeed} = useFeatureFlags();
+  const {flagLegacyRunsPage} = useFeatureFlags();
 
   const [isPaused, setIsPaused] = useState(false);
   const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
@@ -213,15 +213,15 @@ export const SensorPageAutomaterialize = (props: Props) => {
             />
           ) : (
             <Box margin={{top: 32}} border="top">
-              {flagRunsFeed ? (
-                <RunsFeedTableWithFilters
-                  filter={runTableFilter}
-                  actionBarComponents={tableViewSwitch}
-                />
-              ) : (
+              {flagLegacyRunsPage ? (
                 <AutomaterializeRunHistoryTable
                   filterTags={runTableFilter.tags!}
                   setTableView={setTableView}
+                />
+              ) : (
+                <RunsFeedTableWithFilters
+                  filter={runTableFilter}
+                  actionBarComponents={tableViewSwitch}
                 />
               )}
             </Box>

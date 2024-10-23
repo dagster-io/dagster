@@ -40,7 +40,7 @@ const RUNS_FILTER: RunsFilter = {tags: [{key: 'dagster/auto_materialize', value:
 
 export const GlobalAutomaterializationContent = () => {
   const automaterialize = useAutomaterializeDaemonStatus();
-  const {flagRunsFeed} = useFeatureFlags();
+  const {flagLegacyRunsPage} = useFeatureFlags();
   const confirm = useConfirmation();
 
   const {permissions: {canToggleAutoMaterialize} = {}} = useUnscopedPermissions();
@@ -219,15 +219,15 @@ export const GlobalAutomaterializationContent = () => {
               setTimerange={setTimerange}
               actionBarComponents={tableViewSwitch}
             />
-          ) : flagRunsFeed ? (
+          ) : flagLegacyRunsPage ? (
+            <AutomaterializeRunHistoryTable setTableView={setTableView} />
+          ) : (
             <Box margin={{top: 32}} border="top">
               <RunsFeedTableWithFilters
                 filter={RUNS_FILTER}
                 actionBarComponents={tableViewSwitch}
               />
             </Box>
-          ) : (
-            <AutomaterializeRunHistoryTable setTableView={setTableView} />
           )}
         </>
       )}
