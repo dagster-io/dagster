@@ -1330,7 +1330,7 @@ def test_add_backfill_tags():
             # test downgrade
             instance._run_storage._alembic_downgrade(rev="63d7a8ec641a")
             assert get_current_alembic_version(db_path) == "63d7a8ec641a"
-            assert "backfill_tags" in get_sqlite3_tables(db_path)
+            assert "backfill_tags" not in get_sqlite3_tables(db_path)
 
 
 def test_add_bulk_actions_job_name_column():
