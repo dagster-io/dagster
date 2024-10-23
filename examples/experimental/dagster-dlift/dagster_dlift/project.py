@@ -1,11 +1,11 @@
 from functools import cached_property
-from typing import TYPE_CHECKING, NamedTuple
+from typing import NamedTuple, Sequence, Type, Union
+
+from dagster import AssetCheckSpec, AssetSpec
 
 from dagster_dlift.client import DbtCloudClient
 from dagster_dlift.compute import compute_environment_data
-
-if TYPE_CHECKING:
-    from dagster_dlift.translator import DbtCloudProjectEnvironmentData
+from dagster_dlift.translator import DagsterDbtCloudTranslator, DbtCloudProjectEnvironmentData
 
 
 class DbtCloudCredentials(NamedTuple):
@@ -41,3 +41,27 @@ class DBTCloudProjectEnvironment:
         return compute_environment_data(
             project_id=self.project_id, environment_id=self.environment_id, client=self.client
         )
+
+    def get_specs(
+        self, translator_cls: Type[DagsterDbtCloudTranslator]
+    ) -> Sequence[Union[AssetSpec, AssetCheckSpec]]:
+        from dagster_dlift.loader import DbtCloudProjectEnvironmentDefsLoader
+
+        data = DbtCloudProjectEnvironmentDefsLoader(project_environment=self).get_or_fetch_state()
+        translator = translator_cls(context=data)
+        all_external_data = [
+            *data.models_by_unique_id.values(),
+            *data.sources_by_unique_id.values(),
+            *data.tests_by_unique_id.values(),
+        ]
+        return [translator.get_spec(data) for data in all_external_data]
+
+    def get_asset_specs(
+        self, translator_cls: Type[DagsterDbtCloudTranslator] = DagsterDbtCloudTranslator
+    ) -> Sequence[AssetSpec]:
+        return [spec for spec in self.get_specs(translator_cls) if isinstance(spec, AssetSpec)]
+
+    def get_check_specs(
+        self, translator_cls: Type[DagsterDbtCloudTranslator] = DagsterDbtCloudTranslator
+    ) -> Sequence[AssetCheckSpec]:
+        return [spec for spec in self.get_specs(translator_cls) if isinstance(spec, AssetCheckSpec)]

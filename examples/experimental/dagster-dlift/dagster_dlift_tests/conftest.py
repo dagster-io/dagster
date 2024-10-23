@@ -59,8 +59,8 @@ def jaffle_shop_contents() -> (
             "source.jaffle_shop.jaffle_shop.orders": None,
         },
         DbtCloudContentType.TEST: {
-            "test.jaffle_shop.customers": set(),
-            "test.jaffle_shop.orders": set(),
+            "test.jaffle_shop.customers": {"model.jaffle_shop.stg_customers"},
+            "test.jaffle_shop.orders": {"model.jaffle_shop.stg_orders"},
         },
     }
 
