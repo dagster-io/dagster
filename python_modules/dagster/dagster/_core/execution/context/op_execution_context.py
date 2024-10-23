@@ -1,4 +1,4 @@
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
@@ -34,15 +34,9 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
-from dagster._utils.warnings import deprecation_warning
 
 
-# This metaclass has to exist for OpExecutionContext to have a metaclass
-class AbstractComputeMetaclass(ABCMeta):
-    pass
-
-
-class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
+class AbstractComputeExecutionContext(ABC):
     """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext."""
 
     @abstractmethod
@@ -94,27 +88,7 @@ class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
         """The parsed config specific to this op."""
 
 
-class OpExecutionContextMetaClass(AbstractComputeMetaclass):
-    def __instancecheck__(cls, instance) -> bool:
-        from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-
-        # This makes isinstance(context, OpExecutionContext) throw a deprecation warning when
-        # context is an AssetExecutionContext. This metaclass can be deleted once AssetExecutionContext
-        # has been split into it's own class in 1.9.0
-        if type(instance) is AssetExecutionContext and cls is not AssetExecutionContext:
-            deprecation_warning(
-                subject="AssetExecutionContext",
-                additional_warn_text=(
-                    "Starting in version 1.9.0 AssetExecutionContext will no longer be a subclass"
-                    " of OpExecutionContext."
-                ),
-                breaking_version="1.9.0",
-                stacklevel=1,
-            )
-        return super().__instancecheck__(instance)
-
-
-class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionContextMetaClass):
+class OpExecutionContext(AbstractComputeExecutionContext):
     """The ``context`` object that can be made available as the first argument to the function
     used for computing an op or asset.
 

@@ -19,6 +19,7 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
     PipesClientCompletedInvocation,
@@ -361,7 +362,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
     def run(
         self,
         *,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         extras: Optional[PipesExtras] = None,
         image: Optional[str] = None,
         command: Optional[Union[str, Sequence[str]]] = None,

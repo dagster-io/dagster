@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Sequence, Union
 
 from dagster_pipes import (
     DagsterPipesError,
@@ -14,7 +14,8 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.result import MaterializeResult
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._core.pipes.context import PipesExecutionResult, PipesLaunchedData, PipesSession
 
 if TYPE_CHECKING:
@@ -32,7 +33,7 @@ class PipesClient(ABC):
     def run(
         self,
         *,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         extras: Optional[PipesExtras] = None,
         **kwargs,
     ) -> "PipesClientCompletedInvocation":
@@ -41,7 +42,7 @@ class PipesClient(ABC):
          arguments that are appropriate for their own implementation.
 
         Args:
-            context (OpExecutionContext): The context from the executing op/asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context from the executing op/asset.
             extras (Optional[PipesExtras]): Arbitrary data to pass to the external environment.
 
         Returns:
