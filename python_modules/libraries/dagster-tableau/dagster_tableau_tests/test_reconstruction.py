@@ -47,7 +47,7 @@ def cacheable_asset_defs():
     )
 
 
-def test_using_cached_asset_data_with_refresh_request(
+def test_load_assets_workspace_data_refreshable_workbooks(
     sign_in: MagicMock,
     get_workbooks: MagicMock,
     get_workbook: MagicMock,
@@ -65,6 +65,7 @@ def test_using_cached_asset_data_with_refresh_request(
         assert get_job.call_count == 0
         assert cancel_job.call_count == 0
 
+        # first, we resolve the repository to generate our cached metadata
         pointer = CodePointer.from_python_file(
             __file__,
             "cacheable_asset_defs",
@@ -136,3 +137,25 @@ def test_using_cached_asset_data_with_refresh_request(
         assert get_job.call_count == 1
         # The finish_code of the mocked get_job is 0, so no cancel_job is not called
         assert cancel_job.call_count == 0
+
+
+def test_load_assets_workspace_data_translator(
+    sign_in: MagicMock,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+    get_view: MagicMock,
+    get_job: MagicMock,
+    refresh_workbook: MagicMock,
+    cancel_job: MagicMock,
+) -> None:
+    with instance_for_test() as _instance:
+        repository_def = initialize_repository_def_from_pointer(
+            CodePointer.from_python_file(
+                str(Path(__file__).parent / "definitions_with_translator.py"), "defs", None
+            ),
+        )
+
+        assert len(repository_def.assets_defs_by_key) == 3
+        assert all(
+            key.path[0] == "my_prefix" for key in repository_def.assets_defs_by_key.keys()
+        ), repository_def.assets_defs_by_key

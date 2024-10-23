@@ -21,7 +21,7 @@ from dagster import (
     get_dagster_logger,
     multi_asset,
 )
-from dagster._annotations import experimental
+from dagster._annotations import deprecated, experimental
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
@@ -404,6 +404,10 @@ class BaseTableauWorkspace(ConfigurableResource):
             + list(data_sources_by_id.values()),
         )
 
+    @deprecated(
+        breaking_version="1.9.0",
+        additional_warn_text="Use dagster_tableau.load_tableau_asset_specs instead",
+    )
     def build_defs(
         self,
         refreshable_workbook_ids: Optional[Sequence[str]] = None,
@@ -429,11 +433,50 @@ class BaseTableauWorkspace(ConfigurableResource):
         Returns:
             Definitions: A Definitions object which will build and return the Power BI content.
         """
-        return TableauWorkspaceDefsLoader(
-            workspace=self,
+        return Definitions(
+            assets=load_tableau_assets(
+                workspace=self,
+                refreshable_workbook_ids=refreshable_workbook_ids,
+                dagster_tableau_translator=dagster_tableau_translator,
+            )
+        )
+
+
+def load_tableau_assets(
+    workspace: BaseTableauWorkspace,
+    refreshable_workbook_ids: Optional[Sequence[str]] = None,
+    dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
+) -> Sequence[AssetsDefinition]:
+    """Returns a list of AssetSpecs representing the Tableau content in the workspace.
+
+    Args:
+        workspace (BaseTableauWorkspace): The Tableau workspace to fetch assets from.
+        refreshable_workbook_ids (Optional[Sequence[str]]): A list of workbook IDs. The workbooks provided must
+            have extracts as data sources and be refreshable in Tableau.
+
+            When materializing your Tableau assets, the workbooks provided are refreshed,
+            refreshing their sheets and dashboards before pulling their data in Dagster.
+
+            This feature is equivalent to selecting Refreshing Extracts for a workbook in Tableau UI
+            and only works for workbooks for which the data sources are extracts.
+            See https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_ref_workbooks_and_views.htm#update_workbook_now
+            for documentation.
+        dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
+            to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
+
+    Returns:
+        List[AssetsDefinition]: The set of assets representing the Sigma content in the organization.
+    """
+    return check.is_list(
+        TableauWorkspaceDefsLoader(
+            workspace=workspace,
             translator_cls=dagster_tableau_translator,
             refreshable_workbook_ids=refreshable_workbook_ids or [],
-        ).build_defs()
+        )
+        .build_defs()
+        .assets,
+        AssetsDefinition,
+    )
 
 
 @experimental
