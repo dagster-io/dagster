@@ -1,7 +1,9 @@
-import dagster as dg
 from dagster_k8s import PipesK8sClient
 
-@dg.gasset
+import dagster as dg
+
+
+@dg.asset
 def k8s_pod_asset(
     context: dg.AssetExecutionContext,
     pipes_k8s_client: PipesK8sClient,

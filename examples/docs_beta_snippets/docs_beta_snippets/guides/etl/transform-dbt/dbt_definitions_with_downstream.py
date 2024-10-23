@@ -16,7 +16,6 @@ def raw_customers(context: dg.AssetExecutionContext) -> None:
 
     # Create a schema named raw
     connection.execute("create schema if not exists raw")
-    
     # Create/replace table named raw_customers
     connection.execute(
         "create or replace table raw.raw_customers as select * from data"
@@ -42,7 +41,7 @@ def dbt_models(context: dg.AssetExecutionContext, dbt: DbtCliResource):
     compute_kind="python",
     # Defines the dependency on the customers model,
     # which is represented as an asset in Dagster
-    deps=get_asset_key_for_model([dbt_models], "customers"),
+    deps=[get_asset_key_for_model([dbt_models], "customers")],
 )
 # highlight-end
 def customer_histogram(context: dg.AssetExecutionContext):
