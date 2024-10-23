@@ -37,7 +37,6 @@ setup(
     python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
-        "snowflake-connector-python>=3.4.0",
     ],
     extras_require={
         "snowflake.sqlalchemy": [
@@ -46,7 +45,6 @@ setup(
         ],
         "pandas": [
             "pandas",
-            "snowflake-connector-python[pandas]>=3.4.0",
         ],
     },
     zip_safe=False,
