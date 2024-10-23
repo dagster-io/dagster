@@ -767,8 +767,8 @@ def initialize_repository_def_from_pointer(
     pointer: CodePointer,
 ) -> "RepositoryDefinition":
     """Initialize a repository definition from a code pointer
-    as part of an initial load."""
-
+    as part of an initial load.
+    """
     from dagster._core.definitions.definitions_load_context import (
         DefinitionsLoadContext,
         DefinitionsLoadType,
@@ -802,8 +802,8 @@ def reconstruct_repository_def_from_pointer(
     repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> "RepositoryDefinition":
     """Reconstruct a repository definition from a code pointer,
-    avoiding recomputation of expensive load functions."""
-
+    avoiding recomputation of expensive load functions.
+    """
     from dagster._core.definitions.definitions_load_context import (
         DefinitionsLoadContext,
         DefinitionsLoadType,
