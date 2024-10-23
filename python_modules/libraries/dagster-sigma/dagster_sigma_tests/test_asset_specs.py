@@ -51,12 +51,10 @@ def test_load_assets_organization_data_translator(
     sigma_auth_token: str, sigma_sample_data: None
 ) -> None:
     with instance_for_test() as _instance:
-        repository_def = repository_def_from_pointer(
+        repository_def = initialize_repository_def_from_pointer(
             CodePointer.from_python_file(
                 str(Path(__file__).parent / "pending_repo_with_translator.py"), "defs", None
             ),
-            DefinitionsLoadType.INITIALIZATION,
-            None,
         )
 
         assert len(repository_def.assets_defs_by_key) == 2
