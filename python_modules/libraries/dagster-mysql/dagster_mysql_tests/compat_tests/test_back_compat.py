@@ -641,7 +641,7 @@ def test_add_backfill_tags(conn_string):
                 assert len(rows) == 1
                 ids_to_tags = {row[0]: {row[1]: row[2]} for row in rows}
                 assert ids_to_tags.get(before_migration.backfill_id) is None
-                assert ids_to_tags[after_migration.backfill_id] == {"after": "migration"}
+                assert ids_to_tags[after_migration.backfill_id] == after_migration.tags
 
 
 def test_add_bulk_actions_job_name_column(conn_string):
@@ -700,7 +700,7 @@ def test_add_bulk_actions_job_name_column(conn_string):
                 tags={},
                 backfill_timestamp=get_current_timestamp(),
             )
-            instance.add_backfill(before_migration)
+            instance.add_backfill(after_migration)
 
             with instance.run_storage.connect() as conn:
                 rows = conn.execute(
@@ -709,4 +709,4 @@ def test_add_bulk_actions_job_name_column(conn_string):
                 assert len(rows) == 2
                 ids_to_job_name = {row[0]: row[1] for row in rows}
                 assert ids_to_job_name[before_migration.backfill_id] is None
-                assert ids_to_job_name[after_migration.backfill_id] == "foo"
+                assert ids_to_job_name[after_migration.backfill_id] == after_migration.job_name
