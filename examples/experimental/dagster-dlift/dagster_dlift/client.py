@@ -12,7 +12,7 @@ from dagster_dlift.gql_queries import (
 ENVIRONMENTS_SUBPATH = "environments/"
 
 
-class DbtCloudInstance:
+class DbtCloudClient:
     def __init__(
         self,
         # Can be found on the Account Info page of dbt.
