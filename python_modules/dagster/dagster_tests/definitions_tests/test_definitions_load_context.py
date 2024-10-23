@@ -18,8 +18,8 @@ from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
     ReconstructableRepository,
-    repository_def_from_pointer,
-    repository_def_from_target_def,
+    def_from_pointer,
+    initialize_repository_def_from_target_def,
 )
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -84,8 +84,8 @@ def metadata_defs():
 # ########################
 
 
-def test_reconstruction_metadata():
-    repo = repository_def_from_target_def(metadata_defs, DefinitionsLoadType.INITIALIZATION)
+def test_reconstruction_metadata() -> None:
+    repo = initialize_repository_def_from_target_def(metadata_defs)
     assert repo
     assert repo.assets_defs_by_key.keys() == {
         AssetKey("regular_asset"),
@@ -93,7 +93,10 @@ def test_reconstruction_metadata():
         AssetKey("beta"),
     }
 
-    recon_repo = ReconstructableRepository.for_file(__file__, "metadata_defs")
+    # Need to add repository load data to make the repository reconstructable
+    recon_repo = ReconstructableRepository.for_file(
+        __file__, "metadata_defs"
+    ).with_repository_load_data(repo.repository_load_data)
     assert isinstance(recon_repo.get_definition(), RepositoryDefinition)
 
     recon_repo_with_cache = recon_repo.with_repository_load_data(
@@ -151,16 +154,18 @@ def load_type_test_defs() -> Definitions:
     return Definitions(assets=[foo], jobs=[foo_job])
 
 
-def test_definitions_load_type():
+def test_definitions_load_type() -> None:
     pointer = CodePointer.from_python_file(__file__, "load_type_test_defs", None)
 
     # Load type is INITIALIZATION so should not raise
-    assert repository_def_from_pointer(pointer, DefinitionsLoadType.INITIALIZATION, None)
+    defs = initialize_repository_def_from_target_def(def_from_pointer(pointer))
+    assert defs
 
+    # Need to attach repository load data to make the job reconstructable
     recon_job = ReconstructableJob(
         repository=ReconstructableRepository(pointer),
         job_name="foo_job",
-    )
+    ).with_repository_load_data(RepositoryLoadData())
 
     # Executing a job should cause the definitions to be loaded with a non-INITIALIZATION load type
     with instance_for_test() as instance:

@@ -18,8 +18,10 @@ from dagster import (
 )
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
-from dagster._core.definitions.reconstruct import repository_def_from_pointer
+from dagster._core.definitions.reconstruct import (
+    def_from_pointer,
+    initialize_repository_def_from_target_def,
+)
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils.test.definitions import (
     lazy_definitions,
@@ -351,12 +353,12 @@ def airflow_instance_defs() -> Definitions:
 
 
 def test_cached_loading() -> None:
-    repository_def = repository_def_from_pointer(
-        CodePointer.from_python_file(str(Path(__file__)), "airflow_instance_defs", None),
-        DefinitionsLoadType.INITIALIZATION,
-        None,
+    repository_def = initialize_repository_def_from_target_def(
+        def_from_pointer(
+            CodePointer.from_python_file(str(Path(__file__)), "airflow_instance_defs", None)
+        ),
     )
-    assert repository_def.repository_load_data
+    assert repository_def and repository_def.repository_load_data
     assert len(repository_def.repository_load_data.reconstruction_metadata) == 1
     assert (
         "dagster-airlift/source/test_instance"
@@ -382,11 +384,12 @@ def test_cached_loading() -> None:
             "dagster_airlift.core.serialization.compute.compute_serialized_data",
             wraps=compute_serialized_data,
         ) as mock_compute_serialized_data:
-            reloaded_repo_def = repository_def_from_pointer(
-                CodePointer.from_python_file(str(Path(__file__)), "airflow_instance_defs", None),
-                DefinitionsLoadType.INITIALIZATION,
-                None,
+            reloaded_repo_def = initialize_repository_def_from_target_def(
+                def_from_pointer(
+                    CodePointer.from_python_file(str(Path(__file__)), "airflow_instance_defs", None)
+                ),
             )
+            assert reloaded_repo_def
             assert mock_compute_serialized_data.call_count == 0
             assert reloaded_repo_def.assets_defs_by_key
             assert len(list(reloaded_repo_def.assets_defs_by_key.keys())) == 2
