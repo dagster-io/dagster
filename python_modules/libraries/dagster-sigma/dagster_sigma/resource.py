@@ -432,10 +432,11 @@ def _get_translator_spec_assert_keys_match(
 ) -> AssetSpec:
     key = translator.get_asset_key(data)
     spec = translator.get_asset_spec(key, data)
-    check.invariant(
-        spec.key == key,
-        f"Key on AssetSpec returned by {translator.__class__.__name__}.get_asset_spec {spec.key} does not match input key {key}",
-    )
+    if spec.key != key:
+        check.invariant(
+            spec.key == key,
+            f"Key on AssetSpec returned by {translator.__class__.__name__}.get_asset_spec {spec.key} does not match input key {key}",
+        )
     return spec
 
 
