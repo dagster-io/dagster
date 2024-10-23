@@ -2,12 +2,13 @@ from dagster_powerbi import (
     DagsterPowerBITranslator,
     PowerBIServicePrincipal,
     PowerBIWorkspace,
+    load_powerbi_asset_specs,
 )
 from dagster_powerbi.translator import PowerBIContentData
 
 import dagster as dg
 
-resource = PowerBIWorkspace(
+power_bi_workspace = PowerBIWorkspace(
     credentials=PowerBIServicePrincipal(
         client_id=dg.EnvVar("POWER_BI_CLIENT_ID"),
         client_secret=dg.EnvVar("POWER_BI_CLIENT_SECRET"),
@@ -36,4 +37,9 @@ class MyCustomPowerBITranslator(DagsterPowerBITranslator):
         return super().get_dashboard_asset_key(data).with_prefix("powerbi")
 
 
-defs = resource.build_defs(dagster_powerbi_translator=MyCustomPowerBITranslator)
+power_bi_specs = load_powerbi_asset_specs(
+    power_bi_workspace, dagster_powerbi_translator=MyCustomPowerBITranslator
+)
+defs = dg.Definitions(
+    assets=[*power_bi_specs], resources={"power_bi": power_bi_workspace}
+)
