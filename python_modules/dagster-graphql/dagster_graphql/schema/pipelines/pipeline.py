@@ -1,3 +1,4 @@
+import time
 from typing import TYPE_CHECKING, AbstractSet, List, Optional, Sequence
 
 import dagster._check as check
@@ -19,7 +20,13 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
     RunsFilter,
 )
-from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, RUN_METRIC_TAGS, TagType, get_tag_type
+from dagster._core.storage.tags import (
+    HAS_RUN_METRICS_TAG,
+    REPOSITORY_LABEL_TAG,
+    RUN_METRIC_TAGS,
+    TagType,
+    get_tag_type,
+)
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.tags import get_boolean_tag_value
 from dagster._utils.yaml_utils import dump_run_config_yaml
@@ -101,6 +108,8 @@ COMPLETED_STATUSES = {
     DagsterRunStatus.SUCCESS,
     DagsterRunStatus.CANCELED,
 }
+
+RUN_METRICS_RETENTION_IN_SECONDS = 3600 * 24 * 14  # 2 weeks
 
 
 def parse_timestamp(timestamp: Optional[str] = None) -> Optional[float]:
@@ -636,7 +645,23 @@ class GrapheneRun(graphene.ObjectType):
             return False
 
         run_tags = self.dagster_run.tags
-        return any(get_boolean_tag_value(run_tags.get(tag)) for tag in RUN_METRIC_TAGS)
+
+        # metrics are not kept for runs older than 2 weeks
+        retention_deadline = time.time() - RUN_METRICS_RETENTION_IN_SECONDS  # 2 weeks ago
+        end_time = self._run_record.end_time if self._run_record else None
+        if end_time:
+            # if no end time, run is presumed to be still running
+            if end_time < retention_deadline:
+                return False
+
+        # TODO - deprecate looking for the run_metrics activator tags after 1.9.0
+        eligible_tags = [
+            HAS_RUN_METRICS_TAG,
+            *RUN_METRIC_TAGS,
+        ]
+        return any(
+            get_boolean_tag_value(run_tags.get(tag_key, "false")) for tag_key in eligible_tags
+        )
 
 
 class GrapheneIPipelineSnapshotMixin:

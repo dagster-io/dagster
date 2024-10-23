@@ -1003,19 +1003,30 @@ def test_run_has_concurrency_slots():
 @pytest.mark.parametrize(
     "run_tag, run_tag_value, run_metrics_enabled, failure_message",
     [
-        (None, None, False, "run_metrics tag not present should result to false"),
-        (".dagster/run_metrics", "true", True, "run_metrics tag set to true should result to true"),
+        (None, None, False, "has_run_metrics tag not present should result to false"),
         (
-            ".dagster/run_metrics",
+            ".dagster/has_run_metrics",
+            "true",
+            True,
+            "has_run_metrics tag set to true should result to true",
+        ),
+        (
+            ".dagster/has_run_metrics",
             "false",
             False,
             "run_metrics tag set to falsy value should result to false",
         ),
         (
+            ".dagster/run_metrics",
+            "true",
+            True,
+            "hidden run_metrics tag set to true should result to true",
+        ),
+        (
             "dagster/run_metrics",
             "true",
             True,
-            "public run_metrics tag set to true should result to true",
+            "system run_metrics tag set to true should result to true",
         ),
     ],
 )

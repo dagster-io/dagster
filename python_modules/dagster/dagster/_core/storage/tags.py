@@ -98,6 +98,8 @@ RUN_METRIC_TAGS = [
     f"{SYSTEM_TAG_PREFIX}run_metrics",
 ]
 
+HAS_RUN_METRICS_TAG = f"{HIDDEN_TAG_PREFIX}has_run_metrics"
+
 RUN_METRICS_POLLING_INTERVAL_TAG = f"{HIDDEN_TAG_PREFIX}run_metrics_polling_interval"
 RUN_METRICS_PYTHON_RUNTIME_TAG = f"{HIDDEN_TAG_PREFIX}python_runtime_metrics"
 
