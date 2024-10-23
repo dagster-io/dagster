@@ -178,3 +178,12 @@ db.Index(
     },
 )
 db.Index("idx_kvs_keys_unique", KeyValueStoreTable.c.key, unique=True, mysql_length=64)
+
+db.Index(
+    "idx_runs_by_backfill_id",
+    RunsTable.c.backfill_id,
+    RunsTable.c.id,
+    mysql_length={
+        "backfill_id": 255,
+    },
+)
