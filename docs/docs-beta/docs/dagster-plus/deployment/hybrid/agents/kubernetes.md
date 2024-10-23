@@ -20,7 +20,7 @@ You'll also need access to a container registry to which you can push images and
 
 We recommend installing the Dagster+ agent using [Helm](https://helm.sh).
 
-### Step 1: create a Kubernetes namespace
+### Step 1: Create a Kubernetes namespace
 
 ```shell
 kubectl create namespace dagster-cloud
@@ -52,7 +52,7 @@ helm --namespace dagster-cloud install agent --install dagster-cloud/dagster-clo
 You can use Helm to do rolling upgrades of your Dagster+ agent. The version of the agent doesn't need to be the same as the version of Dagster used in your projects. The Dagster+ control plane is upgraded automatically but is backwards compatible with older versions of the agent.
 
 :::tip
-We recommend upgrading your Dagster+ agent every 6 months
+We recommend upgrading your Dagster+ agent every 6 months. The version of your agent is visible on the "Deployments", "Agents" tab, eg https://your-org.dagster.plus/deployment/health. The current version of the agent matches the most [recent Dagster release](https://github.com/dagster-io/dagster/releases).
 :::
 
 ```yaml
@@ -84,11 +84,11 @@ kubectl --namespace dagster-cloud logs -l deployment=agent
 ## Common configurations
 
 There are three places to customize how Dagster interacts with Kubernetes:
-- *Globally* by configuring the Dagster+ agent using [Helm values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
-- *Per Project* by configuring the `dagster_cloud.yaml` file for your [code location](/dagster-plus/deployment/code-locations)
-- *Per Asset or Job* by adding tags to the [asset](/todo), [job](/todo), or [customizing the Kubernetes pipes invocation](/todo)
+- **Per Deployment** by configuring the Dagster+ agent using [Helm values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
+- **Per Project** by configuring the `dagster_cloud.yaml` file for your [code location](/dagster-plus/deployment/code-locations)
+- **Per Asset or Job** by adding tags to the [asset](/todo), [job](/todo), or [customizing the Kubernetes pipes invocation](/todo)
 
-Changes apply in a hierarchy, for example a customization for an asset will over-ride a default set globally in the agent configuration.
+Changes apply in a hierarchy, for example, a customization for an asset will override a default set globally in the agent configuration. Attributes that are not customized will use the global defaults.
 
 An exhaustive list of settings is available [here](/dagster-plus/deployment/hybrid/agents/settings), but common options are presented below.
 
@@ -144,7 +144,7 @@ The agent is responsible for managing the lifecycle of your code locations and w
 
 
 :::tip
-For cloud based Kubernetes such as AWS EKS, AKS, or GCP, you typically don't need an image pull secret. The role used by Kubernetes will have permission to access the registry. You can skip this configuration.
+For cloud-based Kubernetes deployments such as AWS EKS, AKS, or GCP, you don't need an image pull secret. The role used by Kubernetes will have permission to access the registry, so you can skip this configuration.
 :::
 
 
@@ -177,7 +177,7 @@ By default, Dagster+ will capture stdout and stderr and present them to users in
 
 <Tabs>
 
-<TabItem value="s3" label="If you use AWS S3 at your organization">
+<TabItem value="s3" label="Store logs in S3">
 
 The compute logs for a run will be stored in your S3 bucket and a link will be presented to users in the Dagster run page.
 
@@ -201,7 +201,7 @@ helm --namespace dagster-cloud upgrade agent \
 ```
 
 </TabItem>
-<TabItem value="disable" label="You don't use AWS S3">
+<TabItem value="disable" label="Do not store logs">
 
 You can turn off compute logs altogether which will prevent Dagster+ from storing stdout and stderr. This setting will prevent users from accessing these logs.
 
@@ -217,18 +217,17 @@ helm --namespace dagster-cloud upgrade agent \
     --values ./values.yaml
 ```
 
-It's also possible to write your own compute log manager.
 
 </TabItem>
 </Tabs>
 
 ### Make secrets available to your code
 
-You can make secrets available [through the Dagster+ web interface](/dagster-plus/deployment/environment-variables) or through Kubernetes. Configuring secrets through Kubernetes has the benefit that Dagster+ never stores or accesses the secrets. First, create the Kubernetes secret:
+You can make secrets available [through the Dagster+ web interface](/dagster-plus/deployment/environment-variables) or through Kubernetes. Configuring secrets through Kubernetes has the benefit that Dagster+ never stores or accesses the secrets, and they can be managed as code. First, create the Kubernetes secret:
 
 ```bash
-kubectl create secret generic database-password \
-    --from-literal=DATABASE_PASSEWORD=your_password \
+kubectl create secret generic database-password-kubernetes-secret \
+    --from-literal=DATABASE_PASSWORD=your_password \
     --namespace dagster-plus
 ```
 
@@ -242,7 +241,7 @@ Next, determine if the secret should be available to all code locations or a sin
 # values.yaml
 workspace:
   envSecrets:
-    - name: database-password
+    - name: database-password-kubernetes-secret
 ```
 
 ```shell
@@ -278,7 +277,7 @@ location:
 </Tabs>
 
 :::note
-If you need to request secrets from a secret manager like AWS Secrets Manager or Hashicorp Vault, follow one of the prior methods to give your code access to vault credentials. Then, inside your Dagster code, use those  credentials to authenticate a Python client that requests secrets from the secret manager.
+If you need to request secrets from a secret manager like AWS Secrets Manager or HashiCorp Vault, follow one of the prior methods to give your code access to vault credentials. Then, inside your Dagster code, use those  credentials to authenticate a Python client that requests secrets from the secret manager.
 :::
 
 
@@ -321,7 +320,7 @@ In this configuration, requests will be randomly distributed across agents in bo
 </TabItem>
 <TabItem value="queues" label="Global asset graph, but projects run in different clusters">
 
-You may wish to run data pipelines from project A in Kubernetes cluster A, and project B in Kubernetes cluster B. For example, you may wish to run some jobs on-premise and other jobs in the cloud. To accomplish this task:
+You may wish to run data pipelines from project A in Kubernetes cluster A, and project B in Kubernetes cluster B. For example, you may wish to run some jobs on-premise and other jobs in AWS. To accomplish this task:
 
 - Deploy an agent into each environment and use the `agentQueue` configuration:
   Specify an agent queue for the on-prem agent:
@@ -337,15 +336,15 @@ You may wish to run data pipelines from project A in Kubernetes cluster A, and p
     dagster-cloud/dagster-cloud-agent \
     --values ./values.yaml
   ```
-  Specify an agent queue for the cloud agent:
+  Specify an agent queue for the agent on AWS:
 
   ```yaml file=values.yaml
   dagsterCloud:
     agentQueues:
       additionalQueues:
-        - cloud-agent-queue
+        - aws-agent-queue
   ```
-  Deploy onto the cloud Kubernetes cluster:
+  Deploy onto the AWS Kubernetes cluster:
   ```shell
   helm --namespace dagster-cloud upgrade agent \
     dagster-cloud/dagster-cloud-agent \
@@ -360,11 +359,11 @@ You may wish to run data pipelines from project A in Kubernetes cluster A, and p
       agent_queue: on-prem-agent-queue
     - location_name: project-b
       ...
-      agent_queue: cloud-agent-queue
+      agent_queue: aws-agent-queue
   ```
 
 :::tip
-Code locations without an `agent_queue` will be routed to a default queue. You pick an agent to serve this default queue using the `includeDefaultQueue` setting:
+Code locations without an `agent_queue` will be routed to a default queue. By default, all agents will serve this default queue. You can specify which agent should serve the default queue using the `includeDefaultQueue` setting:
 
 ```yaml file=values.yaml
 dagsterCloud:
@@ -376,7 +375,7 @@ dagsterCloud:
 </TabItem>
 <TabItem value="separate-agents" label="Separate deployments per cluster">
 
-If you want completely separate environments with their own asset graph, run history, and access controls you should create different Dagster+ deployments. Separate deployments are common for isolated tenants or separate dev, stage, and prod environments. To create separate deployments:
+If you want completely separate environments with their own asset graph, run history, and access controls you should create different Dagster+ deployments. Separate deployments are common for isolated tenants or separate dev, stage, and prod environments. Multiple deployments require a Dagster+ Pro plan. To create separate deployments:
 
 - Navigate to the deployments page for your organization: https://your-organizaiton.dagster.plus/org-settings/deployments
 
@@ -430,9 +429,9 @@ locations:
 
 The `server_k8s_config` section sets resources for the code location servers, which is where schedule and sensor evaluations occur.
 
-The `runs_k8s_config` section sets resources for the individual runs.
+The `runs_k8s_config` section sets resources for the individual run.
 
-Requests are used by Kubernetes to determine which node to place a pod on, and limits are a strict upper bound on how many resources a pod can use while running. We recommend using limits in most cases.
+Requests are used by Kubernetes to determine which node to place a pod on, and limits are a strict upper bound on how many resources a pod can use while running. We recommend using both in most cases.
 
 The units for CPU and memory resources are described [in this document](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#resource-units-in-kubernetes).
 
