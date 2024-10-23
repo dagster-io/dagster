@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Tuple, cast
 
 from dagster import (
     AssetExecutionContext,
@@ -13,6 +13,7 @@ from dagster import (
 )
 from dagster._annotations import experimental, public
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
+from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
 from looker_sdk import init40
@@ -30,13 +31,18 @@ from dagster_looker.api.dagster_looker_api_translator import (
 )
 
 if TYPE_CHECKING:
-    from looker_sdk.sdk.api40.models import LookmlModelExplore
+    from looker_sdk.sdk.api40.models import LookmlModelExplore, Folder
 
 
 logger = get_dagster_logger("dagster_looker")
 
 
 LOOKER_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-looker/reconstruction_metadata"
+
+@record
+class LookerFilter:
+    dashboard_folders: Optional[List[List[str]]] = None
+    only_fetch_explores_used_in_dashboards: bool = False
 
 
 @experimental
@@ -71,6 +77,7 @@ class LookerResource(ConfigurableResource):
         *,
         request_start_pdt_builds: Optional[Sequence[RequestStartPdtBuild]] = None,
         dagster_looker_translator: Optional[DagsterLookerApiTranslator] = None,
+        looker_filter: Optional[LookerFilter] = None,
     ) -> Definitions:
         """Returns a Definitions object which will load structures from the Looker instance
         and translate it into assets, using the provided translator.
@@ -91,14 +98,23 @@ class LookerResource(ConfigurableResource):
             if dagster_looker_translator is not None
             else DagsterLookerApiTranslator(),
             request_start_pdt_builds=request_start_pdt_builds or [],
+            looker_filter = looker_filter or LookerFilter(),
         ).build_defs()
 
+def build_folder_path(folder_id_to_folder: Dict[str, "Folder"], folder_id: str) -> List[str]:
+    curr = folder_id
+    result = []
+    while curr in folder_id_to_folder:
+        result = [folder_id_to_folder[curr].name] + result
+        curr = folder_id_to_folder[curr].parent_id
+    return result
 
 @dataclass(frozen=True)
 class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     looker_resource: LookerResource
     translator: DagsterLookerApiTranslator
     request_start_pdt_builds: Sequence[RequestStartPdtBuild]
+    looker_filter: LookerFilter
 
     @property
     def defs_key(self) -> str:
@@ -193,6 +209,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
 
         return result
 
+
     def fetch_looker_instance_data(self) -> LookerInstanceData:
         """Fetches all explores and dashboards from the Looker instance.
 
@@ -201,29 +218,53 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
         """
         sdk = self.looker_resource.get_sdk()
 
+        folders = sdk.all_folders()
+        folder_by_id = {
+            folder.id: folder
+            for folder in folders
+            if folder.id is not None
+        }
+
         # Get dashboards
         dashboards = sdk.all_dashboards(
             fields=",".join(
                 [
                     "id",
                     "hidden",
+                    "folder",
                 ]
             )
         )
+
+
+        folder_filter_strings = [
+            '/'.join(folder_filter).lower()
+            for folder_filter in self.looker_filter.dashboard_folders
+        ] if self.looker_filter.dashboard_folders else []
+
+        dashboard_ids_to_fetch = []
+        if len(folder_filter_strings) == 0:
+            dashboard_ids_to_fetch = [dashboard.id for dashboard in dashboards if not dashboard.hidden]
+        else:
+            for dashboard in dashboards:
+                if not dashboard.hidden and dashboard.folder is not None and dashboard.folder.id is not None:
+                    folder_string = '/'.join(build_folder_path(folder_by_id, dashboard.folder.id)).lower()
+                    if any(folder_string.startswith(folder_filter_string) for folder_filter_string in folder_filter_strings):
+                        dashboard_ids_to_fetch.append(dashboard.id)
 
         with ThreadPoolExecutor(max_workers=None) as executor:
             dashboards_by_id = dict(
                 list(
                     executor.map(
-                        lambda dashboard: (dashboard.id, sdk.dashboard(dashboard_id=dashboard.id)),
+                        lambda dashboard_id: (dashboard_id, sdk.dashboard(dashboard_id=dashboard_id)),
                         (
-                            dashboard
-                            for dashboard in dashboards
-                            if dashboard.id and not dashboard.hidden
+                            dashboard_id
+                            for dashboard_id in dashboard_ids_to_fetch
                         ),
                     )
                 )
             )
+
 
         # Get explore names from models
         explores_for_model = {
@@ -238,6 +279,21 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             )
             if model.name
         }
+
+        if self.looker_filter.only_fetch_explores_used_in_dashboards:
+            used_explores = set()
+            for dashboard in dashboards_by_id.values():
+                for filter in dashboard.dashboard_filters or []:
+                    used_explores.add((filter.model, filter.explore))
+
+            explores_for_model = {
+                model_name: [
+                    explore_name
+                    for explore_name in explore_names
+                    if (model_name, explore_name) in used_explores
+                ]
+                for model_name, explore_names in explores_for_model.items()
+            }
 
         def fetch_explore(model_name, explore_name) -> Optional[Tuple[str, "LookmlModelExplore"]]:
             try:
