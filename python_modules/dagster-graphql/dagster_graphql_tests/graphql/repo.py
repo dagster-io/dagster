@@ -1249,7 +1249,7 @@ def define_sensors():
 
     auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_auto_materialize_sensor",
-        asset_selection=AssetSelection.assets(
+        target=AssetSelection.assets(
             "fresh_diamond_bottom",
             "asset_with_automation_condition",
             "asset_with_custom_automation_condition",
