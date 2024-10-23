@@ -1,13 +1,19 @@
 import uuid
+from pathlib import Path
 
 import pytest
 import responses
 from dagster import materialize
 from dagster._config.field_utils import EnvVar
+from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
+from dagster._core.definitions.reconstruct import (
+    ReconstructableJob,
+    ReconstructableRepository,
+    initialize_repository_def_from_pointer,
+)
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
@@ -177,8 +183,11 @@ def test_state_derived_defs(
     with instance_for_test() as instance:
         assert len(workspace_data_api_mocks.calls) == 0
 
+        repository_def = initialize_repository_def_from_pointer(
+            CodePointer.from_python_file(str(Path(__file__)), "state_derived_defs", None),
+        )
+
         # first, we resolve the repository to generate our cached metadata
-        repository_def = state_derived_defs().get_repository_def()
         assert len(workspace_data_api_mocks.calls) == 5
 
         # 3 PowerBI external assets, one materializable asset

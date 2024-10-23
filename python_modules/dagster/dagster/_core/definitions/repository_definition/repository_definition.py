@@ -39,6 +39,7 @@ from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import check_valid_name
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
@@ -97,6 +98,14 @@ class RepositoryLoadData(
             self._hash = hash_collection(self)
         return self._hash
 
+    def replace_reconstruction_metadata(
+        self, reconstruction_metadata: Mapping[str, Any]
+    ) -> "RepositoryLoadData":
+        return RepositoryLoadData(
+            cacheable_asset_data=self.cacheable_asset_data,
+            reconstruction_metadata=reconstruction_metadata,
+        )
+
 
 class RepositoryDefinition:
     """Define a repository that contains a group of definitions.
@@ -132,6 +141,37 @@ class RepositoryDefinition:
     @property
     def repository_load_data(self) -> Optional[RepositoryLoadData]:
         return self._repository_load_data
+
+    def replace_reconstruction_metadata(
+        self, reconstruction_metadata: Mapping[str, str]
+    ) -> "RepositoryDefinition":
+        """Modifies the repository load data to include the provided reconstruction metadata."""
+        check.mapping_param(reconstruction_metadata, "reconstruction_metadata", key_type=str)
+        if not reconstruction_metadata:
+            return self
+
+        for k, v in reconstruction_metadata.items():
+            if not isinstance(v, str):
+                raise DagsterInvariantViolationError(
+                    f"Reconstruction metadata values must be strings. State-representing values are"
+                    f" expected to be serialized before being passed as reconstruction metadata."
+                    f" Got for key {k}:\n\n{v}"
+                )
+        normalized_metadata = {
+            k: CodeLocationReconstructionMetadataValue(v)
+            for k, v in reconstruction_metadata.items()
+        }
+        return RepositoryDefinition(
+            self._name,
+            repository_data=self._repository_data,
+            description=self._description,
+            metadata=self._metadata,
+            repository_load_data=self._repository_load_data.replace_reconstruction_metadata(
+                normalized_metadata
+            )
+            if self._repository_load_data
+            else RepositoryLoadData(reconstruction_metadata=normalized_metadata),
+        )
 
     @public
     @property

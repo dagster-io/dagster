@@ -46,6 +46,7 @@ class DefinitionsLoadContext:
     ):
         self._load_type = load_type
         self._repository_load_data = repository_load_data
+        self._pending_reconstruction_metadata = {}
 
     @classmethod
     def get(cls) -> "DefinitionsLoadContext":
@@ -63,6 +64,12 @@ class DefinitionsLoadContext:
     def load_type(self) -> DefinitionsLoadType:
         """DefinitionsLoadType: Classifier for scenario in which Definitions are being loaded."""
         return self._load_type
+
+    def add_to_pending_reconstruction_metadata(self, key: str, metadata: Any) -> None:
+        self._pending_reconstruction_metadata[key] = metadata
+
+    def get_pending_reconstruction_metadata(self) -> Mapping[str, Any]:
+        return self._pending_reconstruction_metadata
 
     @cached_property
     def reconstruction_metadata(self) -> Mapping[str, Any]:
@@ -160,6 +167,6 @@ class StateBackedDefinitionsLoader(ABC, Generic[TState]):
             else self.fetch_state()
         )
 
-        return self.defs_from_state(state).with_reconstruction_metadata(
-            {self.defs_key: serialize_value(state)}
-        )
+        context.add_to_pending_reconstruction_metadata(self.defs_key, serialize_value(state))
+
+        return self.defs_from_state(state)

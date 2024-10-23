@@ -491,7 +491,7 @@ def test_cloudwatch_logs_reader(cloudwatch_client: "CloudWatchLogsClient", capsy
 
     time.sleep(1)
 
-    assert capsys.readouterr().out == "1\n2\n3\n"
+    assert capsys.readouterr().out.strip() == "1\n2\n3"
 
 
 def test_cloudwatch_message_reader(cloudwatch_client: "CloudWatchLogsClient", capsys):
