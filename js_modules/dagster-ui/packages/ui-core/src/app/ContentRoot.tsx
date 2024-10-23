@@ -57,12 +57,6 @@ export const ContentRoot = memo(() => {
             ? // This is somewhat hacky but the Routes can't be wrapped by a fragment otherwise the Switch statement
               // stops working
               [
-                <Route path="/runs-feed/b/:backfillId" key="3">
-                  <RunsFeedBackfillPage />
-                </Route>,
-                <Route path={['/runs-feed', '/runs-feed/scheduled']} exact key="4">
-                  <RunsFeedRoot />
-                </Route>,
                 <Route path="/runs" exact key="5">
                   <RunsRoot />
                 </Route>,
