@@ -116,10 +116,7 @@ class ReconstructableRepository(
     def get_definition(self) -> "RepositoryDefinition":
         return reconstruct_repository_def_from_pointer(
             self.pointer,
-            check.not_none(
-                self.repository_load_data,
-                additional_message="Repository load data must be provided to reconstruct a repository",
-            ),
+            self.repository_load_data or RepositoryLoadData()
         )
 
     def get_reconstructable_job(self, name: str) -> "ReconstructableJob":
