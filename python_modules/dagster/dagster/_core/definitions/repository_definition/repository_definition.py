@@ -14,7 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
@@ -142,7 +142,6 @@ class RepositoryDefinition:
     def repository_load_data(self) -> Optional[RepositoryLoadData]:
         return self._repository_load_data
 
-    @experimental
     def replace_reconstruction_metadata(
         self, reconstruction_metadata: Mapping[str, str]
     ) -> "RepositoryDefinition":

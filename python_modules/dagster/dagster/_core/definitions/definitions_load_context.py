@@ -68,7 +68,7 @@ class DefinitionsLoadContext:
     def add_to_pending_reconstruction_metadata(self, key: str, metadata: Any) -> None:
         self._pending_reconstruction_metadata[key] = metadata
 
-    def get_pending_reconstruction_metadata(self) -> Any:
+    def get_pending_reconstruction_metadata(self) -> Mapping[str, Any]:
         return self._pending_reconstruction_metadata
 
     @cached_property

@@ -9,11 +9,10 @@ from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
     ReconstructableRepository,
-    repository_def_from_pointer,
+    initialize_repository_def_from_pointer,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
@@ -184,10 +183,8 @@ def test_state_derived_defs(
     with instance_for_test() as instance:
         assert len(workspace_data_api_mocks.calls) == 0
 
-        repository_def = repository_def_from_pointer(
+        repository_def = initialize_repository_def_from_pointer(
             CodePointer.from_python_file(str(Path(__file__)), "state_derived_defs", None),
-            DefinitionsLoadType.INITIALIZATION,
-            None,
         )
 
         # first, we resolve the repository to generate our cached metadata
