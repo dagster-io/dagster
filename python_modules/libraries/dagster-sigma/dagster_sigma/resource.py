@@ -6,7 +6,22 @@ from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import AbstractSet, Any, Callable, Dict, Iterator, List, Mapping, Optional, Type, Union
+from functools import wraps
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Concatenate,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import aiohttp
 import dagster._check as check
@@ -17,9 +32,11 @@ from dagster._annotations import deprecated, public
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
-from dagster._utils.cached_method import cached_method
+from dagster._seven import get_arg_names
+from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, _make_key
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
+from typing_extensions import Concatenate, ParamSpec
 
 from dagster_sigma.translator import (
     DagsterSigmaTranslator,
@@ -28,6 +45,90 @@ from dagster_sigma.translator import (
     SigmaWorkbook,
     _inode_from_url,
 )
+
+S = TypeVar("S")
+T = TypeVar("T")
+T_Callable = TypeVar("T_Callable", bound=Callable)
+P = ParamSpec("P")
+
+
+def _cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenate[S, P], T]:
+    # Cache these once self is first observed to avoid expensive work on each access
+    arg_names = None
+
+    def get_canonical_kwargs(*args: P.args, **kwargs: P.kwargs) -> Dict[str, Any]:
+        canonical_kwargs = None
+        if args:
+            # Entering this block introduces about 15% overhead per call
+            # See top-level docblock for more details.
+
+            # nonlocal required to bind to variable in enclosing scope
+            nonlocal arg_names
+            # only create the lookup table on demand to avoid overhead
+            # if the cached method is never called with positional arguments
+            arg_names = arg_names if arg_names is not None else get_arg_names(method)[1:]
+
+            translated_kwargs = {}
+            for arg_ordinal, arg_value in enumerate(args):
+                arg_name = arg_names[arg_ordinal]
+                translated_kwargs[arg_name] = arg_value
+            if kwargs:
+                # only copy if both args and kwargs were passed
+                canonical_kwargs = {**translated_kwargs, **kwargs}
+            else:
+                # no copy
+                canonical_kwargs = translated_kwargs
+        else:
+            # no copy
+            canonical_kwargs = kwargs
+
+        return canonical_kwargs
+
+    if asyncio.iscoroutinefunction(method):
+
+        @wraps(method)
+        async def _async_cached_method_wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
+            if not hasattr(self, CACHED_METHOD_CACHE_FIELD):
+                setattr(self, CACHED_METHOD_CACHE_FIELD, {})
+
+            cache_dict = getattr(self, CACHED_METHOD_CACHE_FIELD)
+            if method.__name__ not in cache_dict:
+                cache_dict[method.__name__] = {}
+
+            cache = cache_dict[method.__name__]
+
+            canonical_kwargs = get_canonical_kwargs(*args, **kwargs)
+            key = _make_key(canonical_kwargs)
+
+            if key not in cache:
+                result = await method(self, *args, **kwargs)
+                cache[key] = result
+            return cache[key]
+
+        return cast(Callable[Concatenate[S, P], T], _async_cached_method_wrapper)
+
+    else:
+
+        @wraps(method)
+        def _cached_method_wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
+            if not hasattr(self, CACHED_METHOD_CACHE_FIELD):
+                setattr(self, CACHED_METHOD_CACHE_FIELD, {})
+
+            cache_dict = getattr(self, CACHED_METHOD_CACHE_FIELD)
+            if method.__name__ not in cache_dict:
+                cache_dict[method.__name__] = {}
+
+            cache = cache_dict[method.__name__]
+
+            canonical_kwargs = get_canonical_kwargs(*args, **kwargs)
+            key = _make_key(canonical_kwargs)
+            if key not in cache:
+                result = method(self, *args, **kwargs)
+                cache[key] = result
+            return cache[key]
+
+        return _cached_method_wrapper
+
 
 SIGMA_PARTNER_ID_TAG = {"X-Sigma-Partner-Id": "dagster"}
 
@@ -139,19 +240,19 @@ class SigmaOrganization(ConfigurableResource):
 
         return entries
 
-    @cached_method
+    @_cached_method
     async def _fetch_workbooks(self) -> List[Dict[str, Any]]:
         return await self._fetch_json_async_paginated_entries("workbooks")
 
-    @cached_method
+    @_cached_method
     async def _fetch_datasets(self) -> List[Dict[str, Any]]:
         return await self._fetch_json_async_paginated_entries("datasets")
 
-    @cached_method
+    @_cached_method
     async def _fetch_pages_for_workbook(self, workbook_id: str) -> List[Dict[str, Any]]:
         return await self._fetch_json_async_paginated_entries(f"workbooks/{workbook_id}/pages")
 
-    @cached_method
+    @_cached_method
     async def _fetch_elements_for_page(
         self, workbook_id: str, page_id: str
     ) -> List[Dict[str, Any]]:
@@ -159,13 +260,13 @@ class SigmaOrganization(ConfigurableResource):
             f"workbooks/{workbook_id}/pages/{page_id}/elements"
         )
 
-    @cached_method
+    @_cached_method
     async def _fetch_lineage_for_element(self, workbook_id: str, element_id: str) -> Dict[str, Any]:
         return await self._fetch_json_async(
             f"workbooks/{workbook_id}/lineage/elements/{element_id}"
         )
 
-    @cached_method
+    @_cached_method
     async def _fetch_columns_for_element(
         self, workbook_id: str, element_id: str
     ) -> List[Dict[str, Any]]:
@@ -173,7 +274,7 @@ class SigmaOrganization(ConfigurableResource):
             await self._fetch_json_async(f"workbooks/{workbook_id}/elements/{element_id}/columns")
         )["entries"]
 
-    @cached_method
+    @_cached_method
     async def _fetch_queries_for_workbook(self, workbook_id: str) -> List[Dict[str, Any]]:
         return (await self._fetch_json_async(f"workbooks/{workbook_id}/queries"))["entries"]
 
@@ -187,7 +288,7 @@ class SigmaOrganization(ConfigurableResource):
             else:
                 raise
 
-    @cached_method
+    @_cached_method
     async def _fetch_dataset_upstreams_by_inode(self) -> Mapping[str, AbstractSet[str]]:
         """Builds a mapping of dataset inodes to the upstream inputs they depend on.
         Sigma does not expose this information directly, so we have to infer it from
@@ -258,7 +359,7 @@ class SigmaOrganization(ConfigurableResource):
 
         return deps_by_dataset_inode
 
-    @cached_method
+    @_cached_method
     async def _fetch_dataset_columns_by_inode(self) -> Mapping[str, AbstractSet[str]]:
         """Builds a mapping of dataset inodes to the columns they contain. Note that
         this is a partial list and will only include columns which are referenced in
@@ -302,7 +403,7 @@ class SigmaOrganization(ConfigurableResource):
 
         return columns_by_dataset_inode
 
-    @cached_method
+    @_cached_method
     async def build_member_id_to_email_mapping(self) -> Mapping[str, str]:
         """Retrieves all members in the Sigma organization and builds a mapping
         from member ID to email address.
@@ -355,7 +456,7 @@ class SigmaOrganization(ConfigurableResource):
             owner_email=None,
         )
 
-    @cached_method
+    @_cached_method
     async def build_organization_data(self) -> SigmaOrganizationData:
         """Retrieves all workbooks and datasets in the Sigma organization and builds a
         SigmaOrganizationData object representing the organization's assets.
