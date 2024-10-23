@@ -115,6 +115,7 @@ class DagsterLookerApiTranslator:
 
     def get_explore_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
         lookml_explore = check.inst(looker_structure.data, (LookmlModelExplore, DashboardFilter))
+
         if isinstance(lookml_explore, LookmlModelExplore):
             explore_base_view = LookmlView(
                 view_name=check.not_none(lookml_explore.view_name),
