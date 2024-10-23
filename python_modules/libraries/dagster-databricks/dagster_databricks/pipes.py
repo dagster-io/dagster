@@ -8,7 +8,6 @@ import time
 from contextlib import ExitStack, contextmanager
 from typing import Any, Dict, Iterator, Literal, Mapping, Optional, Sequence, Set, TextIO, Union
 
-
 import dagster._check as check
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
@@ -223,7 +222,9 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
     def get_task_fields_which_support_cli_parameters(self) -> Set[str]:
         return {"spark_python_task", "python_wheel_task"}
 
-    def _poll_til_success(self, context: Union[OpExecutionContext, AssetExecutionContext], run_id: int) -> None:
+    def _poll_til_success(
+        self, context: Union[OpExecutionContext, AssetExecutionContext], run_id: int
+    ) -> None:
         # poll the Databricks run until it reaches RunResultState.SUCCESS, raising otherwise
 
         last_observed_state = None
