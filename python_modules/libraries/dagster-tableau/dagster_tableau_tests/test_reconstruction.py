@@ -2,11 +2,11 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
     ReconstructableRepository,
-    repository_def_from_pointer,
+    initialize_repository_def_from_pointer,
+    reconstruct_repository_def_from_pointer,
 )
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
@@ -31,7 +31,14 @@ def test_using_cached_asset_data_with_refresh_request(
         assert get_job.call_count == 0
         assert cancel_job.call_count == 0
 
-        from dagster_tableau_tests.definitions import defs
+        pointer = CodePointer.from_python_file(
+            str(Path(__file__).parent / "definitions.py"),
+            "defs",
+            None,
+        )
+        init_repository_def = initialize_repository_def_from_pointer(
+            pointer,
+        )
 
         # 3 calls to creates the defs
         assert sign_in.call_count == 1
@@ -43,19 +50,13 @@ def test_using_cached_asset_data_with_refresh_request(
         assert cancel_job.call_count == 0
 
         # 1 Tableau external assets, 2 Tableau materializable asset and 1 Dagster materializable asset
-        assert len(defs.get_repository_def().assets_defs_by_key) == 1 + 2 + 1
+        assert len(init_repository_def.assets_defs_by_key) == 1 + 2 + 1
 
-        repository_load_data = defs.get_repository_def().repository_load_data
+        repository_load_data = init_repository_def.repository_load_data
 
         # We use a separate file here just to ensure we get a fresh load
-        pointer = CodePointer.from_python_file(
-            str(Path(__file__).parent / "definitions.py"),
-            "defs",
-            None,
-        )
-        recon_repository_def = repository_def_from_pointer(
+        recon_repository_def = reconstruct_repository_def_from_pointer(
             pointer,
-            DefinitionsLoadType.RECONSTRUCTION,
             repository_load_data,
         )
         assert len(recon_repository_def.assets_defs_by_key) == 1 + 2 + 1
