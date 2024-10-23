@@ -134,6 +134,9 @@ def test_custom_asset_specs(
     expected_metadata = {"custom": "metadata"}
 
     class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
+        def get_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
+            return super().get_asset_key(looker_structure).with_prefix("my_prefix")
+
         def get_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
             return super().get_asset_spec(looker_structure)._replace(metadata=expected_metadata)
 
@@ -150,3 +153,4 @@ def test_custom_asset_specs(
     for asset in all_assets:
         for metadata in asset.metadata_by_key.values():
             assert metadata == expected_metadata
+        assert all(key.path[0] == "my_prefix" for key in asset.keys)
