@@ -1,13 +1,13 @@
 import pytest
-from dagster_dlift.cloud_instance import ENVIRONMENTS_SUBPATH
+from dagster_dlift.client import ENVIRONMENTS_SUBPATH
 from dagster_dlift.gql_queries import (
     GET_DBT_MODELS_QUERY,
     GET_DBT_SOURCES_QUERY,
     GET_DBT_TESTS_QUERY,
     VERIFICATION_QUERY,
 )
-from dagster_dlift.test.instance_fake import (
-    DbtCloudInstanceFake,
+from dagster_dlift.test.client_fake import (
+    DbtCloudClientFake,
     ExpectedAccessApiRequest,
     ExpectedDiscoveryApiRequest,
     build_model_response,
@@ -19,7 +19,7 @@ from dagster_dlift.test.instance_fake import (
 def test_verification() -> None:
     """Test proper error states when we can't properly verify the instance."""
     # We get no response back from the discovery api
-    fake_instance = DbtCloudInstanceFake(
+    fake_instance = DbtCloudClientFake(
         access_api_responses={
             ExpectedAccessApiRequest(subpath=ENVIRONMENTS_SUBPATH): {"data": [{"id": 1}]}
         },
@@ -34,7 +34,7 @@ def test_verification() -> None:
         fake_instance.verify_connections()
 
     # We get a response back from the discovery api, but it's not what we expect
-    fake_instance = DbtCloudInstanceFake(
+    fake_instance = DbtCloudClientFake(
         access_api_responses={
             ExpectedAccessApiRequest(subpath=ENVIRONMENTS_SUBPATH): {"data": [{"id": 1}]}
         },
@@ -49,7 +49,7 @@ def test_verification() -> None:
         fake_instance.verify_connections()
 
     # Finally, we get a valid response back from the discovery api
-    fake_instance = DbtCloudInstanceFake(
+    fake_instance = DbtCloudClientFake(
         access_api_responses={
             ExpectedAccessApiRequest(subpath=ENVIRONMENTS_SUBPATH): {"data": [{"id": 1}]}
         },
@@ -72,7 +72,7 @@ def test_get_models() -> None:
         "model.jaffle_shop.stg_customers": set(),
         "model.jaffle_shop.stg_orders": set(),
     }
-    fake_instance = DbtCloudInstanceFake(
+    fake_instance = DbtCloudClientFake(
         access_api_responses={},
         discovery_api_responses={
             ExpectedDiscoveryApiRequest(
@@ -102,7 +102,7 @@ def test_get_sources() -> None:
         "source.jaffle_shop.jaffle_shop.orders",
     }
 
-    fake_instance = DbtCloudInstanceFake(
+    fake_instance = DbtCloudClientFake(
         access_api_responses={},
         discovery_api_responses={
             ExpectedDiscoveryApiRequest(
@@ -128,7 +128,7 @@ def test_get_tests() -> None:
         "test.jaffle_shop.stg_orders.test_stg_orders": {"model.jaffle_shop.stg_orders"},
     }
 
-    fake_instance = DbtCloudInstanceFake(
+    fake_instance = DbtCloudClientFake(
         access_api_responses={},
         discovery_api_responses={
             ExpectedDiscoveryApiRequest(

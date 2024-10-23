@@ -1,11 +1,11 @@
-from dagster_dlift.cloud_instance import DbtCloudInstance
+from dagster_dlift.client import DbtCloudClient
 from dagster_dlift.test.utils import get_env_var
 
 from dlift_kitchen_sink.constants import TEST_ENV_NAME
 
 
-def get_instance() -> DbtCloudInstance:
-    return DbtCloudInstance(
+def get_instance() -> DbtCloudClient:
+    return DbtCloudClient(
         account_id=get_env_var("KS_DBT_CLOUD_ACCOUNT_ID"),
         token=get_env_var("KS_DBT_CLOUD_TOKEN"),
         access_url=get_env_var("KS_DBT_CLOUD_ACCESS_URL"),
