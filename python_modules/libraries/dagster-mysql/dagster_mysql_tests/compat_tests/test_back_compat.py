@@ -587,6 +587,8 @@ def test_add_runs_by_backfill_id_idx(conn_string):
 
 
 def test_add_backfill_tags(conn_string):
+    from dagster._core.storage.runs.schema import BackfillTagsTable
+
     hostname, port = _reconstruct_from_file(
         conn_string,
         # use an old snapshot, it has the bulk actions table but not the new columns
@@ -605,9 +607,41 @@ def test_add_backfill_tags(conn_string):
 
         with DagsterInstance.from_config(tempdir) as instance:
             assert "backfill_tags" not in get_tables(instance)
+            before_migration = PartitionBackfill(
+                "before_tag_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={"before": "migration"},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(before_migration)
 
             instance.upgrade()
             assert "backfill_tags" in get_tables(instance)
+
+            after_migration = PartitionBackfill(
+                "after_tag_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={"after": "migration"},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(after_migration)
+
+            with instance.run_storage.connect() as conn:
+                rows = conn.execute(
+                    db.select(
+                        BackfillTagsTable.c.backfill_id,
+                        BackfillTagsTable.c.key,
+                        BackfillTagsTable.c.value,
+                    )
+                ).fetchall()
+                assert len(rows) == 1
+                ids_to_tags = {row[0]: {row[1]: row[2]} for row in rows}
+                assert ids_to_tags.get(before_migration.backfill_id) is None
+                assert ids_to_tags[after_migration.backfill_id] == {"after": "migration"}
 
 
 def test_add_bulk_actions_job_name_column(conn_string):
@@ -674,5 +708,5 @@ def test_add_bulk_actions_job_name_column(conn_string):
                 ).fetchall()
                 assert len(rows) == 2
                 ids_to_job_name = {row[0]: row[1] for row in rows}
-                assert ids_to_job_name[before_migration.key] is None
-                assert ids_to_job_name[after_migration.key] == "foo"
+                assert ids_to_job_name[before_migration.backfill_id] is None
+                assert ids_to_job_name[after_migration.backfill_id] == "foo"

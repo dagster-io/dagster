@@ -1025,10 +1025,9 @@ class SqlRunStorage(RunStorage):
             values["job_name"] = partition_backfill.job_name
 
         with self.connect() as conn:
-            res = conn.execute(BulkActionsTable.insert().values(**values)).fetchone()
+            conn.execute(BulkActionsTable.insert().values(**values))
             if self.has_backfill_tags_table():
                 tags_to_insert = partition_backfill.tags
-                bulk_actions_storage_id = res[0]
                 if len(tags_to_insert.items()) > 0:
                     conn.execute(
                         BackfillTagsTable.insert(),
@@ -1037,7 +1036,6 @@ class SqlRunStorage(RunStorage):
                                 backfill_id=partition_backfill.backfill_id,
                                 key=k,
                                 value=v,
-                                bulk_actions_storage_id=bulk_actions_storage_id,
                             )
                             for k, v in tags_to_insert.items()
                         ],

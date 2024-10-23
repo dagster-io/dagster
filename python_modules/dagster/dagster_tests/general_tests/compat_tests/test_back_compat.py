@@ -1329,8 +1329,38 @@ def test_add_backfill_tags():
         assert "backfill_tags" not in get_sqlite3_tables(db_path)
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            before_migration = PartitionBackfill(
+                "before_tag_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={"before": "migration"},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(before_migration)
+
             instance.upgrade()
             assert "backfill_tags" in get_sqlite3_tables(db_path)
+
+            after_migration = PartitionBackfill(
+                "after_tag_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={"after": "migration"},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(after_migration)
+
+            con = sqlite3.connect(db_path)
+            cursor = con.cursor()
+            cursor.execute("SELECT backfill_id, key, value FROM backfill_tags")
+            rows = cursor.fetchall()
+
+            assert len(rows) == 1
+            ids_to_tags = {row[0]: {row[1]: row[2]} for row in rows}
+            assert ids_to_tags.get(before_migration.backfill_id) is None
+            assert ids_to_tags[after_migration.backfill_id] == {"after": "migration"}
 
             # test downgrade
             instance._run_storage._alembic_downgrade(rev="1aca709bba64")
@@ -1365,7 +1395,7 @@ def test_add_bulk_actions_job_name_column():
                 partition_set_name=partition_set_snap_name_for_job_name("foo"),
             )
             before_migration = PartitionBackfill(
-                "before_migration",
+                "before_job_migration",
                 partition_set_origin=partition_set_origin,
                 status=BulkActionStatus.REQUESTED,
                 from_failure=False,
@@ -1380,24 +1410,24 @@ def test_add_bulk_actions_job_name_column():
             assert "job_name" in backfill_columns
 
             after_migration = PartitionBackfill(
-                "after_migration",
+                "after_job_migration",
                 partition_set_origin=partition_set_origin,
                 status=BulkActionStatus.REQUESTED,
                 from_failure=False,
                 tags={},
                 backfill_timestamp=get_current_timestamp(),
             )
-            instance.add_backfill(before_migration)
+            instance.add_backfill(after_migration)
 
             con = sqlite3.connect(db_path)
             cursor = con.cursor()
             cursor.execute("SELECT key, job_name FROM bulk_actions")
             rows = cursor.fetchall()
 
-            assert len(rows) == 2
+            assert len(rows) == 3  # a backfill exists in the db snapshot
             ids_to_job_name = {row[0]: row[1] for row in rows}
-            assert ids_to_job_name[before_migration.key] is None
-            assert ids_to_job_name[after_migration.key] == "foo"
+            assert ids_to_job_name[before_migration.backfill_id] is None
+            assert ids_to_job_name[after_migration.backfill_id] == "foo"
 
             # test downgrade
             instance._run_storage._alembic_downgrade(rev="1aca709bba64")
