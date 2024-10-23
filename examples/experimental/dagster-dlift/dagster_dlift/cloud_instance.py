@@ -5,6 +5,7 @@ import requests
 from dagster_dlift.gql_queries import (
     GET_DBT_MODELS_QUERY,
     GET_DBT_SOURCES_QUERY,
+    GET_DBT_TESTS_QUERY,
     VERIFICATION_QUERY,
 )
 
@@ -123,5 +124,13 @@ class DbtCloudInstance:
             source["node"]
             for source in self.definition_response_iterator(
                 GET_DBT_SOURCES_QUERY, {"environmentId": environment_id}, key="sources"
+            )
+        ]
+
+    def get_dbt_tests(self, environment_id: int) -> Sequence[Mapping[str, Any]]:
+        return [
+            test["node"]
+            for test in self.definition_response_iterator(
+                GET_DBT_TESTS_QUERY, {"environmentId": environment_id}, key="tests"
             )
         ]

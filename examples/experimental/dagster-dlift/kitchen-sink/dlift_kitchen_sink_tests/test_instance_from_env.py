@@ -1,6 +1,5 @@
 from dagster_dlift.cloud_instance import DbtCloudInstance
-from dlift_kitchen_sink.constants import TEST_ENV_NAME
-from dlift_kitchen_sink.instance import get_instance
+from dlift_kitchen_sink.instance import get_environment_id, get_instance
 
 
 def test_cloud_instance() -> None:
@@ -13,5 +12,4 @@ def test_cloud_instance() -> None:
 
 def test_get_test_env() -> None:
     """Test that we can get the test environment ID."""
-    instance = get_instance()
-    assert instance.get_environment_id_by_name(TEST_ENV_NAME)
+    assert get_environment_id()
