@@ -1,6 +1,10 @@
 from dagster import AssetSpec, define_asset_job
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_tableau import DagsterTableauTranslator, TableauCloudWorkspace, load_tableau_assets
+from dagster_tableau import (
+    DagsterTableauTranslator,
+    TableauCloudWorkspace,
+    load_tableau_asset_specs,
+)
 from dagster_tableau.translator import TableauContentData
 
 from dagster_tableau_tests.conftest import (
@@ -36,7 +40,9 @@ resource = TableauCloudWorkspace(
     pod_name=FAKE_POD_NAME,
 )
 
-tableau_specs = load_tableau_assets(workspace=resource, dagster_tableau_translator=MyCoolTranslator)
+tableau_specs = load_tableau_asset_specs(
+    workspace=resource, dagster_tableau_translator=MyCoolTranslator
+)
 
 
 defs = Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])

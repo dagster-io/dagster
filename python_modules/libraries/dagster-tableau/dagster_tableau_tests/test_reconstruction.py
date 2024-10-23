@@ -84,8 +84,8 @@ def test_load_assets_workspace_data_refreshable_workbooks(
         assert get_job.call_count == 0
         assert cancel_job.call_count == 0
 
-        # 1 Tableau external assets, 2 Tableau materializable asset and 1 Dagster materializable asset
-        assert len(init_repository_def.assets_defs_by_key) == 1 + 2 + 1
+        # 1 Tableau external assets and 2 Tableau materializable assets
+        assert len(init_repository_def.assets_defs_by_key) == 1 + 2
 
         repository_load_data = init_repository_def.repository_load_data
 
@@ -94,7 +94,7 @@ def test_load_assets_workspace_data_refreshable_workbooks(
             pointer,
             repository_load_data,
         )
-        assert len(recon_repository_def.assets_defs_by_key) == 1 + 2 + 1
+        assert len(recon_repository_def.assets_defs_by_key) == 1 + 2
 
         # no additional calls after a fresh load
         assert sign_in.call_count == 1
@@ -122,10 +122,11 @@ def test_load_assets_workspace_data_refreshable_workbooks(
             instance=instance,
         )
 
+        # the materialization of the multi-asset for the 2 materializable assets should be successful
         assert (
             len([event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS])
-            == 2
-        ), "Expected two successful steps"
+            == 1
+        ), "Expected one successful step"
 
         # 3 calls to create the defs + 5 calls to materialize the Tableau assets
         # with 1 workbook to refresh, 1 sheet and 1 dashboard

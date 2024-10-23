@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import responses
-from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace
+from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace, load_tableau_asset_specs
 
 
 @responses.activate
@@ -86,12 +86,11 @@ def test_translator_spec(
     resource = clazz(**resource_args)  # type: ignore
     resource.build_client()
 
-    all_assets = resource.build_defs().get_asset_graph().assets_defs
-    all_assets_keys = [key for asset in all_assets for key in asset.keys]
+    all_assets = load_tableau_asset_specs(resource)
+    all_assets_keys = [asset.key for asset in all_assets]
 
-    # 1 multi-asset for tableau assets (sheets and dashboards) and 1 data source external asset
-    assert len(all_assets) == 2
-    # 1 sheet, 1 dashboard and 1 data source
+    # 1 sheet, 1 dashboard and 1 data source as external assets
+    assert len(all_assets) == 3
     assert len(all_assets_keys) == 3
 
     # Sanity check outputs, translator tests cover details here

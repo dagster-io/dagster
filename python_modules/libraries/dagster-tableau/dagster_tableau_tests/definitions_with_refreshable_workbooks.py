@@ -1,6 +1,6 @@
 from dagster import asset, define_asset_job
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_tableau import TableauCloudWorkspace, load_tableau_assets
+from dagster_tableau import TableauCloudWorkspace, load_tableau_asset_specs, build_tableau_executable_assets_definition
 
 from dagster_tableau_tests.conftest import (
     FAKE_CONNECTED_APP_CLIENT_ID,
@@ -20,16 +20,34 @@ resource = TableauCloudWorkspace(
     pod_name=FAKE_POD_NAME,
 )
 
-tableau_specs = load_tableau_assets(
-    workspace=resource, refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"]
+tableau_specs = load_tableau_asset_specs(
+    workspace=resource,
 )
 
+non_executable_asset_specs = [
+    spec
+    for spec in tableau_specs
+    if spec.tags.get("dagster-tableau/asset_type") == "data_source"
+]
 
-@asset
-def my_materializable_asset():
-    pass
+executable_asset_specs = [
+    spec
+    for spec in tableau_specs
+    if spec.tags.get("dagster-tableau/asset_type") in ["dashboard", "sheet"]
+]
 
+resource_key = "tableau"
 
 defs = Definitions(
-    assets=[my_materializable_asset, *tableau_specs], jobs=[define_asset_job("all_asset_job")]
+    assets=[
+        build_tableau_executable_assets_definition(
+            resource_key=resource_key,
+            workspace=resource,
+            specs=executable_asset_specs,
+            refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
+        ),
+        *non_executable_asset_specs,
+    ],
+    jobs=[define_asset_job("all_asset_job")],
+    resources={resource_key: resource}
 )

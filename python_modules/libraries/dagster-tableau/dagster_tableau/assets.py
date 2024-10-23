@@ -1,0 +1,95 @@
+from typing import Optional, Sequence, cast
+
+from dagster import (
+    AssetExecutionContext,
+    AssetsDefinition,
+    AssetSpec,
+    ObserveResult,
+    Output,
+    multi_asset,
+)
+
+from dagster_tableau.resources import BaseTableauWorkspace
+
+
+def build_tableau_executable_assets_definition(
+    resource_key: str,
+    workspace: BaseTableauWorkspace,
+    specs: Sequence[AssetSpec],
+    refreshable_workbook_ids: Optional[Sequence[str]] = None,
+) -> AssetsDefinition:
+    """Returns a list of AssetSpecs representing the Tableau content in the workspace.
+
+    Args:
+        workspace (BaseTableauWorkspace): The Tableau workspace to fetch assets from.
+        refreshable_workbook_ids (Optional[Sequence[str]]): A list of workbook IDs. The workbooks provided must
+            have extracts as data sources and be refreshable in Tableau.
+
+            When materializing your Tableau assets, the workbooks provided are refreshed,
+            refreshing their sheets and dashboards before pulling their data in Dagster.
+
+            This feature is equivalent to selecting Refreshing Extracts for a workbook in Tableau UI
+            and only works for workbooks for which the data sources are extracts.
+            See https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_ref_workbooks_and_views.htm#update_workbook_now
+            for documentation.
+        dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
+            to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
+
+    Returns:
+        List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
+    """
+
+    @multi_asset(
+        name=f"tableau_sync_site_{workspace.site_name.replace('-', '_')}",
+        compute_kind="tableau",
+        can_subset=False,
+        specs=specs,
+        required_resource_keys={resource_key},
+    )
+    def asset_fn(context: AssetExecutionContext):
+        tableau = cast(workspace.__class__, getattr(context.resources, resource_key))
+        with tableau.get_client() as client:
+            refreshed_workbooks = set()
+            for refreshable_workbook_id in refreshable_workbook_ids:
+                refreshed_workbooks.add(client.refresh_and_poll(refreshable_workbook_id))
+            for spec in specs:
+                data = client.get_view(spec.metadata.get("id"))
+                asset_key = spec.key
+                if (
+                    spec.metadata.get("workbook_id")
+                    and spec.metadata.get("workbook_id") in refreshed_workbooks
+                ):
+                    yield Output(
+                        value=None,
+                        output_name="__".join(asset_key.path),
+                        metadata={
+                            "workbook_id": data.workbook_id,
+                            "owner_id": data.owner_id,
+                            "name": data.name,
+                            "contentUrl": data.content_url,
+                            "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+                            if data.created_at
+                            else None,
+                            "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S")
+                            if data.updated_at
+                            else None,
+                        },
+                    )
+                else:
+                    yield ObserveResult(
+                        asset_key=asset_key,
+                        metadata={
+                            "workbook_id": data.workbook_id,
+                            "owner_id": data.owner_id,
+                            "name": data.name,
+                            "contentUrl": data.content_url,
+                            "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+                            if data.created_at
+                            else None,
+                            "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S")
+                            if data.updated_at
+                            else None,
+                        },
+                    )
+
+    return asset_fn
