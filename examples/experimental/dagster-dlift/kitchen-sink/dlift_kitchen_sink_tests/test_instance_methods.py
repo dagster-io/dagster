@@ -50,3 +50,18 @@ def test_get_models() -> None:
     assert {parent["uniqueId"] for parent in stg_orders["parents"]} == {
         "source.test_environment.jaffle_shop.orders_raw"
     }
+
+
+def test_get_sources() -> None:
+    """Test that we can get sources from the instance."""
+    env_id = get_instance().get_environment_id_by_name(TEST_ENV_NAME)
+    sources_response = [
+        source
+        for source in get_instance().get_dbt_sources(env_id)
+        if EXPECTED_TAG in source["tags"]
+    ]
+    assert len(sources_response) == 2
+    assert {source["uniqueId"] for source in sources_response} == {
+        "source.test_environment.jaffle_shop.customers_raw",
+        "source.test_environment.jaffle_shop.orders_raw",
+    }

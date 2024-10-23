@@ -1,8 +1,12 @@
-from typing import Any, Mapping, Sequence
+from typing import Any, Iterator, Mapping, Sequence
 
 import requests
 
-from dagster_dlift.gql_queries import GET_DBT_MODELS_QUERY, VERIFICATION_QUERY
+from dagster_dlift.gql_queries import (
+    GET_DBT_MODELS_QUERY,
+    GET_DBT_SOURCES_QUERY,
+    VERIFICATION_QUERY,
+)
 
 ENVIRONMENTS_SUBPATH = "environments/"
 
@@ -90,25 +94,34 @@ class DbtCloudInstance:
                     f"Failed to verify connection to environment {environment_id}. Response: {response}"
                 )
 
-    def get_dbt_models(self, environment_id: int) -> Sequence[Mapping[str, Any]]:
-        models = []
+    def definition_response_iterator(
+        self, query: str, variables: Mapping[str, Any], key: str
+    ) -> Iterator[Mapping[str, Any]]:
         page_size = 100
-        start_cursor = 0
+        start_cursor = None
         while response := self.make_discovery_api_query(
-            GET_DBT_MODELS_QUERY,
-            {"environmentId": environment_id, "first": page_size, "after": start_cursor},
+            query,
+            {**variables, "first": page_size, "after": start_cursor},
         ):
-            models.extend(
-                [
-                    model["node"]
-                    for model in response["data"]["environment"]["definition"]["models"]["edges"]
-                ]
-            )
-            if not response["data"]["environment"]["definition"]["models"]["pageInfo"][
-                "hasNextPage"
-            ]:
+            yield from response["data"]["environment"]["definition"][key]["edges"]
+            if not response["data"]["environment"]["definition"][key]["pageInfo"]["hasNextPage"]:
                 break
-            start_cursor = response["data"]["environment"]["definition"]["models"]["pageInfo"][
+            start_cursor = response["data"]["environment"]["definition"][key]["pageInfo"][
                 "endCursor"
             ]
-        return models
+
+    def get_dbt_models(self, environment_id: int) -> Sequence[Mapping[str, Any]]:
+        return [
+            model["node"]
+            for model in self.definition_response_iterator(
+                GET_DBT_MODELS_QUERY, {"environmentId": environment_id}, key="models"
+            )
+        ]
+
+    def get_dbt_sources(self, environment_id: int) -> Sequence[Mapping[str, Any]]:
+        return [
+            source["node"]
+            for source in self.definition_response_iterator(
+                GET_DBT_SOURCES_QUERY, {"environmentId": environment_id}, key="sources"
+            )
+        ]
