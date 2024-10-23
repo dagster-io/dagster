@@ -299,10 +299,89 @@ locations:
 
 <Tabs>
 <TabItem value="ha" label="Work can happen in either cluster">
+
+Deploy the agent Helm chart to each cluster, setting the `isolatedAgents.enabled` flag to true.
+
+```yaml file=values.yaml
+# values.yaml
+isolatedAgents:
+  enabled: true
+```
+
+```shell
+helm --namespace dagster-cloud upgrade agent \
+    dagster-cloud/dagster-cloud-agent \
+    --values ./values.yaml
+```
+
+In this configuration, requests will be randomly distributed across agents in both clusters.
+
 </TabItem>
 <TabItem value="queues" label="Global asset graph, but projects run in different clusters">
+
+You may wish to run data pipelines from project A in Kubernetes cluster A, and project B in Kubernetes cluster B. For example, you may wish to run some jobs on-premise and other jobs in the cloud. To accomplish this task:
+
+- Deploy an agent into each environment and use the `agentQueue` configuration:
+  Specify an agent queue for the on-prem agent:
+  ```yaml file=values.yaml
+  dagsterCloud:
+    agentQueues:
+      additionalQueues:
+        - on-prem-agent-queue
+  ```
+  Deploy onto the on-prem Kubernetes cluster:
+  ```shell
+  helm --namespace dagster-cloud upgrade agent \
+    dagster-cloud/dagster-cloud-agent \
+    --values ./values.yaml
+  ```
+  Specify an agent queue for the cloud agent:
+
+  ```yaml file=values.yaml
+  dagsterCloud:
+    agentQueues:
+      additionalQueues:
+        - cloud-agent-queue
+  ```
+  Deploy onto the cloud Kubernetes cluster:
+  ```shell
+  helm --namespace dagster-cloud upgrade agent \
+    dagster-cloud/dagster-cloud-agent \
+    --values ./values.yaml
+  ```
+- Create separate code locations for each project
+- Update the `dagster_cloud.yaml` file for each code location
+  ```yaml file=dagster_cloud.yaml
+  locations:
+    - location_name: project-a
+      ...
+      agent_queue: on-prem-agent-queue
+    - location_name: project-b
+      ...
+      agent_queue: cloud-agent-queue
+  ```
+
+:::tip
+Code locations without an `agent_queue` will be routed to a default queue. You pick an agent to serve this default queue using the `includeDefaultQueue` setting:
+
+```yaml file=values.yaml
+dagsterCloud:
+  agentQueues:
+    includeDefaultQueue: true
+```
+:::
+
 </TabItem>
 <TabItem value="separate-agents" label="Separate deployments per cluster">
+
+If you want completely separate environments with their own asset graph, run history, and access controls you should create different Dagster+ deployments. Separate deployments are common for isolated tenants or separate dev, stage, and prod environments. To create separate deployments:
+
+- Navigate to the deployments page for your organization: https://your-organizaiton.dagster.plus/org-settings/deployments
+
+- Click "New Deployment"
+
+- Follow the preceding instructions for creating and deploying agent for this deployment
+
 </TabItem>
 </Tabs>
 
