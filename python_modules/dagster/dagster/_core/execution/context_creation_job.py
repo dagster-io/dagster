@@ -70,7 +70,10 @@ def initialize_console_manager(
         loggers.append(
             logger_def.logger_fn(
                 InitLoggerContext(
-                    logger_config, logger_def, run_id=dagster_run.run_id if dagster_run else None
+                    logger_config,
+                    logger_def,
+                    run_id=dagster_run.run_id if dagster_run else None,
+                    instance=instance,
                 )
             )
         )
@@ -470,6 +473,7 @@ def create_log_manager(
                         logger_def,
                         job_def=job_def,
                         run_id=dagster_run.run_id,
+                        instance=context_creation_data.instance,
                     )
                 )
             )
@@ -483,6 +487,7 @@ def create_log_manager(
                         logger_def,
                         job_def=job_def,
                         run_id=dagster_run.run_id,
+                        instance=context_creation_data.instance,
                     )
                 )
             )
@@ -515,6 +520,7 @@ def create_context_free_log_manager(
                     logger_def,
                     job_def=None,
                     run_id=dagster_run.run_id,
+                    instance=instance,
                 )
             )
         ]
