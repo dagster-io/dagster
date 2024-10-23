@@ -1,6 +1,10 @@
-from dagster import asset, define_asset_job
+from dagster import define_asset_job
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_tableau import TableauCloudWorkspace, load_tableau_asset_specs, build_tableau_executable_assets_definition
+from dagster_tableau import (
+    TableauCloudWorkspace,
+    build_tableau_executable_assets_definition,
+    load_tableau_asset_specs,
+)
 
 from dagster_tableau_tests.conftest import (
     FAKE_CONNECTED_APP_CLIENT_ID,
@@ -25,9 +29,7 @@ tableau_specs = load_tableau_asset_specs(
 )
 
 non_executable_asset_specs = [
-    spec
-    for spec in tableau_specs
-    if spec.tags.get("dagster-tableau/asset_type") == "data_source"
+    spec for spec in tableau_specs if spec.tags.get("dagster-tableau/asset_type") == "data_source"
 ]
 
 executable_asset_specs = [
@@ -49,5 +51,5 @@ defs = Definitions(
         *non_executable_asset_specs,
     ],
     jobs=[define_asset_job("all_asset_job")],
-    resources={resource_key: resource}
+    resources={resource_key: resource},
 )
