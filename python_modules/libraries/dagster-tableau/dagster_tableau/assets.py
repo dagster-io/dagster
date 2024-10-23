@@ -18,27 +18,6 @@ def build_tableau_executable_assets_definition(
     specs: Sequence[AssetSpec],
     refreshable_workbook_ids: Optional[Sequence[str]] = None,
 ) -> AssetsDefinition:
-    """Returns a list of AssetSpecs representing the Tableau content in the workspace.
-
-    Args:
-        workspace (BaseTableauWorkspace): The Tableau workspace to fetch assets from.
-        refreshable_workbook_ids (Optional[Sequence[str]]): A list of workbook IDs. The workbooks provided must
-            have extracts as data sources and be refreshable in Tableau.
-
-            When materializing your Tableau assets, the workbooks provided are refreshed,
-            refreshing their sheets and dashboards before pulling their data in Dagster.
-
-            This feature is equivalent to selecting Refreshing Extracts for a workbook in Tableau UI
-            and only works for workbooks for which the data sources are extracts.
-            See https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_ref_workbooks_and_views.htm#update_workbook_now
-            for documentation.
-        dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
-            to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
-
-    Returns:
-        List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
-    """
-
     @multi_asset(
         name=f"tableau_sync_site_{workspace.site_name.replace('-', '_')}",
         compute_kind="tableau",
