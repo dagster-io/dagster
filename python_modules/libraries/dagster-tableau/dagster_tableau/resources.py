@@ -429,7 +429,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         Returns:
             Definitions: A Definitions object which will build and return the Power BI content.
         """
-        return TableauDefsLoader(
+        return TableauWorkspaceDefsLoader(
             workspace=self,
             translator_cls=dagster_tableau_translator,
             refreshable_workbook_ids=refreshable_workbook_ids or [],
@@ -475,7 +475,7 @@ class TableauServerWorkspace(BaseTableauWorkspace):
 
 
 @record
-class TableauDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
+class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     workspace: BaseTableauWorkspace
     translator_cls: Type[DagsterTableauTranslator]
     refreshable_workbook_ids: Sequence[str]
