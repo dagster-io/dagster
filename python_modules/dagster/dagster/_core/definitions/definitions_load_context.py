@@ -169,9 +169,8 @@ class StateBackedDefinitionsLoader(ABC, Generic[TState]):
         """
         ...
 
-    def build_defs(self) -> Definitions:
+    def get_or_fetch_state(self) -> TState:
         context = DefinitionsLoadContext.get()
-
         state = (
             cast(TState, deserialize_value(context.reconstruction_metadata[self.defs_key]))
             if (
@@ -180,7 +179,13 @@ class StateBackedDefinitionsLoader(ABC, Generic[TState]):
             )
             else self.fetch_state()
         )
-
         context.add_to_pending_reconstruction_metadata(self.defs_key, serialize_value(state))
 
-        return self.defs_from_state(state)
+        return state
+
+    def build_defs(self) -> Definitions:
+        state = self.get_or_fetch_state()
+
+        return self.defs_from_state(state).with_reconstruction_metadata(
+            {self.defs_key: serialize_value(state)}
+        )
