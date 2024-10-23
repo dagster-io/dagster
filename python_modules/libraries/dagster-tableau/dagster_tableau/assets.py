@@ -6,10 +6,15 @@ from dagster import (
     AssetSpec,
     ObserveResult,
     Output,
+    _check as check,
     multi_asset,
 )
 
-from dagster_tableau.resources import BaseTableauWorkspace
+from dagster_tableau.resources import (
+    BaseTableauWorkspace,
+    TableauCloudWorkspace,
+    TableauServerWorkspace,
+)
 
 
 def build_tableau_executable_assets_definition(
@@ -18,7 +23,6 @@ def build_tableau_executable_assets_definition(
     specs: Sequence[AssetSpec],
     refreshable_workbook_ids: Optional[Sequence[str]] = None,
 ) -> AssetsDefinition:
-
     """Returns the AssetsDefinition of the executable assets in the Tableau workspace.
 
     Args:
@@ -39,6 +43,7 @@ def build_tableau_executable_assets_definition(
     Returns:
         AssetsDefinition: The AssetsDefinition of the executable assets in the Tableau workspace.
     """
+
     @multi_asset(
         name=f"tableau_sync_site_{workspace.site_name.replace('-', '_')}",
         compute_kind="tableau",
@@ -47,10 +52,15 @@ def build_tableau_executable_assets_definition(
         required_resource_keys={resource_key},
     )
     def asset_fn(context: AssetExecutionContext):
-        tableau = cast(workspace.__class__, getattr(context.resources, resource_key))
+        if workspace.__class__ == TableauCloudWorkspace:
+            tableau = cast(TableauCloudWorkspace, getattr(context.resources, resource_key))
+        elif workspace.__class__ == TableauServerWorkspace:
+            tableau = cast(TableauServerWorkspace, getattr(context.resources, resource_key))
+        else:
+            check.assert_never(workspace.__class__)
         with tableau.get_client() as client:
             refreshed_workbooks = set()
-            for refreshable_workbook_id in refreshable_workbook_ids:
+            for refreshable_workbook_id in refreshable_workbook_ids or []:
                 refreshed_workbooks.add(client.refresh_and_poll(refreshable_workbook_id))
             for spec in specs:
                 data = client.get_view(spec.metadata.get("id"))
