@@ -27,7 +27,7 @@ import {SensorType} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../ui/formatters';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 
 type AutomationType = 'schedule' | SensorType;
@@ -106,11 +106,11 @@ const AssetSelectionTag = ({
   }, [assetSelection.assetsOrError]);
 
   const assetsWithAMP = useMemo(
-    () => sortedAssets.filter((asset) => !!asset.definition?.autoMaterializePolicy),
+    () => sortedAssets.filter((asset) => !!asset.definition?.automationCondition),
     [sortedAssets],
   );
   const assetsWithoutAMP = useMemo(
-    () => sortedAssets.filter((asset) => !asset.definition?.autoMaterializePolicy),
+    () => sortedAssets.filter((asset) => !asset.definition?.automationCondition),
     [sortedAssets],
   );
 
@@ -189,8 +189,8 @@ const AssetSelectionTag = ({
           {error
             ? 'Error loading asset selection'
             : isAllAssets
-            ? 'All materializable assets'
-            : assetSelectionString}
+              ? 'All materializable assets'
+              : assetSelectionString}
         </ButtonLink>
       </Tag>
     </>

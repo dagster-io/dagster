@@ -263,3 +263,25 @@ def test_coerce_resource_graph_to_job() -> None:
 
     assert a_job.execute_in_process().success
     assert executed["yes"]
+
+
+def test_job_tag_transfer():
+    @op
+    def my_op(): ...
+
+    @graph
+    def my_graph():
+        my_op()
+
+    my_job_tags_only = my_graph.to_job(tags={"foo": "bar"})
+    assert my_job_tags_only.execute_in_process().dagster_run.tags == {"foo": "bar"}
+
+    my_job_tags_and_empty_run_tags = my_graph.to_job(tags={"foo": "bar"}, run_tags={})
+    assert my_job_tags_and_empty_run_tags.execute_in_process().dagster_run.tags == {}
+
+    my_job_tags_and_nonempty_run_tags = my_graph.to_job(
+        tags={"foo": "bar"}, run_tags={"baz": "quux"}
+    )
+    assert my_job_tags_and_nonempty_run_tags.execute_in_process().dagster_run.tags == {
+        "baz": "quux"
+    }

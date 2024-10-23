@@ -37,7 +37,7 @@ def local_env_fixture(makefile_dir: Path) -> Generator[None, None, None]:
 @pytest.fixture(name="dags_dir")
 def dags_dir_fixture(makefile_dir: Path) -> Iterator[Path]:
     # Creates a temporary directory and copies the dags into it
-    # So we can manipulate the migration state without affecting the original files
+    # So we can manipulate the proxied state without affecting the original files
     with tempfile.TemporaryDirectory() as tmpdir:
         shutil.copytree(
             makefile_dir / "tutorial_example" / "airflow_dags",
@@ -56,26 +56,26 @@ def airflow_home_fixture(local_env) -> Path:
 def mark_tasks_migrated_fixture(
     dags_dir: Path,
     reserialize_dags: Callable[[], None],
-) -> Callable[[AbstractSet[str]], contextlib.AbstractContextManager[None]]:
-    """Returns a context manager that marks the specified tasks as migrated in the migration state file
+) -> Callable[[AbstractSet[str]], contextlib.AbstractContextManager]:
+    """Returns a context manager that marks the specified tasks as proxied in the proxied state file
     for the duration of the context manager's scope.
     """
-    migration_state_file = dags_dir / "migration_state" / "rebuild_customers_list.yaml"
+    proxied_state_file = dags_dir / "proxied_state" / "rebuild_customers_list.yaml"
     all_tasks = {"load_raw_customers", "build_dbt_models", "export_customers"}
 
     @contextlib.contextmanager
     def mark_tasks_migrated(migrated_tasks: AbstractSet[str]) -> Iterator[None]:
-        """Updates the contents of the migration state file to mark the specified tasks as migrated."""
-        with open(migration_state_file, "r") as f:
+        """Updates the contents of the proxied state file to mark the specified tasks as proxied."""
+        with open(proxied_state_file, "r") as f:
             contents = f.read()
 
         try:
-            with open(migration_state_file, "w") as f:
+            with open(proxied_state_file, "w") as f:
                 f.write(
                     yaml.dump(
                         {
                             "tasks": [
-                                {"id": task, "migrated": task in migrated_tasks}
+                                {"id": task, "proxied": task in migrated_tasks}
                                 for task in all_tasks
                             ]
                         }
@@ -86,7 +86,7 @@ def mark_tasks_migrated_fixture(
             yield
 
         finally:
-            with open(migration_state_file, "w") as f:
+            with open(proxied_state_file, "w") as f:
                 f.write(contents)
 
     return mark_tasks_migrated

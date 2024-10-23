@@ -3,7 +3,7 @@
 Schedules and sensors
 =====================
 
-Dagster offers several ways to run data pipelines without manual intervation, including traditional scheduling and event-based triggers. `Automating your Dagster pipelines </concepts/automation>`_ can boost efficiency and ensure that data is produced consistently and reliably.
+Dagster offers several ways to run data pipelines without manual intervation, including traditional scheduling and event-based triggers. `Automating your Dagster pipelines <https://docs.dagster.io/concepts/automation>`_ can boost efficiency and ensure that data is produced consistently and reliably.
 
 ----
 
@@ -17,7 +17,7 @@ Run requests
 Schedules
 ---------
 
-`Schedules </concepts/automation/schedules>`__ are Dagster's way to support traditional ways of automation, such as specifying a job should run at Mondays at 9:00AM. Jobs triggered by schedules can contain a subset of `assets </concepts/assets/software-defined-assets>`__ or `ops </concepts/ops-jobs-graphs/ops>`__.
+`Schedules <https://docs.dagster.io/concepts/automation/schedules>`__ are Dagster's way to support traditional ways of automation, such as specifying a job should run at Mondays at 9:00AM. Jobs triggered by schedules can contain a subset of `assets <https://docs.dagster.io/concepts/assets/software-defined-assets>`__ or `ops <https://docs.dagster.io/concepts/ops-jobs-graphs/ops>`__.
 
 .. autodecorator:: schedule
 
@@ -39,7 +39,7 @@ Schedules
 Sensors
 -------
 
-`Sensors </concepts/partitions-schedules-sensors/sensors>`_ are typically used to poll, listen, and respond to external events. For example, you could configure a sensor to run a job or materialize an asset in response to specific events.
+`Sensors <https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors>`_ are typically used to poll, listen, and respond to external events. For example, you could configure a sensor to run a job or materialize an asset in response to specific events.
 
 .. currentmodule:: dagster
 

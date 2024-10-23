@@ -45,3 +45,5 @@ export type RunStatsQuery = {
       }
     | {__typename: 'RunNotFoundError'; message: string};
 };
+
+export const RunStatsQueryVersion = '75e80f740a79607de9e1152f9b7074d319197fbc219784c767c1abd5553e9a49';

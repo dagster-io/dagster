@@ -309,3 +309,13 @@ def test_asset_materialization_in_sensor_direct_invocation() -> None:
 
     instance = DagsterInstance.ephemeral()
     a_sensor(build_sensor_context(instance=instance))
+
+
+def test_sensor_tags_not_on_run_request():
+    @sensor(target="foo", tags={"foo": "bar"})
+    def my_sensor():
+        return RunRequest()
+
+    with instance_for_test() as instance:
+        result = my_sensor.evaluate_tick(build_sensor_context(instance))
+        assert "foo" not in result.run_requests[0].tags

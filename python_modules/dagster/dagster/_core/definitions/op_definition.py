@@ -63,9 +63,6 @@ OpComputeFunction: TypeAlias = Callable[..., Any]
 class OpDefinition(NodeDefinition, IHasInternalInit):
     """Defines an op, the functional unit of user-defined computation.
 
-    For more details on what a op is, refer to the
-    `Ops Overview <../../concepts/ops-jobs-graphs/ops>`_ .
-
     End users should prefer the :func:`@op <op>` decorator. OpDefinition is generally intended to be
     used by framework authors or for programatically generated ops.
 

@@ -2,6 +2,20 @@ import {Box, Colors, FontFamily, IconWrapper} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import csv from './kindtag-images/csv.svg';
+import dag from './kindtag-images/dag.svg';
+import dashboard from './kindtag-images/dashboard.svg';
+import file from './kindtag-images/file.svg';
+import medallion_bronze from './kindtag-images/medallion-bronze-color.svg';
+import medallion_gold from './kindtag-images/medallion-gold-color.svg';
+import medallion_silver from './kindtag-images/medallion-silver-color.svg';
+import notebook from './kindtag-images/notebook.svg';
+import pdf from './kindtag-images/pdf.svg';
+import seed from './kindtag-images/seed.svg';
+import sigma from './kindtag-images/sigma.svg';
+import source from './kindtag-images/source.svg';
+import table from './kindtag-images/table.svg';
+import task from './kindtag-images/task.svg';
 import airbyte from './kindtag-images/tool-airbyte-color.svg';
 import airflow from './kindtag-images/tool-airflow-color.svg';
 import airtable from './kindtag-images/tool-airtable-color.svg';
@@ -101,6 +115,7 @@ import reddit from './kindtag-images/tool-reddit-color.svg';
 import redshift from './kindtag-images/tool-redshift-color.svg';
 import rockset from './kindtag-images/tool-rockset-color.svg';
 import rust from './kindtag-images/tool-rust-color.svg';
+import s3 from './kindtag-images/tool-s3-color.svg';
 import sagemaker from './kindtag-images/tool-sagemaker-color.svg';
 import salesforce from './kindtag-images/tool-salesforce-color.svg';
 import scala from './kindtag-images/tool-scala-color.svg';
@@ -121,7 +136,7 @@ import sql from './kindtag-images/tool-sql-color.svg';
 import sqlite from './kindtag-images/tool-sqlite-color.svg';
 import sqlmesh from './kindtag-images/tool-sqlmesh-color.svg';
 import sqlserver from './kindtag-images/tool-sqlserver-color.svg';
-import stepfuncitons from './kindtag-images/tool-stepfunctions-color.svg';
+import stepfunctions from './kindtag-images/tool-stepfunctions-color.svg';
 import stitch from './kindtag-images/tool-stitch-color.svg';
 import stripe from './kindtag-images/tool-stripe-color.svg';
 import tableau from './kindtag-images/tool-tableau-color.svg';
@@ -137,6 +152,9 @@ import wandb from './kindtag-images/tool-w&b-color.svg';
 import x from './kindtag-images/tool-x-color.svg';
 import xgboost from './kindtag-images/tool-xgboost-color.svg';
 import youtube from './kindtag-images/tool-youtube-color.svg';
+import view from './kindtag-images/view.svg';
+import yaml from './kindtag-images/yaml.svg';
+
 export interface IOpTag {
   label: string;
   onClick: (e: React.MouseEvent) => void;
@@ -157,7 +175,179 @@ type KnownTag = {
   blackAndWhite?: boolean;
 };
 
-export const KNOWN_TAGS: Record<string, KnownTag> = {
+export type KnownTagType =
+  | 'jupyter'
+  | 'ipynb'
+  | 'noteable'
+  | 'airbyte'
+  | 'sling'
+  | 'snowflake'
+  | 'snowpark'
+  | 'python'
+  | 'fivetran'
+  | 'dbt'
+  | 'slack'
+  | 'pytorch'
+  | 'pyspark'
+  | 'spark'
+  | 'duckdb'
+  | 'tensorflow'
+  | 'pandas'
+  | 'googlesheets'
+  | 'sql'
+  | 'wandb'
+  | 'databricks'
+  | 'airflow'
+  | 'airliftmapped'
+  | 'airtable'
+  | 'omni'
+  | 'datadog'
+  | 'postgres'
+  | 'postgresql'
+  | 'stripe'
+  | 'sigma'
+  | 'hightouch'
+  | 'census'
+  | 'hex'
+  | 'azure'
+  | 'azureml'
+  | 'sagemaker'
+  | 'bigquery'
+  | 'teams'
+  | 'mlflow'
+  | 'mysql'
+  | 'greatexpectations'
+  | 'powerbi'
+  | 'gcp'
+  | 'googlecloud'
+  | 'looker'
+  | 'tableau'
+  | 'segment'
+  | 'athena'
+  | 's3'
+  | 'aws'
+  | 'stitch'
+  | 'openai'
+  | 'vercel'
+  | 'github'
+  | 'gitlab'
+  | 'plotly'
+  | 'modal'
+  | 'meltano'
+  | 'matplotlib'
+  | 'numpy'
+  | 'scipy'
+  | 'scikitlearn'
+  | 'kubernetes'
+  | 'k8s'
+  | 'polars'
+  | 'catboost'
+  | 'rust'
+  | 'pytorchlightning'
+  | 'deltalake'
+  | 'parquet'
+  | 'lightgbm'
+  | 'xgboost'
+  | 'rockset'
+  | 'optuna'
+  | 'chalk'
+  | 'excel'
+  | 'ray'
+  | 'axioma'
+  | 'cube'
+  | 'metabase'
+  | 'linear'
+  | 'notion'
+  | 'hackernewsapi'
+  | 'hackernews'
+  | 'tecton'
+  | 'dask'
+  | 'dlt'
+  | 'dlthub'
+  | 'huggingface'
+  | 'huggingfaceapi'
+  | 'sqlserver'
+  | 'mongodb'
+  | 'atlan'
+  | 'celery'
+  | 'claude'
+  | 'collibra'
+  | 'datahub'
+  | 'discord'
+  | 'docker'
+  | 'facebook'
+  | 'gemini'
+  | 'google'
+  | 'graphql'
+  | 'hashicorp'
+  | 'hudi'
+  | 'iceberg'
+  | 'instagram'
+  | 'lakefs'
+  | 'linkedin'
+  | 'llama'
+  | 'meta'
+  | 'microsoft'
+  | 'minstral'
+  | 'montecarlo'
+  | 'openmetadata'
+  | 'oracle'
+  | 'pagerduty'
+  | 'pandera'
+  | 'papermill'
+  | 'papertrail'
+  | 'plural'
+  | 'prefect'
+  | 'react'
+  | 'reddit'
+  | 'redshift'
+  | 'salesforce'
+  | 'sdf'
+  | 'secoda'
+  | 'shell'
+  | 'shopify'
+  | 'soda'
+  | 'sqlite'
+  | 'sqlmesh'
+  | 'stepfunctions'
+  | 'awsstepfunctions'
+  | 'awsstepfunction'
+  | 'stepfunction'
+  | 'thoughtspot'
+  | 'trino'
+  | 'twilio'
+  | 'twitter'
+  | 'x'
+  | 'youtube'
+  | 'typescript'
+  | 'javascript'
+  | 'scala'
+  | 'csharp'
+  | 'cplus'
+  | 'cplusplus'
+  | 'java'
+  | 'go'
+  | 'r'
+  | 'net'
+  | 'sharepoint'
+  | 'table'
+  | 'view'
+  | 'dag'
+  | 'task'
+  | 'source'
+  | 'seed'
+  | 'file'
+  | 'dashboard'
+  | 'notebook'
+  | 'csv'
+  | 'pdf'
+  | 'yaml'
+  | 'gold'
+  | 'silver'
+  | 'bronze'
+  | 'expand';
+
+export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   jupyter: {
     icon: jupyter,
     content: 'jupyter',
@@ -246,6 +436,10 @@ export const KNOWN_TAGS: Record<string, KnownTag> = {
     icon: airflow,
     content: 'Airflow',
   },
+  airliftmapped: {
+    icon: airflow,
+    content: 'Mapped',
+  },
   airtable: {
     icon: airtable,
     content: 'Airtable',
@@ -269,6 +463,11 @@ export const KNOWN_TAGS: Record<string, KnownTag> = {
   stripe: {
     icon: stripe,
     content: 'Stripe',
+  },
+  sigma: {
+    icon: sigma,
+    content: 'Sigma',
+    blackAndWhite: true,
   },
   hightouch: {
     icon: hightouch,
@@ -344,7 +543,7 @@ export const KNOWN_TAGS: Record<string, KnownTag> = {
     content: 'Athena',
   },
   s3: {
-    icon: aws,
+    icon: s3,
     content: 'S3',
   },
   aws: {
@@ -692,20 +891,20 @@ export const KNOWN_TAGS: Record<string, KnownTag> = {
     icon: sqlmesh,
     content: 'SQLMesh',
   },
-  stepfuncitons: {
-    icon: stepfuncitons,
+  stepfunctions: {
+    icon: stepfunctions,
     content: 'Step Functions',
   },
-  awsstepfuncitons: {
-    icon: stepfuncitons,
+  awsstepfunctions: {
+    icon: stepfunctions,
     content: 'Step Functions',
   },
-  awssetepfunciton: {
-    icon: stepfuncitons,
+  awsstepfunction: {
+    icon: stepfunctions,
     content: 'Step Functions',
   },
-  setepfunciton: {
-    icon: stepfuncitons,
+  stepfunction: {
+    icon: stepfunctions,
     content: 'Step Functions',
   },
   thoughtspot: {
@@ -779,6 +978,78 @@ export const KNOWN_TAGS: Record<string, KnownTag> = {
     icon: sharepoint,
     content: 'Sharepoint',
   },
+  table: {
+    icon: table,
+    content: 'Table',
+    blackAndWhite: true,
+  },
+  view: {
+    icon: view,
+    content: 'View',
+    blackAndWhite: true,
+  },
+  dag: {
+    icon: dag,
+    content: 'Dag',
+    blackAndWhite: true,
+  },
+  task: {
+    icon: task,
+    content: 'Task',
+    blackAndWhite: true,
+  },
+  source: {
+    icon: source,
+    content: 'Source',
+    blackAndWhite: true,
+  },
+  seed: {
+    icon: seed,
+    content: 'Seed',
+    blackAndWhite: true,
+  },
+  file: {
+    icon: file,
+    content: 'File',
+    blackAndWhite: true,
+  },
+  dashboard: {
+    icon: dashboard,
+    content: 'Dashboard',
+    blackAndWhite: true,
+  },
+  notebook: {
+    icon: notebook,
+    content: 'Notebook',
+    blackAndWhite: true,
+  },
+  csv: {
+    icon: csv,
+    content: ' ',
+    blackAndWhite: true,
+  },
+  pdf: {
+    icon: pdf,
+    content: ' ',
+    blackAndWhite: true,
+  },
+  yaml: {
+    icon: yaml,
+    content: ' ',
+    blackAndWhite: true,
+  },
+  gold: {
+    icon: medallion_gold,
+    content: 'Gold',
+  },
+  silver: {
+    icon: medallion_silver,
+    content: 'Silver',
+  },
+  bronze: {
+    icon: medallion_bronze,
+    content: 'Bronze',
+  },
   expand: {color: '#D7A540', content: 'Expand'},
 };
 
@@ -800,7 +1071,8 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
   return (
     <OpTagsContainer style={style}>
       {tags.map((tag) => {
-        const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as keyof typeof KNOWN_TAGS];
+        const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as KnownTagType];
+        const blackAndWhite = known && 'blackAndWhite' in known && known.blackAndWhite;
         const text = known?.content || tag.label;
 
         return (
@@ -819,7 +1091,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
                 role="img"
                 $size={16}
                 $img={extractIconSrc(known)}
-                $color={known.blackAndWhite ? Colors.accentPrimary() : null}
+                $color={blackAndWhite ? Colors.accentPrimary() : null}
                 $rotation={null}
                 aria-label={tag.label}
               />
@@ -833,14 +1105,15 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
 });
 
 export const TagIcon = React.memo(({label}: {label: string}) => {
-  const known = KNOWN_TAGS[coerceToStandardLabel(label) as keyof typeof KNOWN_TAGS];
+  const known = KNOWN_TAGS[coerceToStandardLabel(label) as KnownTagType];
+  const blackAndWhite = known && 'blackAndWhite' in known && known.blackAndWhite;
   if (known && 'icon' in known) {
     return (
       <OpTagIconWrapper
         role="img"
         $size={16}
         $img={extractIconSrc(known)}
-        $color={known.blackAndWhite ? Colors.accentPrimary() : null}
+        $color={blackAndWhite ? Colors.accentPrimary() : null}
         $rotation={null}
         aria-label={label}
       />

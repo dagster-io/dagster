@@ -10,7 +10,7 @@ from dagster._time import get_current_timestamp
 UNCONSTRAINED_CGROUP_MEMORY_LIMIT = 9223372036854000000
 
 
-def cpu_usage_path_cgroup_v1():
+def cpu_usage_path_cgroup_v1() -> str:
     """Path to the cgroup file containing the CPU time in nanoseconds.
 
     We use cgroup files instead of the psutil library because psutil uses the host machine's CPU allocation in virtualized environments like Docker, K8s, ECS, etc.
@@ -18,7 +18,7 @@ def cpu_usage_path_cgroup_v1():
     return os.getenv("DAGSTER_CPU_USAGE_PATH", "/sys/fs/cgroup/cpuacct/cpuacct.usage")
 
 
-def cpu_stat_path_cgroup_v2():
+def cpu_stat_path_cgroup_v2() -> str:
     """Path to the cgroup file containing current CPU stats in microseconds.
 
     We use cgroup files instead of the psutil library because psutil uses the host machine's CPU allocation in virtualized environments like Docker, K8s, ECS, etc.
@@ -26,7 +26,7 @@ def cpu_stat_path_cgroup_v2():
     return os.getenv("DAGSTER_CPU_STAT_PATH", "/sys/fs/cgroup/cpu.stat")
 
 
-def cpu_max_path_cgroup_v2():
+def cpu_max_path_cgroup_v2() -> str:
     """Path to the cgroup file containing the maximum CPU quota per period in microseconds.
 
     We use cgroup files instead of the psutil library because psutil uses the host machine's CPU allocation in virtualized environments like Docker, K8s, ECS, etc.
@@ -34,7 +34,7 @@ def cpu_max_path_cgroup_v2():
     return os.getenv("DAGSTER_CPU_MAX_PATH", "/sys/fs/cgroup/cpu.max")
 
 
-def cpu_cfs_quota_us_path():
+def cpu_cfs_quota_us_path() -> str:
     """Path to the cgroup file containing the CPU quota in microseconds.
 
     We use cgroup files instead of the psutil library because psutil uses the host machine's CPU allocation in virtualized environments like Docker, K8s, ECS, etc.
@@ -42,7 +42,7 @@ def cpu_cfs_quota_us_path():
     return os.getenv("DAGSTER_CPU_CFS_QUOTA_US_PATH", "/sys/fs/cgroup/cpu/cpu.cfs_quota_us")
 
 
-def cpu_cfs_period_us_path():
+def cpu_cfs_period_us_path() -> str:
     """Path to the cgroup file containing the CPU period in microseconds.
 
     We use cgroup files instead of the psutil library because psutil uses the host machine's CPU allocation in virtualized environments like Docker, K8s, ECS, etc.
@@ -50,7 +50,7 @@ def cpu_cfs_period_us_path():
     return os.getenv("DAGSTER_CPU_CFS_PERIOD_US_PATH", "/sys/fs/cgroup/cpu/cpu.cfs_period_us")
 
 
-def cpu_shares_path():
+def cpu_shares_path() -> str:
     """Path to the cgroup file containing the CPU shares.
 
     We use cgroup files instead of the psutil library because psutil uses the host machine's CPU allocation in virtualized environments like Docker, K8s, ECS, etc.
@@ -58,12 +58,12 @@ def cpu_shares_path():
     return os.getenv("DAGSTER_CPU_SHARES_PATH", "/sys/fs/cgroup/cpu/cpu.shares")
 
 
-def cpu_info_path():
+def cpu_info_path() -> str:
     """Path to the file containing the number of cores allocated to the container."""
     return os.getenv("DAGSTER_CPU_INFO_PATH", "/proc/cpuinfo")
 
 
-def memory_usage_path_cgroup_v1():
+def memory_usage_path_cgroup_v1() -> str:
     """Path to the cgroup file containing the memory usage in bytes.
 
     We use cgroup files instead of the psutil library because psutil uses the host machine's memory allocation in virtualized environments like Docker, K8s, ECS, etc.
@@ -71,7 +71,7 @@ def memory_usage_path_cgroup_v1():
     return os.getenv("DAGSTER_MEMORY_USAGE_PATH_V1", "/sys/fs/cgroup/memory/memory.usage_in_bytes")
 
 
-def memory_usage_path_cgroup_v2():
+def memory_usage_path_cgroup_v2() -> str:
     """Path to the cgroup file containing the memory usage in bytes.
 
     We use cgroup files instead of the psutil library because psutil uses the host machine's memory allocation in virtualized environments like Docker, K8s, ECS, etc.
@@ -79,7 +79,7 @@ def memory_usage_path_cgroup_v2():
     return os.getenv("DAGSTER_MEMORY_USAGE_PATH_V2", "/sys/fs/cgroup/memory.current")
 
 
-def memory_limit_path_cgroup_v1():
+def memory_limit_path_cgroup_v1() -> str:
     """Path to the cgroup file containing the memory limit in bytes.
 
     We use cgroup files instead of the psutil library because psutil uses the host machine's memory allocation in virtualized environments like Docker, K8s, ECS, etc.
@@ -87,7 +87,7 @@ def memory_limit_path_cgroup_v1():
     return os.getenv("DAGSTER_MEMORY_LIMIT_PATH_V1", "/sys/fs/cgroup/memory/memory.limit_in_bytes")
 
 
-def memory_limit_path_cgroup_v2():
+def memory_limit_path_cgroup_v2() -> str:
     """Path to the cgroup file containing the memory limit in bytes.
 
     We use cgroup files instead of the psutil library because psutil uses the host machine's memory allocation in virtualized environments like Docker, K8s, ECS, etc.

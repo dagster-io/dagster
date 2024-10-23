@@ -95,6 +95,7 @@ def build_asset_job(
         Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
     ] = None,
     tags: Optional[Mapping[str, str]] = None,
+    run_tags: Optional[Mapping[str, str]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
@@ -189,6 +190,7 @@ def build_asset_job(
             resource_defs=all_resource_defs,
             config=config,
             tags=tags,
+            run_tags=run_tags,
             executor_def=executor_def,
             partitions_def=partitions_def,
             asset_layer=asset_layer,
@@ -198,11 +200,11 @@ def build_asset_job(
             hooks=original_job.hook_defs,
             op_retry_policy=original_job.op_retry_policy,
         )
-
     return graph.to_job(
         resource_defs=all_resource_defs,
         config=config,
         tags=tags,
+        run_tags=run_tags,
         metadata=metadata,
         executor_def=executor_def,
         partitions_def=partitions_def,
@@ -229,7 +231,7 @@ def get_asset_graph_for_job(
     Any unselected dependencies will be included as unexecutable AssetsDefinitions.
     """
     from dagster._core.definitions.external_asset import (
-        create_unexecutable_external_assets_from_assets_def,
+        create_unexecutable_external_asset_from_assets_def,
     )
 
     selected_keys = selection.resolve(parent_asset_graph)
@@ -273,9 +275,7 @@ def get_asset_graph_for_job(
         excluded_assets_defs, other_keys, None, allow_extraneous_asset_keys=True
     )
     unexecutable_assets_defs = [
-        unexecutable_ad
-        for ad in other_assets_defs
-        for unexecutable_ad in create_unexecutable_external_assets_from_assets_def(ad)
+        create_unexecutable_external_asset_from_assets_def(ad) for ad in other_assets_defs
     ]
 
     return AssetGraph.from_assets([*executable_assets_defs, *unexecutable_assets_defs])

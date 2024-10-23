@@ -52,9 +52,8 @@ export const isCanonicalCodeSourceEntry = (
 ): m is CodeReferencesMetadataEntry =>
   m && m.__typename === 'CodeReferencesMetadataEntry' && m.label === 'dagster/code_references';
 
-export const isCanonicalRelationIdentifierEntry = (
-  m: MetadataEntryLabelOnly,
-): m is TextMetadataEntry => m && m.label === 'dagster/relation_identifier';
+export const isCanonicalTableNameEntry = (m: MetadataEntryLabelOnly): m is TextMetadataEntry =>
+  m && (m.label === 'dagster/relation_identifier' || m.label === 'dagster/table_name');
 
 export const isCanonicalUriEntry = (
   m: MetadataEntryLabelOnly,
@@ -63,9 +62,11 @@ export const isCanonicalUriEntry = (
 export const TableSchemaAssetContext = createContext<{
   assetKey: AssetKeyInput | undefined;
   materializationMetadataEntries: MetadataEntryLabelOnly[] | undefined;
+  definitionMetadataEntries: MetadataEntryLabelOnly[] | undefined;
 }>({
   assetKey: undefined,
   materializationMetadataEntries: undefined,
+  definitionMetadataEntries: undefined,
 });
 
 export const TableSchema = ({
@@ -122,12 +123,14 @@ export const TableSchema = ({
                 <Mono>{column.name}</Mono>
               </td>
               <td>
-                <TypeTag type={column.type} />
-                {!column.constraints.nullable && NonNullableTag}
-                {column.constraints.unique && UniqueTag}
-                {column.constraints.other.map((constraint, i) => (
-                  <ArbitraryConstraintTag key={i} constraint={constraint} />
-                ))}
+                <Box flex={{wrap: 'wrap', gap: 4, alignItems: 'center'}}>
+                  <TypeTag type={column.type} />
+                  {!column.constraints.nullable && NonNullableTag}
+                  {column.constraints.unique && UniqueTag}
+                  {column.constraints.other.map((constraint, i) => (
+                    <ArbitraryConstraintTag key={i} constraint={constraint} />
+                  ))}
+                </Box>
               </td>
               <td>
                 <Description description={column.description} />

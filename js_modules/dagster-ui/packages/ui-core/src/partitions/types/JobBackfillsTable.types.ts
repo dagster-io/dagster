@@ -32,14 +32,14 @@ export type JobBackfillsQuery = {
           partitionSet: {
             __typename: 'PartitionSet';
             id: string;
+            mode: string;
             name: string;
             pipelineName: string;
-            mode: string;
             repositoryOrigin: {
               __typename: 'RepositoryOrigin';
+              id: string;
               repositoryName: string;
               repositoryLocationName: string;
-              id: string;
             };
           } | null;
           assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
@@ -59,3 +59,5 @@ export type JobBackfillsQuery = {
     | {__typename: 'PartitionSetNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const JobBackfillsQueryVersion = '520e31190a97fd72e51daf0e8f9a6f718afaa30ce223fb6f767f8d56c08716cd';

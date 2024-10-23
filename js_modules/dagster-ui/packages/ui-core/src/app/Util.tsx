@@ -152,10 +152,13 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
 ): U & {
   isCached: (arg: T, ...rest: any[]) => Promise<boolean>;
 } {
-  const lru = cache<string, R>({
-    dbName: 'indexDBAsyncMemoizeDB',
-    maxCount: 50,
-  });
+  let lru: ReturnType<typeof cache<string, R>> | undefined;
+  try {
+    lru = cache<string, R>({
+      dbName: 'indexDBAsyncMemoizeDB',
+      maxCount: 50,
+    });
+  } catch {}
 
   async function genHashKey(arg: T, ...rest: any[]) {
     const hash = hashFn ? hashFn(arg, ...rest) : arg;
@@ -175,7 +178,7 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
   const ret = (async (arg: T, ...rest: any[]) => {
     return new Promise<R>(async (resolve) => {
       const hashKey = await genHashKey(arg, ...rest);
-      if (await lru.has(hashKey)) {
+      if (lru && (await lru.has(hashKey))) {
         const {value} = await lru.get(hashKey);
         resolve(value);
         return;
@@ -184,14 +187,19 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
       const result = await fn(arg, ...rest);
       // Resolve the promise before storing the result in IndexedDB
       resolve(result);
-      await lru.set(hashKey, result, {
-        // Some day in the year 2050...
-        expiry: new Date(9 ** 13),
-      });
+      if (lru) {
+        await lru.set(hashKey, result, {
+          // Some day in the year 2050...
+          expiry: new Date(9 ** 13),
+        });
+      }
     });
   }) as any;
   ret.isCached = async (arg: T, ...rest: any) => {
     const hashKey = await genHashKey(arg, ...rest);
+    if (!lru) {
+      return false;
+    }
     return await lru.has(hashKey);
   };
   return ret;
@@ -203,8 +211,6 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
 //
 // Uses WeakMap to tie the lifecycle of the cache to the lifecycle of the
 // object argument.
-//
-// eslint-disable-next-line @typescript-eslint/ban-types
 export function weakmapMemoize<T extends object, R>(
   fn: (arg: T, ...rest: any[]) => R,
 ): (arg: T, ...rest: any[]) => R {

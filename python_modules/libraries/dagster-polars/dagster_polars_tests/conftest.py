@@ -1,6 +1,7 @@
 import logging
 import warnings
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 from typing import Tuple, Type
 
 import dagster
@@ -61,11 +62,23 @@ main_data = {
     "6": [{"a": 0}, {"a": 1}, None],
     "7": [datetime(2022, 1, 1), datetime(2022, 1, 2), None],
     "8": [date(2022, 1, 1), date(2022, 1, 2), None],
+    "9": [Decimal("1.0"), Decimal("2.0"), None],
 }
 
-_df_for_delta = pl.DataFrame(main_data)
+schema = {
+    "1": pl.Int64,
+    "2": pl.Float64,
+    "3": pl.Utf8,
+    "4": pl.List(pl.Int64),
+    "6": pl.Struct({"a": pl.Int64}),
+    "7": pl.Datetime,
+    "8": pl.Date,
+    "9": pl.Decimal(precision=38),  # default precision isn't propagated after save-load
+}
 
-_lazy_df_for_delta = pl.LazyFrame(main_data)
+_df_for_delta = pl.DataFrame(main_data, schema=schema)
+
+_lazy_df_for_delta = pl.LazyFrame(main_data, schema=schema)
 
 parquet_data = main_data
 parquet_data["9"] = [timedelta(hours=1), timedelta(hours=2), None]

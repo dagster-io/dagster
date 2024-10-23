@@ -32,6 +32,11 @@ export type AssetNodeDefinitionFragment = {
       decisionType: Types.AutoMaterializeDecisionType;
     }>;
   } | null;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
+  } | null;
   freshnessPolicy: {
     __typename: 'FreshnessPolicy';
     maximumLagMinutes: number;

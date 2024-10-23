@@ -34,4 +34,4 @@ make run_observe
 make run_migrate
 ```
 
-Note that in order to run the observation step with `run_observe`, you must set `migrated` to `False` for each task in the dags. These can be found in `./airflow_dags/migration_state/<dag_name>.yaml`.
+Note that in order to run the observation step with `run_observe`, you must set `proxied` to `False` for each task in the dags. These can be found in `./airflow_dags/migration_state/<dag_name>.yaml`.

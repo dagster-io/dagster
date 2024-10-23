@@ -1,9 +1,12 @@
 import re
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
+from functools import cached_property
+from typing import TYPE_CHECKING, Any, List, Mapping, NamedTuple, Optional, Sequence, TypeVar, Union
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
@@ -19,7 +22,11 @@ def parse_asset_key_string(s: str) -> Sequence[str]:
 
 
 @whitelist_for_serdes
-class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
+@record_custom(
+    checked=False,
+    field_to_new_mapping={"parts": "path"},
+)
+class AssetKey(IHaveNew):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
 
@@ -39,13 +46,24 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
             strings represent the hierarchical structure of the asset_key.
     """
 
-    def __new__(cls, path: Union[str, Sequence[str]]):
-        if isinstance(path, str):
-            path = [path]
-        else:
-            path = list(check.sequence_param(path, "path", of_type=str))
+    # Originally AssetKey contained "path" as a list. In order to change to using a tuple, we now have
+    parts: Sequence[str]  # with path available as a property defined below still returning a list.
 
-        return super(AssetKey, cls).__new__(cls, path=path)
+    def __new__(
+        cls,
+        path: Union[str, Sequence[str]],
+    ):
+        if isinstance(path, str):
+            parts = (path,)
+        else:
+            parts = tuple(check.sequence_param(path, "path", of_type=str))
+
+        return super().__new__(cls, parts=parts)
+
+    @public
+    @cached_property
+    def path(self) -> Sequence[str]:
+        return list(self.parts)
 
     def __str__(self):
         return f"AssetKey({self.path})"
@@ -53,17 +71,11 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
     def __repr__(self):
         return f"AssetKey({self.path})"
 
-    def __hash__(self):
-        return hash(tuple(self.path))
-
-    def __eq__(self, other):
-        if other.__class__ is not self.__class__:
-            return False
-
-        return self.path == other.path
-
     def to_string(self) -> str:
         """E.g. '["first_component", "second_component"]'."""
+        return self.to_db_string()
+
+    def to_db_string(self) -> str:
         return seven.json.dumps(self.path)
 
     def to_user_string(self) -> str:
@@ -147,6 +159,19 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         prefix = key_prefix_from_coercible(prefix)
         return AssetKey(list(prefix) + list(self.path))
 
+    def __iter__(self):
+        raise DagsterInvariantViolationError(
+            "You have attempted to iterate a single AssetKey object. "
+            "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug."
+        )
+
+    def __getitem__(self, _):
+        raise DagsterInvariantViolationError(
+            "You have attempted to index directly in to the AssetKey object. "
+            "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug. "
+            "Use asset_key.path instead to access the list of key components."
+        )
+
 
 CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]
 CoercibleToAssetKeyPrefix = Union[str, Sequence[str]]
@@ -196,5 +221,46 @@ class AssetCheckKey(NamedTuple):
         asset_key_str, name = user_string.split(":")
         return AssetCheckKey(AssetKey.from_user_string(asset_key_str), name)
 
+    @staticmethod
+    def from_db_string(db_string: str) -> Optional["AssetCheckKey"]:
+        try:
+            values = seven.json.loads(db_string)
+            if isinstance(values, dict) and values.keys() == {"asset_key", "check_name"}:
+                return AssetCheckKey(
+                    asset_key=check.not_none(AssetKey.from_db_string(values["asset_key"])),
+                    name=check.inst(values["check_name"], str),
+                )
+            else:
+                return None
+        except seven.JSONDecodeError:
+            return None
 
-AssetKeyOrCheckKey = Union[AssetKey, AssetCheckKey]
+    def to_db_string(self) -> str:
+        return seven.json.dumps({"asset_key": self.asset_key.to_string(), "check_name": self.name})
+
+
+EntityKey = Union[AssetKey, AssetCheckKey]
+T_EntityKey = TypeVar("T_EntityKey", AssetKey, AssetCheckKey, EntityKey)
+
+
+def entity_key_from_db_string(db_string: str) -> EntityKey:
+    check_key = AssetCheckKey.from_db_string(db_string)
+    return check_key if check_key else check.not_none(AssetKey.from_db_string(db_string))
+
+
+def asset_keys_from_defs_and_coercibles(
+    assets: Sequence[Union["AssetsDefinition", CoercibleToAssetKey]],
+) -> Sequence[AssetKey]:
+    from dagster._core.definitions.assets import AssetsDefinition
+
+    result: List[AssetKey] = []
+    for el in assets:
+        if isinstance(el, AssetsDefinition):
+            result.extend(el.keys)
+        else:
+            result.append(
+                AssetKey.from_user_string(el)
+                if isinstance(el, str)
+                else AssetKey.from_coercible(el)
+            )
+    return result

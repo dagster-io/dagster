@@ -11,9 +11,12 @@ export type RepoAssetTableFragment = {
   isMaterializable: boolean;
   isObservable: boolean;
   isExecutable: boolean;
+  isPartitioned: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
+  hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
+  jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   partitionDefinition: {
@@ -24,6 +27,11 @@ export type RepoAssetTableFragment = {
       type: Types.PartitionDefinitionType;
       dynamicPartitionsDefinitionName: string | null;
     }>;
+  } | null;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
   } | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
@@ -67,9 +75,12 @@ export type WorkspaceAssetsQuery = {
           isMaterializable: boolean;
           isObservable: boolean;
           isExecutable: boolean;
+          isPartitioned: boolean;
           computeKind: string | null;
           hasMaterializePermission: boolean;
+          hasReportRunlessAssetEventPermission: boolean;
           description: string | null;
+          jobNames: Array<string>;
           kinds: Array<string>;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
           partitionDefinition: {
@@ -80,6 +91,11 @@ export type WorkspaceAssetsQuery = {
               type: Types.PartitionDefinitionType;
               dynamicPartitionsDefinitionName: string | null;
             }>;
+          } | null;
+          automationCondition: {
+            __typename: 'AutomationCondition';
+            label: string | null;
+            expandedLabel: Array<string>;
           } | null;
           owners: Array<
             | {__typename: 'TeamAssetOwner'; team: string}
@@ -96,3 +112,5 @@ export type WorkspaceAssetsQuery = {
       }
     | {__typename: 'RepositoryNotFoundError'};
 };
+
+export const WorkspaceAssetsQueryVersion = '53e4bb05e5c1194cc83e0910cfe7c482d75344c10eabf184be26da29d771c236';

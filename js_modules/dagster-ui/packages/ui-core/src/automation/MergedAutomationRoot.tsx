@@ -1,5 +1,16 @@
-import {Box, NonIdealState, SpinnerWithText, TextInput, Tooltip} from '@dagster-io/ui-components';
-import {useContext, useMemo} from 'react';
+import {
+  Body2,
+  Box,
+  Colors,
+  Heading,
+  Icon,
+  NonIdealState,
+  PageHeader,
+  SpinnerWithText,
+  TextInput,
+  Tooltip,
+} from '@dagster-io/ui-components';
+import {useCallback, useContext, useMemo} from 'react';
 
 import {AutomationBulkActionMenu} from './AutomationBulkActionMenu';
 import {AutomationsTable} from './AutomationsTable';
@@ -15,11 +26,16 @@ import {useFilters} from '../ui/BaseFilters';
 import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
+import {
+  doesFilterArrayMatchValueArray,
+  useDefinitionTagFilterWithManagedState,
+  useTagsForObjects,
+} from '../ui/Filters/useDefinitionTagFilter';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
 
 type AutomationType = 'schedules' | 'sensors';
 
@@ -82,12 +98,6 @@ export const MergedAutomationRoot = () => {
     },
   });
 
-  const filters = useMemo(
-    () => [codeLocationFilter, runningStateFilter, automationTypeFilter],
-    [codeLocationFilter, runningStateFilter, automationTypeFilter],
-  );
-  const {button: filterButton, activeFiltersJsx} = useFilters({filters});
-
   const repoBuckets = useMemo(() => {
     const cachedEntries = Object.values(cachedData).filter(
       (location): location is Extract<typeof location, {__typename: 'WorkspaceLocationEntry'}> =>
@@ -99,13 +109,38 @@ export const MergedAutomationRoot = () => {
     );
   }, [cachedData, visibleRepos]);
 
+  const tagsFilter = useDefinitionTagFilterWithManagedState({
+    allTags: useTagsForObjects(
+      repoBuckets,
+      useCallback((repoBucket) => {
+        return [
+          ...repoBucket.schedules.flatMap((schedule) => schedule.tags),
+          ...repoBucket.sensors.flatMap((sensor) => sensor.tags),
+        ];
+      }, []),
+    ),
+  });
+  const {state: tagFilterState} = tagsFilter;
+
+  const filters = useMemo(
+    () => [codeLocationFilter, runningStateFilter, automationTypeFilter, tagsFilter],
+    [codeLocationFilter, runningStateFilter, automationTypeFilter, tagsFilter],
+  );
+  const {button: filterButton, activeFiltersJsx} = useFilters({filters});
+
   const {state: runningState} = runningStateFilter;
 
   const filteredBuckets = useMemo(() => {
     return repoBuckets.map(({sensors, schedules, ...rest}) => {
       return {
         ...rest,
-        sensors: sensors.filter(({sensorState}) => {
+        sensors: sensors.filter(({sensorState, tags}) => {
+          if (
+            tagFilterState.size &&
+            !doesFilterArrayMatchValueArray(Array.from(tagFilterState), tags)
+          ) {
+            return false;
+          }
           if (runningState.size && !runningState.has(sensorState.status)) {
             return false;
           }
@@ -114,7 +149,13 @@ export const MergedAutomationRoot = () => {
           }
           return true;
         }),
-        schedules: schedules.filter(({scheduleState}) => {
+        schedules: schedules.filter(({scheduleState, tags}) => {
+          if (
+            tagFilterState.size &&
+            !doesFilterArrayMatchValueArray(Array.from(tagFilterState), tags)
+          ) {
+            return false;
+          }
           if (runningState.size && !runningState.has(scheduleState.status)) {
             return false;
           }
@@ -125,7 +166,7 @@ export const MergedAutomationRoot = () => {
         }),
       };
     });
-  }, [repoBuckets, automationTypes, runningState]);
+  }, [repoBuckets, tagFilterState, runningState, automationTypes]);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
@@ -253,9 +294,23 @@ export const MergedAutomationRoot = () => {
             icon="search"
             title="No automations"
             description={
-              anyReposHidden
-                ? 'No automations were found in the selected code locations'
-                : 'No matching automations'
+              anyReposHidden ? (
+                'No automations were found in the selected code locations'
+              ) : (
+                <Body2>
+                  There are no automations in this deployment.{' '}
+                  <a
+                    href="https://docs.dagster.io/concepts/automation"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                      Learn more about automations
+                      <Icon name="open_in_new" color={Colors.linkDefault()} />
+                    </Box>
+                  </a>
+                </Body2>
+              )
             }
           />
         </Box>
@@ -282,8 +337,9 @@ export const MergedAutomationRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+      <PageHeader title={<Heading>Automation</Heading>} />
       <Box
-        padding={{horizontal: 24, vertical: 16}}
+        padding={{horizontal: 24, vertical: 12}}
         flex={{
           direction: 'row',
           alignItems: 'center',
@@ -344,7 +400,7 @@ const buildBuckets = (
       const {name, schedules, sensors} = repo;
       const repoAddress = buildRepoAddress(name, entry.name);
 
-      if (sensors.length > 0) {
+      if (sensors.length > 0 || schedules.length > 0) {
         buckets.push({
           repoAddress,
           schedules,

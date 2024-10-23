@@ -26,41 +26,42 @@ one_parent_daily = one_parent.with_asset_properties(partitions_def=daily_partiti
 two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_partitions)
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ["expected_value_hash", "condition", "scenario_spec", "materialize_A"],
     [
         # cron condition returns a unique value hash if parents change, if schedule changes, if the
         # partitions def changes, or if an asset is materialized
-        ("0696dcb07b82fd8f4934c828bbc8365f", SC.on_cron("0 * * * *"), one_parent, False),
-        ("7fb8a01606b51f6306e85769533fd5b9", SC.on_cron("0 * * * *"), one_parent, True),
-        ("38ba78431e6c22552840e7177918a880", SC.on_cron("0 0 * * *"), one_parent, False),
-        ("98e74cd660564cb881d889ec9ae75ce0", SC.on_cron("0 * * * *"), one_parent_daily, False),
-        ("c0e6323656d8208666e8c74d9af93a64", SC.on_cron("0 * * * *"), two_parents, False),
-        ("3545889e64a11959400cb116ba2320ec", SC.on_cron("0 * * * *"), two_parents_daily, False),
+        ("93831bb3ab9c6ef4b10a7f823ce5cc1f", SC.on_cron("0 * * * *"), one_parent, False),
+        ("97ea4d62fcef2f6a2ecc99a95d5c1769", SC.on_cron("0 * * * *"), one_parent, True),
+        ("504192a87594854d3964bb03e2092394", SC.on_cron("0 0 * * *"), one_parent, False),
+        ("ccbd282bf8e6d711c2bb0e01ebb16728", SC.on_cron("0 * * * *"), one_parent_daily, False),
+        ("dd74c7cfe19d869931ea4aad9ee10127", SC.on_cron("0 * * * *"), two_parents, False),
+        ("861f8e40d4624d49c4ebdd034c8e1e84", SC.on_cron("0 * * * *"), two_parents_daily, False),
         # same as above
-        ("8d1dc13e39337b2cc43c711930893a36", SC.eager(), one_parent, False),
-        ("a111331589fc2766a34bacab88639ff5", SC.eager(), one_parent, True),
-        ("a41576711e61908a321bf8fc4f7d1261", SC.eager(), one_parent_daily, False),
-        ("a4dbf8969ab764eb07fb666688dafe1b", SC.eager(), two_parents, False),
-        ("ceff99f39c4db7381d8da4622421fde2", SC.eager(), two_parents_daily, False),
+        ("9b4c0a55b5fbea860f72ecc9d7a27e0e", SC.eager(), one_parent, False),
+        ("6925b7770eb2122048e4f50aa0a3303f", SC.eager(), one_parent, True),
+        ("45c2493882264dd06bee6c9abffabf3e", SC.eager(), one_parent_daily, False),
+        ("81132ce4972e8ac8d8be1a0e468637c0", SC.eager(), two_parents, False),
+        ("724d21fef8f7404f1e26b40ddeab711d", SC.eager(), two_parents_daily, False),
         # missing condition is invariant to changes other than partitions def changes
-        ("5c24ffc21af9983a4917b91290de8f5d", SC.missing(), one_parent, False),
-        ("5c24ffc21af9983a4917b91290de8f5d", SC.missing(), one_parent, True),
-        ("5c24ffc21af9983a4917b91290de8f5d", SC.missing(), two_parents, False),
-        ("c722c1abf97c5f5fe13b2f6fc00af739", SC.missing(), two_parents_daily, False),
-        ("c722c1abf97c5f5fe13b2f6fc00af739", SC.missing(), one_parent_daily, False),
+        ("6d7809c4949e3d812d7eddfb1b60d529", SC.missing(), one_parent, False),
+        ("6d7809c4949e3d812d7eddfb1b60d529", SC.missing(), one_parent, True),
+        ("6d7809c4949e3d812d7eddfb1b60d529", SC.missing(), two_parents, False),
+        ("7f852ab7408c67e0830530d025505a37", SC.missing(), two_parents_daily, False),
+        ("7f852ab7408c67e0830530d025505a37", SC.missing(), one_parent_daily, False),
     ],
 )
-def test_value_hash(
+async def test_value_hash(
     condition: SC, scenario_spec: ScenarioSpec, expected_value_hash: str, materialize_A: bool
 ) -> None:
     state = AutomationConditionScenarioState(
         scenario_spec, automation_condition=condition
     ).with_current_time("2024-01-01T00:00")
 
-    state, _ = state.evaluate("downstream")
+    state, _ = await state.evaluate("downstream")
     if materialize_A:
         state = state.with_runs(run_request("A"))
 
-    state, result = state.evaluate("downstream")
+    state, result = await state.evaluate("downstream")
     assert result.value_hash == expected_value_hash

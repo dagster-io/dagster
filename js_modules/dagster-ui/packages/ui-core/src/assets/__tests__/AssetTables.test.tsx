@@ -5,8 +5,8 @@ import {MemoryRouter} from 'react-router';
 import {RecoilRoot} from 'recoil';
 
 import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
-import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {AssetsCatalogTable} from '../AssetsCatalogTable';
 import {
   AssetCatalogGroupTableMock,
@@ -49,7 +49,7 @@ describe('AssetTable', () => {
             <MemoryRouter>
               <MockedProvider mocks={MOCKS}>
                 <WorkspaceProvider>
-                  <AssetsCatalogTable prefixPath={['dashboards']} setPrefixPath={() => {}} />
+                  <AssetsCatalogTable prefixPath={[]} setPrefixPath={() => {}} />
                 </WorkspaceProvider>
               </MockedProvider>
             </MemoryRouter>
@@ -63,17 +63,21 @@ describe('AssetTable', () => {
         'Materialize selected',
       );
 
-      const row1 = await screen.findByTestId(`row-dashboards/cost_dashboard`);
+      const row1 = await screen.findByTestId(`row-good_asset`);
       const checkbox1 = row1.querySelector('input[type=checkbox]') as HTMLInputElement;
       await userEvent.click(checkbox1);
 
       expect(await screen.findByTestId('materialize-button')).toHaveTextContent('Materialize');
 
-      const row2 = await screen.findByTestId(`row-dashboards/traffic_dashboard`);
+      const row2 = await screen.findByTestId(`row-late_asset`);
       const checkbox2 = row2.querySelector('input[type=checkbox]') as HTMLInputElement;
       await userEvent.click(checkbox2);
 
-      expect(await screen.findByTestId('materialize-button')).toHaveTextContent('Materialize (2)');
+      expect(await screen.findByTestId('materialize-button')).toBeEnabled();
+
+      expect(await screen.findByTestId('materialize-button')).toHaveTextContent(
+        'Materialize selected (2)',
+      );
     });
   });
 });

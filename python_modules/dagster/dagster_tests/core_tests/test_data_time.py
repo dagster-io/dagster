@@ -16,6 +16,7 @@ from dagster import (
     multi_asset,
     repository,
 )
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import DataVersion
@@ -123,7 +124,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
 
             # rebuild the data time queryer after each run
             data_time_queryer = CachingDataTimeResolver(
-                instance_queryer=CachingInstanceQueryer(instance, asset_graph)
+                instance_queryer=_get_instance_queryer(instance, asset_graph)
             )
 
             # build mapping of expected timestamps
@@ -269,7 +270,7 @@ def test_partitioned_data_time(scenario):
         record = _get_record(instance=instance)
         _materialize_partitions(instance, scenario.after_partitions)
         data_time_queryer = CachingDataTimeResolver(
-            instance_queryer=CachingInstanceQueryer(instance, partition_repo.asset_graph),
+            instance_queryer=_get_instance_queryer(instance, partition_repo.asset_graph),
         )
 
         data_time = data_time_queryer.get_data_time_by_key_for_record(record=record)
@@ -315,6 +316,16 @@ def versioned_repo():
     return [sA, sB, A, B, AB, B2]
 
 
+def _get_instance_queryer(
+    instance: DagsterInstance, asset_graph: AssetGraph
+) -> CachingInstanceQueryer:
+    return AssetGraphView(
+        temporal_context=TemporalContext(effective_dt=get_current_datetime(), last_event_id=None),
+        instance=instance,
+        asset_graph=asset_graph,
+    ).get_inner_queryer_for_back_compat()
+
+
 def observe_sources(*args):
     def observe_sources_fn(*, instance, times_by_key, **kwargs):
         for arg in args:
@@ -340,7 +351,7 @@ def run_assets(*args):
 def assert_has_current_time(key_str):
     def assert_has_current_time_fn(*, instance, evaluation_time, **kwargs):
         resolver = CachingDataTimeResolver(
-            instance_queryer=CachingInstanceQueryer(instance, versioned_repo.asset_graph),
+            instance_queryer=_get_instance_queryer(instance, versioned_repo.asset_graph),
         )
         data_time = resolver.get_current_data_time(AssetKey(key_str), current_time=evaluation_time)
         assert data_time == evaluation_time
@@ -351,7 +362,7 @@ def assert_has_current_time(key_str):
 def assert_has_index_time(key_str, source_key_str, index):
     def assert_has_index_time_fn(*, instance, times_by_key, evaluation_time, **kwargs):
         resolver = CachingDataTimeResolver(
-            instance_queryer=CachingInstanceQueryer(instance, versioned_repo.asset_graph),
+            instance_queryer=_get_instance_queryer(instance, versioned_repo.asset_graph),
         )
         data_time = resolver.get_current_data_time(AssetKey(key_str), current_time=evaluation_time)
         if index is None:

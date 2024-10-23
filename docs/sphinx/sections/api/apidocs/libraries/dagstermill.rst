@@ -5,7 +5,7 @@ This library provides an integration with `papermill` to allow you to run Jupyte
 
 Related Guides:
 
-* `Using Jupyter notebooks with Papermill and Dagster </integrations/dagstermill>`_
+* `Using Jupyter notebooks with Papermill and Dagster <https://docs.dagster.io/integrations/dagstermill>`_
 
 .. currentmodule:: dagstermill
 

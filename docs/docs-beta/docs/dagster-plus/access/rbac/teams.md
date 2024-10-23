@@ -8,11 +8,6 @@ sidebar_position: 2
 
 As part of [role-based access control (RBAC)](/dagster-plus/access/rbac/user-roles-permissions), Dagster+ supports the ability to assign users to teams. A team is a group of users with a set of default deployment, code location, and Branch Deployment user roles.
 
-## What you'll learn
-
-- How to add, modify, and remove teams
-- How to assign roles to teams
-
 <details>
   <summary>Prerequisites</summary>
 

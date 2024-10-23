@@ -1,4 +1,5 @@
 import {Box, ButtonLink, Colors} from '@dagster-io/ui-components';
+import qs from 'qs';
 import {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 import {atom, useRecoilValue} from 'recoil';
@@ -8,8 +9,8 @@ import {showSharedToaster} from '../app/DomUtils';
 import {RepositoryLocationLoadStatus} from '../graphql/types';
 import {StatusAndMessage} from '../instance/DeploymentStatusType';
 import {CodeLocationRowStatusType} from '../workspace/VirtualizedCodeLocationRow';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
-import {CodeLocationStatusQuery} from '../workspace/types/WorkspaceQueries.types';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {CodeLocationStatusQuery} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 type LocationStatusEntry = {
   loadStatus: RepositoryLocationLoadStatus;
@@ -35,7 +36,11 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
   const [showSpinner, setShowSpinner] = useState(false);
 
   const onClickViewButton = useCallback((statuses: CodeLocationRowStatusType[]) => {
-    historyRef.current.push(`/locations?status=${JSON.stringify(statuses)}`);
+    const params =
+      statuses.length > 0
+        ? qs.stringify({status: statuses}, {arrayFormat: 'brackets', addQueryPrefix: true})
+        : '';
+    historyRef.current.push(`/locations${params}`);
   }, []);
 
   // Reload the workspace, but don't toast about it.

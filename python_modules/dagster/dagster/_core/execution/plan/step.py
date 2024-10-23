@@ -16,7 +16,6 @@ from typing import (
 from typing_extensions import TypeGuard
 
 import dagster._check as check
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.execution.plan.handle import (
     ResolvedFromDynamicStepHandle,
     StepHandle,
@@ -161,9 +160,7 @@ class ExecutionStep(
                 so.name: so
                 for so in check.sequence_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
-            tags=normalize_tags(
-                check.opt_mapping_param(tags, "tags", key_type=str), warn_on_deprecated_tags=False
-            ).tags,
+            tags=tags or {},
             logging_tags=merge_dicts(
                 {
                     "step_key": handle.to_key(),

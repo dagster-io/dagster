@@ -27,3 +27,12 @@ mdx-format:  ## Format mdx files
 	cd next; yarn mdx-format
 
 mdx-full-format: docs_ruff mdx-format
+
+rebuild-kind-tags-page: ## Add all kind tags to the kind tags page
+	python scripts/regen_kind_tags.py
+
+mdx:
+	tox -e sphinx-mdx
+
+mdx_copy:
+	cp -rf sphinx/_build/mdx/sections/api/apidocs/* docs-beta/docs/api/

@@ -20,10 +20,10 @@ yarn-debug.log*
 yarn-error.log*
 *.sqlite
 
-.pnp.*
-.yarn
+.yarn/*
 !.yarn/patches
-!.yarn/plugins
 !.yarn/releases
-!.yarn/sdks
+!.yarn/plugins
+!.yarn/sdks/**
 !.yarn/versions
+.pnp.*

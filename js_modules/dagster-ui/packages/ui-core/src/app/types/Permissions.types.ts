@@ -36,3 +36,5 @@ export type PermissionFragment = {
   value: boolean;
   disabledReason: string | null;
 };
+
+export const PermissionsQueryVersion = '505a351d43369bd83e7d4ff2d974368d2a754a85661dfb077a26d1a11ff2f714';

@@ -1,7 +1,12 @@
+import re
+import warnings
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Tuple, Union
 
+import dagster._seven as seven
 from dagster import _check as check
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.storage.tags import SYSTEM_TAG_PREFIX, USER_EDITABLE_SYSTEM_TAGS
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.step import ExecutionStep
@@ -92,3 +97,136 @@ def get_boolean_tag_value(tag_value: Optional[str], default_value: bool = False)
         return default_value
 
     return tag_value.lower() not in {"false", "none", "0", ""}
+
+
+# ########################
+# ##### NORMALIZATION
+# ########################
+
+# Tag key constraints are inspired by allowed Kubernetes labels:
+# https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
+
+# We allow in some cases for users to specify multi-level namespaces for tags,
+# right now we only allow this for the `dagster/kind` namespace, which is how asset kinds are
+# encoded under the hood.
+VALID_NESTED_NAMESPACES_TAG_KEYS = r"dagster/kind/"
+VALID_TAG_KEY_REGEX = re.compile(
+    r"^([A-Za-z0-9_.-]{1,63}/|" + VALID_NESTED_NAMESPACES_TAG_KEYS + r")?[A-Za-z0-9_.-]{1,63}$"
+)
+VALID_TAG_KEY_EXPLANATION = (
+    "Allowed characters: alpha-numeric, '_', '-', '.'. "
+    "Tag keys can also contain a namespace section, separated by a '/'. Each section "
+    "must have <= 63 characters."
+)
+
+VALID_STRICT_TAG_VALUE_REGEX = re.compile(r"^[A-Za-z0-9_.-]{0,63}$")
+
+
+def normalize_tags(
+    tags: Optional[Mapping[str, Any]],
+    strict: bool = False,
+    allow_private_system_tags: bool = True,
+    warning_stacklevel: int = 4,
+) -> Mapping[str, str]:
+    """Normalizes key-value tags attached to definitions throughout Dagster.
+
+    Tag normalization is complicated for backcompat reasons. In the past, tags were permitted to be
+    arbitrary and potentially large JSON-serializable objects. This is inconsistent with the vision
+    we have for tags going forward, which is as short string labels used for filtering and grouping
+    in the UI.
+
+    The `strict` flag controls whether to normalize/validate tags according to the new vision or the
+    old. `strict` should be set whenever we are normalizing a tags parameter that is newly added. It
+    should not be set if we are normalizing an older tags parameter for which we are maintaining old
+    behavior.
+
+    Args:
+        strict (bool):
+            If `strict=True`, we accept a restricted character set and impose length restrictions
+            (<=63 characters) for string keys and values. Violations of these constraints raise
+            errors. If `strict=False` then we run the same test but only warn for keys. Values are
+            permitted to be any JSON-serializable object that is unaffected by JSON round-trip.
+            Unserializable or round-trip-unequal values raise errors. Values are normalized to the
+            JSON string representation in the return value.
+        allow_private_system_tags (bool):
+            Whether to allow non-whitelisted tags that start with the system tag prefix. This should
+            be set to False whenever we are dealing with exclusively user-provided tags.
+        warning_stacklevel (int):
+            The stacklevel to use for warnings. This should be set to the calling function's
+            stacklevel.
+
+    Returns:
+        Mapping[str, str]: A dictionary of normalized tags.
+    """
+    normalized_tags: Dict[str, str] = {}
+    invalid_tag_keys = []
+
+    for key, value in check.opt_mapping_param(tags, "tags", key_type=str).items():
+        # Validate the key
+        if not isinstance(key, str):
+            raise DagsterInvalidDefinitionError("Tag keys must be strings")
+        elif (not allow_private_system_tags) and is_private_system_tag_key(key):
+            raise DagsterInvalidDefinitionError(
+                f"Attempted to set tag with reserved system prefix: {key}"
+            )
+        elif not is_valid_tag_key(key):
+            invalid_tag_keys.append(key)
+
+        # Normalize the value
+        if not isinstance(value, str):
+            if strict:
+                raise DagsterInvalidDefinitionError("Tag values must be strings")
+            else:
+                normalized_tags[key] = _normalize_value(value, key)
+        else:
+            if strict and not is_valid_strict_tag_value(value):
+                raise DagsterInvalidDefinitionError(
+                    f"Invalid tag value: {value}, for key: {key}. Allowed characters: alpha-numeric, '_', '-', '.'. "
+                    "Must have <= 63 characters."
+                )
+            normalized_tags[key] = value
+
+    # Issue errors (strict=True) or warnings (strict=False) for any invalid tag keys that are too
+    # long or contain invalid characters.
+    if invalid_tag_keys:
+        invalid_tag_keys_sample = invalid_tag_keys[: min(5, len(invalid_tag_keys))]
+        if strict:
+            raise DagsterInvalidDefinitionError(
+                f"Found invalid tag keys: {invalid_tag_keys_sample}. {VALID_TAG_KEY_EXPLANATION}"
+            )
+        else:
+            warnings.warn(
+                f"Non-compliant tag keys like {invalid_tag_keys_sample} are deprecated. {VALID_TAG_KEY_EXPLANATION}",
+                category=DeprecationWarning,
+                stacklevel=warning_stacklevel,
+            )
+
+    return normalized_tags
+
+
+def _normalize_value(value: Any, key: str) -> str:
+    error = None
+    try:
+        serialized_value = seven.json.dumps(value)
+    except TypeError:
+        error = 'Could not JSON encode value "{value}"'
+    if not error and not seven.json.loads(serialized_value) == value:
+        error = f'JSON encoding "{serialized_value}" of value "{value}" is not equivalent to original value'
+    if error:
+        raise DagsterInvalidDefinitionError(
+            f'Invalid value for tag "{key}", {error}. Tag values must be strings '
+            "or meet the constraint that json.loads(json.dumps(value)) == value."
+        )
+    return serialized_value
+
+
+def is_private_system_tag_key(tag) -> bool:
+    return tag.startswith(SYSTEM_TAG_PREFIX) and tag not in USER_EDITABLE_SYSTEM_TAGS
+
+
+def is_valid_tag_key(key: str) -> bool:
+    return bool(VALID_TAG_KEY_REGEX.match(key))
+
+
+def is_valid_strict_tag_value(key: str) -> bool:
+    return bool(VALID_STRICT_TAG_VALUE_REGEX.match(key))

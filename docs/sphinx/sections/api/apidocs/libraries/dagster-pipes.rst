@@ -3,11 +3,11 @@ Pipes (dagster-pipes)
 
 .. currentmodule:: dagster_pipes
 
-The ``dagster-pipes`` library is intended for inclusion in an external process that integrates with Dagster using the `Pipes </concepts/dagster-pipes>`_ protocol. This could be in an environment like Databricks, Kubernetes, or Docker. Using this library, you can write code in the external process that streams metadata back to Dagster.
+The ``dagster-pipes`` library is intended for inclusion in an external process that integrates with Dagster using the `Pipes <https://docs.dagster.io/concepts/dagster-pipes>`_ protocol. This could be in an environment like Databricks, Kubernetes, or Docker. Using this library, you can write code in the external process that streams metadata back to Dagster.
 
-For a detailed look at the Pipes process, including how to customize it, refer to the `Dagster Pipes details and customization guide </concepts/dagster-pipes/dagster-pipes-details-and-customization#overview-and-terms>`__.
+For a detailed look at the Pipes process, including how to customize it, refer to the `Dagster Pipes details and customization guide <https://docs.dagster.io/concepts/dagster-pipes/dagster-pipes-details-and-customization#overview-and-terms>`__.
 
-**Looking to set up a Pipes client in Dagster?** Refer to the `Dagster Pipes API reference </_apidocs/pipes>`_.
+**Looking to set up a Pipes client in Dagster?** Refer to the `Dagster Pipes API reference <https://docs.dagster.io/_apidocs/pipes>`_.
 
 **Note**: This library isn't included with ``dagster`` and must be `installed separately <https://pypi.org/project/dagster-pipes/>`_.
 
@@ -27,7 +27,7 @@ Advanced
 
 Most Pipes users won't need to use the APIs in the following sections unless they are customizing the Pipes protocol.
 
-Refer to the `Dagster Pipes details and customization guide </concepts/dagster-pipes/dagster-pipes-details-and-customization#overview-and-terms>`__ for more information.
+Refer to the `Dagster Pipes details and customization guide <https://docs.dagster.io/concepts/dagster-pipes/dagster-pipes-details-and-customization#overview-and-terms>`__ for more information.
 
 Context loaders
 ^^^^^^^^^^^^^^^

@@ -15,7 +15,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
-import {isThisThingAJob, useRepository} from './WorkspaceContext';
+import {isThisThingAJob, useRepository} from './WorkspaceContext/util';
 import {RepoAddress} from './types';
 import {
   SingleScheduleQuery,
@@ -225,7 +225,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
         <RowCell>
           {tick ? (
             <div>
-              <TickStatusTag tick={tick} />
+              <TickStatusTag tick={tick} tickResultType="runs" />
             </div>
           ) : (
             <LoadingOrNone queryResult={scheduleQueryResult} />

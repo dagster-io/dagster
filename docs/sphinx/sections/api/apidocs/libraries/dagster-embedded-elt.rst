@@ -8,7 +8,7 @@ assets and resources. This package currently includes the following integrations
 
 * `dlt <https://dlthub.com>`_, or data load tool, which provides a way to load data from systems and APIs
 
-For more information on getting started, see the `Embedded ELT </integrations/embedded-elt>`_ documentation.
+For more information on getting started, see the `Embedded ELT <https://docs.dagster.io/integrations/embedded-elt>`_ documentation.
 
 ----
 
@@ -16,7 +16,7 @@ For more information on getting started, see the `Embedded ELT </integrations/em
 Sling (dagster-embedded-elt.sling)
 **********************************
 
-Refer to the `Sling guide </integrations/embedded-elt/sling>`_ to get started.
+Refer to the `Sling guide <https://docs.dagster.io/integrations/embedded-elt/sling>`_ to get started.
 
 .. currentmodule:: dagster_embedded_elt.sling
 
@@ -41,7 +41,7 @@ Resources (Sling)
 dlt (dagster-embedded-elt.dlt)
 *******************************
 
-Refer to the `dlt guide </integrations/embedded-elt/dlt>`_ to get started.
+Refer to the `dlt guide <https://docs.dagster.io/integrations/embedded-elt/dlt>`_ to get started.
 
 .. currentmodule:: dagster_embedded_elt.dlt
 

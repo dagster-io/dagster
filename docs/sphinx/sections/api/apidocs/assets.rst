@@ -8,7 +8,7 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 Asset definitions
 -----------------
 
-Refer to the `Asset definitions </concepts/assets/software-defined-assets>`_ documentation for more information.
+Refer to the `Asset definitions <https://docs.dagster.io/concepts/assets/software-defined-assets>`_ documentation for more information.
 
 .. autodecorator:: asset
 
@@ -23,7 +23,7 @@ Refer to the `Asset definitions </concepts/assets/software-defined-assets>`_ doc
 Graph-backed asset definitions
 ------------------------------
 
-Refer to the `Graph-backed asset </concepts/assets/graph-backed-assets>`_ documentation for more information.
+Refer to the `Graph-backed asset <https://docs.dagster.io/concepts/assets/graph-backed-assets>`_ documentation for more information.
 
 .. autodecorator:: graph_asset
 
@@ -32,7 +32,7 @@ Refer to the `Graph-backed asset </concepts/assets/graph-backed-assets>`_ docume
 Multi-asset definitions
 -----------------------
 
-Refer to the `Multi-asset </concepts/assets/multi-assets>`_ documentation for more information.
+Refer to the `Multi-asset <https://docs.dagster.io/concepts/assets/multi-assets>`_ documentation for more information.
 
 .. autodecorator:: multi_asset
 
@@ -43,7 +43,7 @@ Refer to the `Multi-asset </concepts/assets/multi-assets>`_ documentation for mo
 Source assets
 -------------
 
-Refer to the `External asset dependencies </concepts/assets/software-defined-assets#defining-external-asset-dependencies>`_ documentation for more information.
+Refer to the `External asset dependencies <https://docs.dagster.io/concepts/assets/software-defined-assets#defining-external-asset-dependencies>`_ documentation for more information.
 
 .. autoclass:: SourceAsset
 
@@ -54,7 +54,7 @@ Refer to the `External asset dependencies </concepts/assets/software-defined-ass
 External assets
 ---------------
 
-Refer to the `External assets </concepts/assets/external-assets>`_ documentation for more information.
+Refer to the `External assets <https://docs.dagster.io/concepts/assets/external-assets>`_ documentation for more information.
 
 .. autofunction:: external_assets_from_specs
 
@@ -68,7 +68,7 @@ Dependencies
 Asset jobs
 ----------
 
-`Asset jobs </concepts/assets/asset-jobs>`_ enable the automation of asset materializations.  Dagster's `asset selection syntax </concepts/assets/asset-selection-syntax>`_ can be used to select assets and assign them to a job.
+`Asset jobs <https://docs.dagster.io/concepts/assets/asset-jobs>`_ enable the automation of asset materializations.  Dagster's `asset selection syntax <https://docs.dagster.io/concepts/assets/asset-selection-syntax>`_ can be used to select assets and assign them to a job.
 
 .. autofunction:: define_asset_job
 
@@ -77,7 +77,7 @@ Asset jobs
 Code locations
 --------------
 
-Loading assets and asset jobs into a `code location </concepts/code-locations>`_ makes them available to Dagster tools like the UI, CLI, and GraphQL API.
+Loading assets and asset jobs into a `code location <https://docs.dagster.io/concepts/code-locations>`_ makes them available to Dagster tools like the UI, CLI, and GraphQL API.
 
 .. autofunction:: load_assets_from_modules
 
@@ -90,14 +90,14 @@ Loading assets and asset jobs into a `code location </concepts/code-locations>`_
 Observations
 ------------
 
-Refer to the `Asset observation </concepts/assets/asset-observations>`_ documentation for more information.
+Refer to the `Asset observation <https://docs.dagster.io/concepts/assets/asset-observations>`_ documentation for more information.
 
 .. autoclass:: AssetObservation
 
 Auto-materialize and freshness policies
 ---------------------------------------
 
-Refer to the `Auto-materialize policies </concepts/assets/asset-auto-execution>`_ documentation for more information.
+Refer to the `Auto-materialize policies <https://docs.dagster.io/concepts/assets/asset-auto-execution>`_ documentation for more information.
 
 .. autoclass:: AutoMaterializePolicy
 

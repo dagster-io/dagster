@@ -5,7 +5,7 @@ import {RecoilRoot} from 'recoil';
 import {ApolloTestProps, ApolloTestProvider} from './ApolloTestProvider';
 import {CustomAlertProvider} from '../app/CustomAlertProvider';
 import typeDefs from '../graphql/schema.graphql';
-import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../workspace/WorkspaceContext/WorkspaceContext';
 
 interface Props {
   children: React.ReactNode;

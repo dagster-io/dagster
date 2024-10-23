@@ -6,7 +6,7 @@ import {
   buildRepositoryLocation,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
-import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {DUNDER_REPO_NAME} from '../../workspace/buildRepoAddress';
 
 const buildRepo = ({

@@ -108,8 +108,17 @@ dt > a.reference.internal {
   @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-gray-300 text-gray-900
 }
 
+.superseded-tag {
+  @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-gray-300 text-gray-900
+}
+
 .legacy-tag,
 .flag.deprecated {
+  @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-orange-200 text-orange-700
+}
+
+.legacy-tag,
+.flag.superseded {
   @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-yellow-200 text-yellow-700
 }
 
@@ -576,7 +585,7 @@ dt > a.reference.internal {
 div.flag {
   background: theme("colors.gray.150");
   padding: 0 1rem;
-  margin-top: 1rem; 
+  margin-top: 1rem;
   border-radius: 0.25rem;
   border: 1px solid theme("colors.gray.200");
 }

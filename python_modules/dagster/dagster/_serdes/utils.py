@@ -1,5 +1,5 @@
 import hashlib
-from typing import NamedTuple, Optional
+from typing import Optional
 
 from dagster._serdes.serdes import PackableValue, WhitelistMap, serialize_value
 
@@ -13,11 +13,10 @@ def create_snapshot_id(
 
 
 def hash_str(in_str: str) -> str:
-    m = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
-    m.update(in_str.encode("utf-8"))
-    return m.hexdigest()
+    # so that hexdigest is 40, not 64 bytes
+    return hashlib.sha1(in_str.encode("utf-8")).hexdigest()
 
 
-def serialize_pp(value: NamedTuple) -> str:
+def serialize_pp(value: PackableValue) -> str:
     """Serialize and pretty print."""
     return serialize_value(value, indent=2, separators=(",", ": "))

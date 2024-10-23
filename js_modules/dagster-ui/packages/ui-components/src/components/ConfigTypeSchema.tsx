@@ -173,7 +173,7 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
 export const tryPrettyPrintJSON = (jsonString: string) => {
   try {
     return JSON.stringify(JSON.parse(jsonString), null, 2);
-  } catch (err) {
+  } catch {
     // welp, looks like it's not valid JSON. This has happened at least once
     // in the wild - a user was able to build a metadata entry in Python with
     // a `NaN` number value: https://github.com/dagster-io/dagster/issues/8959

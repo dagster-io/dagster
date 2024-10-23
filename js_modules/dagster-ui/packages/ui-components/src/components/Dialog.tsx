@@ -97,17 +97,17 @@ export const DialogHeaderText = styled.div`
 `;
 
 export const GlobalDialogStyle = createGlobalStyle`
-  .dagster-portal .bp4-overlay-backdrop {
+  .dagster-portal .bp5-overlay-backdrop {
     background-color: ${Colors.dialogBackground()};
   }
 
-  .dagster-portal .bp4-dialog-container {
+  .dagster-portal .bp5-dialog-container {
     display: grid;
     grid-template-rows: minmax(40px, 1fr) auto minmax(40px, 2fr);
     grid-template-columns: 40px 8fr 40px;
   }
 
-  .dagster-portal .bp4-dialog {
+  .dagster-portal .bp5-dialog {
     background-color: ${Colors.backgroundDefault()};
     border-radius: 4px;
     box-shadow: ${Colors.shadowDefault()} 0px 2px 12px;
@@ -118,24 +118,24 @@ export const GlobalDialogStyle = createGlobalStyle`
     padding: 0;
   }
 
-  .dagster-portal .bp4-dialog > :first-child {
+  .dagster-portal .bp5-dialog > :first-child {
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
   }
 
-  .dagster-portal .bp4-dialog > :last-child {
+  .dagster-portal .bp5-dialog > :last-child {
     border-bottom-right-radius: 4px;
     border-bottom-left-radius: 4px;
   }
 
-  .dagster-portal .bp4-dialog-container.bp4-overlay-enter > .bp4-dialog,
-  .dagster-portal .bp4-dialog-container.bp4-overlay-appear > .bp4-dialog {
+  .dagster-portal .bp5-dialog-container.bp5-overlay-enter > .bp5-dialog,
+  .dagster-portal .bp5-dialog-container.bp5-overlay-appear > .bp5-dialog {
     opacity: 0;
     transform:scale(0.95);
   }
 
-  .dagster-portal .bp4-dialog-container.bp4-overlay-enter-active > .bp4-dialog,
-  .dagster-portal .bp4-dialog-container.bp4-overlay-appear-active > .bp4-dialog {
+  .dagster-portal .bp5-dialog-container.bp5-overlay-enter-active > .bp5-dialog,
+  .dagster-portal .bp5-dialog-container.bp5-overlay-appear-active > .bp5-dialog {
     opacity: 1;
     transform: scale(1);
     transition-delay: 0;
@@ -144,12 +144,12 @@ export const GlobalDialogStyle = createGlobalStyle`
     transition-timing-function: ease-in-out;
   }
 
-  .dagster-portal .bp4-dialog-container.bp4-overlay-exit > .bp4-dialog {
+  .dagster-portal .bp5-dialog-container.bp5-overlay-exit > .bp5-dialog {
     opacity: 1;
     transform: scale(1);
   }
 
-  .dagster-portal .bp4-dialog-container.bp4-overlay-exit-active > .bp4-dialog {
+  .dagster-portal .bp5-dialog-container.bp5-overlay-exit-active > .bp5-dialog {
     opacity: 0;
     transform: scale(0.95);
     transition-delay:0;

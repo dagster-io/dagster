@@ -6,6 +6,7 @@ import pytest
 from dagster import (
     ConfigurableResource,
     Definitions,
+    EnvVar,
     RunConfig,
     build_init_resource_context,
     job,
@@ -14,6 +15,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.errors import DagsterResourceFunctionError
 from dagster._core.execution.context.init import InitResourceContext
+from dagster._core.test_utils import environ
 from pydantic import PrivateAttr
 
 
@@ -667,3 +669,85 @@ def test_direct_invocation_from_context_cm() -> None:
         assert res.jwt == "my_jwt"
         assert log == ["setup_for_execution"]
     assert log == ["setup_for_execution", "teardown_after_execution"]
+
+
+def test_process_config_and_initialize_cm() -> None:
+    log = []
+
+    class AWSCredentialsResource(ConfigurableResource):
+        access_key: str
+        secret_key: str
+
+        _jwt: str = PrivateAttr()
+
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            self._jwt = "my_jwt"
+            log.append("setup_for_execution")
+
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            del self._jwt
+            log.append("teardown_after_execution")
+
+        @property
+        def jwt(self) -> str:
+            return self._jwt
+
+    log.clear()
+    with environ({"ENV_ACCESS_KEY": "my_key"}):
+        with AWSCredentialsResource(
+            access_key=EnvVar("ENV_ACCESS_KEY"), secret_key="my_secret"
+        ).process_config_and_initialize_cm() as res:
+            assert res.access_key == "my_key"
+            assert res.jwt == "my_jwt"
+            assert log == ["setup_for_execution"]
+
+    assert log == ["setup_for_execution", "teardown_after_execution"]
+
+
+def test_process_config_and_initialize_cm_nested() -> None:
+    log = []
+
+    class AWSCredentialsResource(ConfigurableResource):
+        access_key: str
+        secret_key: str
+
+        _jwt: str = PrivateAttr()
+
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            self._jwt = "my_jwt"
+            log.append("inner_setup_for_execution")
+
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            del self._jwt
+            log.append("inner_teardown_after_execution")
+
+        @property
+        def jwt(self) -> str:
+            return self._jwt
+
+    class S3Resource(ConfigurableResource):
+        credentials: AWSCredentialsResource
+        label: str
+
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append(f"setup_for_execution with jwt {self.credentials.jwt}")
+
+    log.clear()
+    with environ({"ENV_ACCESS_KEY": "my_key", "ENV_LABEL": "foo"}):
+        with S3Resource(
+            label=EnvVar("ENV_LABEL"),
+            credentials=AWSCredentialsResource(
+                access_key=EnvVar("ENV_ACCESS_KEY"), secret_key="my_secret"
+            ),
+        ).process_config_and_initialize_cm() as res:
+            assert res.label == "foo"
+            creds = res.credentials
+            assert creds.access_key == "my_key"
+            assert creds.jwt == "my_jwt"
+            assert log == ["inner_setup_for_execution", "setup_for_execution with jwt my_jwt"]
+
+    assert log == [
+        "inner_setup_for_execution",
+        "setup_for_execution with jwt my_jwt",
+        "inner_teardown_after_execution",
+    ]

@@ -23,11 +23,21 @@ The "experimental" marker allows us to offer new APIs to users and rapidly itera
 
 Experimental APIs may change or disappear within any release, but we try to avoid breaking them within minor releases if they have been around for a long time.
 
+### Superseded APIs
+
+The "superseded" marker indicates that we recommend avoiding an API, usually because there's a preferred option that should be used instead.
+
+Like non-deprecated public stable APIs, deprecated public stable APIs will not break within any major release after 1.0.
+
+Superseded APIs do not have a known scheduled removal point, but we recommend avoiding them in new code.
+
 ### Deprecated APIs
 
 The "deprecated" marker indicates that we recommend avoiding an API, usually because there's a preferred option that should be used instead.
 
 Like non-deprecated public stable APIs, deprecated public stable APIs will not break within any major release after 1.0.
+
+Unlike superseded APIs, deprecated APIs have a known scheduled removal point. We will provide guidance on when to expect the removal.
 
 ---
 
@@ -41,6 +51,21 @@ While technically the 0.y.z phase of Semantic Versioning is "anything goes", we 
 - An exception to this guarantee is [experimental APIs](#experimental-apis).
 - As often as possible, deprecation warnings will precede removals. E.g. if the current version is 0.8.5 and we want to remove an API, we'll issue a deprecation [warning](https://docs.python.org/3/library/warnings.html) when the API is used and remove it from 0.9.0.
 - Upgrading to a new minor version, e.g. 0.7.5 → 0.8.0 may result in breakages or new deprecation [warnings](https://docs.python.org/3/library/warnings.html).
+
+---
+
+## Version compatibility within a Dagster deployment
+
+Dagster deployments can have multiple versions of Dagster running simultaneously.
+
+A Dagster deployment consists of a set of [code locations](https://docs.dagster.io/concepts/code-locations), as well as _host processes_: the web server and [daemon](https://docs.dagster.io/deployment/dagster-daemon).
+
+- **Code locations** within a deployment can each depend on a different Dagster version.
+- **Host processes** within a deployment are expected to have the same Dagster version. That Dagster version is expected to be greater than or equal to the greatest Dagster version used by any code location within the deployment.
+
+  - **In Dagster+ deployments**, Dagster+ automatically keeps host processes up-to-date so no user action is required.
+
+  - **In OSS deployments**, users are expected to upgrade their host processes before upgrading the version of Dagster used in their code locations.
 
 ---
 

@@ -3,7 +3,6 @@ import qs from 'qs';
 import {useMemo} from 'react';
 
 import {AssetViewParams} from './types';
-import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {TabLink} from '../ui/TabLink';
 
 interface Props {
@@ -38,7 +37,14 @@ export const DEFAULT_ASSET_TAB_ORDER = [
 ] as const;
 
 export type AssetTabConfigInput = {
-  definition: AssetViewDefinitionNodeFragment | null;
+  definition:
+    | {
+        isMaterializable: boolean;
+        automationCondition: {__typename: 'AutomationCondition'} | null | undefined;
+        partitionDefinition: {__typename: 'PartitionDefinition'} | null | undefined;
+      }
+    | null
+    | undefined;
   params: AssetViewParams;
 };
 
@@ -88,7 +94,7 @@ export const buildAssetTabMap = (input: AssetTabConfigInput) => {
       title: 'Automation',
       to: buildAssetViewParams({...params, view: 'automation'}),
       disabled: !definition,
-      hidden: !definition?.autoMaterializePolicy,
+      hidden: !definition?.automationCondition,
     } as AssetTabConfig,
   };
 };

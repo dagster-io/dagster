@@ -9,3 +9,5 @@ export const DEFAULT_TIME_FORMAT = {
   showSeconds: false,
   showMsec: false,
 };
+
+export const DEFAULT_TOOLTIP_TIME_FORMAT = {showSeconds: false, showTimezone: true};

@@ -42,17 +42,17 @@ This condition translates to **Any upstream dependencies (parents) part of an in
 
 Operands are base conditions which can be true or false about a given asset partition.
 
-| Operand                                     | Description                                                                                                                                       |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AutomationCondition.missing`               | Returns true if the asset partition has never been materialized or observed                                                                       |
-| `AutomationCondition.in_progress`           | Returns true if the asset partition is part of an in-progress run                                                                                 |
-| `AutomationCondition.failed`                | Returns true if the asset partition failed to be materialized in its latest run                                                                   |
-| `AutomationCondition.newly_updated`         | Returns true if the asset partition was materialized since the previous evaluation                                                                |
-| `AutomationCondition.newly_requested`       | Returns true if the asset partition was requested on the previous evaluation                                                                      |
-| `AutomationCondition.code_version_changed`  | Returns true if the asset has a new code version since the previous evaluation                                                                    |
-| `AutomationCondition.cron_tick_passed`      | Returns true if a new tick of the provided cron schedule occurred since the previous evaluation                                                   |
-| `AutomationCondition.in_latest_time_window` | Returns true if the asset partition falls within the latest time window of the asset’s <PyObject object="PartitionsDefinition" />, if applicable. |
-| `AutomationCondition.will_be_requested`     | Returns true if the asset partition will be requested in this tick                                                                                |
+| Operand                                     | Description                                                                                                                       |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `AutomationCondition.missing`               | The asset partition has never been materialized or observed                                                                       |
+| `AutomationCondition.in_progress`           | The asset partition is part of an in-progress run                                                                                 |
+| `AutomationCondition.failed`                | The asset partition failed to be materialized in its latest run                                                                   |
+| `AutomationCondition.newly_updated`         | The asset partition was materialized since the previous evaluation                                                                |
+| `AutomationCondition.newly_requested`       | The asset partition was requested on the previous evaluation                                                                      |
+| `AutomationCondition.code_version_changed`  | The asset has a new code version since the previous evaluation                                                                    |
+| `AutomationCondition.cron_tick_passed`      | A new tick of the provided cron schedule occurred since the previous evaluation                                                   |
+| `AutomationCondition.in_latest_time_window` | The asset partition falls within the latest time window of the asset’s <PyObject object="PartitionsDefinition" />, if applicable. |
+| `AutomationCondition.will_be_requested`     | The asset partition will be requested in this tick                                                                                |
 
 ### Operators
 
@@ -105,29 +105,24 @@ The above conditions can be built into more complex expressions using the follow
       <td>
         <code>A.newly_true()</code>
       </td>
-      <td>False on previous tick and is now true</td>
+      <td>Condition A was false on the previous evaluation and is now true.</td>
     </tr>
     <tr>
       <td>
         <code>A.since(B)</code>
       </td>
-      <td>
-        Condition A became true more recently than Condition B. Refer to the{" "}
-        <a href="#using-statuses-and-events-in-conditions">
-          Using statuses and events in conditions
-        </a>{" "}
-        section for an example.
-      </td>
+      <td>Condition A became true more recently than Condition B.</td>
     </tr>
     <tr>
       <td>
         <code>AutomationCondition.any_deps_match(A)</code>
       </td>
       <td>
-        True for any upstream partition. Can be used with <code>.allow()</code>{" "}
-        and <code>.ignore()</code> to target specific upstream assets. Refer to
-        the <a href="#targeting-dependencies">Targeting dependencies</a> section
-        for an example.
+        Condition A is true for any upstream partition. Can be used with{" "}
+        <code>.allow()</code> and <code>.ignore()</code> to target specific
+        upstream assets. Refer to the{" "}
+        <a href="#targeting-dependencies">Targeting dependencies</a> section for
+        an example.
       </td>
     </tr>
     <tr>
@@ -135,9 +130,9 @@ The above conditions can be built into more complex expressions using the follow
         <code>AutomationCondition.all_deps_match(A)</code>
       </td>
       <td>
-        True for at least one partition of each upstream asset. Can be used with{" "}
-        <code>.allow()</code> and <code>.ignore()</code> to target specific
-        upstream assets. Refer to the{" "}
+        Condition A is true for at least one partition of each upstream asset.
+        Can be used with <code>.allow()</code> and <code>.ignore()</code> to
+        target specific upstream assets. Refer to the{" "}
         <a href="#targeting-dependencies">Targeting dependencies</a> section for
         an example.
       </td>
@@ -154,7 +149,46 @@ The above conditions can be built into more complex expressions using the follow
   </tbody>
 </table>
 
+### Composite conditions
+
+Finally, there are a set of pre-built conditions which make it easier to construct common combinations of the above conditions.
+
+| Condition                                         | Description                                                                            |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `AutomationCondition.any_deps_updated`            | Any dependencies have been updated since the previous evaluation                       |
+| `AutomationCondition.any_deps_missing`            | Any dependencies have never been materialized or observed                              |
+| `AutomationCondition.any_deps_in_progress`        | Any dependencies are part of an in-progress run                                        |
+| `AutomationCondition.all_deps_updated_since_cron` | All dependencies have been updated since the latest tick of the provided cron schedule |
+
 ---
+
+## Modifying policies
+
+It's common to have use cases similar to pre-built policies but with minor differences. While it is always possible to copy the base implementation and modify it as needed, it can often be simpler to use the `.without()` method to remove the unwanted sub-conditions or add additional conditions with the `&` operator.
+
+### `AutomationCondition.eager()`: Ignoring missing dependencies
+
+By default, `AutomationCondition.eager()` will not materialize an asset partition if it has any missing dependencies. If it is expected to have missing upstream data, remove `~AutomationCondition.any_deps_missing()` from the eager policy to allow execution:
+
+```python
+from dagster import AutomationCondition
+
+condition = AutomationCondition.eager().without(
+  ~AutomationCondition.any_deps_missing(),
+)
+```
+
+### `AutomationCondition.eager()`: Update older time partitions
+
+By default, `AutomationCondition.eager()` will only update the latest time partition of an asset. If updates to historical partitions should result in downstream updates, then this sub-condition can be removed:
+
+```python
+from dagster import AutomationCondition
+
+condition = AutomationCondition.eager().without(
+  AutomationCondition.in_latest_time_window(),
+)
+```
 
 ## Targeting dependencies
 
@@ -179,6 +213,8 @@ AutomationCondition.any_deps_match(
     AutomationCondition.missing()
 ).ignore(AssetSelection.keys("taxi_trips"))
 ```
+
+Note that these `ignore()` and `allow()` methods also work for composite conditions such as `AutomationCondition.any_deps_missing()` or `AutomationCondition.any_deps_updated()`.
 
 ---
 
@@ -217,45 +253,6 @@ src="/images/concepts/automation/declarative-automation/condition-label-expanded
 width={1576}
 height={593}
 />
-
----
-
-## Using statuses and events in conditions
-
-In some cases, you may want to use statuses and events in your automation conditions:
-
-- **Statuses** are persistent states that are and will be true for some period of time. For example, the `AutomationCondition.missing()` condition will be true only if an asset partition has never been materialized or observed.
-- **Events** are transient and reflect something that may only be true for an instant. For example, the `AutomationCondition.newly_updated()` condition will be true only if an asset partition was materialized since the previous evaluation.
-
-Using the `<A>.since(<B>)` operator, you can create conditions that detect if one event has happened more recently than another. Think of this as converting two events to a status - in this case, `A has occurred more recently than B` - as this will stay true for some period of time. This operator becomes true whenever `<A>` is true, and will remain true until `<B>` is also true.
-
-Conversely, it can also be useful to convert statuses to events. For example, the default `eager()` condition ensures that Dagster only tries to materialize a missing asset partition once using the following sub-condition:
-
-```python
-from dagster import AutomationCondition
-
-AutomationCondition.missing().newly_true().since(
-    AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
-)
-```
-
-By using the `<A>.newly_true()` operator, you can turn the status of _"being missing"_ into a single event, specifically the point in time where an asset partition entered the _missing_ state. From there, you can ensure that an asset is materialized only once in response to detecting a missing partition.
-
----
-
-## Using conditions to chain runs
-
-Dagster can group the execution of multiple assets into a single, logical run. For example, imagine you have a series of dependent assets, each with an `AutomationCondition.eager()` condition. When you update the first asset in the chain, the desired behavior is typically to have all downstream assets grouped into a single run, rather than executing each asset in order in individual run.
-
-To create this scenario, you can use `AutomationCondition.will_be_requested()`. Because each <PyObject object="AutomationCondition" /> is evaluated in order, you can query if an upstream asset will be requested on the current tick. For example:
-
-```python
-from dagster import AutomationCondition
-
-any_parent_missing = AutomationCondition.any_deps_match(
-    AutomationCondition.missing() & ~AutomationCondition.will_be_requested()
-)
-```
 
 ---
 

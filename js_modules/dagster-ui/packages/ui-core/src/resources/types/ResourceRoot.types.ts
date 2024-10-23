@@ -116,3 +116,5 @@ export type ResourceRootQuery = {
       }
     | {__typename: 'ResourceNotFoundError'};
 };
+
+export const ResourceRootQueryVersion = '43f17e6a448c083d86843c38edbae83098853097a8a7a5f3ef3a3238e3880bff';

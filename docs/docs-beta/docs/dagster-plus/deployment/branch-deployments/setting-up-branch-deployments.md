@@ -8,12 +8,6 @@ toc_max_heading_level: 2
 
 In this guide, we'll walk you through setting up Branch Deployments for a code location. Once you're finished, any time a PR is created or updated in your repository, it will automatically create or update an associated branch deployment in Dagster+.
 
-## What you'll learn
-
-- How to create a Dagster+ agent token
-- How to configure a Dagster+ agent
-- How to create and automate branch deployments for a repository
-
 <details>
   <summary>Prerequisites</summary>
 

@@ -4,6 +4,7 @@ from random import randint
 from typing import Sequence, Union
 
 from dagster import StaticPartitionsDefinition, asset
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
@@ -18,6 +19,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
+from dagster._time import get_current_datetime
 from dagster._utils.test.data_versions import materialize_asset
 
 from dagster_test.utils.benchmark import ProfilingSession
@@ -78,9 +80,16 @@ def get_stale_status_resolver(
     instance: DagsterInstance,
     assets: Sequence[Union[AssetsDefinition, SourceAsset]],
 ) -> CachingStaleStatusResolver:
+    asset_graph = AssetGraph.from_assets(assets)
+    asset_graph_view = AssetGraphView(
+        temporal_context=TemporalContext(effective_dt=get_current_datetime(), last_event_id=None),
+        instance=instance,
+        asset_graph=asset_graph,
+    )
     return CachingStaleStatusResolver(
         instance=instance,
         asset_graph=AssetGraph.from_assets(assets),
+        loading_context=asset_graph_view,
     )
 
 

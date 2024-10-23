@@ -1,6 +1,6 @@
 from dagster import Definitions, load_assets_from_modules
 
-from CODE_LOCATION_NAME_PLACEHOLDER import assets  # type: ignore
+from . import assets  # noqa: TID252
 
 all_assets = load_assets_from_modules([assets])
 

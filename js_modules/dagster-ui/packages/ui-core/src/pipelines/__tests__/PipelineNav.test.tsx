@@ -4,10 +4,9 @@ import {MemoryRouter} from 'react-router-dom';
 import {PipelineNav} from '../../nav/PipelineNav';
 import {TestPermissionsProvider} from '../../testing/TestPermissions';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
-import {JobFeatureProvider} from '../JobFeatureContext';
 
-jest.mock('../../workspace/WorkspaceContext', () => ({
-  ...jest.requireActual('../../workspace/WorkspaceContext'),
+jest.mock('../../workspace/WorkspaceContext/util', () => ({
+  ...jest.requireActual('../../workspace/WorkspaceContext/util'),
   useRepository: jest.fn(() => null),
 }));
 
@@ -35,13 +34,11 @@ describe('PipelineNav', () => {
     };
 
     render(
-      <JobFeatureProvider>
-        <TestPermissionsProvider locationOverrides={locationOverrides}>
-          <MemoryRouter initialEntries={['/locations/bar@baz/jobs/foo/overview']}>
-            <PipelineNav repoAddress={repoAddress} />
-          </MemoryRouter>
-        </TestPermissionsProvider>
-      </JobFeatureProvider>,
+      <TestPermissionsProvider locationOverrides={locationOverrides}>
+        <MemoryRouter initialEntries={['/locations/bar@baz/jobs/foo/overview']}>
+          <PipelineNav repoAddress={repoAddress} />
+        </MemoryRouter>
+      </TestPermissionsProvider>,
     );
 
     const launchpadTab = await screen.findByRole('tab', {name: /launchpad/i});
@@ -56,13 +53,11 @@ describe('PipelineNav', () => {
     };
 
     render(
-      <JobFeatureProvider>
-        <TestPermissionsProvider locationOverrides={locationOverrides}>
-          <MemoryRouter initialEntries={['/locations/bar@baz/jobs/foo/overview']}>
-            <PipelineNav repoAddress={repoAddress} />
-          </MemoryRouter>
-        </TestPermissionsProvider>
-      </JobFeatureProvider>,
+      <TestPermissionsProvider locationOverrides={locationOverrides}>
+        <MemoryRouter initialEntries={['/locations/bar@baz/jobs/foo/overview']}>
+          <PipelineNav repoAddress={repoAddress} />
+        </MemoryRouter>
+      </TestPermissionsProvider>,
     );
 
     const launchpadTab = await screen.findByRole('tab', {name: /launchpad/i});

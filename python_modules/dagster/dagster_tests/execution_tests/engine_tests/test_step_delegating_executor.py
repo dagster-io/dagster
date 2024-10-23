@@ -147,7 +147,8 @@ def test_execute_with_tailer_offset():
         with environ(
             {
                 "DAGSTER_EXECUTOR_POP_EVENTS_OFFSET": "100000",
-                "DAGSTER_EXECUTOR_POP_EVENTS_LIMIT": "2",  # limit env var is ignored since it is lower than the offset - if it was not ignored, the run would never finish
+                "DAGSTER_EXECUTOR_POP_EVENTS_LIMIT": "2",
+                "DAGSTER_STEP_DELEGATING_EXECUTOR_SLEEP_SECONDS": "0.001",
             }
         ):
             result = execute_job(

@@ -1,9 +1,9 @@
 import memoize from 'lodash/memoize';
-import {ComponentProps, useMemo} from 'react';
+import {useMemo} from 'react';
+import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 
 import {assertUnreachable} from '../../app/Util';
 import {AssetOwner} from '../../graphql/types';
-import {useLaunchPadHooks} from '../../launchpad/LaunchpadHooksContext';
 import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 const emptyArray: any[] = [];
@@ -55,13 +55,6 @@ export const useAssetOwnerFilter = ({
       setOwners?.(Array.from(values));
     },
   });
-};
-
-const UserDisplay = (
-  props: ComponentProps<ReturnType<typeof useLaunchPadHooks>['UserDisplay']>,
-) => {
-  const {UserDisplay: Component} = useLaunchPadHooks();
-  return <Component {...props} />;
 };
 
 export function useAssetOwnersForAssets(

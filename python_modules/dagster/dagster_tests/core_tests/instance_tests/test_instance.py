@@ -295,17 +295,17 @@ def test_submit_run():
         }
     ) as instance:
         with get_bar_workspace(instance) as workspace:
-            external_job = (
+            remote_job = (
                 workspace.get_code_location("bar_code_location")
                 .get_repository("bar_repo")
-                .get_full_external_job("foo")
+                .get_full_job("foo")
             )
 
             run = create_run_for_test(
                 instance=instance,
-                job_name=external_job.name,
-                external_job_origin=external_job.get_external_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                job_name=remote_job.name,
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
             )
 
             instance.submit_run(run.run_id, workspace)

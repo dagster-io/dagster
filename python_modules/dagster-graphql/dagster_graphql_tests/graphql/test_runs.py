@@ -1,8 +1,11 @@
 import copy
 import tempfile
 
+import pytest
 import yaml
-from dagster import AssetMaterialization, Output, job, op, repository
+from dagster import AssetMaterialization, Output, define_asset_job, job, op, repository
+from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.events import AssetObservation
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.execution.api import execute_run
 from dagster._core.storage.dagster_run import DagsterRunStatus
@@ -227,6 +230,23 @@ query AssetRunsQuery($assetKey: AssetKeyInput!) {
 }
 """
 
+RUN_ASSETS_QUERY = """
+query RunQuery($runId: ID!) {
+  pipelineRunOrError(runId: $runId) {
+    __typename
+    ... on Run {
+      assets {
+        id
+        key {
+          path
+        }
+      }
+    }
+  }
+}
+"""
+
+
 RUN_CONCURRENCY_QUERY = """
 {
   pipelineRunsOrError {
@@ -270,6 +290,22 @@ query RunLogsQuery($afterCursor:String, $limit:Int, $runId: ID!) {
         }
       }
     }
+}
+"""
+
+RUN_METRICS_QUERY = """
+query RunQuery($runId: ID!) {
+  pipelineRunOrError(runId: $runId) {
+    __typename
+    ... on Run {
+        runId
+        tags {
+          key
+          value
+        }
+        hasRunMetricsEnabled
+    }
+  }
 }
 """
 
@@ -507,15 +543,22 @@ def get_asset_repo():
     @op(tags={"dagster/concurrency_key": "foo"})
     def foo():
         yield AssetMaterialization(asset_key="foo", description="foo")
+        yield AssetObservation(asset_key="bar", description="bar")
         yield Output(None)
 
     @job
     def foo_job():
         foo()
 
+    @asset
+    def my_fail_asset():
+        raise Exception("OOPS")
+
+    my_fail_asset_job = define_asset_job(name="my_fail_asset_job", selection="my_fail_asset")
+
     @repository
     def asset_repo():
-        return [foo_job]
+        return [foo_job, my_fail_asset, my_fail_asset_job]
 
     return asset_repo
 
@@ -876,6 +919,12 @@ def test_asset_batching():
         foo_job = repo.get_job("foo_job")
         for _ in range(3):
             foo_job.execute_in_process(instance=instance)
+
+        my_fail_asset_job = repo.get_job("my_fail_asset_job")
+        result = my_fail_asset_job.execute_in_process(instance=instance, raise_on_error=False)
+
+        fail_run_id = result.dagster_run.run_id
+
         with define_out_of_process_context(__file__, "asset_repo", instance) as context:
             traced_counter.set(Counter())
             result = execute_dagster_graphql(
@@ -886,10 +935,28 @@ def test_asset_batching():
             assert "assetMaterializations" in result.data["assetOrError"]
             materializations = result.data["assetOrError"]["assetMaterializations"]
             assert len(materializations) == 3
+
             counter = traced_counter.get()
             counts = counter.counts()
             assert counts
             assert counts.get("DagsterInstance.get_run_records") == 1
+
+            run_ids = [materialization["runOrError"]["id"] for materialization in materializations]
+
+            run_id = run_ids[0]
+            result = execute_dagster_graphql(context, RUN_ASSETS_QUERY, variables={"runId": run_id})
+
+            asset_ids = [asset["id"] for asset in result.data["pipelineRunOrError"]["assets"]]
+            assert sorted(asset_ids) == sorted(['["foo"]', '["bar"]'])
+
+            fail_run_result = execute_dagster_graphql(
+                context, RUN_ASSETS_QUERY, variables={"runId": fail_run_id}
+            )
+            # despite no materialization or observation, the asset is returned, because it was planned
+            asset_ids = [
+                asset["id"] for asset in fail_run_result.data["pipelineRunOrError"]["assets"]
+            ]
+            assert asset_ids == ['["my_fail_asset"]']
 
 
 def test_run_has_concurrency_slots():
@@ -931,3 +998,47 @@ def test_run_has_concurrency_slots():
                 assert result.data["pipelineRunsOrError"]["results"][0]["runId"] == run_id
                 assert result.data["pipelineRunsOrError"]["results"][0]["hasConcurrencyKeySlots"]
                 assert result.data["pipelineRunsOrError"]["results"][0]["rootConcurrencyKeys"]
+
+
+@pytest.mark.parametrize(
+    "run_tag, run_tag_value, run_metrics_enabled, failure_message",
+    [
+        (None, None, False, "run_metrics tag not present should result to false"),
+        (".dagster/run_metrics", "true", True, "run_metrics tag set to true should result to true"),
+        (
+            ".dagster/run_metrics",
+            "false",
+            False,
+            "run_metrics tag set to falsy value should result to false",
+        ),
+        (
+            "dagster/run_metrics",
+            "true",
+            True,
+            "public run_metrics tag set to true should result to true",
+        ),
+    ],
+)
+def test_run_has_run_metrics_enabled(run_tag, run_tag_value, run_metrics_enabled, failure_message):
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+        tags = (
+            {
+                run_tag: run_tag_value,
+            }
+            if run_tag
+            else {}
+        )
+        run = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.STARTED, tags=tags
+        )
+
+        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            result = execute_dagster_graphql(
+                context,
+                RUN_METRICS_QUERY,
+                variables={"runId": run.run_id},
+            )
+            assert result.data
+            has_run_metrics_enabled = result.data["pipelineRunOrError"]["hasRunMetricsEnabled"]
+            assert has_run_metrics_enabled == run_metrics_enabled, failure_message

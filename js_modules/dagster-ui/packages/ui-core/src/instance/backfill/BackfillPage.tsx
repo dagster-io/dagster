@@ -9,30 +9,19 @@ import {
   Tab,
   Tabs,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import {useContext, useEffect, useReducer} from 'react';
+import {useContext} from 'react';
 import {Link, useParams} from 'react-router-dom';
-import styled from 'styled-components';
 
-import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT, BackfillActionsMenu} from './BackfillActionsMenu';
+import {BackfillActionsMenu} from './BackfillActionsMenu';
+import {BackfillAssetPartitionsTable} from './BackfillAssetPartitionsTable';
 import {BackfillLogsTab} from './BackfillLogsTab';
-import {BackfillPartitionsTab} from './BackfillPartitionsTab';
+import {BackfillOverviewDetails} from './BackfillOverviewDetails';
 import {BackfillRunsTab} from './BackfillRunsTab';
-import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
-import {TargetPartitionsDisplay} from './TargetPartitionsDisplay';
-import {
-  BackfillStatusesByAssetQuery,
-  BackfillStatusesByAssetQueryVariables,
-} from './types/BackfillPage.types';
-import {gql, useQuery} from '../../apollo-client';
+import {useBackfillDetailsQuery} from './useBackfillDetailsQuery';
 import {CloudOSSContext} from '../../app/CloudOSSContext';
-import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
-import {Timestamp} from '../../app/time/Timestamp';
 import {BulkActionStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
@@ -41,9 +30,6 @@ import {
   useIsBackfillDaemonHealthy,
 } from '../../partitions/BackfillMessaging';
 import {testId} from '../../testing/testId';
-
-dayjs.extend(duration);
-dayjs.extend(relativeTime);
 
 export const BackfillPage = () => {
   const {featureContext} = useContext(CloudOSSContext);
@@ -56,13 +42,8 @@ export const BackfillPage = () => {
     defaults: {tab: 'partitions'},
   });
 
+  const queryResult = useBackfillDetailsQuery(backfillId);
   const isDaemonHealthy = useIsBackfillDaemonHealthy();
-
-  const queryResult = useQuery<BackfillStatusesByAssetQuery, BackfillStatusesByAssetQueryVariables>(
-    BACKFILL_DETAILS_QUERY,
-    {variables: {backfillId}},
-  );
-
   const {data, error} = queryResult;
 
   const backfill =
@@ -96,45 +77,7 @@ export const BackfillPage = () => {
 
     return (
       <>
-        <Box
-          padding={24}
-          flex={{
-            direction: 'row',
-            justifyContent: 'space-between',
-            wrap: 'nowrap',
-            alignItems: 'center',
-          }}
-          data-testid={testId('backfill-page-details')}
-        >
-          <Detail
-            label="Created"
-            detail={
-              <Timestamp
-                timestamp={{ms: Number(backfill.timestamp * 1000)}}
-                timeFormat={{showSeconds: true, showTimezone: false}}
-              />
-            }
-          />
-          <Detail
-            label="Duration"
-            detail={
-              <BackfillDuration
-                start={backfill.timestamp * 1000}
-                end={backfill.endTimestamp ? backfill.endTimestamp * 1000 : null}
-              />
-            }
-          />
-          <Detail
-            label="Partition selection"
-            detail={
-              <TargetPartitionsDisplay
-                targetPartitionCount={backfill.numPartitions || 0}
-                targetPartitions={backfill.assetBackfillData?.rootTargetedPartitions}
-              />
-            }
-          />
-          <Detail label="Status" detail={<BackfillStatusTagForPage backfill={backfill} />} />
-        </Box>
+        <BackfillOverviewDetails backfill={backfill} />
 
         {isDaemonHealthy ? null : (
           <Box padding={{horizontal: 24, bottom: 16}}>
@@ -156,8 +99,8 @@ export const BackfillPage = () => {
           <Alert intent="error" title={error.graphQLErrors.map((err) => err.message)} />
         )}
         <Box flex={{direction: 'column'}} style={{flex: 1, position: 'relative', minHeight: 0}}>
-          {selectedTab === 'partitions' && <BackfillPartitionsTab backfill={backfill} />}
-          {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} />}
+          {selectedTab === 'partitions' && <BackfillAssetPartitionsTable backfill={backfill} />}
+          {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} view="both" />}
           {selectedTab === 'logs' && <BackfillLogsTab backfill={backfill} />}
         </Box>
       </>
@@ -192,126 +135,4 @@ export const BackfillPage = () => {
       {content()}
     </Box>
   );
-};
-
-const Detail = ({label, detail}: {label: JSX.Element | string; detail: JSX.Element | string}) => (
-  <Box flex={{direction: 'column', gap: 4}} style={{minWidth: '280px'}}>
-    <Label>{label}</Label>
-    <div>{detail}</div>
-  </Box>
-);
-
-const Label = styled.div`
-  color: ${Colors.textLight()};
-  font-size: 12px;
-  line-height: 16px;
-`;
-
-const BackfillDuration = ({start, end}: {start: number; end?: number | null}) => {
-  const [_, rerender] = useReducer((s: number, _: any) => s + 1, 0);
-  useEffect(() => {
-    if (end) {
-      return;
-    }
-    const intervalId = setInterval(rerender, 1000);
-    return () => clearInterval(intervalId);
-  }, [start, end]);
-  const duration = end ? end - start : Date.now() - start;
-
-  return <span>{formatDuration(duration)}</span>;
-};
-
-export const BACKFILL_DETAILS_QUERY = gql`
-  query BackfillStatusesByAsset($backfillId: String!) {
-    partitionBackfillOrError(backfillId: $backfillId) {
-      ...BackfillDetailsBackfillFragment
-      ...PythonErrorFragment
-      ... on BackfillNotFoundError {
-        message
-      }
-    }
-  }
-
-  fragment BackfillDetailsBackfillFragment on PartitionBackfill {
-    id
-    status
-    timestamp
-    endTimestamp
-    numPartitions
-    ...BackfillActionsBackfillFragment
-
-    error {
-      ...PythonErrorFragment
-    }
-    assetBackfillData {
-      rootTargetedPartitions {
-        partitionKeys
-        ranges {
-          start
-          end
-        }
-      }
-      assetBackfillStatuses {
-        ... on AssetPartitionsStatusCounts {
-          assetKey {
-            path
-          }
-          numPartitionsTargeted
-          numPartitionsInProgress
-          numPartitionsMaterialized
-          numPartitionsFailed
-        }
-        ... on UnpartitionedAssetStatus {
-          assetKey {
-            path
-          }
-          inProgress
-          materialized
-          failed
-        }
-      }
-    }
-  }
-
-  ${PYTHON_ERROR_FRAGMENT}
-  ${BACKFILL_ACTIONS_BACKFILL_FRAGMENT}
-`;
-
-export const BACKFILL_PARTITIONS_FOR_ASSET_KEY_QUERY = gql`
-  query BackfillPartitionsForAssetKey($backfillId: String!, $assetKey: AssetKeyInput!) {
-    partitionBackfillOrError(backfillId: $backfillId) {
-      ... on PartitionBackfill {
-        id
-        partitionsTargetedForAssetKey(assetKey: $assetKey) {
-          partitionKeys
-          ranges {
-            start
-            end
-          }
-        }
-      }
-    }
-  }
-`;
-
-const formatDuration = (duration: number) => {
-  const seconds = Math.floor((duration / 1000) % 60);
-  const minutes = Math.floor((duration / (1000 * 60)) % 60);
-  const hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
-  const days = Math.floor(duration / (1000 * 60 * 60 * 24));
-
-  let result = '';
-  if (days > 0) {
-    result += `${days}d `;
-    result += `${hours}h`;
-  } else if (hours > 0) {
-    result += `${hours}h `;
-    result += `${minutes}m`;
-  } else if (minutes > 0) {
-    result += `${minutes}m `;
-    result += `${seconds}s`;
-  } else if (seconds > 0) {
-    result += `${seconds}s`;
-  }
-  return result.trim();
 };

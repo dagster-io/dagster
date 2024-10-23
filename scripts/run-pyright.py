@@ -2,6 +2,7 @@
 # ruff: noqa: T201
 
 import argparse
+import glob
 import json
 import os
 import re
@@ -299,6 +300,16 @@ def normalize_env(
             src_requirements_path = get_env_path(env, "requirements-pinned.txt")
             extra_pip_install_args = ["--no-deps"]
         dest_requirements_path = f"requirements-{env}.txt"
+
+        # This is a hack to get around a bug in uv wherein "--editable-mode=compat" is not respected
+        # if the package is in uv's global cache. This forces uv to reinstall the package and
+        # thereby respect --editable-mode=compat, which is necessary to guarantee that pyright can
+        # read the pth file for the editable install. Tracking uv issue here:
+        #  https://github.com/astral-sh/uv/issues/7028
+        reinstall_package_args = [
+            f"--reinstall-package {pkg}" for pkg in get_all_editable_packages(env)
+        ]
+
         build_venv_cmd = " && ".join(
             [
                 f"uv venv --python={venv_python} --seed {venv_path}",
@@ -319,6 +330,7 @@ def normalize_env(
                         dest_requirements_path,
                         "--no-cache" if no_cache else "",
                         *extra_pip_install_args,
+                        *reinstall_package_args,
                     ]
                 ),
             ]
@@ -327,6 +339,7 @@ def normalize_env(
             print(f"Copying {src_requirements_path} to {dest_requirements_path}....")
             shutil.copyfile(src_requirements_path, dest_requirements_path)
             subprocess.run(build_venv_cmd, shell=True, check=True)
+            validate_editable_installs(env)
         except subprocess.CalledProcessError as e:
             subprocess.run(f"rm -rf {venv_path}", shell=True, check=True)
             print(f"Partially built virtualenv for pyright environment {env} deleted.")
@@ -338,6 +351,35 @@ def normalize_env(
             update_pinned_requirements(env)
 
     return None
+
+
+def extract_package_name_from_editable_requirement(line: str) -> str:
+    trailing_component = line.strip("/").rsplit("/", 1)[1]  # last component of requirement
+    pkg = trailing_component.split("[")[0]  # remove extras if present
+    return pkg.replace("-", "_")
+
+
+def get_all_editable_packages(env: str) -> Sequence[str]:
+    requirements = get_env_path(env, "requirements.txt")
+    with open(requirements, "r") as f:
+        lines = [line.strip() for line in f.readlines()]
+    return [
+        extract_package_name_from_editable_requirement(line)
+        for line in lines
+        if line.startswith("-e")
+    ]
+
+
+# This ensures that all of our editable installs are "legacy" style, which is required to work with
+# pyright.
+def validate_editable_installs(env: str) -> None:
+    venv_path = os.path.join(get_env_path(env), ".venv")
+    for pth_file in glob.glob(f"{venv_path}/lib/python*/site-packages/__editable__*.pth"):
+        with open(pth_file, "r") as f:
+            first_line = f.readlines()[0]
+        # Not a legacy pth-- all legacy pth files contain an absolute path on the first line
+        if first_line[0] != "/":
+            raise Exception(f"Found unexpected modern-style pth file in env: {pth_file}.")
 
 
 def update_pinned_requirements(env: str) -> None:

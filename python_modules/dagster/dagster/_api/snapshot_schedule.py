@@ -5,7 +5,7 @@ from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external_data import ExternalScheduleExecutionErrorData
+from dagster._core.remote_representation.external_data import ScheduleExecutionErrorSnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._grpc.types import ExternalScheduleExecutionArgs
 from dagster._serdes import deserialize_value
@@ -24,7 +24,7 @@ def sync_get_external_schedule_execution_data_ephemeral_grpc(
 ) -> ScheduleExecutionData:
     from dagster._grpc.client import ephemeral_grpc_api_client
 
-    origin = repository_handle.get_external_origin()
+    origin = repository_handle.get_remote_origin()
     with ephemeral_grpc_api_client(
         origin.code_location_origin.loadable_target_origin
     ) as api_client:
@@ -54,7 +54,7 @@ def sync_get_external_schedule_execution_data_grpc(
         scheduled_execution_time, "scheduled_execution_time", TimestampWithTimezone
     )
 
-    origin = repository_handle.get_external_origin()
+    origin = repository_handle.get_remote_origin()
     result = deserialize_value(
         api_client.external_schedule_execution(
             external_schedule_execution_args=ExternalScheduleExecutionArgs(
@@ -71,9 +71,9 @@ def sync_get_external_schedule_execution_data_grpc(
                 timeout=timeout,
             )
         ),
-        (ScheduleExecutionData, ExternalScheduleExecutionErrorData),
+        (ScheduleExecutionData, ScheduleExecutionErrorSnap),
     )
-    if isinstance(result, ExternalScheduleExecutionErrorData):
+    if isinstance(result, ScheduleExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return result

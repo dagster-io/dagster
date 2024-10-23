@@ -1,4 +1,4 @@
-from typing import Iterator, Optional, cast
+from typing import Iterator, List, Optional, cast
 
 import dagster._check as check
 import docker
@@ -19,7 +19,6 @@ from dagster._core.executor.step_delegating.step_handler.base import (
 )
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.utils import parse_env_var
-from dagster._grpc.types import ExecuteStepArgs
 from dagster._serdes.utils import hash_str
 from dagster._utils.merger import merge_dicts
 
@@ -170,11 +169,17 @@ class DockerStepHandler(StepHandler):
             )
         return client
 
-    def _get_container_name(self, execute_step_args: ExecuteStepArgs):
-        run_id = execute_step_args.run_id
-        step_keys_to_execute = check.not_none(execute_step_args.step_keys_to_execute)
+    def _get_step_key(self, step_handler_context: StepHandlerContext) -> str:
+        step_keys_to_execute = cast(
+            List[str], step_handler_context.execute_step_args.step_keys_to_execute
+        )
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
-        step_key = step_keys_to_execute[0]
+        return step_keys_to_execute[0]
+
+    def _get_container_name(self, step_handler_context: StepHandlerContext):
+        execute_step_args = step_handler_context.execute_step_args
+        run_id = execute_step_args.run_id
+        step_key = self._get_step_key(step_handler_context)
 
         step_name = f"dagster-step-{hash_str(run_id + step_key)}"
 
@@ -198,17 +203,23 @@ class DockerStepHandler(StepHandler):
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         step_key = step_keys_to_execute[0]
 
+        container_kwargs = {**container_context.container_kwargs}
+        if "stop_timeout" in container_kwargs:
+            # This should work, but does not due to https://github.com/docker/docker-py/issues/3168
+            # Pull it out and apply it in the terminate() method instead
+            del container_kwargs["stop_timeout"]
+
         env_vars = dict([parse_env_var(env_var) for env_var in container_context.env_vars])
         env_vars["DAGSTER_RUN_JOB_NAME"] = step_handler_context.dagster_run.job_name
         env_vars["DAGSTER_RUN_STEP_KEY"] = step_key
         return client.containers.create(
             step_image,
-            name=self._get_container_name(execute_step_args),
+            name=self._get_container_name(step_handler_context),
             detach=True,
             network=container_context.networks[0] if len(container_context.networks) else None,
             command=execute_step_args.get_command_args(),
             environment=env_vars,
-            **container_context.container_kwargs,
+            **container_kwargs,
         )
 
     def launch_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
@@ -254,9 +265,15 @@ class DockerStepHandler(StepHandler):
 
         client = self._get_client(container_context)
 
-        container_name = self._get_container_name(step_handler_context.execute_step_args)
+        container_name = self._get_container_name(step_handler_context)
+        step_key = self._get_step_key(step_handler_context)
 
-        container = client.containers.get(container_name)
+        try:
+            container = client.containers.get(container_name)
+        except docker.errors.NotFound:
+            return CheckStepHealthResult.unhealthy(
+                reason=f"Docker container {container_name} for step {step_key} could not be found."
+            )
 
         if container.status == "running":
             return CheckStepHealthResult.healthy()
@@ -288,7 +305,7 @@ class DockerStepHandler(StepHandler):
         ), "Terminating multiple steps is not currently supported"
         step_key = step_keys_to_execute[0]
 
-        container_name = self._get_container_name(step_handler_context.execute_step_args)
+        container_name = self._get_container_name(step_handler_context)
 
         yield DagsterEvent.engine_event(
             step_handler_context.get_step_context(step_key),
@@ -300,4 +317,6 @@ class DockerStepHandler(StepHandler):
 
         container = client.containers.get(container_name)
 
-        container.stop()
+        stop_timeout = container_context.container_kwargs.get("stop_timeout")
+
+        container.stop(timeout=stop_timeout)

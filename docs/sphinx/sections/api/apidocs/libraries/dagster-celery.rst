@@ -47,7 +47,7 @@ the celery_executor.
 Monitoring your Celery tasks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We advise using [Flower](https://celery.readthedocs.io/en/latest/userguide/monitoring.html#flower-real-time-celery-web-monitor):
+We advise using `Flower <https://celery.readthedocs.io/en/latest/userguide/monitoring.html#flower-real-time-celery-web-monitor>`_:
 
 .. code-block:: bash
 
@@ -81,14 +81,6 @@ You can then run the celery worker using:
     celery -A my_module worker --loglevel=info
 
 This customization mechanism is used to implement `dagster_celery_k8s` and `dagster_celery_k8s` which delegate the execution of steps to ephemeral kubernetes pods and docker containers, respectively.
-
-Celery best practices
-^^^^^^^^^^^^^^^^^^^^^
-
-Celery is a rich and full-featured system. We've found the following resources helpful:
-
-- `Deni Bertović's Celery best practices <https://denibertovic.com/posts/celery-best-practices/>`_
-- `Balthazar Rouberol's Celery best practices <https://blog.balthazar-rouberol.com/celery-best-practices>`_
 
 API
 ~~~

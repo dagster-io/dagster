@@ -111,3 +111,7 @@ export type PartitionSetForConfigEditorFragment = {
   mode: string;
   solidSelection: Array<string> | null;
 };
+
+export const ConfigPartitionsQueryVersion = 'b2982b87aa317ad4df2f4227ac4285280de352fa571e952f56f9f85e2a0096fc';
+
+export const ConfigPartitionsAssetsQueryVersion = '02438f2590d14870b0df3107680c2d33da2c7a492a3f8a507c591f7ad4555409';

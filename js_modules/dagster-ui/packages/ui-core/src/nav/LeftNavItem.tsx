@@ -7,13 +7,13 @@ import styled from 'styled-components';
 import {LeftNavItemType} from './LeftNavItemType';
 import {Item} from './RepositoryContentList';
 import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
-import {InstigationStatesQuery, InstigationStatesQueryVariables} from './types/LeftNavItem.types';
 import {gql, useFragment, useQuery} from '../apollo-client';
+import {InstigationStatesQuery, InstigationStatesQueryVariables} from './types/LeftNavItem.types';
 import {InstigationStatus} from '../graphql/types';
 import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
 import {InstigationStateFragment} from '../instigation/types/InstigationUtils.types';
 import {humanCronString} from '../schedules/humanCronString';
-import {useRepository} from '../workspace/WorkspaceContext';
+import {useRepository} from '../workspace/WorkspaceContext/util';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface LeftNavItemProps {
@@ -114,8 +114,8 @@ export const LeftNavItem = React.forwardRef(
         const path = scheduleCount
           ? `/schedules/${schedules[0]!.name}`
           : sensorCount
-          ? `/sensors/${sensors[0]!.name}`
-          : null;
+            ? `/sensors/${sensors[0]!.name}`
+            : null;
 
         return path ? <Link to={workspacePathFromAddress(repoAddress, path)}>{icon}</Link> : null;
       };

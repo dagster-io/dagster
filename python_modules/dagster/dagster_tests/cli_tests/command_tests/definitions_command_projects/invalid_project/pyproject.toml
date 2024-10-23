@@ -1,0 +1,2 @@
+[tool.dagster]
+module_name = "invalid_project.definitions"

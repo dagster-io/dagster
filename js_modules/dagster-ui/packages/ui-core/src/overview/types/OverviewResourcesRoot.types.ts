@@ -60,3 +60,5 @@ export type OverviewResourcesQuery = {
         }>;
       };
 };
+
+export const OverviewResourcesQueryVersion = '38594d66ef4f0161f6cd670cb369ce161f1f4a2b012080af70fb446f600b8cf0';

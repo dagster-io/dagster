@@ -1,0 +1,3 @@
+load_from:
+  - python_file:
+      relative_path: valid_project/definitions.py

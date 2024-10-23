@@ -2,16 +2,16 @@ import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-
 import {useMemo} from 'react';
 
 import {VirtualizedSensorTable} from './VirtualizedSensorTable';
-import {useRepository} from './WorkspaceContext';
+import {useRepository} from './WorkspaceContext/util';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
+import {gql, useQuery} from '../apollo-client';
 import {
   WorkspaceSensorsQuery,
   WorkspaceSensorsQueryVariables,
 } from './types/WorkspaceSensorsRoot.types';
-import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';

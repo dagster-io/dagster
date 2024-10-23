@@ -12,13 +12,13 @@ import {
 import {useEffect} from 'react';
 
 import {START_SENSOR_MUTATION, STOP_SENSOR_MUTATION} from './SensorMutations';
+import {useMutation} from '../apollo-client';
 import {
   StartSensorMutation,
   StartSensorMutationVariables,
   StopRunningSensorMutation,
   StopRunningSensorMutationVariables,
 } from './types/SensorMutations.types';
-import {useMutation} from '../apollo-client';
 import {
   OpenWithIntent,
   useInstigationStateReducer,

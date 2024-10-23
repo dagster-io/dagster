@@ -214,8 +214,8 @@ Exception handling
 
 ----
 
-Step Launchers (Experimental)
------------------------------
+Step Launchers (Superseded)
+---------------------------
 
 .. currentmodule:: dagster
 

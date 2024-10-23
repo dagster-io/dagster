@@ -165,6 +165,31 @@ def test_different_event_types(use_materialization: bool, instance: DagsterInsta
         assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, True)
 
 
+def test_materialization_override_timestamp(instance: DagsterInstance) -> None:
+    """Test that the materialization timestamp can be overridden."""
+
+    @asset
+    def my_asset():
+        pass
+
+    start_time = create_datetime(2021, 1, 1, 1, 0, 0)
+    lower_bound_delta = datetime.timedelta(minutes=10)
+
+    # timestamp on the asset record does not result in a failed check, but override timestamp does.
+    with freeze_time(start_time):
+        add_new_event(
+            instance,
+            my_asset.key,
+            is_materialization=True,
+            override_timestamp=(start_time - datetime.timedelta(minutes=11)).timestamp(),
+        )
+        check = build_last_update_freshness_checks(
+            assets=[my_asset],
+            lower_bound_delta=lower_bound_delta,
+        )[0]
+        assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, False)
+
+
 def test_materialization_and_observation(instance: DagsterInstance) -> None:
     """Test that freshness check works when latest event is an observation, but it has no last_updated_time."""
 

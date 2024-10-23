@@ -122,6 +122,10 @@ Clients
 
 .. autoclass:: dagster_aws.pipes.PipesECSClient
 
+.. autoclass:: dagster_aws.pipes.PipesEMRClient
+
+.. autoclass:: dagster_aws.pipes.PipesEMRServerlessClient
+
 Legacy
 --------
 

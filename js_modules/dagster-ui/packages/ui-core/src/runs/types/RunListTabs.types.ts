@@ -18,3 +18,5 @@ export type RunTabsCountQuery = {
     | {__typename: 'PythonError'}
     | {__typename: 'Runs'; count: number | null};
 };
+
+export const RunTabsCountQueryVersion = '5fe1760a3bf0494fb98e3c09f31add5138f9f31d59507a8b25186e2103bebbb4';

@@ -7,16 +7,17 @@ import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {overlap} from './batchRunsForTimeline';
 import {fetchPaginatedBucketData, fetchPaginatedData} from './fetchPaginatedBucketData';
 import {getAutomationForRun} from './getAutomationForRun';
+import {QueryResult, gql, useApolloClient} from '../apollo-client';
 import {
   CompletedRunTimelineQuery,
   CompletedRunTimelineQueryVariables,
+  CompletedRunTimelineQueryVersion,
   FutureTicksQuery,
   FutureTicksQueryVariables,
   OngoingRunTimelineQuery,
   OngoingRunTimelineQueryVariables,
   RunTimelineFragment,
 } from './types/useRunsForTimeline.types';
-import {QueryResult, gql, useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -29,8 +30,6 @@ import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 const BATCH_LIMIT = 500;
-
-export const QUERY_VERSION = 1;
 
 export const useRunsForTimeline = ({
   rangeMs,
@@ -67,12 +66,12 @@ export const useRunsForTimeline = ({
         id: localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline-filtered` : false,
         keyPrefix: JSON.stringify(filter),
         keyMaxCount: 3,
-        version: QUERY_VERSION,
+        version: CompletedRunTimelineQueryVersion,
       });
     }
     return new HourlyDataCache<RunTimelineFragment>({
       id: localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline` : false,
-      version: QUERY_VERSION,
+      version: CompletedRunTimelineQueryVersion,
     });
   }, [filter, localCacheIdPrefix]);
   const [completedRuns, setCompletedRuns] = useState<RunTimelineFragment[]>([]);

@@ -60,6 +60,7 @@ class GCSFileManager(FileManager):
             temp_name = temp_file_obj.name
             bucket_obj = self._client.bucket(file_handle.gcs_bucket)
             bucket_obj.blob(file_handle.gcs_key).download_to_file(temp_file_obj)
+            temp_file_obj.flush()
             self._local_handle_cache[file_handle.gcs_path] = temp_name
 
         return file_handle

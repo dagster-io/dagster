@@ -29,6 +29,7 @@ export type TickHistoryQuery = {
           cursor: string | null;
           instigationType: Types.InstigationType;
           skipReason: string | null;
+          requestedAssetMaterializationCount: number;
           runIds: Array<string>;
           originRunIds: Array<string>;
           logKey: Array<string> | null;
@@ -65,3 +66,5 @@ export type TickHistoryQuery = {
         }>;
       };
 };
+
+export const TickHistoryQueryVersion = 'c7a49ebf0ce969829effc3c7234a7aada77643e14674507b4f75dd4b9aaaf538';

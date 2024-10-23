@@ -35,7 +35,7 @@ export type ScheduleAssetSelectionQuery = {
                   definition: {
                     __typename: 'AssetNode';
                     id: string;
-                    autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
+                    automationCondition: {__typename: 'AutomationCondition'} | null;
                   } | null;
                 }>;
               }
@@ -53,3 +53,5 @@ export type ScheduleAssetSelectionQuery = {
       }
     | {__typename: 'ScheduleNotFoundError'};
 };
+
+export const ScheduleAssetSelectionQueryVersion = '6942bd68a512ac71d6449844dbc07fcfd18226ab14b46e844f432f73a81eeccf';

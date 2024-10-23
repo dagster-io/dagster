@@ -1,8 +1,8 @@
-from tutorial_example.airflow_dags.custom_proxy import CustomProxyToDagsterOperator
-from tutorial_example.airflow_dags.plus_proxy_operator import DagsterCloudProxyOperator
-
-
 def test_dagster_cloud_proxy_operator() -> None:
+    from tutorial_example.snippets.custom_operator_examples.plus_proxy_operator import (
+        DagsterCloudProxyOperator,
+    )
+
     operator = DagsterCloudProxyOperator(task_id="test_task")
     assert (
         operator.get_dagster_url(
@@ -27,6 +27,24 @@ def test_dagster_cloud_proxy_operator() -> None:
 
 
 def test_custom_proxy_operator() -> None:
+    from tutorial_example.snippets.custom_operator_examples.custom_proxy import (
+        CustomProxyToDagsterOperator,
+    )
+
+    operator = CustomProxyToDagsterOperator(task_id="test_task")
+    assert (
+        operator.get_dagster_url({"var": {"value": {"my_api_key": "test_key"}}})  # type: ignore
+        == "https://dagster.example.com/"
+    )
+    session = operator.get_dagster_session({"var": {"value": {"my_api_key": "test_key"}}})  # type: ignore
+    assert session.headers["Authorization"] == "Bearer test_key"
+
+
+def test_dag_override_operator() -> None:
+    from tutorial_example.snippets.custom_operator_examples.custom_dag_level_proxy import (
+        CustomProxyToDagsterOperator,
+    )
+
     operator = CustomProxyToDagsterOperator(task_id="test_task")
     assert (
         operator.get_dagster_url({"var": {"value": {"my_api_key": "test_key"}}})  # type: ignore

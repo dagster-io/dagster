@@ -1,0 +1,7 @@
+tasks: 
+  - id: first_task 
+    proxied: True
+  - id: second_task 
+    proxied: False
+  - id: third_task 
+    proxied: True

@@ -200,9 +200,21 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         the appropriate config classes. For example, discriminated unions are represented
         in Dagster config as dicts with a single key, which is the discriminator value.
         """
-        modified_data = {}
-        for key, value in config_dict.items():
-            field = model_fields(self).get(key)
+        # In order to respect aliases on pydantic fields, we need to keep track of
+        # both the the field_key which is they key for the field on the pydantic model
+        # and the config_key which is the post alias resolution name which is
+        # the key for that field in the incoming config_dict
+        modified_data_by_config_key = {}
+        field_info_by_config_key = {
+            field.alias if field.alias else field_key: (field_key, field)
+            for field_key, field in model_fields(self).items()
+        }
+        for config_key, value in config_dict.items():
+            field_info = field_info_by_config_key.get(config_key)
+            field = None
+            field_key = config_key
+            if field_info:
+                field_key, field = field_info
 
             if field and field.discriminator:
                 nested_dict = value
@@ -221,7 +233,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 )
                 discriminated_value, nested_values = nested_items[0]
 
-                modified_data[key] = {
+                modified_data_by_config_key[config_key] = {
                     **nested_values,
                     discriminator_key: discriminated_value,
                 }
@@ -233,21 +245,32 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 and value in field.annotation.__members__
                 and value not in [member.value for member in field.annotation]  # type: ignore
             ):
-                modified_data[key] = field.annotation.__members__[value].value
+                modified_data_by_config_key[config_key] = field.annotation.__members__[value].value
             elif field and safe_is_subclass(field.annotation, Config) and isinstance(value, dict):
-                modified_data[key] = field.annotation._get_non_default_public_field_values_cls(  # noqa: SLF001
-                    value
+                modified_data_by_config_key[field_key] = (
+                    field.annotation._get_non_default_public_field_values_cls(  # noqa: SLF001
+                        value
+                    )
                 )
             else:
-                modified_data[key] = value
+                modified_data_by_config_key[config_key] = value
 
-        for key, field in model_fields(self).items():
-            if field.is_required() and key not in modified_data:
-                modified_data[key] = field.default if field.default != PydanticUndefined else None
+        for field_key, field in model_fields(self).items():
+            config_key = field.alias if field.alias else field_key
+            if field.is_required() and config_key not in modified_data_by_config_key:
+                modified_data_by_config_key[config_key] = (
+                    field.default if field.default != PydanticUndefined else None
+                )
 
-        super().__init__(**modified_data)
+        super().__init__(**modified_data_by_config_key)
         if USING_PYDANTIC_2:
-            self.__dict__ = ensure_env_vars_set_post_init(self.__dict__, modified_data)
+            modified_data_by_field_key = {}
+            for config_key, value in modified_data_by_config_key.items():
+                field_info = field_info_by_config_key.get(config_key)
+                field_key = field_info[0] if field_info else config_key
+                modified_data_by_field_key[field_key] = value
+
+            self.__dict__ = ensure_env_vars_set_post_init(self.__dict__, modified_data_by_field_key)
 
     def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
         """Converts this Config object to a Dagster config dictionary, in the same format as the dictionary

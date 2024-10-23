@@ -8,10 +8,35 @@ your other data assets, and how changes to other data assets might impact your L
 
 .. currentmodule:: dagster_looker
 
+**********
+Looker API
+**********
 
-Assets
-======
+Here, we provide interfaces to manage Looker projects using the Looker API.
+
+Assets (Looker API)
+===================
+
+.. autoclass:: LookerResource
+
+.. autoclass:: DagsterLookerApiTranslator
+
+.. autoclass:: LookerStructureData
+
+.. autoclass:: LookerStructureType
+
+.. autoclass:: RequestStartPdtBuild
+
+*************
+lkml (LookML)
+*************
+
+Here, we provide interfaces to manage Looker projects defined a set of locally accessible
+LookML files.
+
+Assets (lkml)
+=============
 
 .. autofunction:: build_looker_asset_specs
 
-.. autoclass:: DagsterLookerTranslator
+.. autoclass:: DagsterLookerLkmlTranslator

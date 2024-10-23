@@ -1,4 +1,5 @@
 import re
+from unittest import mock
 
 import kubernetes
 import pytest
@@ -134,3 +135,18 @@ def test_snake_case_extra_key():
     }
     with pytest.raises(Exception, match="Unexpected keys in model class V1Volume: {'extraKey'}"):
         k8s_snake_case_dict(kubernetes.client.V1Volume, volume_dict)
+
+
+def test_logger_calls_bounded():
+    with mock.patch("logging.Logger.setLevel") as mock_set_level:
+        volume_dict = {
+            "name": "my_volume",
+            "csi": {
+                "driver": "my_driver",
+                "volume_attributes": {"foo_key": "foo_val", "bar_key": "bar_val"},
+            },
+        }
+        k8s_model_from_dict(kubernetes.client.V1Volume, volume_dict)
+
+    # Creating a model should not use the logger lock
+    assert mock_set_level.call_count == 0

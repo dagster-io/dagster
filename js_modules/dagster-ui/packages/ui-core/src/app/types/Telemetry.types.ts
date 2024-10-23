@@ -24,3 +24,5 @@ export type LogTelemetryMutation = {
         }>;
       };
 };
+
+export const LogTelemetryMutationVersion = 'b7bec91d7a5e9e8fb3ad41bb5b7fa1eb1e067c530a8f4cd52a76fde6475462c3';

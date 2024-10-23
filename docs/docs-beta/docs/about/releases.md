@@ -18,11 +18,11 @@ If a version breaks your code, help us out by filing an issue on [GitHub](https:
 Our public, stable Python API includes:
 
 - All classes, functions, and variables that are exported at the top-level of the `dagster` package, unless they're marked [experimental](#experimental-apis).
-- Public, non-[experimental](#experimental-apis) methods and properties of public, stable classes. Public methods and properties are those included in the [API reference](/todo). Within the codebase, they're marked with a `@public` decorator.
+- Public, non-[experimental](#experimental-apis) methods and properties of public, stable classes. Public methods and properties are those included in the [API reference](/api). Within the codebase, they're marked with a `@public` decorator.
 
 ### Experimental APIs
 
-The `Experimental` marker allows us to offer new APIs to users and rapidly iterate based on their feedback. Experimental APIs are marked as such in the [API reference](/todo) and usually raise an `ExperimentalWarning` when used.
+The `Experimental` marker allows us to offer new APIs to users and rapidly iterate based on their feedback. Experimental APIs are marked as such in the [API reference](/api) and usually raise an `ExperimentalWarning` when used.
 
 Experimental APIs may change or disappear within any release, but we try to avoid breaking them within minor releases if they have been around for a long time.
 

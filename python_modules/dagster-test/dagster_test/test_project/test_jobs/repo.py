@@ -17,6 +17,7 @@ from dagster import (
     IntSource,
     List,
     Output,
+    RetryPolicy,
     RetryRequested,
     file_relative_path,
     graph,
@@ -30,6 +31,7 @@ from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.test_utils import nesting_graph, poll_for_step_start
 from dagster._utils import segfault
@@ -133,6 +135,9 @@ def apply_platform_settings(
         "factor": IntSource,
         "should_segfault": Field(bool, is_required=False, default_value=False),
     },
+    retry_policy=RetryPolicy(
+        max_retries=2,
+    ),
 )
 def multiply_the_word(context, word: str) -> str:
     if context.op_config.get("should_segfault"):
@@ -171,10 +176,18 @@ def demo_slow_graph():
     count_letters(multiply_the_word_slow())
 
 
-@op
-def hanging_op(_):
-    while True:
-        time.sleep(0.1)
+@op(config_schema={"cleanup_delay": Field(int, is_required=False)})
+def hanging_op(context):
+    try:
+        while True:
+            time.sleep(0.1)
+    except DagsterExecutionInterruptedError:
+        cleanup_delay = context.op_config.get("cleanup_delay")
+        if cleanup_delay:
+            context.log.info(f"Delaying cleanup for {cleanup_delay} seconds")
+            time.sleep(cleanup_delay)
+            context.log.info("Done cleaning up")
+        raise
 
 
 @op(config_schema={"looking_for": str})

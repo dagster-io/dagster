@@ -62,7 +62,7 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
     $ dagster-cloud serverless upload-base-image local-image:tag
 
     ...
-    To use the uploaded image run: dagster-cloud deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
+    To use the uploaded image run: dagster-cloud serverless deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
     ```
 
 4. Specify this base image tag in you GitHub workflow, or using the `dagster-cloud` CLI:

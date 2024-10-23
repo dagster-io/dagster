@@ -140,7 +140,7 @@ export async function makeSVGPortable(svg: SVGElement) {
     let sheetRules: CSSRule[];
     try {
       sheetRules = el.sheet ? Array.from(el.sheet.cssRules) : [];
-    } catch (err) {
+    } catch {
       // https://stackoverflow.com/questions/49993633/uncaught-domexception-failed-to-read-the-cssrules-property
       sheetRules = [];
     }

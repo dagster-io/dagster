@@ -63,6 +63,16 @@ const config: CodegenConfig = {
         },
       ],
     },
+    './client.json': {
+      plugins: [
+        {
+          'persisted-query-ids': {
+            algorithm: 'sha256',
+            output: 'client',
+          },
+        },
+      ],
+    },
   },
 };
 

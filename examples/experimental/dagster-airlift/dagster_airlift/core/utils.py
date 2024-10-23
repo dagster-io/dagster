@@ -1,13 +1,25 @@
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Iterable, Iterator, Optional, Set, Union
 
 from dagster import (
     AssetsDefinition,
     AssetSpec,
+    SourceAsset,
     _check as check,
 )
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.storage.tags import KIND_PREFIX
 
-from dagster_airlift.constants import DAG_ID_TAG, TASK_ID_TAG
+from dagster_airlift.constants import (
+    AIRFLOW_SOURCE_METADATA_KEY_PREFIX,
+    DAG_MAPPING_METADATA_KEY,
+    PEERED_DAG_MAPPING_METADATA_KEY,
+    TASK_MAPPING_METADATA_KEY,
+)
+
+if TYPE_CHECKING:
+    from dagster_airlift.core.serialization.serialized_data import DagHandle, TaskHandle
 
 
 def convert_to_valid_dagster_name(name: str) -> str:
@@ -15,62 +27,81 @@ def convert_to_valid_dagster_name(name: str) -> str:
     return "".join(c if VALID_NAME_REGEX.match(c) else "__" if c == "/" else "_" for c in name)
 
 
-def get_task_id_from_asset(asset: Union[AssetsDefinition, AssetSpec]) -> Optional[str]:
-    return _get_prop_from_asset(asset, TASK_ID_TAG, 1)
+def airflow_kind_dict() -> dict:
+    return {f"{KIND_PREFIX}airflow": ""}
 
 
-def get_dag_id_from_asset(asset: Union[AssetsDefinition, AssetSpec]) -> Optional[str]:
-    return _get_prop_from_asset(asset, DAG_ID_TAG, 0)
+def airlift_mapped_kind_dict() -> dict:
+    return {f"{KIND_PREFIX}airliftmapped": ""}
 
 
-def _get_prop_from_asset(
-    asset: Union[AssetSpec, AssetsDefinition], prop_tag: str, position: int
-) -> Optional[str]:
-    prop_from_asset_tags = prop_from_tags(asset, prop_tag)
-    if isinstance(asset, AssetSpec) or not asset.is_executable:
-        return prop_from_asset_tags
-    prop_from_op_tags = None
-    if asset.node_def.tags and prop_tag in asset.node_def.tags:
-        prop_from_op_tags = asset.node_def.tags[prop_tag]
-    prop_from_name = None
-    if len(asset.node_def.name.split("__")) == 2:
-        prop_from_name = asset.node_def.name.split("__")[position]
-    if prop_from_asset_tags and prop_from_op_tags:
-        check.invariant(
-            prop_from_asset_tags == prop_from_op_tags,
-            f"ID mismatch between asset tags and op tags: {prop_from_asset_tags} != {prop_from_op_tags}",
+def spec_iterator(
+    assets: Optional[
+        Iterable[Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]]
+    ],
+) -> Iterator[AssetSpec]:
+    for asset in assets or []:
+        if isinstance(asset, AssetsDefinition):
+            yield from asset.specs
+        elif isinstance(asset, AssetSpec):
+            yield asset
+        else:
+            raise DagsterInvariantViolationError(
+                "Expected orchestrated defs to all be AssetsDefinitions or AssetSpecs."
+            )
+
+
+def metadata_for_task_mapping(*, task_id: str, dag_id: str) -> dict:
+    return {TASK_MAPPING_METADATA_KEY: [{"dag_id": dag_id, "task_id": task_id}]}
+
+
+def metadata_for_dag_mapping(*, dag_id: str) -> dict:
+    return {DAG_MAPPING_METADATA_KEY: [{"dag_id": dag_id}]}
+
+
+def get_metadata_key(instance_name: str) -> str:
+    return f"{AIRFLOW_SOURCE_METADATA_KEY_PREFIX}/{instance_name}"
+
+
+def is_task_mapped_asset_spec(spec: AssetSpec) -> bool:
+    return TASK_MAPPING_METADATA_KEY in spec.metadata
+
+
+def is_dag_mapped_asset_spec(spec: AssetSpec) -> bool:
+    return DAG_MAPPING_METADATA_KEY in spec.metadata
+
+
+def is_peered_dag_asset_spec(spec: AssetSpec) -> bool:
+    return PEERED_DAG_MAPPING_METADATA_KEY in spec.metadata
+
+
+def task_handles_for_spec(spec: AssetSpec) -> Set["TaskHandle"]:
+    from dagster_airlift.core.serialization.serialized_data import TaskHandle
+
+    check.param_invariant(is_task_mapped_asset_spec(spec), "spec", "Must be mapped spec")
+    task_handles = []
+    for task_handle_dict in spec.metadata[TASK_MAPPING_METADATA_KEY]:
+        task_handles.append(
+            TaskHandle(dag_id=task_handle_dict["dag_id"], task_id=task_handle_dict["task_id"])
         )
-    if prop_from_asset_tags and prop_from_name:
-        check.invariant(
-            prop_from_asset_tags == prop_from_name,
-            f"ID mismatch between tags and name: {prop_from_asset_tags} != {prop_from_name}",
-        )
-    if prop_from_op_tags and prop_from_name:
-        check.invariant(
-            prop_from_op_tags == prop_from_name,
-            f"ID mismatch between op tags and name: {prop_from_op_tags} != {prop_from_name}",
-        )
-    return prop_from_asset_tags or prop_from_op_tags or prop_from_name
+    return set(task_handles)
 
 
-def prop_from_tags(asset: Union[AssetsDefinition, AssetSpec], prop_tag: str) -> Optional[str]:
-    specs = asset.specs if isinstance(asset, AssetsDefinition) else [asset]
-    asset_name = (
-        asset.node_def.name
-        if isinstance(asset, AssetsDefinition) and asset.is_executable
-        else asset.key.to_user_string()
-    )
-    if any(prop_tag in spec.tags for spec in specs):
-        prop = None
-        for spec in specs:
-            if prop is None:
-                prop = spec.tags[prop_tag]
-            else:
-                if spec.tags.get(prop_tag) is None:
-                    check.failed(f"Missing {prop_tag} tag in spec {spec.key} for {asset_name}")
-                check.invariant(
-                    prop == spec.tags[prop_tag],
-                    f"Task ID mismatch within same AssetsDefinition: {prop} != {spec.tags[prop_tag]}",
-                )
-        return prop
-    return None
+def dag_handles_for_spec(spec: AssetSpec) -> Set["DagHandle"]:
+    from dagster_airlift.core.serialization.serialized_data import DagHandle
+
+    check.param_invariant(is_dag_mapped_asset_spec(spec), "spec", "Must be mapped spec")
+    return {
+        DagHandle(dag_id=dag_handle_dict["dag_id"])
+        for dag_handle_dict in spec.metadata[DAG_MAPPING_METADATA_KEY]
+    }
+
+
+def peered_dag_handles_for_spec(spec: AssetSpec) -> Set["DagHandle"]:
+    from dagster_airlift.core.serialization.serialized_data import DagHandle
+
+    check.param_invariant(is_peered_dag_asset_spec(spec), "spec", "Must be mapped spec")
+    return {
+        DagHandle(dag_id=dag_handle_dict["dag_id"])
+        for dag_handle_dict in spec.metadata[PEERED_DAG_MAPPING_METADATA_KEY]
+    }

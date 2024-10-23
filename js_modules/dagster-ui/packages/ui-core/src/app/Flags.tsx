@@ -13,7 +13,7 @@ export const getFeatureFlags: () => FeatureFlag[] = memoize(
 export const featureEnabled = memoize((flag: FeatureFlag) => getFeatureFlags().includes(flag));
 
 type FlagMap = {
-  readonly [F in FeatureFlag]: boolean;
+  readonly [_ in FeatureFlag]: boolean;
 };
 
 export const useFeatureFlags = () => {

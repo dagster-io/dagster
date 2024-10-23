@@ -1,8 +1,7 @@
-import json
 from collections import defaultdict
 from enum import Enum
 from pprint import pformat
-from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Sequence, Tuple, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Union
 
 import polars as pl
 from dagster import InputContext, MetadataValue, MultiPartitionKey, OutputContext
@@ -11,21 +10,23 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.upath_io_manager import is_dict_type
 
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
-from dagster_polars.types import DataFrameWithMetadata, LazyFrameWithMetadata, StorageMetadata
 
 try:
     from deltalake import DeltaTable
     from deltalake.exceptions import TableNotFoundError
 except ImportError as e:
-    raise ImportError("Install 'dagster-polars[deltalake]' to use DeltaLake functionality") from e
+    if "deltalake" in str(e):
+        raise ImportError(
+            "Install 'dagster-polars[deltalake]' to use DeltaLake functionality"
+        ) from e
+    else:
+        raise e
 
 if TYPE_CHECKING:
     from upath import UPath
 
 
-DAGSTER_POLARS_STORAGE_METADATA_SUBDIR = ".dagster_polars_metadata"
-
-SINGLE_LOADING_TYPES = (pl.DataFrame, pl.LazyFrame, LazyFrameWithMetadata, DataFrameWithMetadata)
+SINGLE_LOADING_TYPES = (pl.DataFrame, pl.LazyFrame)
 
 
 class DeltaWriteMode(str, Enum):
@@ -47,7 +48,6 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
        The `partition_by` value will be used in `delta_write_options` of `pl.DataFrame.write_delta` and `pyarrow_options` of `pl.scan_detla`).
        When using a one-dimensional `PartitionsDefinition`, it should be a single string like "column`. When using a `MultiPartitionsDefinition`,
        it should be a dict with dimension to column names mapping, like `{"dimension": "column"}`.
-     - Supports writing/reading custom metadata to/from `.dagster_polars_metadata/<version>.json` file in the DeltaLake table directory.
 
     Install `dagster-polars[delta]` to use this IOManager.
 
@@ -156,18 +156,16 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         context: OutputContext,
         df: pl.LazyFrame,
         path: "UPath",
-        metadata: Optional[StorageMetadata] = None,
     ):
         context_metadata = context.definition_metadata or {}
         streaming = context_metadata.get("streaming", False)
-        return self.write_df_to_path(context, df.collect(streaming=streaming), path, metadata)
+        return self.write_df_to_path(context, df.collect(streaming=streaming), path)
 
     def write_df_to_path(
         self,
         context: OutputContext,
         df: pl.DataFrame,
         path: "UPath",
-        metadata: Optional[StorageMetadata] = None,  # why is metadata passed
     ):
         context_metadata = context.definition_metadata or {}
         delta_write_options = context_metadata.get(
@@ -222,34 +220,18 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             ).version()
         context.add_output_metadata({"version": current_version})
 
-        if metadata is not None:
-            metadata_path = self.get_storage_metadata_path(path, current_version)
-            metadata_path.parent.mkdir(parents=True, exist_ok=True)
-            metadata_path.write_text(json.dumps(metadata))
-
-    @overload
-    def scan_df_from_path(
-        self, path: "UPath", context: InputContext, with_metadata: Literal[None, False]
-    ) -> pl.LazyFrame: ...
-
-    @overload
-    def scan_df_from_path(
-        self, path: "UPath", context: InputContext, with_metadata: Literal[True]
-    ) -> LazyFrameWithMetadata: ...
-
     def scan_df_from_path(
         self,
         path: "UPath",
         context: InputContext,
-        with_metadata: Optional[bool] = False,
-    ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
+    ) -> pl.LazyFrame:
         """This method scans a DeltaLake table into a `polars.LazyFrame`.
         It can be called in 3 different situations:
         1. with an unpartitioned asset
         2. with a partitioned asset without native partitioning enabled - multiple times on nested .delta tables
         3. with a partitioned asset and with native partitioning enabled - a single time on the .delta table.
 
-        In the (3) optin we apply partition filters to only load mapped partitions
+        In the (3) option we apply partition filters to only load mapped partitions
         """
         assert context.upstream_output is not None
         assert context.upstream_output.definition_metadata is not None
@@ -287,25 +269,13 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         if delta_table_options:
             context.log.debug("Reading with delta_table_options: {delta_table_options}")
 
-        ldf = pl.scan_delta(
+        return pl.scan_delta(
             str(path),
             version=version,
             delta_table_options=delta_table_options,
             pyarrow_options=pyarrow_options,
             storage_options=self.storage_options,
         )
-
-        if with_metadata:
-            version = self.get_delta_version_to_load(path, context)
-            metadata_path = self.get_storage_metadata_path(path, version)
-            if metadata_path.exists():
-                metadata = json.loads(metadata_path.read_text())
-            else:
-                metadata = {}
-            return ldf, metadata
-
-        else:
-            return ldf
 
     def load_partitions(self, context: InputContext):
         assert context.upstream_output is not None
@@ -442,6 +412,3 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             ).version()
         else:
             return version
-
-    def get_storage_metadata_path(self, path: "UPath", version: int) -> "UPath":
-        return path / DAGSTER_POLARS_STORAGE_METADATA_SUBDIR / f"{version}.json"

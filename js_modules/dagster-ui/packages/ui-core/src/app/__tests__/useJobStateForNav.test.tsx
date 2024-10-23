@@ -1,7 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
 
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {useJobStateForNav} from '../AppTopNav/useJobStateForNav';
 import {
   workspaceWithDunderJob,

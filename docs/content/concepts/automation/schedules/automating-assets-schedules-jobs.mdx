@@ -102,7 +102,7 @@ defs = Definitions(
 
 At this point, your code should look like the following:
 
-```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py lines=3-10,14-23,30-34,41-47,54-60
+```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py lines=3-12,14-23,27-30,35-40,45-49
 from dagster import (
     AssetSelection,
     DefaultScheduleStatus,
@@ -111,6 +111,8 @@ from dagster import (
     asset,
     define_asset_job,
 )
+
+
 @asset(group_name="ecommerce_assets")
 def orders_asset():
     return 1
@@ -121,18 +123,21 @@ def users_asset():
     return 2
 
 
+ecommerce_job = define_asset_job(
+    "ecommerce_job", AssetSelection.groups("ecommerce_assets")
+)
 
-# end_job
+ecommerce_schedule = ScheduleDefinition(
+    job=ecommerce_job,
+    cron_schedule="15 5 * * 1-5",
+    default_status=DefaultScheduleStatus.RUNNING,
+)
 
-
-# start_schedule
-
-
-# start_definitions
 defs = Definitions(
     assets=[orders_asset, users_asset],
     jobs=[ecommerce_job],
     schedules=[ecommerce_schedule],
+)
 ```
 
 ---

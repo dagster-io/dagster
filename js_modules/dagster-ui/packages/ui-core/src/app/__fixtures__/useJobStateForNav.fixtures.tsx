@@ -5,7 +5,7 @@ import {
   buildRepositoryLocation,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
-import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 
 export const workspaceWithJob = buildWorkspaceMocks([
   buildWorkspaceLocationEntry({

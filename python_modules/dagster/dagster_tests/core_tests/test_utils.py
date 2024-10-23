@@ -16,6 +16,15 @@ from dagster._core.utils import (
 from dagster._utils import hash_collection, library_version_from_core_version
 
 
+@pytest.fixture
+def library_registry_fixture():
+    previous_libraries = DagsterLibraryRegistry.get()
+
+    yield
+
+    DagsterLibraryRegistry._libraries = previous_libraries  # noqa: SLF001
+
+
 def test_parse_env_var_no_equals():
     env_var = "FOO_ENV_VAR"
 
@@ -71,6 +80,15 @@ def test_library_version_from_core_version():
     assert library_version_from_core_version("1.1.16pre0") == "0.17.16rc0"
     assert library_version_from_core_version("1.1.16rc0") == "0.17.16rc0"
     assert library_version_from_core_version("1.1.16post0") == "0.17.16post0"
+
+
+def test_non_dagster_library_registry(library_registry_fixture):
+    DagsterLibraryRegistry.register("not-dagster", "0.0.1", is_dagster_package=False)
+
+    assert DagsterLibraryRegistry.get() == {
+        "dagster": dagster.version.__version__,
+        "not-dagster": "0.0.1",
+    }
 
 
 def test_library_registry():

@@ -162,7 +162,7 @@ export type SensorAssetSelectionQuery = {
                   definition: {
                     __typename: 'AssetNode';
                     id: string;
-                    autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
+                    automationCondition: {__typename: 'AutomationCondition'} | null;
                   } | null;
                 }>;
               }
@@ -181,3 +181,7 @@ export type SensorAssetSelectionQuery = {
     | {__typename: 'SensorNotFoundError'}
     | {__typename: 'UnauthorizedError'};
 };
+
+export const SensorRootQueryVersion = 'fd32c8557a75c273133137c289091357635f3be0af17b9a57b052087f8e9d023';
+
+export const SensorAssetSelectionQueryVersion = '188cd7bab57cb2a04cf4941133f43327d91cf9edef01018d3635cacf6e36582d';

@@ -7,13 +7,14 @@ import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {useAutoMaterializeSensorFlag} from './AutoMaterializeSensorFlag';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {gql, useQuery} from '../apollo-client';
 import {
   AssetGroupMetadataQuery,
   AssetGroupMetadataQueryVariables,
 } from './types/AssetGroupRoot.types';
-import {gql, useQuery} from '../apollo-client';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
+import {AssetGraphViewType} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -123,6 +124,7 @@ export const AssetGroupRoot = ({
           explorerPath={explorerPathFromString(path || 'lineage/')}
           onChangeExplorerPath={onChangeExplorerPath}
           onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
+          viewType={AssetGraphViewType.GROUP}
         />
       ) : (
         <AssetsCatalogTable
@@ -141,7 +143,7 @@ export const ASSET_GROUP_METADATA_QUERY = gql`
   query AssetGroupMetadataQuery($selector: AssetGroupSelector!) {
     assetNodes(group: $selector) {
       id
-      autoMaterializePolicy {
+      automationCondition {
         __typename
       }
     }
@@ -170,7 +172,7 @@ export const AssetGroupTags = ({
 
     if (
       automaterializeSensorsFlagState === 'has-global-amp' &&
-      assetNodes.some((a) => !!a.autoMaterializePolicy)
+      assetNodes.some((a) => !!a.automationCondition)
     ) {
       return <AutomaterializeDaemonStatusTag />;
     }

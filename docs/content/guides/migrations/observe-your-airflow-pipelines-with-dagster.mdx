@@ -7,7 +7,7 @@ description: "Learn how to leverage the features of Dagster and Airflow together
 
 Dagster can act as a single entry point to all orchestration platforms in use at your organization. By injecting a small amount of code into your existing pipelines, you can report events to Dagster, where you can then visualize the full lineage of pipelines. This can be particularly useful if you have multiple Apache Airflow environments, and hope to build a catalog and observation platform through Dagster.
 
-### Emitting materialization events from Airflow to Dagster
+## Emitting materialization events from Airflow to Dagster
 
 Imagine you have a large number of pipelines written in Apache Airflow and wish to introduce Dagster into your stack. By using custom Airflow operators, you can continue to run your existing pipelines while you work toward migrating them off Airflow, or while building new pipelines in Dagster that are tightly integrated with your legacy systems.
 

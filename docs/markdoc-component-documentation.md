@@ -23,11 +23,11 @@ To see the rendered version of these tags, move this file into the `next/pages/g
 
 When the wire was despatched he had a cup of tea; over it he told me of a diary kept by Jonathan Harker when abroad, and gave me a typewritten copy of it, as also of Mrs. Harker's diary at Whitby. "Take these," he said, "and study them well. When I have returned you will be master of all the facts, and we can then better enter on our inquisition. Keep them safe, for there is in them much of treasure. You will need all your faith, even you who have had such an experience as that of to-day. What is here told," he laid his hand heavily and gravely on the packet of papers as he spoke, "may be the beginning of the end to you and me and many another; or it may sound the knell of the Un-Dead who walk the earth. Read all, I pray you, with the open mind; and if you can add in any way to the story here told do so, for it is all-important. You have kept diary of all these so strange things; is it not so? Yes! Then we shall go through all these together when we meet." He then made ready for his departure, and shortly after drove off to Liverpool Street. I took my way to Paddington, where I arrived about fifteen minutes before the train came in.
 
-## Complex Header Where You Definitely Want to Use an Anchor Link {% #complex-header %} 
+## Complex Header Where You Definitely Want to Use an Anchor Link {% #complex-header %}
 
 ```
-## Complex Header Where You Definitely Want to Use an 
-Anchor Link {\% #complex-header %} 
+## Complex Header Where You Definitely Want to Use an
+Anchor Link {\% #complex-header %}
 ```
 
 # Vanilla Markdown Nodes
@@ -229,9 +229,9 @@ You can invoke a cross with this tag `{% cross /}%` and it looks like this {% cr
 Crosses and checks can also be used in lists:
 - {% check /%} Completed task
 - {% cross /%} Incomplete task
-- {% cross /%} Super Incomplete task 
+- {% cross /%} Super Incomplete task
 
-You can also put crosses and checks into headers 
+You can also put crosses and checks into headers
 
 ### This is a header with a check {% check /%}
 Which is pretty neat.
@@ -242,7 +242,7 @@ Which is also pretty neat.
 ## Images
 In the old MDX way of doing things, images were a bit of a pain. You had to either manually specify the height and width of the image or run a script (`make MDX-format`) to do it for you.
 
-Document preprocessors like this have a number of issues such as being slow, error-prone, and making edits to the docs more difficult. 
+Document preprocessors like this have a number of issues such as being slow, error-prone, and making edits to the docs more difficult.
 
 To that end, I've opted to extended the default markdoc image node to automatically determine the height and width of the image during the transform step and use that to instantiate the image using the `Next/Image` component. Doing this allows us to retain the benefits of our current make script approach while also preserving the easy authoring experience of vanilla markdown.
 
@@ -277,10 +277,11 @@ The cool part about all of this is that it removes the need to run `make MDX-for
 ### API Status Badges
 We've also got a bunch of badges that you can use to indicate the level of support an API or feature has.
 
-There are three types of badges:
+There are the available badges:
 
 - `{% experimental /%}` {% experimental /%}
 - `{% deprecated /%}` {% deprecated /%}
+- `{% superseded /%}` {% superseded /%}
 - `{% legacy /%}` {% legacy /%}
 
 ## Code Reference Links : Block
@@ -329,7 +330,7 @@ Code fences
 
 ## Article Lists : Block
 
-Authors can use article lists. 
+Authors can use article lists.
 
 They work like this:
 `{% articleList %}`

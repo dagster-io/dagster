@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Iterator, Mapping, NamedTuple, Optional
 
 import dagster._check as check
+from dagster._annotations import superseded
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.dagster_run import DagsterRun
@@ -56,6 +57,13 @@ class StepRunRef(
         )
 
 
+_step_launcher_supersession = superseded(
+    subject="StepLauncher",
+    additional_warn_text="Consider using Dagster Pipes instead. Learn more here: https://docs.dagster.io/concepts/dagster-pipes",
+)
+
+
+@_step_launcher_supersession
 class StepLauncher(ABC):
     """A StepLauncher is responsible for executing steps, either in-process or in an external process."""
 

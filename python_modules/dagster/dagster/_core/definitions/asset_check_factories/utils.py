@@ -1,5 +1,5 @@
 import datetime
-from typing import Callable, Iterator, Optional, Sequence, Tuple, Union, cast
+from typing import Callable, Iterator, Mapping, Optional, Sequence, Tuple, Union
 
 from dagster import _check as check
 from dagster._core.definitions.asset_check_result import AssetCheckResult
@@ -20,9 +20,9 @@ from dagster._core.definitions.decorators.asset_check_decorator import (
 )
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import JsonMetadataValue
+from dagster._core.definitions.metadata.metadata_value import TimestampMetadataValue
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster._core.instance import DagsterInstance
 
 # Constants
@@ -159,45 +159,24 @@ def retrieve_last_update_record(
 def retrieve_timestamp_from_record(asset_record: EventLogRecord) -> Optional[float]:
     """Retrieve the timestamp from the given materialization or observation record."""
     check.inst_param(asset_record, "asset_record", EventLogRecord)
-    if asset_record.event_log_entry.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION:
-        return asset_record.timestamp
-    else:
-        # If the asset observation does not have a last updated timestamp, return None.
-        if not asset_record.asset_observation or not asset_record.asset_observation.metadata.get(
-            LAST_UPDATED_TIMESTAMP_METADATA_KEY
-        ):
-            return None
-        metadata = check.not_none(asset_record.asset_observation).metadata
-        value = metadata[LAST_UPDATED_TIMESTAMP_METADATA_KEY].value
-        check.invariant(
-            isinstance(value, float),
-            f"Unexpected metadata value type for '{LAST_UPDATED_TIMESTAMP_METADATA_KEY}': "
-            f"{type(metadata[LAST_UPDATED_TIMESTAMP_METADATA_KEY])}",
+    default_value = None if asset_record.asset_observation else asset_record.timestamp
+    return (
+        get_timestamp_out_of_metadata_if_set(
+            check.not_none(asset_record.asset_event).metadata, LAST_UPDATED_TIMESTAMP_METADATA_KEY
         )
-        return cast(float, value)
+        or default_value
+    )
 
 
-def get_last_updated_timestamp(
-    record: Optional[EventLogRecord], context: AssetCheckExecutionContext
-) -> Optional[float]:
-    if record is None:
+def get_timestamp_out_of_metadata_if_set(metadata: Mapping, key: str) -> Optional[float]:
+    if key not in metadata:
         return None
-    if record.asset_materialization is not None:
-        return record.timestamp
-    elif record.asset_observation is not None:
-        metadata_value = record.asset_observation.metadata.get("dagster/last_updated_timestamp")
-        if metadata_value is not None:
-            return check.float_param(metadata_value.value, "last_updated_timestamp")
-        else:
-            context.log.warning(
-                f"Could not find last updated timestamp in observation record for asset key "
-                f"{check.not_none(record.asset_key).to_user_string()}. Please set "
-                "dagster/last_updated_timestamp in the metadata of the observation record on "
-                "assets which have freshness checks."
-            )
-            return None
-    else:
-        check.failed("Expected record to be an observation or materialization")
+    value = check.inst(
+        metadata[key],
+        TimestampMetadataValue,
+        f"Expected {key} in asset metadat to be a TimestampMetadataValue.",
+    )
+    return value.value
 
 
 def get_description_for_freshness_check_result(
@@ -242,6 +221,9 @@ def seconds_in_words(delta: float) -> str:
 
     Return format is "X days, Y hours, Z minutes, A seconds".
     """
+    # Edge case: If the delta is 0 seconds exactly, we should return "0 seconds".
+    if delta == 0:
+        return "0 seconds"
     days = int(delta // 86400)
     days_unit = "days" if days > 1 else "day" if days == 1 else None
     hours = int(delta % 86400 // 3600)

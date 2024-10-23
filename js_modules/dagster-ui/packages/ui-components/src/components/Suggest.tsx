@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
-import {IPopoverProps, InputGroupProps2} from '@blueprintjs/core';
+import {InputGroupProps, PopoverProps} from '@blueprintjs/core';
 // eslint-disable-next-line no-restricted-imports
 import {
   Suggest as BlueprintSuggest,
@@ -19,14 +19,14 @@ import {TextInputContainerStyles, TextInputStyles} from './TextInput';
 import {Container, Inner, Row} from './VirtualizedTable';
 
 export const GlobalSuggestStyle = createGlobalStyle`
-  .dagster-suggest-input.bp4-input-group {
+  .dagster-suggest-input.bp5-input-group {
     ${TextInputContainerStyles}
 
     &:disabled ${IconWrapper}:first-child {
       background-color: ${Colors.accentGray()};
     }
 
-    .bp4-input {
+    .bp5-input {
       ${TextInputStyles}
 
       height: auto;
@@ -36,15 +36,17 @@ export const GlobalSuggestStyle = createGlobalStyle`
       }
     }
 
-    .bp4-input-action {
+    .bp5-input-action {
       height: auto;
       top: 1px;
       right: 2px;
     }
   }
 
-  .bp4-select-popover.dagster-popover {
-    .bp4-popover-content li {
+
+  .bp5-select-popover.dagster-popover,
+  .bp5-suggest-popover.dagster-popover {
+    .bp5-popover-content li {
       list-style: none;
       margin: 0;
       padding: 0;
@@ -67,14 +69,14 @@ interface Props<T> extends React.PropsWithChildren<SuggestProps<T>> {
 export const Suggest = <T,>(props: Props<T>) => {
   const {popoverProps = {}, menuWidth = MENU_WIDTH, noResults, icon, ...rest} = props;
 
-  const allPopoverProps: Partial<IPopoverProps> = {
+  const allPopoverProps: Partial<PopoverProps> = {
     ...popoverProps,
     minimal: true,
     modifiers: deepmerge({offset: {enabled: true, offset: '0, 8px'}}, popoverProps.modifiers || {}),
     popoverClassName: `dagster-popover ${props.popoverProps?.className || ''}`,
   };
 
-  const inputProps: Partial<InputGroupProps2> = {
+  const inputProps: Partial<InputGroupProps> = {
     ...props.inputProps,
     className: 'dagster-suggest-input',
   };

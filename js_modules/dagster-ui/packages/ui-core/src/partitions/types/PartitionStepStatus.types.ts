@@ -159,3 +159,5 @@ export type PartitionStepStatusPipelineQuery = {
     | {__typename: 'PipelineSnapshotNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const PartitionStepStatusPipelineQueryVersion = 'd5ef608096052079835b7080ed72204eab4168a32953d065b398ae7de975c0fb';

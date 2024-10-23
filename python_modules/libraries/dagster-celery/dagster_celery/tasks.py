@@ -112,7 +112,7 @@ def create_execute_job_task(celery: Celery, **task_kwargs: dict) -> celery.Task:
                 ),
             )
 
-    return cast(celery.Task, _execute_job)
+    return cast(celery.Task, _execute_job)  # type: ignore # ignored for update, fix me!
 
 
 def create_resume_job_task(celery: Celery, **task_kwargs: dict) -> celery.Task:
@@ -139,4 +139,4 @@ def create_resume_job_task(celery: Celery, **task_kwargs: dict) -> celery.Task:
                 ),
             )
 
-    return cast(celery.Task, _resume_job)
+    return cast(celery.Task, _resume_job)  # type: ignore # ignored for update, fix me!

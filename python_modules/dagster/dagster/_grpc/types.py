@@ -12,7 +12,7 @@ from dagster._core.instance.ref import InstanceRef
 from dagster._core.origin import JobPythonOrigin, get_python_environment_entry_point
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
-    job_name_for_external_partition_set_name,
+    job_name_for_partition_set_snap_name,
 )
 from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
@@ -441,7 +441,7 @@ class PartitionArgs(
         if self.job_name:
             return self.job_name
         else:
-            return job_name_for_external_partition_set_name(self.partition_set_name)
+            return job_name_for_partition_set_snap_name(self.partition_set_name)
 
 
 @whitelist_for_serdes
@@ -479,7 +479,7 @@ class PartitionNamesArgs(
         if self.job_name:
             return self.job_name
         else:
-            return job_name_for_external_partition_set_name(self.partition_set_name)
+            return job_name_for_partition_set_snap_name(self.partition_set_name)
 
 
 @whitelist_for_serdes

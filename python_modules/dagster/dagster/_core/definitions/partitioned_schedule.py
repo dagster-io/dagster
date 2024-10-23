@@ -74,9 +74,9 @@ def build_schedule_from_partitioned_job(
 ) -> Union[UnresolvedPartitionedAssetScheduleDefinition, ScheduleDefinition]:
     """Creates a schedule from a job that targets
     time window-partitioned or statically-partitioned assets. The job can also be
-    multi-partitioned, as long as one of the partition dimensions is time-partitioned. Refer to the `Partitions API reference </_apidocs/partitions#partitioned-config>`_ for information about time-based run configuration.
+    multi-partitioned, as long as one of the partition dimensions is time-partitioned.
 
-    The schedule executes at the cadence specified by the time partitioning of the job or assets. Refer to the `Partitions documentation </concepts/partitions-schedules-sensors/partitions>`_ for more information.
+    The schedule executes at the cadence specified by the time partitioning of the job or assets.
 
     **Example:**
         .. code-block:: python
@@ -90,6 +90,7 @@ def build_schedule_from_partitioned_job(
                 asset,
                 build_schedule_from_partitioned_job,
                 define_asset_job,
+                Definitions,
             )
 
             @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))

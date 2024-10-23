@@ -1,9 +1,9 @@
+import {gql} from '../apollo-client';
 import {
   ResetScheduleMutation,
   StartThisScheduleMutation,
   StopScheduleMutation,
 } from './types/ScheduleMutations.types';
-import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';

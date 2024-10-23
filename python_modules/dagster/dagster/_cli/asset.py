@@ -9,11 +9,16 @@ from dagster._cli.workspace.cli_target import (
     python_origin_target_argument,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvalidSubsetError, DagsterUnknownPartitionError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+)
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._utils.hosted_user_process import recon_job_from_origin, recon_repository_from_origin
 from dagster._utils.interrupts import capture_interrupts
@@ -28,6 +33,11 @@ def asset_cli():
 @python_origin_target_argument
 @click.option("--select", help="Asset selection to target", required=True)
 @click.option("--partition", help="Asset partition to target", required=False)
+@click.option(
+    "--partition-range",
+    help="Asset partition range to target i.e. <start>...<end>",
+    required=False,
+)
 def asset_materialize_command(**kwargs):
     with capture_interrupts():
         with get_possibly_temporary_instance_for_cli(
@@ -59,6 +69,11 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
         JobPythonOrigin(implicit_job_def.name, repository_origin=repository_origin)
     )
     partition = kwargs.get("partition")
+    partition_range = kwargs.get("partition_range")
+
+    if partition and partition_range:
+        check.failed("Cannot specify both --partition and --partition-range options. Use only one.")
+
     if partition:
         if all(
             implicit_job_def.asset_layer.get(asset_key).partitions_def is None
@@ -78,7 +93,41 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
                 "All selected assets must have a PartitionsDefinition containing the passed"
                 f" partition key `{partition}` or have no PartitionsDefinition."
             )
+    elif partition_range:
+        if len(partition_range.split("...")) != 2:
+            check.failed("Invalid partition range format. Expected <start>...<end>.")
 
+        partition_range_start, partition_range_end = partition_range.split("...")
+
+        for asset_key in asset_keys:
+            backfill_policy = implicit_job_def.asset_layer.get(asset_key).backfill_policy
+            if (
+                backfill_policy is not None
+                and backfill_policy.policy_type != BackfillPolicyType.SINGLE_RUN
+            ):
+                check.failed(
+                    "Provided partition range, but not all assets have a single-run backfill policy."
+                )
+        try:
+            implicit_job_def.validate_partition_key(
+                partition_range_start,
+                selected_asset_keys=asset_keys,
+                dynamic_partitions_store=instance,
+            )
+            implicit_job_def.validate_partition_key(
+                check.not_none(partition_range_end),
+                selected_asset_keys=asset_keys,
+                dynamic_partitions_store=instance,
+            )
+        except DagsterUnknownPartitionError:
+            raise DagsterInvalidSubsetError(
+                "All selected assets must have a PartitionsDefinition containing the passed"
+                f" partition key `{partition_range_start}` or have no PartitionsDefinition."
+            )
+        tags = {
+            ASSET_PARTITION_RANGE_START_TAG: partition_range_start,
+            ASSET_PARTITION_RANGE_END_TAG: partition_range_end,
+        }
     else:
         if any(
             implicit_job_def.asset_layer.get(asset_key).partitions_def is not None

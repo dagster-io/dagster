@@ -1,4 +1,4 @@
-import {Box, NonIdealState, Spinner} from '@dagster-io/ui-components';
+import {Box, NonIdealState, Row, Spinner} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
 
@@ -8,15 +8,21 @@ import {
   VirtualizedCodeLocationRepositoryRow,
   VirtualizedCodeLocationRow,
 } from './VirtualizedCodeLocationRow';
-import {Container, DynamicRowContainer, Inner} from '../ui/VirtualizedTable';
+import {Container, Inner} from '../ui/VirtualizedTable';
 
 interface Props {
   loading: boolean;
   codeLocations: CodeLocationRowType[];
   searchValue: string;
+  isFilteredView: boolean;
 }
 
-export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: Props) => {
+export const RepositoryLocationsList = ({
+  loading,
+  codeLocations,
+  searchValue,
+  isFilteredView,
+}: Props) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
@@ -55,6 +61,18 @@ export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: P
       );
     }
 
+    if (isFilteredView) {
+      return (
+        <Box padding={{vertical: 32}}>
+          <NonIdealState
+            icon="folder"
+            title="No matching code locations"
+            description={<div>No code locations were found for these filter settings.</div>}
+          />
+        </Box>
+      );
+    }
+
     return (
       <Box padding={{vertical: 32}}>
         <NonIdealState
@@ -70,32 +88,32 @@ export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: P
     <Container ref={parentRef}>
       <VirtualizedCodeLocationHeader />
       <Inner $totalHeight={totalHeight}>
-        <DynamicRowContainer $start={items[0]?.start ?? 0}>
-          {items.map(({index, key}) => {
-            const row: CodeLocationRowType = codeLocations[index]!;
-            if (row.type === 'location') {
-              return (
+        {items.map(({index, key, size, start}) => {
+          const row: CodeLocationRowType = codeLocations[index]!;
+          if (row.type === 'location') {
+            return (
+              <Row $height={size} $start={start} key={key}>
                 <VirtualizedCodeLocationRow
-                  key={key}
                   index={index}
                   locationEntry={row.locationEntry}
                   locationStatus={row.locationStatus}
                   ref={virtualizer.measureElement}
                 />
-              );
-            }
-            return (
+              </Row>
+            );
+          }
+          return (
+            <Row $height={size} $start={start} key={key}>
               <VirtualizedCodeLocationRepositoryRow
-                key={key}
                 index={index}
                 locationStatus={row.locationStatus}
                 locationEntry={row.locationEntry}
                 repository={row.repository}
                 ref={virtualizer.measureElement}
               />
-            );
-          })}
-        </DynamicRowContainer>
+            </Row>
+          );
+        })}
       </Inner>
     </Container>
   );

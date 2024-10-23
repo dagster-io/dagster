@@ -142,9 +142,11 @@ helm --namespace dagster-cloud upgrade agent \
 
 The agent is responsible for managing the lifecycle of your code locations and will typically need to pull images after your CI/CD process builds them and pushes them to your registry. You can specify a secret the agent will use to authenticate to your image registry.
 
+
 :::tip
 For cloud based Kubernetes such as AWS EKS, AKS, or GCP, you typically don't need an image pull secret. The role used by Kubernetes will have permission to access the registry. You can skip this configuration.
 :::
+
 
 First create the secret. This step will vary based on the registry you use, but for DockerHub:
 

@@ -1,4 +1,4 @@
-import {Colors, MenuItem, Suggest, useViewport} from '@dagster-io/ui-components';
+import {MenuItem, Suggest, useViewport} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -43,7 +43,7 @@ export const SearchFilter = <T,>({
             item.label.toLocaleLowerCase().includes(query.toLocaleLowerCase())
           }
           menuWidth={viewport.width}
-          popoverProps={{usePortal: false, fill: true}}
+          popoverProps={{usePortal: false, matchTargetWidth: true}}
           itemRenderer={(item, itemProps) => (
             <MenuItem
               active={itemProps.modifiers.active}
@@ -62,11 +62,7 @@ export const SearchFilter = <T,>({
 };
 
 const SuggestWrapper = styled.div`
-  .bp4-input-group.dagster-suggest-input {
+  .bp5-input-group.dagster-suggest-input {
     width: 100%;
-
-    ::placeholder {
-      color: ${Colors.textLighter()};
-    }
   }
 `;

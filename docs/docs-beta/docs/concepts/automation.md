@@ -4,11 +4,11 @@ title: About Automation
 
 There are several ways to automate the execution of your data pipelines with Dagster.
 
-The first system, and the most basic, is the [Schedule](/guides/automation/schedules), which responds to time.
+The first system, and the most basic, is the [Schedule](/guides/schedules), which responds to time.
 
-[Sensors](/guides/automation/sensors) are like schedules, but they respond to an external event defined by the user.
+[Sensors](/guides/sensors) are like schedules, but they respond to an external event defined by the user.
 
-[Asset Sensors](/guides/automation/asset-sensors) are a special case of sensor that responds to changes in asset materialization
+[Asset Sensors](/guides/asset-sensors) are a special case of sensor that responds to changes in asset materialization
 as reported by the Event Log.
 
 Finally, the Declarative Automation system is a

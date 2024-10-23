@@ -2,6 +2,6 @@
 
 ## How I Tested These Changes
 
-## Changelog [New | Bug | Docs]
+## Changelog
 
-> Replace this message with a changelog entry, or `NOCHANGELOG`
+> Insert changelog entry or delete this section.

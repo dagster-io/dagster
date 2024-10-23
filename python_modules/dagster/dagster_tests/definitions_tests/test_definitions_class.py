@@ -4,6 +4,7 @@ from typing import Any, Optional, Sequence
 
 import pytest
 from dagster import (
+    AssetCheckKey,
     AssetDep,
     AssetExecutionContext,
     AssetKey,
@@ -45,6 +46,7 @@ from dagster._core.definitions.executor_definition import executor
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
@@ -815,6 +817,7 @@ def test_merge():
         resources={"resource1": resource1},
         loggers={"logger1": logger1},
         executor=in_process_executor,
+        metadata={"foo": 1},
     )
     defs2 = Definitions(
         assets=[asset2],
@@ -823,6 +826,7 @@ def test_merge():
         sensors=[sensor2],
         resources={"resource2": resource2},
         loggers={"logger2": logger2},
+        metadata={"bar": 2},
     )
 
     merged = Definitions.merge(defs1, defs2)
@@ -835,6 +839,7 @@ def test_merge():
         loggers={"logger1": logger1, "logger2": logger2},
         executor=in_process_executor,
         asset_checks=[],
+        metadata={"foo": MetadataValue.int(1), "bar": MetadataValue.int(2)},
     )
 
 
@@ -1085,3 +1090,21 @@ def test_definitions_dedupe_reference_equality():
     assert len(defs.jobs) == 2
     assert len(defs.sensors) == 2
     assert len(defs.schedules) == 2
+
+
+def test_definitions_class_metadata():
+    defs = Definitions(metadata={"foo": "bar"})
+    assert defs.metadata == {"foo": MetadataValue.text("bar")}
+    assert defs.get_repository_def().metadata == {"foo": MetadataValue.text("bar")}
+
+
+def test_assets_def_with_only_checks():
+    @asset_check(asset="asset1")
+    def check1():
+        pass
+
+    assets_def = AssetsDefinition(**check1.get_attributes_dict())
+    defs = Definitions(assets=[assets_def])
+    check_key = AssetCheckKey(AssetKey("asset1"), "check1")
+    assert defs.get_asset_graph().asset_check_keys == {check_key}
+    assert check_key in defs.get_repository_def().asset_checks_defs_by_key

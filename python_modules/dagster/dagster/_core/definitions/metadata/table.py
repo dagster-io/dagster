@@ -32,103 +32,6 @@ class TableRecord(
 
 
 # ########################
-# ##### TABLE SCHEMA
-# ########################
-
-
-@whitelist_for_serdes
-class TableSchema(
-    NamedTuple(
-        "TableSchema",
-        [
-            ("columns", PublicAttr[Sequence["TableColumn"]]),
-            ("constraints", PublicAttr["TableConstraints"]),
-        ],
-    )
-):
-    """Representation of a schema for tabular data.
-
-    Schema is composed of two parts:
-
-    - A required list of columns (`TableColumn`). Each column specifies a
-      `name`, `type`, set of `constraints`, and (optional) `description`. `type`
-      defaults to `string` if unspecified. Column constraints
-      (`TableColumnConstraints`) consist of boolean properties `unique` and
-      `nullable`, as well as a list of strings `other` containing string
-      descriptions of all additional constraints (e.g. `"<= 5"`).
-    - An optional list of table-level constraints (`TableConstraints`). A
-      table-level constraint cannot be expressed in terms of a single column,
-      e.g. col a > col b. Presently, all table-level constraints must be
-      expressed as strings under the `other` attribute of a `TableConstraints`
-      object.
-
-    .. code-block:: python
-
-            # example schema
-            TableSchema(
-                constraints = TableConstraints(
-                    other = [
-                        "foo > bar",
-                    ],
-                ),
-                columns = [
-                    TableColumn(
-                        name = "foo",
-                        type = "string",
-                        description = "Foo description",
-                        constraints = TableColumnConstraints(
-                            required = True,
-                            other = [
-                                "starts with the letter 'a'",
-                            ],
-                        ),
-                    ),
-                    TableColumn(
-                        name = "bar",
-                        type = "string",
-                    ),
-                    TableColumn(
-                        name = "baz",
-                        type = "custom_type",
-                        constraints = TableColumnConstraints(
-                            unique = True,
-                        )
-                    ),
-                ],
-            )
-
-    Args:
-        columns (List[TableColumn]): The columns of the table.
-        constraints (Optional[TableConstraints]): The constraints of the table.
-    """
-
-    def __new__(
-        cls,
-        columns: Sequence["TableColumn"],
-        constraints: Optional["TableConstraints"] = None,
-    ):
-        return super(TableSchema, cls).__new__(
-            cls,
-            columns=check.sequence_param(columns, "columns", of_type=TableColumn),
-            constraints=check.opt_inst_param(
-                constraints, "constraints", TableConstraints, default=_DEFAULT_TABLE_CONSTRAINTS
-            ),
-        )
-
-    @public
-    @staticmethod
-    def from_name_type_dict(name_type_dict: Mapping[str, str]):
-        """Constructs a TableSchema from a dictionary whose keys are column names and values are the
-        names of data types of those columns.
-        """
-        return TableSchema(
-            columns=[
-                TableColumn(name=name, type=type_str) for name, type_str in name_type_dict.items()
-            ]
-        )
-
-
-# ########################
 # ##### TABLE CONSTRAINTS
 # ########################
 
@@ -162,58 +65,6 @@ class TableConstraints(
 
 
 _DEFAULT_TABLE_CONSTRAINTS = TableConstraints(other=[])
-
-# ########################
-# ##### TABLE COLUMN
-# ########################
-
-
-@whitelist_for_serdes
-class TableColumn(
-    NamedTuple(
-        "TableColumn",
-        [
-            ("name", PublicAttr[str]),
-            ("type", PublicAttr[str]),
-            ("description", PublicAttr[Optional[str]]),
-            ("constraints", PublicAttr["TableColumnConstraints"]),
-        ],
-    )
-):
-    """Descriptor for a table column. The only property that must be specified
-    by the user is `name`. If no `type` is specified, `string` is assumed. If
-    no `constraints` are specified, the column is assumed to be nullable
-    (i.e. `required = False`) and have no other constraints beyond the data type.
-
-    Args:
-        name (List[str]): Descriptions of arbitrary table-level constraints.
-        type (Optional[str]): The type of the column. Can be an arbitrary
-            string. Defaults to `"string"`.
-        description (Optional[str]): Description of this column. Defaults to `None`.
-        constraints (Optional[TableColumnConstraints]): Column-level constraints.
-            If unspecified, column is nullable with no constraints.
-    """
-
-    def __new__(
-        cls,
-        name: str,
-        type: str = "string",  # noqa: A002
-        description: Optional[str] = None,
-        constraints: Optional["TableColumnConstraints"] = None,
-    ):
-        return super(TableColumn, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            type=check.str_param(type, "type"),
-            description=check.opt_str_param(description, "description"),
-            constraints=check.opt_inst_param(
-                constraints,
-                "constraints",
-                TableColumnConstraints,
-                default=_DEFAULT_TABLE_COLUMN_CONSTRAINTS,
-            ),
-        )
-
 
 # ########################
 # ##### TABLE COLUMN CONSTRAINTS
@@ -257,6 +108,158 @@ class TableColumnConstraints(
 
 
 _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
+
+# ########################
+# ##### TABLE COLUMN
+# ########################
+
+
+@whitelist_for_serdes(skip_when_empty_fields={"tags"})
+class TableColumn(
+    NamedTuple(
+        "TableColumn",
+        [
+            ("name", PublicAttr[str]),
+            ("type", PublicAttr[str]),
+            ("description", PublicAttr[Optional[str]]),
+            ("constraints", PublicAttr[TableColumnConstraints]),
+            ("tags", PublicAttr[Mapping[str, str]]),
+        ],
+    )
+):
+    """Descriptor for a table column. The only property that must be specified
+    by the user is `name`. If no `type` is specified, `string` is assumed. If
+    no `constraints` are specified, the column is assumed to be nullable
+    (i.e. `required = False`) and have no other constraints beyond the data type.
+
+    Args:
+        name (List[str]): Descriptions of arbitrary table-level constraints.
+        type (Optional[str]): The type of the column. Can be an arbitrary
+            string. Defaults to `"string"`.
+        description (Optional[str]): Description of this column. Defaults to `None`.
+        constraints (Optional[TableColumnConstraints]): Column-level constraints.
+            If unspecified, column is nullable with no constraints.
+        tags (Optional[Mapping[str, str]]): Tags for filtering or organizing columns.
+    """
+
+    def __new__(
+        cls,
+        name: str,
+        type: str = "string",  # noqa: A002
+        description: Optional[str] = None,
+        constraints: Optional[TableColumnConstraints] = None,
+        tags: Optional[Mapping[str, str]] = None,
+    ):
+        return super(TableColumn, cls).__new__(
+            cls,
+            name=check.str_param(name, "name"),
+            type=check.str_param(type, "type"),
+            description=check.opt_str_param(description, "description"),
+            constraints=check.opt_inst_param(
+                constraints,
+                "constraints",
+                TableColumnConstraints,
+                default=_DEFAULT_TABLE_COLUMN_CONSTRAINTS,
+            ),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
+        )
+
+
+# ########################
+# ##### TABLE SCHEMA
+# ########################
+
+
+@whitelist_for_serdes
+class TableSchema(
+    NamedTuple(
+        "TableSchema",
+        [
+            ("columns", PublicAttr[Sequence[TableColumn]]),
+            ("constraints", PublicAttr[TableConstraints]),
+        ],
+    )
+):
+    """Representation of a schema for tabular data.
+
+    Schema is composed of two parts:
+
+    - A required list of columns (`TableColumn`). Each column specifies a
+      `name`, `type`, set of `constraints`, and (optional) `description`. `type`
+      defaults to `string` if unspecified. Column constraints
+      (`TableColumnConstraints`) consist of boolean properties `unique` and
+      `nullable`, as well as a list of strings `other` containing string
+      descriptions of all additional constraints (e.g. `"<= 5"`).
+    - An optional list of table-level constraints (`TableConstraints`). A
+      table-level constraint cannot be expressed in terms of a single column,
+      e.g. col a > col b. Presently, all table-level constraints must be
+      expressed as strings under the `other` attribute of a `TableConstraints`
+      object.
+
+    .. code-block:: python
+
+            # example schema
+            TableSchema(
+                constraints = TableConstraints(
+                    other = [
+                        "foo > bar",
+                    ],
+                ),
+                columns = [
+                    TableColumn(
+                        name = "foo",
+                        type = "string",
+                        description = "Foo description",
+                        constraints = TableColumnConstraints(
+                            nullable = False,
+                            other = [
+                                "starts with the letter 'a'",
+                            ],
+                        ),
+                    ),
+                    TableColumn(
+                        name = "bar",
+                        type = "string",
+                    ),
+                    TableColumn(
+                        name = "baz",
+                        type = "custom_type",
+                        constraints = TableColumnConstraints(
+                            unique = True,
+                        )
+                    ),
+                ],
+            )
+
+    Args:
+        columns (List[TableColumn]): The columns of the table.
+        constraints (Optional[TableConstraints]): The constraints of the table.
+    """
+
+    def __new__(
+        cls,
+        columns: Sequence[TableColumn],
+        constraints: Optional[TableConstraints] = None,
+    ):
+        return super(TableSchema, cls).__new__(
+            cls,
+            columns=check.sequence_param(columns, "columns", of_type=TableColumn),
+            constraints=check.opt_inst_param(
+                constraints, "constraints", TableConstraints, default=_DEFAULT_TABLE_CONSTRAINTS
+            ),
+        )
+
+    @public
+    @staticmethod
+    def from_name_type_dict(name_type_dict: Mapping[str, str]):
+        """Constructs a TableSchema from a dictionary whose keys are column names and values are the
+        names of data types of those columns.
+        """
+        return TableSchema(
+            columns=[
+                TableColumn(name=name, type=type_str) for name, type_str in name_type_dict.items()
+            ]
+        )
 
 
 # ###########################

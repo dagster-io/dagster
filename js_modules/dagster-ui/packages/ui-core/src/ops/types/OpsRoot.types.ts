@@ -242,3 +242,5 @@ export type OpsRootUsedSolidFragment = {
     pipeline: {__typename: 'Pipeline'; id: string; isJob: boolean; name: string};
   }>;
 };
+
+export const OpsRootQueryVersion = 'a8ce0cedc4ebcc5ed0007d8795360ce5635ceefe1882802f88162b457f2058a4';

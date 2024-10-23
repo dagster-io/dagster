@@ -75,7 +75,7 @@ class OutputsConfig(NamedTuple):
         else:
             return set()
 
-    def get_output_manager_config(self, output_name) -> object:
+    def get_output_manager_config(self, output_name: str) -> object:
         if isinstance(self.config, dict):
             return self.config.get(output_name)
         else:
@@ -86,7 +86,7 @@ class ResourceConfig(NamedTuple):
     config: Any
 
     @staticmethod
-    def from_dict(config):
+    def from_dict(config: Dict[str, object]) -> "ResourceConfig":
         check.dict_param(config, "config", key_type=str)
 
         return ResourceConfig(config=config.get("config"))
@@ -266,7 +266,7 @@ def config_map_resources(
             )
         else:
             config_mapped_resource_configs[resource_key] = ResourceConfig.from_dict(
-                resource_config_evr.value
+                check.not_none(resource_config_evr.value)
             )
 
     return config_mapped_resource_configs

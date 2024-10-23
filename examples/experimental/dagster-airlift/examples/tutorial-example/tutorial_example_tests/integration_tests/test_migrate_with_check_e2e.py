@@ -23,7 +23,7 @@ def setup_dagster_defs_path(
     local_env,
     mark_tasks_migrated: Callable[[AbstractSet[str]], contextlib.AbstractContextManager],
 ) -> Iterable[str]:
-    # Mark only the build_dbt_models task as migrated
+    # Mark only the build_dbt_models task as proxied
     with mark_tasks_migrated({"build_dbt_models"}):
         yield str(
             makefile_dir / "tutorial_example" / "dagster_defs" / "stages" / "migrate_with_check.py"
@@ -52,7 +52,7 @@ def test_migrate_runs_properly_in_dagster_with_check(
     check_key = AssetCheckKey(asset_key=AssetKey(["customers_csv"]), name="validate_exported_csv")
     check_result = poll_for_asset_check(instance, target=check_key)
 
-    # Ensure migrated tasks are run in Dagster and check runs even though the task is not migrated
+    # Ensure proxied tasks are run in Dagster and check runs even though the task is not proxied
     wait_for_all_runs_to_complete(instance)
     runs = instance.get_runs()
     assert len(runs) == 2

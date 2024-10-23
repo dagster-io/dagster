@@ -21,7 +21,6 @@ from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
 )
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_job import (
     IMPLICIT_ASSET_JOB_NAME,
@@ -186,7 +185,7 @@ def build_caching_repository_data_from_list(
     asset_keys: Set[AssetKey] = set()
     asset_check_keys: Set["AssetCheckKey"] = set()
     source_assets: List[SourceAsset] = []
-    asset_checks_defs: List[AssetChecksDefinition] = []
+    asset_checks_defs: List[AssetsDefinition] = []
     partitions_defs: Set[PartitionsDefinition] = set()
     for definition in repository_definitions:
         if isinstance(definition, JobDefinition):
@@ -245,7 +244,11 @@ def build_caching_repository_data_from_list(
             if definition.partitions_def is not None:
                 partitions_defs.add(definition.partitions_def)
             unresolved_jobs[definition.name] = definition
-        elif isinstance(definition, AssetChecksDefinition):
+        elif (
+            isinstance(definition, AssetsDefinition)
+            and definition.has_check_keys
+            and not definition.has_keys
+        ):
             for key in definition.check_keys:
                 if key in asset_check_keys:
                     raise DagsterInvalidDefinitionError(f"Duplicate asset check key: {key}")
@@ -316,10 +319,12 @@ def build_caching_repository_data_from_list(
     assets_without_keys = [ad for ad in assets_defs if not ad.keys]
     asset_graph = AssetGraph.from_assets(
         [
-            *assets_defs_by_key.values(),
+            # Ensure that the same AssetsDefinition doesn't need to be considered twice by the graph if
+            # it produces multiple asset keys
+            *set(assets_defs_by_key.values()),
             *assets_without_keys,
             *asset_checks_defs,
-            *source_assets_by_key.values(),
+            *source_assets_by_key.values(),  # only ever one key per source asset so no need to dedupe
         ]
     )
     if assets_defs or asset_checks_defs or source_assets:

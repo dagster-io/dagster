@@ -73,3 +73,5 @@ export type ScheduledRunsListQuery = {
       }
     | {__typename: 'RepositoryNotFoundError'};
 };
+
+export const ScheduledRunsListQueryVersion = '2650d8ebdfc444fe76fcf8acd9ff54f9ecacdb680b1d83e3f487cb71dd0c7eae';

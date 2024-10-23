@@ -180,7 +180,7 @@ class SdfInformationSchema(IHaveNew):
                     column_schema=TableSchema(
                         columns=table_columns.get(table_row["table_id"], []),
                     ),
-                    relation_identifier=table_row["table_id"],
+                    table_name=table_row["table_id"],
                 ),
                 **(code_references if code_references else {}),
                 DAGSTER_SDF_TABLE_ID: table_row["table_id"],
@@ -217,6 +217,7 @@ class SdfInformationSchema(IHaveNew):
                             get_output_dir(self.target_dir, self.environment),
                         ),
                         metadata=metadata,
+                        kinds={"sdf"},
                         skippable=True,
                     )
                 )
@@ -322,7 +323,7 @@ class SdfInformationSchema(IHaveNew):
                     column_schema=TableSchema(
                         columns=table_columns.get(table_row["table_id"], []),
                     ),
-                    relation_identifier=table_row["table_id"],
+                    table_name=table_row["table_id"],
                 ),
                 **(code_references if code_references else {}),
                 DAGSTER_SDF_TABLE_ID: table_row["table_id"],

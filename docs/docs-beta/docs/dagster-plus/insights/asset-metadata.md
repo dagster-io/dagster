@@ -8,10 +8,6 @@ Out of the box, Dagster+ Insights gives you visibility into a variety of common 
 By creating custom metrics from asset metadata, you can use Insights to perform historical aggregation on any
 data your assets can emit.
 
-## What you'll learn
-
-- How to add asset metadata as a custom metric to Dagster+ Insights
-
 <details>
   <summary>Prerequisites</summary>
 
@@ -25,7 +21,7 @@ You'll need one or more assets that emit the same metadata key at run time. Insi
 are most valuable when you have multiple assets that emit the same kind of metadata, such as
 such as the number of rows processed or the size of a file uploaded to object storage.
 
-Follow [the metadata guide](/guides/data-modeling/metadata#attaching-metadata-to-an-asset-at-runtime) to add numeric metadata
+Follow [the metadata guide](/guides/metadata#runtime-metadata) to add numeric metadata
 to your asset materializations.
 
 ## Step 2: Enable viewing your metadata in Dagster+ Insights

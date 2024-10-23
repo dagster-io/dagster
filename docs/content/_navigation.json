@@ -387,6 +387,14 @@
                 "path": "/concepts/dagster-pipes/aws-glue"
               },
               {
+                "title": "Dagster Pipes + AWS EMR",
+                "path": "/concepts/dagster-pipes/aws-emr"
+              },
+              {
+                "title": "Dagster Pipes + AWS EMR Serverless",
+                "path": "/concepts/dagster-pipes/aws-emr-serverless"
+              },
+              {
                 "title": "Dagster Pipes + AWS Lambda",
                 "path": "/concepts/dagster-pipes/aws-lambda"
               },
@@ -658,6 +666,10 @@
               {
                 "title": "Setup for Hybrid agents",
                 "path": "/dagster-plus/managing-deployments/setting-environment-variables-agents"
+              },
+              {
+                "title": "Reserved environment variables",
+                "path": "/dagster-plus/managing-deployments/reserved-environment-variables"
               }
             ]
           },
@@ -767,6 +779,10 @@
           {
             "title": "dagster_cloud.yaml",
             "path": "/dagster-plus/managing-deployments/dagster-cloud-yaml"
+          },
+          {
+            "title": "API Limits",
+            "path": "/dagster-plus/references/limits"
           }
         ]
       }
@@ -889,10 +905,6 @@
           {
             "title": "Airbyte Cloud & Dagster",
             "path": "/integrations/airbyte-cloud"
-          },
-          {
-            "title": "Ingestion as code",
-            "path": "/guides/dagster/airbyte-ingestion-as-code"
           }
         ]
       },
@@ -902,7 +914,7 @@
       },
       {
         "title": "Databricks",
-        "path": "/integrations/databricks"
+        "path": "/concepts/dagster-pipes/databricks"
       },
       {
         "title": "dbt",
@@ -1003,10 +1015,6 @@
       {
         "title": "Fivetran",
         "path": "/integrations/fivetran"
-      },
-      {
-        "title": "Great Expectations",
-        "path": "/integrations/great-expectations"
       },
       {
         "title": "Google BigQuery",
@@ -1533,6 +1541,10 @@
             "path": "/_apidocs/libraries/dagster-postgres"
           },
           {
+            "title": "PowerBI (dagster-powerbi)",
+            "path": "/_apidocs/libraries/dagster-powerbi"
+          },
+          {
             "title": "Prometheus (dagster-prometheus)",
             "path": "/_apidocs/libraries/dagster-prometheus"
           },
@@ -1567,6 +1579,10 @@
           {
             "title": "SSH / SFTP (dagster-ssh)",
             "path": "/_apidocs/libraries/dagster-ssh"
+          },
+          {
+            "title": "Tableau (dagster-tableau)",
+            "path": "/_apidocs/libraries/dagster-tableau"
           },
           {
             "title": "Twilio (dagster-twilio)",

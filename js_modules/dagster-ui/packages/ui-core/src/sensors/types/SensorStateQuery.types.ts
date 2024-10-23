@@ -22,3 +22,5 @@ export type SensorStateQuery = {
     | {__typename: 'InstigationStateNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const SensorStateQueryVersion = '867ed8f85db89c801fcd6f099356971c9c8a64ce52e6c61e6b73dc18680439aa';

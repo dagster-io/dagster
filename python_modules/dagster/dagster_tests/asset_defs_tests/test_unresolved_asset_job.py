@@ -492,8 +492,10 @@ def test_executor_def():
 
 def test_tags():
     my_tags = {"foo": "bar"}
-    job = create_test_asset_job([foo], tags=my_tags)
+    my_run_tags = {"baz": "quux"}
+    job = create_test_asset_job([foo], tags=my_tags, run_tags=my_run_tags)
     assert job.tags == my_tags
+    assert job.run_tags == my_run_tags
 
 
 def test_description():

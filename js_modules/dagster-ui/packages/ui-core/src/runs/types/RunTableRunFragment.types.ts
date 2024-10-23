@@ -11,6 +11,7 @@ export type RunTableRunFragment = {
   hasReExecutePermission: boolean;
   hasTerminatePermission: boolean;
   hasDeletePermission: boolean;
+  hasRunMetricsEnabled: boolean;
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;

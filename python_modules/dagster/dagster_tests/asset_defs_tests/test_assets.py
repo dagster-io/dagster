@@ -879,7 +879,7 @@ def test_group_name_requirements():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "Empty asset group name was provided, which is not permitted."
+            "Empty asset group name was provided, which is not permitted. "
             "Set group_name=None to use the default group_name or set non-empty string"
         ),
     ):
@@ -2257,7 +2257,7 @@ def test_asset_with_tags():
 
     assert asset1.specs_by_key[asset1.key].tags == {"a": "b"}
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="Found invalid tag keys"):
 
         @asset(tags={"a%": "b"})  # key has illegal character
         def asset2(): ...
@@ -2284,33 +2284,47 @@ def test_asset_spec_with_tags():
 
     assert assets.specs_by_key[AssetKey("asset1")].tags == {"a": "b"}
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="Found invalid tag key"):
 
         @multi_asset(specs=[AssetSpec("asset1", tags={"a%": "b"})])  # key has illegal character
         def assets(): ...
 
 
+def test_asset_decorator_with_kinds() -> None:
+    @asset(kinds={"python"})
+    def asset1():
+        pass
+
+    assert asset1.specs_by_key[AssetKey("asset1")].kinds == {"python"}
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Assets can have at most three kinds currently."
+    ):
+
+        @asset(kinds={"python", "snowflake", "bigquery", "airflow"})
+        def asset2(): ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Cannot specify compute_kind and kinds on the @asset decorator.",
+    ):
+
+        @asset(compute_kind="my_compute_kind", kinds={"python"})
+        def asset3(): ...
+
+
 def test_asset_spec_with_kinds() -> None:
-    @multi_asset(specs=[AssetSpec("asset1", tags={"dagster/kind/python": ""})])
+    @multi_asset(specs=[AssetSpec("asset1", kinds={"python"})])
     def assets(): ...
 
     assert assets.specs_by_key[AssetKey("asset1")].kinds == {"python"}
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="Assets can have at most two kinds currently."
+        DagsterInvalidDefinitionError, match="Assets can have at most three kinds currently."
     ):
 
         @multi_asset(
-            specs=[
-                AssetSpec(
-                    "asset1",
-                    tags={
-                        "dagster/kind/python": "",
-                        "dagster/kind/snowflake": "",
-                        "dagster/kind/bigquery": "",
-                    },
-                )
-            ]
+            specs=[AssetSpec("asset1", kinds={"python", "snowflake", "bigquery", "airflow"})]
         )
         def assets2(): ...
 
@@ -2319,10 +2333,7 @@ def test_asset_spec_with_kinds() -> None:
         match="Can not specify compute_kind on both the @multi_asset and kinds on AssetSpecs.",
     ):
 
-        @multi_asset(
-            compute_kind="my_compute_kind",
-            specs=[AssetSpec("asset1", tags={"dagster/kind/python": ""})],
-        )
+        @multi_asset(compute_kind="my_compute_kind", specs=[AssetSpec("asset1", kinds={"python"})])
         def assets3(): ...
 
 
@@ -2332,7 +2343,7 @@ def test_asset_out_with_tags():
 
     assert assets.specs_by_key[AssetKey("asset1")].tags == {"a": "b"}
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid tag key"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="Found invalid tag key"):
 
         @multi_asset(outs={"asset1": AssetOut(tags={"a%": "b"})})  # key has illegal character
         def assets(): ...
@@ -2391,3 +2402,24 @@ def test_multiple_keys_per_output_name():
         AssetsDefinition(
             node_def=op1, keys_by_output_name={"out1": AssetKey("a"), "out2": AssetKey("a")}
         )
+
+
+def test_iterate_over_single_key():
+    key = AssetKey("ouch")
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="You have attempted to iterate a single AssetKey object. "
+        "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug.",
+    ):
+        [_ for _ in key]
+
+
+def test_index_in_to_key():
+    key = AssetKey("ouch")
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="You have attempted to index directly in to the AssetKey object. "
+        "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug. "
+        "Use asset_key.path instead to access the list of key components.",
+    ):
+        key[0][0]

@@ -10,11 +10,10 @@ describe('CodeLocationSource', () => {
     render(<CodeLocationSource metadata={metadata} />);
 
     expect(screen.getByLabelText('github')).toBeVisible();
-    const link = screen.getByRole('link', {name: /gh-namespace/});
 
-    expect(link).toBeVisible();
-    expect(link.textContent).toBe('gh-namespace/foo-project');
-    expect(link.getAttribute('href')).toBe(url);
+    const button = screen.getByRole('link', {name: /view repo/i});
+    expect(button).toBeVisible();
+    expect(button).toHaveAttribute('href', url);
   });
 
   it('renders a GitLab project link', () => {
@@ -23,12 +22,9 @@ describe('CodeLocationSource', () => {
 
     render(<CodeLocationSource metadata={metadata} />);
 
-    expect(screen.getByLabelText('gitlab')).toBeVisible();
-    const link = screen.getByRole('link', {name: /gl-namespace/});
-
-    expect(link).toBeVisible();
-    expect(link.textContent).toBe('gl-namespace/bar-project');
-    expect(link.getAttribute('href')).toBe(url);
+    const button = screen.getByRole('link', {name: /view repo/i});
+    expect(button).toBeVisible();
+    expect(button).toHaveAttribute('href', url);
   });
 
   it('renders plaintext if the value is not a valid URL', () => {
@@ -51,12 +47,9 @@ describe('CodeLocationSource', () => {
 
     render(<CodeLocationSource metadata={metadata} />);
 
-    // No links.
     const link = screen.getByRole('link', {name: /google/});
     expect(link).toBeVisible();
     expect(link.getAttribute('href')).toBe(cleanedUrl);
-
-    // Jest text.
-    expect(screen.getByText(url)).toBeVisible();
+    expect(link.textContent).toBe(cleanedUrl);
   });
 });

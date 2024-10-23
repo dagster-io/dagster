@@ -170,3 +170,5 @@ export type BackfillSelectorQuery = {
     };
   };
 };
+
+export const BackfillSelectorQueryVersion = '715413ccaeb3a6d4b6d9b6ff9aa6cb98ab40e2d4ee1469a9883182f9d3f540b6';

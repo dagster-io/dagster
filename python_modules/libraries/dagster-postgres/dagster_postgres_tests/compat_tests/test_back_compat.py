@@ -414,7 +414,7 @@ def _reconstruct_from_file(hostname, conn_string, path, username="test", passwor
 
 def _migration_regex(current_revision, expected_revision=None):
     warning = re.escape(
-        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
+        "Raised an exception that may indicate that the Dagster database needs to be migrated."
     )
 
     if expected_revision:

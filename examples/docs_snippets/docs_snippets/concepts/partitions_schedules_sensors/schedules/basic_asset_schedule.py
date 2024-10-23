@@ -37,6 +37,7 @@ ecommerce_schedule = ScheduleDefinition(
     cron_schedule="15 5 * * 1-5",
     default_status=DefaultScheduleStatus.RUNNING,
 )
+
 # end_schedule
 
 

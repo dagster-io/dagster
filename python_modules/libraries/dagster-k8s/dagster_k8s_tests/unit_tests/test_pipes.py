@@ -2,7 +2,13 @@ from pathlib import Path
 
 import pytest
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster_k8s.pipes import _DEV_NULL_MESSAGE_WRITER, _detect_current_namespace, build_pod_body
+from dagster._core.utils import make_new_run_id
+from dagster_k8s.pipes import (
+    _DEV_NULL_MESSAGE_WRITER,
+    _detect_current_namespace,
+    build_pod_body,
+    get_pod_name,
+)
 from dagster_pipes import DAGSTER_PIPES_CONTEXT_ENV_VAR, DAGSTER_PIPES_MESSAGES_ENV_VAR
 
 
@@ -446,3 +452,11 @@ def test_pipes_client_namespace_autodetection_from_secret(tmpdir, kubeconfig_dum
     namespace_secret_path.write_text("my-namespace-from-secret")
     got = _detect_current_namespace(kubeconfig_with_namespace, namespace_secret_path)
     assert got == "my-namespace-from-secret"
+
+
+def test_pipes_pod_name_sanitization():
+    capital_op_name = "WHY_ARE&_YOU!_YELLING_AND_WHY_IS_THIS_OP_NAME_SO_LONG"
+    run_id = make_new_run_id()
+    capital_pod_name = get_pod_name(run_id, capital_op_name)
+    assert capital_pod_name.startswith(f"dagster-{run_id[:18]}-why-are-you-yelling--")
+    assert len(capital_pod_name) <= 63

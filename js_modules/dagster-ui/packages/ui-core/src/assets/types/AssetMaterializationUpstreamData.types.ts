@@ -39,3 +39,5 @@ export type AssetMaterializationUpstreamQuery = {
       }
     | {__typename: 'AssetNotFoundError'};
 };
+
+export const AssetMaterializationUpstreamQueryVersion = '754bab88738acc8d310c71f577ac3cf06dc57950bb1f98a18844e6e00bae756d';

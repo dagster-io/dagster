@@ -111,8 +111,8 @@ export const PartitionStatus = React.memo(
         const operation = !e.getModifierState('Shift')
           ? 'replace'
           : currentSelection.every((name) => selectedSet.has(name))
-          ? 'subtract'
-          : 'add';
+            ? 'subtract'
+            : 'add';
 
         if (operation === 'replace') {
           onSelect(currentSelection);
@@ -143,10 +143,10 @@ export const PartitionStatus = React.memo(
         selectedSet.size === 0
           ? []
           : selectedSet.size === partitionNames.length
-          ? [{startIdx: 0, endIdx: partitionNames.length - 1, status: true}]
-          : assembleIntoSpans(partitionNames, (key) => selectedSet.has(key)).filter(
-              (s) => s.status,
-            ),
+            ? [{startIdx: 0, endIdx: partitionNames.length - 1, status: true}]
+            : assembleIntoSpans(partitionNames, (key) => selectedSet.has(key)).filter(
+                (s) => s.status,
+              ),
       [selectedSet, partitionNames],
     );
 
@@ -160,14 +160,18 @@ export const PartitionStatus = React.memo(
     const _onClick = onClick
       ? (e: React.MouseEvent<any, MouseEvent>) => {
           const partitionName = toPartitionName(e.nativeEvent);
-          partitionName && onClick(partitionName);
+          if (partitionName) {
+            onClick(partitionName);
+          }
         }
       : undefined;
 
     const _onMouseDown = onSelect
       ? (e: React.MouseEvent<any, MouseEvent>) => {
           const partitionName = toPartitionName(e.nativeEvent);
-          partitionName && setCurrentSelectionRange({start: partitionName, end: partitionName});
+          if (partitionName) {
+            setCurrentSelectionRange({start: partitionName, end: partitionName});
+          }
         }
       : undefined;
 
@@ -219,10 +223,10 @@ export const PartitionStatus = React.memo(
                     tooltipMessage
                       ? tooltipMessage
                       : s.start.idx === s.end.idx
-                      ? `Partition ${partitionNames[s.start.idx]} is ${s.label.toLowerCase()}`
-                      : `Partitions ${partitionNames[s.start.idx]} through ${
-                          partitionNames[s.end.idx]
-                        } are ${s.label.toLowerCase()}`
+                        ? `Partition ${partitionNames[s.start.idx]} is ${s.label.toLowerCase()}`
+                        : `Partitions ${partitionNames[s.start.idx]} through ${
+                            partitionNames[s.end.idx]
+                          } are ${s.label.toLowerCase()}`
                   }
                 >
                   <div className="color-span" style={s.style} />
@@ -349,8 +353,8 @@ function useColorSegments(
     return _statusForKey
       ? opRunStatusToColorRanges(partitionNames, splitPartitions, _statusForKey)
       : _ranges && splitPartitions
-      ? splitColorSegments(partitionNames, assetHealthToColorSegments(_ranges))
-      : assetHealthToColorSegments(_ranges!);
+        ? splitColorSegments(partitionNames, assetHealthToColorSegments(_ranges))
+        : assetHealthToColorSegments(_ranges!);
   }, [splitPartitions, partitionNames, _ranges, _statusForKey]);
 }
 

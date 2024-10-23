@@ -22,3 +22,5 @@ export type QueueDaemonStatusQuery = {
     };
   };
 };
+
+export const QueueDaemonStatusQueryVersion = 'aa51c596ee907346e60e2fe173bba10ae2ead067d45109225a2cd400a2278841';

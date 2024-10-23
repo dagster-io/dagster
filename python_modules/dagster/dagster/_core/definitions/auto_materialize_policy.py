@@ -196,7 +196,7 @@ class AutoMaterializePolicy(
     @public
     @staticmethod
     @deprecated(
-        breaking_version="1.9",
+        breaking_version="1.10.0",
         additional_warn_text="Use `AutomationCondition.eager()` instead.",
     )
     def eager(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
@@ -228,7 +228,7 @@ class AutoMaterializePolicy(
     @public
     @staticmethod
     @deprecated(
-        breaking_version="1.9",
+        breaking_version="1.10.0",
         additional_warn_text="Use `AutomationCondition.any_downstream_conditions()` instead.",
     )
     def lazy(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":

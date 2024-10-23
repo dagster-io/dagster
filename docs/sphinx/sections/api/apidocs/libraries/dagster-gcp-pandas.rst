@@ -9,8 +9,8 @@ This library provides an integration with the `BigQuery <https://cloud.google.co
 
 Related Guides:
 
-* `Using Dagster with BigQuery </integrations/bigquery>`_
-* `BigQuery I/O manager reference </integrations/bigquery/reference>`_
+* `Using Dagster with BigQuery <https://docs.dagster.io/integrations/bigquery>`_
+* `BigQuery I/O manager reference <https://docs.dagster.io/integrations/bigquery/reference>`_
 
 .. autoconfigurable:: BigQueryPandasIOManager
   :annotation: IOManagerDefinition

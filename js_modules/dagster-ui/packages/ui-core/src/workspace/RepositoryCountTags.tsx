@@ -2,7 +2,7 @@ import {Box, Tag, Tooltip} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {DagsterRepoOption} from './WorkspaceContext';
+import {DagsterRepoOption} from './WorkspaceContext/util';
 import {RepoAddress} from './types';
 import {workspacePathFromAddress} from './workspacePath';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';

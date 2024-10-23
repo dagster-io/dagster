@@ -9,14 +9,23 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     isMaterializable
     isObservable
     isExecutable
+    isPartitioned
     computeKind
     hasMaterializePermission
+    hasReportRunlessAssetEventPermission
+    assetKey {
+      path
+    }
     partitionDefinition {
       description
       dimensionTypes {
         type
         dynamicPartitionsDefinitionName
       }
+    }
+    automationCondition {
+      label
+      expandedLabel
     }
     description
     owners {
@@ -31,6 +40,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
       key
       value
     }
+    jobNames
     kinds
     repository {
       id

@@ -34,7 +34,7 @@
   -e python_modules/dagster-pipes
   -e python_modules/dagster-webserver
   -e python_modules/dagster-graphql
-  -e python_modules/libraries/dagster-aws/
+  -e python_modules/libraries/dagster-aws[stubs]
   -e python_modules/libraries/dagster-dbt/
   -e python_modules/libraries/dagster-duckdb-pandas/
     -e python_modules/libraries/dagster-duckdb/
@@ -49,4 +49,3 @@
   -e python_modules/libraries/dagster-snowflake/
     -e python_modules/libraries/dagster-snowflake-pandas/
     -e python_modules/libraries/dagster-snowflake-pyspark/
-  

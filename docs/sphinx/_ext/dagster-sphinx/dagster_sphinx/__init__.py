@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Type, TypeVar
+from typing import List, Tuple, Type, TypeVar
 
 import docutils.nodes as nodes
 from dagster._annotations import (
@@ -6,11 +6,13 @@ from dagster._annotations import (
     get_deprecated_params,
     get_experimental_info,
     get_experimental_params,
+    get_superseded_info,
     has_deprecated_params,
     has_experimental_params,
     is_deprecated,
     is_experimental,
     is_public,
+    is_superseded,
 )
 from dagster._record import get_original_class, is_record
 from typing_extensions import Literal, TypeAlias
@@ -38,6 +40,7 @@ from .docstring_flags import inject_object_flag, inject_param_flag
 
 logger = logging.getLogger(__name__)
 
+
 ##### Useful links for Sphinx documentation
 #
 # [Event reference] https://www.sphinx-doc.org/en/master/extdev/appapi.html#sphinx-core-events
@@ -57,14 +60,9 @@ AutodocObjectType: TypeAlias = Literal[
 ]
 
 
-def record_error(env: BuildEnvironment, message: str) -> None:
-    """Record an error in the Sphinx build environment. The error list is
-    globally available during the build.
-    """
-    logger.info(message)
-    if not hasattr(env, "dagster_errors"):
-        setattr(env, "dagster_errors", [])
-    getattr(env, "dagster_errors").append(message)
+def record_error(message: str) -> None:
+    logger.error(message)
+    raise Exception(message)
 
 
 # ########################
@@ -73,12 +71,12 @@ def record_error(env: BuildEnvironment, message: str) -> None:
 
 
 def check_public_method_has_docstring(env: BuildEnvironment, name: str, obj: object) -> None:
-    if name != "__init__" and not obj.__doc__:
+    if name != "__init__" and not hasattr(obj, "__doc__"):
         message = (
-            f"Docstring not found for {object.__name__}.{name}. "
+            f"Docstring not found for {obj!r}.{name}. "
             "All public methods and properties must have docstrings."
         )
-        record_error(env, message)
+        record_error(message)
 
 
 class DagsterClassDocumenter(ClassDocumenter):
@@ -125,6 +123,9 @@ def process_docstring(
     if is_deprecated(obj):
         inject_object_flag(obj, get_deprecated_info(obj), lines)
 
+    if is_superseded(obj):
+        inject_object_flag(obj, get_superseded_info(obj), lines)
+
     if has_deprecated_params(obj):
         params = get_deprecated_params(obj)
         for param, info in params.items():
@@ -150,16 +151,6 @@ def get_child_as(node: nodes.Node, index: int, node_type: Type[T_Node]) -> T_Nod
     return child
 
 
-def check_custom_errors(app: Sphinx, exc: Optional[Exception] = None) -> None:
-    dagster_errors = getattr(app.env, "dagster_errors", [])
-    if len(dagster_errors) > 0:
-        for error_msg in dagster_errors:
-            logger.info(error_msg)
-        raise Exception(
-            f"Bulid failed. Found {len(dagster_errors)} violations of docstring requirements."
-        )
-
-
 def setup(app):
     app.setup_extension("sphinx.ext.autodoc")  # Require autodoc extension
     app.add_autodocumenter(ConfigurableDocumenter)
@@ -171,7 +162,6 @@ def setup(app):
     app.add_role("inline-flag", inline_flag_role)
     app.connect("autodoc-process-docstring", process_docstring)
     # app.connect("doctree-resolved", substitute_deprecated_text)
-    app.connect("build-finished", check_custom_errors)
 
     return {
         "version": "0.1",

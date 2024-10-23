@@ -1,3 +1,4 @@
+import json
 from typing import Any, Mapping, Optional
 
 import dagster._check as check
@@ -102,6 +103,20 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         client = self._get_client(container_context)
 
+        container_kwargs = {**container_context.container_kwargs}
+        labels = container_kwargs.pop("labels", {})
+
+        if "stop_timeout" in container_kwargs:
+            # This should work, but does not due to https://github.com/docker/docker-py/issues/3168
+            # Pull it out and apply it in the terminate() method instead
+            del container_kwargs["stop_timeout"]
+
+        if isinstance(labels, list):
+            labels = {key: "" for key in labels}
+
+        labels["dagster/run_id"] = run.run_id
+        labels["dagster/job_name"] = run.job_name
+
         try:
             container = client.containers.create(
                 image=docker_image,
@@ -109,7 +124,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 detach=True,
                 environment=docker_env,
                 network=container_context.networks[0] if len(container_context.networks) else None,
-                **container_context.container_kwargs,
+                labels=labels,
+                **container_kwargs,
             )
 
         except docker.errors.ImageNotFound:
@@ -120,7 +136,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 detach=True,
                 environment=docker_env,
                 network=container_context.networks[0] if len(container_context.networks) else None,
-                **container_context.container_kwargs,
+                labels=labels,
+                **container_kwargs,
             )
 
         if len(container_context.networks) > 1:
@@ -172,7 +189,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         self._launch_container_with_command(run, docker_image, command)
 
     def _get_container(self, run):
-        if not run or run.is_finished:
+        if not run:
             return None
 
         container_id = run.tags.get(DOCKER_CONTAINER_ID_TAG)
@@ -184,7 +201,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         try:
             return self._get_client(container_context).containers.get(container_id)
-        except Exception:
+        except docker.errors.NotFound:
             return None
 
     def terminate(self, run_id):
@@ -197,6 +214,9 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         container = self._get_container(run)
 
+        container_context = self.get_container_context(run)
+        stop_timeout = container_context.container_kwargs.get("stop_timeout")
+
         if not container:
             self._instance.report_engine_event(
                 message="Unable to get docker container to send termination request to.",
@@ -205,7 +225,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             )
             return False
 
-        container.stop()
+        container.stop(timeout=stop_timeout)
 
         return True
 
@@ -214,11 +234,22 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def check_run_worker_health(self, run: DagsterRun):
+        container_id = run.tags.get(DOCKER_CONTAINER_ID_TAG)
+
+        if not container_id:
+            return CheckRunHealthResult(WorkerStatus.NOT_FOUND, msg="No container ID tag for run.")
+
         container = self._get_container(run)
         if container is None:
-            return CheckRunHealthResult(WorkerStatus.NOT_FOUND)
+            return CheckRunHealthResult(
+                WorkerStatus.NOT_FOUND, msg=f"Could not find container with ID {container_id}."
+            )
         if container.status == "running":
             return CheckRunHealthResult(WorkerStatus.RUNNING)
-        return CheckRunHealthResult(
-            WorkerStatus.FAILED, msg=f"Container status is {container.status}"
+
+        container_state = container.attrs.get("State")
+        failure_string = f"Container status is {container.status}." + (
+            f" Container state: {json.dumps(container_state)}" if container_state else ""
         )
+
+        return CheckRunHealthResult(WorkerStatus.FAILED, msg=failure_string)

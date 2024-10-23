@@ -1,0 +1,246 @@
+---
+title: "Using Dagster with Tableau"
+---
+
+# Using Dagster with Tableau
+
+<ExperimentalCallout />
+
+This guide provides instructions for using Dagster with Tableau. Your Tableau assets, such as data sources, sheets, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Tableau assets and upstream data assets you are already modeling in Dagster.
+
+## What you'll learn
+
+- How to represent Tableau assets in the Dagster asset graph.
+
+- How to customize asset definition metadata for these Tableau assets.
+
+- How to refresh Tableau workbooks.
+
+- How to materialize Tableau sheets and dashboards.
+
+<details>
+  <summary>Prerequisites</summary>
+
+- Familiarity with asset definitions and the Dagster asset graph
+
+- Familiarity with Dagster resources - Familiarity with Tableau concepts, like data sources, sheets, and dashboards
+
+- A Tableau site, either on Tableau Cloud or Tableau Server
+
+- A connected app configured to access Tableau. For more information, see [Use Tableau Connected Apps for Application Integration](https://help.tableau.com/current/online/en-us/connected_apps.htm) in the Tableau documentation.
+
+</details>
+
+## Represent Tableau assets in the asset graph
+
+To load Tableau assets into the Dagster asset graph, you must first construct a Tableau resource, which allows Dagster to communicate with your Tableau workspace. The Tableau resource to create depends on your Tableau deployment type - use <PyObject module="dagster_tableau" object="TableauCloudWorkspace" /> if you are using Tableau Cloud or <PyObject module="dagster_tableau" object="TableauServerWorkspace" /> if you are using Tableau Server. To connect to the Tableau workspace, you'll need to [configure a connected app with direct trust](https://help.tableau.com/current/online/en-gb/connected_apps_direct.htm) in Tableau, then supply your Tableau site information and connected app credentials to the resource. The Tableau resource uses the JSON Web Token (JWT) authentication to connect to the Tableau workspace.
+
+Dagster can automatically load all data sources, sheets, and dashboards from your Tableau workspace. Call the <PyObject module="dagster_tableau" object="BaseTableauClient" method="build_defs" /> function, which returns a <PyObject object="Definitions" /> object containing all the asset definitions for these Tableau assets.
+
+<TabGroup>
+<TabItem name="Using Dagster with Tableau Cloud">
+
+Use <PyObject module="dagster_tableau" object="TableauCloudWorkspace" /> to interact with your Tableau Cloud workspace:
+
+```python file=/integrations/tableau/representing-tableau-cloud-assets.py
+from dagster_tableau import TableauCloudWorkspace
+
+import dagster as dg
+
+# Connect to Tableau Cloud using the connected app credentials
+workspace = TableauCloudWorkspace(
+    connected_app_client_id=dg.EnvVar("TABLEAU_CONNECTED_APP_CLIENT_ID"),
+    connected_app_secret_id=dg.EnvVar("TABLEAU_CONNECTED_APP_SECRET_ID"),
+    connected_app_secret_value=dg.EnvVar("TABLEAU_CONNECTED_APP_SECRET_VALUE"),
+    username=dg.EnvVar("TABLEAU_USERNAME"),
+    site_name=dg.EnvVar("TABLEAU_SITE_NAME"),
+    pod_name=dg.EnvVar("TABLEAU_POD_NAME"),
+)
+
+defs = workspace.build_defs()
+```
+
+---
+
+</TabItem>
+<TabItem name="Using Dagster with Tableau Server">
+
+Use <PyObject module="dagster_tableau" object="TableauServerWorkspace" /> to interact with your Tableau Server workspace:
+
+```python file=/integrations/tableau/representing-tableau-server-assets.py
+from dagster_tableau import TableauServerWorkspace
+
+import dagster as dg
+
+# Connect to Tableau Server using the connected app credentials
+workspace = TableauServerWorkspace(
+    connected_app_client_id=dg.EnvVar("TABLEAU_CONNECTED_APP_CLIENT_ID"),
+    connected_app_secret_id=dg.EnvVar("TABLEAU_CONNECTED_APP_SECRET_ID"),
+    connected_app_secret_value=dg.EnvVar("TABLEAU_CONNECTED_APP_SECRET_VALUE"),
+    username=dg.EnvVar("TABLEAU_USERNAME"),
+    site_name=dg.EnvVar("TABLEAU_SITE_NAME"),
+    server_name=dg.EnvVar("TABLEAU_SERVER_NAME"),
+)
+
+defs = workspace.build_defs()
+```
+
+---
+
+</TabItem>
+</TabGroup>
+
+### Customize asset definition metadata for Tableau assets
+
+By default, Dagster will generate asset keys for each Tableau asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_tableau" object="DagsterTableauTranslator" /> subclass to the <PyObject module="dagster_tableau" object="BaseTableauClient" method="build_defs" /> function. This subclass can implement methods to customize the asset keys or specs for each Tableau asset type.
+
+```python file=/integrations/tableau/customize-tableau-asset-defs.py
+from dagster_tableau import DagsterTableauTranslator, TableauCloudWorkspace
+from dagster_tableau.translator import TableauContentData
+
+import dagster as dg
+
+workspace = TableauCloudWorkspace(
+    connected_app_client_id=dg.EnvVar("TABLEAU_CONNECTED_APP_CLIENT_ID"),
+    connected_app_secret_id=dg.EnvVar("TABLEAU_CONNECTED_APP_SECRET_ID"),
+    connected_app_secret_value=dg.EnvVar("TABLEAU_CONNECTED_APP_SECRET_VALUE"),
+    username=dg.EnvVar("TABLEAU_USERNAME"),
+    site_name=dg.EnvVar("TABLEAU_SITE_NAME"),
+    pod_name=dg.EnvVar("TABLEAU_POD_NAME"),
+)
+
+
+# A translator class lets us customize properties of the built
+# Tableau assets, such as the owners or asset key
+class MyCustomTableauTranslator(DagsterTableauTranslator):
+    def get_sheet_spec(self, data: TableauContentData) -> dg.AssetSpec:
+        # We add a custom team owner tag to all sheets
+        return super().get_sheet_spec(data)._replace(owners=["my_team"])
+
+
+defs = workspace.build_defs(dagster_tableau_translator=MyCustomTableauTranslator)
+```
+
+### Load Tableau assets from multiple workspaces
+
+Definitions from multiple Tableau workspaces can be combined by instantiating multiple Tableau resources and merging their definitions. This lets you view all your Tableau assets in a single asset graph:
+
+```python file=/integrations/tableau/multiple-tableau-workspaces.py
+from dagster_tableau import TableauCloudWorkspace
+
+import dagster as dg
+
+sales_team_workspace = TableauCloudWorkspace(
+    connected_app_client_id=dg.EnvVar("SALES_TABLEAU_CONNECTED_APP_CLIENT_ID"),
+    connected_app_secret_id=dg.EnvVar("SALES_TABLEAU_CONNECTED_APP_SECRET_ID"),
+    connected_app_secret_value=dg.EnvVar("SALES_TABLEAU_CONNECTED_APP_SECRET_VALUE"),
+    username=dg.EnvVar("TABLEAU_USERNAME"),
+    site_name=dg.EnvVar("SALES_TABLEAU_SITE_NAME"),
+    pod_name=dg.EnvVar("SALES_TABLEAU_POD_NAME"),
+)
+
+marketing_team_workspace = TableauCloudWorkspace(
+    connected_app_client_id=dg.EnvVar("MARKETING_TABLEAU_CONNECTED_APP_CLIENT_ID"),
+    connected_app_secret_id=dg.EnvVar("MARKETING_TABLEAU_CONNECTED_APP_SECRET_ID"),
+    connected_app_secret_value=dg.EnvVar(
+        "MARKETING_TABLEAU_CONNECTED_APP_SECRET_VALUE"
+    ),
+    username=dg.EnvVar("TABLEAU_USERNAME"),
+    site_name=dg.EnvVar("MARKETING_TABLEAU_SITE_NAME"),
+    pod_name=dg.EnvVar("MARKETING_TABLEAU_POD_NAME"),
+)
+
+# We use Definitions.merge to combine the definitions from both workspaces
+# into a single set of definitions to load
+defs = dg.Definitions.merge(
+    sales_team_workspace.build_defs(),
+    marketing_team_workspace.build_defs(),
+)
+```
+
+### Refresh and materialize Tableau assets
+
+You can use Dagster to refresh Tableau workbooks and materialize Tableau sheets and dashboards.
+
+```python file=/integrations/tableau/refresh-and-materialize-tableau-assets.py
+from dagster_tableau import TableauCloudWorkspace
+
+import dagster as dg
+
+workspace = TableauCloudWorkspace(
+    connected_app_client_id=dg.EnvVar("TABLEAU_CONNECTED_APP_CLIENT_ID"),
+    connected_app_secret_id=dg.EnvVar("TABLEAU_CONNECTED_APP_SECRET_ID"),
+    connected_app_secret_value=dg.EnvVar("TABLEAU_CONNECTED_APP_SECRET_VALUE"),
+    username=dg.EnvVar("TABLEAU_USERNAME"),
+    site_name=dg.EnvVar("TABLEAU_SITE_NAME"),
+    pod_name=dg.EnvVar("TABLEAU_POD_NAME"),
+)
+
+defs = workspace.build_defs(
+    refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"]
+)
+```
+
+Note that only workbooks created with extracts can be refreshed using this method. See more about [refreshing data sources](https://help.tableau.com/current/pro/desktop/en-us/refreshing_data.htm) in Tableau documentation website.
+
+### Add a Data Quality Warning in Tableau using a sensor
+
+When an upstream dependency of a Tableau asset fails to materialize or to pass the asset checks, it is possible to add a [Data Quality Warning](https://help.tableau.com/current/online/en-us/dm_dqw.htm) to the corresponding data source in Tableau. This can be achieved by leveraging the `add_data_quality_warning_to_data_source` in a sensor.
+
+```python file=/integrations/tableau/add-tableau-data-quality-warning.py
+from dagster_tableau import TableauCloudWorkspace
+
+import dagster as dg
+
+# Connect to Tableau Cloud using the connected app credentials
+workspace = TableauCloudWorkspace(
+    connected_app_client_id=dg.EnvVar("TABLEAU_CONNECTED_APP_CLIENT_ID"),
+    connected_app_secret_id=dg.EnvVar("TABLEAU_CONNECTED_APP_SECRET_ID"),
+    connected_app_secret_value=dg.EnvVar("TABLEAU_CONNECTED_APP_SECRET_VALUE"),
+    username=dg.EnvVar("TABLEAU_USERNAME"),
+    site_name=dg.EnvVar("TABLEAU_SITE_NAME"),
+    pod_name=dg.EnvVar("TABLEAU_POD_NAME"),
+)
+
+
+@dg.asset(
+    # Define which Tableau data source this upstream asset corresponds to
+    metadata={"dagster/tableau_data_source_id": "f5660c7-2b05-4ff0-90ce-3199226956c6"}
+)
+def upstream_asset(): ...
+
+
+@dg.run_failure_sensor
+def tableau_run_failure_sensor(
+    context: dg.RunFailureSensorContext, tableau: TableauCloudWorkspace
+):
+    asset_keys = context.dagster_run.asset_selection or set()
+    for asset_key in asset_keys:
+        data_source_id = upstream_asset.metadata_by_key.get(asset_key, {}).get(
+            "dagster/tableau_data_source_id"
+        )
+        if data_source_id:
+            with tableau.get_client() as client:
+                client.add_data_quality_warning_to_data_source(
+                    data_source_id=data_source_id, message=context.failure_event.message
+                )
+
+
+# We use Definitions.merge to combine the definitions from the Tableau workspace
+# and the Dagster definitions into a single set of definitions to load
+tableau_defs = workspace.build_defs()
+upstream_defs = dg.Definitions(
+    assets=[upstream_asset],
+    sensors=[tableau_run_failure_sensor],
+    resources={"tableau": workspace},
+)
+
+defs = dg.Definitions.merge(tableau_defs, upstream_defs)
+```
+
+### Related
+
+- [`dagster-tableau` API reference](/\_apidocs/libraries/dagster-tableau)
+- [Asset definitions](/concepts/assets/software-defined-assets)
+- [Resources](/concepts/resources)
+- [Using environment variables and secrets](/guides/dagster/using-environment-variables-and-secrets)

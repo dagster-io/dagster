@@ -3,6 +3,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     FrozenSet,
+    Generic,
     Iterator,
     Mapping,
     NamedTuple,
@@ -15,7 +16,8 @@ from typing import (
 )
 
 from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
-from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
@@ -31,7 +33,7 @@ if TYPE_CHECKING:
         AutomationContext,
     )
 
-StructuredCursor = Union[str, AssetSubset, Sequence[AssetSubset]]
+StructuredCursor = Union[str, SerializableEntitySubset, Sequence[SerializableEntitySubset]]
 T_StructuredCursor = TypeVar("T_StructuredCursor", bound=StructuredCursor)
 
 
@@ -44,10 +46,10 @@ class HistoricalAllPartitionsSubsetSentinel:
 
 
 def get_serializable_candidate_subset(
-    candidate_subset: Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel],
-) -> Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel]:
+    candidate_subset: Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel],
+) -> Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel]:
     """Do not serialize the candidate subset directly if it is an AllPartitionsSubset."""
-    if isinstance(candidate_subset, AssetSubset) and isinstance(
+    if isinstance(candidate_subset, SerializableEntitySubset) and isinstance(
         candidate_subset.value, AllPartitionsSubset
     ):
         return HistoricalAllPartitionsSubsetSentinel()
@@ -77,7 +79,7 @@ class AutomationConditionSnapshot(NamedTuple):
 class AssetSubsetWithMetadata(NamedTuple):
     """An asset subset with metadata that corresponds to it."""
 
-    subset: AssetSubset
+    subset: SerializableEntitySubset
     metadata: MetadataMapping
 
     @property
@@ -86,33 +88,25 @@ class AssetSubsetWithMetadata(NamedTuple):
 
 
 @whitelist_for_serdes(storage_name="AssetConditionEvaluation")
-class AutomationConditionEvaluation(NamedTuple):
+@dataclass
+class AutomationConditionEvaluation(Generic[T_EntityKey]):
     """Serializable representation of the results of evaluating a node in the evaluation tree."""
 
     condition_snapshot: AutomationConditionNodeSnapshot
     start_timestamp: Optional[float]
     end_timestamp: Optional[float]
 
-    true_subset: AssetSubset
-    candidate_subset: Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel]
+    true_subset: SerializableEntitySubset[T_EntityKey]
+    candidate_subset: Union[
+        SerializableEntitySubset[T_EntityKey], HistoricalAllPartitionsSubsetSentinel
+    ]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
 
     child_evaluations: Sequence["AutomationConditionEvaluation"]
 
     @property
-    def asset_key(self) -> AssetKey:
-        return self.true_subset.asset_key
-
-    def discarded_subset(self) -> Optional[AssetSubset]:
-        """Returns the AssetSubset representing asset partitions that were discarded during this
-        evaluation. Note that 'discarding' is a deprecated concept that is only used for backwards
-        compatibility.
-        """
-        if len(self.child_evaluations) != 3:
-            return None
-        not_discard_evaluation = self.child_evaluations[-1]
-        discard_evaluation = not_discard_evaluation.child_evaluations[0]
-        return discard_evaluation.true_subset
+    def key(self) -> T_EntityKey:
+        return self.true_subset.key
 
     def for_child(self, child_unique_id: str) -> Optional["AutomationConditionEvaluation"]:
         """Returns the evaluation of a given child condition by finding the child evaluation that
@@ -127,20 +121,6 @@ class AutomationConditionEvaluation(NamedTuple):
     def with_run_ids(self, run_ids: AbstractSet[str]) -> "AutomationConditionEvaluationWithRunIds":
         return AutomationConditionEvaluationWithRunIds(evaluation=self, run_ids=frozenset(run_ids))
 
-    def legacy_num_skipped(self) -> int:
-        if len(self.child_evaluations) < 2:
-            return 0
-
-        not_skip_evaluation = self.child_evaluations[-1]
-        skip_evaluation = not_skip_evaluation.child_evaluations[0]
-        return skip_evaluation.true_subset.size - self.legacy_num_discarded()
-
-    def legacy_num_discarded(self) -> int:
-        discarded_subset = self.discarded_subset()
-        if discarded_subset is None:
-            return 0
-        return discarded_subset.size
-
     def iter_nodes(self) -> Iterator["AutomationConditionEvaluation"]:
         """Convenience utility for iterating through all nodes in an evaluation tree."""
         yield self
@@ -149,56 +129,31 @@ class AutomationConditionEvaluation(NamedTuple):
 
 
 @whitelist_for_serdes(storage_name="AssetConditionEvaluationWithRunIds")
-class AutomationConditionEvaluationWithRunIds(NamedTuple):
+@dataclass
+class AutomationConditionEvaluationWithRunIds(Generic[T_EntityKey]):
     """A union of an AutomatConditionEvaluation and the set of run IDs that have been launched in
     response to it.
     """
 
-    evaluation: AutomationConditionEvaluation
+    evaluation: AutomationConditionEvaluation[T_EntityKey]
     run_ids: FrozenSet[str]
 
     @property
-    def asset_key(self) -> AssetKey:
-        return self.evaluation.asset_key
+    def key(self) -> T_EntityKey:
+        return self.evaluation.key
 
     @property
     def num_requested(self) -> int:
         return self.evaluation.true_subset.size
 
 
-@whitelist_for_serdes(storage_name="AssetConditionEvaluationState")
-@dataclass(frozen=True)
-class AutomationConditionEvaluationState:
-    """Incremental state calculated during the evaluation of an AutomationCondition. This may be used
-    on the subsequent evaluation to make the computation more efficient.
-
-    Attributes:
-        previous_evaluation: The computed AutomationConditionEvaluation.
-        previous_tick_evaluation_timestamp: The evaluation_timestamp at which the evaluation was performed.
-        max_storage_id: The maximum storage ID over all events used in this computation.
-        extra_state_by_unique_id: A mapping from the unique ID of each condition in the evaluation
-            tree to the extra state that was calculated for it, if any.
-    """
-
-    previous_evaluation: AutomationConditionEvaluation
-    previous_tick_evaluation_timestamp: Optional[float]
-
-    max_storage_id: Optional[int]
-    extra_state_by_unique_id: Mapping[str, Optional[StructuredCursor]]
-
-    @property
-    def asset_key(self) -> AssetKey:
-        return self.previous_evaluation.asset_key
-
-    @property
-    def true_subset(self) -> AssetSubset:
-        return self.previous_evaluation.true_subset
-
-
 @whitelist_for_serdes
-class AutomationConditionNodeCursor(NamedTuple):
-    true_subset: AssetSubset
-    candidate_subset: Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel]
+@dataclass
+class AutomationConditionNodeCursor(Generic[T_EntityKey]):
+    true_subset: SerializableEntitySubset[T_EntityKey]
+    candidate_subset: Union[
+        SerializableEntitySubset[T_EntityKey], HistoricalAllPartitionsSubsetSentinel
+    ]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
     extra_state: Optional[StructuredCursor]
 
@@ -212,7 +167,8 @@ class AutomationConditionNodeCursor(NamedTuple):
 
 
 @whitelist_for_serdes
-class AutomationConditionCursor(NamedTuple):
+@dataclass
+class AutomationConditionCursor(Generic[T_EntityKey]):
     """Incremental state calculated during the evaluation of a AutomationCondition. This may be used
     on the subsequent evaluation to make the computation more efficient.
 
@@ -226,7 +182,7 @@ class AutomationConditionCursor(NamedTuple):
             has changed since the last time this was evaluated.
     """
 
-    previous_requested_subset: AssetSubset
+    previous_requested_subset: SerializableEntitySubset
     effective_timestamp: float
     last_event_id: Optional[int]
 
@@ -235,7 +191,7 @@ class AutomationConditionCursor(NamedTuple):
 
     @staticmethod
     def backcompat_from_evaluation_state(
-        evaluation_state: AutomationConditionEvaluationState,
+        evaluation_state: "AutomationConditionEvaluationState",
     ) -> "AutomationConditionCursor":
         """Serves as a temporary method to convert from old representation to the new representation."""
 
@@ -276,7 +232,7 @@ class AutomationConditionCursor(NamedTuple):
             return node_cursors
 
         return AutomationConditionCursor(
-            previous_requested_subset=result.true_subset,
+            previous_requested_subset=result.true_subset.convert_to_serializable_subset(),
             effective_timestamp=context.evaluation_time.timestamp(),
             last_event_id=context.max_storage_id,
             node_cursors_by_unique_id=_gather_node_cursors(result),
@@ -284,8 +240,8 @@ class AutomationConditionCursor(NamedTuple):
         )
 
     @property
-    def asset_key(self) -> AssetKey:
-        return self.previous_requested_subset.asset_key
+    def key(self) -> T_EntityKey:
+        return self.previous_requested_subset.key
 
     @property
     def temporal_context(self) -> TemporalContext:
@@ -293,3 +249,23 @@ class AutomationConditionCursor(NamedTuple):
             effective_dt=datetime_from_timestamp(self.effective_timestamp),
             last_event_id=self.last_event_id,
         )
+
+
+@whitelist_for_serdes(storage_name="AssetConditionEvaluationState")
+@dataclass(frozen=True)
+class AutomationConditionEvaluationState:
+    """DEPRECATED: exists only for backcompat purposes."""
+
+    previous_evaluation: AutomationConditionEvaluation
+    previous_tick_evaluation_timestamp: Optional[float]
+
+    max_storage_id: Optional[int]
+    extra_state_by_unique_id: Mapping[str, Optional[StructuredCursor]]
+
+    @property
+    def asset_key(self) -> AssetKey:
+        return self.previous_evaluation.key
+
+    @property
+    def true_subset(self) -> SerializableEntitySubset:
+        return self.previous_evaluation.true_subset

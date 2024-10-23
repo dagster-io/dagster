@@ -17,6 +17,12 @@ import {
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
 import {RunStatus} from '../graphql/types';
 
+export enum AssetGraphViewType {
+  GLOBAL = 'global',
+  JOB = 'job',
+  GROUP = 'group',
+}
+
 /**
  * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
  */
@@ -212,20 +218,12 @@ export const buildLiveDataForNode = (
 ): LiveDataForNode => {
   const lastMaterialization = assetNode.assetMaterializations[0] || null;
   const lastObservation = assetNode.assetObservations[0] || null;
-  const latestRunForAsset = assetLatestInfo?.latestRun ? assetLatestInfo.latestRun : null;
-
-  const runWhichFailedToMaterialize =
-    (latestRunForAsset?.status === 'FAILURE' &&
-      (!lastMaterialization || lastMaterialization.runId !== latestRunForAsset?.id) &&
-      latestRunForAsset) ||
-    null;
+  const latestRun = assetLatestInfo?.latestRun ? assetLatestInfo.latestRun : null;
 
   return {
     lastMaterialization,
     lastMaterializationRunStatus:
-      latestRunForAsset && lastMaterialization?.runId === latestRunForAsset?.id
-        ? latestRunForAsset.status
-        : null,
+      latestRun && lastMaterialization?.runId === latestRun.id ? latestRun.status : null,
     lastObservation,
     assetChecks:
       assetNode.assetChecksOrError.__typename === 'AssetChecks'
@@ -236,10 +234,33 @@ export const buildLiveDataForNode = (
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
     partitionStats: assetNode.partitionStats || null,
-    runWhichFailedToMaterialize,
+    runWhichFailedToMaterialize:
+      latestRun && shouldDisplayRunFailure(latestRun, lastMaterialization) ? latestRun : null,
     opNames: assetNode.opNames,
   };
 };
+
+export function shouldDisplayRunFailure(
+  latestRun: AssetLatestInfoRunFragment,
+  lastMaterialization: AssetNodeLiveMaterializationFragment | null,
+) {
+  if (latestRun.status !== 'FAILURE') {
+    return false; // The run did not fail
+  }
+  if (lastMaterialization) {
+    if (lastMaterialization && lastMaterialization.runId === latestRun.id) {
+      // The run failed, but it successfully emitted the latest materialization event. This
+      // is caused by the run failing in a later step.
+      return false;
+    }
+    if (Number(lastMaterialization.timestamp) > Number(latestRun.endTime) * 1000) {
+      // The latest materialization is NEWER than the latest run. This is caused by the user
+      // reporting a materialization manually.
+      return false;
+    }
+  }
+  return true;
+}
 
 export function tokenForAssetKey(key: {path: string[]}) {
   return key.path.join('/');
