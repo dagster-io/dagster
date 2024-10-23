@@ -1223,6 +1223,9 @@ def test_add_backfill_id_column():
                 )
             )
 
+            # exclude_subruns filter works before migration
+            assert len(instance.get_runs(filters=RunsFilter(exclude_subruns=True))) == 2
+
             instance.upgrade()
 
             columns = get_sqlite3_columns(db_path, "runs")
@@ -1270,6 +1273,9 @@ def test_add_backfill_id_column():
             assert backfill_ids[run_in_backfill_pre_migration.run_id] == "backfillid"
             assert backfill_ids[run_not_in_backfill_post_migration.run_id] is None
             assert backfill_ids[run_in_backfill_post_migration.run_id] == "backfillid"
+
+            # exclude_subruns filter works after migration, but should use new column
+            assert len(instance.get_runs(filters=RunsFilter(exclude_subruns=True))) == 3
 
             # test downgrade
             instance._run_storage._alembic_downgrade(rev="284a732df317")

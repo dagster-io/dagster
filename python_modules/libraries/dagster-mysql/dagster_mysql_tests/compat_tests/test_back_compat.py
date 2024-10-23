@@ -11,7 +11,7 @@ from dagster import AssetKey, AssetMaterialization, AssetObservation, Output, jo
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.migration.bigint_migration import run_bigint_migration
 from dagster._core.storage.sqlalchemy_compat import db_select
@@ -522,6 +522,9 @@ def test_add_backfill_id_column(conn_string):
                 )
             )
 
+            # exclude_subruns filter works before migration
+            assert len(instance.get_runs(filters=RunsFilter(exclude_subruns=True))) == 2
+
             instance.upgrade()
             assert new_columns <= get_columns(instance, "runs")
 
@@ -552,6 +555,8 @@ def test_add_backfill_id_column(conn_string):
             assert backfill_ids[run_in_backfill_pre_migration.run_id] == "backfillid"
             assert backfill_ids[run_not_in_backfill_post_migration.run_id] is None
             assert backfill_ids[run_in_backfill_post_migration.run_id] == "backfillid"
+            # exclude_subruns filter works after migration, but should use new column
+            assert len(instance.get_runs(filters=RunsFilter(exclude_subruns=True))) == 3
 
 
 def test_add_runs_by_backfill_id_idx(conn_string):
