@@ -35,7 +35,10 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.remote_representation.external_data import StaticPartitionsSnap
+from dagster._core.remote_representation.external_data import (
+    StaticPartitionsSnap,
+    partition_set_snap_name_for_job_name,
+)
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
 from dagster._core.snap.job_snapshot import JobSnap
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
@@ -1336,6 +1339,12 @@ def test_add_backfill_tags():
 
 
 def test_add_bulk_actions_job_name_column():
+    from dagster._core.remote_representation.origin import (
+        GrpcServerCodeLocationOrigin,
+        RemotePartitionSetOrigin,
+        RemoteRepositoryOrigin,
+    )
+
     src_dir = file_relative_path(
         __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
     )
@@ -1346,10 +1355,49 @@ def test_add_bulk_actions_job_name_column():
         assert "job_name" not in backfill_columns
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            partition_set_origin = RemotePartitionSetOrigin(
+                repository_origin=RemoteRepositoryOrigin(
+                    code_location_origin=GrpcServerCodeLocationOrigin(
+                        host="localhost", port=1234, location_name="test_location"
+                    ),
+                    repository_name="the_repo",
+                ),
+                partition_set_name=partition_set_snap_name_for_job_name("foo"),
+            )
+            before_migration = PartitionBackfill(
+                "before_migration",
+                partition_set_origin=partition_set_origin,
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(before_migration)
+
             instance.upgrade()
 
             backfill_columns = get_sqlite3_columns(db_path, "bulk_actions")
             assert "job_name" in backfill_columns
+
+            after_migration = PartitionBackfill(
+                "after_migration",
+                partition_set_origin=partition_set_origin,
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(before_migration)
+
+            con = sqlite3.connect(db_path)
+            cursor = con.cursor()
+            cursor.execute("SELECT key, job_name FROM bulk_actions")
+            rows = cursor.fetchall()
+
+            assert len(rows) == 2
+            ids_to_job_name = {row[0]: row[1] for row in rows}
+            assert ids_to_job_name[before_migration.key] is None
+            assert ids_to_job_name[after_migration.key] == "foo"
 
             # test downgrade
             instance._run_storage._alembic_downgrade(rev="1aca709bba64")

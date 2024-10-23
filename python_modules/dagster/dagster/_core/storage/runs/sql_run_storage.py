@@ -64,6 +64,7 @@ from dagster._core.storage.runs.migration import (
     MigrationFn,
 )
 from dagster._core.storage.runs.schema import (
+    BackfillTagsTable,
     BulkActionsTable,
     DaemonHeartbeatsTable,
     InstanceInfo,
@@ -803,6 +804,17 @@ class SqlRunStorage(RunStorage):
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
             return "backfill_id" in column_names
 
+    def has_bulk_action_job_name_column(self) -> bool:
+        with self.connect() as conn:
+            column_names = [
+                x.get("name") for x in db.inspect(conn).get_columns(BulkActionsTable.name)
+            ]
+            return "job_name" in column_names
+
+    def has_backfill_tags_table(self) -> bool:
+        with self.connect() as conn:
+            return BackfillTagsTable.name in db.inspect(conn).get_table_names()
+
     # Daemon heartbeats
 
     def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat) -> None:
@@ -1009,8 +1021,27 @@ class SqlRunStorage(RunStorage):
             values["selector_id"] = partition_backfill.selector_id
             values["action_type"] = partition_backfill.bulk_action_type.value
 
+        if self.has_bulk_action_job_name_column():
+            values["job_name"] = partition_backfill.job_name
+
         with self.connect() as conn:
-            conn.execute(BulkActionsTable.insert().values(**values))
+            res = conn.execute(BulkActionsTable.insert().values(**values)).fetchone()
+            if self.has_backfill_tags_table():
+                tags_to_insert = partition_backfill.tags
+                bulk_actions_storage_id = res[0]
+                if len(tags_to_insert.items()) > 0:
+                    conn.execute(
+                        BackfillTagsTable.insert(),
+                        [
+                            dict(
+                                backfill_id=partition_backfill.backfill_id,
+                                key=k,
+                                value=v,
+                                bulk_actions_storage_id=bulk_actions_storage_id,
+                            )
+                            for k, v in tags_to_insert.items()
+                        ],
+                    )
 
     def update_backfill(self, partition_backfill: PartitionBackfill) -> None:
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
