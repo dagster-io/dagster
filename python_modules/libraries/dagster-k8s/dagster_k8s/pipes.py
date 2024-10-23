@@ -3,7 +3,6 @@ import os
 import random
 import re
 import string
-import sys
 import threading
 import time
 from collections.abc import Callable, Generator
@@ -110,7 +109,6 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
         """Consume all logs from all containers within the pod.
 
         Args:
-        ----
             context (OpExecutionContext): The execution context.
             core_api: The k8s core API.
             pod_name: The pod to collect logs from.
@@ -182,7 +180,6 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
         """Return the streams of the Kubernetes logs with the appropriate buffer time.
 
         Args:
-        ----
             pod_exit_event (threading.Event): The threading event that indicates to the
                 log reading thread that the pod has exited
             read_namespaced_pod_log (kubernetes.client.CoreV1Api): The Kubernetes CoreV1Api client function for reading
@@ -199,7 +196,6 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
             sleeper (Callable): The time.sleep equivalent.
 
         Yields:
-        ------
             The Kubernetes pod log stream generator
 
         """
@@ -379,7 +375,6 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
         """Publish a kubernetes pod and wait for it to complete, enriched with the pipes protocol.
 
         Args:
-        ----
             context (OpExecutionContext):
                 The execution context.
             image (Optional[str]):
@@ -413,7 +408,6 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
             enable_multi_container_logs (bool): Whether or not to enable multi-container log consumption.
 
         Returns:
-        -------
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
                 process.
 
@@ -478,7 +472,6 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
         This will be a no-op if the message_reader is of the wrong type.
 
         Args:
-        ----
             context (OpExecutionContext): The execution context.
             client (kubernetes.client): _description_
             namespace (str): The namespace the pod lives in
@@ -707,10 +700,11 @@ def _process_log_stream(stream: Iterator[bytes]) -> Iterator[LogItem]:
     if log or timestamp:
         yield LogItem(timestamp=timestamp, log=log)
 
+
 def _is_kube_timestamp(maybe_timestamp: str) -> bool:
-# This extra stripping logic is necessary, as Python's strptime fn doesn't
-# handle valid ISO 8601 timestamps with nanoseconds which we receive in k8s
-# e.g. 2024-03-22T02:17:29.185548486Z
+    # This extra stripping logic is necessary, as Python's strptime fn doesn't
+    # handle valid ISO 8601 timestamps with nanoseconds which we receive in k8s
+    # e.g. 2024-03-22T02:17:29.185548486Z
 
     # This is likely fine. We're just trying to confirm whether or not it's a
     # valid timestamp, not trying to parse it with full correctness.

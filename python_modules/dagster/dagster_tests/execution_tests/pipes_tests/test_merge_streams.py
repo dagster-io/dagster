@@ -1,5 +1,4 @@
 import itertools
-import sys
 import textwrap
 from datetime import datetime
 from queue import Queue
@@ -26,9 +25,7 @@ def _process_log_stream(stream: Iterator[bytes]) -> Iterator[LogItem]:
                 # We have multiple messages with the same timestamp in this chunk, add them separated
                 # with a new line
                 log += f"\n{tail}"
-            elif not (
-                len(maybe_timestamp) == len(timestamp) and _is_timestamp(maybe_timestamp)
-            ):
+            elif not (len(maybe_timestamp) == len(timestamp) and _is_timestamp(maybe_timestamp)):
                 # The line is continuation of a long line that got truncated and thus doesn't
                 # have a timestamp in the beginning of the line.
                 # Since all timestamps in the RFC format returned by Kubernetes have the same
