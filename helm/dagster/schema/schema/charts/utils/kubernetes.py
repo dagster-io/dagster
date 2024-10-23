@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, RootModel
 
 from schema.charts.utils.utils import (
     BaseModel as BaseModelWithNullableRequiredFields,
@@ -9,9 +9,7 @@ from schema.charts.utils.utils import (
 )
 
 
-class Annotations(BaseModel):
-    __root__: Dict[str, str]
-
+class Annotations(RootModel[Dict[str, str]]):
     class Config:
         schema_extra = {
             "$ref": create_definition_ref(
@@ -58,41 +56,31 @@ class Service(BaseModel):
         extra = Extra.forbid
 
 
-class NodeSelector(BaseModel):
-    __root__: Dict[str, str]
-
+class NodeSelector(RootModel[Dict[str, str]]):
     class Config:
         schema_extra = {
             "$ref": create_definition_ref("io.k8s.api.core.v1.PodSpec/properties/nodeSelector")
         }
 
 
-class Affinity(BaseModel):
-    __root__: Dict[str, Any]
-
+class Affinity(RootModel[Dict[str, Any]]):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.Affinity")}
 
 
-class Tolerations(BaseModel):
-    __root__: List[Dict[str, Any]]
-
+class Tolerations(RootModel[List[Dict[str, Any]]]):
     class Config:
         schema_extra = {
             "$ref": create_definition_ref("io.k8s.api.core.v1.PodSpec/properties/tolerations")
         }
 
 
-class PodSecurityContext(BaseModel):
-    __root__: Dict[str, Any]
-
+class PodSecurityContext(RootModel[Dict[str, Any]]):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.PodSecurityContext")}
 
 
-class SecurityContext(BaseModel):
-    __root__: Dict[str, Any]
-
+class SecurityContext(RootModel[Dict[str, Any]]):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.SecurityContext")}
 
@@ -102,9 +90,7 @@ class InitContainer(BaseModel):
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.Container")}
 
 
-class Resources(BaseModel):
-    __root__: Dict[str, Any]
-
+class Resources(RootModel[Dict[str, Any]]):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.ResourceRequirements")}
 

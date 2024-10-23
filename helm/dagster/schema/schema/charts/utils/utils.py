@@ -4,6 +4,7 @@ from typing import Dict, List
 from pydantic import (
     BaseModel as PydanticBaseModel,
     Extra,
+    Field,
 )
 
 
@@ -13,11 +14,10 @@ class SupportedKubernetes(str, Enum):
 
 class ConfigurableClass(PydanticBaseModel):
     module: str
-    class_: str
+    class_: str = Field(alias="class")
     config: dict
 
     class Config:
-        fields = {"class_": "class"}
         extra = Extra.forbid
 
 
