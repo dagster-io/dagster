@@ -336,7 +336,9 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             self._resolved_config_dict.get("private_key", None) is not None
             or self._resolved_config_dict.get("private_key_path", None) is not None
         ):
-            conn_args["private_key"] = self._snowflake_private_key(self._resolved_config_dict)
+            conn_args["private_key"] = self._snowflake_private_key(
+                self._resolved_config_dict
+            )
 
         conn_args["application"] = SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
         return conn_args
@@ -455,7 +457,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             from sqlalchemy import create_engine
 
             engine = create_engine(
-                URL(**self._sqlalchemy_connection_args), connect_args=self._sqlalchemy_engine_args
+                URL(**self._sqlalchemy_connection_args),
+                connect_args=self._sqlalchemy_engine_args,
             )
             conn = engine.raw_connection() if raw_conn else engine.connect()
 
@@ -490,7 +493,10 @@ class SnowflakeConnection:
     """
 
     def __init__(
-        self, config: Mapping[str, str], log, snowflake_connection_resource: SnowflakeResource
+        self,
+        config: Mapping[str, str],
+        log,
+        snowflake_connection_resource: SnowflakeResource,
     ):
         self.snowflake_connection_resource = snowflake_connection_resource
         self.log = log
@@ -523,7 +529,9 @@ class SnowflakeConnection:
                         return conn.get_query_status(query_id)
 
         """
-        with self.snowflake_connection_resource.get_connection(raw_conn=raw_conn) as conn:
+        with self.snowflake_connection_resource.get_connection(
+            raw_conn=raw_conn
+        ) as conn:
             yield conn
 
     @public
@@ -563,7 +571,9 @@ class SnowflakeConnection:
         check.opt_inst_param(parameters, "parameters", (list, dict))
         check.bool_param(fetch_results, "fetch_results")
         if not fetch_results and use_pandas_result:
-            check.failed("If use_pandas_result is True, fetch_results must also be True.")
+            check.failed(
+                "If use_pandas_result is True, fetch_results must also be True."
+            )
 
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
@@ -571,7 +581,9 @@ class SnowflakeConnection:
                     sql = sql.encode("utf-8")
 
                 self.log.info("Executing query: " + sql)
-                parameters = dict(parameters) if isinstance(parameters, Mapping) else parameters
+                parameters = (
+                    dict(parameters) if isinstance(parameters, Mapping) else parameters
+                )
                 cursor.execute(sql, parameters)
                 if use_pandas_result:
                     return cursor.fetch_pandas_all()
@@ -618,15 +630,23 @@ class SnowflakeConnection:
         check.opt_inst_param(parameters, "parameters", (list, dict))
         check.bool_param(fetch_results, "fetch_results")
         if not fetch_results and use_pandas_result:
-            check.failed("If use_pandas_result is True, fetch_results must also be True.")
+            check.failed(
+                "If use_pandas_result is True, fetch_results must also be True."
+            )
 
         results: List[Any] = []
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
                 for raw_sql in sql_queries:
-                    sql = raw_sql.encode("utf-8") if sys.version_info[0] < 3 else raw_sql
+                    sql = (
+                        raw_sql.encode("utf-8") if sys.version_info[0] < 3 else raw_sql
+                    )
                     self.log.info("Executing query: " + sql)
-                    parameters = dict(parameters) if isinstance(parameters, Mapping) else parameters
+                    parameters = (
+                        dict(parameters)
+                        if isinstance(parameters, Mapping)
+                        else parameters
+                    )
                     cursor.execute(sql, parameters)
                     if use_pandas_result:
                         results = results.append(cursor.fetch_pandas_all())  # type: ignore
@@ -719,16 +739,21 @@ def snowflake_resource(context) -> SnowflakeConnection:
     """
     snowflake_resource = SnowflakeResource.from_resource_context(context)
     return SnowflakeConnection(
-        config=context, log=context.log, snowflake_connection_resource=snowflake_resource
+        config=context,
+        log=context.log,
+        snowflake_connection_resource=snowflake_resource,
     )
 
 
 def fetch_last_updated_timestamps(
     *,
-    snowflake_connection: Union[SqlDbConnection, snowflake.connector.SnowflakeConnection],
+    snowflake_connection: Union[
+        SqlDbConnection, snowflake.connector.SnowflakeConnection
+    ],
     schema: str,
     tables: Sequence[str],
     database: Optional[str] = None,
+    ignore_missing_tables: Optional[bool] = False,
 ) -> Mapping[str, datetime]:
     """Fetch the last updated times of a list of tables in Snowflake.
 
@@ -742,16 +767,22 @@ def fetch_last_updated_timestamps(
         tables (Sequence[str]): A list of table names to fetch the last updated time for.
         database (Optional[str]): The database of the table. Only required if the connection
             has not been set with a database.
+        ignore_missing_tables (Optional[bool]): If True, tables not found in Snowflake
+            will be excluded from the result.
 
     Returns:
         Mapping[str, datetime]: A dictionary of table names to their last updated time in UTC.
     """
-    check.invariant(len(tables) > 0, "Must provide at least one table name to query upon.")
+    check.invariant(
+        len(tables) > 0, "Must provide at least one table name to query upon."
+    )
     # Table names in snowflake's information schema are stored in uppercase
     uppercase_tables = [table.upper() for table in tables]
     tables_str = ", ".join([f"'{table_name}'" for table_name in uppercase_tables])
     fully_qualified_table_name = (
-        f"{database}.information_schema.tables" if database else "information_schema.tables"
+        f"{database}.information_schema.tables"
+        if database
+        else "information_schema.tables"
     )
 
     query = f"""
@@ -767,6 +798,8 @@ def fetch_last_updated_timestamps(
     result_correct_case = {}
     for table_name in tables:
         if table_name.upper() not in result_mapping:
+            if ignore_missing_tables:
+                continue
             raise ValueError(f"Table {table_name} could not be found.")
         last_altered = result_mapping[table_name.upper()]
         check.invariant(
