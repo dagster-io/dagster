@@ -18,8 +18,6 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._core.pipes.context import PipesExecutionResult, PipesLaunchedData, PipesSession
 
-
-
 if TYPE_CHECKING:
     from dagster._core.pipes.context import PipesMessageHandler
 

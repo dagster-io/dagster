@@ -8,7 +8,7 @@ import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from threading import Event, Thread
-from typing import IO, Dict, Iterator, Optional, Sequence, Tuple, TypeVar
+from typing import IO, Dict, Iterator, Optional, Sequence, Tuple, TypeVar, Union
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
