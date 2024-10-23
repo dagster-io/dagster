@@ -42,6 +42,7 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, Runs
 from dagster._core.storage.event_log.migration import migrate_event_log_data
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
+from dagster._core.storage.runs.migration import RUN_BACKFILL_ID
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
@@ -1227,6 +1228,7 @@ def test_add_backfill_id_column():
             assert len(instance.get_runs(filters=RunsFilter(exclude_subruns=True))) == 2
 
             instance.upgrade()
+            assert instance.run_storage.has_built_index(RUN_BACKFILL_ID)
 
             columns = get_sqlite3_columns(db_path, "runs")
             assert {

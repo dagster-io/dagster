@@ -23,6 +23,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.migration.bigint_migration import run_bigint_migration
+from dagster._core.storage.runs.migration import RUN_BACKFILL_ID
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._core.utils import make_new_run_id
@@ -942,6 +943,8 @@ def test_add_backfill_id_column(hostname, conn_string):
             assert len(instance.get_runs(filters=RunsFilter(exclude_subruns=True))) == 2
 
             instance.upgrade()
+            assert instance.run_storage.has_built_index(RUN_BACKFILL_ID)
+
             assert new_columns <= get_columns(instance, "runs")
             run_not_in_backfill_post_migration = instance.run_storage.add_run(
                 DagsterRun(
