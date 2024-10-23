@@ -288,15 +288,19 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/docs_snippets",
         pytest_extra_cmds=docs_snippets_extra_cmds,
-        unsupported_python_versions=[
-            # dependency on 3.9-incompatible extension libs
-            AvailablePythonVersion.V3_9,
-            # dagster-airflow dep
-            AvailablePythonVersion.V3_12,
-        ],
+        # The docs_snippets test suite also installs a ton of packages in the same environment,
+        # which is liable to cause dependency collisions. It's not necessary to test all these
+        # snippets in all python versions since we are testing the core code exercised by the
+        # snippets against all supported python versions.
+        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
     ),
     PackageSpec(
         "examples/docs_beta_snippets",
+        # The docs_snippets test suite also installs a ton of packages in the same environment,
+        # which is liable to cause dependency collisions. It's not necessary to test all these
+        # snippets in all python versions since we are testing the core code exercised by the
+        # snippets against all supported python versions.
+        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
         pytest_tox_factors=["all", "integrations"],
     ),
     PackageSpec(
@@ -418,7 +422,10 @@ def tox_factors_for_folder(tests_folder_name: str) -> List[str]:
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/automation",
-        unsupported_python_versions=[AvailablePythonVersion.V3_12],
+        # automation is internal code that doesn't need to be tested in every python version. The
+        # test suite also installs a ton of packages in the same environment, which is liable to
+        # cause dependency collisions.
+        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
     ),
     PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
     PackageSpec(
