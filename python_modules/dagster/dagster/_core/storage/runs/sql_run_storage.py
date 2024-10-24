@@ -863,27 +863,31 @@ class SqlRunStorage(RunStorage):
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(DaemonHeartbeatsTable.delete())
 
+    def _add_backfill_filters_to_table(
+        self, table: db.Table, filters: Optional[BulkActionsFilter]
+    ) -> db.Table:
+        if filters and filters.tags and self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
+            for i, (key, value) in enumerate(filters.tags.items()):
+                backfill_tags_alias = db.alias(BackfillTagsTable, f"backfill_tags_filter{i}")
+
+                table = table.join(
+                    backfill_tags_alias,
+                    db.and_(
+                        BulkActionsTable.c.key == backfill_tags_alias.c.backfill_id,
+                        backfill_tags_alias.c.key == key,
+                        (backfill_tags_alias.c.value == value)
+                        if isinstance(value, str)
+                        else backfill_tags_alias.c.value.in_(value),
+                    ),
+                )
+            return table
+        return table
+
     def _backfills_query(self, filters: Optional[BulkActionsFilter] = None):
         query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
         if filters and filters.tags:
-            if self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
-                intersections = []
-                for key, value in filters.tags.items():
-                    intersections.append(
-                        db_select([BackfillTagsTable.c.backfill_id]).where(
-                            db.and_(
-                                BackfillTagsTable.c.key == key,
-                                (BackfillTagsTable.c.value == value)
-                                if isinstance(value, str)
-                                else BackfillTagsTable.c.value.in_(value),
-                            )
-                        )
-                    )
-
-                if intersections:
-                    query = query.where(BulkActionsTable.c.key.in_(db.intersect(*intersections)))
-
-            else:
+            if not self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
+                # if the migration was run, we added the query for tags filtering in _add_backfill_filters_to_table
                 # BackfillTags table has not been built. However, all tags that are on a backfill are
                 # applied to the runs the backfill launches. So we can query for runs that match the tags and
                 # are also part of a backfill to find the backfills that match the tags.
@@ -990,7 +994,8 @@ class SqlRunStorage(RunStorage):
         if status is not None:
             filters = BulkActionsFilter(statuses=[status])
 
-        query = self._backfills_query(filters=filters)
+        table = self._add_backfill_filters_to_table(BulkActionsTable, filters)
+        query = self._backfills_query(filters=filters).select_from(table)
         query = self._add_cursor_limit_to_backfills_query(query, cursor=cursor, limit=limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
         rows = self.fetchall(query)
