@@ -49,6 +49,7 @@ from dagster._core.storage.tags import (
     LEGACY_COMPUTE_KIND_TAG,
     REPOSITORY_LABEL_TAG,
 )
+from dagster._core.utils import make_new_run_id
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
@@ -61,8 +62,6 @@ from dagster._serdes.serdes import (
 from dagster._time import get_current_timestamp
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.test import copy_directory
-
-from python_modules.dagster.dagster._core.utils import make_new_run_id
 
 
 def _migration_regex(warning, current_revision, expected_revision=None):
