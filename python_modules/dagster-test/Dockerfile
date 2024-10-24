@@ -13,12 +13,10 @@ ENV DAGSTER_DISABLE_TELEMETRY=true
 ENV PYTHONUNBUFFERED=1
 
 RUN pip install -U uv
-# dagster-celery specified twice to deal with pip resolution in pip 20.3.3 when only
-# extras are specified
+
 RUN python -m uv pip install \
     -e modules/dagster \
     -e modules/dagster-graphql \
-    -e modules/dagster-celery \
     -e modules/dagster-celery[flower,redis,kubernetes] \
     -e modules/dagster-webserver \
     -e modules/dagster-postgres \
@@ -32,8 +30,8 @@ RUN python -m uv pip install \
     -e modules/dagster-airflow \
     -e modules/dagstermill \
     -e modules/dagster-pipes \
-    -e . \
-    pyparsing\<3.0.0
+    -e .
+
 
 RUN ! (pip list --exclude-editable | grep -e dagster)
 
