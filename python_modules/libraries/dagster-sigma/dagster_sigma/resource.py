@@ -35,6 +35,7 @@ from dagster._core.definitions.definitions_load_context import StateBackedDefini
 from dagster._record import IHaveNew, record_custom
 from dagster._seven import get_arg_names
 from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, _make_key
+from dagster._utils.log import get_dagster_logger
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
 from typing_extensions import Concatenate, ParamSpec
@@ -46,6 +47,8 @@ from dagster_sigma.translator import (
     SigmaWorkbook,
     _inode_from_url,
 )
+
+logger = get_dagster_logger("dagster_sigma")
 
 S = TypeVar("S")
 T = TypeVar("T")
@@ -315,9 +318,12 @@ class SigmaOrganization(ConfigurableResource):
         """
         deps_by_dataset_inode = defaultdict(set)
 
+        logger.debug("Fetching dataset dependencies")
+
         raw_workbooks = await self._fetch_workbooks()
 
         async def process_workbook(workbook: Dict[str, Any]) -> None:
+            logger.debug("Inferring dataset dependencies for workbook %s", workbook["workbookId"])
             queries = await self._fetch_queries_for_workbook(workbook["workbookId"])
             queries_by_element_id = defaultdict(list)
             for query in queries:
@@ -389,6 +395,7 @@ class SigmaOrganization(ConfigurableResource):
         workbooks = await self._fetch_workbooks()
 
         async def process_workbook(workbook: Dict[str, Any]) -> None:
+            logger.debug("Fetching column data from workbook %s", workbook["workbookId"])
             pages = await self._fetch_pages_for_workbook(workbook["workbookId"])
             elements = [
                 element
@@ -432,6 +439,8 @@ class SigmaOrganization(ConfigurableResource):
 
     async def load_workbook_data(self, raw_workbook_data: Dict[str, Any]) -> SigmaWorkbook:
         workbook_deps = set()
+
+        logger.debug("Fetching data for workbook %s", raw_workbook_data["workbookId"])
 
         pages = await self._fetch_pages_for_workbook(raw_workbook_data["workbookId"])
         elements = [
@@ -484,6 +493,7 @@ class SigmaOrganization(ConfigurableResource):
         """
         _sigma_filter = sigma_filter or SigmaFilter()
 
+        logger.debug("Beginning Sigma organization data fetch")
         raw_workbooks = await self._fetch_workbooks()
         workbooks_to_fetch = []
         if _sigma_filter.workbook_folders:
@@ -506,8 +516,11 @@ class SigmaOrganization(ConfigurableResource):
         datasets: List[SigmaDataset] = []
         deps_by_dataset_inode = await self._fetch_dataset_upstreams_by_inode()
 
-        columns_by_dataset_inode = await self._fetch_dataset_columns_by_inode() if not skip_fetch_column_data else {}
+        columns_by_dataset_inode = (
+            await self._fetch_dataset_columns_by_inode() if not skip_fetch_column_data else {}
+        )
 
+        logger.debug("Fetching dataset data")
         for dataset in await self._fetch_datasets():
             inode = _inode_from_url(dataset["url"])
             datasets.append(
@@ -541,7 +554,9 @@ class SigmaOrganization(ConfigurableResource):
             Definitions: The set of assets representing the Sigma content in the organization.
         """
         return Definitions(
-            assets=load_sigma_asset_specs(self, dagster_sigma_translator, sigma_filter, skip_fetch_column_data  )
+            assets=load_sigma_asset_specs(
+                self, dagster_sigma_translator, sigma_filter, skip_fetch_column_data
+            )
         )
 
 
@@ -601,7 +616,9 @@ class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganization
 
     def fetch_state(self) -> SigmaOrganizationData:
         return asyncio.run(
-            self.organization.build_organization_data(sigma_filter=self.sigma_filter, skip_fetch_column_data=self.skip_fetch_column_data)
+            self.organization.build_organization_data(
+                sigma_filter=self.sigma_filter, skip_fetch_column_data=self.skip_fetch_column_data
+            )
         )
 
     def defs_from_state(self, state: SigmaOrganizationData) -> Definitions:
