@@ -1,16 +1,12 @@
-import pytest
-from dagster_dlift.client import DbtCloudClient
+from dagster_dlift.client import UnscopedDbtCloudClient
 from dagster_dlift.utils import get_job_name
 from dlift_kitchen_sink.constants import EXPECTED_TAG
-from dlift_kitchen_sink.instance import get_instance
 
 
-def test_get_models(instance: DbtCloudClient, environment_id: int) -> None:
+def test_get_models(instance: UnscopedDbtCloudClient, environment_id: int) -> None:
     # Filter to only the models that we use for testing.
     models_response = [
-        model
-        for model in get_instance().get_dbt_models(environment_id)
-        if EXPECTED_TAG in model["tags"]
+        model for model in instance.get_dbt_models(environment_id) if EXPECTED_TAG in model["tags"]
     ]
 
     assert len(models_response) == 3
@@ -56,11 +52,11 @@ def test_get_models(instance: DbtCloudClient, environment_id: int) -> None:
     }
 
 
-def test_get_sources(instance: DbtCloudClient, environment_id: int) -> None:
+def test_get_sources(instance: UnscopedDbtCloudClient, environment_id: int) -> None:
     """Test that we can get sources from the instance."""
     sources_response = [
         source
-        for source in get_instance().get_dbt_sources(environment_id)
+        for source in instance.get_dbt_sources(environment_id)
         if EXPECTED_TAG in source["tags"]
     ]
     assert len(sources_response) == 2
@@ -70,7 +66,7 @@ def test_get_sources(instance: DbtCloudClient, environment_id: int) -> None:
     }
 
 
-def test_get_tests(instance: DbtCloudClient, environment_id: int) -> None:
+def test_get_tests(instance: UnscopedDbtCloudClient, environment_id: int) -> None:
     """Test that we can get tests from the instance."""
     tests_response = [
         test for test in instance.get_dbt_tests(environment_id) if EXPECTED_TAG in test["tags"]
@@ -88,8 +84,9 @@ def test_get_tests(instance: DbtCloudClient, environment_id: int) -> None:
     }
 
 
-@pytest.mark.skip("This test is failing")
-def test_cloud_job_apis(instance: DbtCloudClient, environment_id: int, project_id: int) -> None:
+def test_cloud_job_apis(
+    instance: UnscopedDbtCloudClient, environment_id: int, project_id: int
+) -> None:
     """Tests that we can create / destroy a dagster job."""
     job_id = instance.create_dagster_job(project_id, environment_id)
     job_info = instance.get_job_info_by_id(job_id)
