@@ -272,7 +272,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/with_airflow",
         unsupported_python_versions=[
-            AvailablePythonVersion.V3_9,
             AvailablePythonVersion.V3_10,
             AvailablePythonVersion.V3_11,
             AvailablePythonVersion.V3_12,
@@ -637,9 +636,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-ge",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_8,
-        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-k8s",

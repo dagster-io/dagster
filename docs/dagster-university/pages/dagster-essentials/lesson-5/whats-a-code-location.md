@@ -63,7 +63,7 @@ In the following image, each dark purple box is a code location. By separating c
 Code locations can be used to separate code by categories, such as:
 
 - Teams (ex., marketing or product)
-- Python version (ex., legacy code using Python 3.8 and newer Python 3.11 code locations)
+- Python version (ex., legacy code using Python 3.9 and newer Python 3.11 code locations)
 - Dependency versions (ex., one model using PyTorch v1 and another using PyTorch v2)
 
 These code locations are all maintained in one single Dagster deployment, and changes made to one code location won’t lead to downtime in another one. This allows you to silo packages and versions, but still create connections between data assets as needed. For example, an asset in one code location can depend on an asset in another code location.
