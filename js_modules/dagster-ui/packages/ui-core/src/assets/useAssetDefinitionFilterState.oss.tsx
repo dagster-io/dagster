@@ -10,7 +10,7 @@ import {
   DefinitionTag,
 } from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {doesFilterArrayMatchValueArray} from '../ui/Filters/useDefinitionTagFilter';
+import {doesFilterArrayMatchValueArray} from '../ui/Filters/useAssetTagFilter';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
@@ -33,7 +33,7 @@ export type AssetFilterBaseType = {
   kinds: string[];
   changedInBranch: ChangeReason[];
   owners: AssetOwner[];
-  tags: Omit<DefinitionTag, '__typename'>[];
+  tags: DefinitionTag[];
   codeLocations: RepoAddress[];
 };
 

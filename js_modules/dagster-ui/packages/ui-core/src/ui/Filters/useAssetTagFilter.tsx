@@ -1,7 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import memoize from 'lodash/memoize';
-import {useCallback, useMemo} from 'react';
-import {useQueryPersistedState} from 'shared/hooks/useQueryPersistedState';
+import {useMemo} from 'react';
 
 import {isKindTag} from '../../graph/KindTags';
 import {DefinitionTag} from '../../graphql/types';
@@ -11,27 +10,25 @@ import {buildTagString} from '../tagAsString';
 
 const emptyArray: any[] = [];
 
-type Tag = Omit<DefinitionTag, '__typename'>;
-
-export const useDefinitionTagFilter = ({
-  allTags,
+export const useAssetTagFilter = ({
+  allAssetTags,
   tags,
   setTags,
 }: {
-  allTags: Tag[];
-  tags: null | Tag[];
-  setTags: null | ((s: Tag[]) => void);
+  allAssetTags: DefinitionTag[];
+  tags?: null | DefinitionTag[];
+  setTags?: null | ((s: DefinitionTag[]) => void);
 }) => {
   const memoizedState = useMemo(() => tags?.map(buildDefinitionTag), [tags]);
-  return useStaticSetFilter<Tag>({
+  return useStaticSetFilter<DefinitionTag>({
     ...BaseConfig,
     allValues: useMemo(
       () =>
-        allTags.map((value) => ({
+        allAssetTags.map((value) => ({
           value,
           match: [value.key + ':' + value.value],
         })),
-      [allTags],
+      [allAssetTags],
     ),
     menuWidth: '300px',
     state: memoizedState ?? emptyArray,
@@ -42,45 +39,27 @@ export const useDefinitionTagFilter = ({
   });
 };
 
-export const useDefinitionTagFilterWithManagedState = ({allTags}: {allTags: Tag[]}) => {
-  const [tags, setTags] = useQueryPersistedState<Tag[]>({
-    encode: (tags) => ({tags}),
-    decode: (qs) => (qs.tags as Tag[]) || [],
-  });
-  return useDefinitionTagFilter({
-    allTags,
-    tags,
-    setTags,
-  });
-};
-
 export const buildDefinitionTag = memoize(
-  (tag: Tag) => {
+  (tag: DefinitionTag) => {
     return tag;
   },
   (tag) => [tag.key, tag.value].join('|@-@|'),
 );
 
-export function useTagsForAssets(assets: {definition?: {tags?: Tag[] | null} | null}[]) {
-  return useTagsForObjects(
-    assets,
-    useCallback(
-      (asset: (typeof assets)[0]) => asset.definition?.tags?.filter((tag) => !isKindTag(tag)) ?? [],
-      [],
-    ),
-  );
-}
-
-export function useTagsForObjects<T>(
-  objects: T[],
-  getTags: (obj: T) => Omit<DefinitionTag, '__typename'>[],
-) {
+export function useAssetTagsForAssets(
+  assets: {definition?: {tags?: DefinitionTag[] | null} | null}[],
+): DefinitionTag[] {
   return useMemo(
     () =>
       Array.from(
         new Set(
-          objects
-            .flatMap((a) => getTags(a).map((tag) => JSON.stringify(tag)) ?? [])
+          assets
+            .flatMap(
+              (a) =>
+                a.definition?.tags
+                  ?.filter((tag) => !isKindTag(tag))
+                  .map((tag) => JSON.stringify(tag)) ?? [],
+            )
             .filter((o) => o),
         ),
       )
@@ -91,7 +70,7 @@ export function useTagsForObjects<T>(
             ? a.value.localeCompare(b.value)
             : a.key.localeCompare(b.key),
         ),
-    [objects, getTags],
+    [assets],
   );
 }
 
@@ -112,16 +91,16 @@ export function doesFilterArrayMatchValueArray<T, V>(
   );
 }
 
-export const BaseConfig: StaticBaseConfig<Tag> = {
+export const BaseConfig: StaticBaseConfig<DefinitionTag> = {
   name: 'Tag',
   icon: 'tag',
-  renderLabel: ({value}) => {
+  renderLabel: ({value}: {value: DefinitionTag}) => {
     return (
       <TruncatedTextWithFullTextOnHover
         text={buildTagString({key: value.key, value: value.value})}
       />
     );
   },
-  getStringValue: ({value, key}) => `${key}: ${value}`,
+  getStringValue: ({value, key}: DefinitionTag) => `${key}: ${value}`,
   matchType: 'all-of',
 };

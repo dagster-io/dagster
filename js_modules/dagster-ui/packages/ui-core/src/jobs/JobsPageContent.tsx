@@ -239,10 +239,6 @@ const OVERVIEW_JOBS_QUERY = gql`
                 id
                 name
                 pipelines {
-                  tags {
-                    key
-                    value
-                  }
                   id
                   name
                   isJob

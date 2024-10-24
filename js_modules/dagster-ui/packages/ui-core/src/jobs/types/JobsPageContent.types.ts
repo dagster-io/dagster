@@ -47,7 +47,6 @@ export type OverviewJobsQuery = {
                     id: string;
                     name: string;
                     isJob: boolean;
-                    tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
                   }>;
                 }>;
               }
@@ -56,4 +55,4 @@ export type OverviewJobsQuery = {
       };
 };
 
-export const OverviewJobsQueryVersion = '7de05cca36088c46f8dbd3f995d643fc7e79f240eae0bc614bcf68a0729fe7d9';
+export const OverviewJobsQueryVersion = 'd3bc0af22121e31483422a5681cf80671a6cdae56da120acd353c042c07fc45b';
