@@ -1357,9 +1357,9 @@ def test_add_backfill_tags():
             cursor.execute("SELECT backfill_id, key, value FROM backfill_tags")
             rows = cursor.fetchall()
 
-            assert len(rows) == 1
+            assert len(rows) == 2
             ids_to_tags = {row[0]: {row[1]: row[2]} for row in rows}
-            assert ids_to_tags.get(before_migration.backfill_id) is None
+            assert ids_to_tags.get(before_migration.backfill_id) == before_migration.tags
             assert ids_to_tags[after_migration.backfill_id] == after_migration.tags
 
             # test downgrade
@@ -1426,7 +1426,7 @@ def test_add_bulk_actions_job_name_column():
 
             assert len(rows) == 3  # a backfill exists in the db snapshot
             ids_to_job_name = {row[0]: row[1] for row in rows}
-            assert ids_to_job_name[before_migration.backfill_id] is None
+            assert ids_to_job_name[before_migration.backfill_id] == before_migration.job_name
             assert ids_to_job_name[after_migration.backfill_id] == after_migration.job_name
 
             # test downgrade
