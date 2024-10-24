@@ -632,10 +632,12 @@ def test_add_backfill_tags(conn_string):
 
             with instance.run_storage.connect() as conn:
                 rows = conn.execute(
-                    db.select(
-                        BackfillTagsTable.c.backfill_id,
-                        BackfillTagsTable.c.key,
-                        BackfillTagsTable.c.value,
+                    db_select(
+                        [
+                            BackfillTagsTable.c.backfill_id,
+                            BackfillTagsTable.c.key,
+                            BackfillTagsTable.c.value,
+                        ]
                     )
                 ).fetchall()
                 assert len(rows) == 1
@@ -704,7 +706,7 @@ def test_add_bulk_actions_job_name_column(conn_string):
 
             with instance.run_storage.connect() as conn:
                 rows = conn.execute(
-                    db.select(BulkActionsTable.c.key, BulkActionsTable.c.job_name)
+                    db_select([BulkActionsTable.c.key, BulkActionsTable.c.job_name])
                 ).fetchall()
                 assert len(rows) == 2
                 ids_to_job_name = {row[0]: row[1] for row in rows}
