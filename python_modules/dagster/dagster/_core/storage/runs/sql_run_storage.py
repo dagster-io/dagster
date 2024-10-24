@@ -870,7 +870,7 @@ class SqlRunStorage(RunStorage):
                 intersections = []
                 for key, value in filters.tags.items():
                     intersections.append(
-                        db.select(BackfillTagsTable.c.backfill_id).where(
+                        db_select([BackfillTagsTable.c.backfill_id]).where(
                             db.and_(
                                 BackfillTagsTable.c.key == key,
                                 (BackfillTagsTable.c.value == value)
