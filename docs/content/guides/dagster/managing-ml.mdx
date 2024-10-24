@@ -16,7 +16,7 @@ Machine learning models are highly dependent on data at a point in time and must
 
 ## Prerequisites
 
-Before proceeding, it is recommended to review [Building machine learning pipelines with Dagster ](/guides/dagster/ml-pipeline) which provides background on using Dagster's assets for machine learning.
+Before proceeding, it is recommended to review [Building machine learning pipelines with Dagster](/guides/dagster/ml-pipeline) which provides background on using Dagster's assets for machine learning.
 
 ---
 
@@ -28,23 +28,21 @@ You might have thought about your data sources, feature sets, and the best model
 
 Whether you have a large or small model, Dagster can help automate data refreshes and model training based on your business needs.
 
-Auto-materializing assets can be used to update a machine learning model when the upstream data is updated. This can be done by setting the `AutoMaterializePolicy` to `eager`, which means that our machine learning model asset will be refreshed anytime our data asset is updated.
+Declarative Automation can be used to update a machine learning model when the upstream data is updated. This can be done by setting the `AutomationCondition` to `eager`, which means that our machine learning model asset will be refreshed anytime our data asset is updated.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=eager_materilization_start endbefore=eager_materilization_end
-from dagster import AutoMaterializePolicy, asset
+from dagster import AutomationCondition, asset
 
 
 @asset
 def my_data(): ...
 
 
-@asset(
-    auto_materialize_policy=AutoMaterializePolicy.eager(),
-)
+@asset(automation_condition=AutomationCondition.eager())
 def my_ml_model(my_data): ...
 ```
 
-Some machine learning models might more be cumbersome to retrain; it also might be less important to update them as soon as new data arrives. For this, a lazy auto-materialization policy which can be used in two different ways. The first, by using it with a `freshness_policy` as shown below. In this case, `my_ml_model` will only be auto-materialized once a week.
+Some machine learning models might be more cumbersome to retrain; it also might be less important to update them as soon as new data arrives. For this, the `on_cron` condition may be used, which will cause the asset to be updated on a given cron schedule, but only after all of its upstream dependencies have been updated.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=lazy_materlization_start endbefore=lazy_materlization_end
 from dagster import AutoMaterializePolicy, asset, FreshnessPolicy
@@ -54,44 +52,8 @@ from dagster import AutoMaterializePolicy, asset, FreshnessPolicy
 def my_other_data(): ...
 
 
-@asset(
-    auto_materialize_policy=AutoMaterializePolicy.lazy(),
-    freshness_policy=FreshnessPolicy(maximum_lag_minutes=7 * 24 * 60),
-)
+@asset(automation_condition=AutomationCondition.on_cron("0 9 * * *"))
 def my_other_ml_model(my_other_data): ...
-```
-
-This can be useful if you know that you want your machine learning model retrained at least once a week. While Dagster allows you to refresh a machine learning model as often as you like, best practice is to re-train as seldomly as possible. Model retraining can be costly to compute and having a minimal number of model versions can reduce the complexity of reproducing results at a later point in time. In this case, the model is updated once a week for `predictions`, ensuring that `my_ml_model` is retrained before it is used.
-
-```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=without_policy_start endbefore=without_policy_end
-from dagster import AutoMaterializePolicy, FreshnessPolicy, asset
-
-
-@asset
-def some_data(): ...
-
-
-@asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
-def some_ml_model(some_data): ...
-
-
-@asset(
-    auto_materialize_policy=AutoMaterializePolicy.lazy(),
-    freshness_policy=FreshnessPolicy(maximum_lag_minutes=7 * 24 * 60),
-)
-def predictions(some_ml_model): ...
-```
-
-A more traditional schedule can also be used to update machine learning assets, causing them to be re-materialized or retrained on the latest data. For example, setting up a [cron schedule on a daily basis](/concepts/automation/schedules).
-
-This can be useful if you have data that is also being scheduled on a cron schedule and want to add your machine model jobs to run on a schedule as well.
-
-```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=basic_schedule_start endbefore=basic_schedule_end
-from dagster import AssetSelection, define_asset_job, ScheduleDefinition
-
-ml_asset_job = define_asset_job("ml_asset_job", AssetSelection.groups("ml_asset_group"))
-
-basic_schedule = ScheduleDefinition(job=ml_asset_job, cron_schedule="0 9 * * *")
 ```
 
 ### Monitoring

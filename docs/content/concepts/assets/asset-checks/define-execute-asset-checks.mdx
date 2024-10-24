@@ -319,7 +319,6 @@ When `blocking` is enabled, downstream assets will wait to execute until the che
 This feature has the following limitations:
 
 - **`blocking` is currently only supported with <PyObject object="asset_check" decorator />.** [For checks defined in the same operation as assets](#defining-checks-and-assets-together), you can explicitly raise an exception to block downstream execution.
-- **Assets with an <PyObject object="AutoMaterializePolicy" /> currently do not respect blocking asset checks** and will execute even if a blocking check on an upstream asset failed.
 
 ---
 
