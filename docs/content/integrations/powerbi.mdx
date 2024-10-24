@@ -7,7 +7,7 @@ description: Represent your Power BI assets in Dagster
 
 <ExperimentalCallout />
 
-This guide provides instructions for using Dagster with Power BI. Your Power BI assets, such as semantic models, data sources, reports, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Power BI assets and upstream data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Power BI semantic models, allowing you to trigger refreshes of these models on a cadence or based on upstream data changes.
+This guide provides instructions for using Dagster with Power BI using the `dagster-powerbi` library. Your Power BI assets, such as semantic models, data sources, reports, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Power BI assets and upstream data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Power BI semantic models, allowing you to trigger refreshes of these models on a cadence or based on upstream data changes.
 
 ## What you'll learn
 
@@ -18,13 +18,21 @@ This guide provides instructions for using Dagster with Power BI. Your Power BI 
 
 <details>
   <summary>Prerequisites</summary>
-
+- The `dagster-powerbi` library installed in your environment
 - Familiarity with asset definitions and the Dagster asset graph
 - Familiarity with Dagster resources - Familiarity with Power BI concepts, like semantic models, data sources, reports, and dashboards
 - A Power BI workspace
 - A service principal configured to access Power BI, or an API access token. For more information, see [Embed Power BI content with service principal and an application secret](https://learn.microsoft.com/en-us/power-bi/developer/embedded/embed-service-principal) in the Power BI documentation.
 
 </details>
+
+## Set up your environment
+
+To get started, you'll need to install the `dagster` and `dagster-powerbi` Python packages:
+
+```bash
+pip install dagster dagster-powerbi
+```
 
 ## Represent Power BI assets in the asset graph
 
