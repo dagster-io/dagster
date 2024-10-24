@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
@@ -74,17 +74,9 @@ def cacheable_asset_defs_refreshable_workbooks():
 @lazy_definitions
 def cacheable_asset_defs_custom_translator():
     class MyCoolTranslator(DagsterTableauTranslator):
-        def get_sheet_spec(self, data: TableauContentData) -> AssetSpec:
-            spec = super().get_sheet_spec(data)
-            return spec._replace(key=spec.key.with_prefix("my_prefix"))
+        def get_asset_key(self, data) -> AssetKey:
+            return super().get_asset_key(data).with_prefix("my_prefix")
 
-        def get_dashboard_spec(self, data: TableauContentData) -> AssetSpec:
-            spec = super().get_dashboard_spec(data)
-            return spec._replace(key=spec.key.with_prefix("my_prefix"))
-
-        def get_data_source_spec(self, data: TableauContentData) -> AssetSpec:
-            spec = super().get_data_source_spec(data)
-            return spec._replace(key=spec.key.with_prefix("my_prefix"))
 
     tableau_specs = load_tableau_asset_specs(
         workspace=resource, dagster_tableau_translator=MyCoolTranslator
