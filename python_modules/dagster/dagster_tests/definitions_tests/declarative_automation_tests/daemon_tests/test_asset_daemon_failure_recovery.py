@@ -269,8 +269,9 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
         assert ticks[0].tick_data.failure_count == 0
 
         assert "WHERE IS THE CODE" in str(ticks[0].tick_data.error)
-        assert "Auto-materialization will resume once the code server is available" in str(
-            ticks[0].tick_data.error
+        assert (
+            "Automation condition evaluation will resume once the code server is available"
+            in str(ticks[0].tick_data.error)
         )
 
         # Run requests are still on the tick since they were stored there before the

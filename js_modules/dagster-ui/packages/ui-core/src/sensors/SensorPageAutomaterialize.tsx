@@ -13,7 +13,6 @@ import {useFeatureFlags} from '../app/Flags';
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomaterializationTickDetailDialog} from '../assets/auto-materialization/AutomaterializationTickDetailDialog';
 import {AutomaterializeRunHistoryTable} from '../assets/auto-materialization/AutomaterializeRunHistoryTable';
-import {DeclarativeAutomationBanner} from '../assets/auto-materialization/DeclarativeAutomationBanner';
 import {SensorAutomaterializationEvaluationHistoryTable} from '../assets/auto-materialization/SensorAutomaterializationEvaluationHistoryTable';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus, RunsFilter} from '../graphql/types';
@@ -168,9 +167,6 @@ export const SensorPageAutomaterialize = (props: Props) => {
 
   return (
     <>
-      <Box padding={{vertical: 12, horizontal: 24}}>
-        <DeclarativeAutomationBanner />
-      </Box>
       <SensorInfo assetDaemonHealth={daemonStatus} padding={{vertical: 16, horizontal: 24}} />
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
         <Subtitle2>Evaluation timeline</Subtitle2>

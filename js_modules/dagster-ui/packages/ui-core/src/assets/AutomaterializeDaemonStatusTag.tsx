@@ -10,7 +10,7 @@ export const AutomaterializeDaemonStatusTag = () => {
     <Tooltip
       content={
         paused
-          ? 'Auto-materializing is paused. New materializations will not be triggered by auto-materialization policies.'
+          ? 'Automation condition evaluation is paused. New materializations will not be triggered by automation conditions.'
           : ''
       }
       canShow={paused}

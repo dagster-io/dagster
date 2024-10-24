@@ -661,7 +661,7 @@ export const AssetNodeOverview = ({
           <LargeCollapsibleSection header="Definition" icon="info">
             {renderDefinitionSection()}
           </LargeCollapsibleSection>
-          <LargeCollapsibleSection header="Automation details" icon="auto_materialize_policy">
+          <LargeCollapsibleSection header="Automation details" icon="automation_condition">
             {renderAutomationDetailsSection()}
           </LargeCollapsibleSection>
           {cachedOrLiveAssetNode.isExecutable ? (

@@ -89,7 +89,7 @@ export const MergedAutomationRoot = () => {
   const automationTypeFilter = useStaticSetFilter({
     name: 'Automation type',
     allValues: ALL_AUTOMATION_VALUES,
-    icon: 'auto_materialize_policy',
+    icon: 'automation_condition',
     getStringValue: (value) => value.label,
     state: automationFilterState,
     renderLabel: ({value}) => <span>{value.label}</span>,

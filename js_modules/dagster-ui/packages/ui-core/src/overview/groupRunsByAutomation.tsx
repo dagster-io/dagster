@@ -39,7 +39,7 @@ const automationName = (automation: RunAutomation | null) => {
   const {type} = automation;
   switch (type) {
     case 'legacy-amp':
-      return 'Auto-materialized';
+      return 'Automation condition';
     case 'schedule':
     case 'sensor':
       return automation.name;

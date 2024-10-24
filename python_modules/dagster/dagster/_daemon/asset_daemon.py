@@ -281,7 +281,7 @@ class AutoMaterializeLaunchContext:
             ):
                 try:
                     raise Exception(
-                        "Unable to reach the code server. Auto-materialization will resume once the code server is available."
+                        "Unable to reach the code server. Automation condition evaluation will resume once the code server is available."
                     ) from exception_value
                 except:
                     error_data = DaemonErrorCapture.on_exception(sys.exc_info())
@@ -853,7 +853,7 @@ class AssetDaemon(DagsterDaemon):
             error_info = DaemonErrorCapture.on_exception(
                 exc_info=sys.exc_info(),
                 logger=self._logger,
-                log_message="Auto-materialize daemon caught an error",
+                log_message="Automation condition daemon caught an error",
             )
 
         yield error_info

@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import {TagAction, TagActionsPopover} from '../ui/TagActions';
 
 export enum DagsterTag {
+  AutomationCondition = 'dagster/from_automation_condition',
   Automaterialize = 'dagster/auto_materialize',
   AutoObserve = 'dagster/auto_observe',
   Namespace = 'dagster/',

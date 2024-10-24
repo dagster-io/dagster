@@ -29,7 +29,7 @@ export const CreatedByTagCellWrapper = styled(Box)``;
 
 type TagType =
   | {
-      type: 'user' | 'schedule' | 'sensor' | 'auto-materialize' | 'auto-observe';
+      type: 'user' | 'schedule' | 'sensor' | 'automation-condition' | 'auto-observe';
       tag: RunTagsFragment;
     }
   | {type: 'manual'};
@@ -53,11 +53,11 @@ const pluckTagFromList = (tags: RunTagsFragment[]): TagType => {
     const {key} = tag;
     switch (key) {
       case DagsterTag.Automaterialize:
-        return {type: 'auto-materialize', tag};
+        return {type: 'automation-condition', tag};
       case DagsterTag.CreatedBy: {
         // Backwards compatibility
         if (tag.value === 'auto_materialize') {
-          return {type: 'auto-materialize', tag};
+          return {type: 'automation-condition', tag};
         } else {
           continue;
         }
@@ -105,8 +105,8 @@ export const CreatedByTag = ({repoAddress, tags, onAddTag}: Props) => {
           </Tag>
         );
       }
-      case 'auto-materialize':
-        return <Tag icon="auto_materialize_policy">Auto-materialize policy</Tag>;
+      case 'automation-condition':
+        return <Tag icon="automation_condition">Automation condition</Tag>;
       case 'auto-observe':
         return <Tag icon="auto_observe">Auto-observation</Tag>;
     }
