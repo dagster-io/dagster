@@ -80,12 +80,8 @@ class DagsterSigmaTranslator:
         """Get the AssetKey for a Sigma object, such as a workbook or dataset."""
         return AssetKey(_coerce_input_to_valid_name(data.properties["name"]))
 
-    def get_asset_spec(
-        self, asset_key: AssetKey, data: Union[SigmaDataset, SigmaWorkbook]
-    ) -> AssetSpec:
-        """Get the AssetSpec for a Sigma object, such as a workbook or dataset. The key of the returned
-        spec must match the input asset_key.
-        """
+    def get_asset_spec(self, data: Union[SigmaDataset, SigmaWorkbook]) -> AssetSpec:
+        """Get the AssetSpec for a Sigma object, such as a workbook or dataset."""
         if isinstance(data, SigmaWorkbook):
             metadata = {
                 "dagster_sigma/web_url": MetadataValue.url(data.properties["url"]),
@@ -96,7 +92,7 @@ class DagsterSigmaTranslator:
             }
             datasets = [self._context.get_datasets_by_inode()[inode] for inode in data.datasets]
             return AssetSpec(
-                key=asset_key,
+                key=self.get_asset_key(data),
                 metadata=metadata,
                 kinds={"sigma"},
                 deps={self.get_asset_key(dataset) for dataset in datasets},
@@ -118,7 +114,7 @@ class DagsterSigmaTranslator:
             }
 
             return AssetSpec(
-                key=asset_key,
+                key=self.get_asset_key(data),
                 metadata=metadata,
                 kinds={"sigma"},
                 deps={

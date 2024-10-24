@@ -431,7 +431,7 @@ def _get_translator_spec_assert_keys_match(
     translator: DagsterSigmaTranslator, data: Union[SigmaDataset, SigmaWorkbook]
 ) -> AssetSpec:
     key = translator.get_asset_key(data)
-    spec = translator.get_asset_spec(key, data)
+    spec = translator.get_asset_spec(data)
     if spec.key != key:
         check.invariant(
             spec.key == key,
