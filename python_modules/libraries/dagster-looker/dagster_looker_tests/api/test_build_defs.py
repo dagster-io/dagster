@@ -2,13 +2,14 @@ from typing import Iterator
 
 import pytest
 import responses
-from dagster import AssetKey, AssetSpec, materialize
+from dagster import AssetKey, AssetSpec, Definitions, materialize
+from dagster_looker.api.assets import build_looker_pdt_assets_definitions
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
     LookerStructureData,
     RequestStartPdtBuild,
 )
-from dagster_looker.api.resource import LookerResource
+from dagster_looker.api.resource import LookerResource, load_looker_asset_specs
 
 from dagster_looker_tests.api.mock_looker_data import (
     mock_check_pdt_build,
@@ -71,23 +72,21 @@ def looker_instance_data_mocks_fixture(
 
 
 @responses.activate
-def test_build_defs(
+def test_load_asset_specs(
     looker_resource: LookerResource, looker_instance_data_mocks: responses.RequestsMock
 ) -> None:
-    asset_specs_by_key = {
-        spec.key: spec for spec in looker_resource.build_defs().get_all_asset_specs()
-    }
+    asset_specs_by_key = {spec.key: spec for spec in load_looker_asset_specs(looker_resource)}
 
-    assert len(asset_specs_by_key) == 3
+    assert len(asset_specs_by_key) == 2
 
-    expected_lookml_view_asset_key = AssetKey(["view", "my_view"])
+    expected_lookml_view_asset_dep_key = AssetKey(["view", "my_view"])
     expected_lookml_explore_asset_key = AssetKey(["my_model::my_explore"])
     expected_looker_dashboard_asset_key = AssetKey(["my_dashboard_1"])
 
-    assert asset_specs_by_key[expected_lookml_view_asset_key]
-
     lookml_explore_asset = asset_specs_by_key[expected_lookml_explore_asset_key]
-    assert [dep.asset_key for dep in lookml_explore_asset.deps] == [expected_lookml_view_asset_key]
+    assert [dep.asset_key for dep in lookml_explore_asset.deps] == [
+        expected_lookml_view_asset_dep_key
+    ]
     assert lookml_explore_asset.tags == {"dagster/kind/looker": "", "dagster/kind/explore": ""}
 
     looker_dashboard_asset = asset_specs_by_key[expected_looker_dashboard_asset_key]
@@ -101,8 +100,16 @@ def test_build_defs(
 def test_build_defs_with_pdts(
     looker_resource: LookerResource, looker_instance_data_mocks: responses.RequestsMock
 ) -> None:
-    defs = looker_resource.build_defs(
-        request_start_pdt_builds=[RequestStartPdtBuild(model_name="my_model", view_name="my_view")]
+    resource_key = "looker"
+
+    pdts = build_looker_pdt_assets_definitions(
+        resource_key=resource_key,
+        request_start_pdt_builds=[RequestStartPdtBuild(model_name="my_model", view_name="my_view")],
+    )
+
+    defs = Definitions(
+        assets=[*pdts, *load_looker_asset_specs(looker_resource)],
+        resources={resource_key: looker_resource},
     )
 
     assert len(defs.get_all_asset_specs()) == 3
@@ -142,8 +149,8 @@ def test_custom_asset_specs(
 
     all_assets = (
         asset
-        for asset in looker_resource.build_defs(
-            dagster_looker_translator=CustomDagsterLookerApiTranslator()
+        for asset in Definitions(
+            assets=[*load_looker_asset_specs(looker_resource, CustomDagsterLookerApiTranslator)],
         )
         .get_asset_graph()
         .assets_defs
