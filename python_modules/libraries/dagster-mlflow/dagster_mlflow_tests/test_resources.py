@@ -77,6 +77,7 @@ def basic_context(mlflow_run_config, dagster_run):
 def child_context(basic_context, mlflow_run_config):
     resource_config = deepcopy(mlflow_run_config["resources"]["mlflow"]["config"])
     resource_config["parent_run_id"] = basic_context.run_id
+    resource_config["run_name"] = "child"  # Custom run name
     return MagicMock(
         resource_config=resource_config,
         log=basic_context.log,
@@ -117,7 +118,7 @@ def test_mlflow_constructor_basic(
 
     # - the context associated attributes passed have been set
     assert mlf.log == context.log
-    assert mlf.run_name == context.dagster_run.job_name
+    assert mlf.run_name == context.resource_config.get("run_name", context.dagster_run.job_name)
     assert mlf.dagster_run_id == context.run_id
 
     # - the tracking URI is the same as what was passed
