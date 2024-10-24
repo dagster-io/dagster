@@ -76,28 +76,3 @@ def test_my_asset_sensor():
 
 
 # end_asset_sensor_test_marker
-
-
-def send_alert(_msg: str) -> None:
-    return
-
-
-# start_freshness_policy_sensor_marker
-
-from dagster import FreshnessPolicySensorContext, freshness_policy_sensor
-
-
-@freshness_policy_sensor(asset_selection=AssetSelection.all())
-def my_freshness_alerting_sensor(context: FreshnessPolicySensorContext):
-    if context.minutes_overdue is None or context.previous_minutes_overdue is None:
-        return
-
-    if context.minutes_overdue >= 10 and context.previous_minutes_overdue < 10:
-        send_alert(
-            f"Asset with key {context.asset_key} is now more than 10 minutes overdue."
-        )
-    elif context.minutes_overdue == 0 and context.previous_minutes_overdue >= 10:
-        send_alert(f"Asset with key {context.asset_key} is now on time.")
-
-
-# end_freshness_policy_sensor_marker

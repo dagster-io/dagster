@@ -243,12 +243,6 @@ from dagster._core.definitions.external_asset import (
     external_assets_from_specs as external_assets_from_specs,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy as FreshnessPolicy
-from dagster._core.definitions.freshness_policy_sensor_definition import (
-    FreshnessPolicySensorContext as FreshnessPolicySensorContext,
-    FreshnessPolicySensorDefinition as FreshnessPolicySensorDefinition,
-    build_freshness_policy_sensor_context as build_freshness_policy_sensor_context,
-    freshness_policy_sensor as freshness_policy_sensor,
-)
 from dagster._core.definitions.graph_definition import GraphDefinition as GraphDefinition
 from dagster._core.definitions.hook_definition import HookDefinition as HookDefinition
 from dagster._core.definitions.input import (
