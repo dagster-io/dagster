@@ -581,3 +581,50 @@ def test_add_runs_by_backfill_id_idx(conn_string):
             assert get_indexes(instance, "runs") & {"idx_runs_by_backfill_id"} == set()
             instance.upgrade()
             assert {"idx_runs_by_backfill_id"} <= get_indexes(instance, "runs")
+
+
+def test_add_backfill_tags(conn_string):
+    hostname, port = _reconstruct_from_file(
+        conn_string,
+        # use an old snapshot, it has the bulk actions table but not the new columns
+        file_relative_path(
+            __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table.sql"
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname, port=port)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "backfill_tags" not in get_tables(instance)
+
+            instance.upgrade()
+            assert "backfill_tags" in get_tables(instance)
+
+
+def test_add_bulk_actions_job_name_column(conn_string):
+    hostname, port = _reconstruct_from_file(
+        conn_string,
+        # use an old snapshot, it has the bulk actions table but not the new columns
+        file_relative_path(
+            __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table.sql"
+        ),
+    )
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname, port=port)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "job_name" not in get_columns(instance, "bulk_actions")
+
+            instance.upgrade()
+            assert "job_name" in get_columns(instance, "bulk_actions")

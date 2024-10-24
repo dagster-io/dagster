@@ -121,6 +121,21 @@ BulkActionsTable = db.Table(
     db.Column("body", db.Text),
     db.Column("action_type", db.String(32)),
     db.Column("selector_id", db.Text),
+    db.Column("job_name", db.Text, nullable=True),
+)
+
+BackfillTagsTable = db.Table(
+    "backfill_tags",
+    RunStorageSqlMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("backfill_id", db.String(255)),
+    db.Column("key", db.Text),
+    db.Column("value", db.Text),
 )
 
 InstanceInfo = db.Table(
@@ -186,4 +201,9 @@ db.Index(
     mysql_length={
         "backfill_id": 255,
     },
+)
+db.Index(
+    "idx_backfill_tags_backfill_id",
+    BackfillTagsTable.c.backfill_id,
+    BackfillTagsTable.c.id,
 )
