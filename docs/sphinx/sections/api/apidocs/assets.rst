@@ -94,20 +94,14 @@ Refer to the `Asset observation <https://docs.dagster.io/concepts/assets/asset-o
 
 .. autoclass:: AssetObservation
 
-Auto-materialize and freshness policies
+Declarative Automation
 ---------------------------------------
 
-Refer to the `Auto-materialize policies <https://docs.dagster.io/concepts/assets/asset-auto-execution>`_ documentation for more information.
-
-.. autoclass:: AutoMaterializePolicy
-
-.. autoclass:: AutoMaterializeRule
-
-.. autoclass:: AutomationConditionSensorDefinition
+Refer to the `Declarative Automation <https://docs.dagster.io/concepts/automation/declarative-automation>`_ documentation for more information.
 
 .. autoclass:: AutomationCondition
 
-.. autoclass:: FreshnessPolicy
+.. autoclass:: AutomationConditionSensorDefinition
 
 Asset values
 ------------

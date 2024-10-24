@@ -16,7 +16,6 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import (
-    deprecated_param,
     experimental_param,
     hidden_param,
     only_allow_hidden_params_in_kwargs,
@@ -96,9 +95,6 @@ def asset(
     op_tags: Optional[Mapping[str, Any]] = ...,
     group_name: Optional[str] = ...,
     output_required: bool = ...,
-    freshness_policy: Optional[FreshnessPolicy] = ...,
-    # TODO: FOU-243
-    auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
     automation_condition: Optional[AutomationCondition] = ...,
     backfill_policy: Optional[BackfillPolicy] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
@@ -143,12 +139,12 @@ def _validate_hidden_non_argument_dep_param(
     breaking_version="2.0.0",
     additional_warn_text="use `deps` instead.",
 )
-@deprecated_param(
+@hidden_param(
     param="auto_materialize_policy",
     breaking_version="1.10.0",
     additional_warn_text="use `automation_condition` instead.",
 )
-@deprecated_param(
+@hidden_param(
     param="freshness_policy",
     breaking_version="1.10.0",
     additional_warn_text="use freshness checks instead.",
@@ -174,7 +170,6 @@ def asset(
     op_tags: Optional[Mapping[str, Any]] = None,
     group_name: Optional[str] = None,
     output_required: bool = True,
-    freshness_policy: Optional[FreshnessPolicy] = None,
     automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
@@ -183,8 +178,6 @@ def asset(
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     owners: Optional[Sequence[str]] = None,
     kinds: Optional[AbstractSet[str]] = None,
-    # TODO: FOU-243
-    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     **kwargs,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
@@ -247,8 +240,6 @@ def asset(
         output_required (bool): Whether the decorated function will always materialize an asset.
             Defaults to True. If False, the function can return None, which will not be materialized to
             storage and will halt execution of downstream assets.
-        freshness_policy (FreshnessPolicy): (Deprecated) A constraint telling Dagster how often this
-            asset is intended to be updated with respect to its root data.
         automation_condition (AutomationCondition): (Experimental) A condition describing when
             Dagster should materialize this asset.
         backfill_policy (BackfillPolicy): (Experimental) Configure Dagster to backfill this asset according to its
@@ -315,9 +306,9 @@ def asset(
         op_tags=op_tags,
         group_name=group_name,
         output_required=output_required,
-        freshness_policy=freshness_policy,
+        freshness_policy=kwargs.get("freshness_policy"),
         automation_condition=resolve_automation_condition(
-            automation_condition, auto_materialize_policy
+            automation_condition, kwargs.get("auto_materialize_policy")
         ),
         backfill_policy=backfill_policy,
         retry_policy=retry_policy,
@@ -744,6 +735,16 @@ def graph_asset(
 @experimental_param(param="tags")
 @experimental_param(param="owners")
 @experimental_param(param="kinds")
+@hidden_param(
+    param="freshness_policy",
+    breaking_version="1.10.0",
+    additional_warn_text="use freshness checks instead",
+)
+@hidden_param(
+    param="auto_materialize_policy",
+    breaking_version="1.10.0",
+    additional_warn_text="use `automation_condition` instead",
+)
 def graph_asset(
     compose_fn: Optional[Callable] = None,
     *,
@@ -757,9 +758,6 @@ def graph_asset(
     metadata: Optional[RawMetadataMapping] = None,
     tags: Optional[Mapping[str, str]] = None,
     owners: Optional[Sequence[str]] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
-    # TODO: FOU-243
-    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -767,6 +765,7 @@ def graph_asset(
     code_version: Optional[str] = None,
     key: Optional[CoercibleToAssetKey] = None,
     kinds: Optional[AbstractSet[str]] = None,
+    **kwargs,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Creates a software-defined asset that's computed using a graph of ops.
 
@@ -812,8 +811,6 @@ def graph_asset(
             e.g. `team:finops`.
         kinds (Optional[Set[str]]): A list of strings representing the kinds of the asset. These
             will be made visible in the Dagster UI.
-        freshness_policy (Optional[FreshnessPolicy]): A constraint telling Dagster how often this asset is
-            intended to be updated with respect to its root data.
         automation_condition (Optional[AutomationCondition]): The AutomationCondition to use
             for this asset.
         backfill_policy (Optional[BackfillPolicy]): The BackfillPolicy to use for this asset.
@@ -837,6 +834,8 @@ def graph_asset(
             def slack_files_table():
                 return store_files(fetch_files_from_slack())
     """
+    only_allow_hidden_params_in_kwargs(graph_asset, kwargs)
+
     if compose_fn is None:
         return lambda fn: graph_asset(
             fn,  # type: ignore
@@ -850,9 +849,9 @@ def graph_asset(
             metadata=metadata,
             tags=tags,
             owners=owners,
-            freshness_policy=freshness_policy,
+            freshness_policy=kwargs.get("freshness_policy"),
             automation_condition=resolve_automation_condition(
-                automation_condition, auto_materialize_policy
+                automation_condition, kwargs.get("auto_materialize_policy")
             ),
             backfill_policy=backfill_policy,
             resource_defs=resource_defs,
@@ -874,9 +873,9 @@ def graph_asset(
             metadata=metadata,
             tags=tags,
             owners=owners,
-            freshness_policy=freshness_policy,
+            freshness_policy=kwargs.get("freshness_policy"),
             automation_condition=resolve_automation_condition(
-                automation_condition, auto_materialize_policy
+                automation_condition, kwargs.get("auto_materialize_policy")
             ),
             backfill_policy=backfill_policy,
             resource_defs=resource_defs,
