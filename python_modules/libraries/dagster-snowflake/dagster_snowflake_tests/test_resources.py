@@ -22,11 +22,7 @@ from dagster._core.definitions.metadata import FloatMetadataValue
 from dagster._core.definitions.observe import observe
 from dagster._core.test_utils import environ
 from dagster._time import get_current_timestamp
-from dagster_snowflake import (
-    SnowflakeResource,
-    fetch_last_updated_timestamps,
-    snowflake_resource,
-)
+from dagster_snowflake import SnowflakeResource, fetch_last_updated_timestamps, snowflake_resource
 from dagster_snowflake.constants import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
 
 from dagster_snowflake_tests.utils import create_mock_connector
@@ -302,9 +298,7 @@ def test_fetch_last_updated_timestamps_empty():
         )
 
 
-@pytest.mark.skipif(
-    not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB"
-)
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 @pytest.mark.importorskip(
     "snowflake.sqlalchemy", reason="sqlalchemy is not available in the test environment"
 )
@@ -345,13 +339,9 @@ def test_fetch_last_updated_timestamps_missing_table():
             conn.cursor().execute(f"drop table if exists {table_name}")
 
 
-@pytest.mark.skipif(
-    not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB"
-)
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 @pytest.mark.integration
-@pytest.mark.parametrize(
-    "db_str", [None, "TESTDB"], ids=["db_from_resource", "db_from_param"]
-)
+@pytest.mark.parametrize("db_str", [None, "TESTDB"], ids=["db_from_resource", "db_from_param"])
 def test_fetch_last_updated_timestamps(db_str: str):
     start_time = get_current_timestamp()
     with temporary_snowflake_table() as table_name:
@@ -398,9 +388,7 @@ def test_fetch_last_updated_timestamps(db_str: str):
         assert freshness_val.value > start_time
 
 
-@pytest.mark.skipif(
-    not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB"
-)
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 @pytest.mark.importorskip(
     "snowflake.sqlalchemy", reason="sqlalchemy is not available in the test environment"
 )
