@@ -563,7 +563,6 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
             ("run_status", "RUN_STATUS"),
             ("single_asset_sensor", "ASSET"),
             ("many_asset_sensor", "MULTI_ASSET"),
-            ("fresh_sensor", "FRESHNESS_POLICY"),
             ("the_failure_sensor", "RUN_STATUS"),
         ],
     )

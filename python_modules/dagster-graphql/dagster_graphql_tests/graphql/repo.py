@@ -68,7 +68,6 @@ from dagster import (
     dagster_type_loader,
     daily_partitioned_config,
     define_asset_job,
-    freshness_policy_sensor,
     graph,
     job,
     logger,
@@ -1240,10 +1239,6 @@ def define_sensors():
     def many_asset_sensor(_):
         pass
 
-    @freshness_policy_sensor(asset_selection=AssetSelection.all())
-    def fresh_sensor(_):
-        pass
-
     @run_failure_sensor
     def the_failure_sensor():
         pass
@@ -1276,7 +1271,6 @@ def define_sensors():
         run_status,
         single_asset_sensor,
         many_asset_sensor,
-        fresh_sensor,
         the_failure_sensor,
         auto_materialize_sensor,
         every_asset_sensor,
