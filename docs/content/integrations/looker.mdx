@@ -7,7 +7,7 @@ description: Represent your Looker assets in Dagster
 
 <ExperimentalCallout />
 
-This guide provides instructions for using Dagster with Looker. Your Looker assets, such as views, explores, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Looker assets. You can also use Dagster to orchestrate Looker PDTs, allowing you to trigger refreshes of these materialized tables on a cadence or based on upstream data changes.
+This guide provides instructions for using Dagster with Looker using the `dagster-looker` library. Your Looker assets, such as views, explores, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Looker assets. You can also use Dagster to orchestrate Looker PDTs, allowing you to trigger refreshes of these materialized tables on a cadence or based on upstream data changes.
 
 ## What you'll learn
 
@@ -18,12 +18,23 @@ This guide provides instructions for using Dagster with Looker. Your Looker asse
 <details>
   <summary>Prerequisites</summary>
 
+- The `dagster-looker` library installed in your environment
 - Familiarity with asset definitions and the Dagster asset graph
 - Familiarity with Dagster resources - Familiarity with Power BI concepts, like semantic models, data sources, reports, and dashboards
 - A Looker instance
 - Looker API credentials to access your Looker instance. For more information, see [Looker API authentication](https://cloud.google.com/looker/docs/api-auth) in the Looker documentation.
 
 </details>
+
+</details>
+
+## Set up your environment
+
+To get started, you'll need to install the `dagster` and `dagster-looker` Python packages:
+
+```bash
+pip install dagster dagster-looker
+```
 
 ## Represent Looker assets in the asset graph
 
