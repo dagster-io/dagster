@@ -939,6 +939,6 @@ def test_add_runs_by_backfill_id_idx(hostname, conn_string):
                 target_fd.write(template)
 
         with DagsterInstance.from_config(tempdir) as instance:
-            assert get_indexes(instance, "runs") & "idx_runs_by_backfill_id" == set()
+            assert get_indexes(instance, "runs") & {"idx_runs_by_backfill_id"} == set()
             instance.upgrade()
-            assert "idx_runs_by_backfill_id" <= get_indexes(instance, "runs")
+            assert {"idx_runs_by_backfill_id"} <= get_indexes(instance, "runs")
