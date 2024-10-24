@@ -23,17 +23,10 @@ def users_asset():
 
 # end_assets
 
-# start_job
-ecommerce_job = define_asset_job(
-    "ecommerce_job", AssetSelection.groups("ecommerce_assets")
-)
-
-# end_job
-
-
 # start_schedule
 ecommerce_schedule = ScheduleDefinition(
-    job=ecommerce_job,
+    name="ecommerce_schedule",
+    target=AssetSelection.groups("ecommerce_assets"),
     cron_schedule="15 5 * * 1-5",
     default_status=DefaultScheduleStatus.RUNNING,
 )
@@ -44,7 +37,6 @@ ecommerce_schedule = ScheduleDefinition(
 # start_definitions
 defs = Definitions(
     assets=[orders_asset, users_asset],
-    jobs=[ecommerce_job],
     schedules=[ecommerce_schedule],
 )
 # end_definitions
