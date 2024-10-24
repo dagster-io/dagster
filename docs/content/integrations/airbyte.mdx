@@ -95,55 +95,6 @@ airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
 The `load_assets_from_airbyte_instance` function retrieves all of the connections you have defined in the Airbyte interface, creating asset definitions for each data stream. Each connection has an associated [op](https://docs.dagster.io/concepts/ops-jobs-graphs/ops#ops) which triggers a sync of that connection.
 
 </TabItem>
-
-<TabItem name="Loading from YAML config">
-
-### Loading Airbyte asset definitions from YAML config <Deprecated />
-
-<strong>
-  <PyObject
-    module="dagster_airbyte"
-    object="load_assets_from_airbyte_project"
-  />{" "}
-  has been deprecated as the Octavia CLI is no longer maintained. Consider using{" "}
-  <PyObject
-    module="dagster_airbyte"
-    object="load_assets_from_airbyte_instance"
-  />{" "}
-  instead.
-</strong>
-
-To load Airbyte assets into Dagster from a set of YAML configuration files, specify the Octavia project directory, which contains the `sources`, `destinations`, and `connections` subfolders. This is the directory where you first ran `octavia init`. Here, the YAML files are treated as the source of truth for building Dagster assets.
-
-```python startafter=start_load_assets_from_airbyte_project endbefore=end_load_assets_from_airbyte_project file=/integrations/airbyte/airbyte.py dedent=4
-from dagster_airbyte import load_assets_from_airbyte_project
-
-airbyte_assets = load_assets_from_airbyte_project(
-    project_dir="path/to/airbyte/project",
-)
-```
-
-The `load_assets_from_airbyte_project` function parses the YAML metadata, generating a set of asset definitions which reflect each of the data streams synced by your connections. Each connection has an associated [op](https://docs.dagster.io/concepts/ops-jobs-graphs/ops#ops) which triggers a sync of that connection.
-
-#### Adding a resource
-
-Assets loaded from Airbyte require an `AirbyteResource`, which defines how to connect and interact with your Airbyte instance.
-
-We can add the Airbyte resource we configured above to our Airbyte assets by doing the following:
-
-```python startafter=start_airbyte_project_config endbefore=end_airbyte_project_config file=/integrations/airbyte/airbyte.py dedent=4
-from dagster_airbyte import load_assets_from_airbyte_project
-
-from dagster import with_resources
-
-# Use the airbyte_instance resource we defined in Step 1
-airbyte_assets = with_resources(
-    [load_assets_from_airbyte_project(project_dir="path/to/airbyte/project")],
-    {"airbyte": airbyte_instance},
-)
-```
-
-</TabItem>
 <TabItem name="Manually building assets">
 
 ### Manually building Airbyte asset definitions
