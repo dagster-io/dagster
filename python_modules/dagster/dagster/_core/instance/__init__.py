@@ -1988,8 +1988,8 @@ class DagsterInstance(DynamicPartitionsStore):
             asset_check_key
         )
 
-    @public
     @traced
+    @deprecated(breaking_version="2.0")
     def get_event_records(
         self,
         event_records_filter: "EventRecordsFilter",
