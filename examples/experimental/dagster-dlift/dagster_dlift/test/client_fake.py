@@ -14,9 +14,10 @@ class ExpectedDiscoveryApiRequest(NamedTuple):
 
 class ExpectedAccessApiRequest(NamedTuple):
     subpath: str
+    data: Optional[Mapping[str, Any]] = None
 
     def __hash__(self) -> int:
-        return hash(self.subpath)
+        return hash((self.subpath, frozenset(self.data.items() if self.data else [])))
 
 
 class DbtCloudClientFake(DbtCloudClient):
@@ -30,12 +31,15 @@ class DbtCloudClientFake(DbtCloudClient):
         self.access_api_responses = access_api_responses
         self.discovery_api_responses = discovery_api_responses
 
-    def make_access_api_request(self, subpath: str) -> Mapping[str, Any]:
-        if ExpectedAccessApiRequest(subpath) not in self.access_api_responses:
+    def make_access_api_request(
+        self, subpath: str, data: Optional[Mapping[str, Any]] = None
+    ) -> Mapping[str, Any]:
+        expected_request = ExpectedAccessApiRequest(subpath, data)
+        if expected_request not in self.access_api_responses:
             raise Exception(
                 f"ExpectedAccessApiRequest({subpath}) not found in access_api_responses"
             )
-        return self.access_api_responses[ExpectedAccessApiRequest(subpath)]
+        return self.access_api_responses[expected_request]
 
     def make_discovery_api_query(
         self, query: str, variables: Mapping[str, Any]

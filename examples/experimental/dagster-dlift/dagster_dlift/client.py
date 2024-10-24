@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Sequence
+import time
+from typing import Any, Mapping, Optional, Sequence
 
 import requests
 
@@ -8,6 +9,7 @@ from dagster_dlift.gql_queries import (
     GET_DBT_TESTS_QUERY,
     VERIFICATION_QUERY,
 )
+from dagster_dlift.utils import get_job_name
 
 ENVIRONMENTS_SUBPATH = "environments/"
 
@@ -16,7 +18,7 @@ class DbtCloudClient:
     def __init__(
         self,
         # Can be found on the Account Info page of dbt.
-        account_id: str,
+        account_id: int,
         # Can be either a personal token or a service token.
         token: str,
         # Can be found on the
@@ -44,12 +46,29 @@ class DbtCloudClient:
         )
         return session
 
-    def make_access_api_request(self, subpath: str) -> Mapping[str, Any]:
-        session = self.get_session()
-        return self.ensure_valid_response(session.get(f"{self.get_api_v2_url()}/{subpath}")).json()
+    def get_artifact_session(self) -> requests.Session:
+        session = requests.Session()
+        session.headers.update(
+            {
+                "Authorization": f"Token {self.token}",
+                "Content-Type": "application/json",
+            }
+        )
+        return session
 
-    def ensure_valid_response(self, response: requests.Response) -> requests.Response:
-        if response.status_code != 200:
+    def make_access_api_request(
+        self, subpath: str, data: Optional[Mapping[str, Any]] = None
+    ) -> Mapping[str, Any]:
+        session = self.get_session()
+        data = data or {}
+        return self.ensure_valid_response(
+            session.get(f"{self.get_api_v2_url()}/{subpath}", data=data)
+        ).json()
+
+    def ensure_valid_response(
+        self, response: requests.Response, expected_code: int = 200
+    ) -> requests.Response:
+        if response.status_code != expected_code:
             raise Exception(f"Request to DBT Cloud failed: {response.text}")
         return response
 
@@ -163,3 +182,69 @@ class DbtCloudClient:
                 "endCursor"
             ]
         return tests
+
+    def create_dagster_job(self, project_id: int, environment_id: int) -> int:
+        """Creats a dbt cloud job spec'ed to do what dagster expects."""
+        session = self.get_session()
+        response = self.ensure_valid_response(
+            session.post(
+                f"{self.get_api_v2_url()}/jobs/",
+                json={
+                    "account_id": self.account_id,
+                    "environment_id": environment_id,
+                    "project_id": project_id,
+                    "name": get_job_name(environment_id=environment_id, project_id=project_id),
+                    "description": "A job that runs dbt models, sources, and tests.",
+                    "job_type": "other",
+                },
+            ),
+            expected_code=201,
+        ).json()
+        return response["data"]["id"]
+
+    def destroy_dagster_job(self, project_id: int, environment_id: int, job_id: int) -> None:
+        """Destroys a dagster job."""
+        session = self.get_session()
+        self.ensure_valid_response(session.delete(f"{self.get_api_v2_url()}/jobs/{job_id}")).json()
+
+    def get_job_info_by_id(self, job_id: int) -> Mapping[str, Any]:
+        session = self.get_session()
+        return self.ensure_valid_response(
+            session.get(f"{self.get_api_v2_url()}/jobs/{job_id}")
+        ).json()
+
+    def list_jobs(self, environment_id: int) -> Sequence[Mapping[str, Any]]:
+        return self.make_access_api_request("/jobs/", data={"environment_id": environment_id})[
+            "data"
+        ]
+
+    def trigger_job(self, job_id: int, steps: Optional[Sequence[str]] = None) -> Mapping[str, Any]:
+        session = self.get_session()
+        response = self.ensure_valid_response(
+            session.post(
+                f"{self.get_api_v2_url()}/jobs/{job_id}/run/",
+                json={"steps_override": steps, "cause": "Triggered by dagster."},
+            )
+        )
+        return response.json()
+
+    def get_job_run_info(self, job_run_id: int) -> Mapping[str, Any]:
+        session = self.get_session()
+        return self.ensure_valid_response(
+            session.get(f"{self.get_api_v2_url()}/runs/{job_run_id}")
+        ).json()
+
+    def poll_for_run_completion(self, job_run_id: int, timeout: int = 60) -> int:
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            run_info = self.get_job_run_info(job_run_id)
+            if run_info["data"]["status"] in {10, 20, 30}:
+                return run_info["data"]["status"]
+            time.sleep(0.1)
+        raise Exception(f"Run {job_run_id} did not complete within {timeout} seconds.")
+
+    def get_run_results_json(self, job_run_id: int) -> Mapping[str, Any]:
+        session = self.get_artifact_session()
+        return self.ensure_valid_response(
+            session.get(f"{self.get_api_v2_url()}/runs/{job_run_id}/artifacts/run_results.json")
+        ).json()
