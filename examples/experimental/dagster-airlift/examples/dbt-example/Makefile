@@ -7,6 +7,7 @@ endef
 export MAKEFILE_DIR := $(GET_MAKEFILE_DIR)
 export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
 export MIGRATING_AIRFLOW_HOME := $(MAKEFILE_DIR)/.migrating_airflow_home
+export FEDERATED_AIRFLOW_HOME := $(MAKEFILE_DIR)/.federated_airflow_home
 export DBT_PROJECT_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DAGSTER_URL := http://localhost:3333
@@ -25,9 +26,11 @@ dev_install:
 setup_local_env: 
 	$(MAKE) wipe
 	mkdir -p $(MIGRATING_AIRFLOW_HOME)
+	mkdir -p $(FEDERATED_AIRFLOW_HOME)
 	mkdir -p $(DAGSTER_HOME)
 	chmod +x ../../scripts/airflow_setup.sh
 	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags $(MIGRATING_AIRFLOW_HOME)
+	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/federated_airflow_dags $(FEDERATED_AIRFLOW_HOME) 8081
 	$(MAKE) dbt_setup
 
 not_proxied:
@@ -38,8 +41,11 @@ proxied:
 	chmod +x ../../scripts/find_and_replace_in_yaml_dir.sh
 	../../scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state False True
 
-run_airflow:
+run_migrating_airflow:
 	AIRFLOW_HOME=$(MIGRATING_AIRFLOW_HOME) airflow standalone
+
+run_federated_airflow:
+	AIRFLOW_HOME=$(FEDERATED_AIRFLOW_HOME) airflow standalone
 
 run_peer:
 	dagster dev -m dbt_example.dagster_defs.peer -p 3333
@@ -55,6 +61,9 @@ run_migrate: proxied
 
 run_complete:
 	dagster dev -m dbt_example.dagster_defs.complete -p 3333
+
+run_federated_airflow_defs:
+	dagster dev -m dbt_example.dagster_defs.federated_airflow_defs -p 3333
 
 wipe: ## Wipe out all the files created by the Makefile
 	rm -rf $(AIRFLOW_HOME) $(DAGSTER_HOME)
