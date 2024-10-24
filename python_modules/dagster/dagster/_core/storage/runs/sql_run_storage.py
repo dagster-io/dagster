@@ -996,7 +996,8 @@ class SqlRunStorage(RunStorage):
         rows = self.fetchall(query)
         backfill_candidates = deserialize_values((row["body"] for row in rows), PartitionBackfill)
 
-        if filters and filters.tags:
+        if filters and filters.tags and not self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
+            # if we are still using the run tags table to get backfills by tag, we need to do an additional check.
             # runs can have more tags than the backfill that launched them. Since we filtered tags by
             # querying for runs with those tags, we need to do an additional check that the backfills
             # also have the requested tags
