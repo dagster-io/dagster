@@ -1000,6 +1000,7 @@ def test_add_runs_by_backfill_id_idx(hostname, conn_string):
             instance.upgrade()
             assert {"idx_runs_by_backfill_id"} <= get_indexes(instance, "runs")
 
+
 def test_add_backfill_tags(hostname, conn_string):
     _reconstruct_from_file(
         hostname,

@@ -38,9 +38,6 @@ def upgrade():
             sa.Column("backfill_id", sa.String(length=255), nullable=True),
             sa.Column("key", sa.Text(), nullable=True),
             sa.Column("value", sa.Text(), nullable=True),
-            sa.Column("organization_id", sa.BigInteger(), nullable=False),
-            sa.Column("deployment_id", sa.BigInteger(), nullable=False),
-            sa.Column("bulk_actions_storage_id", sa.BigInteger(), nullable=True),
             sa.PrimaryKeyConstraint("id"),
         )
 
@@ -49,7 +46,7 @@ def downgrade():
     inspector = sa.inspect(op.get_bind())
     has_tables = inspector.get_table_names()
     if "bulk_actions" in has_tables:
-        columns = [x.get("name") for x in inspector.get_columns("runs")]
+        columns = [x.get("name") for x in inspector.get_columns("bulk_actions")]
         if "job_name" in columns:
             op.drop_column("bulk_actions", "job_name")
 

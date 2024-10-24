@@ -1313,7 +1313,8 @@ def test_add_runs_by_backfill_id_idx():
             assert "idx_runs_by_backfill_id" not in get_sqlite3_indexes(db_path, "runs")
             instance.upgrade()
             assert "idx_runs_by_backfill_id" in get_sqlite3_indexes(db_path, "runs")
-            
+
+
 def test_add_backfill_tags():
     src_dir = file_relative_path(
         __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
