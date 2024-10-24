@@ -59,7 +59,7 @@ def test_verification() -> None:
 
 def test_get_models() -> None:
     """Test that we can get models from the instance, even if they are paginated."""
-    client = create_jaffle_shop_project().client
+    client = create_jaffle_shop_project()._unscoped_client  # noqa
     models = client.get_dbt_models(1)
     expected_unique_id_dep_graph = jaffle_shop_contents()[DbtCloudContentType.MODEL]
     assert len(models) == len(expected_unique_id_dep_graph)
@@ -71,7 +71,7 @@ def test_get_models() -> None:
 
 def test_get_sources() -> None:
     """Test that we can get sources from the instance, even if they are paginated."""
-    client = create_jaffle_shop_project().client
+    client = create_jaffle_shop_project()._unscoped_client  # noqa
     sources = client.get_dbt_sources(1)
     expected_unique_id_dep_graph = jaffle_shop_contents()[DbtCloudContentType.SOURCE]
     assert len(sources) == len(expected_unique_id_dep_graph)
@@ -82,7 +82,7 @@ def test_get_sources() -> None:
 
 def test_get_tests() -> None:
     """Tests that we can get tests from the instance, even if they are paginated."""
-    client = create_jaffle_shop_project().client
+    client = create_jaffle_shop_project()._unscoped_client  # noqa
     tests = client.get_dbt_tests(1)
     expected_unique_id_dep_graph = jaffle_shop_contents()[DbtCloudContentType.TEST]
     assert len(tests) == len(expected_unique_id_dep_graph)
