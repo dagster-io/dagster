@@ -7,7 +7,7 @@ description: "Learn to automatically run your Dagster pipelines."
 
 Dagster offers several ways to run data pipelines without manual intervention, including traditional scheduling and event-based triggers. Automating your Dagster pipelines can boost efficiency and ensure that data is produced consistently and reliably.
 
-When one of Dagster's automation methods is triggered, a **tick** is created, which indicates that a **run** should occur. The tick will kick off a run, which is a single instance of a pipeline being executed.
+When one of Dagster's automation methods is triggered, a **tick** is created. A tick is an opportunity for one or more **runs** to be launched. A run will either materialize a selection of assets or execute a job. Some schedules and sensors will launch runs on every tick. Others have associated logic that is executed on each tick which determines the runs to be launched.
 
 In this guide, we'll cover the available automation methods Dagster provides and when to use each one.
 
@@ -29,11 +29,11 @@ In this section, we'll touch on each of the automation methods currently support
 
 ### Schedules
 
-Schedules are Dagster's imperative approach, which allow you to specify when a job should run, such as Mondays at 9:00 AM. Jobs triggered by schedules can contain a subset of [assets][assets] or [ops][ops]. Refer to the [Schedules documentation][schedules] to learn more.
+Schedules are Dagster's imperative option for automation. They allow you to specify exactly when a run should be launched, such as Mondays at 9:00 AM. Schedules can target a selection of [assets][assets] or a [job][jobs]. Refer to the [Schedules documentation][schedules] to learn more.
 
 ### Sensors
 
-You can use sensors to run a job or materialize an asset in response to specific events. Sensors periodically check and execute logic to know whether to kick off a run. They are commonly used for situations where you want to materialize an asset after some externally observable event happens, such as:
+Sensors launch runs in response to a detected event. They periodically check and execute logic to detect an event and conditionally launch runs. They are commonly used for situations where you want to materialize an asset on some externally observable trigger, such as:
 
 - A new file arrives in a specific location, such as Amazon S3
 - A webhook notification is received
@@ -54,7 +54,7 @@ Materialization conditions are declared on an asset-by-asset basis. Refer to the
 
 ### Asset Sensors <Experimental />
 
-Asset sensors trigger jobs when a specified asset is materialized. Using asset sensors, you can instigate runs across jobs and code locations and keep downstream assets up-to-date with ease.
+Asset sensors launch runs when a specified asset is materialized. Using asset sensors, you can instigate runs across jobs and code locations and keep downstream assets up-to-date with ease.
 
 Refer to the [Asset Sensor documentation][asset-sensors] to learn more.
 
