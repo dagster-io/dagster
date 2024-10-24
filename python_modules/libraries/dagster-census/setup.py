@@ -24,7 +24,6 @@ setup(
     description="Package for integrating Census with Dagster.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-census",
     classifiers=[
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
@@ -34,7 +33,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_census_tests*"]),
     include_package_data=True,
-    python_requires=">=3.8,<3.13",
+    python_requires=">=3.9,<3.13",
     install_requires=[f"dagster{pin}"],
     zip_safe=False,
 )

@@ -23,7 +23,6 @@ setup(
     description="A Open AI client resource for interacting with Open AI API.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-openai",
     classifiers=[
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
