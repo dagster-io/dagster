@@ -3,10 +3,10 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {succinctType} from './ResourceRoot';
-import {ResourceEntryFragment} from './types/WorkspaceResourcesRoot.types';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+import {ResourceEntryFragment} from './types/WorkspaceResourcesQuery.types';
 
 const TEMPLATE_COLUMNS = '1.5fr 1fr 1fr';
 
