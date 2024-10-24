@@ -6,7 +6,7 @@ from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Type
+from typing import AbstractSet, Any, Callable, Dict, Iterator, List, Mapping, Optional, Type
 
 import aiohttp
 import dagster._check as check
@@ -404,7 +404,9 @@ class SigmaOrganization(ConfigurableResource):
 
 def load_sigma_asset_specs(
     organization: SigmaOrganization,
-    dagster_sigma_translator: Type[DagsterSigmaTranslator] = DagsterSigmaTranslator,
+    dagster_sigma_translator: Callable[
+        [SigmaOrganizationData], DagsterSigmaTranslator
+    ] = DagsterSigmaTranslator,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Sigma content in the organization.
 
