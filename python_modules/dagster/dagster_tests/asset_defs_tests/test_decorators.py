@@ -916,6 +916,8 @@ def test_graph_asset_decorator_no_args():
 @ignore_warning("Parameter `resource_defs` .* is experimental")
 @ignore_warning("Parameter `tags` .* is experimental")
 @ignore_warning("Parameter `owners` .* is experimental")
+@ignore_warning("Parameter `auto_materialize_policy` .* is deprecated")
+@ignore_warning("Parameter `freshness_policy` .* is deprecated")
 @pytest.mark.parametrize(
     "automation_condition_arg",
     [
@@ -1126,6 +1128,8 @@ def test_graph_asset_w_config_mapping():
 @ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
 @ignore_warning("Parameter `auto_materialize_policy` is deprecated")
 @ignore_warning("Parameter `resource_defs`")
+@ignore_warning("Parameter `auto_materialize_policy`")
+@ignore_warning("Parameter `freshness_policy`")
 @pytest.mark.parametrize(
     "automation_condition_arg",
     [
@@ -1352,7 +1356,7 @@ def test_multi_asset_with_bare_resource():
 @ignore_warning("Static method `AutomationCondition.on_cron` is experimental")
 @ignore_warning("Static method `AutomationCondition.eager` is experimental")
 @ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
-@ignore_warning("Parameter `auto_materialize_policy` is deprecated")
+@ignore_warning("Parameter `auto_materialize_policy`")
 def test_multi_asset_with_automation_conditions():
     ac2 = AutomationCondition.on_cron("@daily")
     ac3 = AutomationCondition.eager()
