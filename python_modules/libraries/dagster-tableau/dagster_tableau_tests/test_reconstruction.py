@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
@@ -14,7 +14,9 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.test.definitions import lazy_definitions
-from dagster_tableau.resources import TableauCloudWorkspace
+from dagster_tableau.assets import build_tableau_executable_assets_definition
+from dagster_tableau.resources import TableauCloudWorkspace, load_tableau_asset_specs
+from dagster_tableau.translator import DagsterTableauTranslator, TableauContentData
 
 from dagster_tableau_tests.conftest import (
     FAKE_CONNECTED_APP_CLIENT_ID,
@@ -36,15 +38,60 @@ resource = TableauCloudWorkspace(
 
 
 @lazy_definitions
-def cacheable_asset_defs():
-    @asset
-    def my_materializable_asset():
-        pass
-
-    return Definitions.merge(
-        Definitions(assets=[my_materializable_asset], jobs=[define_asset_job("all_asset_job")]),
-        resource.build_defs(refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"]),
+def cacheable_asset_defs_refreshable_workbooks():
+    tableau_specs = load_tableau_asset_specs(
+        workspace=resource,
     )
+
+    non_executable_asset_specs = [
+        spec
+        for spec in tableau_specs
+        if spec.tags.get("dagster-tableau/asset_type") == "data_source"
+    ]
+
+    executable_asset_specs = [
+        spec
+        for spec in tableau_specs
+        if spec.tags.get("dagster-tableau/asset_type") in ["dashboard", "sheet"]
+    ]
+
+    resource_key = "tableau"
+
+    return Definitions(
+        assets=[
+            build_tableau_executable_assets_definition(
+                resource_key=resource_key,
+                workspace=resource,
+                specs=executable_asset_specs,
+                refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
+            ),
+            *non_executable_asset_specs,
+        ],
+        jobs=[define_asset_job("all_asset_job")],
+        resources={resource_key: resource},
+    )
+
+
+@lazy_definitions
+def cacheable_asset_defs_custom_translator():
+    class MyCoolTranslator(DagsterTableauTranslator):
+        def get_sheet_spec(self, data: TableauContentData) -> AssetSpec:
+            spec = super().get_sheet_spec(data)
+            return spec._replace(key=spec.key.with_prefix("my_prefix"))
+
+        def get_dashboard_spec(self, data: TableauContentData) -> AssetSpec:
+            spec = super().get_dashboard_spec(data)
+            return spec._replace(key=spec.key.with_prefix("my_prefix"))
+
+        def get_data_source_spec(self, data: TableauContentData) -> AssetSpec:
+            spec = super().get_data_source_spec(data)
+            return spec._replace(key=spec.key.with_prefix("my_prefix"))
+
+    tableau_specs = load_tableau_asset_specs(
+        workspace=resource, dagster_tableau_translator=MyCoolTranslator
+    )
+
+    return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
 
 
 def test_load_assets_workspace_data_refreshable_workbooks(
@@ -68,7 +115,7 @@ def test_load_assets_workspace_data_refreshable_workbooks(
         # first, we resolve the repository to generate our cached metadata
         pointer = CodePointer.from_python_file(
             __file__,
-            "cacheable_asset_defs",
+            "cacheable_asset_defs_refreshable_workbooks",
             None,
         )
         init_repository_def = initialize_repository_def_from_pointer(
@@ -151,9 +198,11 @@ def test_load_assets_workspace_data_translator(
 ) -> None:
     with instance_for_test() as _instance:
         repository_def = initialize_repository_def_from_pointer(
-            CodePointer.from_python_file(
-                str(Path(__file__).parent / "definitions_with_translator.py"), "defs", None
-            ),
+            pointer=CodePointer.from_python_file(
+                __file__,
+                "cacheable_asset_defs_custom_translator",
+                None,
+            )
         )
 
         assert len(repository_def.assets_defs_by_key) == 3
