@@ -17,7 +17,6 @@ setup(
     description="Dagster example of local development and production deployment.",
     url="https://github.com/dagster-io/dagster/tree/master/examples/development_to_production",
     classifiers=[
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",

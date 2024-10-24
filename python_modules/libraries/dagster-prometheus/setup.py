@@ -24,7 +24,6 @@ setup(
     description="A Dagster integration for prometheus",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-prometheus",
     classifiers=[
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
@@ -34,7 +33,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_prometheus_tests*"]),
     include_package_data=True,
-    python_requires=">=3.8,<3.13",
+    python_requires=">=3.9,<3.13",
     install_requires=[f"dagster{pin}", "prometheus_client"],
     zip_safe=False,
 )

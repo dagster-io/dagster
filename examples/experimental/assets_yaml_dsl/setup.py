@@ -8,7 +8,6 @@ setup(
     description="Dagster example of yaml dsl for building asset graphs",
     url="https://github.com/dagster-io/dagster/tree/master/examples/assets_yaml_dsl",
     classifiers=[
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
