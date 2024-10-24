@@ -381,6 +381,10 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "examples/experimental/dagster-airlift/examples/kitchen-sink",
         always_run_if=has_dagster_airlift_changes,
     ),
+    PackageSpec(
+        "examples/experimental/dagster-dlift",
+        name=":dbt: Dbt Cloud-Lift",
+    ),
 ]
 
 
