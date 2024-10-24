@@ -2423,3 +2423,10 @@ def test_index_in_to_key() -> None:
         "Use asset_key.path instead to access the list of key components.",
     ):
         key[0][0]  # type: ignore # good job type checker
+
+
+def test_asset_dep_backcompat() -> None:
+    # AssetKey used to be an iterable tuple, which unintentionally made this work so continue supporting it
+
+    @asset(deps=AssetKey("oops"))  # type: ignore # good job type checker
+    def _(): ...
