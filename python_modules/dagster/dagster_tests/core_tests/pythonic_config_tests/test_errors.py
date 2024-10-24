@@ -18,7 +18,6 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
-from dagster._model.pydantic_compat_layer import USING_PYDANTIC_2
 
 
 def test_invalid_config_type_basic() -> None:
@@ -189,12 +188,8 @@ def test_annotate_with_resource_factory() -> None:
             return "hello"
 
     # https://github.com/dagster-io/dagster/issues/18017
-    if USING_PYDANTIC_2:  # pydantic 2 causing issues with Generic
-        target = "an unknown"  # should be "a '<class 'str'>'"
-        ttype = "Any"  # should be "str"
-    else:
-        target = "a '<class 'str'>'"
-        ttype = "str"
+    target = "an unknown"  # should be "a '<class 'str'>'"
+    ttype = "Any"  # should be "str"
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -269,12 +264,8 @@ def test_annotate_with_resource_factory_schedule_sensor() -> None:
             return "hello"
 
     # https://github.com/dagster-io/dagster/issues/18017
-    if USING_PYDANTIC_2:  # pydantic 2 causing issues with Generic
-        target = "an unknown"  # should be "a '<class 'str'>'"
-        ttype = "Any"  # should be "str"
-    else:
-        target = "a '<class 'str'>'"
-        ttype = "str"
+    target = "an unknown"  # should be "a '<class 'str'>'"
+    ttype = "Any"  # should be "str"
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -405,43 +396,6 @@ def test_trying_to_set_a_field_resource() -> None:
     ):
         my_resource = MyResource(my_str="foo")
         my_resource.my_str = "bar"
-
-
-@pytest.mark.skipif(USING_PYDANTIC_2, reason="Does not throw error in Pydantic 2")
-def test_trying_to_set_an_undefined_field() -> None:
-    class MyConfig(Config):
-        my_str: str
-
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match=(
-            "'MyConfig' is a Pythonic config class and does not support manipulating"
-            " undeclared attribute '_my_random_other_field' as it inherits from"
-            " 'pydantic.BaseModel' without extra=\\\"allow\\\"."
-        ),
-    ):
-        my_config = MyConfig(my_str="foo")
-        my_config._my_random_other_field = "bar"  # noqa: SLF001
-
-
-@pytest.mark.skipif(USING_PYDANTIC_2, reason="Does not throw error in Pydantic 2")
-def test_trying_to_set_an_undefined_field_resource() -> None:
-    class MyResource(ConfigurableResource):
-        my_str: str
-
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match=(
-            "'MyResource' is a Pythonic resource and does not support manipulating"
-            " undeclared attribute '_my_random_other_field' as it inherits from"
-            " 'pydantic.BaseModel' without extra=\\\"allow\\\". If trying to maintain"
-            " state on this resource, consider building a separate, stateful client"
-            " class, and provide a method on the resource to construct and return the"
-            " stateful client."
-        ),
-    ):
-        my_resource = MyResource(my_str="foo")
-        my_resource._my_random_other_field = "bar"  # noqa: SLF001
 
 
 def test_custom_dagster_type_as_config_type() -> None:
