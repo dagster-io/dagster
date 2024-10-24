@@ -57,8 +57,15 @@ def get_conn_string(
     port: str = "5432",
     params: Optional[Mapping[str, object]] = None,
     scheme: str = "postgresql",
+    schema: Optional[str] = None,
 ) -> str:
     uri = f"{scheme}://{quote(username)}:{quote(password)}@{hostname}:{port}/{db_name}"
+
+    if schema:
+        params = {
+            "schema": schema,
+            **(params if params is not None else {}),
+        }
 
     if params:
         query_string = f"{urlencode(params, quote_via=quote)}"
