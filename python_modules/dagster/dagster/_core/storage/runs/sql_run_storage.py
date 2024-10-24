@@ -57,6 +57,7 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.migration import (
+    BACKFILL_JOB_NAME_AND_TAGS,
     OPTIONAL_DATA_MIGRATIONS,
     REQUIRED_DATA_MIGRATIONS,
     RUN_BACKFILL_ID,
@@ -865,46 +866,69 @@ class SqlRunStorage(RunStorage):
     def _backfills_query(self, filters: Optional[BulkActionsFilter] = None):
         query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
         if filters and filters.tags:
-            # Backfills do not have a corresponding tags table. However, all tags that are on a backfill are
-            # applied to the runs the backfill launches. So we can query for runs that match the tags and
-            # are also part of a backfill to find the backfills that match the tags.
+            if self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
+                intersections = []
+                for key, value in filters.tags.items():
+                    intersections.append(
+                        db.select(BackfillTagsTable.c.backfill_id).where(
+                            db.and_(
+                                BackfillTagsTable.c.key == key,
+                                (BackfillTagsTable.c.value == value)
+                                if isinstance(value, str)
+                                else BackfillTagsTable.c.value.in_(value),
+                            )
+                        )
+                    )
 
-            backfills_with_tags_query = db_select([RunTagsTable.c.value]).where(
-                RunTagsTable.c.key == BACKFILL_ID_TAG
-            )
+                if intersections:
+                    query = query.where(BulkActionsTable.c.key.in_(db.intersect(*intersections)))
 
-            for i, (key, value) in enumerate(filters.tags.items()):
-                run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
-                backfills_with_tags_query = backfills_with_tags_query.where(
+            else:
+                # BackfillTags table has not been built. However, all tags that are on a backfill are
+                # applied to the runs the backfill launches. So we can query for runs that match the tags and
+                # are also part of a backfill to find the backfills that match the tags.
+
+                backfills_with_tags_query = db_select([RunTagsTable.c.value]).where(
+                    RunTagsTable.c.key == BACKFILL_ID_TAG
+                )
+
+                for i, (key, value) in enumerate(filters.tags.items()):
+                    run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
+                    backfills_with_tags_query = backfills_with_tags_query.where(
+                        db.and_(
+                            RunTagsTable.c.run_id == run_tags_alias.c.run_id,
+                            run_tags_alias.c.key == key,
+                            (run_tags_alias.c.value == value)
+                            if isinstance(value, str)
+                            else run_tags_alias.c.value.in_(value),
+                        ),
+                    )
+
+                query = query.where(
+                    BulkActionsTable.c.key.in_(db_subquery(backfills_with_tags_query))
+                )
+
+        if filters and filters.job_name:
+            if self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
+                query = query.where(BulkActionsTable.c.job_name == filters.job_name)
+            else:
+                run_tags_table = RunTagsTable
+
+                runs_in_backfill_with_job_name = run_tags_table.join(
+                    RunsTable,
                     db.and_(
-                        RunTagsTable.c.run_id == run_tags_alias.c.run_id,
-                        run_tags_alias.c.key == key,
-                        (run_tags_alias.c.value == value)
-                        if isinstance(value, str)
-                        else run_tags_alias.c.value.in_(value),
+                        RunTagsTable.c.run_id == RunsTable.c.run_id,
+                        RunTagsTable.c.key == BACKFILL_ID_TAG,
+                        RunsTable.c.pipeline_name == filters.job_name,
                     ),
                 )
 
-            query = query.where(BulkActionsTable.c.key.in_(db_subquery(backfills_with_tags_query)))
-
-        if filters and filters.job_name:
-            run_tags_table = RunTagsTable
-
-            runs_in_backfill_with_job_name = run_tags_table.join(
-                RunsTable,
-                db.and_(
-                    RunTagsTable.c.run_id == RunsTable.c.run_id,
-                    RunTagsTable.c.key == BACKFILL_ID_TAG,
-                    RunsTable.c.pipeline_name == filters.job_name,
-                ),
-            )
-
-            backfills_with_job_name_query = db_select([RunTagsTable.c.value]).select_from(
-                runs_in_backfill_with_job_name
-            )
-            query = query.where(
-                BulkActionsTable.c.key.in_(db_subquery(backfills_with_job_name_query))
-            )
+                backfills_with_job_name_query = db_select([RunTagsTable.c.value]).select_from(
+                    runs_in_backfill_with_job_name
+                )
+                query = query.where(
+                    BulkActionsTable.c.key.in_(db_subquery(backfills_with_job_name_query))
+                )
         if filters and filters.statuses:
             query = query.where(
                 BulkActionsTable.c.status.in_([status.value for status in filters.statuses])
