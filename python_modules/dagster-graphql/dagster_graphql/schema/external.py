@@ -311,7 +311,6 @@ class GrapheneRepository(graphene.ObjectType):
             [
                 GrapheneSchedule(
                     schedule,
-                    repository.handle,
                     batch_loader.get_schedule_state(schedule.name),
                     batch_loader,
                 )
@@ -326,7 +325,6 @@ class GrapheneRepository(graphene.ObjectType):
         return [
             GrapheneSensor(
                 sensor,
-                repository.handle,
                 batch_loader.get_sensor_state(sensor.name),
                 batch_loader,
             )

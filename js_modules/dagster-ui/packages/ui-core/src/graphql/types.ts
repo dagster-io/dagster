@@ -4926,7 +4926,11 @@ export type ScheduleData = {
 
 export type ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError;
 
-export type ScheduleMutationResult = PythonError | ScheduleStateResult | UnauthorizedError;
+export type ScheduleMutationResult =
+  | PythonError
+  | ScheduleNotFoundError
+  | ScheduleStateResult
+  | UnauthorizedError;
 
 export type ScheduleNotFoundError = Error & {
   __typename: 'ScheduleNotFoundError';

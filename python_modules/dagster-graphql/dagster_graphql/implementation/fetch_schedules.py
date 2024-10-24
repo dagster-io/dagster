@@ -32,14 +32,17 @@ if TYPE_CHECKING:
 def start_schedule(
     graphene_info: ResolveInfo, schedule_selector: ScheduleSelector
 ) -> "GrapheneScheduleStateResult":
+    from dagster_graphql.schema.errors import GrapheneScheduleNotFoundError
     from dagster_graphql.schema.instigation import GrapheneInstigationState
     from dagster_graphql.schema.schedules import GrapheneScheduleStateResult
 
     check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
-    location = graphene_info.context.get_code_location(schedule_selector.location_name)
-    repository = location.get_repository(schedule_selector.repository_name)
+    schedule = graphene_info.context.get_schedule(schedule_selector)
+    if not schedule:
+        raise UserFacingGraphQLError(
+            GrapheneScheduleNotFoundError(schedule_name=schedule_selector.schedule_name)
+        )
 
-    schedule = repository.get_schedule(schedule_selector.schedule_name)
     stored_state = graphene_info.context.instance.start_schedule(schedule)
     schedule_state = schedule.get_current_instigator_state(stored_state)
 
@@ -145,7 +148,6 @@ def get_schedules_or_error(
     results = [
         GrapheneSchedule(
             schedule,
-            repository.handle,
             schedule_states_by_name.get(schedule.name),
             batch_loader,
         )
@@ -176,7 +178,7 @@ def get_schedules_for_pipeline(
             schedule.selector_id,
         )
 
-        results.append(GrapheneSchedule(schedule, repository.handle, schedule_state))
+        results.append(GrapheneSchedule(schedule, schedule_state))
 
     return results
 
@@ -188,20 +190,17 @@ def get_schedule_or_error(
     from dagster_graphql.schema.schedules import GrapheneSchedule
 
     check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
-    location = graphene_info.context.get_code_location(schedule_selector.location_name)
-    repository = location.get_repository(schedule_selector.repository_name)
 
-    if not repository.has_schedule(schedule_selector.schedule_name):
+    schedule = graphene_info.context.get_schedule(schedule_selector)
+    if not schedule:
         raise UserFacingGraphQLError(
             GrapheneScheduleNotFoundError(schedule_name=schedule_selector.schedule_name)
         )
 
-    schedule = repository.get_schedule(schedule_selector.schedule_name)
-
     schedule_state = graphene_info.context.instance.get_instigator_state(
         schedule.get_remote_origin_id(), schedule.selector_id
     )
-    return GrapheneSchedule(schedule, repository.handle, schedule_state)
+    return GrapheneSchedule(schedule, schedule_state)
 
 
 def get_schedule_next_tick(
@@ -213,22 +212,16 @@ def get_schedule_next_tick(
         return None
 
     repository_origin = schedule_state.origin.repository_origin
-    if not graphene_info.context.has_code_location(
-        repository_origin.code_location_origin.location_name
-    ):
-        return None
-    code_location = graphene_info.context.get_code_location(
-        repository_origin.code_location_origin.location_name
+    selector = ScheduleSelector(
+        location_name=repository_origin.code_location_origin.location_name,
+        repository_name=repository_origin.repository_name,
+        schedule_name=schedule_state.name,
     )
-    if not code_location.has_repository(repository_origin.repository_name):
+
+    schedule = graphene_info.context.get_schedule(selector)
+    if not schedule:
         return None
 
-    repository = code_location.get_repository(repository_origin.repository_name)
-
-    if not repository.has_schedule(schedule_state.name):
-        return None
-
-    schedule = repository.get_schedule(schedule_state.name)
     time_iter = schedule.execution_time_iterator(time.time())
 
     next_timestamp = next(time_iter).timestamp()

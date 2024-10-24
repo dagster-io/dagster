@@ -23,7 +23,13 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.selector import JobSelector, JobSubsetSelector, RepositorySelector
+from dagster._core.definitions.selector import (
+    JobSelector,
+    JobSubsetSelector,
+    RepositorySelector,
+    ScheduleSelector,
+    SensorSelector,
+)
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterCodeLocationNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -353,19 +359,39 @@ class BaseWorkspaceRequestContext(LoadingContext):
             selector.repository_name
         )
 
-    def get_sensor(self, selector: InstigatorHandle) -> RemoteSensor:
-        return (
-            self.get_code_location(selector.location_name)
-            .get_repository(selector.repository_name)
-            .get_sensor(selector.instigator_name)
-        )
+    def get_sensor(
+        self, selector: Union[InstigatorHandle, SensorSelector]
+    ) -> Optional[RemoteSensor]:
+        if not self.has_code_location(selector.location_name):
+            return None
 
-    def get_schedule(self, selector: InstigatorHandle) -> RemoteSchedule:
-        return (
-            self.get_code_location(selector.location_name)
-            .get_repository(selector.repository_name)
-            .get_schedule(selector.instigator_name)
-        )
+        location = self.get_code_location(selector.location_name)
+
+        if not location.has_repository(selector.repository_name):
+            return None
+
+        repository = location.get_repository(selector.repository_name)
+        if not repository.has_sensor(selector.instigator_name):
+            return None
+
+        return repository.get_sensor(selector.instigator_name)
+
+    def get_schedule(
+        self, selector: Union[InstigatorHandle, ScheduleSelector]
+    ) -> Optional[RemoteSchedule]:
+        if not self.has_code_location(selector.location_name):
+            return None
+
+        location = self.get_code_location(selector.location_name)
+
+        if not location.has_repository(selector.repository_name):
+            return None
+
+        repository = location.get_repository(selector.repository_name)
+        if not repository.has_schedule(selector.instigator_name):
+            return None
+
+        return repository.get_schedule(selector.instigator_name)
 
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):
