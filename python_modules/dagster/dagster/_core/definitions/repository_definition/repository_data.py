@@ -23,7 +23,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.repository_definition.caching_index import CacheingDefinitionIndex
 from dagster._core.definitions.repository_definition.valid_definitions import (
-    RepositoryListDefinition,
+    RepositoryElementDefinition,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -362,7 +362,7 @@ class CachingRepositoryData(RepositoryData):
     @classmethod
     def from_list(
         cls,
-        repository_definitions: Sequence[RepositoryListDefinition],
+        repository_definitions: Sequence[RepositoryElementDefinition],
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,

@@ -1,16 +1,50 @@
-from pathlib import Path
 from unittest.mock import MagicMock
 
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
     ReconstructableRepository,
     initialize_repository_def_from_pointer,
     reconstruct_repository_def_from_pointer,
 )
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
+from dagster._utils.test.definitions import lazy_definitions
+from dagster_tableau.resources import TableauCloudWorkspace
+
+from dagster_tableau_tests.conftest import (
+    FAKE_CONNECTED_APP_CLIENT_ID,
+    FAKE_CONNECTED_APP_SECRET_ID,
+    FAKE_CONNECTED_APP_SECRET_VALUE,
+    FAKE_POD_NAME,
+    FAKE_SITE_NAME,
+    FAKE_USERNAME,
+)
+
+resource = TableauCloudWorkspace(
+    connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+    connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+    connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+    username=FAKE_USERNAME,
+    site_name=FAKE_SITE_NAME,
+    pod_name=FAKE_POD_NAME,
+)
+
+
+@lazy_definitions
+def cacheable_asset_defs():
+    @asset
+    def my_materializable_asset():
+        pass
+
+    return Definitions.merge(
+        Definitions(assets=[my_materializable_asset], jobs=[define_asset_job("all_asset_job")]),
+        resource.build_defs(refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"]),
+    )
 
 
 def test_using_cached_asset_data_with_refresh_request(
@@ -32,8 +66,8 @@ def test_using_cached_asset_data_with_refresh_request(
         assert cancel_job.call_count == 0
 
         pointer = CodePointer.from_python_file(
-            str(Path(__file__).parent / "definitions.py"),
-            "defs",
+            __file__,
+            "cacheable_asset_defs",
             None,
         )
         init_repository_def = initialize_repository_def_from_pointer(
