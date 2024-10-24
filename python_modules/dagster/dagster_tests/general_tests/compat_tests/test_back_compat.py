@@ -952,6 +952,7 @@ def test_add_bulk_actions_columns():
                 "body",
                 "action_type",
                 "selector_id",
+                "job_name",
             } == set(get_sqlite3_columns(db_path, "bulk_actions"))
             assert "idx_bulk_actions_action_type" in get_sqlite3_indexes(db_path, "bulk_actions")
             assert "idx_bulk_actions_selector_id" in get_sqlite3_indexes(db_path, "bulk_actions")

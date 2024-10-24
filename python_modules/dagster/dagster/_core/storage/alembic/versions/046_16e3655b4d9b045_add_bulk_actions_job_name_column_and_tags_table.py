@@ -44,7 +44,6 @@ def upgrade():
             ["bulk_actions_storage_id", "id"],
             unique=False,
             postgresql_concurrently=True,
-            mysql_length={"bulk_actions_storage_id": 255},
         )
 
 
