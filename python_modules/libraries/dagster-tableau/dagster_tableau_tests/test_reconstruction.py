@@ -61,7 +61,6 @@ def cacheable_asset_defs_refreshable_workbooks():
         assets=[
             build_tableau_executable_assets_definition(
                 resource_key=resource_key,
-                workspace=resource,
                 specs=executable_asset_specs,
                 refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
             ),
