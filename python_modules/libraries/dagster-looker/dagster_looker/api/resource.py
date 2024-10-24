@@ -38,6 +38,16 @@ LOOKER_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-looker/reconstruction_metad
 
 @record
 class LookerFilter:
+    """Filters the set of Looker objects to fetch.
+
+    Args:
+        dashboard_folders (Optional[List[List[str]]]): A list of folder paths to fetch dashboards from.
+            Each folder path is a list of folder names, starting from the root folder. All dashboards
+            contained in the specified folders will be fetched. If not provided, all dashboards will be fetched.
+        only_fetch_explores_used_in_dashboards (bool): If True, only explores used in the fetched dashboards
+            will be fetched. If False, all explores will be fetched. Defaults to False.
+    """
+
     dashboard_folders: Optional[List[List[str]]] = None
     only_fetch_explores_used_in_dashboards: bool = False
 
@@ -272,8 +282,8 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
         if self.looker_filter.only_fetch_explores_used_in_dashboards:
             used_explores = set()
             for dashboard in dashboards_by_id.values():
-                for filter in dashboard.dashboard_filters or []:
-                    used_explores.add((filter.model, filter.explore))
+                for dash_filter in dashboard.dashboard_filters or []:
+                    used_explores.add((dash_filter.model, dash_filter.explore))
 
             explores_for_model = {
                 model_name: [
