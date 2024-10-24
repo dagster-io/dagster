@@ -44,10 +44,12 @@ from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
     COMPUTE_KIND_TAG,
     LEGACY_COMPUTE_KIND_TAG,
     REPOSITORY_LABEL_TAG,
 )
+from dagster._core.utils import make_new_run_id
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
@@ -1176,6 +1178,8 @@ def test_add_primary_keys():
 
 
 def test_add_backfill_id_column():
+    from dagster._core.storage.runs.schema import RunsTable
+
     src_dir = file_relative_path(
         __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
     )
@@ -1201,6 +1205,24 @@ def test_add_backfill_id_column():
         assert "backfill_id" not in columns
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            # these runs won't have an entry for backfill_id until after the data migration
+            run_not_in_backfill_pre_migration = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name="first_job_no_backfill",
+                    run_id=make_new_run_id(),
+                    tags=None,
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+            run_in_backfill_pre_migration = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name="first_job_in_backfill",
+                    run_id=make_new_run_id(),
+                    tags={BACKFILL_ID_TAG: "backfillid"},
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+
             instance.upgrade()
 
             columns = get_sqlite3_columns(db_path, "runs")
@@ -1220,6 +1242,34 @@ def test_add_backfill_id_column():
                 "end_time",
                 "backfill_id",
             } == set(columns)
+
+            run_not_in_backfill_post_migration = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name="second_job_no_backfill",
+                    run_id=make_new_run_id(),
+                    tags=None,
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+            run_in_backfill_post_migration = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name="second_job_in_backfill",
+                    run_id=make_new_run_id(),
+                    tags={BACKFILL_ID_TAG: "backfillid"},
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+
+            backfill_ids = {
+                row["run_id"]: row["backfill_id"]
+                for row in instance._run_storage.fetchall(
+                    db_select([RunsTable.c.run_id, RunsTable.c.backfill_id]).select_from(RunsTable)
+                )
+            }
+            assert backfill_ids[run_not_in_backfill_pre_migration.run_id] is None
+            assert backfill_ids[run_in_backfill_pre_migration.run_id] is None
+            assert backfill_ids[run_not_in_backfill_post_migration.run_id] is None
+            assert backfill_ids[run_in_backfill_post_migration.run_id] == "backfillid"
 
             # test downgrade
             instance._run_storage._alembic_downgrade(rev="284a732df317")
