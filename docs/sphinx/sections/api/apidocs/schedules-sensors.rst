@@ -56,15 +56,6 @@ Sensors
 
 .. autoclass:: AssetSensorDefinition
 
-.. autodecorator:: freshness_policy_sensor
-
-.. autoclass:: FreshnessPolicySensorDefinition
-
-.. autoclass:: FreshnessPolicySensorContext
-   :noindex:
-
-.. autofunction:: build_freshness_policy_sensor_context
-
 .. autoclass:: RunStatusSensorDefinition
 
 .. autoclass:: RunStatusSensorContext

@@ -11,15 +11,13 @@ Asset sensors allow you to instigate runs when materializations occur.
 
 ## Relevant APIs
 
-| Name                                                    | Description                                                                                                                                                                                                                                                                             |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="RunRequest" />                        | The sensor evaluation function can yield one or more run requests. Each run request creates a job run.                                                                                                                                                                                  |
-| <PyObject object="SkipReason" />                        | If a sensor evaluation doesn't yield any run requests, it can instead yield a skip reason to log why the evaluation was skipped or why there were no events to be processed.                                                                                                            |
-| <PyObject object="asset_sensor" decorator />            | The decorator used to define an asset sensor. The decorated function is an evaluation function that takes in a <PyObject object="SensorEvaluationContext" /> and an asset materialization event. The decorator returns an <PyObject object="AssetSensorDefinition" />                   |
-| <PyObject object="AssetSensorDefinition"  />            | A special sensor definition class for asset sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="asset_sensor" decorator /> which returns a <PyObject object="AssetSensorDefinition"  />                                 |
-| <PyObject object="freshness_policy_sensor" decorator /> | The decorator used to define a freshness policy sensor. The decorated function is an evaluation function that takes in a `FreshnessPolicySensorContext`. The decorator returns a <PyObject object="FreshnessPolicySensorDefinition" />                                                  |
-| <PyObject object="FreshnessPolicySensorDefinition"  />  | A special sensor definition class for freshness policy sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="freshness_policy_sensor" decorator /> which returns a <PyObject object="FreshnessPolicySensorDefinition"  /> |
-| ---                                                     |                                                                                                                                                                                                                                                                                         |
+| Name                                         | Description                                                                                                                                                                                                                                                           |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="RunRequest" />             | The sensor evaluation function can yield one or more run requests. Each run request creates a job run.                                                                                                                                                                |
+| <PyObject object="SkipReason" />             | If a sensor evaluation doesn't yield any run requests, it can instead yield a skip reason to log why the evaluation was skipped or why there were no events to be processed.                                                                                          |
+| <PyObject object="asset_sensor" decorator /> | The decorator used to define an asset sensor. The decorated function is an evaluation function that takes in a <PyObject object="SensorEvaluationContext" /> and an asset materialization event. The decorator returns an <PyObject object="AssetSensorDefinition" /> |
+| <PyObject object="AssetSensorDefinition"  /> | A special sensor definition class for asset sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="asset_sensor" decorator /> which returns a <PyObject object="AssetSensorDefinition"  />               |
+| ---                                          |                                                                                                                                                                                                                                                                       |
 
 ## Defining an asset sensor
 
@@ -83,39 +81,6 @@ def test_my_asset_sensor():
     result = list(my_asset_sensor(ctx))
     assert len(result) == 1
     assert isinstance(result[0], RunRequest)
-```
-
----
-
-## Freshness policy sensors
-
-<Note>
-  Freshness policy sensors are <strong>experimental</strong>.
-</Note>
-
-A freshness policy sensor checks the freshness of a given selection of assets on each tick, and performs some action in response to that status.
-
-`FreshnessPolicySensorContext` has a `current_minutes_late` property, specifying how many minutes late the asset is with respect to its <PyObject object="FreshnessPolicy" />, as well as `previous_minutes_late`, the number of minutes late that asset was on the previous sensor tick. Each tick, the decorated function will be run for each asset within the `asset_selection` that has a `FreshnessPolicy` defined.
-
-Currently, freshness policy sensors do not support returning or yielding values (such as RunRequests) from their execution function.
-
-Here is an example of a sensor that will send a single alert once an asset is 10 minutes later than its configured policy allows, and a single alert once that asset is on time again.
-
-```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_freshness_policy_sensor_marker endbefore=end_freshness_policy_sensor_marker
-from dagster import FreshnessPolicySensorContext, freshness_policy_sensor
-
-
-@freshness_policy_sensor(asset_selection=AssetSelection.all())
-def my_freshness_alerting_sensor(context: FreshnessPolicySensorContext):
-    if context.minutes_overdue is None or context.previous_minutes_overdue is None:
-        return
-
-    if context.minutes_overdue >= 10 and context.previous_minutes_overdue < 10:
-        send_alert(
-            f"Asset with key {context.asset_key} is now more than 10 minutes overdue."
-        )
-    elif context.minutes_overdue == 0 and context.previous_minutes_overdue >= 10:
-        send_alert(f"Asset with key {context.asset_key} is now on time.")
 ```
 
 ---
