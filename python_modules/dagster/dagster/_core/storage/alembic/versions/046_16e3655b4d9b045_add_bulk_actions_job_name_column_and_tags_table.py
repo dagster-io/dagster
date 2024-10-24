@@ -38,6 +38,7 @@ def upgrade():
             sa.Column("backfill_id", sa.String(length=255), nullable=True),
             sa.Column("key", sa.Text(), nullable=True),
             sa.Column("value", sa.Text(), nullable=True),
+            sa.Column("bulk_actions_storage_id", sa.BigInteger(), nullable=True),
             sa.PrimaryKeyConstraint("id"),
         )
 
