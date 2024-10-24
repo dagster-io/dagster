@@ -14,7 +14,7 @@ from dagster_dlift.utils import get_job_name
 ENVIRONMENTS_SUBPATH = "environments/"
 
 
-class DbtCloudClient:
+class UnscopedDbtCloudClient:
     def __init__(
         self,
         # Can be found on the Account Info page of dbt.

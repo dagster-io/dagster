@@ -373,7 +373,11 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     # nightly build
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/dbt-example",
+<<<<<<< HEAD
         skip_if=skip_if_not_airlift_or_dlift_commit,
+=======
+        always_run_if=has_dagster_airlift_changes,
+>>>>>>> b7523e547d ([dagster-dlift] runtime event translation)
         env_vars=[
             "KS_DBT_CLOUD_ACCOUNT_ID",
             "KS_DBT_CLOUD_PROJECT_ID",

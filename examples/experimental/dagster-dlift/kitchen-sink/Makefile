@@ -21,7 +21,7 @@ setup_local_env:
 	mkdir -p $(DAGSTER_HOME)
 
 run_dagster:
-	dagster dev -m kitchen_sink_dlift.dagster_defs.defs -p 3333
+	dagster dev -m dlift_kitchen_sink.defs -p 3333
 
 wipe: ## Wipe out all the files created by the Makefile
 	rm -rf $(DAGSTER_HOME)
