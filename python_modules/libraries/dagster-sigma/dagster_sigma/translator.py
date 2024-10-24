@@ -1,5 +1,5 @@
 import re
-from typing import AbstractSet, Any, Dict, List, Optional
+from typing import AbstractSet, Any, Dict, List, Optional, Union
 
 from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
@@ -10,9 +10,14 @@ from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil.parser import isoparse
 
 
-def _clean_asset_name(name: str) -> str:
+def _coerce_input_to_valid_name(name: str) -> str:
     """Cleans an input to be a valid Dagster asset name."""
     return re.sub(r"[^A-Za-z0-9_]+", "_", name)
+
+
+def asset_key_from_table_name(table_name: str) -> AssetKey:
+    """Converts a reference to a table in a Sigma query to a Dagster AssetKey."""
+    return AssetKey([_coerce_input_to_valid_name(part) for part in table_name.split(".")])
 
 
 def _inode_from_url(url: str) -> str:
@@ -71,46 +76,50 @@ class DagsterSigmaTranslator:
     def organization_data(self) -> SigmaOrganizationData:
         return self._context
 
-    def get_workbook_key(self, data: SigmaWorkbook) -> AssetKey:
-        return AssetKey(_clean_asset_name(data.properties["name"]))
+    def get_asset_key(self, data: Union[SigmaDataset, SigmaWorkbook]) -> AssetKey:
+        """Get the AssetKey for a Sigma object, such as a workbook or dataset."""
+        return AssetKey(_coerce_input_to_valid_name(data.properties["name"]))
 
-    def get_workbook_spec(self, data: SigmaWorkbook) -> AssetSpec:
-        metadata = {
-            "dagster_sigma/web_url": MetadataValue.url(data.properties["url"]),
-            "dagster_sigma/version": data.properties["latestVersion"],
-            "dagster_sigma/created_at": MetadataValue.timestamp(
-                isoparse(data.properties["createdAt"])
-            ),
-        }
-        datasets = [self._context.get_datasets_by_inode()[inode] for inode in data.datasets]
-        return AssetSpec(
-            key=self.get_workbook_key(data),
-            metadata=metadata,
-            kinds={"sigma"},
-            deps={self.get_dataset_key(dataset) for dataset in datasets},
-            owners=[data.owner_email] if data.owner_email else None,
-        )
+    def get_asset_spec(self, data: Union[SigmaDataset, SigmaWorkbook]) -> AssetSpec:
+        """Get the AssetSpec for a Sigma object, such as a workbook or dataset."""
+        if isinstance(data, SigmaWorkbook):
+            metadata = {
+                "dagster_sigma/web_url": MetadataValue.url(data.properties["url"]),
+                "dagster_sigma/version": data.properties["latestVersion"],
+                "dagster_sigma/created_at": MetadataValue.timestamp(
+                    isoparse(data.properties["createdAt"])
+                ),
+            }
+            datasets = [self._context.get_datasets_by_inode()[inode] for inode in data.datasets]
+            return AssetSpec(
+                key=self.get_asset_key(data),
+                metadata=metadata,
+                kinds={"sigma"},
+                deps={self.get_asset_key(dataset) for dataset in datasets},
+                owners=[data.owner_email] if data.owner_email else None,
+            )
+        elif isinstance(data, SigmaDataset):
+            metadata = {
+                "dagster_sigma/web_url": MetadataValue.url(data.properties["url"]),
+                "dagster_sigma/created_at": MetadataValue.timestamp(
+                    isoparse(data.properties["createdAt"])
+                ),
+                **TableMetadataSet(
+                    column_schema=TableSchema(
+                        columns=[
+                            TableColumn(name=column_name) for column_name in sorted(data.columns)
+                        ]
+                    )
+                ),
+            }
 
-    def get_dataset_key(self, data: SigmaDataset) -> AssetKey:
-        return AssetKey(_clean_asset_name(data.properties["name"]))
-
-    def get_dataset_spec(self, data: SigmaDataset) -> AssetSpec:
-        metadata = {
-            "dagster_sigma/web_url": MetadataValue.url(data.properties["url"]),
-            "dagster_sigma/created_at": MetadataValue.timestamp(
-                isoparse(data.properties["createdAt"])
-            ),
-            **TableMetadataSet(
-                column_schema=TableSchema(
-                    columns=[TableColumn(name=column_name) for column_name in sorted(data.columns)]
-                )
-            ),
-        }
-
-        return AssetSpec(
-            key=self.get_dataset_key(data),
-            metadata=metadata,
-            kinds={"sigma"},
-            deps={AssetKey(input_name.lower().split(".")) for input_name in data.inputs},
-            description=data.properties.get("description"),
-        )
+            return AssetSpec(
+                key=self.get_asset_key(data),
+                metadata=metadata,
+                kinds={"sigma"},
+                deps={
+                    asset_key_from_table_name(input_table_name.lower())
+                    for input_table_name in data.inputs
+                },
+                description=data.properties.get("description"),
+            )
