@@ -65,14 +65,6 @@ Sensors
 
 .. autofunction:: build_freshness_policy_sensor_context
 
-.. autodecorator:: multi_asset_sensor
-
-.. autoclass:: MultiAssetSensorDefinition
-
-.. autoclass:: MultiAssetSensorEvaluationContext
-
-.. autofunction:: build_multi_asset_sensor_context
-
 .. autoclass:: RunStatusSensorDefinition
 
 .. autoclass:: RunStatusSensorContext
