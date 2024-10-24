@@ -62,7 +62,7 @@ While Dagster Pipes is lightweight and flexible, there are a few limitations to 
 
 - **Some Dagster concepts aren't supported for use in external processes.** Dagster Pipes (`dagster-pipes`) doesn't include the core Dagster (`dagster`) library. As such, concepts like resources and I/O managers, which are included in `dagster`, aren't available for use in external processes executed by Dagster Pipes.
 
-  For example, I/O managers aren't currently supported.
+  For example, I/O managers aren't currently supported. A work-around is demonstrated in the [step launchers migration guide](/guides/migrations/from-step-launchers-to-pipes).
 
 ---
 
