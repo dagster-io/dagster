@@ -455,7 +455,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             from sqlalchemy import create_engine
 
             engine = create_engine(
-                URL(**self._sqlalchemy_connection_args), connect_args=self._sqlalchemy_engine_args,
+                URL(**self._sqlalchemy_connection_args), connect_args=self._sqlalchemy_engine_args
             )
             conn = engine.raw_connection() if raw_conn else engine.connect()
 
@@ -490,7 +490,7 @@ class SnowflakeConnection:
     """
 
     def __init__(
-        self, config: Mapping[str, str], log, snowflake_connection_resource: SnowflakeResource,
+        self, config: Mapping[str, str], log, snowflake_connection_resource: SnowflakeResource
     ):
         self.snowflake_connection_resource = snowflake_connection_resource
         self.log = log
@@ -719,9 +719,7 @@ def snowflake_resource(context) -> SnowflakeConnection:
     """
     snowflake_resource = SnowflakeResource.from_resource_context(context)
     return SnowflakeConnection(
-        config=context,
-        log=context.log,
-        snowflake_connection_resource=snowflake_resource,
+        config=context, log=context.log, snowflake_connection_resource=snowflake_resource
     )
 
 
