@@ -20,7 +20,7 @@ def build_looker_pdt_assets_definitions(
     """Returns the AssetsDefinitions of the executable assets for the given the list of refreshable PDTs.
 
     Args:
-        resource_key (str): The resource key to use for the Tableau resource.
+        resource_key (str): The resource key to use for the Looker resource.
         request_start_pdt_builds (Optional[Sequence[RequestStartPdtBuild]]): A list of requests to start PDT builds.
             See https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py
             for documentation on all available fields.
