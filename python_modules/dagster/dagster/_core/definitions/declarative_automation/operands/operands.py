@@ -71,7 +71,7 @@ class MissingAutomationCondition(SubsetAutomationCondition):
 class RunInProgressAutomationCondition(SubsetAutomationCondition):
     @property
     def name(self) -> str:
-        return "execution_in_progress"
+        return "run_in_progress"
 
     async def compute_subset(self, context: AutomationContext) -> EntitySubset:
         return await context.asset_graph_view.compute_run_in_progress_subset(key=context.key)
