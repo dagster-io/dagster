@@ -119,7 +119,7 @@ observed to have a newer data version than the data version it had when a
 downstream asset was materialized, then the downstream asset will be given a
 label in the Dagster UI that indicates that upstream data has changed.
 
-<PyObject object="AutoMaterializePolicy" pluralize /> can be used to automatically
+<PyObject object="AutomationCondition" pluralize /> can be used to automatically
 materialize downstream assets when this occurs.
 
 The <PyObject object="observable_source_asset" /> decorator provides a convenient way to define source assets with observation functions. The below observable source asset takes a file hash and returns it as the data version. Every time you run the observation function, a new observation will be generated with this hash set as its data version.

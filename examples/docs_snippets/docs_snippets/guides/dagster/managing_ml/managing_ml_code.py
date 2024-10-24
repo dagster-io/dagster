@@ -2,16 +2,14 @@
 
 ## eager_materilization_start
 
-from dagster import AutoMaterializePolicy, asset
+from dagster import AutomationCondition, asset
 
 
 @asset
 def my_data(): ...
 
 
-@asset(
-    auto_materialize_policy=AutoMaterializePolicy.eager(),
-)
+@asset(automation_condition=AutomationCondition.eager())
 def my_ml_model(my_data): ...
 
 
@@ -26,46 +24,12 @@ from dagster import AutoMaterializePolicy, asset, FreshnessPolicy
 def my_other_data(): ...
 
 
-@asset(
-    auto_materialize_policy=AutoMaterializePolicy.lazy(),
-    freshness_policy=FreshnessPolicy(maximum_lag_minutes=7 * 24 * 60),
-)
+@asset(automation_condition=AutomationCondition.on_cron("0 9 * * *"))
 def my_other_ml_model(my_other_data): ...
 
 
 ## lazy_materlization_end
 
-
-## without_policy_start
-from dagster import AutoMaterializePolicy, FreshnessPolicy, asset
-
-
-@asset
-def some_data(): ...
-
-
-@asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
-def some_ml_model(some_data): ...
-
-
-@asset(
-    auto_materialize_policy=AutoMaterializePolicy.lazy(),
-    freshness_policy=FreshnessPolicy(maximum_lag_minutes=7 * 24 * 60),
-)
-def predictions(some_ml_model): ...
-
-
-## without_policy_end
-
-## basic_schedule_start
-
-from dagster import AssetSelection, define_asset_job, ScheduleDefinition
-
-ml_asset_job = define_asset_job("ml_asset_job", AssetSelection.groups("ml_asset_group"))
-
-basic_schedule = ScheduleDefinition(job=ml_asset_job, cron_schedule="0 9 * * *")
-
-## basic_schedule_end
 
 ## conditional_monitoring_start
 
