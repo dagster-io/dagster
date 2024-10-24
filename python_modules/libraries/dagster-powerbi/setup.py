@@ -1,10 +1,23 @@
+from pathlib import Path
+from typing import Dict
+
 from setuptools import find_packages, setup
 
+
+def get_version() -> str:
+    version: Dict[str, str] = {}
+    with open(Path(__file__).parent / "dagster_powerbi/version.py", encoding="utf8") as fp:
+        exec(fp.read(), version)
+
+    return version["__version__"]
+
+
+ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
-pin = ""
+pin = "" if ver == "1!0+dev" or "rc" in ver else f"=={ver}"
 setup(
     name="dagster_powerbi",
-    version="0.0.10",
+    version=ver,
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
