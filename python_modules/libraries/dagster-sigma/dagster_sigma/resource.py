@@ -430,7 +430,7 @@ def load_sigma_asset_specs(
 @dataclass
 class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganizationData]):
     organization: SigmaOrganization
-    translator_cls: Type[DagsterSigmaTranslator]
+    translator_cls: Callable[[SigmaOrganizationData], DagsterSigmaTranslator]
 
     @property
     def defs_key(self) -> str:
@@ -440,7 +440,7 @@ class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganization
         return asyncio.run(self.organization.build_organization_data())
 
     def defs_from_state(self, state: SigmaOrganizationData) -> Definitions:
-        translator = self.translator_cls(context=state)
+        translator = self.translator_cls(state)
         asset_specs = [
             *[translator.get_workbook_spec(workbook) for workbook in state.workbooks],
             *[translator.get_dataset_spec(dataset) for dataset in state.datasets],
