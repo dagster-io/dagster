@@ -835,6 +835,7 @@ type PartitionDefinition {
   type: PartitionDefinitionType!
   dimensionTypes: [DimensionDefinitionType!]!
   name: String
+  fmt: String
 }
 
 enum PartitionDefinitionType {
