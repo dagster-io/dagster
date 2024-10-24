@@ -99,6 +99,12 @@ const config: Config = {
           docId: 'api/index',
           position: 'left',
         },
+        {
+          label: 'Reference',
+          type: 'doc',
+          docId: 'reference/index',
+          position: 'left',
+        },
         //{
         //  label: 'Changelog',
         //  type: 'doc',
