@@ -13,7 +13,13 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated_param, experimental_param, public
+from dagster._annotations import (
+    PublicAttr,
+    experimental_param,
+    hidden_param,
+    only_allow_hidden_params_in_kwargs,
+    public,
+)
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -88,10 +94,15 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
 @experimental_param(param="owners")
 @experimental_param(param="tags")
 @experimental_param(param="kinds")
-@deprecated_param(
+@hidden_param(
     param="freshness_policy",
     breaking_version="1.10.0",
     additional_warn_text="use freshness checks instead.",
+)
+@hidden_param(
+    param="auto_materialize_policy",
+    breaking_version="1.10.0",
+    additional_warn_text="use `automation_condition` instead",
 )
 class AssetSpec(
     NamedTuple(
@@ -133,10 +144,6 @@ class AssetSpec(
             not provided, the name "default" is used.
         code_version (Optional[str]): The version of the code for this specific asset,
             overriding the code version of the materialization function
-        freshness_policy (Optional[FreshnessPolicy]): (Deprecated) A policy which indicates how up
-            to date this asset is intended to be.
-        auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
-            the specified asset.
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
@@ -159,16 +166,16 @@ class AssetSpec(
         skippable: bool = False,
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,
-        freshness_policy: Optional[FreshnessPolicy] = None,
         automation_condition: Optional[AutomationCondition] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         kinds: Optional[Set[str]] = None,
-        # TODO: FOU-243
-        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+        **kwargs,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
+
+        only_allow_hidden_params_in_kwargs(AssetSpec, kwargs)
 
         key = AssetKey.from_coercible(key)
         asset_deps = coerce_to_deps_and_check_duplicates(deps, key)
@@ -199,12 +206,14 @@ class AssetSpec(
             group_name=check.opt_str_param(group_name, "group_name"),
             code_version=check.opt_str_param(code_version, "code_version"),
             freshness_policy=check.opt_inst_param(
-                freshness_policy,
+                kwargs.get("freshness_policy"),
                 "freshness_policy",
                 FreshnessPolicy,
             ),
             automation_condition=check.opt_inst_param(
-                resolve_automation_condition(automation_condition, auto_materialize_policy),
+                resolve_automation_condition(
+                    automation_condition, kwargs.get("auto_materialize_policy")
+                ),
                 "automation_condition",
                 AutomationCondition,
             ),
@@ -225,15 +234,14 @@ class AssetSpec(
         skippable: bool,
         group_name: Optional[str],
         code_version: Optional[str],
-        freshness_policy: Optional[FreshnessPolicy],
         automation_condition: Optional[AutomationCondition],
         owners: Optional[Sequence[str]],
         tags: Optional[Mapping[str, str]],
         kinds: Optional[Set[str]],
-        auto_materialize_policy: Optional[AutoMaterializePolicy],
         partitions_def: Optional[PartitionsDefinition],
+        **kwargs,
     ) -> "AssetSpec":
-        check.invariant(auto_materialize_policy is None)
+        check.invariant(kwargs.get("auto_materialize_policy") is None)
         return AssetSpec(
             key=key,
             deps=deps,
@@ -242,7 +250,7 @@ class AssetSpec(
             skippable=skippable,
             group_name=group_name,
             code_version=code_version,
-            freshness_policy=freshness_policy,
+            freshness_policy=kwargs.get("freshness_policy"),
             automation_condition=automation_condition,
             owners=owners,
             tags=tags,
@@ -260,7 +268,6 @@ class AssetSpec(
 
     @property
     def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
-        # TODO: FOU-243
         return (
             self.automation_condition.as_auto_materialize_policy()
             if self.automation_condition
