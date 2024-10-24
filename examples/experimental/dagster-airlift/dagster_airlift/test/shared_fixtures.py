@@ -43,7 +43,7 @@ def setup_fixture(airflow_home: Path, dags_dir: Path) -> Generator[Path, None, N
     }
     path_to_script = Path(__file__).parent.parent.parent / "scripts" / "airflow_setup.sh"
     subprocess.run(["chmod", "+x", path_to_script], check=True, env=temp_env)
-    subprocess.run([path_to_script, dags_dir], check=True, env=temp_env)
+    subprocess.run([path_to_script, dags_dir, airflow_home], check=True, env=temp_env)
     with environ(temp_env):
         yield airflow_home
 
