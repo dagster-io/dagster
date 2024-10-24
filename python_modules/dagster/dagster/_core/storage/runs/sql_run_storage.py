@@ -59,6 +59,7 @@ from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.migration import (
     OPTIONAL_DATA_MIGRATIONS,
     REQUIRED_DATA_MIGRATIONS,
+    RUN_BACKFILL_ID,
     RUN_PARTITIONS,
     MigrationFn,
 )
@@ -301,10 +302,13 @@ class SqlRunStorage(RunStorage):
             )
 
         if filters.exclude_subruns:
-            runs_in_backfills = db_select([RunTagsTable.c.run_id]).where(
-                RunTagsTable.c.key == BACKFILL_ID_TAG
-            )
-            query = query.where(RunsTable.c.run_id.notin_(runs_in_backfills))
+            if self.has_built_index(RUN_BACKFILL_ID):
+                query = query.where(RunsTable.c.backfill_id.is_(None))
+            else:
+                runs_in_backfills = db_select([RunTagsTable.c.run_id]).where(
+                    RunTagsTable.c.key == BACKFILL_ID_TAG
+                )
+                query = query.where(RunsTable.c.run_id.notin_(runs_in_backfills))
 
         return query
 
