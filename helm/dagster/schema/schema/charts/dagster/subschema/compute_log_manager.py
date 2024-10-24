@@ -18,45 +18,42 @@ class ComputeLogManagerType(str, Enum):
 class AzureBlobComputeLogManager(BaseModel):
     storageAccount: StringSource
     container: StringSource
-    secretKey: Optional[StringSource]
-    defaultAzureCredential: Optional[dict]
-    localDir: Optional[StringSource]
-    prefix: Optional[StringSource]
-    uploadInterval: Optional[int]
+    secretKey: Optional[StringSource] = None
+    defaultAzureCredential: Optional[dict] = None
+    localDir: Optional[StringSource] = None
+    prefix: Optional[StringSource] = None
+    uploadInterval: Optional[int] = None
 
 
 class GCSComputeLogManager(BaseModel):
     bucket: StringSource
-    localDir: Optional[StringSource]
-    prefix: Optional[StringSource]
-    jsonCredentialsEnvvar: Optional[StringSource]
-    uploadInterval: Optional[int]
-    showUrlOnly: Optional[bool]
+    localDir: Optional[StringSource] = None
+    prefix: Optional[StringSource] = None
+    jsonCredentialsEnvvar: Optional[StringSource] = None
+    uploadInterval: Optional[int] = None
+    showUrlOnly: Optional[bool] = None
 
 
 class S3ComputeLogManager(BaseModel):
     bucket: StringSource
-    localDir: Optional[StringSource]
-    prefix: Optional[StringSource]
-    useSsl: Optional[bool]
-    verify: Optional[bool]
-    verifyCertPath: Optional[StringSource]
-    endpointUrl: Optional[StringSource]
-    skipEmptyFiles: Optional[bool]
-    uploadInterval: Optional[int]
-    uploadExtraArgs: Optional[dict]
-    showUrlOnly: Optional[bool]
-    region: Optional[StringSource]
+    localDir: Optional[StringSource] = None
+    prefix: Optional[StringSource] = None
+    useSsl: Optional[bool] = None
+    verify: Optional[bool] = None
+    verifyCertPath: Optional[StringSource] = None
+    endpointUrl: Optional[StringSource] = None
+    skipEmptyFiles: Optional[bool] = None
+    uploadInterval: Optional[int] = None
+    uploadExtraArgs: Optional[dict] = None
+    showUrlOnly: Optional[bool] = None
+    region: Optional[StringSource] = None
 
 
-class ComputeLogManagerConfig(BaseModel):
-    azureBlobComputeLogManager: Optional[AzureBlobComputeLogManager]
-    gcsComputeLogManager: Optional[GCSComputeLogManager]
-    s3ComputeLogManager: Optional[S3ComputeLogManager]
-    customComputeLogManager: Optional[ConfigurableClass]
-
-    class Config:
-        extra = Extra.forbid
+class ComputeLogManagerConfig(BaseModel, extra="forbid"):
+    azureBlobComputeLogManager: Optional[AzureBlobComputeLogManager] = None
+    gcsComputeLogManager: Optional[GCSComputeLogManager] = None
+    s3ComputeLogManager: Optional[S3ComputeLogManager] = None
+    customComputeLogManager: Optional[ConfigurableClass] = None
 
 
 class ComputeLogManager(BaseModel):
@@ -67,8 +64,8 @@ class ComputeLogManager(BaseModel):
         extra = Extra.forbid
 
         @staticmethod
-        def schema_extra(schema: Dict[str, Any], model: Type["ComputeLogManager"]):
-            BaseModel.Config.schema_extra(schema, model)
+        def json_schema_extra(schema: Dict[str, Any], model: Type["ComputeLogManager"]):
+            BaseModel.Config.json_schema_extra(schema, model)
             schema["allOf"] = create_json_schema_conditionals(
                 {
                     ComputeLogManagerType.AZURE: "azureBlobComputeLogManager",
