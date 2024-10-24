@@ -1,35 +1,5 @@
 # serializer version: 1
-# name: test_loader_schema[pydantic1]
-  dict({
-    '$ref': '#/definitions/SimpleAssetBlueprint',
-    'definitions': dict({
-      'SimpleAssetBlueprint': dict({
-        'additionalProperties': False,
-        'description': '''
-          A blob of user-provided, structured metadata that specifies a set of Dagster definitions,
-          like assets, jobs, schedules, sensors, resources, or asset checks.
-          
-          Base class for user-provided types. Users override and provide:
-          - The set of fields
-          - A build_defs implementation that generates Dagster Definitions from field values
-        ''',
-        'properties': dict({
-          'key': dict({
-            'title': 'Key',
-            'type': 'string',
-          }),
-        }),
-        'required': list([
-          'key',
-        ]),
-        'title': 'SimpleAssetBlueprint',
-        'type': 'object',
-      }),
-    }),
-    'title': 'ParsingModel[SimpleAssetBlueprint]',
-  })
-# ---
-# name: test_loader_schema[pydantic2]
+# name: test_loader_schema
   dict({
     'additionalProperties': False,
     'properties': dict({
@@ -45,40 +15,7 @@
     'type': 'object',
   })
 # ---
-# name: test_loader_schema_sequence[pydantic1]
-  dict({
-    'definitions': dict({
-      'SimpleAssetBlueprint': dict({
-        'additionalProperties': False,
-        'description': '''
-          A blob of user-provided, structured metadata that specifies a set of Dagster definitions,
-          like assets, jobs, schedules, sensors, resources, or asset checks.
-          
-          Base class for user-provided types. Users override and provide:
-          - The set of fields
-          - A build_defs implementation that generates Dagster Definitions from field values
-        ''',
-        'properties': dict({
-          'key': dict({
-            'title': 'Key',
-            'type': 'string',
-          }),
-        }),
-        'required': list([
-          'key',
-        ]),
-        'title': 'SimpleAssetBlueprint',
-        'type': 'object',
-      }),
-    }),
-    'items': dict({
-      '$ref': '#/definitions/SimpleAssetBlueprint',
-    }),
-    'title': 'ParsingModel[Sequence[dagster_blueprints_tests.test_load_defs_from_yaml.test_loader_schema_sequence.<locals>.SimpleAssetBlueprint]]',
-    'type': 'array',
-  })
-# ---
-# name: test_loader_schema_sequence[pydantic2]
+# name: test_loader_schema_sequence
   dict({
     '$defs': dict({
       'SimpleAssetBlueprint': dict({
@@ -102,82 +39,7 @@
     'type': 'array',
   })
 # ---
-# name: test_loader_schema_union[pydantic1]
-  dict({
-    'anyOf': list([
-      dict({
-        '$ref': '#/definitions/FooAssetBlueprint',
-      }),
-      dict({
-        '$ref': '#/definitions/BarAssetBlueprint',
-      }),
-    ]),
-    'definitions': dict({
-      'BarAssetBlueprint': dict({
-        'additionalProperties': False,
-        'description': '''
-          A blob of user-provided, structured metadata that specifies a set of Dagster definitions,
-          like assets, jobs, schedules, sensors, resources, or asset checks.
-          
-          Base class for user-provided types. Users override and provide:
-          - The set of fields
-          - A build_defs implementation that generates Dagster Definitions from field values
-        ''',
-        'properties': dict({
-          'string': dict({
-            'title': 'String',
-            'type': 'string',
-          }),
-          'type': dict({
-            'default': 'bar',
-            'enum': list([
-              'bar',
-            ]),
-            'title': 'Type',
-            'type': 'string',
-          }),
-        }),
-        'required': list([
-          'string',
-        ]),
-        'title': 'BarAssetBlueprint',
-        'type': 'object',
-      }),
-      'FooAssetBlueprint': dict({
-        'additionalProperties': False,
-        'description': '''
-          A blob of user-provided, structured metadata that specifies a set of Dagster definitions,
-          like assets, jobs, schedules, sensors, resources, or asset checks.
-          
-          Base class for user-provided types. Users override and provide:
-          - The set of fields
-          - A build_defs implementation that generates Dagster Definitions from field values
-        ''',
-        'properties': dict({
-          'number': dict({
-            'title': 'Number',
-            'type': 'integer',
-          }),
-          'type': dict({
-            'default': 'foo',
-            'enum': list([
-              'foo',
-            ]),
-            'title': 'Type',
-            'type': 'string',
-          }),
-        }),
-        'required': list([
-          'number',
-        ]),
-        'title': 'FooAssetBlueprint',
-        'type': 'object',
-      }),
-    }),
-    'title': 'ParsingModel[Union[FooAssetBlueprint, BarAssetBlueprint]]',
-  })
-# ---
-# name: test_loader_schema_union[pydantic2]
+# name: test_loader_schema_union
   dict({
     '$defs': dict({
       'BarAssetBlueprint': dict({

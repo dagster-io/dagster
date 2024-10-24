@@ -1,5 +1,4 @@
 import asyncio
-import sys
 from datetime import datetime
 from functools import partial
 
@@ -45,7 +44,6 @@ from dagster._core.errors import (
 )
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.invocation import DirectOpExecutionContext, build_asset_context
-from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
 from dagster._time import create_datetime
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
@@ -646,10 +644,6 @@ def test_missing_required_output_generator_async():
         asyncio.run(get_results())
 
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 12) and USING_PYDANTIC_1,
-    reason="something with py3.12 and pydantic1 and sqlite",
-)
 def test_missing_required_output_return():
     @op(
         out={
