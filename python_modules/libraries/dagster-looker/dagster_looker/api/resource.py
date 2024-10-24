@@ -31,7 +31,7 @@ from dagster_looker.api.dagster_looker_api_translator import (
 )
 
 if TYPE_CHECKING:
-    from looker_sdk.sdk.api40.models import LookmlModelExplore, Folder
+    from looker_sdk.sdk.api40.models import Folder, LookmlModelExplore
 
 
 logger = get_dagster_logger("dagster_looker")
@@ -39,9 +39,11 @@ logger = get_dagster_logger("dagster_looker")
 
 LOOKER_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-looker/reconstruction_metadata"
 
+
 @record
 class LookerFilter:
     dashboard_folders: Optional[List[List[str]]] = None
+    excluded_dashboard_folders: Optional[List[List[str]]] = None
     only_fetch_explores_used_in_dashboards: bool = False
 
 
@@ -98,8 +100,9 @@ class LookerResource(ConfigurableResource):
             if dagster_looker_translator is not None
             else DagsterLookerApiTranslator(),
             request_start_pdt_builds=request_start_pdt_builds or [],
-            looker_filter = looker_filter or LookerFilter(),
+            looker_filter=looker_filter or LookerFilter(),
         ).build_defs()
+
 
 def build_folder_path(folder_id_to_folder: Dict[str, "Folder"], folder_id: str) -> List[str]:
     curr = folder_id
@@ -108,6 +111,7 @@ def build_folder_path(folder_id_to_folder: Dict[str, "Folder"], folder_id: str) 
         result = [folder_id_to_folder[curr].name] + result
         curr = folder_id_to_folder[curr].parent_id
     return result
+
 
 @dataclass(frozen=True)
 class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
@@ -209,7 +213,6 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
 
         return result
 
-
     def fetch_looker_instance_data(self) -> LookerInstanceData:
         """Fetches all explores and dashboards from the Looker instance.
 
@@ -218,14 +221,12 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
         """
         sdk = self.looker_resource.get_sdk()
 
+        logger.debug("Fetching Looker instance data")
         folders = sdk.all_folders()
-        folder_by_id = {
-            folder.id: folder
-            for folder in folders
-            if folder.id is not None
-        }
+        folder_by_id = {folder.id: folder for folder in folders if folder.id is not None}
 
         # Get dashboards
+        logger.debug("Fetching dashboard list")
         dashboards = sdk.all_dashboards(
             fields=",".join(
                 [
@@ -236,36 +237,65 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             )
         )
 
+        folder_filter_strings = (
+            [
+                "/".join(folder_filter).lower()
+                for folder_filter in self.looker_filter.dashboard_folders
+            ]
+            if self.looker_filter.dashboard_folders
+            else []
+        )
+        excluded_folder_filter_strings = (
+            [
+                "/".join(folder_filter).lower()
+                for folder_filter in self.looker_filter.excluded_dashboard_folders
+            ]
+            if self.looker_filter.excluded_dashboard_folders
+            else []
+        )
 
-        folder_filter_strings = [
-            '/'.join(folder_filter).lower()
-            for folder_filter in self.looker_filter.dashboard_folders
-        ] if self.looker_filter.dashboard_folders else []
+        check.invariant(
+            len(folder_filter_strings) == 0 or len(excluded_folder_filter_strings) == 0,
+            "Cannot specify both included and excluded folder filters",
+        )
 
-        dashboard_ids_to_fetch = []
-        if len(folder_filter_strings) == 0:
-            dashboard_ids_to_fetch = [dashboard.id for dashboard in dashboards if not dashboard.hidden]
+        logger.debug(f"Fetching dashboard details with folder filters: {folder_filter_strings}")
+        dashboard_ids_to_fetch: List[str] = []
+        if len(folder_filter_strings) == 0 and len(excluded_folder_filter_strings) == 0:
+            dashboard_ids_to_fetch = [
+                check.not_none(dashboard.id) for dashboard in dashboards if not dashboard.hidden
+            ]
         else:
             for dashboard in dashboards:
-                if not dashboard.hidden and dashboard.folder is not None and dashboard.folder.id is not None:
-                    folder_string = '/'.join(build_folder_path(folder_by_id, dashboard.folder.id)).lower()
-                    if any(folder_string.startswith(folder_filter_string) for folder_filter_string in folder_filter_strings):
-                        dashboard_ids_to_fetch.append(dashboard.id)
+                if (
+                    not dashboard.hidden
+                    and dashboard.folder is not None
+                    and dashboard.folder.id is not None
+                ):
+                    folder_string = "/".join(
+                        build_folder_path(folder_by_id, dashboard.folder.id)
+                    ).lower()
+                    if len(folder_filter_strings) > 0:
+                        if any(
+                            folder_string.startswith(folder_filter_string)
+                            for folder_filter_string in folder_filter_strings
+                        ):
+                            dashboard_ids_to_fetch.append(check.not_none(dashboard.id))
+                    else:
+                        if not any(
+                            folder_string.startswith(folder_filter_string)
+                            for folder_filter_string in excluded_folder_filter_strings
+                        ):
+                            dashboard_ids_to_fetch.append(check.not_none(dashboard.id))
 
-        with ThreadPoolExecutor(max_workers=None) as executor:
-            dashboards_by_id = dict(
-                list(
-                    executor.map(
-                        lambda dashboard_id: (dashboard_id, sdk.dashboard(dashboard_id=dashboard_id)),
-                        (
-                            dashboard_id
-                            for dashboard_id in dashboard_ids_to_fetch
-                        ),
-                    )
-                )
+        dashboards_by_id = {
+            check.not_none(dashboard.id): dashboard
+            for dashboard in sdk.search_dashboards(
+                id=",".join(dashboard_ids_to_fetch),
             )
+        }
 
-
+        logger.debug("Fetching models and associated explore ids")
         # Get explore names from models
         explores_for_model = {
             model.name: [explore.name for explore in (model.explores or []) if explore.name]
@@ -297,6 +327,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
 
         def fetch_explore(model_name, explore_name) -> Optional[Tuple[str, "LookmlModelExplore"]]:
             try:
+                logger.debug(f"Fetching LookML explore '{explore_name}' for model '{model_name}'")
                 lookml_explore = sdk.lookml_model_explore(
                     lookml_model_name=model_name,
                     explore_name=explore_name,
@@ -322,6 +353,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
                 for model_name, explore_names in explores_for_model.items()
                 for explore_name in explore_names
             ]
+
             explores_by_id = dict(
                 cast(
                     List[Tuple[str, "LookmlModelExplore"]],
