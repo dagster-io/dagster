@@ -17,12 +17,7 @@ import {visibleRepoKeys} from '../overview/visibleRepoKeys';
 import {useFilters} from '../ui/BaseFilters/useFilters';
 import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
-import {
-  Tag,
-  doesFilterArrayMatchValueArray,
-  useDefinitionTagFilter,
-  useTagsForObjects,
-} from '../ui/Filters/useDefinitionTagFilter';
+import {Tag, useDefinitionTagFilter} from '../ui/Filters/useDefinitionTagFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {
   WorkspaceLocationNodeFragment,
@@ -50,7 +45,7 @@ export const JobsPageContent = () => {
   }, [cachedData, visibleRepos]);
 
   const allJobs = useMemo(() => repoBuckets.flatMap((bucket) => bucket.jobs), [repoBuckets]);
-  const allTags = useTagsForObjects(allJobs, (job) => job.tags);
+  const allTags: Tag[] = [];
 
   const {state: _state, setters} = useQueryPersistedFilterState<{
     jobs: string[];
@@ -117,9 +112,6 @@ export const JobsPageContent = () => {
         ...bucket,
         jobs: bucket.jobs.filter((job) => {
           if (state.jobs.length && !state.jobs.includes(job.name)) {
-            return false;
-          }
-          if (state.tags.length && !doesFilterArrayMatchValueArray(state.tags, job.tags)) {
             return false;
           }
           return true;

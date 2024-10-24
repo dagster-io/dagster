@@ -92,10 +92,6 @@ export const LOCATION_WORKSPACE_QUERY = gql`
     isJob
     isAssetJob
     pipelineSnapshotId
-    tags {
-      key
-      value
-    }
   }
 
   fragment WorkspaceSchedule on Schedule {
