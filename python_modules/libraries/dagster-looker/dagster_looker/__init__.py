@@ -10,6 +10,7 @@ from dagster_looker.api.dagster_looker_api_translator import (
     RequestStartPdtBuild as RequestStartPdtBuild,
 )
 from dagster_looker.api.resource import (
+    LookerFilter as LookerFilter,
     LookerResource as LookerResource,
     load_looker_asset_specs as load_looker_asset_specs,
 )
