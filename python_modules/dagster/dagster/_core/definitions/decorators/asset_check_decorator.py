@@ -4,6 +4,7 @@ from typing_extensions import TypeAlias
 
 from dagster import _check as check
 from dagster._config import UserConfigSchema
+from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
@@ -203,7 +204,7 @@ def asset_check(
 
         spec = AssetCheckSpec(
             name=resolved_name,
-            description=description,
+            description=description or format_docstring_for_description(fn),
             asset=asset_key,
             additional_deps=additional_ins_and_deps,
             blocking=blocking,
