@@ -2634,10 +2634,12 @@ class TestEventLogStorage:
         b = AssetKey(["b"])
         run_id = make_new_run_id()
 
-        def _assert_storage_matches(expected):
+        def _assert_storage_matches(expected, partition: Optional[str] = None):
             assert (
                 storage.get_latest_storage_id_by_partition(
-                    a, DagsterEventType.ASSET_MATERIALIZATION
+                    a,
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    partitions={partition} if partition else None,
                 )
                 == expected
             )
@@ -2678,6 +2680,10 @@ class TestEventLogStorage:
             # p2 materialized
             latest_storage_ids["p2"] = _store_partition_event(a, "p2")
             _assert_storage_matches(latest_storage_ids)
+
+            # check that we can filter for specific partitions
+            _assert_storage_matches({"p1": latest_storage_ids["p1"]}, partition="p1")
+            _assert_storage_matches({"p2": latest_storage_ids["p2"]}, partition="p2")
 
             # unrelated asset materialized
             _store_partition_event(b, "p1")
