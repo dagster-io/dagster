@@ -1490,7 +1490,7 @@ def test_add_bulk_actions_job_name_column():
             assert ids_to_job_name[before_migration.backfill_id] == before_migration.job_name
             assert ids_to_job_name[after_migration.backfill_id] == after_migration.job_name
 
-            # filtering by tags works after migration
+            # filtering by job_name works after migration
             assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)
             # delete the run that was added pre-migration to prove that tags filtering is happening on the
             # backfill_tags table
