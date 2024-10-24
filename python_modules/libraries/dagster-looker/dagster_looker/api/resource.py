@@ -1,17 +1,14 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, Type, cast
 
 from dagster import (
-    AssetExecutionContext,
-    AssetsDefinition,
+    AssetSpec,
     ConfigurableResource,
     Definitions,
-    Failure,
     _check as check,
-    multi_asset,
 )
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
@@ -25,7 +22,6 @@ from dagster_looker.api.dagster_looker_api_translator import (
     LookerInstanceData,
     LookerStructureData,
     LookerStructureType,
-    LookmlView,
     RequestStartPdtBuild,
 )
 
@@ -66,6 +62,10 @@ class LookerResource(ConfigurableResource):
         return init40(config_settings=DagsterLookerApiSettings())
 
     @public
+    @deprecated(
+        breaking_version="1.9.0",
+        additional_warn_text="Use dagster_looker.load_looker_asset_specs instead",
+    )
     def build_defs(
         self,
         *,
@@ -85,20 +85,55 @@ class LookerResource(ConfigurableResource):
         Returns:
             Definitions: A Definitions object which will contain return the Looker structures as assets.
         """
-        return LookerApiDefsLoader(
-            looker_resource=self,
-            translator=dagster_looker_translator
-            if dagster_looker_translator is not None
-            else DagsterLookerApiTranslator(),
+        from dagster_looker.api.assets import build_looker_pdt_assets_definitions
+
+        resource_key = "looker"
+        translator_cls = (
+            dagster_looker_translator.__class__
+            if dagster_looker_translator
+            else DagsterLookerApiTranslator
+        )
+
+        pdts = build_looker_pdt_assets_definitions(
+            resource_key=resource_key,
             request_start_pdt_builds=request_start_pdt_builds or [],
-        ).build_defs()
+            dagster_looker_translator=translator_cls,
+        )
+
+        return Definitions(
+            assets=[*pdts, *load_looker_asset_specs(self, translator_cls)],
+            resources={resource_key: self},
+        )
+
+
+def load_looker_asset_specs(
+    looker_resource: LookerResource,
+    dagster_looker_translator: Type[DagsterLookerApiTranslator] = DagsterLookerApiTranslator,
+) -> Sequence[AssetSpec]:
+    """Returns a list of AssetSpecs representing the Looker structures.
+
+    Args:
+        looker_resource (LookerResource): The Looker resource to fetch assets from.
+        dagster_looker_translator (Type[DagsterLookerApiTranslator]): The translator to use
+            to convert Looker structures into AssetSpecs. Defaults to DagsterLookerApiTranslator.
+
+    Returns:
+        List[AssetSpec]: The set of AssetSpecs representing the Looker structures.
+    """
+    return check.is_list(
+        LookerApiDefsLoader(
+            looker_resource=looker_resource, translator_cls=dagster_looker_translator
+        )
+        .build_defs()
+        .assets,
+        AssetSpec,
+    )
 
 
 @dataclass(frozen=True)
 class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     looker_resource: LookerResource
-    translator: DagsterLookerApiTranslator
-    request_start_pdt_builds: Sequence[RequestStartPdtBuild]
+    translator_cls: Type[DagsterLookerApiTranslator]
 
     @property
     def defs_key(self) -> str:
@@ -110,17 +145,14 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
 
     def defs_from_state(self, state: Mapping[str, Any]) -> Definitions:
         looker_instance_data = LookerInstanceData.from_state(self.looker_resource.get_sdk(), state)
-        return self._build_defs_from_looker_instance_data(
-            looker_instance_data, self.request_start_pdt_builds or [], self.translator
-        )
+        translator = self.translator_cls()
+        return self._build_defs_from_looker_instance_data(looker_instance_data, translator)
 
     def _build_defs_from_looker_instance_data(
         self,
         looker_instance_data: LookerInstanceData,
-        request_start_pdt_builds: Sequence[RequestStartPdtBuild],
         dagster_looker_translator: DagsterLookerApiTranslator,
     ) -> Definitions:
-        pdts = self._build_pdt_defs(request_start_pdt_builds, dagster_looker_translator)
         explores = [
             dagster_looker_translator.get_asset_spec(
                 LookerStructureData(structure_type=LookerStructureType.EXPLORE, data=lookml_explore)
@@ -135,63 +167,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             )
             for looker_dashboard in looker_instance_data.dashboards_by_id.values()
         ]
-
-        return Definitions(assets=[*pdts, *explores, *views])
-
-    def _build_pdt_defs(
-        self,
-        request_start_pdt_builds: Sequence[RequestStartPdtBuild],
-        dagster_looker_translator: DagsterLookerApiTranslator,
-    ) -> Sequence[AssetsDefinition]:
-        result = []
-        for request_start_pdt_build in request_start_pdt_builds:
-
-            @multi_asset(
-                specs=[
-                    dagster_looker_translator.get_asset_spec(
-                        LookerStructureData(
-                            structure_type=LookerStructureType.VIEW,
-                            data=LookmlView(
-                                view_name=request_start_pdt_build.view_name,
-                                sql_table_name=None,
-                            ),
-                        )
-                    )
-                ],
-                name=f"{request_start_pdt_build.model_name}_{request_start_pdt_build.view_name}",
-                resource_defs={"looker": self.looker_resource},
-            )
-            def pdts(context: AssetExecutionContext):
-                looker: "LookerResource" = context.resources.looker
-
-                context.log.info(
-                    f"Starting pdt build for Looker view `{request_start_pdt_build.view_name}` in Looker model `{request_start_pdt_build.model_name}`."
-                )
-
-                materialize_pdt = looker.get_sdk().start_pdt_build(
-                    model_name=request_start_pdt_build.model_name,
-                    view_name=request_start_pdt_build.view_name,
-                    force_rebuild=request_start_pdt_build.force_rebuild,
-                    force_full_incremental=request_start_pdt_build.force_full_incremental,
-                    workspace=request_start_pdt_build.workspace,
-                    source=f"Dagster run {context.run_id}" or request_start_pdt_build.source,
-                )
-
-                if not materialize_pdt.materialization_id:
-                    raise Failure("No materialization id was returned from Looker API.")
-
-                check_pdt = looker.get_sdk().check_pdt_build(
-                    materialization_id=materialize_pdt.materialization_id
-                )
-
-                context.log.info(
-                    f"Materialization id: {check_pdt.materialization_id}, "
-                    f"response text: {check_pdt.resp_text}"
-                )
-
-            result.append(pdts)
-
-        return result
+        return Definitions(assets=[*explores, *views])
 
     def fetch_looker_instance_data(self) -> LookerInstanceData:
         """Fetches all explores and dashboards from the Looker instance.
