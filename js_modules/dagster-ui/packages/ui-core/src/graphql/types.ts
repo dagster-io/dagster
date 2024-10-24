@@ -3092,6 +3092,7 @@ export type PartitionBackfill = RunsFeedEntry & {
   isAssetBackfill: Scalars['Boolean']['output'];
   isValidSerialization: Scalars['Boolean']['output'];
   jobName: Maybe<Scalars['String']['output']>;
+  launchedBy: PipelineTag;
   logEvents: InstigationEventConnection;
   numCancelable: Scalars['Int']['output'];
   numPartitions: Maybe<Scalars['Int']['output']>;
@@ -4452,6 +4453,7 @@ export type Run = PipelineRun &
     hasUnconstrainedRootNodes: Scalars['Boolean']['output'];
     id: Scalars['ID']['output'];
     jobName: Scalars['String']['output'];
+    launchedBy: PipelineTag;
     mode: Scalars['String']['output'];
     parentPipelineSnapshotId: Maybe<Scalars['String']['output']>;
     parentRunId: Maybe<Scalars['String']['output']>;
@@ -4796,6 +4798,7 @@ export type RunsFeedEntry = {
   endTime: Maybe<Scalars['Float']['output']>;
   id: Scalars['ID']['output'];
   jobName: Maybe<Scalars['String']['output']>;
+  launchedBy: PipelineTag;
   runStatus: Maybe<RunStatus>;
   startTime: Maybe<Scalars['Float']['output']>;
   tags: Array<PipelineTag>;
@@ -10861,6 +10864,12 @@ export const buildPartitionBackfill = (
         ? overrides.isValidSerialization!
         : false,
     jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'est',
+    launchedBy:
+      overrides && overrides.hasOwnProperty('launchedBy')
+        ? overrides.launchedBy!
+        : relationshipsToOmit.has('PipelineTag')
+        ? ({} as PipelineTag)
+        : buildPipelineTag({}, relationshipsToOmit),
     logEvents:
       overrides && overrides.hasOwnProperty('logEvents')
         ? overrides.logEvents!
@@ -13044,6 +13053,12 @@ export const buildRun = (
         ? overrides.id!
         : '1e257d13-8f67-444f-aeb2-b39ede89fbf5',
     jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'ut',
+    launchedBy:
+      overrides && overrides.hasOwnProperty('launchedBy')
+        ? overrides.launchedBy!
+        : relationshipsToOmit.has('PipelineTag')
+        ? ({} as PipelineTag)
+        : buildPipelineTag({}, relationshipsToOmit),
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'laboriosam',
     parentPipelineSnapshotId:
       overrides && overrides.hasOwnProperty('parentPipelineSnapshotId')
@@ -13680,6 +13695,12 @@ export const buildRunsFeedEntry = (
         ? overrides.id!
         : '6d9ebb9a-e183-4642-b24f-468c247b375f',
     jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'sed',
+    launchedBy:
+      overrides && overrides.hasOwnProperty('launchedBy')
+        ? overrides.launchedBy!
+        : relationshipsToOmit.has('PipelineTag')
+        ? ({} as PipelineTag)
+        : buildPipelineTag({}, relationshipsToOmit),
     runStatus:
       overrides && overrides.hasOwnProperty('runStatus')
         ? overrides.runStatus!

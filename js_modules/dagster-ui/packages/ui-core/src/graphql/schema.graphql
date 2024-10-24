@@ -1429,6 +1429,7 @@ type Run implements PipelineRun & RunsFeedEntry {
   endTime: Float
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
+  launchedBy: PipelineTag!
   parentPipelineSnapshotId: String
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
@@ -1453,6 +1454,7 @@ interface RunsFeedEntry {
   jobName: String
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
+  launchedBy: PipelineTag!
 }
 
 type AssetCheckhandle {
@@ -2843,6 +2845,7 @@ type PartitionBackfill implements RunsFeedEntry {
   jobName: String
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
+  launchedBy: PipelineTag!
   status: BulkActionStatus!
   partitionNames: [String!]
   isValidSerialization: Boolean!

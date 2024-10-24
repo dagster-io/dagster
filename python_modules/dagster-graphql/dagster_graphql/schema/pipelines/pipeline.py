@@ -19,7 +19,17 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
     RunsFilter,
 )
-from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, RUN_METRIC_TAGS, TagType, get_tag_type
+from dagster._core.storage.tags import (
+    AUTO_MATERIALIZE_TAG,
+    AUTO_OBSERVE_TAG,
+    REPOSITORY_LABEL_TAG,
+    RUN_METRIC_TAGS,
+    SCHEDULE_NAME_TAG,
+    SENSOR_NAME_TAG,
+    USER_TAG,
+    TagType,
+    get_tag_type,
+)
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.tags import get_boolean_tag_value
 from dagster._utils.yaml_utils import dump_run_config_yaml
@@ -391,6 +401,7 @@ class GrapheneRun(graphene.ObjectType):
     rootConcurrencyKeys = graphene.List(graphene.NonNull(graphene.String))
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
     hasRunMetricsEnabled = graphene.NonNull(graphene.Boolean)
+    launchedBy = graphene.NonNull(GraphenePipelineTag)
 
     class Meta:
         interfaces = (GraphenePipelineRun, GrapheneRunsFeedEntry)
@@ -528,6 +539,35 @@ class GrapheneRun(graphene.ObjectType):
             for key, value in self.dagster_run.tags.items()
             if get_tag_type(key) != TagType.HIDDEN
         ]
+
+    def resolve_launchedBy(self, _graphene_info: ResolveInfo):
+        """Determines which value should be shown in the Launched by column in the UI. This value is
+        deetermined based on the tags of the run, not the source of the run as stored in the DB. Thus, some
+        runs may have different launchedBy values from source columns.
+        """
+        if self.dagster_run.tags.get(USER_TAG):
+            return GraphenePipelineTag(key=USER_TAG, value=self.dagster_run.tags[USER_TAG])
+        if self.dagster_run.tags.get(SCHEDULE_NAME_TAG):
+            return GraphenePipelineTag(
+                key=SCHEDULE_NAME_TAG, value=self.dagster_run.tags[SCHEDULE_NAME_TAG]
+            )
+        if self.dagster_run.tags.get(SENSOR_NAME_TAG):
+            return GraphenePipelineTag(
+                key=SENSOR_NAME_TAG, value=self.dagster_run.tags[SENSOR_NAME_TAG]
+            )
+        if self.dagster_run.tags.get(AUTO_MATERIALIZE_TAG):
+            return GraphenePipelineTag(
+                key=AUTO_MATERIALIZE_TAG, value=self.dagster_run.tags[AUTO_MATERIALIZE_TAG]
+            )
+        if self.dagster_run.tags.get("dagster/created_by") == "auto_materialize":
+            return GraphenePipelineTag(
+                key="dagster/created_by", value=self.dagster_run.tags["dagster/created_by"]
+            )
+        if self.dagster_run.tags.get(AUTO_OBSERVE_TAG):
+            return GraphenePipelineTag(
+                key=AUTO_OBSERVE_TAG, value=self.dagster_run.tags[AUTO_OBSERVE_TAG]
+            )
+        return GraphenePipelineTag(key="manual", value="")
 
     def resolve_rootRunId(self, _graphene_info: ResolveInfo):
         return self.dagster_run.root_run_id
