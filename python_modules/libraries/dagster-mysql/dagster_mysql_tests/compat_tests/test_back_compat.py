@@ -10,7 +10,9 @@ import sqlalchemy as db
 from dagster import AssetKey, AssetMaterialization, AssetObservation, Output, job, op
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external_data import partition_set_snap_name_for_job_name
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.migration.bigint_migration import run_bigint_migration
@@ -19,6 +21,7 @@ from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import BACKFILL_ID_TAG
 from dagster._core.utils import make_new_run_id
 from dagster._daemon.types import DaemonHeartbeat
+from dagster._time import get_current_timestamp
 from dagster._utils import file_relative_path
 
 
@@ -584,6 +587,8 @@ def test_add_runs_by_backfill_id_idx(conn_string):
 
 
 def test_add_backfill_tags(conn_string):
+    from dagster._core.storage.runs.schema import BackfillTagsTable
+
     hostname, port = _reconstruct_from_file(
         conn_string,
         # use an old snapshot, it has the bulk actions table but not the new columns
@@ -602,12 +607,53 @@ def test_add_backfill_tags(conn_string):
 
         with DagsterInstance.from_config(tempdir) as instance:
             assert "backfill_tags" not in get_tables(instance)
+            before_migration = PartitionBackfill(
+                "before_tag_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={"before": "migration"},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(before_migration)
 
             instance.upgrade()
             assert "backfill_tags" in get_tables(instance)
 
+            after_migration = PartitionBackfill(
+                "after_tag_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={"after": "migration"},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(after_migration)
+
+            with instance.run_storage.connect() as conn:
+                rows = conn.execute(
+                    db_select(
+                        [
+                            BackfillTagsTable.c.backfill_id,
+                            BackfillTagsTable.c.key,
+                            BackfillTagsTable.c.value,
+                        ]
+                    )
+                ).fetchall()
+                assert len(rows) == 1
+                ids_to_tags = {row[0]: {row[1]: row[2]} for row in rows}
+                assert ids_to_tags.get(before_migration.backfill_id) is None
+                assert ids_to_tags[after_migration.backfill_id] == after_migration.tags
+
 
 def test_add_bulk_actions_job_name_column(conn_string):
+    from dagster._core.remote_representation.origin import (
+        GrpcServerCodeLocationOrigin,
+        RemotePartitionSetOrigin,
+        RemoteRepositoryOrigin,
+    )
+    from dagster._core.storage.runs.schema import BulkActionsTable
+
     hostname, port = _reconstruct_from_file(
         conn_string,
         # use an old snapshot, it has the bulk actions table but not the new columns
@@ -625,6 +671,44 @@ def test_add_bulk_actions_job_name_column(conn_string):
 
         with DagsterInstance.from_config(tempdir) as instance:
             assert "job_name" not in get_columns(instance, "bulk_actions")
+            partition_set_origin = RemotePartitionSetOrigin(
+                repository_origin=RemoteRepositoryOrigin(
+                    code_location_origin=GrpcServerCodeLocationOrigin(
+                        host="localhost", port=1234, location_name="test_location"
+                    ),
+                    repository_name="the_repo",
+                ),
+                partition_set_name=partition_set_snap_name_for_job_name("foo"),
+            )
+            before_migration = PartitionBackfill(
+                "before_migration",
+                partition_set_origin=partition_set_origin,
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(before_migration)
 
             instance.upgrade()
+
             assert "job_name" in get_columns(instance, "bulk_actions")
+
+            after_migration = PartitionBackfill(
+                "after_migration",
+                partition_set_origin=partition_set_origin,
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(after_migration)
+
+            with instance.run_storage.connect() as conn:
+                rows = conn.execute(
+                    db_select([BulkActionsTable.c.key, BulkActionsTable.c.job_name])
+                ).fetchall()
+                assert len(rows) == 2
+                ids_to_job_name = {row[0]: row[1] for row in rows}
+                assert ids_to_job_name[before_migration.backfill_id] is None
+                assert ids_to_job_name[after_migration.backfill_id] == after_migration.job_name
