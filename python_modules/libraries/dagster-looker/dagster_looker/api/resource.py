@@ -117,8 +117,7 @@ def load_looker_asset_specs(
     """
     return check.is_list(
         LookerApiDefsLoader(
-            looker_resource=looker_resource,
-            translator_cls=dagster_looker_translator
+            looker_resource=looker_resource, translator_cls=dagster_looker_translator
         )
         .build_defs()
         .assets,
