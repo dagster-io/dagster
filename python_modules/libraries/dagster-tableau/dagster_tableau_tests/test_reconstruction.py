@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
@@ -14,7 +14,9 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.test.definitions import lazy_definitions
-from dagster_tableau.resources import TableauCloudWorkspace
+from dagster_tableau.assets import build_tableau_executable_assets_definition
+from dagster_tableau.resources import TableauCloudWorkspace, load_tableau_asset_specs
+from dagster_tableau.translator import DagsterTableauTranslator, TableauContentData
 
 from dagster_tableau_tests.conftest import (
     FAKE_CONNECTED_APP_CLIENT_ID,
@@ -36,18 +38,62 @@ resource = TableauCloudWorkspace(
 
 
 @lazy_definitions
-def cacheable_asset_defs():
-    @asset
-    def my_materializable_asset():
-        pass
+def cacheable_asset_defs_refreshable_workbooks():
+    tableau_specs = load_tableau_asset_specs(
+        workspace=resource,
+    )
 
-    return Definitions.merge(
-        Definitions(assets=[my_materializable_asset], jobs=[define_asset_job("all_asset_job")]),
-        resource.build_defs(refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"]),
+    non_executable_asset_specs = [
+        spec
+        for spec in tableau_specs
+        if spec.tags.get("dagster-tableau/asset_type") == "data_source"
+    ]
+
+    executable_asset_specs = [
+        spec
+        for spec in tableau_specs
+        if spec.tags.get("dagster-tableau/asset_type") in ["dashboard", "sheet"]
+    ]
+
+    resource_key = "tableau"
+
+    return Definitions(
+        assets=[
+            build_tableau_executable_assets_definition(
+                resource_key=resource_key,
+                specs=executable_asset_specs,
+                refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
+            ),
+            *non_executable_asset_specs,
+        ],
+        jobs=[define_asset_job("all_asset_job")],
+        resources={resource_key: resource},
     )
 
 
-def test_using_cached_asset_data_with_refresh_request(
+@lazy_definitions
+def cacheable_asset_defs_custom_translator():
+    class MyCoolTranslator(DagsterTableauTranslator):
+        def get_sheet_spec(self, data: TableauContentData) -> AssetSpec:
+            spec = super().get_sheet_spec(data)
+            return spec._replace(key=spec.key.with_prefix("my_prefix"))
+
+        def get_dashboard_spec(self, data: TableauContentData) -> AssetSpec:
+            spec = super().get_dashboard_spec(data)
+            return spec._replace(key=spec.key.with_prefix("my_prefix"))
+
+        def get_data_source_spec(self, data: TableauContentData) -> AssetSpec:
+            spec = super().get_data_source_spec(data)
+            return spec._replace(key=spec.key.with_prefix("my_prefix"))
+
+    tableau_specs = load_tableau_asset_specs(
+        workspace=resource, dagster_tableau_translator=MyCoolTranslator
+    )
+
+    return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
+
+
+def test_load_assets_workspace_data_refreshable_workbooks(
     sign_in: MagicMock,
     get_workbooks: MagicMock,
     get_workbook: MagicMock,
@@ -65,9 +111,10 @@ def test_using_cached_asset_data_with_refresh_request(
         assert get_job.call_count == 0
         assert cancel_job.call_count == 0
 
+        # first, we resolve the repository to generate our cached metadata
         pointer = CodePointer.from_python_file(
             __file__,
-            "cacheable_asset_defs",
+            "cacheable_asset_defs_refreshable_workbooks",
             None,
         )
         init_repository_def = initialize_repository_def_from_pointer(
@@ -83,8 +130,8 @@ def test_using_cached_asset_data_with_refresh_request(
         assert get_job.call_count == 0
         assert cancel_job.call_count == 0
 
-        # 1 Tableau external assets, 2 Tableau materializable asset and 1 Dagster materializable asset
-        assert len(init_repository_def.assets_defs_by_key) == 1 + 2 + 1
+        # 1 Tableau external assets and 2 Tableau materializable assets
+        assert len(init_repository_def.assets_defs_by_key) == 1 + 2
 
         repository_load_data = init_repository_def.repository_load_data
 
@@ -93,7 +140,7 @@ def test_using_cached_asset_data_with_refresh_request(
             pointer,
             repository_load_data,
         )
-        assert len(recon_repository_def.assets_defs_by_key) == 1 + 2 + 1
+        assert len(recon_repository_def.assets_defs_by_key) == 1 + 2
 
         # no additional calls after a fresh load
         assert sign_in.call_count == 1
@@ -121,10 +168,11 @@ def test_using_cached_asset_data_with_refresh_request(
             instance=instance,
         )
 
+        # the materialization of the multi-asset for the 2 materializable assets should be successful
         assert (
             len([event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS])
-            == 2
-        ), "Expected two successful steps"
+            == 1
+        ), "Expected one successful step"
 
         # 3 calls to create the defs + 5 calls to materialize the Tableau assets
         # with 1 workbook to refresh, 1 sheet and 1 dashboard
@@ -136,3 +184,27 @@ def test_using_cached_asset_data_with_refresh_request(
         assert get_job.call_count == 1
         # The finish_code of the mocked get_job is 0, so no cancel_job is not called
         assert cancel_job.call_count == 0
+
+
+def test_load_assets_workspace_data_translator(
+    sign_in: MagicMock,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+    get_view: MagicMock,
+    get_job: MagicMock,
+    refresh_workbook: MagicMock,
+    cancel_job: MagicMock,
+) -> None:
+    with instance_for_test() as _instance:
+        repository_def = initialize_repository_def_from_pointer(
+            pointer=CodePointer.from_python_file(
+                __file__,
+                "cacheable_asset_defs_custom_translator",
+                None,
+            )
+        )
+
+        assert len(repository_def.assets_defs_by_key) == 3
+        assert all(
+            key.path[0] == "my_prefix" for key in repository_def.assets_defs_by_key.keys()
+        ), repository_def.assets_defs_by_key

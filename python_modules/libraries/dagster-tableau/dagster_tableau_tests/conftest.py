@@ -129,6 +129,11 @@ def dashboard_id_fixture() -> str:
     return "c9bf8403-5daf-427a-b3d6-2ce9bed7798f"
 
 
+@pytest.fixture(name="data_source_id")
+def data_source_id_fixture() -> str:
+    return "0f5660c7-2b05-4ff0-90ce-3199226956c6"
+
+
 @pytest.fixture(name="job_id")
 def job_id_fixture() -> str:
     return uuid.uuid4().hex
