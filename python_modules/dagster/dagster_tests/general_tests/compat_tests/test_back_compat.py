@@ -1244,6 +1244,20 @@ def test_add_backfill_id_column():
             assert "backfill_id" not in columns
 
 
+def test_add_runs_by_backfill_id_idx():
+    src_dir = file_relative_path(
+        __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "idx_runs_by_backfill_id" not in get_sqlite3_indexes(db_path, "runs")
+            instance.upgrade()
+            assert "idx_runs_by_backfill_id" in get_sqlite3_indexes(db_path, "runs")
+
+
 # Prior to 0.10.0, it was possible to have `Materialization` events with no asset key.
 # `AssetMaterialization` is _supposed_ to runtime-check for null `AssetKey`, but it doesn't, so we
 # can deserialize a `Materialization` with a null asset key directly to an `AssetMaterialization`.
