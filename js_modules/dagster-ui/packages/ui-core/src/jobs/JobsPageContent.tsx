@@ -94,10 +94,7 @@ export const JobsPageContent = () => {
     ),
   });
 
-  const filters = useMemo(
-    () => [codeLocationFilter, jobFilter, tagsFilter],
-    [codeLocationFilter, jobFilter, tagsFilter],
-  );
+  const filters = useMemo(() => [codeLocationFilter, jobFilter], [codeLocationFilter, jobFilter]);
   const {button: filterButton, activeFiltersJsx} = useFilters({filters});
 
   const filteredRepoBuckets = useMemo(() => {
