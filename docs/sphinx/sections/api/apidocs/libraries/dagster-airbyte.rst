@@ -21,8 +21,6 @@ Assets
 
 .. autofunction:: load_assets_from_airbyte_instance
 
-.. autofunction:: load_assets_from_airbyte_project
-
 .. autofunction:: build_airbyte_assets
 
 
