@@ -110,6 +110,8 @@ class DagsterLookerApiTranslator:
             lookml_model_name = check.not_none(lookml_explore.model)
             lookml_explore_name = check.not_none(lookml_explore.explore)
             return AssetKey(f"{lookml_model_name}::{lookml_explore_name}")
+        else:
+            check.assert_never(lookml_explore)
 
     def get_explore_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
         lookml_explore = check.inst(looker_structure.data, (LookmlModelExplore, DashboardFilter))
@@ -146,6 +148,8 @@ class DagsterLookerApiTranslator:
             )
         elif isinstance(lookml_explore, DashboardFilter):
             return AssetSpec(key=self.get_asset_key(looker_structure))
+        else:
+            check.assert_never(lookml_explore)
 
     def get_dashboard_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
         looker_dashboard = check.inst(looker_structure.data, Dashboard)
