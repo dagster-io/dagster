@@ -9,7 +9,7 @@ from dagster_dlift.translator import DagsterDbtCloudTranslator, DbtCloudProjectE
 
 
 class DbtCloudCredentials(NamedTuple):
-    account_id: str
+    account_id: int
     token: str
     access_url: str
     discovery_api_url: str
