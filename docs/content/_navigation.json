@@ -1057,7 +1057,7 @@
         "path": "/integrations/pandera"
       },
       {
-        "title": "PySpark",
+        "title": "Spark",
         "path": "/integrations/spark"
       },
       {
