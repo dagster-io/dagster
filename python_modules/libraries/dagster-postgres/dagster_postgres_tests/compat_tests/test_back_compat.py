@@ -25,11 +25,10 @@ from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.migration.bigint_migration import run_bigint_migration
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._core.utils import make_new_run_id
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import file_relative_path
 from sqlalchemy import inspect
-
-from python_modules.dagster.dagster._core.utils import make_new_run_id
 
 
 def get_columns(instance, table_name: str):
