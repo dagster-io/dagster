@@ -32,6 +32,7 @@ from dagster._annotations import deprecated, public
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
+from dagster._record import IHaveNew, record_custom
 from dagster._seven import get_arg_names
 from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, _make_key
 from pydantic import Field, PrivateAttr
@@ -131,6 +132,24 @@ def _cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatena
 
 
 SIGMA_PARTNER_ID_TAG = {"X-Sigma-Partner-Id": "dagster"}
+
+
+@record_custom
+class SigmaFilter(IHaveNew):
+    """Filters the set of Sigma objects to fetch.
+
+    Args:
+        workbook_folders (Optional[Sequence[Sequence[str]]]): A list of folder paths to fetch workbooks from.
+            Each folder path is a list of folder names, starting from the root folder. All workbooks
+            contained in the specified folders will be fetched. If not provided, all workbooks will be fetched.
+    """
+
+    workbook_folders: Optional[Sequence[Sequence[str]]] = None
+
+    def __new__(cls, workbook_folders: Optional[Sequence[Sequence[str]]] = None):
+        return super().__new__(
+            cls, workbook_folders=tuple([tuple(folder) for folder in workbook_folders or []])
+        )
 
 
 class SigmaBaseUrl(str, Enum):
@@ -457,13 +476,31 @@ class SigmaOrganization(ConfigurableResource):
         )
 
     @_cached_method
-    async def build_organization_data(self) -> SigmaOrganizationData:
+    async def build_organization_data(
+        self, sigma_filter: Optional[SigmaFilter]
+    ) -> SigmaOrganizationData:
         """Retrieves all workbooks and datasets in the Sigma organization and builds a
         SigmaOrganizationData object representing the organization's assets.
         """
+        _sigma_filter = sigma_filter or SigmaFilter()
+
         raw_workbooks = await self._fetch_workbooks()
+        workbooks_to_fetch = []
+        if _sigma_filter.workbook_folders:
+            workbook_filter_strings = [
+                "/".join(folder).lower() for folder in _sigma_filter.workbook_folders
+            ]
+            for workbook in raw_workbooks:
+                workbook_path = str(workbook["path"]).lower()
+                if any(
+                    workbook_path.startswith(folder_str) for folder_str in workbook_filter_strings
+                ):
+                    workbooks_to_fetch.append(workbook)
+        else:
+            workbooks_to_fetch = raw_workbooks
+
         workbooks: List[SigmaWorkbook] = await asyncio.gather(
-            *[self.load_workbook_data(workbook) for workbook in raw_workbooks]
+            *[self.load_workbook_data(workbook) for workbook in workbooks_to_fetch]
         )
 
         datasets: List[SigmaDataset] = []
@@ -490,6 +527,7 @@ class SigmaOrganization(ConfigurableResource):
     def build_defs(
         self,
         dagster_sigma_translator: Type[DagsterSigmaTranslator] = DagsterSigmaTranslator,
+        sigma_filter: Optional[SigmaFilter] = None,
     ) -> Definitions:
         """Returns a Definitions object representing the Sigma content in the organization.
 
@@ -500,7 +538,9 @@ class SigmaOrganization(ConfigurableResource):
         Returns:
             Definitions: The set of assets representing the Sigma content in the organization.
         """
-        return Definitions(assets=load_sigma_asset_specs(self, dagster_sigma_translator))
+        return Definitions(
+            assets=load_sigma_asset_specs(self, dagster_sigma_translator, sigma_filter)
+        )
 
 
 def load_sigma_asset_specs(
@@ -508,6 +548,7 @@ def load_sigma_asset_specs(
     dagster_sigma_translator: Callable[
         [SigmaOrganizationData], DagsterSigmaTranslator
     ] = DagsterSigmaTranslator,
+    sigma_filter: Optional[SigmaFilter] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Sigma content in the organization.
 
@@ -520,7 +561,9 @@ def load_sigma_asset_specs(
     with organization.process_config_and_initialize_cm() as initialized_organization:
         return check.is_list(
             SigmaOrganizationDefsLoader(
-                organization=initialized_organization, translator_cls=dagster_sigma_translator
+                organization=initialized_organization,
+                translator_cls=dagster_sigma_translator,
+                sigma_filter=sigma_filter,
             )
             .build_defs()
             .assets,
@@ -545,13 +588,16 @@ def _get_translator_spec_assert_keys_match(
 class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganizationData]):
     organization: SigmaOrganization
     translator_cls: Callable[[SigmaOrganizationData], DagsterSigmaTranslator]
+    sigma_filter: Optional[SigmaFilter] = None
 
     @property
     def defs_key(self) -> str:
         return f"sigma_{self.organization.client_id}"
 
     def fetch_state(self) -> SigmaOrganizationData:
-        return asyncio.run(self.organization.build_organization_data())
+        return asyncio.run(
+            self.organization.build_organization_data(sigma_filter=self.sigma_filter)
+        )
 
     def defs_from_state(self, state: SigmaOrganizationData) -> Definitions:
         translator = self.translator_cls(state)
