@@ -38,10 +38,6 @@ export const useVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagLegacyNav,
   },
   {
-    key: 'New code location page',
-    flagType: FeatureFlag.flagCodeLocationPage,
-  },
-  {
     key: 'Revert to legacy Runs page',
     flagType: FeatureFlag.flagLegacyRunsPage,
     label: (
