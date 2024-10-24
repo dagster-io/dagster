@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, cast
+from typing import TYPE_CHECKING, Optional, Sequence
 
 from dagster import (
     AssetExecutionContext,
@@ -6,15 +6,11 @@ from dagster import (
     AssetSpec,
     ObserveResult,
     Output,
-    _check as check,
     multi_asset,
 )
 
-from dagster_tableau.resources import (
-    BaseTableauWorkspace,
-    TableauCloudWorkspace,
-    TableauServerWorkspace,
-)
+if TYPE_CHECKING:
+    from dagster_tableau.resources import BaseTableauWorkspace
 
 
 def build_tableau_executable_assets_definition(
@@ -50,7 +46,7 @@ def build_tableau_executable_assets_definition(
         required_resource_keys={resource_key},
     )
     def asset_fn(context: AssetExecutionContext):
-        tableau: BaseTableauWorkspace = getattr(context.resources, resource_key)
+        tableau: "BaseTableauWorkspace" = getattr(context.resources, resource_key)
         with tableau.get_client() as client:
             refreshed_workbooks = set()
             for refreshable_workbook_id in refreshable_workbook_ids or []:
