@@ -59,7 +59,7 @@ SAMPLE_WORKBOOK_DATA = {
     "updatedAt": "2024-09-12T22:20:39.848Z",
     "name": "Sample Workbook",
     "url": "https://app.sigmacomputing.com/dagster-labs/workbook/2opi6VLEne4BaPyj00US50",
-    "path": "My Documents",
+    "path": "My Documents/My Subfolder",
     "latestVersion": 5,
     "ownerId": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
 }
