@@ -16,7 +16,7 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.test.definitions import lazy_definitions
 from dagster_tableau.assets import build_tableau_executable_assets_definition
 from dagster_tableau.resources import TableauCloudWorkspace, load_tableau_asset_specs
-from dagster_tableau.translator import DagsterTableauTranslator, TableauContentData
+from dagster_tableau.translator import DagsterTableauTranslator
 
 from dagster_tableau_tests.conftest import (
     FAKE_CONNECTED_APP_CLIENT_ID,
@@ -76,7 +76,6 @@ def cacheable_asset_defs_custom_translator():
     class MyCoolTranslator(DagsterTableauTranslator):
         def get_asset_key(self, data) -> AssetKey:
             return super().get_asset_key(data).with_prefix("my_prefix")
-
 
     tableau_specs = load_tableau_asset_specs(
         workspace=resource, dagster_tableau_translator=MyCoolTranslator
