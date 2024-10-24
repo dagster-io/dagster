@@ -34,6 +34,7 @@ from dagster._check import (
     ParameterCheckError,
     build_check_call_str,
 )
+from dagster._record import record
 from typing_extensions import Annotated
 
 if TYPE_CHECKING:
@@ -1110,13 +1111,17 @@ def test_opt_set_param():
 # ########################
 
 
+@record
+class SomeRecord: ...
+
+
 def test_sequence_param():
     assert check.sequence_param([], "sequence_param") == []
     assert check.sequence_param(tuple(), "sequence_param") == tuple()
 
     assert check.sequence_param(["foo"], "sequence_param", of_type=str) == ["foo"]
-    assert check.sequence_param("foo", "sequence_param") == "foo"
-    assert check.sequence_param("foo", "sequence_param", of_type=str) == "foo"
+    assert check.sequence_param("foo", "sequence_param", allow_str=True) == "foo"
+    assert check.sequence_param("foo", "sequence_param", of_type=str, allow_str=True) == "foo"
 
     with pytest.raises(ParameterCheckError):
         check.sequence_param(None, "sequence_param")
@@ -1127,14 +1132,21 @@ def test_sequence_param():
     with pytest.raises(CheckError):
         check.sequence_param(["foo"], "sequence_param", of_type=int)
 
+    with pytest.raises(CheckError):
+        check.sequence_param("foo", "sequence_param")
+
+    with pytest.raises(CheckError):
+        check.sequence_param("foo", "sequence_param", of_type=str)
+
+    with pytest.raises(CheckError):
+        check.sequence_param(SomeRecord(), "sequence_param")
+
 
 def test_opt_sequence_param():
     assert check.opt_sequence_param([], "sequence_param") == []
     assert check.opt_sequence_param(tuple(), "sequence_param") == tuple()
 
     assert check.opt_sequence_param(["foo"], "sequence_param", of_type=str) == ["foo"]
-    assert check.opt_sequence_param("foo", "sequence_param") == "foo"
-    assert check.opt_sequence_param("foo", "sequence_param", of_type=str) == "foo"
 
     assert check.opt_sequence_param(None, "sequence_param") == []
 
@@ -1144,14 +1156,21 @@ def test_opt_sequence_param():
     with pytest.raises(CheckError):
         check.opt_sequence_param(["foo"], "sequence_param", of_type=int)
 
+    with pytest.raises(CheckError):
+        assert check.opt_sequence_param("foo", "sequence_param") == "foo"
+
+    with pytest.raises(CheckError):
+        assert check.opt_sequence_param("foo", "sequence_param", of_type=str) == "foo"
+
+    with pytest.raises(CheckError):
+        check.opt_sequence_param(SomeRecord(), "sequence_param")
+
 
 def test_opt_nullable_sequence_param():
     assert check.opt_nullable_sequence_param([], "sequence_param") == []
     assert check.opt_nullable_sequence_param(tuple(), "sequence_param") == tuple()
 
     assert check.opt_nullable_sequence_param(["foo"], "sequence_param", of_type=str) == ["foo"]
-    assert check.opt_nullable_sequence_param("foo", "sequence_param") == "foo"
-    assert check.opt_nullable_sequence_param("foo", "sequence_param", of_type=str) == "foo"
 
     assert check.opt_nullable_sequence_param(None, "sequence_param") is None
 
@@ -1160,6 +1179,15 @@ def test_opt_nullable_sequence_param():
 
     with pytest.raises(CheckError):
         check.opt_nullable_sequence_param(["foo"], "sequence_param", of_type=int)
+
+    with pytest.raises(CheckError):
+        assert check.opt_nullable_sequence_param("foo", "sequence_param") == "foo"
+
+    with pytest.raises(CheckError):
+        assert check.opt_nullable_sequence_param("foo", "sequence_param", of_type=str) == "foo"
+
+    with pytest.raises(CheckError):
+        check.opt_nullable_sequence_param(SomeRecord(), "sequence_param")
 
 
 # ########################
@@ -1345,10 +1373,13 @@ def test_is_tuple():
     with pytest.raises(CheckError, match="Did you pass a class"):
         check.is_tuple((str,), of_type=int)
 
+    with pytest.raises(CheckError):
+        check.is_tuple(SomeRecord())
+
 
 def test_tuple_elem():
     tuple_value = ("blah", "blahblah")
-    ddict = {"tuplekey": tuple_value, "stringkey": "A", "nonekey": None}
+    ddict = {"tuplekey": tuple_value, "stringkey": "A", "nonekey": None, "reckey": SomeRecord()}
 
     assert check.tuple_elem(ddict, "tuplekey") == tuple_value
     assert check.tuple_elem(ddict, "tuplekey", of_type=str) == tuple_value
@@ -1365,10 +1396,13 @@ def test_tuple_elem():
     with pytest.raises(CheckError):
         check.tuple_elem(ddict, "tuplekey", of_type=int)
 
+    with pytest.raises(CheckError):
+        check.tuple_elem(ddict, "reckey")
+
 
 def test_opt_tuple_elem():
     tuple_value = ("blah", "blahblah")
-    ddict = {"tuplekey": tuple_value, "stringkey": "A", "nonekey": None}
+    ddict = {"tuplekey": tuple_value, "stringkey": "A", "nonekey": None, "reckey": SomeRecord()}
 
     assert check.opt_tuple_elem(ddict, "tuplekey") == tuple_value
     assert check.opt_tuple_elem(ddict, "tuplekey", of_type=str) == tuple_value
@@ -1380,6 +1414,9 @@ def test_opt_tuple_elem():
 
     with pytest.raises(CheckError):
         check.opt_tuple_elem(ddict, "tuplekey", of_type=int)
+
+    with pytest.raises(CheckError):
+        check.opt_tuple_elem(ddict, "reckey")
 
 
 def test_typed_is_tuple():
@@ -1489,7 +1526,8 @@ def test_iterable():
     assert check.iterable_param((i for i in [1, 2]), "thisisfine") != [1, 2]
     assert list(check.iterable_param((i for i in [1, 2]), "thisisfine")) == [1, 2]
 
-    check.iterable_param("lkjsdkf", "stringisiterable")
+    with pytest.raises(CheckError, match="Iterable.*str"):
+        check.iterable_param("lkjsdkf", "stringisiterable")
 
     with pytest.raises(CheckError, match="Iterable.*None"):
         check.iterable_param(None, "nonenotallowed")
@@ -1506,6 +1544,9 @@ def test_iterable():
     with pytest.raises(CheckError, match="Member of iterable mismatches type"):
         check.iterable_param(["atr", None], "nonedoesntcount", of_type=str)
 
+    with pytest.raises(CheckError):
+        check.iterable_param(SomeRecord(), "nonenotallowed")
+
 
 def test_opt_iterable():
     assert check.opt_iterable_param(None, "thisisfine") == []
@@ -1520,8 +1561,10 @@ def test_opt_iterable():
         2,
     ]
 
-    check.opt_iterable_param("lkjsdkf", "stringisiterable")
     check.opt_iterable_param(None, "noneisallowed")
+
+    with pytest.raises(CheckError, match="Iterable.*str"):
+        check.opt_iterable_param("lkjsdkf", "stringisiterable")
 
     with pytest.raises(CheckError, match="Iterable.*int"):
         check.opt_iterable_param(1, "intnotallowed")
@@ -1534,6 +1577,9 @@ def test_opt_iterable():
 
     with pytest.raises(CheckError, match="Member of iterable mismatches type"):
         check.opt_iterable_param(["atr", None], "nonedoesntcount", of_type=str)
+
+    with pytest.raises(CheckError):
+        check.opt_iterable_param(SomeRecord(), "nonenotallowed")
 
 
 def test_is_iterable() -> None:
@@ -1616,7 +1662,7 @@ BUILD_CASES = [
     (Bar, [Bar()], [Foo()]),
     (Optional[Bar], [Bar()], [Foo()]),
     (List[str], [["a", "b"]], [[1, 2]]),
-    (Sequence[str], [["a", "b"]], [[1, 2]]),
+    (Sequence[str], [["a", "b"]], [[1, 2], "just_a_string"]),
     (Iterable[str], [["a", "b"]], [[1, 2]]),
     (Set[str], [{"a", "b"}], [{1, 2}]),
     (AbstractSet[str], [{"a", "b"}], [{1, 2}]),

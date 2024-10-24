@@ -869,9 +869,20 @@ def _dedup_partition_keys(keys: Sequence[str]) -> Sequence[str]:
 
 
 @whitelist_for_serdes(storage_name="ExternalStaticPartitionsDefinitionData")
-@record
-class StaticPartitionsSnap(PartitionsSnap):
+@record_custom(checked=False)
+class StaticPartitionsSnap(PartitionsSnap, IHaveNew):
     partition_keys: Sequence[str]
+
+    def __new__(cls, partition_keys: Sequence[str]):
+        return super().__new__(
+            cls,
+            partition_keys=check.sequence_param(
+                partition_keys,
+                "partition_keys",
+                of_type=str,
+                allow_str=True,  # for back compat reasons we allow str as a Sequence[str] here
+            ),
+        )
 
     @classmethod
     def from_def(cls, partitions_def: StaticPartitionsDefinition) -> Self:

@@ -35,10 +35,7 @@ def solid_a_b_list():
 
 
 def test_create_job_with_bad_ops_list():
-    with pytest.raises(
-        ParameterCheckError,
-        match=r'Param "node_defs" is not one of \[\'Sequence\'\]',
-    ):
+    with pytest.raises(ParameterCheckError, match=r'Param "node_defs" is not a Sequence'):
         GraphDefinition(name="a_pipeline", node_defs=create_stub_op("stub", [{"a key": "a value"}]))
 
 
