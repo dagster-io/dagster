@@ -61,7 +61,6 @@ export type LocationWorkspaceQuery = {
                   isJob: boolean;
                   isAssetJob: boolean;
                   pipelineSnapshotId: string;
-                  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
                 }>;
                 schedules: Array<{
                   __typename: 'Schedule';
@@ -175,7 +174,6 @@ export type WorkspaceLocationNodeFragment = {
             isJob: boolean;
             isAssetJob: boolean;
             pipelineSnapshotId: string;
-            tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
           }>;
           schedules: Array<{
             __typename: 'Schedule';
@@ -269,7 +267,6 @@ export type WorkspaceLocationFragment = {
       isJob: boolean;
       isAssetJob: boolean;
       pipelineSnapshotId: string;
-      tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
     }>;
     schedules: Array<{
       __typename: 'Schedule';
@@ -344,7 +341,6 @@ export type WorkspaceRepositoryFragment = {
     isJob: boolean;
     isAssetJob: boolean;
     pipelineSnapshotId: string;
-    tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
   }>;
   schedules: Array<{
     __typename: 'Schedule';
@@ -414,7 +410,6 @@ export type WorkspacePipelineFragment = {
   isJob: boolean;
   isAssetJob: boolean;
   pipelineSnapshotId: string;
-  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
 };
 
 export type WorkspaceScheduleFragment = {
@@ -485,6 +480,6 @@ export type LocationStatusEntryFragment = {
   versionKey: string;
 };
 
-export const LocationWorkspaceQueryVersion = '976247550d8a8226d9b5afcb03dbb9e2c8daa5b1691f9bfe09dcc12be7a67425';
+export const LocationWorkspaceQueryVersion = '72685489c28204d48c39ed5d85231756f5637febc8b19e0a0b4967a2d982191e';
 
 export const CodeLocationStatusQueryVersion = 'f92885e073b8b4b9bd588bf248df7b06025e2a1f6e74c082233ac7863f5eef8e';
