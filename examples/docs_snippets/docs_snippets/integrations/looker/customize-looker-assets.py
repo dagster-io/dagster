@@ -28,4 +28,4 @@ class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
         return asset_spec
 
 
-defs = resource.build_defs(dagster_looker_translator=CustomDagsterLookerApiTranslator)
+defs = resource.build_defs(dagster_looker_translator=CustomDagsterLookerApiTranslator())

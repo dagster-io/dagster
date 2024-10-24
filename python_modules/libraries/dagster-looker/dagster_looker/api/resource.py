@@ -70,7 +70,7 @@ class LookerResource(ConfigurableResource):
         self,
         *,
         request_start_pdt_builds: Optional[Sequence[RequestStartPdtBuild]] = None,
-        dagster_looker_translator: Type[DagsterLookerApiTranslator] = DagsterLookerApiTranslator,
+        dagster_looker_translator: Optional[DagsterLookerApiTranslator] = None,
     ) -> Definitions:
         """Returns a Definitions object which will load structures from the Looker instance
         and translate it into assets, using the provided translator.
@@ -88,15 +88,20 @@ class LookerResource(ConfigurableResource):
         from dagster_looker.api.assets import build_looker_pdt_assets_definitions
 
         resource_key = "looker"
+        translator_cls = (
+            dagster_looker_translator.__class__
+            if dagster_looker_translator
+            else DagsterLookerApiTranslator
+        )
 
         pdts = build_looker_pdt_assets_definitions(
             resource_key=resource_key,
             request_start_pdt_builds=request_start_pdt_builds or [],
-            dagster_looker_translator=dagster_looker_translator,
+            dagster_looker_translator=translator_cls,
         )
 
         return Definitions(
-            assets=[*pdts, *load_looker_asset_specs(self, dagster_looker_translator)],
+            assets=[*pdts, *load_looker_asset_specs(self, translator_cls)],
             resources={resource_key: self},
         )
 
