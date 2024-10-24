@@ -452,7 +452,6 @@ class BaseTableauWorkspace(ConfigurableResource):
             assets=[
                 build_tableau_executable_assets_definition(
                     resource_key=resource_key,
-                    workspace=self,
                     specs=executable_asset_specs,
                     refreshable_workbook_ids=refreshable_workbook_ids,
                 ),
