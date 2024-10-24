@@ -11,7 +11,7 @@ import {buildTagString} from '../tagAsString';
 
 const emptyArray: any[] = [];
 
-export type Tag = Omit<DefinitionTag, '__typename'>;
+type Tag = Omit<DefinitionTag, '__typename'>;
 
 export const useDefinitionTagFilter = ({
   allTags,
@@ -36,16 +36,17 @@ export const useDefinitionTagFilter = ({
     menuWidth: '300px',
     state: memoizedState ?? emptyArray,
     onStateChanged: (values) => {
-      const nextTags = Array.from(values);
-      setTags?.(nextTags);
+      setTags?.(Array.from(values));
     },
     canSelectAll: false,
   });
 };
 
 export const useDefinitionTagFilterWithManagedState = ({allTags}: {allTags: Tag[]}) => {
-  const [tags, setTags] = useQueryPersistedState<Tag[]>({queryKey: 'tags'});
-
+  const [tags, setTags] = useQueryPersistedState<Tag[]>({
+    encode: (tags) => ({tags}),
+    decode: (qs) => (qs.tags as Tag[]) || [],
+  });
   return useDefinitionTagFilter({
     allTags,
     tags,

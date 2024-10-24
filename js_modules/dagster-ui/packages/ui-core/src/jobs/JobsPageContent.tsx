@@ -1,132 +1,93 @@
 import {
   Box,
   Colors,
-  Icon,
   NonIdealState,
   Spinner,
   SpinnerWithText,
+  TextInput,
 } from '@dagster-io/ui-components';
-import {useCallback, useContext, useMemo} from 'react';
+import {useContext, useMemo} from 'react';
 
+import {gql, useQuery} from '../apollo-client';
+import {OverviewJobsQuery, OverviewJobsQueryVariables} from './types/JobsPageContent.types';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {useQueryPersistedFilterState} from '../hooks/useQueryPersistedFilterState';
-import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {OverviewJobsTable} from '../overview/OverviewJobsTable';
 import {sortRepoBuckets} from '../overview/sortRepoBuckets';
 import {visibleRepoKeys} from '../overview/visibleRepoKeys';
-import {useFilters} from '../ui/BaseFilters/useFilters';
-import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
-import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
-import {
-  Tag,
-  doesFilterArrayMatchValueArray,
-  useDefinitionTagFilter,
-  useTagsForObjects,
-} from '../ui/Filters/useDefinitionTagFilter';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
-import {
-  WorkspaceLocationNodeFragment,
-  WorkspacePipelineFragment,
-} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
-const FILTER_FIELDS = ['jobs', 'tags', 'codeLocations'] as const;
-
 export const JobsPageContent = () => {
-  const {allRepos, visibleRepos, loading, data: cachedData} = useContext(WorkspaceContext);
+  const {
+    allRepos,
+    visibleRepos,
+    loading: workspaceLoading,
+    data: cachedData,
+  } = useContext(WorkspaceContext);
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
+  });
+
   const repoCount = allRepos.length;
+
+  const queryResultOverview = useQuery<OverviewJobsQuery, OverviewJobsQueryVariables>(
+    OVERVIEW_JOBS_QUERY,
+    {
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true,
+    },
+  );
+  const {data, loading: queryLoading} = queryResultOverview;
+
+  const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
+
   // Batch up the data and bucket by repo.
   const repoBuckets = useMemo(() => {
     const cachedEntries = Object.values(cachedData).filter(
       (location): location is Extract<typeof location, {__typename: 'WorkspaceLocationEntry'}> =>
         location.__typename === 'WorkspaceLocationEntry',
     );
+    const workspaceOrError = data?.workspaceOrError;
+    const entries =
+      workspaceOrError?.__typename === 'Workspace'
+        ? workspaceOrError.locationEntries
+        : cachedEntries;
     const visibleKeys = visibleRepoKeys(visibleRepos);
-    return buildBuckets(cachedEntries).filter(({repoAddress}) =>
+    return buildBuckets(entries).filter(({repoAddress}) =>
       visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
-  }, [cachedData, visibleRepos]);
+  }, [cachedData, data, visibleRepos]);
 
-  const allJobs = useMemo(() => repoBuckets.flatMap((bucket) => bucket.jobs), [repoBuckets]);
-  const allTags = useTagsForObjects(allJobs, (job) => job.tags);
+  const loading = !data && workspaceLoading;
 
-  const {state: _state, setters} = useQueryPersistedFilterState<{
-    jobs: string[];
-    tags: Tag[];
-    codeLocations: RepoAddress[];
-  }>(FILTER_FIELDS);
+  useBlockTraceUntilTrue('OverviewJobs', !loading);
 
-  const state = useMemo(() => {
-    return {
-      ..._state,
-      codeLocations: _state.codeLocations.map(({name, location}) =>
-        buildRepoAddress(name, location),
-      ),
-    };
-  }, [_state]);
+  const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
+  const anySearch = sanitizedSearch.length > 0;
 
-  const codeLocationFilter = useCodeLocationFilter({
-    codeLocations: state.codeLocations,
-    setCodeLocations: setters.setCodeLocations,
-  });
-
-  const tagsFilter = useDefinitionTagFilter({allTags, tags: state.tags, setTags: setters.setTags});
-
-  const jobFilter = useStaticSetFilter<string>({
-    name: 'Job',
-    icon: 'job',
-    allValues: useMemo(
-      () =>
-        allJobs.map((job) => ({
-          key: job.name,
-          value: job.name,
-          match: [job.name],
-        })),
-      [allJobs],
-    ),
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="job" />
-        <TruncatedTextWithFullTextOnHover text={value} />
-      </Box>
-    ),
-    getStringValue: (x) => x,
-    state: state.jobs,
-    onStateChanged: useCallback(
-      (values) => {
-        setters.setJobs(Array.from(values));
-      },
-      [setters],
-    ),
-  });
-
-  const filters = useMemo(
-    () => [codeLocationFilter, jobFilter, tagsFilter],
-    [codeLocationFilter, jobFilter, tagsFilter],
-  );
-  const {button: filterButton, activeFiltersJsx} = useFilters({filters});
-
-  const filteredRepoBuckets = useMemo(() => {
+  const filteredBySearch = useMemo(() => {
+    const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return repoBuckets
-      .filter((bucket) => {
-        return !state.codeLocations.length || state.codeLocations.includes(bucket.repoAddress);
-      })
-      .map((bucket) => ({
-        ...bucket,
-        jobs: bucket.jobs.filter((job) => {
-          if (state.jobs.length && !state.jobs.includes(job.name)) {
-            return false;
-          }
-          if (state.tags.length && !doesFilterArrayMatchValueArray(state.tags, job.tags)) {
-            return false;
-          }
-          return true;
-        }),
+      .map(({repoAddress, jobs}) => ({
+        repoAddress,
+        jobs: jobs.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower)),
       }))
-      .filter((bucket) => !!bucket.jobs.length);
-  }, [repoBuckets, state]);
+      .filter(({jobs}) => jobs.length > 0);
+  }, [repoBuckets, sanitizedSearch]);
 
   const content = () => {
     if (loading) {
@@ -140,15 +101,40 @@ export const JobsPageContent = () => {
       );
     }
 
-    if (!filteredRepoBuckets.length) {
+    const anyReposHidden = allRepos.length > visibleRepos.length;
+
+    if (!filteredBySearch.length) {
+      if (anySearch) {
+        return (
+          <Box padding={{top: 20}}>
+            <NonIdealState
+              icon="search"
+              title="No matching jobs"
+              description={
+                anyReposHidden ? (
+                  <div>
+                    No jobs matching <strong>{searchValue}</strong> were found in the selected code
+                    locations
+                  </div>
+                ) : (
+                  <div>
+                    No jobs matching <strong>{searchValue}</strong> were found in your definitions
+                  </div>
+                )
+              }
+            />
+          </Box>
+        );
+      }
+
       return (
         <Box padding={{top: 20}}>
           <NonIdealState
             icon="search"
             title="No jobs"
             description={
-              repoBuckets.length
-                ? 'No jobs were found that match your filters'
+              anyReposHidden
+                ? 'No jobs were found in the selected code locations'
                 : 'No jobs were found in your definitions'
             }
           />
@@ -156,27 +142,32 @@ export const JobsPageContent = () => {
       );
     }
 
-    return <OverviewJobsTable repos={filteredRepoBuckets} />;
+    return <OverviewJobsTable repos={filteredBySearch} />;
   };
+
+  const showSearchSpinner = queryLoading && !data;
 
   return (
     <>
       <Box
-        padding={{horizontal: 24, vertical: 8}}
+        padding={{horizontal: 24, vertical: 12}}
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between', grow: 0}}
-        border="bottom"
       >
-        {filterButton}
-      </Box>
-      {activeFiltersJsx.length ? (
-        <Box
-          padding={{vertical: 8, horizontal: 24}}
-          border="bottom"
-          flex={{direction: 'row', gap: 8}}
-        >
-          {activeFiltersJsx}
+        <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+          {repoCount > 1 ? <RepoFilterButton /> : null}
+          <TextInput
+            icon="search"
+            value={searchValue}
+            rightElement={
+              showSearchSpinner ? <SearchInputSpinner tooltipContent="Loading jobs…" /> : undefined
+            }
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder="Filter by job name…"
+            style={{width: '340px'}}
+          />
         </Box>
-      ) : null}
+        <QueryRefreshCountdown refreshState={refreshState} />
+      </Box>
       {loading && !repoCount ? (
         <Box padding={64}>
           <SpinnerWithText label="Loading jobs…" />
@@ -190,11 +181,16 @@ export const JobsPageContent = () => {
 
 type RepoBucket = {
   repoAddress: RepoAddress;
-  jobs: WorkspacePipelineFragment[];
+  jobs: {
+    isJob: boolean;
+    name: string;
+  }[];
 };
 
 const buildBuckets = (
-  locationEntries: Extract<WorkspaceLocationNodeFragment, {__typename: 'WorkspaceLocationEntry'}>[],
+  locationEntries:
+    | Extract<OverviewJobsQuery['workspaceOrError'], {__typename: 'Workspace'}>['locationEntries']
+    | Extract<WorkspaceLocationNodeFragment, {__typename: 'WorkspaceLocationEntry'}>[],
 ): RepoBucket[] => {
   const entries = locationEntries.map((entry) => entry.locationOrLoadError);
   const buckets = [];
@@ -207,7 +203,14 @@ const buildBuckets = (
     for (const repo of entry.repositories) {
       const {name, pipelines} = repo;
       const repoAddress = buildRepoAddress(name, entry.name);
-      const jobs = pipelines.filter(({name}) => !isHiddenAssetGroupJob(name));
+      const jobs = pipelines
+        .filter(({name}) => !isHiddenAssetGroupJob(name))
+        .map((pipeline) => {
+          return {
+            isJob: pipeline.isJob,
+            name: pipeline.name,
+          };
+        });
 
       if (jobs.length > 0) {
         buckets.push({
@@ -220,3 +223,39 @@ const buildBuckets = (
 
   return sortRepoBuckets(buckets);
 };
+
+const OVERVIEW_JOBS_QUERY = gql`
+  query OverviewJobsQuery {
+    workspaceOrError {
+      ... on Workspace {
+        id
+        locationEntries {
+          id
+          locationOrLoadError {
+            ... on RepositoryLocation {
+              id
+              name
+              repositories {
+                id
+                name
+                pipelines {
+                  tags {
+                    key
+                    value
+                  }
+                  id
+                  name
+                  isJob
+                }
+              }
+            }
+            ...PythonErrorFragment
+          }
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;
