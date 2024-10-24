@@ -35,13 +35,12 @@ def upgrade():
             sa.Column("backfill_id", sa.String(length=255), nullable=True),
             sa.Column("key", sa.Text(), nullable=True),
             sa.Column("value", sa.Text(), nullable=True),
-            sa.Column("bulk_actions_storage_id", sa.BigInteger(), nullable=True),
             sa.PrimaryKeyConstraint("id"),
         )
         op.create_index(
-            "idx_backfill_tags_backfill_idx",
+            "idx_backfill_tags_backfill_id",
             "backfill_tags",
-            ["bulk_actions_storage_id", "id"],
+            ["backfill_id", "id"],
             unique=False,
             postgresql_concurrently=True,
         )
@@ -53,9 +52,9 @@ def downgrade():
             op.drop_column("bulk_actions", "job_name")
 
     if has_table("backfill_tags"):
-        if has_index("backfill_tags", "idx_backfill_tags_backfill_idx"):
+        if has_index("backfill_tags", "idx_backfill_tags_backfill_id"):
             op.drop_index(
-                "idx_backfill_tags_backfill_idx",
+                "idx_backfill_tags_backfill_id",
                 "backfill_tags",
                 postgresql_concurrently=True,
             )

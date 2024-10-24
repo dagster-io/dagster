@@ -136,7 +136,6 @@ BackfillTagsTable = db.Table(
     db.Column("backfill_id", db.String(255)),
     db.Column("key", db.Text),
     db.Column("value", db.Text),
-    db.Column("bulk_actions_storage_id", db.BigInteger),
 )
 
 InstanceInfo = db.Table(
@@ -204,7 +203,7 @@ db.Index(
     },
 )
 db.Index(
-    "idx_backfill_tags_backfill_idx",
-    BackfillTagsTable.c.bulk_actions_storage_id,
+    "idx_backfill_tags_backfill_id",
+    BackfillTagsTable.c.backfill_id,
     BackfillTagsTable.c.id,
 )
