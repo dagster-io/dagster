@@ -14,7 +14,7 @@ defs = dg.Definitions(
     sensors=[
         dg.AutomationConditionSensorDefinition(
             name="all_assets",
-            asset_selection=dg.AssetSelection.all(),
+            target=dg.AssetSelection.all(),
             default_condition=dg.AutomationCondition.cron_tick_passed("*/5 * * * *"),
             use_user_code_server=True,
         )

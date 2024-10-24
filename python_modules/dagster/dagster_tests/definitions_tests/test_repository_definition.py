@@ -1439,8 +1439,8 @@ def test_auto_materialize_sensors_do_not_conflict():
         return [
             asset1,
             asset2,
-            AutomationConditionSensorDefinition("a", asset_selection=[asset1]),
-            AutomationConditionSensorDefinition("b", asset_selection=[asset2]),
+            AutomationConditionSensorDefinition("a", target=[asset1]),
+            AutomationConditionSensorDefinition("b", target=[asset2]),
         ]
 
 
@@ -1456,7 +1456,7 @@ def test_auto_materialize_sensors_incomplete_cover():
         return [
             asset1,
             asset2,
-            AutomationConditionSensorDefinition("a", asset_selection=[asset1]),
+            AutomationConditionSensorDefinition("a", target=[asset1]),
         ]
 
 
@@ -1478,6 +1478,6 @@ def test_auto_materialize_sensors_conflict():
             return [
                 asset1,
                 asset2,
-                AutomationConditionSensorDefinition("a", asset_selection=[asset1]),
-                AutomationConditionSensorDefinition("b", asset_selection=[asset1, asset2]),
+                AutomationConditionSensorDefinition("a", target=[asset1]),
+                AutomationConditionSensorDefinition("b", target=[asset1, asset2]),
             ]

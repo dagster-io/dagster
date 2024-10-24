@@ -71,8 +71,6 @@ defs = dg.Definitions(
     assets=[backfillA, backfillB, backfillC, run1, run2],
     asset_checks=[outsideA, outsideB, outside1, outside2],
     sensors=[
-        dg.AutomationConditionSensorDefinition(
-            "the_sensor", asset_selection="*", use_user_code_server=True
-        )
+        dg.AutomationConditionSensorDefinition("the_sensor", target="*", use_user_code_server=True)
     ],
 )

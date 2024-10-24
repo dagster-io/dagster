@@ -27,9 +27,7 @@ def get_defs(n: int) -> Definitions:
     return Definitions(
         assets=assets,
         sensors=[
-            AutomationConditionSensorDefinition(
-                "the_sensor", asset_selection="*", use_user_code_server=True
-            )
+            AutomationConditionSensorDefinition("the_sensor", target="*", use_user_code_server=True)
         ],
     )
 
