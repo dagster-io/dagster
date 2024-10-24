@@ -1,4 +1,8 @@
-from dagster_powerbi import PowerBIServicePrincipal, PowerBIWorkspace
+from dagster_powerbi import (
+    PowerBIServicePrincipal,
+    PowerBIWorkspace,
+    load_powerbi_asset_specs,
+)
 
 import dagster as dg
 
@@ -18,9 +22,14 @@ marketing_team_workspace = PowerBIWorkspace(
     workspace_id="8b7f815d-4e64-40dd-993c-cfa4fb12edee",
 )
 
-# We use Definitions.merge to combine the definitions from both workspaces
-# into a single set of definitions to load
-defs = dg.Definitions.merge(
-    sales_team_workspace.build_defs(),
-    marketing_team_workspace.build_defs(),
+sales_team_specs = load_powerbi_asset_specs(sales_team_workspace)
+marketing_team_specs = load_powerbi_asset_specs(marketing_team_workspace)
+
+# Merge the specs into a single set of definitions
+defs = dg.Definitions(
+    assets=[*sales_team_specs, *marketing_team_specs],
+    resources={
+        "marketing_power_bi": marketing_team_workspace,
+        "sales_power_bi": sales_team_workspace,
+    },
 )
