@@ -33,7 +33,6 @@ from dagster import (
     SourceAsset,
     _check as check,
 )
-from dagster._annotations import deprecated
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
