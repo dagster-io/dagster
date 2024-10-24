@@ -44,7 +44,9 @@ class HelmTemplate:
             helm_dir_path = os.path.join(git_repo_root(), self.helm_dir_path)
 
             values_json = (
-                json.loads(values.json(exclude_none=True, by_alias=True)) if values else values_dict
+                json.loads(values.model_dump_json(exclude_none=True, by_alias=True))
+                if values
+                else values_dict
             )
             pprint(values_json)  # noqa: T203
             content = yaml.dump(values_json)

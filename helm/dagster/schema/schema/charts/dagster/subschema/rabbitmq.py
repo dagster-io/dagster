@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+from typing import Literal
+
+from pydantic import BaseModel
 
 from schema.charts.utils.kubernetes import ExternalImage
 
@@ -13,7 +15,7 @@ class Service(BaseModel):
 
 
 class VolumePermissions(BaseModel):
-    enabled: bool = Field(default=True, const=True)
+    enabled: Literal[True] = True
     image: ExternalImage
 
 
