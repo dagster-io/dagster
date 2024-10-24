@@ -63,7 +63,9 @@ def build_looker_pdt_assets_definitions(
                 force_rebuild=request_start_pdt_build.force_rebuild,
                 force_full_incremental=request_start_pdt_build.force_full_incremental,
                 workspace=request_start_pdt_build.workspace,
-                source=f"Dagster run {context.run_id}" if context.run_id else request_start_pdt_build.source,
+                source=f"Dagster run {context.run_id}"
+                if context.run_id
+                else request_start_pdt_build.source,
             )
 
             if not materialize_pdt.materialization_id:
