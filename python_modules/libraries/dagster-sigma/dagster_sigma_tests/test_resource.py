@@ -2,6 +2,7 @@ import asyncio
 import json
 import uuid
 
+from dagster._generate.generate import _should_skip_file
 import pytest
 import responses
 from aiohttp import ClientResponseError, hdrs
@@ -75,7 +76,8 @@ def test_model_organization_data(sigma_auth_token: str, sigma_sample_data: None)
         client_secret=fake_client_secret,
     )
 
-    data = asyncio.run(resource.build_organization_data(sigma_filter=None))
+    data = asyncio.run(resource.build_organization_data(sigma_filter=None,
+                                     skip_fetch_column_data=False))
 
     assert len(data.workbooks) == 1
     assert data.workbooks[0].properties["name"] == "Sample Workbook"
@@ -107,7 +109,8 @@ def test_model_organization_data_filter(sigma_auth_token: str, sigma_sample_data
 
     data = asyncio.run(
         resource.build_organization_data(
-            sigma_filter=SigmaFilter(workbook_folders=[("My Documents", "Test Folder")])
+            sigma_filter=SigmaFilter(workbook_folders=[("My Documents", "Test Folder")]),
+                                     skip_fetch_column_data=False
         )
     )
 
@@ -115,7 +118,8 @@ def test_model_organization_data_filter(sigma_auth_token: str, sigma_sample_data
 
     data = asyncio.run(
         resource.build_organization_data(
-            sigma_filter=SigmaFilter(workbook_folders=[("My Documents", "My Subfolder")])
+            sigma_filter=SigmaFilter(workbook_folders=[("My Documents", "My Subfolder")]),
+                                     skip_fetch_column_data=False
         )
     )
 
@@ -124,7 +128,8 @@ def test_model_organization_data_filter(sigma_auth_token: str, sigma_sample_data
 
     data = asyncio.run(
         resource.build_organization_data(
-            sigma_filter=SigmaFilter(workbook_folders=[("My Documents",)])
+            sigma_filter=SigmaFilter(workbook_folders=[("My Documents",)]),
+                                     skip_fetch_column_data=False
         )
     )
 
@@ -147,7 +152,8 @@ def test_model_organization_data_warn_err(
     )
 
     with pytest.raises(ClientResponseError):
-        asyncio.run(resource.build_organization_data(sigma_filter=None))
+        asyncio.run(resource.build_organization_data(sigma_filter=None,
+                                     skip_fetch_column_data=False))
 
 
 @responses.activate
@@ -164,7 +170,8 @@ def test_model_organization_data_warn_no_err(
         warn_on_lineage_fetch_error=True,
     )
 
-    data = asyncio.run(resource_warn.build_organization_data(sigma_filter=None))
+    data = asyncio.run(resource_warn.build_organization_data(sigma_filter=None,
+                                     skip_fetch_column_data=False))
 
     assert len(data.workbooks) == 1
     assert data.workbooks[0].properties["name"] == "Sample Workbook"
