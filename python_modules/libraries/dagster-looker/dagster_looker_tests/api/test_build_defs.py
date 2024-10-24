@@ -3,6 +3,7 @@ from typing import Iterator
 import pytest
 import responses
 from dagster import AssetKey, AssetSpec, Definitions, materialize
+from dagster_looker import LookerFilter
 from dagster_looker.api.assets import build_looker_pdt_assets_definitions
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
@@ -13,10 +14,13 @@ from dagster_looker.api.resource import LookerResource, load_looker_asset_specs
 
 from dagster_looker_tests.api.mock_looker_data import (
     mock_check_pdt_build,
+    mock_folders,
     mock_looker_dashboard,
     mock_looker_dashboard_bases,
     mock_lookml_explore,
     mock_lookml_models,
+    mock_lookml_other_explore,
+    mock_other_looker_dashboard,
     mock_start_pdt_build,
 )
 
@@ -53,6 +57,18 @@ def looker_instance_data_mocks_fixture(
             url=f"{TEST_BASE_URL}/api/4.0/lookml_models/my_model/explores/my_explore",
             body=sdk.serialize(api_model=mock_lookml_explore),  # type: ignore
         )
+        responses.add(
+            method=responses.GET,
+            url=f"{TEST_BASE_URL}/api/4.0/lookml_models/my_model/explores/my_other_explore",
+            body=sdk.serialize(api_model=mock_lookml_other_explore),  # type: ignore
+        )
+
+        # Mock the request for all looker dashboards
+        responses.add(
+            method=responses.GET,
+            url=f"{TEST_BASE_URL}/api/4.0/folders",
+            body=sdk.serialize(api_model=mock_folders),  # type: ignore
+        )
 
         # Mock the request for all looker dashboards
         responses.add(
@@ -68,7 +84,33 @@ def looker_instance_data_mocks_fixture(
             body=sdk.serialize(api_model=mock_looker_dashboard),  # type: ignore
         )
 
+        responses.add(
+            method=responses.GET,
+            url=f"{TEST_BASE_URL}/api/4.0/dashboards/2",
+            body=sdk.serialize(api_model=mock_other_looker_dashboard),  # type: ignore
+        )
+
         yield response
+
+
+@responses.activate
+def test_load_asset_specs_filter(
+    looker_resource: LookerResource, looker_instance_data_mocks: responses.RequestsMock
+) -> None:
+    asset_specs_by_key = {
+        spec.key: spec
+        for spec in load_looker_asset_specs(
+            looker_resource,
+            looker_filter=LookerFilter(
+                dashboard_folders=[["my_folder", "my_subfolder"]],
+                only_fetch_explores_used_in_dashboards=True,
+            ),
+        )
+    }
+
+    assert len(asset_specs_by_key) == 2
+    assert AssetKey(["my_dashboard_2"]) not in asset_specs_by_key
+    assert AssetKey(["my_model::my_other_explore"]) not in asset_specs_by_key
 
 
 @responses.activate
@@ -77,7 +119,7 @@ def test_load_asset_specs(
 ) -> None:
     asset_specs_by_key = {spec.key: spec for spec in load_looker_asset_specs(looker_resource)}
 
-    assert len(asset_specs_by_key) == 2
+    assert len(asset_specs_by_key) == 4
 
     expected_lookml_view_asset_dep_key = AssetKey(["view", "my_view"])
     expected_lookml_explore_asset_key = AssetKey(["my_model::my_explore"])
@@ -112,7 +154,7 @@ def test_build_defs_with_pdts(
         resources={resource_key: looker_resource},
     )
 
-    assert len(defs.get_all_asset_specs()) == 3
+    assert len(defs.get_all_asset_specs()) == 5
 
     sdk = looker_resource.get_sdk()
 
