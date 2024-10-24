@@ -9,8 +9,6 @@ from dagster_sigma.translator import (
     SigmaDataset as SigmaDataset,
     SigmaWorkbook as SigmaWorkbook,
 )
-
-# Move back to version.py and edit setup.py once we are ready to publish.
-__version__ = "0.0.13"
+from dagster_sigma.version import __version__
 
 DagsterLibraryRegistry.register("dagster-sigma", __version__)

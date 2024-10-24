@@ -5,8 +5,6 @@ from dagster_tableau.resources import (
     TableauServerWorkspace as TableauServerWorkspace,
 )
 from dagster_tableau.translator import DagsterTableauTranslator as DagsterTableauTranslator
-
-# Move back to version.py and edit setup.py once we are ready to publish.
-__version__ = "1!0+dev"
+from dagster_tableau.version import __version__ as __version__
 
 DagsterLibraryRegistry.register("dagster-tableau", __version__)
