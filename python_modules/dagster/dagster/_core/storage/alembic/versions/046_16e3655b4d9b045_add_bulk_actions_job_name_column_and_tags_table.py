@@ -8,6 +8,7 @@ Create Date: 2024-10-23 13:13:13.390846
 
 import sqlalchemy as sa
 from alembic import op
+from dagster._core.storage.migration.utils import has_column, has_index, has_table
 from sqlalchemy.dialects import sqlite
 
 # revision identifiers, used by Alembic.
@@ -18,15 +19,11 @@ depends_on = None
 
 
 def upgrade():
-    inspector = sa.inspect(op.get_bind())
-    has_tables = inspector.get_table_names()
-
-    if "bulk_actions" in has_tables:
-        columns = [x.get("name") for x in inspector.get_columns("bulk_actions")]
-        if "job_name" not in columns:
+    if has_table("bulk_actions"):
+        if not has_column("bulk_actions", "job_name"):
             op.add_column("bulk_actions", sa.Column("job_name", sa.Text(), nullable=True))
 
-    if "backfill_tags" not in has_tables:
+    if not has_table("backfill_tags"):
         op.create_table(
             "backfill_tags",
             sa.Column(
@@ -41,15 +38,26 @@ def upgrade():
             sa.Column("bulk_actions_storage_id", sa.BigInteger(), nullable=True),
             sa.PrimaryKeyConstraint("id"),
         )
+        op.create_index(
+            "idx_backfill_tags_backfill_idx",
+            "backfill_tags",
+            ["bulk_actions_storage_id", "id"],
+            unique=False,
+            postgresql_concurrently=True,
+            mysql_length={"bulk_actions_storage_id": 255},
+        )
 
 
 def downgrade():
-    inspector = sa.inspect(op.get_bind())
-    has_tables = inspector.get_table_names()
-    if "bulk_actions" in has_tables:
-        columns = [x.get("name") for x in inspector.get_columns("bulk_actions")]
-        if "job_name" in columns:
+    if has_table("bulk_actions"):
+        if has_column("bulk_actions", "job_name"):
             op.drop_column("bulk_actions", "job_name")
 
-    if "backfill_tags" in has_tables:
+    if has_table("backfill_tags"):
+        if has_index("backfill_tags", "idx_backfill_tags_backfill_idx"):
+            op.drop_index(
+                "idx_backfill_tags_backfill_idx",
+                "backfill_tags",
+                postgresql_concurrently=True,
+            )
         op.drop_table("backfill_tags")

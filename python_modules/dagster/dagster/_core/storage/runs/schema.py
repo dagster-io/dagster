@@ -203,3 +203,9 @@ db.Index(
         "backfill_id": 255,
     },
 )
+db.Index(
+    "idx_backfill_tags_backfill_idx",
+    BackfillTagsTable.c.bulk_actions_storage_id,
+    BackfillTagsTable.c.id,
+    mysql_length={"bulk_actions_storage_id": 255},
+)
