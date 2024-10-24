@@ -298,7 +298,8 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             return (
                 assets_def.unique_id
                 if (
-                    not assets_def.can_subset
+                    assets_def.is_executable
+                    and not assets_def.can_subset
                     and (len(assets_def.keys) > 1 or assets_def.check_keys)
                 )
                 else None
