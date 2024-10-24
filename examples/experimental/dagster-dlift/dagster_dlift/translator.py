@@ -2,10 +2,13 @@ from enum import Enum
 from typing import Any, Mapping, Sequence, Union, cast
 
 from dagster import (
+    AssetCheckResult,
     AssetCheckSpec,
+    AssetMaterialization,
     AssetSpec,
     _check as check,
 )
+from dagster._core.storage.tags import KIND_PREFIX
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.names import clean_asset_name
@@ -21,6 +24,15 @@ class DbtCloudProjectEnvironmentData:
     models_by_unique_id: Mapping[str, "DbtCloudContentData"]
     sources_by_unique_id: Mapping[str, "DbtCloudContentData"]
     tests_by_unique_id: Mapping[str, "DbtCloudContentData"]
+
+    def get_from_unique_id(self, unique_id: str) -> "DbtCloudContentData":
+        if unique_id in self.models_by_unique_id:
+            return self.models_by_unique_id[unique_id]
+        if unique_id in self.sources_by_unique_id:
+            return self.sources_by_unique_id[unique_id]
+        if unique_id in self.tests_by_unique_id:
+            return self.tests_by_unique_id[unique_id]
+        raise Exception(f"Unique id {unique_id} not found in environment data.")
 
 
 @whitelist_for_serdes
@@ -55,11 +67,19 @@ class DagsterDbtCloudTranslator:
 
     def get_model_spec(self, data: DbtCloudContentData) -> AssetSpec:
         # This is obviously a placeholder implementation
-        return AssetSpec(key=clean_asset_name(data.properties["uniqueId"]))
+        return AssetSpec(
+            key=clean_asset_name(data.properties["uniqueId"]),
+            metadata={"raw_data": data.properties},
+            tags={f"{KIND_PREFIX}dbt": ""},
+        )
 
     def get_source_spec(self, data: DbtCloudContentData) -> AssetSpec:
         # This is obviously a placeholder implementation
-        return AssetSpec(key=clean_asset_name(data.properties["uniqueId"]))
+        return AssetSpec(
+            key=clean_asset_name(data.properties["uniqueId"]),
+            metadata={"raw_data": data.properties},
+            tags={f"{KIND_PREFIX}dbt": ""},
+        )
 
     def get_test_spec(self, data: DbtCloudContentData) -> AssetCheckSpec:
         associated_data_per_parent = []
@@ -84,6 +104,7 @@ class DagsterDbtCloudTranslator:
             name=clean_asset_name(data.properties["uniqueId"]),
             asset=parent_specs[0].key,
             additional_deps=[parent_spec.key for parent_spec in parent_specs[1:]],
+            metadata={"raw_data": data.properties},
         )
 
     def get_spec(self, data: DbtCloudContentData) -> Union[AssetSpec, AssetCheckSpec]:
@@ -95,3 +116,23 @@ class DagsterDbtCloudTranslator:
             return self.get_test_spec(data)
         else:
             raise Exception(f"Unrecognized content type: {data.content_type}")
+
+    def get_asset_event(
+        self, spec: Union[AssetSpec, AssetCheckSpec], result: Mapping[str, Any]
+    ) -> Union[AssetMaterialization, AssetCheckResult]:
+        if isinstance(spec, AssetSpec):
+            return self.get_materialization(spec, result)
+        else:
+            return self.get_check_result(spec, result)
+
+    def get_materialization(
+        self, spec: AssetSpec, result: Mapping[str, Any]
+    ) -> AssetMaterialization:
+        return AssetMaterialization(spec.key)
+
+    def get_check_result(self, spec: AssetCheckSpec, result: Mapping[str, Any]) -> AssetCheckResult:
+        return AssetCheckResult(
+            passed=True if result["status"] == "pass" else False,
+            check_name=spec.name,
+            asset_key=spec.key.asset_key,
+        )

@@ -1,11 +1,11 @@
-from dagster_dlift.client import DbtCloudClient
-from dlift_kitchen_sink.instance import get_environment_id, get_instance
+from dagster_dlift.client import UnscopedDbtCloudClient
+from dlift_kitchen_sink.instance import get_environment_id, get_unscoped_client
 
 
 def test_cloud_instance() -> None:
     """Test that we can create a DbtCloudInstance and verify connections successfully."""
-    instance = get_instance()
-    assert isinstance(instance, DbtCloudClient)
+    instance = get_unscoped_client()
+    assert isinstance(instance, UnscopedDbtCloudClient)
 
     instance.verify_connections()
 
