@@ -2350,6 +2350,7 @@ input RunsFilter {
   pipelineName: String
   tags: [ExecutionTag!]
   statuses: [RunStatus!]
+  assets: [AssetKeyInput!]
   snapshotId: String
   updatedAfter: Float
   updatedBefore: Float

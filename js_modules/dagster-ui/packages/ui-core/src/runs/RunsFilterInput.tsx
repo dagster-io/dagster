@@ -13,13 +13,19 @@ import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import {DagsterTag} from './RunTag';
 import {gql, useApolloClient, useLazyQuery} from '../apollo-client';
 import {
+  AssetsQuery,
+  AssetsQueryVariables,
   RunTagKeysQuery,
   RunTagKeysQueryVariables,
   RunTagValuesQuery,
   RunTagValuesQueryVariables,
 } from './types/RunsFilterInput.types';
 import {COMMON_COLLATOR} from '../app/Util';
-import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
+import {
+  __ASSET_JOB_PREFIX,
+  displayNameForAssetKey,
+  displayNameToAssetKey,
+} from '../asset-graph/Utils';
 import {RunStatus, RunsFilter} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
@@ -44,6 +50,7 @@ export type RunFilterTokenType =
   | 'id'
   | 'status'
   | 'pipeline'
+  | 'asset'
   | 'partition'
   | 'job'
   | 'snapshotId'
@@ -68,6 +75,10 @@ const RUN_PROVIDERS_EMPTY = [
   },
   {
     token: 'pipeline',
+    values: () => [],
+  },
+  {
+    token: 'asset',
     values: () => [],
   },
   {
@@ -141,6 +152,9 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
       obj.createdAfter = parseInt(item.value);
     } else if (item.token === 'pipeline' || item.token === 'job') {
       obj.pipelineName = item.value;
+    } else if (item.token === 'asset') {
+      obj.assets = obj.assets || [];
+      obj.assets.push(displayNameToAssetKey(item.value));
     } else if (item.token === 'id') {
       obj.runIds = obj.runIds || [];
       obj.runIds.push(item.value);
@@ -205,6 +219,26 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     [client],
   );
 
+  const [fetchAssetValues, {data: assetData}] = useLazyQuery<AssetsQuery, AssetsQueryVariables>(
+    ASSETS_QUERY,
+  );
+
+  const assetValues = useMemo(() => {
+    if (assetData?.assetsOrError.__typename === 'AssetConnection') {
+      return (
+        assetData.assetsOrError.nodes.map((asset) => {
+          const val = displayNameForAssetKey(asset.key);
+          return {
+            key: val,
+            value: val,
+            match: [val],
+          };
+        }) || []
+      );
+    }
+    return [];
+  }, [assetData]);
+
   const tagSuggestions: SuggestionFilterSuggestion<{
     value: string;
     key?: string;
@@ -245,6 +279,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       fetchBackfillValues();
     }
     fetchPartitionValues();
+    fetchAssetValues();
   }, [
     fetchBackfillValues,
     fetchScheduleValues,
@@ -253,6 +288,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     fetchUserValues,
     fetchPartitionValues,
     isBackfillsFilterEnabled,
+    fetchAssetValues,
   ]);
 
   const createdByValues = useMemo(
@@ -642,6 +678,32 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const ID_EMPTY = 'Type or paste 36-character ID';
   const ID_TOO_SHORT = 'Invalid Run ID';
 
+  const assetFilter = useStaticSetFilter({
+    name: 'Asset',
+    icon: 'asset',
+    allValues: assetValues,
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="asset" />
+        <TruncatedTextWithFullTextOnHover text={value} />
+      </Box>
+    ),
+    getStringValue: (x) => x,
+    state: useMemo(
+      () => new Set(tokens.filter((x) => x.token === 'asset').map((x) => x.value)),
+      [tokens],
+    ),
+    onStateChanged: (values) => {
+      onChange([
+        ...tokens.filter((x) => x.token !== 'asset'),
+        ...Array.from(values).map((value) => ({
+          token: 'asset' as const,
+          value,
+        })),
+      ]);
+    },
+  });
+
   const idFilter = useSuggestionFilter({
     name: 'Run ID',
     icon: 'id',
@@ -694,6 +756,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       isBackfillsFilterEnabled ? backfillsFilter : null,
       isPartitionsFilterEnabled ? partitionsFilter : null,
       tagFilter,
+      assetFilter,
     ].filter((x) => x) as FilterObject[],
   });
 
@@ -764,6 +827,21 @@ export const RUN_TAG_VALUES_QUERY = gql`
         tags {
           key
           values
+        }
+      }
+    }
+  }
+`;
+
+export const ASSETS_QUERY = gql`
+  query AssetsQuery {
+    assetsOrError {
+      ... on AssetConnection {
+        nodes {
+          id
+          key {
+            path
+          }
         }
       }
     }

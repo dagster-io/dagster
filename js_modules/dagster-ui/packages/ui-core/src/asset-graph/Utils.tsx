@@ -274,6 +274,10 @@ export function displayNameForAssetKey(key: {path: string[]}) {
   return key.path.join(' / ');
 }
 
+export function displayNameToAssetKey(displayName: string) {
+  return {path: displayName.split(' / ')};
+}
+
 export function sortAssetKeys(a: {path: string[]}, b: {path: string[]}) {
   return COMMON_COLLATOR.compare(displayNameForAssetKey(a), displayNameForAssetKey(b));
 }

@@ -26,6 +26,7 @@ import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
@@ -368,7 +369,7 @@ class SqlRunStorage(RunStorage):
         return table
 
     def _apply_assets_table_filters(
-        self, table: db.Table, assets: Sequence[str]
+        self, table: db.Table, assets: Iterable[AssetKey]
     ) -> SqlAlchemyQuery:
         """Efficient query pattern for filtering by multiple assets."""
         for i, asset in enumerate(assets):
@@ -378,7 +379,7 @@ class SqlRunStorage(RunStorage):
                 run_assets_alias,
                 db.and_(
                     RunsTable.c.run_id == run_assets_alias.c.run_id,
-                    run_assets_alias.c.asset_key == asset,
+                    run_assets_alias.c.asset_key == asset.to_string(),
                 ),
             )
 

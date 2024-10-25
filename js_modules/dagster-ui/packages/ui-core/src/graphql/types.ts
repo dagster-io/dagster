@@ -4801,6 +4801,7 @@ export type RunsFeedEntry = {
 };
 
 export type RunsFilter = {
+  assets?: InputMaybe<Array<AssetKeyInput>>;
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
   createdBefore?: InputMaybe<Scalars['Float']['input']>;
   mode?: InputMaybe<Scalars['String']['input']>;
@@ -13694,6 +13695,7 @@ export const buildRunsFilter = (
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
   relationshipsToOmit.add('RunsFilter');
   return {
+    assets: overrides && overrides.hasOwnProperty('assets') ? overrides.assets! : [],
     createdAfter:
       overrides && overrides.hasOwnProperty('createdAfter') ? overrides.createdAfter! : 2.71,
     createdBefore:
