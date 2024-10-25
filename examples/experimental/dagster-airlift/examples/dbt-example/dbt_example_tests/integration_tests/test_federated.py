@@ -5,6 +5,7 @@ from typing import Any, Callable, Generator, List, Tuple
 
 import pytest
 from dagster import AssetKey, AssetsDefinition, DagsterInstance, materialize
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import environ
 from dagster._time import get_current_datetime
 from dagster_airlift.core import AirflowInstance
@@ -46,6 +47,8 @@ def dagster_dev_cmd_fixture(stage_and_fn: Tuple[str, Callable[[], AirflowInstanc
     dagster_dev_module = stage_and_fn[0]
     if dagster_dev_module.endswith("federated_airflow_defs"):
         cmd = ["make", "run_federated_airflow_defs"]
+    elif dagster_dev_module.endswith("dbt_cloud_airflow"):
+        cmd = ["make", "run_dbt_cloud_defs"]
     else:
         raise ValueError(f"Unknown stage: {dagster_dev_module}")
     return cmd + ["-C", str(makefile_dir())]
@@ -73,12 +76,25 @@ def federated_airflow_instance() -> AirflowInstance:
     return af_instance
 
 
+def get_federated_defs() -> Definitions:
+    from dbt_example.dagster_defs.federated_airflow_defs import defs
+
+    return defs
+
+
+def get_dbt_cloud_defs() -> Definitions:
+    from dbt_example.dagster_defs.dbt_cloud_airflow import defs
+
+    return defs
+
+
 @pytest.mark.parametrize(
     "stage_and_fn",
     [
         ("federated_airflow_defs", federated_airflow_instance),
+        ("dbt_cloud_airflow", federated_airflow_instance),
     ],
-    ids=["federated_airflow_defs"],
+    ids=["federated_airflow_defs", "dbt_cloud_airflow"],
     indirect=True,
 )
 def test_dagster_materializes(
@@ -89,7 +105,12 @@ def test_dagster_materializes(
 ) -> None:
     """Test that assets can load properly, and that materializations register."""
     # Attempt to run all original completed assets.
-    from dbt_example.dagster_defs.federated_airflow_defs import defs
+    if stage_and_fn[0] == "federated_airflow_defs":
+        defs = get_federated_defs()
+    elif stage_and_fn[0] == "dbt_cloud_airflow":
+        defs = get_dbt_cloud_defs()
+    else:
+        raise ValueError(f"Unknown stage: {stage_and_fn[0]}")
 
     assert defs.assets
     materializable_assets = [
@@ -105,7 +126,7 @@ def test_dagster_materializes(
             assert instance.get_latest_materialization_event(asset_key=spec.key)
     dagster_dev_module, af_instance_fn = stage_and_fn
     af_instance = af_instance_fn()
-    for dag_id in ["upload_seeds", "run_scrapers_daily"]:
+    for dag_id in ["upload_source_data", "run_scrapers_daily"]:
         run_id = af_instance.trigger_dag(dag_id=dag_id)
         af_instance.wait_for_run_completion(dag_id=dag_id, run_id=run_id, timeout=60)
         dagster_instance = DagsterInstance.get()
