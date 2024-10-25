@@ -1,3 +1,4 @@
+import re
 from enum import Enum
 from typing import Any, Dict, Mapping, Optional, Union
 
@@ -7,13 +8,37 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import public
+from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
+from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._record import record
 from dagster._utils.log import get_dagster_logger
 from looker_sdk.sdk.api40.methods import Looker40SDK
 from looker_sdk.sdk.api40.models import Dashboard, DashboardFilter, LookmlModelExplore, User
 
+
+def _clean_asset_name(name: str) -> str:
+    """Cleans an input to be a valid Dagster asset name."""
+    return re.sub(r"[^A-Za-z0-9_]+", "_", name)
+
+
 logger = get_dagster_logger("dagster_looker")
+
+
+class DagsterLookerMetadataSet(NamespacedMetadataSet):
+    id: Optional[str] = None
+
+    @classmethod
+    def namespace(cls) -> str:
+        return "dagster-looker"
+
+
+class DagsterLookerTagSet(NamespacedTagSet):
+    asset_type: str
+
+    @classmethod
+    def namespace(cls) -> str:
+        return "dagster-looker"
 
 
 @record
@@ -123,16 +148,17 @@ class DagsterLookerApiTranslator:
         _ = check.inst(looker_structure.data, LookmlView)
         return AssetSpec(
             key=self.get_asset_key(looker_structure),
+            tags={**DagsterLookerTagSet(asset_type="view")},
         )
 
     def get_explore_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
         lookml_explore = check.inst(looker_structure.data, (LookmlModelExplore, DashboardFilter))
         if isinstance(lookml_explore, LookmlModelExplore):
-            return AssetKey(check.not_none(lookml_explore.id))
+            return AssetKey(_clean_asset_name(check.not_none(lookml_explore.id)))
         elif isinstance(lookml_explore, DashboardFilter):
             lookml_model_name = check.not_none(lookml_explore.model)
             lookml_explore_name = check.not_none(lookml_explore.explore)
-            return AssetKey(f"{lookml_model_name}::{lookml_explore_name}")
+            return AssetKey(_clean_asset_name(f"{lookml_model_name}_{lookml_explore_name}"))
         else:
             check.assert_never(lookml_explore)
 
@@ -165,18 +191,16 @@ class DagsterLookerApiTranslator:
                         for lookml_view in [explore_base_view, *explore_join_views]
                     }
                 ),
-                tags={
-                    "dagster/kind/looker": "",
-                    "dagster/kind/explore": "",
-                },
                 metadata={
                     "dagster-looker/web_url": MetadataValue.url(
                         f"{looker_structure.base_url}/explore/{check.not_none(lookml_explore.id).replace('::', '/')}"
                     ),
                 },
+                tags={**DagsterLookerTagSet(asset_type="explore")},
+                kinds={"looker", "explore"},
             )
         elif isinstance(lookml_explore, DashboardFilter):
-            return AssetSpec(key=self.get_asset_key(looker_structure))
+            return AssetSpec(key=self.get_asset_key(looker_structure), kinds={"looker", "explore"})
         else:
             check.assert_never(lookml_explore)
 
@@ -203,16 +227,14 @@ class DagsterLookerApiTranslator:
                     for dashboard_filter in looker_dashboard.dashboard_filters or []
                 }
             ),
-            tags={
-                "dagster/kind/looker": "",
-                "dagster/kind/dashboard": "",
-            },
             metadata={
                 "dagster-looker/web_url": MetadataValue.url(
                     f"{looker_structure.base_url}{looker_dashboard.url}"
                 ),
+                **DagsterLookerMetadataSet(id=looker_dashboard.id),
             },
-            owners=[user.email] if user and user.email else None,
+            tags={**DagsterLookerTagSet(asset_type="dashboard")},
+            kinds={"looker", "dashboard"},
         )
 
     @public

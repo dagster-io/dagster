@@ -2,9 +2,12 @@ from typing import Sequence, Type, cast
 
 from dagster import AssetExecutionContext, AssetsDefinition, Failure, multi_asset
 from dagster._annotations import experimental
+from dagster._core.definitions.asset_spec import AssetSpec
+from looker_sdk.sdk.api40.models import ScheduledPlanDestination, WriteScheduledPlan
 
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
+    DagsterLookerMetadataSet,
     LookerStructureData,
     LookerStructureType,
     LookmlView,
@@ -85,3 +88,27 @@ def build_looker_pdt_assets_definitions(
         result.append(pdts)
 
     return result
+
+
+def build_dashboard_notification_assets_definition(
+    resource_key: str,
+    asset_spec: AssetSpec,
+    destination: ScheduledPlanDestination,
+) -> AssetsDefinition:
+    looker_data = DagsterLookerMetadataSet.extract(asset_spec.metadata)
+
+    @multi_asset(
+        specs=[asset_spec],
+        name=f"{asset_spec.key.to_python_identifier()}_notify",
+        required_resource_keys={resource_key},
+    )
+    def notify(context: AssetExecutionContext):
+        looker = cast("LookerResource", getattr(context.resources, resource_key))
+
+        looker.get_sdk().scheduled_plan_run_once(
+            WriteScheduledPlan(
+                dashboard_id=looker_data.id, scheduled_plan_destination=[destination]
+            )
+        )
+
+    return notify

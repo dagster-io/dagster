@@ -16,6 +16,7 @@ from dagster._utils.log import get_dagster_logger
 from looker_sdk import init40
 from looker_sdk.rtl.api_settings import ApiSettings, SettingsConfig
 from looker_sdk.sdk.api40.methods import Looker40SDK
+from looker_sdk.sdk.api40.models import LookmlModelExplore
 from pydantic import Field
 
 from dagster_looker.api.dagster_looker_api_translator import (
@@ -195,7 +196,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             )
             for lookml_explore in looker_instance_data.explores_by_id.values()
         ]
-        views = [
+        dashboards = [
             dagster_looker_translator.get_asset_spec(
                 LookerStructureData(
                     structure_type=LookerStructureType.DASHBOARD,
@@ -205,7 +206,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             )
             for looker_dashboard in looker_instance_data.dashboards_by_id.values()
         ]
-        return Definitions(assets=[*explores, *views])
+        return Definitions(assets=[*explores, *dashboards])
 
     def fetch_looker_instance_data(self) -> LookerInstanceData:
         """Fetches all explores and dashboards from the Looker instance.
