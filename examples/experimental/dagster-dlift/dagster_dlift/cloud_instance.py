@@ -2,7 +2,11 @@ from typing import Any, Mapping, Sequence
 
 import requests
 
-from dagster_dlift.gql_queries import GET_DBT_MODELS_QUERY, VERIFICATION_QUERY
+from dagster_dlift.gql_queries import (
+    GET_DBT_MODELS_QUERY,
+    GET_DBT_SOURCES_QUERY,
+    VERIFICATION_QUERY,
+)
 
 ENVIRONMENTS_SUBPATH = "environments/"
 
@@ -112,3 +116,26 @@ class DbtCloudInstance:
                 "endCursor"
             ]
         return models
+
+    def get_dbt_sources(self, environment_id: int) -> Sequence[Mapping[str, Any]]:
+        sources = []
+        page_size = 100
+        start_cursor = 0
+        while response := self.make_discovery_api_query(
+            GET_DBT_SOURCES_QUERY,
+            {"environmentId": environment_id, "first": page_size, "after": start_cursor},
+        ):
+            sources.extend(
+                [
+                    source["node"]
+                    for source in response["data"]["environment"]["definition"]["sources"]["edges"]
+                ]
+            )
+            if not response["data"]["environment"]["definition"]["sources"]["pageInfo"][
+                "hasNextPage"
+            ]:
+                break
+            start_cursor = response["data"]["environment"]["definition"]["sources"]["pageInfo"][
+                "endCursor"
+            ]
+        return sources
