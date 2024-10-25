@@ -32,7 +32,12 @@ def postprocess_payroll(numrows, expectation):
 
 # start_ge_demo_marker_factory
 payroll_expectations = ge_validation_op_factory(
-    name="ge_validation_op", datasource_name="getest", suite_name="basic.warning"
+    name="ge_validation_op",
+    datasource_name="getest",
+    data_connector_name="my_runtime_data_connector",
+    data_asset_name="test_asset",
+    suite_name="basic.warning",
+    batch_identifiers={"foo": "bar"},
 )
 # end_ge_demo_marker_factory
 
