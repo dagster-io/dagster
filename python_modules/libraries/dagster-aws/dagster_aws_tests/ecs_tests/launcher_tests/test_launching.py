@@ -1037,7 +1037,7 @@ def test_propagate_tags_include_all(
     [
         [{"allow_list": ["dagster/op_selection"]}],
         [{"allow_list": ["dagster/solid_selection", "dagster/git_commit_hash"]}],
-    ]
+    ],
 )
 def test_propagate_tags_args_validated(
     instance_cm,
@@ -1047,11 +1047,7 @@ def test_propagate_tags_args_validated(
     propagate_tags: Dict[str, Any],
 ):
     with pytest.raises(CheckError):
-        with instance_cm(
-            {
-                "propagate_tags": propagate_tags
-            }
-        ) as instance:
+        with instance_cm({"propagate_tags": propagate_tags}) as instance:
             run = instance.create_run_for_job(
                 job,
                 external_job_origin=external_job.get_external_origin(),
