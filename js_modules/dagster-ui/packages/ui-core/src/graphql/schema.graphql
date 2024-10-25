@@ -1657,7 +1657,11 @@ type AssetSelection {
   assetsOrError: AssetsOrError!
 }
 
-union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
+union ScheduleMutationResult =
+  | PythonError
+  | UnauthorizedError
+  | ScheduleStateResult
+  | ScheduleNotFoundError
 
 union ScheduleOrError = Schedule | ScheduleNotFoundError | PythonError
 

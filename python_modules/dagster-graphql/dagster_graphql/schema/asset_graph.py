@@ -861,13 +861,16 @@ class GrapheneAssetNode(graphene.ObjectType):
         if isinstance(self._remote_node, RemoteWorkspaceAssetNode):
             # global nodes have saved references to their targeting instigators
             schedules = [
-                graphene_info.context.get_schedule(schedule_handle)
+                schedule
                 for schedule_handle in self._remote_node.get_targeting_schedule_handles()
+                if (schedule := graphene_info.context.get_schedule(schedule_handle)) is not None
             ]
             sensors = [
-                graphene_info.context.get_sensor(sensor_handle)
+                sensor
                 for sensor_handle in self._remote_node.get_targeting_sensor_handles()
+                if (sensor := graphene_info.context.get_sensor(sensor_handle)) is not None
             ]
+
         else:
             # fallback to using the repository
             repo = graphene_info.context.get_repository(self._repository_selector)
@@ -883,7 +886,6 @@ class GrapheneAssetNode(graphene.ObjectType):
             results.append(
                 GrapheneSensor(
                     sensor,
-                    sensor.handle.repository_handle,
                     sensor_state,
                 )
             )
@@ -896,7 +898,6 @@ class GrapheneAssetNode(graphene.ObjectType):
             results.append(
                 GrapheneSchedule(
                     schedule,
-                    schedule.handle.repository_handle,
                     schedule_state,
                 )
             )

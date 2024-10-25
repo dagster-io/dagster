@@ -19,6 +19,7 @@ export type StartThisScheduleMutation = {
           error: {__typename: 'PythonError'; message: string; stack: Array<string>};
         }>;
       }
+    | {__typename: 'ScheduleNotFoundError'}
     | {
         __typename: 'ScheduleStateResult';
         scheduleState: {
@@ -51,6 +52,7 @@ export type StopScheduleMutation = {
           error: {__typename: 'PythonError'; message: string; stack: Array<string>};
         }>;
       }
+    | {__typename: 'ScheduleNotFoundError'}
     | {
         __typename: 'ScheduleStateResult';
         scheduleState: {
@@ -80,6 +82,7 @@ export type ResetScheduleMutation = {
           error: {__typename: 'PythonError'; message: string; stack: Array<string>};
         }>;
       }
+    | {__typename: 'ScheduleNotFoundError'}
     | {
         __typename: 'ScheduleStateResult';
         scheduleState: {
