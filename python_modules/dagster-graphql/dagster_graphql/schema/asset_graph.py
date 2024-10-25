@@ -981,13 +981,12 @@ class GrapheneAssetNode(graphene.ObjectType):
             lambda event: event.dagster_event.step_materialization_data.materialization.partition
         )
 
-        partitions = self.get_partition_keys() if partitions is None else partitions
         latest_storage_ids = sorted(
             (
                 graphene_info.context.instance.event_log_storage.get_latest_storage_id_by_partition(
                     self._asset_node_snap.asset_key,
                     DagsterEventType.ASSET_MATERIALIZATION,
-                    set(partitions),
+                    set(partitions) if partitions else None,
                 )
             ).values()
         )
@@ -1002,6 +1001,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         # return materializations in the same order as the provided partitions, None if
         # materialization does not exist
+        partitions = self.get_partition_keys() if partitions is None else partitions
         ordered_materializations = [
             latest_materialization_by_partition.get(partition) for partition in partitions
         ]
