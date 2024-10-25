@@ -3,11 +3,7 @@ from pathlib import Path
 
 import yaml
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
-from dagster_airlift.test import airlift_root, configured_airflow_home
-
-
-def update_script_path() -> Path:
-    return airlift_root() / "scripts" / "airflow_setup.sh"
+from dagster_airlift.test import configured_airflow_home
 
 
 def path_to_test_proj() -> Path:
