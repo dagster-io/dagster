@@ -6,9 +6,8 @@ import logging
 import queue
 import threading
 from collections import deque
-from collections.abc import Callable, Generator, Iterator
 from dataclasses import dataclass, field
-from typing import Any, Mapping
+from typing import Any, Callable, Generator, Iterator, Mapping
 
 _default_logger = logging.getLogger(__name__)
 
@@ -21,7 +20,7 @@ class LogItem:
     log: Any = field(compare=False)
 
 
-def _deduplicate(recent_messages: deque) -> Callable[[LogItem], bool]:
+def _deduplicate(recent_messages: "deque[LogItem]") -> Callable[[LogItem], bool]:
     def _should_drop(x: LogItem) -> bool:
         if (
             len(recent_messages) == recent_messages.maxlen
