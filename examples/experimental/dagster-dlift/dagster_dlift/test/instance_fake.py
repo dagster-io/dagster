@@ -85,3 +85,16 @@ def build_source_response(
             }
         }
     )
+
+
+def build_test_response(
+    unique_id: str, parents: Sequence[str], has_next_page: bool = False, start_cursor: int = 0
+) -> Mapping[str, Any]:
+    return build_definition_response(
+        {
+            "tests": {
+                "pageInfo": build_page_info(has_next_page, start_cursor),
+                "edges": [build_edge(unique_id, parents)],
+            }
+        }
+    )

@@ -3,6 +3,7 @@ from dagster_dlift.cloud_instance import ENVIRONMENTS_SUBPATH
 from dagster_dlift.gql_queries import (
     GET_DBT_MODELS_QUERY,
     GET_DBT_SOURCES_QUERY,
+    GET_DBT_TESTS_QUERY,
     VERIFICATION_QUERY,
 )
 from dagster_dlift.test.instance_fake import (
@@ -11,6 +12,7 @@ from dagster_dlift.test.instance_fake import (
     ExpectedDiscoveryApiRequest,
     build_model_response,
     build_source_response,
+    build_test_response,
 )
 
 
@@ -117,3 +119,30 @@ def test_get_sources() -> None:
     assert {
         source["uniqueId"] for source in fake_instance.get_dbt_sources(1)
     } == expected_unique_id_sources
+
+
+def test_get_tests() -> None:
+    """Tests that we can get tests from the instance, even if they are paginated."""
+    expected_unique_id_tests = {
+        "test.jaffle_shop.stg_customers.test_stg_customers": {"model.jaffle_shop.stg_customers"},
+        "test.jaffle_shop.stg_orders.test_stg_orders": {"model.jaffle_shop.stg_orders"},
+    }
+
+    fake_instance = DbtCloudInstanceFake(
+        access_api_responses={},
+        discovery_api_responses={
+            ExpectedDiscoveryApiRequest(
+                query=GET_DBT_TESTS_QUERY,
+                variables={"environmentId": 1, "first": 100, "after": idx},
+            ): build_test_response(
+                unique_id=unique_id,
+                has_next_page=True if idx < len(expected_unique_id_tests) - 1 else False,
+                start_cursor=idx,
+                parents=list(parents),
+            )
+            for idx, (unique_id, parents) in enumerate(expected_unique_id_tests.items())
+        },
+    )
+    assert {source["uniqueId"] for source in fake_instance.get_dbt_tests(1)} == set(
+        expected_unique_id_tests.keys()
+    )

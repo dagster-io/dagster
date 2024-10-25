@@ -5,6 +5,7 @@ import requests
 from dagster_dlift.gql_queries import (
     GET_DBT_MODELS_QUERY,
     GET_DBT_SOURCES_QUERY,
+    GET_DBT_TESTS_QUERY,
     VERIFICATION_QUERY,
 )
 
@@ -139,3 +140,26 @@ class DbtCloudInstance:
                 "endCursor"
             ]
         return sources
+
+    def get_dbt_tests(self, environment_id: int) -> Sequence[Mapping[str, Any]]:
+        tests = []
+        page_size = 100
+        start_cursor = 0
+        while response := self.make_discovery_api_query(
+            GET_DBT_TESTS_QUERY,
+            {"environmentId": environment_id, "first": page_size, "after": start_cursor},
+        ):
+            tests.extend(
+                [
+                    test["node"]
+                    for test in response["data"]["environment"]["definition"]["tests"]["edges"]
+                ]
+            )
+            if not response["data"]["environment"]["definition"]["tests"]["pageInfo"][
+                "hasNextPage"
+            ]:
+                break
+            start_cursor = response["data"]["environment"]["definition"]["tests"]["pageInfo"][
+                "endCursor"
+            ]
+        return tests

@@ -45,6 +45,32 @@ query GetSourcesQuery($environmentId: BigInt!, $first: Int) {
 }
 """
 
+GET_DBT_TESTS_QUERY = """
+query GetTestsQuery($environmentId: BigInt!, $first: Int) {
+  environment(id: $environmentId) {
+    definition {
+      tests(first: $first) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        edges {
+          node {
+            parents {
+              uniqueId
+              resourceType
+            }
+            uniqueId
+            name
+            tags
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
 VERIFICATION_QUERY = """
 query VerificationQuery($environmentId: BigInt!) {
   environment(id: $environmentId) {
