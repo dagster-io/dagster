@@ -30,6 +30,7 @@ from dagster_looker.api.dagster_looker_api_translator import (
     RequestStartPdtBuild,
 )
 
+from looker_sdk.rtl.transport import TransportOptions
 if TYPE_CHECKING:
     from looker_sdk.sdk.api40.models import Folder, LookmlModelExplore
 
@@ -292,6 +293,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             check.not_none(dashboard.id): dashboard
             for dashboard in sdk.search_dashboards(
                 id=",".join(dashboard_ids_to_fetch),
+                transport_options=TransportOptions(timeout=60 * 5)
             )
         }
 
