@@ -8,11 +8,13 @@ from dagster_dlift.gql_queries import (
 from dagster_dlift.project import DbtCloudCredentials
 from dagster_dlift.test.client_fake import (
     DbtCloudClientFake,
+    ExpectedAccessApiRequest,
     ExpectedDiscoveryApiRequest,
     build_response_for_type,
 )
 from dagster_dlift.test.project_fake import DbtCloudProjectEnvironmentFake
 from dagster_dlift.translator import DbtCloudContentType
+from dagster_dlift.utils import get_job_name
 
 
 def query_per_content_type(content_type: DbtCloudContentType) -> str:
@@ -65,9 +67,22 @@ def jaffle_shop_contents() -> (
     }
 
 
+def build_dagster_job_response(environment_id: int, project_id: int) -> Mapping[str, Any]:
+    return {"name": get_job_name(environment_id, project_id), "id": 1}
+
+
+def build_expected_access_api_requests() -> Mapping[ExpectedAccessApiRequest, Any]:
+    return {
+        # List of jobs
+        ExpectedAccessApiRequest("/jobs/", data={"environment_id": 1}): {
+            "data": [build_dagster_job_response(1, 1)]
+        }
+    }
+
+
 def create_seeded_jaffle_shop_client() -> DbtCloudClientFake:
     return DbtCloudClientFake(
-        access_api_responses={},
+        access_api_responses=build_expected_access_api_requests(),
         discovery_api_responses=build_expected_requests(dep_graph_per_type=jaffle_shop_contents()),
     )
 
@@ -79,6 +94,6 @@ def create_jaffle_shop_project() -> DbtCloudProjectEnvironmentFake:
         environment_id=1,
         project_id=1,
         credentials=DbtCloudCredentials(
-            account_id="fake", token="fake", access_url="fake", discovery_api_url="fake"
+            account_id=123, token="fake", access_url="fake", discovery_api_url="fake"
         ),
     )

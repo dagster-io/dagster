@@ -4,6 +4,7 @@ from dagster_dlift.translator import (
     DbtCloudContentType,
     DbtCloudProjectEnvironmentData,
 )
+from dagster_dlift.utils import get_job_name
 
 
 def compute_environment_data(
@@ -13,6 +14,7 @@ def compute_environment_data(
     return DbtCloudProjectEnvironmentData(
         project_id=project_id,
         environment_id=environment_id,
+        job_id=get_or_create_job(environment_id, project_id, client),
         models_by_unique_id={
             model["uniqueId"]: DbtCloudContentData(
                 content_type=DbtCloudContentType.MODEL,
@@ -35,3 +37,17 @@ def compute_environment_data(
             for test in client.get_dbt_tests(environment_id)
         },
     )
+
+
+def get_or_create_job(environment_id: int, project_id: int, client: DbtCloudClient) -> int:
+    """Get or create a dbt Cloud job for a project environment."""
+    expected_job_name = get_job_name(project_id, environment_id)
+    if expected_job_name in {
+        job["name"] for job in client.list_jobs(environment_id=environment_id)
+    }:
+        return next(
+            job["id"]
+            for job in client.list_jobs(environment_id=environment_id)
+            if job["name"] == expected_job_name
+        )
+    return client.create_dagster_job(project_id, environment_id)

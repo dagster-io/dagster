@@ -12,6 +12,8 @@ from dagster._serdes.serdes import whitelist_for_serdes
 class DbtCloudProjectEnvironmentData:
     project_id: int
     environment_id: int
+    # The dbt cloud job id that we'll use to kick off executions launched from a client.
+    job_id: int
     models_by_unique_id: Mapping[str, "DbtCloudContentData"]
     sources_by_unique_id: Mapping[str, "DbtCloudContentData"]
     tests_by_unique_id: Mapping[str, "DbtCloudContentData"]
