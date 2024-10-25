@@ -1,7 +1,5 @@
 from typing import Dict, List, Optional, Union
 
-from pydantic import Extra
-
 from schema.charts.utils import kubernetes
 from schema.charts.utils.utils import BaseModel
 
@@ -9,21 +7,21 @@ from schema.charts.utils.utils import BaseModel
 class Server(BaseModel):
     host: str
     port: int
-    name: Optional[str]
-    ssl: Optional[bool]
+    name: Optional[str] = None
+    ssl: Optional[bool] = None
 
 
 class Workspace(BaseModel):
     enabled: bool
     servers: List[Server]
-    externalConfigmap: Optional[str]
+    externalConfigmap: Optional[str] = None
 
 
-class Webserver(BaseModel):
+class Webserver(BaseModel, extra="forbid"):
     replicaCount: int
     image: kubernetes.Image
     nameOverride: str
-    pathPrefix: Optional[str]
+    pathPrefix: Optional[str] = None
     service: kubernetes.Service
     workspace: Workspace
     env: Union[Dict[str, str], List[kubernetes.EnvVar]]
@@ -42,13 +40,10 @@ class Webserver(BaseModel):
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
     enableReadOnly: bool
-    dbStatementTimeout: Optional[int]
-    dbPoolRecycle: Optional[int]
-    logLevel: Optional[str]
-    schedulerName: Optional[str]
-    volumeMounts: Optional[List[kubernetes.VolumeMount]]
-    volumes: Optional[List[kubernetes.Volume]]
-    initContainerResources: Optional[kubernetes.Resources]
-
-    class Config:
-        extra = Extra.forbid
+    dbStatementTimeout: Optional[int] = None
+    dbPoolRecycle: Optional[int] = None
+    logLevel: Optional[str] = None
+    schedulerName: Optional[str] = None
+    volumeMounts: Optional[List[kubernetes.VolumeMount]] = None
+    volumes: Optional[List[kubernetes.Volume]] = None
+    initContainerResources: Optional[kubernetes.Resources] = None

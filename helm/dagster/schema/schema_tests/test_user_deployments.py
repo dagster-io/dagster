@@ -884,7 +884,7 @@ def test_user_deployment_labels(template: HelmTemplate, include_config_in_launch
 def test_annotations(template: HelmTemplate, include_config_in_launched_runs: bool):
     name = "foo"
 
-    annotations = {"my-annotation-key": "my-annotation-val"}
+    annotations = kubernetes.Annotations.parse_obj({"my-annotation-key": "my-annotation-val"})
 
     deployment = UserDeployment.construct(
         name=name,
@@ -925,7 +925,7 @@ def test_annotations(template: HelmTemplate, include_config_in_launched_runs: bo
                         "automount_service_account_token": True,
                     },
                     "pod_template_spec_metadata": {
-                        "annotations": annotations,
+                        "annotations": annotations.model_dump(),
                     },
                 },
             }
@@ -938,10 +938,12 @@ def test_annotations(template: HelmTemplate, include_config_in_launched_runs: bo
 def test_user_deployment_resources(template: HelmTemplate, include_config_in_launched_runs: bool):
     name = "foo"
 
-    resources = {
-        "requests": {"memory": "64Mi", "cpu": "250m"},
-        "limits": {"memory": "128Mi", "cpu": "500m"},
-    }
+    resources = kubernetes.Resources.parse_obj(
+        {
+            "requests": {"memory": "64Mi", "cpu": "250m"},
+            "limits": {"memory": "128Mi", "cpu": "500m"},
+        }
+    )
 
     deployment = UserDeployment.construct(
         name=name,
@@ -973,7 +975,7 @@ def test_user_deployment_resources(template: HelmTemplate, include_config_in_lau
                 "env_config_maps": [
                     "release-name-dagster-user-deployments-foo-user-env",
                 ],
-                "resources": resources,
+                "resources": resources.model_dump(),
                 "namespace": "default",
                 "service_account_name": "release-name-dagster-user-deployments-user-deployments",
                 "run_k8s_config": {

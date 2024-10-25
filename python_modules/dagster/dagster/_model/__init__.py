@@ -32,7 +32,7 @@ class DagsterModel(BaseModel):
         def __init__(self, **data: Any) -> None: ...
 
     if USING_PYDANTIC_2:
-        model_config = ConfigDict(  # type: ignore
+        model_config = ConfigDict(
             extra="forbid",
             frozen=True,
             arbitrary_types_allowed=True,
@@ -48,13 +48,13 @@ class DagsterModel(BaseModel):
 
     def model_copy(self, *, update: Optional[Dict[str, Any]] = None) -> Self:
         if USING_PYDANTIC_2:
-            return super().model_copy(update=update)  # type: ignore
+            return super().model_copy(update=update)
         else:
             return super().copy(update=update)
 
     @classmethod
     def model_construct(cls, **kwargs: Any) -> Self:
         if USING_PYDANTIC_2:
-            return super().model_construct(**kwargs)  # type: ignore
+            return super().model_construct(**kwargs)
         else:
             return super().construct(**kwargs)

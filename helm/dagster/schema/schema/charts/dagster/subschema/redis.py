@@ -1,7 +1,7 @@
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 
 
-class Redis(BaseModel):
+class Redis(BaseModel, extra="allow"):
     enabled: bool
     internal: bool
     usePassword: bool
@@ -12,6 +12,3 @@ class Redis(BaseModel):
     backendDbNumber: int
     brokerUrl: str
     backendUrl: str
-
-    class Config:
-        extra = Extra.allow

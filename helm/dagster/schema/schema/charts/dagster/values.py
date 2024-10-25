@@ -7,7 +7,11 @@ from schema.charts.dagster_user_deployments.subschema.user_deployments import Us
 from schema.charts.utils import kubernetes
 
 
-class DagsterHelmValues(BaseModel):
+# We have `extra="allow"` here to support passing `dagit` as an alias for `dagsterWebserver` when
+# constructing without validation. This can be removed in 2.0 since we will no longer support the
+# dagit alias. It is possible there is a better way to do this using Pydantic field aliases, but the
+# current solution does work.
+class DagsterHelmValues(BaseModel, extra="allow"):
     __doc__ = "@" + "generated"
 
     dagsterWebserver: subschema.Webserver
@@ -31,4 +35,4 @@ class DagsterHelmValues(BaseModel):
     serviceAccount: subschema.ServiceAccount
     global_: subschema.Global = Field(..., alias="global")
     retention: subschema.Retention
-    additionalInstanceConfig: Optional[Mapping[str, Any]]
+    additionalInstanceConfig: Optional[Mapping[str, Any]] = None

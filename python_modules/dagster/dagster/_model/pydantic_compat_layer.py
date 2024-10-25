@@ -9,13 +9,13 @@ USING_PYDANTIC_2 = int(pydantic.__version__.split(".")[0]) >= 2
 
 PydanticUndefined = None
 if USING_PYDANTIC_2:
-    from pydantic_core import PydanticUndefined as _PydanticUndefined  # type: ignore
+    from pydantic_core import PydanticUndefined as _PydanticUndefined
 
     PydanticUndefined = _PydanticUndefined
 
 
 if TYPE_CHECKING:
-    from pydantic.fields import ModelField
+    from pydantic.fields import ModelField  # type: ignore
 
 
 class ModelFieldCompat:
@@ -63,7 +63,7 @@ class ModelFieldCompat:
 
     def is_required(self) -> bool:
         if USING_PYDANTIC_2:
-            return self.field.is_required()  # type: ignore
+            return self.field.is_required()
         else:
             # required is of type 'BoolUndefined', which is a Union of bool and pydantic 1.x's UndefinedType
             return self.field.required if isinstance(self.field.required, bool) else False
@@ -72,7 +72,7 @@ class ModelFieldCompat:
     def discriminator(self) -> Optional[str]:
         if USING_PYDANTIC_2:
             if hasattr(self.field, "discriminator"):
-                return self.field.discriminator if hasattr(self.field, "discriminator") else None  # type: ignore
+                return self.field.discriminator if hasattr(self.field, "discriminator") else None
         else:
             return getattr(self.field, "discriminator_key", None)
 
@@ -144,10 +144,10 @@ def build_validation_error(
     input_type: Literal["python", "json"],
 ) -> ValidationError:
     if USING_PYDANTIC_1:
-        return ValidationError(errors=line_errors, model=base_error.model)
+        return ValidationError(errors=line_errors, model=base_error.model)  # type: ignore
     else:
-        return ValidationError.from_exception_data(  # type: ignore
-            title=base_error.title,  # type: ignore
+        return ValidationError.from_exception_data(
+            title=base_error.title,
             line_errors=line_errors,
             input_type=input_type,
             hide_input=hide_input,
@@ -164,6 +164,6 @@ def json_schema_from_type(model_type: Union[Type[BaseModel], Type[Sequence[BaseM
         return json.loads(schema_json_of(model_type))
 
     else:
-        from pydantic import TypeAdapter  # type: ignore
+        from pydantic import TypeAdapter
 
         return TypeAdapter(model_type).json_schema()
