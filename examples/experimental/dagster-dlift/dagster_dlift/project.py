@@ -24,6 +24,10 @@ class DBTCloudProjectEnvironment:
         self.project_id = project_id
         self.environment_id = environment_id
 
+    @property
+    def unique_id(self) -> str:
+        return f"{self.project_id}-{self.environment_id}"
+
     @cached_property
     def client(self) -> DbtCloudClient:
         return DbtCloudClient(

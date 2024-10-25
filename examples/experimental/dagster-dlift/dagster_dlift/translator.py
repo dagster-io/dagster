@@ -1,10 +1,14 @@
 from enum import Enum
-from typing import Any, Mapping, NamedTuple, Union
+from typing import Any, Mapping, Union
 
 from dagster import AssetCheckSpec, AssetSpec
+from dagster._record import record
+from dagster._serdes.serdes import whitelist_for_serdes
 
 
-class DbtCloudProjectEnvironmentData(NamedTuple):
+@whitelist_for_serdes
+@record
+class DbtCloudProjectEnvironmentData:
     project_id: int
     environment_id: int
     models_by_unique_id: Mapping[str, "DbtCloudContentData"]
@@ -12,13 +16,16 @@ class DbtCloudProjectEnvironmentData(NamedTuple):
     tests_by_unique_id: Mapping[str, "DbtCloudContentData"]
 
 
+@whitelist_for_serdes
 class DbtCloudContentType(Enum):
     MODEL = "MODEL"
     SOURCE = "SOURCE"
     TEST = "TEST"
 
 
-class DbtCloudContentData(NamedTuple):
+@whitelist_for_serdes
+@record
+class DbtCloudContentData:
     content_type: DbtCloudContentType
     properties: Mapping[str, Any]
 
