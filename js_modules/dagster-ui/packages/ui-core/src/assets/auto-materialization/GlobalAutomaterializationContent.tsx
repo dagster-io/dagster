@@ -12,7 +12,6 @@ import {useCallback, useMemo, useState} from 'react';
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
 import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
 import {AutomaterializeRunHistoryTable} from './AutomaterializeRunHistoryTable';
-import {DeclarativeAutomationBanner} from './DeclarativeAutomationBanner';
 import {InstanceAutomaterializationEvaluationHistoryTable} from './InstanceAutomaterializationEvaluationHistoryTable';
 import {
   AssetDaemonTickFragment,
@@ -146,9 +145,6 @@ export const GlobalAutomaterializationContent = () => {
 
   return (
     <>
-      <Box padding={{vertical: 12, horizontal: 24}}>
-        <DeclarativeAutomationBanner />
-      </Box>
       <Table>
         <tbody>
           <tr>
