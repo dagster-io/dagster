@@ -20,7 +20,8 @@ dbt_setup: ## Initialize dbt project
 
 dev_install:
 	pip install uv && \
-	uv pip install -e ../../../dagster-airlift
+	uv pip install -e ../../../dagster-dlift && \
+	uv pip install -e ../../../dagster-airlift[test]
 	uv pip install -e .
 
 setup_local_env: 
@@ -65,8 +66,11 @@ run_complete:
 run_federated_airflow_defs:
 	dagster dev -m dbt_example.dagster_defs.federated_airflow_defs -p 3333
 
+run_dbt_cloud_defs:
+	dagster dev -m dbt_example.dagster_defs.dbt_cloud_airflow -p 3333
+
 wipe: ## Wipe out all the files created by the Makefile
-	rm -rf $(AIRFLOW_HOME) $(DAGSTER_HOME)
+	rm -rf $(AIRFLOW_HOME) $(FEDERATED_AIRFLOW_HOME) $(DAGSTER_HOME)
 
 wipe_dagster: ## Wipe out all the files created by the Makefile
 	rm -rf $$DAGSTER_HOME

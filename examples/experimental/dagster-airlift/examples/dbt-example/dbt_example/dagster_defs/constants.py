@@ -19,6 +19,16 @@ PASSWORD = "admin"
 ASSETS_PATH = Path(__file__).parent / "defs"
 PROXIED_STATE_PATH = Path(__file__).parent / "proxied_state"
 DBT_DAG_ASSET_KEY = AssetKey([AIRFLOW_INSTANCE_NAME, "dag", "dbt_dag"])
+UPLOAD_SOURCE_DATA_ASSET_KEY = AssetKey([FEDERATED_INSTANCE_NAME, "dag", "upload_source_data"])
+DBT_SOURCE_TO_DAG = {
+    AssetKey("raw_customers"): UPLOAD_SOURCE_DATA_ASSET_KEY,
+    AssetKey("raw_orders"): UPLOAD_SOURCE_DATA_ASSET_KEY,
+    AssetKey("raw_payments"): UPLOAD_SOURCE_DATA_ASSET_KEY,
+}
+DBT_UPSTREAMS = {
+    "model.test_environment.customer_metrics": AssetKey("customers"),
+    "model.test_environment.order_metrics": AssetKey("orders"),
+}
 
 
 def dbt_project_path() -> Path:

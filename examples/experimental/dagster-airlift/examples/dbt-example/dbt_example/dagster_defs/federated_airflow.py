@@ -4,6 +4,7 @@ from dagster import AssetsDefinition, Definitions, SensorDefinition
 from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
 
 from .constants import FEDERATED_BASE_URL, FEDERATED_INSTANCE_NAME, PASSWORD, USERNAME
+from .utils import with_group
 
 airflow_instance = AirflowInstance(
     auth_backend=BasicAuthBackend(
@@ -25,4 +26,7 @@ def get_federated_airflow_sensor() -> SensorDefinition:
 
 def get_federated_airflow_assets() -> Sequence[AssetsDefinition]:
     defs = get_federated_airflow_defs()
-    return list(defs.get_repository_def().assets_defs_by_key.values())
+    return [
+        with_group(assets_def, "upstream_af_instance")
+        for assets_def in defs.get_repository_def().assets_defs_by_key.values()
+    ]
