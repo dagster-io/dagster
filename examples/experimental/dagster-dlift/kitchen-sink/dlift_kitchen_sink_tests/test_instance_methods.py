@@ -1,13 +1,14 @@
-from dlift_kitchen_sink.constants import EXPECTED_TAG, TEST_ENV_NAME
+from dagster_dlift.client import DbtCloudClient
+from dlift_kitchen_sink.constants import EXPECTED_TAG
 from dlift_kitchen_sink.instance import get_instance
-from dagster_dlift.cloud_instance import DbtCloudInstance
 
 
-def test_get_models() -> None:
-    env_id = get_instance().get_environment_id_by_name(TEST_ENV_NAME)
+def test_get_models(instance: DbtCloudClient, environment_id: int) -> None:
     # Filter to only the models that we use for testing.
     models_response = [
-        model for model in get_instance().get_dbt_models(env_id) if EXPECTED_TAG in model["tags"]
+        model
+        for model in get_instance().get_dbt_models(environment_id)
+        if EXPECTED_TAG in model["tags"]
     ]
 
     assert len(models_response) == 3
@@ -53,12 +54,11 @@ def test_get_models() -> None:
     }
 
 
-def test_get_sources(instance: DbtCloudInstance, environment_id: int) -> None:
+def test_get_sources(instance: DbtCloudClient, environment_id: int) -> None:
     """Test that we can get sources from the instance."""
-    env_id = get_instance().get_environment_id_by_name(TEST_ENV_NAME)
     sources_response = [
         source
-        for source in get_instance().get_dbt_sources(env_id)
+        for source in get_instance().get_dbt_sources(environment_id)
         if EXPECTED_TAG in source["tags"]
     ]
     assert len(sources_response) == 2
@@ -68,9 +68,11 @@ def test_get_sources(instance: DbtCloudInstance, environment_id: int) -> None:
     }
 
 
-def test_get_tests(instance: DbtCloudInstance, environment_id: int) -> None:
+def test_get_tests(instance: DbtCloudClient, environment_id: int) -> None:
     """Test that we can get tests from the instance."""
-    tests_response = [test for test in instance.get_dbt_tests(environment_id) if EXPECTED_TAG in test["tags"]]
+    tests_response = [
+        test for test in instance.get_dbt_tests(environment_id) if EXPECTED_TAG in test["tags"]
+    ]
     assert {test["name"] for test in tests_response} == {
         "accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned",
         "not_null_customers_customer_id",

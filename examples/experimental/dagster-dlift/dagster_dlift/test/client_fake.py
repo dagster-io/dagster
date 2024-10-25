@@ -1,6 +1,6 @@
 from typing import Any, Dict, Mapping, NamedTuple, Optional, Sequence
 
-from dagster_dlift.cloud_instance import DbtCloudInstance
+from dagster_dlift.client import DbtCloudClient
 
 
 class ExpectedDiscoveryApiRequest(NamedTuple):
@@ -18,7 +18,7 @@ class ExpectedAccessApiRequest(NamedTuple):
         return hash(self.subpath)
 
 
-class DbtCloudInstanceFake(DbtCloudInstance):
+class DbtCloudClientFake(DbtCloudClient):
     """A version that allows users to fake API responses for testing purposes."""
 
     def __init__(

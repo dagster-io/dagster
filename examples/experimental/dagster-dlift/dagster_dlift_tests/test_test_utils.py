@@ -1,9 +1,9 @@
 import pytest
 from dagster._core.test_utils import environ
-from dagster_dlift.cloud_instance import ENVIRONMENTS_SUBPATH
+from dagster_dlift.client import ENVIRONMENTS_SUBPATH
 from dagster_dlift.gql_queries import VERIFICATION_QUERY
-from dagster_dlift.test.instance_fake import (
-    DbtCloudInstanceFake,
+from dagster_dlift.test.client_fake import (
+    DbtCloudClientFake,
     ExpectedAccessApiRequest,
     ExpectedDiscoveryApiRequest,
 )
@@ -21,7 +21,7 @@ def test_get_env_var() -> None:
 
 def test_cloud_instance_fake() -> None:
     """Test that cloud instance fake behaves properly when inducing queries."""
-    fake_instance = DbtCloudInstanceFake(
+    fake_instance = DbtCloudClientFake(
         access_api_responses={
             ExpectedAccessApiRequest(subpath=ENVIRONMENTS_SUBPATH): {
                 "data": {"environments": [{"id": 1}]}
