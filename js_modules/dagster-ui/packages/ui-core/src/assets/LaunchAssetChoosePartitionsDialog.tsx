@@ -108,7 +108,7 @@ export const LaunchAssetChoosePartitionsDialog = (
     <Dialog
       style={{width: 700}}
       isOpen={props.open}
-      canEscapeKeyClose
+      canEscapeKeyClose={false}
       canOutsideClickClose
       onClose={() => props.setOpen(false)}
     >
