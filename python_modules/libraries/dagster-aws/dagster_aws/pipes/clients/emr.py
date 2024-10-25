@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 import boto3
 import dagster._check as check
@@ -9,6 +9,7 @@ from dagster import PipesClient
 from dagster._annotations import experimental, public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClientCompletedInvocation,
@@ -116,7 +117,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
     def run(
         self,
         *,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         run_job_flow_params: "RunJobFlowInputRequestTypeDef",
         extras: Optional[Dict[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
@@ -125,7 +126,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
         Starts a new EMR cluster for each invocation.
 
         Args:
-            context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context of the currently executing Dagster op or asset.
             run_job_flow_params (Optional[dict]): Parameters for the ``run_job_flow`` boto3 EMR client call.
                 See `Boto3 EMR API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr/client/emr.html#emr>`_
             extras (Optional[Dict[str, Any]]): Additional information to pass to the Pipes session in the external process.
@@ -202,7 +203,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
 
     def _start(
         self,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         session: PipesSession,
         params: "RunJobFlowInputRequestTypeDef",
     ) -> "RunJobFlowOutputTypeDef":
@@ -216,7 +217,9 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
         return response
 
     def _wait_for_completion(
-        self, context: OpExecutionContext, response: "RunJobFlowOutputTypeDef"
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        response: "RunJobFlowOutputTypeDef",
     ) -> "DescribeClusterOutputTypeDef":
         cluster_id = response["JobFlowId"]
         self._client.get_waiter("cluster_running").wait(ClusterId=cluster_id)
@@ -236,7 +239,11 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
 
         return cluster
 
-    def _add_log_readers(self, context: OpExecutionContext, response: "RunJobFlowOutputTypeDef"):
+    def _add_log_readers(
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        response: "RunJobFlowOutputTypeDef",
+    ):
         cluster = self.client.describe_cluster(ClusterId=response["JobFlowId"])
 
         cluster_id = cluster["Cluster"]["Id"]  # type: ignore
@@ -278,7 +285,9 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
                     )
 
     def _read_remaining_logs(
-        self, context: OpExecutionContext, response: "DescribeClusterOutputTypeDef"
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        response: "DescribeClusterOutputTypeDef",
     ):
         cluster_id = response["Cluster"]["Id"]  # type: ignore
         logs_uri = response.get("Cluster", {}).get("LogUri", {})
@@ -333,7 +342,11 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
                     ),
                 )
 
-    def _terminate(self, context: OpExecutionContext, start_response: "RunJobFlowOutputTypeDef"):
+    def _terminate(
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        start_response: "RunJobFlowOutputTypeDef",
+    ):
         cluster_id = start_response["JobFlowId"]
         context.log.info(f"[pipes] Terminating EMR job {cluster_id}")
         self._client.terminate_job_flows(JobFlowIds=[cluster_id])

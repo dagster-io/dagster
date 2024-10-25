@@ -6,12 +6,13 @@ import string
 import sys
 import time
 from contextlib import ExitStack, contextmanager
-from typing import Any, Dict, Iterator, Literal, Mapping, Optional, Sequence, Set, TextIO
+from typing import Any, Dict, Iterator, Literal, Mapping, Optional, Sequence, Set, TextIO, Union
 
 import dagster._check as check
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
     PipesClientCompletedInvocation,
@@ -126,7 +127,7 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
     def run(
         self,
         *,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         extras: Optional[PipesExtras] = None,
         task: jobs.SubmitTask,
         submit_args: Optional[Mapping[str, Any]] = None,
@@ -146,7 +147,7 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
                 variables in `spark_env_vars` (if there is an existing dictionary here, the Pipes environment
                 variables will be merged in). This doesn't require any special setup in the task code.
                 All other fields will be passed unaltered under the `tasks` arg to `WorkspaceClient.jobs.submit`.
-            context (OpExecutionContext): The context from the executing op or asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context from the executing op or asset.
             extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the
                 subprocess.
             submit_args (Optional[Mapping[str, Any]]): Additional keyword arguments that will be
@@ -186,7 +187,10 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
         return PipesClientCompletedInvocation(pipes_session)
 
     def _enrich_submit_task_dict(
-        self, context: OpExecutionContext, session: PipesSession, submit_task_dict: Dict[str, Any]
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        session: PipesSession,
+        submit_task_dict: Dict[str, Any],
     ) -> Dict[str, Any]:
         if "existing_cluster_id" in submit_task_dict:
             # we can't set env vars on an existing cluster
@@ -221,7 +225,9 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
     def get_task_fields_which_support_cli_parameters(self) -> Set[str]:
         return {"spark_python_task", "python_wheel_task"}
 
-    def _poll_til_success(self, context: OpExecutionContext, run_id: int) -> None:
+    def _poll_til_success(
+        self, context: Union[OpExecutionContext, AssetExecutionContext], run_id: int
+    ) -> None:
         # poll the Databricks run until it reaches RunResultState.SUCCESS, raising otherwise
 
         last_observed_state = None

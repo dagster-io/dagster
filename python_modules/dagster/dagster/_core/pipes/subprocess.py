@@ -9,7 +9,8 @@ from dagster import _check as check
 from dagster._annotations import public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
     PipesClientCompletedInvocation,
@@ -83,7 +84,7 @@ class PipesSubprocessClient(PipesClient, TreatAsResourceParam):
     def run(
         self,
         *,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         extras: Optional[PipesExtras] = None,
         command: Union[str, Sequence[str]],
         env: Optional[Mapping[str, str]] = None,
@@ -93,7 +94,7 @@ class PipesSubprocessClient(PipesClient, TreatAsResourceParam):
 
         Args:
             command (Union[str, Sequence[str]]): The command to run. Will be passed to `subprocess.Popen()`.
-            context (OpExecutionContext): The context from the executing op or asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context from the executing op or asset.
             extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the subprocess.
             env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
             cwd (Optional[str]): Working directory in which to launch the subprocess command.

@@ -1,5 +1,5 @@
 import time
-from typing import TYPE_CHECKING, Any, Dict, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
 import boto3
 import dagster._check as check
@@ -8,6 +8,7 @@ from dagster import PipesClient
 from dagster._annotations import experimental, public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClientCompletedInvocation,
@@ -60,7 +61,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     def run(
         self,
         *,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         start_job_run_params: "StartJobRunRequestRequestTypeDef",
         extras: Optional[Dict[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
@@ -69,7 +70,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         See also: `AWS API Documentation <https://docs.aws.amazon.com/goto/WebAPI/glue-2017-03-31/StartJobRun>`_
 
         Args:
-            context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context of the currently executing Dagster op or asset.
             start_job_run_params (Dict): Parameters for the ``start_job_run`` boto3 Glue client call.
             extras (Optional[Dict[str, Any]]): Additional Dagster metadata to pass to the Glue job.
 
@@ -155,7 +156,9 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                 return response  # pyright: ignore (reportReturnType)
             time.sleep(5)
 
-    def _terminate_job_run(self, context: OpExecutionContext, job_name: str, run_id: str):
+    def _terminate_job_run(
+        self, context: Union[OpExecutionContext, AssetExecutionContext], job_name: str, run_id: str
+    ):
         """Creates a handler which will gracefully stop the Run in case of external termination.
         It will stop the Glue job before doing so.
         """
