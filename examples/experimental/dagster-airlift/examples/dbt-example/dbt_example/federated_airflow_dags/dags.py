@@ -10,7 +10,7 @@ default_args = {
 }
 
 upload_seeds_dag = DAG(
-    dag_id="upload_seeds",
+    dag_id="upload_source_data",
     default_args=default_args,
     schedule_interval=None,
     is_paused_upon_creation=False,

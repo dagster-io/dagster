@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Any, Mapping, Sequence, Union, cast
 
 from dagster import AssetCheckResult, AssetCheckSpec, AssetMaterialization, AssetSpec
+from dagster._core.storage.tags import KIND_PREFIX
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
@@ -68,6 +69,7 @@ class DagsterDbtCloudTranslator:
         return AssetSpec(
             key=clean_asset_name(data.properties["uniqueId"]),
             metadata={"raw_data": data.properties},
+            tags={f"{KIND_PREFIX}dbt": ""},
         )
 
     def get_source_spec(self, data: DbtCloudContentData) -> AssetSpec:
@@ -75,6 +77,7 @@ class DagsterDbtCloudTranslator:
         return AssetSpec(
             key=clean_asset_name(data.properties["uniqueId"]),
             metadata={"raw_data": data.properties},
+            tags={f"{KIND_PREFIX}dbt": ""},
         )
 
     def get_test_spec(self, data: DbtCloudContentData) -> AssetCheckSpec:
