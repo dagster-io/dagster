@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List
+from typing import Any, Dict, List, Mapping
 
 from pydantic import (
     BaseModel as PydanticBaseModel,
@@ -51,7 +51,7 @@ def create_definition_ref(definition: str, version: str = SupportedKubernetes.V1
 
 def create_json_schema_conditionals(
     enum_type_to_config_name_mapping: Dict[Enum, str],
-) -> List[dict]:
+) -> List[Mapping[str, Any]]:
     return [
         {
             "if": {

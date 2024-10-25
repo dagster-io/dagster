@@ -76,7 +76,7 @@ class MakeConfigCacheable(BaseModel):
     # - arbitrary_types_allowed, to allow non-model class params to be validated with isinstance.
     # - Avoid pydantic reading a cached property class as part of the schema.
     if USING_PYDANTIC_2:
-        model_config = ConfigDict(  # type: ignore
+        model_config = ConfigDict(
             frozen=True, arbitrary_types_allowed=True, ignored_types=(cached_property,)
         )
     else:
@@ -411,7 +411,7 @@ class PermissiveConfig(Config):
     # Pydantic config for this class
     # Cannot use kwargs for base class as this is not support for pydantic<1.8
     if USING_PYDANTIC_2:
-        model_config = ConfigDict(extra="allow")  # type: ignore
+        model_config = ConfigDict(extra="allow")
     else:
 
         class Config:

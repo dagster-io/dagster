@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from schema.charts.utils import kubernetes
 
@@ -53,5 +53,5 @@ class Ingress(BaseModel, extra="allow"):
     labels: kubernetes.Labels
     annotations: kubernetes.Annotations
     flower: FlowerIngressConfiguration
-    dagsterWebserver: WebserverIngressConfiguration = Field(alias="dagit")
+    dagsterWebserver: WebserverIngressConfiguration
     readOnlyDagsterWebserver: WebserverIngressConfiguration

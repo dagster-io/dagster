@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, Optional, Type
 
-from pydantic import Extra
+from pydantic import ConfigDict
 
 from schema.charts.dagster.subschema.config import StringSource
 from schema.charts.utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
@@ -60,17 +60,18 @@ class ComputeLogManager(BaseModel):
     type: ComputeLogManagerType
     config: ComputeLogManagerConfig
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra=lambda schema, model: ComputeLogManager.json_schema_extra(schema, model),
+    )
 
-        @staticmethod
-        def json_schema_extra(schema: Dict[str, Any], model: Type["ComputeLogManager"]):
-            BaseModel.Config.json_schema_extra(schema, model)
-            schema["allOf"] = create_json_schema_conditionals(
-                {
-                    ComputeLogManagerType.AZURE: "azureBlobComputeLogManager",
-                    ComputeLogManagerType.GCS: "gcsComputeLogManager",
-                    ComputeLogManagerType.S3: "s3ComputeLogManager",
-                    ComputeLogManagerType.CUSTOM: "customComputeLogManager",
-                }
-            )
+    @staticmethod
+    def json_schema_extra(schema: Dict[str, Any], model: Type["ComputeLogManager"]):
+        schema["allOf"] = create_json_schema_conditionals(
+            {
+                ComputeLogManagerType.AZURE: "azureBlobComputeLogManager",
+                ComputeLogManagerType.GCS: "gcsComputeLogManager",
+                ComputeLogManagerType.S3: "s3ComputeLogManager",
+                ComputeLogManagerType.CUSTOM: "customComputeLogManager",
+            }
+        )
