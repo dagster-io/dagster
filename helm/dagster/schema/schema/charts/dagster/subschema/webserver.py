@@ -49,6 +49,8 @@ class Webserver(BaseModel):
     volumeMounts: Optional[List[kubernetes.VolumeMount]]
     volumes: Optional[List[kubernetes.Volume]]
     initContainerResources: Optional[kubernetes.Resources]
+    extraContainers: Optional[List[kubernetes.Container]]
+    extraPrependedInitContainers: Optional[List[kubernetes.InitContainer]]
 
     class Config:
         extra = Extra.forbid

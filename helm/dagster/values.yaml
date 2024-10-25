@@ -151,6 +151,29 @@ dagsterWebserver:
   #     subPath: test_file.yaml
   volumeMounts: []
 
+  # Additional containers that should run as sidecars to the webserver. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers
+  # For K8s versions after 1.29, prefer using extraPrependedInitContainers instead. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Example:
+  # extraContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraContainers: []
+
+  # Additional init containers that should run before the webserver's init container, such as sidecars.
+  # For K8s versions after 1.29, see:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Extra init containers are started **before** the check-db-ready init container.
+  # 
+  # Example:
+  # extraPrependedInitContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraPrependedInitContainers: []
+
   # Support Node, affinity and tolerations for webserver pod assignment. See:
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -1209,6 +1232,29 @@ dagsterDaemon:
   #     subPath: test_file.yaml
   volumeMounts: []
 
+  # Additional containers that should run as sidecars to the daemon. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers
+  # For K8s versions after 1.29, prefer using extraPrependedInitContainers instead. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Example:
+  # extraContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraContainers: []
+
+  # Additional init containers that should run before to the daemon's init container, such as sidecars.
+  # For K8s versions after 1.29, see:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Extra init containers are started **before** the check-db-ready init container.
+  # 
+  # Example:
+  # extraPrependedInitContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraPrependedInitContainers: []
+
   annotations: {}
   nodeSelector: {}
   affinity: {}
@@ -1279,6 +1325,26 @@ extraManifests:
 ####################################################################################################
 migrate:
   enabled: false
+
+  # Additional containers that should be run as sidecars to the migration job. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers
+  # For K8s versions after 1.29, prefer using initContainers instead. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Example:
+  # extraContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraContainers: []
+
+  # Init containers that should run before the main job container, such as sidecars. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  # 
+  # Example:
+  # initContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  initContainers: []
 
 ####################################################################################################
 # As an open source project, we collect usage statistics to better understand how users engage

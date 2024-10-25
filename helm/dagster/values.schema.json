@@ -334,6 +334,18 @@
             "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
         },
+        "Container": {
+            "title": "Container",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+        },
+        "InitContainer": {
+            "title": "InitContainer",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+        },
         "Webserver": {
             "title": "Webserver",
             "type": "object",
@@ -527,6 +539,34 @@
                             "type": "null"
                         }
                     ]
+                },
+                "extraContainers": {
+                    "title": "Extracontainers",
+                    "items": {
+                        "$ref": "#/definitions/Container"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "extraPrependedInitContainers": {
+                    "title": "Extraprependedinitcontainers",
+                    "items": {
+                        "$ref": "#/definitions/InitContainer"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -578,12 +618,6 @@
             "type": "object",
             "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
-        },
-        "Container": {
-            "title": "Container",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
         },
         "UserDeployment": {
             "title": "UserDeployment",
@@ -2980,6 +3014,34 @@
                             "type": "null"
                         }
                     ]
+                },
+                "extraContainers": {
+                    "title": "Extracontainers",
+                    "items": {
+                        "$ref": "#/definitions/Container"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "extraPrependedInitContainers": {
+                    "title": "Extraprependedinitcontainers",
+                    "items": {
+                        "$ref": "#/definitions/InitContainer"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -3028,6 +3090,20 @@
                 "enabled": {
                     "title": "Enabled",
                     "type": "boolean"
+                },
+                "extraContainers": {
+                    "title": "Extracontainers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Container"
+                    }
+                },
+                "initContainers": {
+                    "title": "Initcontainers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Container"
+                    }
                 }
             },
             "required": [

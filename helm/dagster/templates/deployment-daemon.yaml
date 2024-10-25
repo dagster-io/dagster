@@ -49,6 +49,11 @@ spec:
       securityContext:
         {{- toYaml .Values.dagsterDaemon.podSecurityContext | nindent 8 }}
       initContainers:
+        {{- if .Values.dagsterDaemon.extraPrependedInitContainers }}
+        {{- range $container := .Values.dagsterDaemon.extraPrependedInitContainers }}
+        - {{ toYaml $container | nindent 10 | trim }}
+        {{- end }}
+        {{- end }}
         - name: check-db-ready
           image: {{ include "dagster.externalImage.name" $.Values.postgresql.image | quote }}
           imagePullPolicy: "{{- $.Values.postgresql.image.pullPolicy -}}"
@@ -136,6 +141,11 @@ spec:
           startupProbe:
             {{- toYaml $startupProbe | nindent 12 }}
           {{- end }}
+        {{- if .Values.dagsterDaemon.extraContainers }}
+        {{- range $container := .Values.dagsterDaemon.extraContainers }}
+        - {{ toYaml $container | nindent 10 | trim }}
+        {{- end }}
+        {{- end }}
       nodeSelector:
         {{- toYaml .Values.dagsterDaemon.nodeSelector | nindent 8 }}
       volumes:
