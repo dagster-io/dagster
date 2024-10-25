@@ -1,0 +1,94 @@
+---
+title: 'CI/CD in Serverless '
+displayed_sidebar: 'dagsterPlus'
+sidebar_position: 10
+---
+
+# CI/CD in Serverless
+
+If you're a GitHub or GitLab user, our GitHub and GitLab integrations will allow us to set up an automated CI/CD process for you to seamlessly deploy your code locations to Dagster+ and update them whenever you push changes to your project's repo. You can also use other Git providers or a local Git repository with our [dagster-cloud CLI](/dagster-plus/deployment/branch-deployments/dagster-cloud-cli) to run your own CI/CD process.
+
+<Tabs groupId="method">
+<TabItem value="GitHub" label="With GitHub">
+
+If you're a GitHub user, our GitHub integration is the fastest way to get started. It uses a GitHub app and GitHub Actions to set up a repo containing skeleton code and configuration consistent with Dagster+'s best practices with a single click.
+
+When you create a new Dagster+ organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitHub integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/deployment/branch-deployments) using the Serverless agent.
+
+:::note
+**If you are importing a Dagster project that's in an existing GitHub repo:**
+
+- The repo will need to allow the [Workflow permission](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository) for `Read and write permissions`. Workflow permissions settings can be found in GitHub's `Settings` > `Actions` > `General` > `Workflow permissions`. In GitHub Enterprise, these permissions [are controlled at the Organization level](https://github.com/orgs/community/discussions/57244).
+
+- An initial commit will need to be able to be merged directly to the repo's `main` branch to automatically add the GitHub Actions workflow files. If [branch protection rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#about-protected-branches) require changes be done through a pull request, it will prevent the automatic setup from completing.
+
+  - You can temporarily disable the branch protection rules and then re-enable them after the automatic setup completes. Alternatively, you can manually set up the GitHub Actions workflows. You can use our [dagster-cloud-serverless-quickstart repo](https://github.com/dagster-io/dagster-cloud-serverless-quickstart) as a template and its [README](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/README.md) as a guide.
+
+:::
+
+</TabItem>
+
+<TabItem value="GitLab" label="With GitLab">
+
+If you're a GitLab user, our GitLab integration is the fastest way to get started. It uses a GitLab app to set up a repo containing skeleton code and CI/CD configuration consistent with Dagster+'s best practices with a single click.
+
+When you create a new Dagster+ organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitLab integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/deployment/branch-deployments) using the Serverless agent.
+
+</TabItem>
+
+<TabItem value="Other" label="Other Git providers or local development">
+
+If you don't want to use our GitHub/GitLab integrations, we offer [the powerful `dagster-cloud` command-line interface (CLI)](/dagster-plus/deployment/branch-deployments/dagster-cloud-cli) that you can use in another CI environment or locally.
+
+First, [create a new project](/getting-started/quickstart) with the Dagster open source CLI.
+
+The example below uses our [quickstart_etl example project](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl). For more info about the examples, visit the [Dagster GitHub repository](https://github.com/dagster-io/dagster/tree/master/examples).
+
+```shell
+pip install dagster
+dagster project from-example \
+  --name my-dagster-project \
+  --example quickstart_etl
+```
+
+:::note
+If using a different project, ensure that `dagster-cloud` is included as a dependency in your `setup.py` or `requirements.txt` file.
+
+For example, in `my-dagster-project/setup.py`:
+
+```python
+install_requires=[
+    "dagster",
+    "dagster-cloud",    # add this line
+    ...
+]
+```
+
+:::
+
+Next, install the [`dagster-cloud` CLI](/dagster-plus/deployment/branch-deployments/dagster-cloud-cli) and use its `configure` command to authenticate it to your Dagster+ organization.
+
+**Note:** The CLI requires a recent version of Python 3 and Docker.
+
+```shell
+pip install dagster-cloud
+dagster-cloud configure
+```
+
+You can also configure the `dagster-cloud` tool noninteractively; see [the CLI docs](/dagster-plus/deployment/branch-deployments/dagster-cloud-cli) for more information.
+
+Finally, deploy your project to Dagster+ using the `serverless` command:
+
+```shell
+dagster-cloud serverless deploy-python-executable ./my-dagster-project \
+  --location-name example \
+  --package-name quickstart_etl \
+  --python-version 3.12
+```
+
+**Note:** Windows users should use the `deploy` command instead of `deploy-python-executable`.
+
+</TabItem>
+</Tabs>
+
+---
