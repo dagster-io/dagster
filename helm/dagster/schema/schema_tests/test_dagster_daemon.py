@@ -582,7 +582,9 @@ def test_scheduler_name(template: HelmTemplate):
 def test_init_container_resources(template: HelmTemplate):
     init_container_resources = {"limits": {"cpu": "200m"}, "requests": {"memory": "1Gi"}}
     helm_values = DagsterHelmValues.construct(
-        dagsterDaemon=Daemon.construct(initContainerResources=init_container_resources)
+        dagsterDaemon=Daemon.construct(
+            initContainerResources=kubernetes.Resources.parse_obj(init_container_resources)
+        )
     )
 
     [webserver_deployment] = template.render(helm_values)

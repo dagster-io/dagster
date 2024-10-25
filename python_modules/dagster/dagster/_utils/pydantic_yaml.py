@@ -50,8 +50,8 @@ def _parse_and_populate_model_with_annotated_errors(
                     {**error, "loc": [file_key_path_str + " at " + str(source_position)]}
                 )
 
-            raise ValidationError.from_exception_data(  # type: ignore
-                title=e.title,  # type: ignore
+            raise ValidationError.from_exception_data(
+                title=e.title,
                 line_errors=line_errors,
                 input_type="json",
                 hide_input=False,

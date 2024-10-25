@@ -45,6 +45,7 @@ from schema.charts.dagster.subschema.run_launcher import (
 )
 from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
+from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
 
@@ -339,7 +340,7 @@ def test_k8s_run_launcher_security_context(template: HelmTemplate):
                     envVars=[],
                     volumeMounts=[],
                     volumes=[],
-                    securityContext=sacred_rites_of_debugging,
+                    securityContext=kubernetes.SecurityContext.parse_obj(sacred_rites_of_debugging),
                 )
             ),
         )

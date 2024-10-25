@@ -18,7 +18,7 @@ setup(
     packages=find_packages(exclude=["schema_tests"]),
     install_requires=[
         "click",
-        "pydantic>=1.10.0,<2.0.0",
+        "pydantic>=2",
     ],
     extras_require={
         "test": [

@@ -235,7 +235,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             "Indicate alternative database connection engine. Permissible option is "
             "'sqlalchemy' otherwise defaults to use the Snowflake Connector for Python."
         ),
-        is_required=False,
+        is_required=False,  # type: ignore
     )
 
     cache_column_metadata: Optional[str] = Field(

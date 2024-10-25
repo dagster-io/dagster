@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import Extra
+from pydantic import ConfigDict
 
 from schema.charts.dagster.subschema.config import IntSource
 from schema.charts.utils import kubernetes
@@ -13,20 +13,14 @@ class RunCoordinatorType(str, Enum):
     CUSTOM = "CustomRunCoordinator"
 
 
-class TagConcurrencyLimitConfig(BaseModel):
+class TagConcurrencyLimitConfig(BaseModel, extra="forbid"):
     applyLimitPerUniqueValue: bool
 
-    class Config:
-        extra = Extra.forbid
 
-
-class TagConcurrencyLimit(BaseModel):
+class TagConcurrencyLimit(BaseModel, extra="forbid"):
     key: str
-    value: Optional[Union[str, TagConcurrencyLimitConfig]]
+    value: Optional[Union[str, TagConcurrencyLimitConfig]] = None
     limit: int
-
-    class Config:
-        extra = Extra.forbid
 
 
 class BlockOpConcurrencyLimitedRuns(BaseModel):
@@ -34,21 +28,18 @@ class BlockOpConcurrencyLimitedRuns(BaseModel):
     opConcurrencySlotBuffer: int
 
 
-class QueuedRunCoordinatorConfig(BaseModel):
-    maxConcurrentRuns: Optional[IntSource]
-    tagConcurrencyLimits: Optional[List[TagConcurrencyLimit]]
-    dequeueIntervalSeconds: Optional[IntSource]
-    dequeueNumWorkers: Optional[IntSource]
-    dequeueUseThreads: Optional[bool]
-    blockOpConcurrencyLimitedRuns: Optional[BlockOpConcurrencyLimitedRuns]
-
-    class Config:
-        extra = Extra.forbid
+class QueuedRunCoordinatorConfig(BaseModel, extra="forbid"):
+    maxConcurrentRuns: Optional[IntSource] = None
+    tagConcurrencyLimits: Optional[List[TagConcurrencyLimit]] = None
+    dequeueIntervalSeconds: Optional[IntSource] = None
+    dequeueNumWorkers: Optional[IntSource] = None
+    dequeueUseThreads: Optional[bool] = None
+    blockOpConcurrencyLimitedRuns: Optional[BlockOpConcurrencyLimitedRuns] = None
 
 
 class RunCoordinatorConfig(BaseModel):
-    queuedRunCoordinator: Optional[QueuedRunCoordinatorConfig]
-    customRunCoordinator: Optional[ConfigurableClass]
+    queuedRunCoordinator: Optional[QueuedRunCoordinatorConfig] = None
+    customRunCoordinator: Optional[ConfigurableClass] = None
 
 
 class RunCoordinator(BaseModel):
@@ -56,37 +47,38 @@ class RunCoordinator(BaseModel):
     type: RunCoordinatorType
     config: RunCoordinatorConfig
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "allOf": create_json_schema_conditionals(
                 {
                     RunCoordinatorType.QUEUED: "queuedRunCoordinator",
                     RunCoordinatorType.CUSTOM: "customRunCoordinator",
                 }
             )
-        }
+        },
+    )
 
 
 class Sensors(BaseModel):
     useThreads: bool
-    numWorkers: Optional[int]
-    numSubmitWorkers: Optional[int]
+    numWorkers: Optional[int] = None
+    numSubmitWorkers: Optional[int] = None
 
 
 class Schedules(BaseModel):
     useThreads: bool
-    numWorkers: Optional[int]
-    numSubmitWorkers: Optional[int]
+    numWorkers: Optional[int] = None
+    numSubmitWorkers: Optional[int] = None
 
 
 class RunRetries(BaseModel):
     enabled: bool
-    maxRetries: Optional[int]
-    retryOnAssetOrOpFailure: Optional[bool]
+    maxRetries: Optional[int] = None
+    retryOnAssetOrOpFailure: Optional[bool] = None
 
 
-class Daemon(BaseModel):
+class Daemon(BaseModel, extra="forbid"):
     enabled: bool
     image: kubernetes.Image
     runCoordinator: RunCoordinator
@@ -110,10 +102,7 @@ class Daemon(BaseModel):
     runRetries: RunRetries
     sensors: Sensors
     schedules: Schedules
-    schedulerName: Optional[str]
-    volumeMounts: Optional[List[kubernetes.VolumeMount]]
-    volumes: Optional[List[kubernetes.Volume]]
-    initContainerResources: Optional[kubernetes.Resources]
-
-    class Config:
-        extra = Extra.forbid
+    schedulerName: Optional[str] = None
+    volumeMounts: Optional[List[kubernetes.VolumeMount]] = None
+    volumes: Optional[List[kubernetes.Volume]] = None
+    initContainerResources: Optional[kubernetes.Resources] = None

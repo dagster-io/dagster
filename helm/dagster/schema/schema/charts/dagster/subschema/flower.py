@@ -16,5 +16,5 @@ class Flower(BaseModel):
     resources: kubernetes.Resources
     livenessProbe: kubernetes.LivenessProbe
     startupProbe: kubernetes.StartupProbe
-    annotations: Optional[kubernetes.Annotations]
-    schedulerName: Optional[str]
+    annotations: Optional[kubernetes.Annotations] = None
+    schedulerName: Optional[str] = None

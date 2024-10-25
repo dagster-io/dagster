@@ -495,7 +495,9 @@ def test_webserver_security_context(deployment_template: HelmTemplate):
         },
     }
     helm_values = DagsterHelmValues.construct(
-        dagsterWebserver=Webserver.construct(securityContext=security_context)
+        dagsterWebserver=Webserver.construct(
+            securityContext=kubernetes.SecurityContext.parse_obj(security_context)
+        )
     )
 
     [webserver_deployment] = deployment_template.render(helm_values)
@@ -515,7 +517,9 @@ def test_webserver_security_context(deployment_template: HelmTemplate):
 def test_init_container_resources(deployment_template: HelmTemplate):
     init_container_resources = {"limits": {"cpu": "200m"}, "requests": {"memory": "1Gi"}}
     helm_values = DagsterHelmValues.construct(
-        dagsterWebserver=Webserver.construct(initContainerResources=init_container_resources)
+        dagsterWebserver=Webserver.construct(
+            initContainerResources=kubernetes.Resources.parse_obj(init_container_resources)
+        )
     )
 
     [webserver_deployment] = deployment_template.render(helm_values)

@@ -21,7 +21,7 @@ def test_str_regex() -> None:
     try:
 
         class AStringConfig(Config):  # type: ignore
-            a_str: str = Field(regex=r"^(foo)+$")
+            a_str: str = Field(regex=r"^(foo)+$")  # type: ignore
 
     except:
 
@@ -111,7 +111,7 @@ def test_float_multiple() -> None:
 
 def test_list_length() -> None:
     class AListConfig(Config):
-        a_list: List[int] = Field(min_items=2, max_items=10)
+        a_list: List[int] = Field(min_items=2, max_items=10)  # type: ignore
 
     AListConfig(a_list=[1, 2])
     with pytest.raises(ValidationError, match=" at least 2 items"):
@@ -123,7 +123,7 @@ def test_list_length() -> None:
 @pytest.mark.skipif(USING_PYDANTIC_2, reason="Removed in pydantic 2")
 def test_list_uniqueness() -> None:
     class AListConfig(Config):
-        a_list: List[int] = Field(unique_items=True)
+        a_list: List[int] = Field(unique_items=True)  # type: ignore
 
     AListConfig(a_list=[1, 2])
     with pytest.raises(ValidationError, match="the list has duplicated items"):

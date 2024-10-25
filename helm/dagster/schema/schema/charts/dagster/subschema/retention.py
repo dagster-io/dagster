@@ -1,27 +1,21 @@
 from typing import Optional, Union
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 
 
-class TickRetentionByType(BaseModel):
+class TickRetentionByType(BaseModel, extra="forbid"):
     skipped: int
     success: int
     failure: int
     started: int
-
-    class Config:
-        extra = Extra.forbid
 
 
 class TickRetention(BaseModel):
     purgeAfterDays: Union[int, TickRetentionByType]
 
 
-class Retention(BaseModel):
+class Retention(BaseModel, extra="forbid"):
     enabled: bool
     sensor: TickRetention
     schedule: TickRetention
-    autoMaterialize: Optional[TickRetention]
-
-    class Config:
-        extra = Extra.forbid
+    autoMaterialize: Optional[TickRetention] = None
