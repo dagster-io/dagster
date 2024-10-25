@@ -1,5 +1,6 @@
+import re
 from enum import Enum
-from typing import Any, Mapping, Union
+from typing import Any, Mapping, Sequence, Union, cast
 
 from dagster import AssetCheckSpec, AssetSpec
 from dagster._record import record
@@ -29,6 +30,15 @@ class DbtCloudContentData:
     content_type: DbtCloudContentType
     properties: Mapping[str, Any]
 
+    def from_raw_gql(self, raw_data: Mapping[str, Any]) -> "DbtCloudContentData":
+        content_type = DbtCloudContentType(raw_data["resourceType"].upper())
+        return DbtCloudContentData(content_type=content_type, properties=raw_data["properties"])
+
+
+def clean_asset_name(name: str) -> str:
+    """Cleans an input to be a valid Dagster asset name."""
+    return re.sub(r"[^A-Za-z0-9_]+", "_", name)
+
 
 class DagsterDbtCloudTranslator:
     """Translator class which converts raw response data from the dbt Cloud API into AssetSpecs.
@@ -44,15 +54,35 @@ class DagsterDbtCloudTranslator:
 
     def get_model_spec(self, data: DbtCloudContentData) -> AssetSpec:
         # This is obviously a placeholder implementation
-        return AssetSpec(key=data.properties["uniqueId"])
+        return AssetSpec(key=clean_asset_name(data.properties["uniqueId"]))
 
     def get_source_spec(self, data: DbtCloudContentData) -> AssetSpec:
         # This is obviously a placeholder implementation
-        return AssetSpec(key=data.properties["uniqueId"])
+        return AssetSpec(key=clean_asset_name(data.properties["uniqueId"]))
 
     def get_test_spec(self, data: DbtCloudContentData) -> AssetCheckSpec:
-        # This is obviously a placeholder implementation
-        return AssetCheckSpec(name=data.properties["uniqueId"], asset=data.properties["uniqueId"])
+        associated_data_per_parent = []
+        for parent in data.properties["parents"]:
+            if parent["resourceType"] == "model":
+                associated_data_per_parent.append(
+                    self.environment_data.models_by_unique_id[parent["uniqueId"]]
+                )
+            elif parent["resourceType"] == "source":
+                associated_data_per_parent.append(
+                    self.environment_data.sources_by_unique_id[parent["uniqueId"]]
+                )
+            else:
+                # Macros, etc. which we don't create assets for.
+                continue
+        # Haven't actually figured out if it's possible for there to be more than one "asset-creatable" entity per test
+        parent_specs = cast(
+            Sequence[AssetSpec], [self.get_spec(data) for data in associated_data_per_parent]
+        )
+        return AssetCheckSpec(
+            name=clean_asset_name(data.properties["uniqueId"]),
+            asset=parent_specs[0].key,
+            additional_deps=[parent_spec.key for parent_spec in parent_specs[1:]],
+        )
 
     def get_spec(self, data: DbtCloudContentData) -> Union[AssetSpec, AssetCheckSpec]:
         if data.content_type == DbtCloudContentType.MODEL:
