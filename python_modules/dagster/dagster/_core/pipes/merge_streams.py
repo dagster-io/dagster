@@ -21,7 +21,7 @@ class LogItem:
     log: Any = field(compare=False)
 
 
-def _deduplicate(recent_messages: "deque[LogItem]") -> Callable[[LogItem], bool]:
+def _deduplicate(recent_messages: deque) -> Callable[[LogItem], bool]:
     def _should_drop(x: LogItem) -> bool:
         if (
             len(recent_messages) == recent_messages.maxlen

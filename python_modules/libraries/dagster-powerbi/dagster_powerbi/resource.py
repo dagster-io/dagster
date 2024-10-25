@@ -2,10 +2,9 @@ import abc
 import json
 import re
 import time
-from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Dict, Mapping, Optional, Type
+from typing import Any, Dict, Mapping, Optional, Sequence, Type
 
 import requests
 from dagster import (
