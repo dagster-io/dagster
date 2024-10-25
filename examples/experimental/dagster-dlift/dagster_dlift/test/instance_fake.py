@@ -1,4 +1,4 @@
-from typing import Any, Mapping, NamedTuple
+from typing import Any, Mapping, NamedTuple, Sequence
 
 from dagster_dlift.cloud_instance import DbtCloudInstance
 
@@ -44,3 +44,27 @@ class DbtCloudInstanceFake(DbtCloudInstance):
                 f"ExpectedDiscoveryApiRequest({query}, {variables}) not found in discovery_api_responses"
             )
         return self.discovery_api_responses[ExpectedDiscoveryApiRequest(query, variables)]
+
+
+def build_model_response(
+    unique_id: str, parents: Sequence[str], has_next_page: bool = False, start_cursor: int = 0
+) -> Mapping[str, Any]:
+    return {
+        "data": {
+            "environment": {
+                "definition": {
+                    "models": {
+                        "pageInfo": {"hasNextPage": has_next_page, "endCursor": start_cursor + 1},
+                        "edges": [
+                            {
+                                "node": {
+                                    "uniqueId": unique_id,
+                                    "parents": [{"uniqueId": parent} for parent in parents],
+                                }
+                            },
+                        ],
+                    }
+                }
+            }
+        }
+    }
