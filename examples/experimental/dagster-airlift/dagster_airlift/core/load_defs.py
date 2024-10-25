@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Iterable, Iterator, Optional
+from typing import Callable, Iterable, Iterator, Optional
 
 from dagster import (
     AssetsDefinition,
@@ -20,13 +20,16 @@ from dagster_airlift.core.sensor.sensor_builder import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     build_airflow_polling_sensor_defs,
 )
-from dagster_airlift.core.serialization.compute import compute_serialized_data
+from dagster_airlift.core.serialization.compute import DagSelectorFn, compute_serialized_data
 from dagster_airlift.core.serialization.defs_construction import (
     construct_automapped_dag_assets_defs,
     construct_dag_assets_defs,
     get_airflow_data_to_spec_mapper,
 )
-from dagster_airlift.core.serialization.serialized_data import SerializedAirflowDefinitionsData
+from dagster_airlift.core.serialization.serialized_data import (
+    DagInfo,
+    SerializedAirflowDefinitionsData,
+)
 from dagster_airlift.core.utils import get_metadata_key
 
 
@@ -35,6 +38,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
     airflow_instance: AirflowInstance
     explicit_defs: Definitions
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS
+    dag_selector_fn: Optional[Callable[[DagInfo], bool]] = None
 
     @property
     def defs_key(self) -> str:
@@ -42,7 +46,9 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
 
     def fetch_state(self) -> SerializedAirflowDefinitionsData:
         return compute_serialized_data(
-            airflow_instance=self.airflow_instance, defs=self.explicit_defs
+            airflow_instance=self.airflow_instance,
+            defs=self.explicit_defs,
+            dag_selector_fn=self.dag_selector_fn,
         )
 
     def defs_from_state(
@@ -58,10 +64,12 @@ def build_airflow_mapped_defs(
     *,
     airflow_instance: AirflowInstance,
     defs: Optional[Definitions] = None,
+    dag_selector_fn: Optional[DagSelectorFn] = None,
 ) -> Definitions:
     return AirflowInstanceDefsLoader(
         airflow_instance=airflow_instance,
         explicit_defs=defs or Definitions(),
+        dag_selector_fn=dag_selector_fn,
     ).build_defs()
 
 
@@ -72,8 +80,11 @@ def build_defs_from_airflow_instance(
     defs: Optional[Definitions] = None,
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
+    dag_selector_fn: Optional[DagSelectorFn] = None,
 ) -> Definitions:
-    mapped_defs = build_airflow_mapped_defs(airflow_instance=airflow_instance, defs=defs)
+    mapped_defs = build_airflow_mapped_defs(
+        airflow_instance=airflow_instance, defs=defs, dag_selector_fn=dag_selector_fn
+    )
     return Definitions.merge(
         mapped_defs,
         build_airflow_polling_sensor_defs(
@@ -97,7 +108,7 @@ class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[SerializedAirflowDef
 
     def fetch_state(self) -> SerializedAirflowDefinitionsData:
         return compute_serialized_data(
-            airflow_instance=self.airflow_instance, defs=self.explicit_defs
+            airflow_instance=self.airflow_instance, defs=self.explicit_defs, dag_selector_fn=None
         )
 
     def defs_from_state(

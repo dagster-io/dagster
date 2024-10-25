@@ -36,6 +36,10 @@ run_dagster_automapped:
 run_observation_defs:
 	dagster dev -m kitchen_sink.dagster_defs.observation_defs -p 3333
 
+# Command to point at a workspace.yaml
+run_dagster_multi_code_locations:
+	dagster dev -w $(MAKEFILE_DIR)/kitchen_sink/dagster_multi_code_locations/workspace.yaml -p 3333
+
 wipe: ## Wipe out all the files created by the Makefile
 	rm -rf $(AIRFLOW_HOME) $(DAGSTER_HOME)
 
