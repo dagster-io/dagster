@@ -92,6 +92,7 @@ def test_load_assets_workspace_data_refreshable_workbooks(
     get_job: MagicMock,
     refresh_workbook: MagicMock,
     cancel_job: MagicMock,
+        refresh_and_materialize_workbooks
 ) -> None:
     with instance_for_test() as instance:
         assert sign_in.call_count == 0

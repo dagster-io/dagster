@@ -14,6 +14,8 @@ from dagster import (
     ConfigurableResource,
     Definitions,
     Failure,
+    ObserveResult,
+    Output,
     _check as check,
     get_dagster_logger,
 )
@@ -100,6 +102,54 @@ class BaseTableauClient:
     ) -> requests.Response:
         """Cancels a given job."""
         return self._server.jobs.cancel(job_id)
+
+    def refresh_and_materialize_workbooks(
+        self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Optional[Sequence[str]]
+    ):
+        """Refreshes workbooks for the given workbook IDs and materializes workbook views given the asset specs."""
+        refreshed_workbooks = set()
+        for refreshable_workbook_id in refreshable_workbook_ids or []:
+            refreshed_workbooks.add(self.refresh_and_poll(refreshable_workbook_id))
+        for spec in specs:
+            view_id = check.inst(spec.metadata.get("id"), str)
+            data = self.get_view(view_id)
+            asset_key = spec.key
+            if (
+                spec.metadata.get("workbook_id")
+                and spec.metadata.get("workbook_id") in refreshed_workbooks
+            ):
+                yield Output(
+                    value=None,
+                    output_name="__".join(asset_key.path),
+                    metadata={
+                        "workbook_id": data.workbook_id,
+                        "owner_id": data.owner_id,
+                        "name": data.name,
+                        "contentUrl": data.content_url,
+                        "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+                        if data.created_at
+                        else None,
+                        "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S")
+                        if data.updated_at
+                        else None,
+                    },
+                )
+            else:
+                yield ObserveResult(
+                    asset_key=asset_key,
+                    metadata={
+                        "workbook_id": data.workbook_id,
+                        "owner_id": data.owner_id,
+                        "name": data.name,
+                        "contentUrl": data.content_url,
+                        "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+                        if data.created_at
+                        else None,
+                        "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S")
+                        if data.updated_at
+                        else None,
+                    },
+                )
 
     def refresh_workbook(self, workbook_id) -> TSC.JobItem:
         """Refreshes all extracts for a given workbook and return the JobItem object."""
