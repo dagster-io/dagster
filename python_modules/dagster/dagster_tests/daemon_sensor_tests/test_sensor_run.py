@@ -792,7 +792,7 @@ def auto_materialize_asset():
 
 auto_materialize_sensor = AutomationConditionSensorDefinition(
     "my_auto_materialize_sensor",
-    asset_selection=[auto_materialize_asset],
+    target=[auto_materialize_asset],
 )
 
 

@@ -6,7 +6,7 @@ def get_defs() -> dg.Definitions:
 
     return dg.Definitions(
         assets=uc_defs.assets,
-        sensors=[dg.AutomationConditionSensorDefinition(name="the_sensor", asset_selection="*")],
+        sensors=[dg.AutomationConditionSensorDefinition(name="the_sensor", target="*")],
     )
 
 

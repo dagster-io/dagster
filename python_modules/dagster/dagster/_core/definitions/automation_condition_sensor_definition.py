@@ -81,8 +81,8 @@ class AutomationConditionSensorDefinition(SensorDefinition):
 
     Args:
         name: The name of the sensor.
-        asset_selection (Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]):
-            The assets to evaluate AutomationConditions of and request runs for.
+        target (Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]):
+            A selection of assets to evaluate AutomationConditions of and request runs for.
         tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
             be used for searching and filtering in the UI.
         run_tags (Optional[Mapping[str, Any]]): Tags that will be automatically attached to runs launched by this sensor.
@@ -110,7 +110,7 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         self,
         name: str,
         *,
-        asset_selection: CoercibleToAssetSelection,
+        target: CoercibleToAssetSelection,
         tags: Optional[Mapping[str, str]] = None,
         run_tags: Optional[Mapping[str, Any]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
@@ -149,7 +149,7 @@ class AutomationConditionSensorDefinition(SensorDefinition):
             jobs=None,
             default_status=default_status,
             required_resource_keys=None,
-            asset_selection=asset_selection,
+            asset_selection=target,
             tags=tags,
             metadata=metadata,
         )
