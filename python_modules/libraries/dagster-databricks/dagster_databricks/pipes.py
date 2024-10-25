@@ -187,7 +187,10 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
         return PipesClientCompletedInvocation(pipes_session)
 
     def _enrich_submit_task_dict(
-        self, context: OpExecutionContext, session: PipesSession, submit_task_dict: Dict[str, Any]
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        session: PipesSession,
+        submit_task_dict: Dict[str, Any],
     ) -> Dict[str, Any]:
         if "existing_cluster_id" in submit_task_dict:
             # we can't set env vars on an existing cluster

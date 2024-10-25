@@ -94,7 +94,7 @@ class PipesSubprocessClient(PipesClient, TreatAsResourceParam):
 
         Args:
             command (Union[str, Sequence[str]]): The command to run. Will be passed to `subprocess.Popen()`.
-            context (OpExecutionContext): The context from the executing op or asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context from the executing op or asset.
             extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the subprocess.
             env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the subprocess.
             cwd (Optional[str]): Working directory in which to launch the subprocess command.

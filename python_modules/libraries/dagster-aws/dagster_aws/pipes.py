@@ -228,7 +228,7 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
         Args:
             function_name (str): The name of the function to use.
             event (Mapping[str, Any]): A JSON serializable object to pass as input to the lambda.
-            context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context of the currently executing Dagster op or asset.
 
         Returns:
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
@@ -330,7 +330,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
 
         Args:
             job_name (str): The name of the job to use.
-            context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context of the currently executing Dagster op or asset.
             extras (Optional[Dict[str, Any]]): Additional Dagster metadata to pass to the Glue job.
             arguments (Optional[Dict[str, str]]): Arguments to pass to the Glue job Command
             job_run_id (Optional[str]): The ID of the previous job run to retry.
