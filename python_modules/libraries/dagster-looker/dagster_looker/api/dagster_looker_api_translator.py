@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, Mapping, Optional, Union
+from typing import Any, Dict, Mapping, Optional, Type, Union
 
 from dagster import (
     AssetSpec,
@@ -12,6 +12,16 @@ from looker_sdk.sdk.api40.methods import Looker40SDK
 from looker_sdk.sdk.api40.models import Dashboard, DashboardFilter, LookmlModelExplore
 
 logger = get_dagster_logger("dagster_looker")
+
+
+def _safe_deserialize(sdk: Looker40SDK, data: Any, structure: Type) -> Any:
+    try:
+        return sdk.deserialize(data=data, structure=structure)  # type: ignore
+    except Exception as e:
+        logger.warning(
+            f"Failed to deserialize Looker {structure.__name__} from data: {data}. Error: {e}"
+        )
+        return None
 
 
 @record
@@ -37,17 +47,22 @@ class LookerInstanceData:
     def from_state(sdk: Looker40SDK, state: Mapping[str, Any]) -> "LookerInstanceData":
         explores_by_id = {
             explore_id: (
-                sdk.deserialize(data=serialized_lookml_explore, structure=LookmlModelExplore)  # type: ignore
+                _safe_deserialize(sdk, data=serialized_lookml_explore, structure=LookmlModelExplore)
             )
             for explore_id, serialized_lookml_explore in state["explores_by_id"].items()
         }
 
         dashboards_by_id = {
-            dashboard_id: (sdk.deserialize(data=serialized_looker_dashboard, structure=Dashboard))  # type: ignore
+            dashboard_id: (
+                _safe_deserialize(sdk, data=serialized_looker_dashboard, structure=Dashboard)
+            )
             for dashboard_id, serialized_looker_dashboard in state["dashboards_by_id"].items()
         }
 
-        return LookerInstanceData(explores_by_id=explores_by_id, dashboards_by_id=dashboards_by_id)
+        return LookerInstanceData(
+            explores_by_id={k: v for k, v in explores_by_id.items() if v is not None},
+            dashboards_by_id={k: v for k, v in dashboards_by_id.items() if v is not None},
+        )
 
 
 @record
