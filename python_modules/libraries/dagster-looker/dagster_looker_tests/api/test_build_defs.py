@@ -8,7 +8,7 @@ from dagster_looker.api.assets import build_looker_pdt_assets_definitions
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
     LookerStructureData,
-    RequestStartPdtBuild,
+    PdtBuildDefinition,
 )
 from dagster_looker.api.resource import LookerResource, load_looker_asset_specs
 
@@ -146,7 +146,7 @@ def test_build_defs_with_pdts(
 
     pdts = build_looker_pdt_assets_definitions(
         resource_key=resource_key,
-        request_start_pdt_builds=[RequestStartPdtBuild(model_name="my_model", view_name="my_view")],
+        pdt_build_definitions=[PdtBuildDefinition(model_name="my_model", view_name="my_view")],
     )
 
     defs = Definitions(

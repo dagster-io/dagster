@@ -23,6 +23,7 @@ from dagster_looker.api.dagster_looker_api_translator import (
     LookerInstanceData,
     LookerStructureData,
     LookerStructureType,
+    PdtBuildDefinition,
     RequestStartPdtBuild,
 )
 
@@ -114,7 +115,8 @@ class LookerResource(ConfigurableResource):
 
         pdts = build_looker_pdt_assets_definitions(
             resource_key=resource_key,
-            request_start_pdt_builds=request_start_pdt_builds or [],
+            pdt_build_definitions=cast(Sequence[PdtBuildDefinition], request_start_pdt_builds)
+            or [],
             dagster_looker_translator=translator_cls,
         )
 
