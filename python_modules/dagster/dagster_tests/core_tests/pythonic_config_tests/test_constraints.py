@@ -2,7 +2,6 @@ from typing import List
 
 import pytest
 from dagster._config.pythonic_config import Config
-from dagster._model.pydantic_compat_layer import USING_PYDANTIC_2
 from pydantic import Field, ValidationError, conlist, constr
 
 
@@ -118,18 +117,6 @@ def test_list_length() -> None:
         AListConfig(a_list=[1])
     with pytest.raises(ValidationError, match=" at most 10 items"):
         AListConfig(a_list=[1] * 11)
-
-
-@pytest.mark.skipif(USING_PYDANTIC_2, reason="Removed in pydantic 2")
-def test_list_uniqueness() -> None:
-    class AListConfig(Config):
-        a_list: List[int] = Field(unique_items=True)  # type: ignore
-
-    AListConfig(a_list=[1, 2])
-    with pytest.raises(ValidationError, match="the list has duplicated items"):
-        AListConfig(a_list=[1, 1])
-    with pytest.raises(ValidationError, match="the list has duplicated items"):
-        AListConfig(a_list=[1, 2, 1])
 
 
 def test_with_constr() -> None:
