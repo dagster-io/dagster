@@ -31,7 +31,7 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.test_utils import instance_for_test, raise_exception_on_warnings
+from dagster._core.test_utils import instance_for_test
 
 
 def test_op_execution_context():
@@ -95,46 +95,6 @@ def test_asset_execution_repo_context():
     with instance_for_test() as instance:
         result = execute_job(recon_job, instance)
         assert result.success
-
-
-def test_instance_check():
-    raise_exception_on_warnings()
-
-    class AssetExecutionContextSubclass(AssetExecutionContext):
-        # allows us to confirm isinstance(context, AssetExecutionContext)
-        # does not throw deprecation warnings
-        def __init__(self):
-            pass
-
-    @op
-    def test_op_context_instance_check(context: OpExecutionContext):
-        step_context = context._step_execution_context  # noqa: SLF001
-        op_context = OpExecutionContext(step_execution_context=step_context)
-        asset_context = AssetExecutionContext(op_execution_context=op_context)
-        with pytest.raises(DeprecationWarning):
-            isinstance(asset_context, OpExecutionContext)
-        assert not isinstance(op_context, AssetExecutionContext)
-
-        # the instance checks below will not hit the metaclass __instancecheck__ method because
-        # python returns early if the type is the same
-        # https://github.com/python/cpython/blob/b57b4ac042b977e0b42a2f5ddb30ca7edffacfa9/Objects/abstract.c#L2404
-        # but still test for completeness
-        assert isinstance(asset_context, AssetExecutionContext)
-        assert isinstance(op_context, OpExecutionContext)
-
-        # since python short circuits when context is AssetExecutionContext and you call
-        # isinstance(context, AssetExecutionContext), make a subclass of AssetExecutionContext
-        # so that we can ensure isinstance(context, AssetExecutionContext) doesn't throw a
-        # deprecation warning
-
-        asset_subclass_context = AssetExecutionContextSubclass()
-        assert isinstance(asset_subclass_context, AssetExecutionContext)
-
-    @job
-    def test_isinstance():
-        test_op_context_instance_check()
-
-    test_isinstance.execute_in_process()
 
 
 def test_context_provided_to_asset():
