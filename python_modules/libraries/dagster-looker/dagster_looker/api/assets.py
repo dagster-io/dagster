@@ -95,6 +95,16 @@ def build_dashboard_notification_assets_definition(
     asset_spec: AssetSpec,
     destination: ScheduledPlanDestination,
 ) -> AssetsDefinition:
+    """Bulds an AssetsDefinition for a Looker dashboard which, when materialized, will refresh the
+    dashboard and send out a notification specified by the passed ScheduledPlanDestination.
+
+    Args:
+        resource_key (str): The resource key to use for the Looker resource.
+        asset_spec (AssetSpec): The asset spec for the Looker dashboard.
+        destination (ScheduledPlanDestination): The destination to send the notification to.
+            See https://cloud.google.com/looker/docs/reference/looker-api/latest/types/ScheduledPlanDestination
+    for documentation on all available fields.
+    """
     looker_data = DagsterLookerMetadataSet.extract(asset_spec.metadata)
 
     @multi_asset(
