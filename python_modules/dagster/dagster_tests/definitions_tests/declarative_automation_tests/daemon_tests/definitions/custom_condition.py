@@ -21,8 +21,6 @@ def foo() -> None: ...
 defs = dg.Definitions(
     assets=[foo],
     sensors=[
-        dg.AutomationConditionSensorDefinition(
-            "the_sensor", asset_selection="*", use_user_code_server=True
-        )
+        dg.AutomationConditionSensorDefinition("the_sensor", target="*", use_user_code_server=True)
     ],
 )

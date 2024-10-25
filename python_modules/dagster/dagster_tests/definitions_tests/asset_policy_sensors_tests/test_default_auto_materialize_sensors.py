@@ -173,7 +173,7 @@ def test_opt_out_default_auto_materialize_sensors(instance_without_auto_material
 def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_materialize_sensors):
     auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_custom_policy_sensor",
-        asset_selection=[auto_materialize_asset, auto_observe_asset],
+        target=[auto_materialize_asset, auto_observe_asset],
     )
 
     defs_with_auto_materialize_sensor = Definitions(
@@ -237,7 +237,7 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
 def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
     auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_custom_policy_sensor",
-        asset_selection=[
+        target=[
             auto_materialize_asset,
             auto_observe_asset,
             other_auto_materialize_asset,
