@@ -1,7 +1,7 @@
 import re
 import urllib.parse
 from enum import Enum
-from typing import Any, Dict, Literal, Optional, Sequence
+from typing import Any, Dict, List, Literal, Optional, Sequence
 
 from dagster import (
     UrlMetadataValue,
@@ -29,6 +29,31 @@ def _remove_file_ext(name: str) -> str:
 def _clean_asset_name(name: str) -> str:
     """Cleans an input to be a valid Dagster asset name."""
     return re.sub(r"[^A-Za-z0-9_]+", "_", name)
+
+
+# regex to find objects of form
+# [Name="ANALYTICS",Kind="Schema"]
+PARSE_M_QUERY_OBJECT = re.compile(r'\[Name="(?P<name>[^"]+)",Kind="(?P<kind>[^"]+)"\]')
+
+
+def _attempt_parse_m_query_source(sources: List[Dict[str, Any]]) -> Optional[AssetKey]:
+    for source in sources:
+        if "expression" in source:
+            if "Snowflake.Databases" in source["expression"]:
+                objects = PARSE_M_QUERY_OBJECT.findall(source["expression"])
+                objects_by_kind = {obj[1]: obj[0].lower() for obj in objects}
+
+                if "Schema" in objects_by_kind and "Table" in objects_by_kind:
+                    if "Database" in objects_by_kind:
+                        return AssetKey(
+                            [
+                                objects_by_kind["Database"],
+                                objects_by_kind["Schema"],
+                                objects_by_kind["Table"],
+                            ]
+                        )
+                    else:
+                        return AssetKey([objects_by_kind["Schema"], objects_by_kind["Table"]])
 
 
 @whitelist_for_serdes
@@ -159,7 +184,7 @@ class DagsterPowerBITranslator:
             deps=report_keys,
             metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
             tags={**PowerBITagSet(asset_type="dashboard")},
-            kinds={"powerbi"},
+            kinds={"powerbi", "dashboard"},
         )
 
     def get_report_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -176,7 +201,7 @@ class DagsterPowerBITranslator:
             deps=[dataset_key] if dataset_key else None,
             metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
             tags={**PowerBITagSet(asset_type="report")},
-            kinds={"powerbi"},
+            kinds={"powerbi", "notebook"},
         )
 
     def get_semantic_model_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -190,6 +215,12 @@ class DagsterPowerBITranslator:
         ]
         url = data.properties.get("webUrl")
 
+        for table in data.properties.get("tables", []):
+            source = table.get("source")
+            source_key = _attempt_parse_m_query_source(source)
+            if source_key:
+                source_keys.append(source_key)
+
         return AssetSpec(
             key=self.get_semantic_model_asset_key(data),
             deps=source_keys,
@@ -199,7 +230,7 @@ class DagsterPowerBITranslator:
                 )
             },
             tags={**PowerBITagSet(asset_type="semantic_model")},
-            kinds={"powerbi"},
+            kinds={"powerbi", "view"},
         )
 
     def get_data_source_asset_key(self, data: PowerBIContentData) -> AssetKey:
