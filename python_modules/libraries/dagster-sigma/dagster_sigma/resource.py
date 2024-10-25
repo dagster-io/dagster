@@ -3,10 +3,21 @@ import contextlib
 import urllib.parse
 import warnings
 from collections import defaultdict
-from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import AbstractSet, Any, Callable, Dict, Iterator, List, Mapping, Optional, Type, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
 
 import aiohttp
 import dagster._check as check
