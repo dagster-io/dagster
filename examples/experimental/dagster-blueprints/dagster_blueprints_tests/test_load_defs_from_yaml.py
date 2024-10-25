@@ -11,7 +11,6 @@ from dagster._core.definitions.metadata.source_code import (
     LocalFileCodeReference,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1, USING_PYDANTIC_2
 from dagster_blueprints.blueprint import Blueprint, DagsterBuildDefinitionsFromConfigError
 from dagster_blueprints.load_from_yaml import YamlBlueprintsLoader, load_defs_from_yaml
 from pydantic import ValidationError
@@ -146,8 +145,7 @@ def test_model_validation_error() -> None:
     class DifferentFieldsAssetBlueprint(Blueprint):
         keykey: str
 
-    match = "" if USING_PYDANTIC_1 else "yaml_files/single_blueprint.yaml"
-    with pytest.raises(ValidationError, match=match):
+    with pytest.raises(ValidationError, match="yaml_files/single_blueprint.yaml"):
         load_defs_from_yaml(
             path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
             per_file_blueprint_type=DifferentFieldsAssetBlueprint,
@@ -259,18 +257,7 @@ def test_yaml_blueprints_loader_additional_resources() -> None:
     assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
 
 
-@pytest.mark.parametrize(
-    "pydantic_version",
-    [
-        pytest.param(
-            1, id="pydantic1", marks=pytest.mark.skipif(USING_PYDANTIC_2, reason="Pydantic >= 2.0")
-        ),
-        pytest.param(
-            2, id="pydantic2", marks=pytest.mark.skipif(USING_PYDANTIC_1, reason="Pydantic < 2.0")
-        ),
-    ],
-)
-def test_loader_schema(snapshot, pydantic_version: int) -> None:
+def test_loader_schema(snapshot) -> None:
     class SimpleAssetBlueprint(Blueprint):
         key: str
 
@@ -279,8 +266,6 @@ def test_loader_schema(snapshot, pydantic_version: int) -> None:
     model_schema = loader.model_json_schema()
     snapshot.assert_match(model_schema)
 
-    # Pydantic 1 JSON schema has the blueprint as a definition rather than a top-level object
-    # Pydantic 2 JSON schema has the blueprint as a top-level object
     if model_schema["title"] == "ParsingModel[SimpleAssetBlueprint]":
         assert model_schema["$ref"] == "#/definitions/SimpleAssetBlueprint"
         model_schema = model_schema["definitions"]["SimpleAssetBlueprint"]
@@ -291,18 +276,7 @@ def test_loader_schema(snapshot, pydantic_version: int) -> None:
     assert set(model_keys) == {"key"}
 
 
-@pytest.mark.parametrize(
-    "pydantic_version",
-    [
-        pytest.param(
-            1, id="pydantic1", marks=pytest.mark.skipif(USING_PYDANTIC_2, reason="Pydantic >= 2.0")
-        ),
-        pytest.param(
-            2, id="pydantic2", marks=pytest.mark.skipif(USING_PYDANTIC_1, reason="Pydantic < 2.0")
-        ),
-    ],
-)
-def test_loader_schema_sequence(snapshot, pydantic_version: int) -> None:
+def test_loader_schema_sequence(snapshot) -> None:
     class SimpleAssetBlueprint(Blueprint):
         key: str
 
@@ -316,18 +290,7 @@ def test_loader_schema_sequence(snapshot, pydantic_version: int) -> None:
     assert model_schema["type"] == "array"
 
 
-@pytest.mark.parametrize(
-    "pydantic_version",
-    [
-        pytest.param(
-            1, id="pydantic1", marks=pytest.mark.skipif(USING_PYDANTIC_2, reason="Pydantic >= 2.0")
-        ),
-        pytest.param(
-            2, id="pydantic2", marks=pytest.mark.skipif(USING_PYDANTIC_1, reason="Pydantic < 2.0")
-        ),
-    ],
-)
-def test_loader_schema_union(snapshot, pydantic_version: int) -> None:
+def test_loader_schema_union(snapshot) -> None:
     class FooAssetBlueprint(Blueprint):
         type: Literal["foo"] = "foo"
         number: int
