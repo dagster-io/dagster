@@ -2,7 +2,7 @@ import copy
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
+from typing import Any, Dict, List, Set
 
 import pytest
 from botocore.exceptions import ClientError
@@ -998,9 +998,9 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, remote_job):
     ],
 )
 def test_propagate_tags_include_all(
-    run_tags: dict[str, str],
-    expected_ecs_tag_keys: set[str],
-    allow_list: list[str],
+    run_tags: Dict[str, str],
+    expected_ecs_tag_keys: Set[str],
+    allow_list: List[str],
     instance_cm,
     workspace,
     job,
@@ -1044,7 +1044,7 @@ def test_propagate_tags_args_validated(
     workspace,
     job,
     external_job,
-    propagate_tags: dict[str, Any],
+    propagate_tags: Dict[str, Any],
 ):
     with pytest.raises(CheckError):
         with instance_cm(
