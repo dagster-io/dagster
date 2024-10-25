@@ -45,5 +45,10 @@ setup(
         "python-liquid",
         "cattrs<23.2",  # https://github.com/looker-open-source/sdk-codegen/issues/1410
     ],
+    entry_points={
+        "console_scripts": [
+            "dagster-looker = dagster_looker.api.cli:app",
+        ]
+    },
     zip_safe=False,
 )

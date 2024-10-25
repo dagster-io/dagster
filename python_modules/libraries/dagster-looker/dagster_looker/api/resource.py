@@ -1,6 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Tuple, cast
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, Type, Union, cast
 
 from dagster import (
     AssetExecutionContext,
@@ -11,9 +13,13 @@ from dagster import (
     _check as check,
     multi_asset,
 )
+import os
 from dagster._annotations import experimental, public
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
+from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
+from dagster._serdes.serdes import deserialize_value
 from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
 from looker_sdk import init40
@@ -31,6 +37,7 @@ from dagster_looker.api.dagster_looker_api_translator import (
 )
 
 from looker_sdk.rtl.transport import TransportOptions
+from syrupy import snapshot
 if TYPE_CHECKING:
     from looker_sdk.sdk.api40.models import Folder, LookmlModelExplore
 
@@ -81,6 +88,7 @@ class LookerResource(ConfigurableResource):
         request_start_pdt_builds: Optional[Sequence[RequestStartPdtBuild]] = None,
         dagster_looker_translator: Optional[DagsterLookerApiTranslator] = None,
         looker_filter: Optional[LookerFilter] = None,
+        snapshot_path: Optional[Union[str, Path]] = None,
     ) -> Definitions:
         """Returns a Definitions object which will load structures from the Looker instance
         and translate it into assets, using the provided translator.
@@ -95,14 +103,21 @@ class LookerResource(ConfigurableResource):
         Returns:
             Definitions: A Definitions object which will contain return the Looker structures as assets.
         """
+
+        snapshot=None
+        if snapshot_path and not os.getenv("DAGSTER_LOOKER_IS_GENERATING_SNAPSHOT"):
+            snapshot = deserialize_value(Path(snapshot_path).read_text(), RepositoryLoadData)
+
         return LookerApiDefsLoader(
             looker_resource=self,
-            translator=dagster_looker_translator
-            if dagster_looker_translator is not None
-            else DagsterLookerApiTranslator(),
+
             request_start_pdt_builds=request_start_pdt_builds or [],
+            translator=dagster_looker_translator if dagster_looker_translator is not None
+            else DagsterLookerApiTranslator(),
             looker_filter=looker_filter or LookerFilter(),
+            snapshot=snapshot
         ).build_defs()
+
 
 
 def build_folder_path(folder_id_to_folder: Dict[str, "Folder"], folder_id: str) -> List[str]:
@@ -113,19 +128,21 @@ def build_folder_path(folder_id_to_folder: Dict[str, "Folder"], folder_id: str) 
         curr = folder_id_to_folder[curr].parent_id
     return result
 
-
 @dataclass(frozen=True)
 class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     looker_resource: LookerResource
-    translator: DagsterLookerApiTranslator
-    request_start_pdt_builds: Sequence[RequestStartPdtBuild]
     looker_filter: LookerFilter
+    translator: DagsterLookerApiTranslator
+    snapshot: Optional[RepositoryLoadData]
+    request_start_pdt_builds: Optional[Sequence[RequestStartPdtBuild]]
 
     @property
     def defs_key(self) -> str:
         return f"{LOOKER_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.looker_resource.client_id}"
 
     def fetch_state(self) -> Mapping[str, Any]:
+        if self.snapshot and self.defs_key in self.snapshot.reconstruction_metadata:
+            return deserialize_value(self.snapshot.reconstruction_metadata[self.defs_key]) # type: ignore
         looker_instance_data = self.fetch_looker_instance_data()
         return looker_instance_data.to_state(self.looker_resource.get_sdk())
 
