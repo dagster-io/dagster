@@ -19,6 +19,7 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
     PipesClientCompletedInvocation,
@@ -101,7 +102,7 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
     @contextmanager
     def async_consume_pod_logs(
         self,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         core_api: kubernetes.client.CoreV1Api,
         pod_name: str,
         namespace: str,
@@ -109,7 +110,7 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
         """Consume all logs from all containers within the pod.
 
         Args:
-            context (OpExecutionContext): The execution context.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The execution context.
             core_api: The k8s core API.
             pod_name: The pod to collect logs from.
             namespace: The namespace to collect logs from.
@@ -361,7 +362,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
     def run(
         self,
         *,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         extras: Optional[PipesExtras] = None,
         image: Optional[str] = None,
         command: Optional[Union[str, Sequence[str]]] = None,
@@ -375,7 +376,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
         """Publish a kubernetes pod and wait for it to complete, enriched with the pipes protocol.
 
         Args:
-            context (OpExecutionContext):
+            context (Union[OpExecutionContext, AssetExecutionContext]):
                 The execution context.
             image (Optional[str]):
                 The image to set the first container in the pod spec to use.
@@ -461,7 +462,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
     @contextmanager
     def consume_pod_logs(
         self,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         client: DagsterKubernetesClient,
         namespace: str,
         pod_name: str,
@@ -472,7 +473,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
         This will be a no-op if the message_reader is of the wrong type.
 
         Args:
-            context (OpExecutionContext): The execution context.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The execution context.
             client (kubernetes.client): _description_
             namespace (str): The namespace the pod lives in
             pod_name (str): The name of the Pipes Pod
