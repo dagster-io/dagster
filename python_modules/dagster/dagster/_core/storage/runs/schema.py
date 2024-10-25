@@ -76,6 +76,19 @@ RunTagsTable = db.Table(
     db.Column("value", db.Text),
 )
 
+RunAssetsTable = db.Table(
+    "run_assets",
+    RunStorageSqlMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("run_id", None, db.ForeignKey("runs.run_id", ondelete="CASCADE")),
+    db.Column("asset_key", db.Text),
+)
+
 SnapshotsTable = db.Table(
     "snapshots",
     RunStorageSqlMetadata,
@@ -150,6 +163,13 @@ KeyValueStoreTable = db.Table(
 db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value, mysql_length=64)
 db.Index(
     "idx_run_tags_run_idx", RunTagsTable.c.run_id, RunTagsTable.c.id, mysql_length={"run_id": 255}
+)
+db.Index("idx_run_assets", RunAssetsTable.c.asset_key, mysql_length=64)
+db.Index(
+    "idx_run_assets_run_idx",
+    RunAssetsTable.c.run_id,
+    RunAssetsTable.c.id,
+    mysql_length={"run_id": 255},
 )
 db.Index("idx_run_partitions", RunsTable.c.partition_set, RunsTable.c.partition, mysql_length=64)
 db.Index(

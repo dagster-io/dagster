@@ -535,6 +535,7 @@ class RunsFilter(IHaveNew):
     job_name: Optional[str]
     statuses: Sequence[DagsterRunStatus]
     tags: Mapping[str, Union[str, Sequence[str]]]
+    assets: Optional[Sequence[str]]
     snapshot_id: Optional[str]
     updated_after: Optional[datetime]
     updated_before: Optional[datetime]
@@ -549,6 +550,7 @@ class RunsFilter(IHaveNew):
         job_name: Optional[str] = None,
         statuses: Optional[Sequence[DagsterRunStatus]] = None,
         tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
+        assets: Optional[Sequence[str]] = None,
         snapshot_id: Optional[str] = None,
         updated_after: Optional[datetime] = None,
         updated_before: Optional[datetime] = None,
@@ -564,6 +566,7 @@ class RunsFilter(IHaveNew):
             job_name=job_name,
             statuses=statuses or [],
             tags=tags or {},
+            assets=assets or [],
             snapshot_id=snapshot_id,
             updated_after=updated_after,
             updated_before=updated_before,

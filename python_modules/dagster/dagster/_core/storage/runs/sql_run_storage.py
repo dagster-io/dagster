@@ -67,6 +67,7 @@ from dagster._core.storage.runs.schema import (
     DaemonHeartbeatsTable,
     InstanceInfo,
     KeyValueStoreTable,
+    RunAssetsTable,
     RunsTable,
     RunTagsTable,
     SecondaryIndexMigrationTable,
@@ -161,6 +162,17 @@ class SqlRunStorage(RunStorage):
                         for k, v in tags_to_insert.items()
                     ],
                 )
+            if dagster_run.job_snapshot_id:
+                job_snapshot = self.get_job_snapshot(dagster_run.job_snapshot_id)
+
+                if job_snapshot.lineage_snapshot and job_snapshot.lineage_snapshot.asset_selection:
+                    conn.execute(
+                        RunAssetsTable.insert(),
+                        [
+                            dict(run_id=dagster_run.run_id, asset_key=asset_key.to_string())
+                            for asset_key in job_snapshot.lineage_snapshot.asset_selection
+                        ],
+                    )
 
         return dagster_run
 
@@ -258,6 +270,9 @@ class SqlRunStorage(RunStorage):
         if filters.tags:
             table = self._apply_tags_table_filters(table, filters.tags)
 
+        if filters.assets:
+            table = self._apply_assets_table_filters(table, filters.assets)
+
         return table
 
     def _add_filters_to_query(self, query: SqlAlchemyQuery, filters: RunsFilter) -> SqlAlchemyQuery:
@@ -347,6 +362,23 @@ class SqlRunStorage(RunStorage):
                     (run_tags_alias.c.value == value)
                     if isinstance(value, str)
                     else run_tags_alias.c.value.in_(value),
+                ),
+            )
+
+        return table
+
+    def _apply_assets_table_filters(
+        self, table: db.Table, assets: Sequence[str]
+    ) -> SqlAlchemyQuery:
+        """Efficient query pattern for filtering by multiple assets."""
+        for i, asset in enumerate(assets):
+            run_assets_alias = db.alias(RunAssetsTable, f"run_assets_filter{i}")
+
+            table = table.join(
+                run_assets_alias,
+                db.and_(
+                    RunsTable.c.run_id == run_assets_alias.c.run_id,
+                    run_assets_alias.c.asset_key == asset,
                 ),
             )
 
