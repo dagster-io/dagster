@@ -39,6 +39,6 @@ def airflow_home_fixture(local_env: None) -> Path:
 @pytest.fixture(name="airflow_instance")
 def airflow_instance_fixture(local_env: None) -> Generator[subprocess.Popen, None, None]:
     with stand_up_airflow(
-        airflow_cmd=["make", "run_airflow"], env=os.environ, cwd=makefile_dir()
+        airflow_cmd=["make", "run_migrating_airflow"], env=os.environ, cwd=makefile_dir()
     ) as process:
         yield process
