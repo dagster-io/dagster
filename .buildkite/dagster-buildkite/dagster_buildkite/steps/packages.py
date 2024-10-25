@@ -394,6 +394,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         name=":dbt: :sink: Dbt Cloud-Lift Kitchen Sink",
         env_vars=[
             "KS_DBT_CLOUD_ACCOUNT_ID",
+            "KS_DBT_CLOUD_PROJECT_ID",
             "KS_DBT_CLOUD_TOKEN",
             "KS_DBT_CLOUD_ACCESS_URL",
             "KS_DBT_CLOUD_DISCOVERY_API_URL",

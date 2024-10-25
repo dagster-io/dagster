@@ -5,6 +5,7 @@ from dagster import AssetCheckSpec, AssetSpec
 
 from dagster_dlift.client import DbtCloudClient
 from dagster_dlift.compute import compute_environment_data
+from dagster_dlift.env_client import DbtCloudEnvClient
 from dagster_dlift.translator import DagsterDbtCloudTranslator, DbtCloudProjectEnvironmentData
 
 
@@ -29,7 +30,7 @@ class DBTCloudProjectEnvironment:
         return f"{self.project_id}-{self.environment_id}"
 
     @cached_property
-    def client(self) -> DbtCloudClient:
+    def _unscoped_client(self) -> DbtCloudClient:
         return DbtCloudClient(
             account_id=self.credentials.account_id,
             token=self.credentials.token,
@@ -37,17 +38,32 @@ class DBTCloudProjectEnvironment:
             discovery_api_url=self.credentials.discovery_api_url,
         )
 
+    def get_client(
+        self, translator_cls: Type[DagsterDbtCloudTranslator] = DagsterDbtCloudTranslator
+    ) -> DbtCloudEnvClient:
+        env_data = self.get_or_compute_data()
+        return DbtCloudEnvClient(
+            dbt_client=self._unscoped_client,
+            env_data=env_data,
+            translator=translator_cls(context=env_data),
+        )
+
     def compute_data(self) -> "DbtCloudProjectEnvironmentData":
         return compute_environment_data(
-            project_id=self.project_id, environment_id=self.environment_id, client=self.client
+            project_id=self.project_id,
+            environment_id=self.environment_id,
+            client=self._unscoped_client,
         )
+
+    def get_or_compute_data(self) -> "DbtCloudProjectEnvironmentData":
+        from dagster_dlift.loader import DbtCloudProjectEnvironmentDefsLoader
+
+        return DbtCloudProjectEnvironmentDefsLoader(project_environment=self).get_or_fetch_state()
 
     def get_specs(
         self, translator_cls: Type[DagsterDbtCloudTranslator]
     ) -> Sequence[Union[AssetSpec, AssetCheckSpec]]:
-        from dagster_dlift.loader import DbtCloudProjectEnvironmentDefsLoader
-
-        data = DbtCloudProjectEnvironmentDefsLoader(project_environment=self).get_or_fetch_state()
+        data = self.get_or_compute_data()
         translator = translator_cls(context=data)
         all_external_data = [
             *data.models_by_unique_id.values(),
