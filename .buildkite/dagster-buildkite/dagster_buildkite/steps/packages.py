@@ -369,6 +369,13 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/dbt-example",
         always_run_if=has_dagster_airlift_changes,
+        env_vars=[
+            "KS_DBT_CLOUD_ACCOUNT_ID",
+            "KS_DBT_CLOUD_PROJECT_ID",
+            "KS_DBT_CLOUD_TOKEN",
+            "KS_DBT_CLOUD_ACCESS_URL",
+            "KS_DBT_CLOUD_DISCOVERY_API_URL",
+        ],
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/perf-harness",
