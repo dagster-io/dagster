@@ -22,11 +22,7 @@ from dagster._core.definitions.op_definition import OpComputeFunction
 from dagster._core.definitions.result import AssetResult, MaterializeResult, ObserveResult
 from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.context.compute import (
-    AssetCheckExecutionContext,
-    AssetExecutionContext,
-    OpExecutionContext,
-)
+from dagster._core.execution.context.compute import ExecutionContextTypes
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.plan.outputs import StepOutput, StepOutputProperties
 from dagster._core.execution.plan.utils import op_execution_error_boundary
@@ -142,7 +138,7 @@ def _yield_compute_results(
     step_context: StepExecutionContext,
     inputs: Mapping[str, Any],
     compute_fn: OpComputeFunction,
-    compute_context: Union[OpExecutionContext, AssetExecutionContext, AssetCheckExecutionContext],
+    compute_context: ExecutionContextTypes,
 ) -> Iterator[OpOutputUnion]:
     user_event_generator = compute_fn(compute_context, inputs)
 
@@ -186,7 +182,7 @@ def execute_core_compute(
     step_context: StepExecutionContext,
     inputs: Mapping[str, Any],
     compute_fn: OpComputeFunction,
-    compute_context: Union[OpExecutionContext, AssetExecutionContext, AssetCheckExecutionContext],
+    compute_context: ExecutionContextTypes,
 ) -> Iterator[OpOutputUnion]:
     """Execute the user-specified compute for the op. Wrap in an error boundary and do
     all relevant logging and metrics tracking.
