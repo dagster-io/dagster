@@ -395,7 +395,7 @@ In order to proxy a task, you must do two things:
 1. First, ensure all associated assets are executable in Dagster by providing asset definitions in place of bare asset specs.
 2. The `proxied: False` status in the `proxied_state` YAML folder must be adjusted to `proxied: True`.
 
-Any task marked as proxied will use the `DefaultProxyToDagsterOperator` when executed as part of the DAG. This operator will use the Dagster GraphQL API to initiate a Dagster run of the assets corresponding to the task.
+Any task marked as proxied will use the `DefaultProxyTaskToDagsterOperator` when executed as part of the DAG. This operator will use the Dagster GraphQL API to initiate a Dagster run of the assets corresponding to the task.
 
 The proxied file acts as the source of truth for proxied state. The information is attached to the DAG and then accessed by Dagster via the REST API.
 
@@ -404,9 +404,9 @@ A task which has been proxied can be easily toggled back to run in Airflow (for 
 #### Supporting custom authorization
 
 If your Dagster deployment lives behind a custom auth backend, you can customize the Airflow-to-Dagster proxying behavior to authenticate to your backend.
-`proxying_to_dagster` can take a parameter `dagster_operator_klass`, which allows you to define a custom `BaseProxyToDagsterOperator` class. This allows you to
+`proxying_to_dagster` can take a parameter `dagster_operator_klass`, which allows you to define a custom `BaseProxyTasktoDagsterOperator` class. This allows you to
 override how a session is created. Let's say for example, your Dagster installation requires an access key to be set whenever a request is made, and that access key is set in an Airflow `Variable` called `my_api_key`.
-We can create a custom `BaseProxyToDagsterOperator` subclass which will retrieve that variable value and set it on the session, so that any requests to Dagster's graphql API
+We can create a custom `BaseProxyTasktoDagsterOperator` subclass which will retrieve that variable value and set it on the session, so that any requests to Dagster's graphql API
 will be made using that api key.
 
 ```python
@@ -420,7 +420,7 @@ from dagster_airlift.in_airflow import BaseProxyTaskToDagsterOperator, proxying_
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
 
 
-class CustomProxyToDagsterOperator(BaseProxyTaskToDagsterOperator):
+class CustomProxyTaskToDagsterOperator(BaseProxyTaskToDagsterOperator):
     def get_dagster_session(self, context: Context) -> requests.Session:
         if "var" not in context:
             raise ValueError("No variables found in context")
@@ -441,7 +441,7 @@ dag = DAG(
 proxying_to_dagster(
     global_vars=globals(),
     proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
-    build_from_task_fn=CustomProxyToDagsterOperator.build_from_task,
+    build_from_task_fn=CustomProxyTaskToDagsterOperator.build_from_task,
 )
 ```
 
@@ -1208,7 +1208,7 @@ from dagster_airlift.in_airflow import BaseProxyDAGToDagsterOperator, proxying_t
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
 
 
-class CustomProxyToDagsterOperator(BaseProxyDAGToDagsterOperator):
+class CustomProxyTaskToDagsterOperator(BaseProxyDAGToDagsterOperator):
     def get_dagster_session(self, context: Context) -> requests.Session:
         if "var" not in context:
             raise ValueError("No variables found in context")
@@ -1223,7 +1223,7 @@ class CustomProxyToDagsterOperator(BaseProxyDAGToDagsterOperator):
     # This method controls how the operator is built from the dag.
     @classmethod
     def build_from_dag(cls, dag: DAG):
-        return CustomProxyToDagsterOperator(dag=dag, task_id="OVERRIDDEN")
+        return CustomProxyTaskToDagsterOperator(dag=dag, task_id="OVERRIDDEN")
 
 
 dag = DAG(
@@ -1234,7 +1234,7 @@ dag = DAG(
 proxying_to_dagster(
     global_vars=globals(),
     proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
-    build_from_dag_fn=CustomProxyToDagsterOperator.build_from_dag,
+    build_from_dag_fn=CustomProxyTaskToDagsterOperator.build_from_dag,
 )
 ```
 
