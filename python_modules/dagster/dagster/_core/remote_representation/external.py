@@ -503,14 +503,13 @@ class RemoteJob(RepresentedJob):
         if job_data_snap:
             self._active_preset_dict = {ap.name: ap for ap in job_data_snap.active_presets}
             self._name = job_data_snap.name
-            self._snapshot_id = self._job_index.job_snapshot_id
 
         elif job_ref_snap:
             self._active_preset_dict = {ap.name: ap for ap in job_ref_snap.active_presets}
             self._name = job_ref_snap.name
             if ref_to_data_fn is None:
                 check.failed("ref_to_data_fn must be passed when using deferred snapshots")
-            self._snapshot_id = job_ref_snap.snapshot_id
+
         else:
             check.failed("Expected either job data or ref, got neither")
 
@@ -630,6 +629,13 @@ class RemoteJob(RepresentedJob):
     @property
     def job_snapshot(self) -> JobSnap:
         return self._job_index.job_snapshot
+
+    @property
+    def _snapshot_id(self) -> str:
+        if self._job_ref_snap:
+            return self._job_ref_snap.snapshot_id
+
+        return self._job_index.job_snapshot_id
 
     @property
     def computed_job_snapshot_id(self) -> str:
