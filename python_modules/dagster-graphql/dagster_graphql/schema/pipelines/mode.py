@@ -1,6 +1,9 @@
+from typing import Callable
+
 import dagster._check as check
 import graphene
-from dagster._core.snap import ConfigSchemaSnapshot, ModeDefSnap
+from dagster._config.snap import ConfigTypeSnap
+from dagster._core.snap import ModeDefSnap
 
 from dagster_graphql.schema.pipelines.logger import GrapheneLogger
 from dagster_graphql.schema.pipelines.resource import GrapheneResource
@@ -17,12 +20,15 @@ class GrapheneMode(graphene.ObjectType):
     class Meta:
         name = "Mode"
 
-    def __init__(self, config_schema_snapshot, pipeline_snapshot_id, mode_def_snap):
+    def __init__(
+        self,
+        get_config_type: Callable[[str], ConfigTypeSnap],
+        pipeline_snapshot_id: str,
+        mode_def_snap: ModeDefSnap,
+    ):
         super().__init__()
         self._mode_def_snap = check.inst_param(mode_def_snap, "mode_def_snap", ModeDefSnap)
-        self._config_schema_snapshot = check.inst_param(
-            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
-        )
+        self._get_config_type = get_config_type
         self._job_snapshot_id = pipeline_snapshot_id
 
     def resolve_id(self, _graphene_info: ResolveInfo):
@@ -36,12 +42,12 @@ class GrapheneMode(graphene.ObjectType):
 
     def resolve_resources(self, _graphene_info: ResolveInfo):
         return [
-            GrapheneResource(self._config_schema_snapshot, resource_def_snap)
+            GrapheneResource(self._get_config_type, resource_def_snap)
             for resource_def_snap in sorted(self._mode_def_snap.resource_def_snaps)
         ]
 
     def resolve_loggers(self, _graphene_info: ResolveInfo):
         return [
-            GrapheneLogger(self._config_schema_snapshot, logger_def_snap)
+            GrapheneLogger(self._get_config_type, logger_def_snap)
             for logger_def_snap in sorted(self._mode_def_snap.logger_def_snaps)
         ]

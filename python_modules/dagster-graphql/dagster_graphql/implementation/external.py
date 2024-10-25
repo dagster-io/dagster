@@ -85,7 +85,8 @@ def ensure_valid_config(remote_job: RemoteJob, run_config: object) -> object:
     if not validated_config.success:
         raise UserFacingGraphQLError(
             GrapheneRunConfigValidationInvalid.for_validation_errors(
-                remote_job, validated_config.errors
+                remote_job,
+                check.not_none(validated_config.errors),
             )
         )
 

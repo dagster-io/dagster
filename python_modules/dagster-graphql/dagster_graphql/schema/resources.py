@@ -120,7 +120,12 @@ class GrapheneResourceDetails(graphene.ObjectType):
     class Meta:
         name = "ResourceDetails"
 
-    def __init__(self, location_name: str, repository_name: str, remote_resource: RemoteResource):
+    def __init__(
+        self,
+        location_name: str,
+        repository_name: str,
+        remote_resource: RemoteResource,
+    ):
         super().__init__()
 
         self.id = f"{location_name}-{repository_name}-{remote_resource.name}"
@@ -144,10 +149,10 @@ class GrapheneResourceDetails(graphene.ObjectType):
         self._schedules_using = remote_resource.schedules_using
         self._sensors_using = remote_resource.sensors_using
 
-    def resolve_configFields(self, _graphene_info):
+    def resolve_configFields(self, _graphene_info: ResolveInfo):
         return [
             GrapheneConfigTypeField(
-                config_schema_snapshot=self._config_schema_snap,
+                get_config_type=self._config_schema_snap.get_config_snap,
                 field_snap=field_snap,
             )
             for field_snap in self._config_field_snaps

@@ -701,7 +701,11 @@ class GrapheneIPipelineSnapshotMixin:
         return sorted(
             list(
                 map(
-                    lambda dt: to_dagster_type(represented_pipeline.job_snapshot, dt.key),
+                    lambda dt: to_dagster_type(
+                        represented_pipeline.job_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap,
+                        represented_pipeline.job_snapshot.config_schema_snapshot.get_config_snap,
+                        dt.key,
+                    ),
                     [t for t in represented_pipeline.dagster_type_snaps if t.name],
                 )
             ),
@@ -720,7 +724,8 @@ class GrapheneIPipelineSnapshotMixin:
             )
 
         return to_dagster_type(
-            represented_pipeline.job_snapshot,
+            represented_pipeline.job_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap,
+            represented_pipeline.job_snapshot.config_schema_snapshot.get_config_snap,
             represented_pipeline.get_dagster_type_by_name(dagsterTypeName).key,
         )
 
@@ -735,7 +740,7 @@ class GrapheneIPipelineSnapshotMixin:
         represented_pipeline = self.get_represented_job()
         return [
             GrapheneMode(
-                represented_pipeline.config_schema_snapshot,
+                represented_pipeline.config_schema_snapshot.get_config_snap,
                 represented_pipeline.identifying_job_snapshot_id,
                 mode_def_snap,
             )

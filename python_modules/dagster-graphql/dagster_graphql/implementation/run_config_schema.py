@@ -69,7 +69,7 @@ def resolve_is_run_config_valid(
                 pipeline_name=represented_pipeline.name,
                 errors=[
                     GraphenePipelineConfigValidationError.from_dagster_error(
-                        represented_pipeline.config_schema_snapshot,
+                        represented_pipeline.config_schema_snapshot.get_config_snap,
                         err,
                     )
                     for err in errors

@@ -58,7 +58,9 @@ class GrapheneInputDefinition(graphene.ObjectType):
 
     def resolve_type(self, _graphene_info: ResolveInfo) -> GrapheneDagsterTypeUnion:
         return to_dagster_type(
-            self._represented_job.job_snapshot, self._input_def_snap.dagster_type_key
+            self._represented_job.job_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap,
+            self._represented_job.job_snapshot.config_schema_snapshot.get_config_snap,
+            self._input_def_snap.dagster_type_key,
         )
 
     def resolve_metadata_entries(self, _graphene_info):
@@ -77,18 +79,16 @@ class GrapheneOutputDefinition(graphene.ObjectType):
 
     def __init__(
         self,
-        represented_pipeline: RepresentedJob,
+        represented_job: RepresentedJob,
         solid_def_name: str,
         output_def_name: str,
         is_dynamic: bool,
     ):
-        self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedJob
-        )
+        self._represented_job = check.inst_param(represented_job, "represented_job", RepresentedJob)
         check.str_param(solid_def_name, "solid_def_name")
         check.str_param(output_def_name, "output_def_name")
 
-        node_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
+        node_def_snap = represented_job.get_node_def_snap(solid_def_name)
         self._output_def_snap = node_def_snap.get_output_snap(output_def_name)
 
         super().__init__(
@@ -99,7 +99,8 @@ class GrapheneOutputDefinition(graphene.ObjectType):
 
     def resolve_type(self, _graphene_info) -> GrapheneDagsterTypeUnion:
         return to_dagster_type(
-            self._represented_pipeline.job_snapshot,
+            self._represented_job.job_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap,
+            self._represented_job.job_snapshot.config_schema_snapshot.get_config_snap,
             self._output_def_snap.dagster_type_key,
         )
 
@@ -486,7 +487,7 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
         check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
         _solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
         if not isinstance(_solid_def_snap, OpDefSnap):
-            check.failed("Expected SolidDefSnap")
+            check.failed("Expected OpDefSnap")
         self._solid_def_snap = _solid_def_snap
         super().__init__(name=solid_def_name, description=self._solid_def_snap.description)
         ISolidDefinitionMixin.__init__(self, represented_pipeline, solid_def_name)
@@ -496,7 +497,7 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
     ) -> Optional[GrapheneConfigTypeField]:
         return (
             GrapheneConfigTypeField(
-                config_schema_snapshot=self._represented_pipeline.config_schema_snapshot,
+                get_config_type=self._represented_pipeline.config_schema_snapshot.get_config_snap,
                 field_snap=self._solid_def_snap.config_field_snap,
             )
             if self._solid_def_snap.config_field_snap
