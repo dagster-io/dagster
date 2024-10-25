@@ -42,7 +42,7 @@ def build_tableau_executable_assets_definition(
     def asset_fn(context: AssetExecutionContext):
         tableau = cast(BaseTableauWorkspace, getattr(context.resources, resource_key))
         with tableau.get_client() as client:
-            client.refresh_and_materialize_workbooks(
+            yield from client.refresh_and_materialize_workbooks(
                 specs=specs, refreshable_workbook_ids=refreshable_workbook_ids
             )
 

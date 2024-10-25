@@ -30,6 +30,7 @@ from dagster_tableau.translator import (
     DagsterTableauTranslator,
     TableauContentData,
     TableauContentType,
+    TableauMetadataSet,
     TableauTagSet,
     TableauWorkspaceData,
 )
@@ -111,13 +112,11 @@ class BaseTableauClient:
         for refreshable_workbook_id in refreshable_workbook_ids or []:
             refreshed_workbooks.add(self.refresh_and_poll(refreshable_workbook_id))
         for spec in specs:
-            view_id = check.inst(spec.metadata.get("id"), str)
+            view_id = check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
             data = self.get_view(view_id)
             asset_key = spec.key
-            if (
-                spec.metadata.get("workbook_id")
-                and spec.metadata.get("workbook_id") in refreshed_workbooks
-            ):
+            workbook_id = TableauMetadataSet.extract(spec.metadata).workbook_id
+            if workbook_id and workbook_id in refreshed_workbooks:
                 yield Output(
                     value=None,
                     output_name="__".join(asset_key.path),

@@ -198,12 +198,6 @@ def build_workbook_item_fixture():
         )
         yield mocked_class
 
-@pytest.fixture(name="refresh_and_materialize_workbooks", autouse=True)
-def refresh_and_materialize_workbooks_fixture():
-    with patch("dagster_tableau.resources.BaseTableauClient.refresh_and_materialize_workbooks", autospec=True) as mocked_function:
-        yield mocked_function
-
-
 
 @pytest.fixture(name="build_view_item", autouse=True)
 def build_view_item_fixture():
