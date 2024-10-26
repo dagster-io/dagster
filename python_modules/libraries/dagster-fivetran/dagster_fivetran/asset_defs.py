@@ -59,9 +59,11 @@ class DagsterFivetranTranslatorProps(NamedTuple):
 
 class DagsterFivetranTranslator:
     def get_asset_key(self, props: DagsterFivetranTranslatorProps) -> AssetKey:
+        """Get the AssetKey for a Fivetran table."""
         return AssetKey(*props.table_name.split("."))
 
     def get_asset_spec(self, props: DagsterFivetranTranslatorProps) -> AssetSpec:
+        """Get the AssetSpec for a Fivetran table."""
         return AssetSpec(
             key=self.get_asset_key(props),
             metadata={
