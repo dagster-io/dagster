@@ -317,7 +317,7 @@ class DagsterDbtTranslator:
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     def get_code_version(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
-                        return "custom_code_version"
+                        return dbt_resource_props["checksum"]["checksum"]
         """
         return default_code_version_fn(dbt_resource_props)
 
