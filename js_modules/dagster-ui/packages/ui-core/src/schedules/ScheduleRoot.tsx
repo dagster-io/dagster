@@ -44,7 +44,7 @@ export const ScheduleRoot = (props: Props) => {
 
   const {repoAddress} = props;
   const {scheduleName} = useParams<{scheduleName: string}>();
-  const {flagRunsFeed} = useFeatureFlags();
+  const {flagLegacyRunsPage} = useFeatureFlags();
 
   useDocumentTitle(`Schedule: ${scheduleName}`);
 
@@ -126,14 +126,14 @@ export const ScheduleRoot = (props: Props) => {
                 repoAddress={repoAddress}
                 name={scheduleOrError.name}
               />
-            ) : flagRunsFeed ? (
-              <RunsFeedTableWithFilters filter={runsFilter} />
-            ) : (
+            ) : flagLegacyRunsPage ? (
               <SchedulePreviousRuns
                 repoAddress={repoAddress}
                 schedule={scheduleOrError}
                 tabs={tabs}
               />
+            ) : (
+              <RunsFeedTableWithFilters filter={runsFilter} />
             )}
           </Page>
         );

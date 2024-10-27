@@ -409,6 +409,10 @@
               {
                 "title": "Details and customization",
                 "path": "/concepts/dagster-pipes/dagster-pipes-details-and-customization"
+              },
+              {
+                "title": "Migrating from Step Launchers to Dagster Pipes",
+                "path": "/guides/migrations/from-step-launchers-to-pipes"
               }
             ]
           },
@@ -1057,7 +1061,7 @@
         "path": "/integrations/pandera"
       },
       {
-        "title": "PySpark",
+        "title": "Spark",
         "path": "/integrations/spark"
       },
       {

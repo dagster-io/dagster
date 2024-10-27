@@ -17,7 +17,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {DeclarativeAutomationBanner} from '../assets/auto-materialization/DeclarativeAutomationBanner';
 import {AUTOMATION_ASSET_SELECTION_FRAGMENT} from '../automation/AutomationAssetSelectionFragment';
 import {InstigationTickStatus, SensorType} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -156,11 +155,6 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
         sensorDaemonStatus={sensorDaemonStatus}
         padding={{vertical: 16, horizontal: 24}}
       />
-      {isAutomationSensor && (
-        <Box padding={{vertical: 12, horizontal: 24}}>
-          <DeclarativeAutomationBanner />
-        </Box>
-      )}
       <TickHistoryTimeline
         tickResultType={tickResultType}
         repoAddress={repoAddress}

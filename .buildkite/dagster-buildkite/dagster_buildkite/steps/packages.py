@@ -288,15 +288,19 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/docs_snippets",
         pytest_extra_cmds=docs_snippets_extra_cmds,
-        unsupported_python_versions=[
-            # dependency on 3.9-incompatible extension libs
-            AvailablePythonVersion.V3_9,
-            # dagster-airflow dep
-            AvailablePythonVersion.V3_12,
-        ],
+        # The docs_snippets test suite also installs a ton of packages in the same environment,
+        # which is liable to cause dependency collisions. It's not necessary to test all these
+        # snippets in all python versions since we are testing the core code exercised by the
+        # snippets against all supported python versions.
+        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
     ),
     PackageSpec(
         "examples/docs_beta_snippets",
+        # The docs_snippets test suite also installs a ton of packages in the same environment,
+        # which is liable to cause dependency collisions. It's not necessary to test all these
+        # snippets in all python versions since we are testing the core code exercised by the
+        # snippets against all supported python versions.
+        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
         pytest_tox_factors=["all", "integrations"],
     ),
     PackageSpec(
@@ -418,7 +422,10 @@ def tox_factors_for_folder(tests_folder_name: str) -> List[str]:
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/automation",
-        unsupported_python_versions=[AvailablePythonVersion.V3_12],
+        # automation is internal code that doesn't need to be tested in every python version. The
+        # test suite also installs a ton of packages in the same environment, which is liable to
+        # cause dependency collisions.
+        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
     ),
     PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
     PackageSpec(
@@ -428,8 +435,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "api_tests",
             "asset_defs_tests",
             "cli_tests",
-            "core_tests_pydantic1",
-            "core_tests_pydantic2",
+            "core_tests",
             "daemon_sensor_tests",
             "daemon_tests",
             "definitions_tests",
@@ -437,8 +443,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "general_tests_old_protobuf",
             "launcher_tests",
             "logging_tests",
-            "model_tests_pydantic1",
-            "model_tests_pydantic2",
+            "model_tests",
             "scheduler_tests",
             "storage_tests",
             "storage_tests_sqlalchemy_1_3",
@@ -496,16 +501,12 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
             f"{deps_factor}-{command_factor}"
-            for deps_factor in ["dbt17", "dbt18", "pydantic1"]
+            for deps_factor in ["dbt17", "dbt18"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
         ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-snowflake",
-        pytest_tox_factors=[
-            "pydantic1",
-            "pydantic2",
-        ],
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
     ),
     PackageSpec(
@@ -560,10 +561,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-databricks",
-        pytest_tox_factors=[
-            "pydantic1",
-            "pydantic2",
-        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-docker",
@@ -640,6 +637,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-ge",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_8,
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-k8s",

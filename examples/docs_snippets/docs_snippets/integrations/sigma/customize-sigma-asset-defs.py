@@ -18,7 +18,7 @@ resource = SigmaOrganization(
 class MyCustomSigmaTranslator(DagsterSigmaTranslator):
     def get_workbook_spec(self, data: SigmaWorkbook) -> dg.AssetSpec:
         # Adds a custom team owner tag to all reports
-        return super().get_workbook_spec(data)._replace(owners=["my_team"])
+        return super().get_asset_spec(data)._replace(owners=["my_team"])
 
 
 defs = resource.build_defs(dagster_sigma_translator=MyCustomSigmaTranslator)

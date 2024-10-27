@@ -8,7 +8,7 @@ from dagster._core.errors import DagsterInvalidDagsterTypeInPythonicConfigDefini
 
 try:
     # Pydantic 1.x
-    from pydantic._internal._model_construction import ModelMetaclass  # type: ignore
+    from pydantic._internal._model_construction import ModelMetaclass
 except ImportError:
     # Pydantic 2.x
     from pydantic.main import ModelMetaclass

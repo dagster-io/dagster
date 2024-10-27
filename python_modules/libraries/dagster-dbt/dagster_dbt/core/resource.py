@@ -18,7 +18,6 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.execution.context.init import InitResourceContext
-from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils import pushd
 from dbt.adapters.base.impl import BaseAdapter
 from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
@@ -28,7 +27,7 @@ from dbt.config.utils import parse_cli_vars
 from dbt.flags import get_flags, set_from_args
 from dbt.version import __version__ as dbt_version
 from packaging import version
-from pydantic import Field, validator
+from pydantic import Field, model_validator, validator
 from typing_extensions import Final
 
 from dagster_dbt.asset_utils import (
@@ -314,7 +313,7 @@ class DbtCliResource(ConfigurableResource):
 
         return dbt_executable
 
-    @compat_model_validator(mode="before")
+    @model_validator(mode="before")
     def validate_dbt_version(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that the dbt version is supported."""
         if version.parse(dbt_version) < version.parse("1.7.0"):

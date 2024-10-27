@@ -11,9 +11,19 @@ import dagster._check as check
 from dagster._core.execution.job_backfill import PartitionBackfill
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunRecord
 from dagster._core.storage.runs.base import RunStorage
-from dagster._core.storage.runs.schema import BulkActionsTable, RunsTable, RunTagsTable
+from dagster._core.storage.runs.schema import (
+    BackfillTagsTable,
+    BulkActionsTable,
+    RunsTable,
+    RunTagsTable,
+)
 from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
+from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
+    PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+    REPOSITORY_LABEL_TAG,
+)
 from dagster._serdes import deserialize_value
 
 RUN_PARTITIONS = "run_partitions"
@@ -22,6 +32,8 @@ RUN_START_END = (  # was run_start_end, but renamed to overwrite bad timestamps 
 )
 RUN_REPO_LABEL_TAGS = "run_repo_label_tags"
 BULK_ACTION_TYPES = "bulk_action_types"
+RUN_BACKFILL_ID = "run_backfill_id"
+BACKFILL_JOB_NAME_AND_TAGS = "backfill_job_name_and_tags"
 
 PrintFn: TypeAlias = Callable[[Any], None]
 MigrationFn: TypeAlias = Callable[[RunStorage, Optional[PrintFn]], None]
@@ -31,6 +43,8 @@ REQUIRED_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
     RUN_PARTITIONS: lambda: migrate_run_partition,
     RUN_REPO_LABEL_TAGS: lambda: migrate_run_repo_tags,
     BULK_ACTION_TYPES: lambda: migrate_bulk_actions,
+    RUN_BACKFILL_ID: lambda: migrate_run_backfill_id,
+    BACKFILL_JOB_NAME_AND_TAGS: lambda: migrate_backfill_job_name_and_tags,
 }
 # for `dagster instance reindex`, optionally run for better read performance
 OPTIONAL_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
@@ -92,6 +106,31 @@ def chunked_run_records_iterator(
             for run in chunk:
                 cursor = run.dagster_run.run_id
                 yield run
+
+            if progress:
+                progress.update(len(chunk))
+
+
+def chunked_backfill_iterator(
+    storage: RunStorage, print_fn: Optional[PrintFn] = None, chunk_size: int = CHUNK_SIZE
+) -> Iterator[PartitionBackfill]:
+    with ExitStack() as stack:
+        if print_fn:
+            backfill_count = storage.get_backfills_count()
+            progress = stack.enter_context(tqdm(total=backfill_count))
+        else:
+            progress = None
+
+        cursor = None
+        has_more = True
+
+        while has_more:
+            chunk = storage.get_backfills(cursor=cursor, limit=chunk_size)
+            has_more = chunk_size and len(chunk) >= chunk_size
+
+            for backfill in chunk:
+                cursor = backfill.backfill_id
+                yield backfill
 
             if progress:
                 progress.update(len(chunk))
@@ -259,3 +298,99 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn: Optional[PrintFn] = 
                     .where(BulkActionsTable.c.id == storage_id)
                 )
                 cursor = storage_id
+
+
+def migrate_run_backfill_id(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
+    """Utility method to add a backfill_id column to the runs table and populate it with the backfill_id of the run."""
+    if print_fn:
+        print_fn("Querying run storage.")
+
+    for run in chunked_run_iterator(storage, print_fn):
+        if run.tags.get(BACKFILL_ID_TAG) is None:
+            continue
+
+        add_backfill_id(
+            run_storage=storage, run_id=run.run_id, backfill_id=run.tags[BACKFILL_ID_TAG]
+        )
+
+
+def add_backfill_id(run_storage: RunStorage, run_id: str, backfill_id) -> None:
+    from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
+
+    check.str_param(run_id, "run_id")
+    check.inst_param(run_storage, "run_storage", RunStorage)
+
+    if not isinstance(run_storage, SqlRunStorage):
+        return
+
+    with run_storage.connect() as conn:
+        conn.execute(
+            RunsTable.update()
+            .where(RunsTable.c.run_id == run_id)
+            .values(
+                backfill_id=backfill_id,
+            )
+        )
+
+
+def migrate_backfill_job_name_and_tags(
+    storage: RunStorage, print_fn: Optional[PrintFn] = None
+) -> None:
+    """Utility method to add a backfill's job_name to the bulk_actions table and tags to the backfill_tags table."""
+    if print_fn:
+        print_fn("Querying run storage.")
+
+    for backfill in chunked_backfill_iterator(storage, print_fn):
+        if backfill.tags:
+            add_backfill_tags(
+                run_storage=storage, backfill_id=backfill.backfill_id, tags=backfill.tags
+            )
+
+        if backfill.job_name is not None:
+            add_backfill_job_name(
+                run_storage=storage, backfill_id=backfill.backfill_id, job_name=backfill.job_name
+            )
+
+
+def add_backfill_tags(run_storage: RunStorage, backfill_id: str, tags: Mapping[str, str]):
+    from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
+
+    check.str_param(backfill_id, "run_id")
+    check.dict_param(tags, "tags", key_type=str, value_type=str)
+    check.inst_param(run_storage, "run_storage", RunStorage)
+
+    if not isinstance(run_storage, SqlRunStorage):
+        return
+
+    with run_storage.connect() as conn:
+        conn.execute(
+            BackfillTagsTable.insert(),
+            [
+                dict(
+                    backfill_id=backfill_id,
+                    key=k,
+                    value=v,
+                )
+                for k, v in tags.items()
+            ],
+        )
+
+
+def add_backfill_job_name(run_storage: RunStorage, backfill_id: str, job_name: str):
+    from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
+
+    check.str_param(backfill_id, "run_id")
+    check.str_param(job_name, "job_name")
+    check.inst_param(run_storage, "run_storage", RunStorage)
+
+    if not isinstance(run_storage, SqlRunStorage):
+        return
+
+    with run_storage.connect() as conn:
+        conn.execute(
+            BulkActionsTable.update()
+            .values(
+                job_name=job_name,
+            )
+            .where(BulkActionsTable.c.key == backfill_id)
+        )

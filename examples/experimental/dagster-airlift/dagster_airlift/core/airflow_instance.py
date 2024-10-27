@@ -270,6 +270,17 @@ class AirflowInstance:
             metadata=response.json(),
         )
 
+    def unpause_dag(self, dag_id: str) -> None:
+        response = self.auth_backend.get_session().patch(
+            f"{self.get_api_url()}/dags",
+            json={"is_paused": False},
+            params={"dag_id_pattern": dag_id},
+        )
+        if response.status_code != 200:
+            raise DagsterError(
+                f"Failed to unpause dag {dag_id}. Status code: {response.status_code}, Message: {response.text}"
+            )
+
     def wait_for_run_completion(self, dag_id: str, run_id: str, timeout: int = 30) -> None:
         start_time = get_current_datetime()
         while get_current_datetime() - start_time < datetime.timedelta(seconds=timeout):

@@ -63,7 +63,6 @@ def get_sensors_or_error(
         results=[
             GrapheneSensor(
                 sensor,
-                repository.handle,
                 sensor_states_by_name.get(sensor.name),
                 batch_loader,
             )
@@ -77,18 +76,17 @@ def get_sensor_or_error(graphene_info: ResolveInfo, selector: SensorSelector) ->
     from dagster_graphql.schema.sensors import GrapheneSensor
 
     check.inst_param(selector, "selector", SensorSelector)
-    location = graphene_info.context.get_code_location(selector.location_name)
-    repository = location.get_repository(selector.repository_name)
 
-    if not repository.has_sensor(selector.sensor_name):
+    sensor = graphene_info.context.get_sensor(selector)
+    if not sensor:
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(selector.sensor_name))
-    sensor = repository.get_sensor(selector.sensor_name)
+
     sensor_state = graphene_info.context.instance.get_instigator_state(
         sensor.get_remote_origin_id(),
         sensor.selector_id,
     )
 
-    return GrapheneSensor(sensor, repository.handle, sensor_state)
+    return GrapheneSensor(sensor, sensor_state)
 
 
 def start_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) -> "GrapheneSensor":
@@ -97,13 +95,12 @@ def start_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) ->
 
     check.inst_param(sensor_selector, "sensor_selector", SensorSelector)
 
-    location = graphene_info.context.get_code_location(sensor_selector.location_name)
-    repository = location.get_repository(sensor_selector.repository_name)
-    if not repository.has_sensor(sensor_selector.sensor_name):
+    sensor = graphene_info.context.get_sensor(sensor_selector)
+    if not sensor:
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(sensor_selector.sensor_name))
-    sensor = repository.get_sensor(sensor_selector.sensor_name)
+
     sensor_state = graphene_info.context.instance.start_sensor(sensor)
-    return GrapheneSensor(sensor, repository.handle, sensor_state)
+    return GrapheneSensor(sensor, sensor_state)
 
 
 def stop_sensor(
@@ -147,16 +144,13 @@ def reset_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) ->
     from dagster_graphql.schema.sensors import GrapheneSensor
 
     check.inst_param(sensor_selector, "sensor_selector", SensorSelector)
-
-    location = graphene_info.context.get_code_location(sensor_selector.location_name)
-    repository = location.get_repository(sensor_selector.repository_name)
-    if not repository.has_sensor(sensor_selector.sensor_name):
+    sensor = graphene_info.context.get_sensor(sensor_selector)
+    if not sensor:
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(sensor_selector.sensor_name))
 
-    sensor = repository.get_sensor(sensor_selector.sensor_name)
     sensor_state = graphene_info.context.instance.reset_sensor(sensor)
 
-    return GrapheneSensor(sensor, repository.handle, sensor_state)
+    return GrapheneSensor(sensor, sensor_state)
 
 
 def get_sensors_for_pipeline(
@@ -179,7 +173,7 @@ def get_sensors_for_pipeline(
             sensor.get_remote_origin_id(),
             sensor.selector_id,
         )
-        results.append(GrapheneSensor(sensor, repository.handle, sensor_state))
+        results.append(GrapheneSensor(sensor, sensor_state))
 
     return results
 
@@ -190,27 +184,18 @@ def get_sensor_next_tick(
     from dagster_graphql.schema.instigation import GrapheneDryRunInstigationTick
 
     check.inst_param(sensor_state, "sensor_state", InstigatorState)
+    if not sensor_state.is_running:
+        return None
 
     repository_origin = sensor_state.origin.repository_origin
-    if not graphene_info.context.has_code_location(
-        repository_origin.code_location_origin.location_name
-    ):
-        return None
-
-    code_location = graphene_info.context.get_code_location(
-        repository_origin.code_location_origin.location_name
+    selector = SensorSelector(
+        location_name=repository_origin.code_location_origin.location_name,
+        repository_name=repository_origin.repository_name,
+        sensor_name=sensor_state.name,
     )
-    if not code_location.has_repository(repository_origin.repository_name):
-        return None
 
-    repository = code_location.get_repository(repository_origin.repository_name)
-
-    if not repository.has_sensor(sensor_state.name):
-        return None
-
-    sensor = repository.get_sensor(sensor_state.name)
-
-    if not sensor_state.is_running:
+    sensor = graphene_info.context.get_sensor(selector)
+    if not sensor:
         return None
 
     ticks = graphene_info.context.instance.get_ticks(
@@ -235,13 +220,11 @@ def set_sensor_cursor(
     from dagster_graphql.schema.errors import GrapheneSensorNotFoundError
     from dagster_graphql.schema.sensors import GrapheneSensor
 
-    location = graphene_info.context.get_code_location(selector.location_name)
-    repository = location.get_repository(selector.repository_name)
-
-    if not repository.has_sensor(selector.sensor_name):
+    sensor = graphene_info.context.get_sensor(selector)
+    if not sensor:
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(selector.sensor_name))
+
     instance = graphene_info.context.instance
-    sensor = repository.get_sensor(selector.sensor_name)
     stored_state = instance.get_instigator_state(
         sensor.get_remote_origin_id(),
         sensor.selector_id,
@@ -264,4 +247,4 @@ def set_sensor_cursor(
     else:
         instance.update_instigator_state(updated_state)
 
-    return GrapheneSensor(sensor, repository.handle, updated_state)
+    return GrapheneSensor(sensor, updated_state)

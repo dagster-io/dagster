@@ -7,7 +7,7 @@ import {
   VirtualizedResourceHeader,
   VirtualizedResourceRow,
 } from '../resources/VirtualizedResourceRow';
-import {ResourceEntryFragment} from '../resources/types/WorkspaceResourcesRoot.types';
+import {ResourceEntryFragment} from '../resources/types/WorkspaceResourcesQuery.types';
 import {Container, Inner} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';

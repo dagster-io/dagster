@@ -49,7 +49,7 @@ def dbt_models(context: dg.AssetExecutionContext, dbt: DbtCliResource):
     compute_kind="python",
     # Defines the dependency on the customers model,
     # which is represented as an asset in Dagster
-    deps=get_asset_key_for_model([dbt_models], "customers"),
+    deps=[get_asset_key_for_model([dbt_models], "customers")],
 )
 def customer_histogram(context: dg.AssetExecutionContext):
     # Read the contents of the customers table into a Pandas DataFrame

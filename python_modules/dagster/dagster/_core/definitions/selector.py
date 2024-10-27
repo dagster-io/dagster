@@ -180,6 +180,10 @@ class ScheduleSelector:
             "scheduleName": self.schedule_name,
         }
 
+    @property
+    def instigator_name(self) -> str:
+        return self.schedule_name
+
     @staticmethod
     def from_graphql_input(graphql_data):
         return ScheduleSelector(
@@ -231,6 +235,10 @@ class SensorSelector:
             repository_name=graphql_data["repositoryName"],
             sensor_name=graphql_data["sensorName"],
         )
+
+    @property
+    def instigator_name(self) -> str:
+        return self.sensor_name
 
 
 @whitelist_for_serdes

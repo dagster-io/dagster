@@ -21,7 +21,7 @@ def test_constructor(selection: AssetSelection, user_code: bool) -> None:
     tags = {"apple": "banana", "orange": "kiwi"}
     automation_sensor = AutomationConditionSensorDefinition(
         "foo",
-        asset_selection=selection,
+        target=selection,
         run_tags=tags,
         description="fdsjkl",
         default_status=DefaultSensorStatus.RUNNING,
@@ -46,12 +46,12 @@ def test_constructor(selection: AssetSelection, user_code: bool) -> None:
 def test_default_condition() -> None:
     with pytest.raises(ParameterCheckError, match="non-user-code"):
         AutomationConditionSensorDefinition(
-            "foo", asset_selection="*", default_condition=AutomationCondition.eager()
+            "foo", target="*", default_condition=AutomationCondition.eager()
         )
 
     sensor = AutomationConditionSensorDefinition(
         "foo",
-        asset_selection="*",
+        target="*",
         default_condition=AutomationCondition.eager(),
         use_user_code_server=True,
     )
@@ -59,9 +59,7 @@ def test_default_condition() -> None:
 
 
 def test_limits() -> None:
-    sensor = AutomationConditionSensorDefinition(
-        "foo", asset_selection="*", use_user_code_server=True
-    )
+    sensor = AutomationConditionSensorDefinition("foo", target="*", use_user_code_server=True)
 
     defs = Definitions(
         assets=build_assets(

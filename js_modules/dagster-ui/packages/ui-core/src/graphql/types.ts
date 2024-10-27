@@ -3146,6 +3146,7 @@ export type PartitionDefinition = {
   __typename: 'PartitionDefinition';
   description: Scalars['String']['output'];
   dimensionTypes: Array<DimensionDefinitionType>;
+  fmt: Maybe<Scalars['String']['output']>;
   name: Maybe<Scalars['String']['output']>;
   type: PartitionDefinitionType;
 };
@@ -4926,7 +4927,11 @@ export type ScheduleData = {
 
 export type ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError;
 
-export type ScheduleMutationResult = PythonError | ScheduleStateResult | UnauthorizedError;
+export type ScheduleMutationResult =
+  | PythonError
+  | ScheduleNotFoundError
+  | ScheduleStateResult
+  | UnauthorizedError;
 
 export type ScheduleNotFoundError = Error & {
   __typename: 'ScheduleNotFoundError';
@@ -10944,6 +10949,7 @@ export const buildPartitionDefinition = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'ab',
     dimensionTypes:
       overrides && overrides.hasOwnProperty('dimensionTypes') ? overrides.dimensionTypes! : [],
+    fmt: overrides && overrides.hasOwnProperty('fmt') ? overrides.fmt! : 'earum',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'facilis',
     type:
       overrides && overrides.hasOwnProperty('type')

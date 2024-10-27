@@ -105,6 +105,7 @@ class PowerBITagSet(NamespacedTagSet):
 
 class PowerBIMetadataSet(NamespacedMetadataSet):
     web_url: Optional[UrlMetadataValue] = None
+    id: Optional[str] = None
 
     @classmethod
     def namespace(cls) -> str:
@@ -192,7 +193,11 @@ class DagsterPowerBITranslator:
         return AssetSpec(
             key=self.get_semantic_model_asset_key(data),
             deps=source_keys,
-            metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
+            metadata={
+                **PowerBIMetadataSet(
+                    web_url=MetadataValue.url(url) if url else None, id=data.properties["id"]
+                )
+            },
             tags={**PowerBITagSet(asset_type="semantic_model")},
             kinds={"powerbi"},
         )

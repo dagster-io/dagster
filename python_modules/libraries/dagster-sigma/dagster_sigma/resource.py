@@ -5,13 +5,27 @@ import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
-from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Type
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
 
 import aiohttp
+import dagster._check as check
 import requests
 from aiohttp.client_exceptions import ClientResponseError
 from dagster import ConfigurableResource
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._utils.cached_method import cached_method
@@ -89,7 +103,10 @@ class SigmaOrganization(ConfigurableResource):
         return self._api_token
 
     async def _fetch_json_async(
-        self, endpoint: str, method: str = "GET", query_params: Optional[Dict[str, Any]] = None
+        self,
+        endpoint: str,
+        method: str = "GET",
+        query_params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         url = f"{self.base_url}/v2/{endpoint}"
         if query_params:
@@ -376,6 +393,10 @@ class SigmaOrganization(ConfigurableResource):
         return SigmaOrganizationData(workbooks=workbooks, datasets=datasets)
 
     @public
+    @deprecated(
+        breaking_version="1.9.0",
+        additional_warn_text="Use dagster_sigma.load_sigma_asset_specs instead",
+    )
     def build_defs(
         self,
         dagster_sigma_translator: Type[DagsterSigmaTranslator] = DagsterSigmaTranslator,
@@ -389,16 +410,51 @@ class SigmaOrganization(ConfigurableResource):
         Returns:
             Definitions: The set of assets representing the Sigma content in the organization.
         """
-        with self.process_config_and_initialize_cm() as initialized_organization:
-            return SigmaOrganizationDefsLoader(
+        return Definitions(assets=load_sigma_asset_specs(self, dagster_sigma_translator))
+
+
+def load_sigma_asset_specs(
+    organization: SigmaOrganization,
+    dagster_sigma_translator: Callable[
+        [SigmaOrganizationData], DagsterSigmaTranslator
+    ] = DagsterSigmaTranslator,
+) -> Sequence[AssetSpec]:
+    """Returns a list of AssetSpecs representing the Sigma content in the organization.
+
+    Args:
+        organization (SigmaOrganization): The Sigma organization to fetch assets from.
+
+    Returns:
+        List[AssetSpec]: The set of assets representing the Sigma content in the organization.
+    """
+    with organization.process_config_and_initialize_cm() as initialized_organization:
+        return check.is_list(
+            SigmaOrganizationDefsLoader(
                 organization=initialized_organization, translator_cls=dagster_sigma_translator
-            ).build_defs()
+            )
+            .build_defs()
+            .assets,
+            AssetSpec,
+        )
+
+
+def _get_translator_spec_assert_keys_match(
+    translator: DagsterSigmaTranslator, data: Union[SigmaDataset, SigmaWorkbook]
+) -> AssetSpec:
+    key = translator.get_asset_key(data)
+    spec = translator.get_asset_spec(data)
+    if spec.key != key:
+        check.invariant(
+            spec.key == key,
+            f"Key on AssetSpec returned by {translator.__class__.__name__}.get_asset_spec {spec.key} does not match input key {key}",
+        )
+    return spec
 
 
 @dataclass
 class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganizationData]):
     organization: SigmaOrganization
-    translator_cls: Type[DagsterSigmaTranslator]
+    translator_cls: Callable[[SigmaOrganizationData], DagsterSigmaTranslator]
 
     @property
     def defs_key(self) -> str:
@@ -408,9 +464,9 @@ class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganization
         return asyncio.run(self.organization.build_organization_data())
 
     def defs_from_state(self, state: SigmaOrganizationData) -> Definitions:
-        translator = self.translator_cls(context=state)
+        translator = self.translator_cls(state)
         asset_specs = [
-            *[translator.get_workbook_spec(workbook) for workbook in state.workbooks],
-            *[translator.get_dataset_spec(dataset) for dataset in state.datasets],
+            _get_translator_spec_assert_keys_match(translator, obj)
+            for obj in [*state.workbooks, *state.datasets]
         ]
         return Definitions(assets=asset_specs)

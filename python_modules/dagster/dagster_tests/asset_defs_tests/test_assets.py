@@ -2404,17 +2404,17 @@ def test_multiple_keys_per_output_name():
         )
 
 
-def test_iterate_over_single_key():
+def test_iterate_over_single_key() -> None:
     key = AssetKey("ouch")
     with pytest.raises(
         DagsterInvariantViolationError,
         match="You have attempted to iterate a single AssetKey object. "
         "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug.",
     ):
-        [_ for _ in key]
+        [_ for _ in key]  # type: ignore # good job type checker
 
 
-def test_index_in_to_key():
+def test_index_in_to_key() -> None:
     key = AssetKey("ouch")
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -2422,4 +2422,4 @@ def test_index_in_to_key():
         "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug. "
         "Use asset_key.path instead to access the list of key components.",
     ):
-        key[0][0]
+        key[0][0]  # type: ignore # good job type checker

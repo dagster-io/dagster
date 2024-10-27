@@ -23,7 +23,7 @@ export const AutomaterializeTagWithEvaluation = ({assetKeys, evaluationId}: Prop
       content={
         <div style={{width: '340px'}}>
           <Box padding={{vertical: 8, horizontal: 12}} border="bottom" style={{fontWeight: 600}}>
-            Auto-materialized
+            Automation condition
           </Box>
           <Box
             flex={{direction: 'column', gap: 12}}
@@ -65,7 +65,7 @@ export const AutomaterializeTagWithEvaluation = ({assetKeys, evaluationId}: Prop
       }
       interactionKind="hover"
     >
-      <Tag icon="auto_materialize_policy">Auto-materialized</Tag>
+      <Tag icon="automation_condition">Automation condition</Tag>
     </Popover>
   );
 };

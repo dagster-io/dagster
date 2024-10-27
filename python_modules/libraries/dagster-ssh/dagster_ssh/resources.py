@@ -144,7 +144,7 @@ class SSHResource(ConfigurableResource):
                 timeout=self.timeout,
                 compress=self.compress,
                 port=self.remote_port,  # type: ignore
-                sock=self._host_proxy,  # type: ignore
+                sock=self._host_proxy,
                 look_for_keys=False,
             )
         else:
@@ -156,7 +156,7 @@ class SSHResource(ConfigurableResource):
                 timeout=self.timeout,
                 compress=self.compress,
                 port=self.remote_port,  # type: ignore
-                sock=self._host_proxy,  # type: ignore
+                sock=self._host_proxy,
             )
 
         if self.keepalive_interval:

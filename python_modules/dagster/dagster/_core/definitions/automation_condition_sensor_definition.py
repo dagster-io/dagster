@@ -81,8 +81,8 @@ class AutomationConditionSensorDefinition(SensorDefinition):
 
     Args:
         name: The name of the sensor.
-        asset_selection (Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]):
-            The assets to evaluate AutomationConditions of and request runs for.
+        target (Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]):
+            A selection of assets to evaluate AutomationConditions of and request runs for.
         tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
             be used for searching and filtering in the UI.
         run_tags (Optional[Mapping[str, Any]]): Tags that will be automatically attached to runs launched by this sensor.
@@ -104,13 +104,45 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         default_condition (Optional[AutomationCondition]): (experimental) If provided, this condition will
             be used for any selected assets or asset checks which do not have an automation condition defined.
             Requires `use_user_code_server` to be set to `True`.
+
+    Examples:
+        .. code-block:: python
+
+            import dagster as dg
+
+            # automation condition sensor that defaults to running
+            defs1 = dg.Definitions(
+                assets=...,
+                sensors=[
+                    dg.AutomationConditionSensorDefinition(
+                        name="automation_condition_sensor",
+                        default_status=dg.DefaultSensorStatus.RUNNING,
+                    ),
+                ]
+            )
+
+            # one automation condition sensor per group
+            defs2 = dg.Definitions(
+                assets=...,
+                sensors=[
+                    dg.AutomationConditionSensorDefinition(
+                        name="raw_data_automation_condition_sensor",
+                        target=dg.AssetSelection.groups("raw_data"),
+                    ),
+                    dg.AutomationConditionSensorDefinition(
+                        name="ml_automation_condition_sensor",
+                        target=dg.AssetSelection.groups("machine_learning"),
+                    ),
+                ]
+            )
+
     """
 
     def __init__(
         self,
         name: str,
         *,
-        asset_selection: CoercibleToAssetSelection,
+        target: CoercibleToAssetSelection,
         tags: Optional[Mapping[str, str]] = None,
         run_tags: Optional[Mapping[str, Any]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
@@ -149,7 +181,7 @@ class AutomationConditionSensorDefinition(SensorDefinition):
             jobs=None,
             default_status=default_status,
             required_resource_keys=None,
-            asset_selection=asset_selection,
+            asset_selection=target,
             tags=tags,
             metadata=metadata,
         )

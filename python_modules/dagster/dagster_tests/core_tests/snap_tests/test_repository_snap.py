@@ -18,10 +18,6 @@ from dagster import (
 from dagster._config.field_utils import EnvVar
 from dagster._config.pythonic_config import Config, ConfigurableResource
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.repository_definition import (
-    PendingRepositoryDefinition,
-    RepositoryDefinition,
-)
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
@@ -63,15 +59,6 @@ def test_repository_snap_all_props():
     assert job_snapshot.tags == {}
 
 
-def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
-    repo_or_caching_repo = definitions.get_inner_repository()
-    return (
-        repo_or_caching_repo.compute_repository_definition()
-        if isinstance(repo_or_caching_repo, PendingRepositoryDefinition)
-        else repo_or_caching_repo
-    )
-
-
 def test_repository_snap_definitions_resources_basic():
     @asset
     def my_asset(foo: ResourceParam[str]):
@@ -82,7 +69,7 @@ def test_repository_snap_definitions_resources_basic():
         resources={"foo": ResourceDefinition.hardcoded_resource("wrapped")},
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
 
     assert len(repo_snap.resources) == 1
@@ -104,7 +91,7 @@ def test_repository_snap_definitions_resources_nested() -> None:
         resources={"foo": MyOuterResource(inner=inner)},
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
     assert repo_snap.resources
 
@@ -137,7 +124,7 @@ def test_repository_snap_definitions_resources_nested_top_level() -> None:
         resources={"foo": MyOuterResource(inner=inner), "inner": inner},
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
     assert repo_snap.resources
 
@@ -179,7 +166,7 @@ def test_repository_snap_definitions_function_style_resources_nested() -> None:
         resources={"foo": my_outer_resource, "inner": my_inner_resource},
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
     assert repo_snap.resources
 
@@ -227,7 +214,7 @@ def test_repository_snap_definitions_resources_nested_many() -> None:
         },
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
     assert repo_snap.resources
 
@@ -271,7 +258,7 @@ def test_repository_snap_definitions_resources_complex():
         },
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
 
     assert len(repo_snap.resources) == 1
@@ -362,7 +349,7 @@ def test_repository_snap_definitions_env_vars() -> None:
         },
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
     assert repo_snap.utilized_env_vars
 
@@ -406,7 +393,7 @@ def test_repository_snap_definitions_resources_assets_usage() -> None:
         },
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
     assert repo_snap.resources
 
@@ -455,7 +442,7 @@ def test_repository_snap_definitions_function_style_resources_assets_usage() -> 
         resources={"foo": my_resource},
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
     assert repo_snap.resources
 
@@ -511,7 +498,7 @@ def test_repository_snap_definitions_resources_job_op_usage() -> None:
         resources={"foo": MyResource(a_str="foo"), "bar": MyResource(a_str="bar")},
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
     assert repo_snap.resources
 
@@ -571,7 +558,7 @@ def test_repository_snap_definitions_resources_job_op_usage_graph() -> None:
         resources={"foo": MyResource(a_str="foo"), "bar": MyResource(a_str="bar")},
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
     assert repo_snap.resources
 
@@ -612,7 +599,7 @@ def test_asset_check():
         asset_checks=[my_asset_check, my_asset_check_2],
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
 
     assert len(repo_snap.asset_check_nodes) == 2
@@ -638,7 +625,7 @@ def test_asset_check_in_asset_op():
         asset_checks=[my_asset_check],
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
 
     assert len(repo_snap.asset_check_nodes) == 3
@@ -667,7 +654,7 @@ def test_asset_check_multiple_jobs():
         jobs=[my_job],
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
     assert repo_snap.asset_check_nodes
     assert len(repo_snap.asset_check_nodes) == 2
@@ -690,7 +677,7 @@ def test_asset_check_multi_asset():
 
     defs = Definitions(assets=[my_multi_asset])
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
     assert repo_snap.asset_check_nodes
     assert len(repo_snap.asset_check_nodes) == 1
@@ -736,7 +723,7 @@ def test_repository_snap_definitions_resources_schedule_sensor_usage():
         schedules=[my_schedule, my_schedule_two],
     )
 
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
     assert repo_snap.resources
 

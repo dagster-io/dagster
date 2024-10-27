@@ -159,18 +159,20 @@ class AssetKey(IHaveNew):
         prefix = key_prefix_from_coercible(prefix)
         return AssetKey(list(prefix) + list(self.path))
 
-    def __iter__(self):
-        raise DagsterInvariantViolationError(
-            "You have attempted to iterate a single AssetKey object. "
-            "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug."
-        )
+    if not TYPE_CHECKING:
+        # hide these from type checker so it doesn't believe AssetKey is iterable/indexable
+        def __iter__(self):
+            raise DagsterInvariantViolationError(
+                "You have attempted to iterate a single AssetKey object. "
+                "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug."
+            )
 
-    def __getitem__(self, _):
-        raise DagsterInvariantViolationError(
-            "You have attempted to index directly in to the AssetKey object. "
-            "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug. "
-            "Use asset_key.path instead to access the list of key components."
-        )
+        def __getitem__(self, _):
+            raise DagsterInvariantViolationError(
+                "You have attempted to index directly in to the AssetKey object. "
+                "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug. "
+                "Use asset_key.path instead to access the list of key components."
+            )
 
 
 CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]

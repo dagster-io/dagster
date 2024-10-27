@@ -167,7 +167,7 @@ export const RunsFeedRoot = () => {
       <Box
         border="bottom"
         background={Colors.backgroundLight()}
-        padding={{left: 24, right: 20, top: 12}}
+        padding={{left: 24, right: 20}}
         flex={{direction: 'row', justifyContent: 'space-between'}}
       >
         {tabs}

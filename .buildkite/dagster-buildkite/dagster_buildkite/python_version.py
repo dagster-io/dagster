@@ -21,6 +21,12 @@ class AvailablePythonVersion(str, Enum):
     def get_default(cls) -> "AvailablePythonVersion":
         return cls["V3_11"]
 
+    # Useful for providing to `PackageSpec.unsupported_python_versions` when you only want to test
+    # the default version.
+    @classmethod
+    def get_all_except_default(cls) -> List["AvailablePythonVersion"]:
+        return [v for v in cls.get_all() if v != cls.get_default()]
+
     @classmethod
     def get_pytest_defaults(cls) -> List["AvailablePythonVersion"]:
         branch_name = safe_getenv("BUILDKITE_BRANCH")

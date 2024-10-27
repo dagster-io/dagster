@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.8.13 (core) / 0.24.13 (libraries)
+
+### New
+
+- Performance improvements when loading code locations using multi-assets with many asset keys.
+- `AutomationCondition.in_progress()` now will be true if an asset partition is part of an in-progress backfill that has not yet executed it. The prior behavior, which only considered runs, is encapsulated in `AutomationCondition.execution_in_progress()`.
+- [ui] Added tag filter to the jobs page.
+- [ui] Preserve user login state for a longer period of time.
+- [dagster-dbt] Performance improvements when loading definitions using `build_dbt_asset_selection`.
+- [dagster-docker] `container_kwargs.stop_timeout` can now be set when using the `DockerRunLauncher` or `docker_executor` to configure the amount of time that Docker will wait when terminating a run for it to clean up before forcibly stopping it with a SIGKILL signal.
+- [dagster-sigma] The Sigma integration now fetches initial API responses in parallel, speeding up initial load.
+- [dagster-looker] Attempt to naively render liquid templates for derived table sql.
+- [dagster-looker] Added support for views and explores that rely on refinements or extends.
+- [dagster-looker] When fetching explores and dashboards from the Looker API, retrieve in parallel.
+
+### Bugfixes
+
+- Fixed an issue with `AutomationCondition.eager()` that could cause it to attempt to launch a second attempt of an asset in cases where it was skipped or failed during a run where one of its parents successfully materialized.
+- Fixed an issue which would cause `AutomationConditionSensorDefinitions` to not be evaluated if the `use_user_code_server` value was toggled after the initial evaluation.
+- Fixed an issue where configuration values for aliased pydantic fields would be dropped.
+- [ui] Fix an issue in the code locations page where invalid query parameters could crash the page.
+- [ui] Fix navigation between deployments when query parameters are present in the URL.
+- [helm] the blockOpConcurrencyLimitedRuns section of queuedRunCoordinator now correctly templates the appropriate config.
+- [dagster-sigma] Fixed pulling incomplete data for very large workspaces.
+
 ## 1.8.12 (core) / 0.24.12 (libraries)
 
 ### New

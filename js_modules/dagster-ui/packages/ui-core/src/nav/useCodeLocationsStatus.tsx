@@ -79,9 +79,16 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
     erroredLocationEntries = previousErroredLocationEntries.current;
   }
 
+  const isFirstLoadedRender = useRef(true);
+
   // Reload the workspace, and show a success or error toast upon completion.
   useLayoutEffect(() => {
     if (loading) {
+      return;
+    }
+
+    if (isFirstLoadedRender.current) {
+      isFirstLoadedRender.current = false;
       return;
     }
 

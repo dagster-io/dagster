@@ -62,7 +62,7 @@ While Dagster Pipes is lightweight and flexible, there are a few limitations to 
 
 - **Some Dagster concepts aren't supported for use in external processes.** Dagster Pipes (`dagster-pipes`) doesn't include the core Dagster (`dagster`) library. As such, concepts like resources and I/O managers, which are included in `dagster`, aren't available for use in external processes executed by Dagster Pipes.
 
-  For example, I/O managers aren't currently supported, as Dagster Pipes isn't built for processing data in memory. To process data in memory in Pyspark, you could use an I/O manager [as demonstrated in the Pyspark integration guide](/integrations/spark#running-pyspark-code-in-assets). Otherwise, in a remote case, you can use Pipes.
+  For example, I/O managers aren't currently supported. A work-around is demonstrated in the [step launchers migration guide](/guides/migrations/from-step-launchers-to-pipes).
 
 ---
 
@@ -74,8 +74,12 @@ Ready to get started with Dagster Pipes? Depending on what your goal is, how you
 
 - **If you need to orchestrate scripts others have written**, you can use our ready-to-go integrations to execute scripts in your chosen technology:
 
-  - [Amazon Web Services Lambda](/concepts/dagster-pipes/aws-lambda)
-  - [Databricks](/concepts/dagster-pipes/databricks)
   - [Kubernetes](/concepts/dagster-pipes/kubernetes)
+  - [Databricks](/concepts/dagster-pipes/databricks)
+  - [AWS ECS](/concepts/dagster-pipes/aws-ecs)
+  - [AWS Lambda](/concepts/dagster-pipes/aws-lambda)
+  - [AWS Glue](/concepts/dagster-pipes/aws-glue)
+  - [AWS EMR Serverless](/concepts/dagster-pipes/aws-emr-serverless)
+  - [AWS EMR](/concepts/dagster-pipes/aws-emr)
 
 - **If you don’t see your integration or you want to fully customize your Pipes experience**, check out the [Dagster Pipes details and customization guide](/concepts/dagster-pipes/dagster-pipes-details-and-customization) to learn how to create a custom experience.

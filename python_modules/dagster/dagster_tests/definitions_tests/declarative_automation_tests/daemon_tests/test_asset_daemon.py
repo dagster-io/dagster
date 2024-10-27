@@ -348,7 +348,7 @@ daemon_sensor_scenario = AssetDaemonScenario(
         [
             AutomationConditionSensorDefinition(
                 name="auto_materialize_sensor_a",
-                asset_selection=AssetSelection.assets("A"),
+                target=AssetSelection.assets("A"),
                 default_status=DefaultSensorStatus.RUNNING,
                 run_tags={
                     "foo_tag": "bar_val",
@@ -356,7 +356,7 @@ daemon_sensor_scenario = AssetDaemonScenario(
             ),
             AutomationConditionSensorDefinition(
                 name="auto_materialize_sensor_b",
-                asset_selection=AssetSelection.assets("B"),
+                target=AssetSelection.assets("B"),
                 default_status=DefaultSensorStatus.STOPPED,
                 minimum_interval_seconds=15,
             ),
@@ -524,7 +524,7 @@ single_daemon_sensor_scenario = AssetDaemonScenario(
         [
             AutomationConditionSensorDefinition(
                 name="named_sensor",
-                asset_selection=AssetSelection.assets("C"),
+                target=AssetSelection.assets("C"),
                 default_status=DefaultSensorStatus.RUNNING,
             ),
         ]

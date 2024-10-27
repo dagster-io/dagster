@@ -1,21 +1,29 @@
 import uuid
+from pathlib import Path
 
 import pytest
 import responses
 from dagster import materialize
 from dagster._config.field_utils import EnvVar
-from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
+from dagster._core.definitions.reconstruct import (
+    ReconstructableJob,
+    ReconstructableRepository,
+    initialize_repository_def_from_pointer,
+)
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.env import environ
 from dagster._utils.test.definitions import lazy_definitions
 from dagster_powerbi import PowerBIWorkspace
-from dagster_powerbi.resource import BASE_API_URL, PowerBIToken
+from dagster_powerbi.assets import build_semantic_model_refresh_asset_definition
+from dagster_powerbi.resource import BASE_API_URL, PowerBIToken, load_powerbi_asset_specs
 
 from dagster_powerbi_tests.conftest import SAMPLE_SEMANTIC_MODEL
 
@@ -40,10 +48,10 @@ def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id:
         credentials=PowerBIToken(api_token=fake_token),
         workspace_id=workspace_id,
     )
-    all_assets = resource.build_defs().get_asset_graph().assets_defs
+    all_assets = load_powerbi_asset_specs(resource)
 
-    # 1 dashboard, 1 report, 1 semantic model, 2 data sources
-    assert len(all_assets) == 5
+    # 1 dashboard, 1 report, 1 semantic model
+    assert len(all_assets) == 3
 
     # Sanity check outputs, translator tests cover details here
     dashboard_asset = next(asset for asset in all_assets if asset.key.path[0] == "dashboard")
@@ -57,19 +65,6 @@ def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id:
     )
     assert semantic_model_asset.key.path == ["semantic_model", "Sales_Returns_Sample_v201912"]
 
-    data_source_assets = [
-        asset
-        for asset in all_assets
-        if asset.key.path[0] not in ("dashboard", "report", "semantic_model")
-    ]
-    assert len(data_source_assets) == 2
-
-    data_source_keys = {spec.key for spec in data_source_assets}
-    assert data_source_keys == {
-        AssetKey(["data_27_09_2019_xlsx"]),
-        AssetKey(["sales_marketing_datas_xlsx"]),
-    }
-
 
 @lazy_definitions
 def state_derived_defs_two_workspaces() -> Definitions:
@@ -81,9 +76,11 @@ def state_derived_defs_two_workspaces() -> Definitions:
         credentials=PowerBIToken(api_token=EnvVar("FAKE_API_TOKEN")),
         workspace_id="c5322b8a-d7e1-42e8-be2b-a5e636ca3221",
     )
-    return Definitions.merge(
-        resource.build_defs(),
-        resource_second_workspace.build_defs(),
+    return Definitions(
+        assets=[
+            *load_powerbi_asset_specs(resource),
+            *load_powerbi_asset_specs(resource_second_workspace),
+        ]
     )
 
 
@@ -112,18 +109,80 @@ def test_refreshable_semantic_model(
         workspace_id=workspace_id,
         refresh_poll_interval=0,
     )
-    all_assets = (
-        resource.build_defs(enable_refresh_semantic_models=True).get_asset_graph().assets_defs
-    )
+    all_specs = load_powerbi_asset_specs(resource)
 
-    # 1 dashboard, 1 report, 1 semantic model, 2 data sources
-    assert len(all_assets) == 5
+    assets_with_semantic_models = [
+        build_semantic_model_refresh_asset_definition(resource_key="powerbi", spec=spec)
+        if spec.tags.get("dagster-powerbi/asset_type") == "semantic_model"
+        else spec
+        for spec in all_specs
+    ]
+
+    # 1 dashboard, 1 report, 1 semantic model
+    assert len(assets_with_semantic_models) == 3
 
     semantic_model_asset = next(
-        asset for asset in all_assets if asset.key.path[0] == "semantic_model"
+        asset for asset in assets_with_semantic_models if asset.key.path[0] == "semantic_model"
     )
+
     assert semantic_model_asset.key.path == ["semantic_model", "Sales_Returns_Sample_v201912"]
-    assert semantic_model_asset.is_executable
+    assert isinstance(semantic_model_asset, AssetsDefinition) and semantic_model_asset.is_executable
+
+    # materialize the semantic model
+
+    workspace_data_api_mocks.add(
+        method=responses.POST,
+        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
+        json={"notifyOption": "NoNotification"},
+        status=202,
+    )
+
+    workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
+        json={"value": [{"status": "Unknown"}]},
+        status=200,
+    )
+    workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
+        json={
+            "value": [{"status": "Completed" if success else "Failed", "serviceExceptionJson": {}}]
+        },
+        status=200,
+    )
+
+    # Missing resource
+    with pytest.raises(DagsterInvalidDefinitionError):
+        materialize([semantic_model_asset], raise_on_error=False)
+
+    result = materialize(
+        [semantic_model_asset], raise_on_error=False, resources={"powerbi": resource}
+    )
+    assert result.success is success
+
+
+@pytest.mark.parametrize("success", [True, False])
+def test_refreshable_semantic_model_legacy(
+    workspace_data_api_mocks: responses.RequestsMock, workspace_id: str, success: bool
+) -> None:
+    fake_token = uuid.uuid4().hex
+    resource = PowerBIWorkspace(
+        credentials=PowerBIToken(api_token=fake_token),
+        workspace_id=workspace_id,
+        refresh_poll_interval=0,
+    )
+
+    defs = resource.build_defs(enable_refresh_semantic_models=True)
+
+    semantic_model_asset = next(
+        asset
+        for asset in defs.get_asset_graph().assets_defs
+        if asset.is_executable and asset.key.path[0] == "semantic_model"
+    )
+
+    assert semantic_model_asset.key.path == ["semantic_model", "Sales_Returns_Sample_v201912"]
+    assert isinstance(semantic_model_asset, AssetsDefinition) and semantic_model_asset.is_executable
 
     # materialize the semantic model
 
@@ -160,14 +219,13 @@ def state_derived_defs() -> Definitions:
         credentials=PowerBIToken(api_token=fake_token),
         workspace_id="a2122b8f-d7e1-42e8-be2b-a5e636ca3221",
     )
-    pbi_defs = resource.build_defs()
+    powerbi_specs = load_powerbi_asset_specs(resource)
 
     @asset
     def my_materializable_asset(): ...
 
-    return Definitions.merge(
-        Definitions(assets=[my_materializable_asset], jobs=[define_asset_job("all_asset_job")]),
-        pbi_defs,
+    return Definitions(
+        assets=[my_materializable_asset, *powerbi_specs], jobs=[define_asset_job("all_asset_job")]
     )
 
 
@@ -177,8 +235,11 @@ def test_state_derived_defs(
     with instance_for_test() as instance:
         assert len(workspace_data_api_mocks.calls) == 0
 
+        repository_def = initialize_repository_def_from_pointer(
+            CodePointer.from_python_file(str(Path(__file__)), "state_derived_defs", None),
+        )
+
         # first, we resolve the repository to generate our cached metadata
-        repository_def = state_derived_defs().get_repository_def()
         assert len(workspace_data_api_mocks.calls) == 5
 
         # 3 PowerBI external assets, one materializable asset

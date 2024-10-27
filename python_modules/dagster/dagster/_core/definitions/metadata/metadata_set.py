@@ -93,6 +93,14 @@ class NamespacedKVSet(ABC, DagsterModel):
                 namespace, key = splits
                 if namespace == cls.namespace() and key in model_fields(cls):
                     kwargs[key] = cls._extract_value(field_name=key, value=value)
+                elif namespace == cls.namespace() and key in cls.current_key_by_legacy_key():
+                    current_key = cls.current_key_by_legacy_key()[key]
+                    if f"{cls.namespace()}/{current_key}" not in values:
+                        # Only extract the value from the backcompat key if the new
+                        # key is not present
+                        kwargs[current_key] = cls._extract_value(
+                            field_name=current_key, value=value
+                        )
 
         return cls(**kwargs)
 
@@ -101,6 +109,11 @@ class NamespacedKVSet(ABC, DagsterModel):
     def _extract_value(cls, field_name: str, value: Any) -> Any:
         """Based on type annotation, potentially coerce the value to the expected type."""
         ...
+
+    @classmethod
+    def current_key_by_legacy_key(cls) -> Mapping[str, str]:
+        """Return a mapping of each legacy key to its current key."""
+        return {}
 
 
 class NamespacedMetadataSet(NamespacedKVSet):
@@ -165,7 +178,7 @@ class TableMetadataSet(NamespacedMetadataSet):
             outputs for the table.
         row_count (Optional[int]): The number of rows in the table.
         partition_row_count (Optional[int]): The number of rows in the materialized or observed partition.
-        relation_identifier (Optional[str]): A unique identifier for the table/view, typically fully qualified.
+        table_name (Optional[str]): A unique identifier for the table/view, typically fully qualified.
             For example, `my_database.my_schema.my_table`.
     """
 
@@ -173,11 +186,15 @@ class TableMetadataSet(NamespacedMetadataSet):
     column_lineage: Optional[TableColumnLineage] = None
     row_count: Optional[int] = None
     partition_row_count: Optional[int] = None
-    relation_identifier: Optional[str] = None
+    table_name: Optional[str] = None
 
     @classmethod
     def namespace(cls) -> str:
         return "dagster"
+
+    @classmethod
+    def current_key_by_legacy_key(cls) -> Mapping[str, str]:
+        return {"relation_identifier": "table_name"}
 
 
 class UriMetadataSet(NamespacedMetadataSet):

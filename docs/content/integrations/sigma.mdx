@@ -7,7 +7,7 @@ description: Represent your Sigma assets in Dagster
 
 <ExperimentalCallout />
 
-This guide provides instructions for using Dagster with Sigma. Your Sigma assets, including datasets and workbooks, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Sigma assets and upstream data assets you are already modeling in Dagster.
+This guide provides instructions for using Dagster with Sigma using the `dagster-sigma` library. Your Sigma assets, including datasets and workbooks, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Sigma assets and upstream data assets you are already modeling in Dagster.
 
 ## What you'll learn
 
@@ -17,6 +17,7 @@ This guide provides instructions for using Dagster with Sigma. Your Sigma assets
 <details>
   <summary>Prerequisites</summary>
 
+- The `dagster-sigma` library installed in your environment
 - Familiarity with asset definitions and the Dagster asset graph
 - Familiarity with Dagster resources
 - Familiarity with Sigma concepts, like datasets and workbooks
@@ -24,6 +25,14 @@ This guide provides instructions for using Dagster with Sigma. Your Sigma assets
 - A Sigma client ID and client secret. For more information, see [Generate API client credentials](https://help.sigmacomputing.com/reference/generate-client-credentials#generate-api-client-credentials) in the Sigma documentation.
 
 </details>
+
+## Set up your environment
+
+To get started, you'll need to install the `dagster` and `dagster-sigma` Python packages:
+
+```bash
+pip install dagster dagster-sigma
+```
 
 ## Represent Sigma assets in the asset graph
 
@@ -70,7 +79,7 @@ resource = SigmaOrganization(
 class MyCustomSigmaTranslator(DagsterSigmaTranslator):
     def get_workbook_spec(self, data: SigmaWorkbook) -> dg.AssetSpec:
         # Adds a custom team owner tag to all reports
-        return super().get_workbook_spec(data)._replace(owners=["my_team"])
+        return super().get_asset_spec(data)._replace(owners=["my_team"])
 
 
 defs = resource.build_defs(dagster_sigma_translator=MyCustomSigmaTranslator)

@@ -17,9 +17,17 @@ def get_version() -> str:
 ver = get_version()
 pin = "" if ver == "1!0+dev" else NON_EDITABLE_INSTALL_DAGSTER_PIN
 
+# The [in-airflow] subpackage does not have a setup dependency on Airflow because
+# Airflow cannot be installed via setup.py reliably. Instead, users need to install
+# from a constraints file as recommended by the Airflow project.
+# However, to ensure a reliable test and tutorial setup, we pin a version of Airflow
+# that is compatible with the current version of dagster-airlift for all supported
+# versions of python.
+# Eventually, we could consider adding a test suite that runs across different versions of airflow
+# to ensure compatibility.
 AIRFLOW_REQUIREMENTS = [
     # Requirements for python versions under 3.12.
-    "apache-airflow>=2.0.0; python_version < '3.12'",
+    "apache-airflow==2.7.3; python_version < '3.12'",
     "pendulum>=2.0.0,<3.0.0; python_version < '3.12'",
     # Requirements for python versions 3.12 and above.
     "apache-airflow>=2.9.0; python_version >= '3.12'",

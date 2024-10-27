@@ -170,15 +170,11 @@
   "TypeListContainerQuery": "c92c874af7b1e7be221281fa265743a9c426f909ffc7500f302540ef9a6cf8f2",
   "GraphExplorerRootQuery": "04d1a414b72b466ded40652c5e4110ef46fa905557cee0d737fc20cede490b85",
   "SingleNonSDAAssetQuery": "a7ef9ca5f114adee47bc5361112b16a2f00b70ae06eb6ab65a9f312bbae7625c",
-  "SingleGraphQuery": "f1d47e63982c085807a7013c1581574e1284fe12344ea9752349c57aff0e0b2b",
   "SingleJobQuery": "5ff8f070e59507f5369f1a19abb9a72cfa12439ab04a08dc340866885f6e4702",
   "SingleScheduleQuery": "508a47e32ce04ba5be52c66cd592b74147bf98ec85b9f5d0e4db45172bd9a897",
   "SingleSensorQuery": "dbda5ba47d4ba10f8c527c9a7cd45fba0811276441a17a8ac6f173ed588f025b",
   "WorkspaceAssetsQuery": "53e4bb05e5c1194cc83e0910cfe7c482d75344c10eabf184be26da29d771c236",
-  "LocationWorkspaceQuery": "976247550d8a8226d9b5afcb03dbb9e2c8daa5b1691f9bfe09dcc12be7a67425",
+  "LocationWorkspaceQuery": "72685489c28204d48c39ed5d85231756f5637febc8b19e0a0b4967a2d982191e",
   "CodeLocationStatusQuery": "f92885e073b8b4b9bd588bf248df7b06025e2a1f6e74c082233ac7863f5eef8e",
-  "WorkspaceGraphsQuery": "ccbef870f327b56beb0d781a476c8afbbc22ff2621181c8576861daaf7667ecf",
-  "WorkspaceJobsQuery": "637f616d6d4eba194cf80bbb292f579f864d3b16aeb0b40cdf108d8100ba9b1c",
-  "WorkspaceSchedulesQuery": "213cb3c1a2ffd6d9a6fbe20cd58eab746d53b6ab04d7d498c3c4f1f9d4a850d3",
-  "WorkspaceSensorsQuery": "2c8ef3f0111c4524514ff762d542810e95d429cc421e60893a3a4bbb39bb9849"
+  "WorkspaceGraphsQuery": "ccbef870f327b56beb0d781a476c8afbbc22ff2621181c8576861daaf7667ecf"
 }

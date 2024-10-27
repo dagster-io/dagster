@@ -343,7 +343,7 @@ def add_default_automation_condition_sensor(
         sensor_selection = get_default_automation_condition_sensor_selection(sensors, asset_graph)
         if sensor_selection:
             default_sensor = AutomationConditionSensorDefinition(
-                DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME, asset_selection=sensor_selection
+                DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME, target=sensor_selection
             )
             sensors = [*sensors, default_sensor]
 

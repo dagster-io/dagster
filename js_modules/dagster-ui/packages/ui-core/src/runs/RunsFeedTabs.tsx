@@ -5,7 +5,6 @@ import {useLocation} from 'react-router-dom';
 import styled, {css} from 'styled-components';
 
 import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
-import {getRunFeedPath} from './RunsFeedUtils';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
 import {gql, useQuery} from '../apollo-client';
 import {RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables} from './types/RunsFeedTabs.types';
@@ -65,7 +64,7 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfill
     const statusTokens = statuses.map((status) => ({token: 'status' as const, value: status}));
     return runsPathWithFilters(
       [...statusTokens, ...tokensMinusStatus],
-      getRunFeedPath(),
+      '/runs/',
       includeRunsFromBackfills,
     );
   };
@@ -87,9 +86,7 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfill
       <TabLink
         id="scheduled"
         title="Scheduled"
-        to={`${getRunFeedPath()}scheduled?${
-          includeRunsFromBackfills ? 'show_runs_within_backfills=true' : ''
-        }`}
+        to={`/runs/scheduled?${includeRunsFromBackfills ? 'show_runs_within_backfills=true' : ''}`}
       />
     </Tabs>
   );
@@ -122,7 +119,7 @@ export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
 
 export const useSelectedRunsFeedTab = (filterTokens: TokenizingFieldValue[]) => {
   const {pathname} = useLocation();
-  if (pathname === `${getRunFeedPath()}scheduled`) {
+  if (pathname === '/runs/scheduled') {
     return 'scheduled';
   }
   const statusTokens = new Set(

@@ -14,10 +14,10 @@ from typing import (
     get_origin,
 )
 
-if sys.version_info >= (3, 9):
-    from typing import TypeAlias
-else:
+if sys.version_info < (3, 10):
     from typing_extensions import TypeAlias
+else:
+    from typing import TypeAlias
 
 import polars as pl
 from dagster import InputContext, OutputContext

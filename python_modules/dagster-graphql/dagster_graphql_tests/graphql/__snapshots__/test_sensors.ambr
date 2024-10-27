@@ -141,21 +141,6 @@
     dict({
       'description': None,
       'minIntervalSeconds': 30,
-      'name': 'fresh_sensor',
-      'sensorState': dict({
-        'runs': list([
-        ]),
-        'runsCount': 0,
-        'status': 'STOPPED',
-        'ticks': list([
-        ]),
-      }),
-      'targets': list([
-      ]),
-    }),
-    dict({
-      'description': None,
-      'minIntervalSeconds': 30,
       'name': 'invalid_asset_selection_error',
       'sensorState': dict({
         'runs': list([

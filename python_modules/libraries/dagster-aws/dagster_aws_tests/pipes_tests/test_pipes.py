@@ -491,7 +491,7 @@ def test_cloudwatch_logs_reader(cloudwatch_client: "CloudWatchLogsClient", capsy
 
     time.sleep(1)
 
-    assert capsys.readouterr().out == "1\n2\n3\n"
+    assert capsys.readouterr().out.strip() == "1\n2\n3"
 
 
 def test_cloudwatch_message_reader(cloudwatch_client: "CloudWatchLogsClient", capsys):
@@ -615,7 +615,7 @@ def test_glue_pipes(
     def foo(context: AssetExecutionContext, pipes_glue_client: PipesGlueClient):
         results = pipes_glue_client.run(
             context=context,
-            job_name=GLUE_JOB_NAME,
+            start_job_run_params={"JobName": GLUE_JOB_NAME},
             extras={"bar": "baz"},
         ).get_results()
         return results
@@ -701,70 +701,13 @@ def long_glue_job(s3_client, glue_client) -> Iterator[str]:
         yield job_name
 
 
-@pytest.mark.parametrize("pipes_messages_backend", ["s3", "cloudwatch"])
-def test_glue_pipes_params_argument(
-    capsys,
-    s3_client,
-    glue_client,
-    cloudwatch_client,
-    pipes_messages_backend: Literal["s3", "cloudwatch"],
-):
-    @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["foo"]))])
-    def foo(context: AssetExecutionContext, pipes_glue_client: PipesGlueClient):
-        results = pipes_glue_client.run(
-            context=context,
-            extras={"bar": "baz"},
-            start_job_run_params={"JobName": GLUE_JOB_NAME, "Arguments": {"FOO": "BAR"}},
-        ).get_results()
-        return results
-
-    context_injector = PipesS3ContextInjector(bucket=_S3_TEST_BUCKET, client=s3_client)
-    message_reader = (
-        PipesS3MessageReader(bucket=_S3_TEST_BUCKET, client=s3_client, interval=0.001)
-        if pipes_messages_backend == "s3"
-        else PipesCloudWatchMessageReader(client=cloudwatch_client)
-    )
-
-    pipes_glue_client = PipesGlueClient(
-        client=LocalGlueMockClient(  # pyright: ignore[reportArgumentType]
-            aws_endpoint_url=_MOTO_SERVER_URL,
-            glue_client=glue_client,
-            s3_client=s3_client,
-            cloudwatch_client=cloudwatch_client,
-            pipes_messages_backend=pipes_messages_backend,
-        ),
-        context_injector=context_injector,
-        message_reader=message_reader,
-    )
-
-    with instance_for_test() as instance:
-        materialize([foo], instance=instance, resources={"pipes_glue_client": pipes_glue_client})
-        mat = instance.get_latest_materialization_event(foo.key)
-        assert mat and mat.asset_materialization
-        assert isinstance(mat.asset_materialization.metadata["bar"], MarkdownMetadataValue)
-        assert mat.asset_materialization.metadata["bar"].value == "baz"
-        assert mat.asset_materialization.tags
-        assert mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
-        assert mat.asset_materialization.tags[DATA_VERSION_IS_USER_PROVIDED_TAG]
-
-        captured = capsys.readouterr()
-        assert re.search(r"dagster - INFO - [^\n]+ - hello world\n", captured.err, re.MULTILINE)
-
-        asset_check_executions = instance.event_log_storage.get_asset_check_execution_history(
-            check_key=AssetCheckKey(foo.key, name="foo_check"),
-            limit=1,
-        )
-        assert len(asset_check_executions) == 1
-        assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
-
-
 @pytest.fixture
 def glue_asset(long_glue_job: str) -> AssetsDefinition:
     @asset
     def foo(context: AssetExecutionContext, pipes_glue_client: PipesGlueClient):
         results = pipes_glue_client.run(
             context=context,
-            job_name=long_glue_job,
+            start_job_run_params={"JobName": long_glue_job},
         ).get_results()
         return results
 

@@ -17,7 +17,7 @@ dev_install:
 	uv pip install -e ../../../dagster-airlift
 	uv pip install -e .
 
-setup_local_env: 
+setup_local_env:
 	$(MAKE) wipe
 	mkdir -p $(AIRFLOW_HOME)
 	mkdir -p $(DAGSTER_HOME)

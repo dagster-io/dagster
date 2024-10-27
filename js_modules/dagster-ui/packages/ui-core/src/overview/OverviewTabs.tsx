@@ -18,7 +18,7 @@ interface Props<TData> {
 export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
   const {refreshState, tab} = props;
 
-  const {flagLegacyNav, flagRunsFeed} = useFeatureFlags();
+  const {flagLegacyNav, flagLegacyRunsPage} = useFeatureFlags();
 
   const automaterialize = useAutomaterializeDaemonStatus();
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
@@ -64,9 +64,9 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
           />
         ) : null}
         <TabLink id="resources" title="Resources" to="/overview/resources" />
-        {flagRunsFeed ? null : (
+        {flagLegacyRunsPage ? (
           <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
-        )}
+        ) : null}
       </Tabs>
       {refreshState ? (
         <Box style={{alignSelf: 'center'}}>

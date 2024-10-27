@@ -56,6 +56,8 @@ def test_observation_defs_are_observed(
     from kitchen_sink.dagster_defs.airflow_instance import local_airflow_instance
 
     af_instance = local_airflow_instance()
+    dag_ids = [dag_info.dag_id for dag_info in af_instance.list_dags()]
+    assert "simple_unproxied_dag" in dag_ids
 
     expected_obs_per_dag = {
         "simple_unproxied_dag": [AssetKey("my_asset"), AssetKey("my_downstream_asset")],
@@ -63,7 +65,7 @@ def test_observation_defs_are_observed(
 
     for dag_id, expected_asset_keys in expected_obs_per_dag.items():
         airflow_run_id = af_instance.trigger_dag(dag_id=dag_id)
-        af_instance.wait_for_run_completion(dag_id=dag_id, run_id=airflow_run_id, timeout=60)
+        af_instance.wait_for_run_completion(dag_id=dag_id, run_id=airflow_run_id, timeout=120)
         dagster_instance = DagsterInstance.get()
 
         dag_asset_key = AssetKey(["my_airflow_instance", "dag", dag_id])

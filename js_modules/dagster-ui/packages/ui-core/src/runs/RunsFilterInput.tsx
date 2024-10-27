@@ -535,8 +535,8 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       } else if (value.type === DagsterTag.User) {
         return <UserDisplay email={value.value!} isFilter />;
       } else if (value.type === DagsterTag.Automaterialize) {
-        icon = <Icon name="auto_materialize_policy" />;
-        labelValue = 'Auto-materialize policy';
+        icon = <Icon name="automation_condition" />;
+        labelValue = 'Automation condition';
       }
       return (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
@@ -547,7 +547,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     },
     getStringValue: (x) => {
       if (x.type === DagsterTag.Automaterialize) {
-        return 'Auto-materialize policy';
+        return 'Automation condition';
       }
       return x.value!;
     },

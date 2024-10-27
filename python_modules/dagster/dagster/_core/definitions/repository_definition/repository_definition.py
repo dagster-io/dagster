@@ -4,13 +4,11 @@ from typing import (
     Any,
     Dict,
     Iterable,
-    List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Type,
-    Union,
 )
 
 import dagster._check as check
@@ -20,25 +18,21 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import MetadataMapping
 from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
 )
-from dagster._core.definitions.repository_definition.repository_data import (
-    CachingRepositoryData,
-    RepositoryData,
-)
+from dagster._core.definitions.repository_definition.repository_data import RepositoryData
 from dagster._core.definitions.repository_definition.valid_definitions import (
-    RepositoryListDefinition as RepositoryListDefinition,
+    RepositoryElementDefinition as RepositoryElementDefinition,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import check_valid_name
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
@@ -47,7 +41,6 @@ from dagster._utils.cached_method import cached_method
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.asset_checks import AssetChecksDefinition
-    from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
@@ -97,6 +90,14 @@ class RepositoryLoadData(
             self._hash = hash_collection(self)
         return self._hash
 
+    def replace_reconstruction_metadata(
+        self, reconstruction_metadata: Mapping[str, Any]
+    ) -> "RepositoryLoadData":
+        return RepositoryLoadData(
+            cacheable_asset_data=self.cacheable_asset_data,
+            reconstruction_metadata=reconstruction_metadata,
+        )
+
 
 class RepositoryDefinition:
     """Define a repository that contains a group of definitions.
@@ -132,6 +133,37 @@ class RepositoryDefinition:
     @property
     def repository_load_data(self) -> Optional[RepositoryLoadData]:
         return self._repository_load_data
+
+    def replace_reconstruction_metadata(
+        self, reconstruction_metadata: Mapping[str, str]
+    ) -> "RepositoryDefinition":
+        """Modifies the repository load data to include the provided reconstruction metadata."""
+        check.mapping_param(reconstruction_metadata, "reconstruction_metadata", key_type=str)
+        if not reconstruction_metadata:
+            return self
+
+        for k, v in reconstruction_metadata.items():
+            if not isinstance(v, str):
+                raise DagsterInvariantViolationError(
+                    f"Reconstruction metadata values must be strings. State-representing values are"
+                    f" expected to be serialized before being passed as reconstruction metadata."
+                    f" Got for key {k}:\n\n{v}"
+                )
+        normalized_metadata = {
+            k: CodeLocationReconstructionMetadataValue(v)
+            for k, v in reconstruction_metadata.items()
+        }
+        return RepositoryDefinition(
+            self._name,
+            repository_data=self._repository_data,
+            description=self._description,
+            metadata=self._metadata,
+            repository_load_data=self._repository_load_data.replace_reconstruction_metadata(
+                normalized_metadata
+            )
+            if self._repository_load_data
+            else RepositoryLoadData(reconstruction_metadata=normalized_metadata),
+        )
 
     @public
     @property
@@ -398,104 +430,3 @@ class RepositoryDefinition:
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.
     def __call__(self, *args, **kwargs):
         return self
-
-
-class PendingRepositoryDefinition:
-    def __init__(
-        self,
-        name: str,
-        repository_definitions: Sequence[
-            Union[RepositoryListDefinition, "CacheableAssetsDefinition"]
-        ],
-        description: Optional[str] = None,
-        metadata: Optional[MetadataMapping] = None,
-        default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-        default_executor_def: Optional[ExecutorDefinition] = None,
-        _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
-    ):
-        self._repository_definitions = check.list_param(
-            repository_definitions,
-            "repository_definition",
-            additional_message=(
-                "PendingRepositoryDefinition supports only list-based repository data at this time."
-            ),
-        )
-        self._name = name
-        self._description = description
-        self._metadata = metadata or {}
-        self._default_logger_defs = default_logger_defs
-        self._default_executor_def = default_executor_def
-        self._top_level_resources = _top_level_resources
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    def _compute_repository_load_data(self) -> RepositoryLoadData:
-        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-
-        cacheable_asset_data = {
-            defn.unique_id: defn.compute_cacheable_data()
-            for defn in self._repository_definitions
-            if isinstance(defn, CacheableAssetsDefinition)
-        }
-
-        return RepositoryLoadData(
-            cacheable_asset_data=cacheable_asset_data,
-            # Extract all CodeLocationReconstructionMetadataValue to make available for reconstruction
-            reconstruction_metadata={
-                k: v
-                for k, v in self._metadata.items()
-                if isinstance(v, CodeLocationReconstructionMetadataValue)
-            },
-        )
-
-    def _get_repository_definition(
-        self, repository_load_data: RepositoryLoadData
-    ) -> RepositoryDefinition:
-        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-
-        resolved_definitions: List[RepositoryListDefinition] = []
-        for defn in self._repository_definitions:
-            if isinstance(defn, CacheableAssetsDefinition):
-                # should always have metadata for each cached defn at this point
-                check.invariant(
-                    defn.unique_id in repository_load_data.cacheable_asset_data,
-                    "No metadata found for CacheableAssetsDefinition with unique_id"
-                    f" {defn.unique_id}.",
-                )
-                # use the emtadata to generate definitions
-                resolved_definitions.extend(
-                    defn.build_definitions(
-                        data=repository_load_data.cacheable_asset_data[defn.unique_id]
-                    )
-                )
-            else:
-                resolved_definitions.append(defn)
-
-        repository_data = CachingRepositoryData.from_list(
-            resolved_definitions,
-            default_executor_def=self._default_executor_def,
-            default_logger_defs=self._default_logger_defs,
-            top_level_resources=self._top_level_resources,
-        )
-
-        return RepositoryDefinition(
-            self._name,
-            repository_data=repository_data,
-            description=self._description,
-            metadata=self._metadata,
-            repository_load_data=repository_load_data,
-        )
-
-    def reconstruct_repository_definition(
-        self, repository_load_data: RepositoryLoadData
-    ) -> RepositoryDefinition:
-        """Use the provided RepositoryLoadData to construct and return a RepositoryDefinition."""
-        check.inst_param(repository_load_data, "repository_load_data", RepositoryLoadData)
-        return self._get_repository_definition(repository_load_data)
-
-    def compute_repository_definition(self) -> RepositoryDefinition:
-        """Compute the required RepositoryLoadData and use it to construct and return a RepositoryDefinition."""
-        repository_load_data = self._compute_repository_load_data()
-        return self._get_repository_definition(repository_load_data)

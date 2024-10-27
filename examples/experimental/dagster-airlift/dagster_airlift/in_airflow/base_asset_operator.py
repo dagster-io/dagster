@@ -2,6 +2,7 @@ import logging
 import os
 import time
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any, Dict, Iterable, Mapping, Sequence, Tuple
 
 import requests
@@ -12,6 +13,11 @@ from requests import Response
 from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY, TASK_ID_TAG_KEY
 
 from .gql_queries import ASSET_NODES_QUERY, RUNS_QUERY, TRIGGER_ASSETS_MUTATION, VERIFICATION_QUERY
+from .partition_utils import (
+    PARTITION_NAME_TAG,
+    PartitioningInformation,
+    translate_logical_date_to_partition_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +67,19 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
         self, context: Context, asset_nodes: Sequence[Mapping[str, Any]]
     ) -> Iterable[Mapping[str, Any]]:
         """Filters the asset nodes to only include those that should be triggered by the current task."""
+
+    def get_partition_key(
+        self, context: Context, partitioning_info: PartitioningInformation
+    ) -> str:
+        """Overrideable method to determine the partition key to use to trigger the dagster run.
+
+        This method will only be called if the underlying asset is partitioned.
+        """
+        if not partitioning_info:
+            return None
+        return translate_logical_date_to_partition_key(
+            self.get_airflow_logical_date(context), partitioning_info
+        )
 
     def get_valid_graphql_response(self, response: Response, key: str) -> Any:
         response_json = response.json()
@@ -128,6 +147,9 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
     def get_airflow_task_id(self, context: Context) -> str:
         return self.get_attribute_from_airflow_context(context, "task").task_id
 
+    def get_airflow_logical_date(self, context: Context) -> datetime:
+        return self.get_attribute_from_airflow_context(context, "logical_date")
+
     def default_dagster_run_tags(self, context: Context) -> Dict[str, str]:
         return {
             DAG_ID_TAG_KEY: self.get_airflow_dag_id(context),
@@ -165,12 +187,17 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
         job_identifier = _get_implicit_job_identifier(next(iter(filtered_asset_nodes)))
         asset_key_paths = [asset_node["assetKey"]["path"] for asset_node in filtered_asset_nodes]
         logger.info(f"Triggering run for {job_identifier} with assets {asset_key_paths}")
+        tags = self.default_dagster_run_tags(context)
+        partitioning_info = PartitioningInformation.from_asset_node_graphql(filtered_asset_nodes)
+        if partitioning_info:
+            tags[PARTITION_NAME_TAG] = self.get_partition_key(context, partitioning_info)
+        logger.info(f"Using tags {tags}")
         run_id = self.launch_dagster_run(
             context,
             session,
             dagster_url,
             _build_dagster_run_execution_params(
-                self.default_dagster_run_tags(context),
+                tags,
                 job_identifier,
                 asset_key_paths=asset_key_paths,
             ),
