@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from dagster import AssetExecutionContext, AssetSpec, DailyPartitionsDefinition, Definitions
+from dagster import AssetExecutionContext, AssetSpec, Definitions
 from dagster._time import get_current_datetime_midnight
 from dagster_airlift.core import (
     AirflowInstance,
@@ -11,7 +11,16 @@ from dagster_airlift.core import (
 )
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
+# start_create_partitions
+from dagster import DailyPartitionsDefinition
+
+# Pick your current date for the start date here.
+PARTITIONS_DEF = DailyPartitionsDefinition(start_date="2024-10-28")
+# end_create_partitions
+
+# we'll create the same thing but with the _actual_ current datetime for testing purposes.
 PARTITIONS_DEF = DailyPartitionsDefinition(start_date=get_current_datetime_midnight())
+
 
 
 def dbt_project_path() -> Path:
@@ -19,6 +28,9 @@ def dbt_project_path() -> Path:
     assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
     return Path(env_val)
 
+# start_partitioned_assets 
+raw_customers_spec = AssetSpec(key=["raw_data", "raw_customers"], partitions_def=PARTITIONS_DEF)
+export_customers_spec = AssetSpec(key="customers_csv", deps=["customers"], partitions_def=PARTITIONS_DEF)
 
 @dbt_assets(
     manifest=dbt_project_path() / "target" / "manifest.json",
@@ -27,6 +39,7 @@ def dbt_project_path() -> Path:
 )
 def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
+# end_partitioned_assets 
 
 
 mapped_assets = assets_with_task_mappings(

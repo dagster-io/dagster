@@ -262,30 +262,20 @@ _Note: There will be some delay between task completion and assets materializing
 
 ### Adding partitions
 
-If your assets represent a time-partitioned data source, Airlift can automatically associate your materializations to the relevant partitions. In the case of `rebuild_customers_list`, data is daily partitioned in each created table, and as a result we've added a `@daily` cron schedule to the DAG to make sure it runs every day. We can likewise add a `DailyPartitionsDefinition` to each of our assets.
+If your assets represent a time-partitioned data source, Airlift can automatically associate your materializations to the relevant partitions. In the case of `rebuild_customers_list`, data is daily partitioned in each created table, and as a result we've added a `@daily` cron schedule to the DAG to make sure it runs every day. We can likewise add a `DailyPartitionsDefinition` to each of our assets. Our Airflow DAG runs every day at midnight. So we'll create a `DailyPartitionsDefinition` that starts at midnight.
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe_with_partitions.py
-import os
-from pathlib import Path
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe_with_partitions.py startafter=start_create_partitions endbefore=end_create_partitions
+from dagster import DailyPartitionsDefinition
 
-from dagster import AssetExecutionContext, AssetSpec, DailyPartitionsDefinition, Definitions
-from dagster._time import get_current_datetime_midnight
-from dagster_airlift.core import (
-    AirflowInstance,
-    BasicAuthBackend,
-    assets_with_task_mappings,
-    build_defs_from_airflow_instance,
-)
-from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+# Pick your current date for the start date here.
+PARTITIONS_DEF = DailyPartitionsDefinition(start_date="2024-10-28")
+```
 
-PARTITIONS_DEF = DailyPartitionsDefinition(start_date=get_current_datetime_midnight())
+Now, we can add this partitioning scheme to our assets:
 
-
-def dbt_project_path() -> Path:
-    env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
-    assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
-    return Path(env_val)
-
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe_with_partitions.py startafter=start_partitioned_assets endbefore=end_partitioned_assets
+raw_customers_spec = AssetSpec(key=["raw_data", "raw_customers"], partitions_def=PARTITIONS_DEF)
+export_customers_spec = AssetSpec(key="customers_csv", deps=["customers"], partitions_def=PARTITIONS_DEF)
 
 @dbt_assets(
     manifest=dbt_project_path() / "target" / "manifest.json",
@@ -294,36 +284,6 @@ def dbt_project_path() -> Path:
 )
 def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
-
-
-mapped_assets = assets_with_task_mappings(
-    dag_id="rebuild_customers_list",
-    task_mappings={
-        "load_raw_customers": [
-            AssetSpec(key=["raw_data", "raw_customers"], partitions_def=PARTITIONS_DEF)
-        ],
-        "build_dbt_models": [dbt_project_assets],
-        "export_customers": [
-            AssetSpec(key="customers_csv", deps=["customers"], partitions_def=PARTITIONS_DEF)
-        ],
-    },
-)
-
-
-defs = build_defs_from_airflow_instance(
-    airflow_instance=AirflowInstance(
-        auth_backend=BasicAuthBackend(
-            webserver_url="http://localhost:8080",
-            username="admin",
-            password="admin",
-        ),
-        name="airflow_instance_one",
-    ),
-    defs=Definitions(
-        assets=mapped_assets,
-        resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
-    ),
-)
 ```
 
 Now, every time the sensor synthesizes a materialization for an asset, it will automatically have a partition associated with it.
@@ -343,9 +303,13 @@ In order for partitioned assets to work out of the box with `dagster-airlift`, t
 
 Once you have created corresponding definitions in Dagster to your Airflow tasks, you can proxy execution to Dagster on a per-task basis while Airflow is still controlling scheduling and orchestration. Once a task has been proxied, Airflow will kick off materializations of corresponding Dagster assets in place of executing the business logic of that task.
 
-To begin proxying tasks in a DAG, first you will need a file to track proxying state. In your Airflow DAG directory, create a `proxied_state` folder, and in it create a yaml file with the same name as your DAG. The included example at [`airflow_dags/proxied_state`](./tutorial_example/airflow_dags/proxied_state) is used by `make airflow_run`, and can be used as a template for your own proxied state files.
+To begin proxying tasks in a DAG, first you will need a file to track proxying state. `dagster-airlift` provides a CLI for scaffolding out this directory. Run the following command, ensuring that `AIRFLOW_HOME` is set as an environment variable, and `dagster-airlift[in-airflow]` is installed in your environment:
 
-Given our example DAG `rebuild_customers_list` with three tasks, `load_raw_customers`, `run_dbt_model`, and `export_customers`, [`proxied_state/rebuild_customers_list.yaml`](./tutorial_example/airflow_dags/proxied_state/rebuild_customers_list.yaml) should look like the following:
+```bash
+dagster-airlift proxy scaffold
+```
+
+This will build a `proxy_state` directory within your Airflow DAG directory. This directory contains a YAML file for each DAG in your Airflow instance. Let's take a look at the contents of the `rebuild_customers_list.yaml` file:
 
 ```yaml file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/airflow_dags/proxied_state/rebuild_customers_list.yaml
 tasks:
@@ -356,6 +320,8 @@ tasks:
   - id: export_customers
     proxied: False
 ```
+
+Each YAML file contains a list of tasks in the DAG, with a `proxied` key set to `False` for each task. Once corresponding assets exist in Dagster for a given task, this key can be toggled to `True` for the task you wish to proxy.
 
 Next, you will need to modify your Airflow DAG to make it aware of the proxied state. This is already done in the example DAG:
 
@@ -383,7 +349,7 @@ if PROXYING:
 
 Set `PROXYING` to `True` or eliminate the `if` statement.
 
-The DAG will now display its proxied state in the Airflow UI. (There is some latency as Airflow evaluates the Python file periodically.)
+The DAG will now display its proxied state in the Airflow UI.
 
 <p align="center">
 
