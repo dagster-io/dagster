@@ -1,6 +1,6 @@
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Dict, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
 import boto3
 import dagster._check as check
@@ -8,6 +8,7 @@ from dagster import DagsterInvariantViolationError, PipesClient
 from dagster._annotations import experimental, public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClientCompletedInvocation,
@@ -84,14 +85,14 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
     def run(
         self,
         *,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         start_job_run_params: "StartJobRunRequestRequestTypeDef",
         extras: Optional[Dict[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
         """Run a workload on AWS EMR Serverless, enriched with the pipes protocol.
 
         Args:
-            context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context of the currently executing Dagster op or asset.
             params (dict): Parameters for the ``start_job_run`` boto3 AWS EMR Serverless client call.
                 See `Boto3 EMR Serverless API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr-serverless/client/start_job_run.html>`_
             extras (Optional[Dict[str, Any]]): Additional information to pass to the Pipes session in the external process.
@@ -124,7 +125,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
 
     def _enrich_start_params(
         self,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         session: PipesSession,
         params: "StartJobRunRequestRequestTypeDef",
     ) -> "StartJobRunRequestRequestTypeDef":
@@ -132,7 +133,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         tags = params.get("tags", {})
         tags = {
             **tags,
-            "dagster/run_id": context.run_id,
+            "dagster/run_id": context.run.run_id,
         }
 
         params["tags"] = tags
@@ -160,7 +161,9 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         return cast("StartJobRunRequestRequestTypeDef", params)
 
     def _start(
-        self, context: OpExecutionContext, params: "StartJobRunRequestRequestTypeDef"
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        params: "StartJobRunRequestRequestTypeDef",
     ) -> "StartJobRunResponseTypeDef":
         response = self.client.start_job_run(**params)
         job_run_id = response["jobRunId"]
@@ -170,7 +173,9 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         return response
 
     def _wait_for_completion(
-        self, context: OpExecutionContext, start_response: "StartJobRunResponseTypeDef"
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        start_response: "StartJobRunResponseTypeDef",
     ) -> "GetJobRunResponseTypeDef":  # pyright: ignore[reportReturnType]
         job_run_id = start_response["jobRunId"]
 
@@ -202,7 +207,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
 
     def _read_messages(
         self,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         session: PipesSession,
         response: "GetJobRunResponseTypeDef",
     ):
@@ -313,7 +318,11 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
                     ),
                 )
 
-    def _terminate(self, context: OpExecutionContext, start_response: "StartJobRunResponseTypeDef"):
+    def _terminate(
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        start_response: "StartJobRunResponseTypeDef",
+    ):
         job_run_id = start_response["jobRunId"]
         application_id = start_response["applicationId"]
         context.log.info(f"[pipes] Terminating {self.AWS_SERVICE_NAME} job run {job_run_id}")
