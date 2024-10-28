@@ -55,7 +55,7 @@ export interface IExecutionSession {
   base: SessionBase | null;
   mode: string | null;
   needsRefresh: boolean;
-  assetSelection: {assetKey: AssetKeyInput; opNames: string[]}[] | null;
+  assetSelection: {assetKey: AssetKeyInput; opNames?: string[]}[] | null;
   // Nullable for backwards compatibility
   assetChecksAvailable?: Pick<AssetCheck, 'name' | 'canExecuteIndividually' | 'assetKey'>[];
   includeSeparatelyExecutableChecks: boolean;
