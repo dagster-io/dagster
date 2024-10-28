@@ -154,20 +154,19 @@ def get_asset_node_definition_collisions(
     from dagster_graphql.schema.external import GrapheneRepository
 
     repos: Dict[AssetKey, List[GrapheneRepository]] = defaultdict(list)
+    for asset_key in asset_keys:
+        remote_asset_node = graphene_info.context.asset_graph.get(asset_key)
+        for info in remote_asset_node.repo_scoped_asset_infos:
+            asset_node_snap = info.asset_node.asset_node_snap
+            is_defined = (
+                asset_node_snap.node_definition_name
+                or asset_node_snap.graph_name
+                or asset_node_snap.op_name
+            )
+            if not is_defined:
+                continue
 
-    for remote_asset_node in graphene_info.context.asset_graph.asset_nodes:
-        if remote_asset_node.key in asset_keys:
-            for info in remote_asset_node.repo_scoped_asset_infos:
-                asset_node_snap = info.asset_node.asset_node_snap
-                is_defined = (
-                    asset_node_snap.node_definition_name
-                    or asset_node_snap.graph_name
-                    or asset_node_snap.op_name
-                )
-                if not is_defined:
-                    continue
-
-                repos[asset_node_snap.asset_key].append(GrapheneRepository(info.handle))
+            repos[asset_node_snap.asset_key].append(GrapheneRepository(info.handle))
 
     results: List[GrapheneAssetNodeDefinitionCollision] = []
     for asset_key in repos.keys():
@@ -251,10 +250,10 @@ def get_asset_node(
 
     check.inst_param(asset_key, "asset_key", AssetKey)
 
-    remote_node = graphene_info.context.get_asset_node(asset_key)
-    if not remote_node:
+    if not graphene_info.context.asset_graph.has(asset_key):
         return GrapheneAssetNotFoundError(asset_key=asset_key)
 
+    remote_node = graphene_info.context.asset_graph.get(asset_key)
     return _graphene_asset_node(
         graphene_info,
         remote_node,
@@ -282,14 +281,15 @@ def get_asset(
 
     check.inst_param(asset_key, "asset_key", AssetKey)
     instance = graphene_info.context.instance
-    remote_node = graphene_info.context.get_asset_node(asset_key)
 
-    if not remote_node and not instance.has_asset_key(asset_key):
+    has_remote_node = graphene_info.context.asset_graph.has(asset_key)
+    if not has_remote_node and not instance.has_asset_key(asset_key):
         return GrapheneAssetNotFoundError(asset_key=asset_key)
-    elif remote_node:
+
+    if has_remote_node:
         def_node = _graphene_asset_node(
             graphene_info,
-            remote_node,
+            graphene_info.context.asset_graph.get(asset_key),
             stale_status_loader=None,
             asset_checks_loader=AssetChecksLoader(
                 context=graphene_info.context,
@@ -331,7 +331,9 @@ def get_asset_materializations(
         cursor = None
         while True:
             event_records_result = instance.fetch_materializations(
-                records_filter=records_filter, cursor=cursor, limit=get_max_event_records_limit()
+                records_filter=records_filter,
+                cursor=cursor,
+                limit=get_max_event_records_limit(),
             )
             cursor = event_records_result.cursor
             event_records.extend(event_records_result.records)
@@ -370,7 +372,9 @@ def get_asset_observations(
         cursor = None
         while True:
             event_records_result = instance.fetch_observations(
-                records_filter=records_filter, cursor=cursor, limit=get_max_event_records_limit()
+                records_filter=records_filter,
+                cursor=cursor,
+                limit=get_max_event_records_limit(),
             )
             cursor = event_records_result.cursor
             event_records.extend(event_records_result.records)
@@ -566,7 +570,8 @@ def build_partition_statuses(
         graphene_ranges = []
         for r in ranges:
             partition_key_range = cast(
-                TimeWindowPartitionsDefinition, materialized_partitions_subset.partitions_def
+                TimeWindowPartitionsDefinition,
+                materialized_partitions_subset.partitions_def,
             ).get_partition_key_range_for_time_window(r.time_window)
             graphene_ranges.append(
                 GrapheneTimePartitionRangeStatus(
@@ -597,7 +602,8 @@ def build_partition_statuses(
             - set(in_progress_keys),
             failedPartitions=failed_keys,
             unmaterializedPartitions=materialized_partitions_subset.get_partition_keys_not_in_subset(
-                partitions_def=partitions_def, dynamic_partitions_store=dynamic_partitions_store
+                partitions_def=partitions_def,
+                dynamic_partitions_store=dynamic_partitions_store,
             ),
             materializingPartitions=in_progress_keys,
         )

@@ -1016,11 +1016,10 @@ class GrapheneQuery(graphene.ObjectType):
             ]
         else:
             if not use_all_asset_keys and resolved_asset_keys:
-                fetched_nodes = [
-                    graphene_info.context.get_asset_node(asset_key)
+                remote_nodes = [
+                    graphene_info.context.asset_graph.get(asset_key)
                     for asset_key in resolved_asset_keys
                 ]
-                remote_nodes = [node for node in fetched_nodes if node]
             else:
                 remote_nodes = [
                     remote_node for remote_node in graphene_info.context.asset_graph.asset_nodes
@@ -1160,7 +1159,9 @@ class GrapheneQuery(graphene.ObjectType):
     ):
         asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys)
 
-        remote_nodes = {graphene_info.context.get_asset_node(asset_key) for asset_key in asset_keys}
+        remote_nodes = {
+            graphene_info.context.asset_graph.get(asset_key) for asset_key in asset_keys
+        }
 
         # Build mapping of asset key to the step keys required to generate the asset
         step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {

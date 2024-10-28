@@ -79,10 +79,7 @@ from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import (
-        RemoteWorkspaceAssetGraph,
-        RemoteWorkspaceAssetNode,
-    )
+    from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
     from dagster._core.remote_representation import (
         PartitionConfigSnap,
         PartitionExecutionErrorSnap,
@@ -348,12 +345,6 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     def get_base_deployment_context(self) -> Optional["BaseWorkspaceRequestContext"]:
         return None
-
-    def get_asset_node(self, asset_key: AssetKey) -> Optional["RemoteWorkspaceAssetNode"]:
-        if not self.get_workspace_snapshot().asset_graph.has(asset_key):
-            return None
-
-        return self.get_workspace_snapshot().asset_graph.get(asset_key)
 
     def get_repository(
         self, selector: Union[RepositorySelector, RepositoryHandle]
