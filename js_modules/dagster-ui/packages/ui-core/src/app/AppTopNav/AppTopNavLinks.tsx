@@ -1,7 +1,6 @@
 import {Box} from '@dagster-io/ui-components';
 import {ReactElement} from 'react';
 import {useHistory} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {TopNavLink} from './AppTopNav';
 import {
@@ -9,11 +8,9 @@ import {
   automationPathMatcher,
   deploymentPathMatcher,
   jobsPathMatcher,
-  locationPathMatcher,
 } from './activePathMatchers';
 import {JobStateForNav} from './useJobStateForNav';
 import {DeploymentStatusIcon} from '../../nav/DeploymentStatusIcon';
-import {featureEnabled} from '../Flags';
 import {ShortcutHandler} from '../ShortcutHandler';
 
 export type AppNavLinkType = {
@@ -94,47 +91,28 @@ export const navLinks = (config: Config): AppNavLinkType[] => {
     ),
   };
 
-  if (!featureEnabled(FeatureFlag.flagLegacyNav)) {
-    const jobs =
-      jobState === 'has-jobs'
-        ? {
-            key: 'jobs',
-            path: '/jobs',
-            element: (
-              <TopNavLink to="/jobs" data-cy="AppTopNav_JobsLink" isActive={jobsPathMatcher}>
-                Jobs
-              </TopNavLink>
-            ),
-          }
-        : null;
-
-    const deployment = {
-      key: 'deployment',
-      path: '/deployment',
-      element: (
-        <TopNavLink
-          to="/deployment"
-          data-cy="AppTopNav_DeploymentLink"
-          isActive={deploymentPathMatcher}
-        >
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-            Deployment
-            <DeploymentStatusIcon />
-          </Box>
-        </TopNavLink>
-      ),
-    };
-
-    return [overview, runs, assets, jobs, automation, deployment].filter(
-      (link): link is AppNavLinkType => !!link,
-    );
-  }
+  const jobs =
+    jobState === 'has-jobs'
+      ? {
+          key: 'jobs',
+          path: '/jobs',
+          element: (
+            <TopNavLink to="/jobs" data-cy="AppTopNav_JobsLink" isActive={jobsPathMatcher}>
+              Jobs
+            </TopNavLink>
+          ),
+        }
+      : null;
 
   const deployment = {
-    key: 'locations',
-    path: '/locations',
+    key: 'deployment',
+    path: '/deployment',
     element: (
-      <TopNavLink to="/locations" data-cy="AppTopNav_StatusLink" isActive={locationPathMatcher}>
+      <TopNavLink
+        to="/deployment"
+        data-cy="AppTopNav_DeploymentLink"
+        isActive={deploymentPathMatcher}
+      >
         <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
           Deployment
           <DeploymentStatusIcon />
@@ -143,5 +121,7 @@ export const navLinks = (config: Config): AppNavLinkType[] => {
     ),
   };
 
-  return [overview, runs, assets, deployment];
+  return [overview, runs, assets, jobs, automation, deployment].filter(
+    (link): link is AppNavLinkType => !!link,
+  );
 };

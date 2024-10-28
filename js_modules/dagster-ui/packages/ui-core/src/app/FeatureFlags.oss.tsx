@@ -3,6 +3,5 @@ export enum FeatureFlag {
   flagDisableWebsockets = 'flagDisableWebsockets',
   flagSidebarResources = 'flagSidebarResources',
   flagDisableAutoLoadDefaults = 'flagDisableAutoLoadDefaults',
-  flagLegacyNav = 'flagLegacyNav',
   flagLegacyRunsPage = 'flagLegacyRunsPage',
 }
