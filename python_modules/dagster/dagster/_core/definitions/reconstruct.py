@@ -114,7 +114,11 @@ class ReconstructableRepository(
         return self._replace(repository_load_data=metadata)
 
     def get_definition(self) -> "RepositoryDefinition":
-        return reconstruct_repository_def_from_pointer(self.pointer, self.repository_load_data) if self.repository_load_data else initialize_repository_def_from_pointer(self.pointer)
+        return (
+            reconstruct_repository_def_from_pointer(self.pointer, self.repository_load_data)
+            if self.repository_load_data
+            else initialize_repository_def_from_pointer(self.pointer)
+        )
 
     def get_reconstructable_job(self, name: str) -> "ReconstructableJob":
         return ReconstructableJob(self, name)
@@ -752,7 +756,6 @@ def repository_def_from_target_def(
     target: object,
 ) -> Optional["RepositoryDefinition"]:
     from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
-
 
     repo_def = _repository_def_from_target_def_inner(target, None)
 

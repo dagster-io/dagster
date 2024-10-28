@@ -1,8 +1,8 @@
+import os
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Tuple, cast
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
 
 from dagster import (
     AssetExecutionContext,
@@ -13,17 +13,16 @@ from dagster import (
     _check as check,
     multi_asset,
 )
-import os
 from dagster._annotations import experimental, public
-from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
-from dagster._record import record
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
+from dagster._record import record
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
 from looker_sdk import init40
 from looker_sdk.rtl.api_settings import ApiSettings, SettingsConfig
+from looker_sdk.rtl.transport import TransportOptions
 from looker_sdk.sdk.api40.methods import Looker40SDK
 from pydantic import Field
 
@@ -36,8 +35,6 @@ from dagster_looker.api.dagster_looker_api_translator import (
     RequestStartPdtBuild,
 )
 
-from looker_sdk.rtl.transport import TransportOptions
-from syrupy import snapshot
 if TYPE_CHECKING:
     from looker_sdk.sdk.api40.models import Folder, LookmlModelExplore
 
@@ -103,21 +100,19 @@ class LookerResource(ConfigurableResource):
         Returns:
             Definitions: A Definitions object which will contain return the Looker structures as assets.
         """
-
-        snapshot=None
+        snapshot = None
         if snapshot_path and not os.getenv("DAGSTER_LOOKER_IS_GENERATING_SNAPSHOT"):
             snapshot = deserialize_value(Path(snapshot_path).read_text(), RepositoryLoadData)
 
         return LookerApiDefsLoader(
             looker_resource=self,
-
             request_start_pdt_builds=request_start_pdt_builds or [],
-            translator=dagster_looker_translator if dagster_looker_translator is not None
+            translator=dagster_looker_translator
+            if dagster_looker_translator is not None
             else DagsterLookerApiTranslator(),
             looker_filter=looker_filter or LookerFilter(),
-            snapshot=snapshot
+            snapshot=snapshot,
         ).build_defs()
-
 
 
 def build_folder_path(folder_id_to_folder: Dict[str, "Folder"], folder_id: str) -> List[str]:
@@ -127,6 +122,7 @@ def build_folder_path(folder_id_to_folder: Dict[str, "Folder"], folder_id: str) 
         result = [folder_id_to_folder[curr].name] + result
         curr = folder_id_to_folder[curr].parent_id
     return result
+
 
 @dataclass(frozen=True)
 class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
@@ -142,7 +138,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
 
     def fetch_state(self) -> Mapping[str, Any]:
         if self.snapshot and self.defs_key in self.snapshot.reconstruction_metadata:
-            return deserialize_value(self.snapshot.reconstruction_metadata[self.defs_key]) # type: ignore
+            return deserialize_value(self.snapshot.reconstruction_metadata[self.defs_key])  # type: ignore
         looker_instance_data = self.fetch_looker_instance_data()
         return looker_instance_data.to_state(self.looker_resource.get_sdk())
 
@@ -310,7 +306,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             check.not_none(dashboard.id): dashboard
             for dashboard in sdk.search_dashboards(
                 id=",".join(dashboard_ids_to_fetch),
-                transport_options=TransportOptions(timeout=60 * 5)
+                transport_options=TransportOptions(timeout=60 * 5),
             )
         }
 
@@ -332,8 +328,8 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
         if self.looker_filter.only_fetch_explores_used_in_dashboards:
             used_explores = set()
             for dashboard in dashboards_by_id.values():
-                for filter in dashboard.dashboard_filters or []:
-                    used_explores.add((filter.model, filter.explore))
+                for filterz in dashboard.dashboard_filters or []:
+                    used_explores.add((filterz.model, filterz.explore))
 
             explores_for_model = {
                 model_name: [
