@@ -1,4 +1,4 @@
-from dagster_tableau import TableauCloudWorkspace
+from dagster_tableau import TableauCloudWorkspace, load_tableau_asset_specs
 
 import dagster as dg
 
@@ -22,9 +22,14 @@ marketing_team_workspace = TableauCloudWorkspace(
     pod_name=dg.EnvVar("MARKETING_TABLEAU_POD_NAME"),
 )
 
-# We use Definitions.merge to combine the definitions from both workspaces
-# into a single set of definitions to load
-defs = dg.Definitions.merge(
-    sales_team_workspace.build_defs(),
-    marketing_team_workspace.build_defs(),
+
+sales_team_specs = load_tableau_asset_specs(sales_team_workspace)
+marketing_team_specs = load_tableau_asset_specs(marketing_team_workspace)
+
+defs = dg.Definitions(
+    assets=[*sales_team_specs, *marketing_team_specs],
+    resources={
+        "marketing_tableau": marketing_team_workspace,
+        "sales_tableau": sales_team_workspace,
+    },
 )

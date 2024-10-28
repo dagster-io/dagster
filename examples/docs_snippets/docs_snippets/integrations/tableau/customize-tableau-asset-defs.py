@@ -1,9 +1,13 @@
-from dagster_tableau import DagsterTableauTranslator, TableauCloudWorkspace
+from dagster_tableau import (
+    DagsterTableauTranslator,
+    TableauCloudWorkspace,
+    load_tableau_asset_specs,
+)
 from dagster_tableau.translator import TableauContentData
 
 import dagster as dg
 
-workspace = TableauCloudWorkspace(
+tableau_workspace = TableauCloudWorkspace(
     connected_app_client_id=dg.EnvVar("TABLEAU_CONNECTED_APP_CLIENT_ID"),
     connected_app_secret_id=dg.EnvVar("TABLEAU_CONNECTED_APP_SECRET_ID"),
     connected_app_secret_value=dg.EnvVar("TABLEAU_CONNECTED_APP_SECRET_VALUE"),
@@ -21,4 +25,7 @@ class MyCustomTableauTranslator(DagsterTableauTranslator):
         return super().get_sheet_spec(data)._replace(owners=["my_team"])
 
 
-defs = workspace.build_defs(dagster_tableau_translator=MyCustomTableauTranslator)
+tableau_specs = load_tableau_asset_specs(
+    tableau_workspace, dagster_tableau_translator=MyCustomTableauTranslator
+)
+defs = dg.Definitions(assets=[*tableau_specs], resources={"tableau": tableau_workspace})
