@@ -159,6 +159,56 @@ In your CI/CD workflows for your Dagster and dbt project:
 
 ---
 
+## Leveraging dbt defer with branch deployments
+
+It is possible to leverage [dbt defer](https://docs.getdbt.com/reference/node-selection/defer) by passing a `state_path` to <PyObject object="DbtProject" module="dagster_dbt" />. This is useful for testing recent changes made in development against the state of the dbt project in production. Using `dbt defer`, you can run a subset of models or tests, those that have been changed between development and production, without having to build their upstream parents first.
+
+In practice, this is most useful when combined with branch deployments in Dagster+, to test changes made in your branches. This can be done by updating your CI/CD files and your Dagster code.
+
+First, let's take a look at your CI/CD files. You might have one or two CI/CD files to manage your production and branch deployments. In these files, find the steps related to your dbt project - refer to the [Deploying a Dagster project with a dbt project](#deploying-a-dagster-project-with-a-dbt-project) section for more information.
+
+Once your dbt steps are located, add the following step to manage the state of your dbt project.
+
+```bash
+dagster-cloud ci dagster-dbt project manage-state --file path/to/project.py
+```
+
+The `dagster-cloud ci dagster-dbt project manage-state` CLI command fetches the `manifest.json` file from your production branch and saves it to a state directory, in order to power the `dbt defer` command.
+
+In practice, this command fetches the `manifest.json` file from your production branch and add it to the state directory set to the `state_path` of the DbtProject found in `path/to/project.py`. The production `manifest.json` file can then be used as the deferred dbt artifacts.
+
+Now that your CI/CD files are updated to manage the state of your dbt project using the dagster-cloud CLI, we need to update the Dagster code to pass a state directory to the DbtProject.
+
+Update your Dagster code to pass a `state_path` to your `DbtProject` object. Note that value passed to `state_path` must be a path, relative to the dbt project directory, to a state directory of dbt artifacts. In the code below, we set the `state_path` to 'state/'. If this directory does not exist in your project structure, it will be created by Dagster.
+
+Also, update the dbt command in your `@dbt_assets` definition to pass the defer args using `get_defer_args`.
+
+```python startafter=start_use_dbt_defer_with_dbt_project endbefore=end_use_dbt_defer_with_dbt_project file=/integrations/dbt/dbt.py dedent=4
+import os
+from pathlib import Path
+
+from dagster import AssetExecutionContext
+from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+
+my_dbt_project = DbtProject(
+    project_dir=Path(__file__).joinpath("..", "..", "..").resolve(),
+    packaged_project_dir=Path(__file__)
+    .joinpath("..", "..", "dbt-project")
+    .resolve(),
+    state_path=Path("state"),
+)
+my_dbt_project.prepare_if_dev()
+
+@dbt_assets(manifest=my_dbt_project.manifest_path)
+def my_dbt_assets(
+    context: AssetExecutionContext,
+    dbt: DbtCliResource,
+):
+    yield from dbt.cli(["build", *dbt.get_defer_args()], context=context).stream()
+```
+
+---
+
 ## Using config with `@dbt_assets`
 
 Like for a standard \[software-defined asset], `@dbt_assets` can use a config system to enable [run configuration](/concepts/configuration/config-schema). This allows to provide parameters to jobs at the time they're executed.
