@@ -11,12 +11,14 @@ from threading import Event, Thread
 from typing import IO, Dict, Iterator, Optional, Sequence, Tuple, TypeVar
 
 from dagster_pipes import (
+    DAGSTER_PIPES_LOG_WRITER_KEY,
     PIPES_PROTOCOL_VERSION_FIELD,
     PipesContextData,
     PipesDefaultContextLoader,
     PipesDefaultMessageWriter,
     PipesExtras,
     PipesOpenedData,
+    PipesOutErrLogWriter,
     PipesParams,
 )
 
@@ -135,8 +137,9 @@ class PipesFileMessageReader(PipesMessageReader):
             on close of the pipes session.
     """
 
-    def __init__(self, path: str):
+    def __init__(self, path: str, enable_log_writer: bool = False):
         self._path = check.str_param(path, "path")
+        self.enable_log_writer = check.bool_param(enable_log_writer, "enable_log_writer")
 
     def on_launched(self, params: PipesLaunchedData) -> None:
         self.launched_payload = params
@@ -166,7 +169,17 @@ class PipesFileMessageReader(PipesMessageReader):
                 daemon=True,
             )
             thread.start()
-            yield {PipesDefaultMessageWriter.FILE_PATH_KEY: self._path}
+            params: PipesParams = {PipesDefaultMessageWriter.FILE_PATH_KEY: self._path}
+            if self.enable_log_writer:
+                log_writer_dir = os.path.join(
+                    tempfile._get_default_tempdir(),  # type: ignore  # noqa: SLF001
+                    next(tempfile._get_candidate_names()),  # type: ignore  # noqa: SLF001
+                )
+                params[DAGSTER_PIPES_LOG_WRITER_KEY] = {
+                    PipesOutErrLogWriter.LOGS_DIR_KEY: log_writer_dir
+                }
+
+            yield params
         finally:
             is_session_closed.set()
             if thread:
@@ -193,6 +206,9 @@ class PipesFileMessageReader(PipesMessageReader):
 class PipesTempFileMessageReader(PipesMessageReader):
     """Message reader that reads messages by tailing an automatically-generated temporary file."""
 
+    def __init__(self, enable_log_writer: bool = False) -> None:
+        self.enable_log_writer = enable_log_writer
+
     @contextmanager
     def read_messages(
         self,
@@ -210,7 +226,8 @@ class PipesTempFileMessageReader(PipesMessageReader):
         """
         with tempfile.TemporaryDirectory() as tempdir:
             with PipesFileMessageReader(
-                os.path.join(tempdir, _MESSAGE_READER_FILENAME)
+                os.path.join(tempdir, _MESSAGE_READER_FILENAME),
+                enable_log_writer=self.enable_log_writer,
             ).read_messages(handler) as params:
                 yield params
 
