@@ -2,7 +2,7 @@
 import os
 from datetime import timedelta
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from airflow import DAG
 from airflow.models.operator import BaseOperator
@@ -17,34 +17,15 @@ from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load
 class LoadCSVToDuckDB(BaseOperator):
     def __init__(
         self,
-        table_name: str,
-        csv_path: Path,
-        duckdb_path: Path,
-        column_names: List[str],
-        duckdb_schema: str,
-        duckdb_database_name: str,
+        loader_args: LoadCsvToDuckDbArgs,
         *args,
         **kwargs,
     ):
-        self._table_name = table_name
-        self._csv_path = csv_path
-        self._duckdb_path = duckdb_path
-        self._column_names = column_names
-        self._duckdb_schema = duckdb_schema
-        self._duckdb_database_name = duckdb_database_name
+        self.loader_args = loader_args
         super().__init__(*args, **kwargs)
 
     def execute(self, context) -> None:
-        load_csv_to_duckdb(
-            LoadCsvToDuckDbArgs(
-                table_name=self._table_name,
-                csv_path=self._csv_path,
-                duckdb_path=self._duckdb_path,
-                names=self._column_names,
-                duckdb_schema=self._duckdb_schema,
-                duckdb_database_name=self._duckdb_database_name,
-            )
-        )
+        load_csv_to_duckdb(self.loader_args)
 
 
 class ExportDuckDBToCSV(BaseOperator):
@@ -96,16 +77,18 @@ dag = DAG(
 load_raw_customers = LoadCSVToDuckDB(
     task_id="load_raw_customers",
     dag=dag,
-    table_name="raw_customers",
-    csv_path=Path(__file__).parent / "raw_customers.csv",
-    duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
-    column_names=[
-        "id",
-        "first_name",
-        "last_name",
-    ],
-    duckdb_schema="raw_data",
-    duckdb_database_name="jaffle_shop",
+    loader_args=LoadCsvToDuckDbArgs(
+        table_name="raw_customers",
+        csv_path=Path(__file__).parent / "raw_customers.csv",
+        duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
+        names=[
+            "id",
+            "first_name",
+            "last_name",
+        ],
+        duckdb_schema="raw_data",
+        duckdb_database_name="jaffle_shop",
+    ),
 )
 
 
