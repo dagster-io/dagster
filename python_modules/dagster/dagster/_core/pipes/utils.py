@@ -8,7 +8,7 @@ import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from threading import Event, Thread
-from typing import IO, Dict, Iterator, Optional, Sequence, Tuple, TypeVar
+from typing import IO, Dict, Iterator, Optional, Sequence, Tuple, TypeVar, Union
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
@@ -25,6 +25,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.client import PipesContextInjector, PipesLaunchedData, PipesMessageReader
 from dagster._core.pipes.context import (
     PipesMessageHandler,
@@ -696,7 +697,7 @@ _FAIL_TO_YIELD_ERROR_MESSAGE = (
 
 @contextmanager
 def open_pipes_session(
-    context: OpExecutionContext,
+    context: Union[OpExecutionContext, AssetExecutionContext],
     context_injector: PipesContextInjector,
     message_reader: PipesMessageReader,
     extras: Optional[PipesExtras] = None,
@@ -716,7 +717,7 @@ def open_pipes_session(
 
 
     Args:
-        context (OpExecutionContext): The context for the current op/asset execution.
+        context (Union[OpExecutionContext, AssetExecutionContext]): The context for the current op/asset execution.
         context_injector (PipesContextInjector): The context injector to use to inject context into the external process.
         message_reader (PipesMessageReader): The message reader to use to read messages from the external process.
         extras (Optional[PipesExtras]): Optional extras to pass to the external process via the injected context.
@@ -732,7 +733,7 @@ def open_pipes_session(
         extras = {"foo": "bar"}
 
         @asset
-        def ext_asset(context: OpExecutionContext):
+        def ext_asset(context: AssetExecutionContext):
             with open_pipes_session(
                 context=context,
                 extras={"foo": "bar"},

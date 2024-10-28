@@ -1,5 +1,5 @@
 from pprint import pformat
-from typing import TYPE_CHECKING, Any, Dict, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
 import boto3
 import botocore
@@ -8,6 +8,7 @@ from dagster import DagsterInvariantViolationError, PipesClient
 from dagster._annotations import experimental, public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClientCompletedInvocation,
@@ -60,7 +61,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
     def run(
         self,
         *,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         run_task_params: "RunTaskRequestRequestTypeDef",
         extras: Optional[Dict[str, Any]] = None,
         pipes_container_name: Optional[str] = None,
@@ -68,7 +69,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         """Run ECS tasks, enriched with the pipes protocol.
 
         Args:
-            context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context of the currently executing Dagster op or asset.
             run_task_params (dict): Parameters for the ``run_task`` boto3 ECS client call.
                 Must contain ``taskDefinition`` key.
                 See `Boto3 API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs/client/run_task.html#run-task>`_
@@ -273,7 +274,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
 
     def _terminate(
         self,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         wait_response: "DescribeTasksResponseTypeDef",
         cluster: Optional[str] = None,
     ):
