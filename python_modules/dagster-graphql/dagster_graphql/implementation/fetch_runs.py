@@ -190,10 +190,8 @@ def get_assets_latest_info(
         return []
 
     asset_nodes = {
-        asset_key: graphene_info.context.get_asset_node(asset_key) for asset_key in asset_keys
+        asset_key: graphene_info.context.asset_graph.get(asset_key) for asset_key in asset_keys
     }
-
-    # asset_nodes = get_asset_nodes_by_asset_key(graphene_info, set(asset_keys))
 
     asset_records = AssetRecord.blocking_get_many(graphene_info.context, asset_keys)
 

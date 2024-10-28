@@ -171,7 +171,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
         super().__init__()
 
     def resolve_asset(self, graphene_info: ResolveInfo):
-        remote_node = check.not_none(graphene_info.context.get_asset_node(self._asset_key))
+        remote_node = graphene_info.context.asset_graph.get(self._asset_key)
         return GrapheneAssetNode(
             remote_node=remote_node,
             asset_checks_loader=self._asset_checks_loader,
