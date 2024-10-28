@@ -169,7 +169,7 @@ def test_adls_file_manager_resource(MockADLS2FileManager, MockADLS2Resource):
         MockADLS2Resource.assert_called_once_with(
             storage_account=resource_config["storage_account"],
             credential=ADLS2Key(key=resource_config["credential"]["key"]),
-            cloud_type=None
+            cloud_type=resource_config.get("cloud_type", "public"),
         )
 
         did_it_run["it_ran"] = True
@@ -254,6 +254,7 @@ def test_adls_file_manager_resource_defaultazurecredential(
         MockADLS2Resource.assert_called_once_with(
             storage_account=resource_config["storage_account"],
             credential=MockADLS2DefaultAzureCredential.return_value,
+            cloud_type=resource_config.get("cloud_type", "public"),
         )
 
         did_it_run["it_ran"] = True

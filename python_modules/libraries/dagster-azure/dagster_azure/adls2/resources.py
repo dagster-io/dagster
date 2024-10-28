@@ -199,6 +199,7 @@ def _adls2_resource_from_config(config) -> ADLS2Resource:
     Returns: An adls2 client.
     """
     storage_account = config["storage_account"]
+    cloud_type = config["cloud_type"]
     if "DefaultAzureCredential" in config["credential"]:
         credential = ADLS2DefaultAzureCredential(
             kwargs=config["credential"]["DefaultAzureCredential"]
@@ -208,4 +209,4 @@ def _adls2_resource_from_config(config) -> ADLS2Resource:
     else:
         credential = ADLS2Key(key=config["credential"]["key"])
     
-    return ADLS2Resource(storage_account=storage_account, cloud_type=config["cloud_type"], credential=credential)
+    return ADLS2Resource(storage_account=storage_account, cloud_type=cloud_type, credential=credential)
