@@ -325,7 +325,7 @@ def test_cycle_status(instance) -> None:
     asset_graph = context.asset_graph
 
     resolver = CachingStaleStatusResolver(DagsterInstance.ephemeral(), asset_graph, context)
-    for key in asset_graph.all_asset_keys:
+    for key in asset_graph.get_all_asset_keys():
         resolver.get_status(key)
 
 

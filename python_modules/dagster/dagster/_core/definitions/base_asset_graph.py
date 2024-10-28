@@ -267,8 +267,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             "downstream": {node.key: node.child_entity_keys for node in self.nodes},
         }
 
-    @property
-    def all_asset_keys(self) -> AbstractSet[AssetKey]:
+    def get_all_asset_keys(self) -> AbstractSet[AssetKey]:
         return set(self._asset_nodes_by_key)
 
     @cached_property

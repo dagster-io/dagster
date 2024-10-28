@@ -89,7 +89,7 @@ def test_basics(asset_graph_from_assets):
     asset2_node = asset_graph.get(asset2.key)
     asset3_node = asset_graph.get(asset3.key)
 
-    assert asset_graph.all_asset_keys == {asset0.key, asset1.key, asset2.key, asset3.key}
+    assert asset_graph.get_all_asset_keys() == {asset0.key, asset1.key, asset2.key, asset3.key}
     assert not asset0_node.is_partitioned
     assert asset1_node.is_partitioned
     assert asset1_node.partitions_def == asset2_node.partitions_def

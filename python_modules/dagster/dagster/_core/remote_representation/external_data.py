@@ -1635,7 +1635,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
 
     asset_node_snaps: List[AssetNodeSnap] = []
     asset_graph = repo.asset_graph
-    for key in sorted(asset_graph.all_asset_keys):
+    for key in sorted(asset_graph.get_all_asset_keys()):
         asset_node = asset_graph.get(key)
 
         # Materializable assets (which are always part of at least one job, due to asset base jobs)

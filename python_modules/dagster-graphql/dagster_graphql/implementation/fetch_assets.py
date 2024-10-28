@@ -228,7 +228,7 @@ def get_asset_nodes_by_asset_key(
 
     asset_checks_loader = AssetChecksLoader(
         context=graphene_info.context,
-        asset_keys=graphene_info.context.asset_graph.all_asset_keys,
+        asset_keys=graphene_info.context.asset_graph.get_all_asset_keys(),
     )
 
     return {

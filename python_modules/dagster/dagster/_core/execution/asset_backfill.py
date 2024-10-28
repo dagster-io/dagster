@@ -817,7 +817,7 @@ def _check_target_partitions_subset_is_valid(
     """Checks for any partitions definition changes since backfill launch that should mark
     the backfill as failed.
     """
-    if asset_key not in asset_graph.all_asset_keys:
+    if not asset_graph.has(asset_key):
         raise DagsterDefinitionChangedDeserializationError(
             f"Asset {asset_key} existed at storage-time, but no longer does"
         )
