@@ -617,3 +617,31 @@ def test_last_day_of_month_cron_schedule():
 
     for i in range(len(expected_datetimes)):
         assert next(cron_iter) == expected_datetimes[-(i + 1)]
+
+
+def test_weekend_cron_schedule_with_sunday_as_7():
+    execution_timezone = "Europe/Berlin"
+    cron_strings = ["0 0 * * 6-7", "0 0 * * 0,6"]
+    for cron_string in cron_strings:
+        expected_datetimes = [
+            create_datetime(2024, 10, 26, 0, 0, 0, tz="Europe/Berlin"),
+            create_datetime(2024, 10, 27, 0, 0, 0, tz="Europe/Berlin"),
+            create_datetime(2024, 11, 2, 0, 0, 0, tz="Europe/Berlin"),
+            create_datetime(2024, 11, 3, 0, 0, 0, tz="Europe/Berlin"),
+            create_datetime(2024, 11, 9, 0, 0, 0, tz="Europe/Berlin"),
+            create_datetime(2024, 11, 10, 0, 0, 0, tz="Europe/Berlin"),
+        ]
+
+        start_timestamp = expected_datetimes[0].timestamp() - 1
+
+        cron_iter = cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+
+        for i in range(len(expected_datetimes)):
+            assert next(cron_iter) == expected_datetimes[i]
+
+        end_timestamp = expected_datetimes[-1].timestamp() + 1
+
+        cron_iter = reverse_cron_string_iterator(end_timestamp, cron_string, execution_timezone)
+
+        for i in range(len(expected_datetimes)):
+            assert next(cron_iter) == expected_datetimes[-(i + 1)]
