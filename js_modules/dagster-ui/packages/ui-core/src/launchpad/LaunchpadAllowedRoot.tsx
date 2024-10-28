@@ -29,11 +29,11 @@ interface Props {
   sessionPresets?: Partial<IExecutionSession>;
 }
 
-const filterDefaultYamlForSubselection = (defaultYaml: string, opNames?: Set<string>): string => {
+const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<string>): string => {
   const parsedYaml = yaml.parse(defaultYaml);
 
   const opsConfig = parsedYaml['ops'];
-  if (opsConfig && opNames) {
+  if (opsConfig) {
     const filteredOpKeys = Object.keys(opsConfig).filter((entry: any) => {
       return opNames.has(entry);
     });
