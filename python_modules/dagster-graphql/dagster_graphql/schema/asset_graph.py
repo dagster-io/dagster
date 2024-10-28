@@ -977,10 +977,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene_info: ResolveInfo,
         partitions: Optional[Sequence[str]] = None,
     ) -> Sequence[Optional[GrapheneMaterializationEvent]]:
-        get_partition = (
-            lambda event: event.dagster_event.step_materialization_data.materialization.partition
-        )
-
         latest_storage_ids = sorted(
             (
                 graphene_info.context.instance.event_log_storage.get_latest_storage_id_by_partition(
@@ -996,7 +992,9 @@ class GrapheneAssetNode(graphene.ObjectType):
             storage_ids=latest_storage_ids,
         )
         latest_materialization_by_partition = {
-            get_partition(event): event for event in events_for_partitions
+            event.dagster_event.step_materialization_data.materialization.partition: event
+            for event in events_for_partitions
+            if event.dagster_event
         }
 
         # return materializations in the same order as the provided partitions, None if
