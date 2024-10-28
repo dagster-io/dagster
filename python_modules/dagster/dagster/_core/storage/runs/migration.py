@@ -334,8 +334,9 @@ def migrate_run_backfill_id(storage: RunStorage, print_fn: Optional[PrintFn] = N
                 add_backfill_id(conn, run_id, backfill_id)
 
 
-def add_backfill_id(conn, run_id: str, backfill_id) -> None:
+def add_backfill_id(conn, run_id: str, backfill_id: str) -> None:
     check.str_param(run_id, "run_id")
+    check.str_param(backfill_id, "backfill_id")
     conn.execute(
         RunsTable.update()
         .where(RunsTable.c.run_id == run_id)
