@@ -56,17 +56,6 @@ To install Dagster and the Dagster webserver/UI into an existing [Poetry](https:
 poetry add dagster dagster-webserver
 ```
 
-**Using a Mac with an Apple silicon chip**? Some users have reported installation problems due to missing wheels for arm64 Macs when installing the `grpcio` package. You can avoid these errors by installing `dagster` using our pre-built wheel of the `grpcio` package for M1, M2, and M3 machines:
-
-```bash
-# Add named source
-poetry source add grpcio https://github.com/dagster-io/build-grpcio/wiki/Wheels
-# Install grpcio from the source added above if needed
-poetry add --source grpcio grpcio
-# Add dagster
-poetry add dagster dagster-webserver
-```
-
 ---
 
 ## Related
