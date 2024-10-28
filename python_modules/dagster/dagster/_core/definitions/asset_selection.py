@@ -542,7 +542,7 @@ class AllSelection(AssetSelection):
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         return (
-            asset_graph.all_asset_keys
+            asset_graph.get_all_asset_keys()
             if self.include_sources
             else asset_graph.materializable_asset_keys
         )
@@ -847,7 +847,7 @@ class GroupsAssetSelection(AssetSelection):
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         base_set = (
-            asset_graph.all_asset_keys
+            asset_graph.get_all_asset_keys()
             if self.include_sources
             else asset_graph.materializable_asset_keys
         )
@@ -879,7 +879,7 @@ class TagAssetSelection(AssetSelection):
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         base_set = (
-            asset_graph.all_asset_keys
+            asset_graph.get_all_asset_keys()
             if self.include_sources
             else asset_graph.materializable_asset_keys
         )
@@ -900,7 +900,7 @@ class OwnerAssetSelection(AssetSelection):
     ) -> AbstractSet[AssetKey]:
         return {
             key
-            for key in asset_graph.all_asset_keys
+            for key in asset_graph.get_all_asset_keys()
             if self.selected_owner in asset_graph.get(key).owners
         }
 
@@ -936,14 +936,16 @@ class KeysAssetSelection(AssetSelection):
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         specified_keys = set(self.selected_keys)
-        missing_keys = {key for key in specified_keys if key not in asset_graph.all_asset_keys}
+        missing_keys = {key for key in specified_keys if not asset_graph.has(key)}
 
         if not allow_missing:
             # Arbitrary limit to avoid huge error messages
             keys_to_suggest = list(missing_keys)[:4]
             suggestions = ""
             for invalid_key in keys_to_suggest:
-                similar_names = resolve_similar_asset_names(invalid_key, asset_graph.all_asset_keys)
+                similar_names = resolve_similar_asset_names(
+                    invalid_key, asset_graph.get_all_asset_keys()
+                )
                 if similar_names:
                     # Arbitrarily limit to 10 similar names to avoid a huge error message
                     subset_similar_names = similar_names[:10]
@@ -988,7 +990,7 @@ class KeyPrefixesAssetSelection(AssetSelection):
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         base_set = (
-            asset_graph.all_asset_keys
+            asset_graph.get_all_asset_keys()
             if self.include_sources
             else asset_graph.materializable_asset_keys
         )

@@ -180,10 +180,10 @@ class AssetGraphDiffer:
             # is new and doesn't exist in the base deployment. Thus all assets are new.
             return AssetDefinitionDiffDetails(change_types={AssetDefinitionChangeType.NEW})
 
-        if asset_key not in self.base_asset_graph.all_asset_keys:
+        if not self.base_asset_graph.has(asset_key):
             return AssetDefinitionDiffDetails(change_types={AssetDefinitionChangeType.NEW})
 
-        if asset_key not in self.branch_asset_graph.all_asset_keys:
+        if not self.branch_asset_graph.has(asset_key):
             return AssetDefinitionDiffDetails(change_types={AssetDefinitionChangeType.REMOVED})
 
         branch_asset = self.branch_asset_graph.get(asset_key)

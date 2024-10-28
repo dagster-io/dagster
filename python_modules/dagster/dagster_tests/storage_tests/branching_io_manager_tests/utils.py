@@ -33,7 +33,7 @@ class DefinitionsRunner:
             yield DefinitionsRunner(defs, instance)
 
     def materialize_all_assets(self, partition_key: Optional[str] = None) -> ExecuteInProcessResult:
-        all_keys = list(self.defs.get_repository_def().asset_graph.all_asset_keys)
+        all_keys = list(self.defs.get_repository_def().asset_graph.get_all_asset_keys())
         job_def = self.defs.get_implicit_job_def_for_assets(all_keys)
         assert job_def
         return job_def.execute_in_process(instance=self.instance, partition_key=partition_key)

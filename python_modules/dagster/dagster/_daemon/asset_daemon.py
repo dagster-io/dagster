@@ -696,7 +696,7 @@ class AssetDaemon(DagsterDaemon):
                     repo_asset_graph
                 )
             else:
-                eligible_keys = asset_graph.all_asset_keys
+                eligible_keys = asset_graph.get_all_asset_keys()
 
             auto_materialize_entity_keys = {
                 target_key

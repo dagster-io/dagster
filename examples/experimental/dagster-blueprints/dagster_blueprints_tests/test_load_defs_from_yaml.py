@@ -41,7 +41,7 @@ def test_single_file_single_blueprint() -> None:
         path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
         per_file_blueprint_type=SimpleAssetBlueprint,
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {AssetKey("asset1")}
 
     metadata = defs.get_assets_def("asset1").metadata_by_key[AssetKey("asset1")]
     code_references_metadata = CodeReferencesMetadataSet.extract(metadata)
@@ -60,7 +60,10 @@ def test_dir_of_single_blueprints() -> None:
         path=Path(__file__).parent / "yaml_files" / "dir_of_single_blueprints",
         per_file_blueprint_type=SimpleAssetBlueprint,
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset2"), AssetKey("asset3")}
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {
+        AssetKey("asset2"),
+        AssetKey("asset3"),
+    }
 
     for asset_key, expected_filename in (
         (AssetKey("asset2"), "single_blueprint1.yaml"),
@@ -138,7 +141,7 @@ def test_empty_dir() -> None:
         path=Path(__file__).parent / "yaml_files" / "dir_with_no_yaml_files",
         per_file_blueprint_type=SimpleAssetBlueprint,
     )
-    assert len(set(defs.get_asset_graph().all_asset_keys)) == 0
+    assert len(set(defs.get_asset_graph().get_all_asset_keys())) == 0
 
 
 def test_model_validation_error() -> None:
@@ -157,7 +160,7 @@ def test_single_file_union_of_blueprints() -> None:
         path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
         per_file_blueprint_type=Union[SimpleAssetBlueprint, SimpleJobBlueprint],
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {AssetKey("asset1")}
 
 
 def test_single_file_union_of_blueprints_discriminated_union() -> None:
@@ -182,7 +185,7 @@ def test_single_file_union_of_blueprints_discriminated_union() -> None:
         path=Path(__file__).parent / "yaml_files" / "single_blueprint_with_type.yaml",
         per_file_blueprint_type=Union[SameFieldsAssetBlueprint1, SameFieldsAssetBlueprint2],
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {AssetKey("asset1")}
 
 
 class SourceFileNameAssetBlueprint(Blueprint):
@@ -200,7 +203,7 @@ def test_source_file_name() -> None:
         path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
         per_file_blueprint_type=SourceFileNameAssetBlueprint,
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {AssetKey("asset1")}
 
     metadata = defs.get_assets_def("asset1").metadata_by_key[AssetKey("asset1")]
     assert metadata["source_file_name"] == "single_blueprint.yaml"
@@ -234,7 +237,7 @@ def test_additional_resources() -> None:
         resources={"some_resource": "some_value"},
     )
 
-    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {AssetKey("asset1")}
 
 
 def test_yaml_blueprints_loader_additional_resources() -> None:
@@ -254,7 +257,7 @@ def test_yaml_blueprints_loader_additional_resources() -> None:
         per_file_blueprint_type=SimpleAssetBlueprintNeedsResource,
     ).load_defs(resources={"some_resource": "some_value"})
 
-    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {AssetKey("asset1")}
 
 
 def test_loader_schema(snapshot) -> None:
@@ -320,7 +323,7 @@ def test_single_file_many_blueprints() -> None:
         path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
         per_file_blueprint_type=List[SimpleAssetBlueprint],
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {
         AssetKey("asset1"),
         AssetKey("asset2"),
         AssetKey("asset3"),
@@ -330,7 +333,7 @@ def test_single_file_many_blueprints() -> None:
         path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
         per_file_blueprint_type=Sequence[SimpleAssetBlueprint],
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {
         AssetKey("asset1"),
         AssetKey("asset2"),
         AssetKey("asset3"),
@@ -345,7 +348,7 @@ def test_single_file_many_blueprints_builtin_list() -> None:
         path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
         per_file_blueprint_type=list[SimpleAssetBlueprint],  # type: ignore
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {
         AssetKey("asset1"),
         AssetKey("asset2"),
         AssetKey("asset3"),
@@ -384,7 +387,7 @@ def test_dir_of_many_blueprints() -> None:
         path=Path(__file__).parent / "yaml_files" / "dir_of_lists_of_blueprints",
         per_file_blueprint_type=List[SimpleAssetBlueprint],
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {
         AssetKey("asset1"),
         AssetKey("asset2"),
         AssetKey("asset3"),

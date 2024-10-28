@@ -24,7 +24,7 @@ def test_basic_construction_and_identity() -> None:
 
     assert asset_graph_view_t0._instance is instance  # noqa: SLF001
 
-    assert asset_graph_view_t0.asset_graph.all_asset_keys == {an_asset.key}
+    assert asset_graph_view_t0.asset_graph.get_all_asset_keys() == {an_asset.key}
 
 
 def test_subset_traversal_static_partitions() -> None:

@@ -133,10 +133,6 @@ class AssetLayer(NamedTuple):
         )
 
     @property
-    def all_asset_keys(self) -> Iterable[AssetKey]:
-        return self.asset_graph.all_asset_keys
-
-    @property
     def executable_asset_keys(self) -> Iterable[AssetKey]:
         return self.asset_graph.executable_asset_keys
 

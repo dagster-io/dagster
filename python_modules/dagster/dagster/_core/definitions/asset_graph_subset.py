@@ -339,7 +339,7 @@ class AssetGraphSubset(NamedTuple):
         for key, value in serialized_dict["partitions_subsets_by_asset_key"].items():
             asset_key = AssetKey.from_user_string(key)
 
-            if asset_key not in asset_graph.all_asset_keys:
+            if not asset_graph.has(asset_key):
                 if not allow_partial:
                     raise DagsterDefinitionChangedDeserializationError(
                         f"Asset {key} existed at storage-time, but no longer does"
@@ -374,8 +374,10 @@ class AssetGraphSubset(NamedTuple):
             partitions_subsets_by_asset_key[asset_key] = partitions_def.deserialize_subset(value)
 
         non_partitioned_asset_keys = {
-            AssetKey.from_user_string(key) for key in serialized_dict["non_partitioned_asset_keys"]
-        } & asset_graph.all_asset_keys
+            asset_key
+            for key in serialized_dict["non_partitioned_asset_keys"]
+            if asset_graph.has((asset_key := AssetKey.from_user_string(key)))
+        }
 
         return AssetGraphSubset(
             partitions_subsets_by_asset_key=partitions_subsets_by_asset_key,
