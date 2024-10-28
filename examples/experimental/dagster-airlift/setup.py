@@ -25,7 +25,7 @@ pin = "" if ver == "1!0+dev" else NON_EDITABLE_INSTALL_DAGSTER_PIN
 # versions of python.
 # Eventually, we could consider adding a test suite that runs across different versions of airflow
 # to ensure compatibility.
-AIRFLOW_REQUIREMENTS = [
+CONSISTENT_TEST_AIRFLOW_REQUIREMENTS = [
     # Requirements for python versions under 3.12.
     "apache-airflow==2.7.3; python_version < '3.12'",
     "pendulum>=2.0.0,<3.0.0; python_version < '3.12'",
@@ -40,6 +40,23 @@ AIRFLOW_REQUIREMENTS = [
 ]
 
 CLI_REQUIREMENTS = ["click", "structlog"]
+CORE_REQUIREMENTS = [f"dagster{pin}", *CLI_REQUIREMENTS]
+IN_AIRFLOW_REQUIREMENTS = CLI_REQUIREMENTS
+MWAA_REQUIREMENTS = [
+    "boto3>=1.18.0"
+]  # confirms that mwaa is available in the environment (can't find exactly which version adds mwaa support, but I can confirm that 1.18.0 and greater have it.)
+DBT_REQUIREMENTS = ["dagster-dbt"]
+K8S_REQUIREMENTS = ["dagster-k8s"]
+ALL_SUBPACKAGE_REQUIREMENTS = list(
+    set(
+        [
+            *CORE_REQUIREMENTS,
+            *CONSISTENT_TEST_AIRFLOW_REQUIREMENTS,
+            *CLI_REQUIREMENTS,
+            *MWAA_REQUIREMENTS,
+        ]
+    )
+)
 
 
 setup(
@@ -67,32 +84,26 @@ setup(
     packages=find_packages(exclude=["dagster_airlift_tests*", "examples*"]),
     requires=CLI_REQUIREMENTS,
     extras_require={
-        "core": [
-            f"dagster{pin}",
-            *CLI_REQUIREMENTS,
-        ],
+        "core": CORE_REQUIREMENTS,
         # [in-airflow] doesn't directly have a dependency on airflow because Airflow cannot be installed via setup.py reliably. Instead, users need to install from a constraints
         # file as recommended by the Airflow project.
-        "in-airflow": CLI_REQUIREMENTS,
+        "in-airflow": IN_AIRFLOW_REQUIREMENTS,
         # [tutorial] includes additional dependencies needed to run the tutorial. Namely, the dagster-webserver and the constrained airflow packages.
         "tutorial": [
             "dagster-webserver",
-            *AIRFLOW_REQUIREMENTS,
-            *CLI_REQUIREMENTS,
+            "dbt-duckdb",
+            *ALL_SUBPACKAGE_REQUIREMENTS,
+            *CONSISTENT_TEST_AIRFLOW_REQUIREMENTS,
         ],
-        "mwaa": [
-            "boto3>=1.18.0"
-        ],  # confirms that mwaa is available in the environment (can't find exactly which version adds mwaa support, but I can confirm that 1.18.0 and greater have it.)
-        "dbt": ["dagster-dbt"],
-        "k8s": ["dagster-k8s"],
+        "mwaa": MWAA_REQUIREMENTS,
+        "dbt": DBT_REQUIREMENTS,
+        "k8s": K8S_REQUIREMENTS,
         "test": [
             "pytest",
-            "dagster-dbt",
-            "dbt-duckdb",
-            "boto3",
             "dagster-webserver",
-            *AIRFLOW_REQUIREMENTS,
-            *CLI_REQUIREMENTS,
+            "dbt-duckdb",
+            *CONSISTENT_TEST_AIRFLOW_REQUIREMENTS,
+            *ALL_SUBPACKAGE_REQUIREMENTS,
         ],
     },
     entry_points={
