@@ -162,7 +162,7 @@ const buildValidator =
     return data;
   };
 
-export const makeKey = (basePath: string, repoAddress: RepoAddress, pipelineOrJobName: string) =>
+const makeKey = (basePath: string, repoAddress: RepoAddress, pipelineOrJobName: string) =>
   `dagster.v2.${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
 
 export function useExecutionSessionStorage(
