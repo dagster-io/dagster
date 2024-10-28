@@ -461,6 +461,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         )
 
 
+@experimental
 def load_tableau_asset_specs(
     workspace: BaseTableauWorkspace,
     dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
