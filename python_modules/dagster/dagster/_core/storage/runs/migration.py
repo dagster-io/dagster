@@ -319,6 +319,7 @@ def migrate_run_backfill_id(storage: RunStorage, print_fn: Optional[PrintFn] = N
             db_select([RunTagsTable.c.id, RunTagsTable.c.run_id, RunTagsTable.c.value])
             .where(RunTagsTable.c.key == BACKFILL_ID_TAG)
             .limit(CHUNK_SIZE)
+            .order_by(RunTagsTable.c.id)
         )
 
         while has_more:
@@ -327,11 +328,11 @@ def migrate_run_backfill_id(storage: RunStorage, print_fn: Optional[PrintFn] = N
             res = storage.fetchall(query)
             has_more = len(res) >= CHUNK_SIZE
             for row in res:
+                cursor = row[0]
                 run_id = row[1]
                 backfill_id = row[2]
-                cursor = row[0]
 
-                add_backfill_id(conn, run_id, backfill_id)
+                add_backfill_id(conn, run_id=run_id, backfill_id=backfill_id)
 
 
 def add_backfill_id(conn, run_id: str, backfill_id: str) -> None:
