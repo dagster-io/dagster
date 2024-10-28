@@ -341,6 +341,7 @@ def add_backfill_id(conn, run_id: str, backfill_id: str) -> None:
     conn.execute(
         RunsTable.update()
         .where(RunsTable.c.run_id == run_id)
+        .where(RunsTable.c.backfill_id.is_(None))
         .values(
             backfill_id=backfill_id,
         )
