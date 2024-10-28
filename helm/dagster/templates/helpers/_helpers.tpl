@@ -221,3 +221,13 @@ DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY: "{{ .Values.pipelineRun.image.pullPo
 {{ template "dagster.fullname" . }}-workspace-yaml
 {{- end -}}
 {{- end -}}
+
+{{- define "dagster.workspace.configmapOptional" -}}
+{{- $_ := include "dagster.backcompat" . | mustFromJson -}}
+{{- $webserverWorkspace := $_.Values.dagsterWebserver.workspace }}
+{{- if and $webserverWorkspace.enabled $webserverWorkspace.externalConfigmapOptional }}
+{{- $webserverWorkspace.externalConfigmapOptional -}}
+{{- else -}}
+false
+{{- end -}}
+{{- end -}}

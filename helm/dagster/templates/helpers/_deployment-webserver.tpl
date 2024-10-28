@@ -151,6 +151,7 @@ spec:
         - name: dagster-workspace-yaml
           configMap:
             name: {{ include "dagster.workspace.configmapName" . }}
+            optional: {{ include "dagster.workspace.configmapOptional" . }}
         {{- end }}
         {{- if $_.Values.dagsterWebserver.volumes }}
         {{- range $volume := $_.Values.dagsterWebserver.volumes }}

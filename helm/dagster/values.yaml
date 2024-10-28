@@ -69,6 +69,11 @@ dagsterWebserver:
     # must be empty.
     externalConfigmap: ~
 
+    # Defines if the external configmap is optional. If set to false,
+    # the configmap will have to exist before deploying the helm chart
+    # default: false
+    externalConfigmapOptional: false
+
   # Deploy a separate instance of the webserver in --read-only mode (can't launch runs, disable schedules, etc.)
   enableReadOnly: false
 
