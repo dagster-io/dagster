@@ -7,7 +7,6 @@ from dagster_buildkite.utils import is_release_branch, safe_getenv
 
 class AvailablePythonVersion(str, Enum):
     # Ordering is important here, because some steps will take the highest/lowest available version.
-    V3_8 = "3.8"
     V3_9 = "3.9"
     V3_10 = "3.10"
     V3_11 = "3.11"

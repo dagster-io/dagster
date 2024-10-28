@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN curl -sSL https://get.docker.com/ > install_docker.sh
 
-RUN pip install pex==2.1.12
+RUN pip install pex
 
 ADD requirements.txt .
 

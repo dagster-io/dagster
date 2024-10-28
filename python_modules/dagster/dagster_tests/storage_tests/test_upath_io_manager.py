@@ -1,7 +1,6 @@
 import inspect
 import json
 import pickle
-import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
@@ -513,11 +512,7 @@ class AsyncJSONIOManager(ConfigurableIOManager, UPathIOManager):
             )
 
 
-requires_python38 = pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8")
-
-
 @pytest.mark.parametrize("json_data", [0, 0.0, [0, 1, 2], {"a": 0}, [{"a": 0}, {"b": 1}, {"c": 2}]])
-@requires_python38
 def test_upath_io_manager_async_load_from_path(tmp_path: Path, json_data: Any):
     manager = AsyncJSONIOManager(base_dir=str(tmp_path))
 
@@ -538,7 +533,6 @@ def test_upath_io_manager_async_load_from_path(tmp_path: Path, json_data: Any):
     assert result.output_for_node("partitioned_asset") == "a"
 
 
-@requires_python38
 def test_upath_io_manager_async_multiple_time_partitions(
     tmp_path: Path,
     daily: DailyPartitionsDefinition,
@@ -574,7 +568,6 @@ def test_upath_io_manager_async_multiple_time_partitions(
     assert len(downstream_asset_data) == 2, "downstream day should map to 2 upstream days"
 
 
-@requires_python38
 def test_upath_io_manager_async_fail_on_missing_partitions(
     tmp_path: Path,
     daily: DailyPartitionsDefinition,
@@ -608,7 +601,6 @@ def test_upath_io_manager_async_fail_on_missing_partitions(
         )
 
 
-@requires_python38
 def test_upath_io_manager_async_allow_missing_partitions(
     tmp_path: Path,
     daily: DailyPartitionsDefinition,

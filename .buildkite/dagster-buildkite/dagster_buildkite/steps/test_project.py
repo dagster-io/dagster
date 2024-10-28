@@ -67,7 +67,7 @@ def build_test_project_steps() -> List[GroupStep]:
             )
             .on_python_image(
                 # py version can be bumped when rebuilt
-                f"buildkite-build-test-project-image:py{AvailablePythonVersion.V3_8}-{BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION}",
+                f"buildkite-build-test-project-image:py{AvailablePythonVersion.V3_11}-{BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION}",
                 [
                     "AIRFLOW_HOME",
                     "AWS_ACCOUNT_ID",

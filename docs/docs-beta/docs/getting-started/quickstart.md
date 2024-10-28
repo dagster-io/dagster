@@ -27,7 +27,7 @@ Welcome to Dagster! In this guide, you'll use Dagster to create a basic pipeline
 To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
-- Python 3.8+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
+- Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
 </details>
 
 ## Step 1: Set up the Dagster environment
