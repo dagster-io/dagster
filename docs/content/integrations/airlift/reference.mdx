@@ -1,16 +1,18 @@
 Test
 
 ```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe.py
+# start_asset_specs
+from dagster import AssetSpec
+
+raw_customers_spec = AssetSpec(key=["raw_data", "raw_customers"])
+export_customers_spec = AssetSpec(key="customers_csv", deps=["customers"])
+# end_asset_specs
+
+# start_dbt_assets
 import os
 from pathlib import Path
 
-from dagster import AssetExecutionContext, AssetSpec, Definitions
-from dagster_airlift.core import (
-    AirflowInstance,
-    BasicAuthBackend,
-    assets_with_task_mappings,
-    build_defs_from_airflow_instance,
-)
+from dagster import AssetExecutionContext
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
 
@@ -28,15 +30,25 @@ def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
 
+# end_dbt_assets
+
+# start_task_mappings
+from dagster_airlift.core import assets_with_task_mappings
+
 mapped_assets = assets_with_task_mappings(
     dag_id="rebuild_customers_list",
     task_mappings={
-        "load_raw_customers": [AssetSpec(key=["raw_data", "raw_customers"])],
+        "load_raw_customers": [raw_customers_spec],
         "build_dbt_models": [dbt_project_assets],
-        "export_customers": [AssetSpec(key="customers_csv", deps=["customers"])],
+        "export_customers": [export_customers_spec],
     },
 )
+# end_task_mappings
 
+
+# start_build_defs
+from dagster import Definitions
+from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
@@ -52,4 +64,5 @@ defs = build_defs_from_airflow_instance(
         resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
     ),
 )
+# end_build_defs
 ```

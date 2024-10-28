@@ -176,25 +176,22 @@ The first and third tasks involve a single table each. We can manually construct
 
 We will also create a set of dbt asset definitions for the `build_dbt_models` task. We can use the `dagster-dbt`-supplied decorator `@dbt_assets` to generate these definitions using Dagster's dbt integration.
 
-First, you need to install the extra that has the dbt factory:
+First, we'll construct AssetSpecs for the `load_raw_customers` and `export_customers` tasks:
 
-```bash
-uv pip install 'dagster-airlift[dbt]'
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe.py startafter=start_asset_specs endbefore=end_asset_specs
+from dagster import AssetSpec
+
+raw_customers_spec = AssetSpec(key=["raw_data", "raw_customers"])
+export_customers_spec = AssetSpec(key="customers_csv", deps=["customers"])
 ```
 
-Then, we will construct our assets:
+Next, let's construct assets using the `@dbt_assets` decorator:
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe.py
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe.py startafter=start_dbt_assets endbefore=end_dbt_assets
 import os
 from pathlib import Path
 
-from dagster import AssetExecutionContext, AssetSpec, Definitions
-from dagster_airlift.core import (
-    AirflowInstance,
-    BasicAuthBackend,
-    assets_with_task_mappings,
-    build_defs_from_airflow_instance,
-)
+from dagster import AssetExecutionContext
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
 
@@ -210,17 +207,28 @@ def dbt_project_path() -> Path:
 )
 def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
+```
 
+Now, we can use the `assets_with_task_mappings` utility to associate these assets with the tasks that produce them:
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe.py startafter=start_task_mappings endbefore=end_task_mappings
+from dagster_airlift.core import assets_with_task_mappings
 
 mapped_assets = assets_with_task_mappings(
     dag_id="rebuild_customers_list",
     task_mappings={
-        "load_raw_customers": [AssetSpec(key=["raw_data", "raw_customers"])],
+        "load_raw_customers": [raw_customers_spec],
         "build_dbt_models": [dbt_project_assets],
-        "export_customers": [AssetSpec(key="customers_csv", deps=["customers"])],
+        "export_customers": [export_customers_spec],
     },
 )
+```
 
+Finally, we can pass these definitions to `build_defs_from_airflow_instance`:
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe.py startafter=start_build_defs endbefore=end_build_defs
+from dagster import Definitions
+from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
