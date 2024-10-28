@@ -39,6 +39,7 @@ from dagster._core.definitions.tags import build_kind_tag
 from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.utils import imap
+from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.log import get_dagster_logger
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
@@ -53,21 +54,46 @@ logger = get_dagster_logger()
 
 
 class FivetranConnectorTableProps(NamedTuple):
+    table: str
     connector_id: str
-    table_name: str
+    name: str
+    connector_url: str
+    schemas: Mapping[str, Any]
+    database: Optional[str]
+    service: Optional[str]
 
 
 class DagsterFivetranTranslator:
     def get_asset_key(self, props: FivetranConnectorTableProps) -> AssetKey:
         """Get the AssetKey for a table synced by a Fivetran connector."""
-        return AssetKey(*props.table_name.split("."))
+        return AssetKey(props.table.split("."))
 
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
         """Get the AssetSpec for a table synced by a Fivetran connector."""
+        schema_name, table_name = props.table.split(".")
+        schema_entry = next(
+            schema
+            for schema in props.schemas["schemas"].values()
+            if schema["name_in_destination"] == schema_name
+        )
+        table_entry = next(
+            table_entry
+            for table_entry in schema_entry["tables"].values()
+            if table_entry["name_in_destination"] == table_name
+        )
+
+        metadata = metadata_for_table(
+            table_entry,
+            props.connector_url,
+            database=props.database,
+            schema=schema_name,
+            table=table_name,
+        )
+
         return AssetSpec(
             key=self.get_asset_key(props),
-            metadata={},
-            tags={},
+            metadata=metadata,
+            kinds={"fivetran", *({props.service} if props.service else set())},
         )
 
 
@@ -126,15 +152,21 @@ def _build_fivetran_assets(
     asset_tags: Optional[Mapping[str, Any]],
     max_threadpool_workers: int = DEFAULT_MAX_THREADPOOL_WORKERS,
     translator: Optional[Type[DagsterFivetranTranslator]] = None,
+    connection_metadata: Optional["FivetranConnectionMetadata"] = None,
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
+    check.invariant(
+        translator and connection_metadata, "Translator and connection_metadata required."
+    )
 
     translator_instance = translator() if translator else None
 
     tracked_asset_keys = {
         table: AssetKey([*asset_key_prefix, *table.split(".")])
-        if not translator_instance
-        else translator_instance.get_asset_key(FivetranConnectorTableProps(connector_id, table))
+        if not translator_instance or not connection_metadata
+        else translator_instance.get_asset_key(
+            FivetranConnectorTableProps(table=table, **connection_metadata._asdict())
+        )
         for table in destination_tables
     }
     user_facing_asset_keys = table_to_asset_key_map or tracked_asset_keys
@@ -164,9 +196,9 @@ def _build_fivetran_assets(
                     **(asset_tags or {}),
                 },
             )
-            if not translator_instance
+            if not translator_instance or not connection_metadata
             else translator_instance.get_asset_spec(
-                FivetranConnectorTableProps(connector_id, table)
+                FivetranConnectorTableProps(table=table, **connection_metadata._asdict())
             )
             for table in tracked_asset_keys.keys()
         ],
@@ -334,6 +366,7 @@ def build_fivetran_assets(
     )
 
 
+@whitelist_for_serdes
 class FivetranConnectionMetadata(
     NamedTuple(
         "_FivetranConnectionMetadata",
@@ -360,7 +393,9 @@ class FivetranConnectionMetadata(
             for schema in schemas_inner.values():
                 if schema["enabled"]:
                     schema_name = schema["name_in_destination"]
-                    schema_tables = cast(Dict[str, Dict[str, Any]], schema["tables"])
+                    schema_tables: Dict[str, Dict[str, Any]] = cast(
+                        Dict[str, Dict[str, Any]], schema["tables"]
+                    )
                     for table in schema_tables.values():
                         if table["enabled"]:
                             table_name = table["name_in_destination"]
@@ -393,6 +428,7 @@ class FivetranConnectionMetadata(
                 "connector_id": self.connector_id,
                 "io_manager_key": io_manager_key,
                 "storage_kind": self.service,
+                "connection_metadata": self,
             },
         )
 
@@ -409,6 +445,8 @@ def _build_fivetran_assets_from_metadata(
     connector_id = cast(str, metadata["connector_id"])
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
     storage_kind = cast(Optional[str], metadata.get("storage_kind"))
+
+    connection_metadata = metadata["connection_metadata"]
 
     return _build_fivetran_assets(
         connector_id=connector_id,
@@ -432,6 +470,7 @@ def _build_fivetran_assets_from_metadata(
         infer_missing_tables=False,
         op_tags=None,
         translator=translator,
+        connection_metadata=connection_metadata,
     )[0]
 
 
@@ -583,7 +622,7 @@ def _clean_name(name: str) -> str:
 def load_assets_from_fivetran_instance(
     fivetran: Union[FivetranResource, ResourceDefinition],
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    connector_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+    connector_to_group_fn: Optional[Callable[[str], Optional[str]]] = None,
     io_manager_key: Optional[str] = None,
     connector_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
     connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]] = None,
@@ -675,6 +714,7 @@ def load_assets_from_fivetran_instance(
         ),
         "Cannot specify key_prefix, connector_to_group_fn, io_manager_key, connector_to_io_manager_key_fn, or connector_to_asset_key_fn when translator is specified",
     )
+    connector_to_group_fn = connector_to_group_fn or _clean_name
 
     check.invariant(
         not io_manager_key or not connector_to_io_manager_key_fn,

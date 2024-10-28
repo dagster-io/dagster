@@ -21,6 +21,7 @@ from dagster._core.execution.with_resources import with_resources
 from dagster._core.instance_for_test import environ
 from dagster_fivetran import FivetranResource
 from dagster_fivetran.asset_defs import (
+    DagsterFivetranTranslator,
     FivetranConnectionMetadata,
     load_assets_from_fivetran_instance,
 )
@@ -307,3 +308,110 @@ def test_load_from_instance(
 
         # Validate IO manager is called to retrieve the xyz asset which our downstream asset depends on
         assert load_calls == [xyz_asset_key]
+
+
+@responses.activate
+def test_load_from_instance_with_translator() -> None:
+    with environ({"FIVETRAN_API_KEY": "some_key", "FIVETRAN_API_SECRET": "some_secret"}):
+        load_calls = []
+
+        @io_manager
+        def test_io_manager(_context) -> IOManager:
+            class TestIOManager(IOManager):
+                def handle_output(self, context: OutputContext, obj) -> None:
+                    return
+
+                def load_input(self, context: InputContext) -> Any:
+                    load_calls.append(context.asset_key)
+                    return None
+
+            return TestIOManager()
+
+        ft_resource = FivetranResource(
+            api_key=EnvVar("FIVETRAN_API_KEY"), api_secret=EnvVar("FIVETRAN_API_SECRET")
+        )
+
+        b64_encoded_auth_str = base64.b64encode(b"some_key:some_secret").decode("utf-8")
+        expected_auth_header = {"Authorization": f"Basic {b64_encoded_auth_str}"}
+
+        responses.add(
+            method=responses.GET,
+            url=ft_resource.api_base_url + "groups",
+            json=get_sample_groups_response(),
+            status=200,
+            match=[matchers.header_matcher(expected_auth_header)],
+        )
+        responses.add(
+            method=responses.GET,
+            url=ft_resource.api_base_url + "destinations/some_group",
+            json=(get_sample_destination_details_response()),
+            status=200,
+            match=[matchers.header_matcher(expected_auth_header)],
+        )
+        responses.add(
+            method=responses.GET,
+            url=ft_resource.api_base_url + "groups/some_group/connectors",
+            json=(get_sample_connectors_response()),
+            status=200,
+            match=[matchers.header_matcher(expected_auth_header)],
+        )
+
+        responses.add(
+            responses.GET,
+            f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas",
+            json=get_complex_sample_connector_schema_config(),
+        )
+
+        ft_cacheable_assets = load_assets_from_fivetran_instance(
+            ft_resource,
+            poll_interval=10,
+            poll_timeout=600,
+            translator=DagsterFivetranTranslator,
+        )
+        ft_assets = ft_cacheable_assets.build_definitions(
+            ft_cacheable_assets.compute_cacheable_data()
+        )
+        ft_assets = with_resources(ft_assets, {"test_io_manager": test_io_manager})
+
+        # Create set of expected asset keys
+        tables = {
+            AssetKey(["xyz1", "abc2"]),
+            AssetKey(["xyz1", "abc1"]),
+            AssetKey(["abc", "xyz"]),
+        }
+
+        # Set up a downstream asset to consume the xyz output table
+        xyz_asset_key = AssetKey(["abc", "xyz"])
+
+        @asset(ins={"xyz": AssetIn(key=xyz_asset_key)})
+        def downstream_asset(xyz):
+            return
+
+        # Check schema metadata is added correctly to asset def
+        assets_def = ft_assets[0]
+
+        assert any(
+            metadata.get("dagster/column_schema")
+            == (
+                TableSchema(
+                    columns=[
+                        TableColumn(name="column_1", type=""),
+                        TableColumn(name="column_2", type=""),
+                        TableColumn(name="column_3", type=""),
+                    ]
+                )
+            )
+            for key, metadata in assets_def.metadata_by_key.items()
+        ), str(assets_def.metadata_by_key)
+
+        for key, metadata in assets_def.metadata_by_key.items():
+            assert metadata.get("dagster/table_name") == (
+                "example_database." + ".".join(key.path[-2:])
+            )
+            assert has_kind(assets_def.tags_by_key[key], "snowflake")
+
+        assert ft_assets[0].keys == tables
+        assert all(
+            [ft_assets[0].group_names_by_key.get(t) == ("some_service_some_name") for t in tables]
+        )
+        assert len(ft_assets[0].op.output_defs) == len(tables)
