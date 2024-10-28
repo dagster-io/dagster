@@ -13,6 +13,8 @@ import {RunsFilter} from '../graphql/types';
 
 const PAGE_SIZE = 25;
 
+const RUNS_FEED_CURSOR_KEY = `runs_before`;
+
 export function useRunsFeedEntries(
   filter: RunsFilter,
   currentTab: ReturnType<typeof useSelectedRunsFeedTab>,
@@ -24,6 +26,7 @@ export function useRunsFeedEntries(
     RunsFeedRootQueryVariables
   >({
     query: RUNS_FEED_ROOT_QUERY,
+    queryKey: RUNS_FEED_CURSOR_KEY,
     pageSize: PAGE_SIZE,
     variables: {filter, includeRunsFromBackfills},
     skip: isScheduled,
