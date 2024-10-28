@@ -1,6 +1,7 @@
 from typing import Sequence, Type, cast
 
 from dagster import AssetExecutionContext, AssetsDefinition, Failure, multi_asset
+from dagster._annotations import experimental
 
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
@@ -12,6 +13,7 @@ from dagster_looker.api.dagster_looker_api_translator import (
 from dagster_looker.api.resource import LookerResource
 
 
+@experimental
 def build_looker_pdt_assets_definitions(
     resource_key: str,
     request_start_pdt_builds: Sequence[RequestStartPdtBuild],
