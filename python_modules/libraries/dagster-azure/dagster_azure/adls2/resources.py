@@ -97,7 +97,7 @@ class ADLS2Resource(ADLS2BaseResource):
     @property
     @cached_method
     def adls2_client(self) -> DataLakeServiceClient:
-        return create_adls2_client(self.storage_account, self._raw_credential)
+        return create_adls2_client(self.storage_account, self.cloud_type, self._raw_credential)
 
     @property
     @cached_method
@@ -207,5 +207,5 @@ def _adls2_resource_from_config(config) -> ADLS2Resource:
         credential = ADLS2SASToken(token=config["credential"]["sas"])
     else:
         credential = ADLS2Key(key=config["credential"]["key"])
-
-    return ADLS2Resource(storage_account=storage_account, credential=credential)
+    
+    return ADLS2Resource(storage_account=storage_account, cloud_type=config["cloud_type"], credential=credential)
