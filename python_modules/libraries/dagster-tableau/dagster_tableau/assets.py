@@ -8,10 +8,12 @@ from dagster import (
     Output,
     multi_asset,
 )
+from dagster._annotations import experimental
 
 from dagster_tableau.resources import BaseTableauWorkspace
 
 
+@experimental
 def build_tableau_executable_assets_definition(
     resource_key: str,
     specs: Sequence[AssetSpec],
