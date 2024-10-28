@@ -21,23 +21,6 @@ export const useVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagDebugConsoleLogging,
   },
   {
-    key: 'Revert to legacy navigation',
-    label: (
-      <>
-        Revert to legacy navigation (
-        <a
-          href="https://github.com/dagster-io/dagster/discussions/21370"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Learn more
-        </a>
-        )
-      </>
-    ),
-    flagType: FeatureFlag.flagLegacyNav,
-  },
-  {
     key: 'Revert to legacy Runs page',
     flagType: FeatureFlag.flagLegacyRunsPage,
     label: (
