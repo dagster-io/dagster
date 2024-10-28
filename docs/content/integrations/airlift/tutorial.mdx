@@ -439,7 +439,7 @@ class DagsterCloudProxyOperator(BaseProxyTaskToDagsterOperator):
 
 #### Migrating common operators
 
-For some common operator patterns, like our dbt operator, Dagster supplies factories to build software defined assets for our tasks. In fact, the `@dbt_assets` decorator used earlier already backs its assets with definitions, so we can toggle the proxied state of the `build_dbt_models` task to `proxied: True` in the proxied state file:
+For some common operator patterns, like using the BashOperator for DBT, Dagster supplies factories to build software defined assets for our tasks. In fact, the `@dbt_assets` decorator used earlier already backs its assets with definitions, so we can toggle the proxied state of the `build_dbt_models` task to `proxied: True` in the proxied state file:
 
 ```yaml file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/snippets/dbt_proxied.yaml
 tasks:
@@ -451,7 +451,10 @@ tasks:
     proxied: False
 ```
 
-**Important**: It may take up to 30 seconds for the proxied state in the Airflow UI to reflect this change. You must subsequently reload the definitions in Dagster via the UI or by restarting `dagster dev`.
+Run the following command to reload the Airflow DAG (again making sure that AIRFLOW_HOME is set as an environment variable):
+```bash
+airflow dags reserialize
+```
 
 You can now run the `rebuild_customers_list` DAG in Airflow, and the `build_dbt_models` task will be executed in a Dagster run:
 
