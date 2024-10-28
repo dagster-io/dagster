@@ -29,9 +29,12 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
   variables: Omit<TVars, 'cursor' | 'limit'>;
   pageSize: number;
   getResultArray: (result: T | undefined) => any[];
+  queryKey?: string;
 }) {
   const [cursorStack, setCursorStack] = useState<string[]>(() => []);
-  const [cursor, setCursor] = useQueryPersistedState<string | undefined>({queryKey: 'cursor'});
+  const [cursor, setCursor] = useQueryPersistedState<string | undefined>({
+    queryKey: options.queryKey || 'cursor',
+  });
 
   const queryVars: any = {
     ...options.variables,
