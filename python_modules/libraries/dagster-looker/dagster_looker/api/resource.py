@@ -124,6 +124,7 @@ class LookerResource(ConfigurableResource):
         )
 
 
+@experimental
 def load_looker_asset_specs(
     looker_resource: LookerResource,
     dagster_looker_translator: Type[DagsterLookerApiTranslator] = DagsterLookerApiTranslator,
