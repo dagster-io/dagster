@@ -55,7 +55,7 @@ export interface IExecutionSession {
   base: SessionBase | null;
   mode: string | null;
   needsRefresh: boolean;
-  assetSelection: {assetKey: AssetKeyInput; opNames: string[]}[] | null;
+  assetSelection: {assetKey: AssetKeyInput; opNames?: string[]}[] | null;
   // Nullable for backwards compatibility
   assetChecksAvailable?: Pick<AssetCheck, 'name' | 'canExecuteIndividually' | 'assetKey'>[];
   includeSeparatelyExecutableChecks: boolean;
@@ -162,7 +162,7 @@ const buildValidator =
     return data;
   };
 
-const makeKey = (basePath: string, repoAddress: RepoAddress, pipelineOrJobName: string) =>
+export const makeKey = (basePath: string, repoAddress: RepoAddress, pipelineOrJobName: string) =>
   `dagster.v2.${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
 
 export function useExecutionSessionStorage(
