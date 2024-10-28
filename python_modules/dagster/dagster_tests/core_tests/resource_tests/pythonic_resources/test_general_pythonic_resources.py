@@ -1,5 +1,4 @@
 import enum
-import sys
 from abc import ABC, abstractmethod
 from typing import List, Mapping, Optional
 
@@ -100,7 +99,6 @@ def test_invalid_config() -> None:
         MyResource(foo="why")  # type: ignore
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8")
 def test_caching_within_resource():
     called = {"greeting": 0, "get_introduction": 0}
 

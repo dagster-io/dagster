@@ -1,4 +1,4 @@
-FROM python:3.8-slim
+FROM python:3.10-slim
 
 COPY ./python_modules/ /tmp/python_modules/
 

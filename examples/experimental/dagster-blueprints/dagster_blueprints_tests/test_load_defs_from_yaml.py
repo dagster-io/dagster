@@ -346,7 +346,7 @@ def test_single_file_many_blueprints() -> None:
 def test_single_file_many_blueprints_builtin_list() -> None:
     defs = load_defs_from_yaml(
         path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
-        per_file_blueprint_type=list[SimpleAssetBlueprint],  # type: ignore
+        per_file_blueprint_type=list[SimpleAssetBlueprint],
     )
     assert set(defs.get_asset_graph().get_all_asset_keys()) == {
         AssetKey("asset1"),
