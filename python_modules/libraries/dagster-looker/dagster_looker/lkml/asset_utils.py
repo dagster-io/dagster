@@ -138,6 +138,7 @@ def build_looker_dashboard_specs(
                     group_name=dagster_looker_translator.get_group_name(lookml_dashboard),
                     owners=dagster_looker_translator.get_owners(lookml_dashboard),
                     tags=dagster_looker_translator.get_tags(lookml_dashboard),
+                    kinds={"looker", "dashboard"},
                 )
             )
 
@@ -170,6 +171,7 @@ def build_looker_explore_specs(
                 group_name=dagster_looker_translator.get_group_name(lookml_explore),
                 owners=dagster_looker_translator.get_owners(lookml_explore),
                 tags=dagster_looker_translator.get_tags(lookml_explore),
+                kinds={"looker", "explore"},
             )
         )
 
@@ -200,6 +202,7 @@ def build_looker_view_specs(
                 group_name=dagster_looker_translator.get_group_name(lookml_view),
                 owners=dagster_looker_translator.get_owners(lookml_view),
                 tags=dagster_looker_translator.get_tags(lookml_view),
+                kinds={"looker", "view"},
             )
         )
 
