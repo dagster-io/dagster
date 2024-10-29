@@ -479,7 +479,7 @@ def load_tableau_asset_specs(
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
         return check.is_list(
             TableauWorkspaceDefsLoader(
-                workspace=workspace,
+                workspace=initialized_workspace,
                 translator_cls=dagster_tableau_translator,
             )
             .build_defs()
