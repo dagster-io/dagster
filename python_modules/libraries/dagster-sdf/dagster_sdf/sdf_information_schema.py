@@ -18,6 +18,7 @@ import dagster._check as check
 import polars as pl
 from dagster import (
     AssetCheckSpec,
+    AssetExecutionContext,
     AssetKey,
     AssetObservation,
     AssetSpec,
@@ -289,10 +290,10 @@ class SdfInformationSchema(IHaveNew):
     def stream_asset_observations(
         self,
         dagster_sdf_translator: DagsterSdfTranslator,
-        context: Optional[OpExecutionContext] = None,
+        context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
     ) -> Iterator[SdfDagsterEventType]:
         selected_output_names: AbstractSet[str] = (
-            context.selected_output_names if context else set()
+            context.op_execution_context.selected_output_names if context else set()
         )
         tables = self.read_table("tables")
         tables = tables.filter(~pl.col("purpose").is_in(["system", "external-system"]))
