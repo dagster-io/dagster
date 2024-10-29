@@ -970,9 +970,9 @@ def test_invalid_partitions_subclass():
     def asset1():
         pass
 
-    with pytest.warns(
-        DeprecationWarning,
-        match="custom PartitionsDefinition subclasses",
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Custom PartitionsDefinition subclasses",
     ):
         Definitions.validate_loadable(Definitions(assets=[asset1]))
 
