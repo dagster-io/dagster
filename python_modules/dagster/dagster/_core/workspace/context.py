@@ -650,6 +650,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                     startup_timeout=instance.code_server_process_startup_timeout,
                     log_level=code_server_log_level,
                     wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
+                    additional_timeout_msg="To increase the timeout, set the `code_servers.local_startup_timeout` instance configuration option. ",
                 )
             )
 
