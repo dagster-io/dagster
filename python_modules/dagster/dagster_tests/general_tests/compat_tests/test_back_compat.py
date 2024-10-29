@@ -17,7 +17,6 @@ from dagster import (
     AssetMaterialization,
     Output,
     _check as check,
-    asset,
     file_relative_path,
     job,
     op,
@@ -40,19 +39,13 @@ from dagster._core.remote_representation.external_data import (
     partition_set_snap_name_for_job_name,
 )
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
-from dagster._core.snap.job_snapshot import JobSnap
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import migrate_event_log_data
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
 from dagster._core.storage.runs.migration import BACKFILL_JOB_NAME_AND_TAGS, RUN_BACKFILL_ID
 from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._core.storage.tags import (
-    BACKFILL_ID_TAG,
-    COMPUTE_KIND_TAG,
-    LEGACY_COMPUTE_KIND_TAG,
-    REPOSITORY_LABEL_TAG,
-)
+from dagster._core.storage.tags import BACKFILL_ID_TAG, REPOSITORY_LABEL_TAG
 from dagster._core.utils import make_new_run_id
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import create_snapshot_id
@@ -1636,28 +1629,3 @@ def test_known_execution_state_step_output_version_serialization() -> None:
     ]
 
     assert deserialize_value(serialized, KnownExecutionState) == known_state
-
-
-def test_legacy_compute_kind_tag_backcompat() -> None:
-    legacy_tags = {LEGACY_COMPUTE_KIND_TAG: "foo"}
-    with pytest.warns(DeprecationWarning, match="Legacy compute kind tag"):
-
-        @asset(op_tags=legacy_tags)
-        def legacy_asset():
-            pass
-
-        assert legacy_asset.op.tags[COMPUTE_KIND_TAG] == "foo"
-
-    with pytest.warns(DeprecationWarning, match="Legacy compute kind tag"):
-
-        @op(tags=legacy_tags)
-        def legacy_op():
-            pass
-
-        assert legacy_op.tags[COMPUTE_KIND_TAG] == "foo"
-
-    legacy_snap_path = file_relative_path(__file__, "1_7_9_kind_op_job_snap.gz")
-    legacy_snap = deserialize_value(
-        GzipFile(legacy_snap_path, mode="r").read().decode("utf-8"), JobSnap
-    )
-    assert create_snapshot_id(legacy_snap) == "8db90f128b7eaa5c229bdde372e39d5cbecdc7e4"
