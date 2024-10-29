@@ -17,18 +17,21 @@ from dagster import (
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
 # Code also invoked from Airflow
-from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
-from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load_csv_to_duckdb
+from tutorial_example.shared.complete.export_duckdb_to_csv import (
+    ExportDuckDbToCsvArgs,
+    export_duckdb_to_csv,
+)
+from tutorial_example.shared.complete.load_csv_to_duckdb import (
+    LoadCsvToDuckDbArgs,
+    load_csv_to_duckdb,
+)
+from tutorial_example.shared.constants import CUSTOMERS_CSV_PATH, WAREHOUSE_PATH
 
 
 def dbt_project_path() -> Path:
     env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
     assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
     return Path(env_val)
-
-
-def airflow_dags_path() -> Path:
-    return Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "tutorial_example" / "airflow_dags"
 
 
 def load_csv_to_duckdb_asset(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> AssetsDefinition:
@@ -60,8 +63,8 @@ assets = [
         AssetSpec(key=["raw_data", "raw_customers"]),
         LoadCsvToDuckDbArgs(
             table_name="raw_customers",
-            csv_path=airflow_dags_path() / "raw_customers.csv",
-            duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
+            csv_path=CUSTOMERS_CSV_PATH,
+            duckdb_path=WAREHOUSE_PATH,
             names=["id", "first_name", "last_name"],
             duckdb_schema="raw_data",
             duckdb_database_name="jaffle_shop",
@@ -72,8 +75,8 @@ assets = [
         AssetSpec(key="customers_csv", deps=["customers"]),
         ExportDuckDbToCsvArgs(
             table_name="customers",
-            csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
-            duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
+            csv_path=CUSTOMERS_CSV_PATH,
+            duckdb_path=WAREHOUSE_PATH,
             duckdb_database_name="jaffle_shop",
         ),
     ),
@@ -82,7 +85,7 @@ assets = [
 
 @asset_check(asset=AssetKey(["customers_csv"]))
 def validate_exported_csv() -> AssetCheckResult:
-    csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
+    csv_path = CUSTOMERS_CSV_PATH
 
     if not csv_path.exists():
         return AssetCheckResult(passed=False, description=f"Export CSV {csv_path} does not exist")

@@ -1,3 +1,4 @@
+# start_migrate
 import os
 from pathlib import Path
 
@@ -17,9 +18,17 @@ from dagster_airlift.core import (
 )
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
-# Code also invoked from Airflow
-from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
-from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load_csv_to_duckdb
+from tutorial_example.shared.complete.export_duckdb_to_csv import (
+    ExportDuckDbToCsvArgs,
+    export_duckdb_to_csv,
+)
+
+# Completed version fo the load and export code can be found at tutorial_example/shared/complete.
+from tutorial_example.shared.complete.load_csv_to_duckdb import (
+    LoadCsvToDuckDbArgs,
+    load_csv_to_duckdb,
+)
+from tutorial_example.shared.constants import CUSTOMERS_CSV_PATH, WAREHOUSE_PATH
 
 
 def dbt_project_path() -> Path:
@@ -28,8 +37,7 @@ def dbt_project_path() -> Path:
     return Path(env_val)
 
 
-def airflow_dags_path() -> Path:
-    return Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "tutorial_example" / "airflow_dags"
+raw_customers_spec = AssetSpec(key=["raw_data", "raw_customers"])
 
 
 def load_csv_to_duckdb_asset(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> AssetsDefinition:
@@ -38,6 +46,19 @@ def load_csv_to_duckdb_asset(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> Asse
         load_csv_to_duckdb(args)
 
     return _multi_asset
+
+
+raw_customers_asset = load_csv_to_duckdb_asset(
+    spec=raw_customers_spec,
+    args=LoadCsvToDuckDbArgs(
+        table_name="raw_customers",
+        csv_path=CUSTOMERS_CSV_PATH,
+        duckdb_path=WAREHOUSE_PATH,
+        names=["id", "first_name", "last_name"],
+        duckdb_schema="raw_data",
+        duckdb_database_name="jaffle_shop",
+    ),
+)
 
 
 def export_duckdb_to_csv_defs(spec: AssetSpec, args: ExportDuckDbToCsvArgs) -> AssetsDefinition:
@@ -60,17 +81,7 @@ mapped_assets = assets_with_task_mappings(
     dag_id="rebuild_customers_list",
     task_mappings={
         "load_raw_customers": [
-            load_csv_to_duckdb_asset(
-                AssetSpec(key=["raw_data", "raw_customers"]),
-                LoadCsvToDuckDbArgs(
-                    table_name="raw_customers",
-                    csv_path=airflow_dags_path() / "raw_customers.csv",
-                    duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
-                    names=["id", "first_name", "last_name"],
-                    duckdb_schema="raw_data",
-                    duckdb_database_name="jaffle_shop",
-                ),
-            )
+            raw_customers_asset,
         ],
         "build_dbt_models":
         # load rich set of assets from dbt project
@@ -80,8 +91,8 @@ mapped_assets = assets_with_task_mappings(
                 AssetSpec(key="customers_csv", deps=["customers"]),
                 ExportDuckDbToCsvArgs(
                     table_name="customers",
-                    csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
-                    duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
+                    csv_path=CUSTOMERS_CSV_PATH,
+                    duckdb_path=WAREHOUSE_PATH,
                     duckdb_database_name="jaffle_shop",
                 ),
             )
@@ -104,7 +115,7 @@ defs = build_defs_from_airflow_instance(
         resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
     ),
 )
-
+# end_migrate
 
 if __name__ == "__main__":
     assert dbt_project_path().exists()
