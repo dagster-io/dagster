@@ -57,7 +57,6 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -543,10 +542,8 @@ def _validate_auto_materialize_sensors(
 def _validate_partitions_definition(partitions_def: PartitionsDefinition) -> None:
     if not isinstance(partitions_def, VALID_PARTITIONS_DEFINITION_CLASSES):
         valid_names = ", ".join([cls.__name__ for cls in VALID_PARTITIONS_DEFINITION_CLASSES])
-        deprecation_warning(
-            "Support for custom PartitionsDefinition subclasses",
-            breaking_version="1.9.0",
-            additional_warn_text="All passed-in PartitionsDefinition"
+        raise DagsterInvalidDefinitionError(
+            "Custom PartitionsDefinition subclasses are not supported. All passed-in PartitionsDefinition"
             f" objects must be an instance of one of ({valid_names})."
             f" Found instance of {type(partitions_def).__name__}",
         )
