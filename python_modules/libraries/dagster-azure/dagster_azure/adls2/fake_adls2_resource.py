@@ -25,6 +25,7 @@ class FakeADLS2Resource(ConfigurableResource):
     """
 
     account_name: str
+    cloud_type: Optional[str] = "public"
     storage_account: Optional[str] = None
 
     @classmethod
@@ -76,8 +77,9 @@ class FakeADLS2ServiceClient:
     Wraps a ``mock.MagicMock``. Containers are implemented using an in-memory dict.
     """
 
-    def __init__(self, account_name, credential="fake-creds"):
+    def __init__(self, account_name, credential="fake-creds", cloud_type="public"):
         self._account_name = account_name
+        self._cloud_type = cloud_type
         self._credential = mock.MagicMock()
         self._credential.account_key = credential
         self._file_systems = {}
