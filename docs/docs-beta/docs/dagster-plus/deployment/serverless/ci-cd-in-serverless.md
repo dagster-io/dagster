@@ -6,7 +6,7 @@ sidebar_position: 10
 
 # CI/CD in Serverless
 
-If you're a GitHub or GitLab user, our GitHub and GitLab integrations will allow us to set up an automated CI/CD process for you to seamlessly deploy your code locations to Dagster+ and update them whenever you push changes to your project's repo. You can also use other Git providers or a local Git repository with our [dagster-cloud CLI](/dagster-plus/deployment/branch-deployments/dagster-cloud-cli) to run your own CI/CD process.
+If you're a GitHub or GitLab user, you can use our predefined workflows to seamlessly deploy and synchronize your code to Dagster+. You can also use other Git providers or a local Git repository with our [dagster-cloud CLI](/dagster-plus/deployment/branch-deployments/dagster-cloud-cli) to run your own CI/CD process.
 
 <Tabs groupId="method">
 <TabItem value="GitHub" label="With GitHub">
