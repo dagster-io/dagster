@@ -336,7 +336,7 @@ Each YAML file contains a list of tasks in the DAG, with a `proxied` key set to 
 
 Next, you will need to modify your Airflow DAG to make it aware of the proxied state. This is already done in the example DAG:
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/snippets/dags_truncated.py
+```python file=/integrations/airlift/tutorial/dags_truncated.py
 # Dags file can be found at tutorial_example/airflow_dags/dags.py
 from pathlib import Path
 
@@ -385,7 +385,7 @@ A task which has been proxied can be easily toggled back to run in Airflow (for 
 
 If your Dagster deployment lives behind a custom auth backend, you can customize the Airflow-to-Dagster proxying behavior to authenticate to your backend. `proxying_to_dagster` can take a parameter `dagster_operator_klass`, which allows you to define a custom `BaseProxyToDagsterOperator` class. This allows you to override how a session is created. Let's say for example, your Dagster installation requires an access key to be set whenever a request is made, and that access key is set in an Airflow `Variable` called `my_api_key`. We can create a custom `BaseProxyToDagsterOperator` subclass which will retrieve that variable value and set it on the session, so that any requests to Dagster's graphql API will be made using that api key.
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/snippets/custom_operator_examples/custom_proxy.py
+```python file=/integrations/airlift/tutorial/custom_operator_examples/custom_proxy.py
 from pathlib import Path
 
 import requests
@@ -424,7 +424,7 @@ proxying_to_dagster(
 
 You can use a customer proxy operator to establish a connection to a Dagster plus deployment. The below example proxies to Dagster Plus using organization name, deployment name, and user token set as Airflow Variables. To set a Dagster+ user token, follow this guide: <https://docs.dagster.io/dagster-plus/account/managing-user-agent-tokens#managing-user-tokens>.
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/snippets/custom_operator_examples/plus_proxy_operator.py
+```python file=/integrations/airlift/tutorial/custom_operator_examples/plus_proxy_operator.py
 import requests
 from airflow.utils.context import Context
 from dagster_airlift.in_airflow import BaseProxyTaskToDagsterOperator
@@ -452,7 +452,7 @@ class DagsterCloudProxyOperator(BaseProxyTaskToDagsterOperator):
 
 For some common operator patterns, like using the BashOperator for DBT, Dagster supplies factories to build software defined assets for our tasks. In fact, the `@dbt_assets` decorator used earlier already backs its assets with definitions, so we can toggle the proxied state of the `build_dbt_models` task to `proxied: True` in the proxied state file:
 
-```yaml file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/snippets/dbt_proxied.yaml
+```yaml file=/integrations/airlift/tutorial/dbt_proxied.yaml
 tasks:
   - id: load_raw_customers
     proxied: False
@@ -634,7 +634,7 @@ mapped_assets = assets_with_task_mappings(
 
 We can then toggle the proxied state of the `load_raw_customers` task in the `proxied_state` file to `True`:
 
-```yaml file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/snippets/all_proxied.yaml
+```yaml file=/integrations/airlift/tutorial/all_proxied.yaml
 tasks:
   - id: load_raw_customers
     proxied: True
@@ -1311,13 +1311,13 @@ if __name__ == "__main__":
 
 Now that all of our assets are fully executable, we can create a simple yaml file to proxy execution for the whole dag:
 
-```yaml file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/snippets/rebuild_customers_list.yaml
+```yaml file=/integrations/airlift/tutorial/rebuild_customers_list.yaml
 proxied: True
 ```
 
 We will similarly use `proxying_to_dagster` at the end of our DAG file (the code is exactly the same here as it was for the per-task migration step)
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/snippets/dags_truncated.py
+```python file=/integrations/airlift/tutorial/dags_truncated.py
 # Dags file can be found at tutorial_example/airflow_dags/dags.py
 from pathlib import Path
 
@@ -1357,7 +1357,7 @@ Similar to how we can customize the operator we construct on a per-dag basis, we
 
 For example, let's take a look at the following custom operator which expects an API key to be provided as a variable:
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/snippets/custom_operator_examples/custom_dag_level_proxy.py
+```python file=/integrations/airlift/tutorial/custom_operator_examples/custom_dag_level_proxy.py
 from pathlib import Path
 
 import requests

@@ -3,11 +3,14 @@ from pathlib import Path
 import requests
 from airflow import DAG
 from airflow.utils.context import Context
-from dagster_airlift.in_airflow import BaseProxyDAGToDagsterOperator, proxying_to_dagster
+from dagster_airlift.in_airflow import (
+    BaseProxyTaskToDagsterOperator,
+    proxying_to_dagster,
+)
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
 
 
-class CustomProxyToDagsterOperator(BaseProxyDAGToDagsterOperator):
+class CustomProxyToDagsterOperator(BaseProxyTaskToDagsterOperator):
     def get_dagster_session(self, context: Context) -> requests.Session:
         if "var" not in context:
             raise ValueError("No variables found in context")
@@ -19,19 +22,14 @@ class CustomProxyToDagsterOperator(BaseProxyDAGToDagsterOperator):
     def get_dagster_url(self, context: Context) -> str:
         return "https://dagster.example.com/"
 
-    # This method controls how the operator is built from the dag.
-    @classmethod
-    def build_from_dag(cls, dag: DAG):
-        return CustomProxyToDagsterOperator(dag=dag, task_id="OVERRIDDEN")
-
 
 dag = DAG(
-    dag_id="custom_dag_level_proxy_example",
+    dag_id="custom_proxy_example",
 )
 
 # At the end of your dag file
 proxying_to_dagster(
     global_vars=globals(),
     proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
-    build_from_dag_fn=CustomProxyToDagsterOperator.build_from_dag,
+    build_from_task_fn=CustomProxyToDagsterOperator.build_from_task,
 )

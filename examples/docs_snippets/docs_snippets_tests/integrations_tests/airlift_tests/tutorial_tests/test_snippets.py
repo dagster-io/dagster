@@ -1,5 +1,5 @@
 def test_dagster_cloud_proxy_operator() -> None:
-    from tutorial_example.snippets.custom_operator_examples.plus_proxy_operator import (
+    from docs_snippets.integrations.airlift.tutorial.custom_operator_examples.plus_proxy_operator import (
         DagsterCloudProxyOperator,
     )
 
@@ -27,7 +27,7 @@ def test_dagster_cloud_proxy_operator() -> None:
 
 
 def test_custom_proxy_operator() -> None:
-    from tutorial_example.snippets.custom_operator_examples.custom_proxy import (
+    from docs_snippets.integrations.airlift.tutorial.custom_operator_examples.custom_proxy import (
         CustomProxyToDagsterOperator,
     )
 
@@ -36,12 +36,14 @@ def test_custom_proxy_operator() -> None:
         operator.get_dagster_url({"var": {"value": {"my_api_key": "test_key"}}})  # type: ignore
         == "https://dagster.example.com/"
     )
-    session = operator.get_dagster_session({"var": {"value": {"my_api_key": "test_key"}}})  # type: ignore
+    session = operator.get_dagster_session(
+        {"var": {"value": {"my_api_key": "test_key"}}}
+    )  # type: ignore
     assert session.headers["Authorization"] == "Bearer test_key"
 
 
 def test_dag_override_operator() -> None:
-    from tutorial_example.snippets.custom_operator_examples.custom_dag_level_proxy import (
+    from docs_snippets.integrations.airlift.tutorial.custom_operator_examples.custom_dag_level_proxy import (
         CustomProxyToDagsterOperator,
     )
 
@@ -50,5 +52,7 @@ def test_dag_override_operator() -> None:
         operator.get_dagster_url({"var": {"value": {"my_api_key": "test_key"}}})  # type: ignore
         == "https://dagster.example.com/"
     )
-    session = operator.get_dagster_session({"var": {"value": {"my_api_key": "test_key"}}})  # type: ignore
+    session = operator.get_dagster_session(
+        {"var": {"value": {"my_api_key": "test_key"}}}
+    )  # type: ignore
     assert session.headers["Authorization"] == "Bearer test_key"

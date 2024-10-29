@@ -10,7 +10,9 @@ class DagsterCloudProxyOperator(BaseProxyTaskToDagsterOperator):
         return context["var"]["value"][var_name]
 
     def get_dagster_session(self, context: Context) -> requests.Session:
-        dagster_cloud_user_token = self.get_variable(context, "dagster_cloud_user_token")
+        dagster_cloud_user_token = self.get_variable(
+            context, "dagster_cloud_user_token"
+        )
         session = requests.Session()
         session.headers.update({"Dagster-Cloud-Api-Token": dagster_cloud_user_token})
         return session

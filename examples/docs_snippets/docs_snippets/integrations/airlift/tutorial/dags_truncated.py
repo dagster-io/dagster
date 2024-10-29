@@ -15,5 +15,7 @@ PROXYING = False
 if PROXYING:
     proxying_to_dagster(
         global_vars=globals(),
-        proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
+        proxied_state=load_proxied_state_from_yaml(
+            Path(__file__).parent / "proxied_state"
+        ),
     )
