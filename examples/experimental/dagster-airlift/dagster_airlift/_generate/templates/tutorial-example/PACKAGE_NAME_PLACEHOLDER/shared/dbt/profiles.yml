@@ -1,0 +1,8 @@
+jaffle_shop:
+
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('TUTORIAL_EXAMPLE_DIR') }}/data/jaffle_shop.duckdb"
+      threads: 24

@@ -5,7 +5,8 @@ from pathlib import Path
 from dagster import AssetExecutionContext, AssetSpec
 from dagster_airlift.core import assets_with_task_mappings
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
-from tutorial_example.shared.constants import CUSTOMERS_CSV_PATH, WAREHOUSE_PATH
+
+from {{ PACKAGE_NAME_PLACEHOLDER }}.shared.constants import CUSTOMERS_CSV_PATH, WAREHOUSE_PATH
 
 raw_customers_spec = AssetSpec(key=["raw_data", "raw_customers"])
 export_customers_spec = AssetSpec(key="customers_csv", deps=["customers"])
@@ -29,7 +30,7 @@ def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 from dagster import AssetsDefinition, multi_asset
 
 # completed shared utilities can be found in tutorial_example/shared/complete/load_csv_to_duckdb.py
-from tutorial_example.shared.complete.load_csv_to_duckdb import (
+from {{ PACKAGE_NAME_PLACEHOLDER }}.shared.complete.load_csv_to_duckdb import (
     LoadCsvToDuckDbArgs,
     load_csv_to_duckdb,
 )

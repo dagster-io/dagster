@@ -18,17 +18,18 @@ from dagster_airlift.core import (
     build_defs_from_airflow_instance,
 )
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
-from tutorial_example.shared.complete.export_duckdb_to_csv import (
+
+from {{ PACKAGE_NAME_PLACEHOLDER }}.shared.complete.export_duckdb_to_csv import (
     ExportDuckDbToCsvArgs,
     export_duckdb_to_csv,
 )
 
 # Completed version fo the load and export code can be found at tutorial_example/shared/complete.
-from tutorial_example.shared.complete.load_csv_to_duckdb import (
+from {{ PACKAGE_NAME_PLACEHOLDER }}.shared.complete.load_csv_to_duckdb import (
     LoadCsvToDuckDbArgs,
     load_csv_to_duckdb,
 )
-from tutorial_example.shared.constants import CUSTOMERS_CSV_PATH, WAREHOUSE_PATH
+from {{ PACKAGE_NAME_PLACEHOLDER }}.shared.constants import CUSTOMERS_CSV_PATH, WAREHOUSE_PATH
 
 
 def dbt_project_path() -> Path:

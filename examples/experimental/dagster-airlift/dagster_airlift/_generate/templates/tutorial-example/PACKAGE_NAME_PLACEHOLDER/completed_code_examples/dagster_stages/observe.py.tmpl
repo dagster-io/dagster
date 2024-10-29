@@ -1,14 +1,16 @@
-# type: ignore
-import os
-from pathlib import Path
-
-from dagster import AssetExecutionContext, AssetSpec
-from dagster_airlift.core import assets_with_task_mappings
-from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
-from tutorial_example.shared.constants import CUSTOMERS_CSV_PATH, WAREHOUSE_PATH
+# start_asset_specs
+from dagster import AssetSpec
 
 raw_customers_spec = AssetSpec(key=["raw_data", "raw_customers"])
 export_customers_spec = AssetSpec(key="customers_csv", deps=["customers"])
+# end_asset_specs
+
+# start_dbt_assets
+import os
+from pathlib import Path
+
+from dagster import AssetExecutionContext
+from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
 
 def dbt_project_path() -> Path:
@@ -25,42 +27,15 @@ def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
 
-# start_load_factory
-from dagster import AssetsDefinition, multi_asset
-
-# completed shared utilities can be found in tutorial_example/shared/complete/load_csv_to_duckdb.py
-from tutorial_example.shared.complete.load_csv_to_duckdb import (
-    LoadCsvToDuckDbArgs,
-    load_csv_to_duckdb,
-)
-
-
-def load_csv_to_duckdb_asset(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> AssetsDefinition:
-    @multi_asset(name=f"load_{args.table_name}", specs=[spec])
-    def _multi_asset() -> None:
-        load_csv_to_duckdb(args)
-
-    return _multi_asset
-
-
-raw_customers_asset = load_csv_to_duckdb_asset(
-    spec=raw_customers_spec,
-    args=LoadCsvToDuckDbArgs(
-        table_name="raw_customers",
-        csv_path=CUSTOMERS_CSV_PATH,
-        duckdb_path=WAREHOUSE_PATH,
-        names=["id", "first_name", "last_name"],
-        duckdb_schema="raw_data",
-        duckdb_database_name="jaffle_shop",
-    ),
-)
-# end_load_factory
+# end_dbt_assets
 
 # start_task_mappings
+from dagster_airlift.core import assets_with_task_mappings
+
 mapped_assets = assets_with_task_mappings(
     dag_id="rebuild_customers_list",
     task_mappings={
-        "load_raw_customers": [raw_customers_asset],
+        "load_raw_customers": [raw_customers_spec],
         "build_dbt_models": [dbt_project_assets],
         "export_customers": [export_customers_spec],
     },
@@ -68,6 +43,7 @@ mapped_assets = assets_with_task_mappings(
 # end_task_mappings
 
 
+# start_build_defs
 from dagster import Definitions
 from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
 
@@ -85,3 +61,4 @@ defs = build_defs_from_airflow_instance(
         resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
     ),
 )
+# end_build_defs
