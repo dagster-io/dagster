@@ -211,7 +211,7 @@ class BaseTableauClient:
     @property
     def workbook_graphql_query(self) -> str:
         return """
-            query workbooks($luid: String!) { 
+            query workbooks($luid: String!) {
               workbooks(filter: {luid: $luid}) {
                 luid
                 name
@@ -476,15 +476,16 @@ def load_tableau_asset_specs(
     Returns:
         List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
     """
-    return check.is_list(
-        TableauWorkspaceDefsLoader(
-            workspace=workspace,
-            translator_cls=dagster_tableau_translator,
+    with workspace.process_config_and_initialize_cm() as initialized_workspace:
+        return check.is_list(
+            TableauWorkspaceDefsLoader(
+                workspace=initialized_workspace,
+                translator_cls=dagster_tableau_translator,
+            )
+            .build_defs()
+            .assets,
+            AssetSpec,
         )
-        .build_defs()
-        .assets,
-        AssetSpec,
-    )
 
 
 @experimental
