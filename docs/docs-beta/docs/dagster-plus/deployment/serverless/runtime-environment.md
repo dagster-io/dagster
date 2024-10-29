@@ -43,6 +43,7 @@ setup(
 To add a package from a private GitHub repository, see: [Use private Python packages](#private-packages)
 
 ## Use a different Python version \{#python-version}
+
 The default Python version for Dagster+ Serverless is Python 3.9. Python versions 3.10 through 3.12 are also supported. You can specify the Python version you want to use in your GitHub or GitLab workflow, or by using the `dagster-cloud` CLI.
 
 <Tabs groupId="method">
@@ -200,7 +201,7 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
 </TabItem>
 </Tabs>
 
-## Use private Python packages \{#private-packages]}
+## Use private Python packages \{#private-packages}
 
 If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the following steps can install a package from a private GitHub repository, eg. `my-org/private-repo`, as a dependency:
 
