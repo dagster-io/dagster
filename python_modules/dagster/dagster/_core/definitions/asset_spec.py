@@ -92,7 +92,6 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
 
 
 @experimental_param(param="owners")
-@experimental_param(param="kinds")
 @hidden_param(
     param="freshness_policy",
     breaking_version="1.10.0",

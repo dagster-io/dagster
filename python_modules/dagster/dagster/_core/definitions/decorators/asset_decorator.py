@@ -89,7 +89,6 @@ def asset(
     resource_defs: Optional[Mapping[str, object]] = ...,
     io_manager_def: Optional[object] = ...,
     io_manager_key: Optional[str] = ...,
-    compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
     partitions_def: Optional[PartitionsDefinition] = ...,
     op_tags: Optional[Mapping[str, Any]] = ...,
@@ -132,7 +131,6 @@ def _validate_hidden_non_argument_dep_param(
 @experimental_param(param="io_manager_def")
 @experimental_param(param="backfill_policy")
 @experimental_param(param="owners")
-@experimental_param(param="kinds")
 @hidden_param(
     param="non_argument_deps",
     breaking_version="2.0.0",
@@ -147,6 +145,11 @@ def _validate_hidden_non_argument_dep_param(
     param="freshness_policy",
     breaking_version="1.10.0",
     additional_warn_text="use freshness checks instead.",
+)
+@hidden_param(
+    param="compute_kind",
+    emit_runtime_warning=False,
+    breaking_version="1.10.0",
 )
 def asset(
     compute_fn: Optional[Callable[..., Any]] = None,
@@ -163,7 +166,6 @@ def asset(
     resource_defs: Optional[Mapping[str, object]] = None,
     io_manager_def: Optional[object] = None,
     io_manager_key: Optional[str] = None,
-    compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
@@ -220,8 +222,6 @@ def asset(
         io_manager_def (Optional[object]): (Experimental) The IOManager used for
             storing the output of the op as an asset,  and for loading it in
             downstream ops. Only one of io_manager_def and io_manager_key can be provided.
-        compute_kind (Optional[str]): A string to represent the kind of computation that produces
-            the asset, e.g. "dbt" or "spark". It will be displayed in the Dagster UI as a badge on the asset.
         dagster_type (Optional[DagsterType]): Allows specifying type validation functions that
             will be executed on the output of the decorated function after it runs.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
@@ -266,7 +266,7 @@ def asset(
             def my_asset(my_upstream_asset: int) -> int:
                 return my_upstream_asset + 1
     """
-    compute_kind = check.opt_str_param(compute_kind, "compute_kind")
+    compute_kind = check.opt_str_param(kwargs.get("compute_kind"), "compute_kind")
     required_resource_keys = check.opt_set_param(required_resource_keys, "required_resource_keys")
     upstream_asset_deps = _deps_and_non_argument_deps_to_asset_deps(
         deps=deps,
@@ -532,6 +532,11 @@ def create_assets_def_from_fn_and_decorator_args(
     breaking_version="2.0.0",
     additional_warn_text="use `deps` instead.",
 )
+@hidden_param(
+    param="compute_kind",
+    emit_runtime_warning=False,
+    breaking_version="1.10.0",
+)
 def multi_asset(
     *,
     outs: Optional[Mapping[str, AssetOut]] = None,
@@ -541,7 +546,6 @@ def multi_asset(
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
-    compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
@@ -553,7 +557,7 @@ def multi_asset(
     code_version: Optional[str] = None,
     specs: Optional[Sequence[AssetSpec]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-    **kwargs: Mapping[str, Any],
+    **kwargs: Any,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -580,8 +584,6 @@ def multi_asset(
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the underlying op.
-        compute_kind (Optional[str]): A string to represent the kind of computation that produces
-            the asset, e.g. "dbt" or "spark". It will be displayed in the Dagster UI as a badge on the asset.
         internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
             that all assets produced by a multi_asset depend on all assets that are consumed by that
             multi asset. If this default is not correct, you pass in a map of output names to a
@@ -671,7 +673,7 @@ def multi_asset(
             "config_schema",
             additional_message="Only dicts are supported for asset config_schema.",
         ),
-        compute_kind=compute_kind,
+        compute_kind=check.opt_str_param(kwargs.get("compute_kind"), "compute_kind"),
         required_resource_keys=check.opt_set_param(
             required_resource_keys, "required_resource_keys", of_type=str
         ),
@@ -732,7 +734,6 @@ def graph_asset(
 
 
 @experimental_param(param="owners")
-@experimental_param(param="kinds")
 @hidden_param(
     param="freshness_policy",
     breaking_version="1.10.0",
