@@ -328,9 +328,9 @@ def migrate_run_backfill_id(storage: RunStorage, print_fn: Optional[PrintFn] = N
             res = storage.fetchall(query)
             has_more = len(res) >= CHUNK_SIZE
             for row in res:
-                cursor = row[0]
-                run_id = row[1]
-                backfill_id = row[2]
+                cursor = row["id"]
+                run_id = row["run_id"]
+                backfill_id = row["value"]
 
                 add_backfill_id(conn, run_id=run_id, backfill_id=backfill_id)
 
