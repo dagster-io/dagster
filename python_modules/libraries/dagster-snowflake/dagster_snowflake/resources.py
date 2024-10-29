@@ -728,6 +728,7 @@ def fetch_last_updated_timestamps(
     schema: str,
     tables: Sequence[str],
     database: Optional[str] = None,
+    ignore_missing_tables: Optional[bool] = False,
 ) -> Mapping[str, datetime]:
     """Fetch the last updated times of a list of tables in Snowflake.
 
@@ -741,6 +742,8 @@ def fetch_last_updated_timestamps(
         tables (Sequence[str]): A list of table names to fetch the last updated time for.
         database (Optional[str]): The database of the table. Only required if the connection
             has not been set with a database.
+        ignore_missing_tables (Optional[bool]): If True, tables not found in Snowflake
+            will be excluded from the result.
 
     Returns:
         Mapping[str, datetime]: A dictionary of table names to their last updated time in UTC.
@@ -766,6 +769,8 @@ def fetch_last_updated_timestamps(
     result_correct_case = {}
     for table_name in tables:
         if table_name.upper() not in result_mapping:
+            if ignore_missing_tables:
+                continue
             raise ValueError(f"Table {table_name} could not be found.")
         last_altered = result_mapping[table_name.upper()]
         check.invariant(
