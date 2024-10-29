@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import NamedTuple, Optional, Sequence
+from typing import List, NamedTuple, Optional, Sequence, Union
 
 import click
 import requests
@@ -11,7 +11,7 @@ from dagster.version import __version__ as dagster_version
 
 
 @click.group(name="project")
-def project_cli():
+def project_cli() -> None:
     """Commands for bootstrapping new Dagster projects and code locations."""
 
 
@@ -180,7 +180,9 @@ def scaffold_code_location_command(context, name: str):
     help="Controls whether the project name can conflict with an existing PyPI package.",
 )
 def scaffold_command(
-    name: str, excludes: list[str] | tuple | None = None, ignore_package_conflict: bool = False
+    name: str,
+    excludes: Optional[Union[List[str], tuple]] = None,
+    ignore_package_conflict: bool = False,
 ) -> None:
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
@@ -272,7 +274,7 @@ def _styled_list_examples_prints(examples: Sequence[str]) -> str:
     return "\n".join([f"* {name}" for name in examples])
 
 
-def _styled_success_statement(name: str, path: str) -> None:
+def _styled_success_statement(name: str, path: str) -> str:
     return (
         click.style("Success!", fg="green")
         + " Created "

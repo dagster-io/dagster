@@ -1,6 +1,6 @@
 import os
 import posixpath
-from typing import List
+from typing import List, Optional
 
 import click
 import jinja2
@@ -37,12 +37,12 @@ def generate_repository(path: str):
 
 def generate_project(
     path: str,
-    excludes: List[str] | None = None,
+    excludes: Optional[List[str]] = None,
     name_placeholder: str = PROJECT_NAME_PLACEHOLDER,
     templates_path: str = PROJECT_NAME_PLACEHOLDER,
 ):
     """Renders templates for Dagster project."""
-    excludes: list[str] = DEFAULT_EXCLUDES if not excludes else DEFAULT_EXCLUDES + excludes
+    excludes = DEFAULT_EXCLUDES if not excludes else DEFAULT_EXCLUDES + excludes
 
     click.echo(f"Creating a Dagster project at {path}.")
 
@@ -78,7 +78,7 @@ def generate_project(
 
         # For each file in the source template, render a file in the destination.
         for filename in files:
-            src_file_path: posixpath = os.path.join(root, filename)
+            src_file_path = os.path.join(root, filename)
             if _should_skip_file(src_file_path, excludes):
                 continue
 
