@@ -1,5 +1,7 @@
-import dagster as dg
 import time
+
+import dagster as dg
+
 
 @dg.asset
 def first_asset(context: dg.AssetExecutionContext):
@@ -7,11 +9,11 @@ def first_asset(context: dg.AssetExecutionContext):
     time.sleep(5)
     context.log.info("First asset executing")
 
+
 @dg.asset
 def second_asset_that_waits(context: dg.AssetExecutionContext):
     time.sleep(1)
     context.log.info("Second asset executing")
-
 
 
 assets_job = dg.define_asset_job(
@@ -32,10 +34,10 @@ assets_job = dg.define_asset_job(
                 }
             }
         }
-    }
-    #highlight-end
+    },
+    # highlight-end
 )
-    
+
 defs = dg.Definitions(
     assets=[first_asset, second_asset_that_waits],
     jobs=[assets_job],

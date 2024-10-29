@@ -1,6 +1,7 @@
+import time
 
 import dagster as dg
-import time
+
 
 @dg.op
 def first_op(context: dg.OpExecutionContext):
@@ -8,9 +9,11 @@ def first_op(context: dg.OpExecutionContext):
     time.sleep(20)
     context.log.info("First asset executing")
 
+
 @dg.op
 def second_op_that_waits(context: dg.OpExecutionContext):
     context.log.info("Second asset executing")
+
 
 @dg.job(
     # highlight-start
@@ -29,13 +32,13 @@ def second_op_that_waits(context: dg.OpExecutionContext):
             }
         }
     }
-    #highlight-end
+    # highlight-end
 )
 def tag_concurrency_job():
     first_op()
     second_op_that_waits()
 
-    
+
 defs = dg.Definitions(
     jobs=[tag_concurrency_job],
 )

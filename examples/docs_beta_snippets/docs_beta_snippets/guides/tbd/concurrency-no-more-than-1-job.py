@@ -1,5 +1,7 @@
-import dagster as dg
 import time
+
+import dagster as dg
+
 
 @dg.asset
 def first_asset(context: dg.AssetExecutionContext):
@@ -7,12 +9,15 @@ def first_asset(context: dg.AssetExecutionContext):
     time.sleep(75)
     context.log.info("First asset executing")
 
+
 my_job = dg.define_asset_job("my_job", [first_asset])
 
+
 @dg.schedule(
-        job=my_job,
-        # Runs every minute to show the effect of the concurrency limit
-        cron_schedule="* * * * *")
+    job=my_job,
+    # Runs every minute to show the effect of the concurrency limit
+    cron_schedule="* * * * *",
+)
 def my_schedule(context):
     # Find runs of the same job that are currently running
     # highlight-start
@@ -21,9 +26,12 @@ def my_schedule(context):
     )
     # skip a schedule run if another run of the same job is already running
     if len(run_records) > 0:
-       return dg.SkipReason("Skipping this run because another run of the same job is already running")
+        return dg.SkipReason(
+            "Skipping this run because another run of the same job is already running"
+        )
     # highlight-end
     return dg.RunRequest()
+
 
 defs = dg.Definitions(
     assets=[first_asset],
