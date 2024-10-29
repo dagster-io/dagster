@@ -1,5 +1,5 @@
 [project]
-name = "{{ code_location_name }}"
+name = "{{ project_name }}"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -20,5 +20,8 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
-module_name = "{{ code_location_name }}.definitions"
-code_location_name = "{{ code_location_name }}"
+module_name = "{{ project_name }}.definitions"
+project_name = "{{ project_name }}"
+
+[tool.setuptools.packages.find]
+exclude=["{{ project_name }}_tests"]
