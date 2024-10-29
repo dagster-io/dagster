@@ -343,9 +343,9 @@ def launch_scheduled_runs(
 
         # Remove all-stopped states declared in code immediately.
         # Also remove all other states that are not present in the workspace after a 12-hour grace period.
-        if (
-            state.status == InstigatorStatus.DECLARED_IN_CODE
-            or _last_iteration_time + RETAIN_ORPHANED_STATE_INTERVAL_SECONDS
+        if state.status == InstigatorStatus.DECLARED_IN_CODE or (
+            _last_iteration_time
+            and _last_iteration_time + RETAIN_ORPHANED_STATE_INTERVAL_SECONDS
             < end_datetime_utc.timestamp()
         ):
             logger.info(
