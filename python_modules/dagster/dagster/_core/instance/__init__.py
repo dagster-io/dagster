@@ -1062,7 +1062,7 @@ class DagsterInstance(DynamicPartitionsStore):
         """
         if not run_id:
             return None
-        records = self._run_storage.get_run_records(RunsFilter(run_ids=[run_id]))
+        records = self._run_storage.get_run_records(RunsFilter(run_ids=[run_id]), limit=1)
         if not records:
             return None
         return records[0]
