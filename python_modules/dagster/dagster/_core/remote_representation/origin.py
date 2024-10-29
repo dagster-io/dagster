@@ -283,7 +283,9 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
                 if instance
                 else DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
             ),
-                                additional_timeout_msg="To increase the timeout, set the `code_servers.local_startup_timeout` instance configuration option. " if instance else "Using default timeout. ",
+            additional_timeout_msg="To increase the timeout, set the `code_servers.local_startup_timeout` instance configuration option. "
+            if instance
+            else "Using default timeout. ",
             wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
         ) as grpc_server_registry:
             endpoint = grpc_server_registry.get_grpc_endpoint(self)

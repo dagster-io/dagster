@@ -1296,7 +1296,13 @@ class CouldNotStartServerProcess(Exception):
         )
 
 
-def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60, additional_timeout_msg: Optional[str] = None):
+def wait_for_grpc_server(
+    server_process,
+    client,
+    subprocess_args,
+    timeout=60,
+    additional_timeout_msg: Optional[str] = None,
+):
     start_time = time.time()
 
     last_error = None
@@ -1396,7 +1402,13 @@ def open_server_process(
     )
 
     try:
-        wait_for_grpc_server(server_process, client, subprocess_args, timeout=startup_timeout, additional_timeout_msg=additional_timeout_msg)
+        wait_for_grpc_server(
+            server_process,
+            client,
+            subprocess_args,
+            timeout=startup_timeout,
+            additional_timeout_msg=additional_timeout_msg,
+        )
     except:
         if server_process.poll() is None:
             server_process.terminate()
@@ -1444,7 +1456,7 @@ class GrpcServerProcess:
         inject_env_vars_from_instance: bool = True,
         container_image: Optional[str] = None,
         container_context: Optional[Dict[str, Any]] = None,
-                additional_timeout_msg: Optional[str] = None,
+        additional_timeout_msg: Optional[str] = None,
     ):
         self.port = None
         self.socket = None

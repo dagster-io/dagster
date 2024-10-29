@@ -75,8 +75,7 @@ def create_daemon_grpc_server_registry(
         instance_ref=instance.get_ref(),
         heartbeat_ttl=DAEMON_GRPC_SERVER_HEARTBEAT_TTL,
         startup_timeout=instance.code_server_process_startup_timeout,
-                                        additional_timeout_msg="To increase the timeout, set the `code_servers.local_startup_timeout` instance configuration option. ",
-
+        additional_timeout_msg="To increase the timeout, set the `code_servers.local_startup_timeout` instance configuration option. ",
         log_level=code_server_log_level,
         wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
     )
