@@ -132,7 +132,6 @@ def _validate_hidden_non_argument_dep_param(
 @experimental_param(param="io_manager_def")
 @experimental_param(param="backfill_policy")
 @experimental_param(param="owners")
-@experimental_param(param="tags")
 @experimental_param(param="kinds")
 @hidden_param(
     param="non_argument_deps",
@@ -732,7 +731,6 @@ def graph_asset(
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
-@experimental_param(param="tags")
 @experimental_param(param="owners")
 @experimental_param(param="kinds")
 @hidden_param(
