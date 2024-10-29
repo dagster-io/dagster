@@ -86,7 +86,7 @@ def test_translator_spec(
             host_key: host_value,
         }
 
-        resource = clazz(**resource_args)  # type: ignore
+        resource = clazz(**resource_args)
         resource.build_client()
 
         all_assets = load_tableau_asset_specs(resource)
