@@ -24,7 +24,7 @@ import dagster._check as check
 import requests
 from aiohttp.client_exceptions import ClientResponseError
 from dagster import ConfigurableResource
-from dagster._annotations import deprecated, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
@@ -413,6 +413,7 @@ class SigmaOrganization(ConfigurableResource):
         return Definitions(assets=load_sigma_asset_specs(self, dagster_sigma_translator))
 
 
+@experimental
 def load_sigma_asset_specs(
     organization: SigmaOrganization,
     dagster_sigma_translator: Callable[
