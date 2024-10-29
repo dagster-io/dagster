@@ -35,6 +35,7 @@ from dagster_dbt.asset_utils import (
     DAGSTER_DBT_SELECT_METADATA_KEY,
     dagster_name_fn,
     get_manifest_and_translator_from_dbt_assets,
+    default_code_version_fn,
 )
 from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation, _get_dbt_target_path
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
@@ -456,6 +457,7 @@ class DbtCliResource(ConfigurableResource):
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
         target_path: Optional[Path] = None,
+        **kwargs: Mapping[str, Any],
     ) -> DbtCliInvocation:
         """Create a subprocess to execute a dbt CLI command.
 
@@ -639,6 +641,7 @@ class DbtCliResource(ConfigurableResource):
                 exclude=context.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY),
                 dagster_dbt_translator=dagster_dbt_translator,
                 current_dbt_indirect_selection_env=env.get(DBT_INDIRECT_SELECTION_ENV, None),
+                **kwargs,
             )
 
             # set dbt indirect selection if needed to execute specific dbt tests due to asset check
@@ -724,6 +727,7 @@ def _get_subset_selection_for_context(
     exclude: Optional[str],
     dagster_dbt_translator: DagsterDbtTranslator,
     current_dbt_indirect_selection_env: Optional[str],
+    **kwargs: Mapping[str, Any],
 ) -> Tuple[List[str], Optional[str]]:
     """Generate a dbt selection string and DBT_INDIRECT_SELECTION setting to execute the selected
     resources in a subsetted execution context.
@@ -781,10 +785,12 @@ def _get_subset_selection_for_context(
     # than selecting it by its fully qualified name.
     # https://docs.getdbt.com/reference/node-selection/methods#the-path-method
     dbt_resource_props_by_output_name = get_dbt_resource_props_by_output_name(manifest)
+
     selected_dbt_non_test_resources = get_dbt_resource_names_for_output_names(
-        output_names=context.selected_output_names,
+        context=context,
         dbt_resource_props_by_output_name=dbt_resource_props_by_output_name,
         dagster_dbt_translator=dagster_dbt_translator,
+        **kwargs,
     )
 
     # if all asset checks for the subsetted assets are selected, then we can just select the
@@ -880,16 +886,27 @@ def get_dbt_resource_props_by_test_name(
 
 
 def get_dbt_resource_names_for_output_names(
-    output_names: Iterable[str],
+    context: OpExecutionContext,
     dbt_resource_props_by_output_name: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
+    **kwargs,
 ) -> Sequence[str]:
-    dbt_resource_props_gen = (
-        dbt_resource_props_by_output_name[output_name]
+    
+    output_names = context.selected_output_names
+
+    dbt_resource_props_gen = {
+        output_name: dbt_resource_props_by_output_name[output_name]
         for output_name in output_names
         # output names corresponding to asset checks won't be in this dict
         if output_name in dbt_resource_props_by_output_name
-    )
+    }
+
+    if kwargs.get("enable_selective_view_materialization"):
+
+        return _get_conditional_dbt_resource_names(
+            context=context,
+            dbt_resource_props_gen=dbt_resource_props_gen
+        )
 
     # Explicitly select a dbt resource by its file name.
     # https://docs.getdbt.com/reference/node-selection/methods#the-file-method
@@ -902,6 +919,47 @@ def get_dbt_resource_names_for_output_names(
     # Explictly select a dbt resource by its fully qualified name (FQN).
     # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
     return [".".join(dbt_resource_props["fqn"]) for dbt_resource_props in dbt_resource_props_gen]
+
+
+def _get_conditional_dbt_resource_names(
+        context: OpExecutionContext,
+        dbt_resource_props_gen: Mapping[str, Any],
+    ):
+    _view_types = ("view", "materialized view")
+    selected_resources = []
+    asset_keys_for_code_version = []
+    views = {}
+
+    for output_name, dbt_resource_props in dbt_resource_props_gen.items():
+        resource_type = dbt_resource_props["resource_type"]
+        materialization_type = dbt_resource_props.get("config", {}).get("materialized")
+
+        if not resource_type == "model" or materialization_type not in _view_types:
+            selected_resources.append(dbt_resource_props)
+
+        asset_key = context.asset_key_for_output(output_name)
+        has_materialized_before = bool(context.instance.get_latest_materialization_event(asset_key))
+        asset_keys_for_code_version.append(asset_key)
+        views.update(
+            {
+                output_name: {
+                    "asset_key": asset_key,
+                    "dbt_properties": dbt_resource_props,
+                    "has_not_materialized_before": not has_materialized_before,
+                }
+            }
+        )
+
+    latest_code_versions = context.instance.get_latest_materialization_code_versions(asset_keys_for_code_version)
+    for output_name, properties in views.items():
+        has_new_code_version = (
+            latest_code_versions[properties["asset_key"]] != default_code_version_fn(properties["dbt_properties"])
+        )
+        if properties["has_not_materialized_before"] or has_new_code_version:
+            selected_resources.append(dbt_resource_props)
+
+
+    return [".".join(dbt_resource_props["fqn"]) for dbt_resource_props in selected_resources]
 
 
 def get_dbt_test_names_for_asset_checks(
