@@ -11,9 +11,7 @@ If you're a GitHub or GitLab user, you can use our predefined workflows to seaml
 <Tabs groupId="method">
 <TabItem value="GitHub" label="With GitHub">
 
-If you're a GitHub user, our predefined workflows are the fastest way to get started. It uses a GitHub app and GitHub Actions to set up a repo containing skeleton code and configuration consistent with Dagster+'s best practices with a single click.
-
-When you create a new Dagster+ organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitHub integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/deployment/branch-deployments) using the Serverless agent.
+If you're a GitHub user, with a single click our GitHub app with GitHub Actions can set up a repo containing skeleton code and configuration for you consistent with Dagster+'s best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/deployment/branch-deployments) that you can view in the Dagster+ UI for previewing and testing.
 
 :::note
 **If you are importing a Dagster project that's in an existing GitHub repo:**
@@ -30,15 +28,13 @@ When you create a new Dagster+ organization, you'll be prompted to choose Server
 
 <TabItem value="GitLab" label="With GitLab">
 
-If you're a GitLab user, our predefined workflows are the fastest way to get started. It uses a GitLab app to set up a repo containing skeleton code and CI/CD configuration consistent with Dagster+'s best practices with a single click.
-
-When you create a new Dagster+ organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitLab integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/deployment/branch-deployments) using the Serverless agent.
+If you're a GitLab user, with a single click our GitLab app can set up a repo containing skeleton code and CI/CD configuration for you consistent with Dagster+'s best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/deployment/branch-deployments) that you can view in the Dagster+ UI for previewing and testing.
 
 </TabItem>
 
 <TabItem value="Other" label="Other Git providers or local development">
 
-If you don't want to use our GitHub/GitLab integrations, we offer [the powerful `dagster-cloud` command-line interface (CLI)](/dagster-plus/deployment/branch-deployments/dagster-cloud-cli) that you can use in another CI environment or locally.
+If you don't want to use our automated GitHub/GitLab process, we offer [the powerful `dagster-cloud` command-line interface (CLI)](/dagster-plus/deployment/branch-deployments/dagster-cloud-cli) that you can use in another CI environment or locally.
 
 First, [create a new project](/getting-started/quickstart) with the Dagster open source CLI.
 
@@ -75,7 +71,7 @@ pip install dagster-cloud
 dagster-cloud configure
 ```
 
-You can also configure the `dagster-cloud` tool noninteractively; see [the CLI docs](/dagster-plus/deployment/branch-deployments/dagster-cloud-cli) for more information.
+You can also configure the `dagster-cloud` tool non-interactively; see [the CLI docs](/dagster-plus/deployment/branch-deployments/dagster-cloud-cli) for more information.
 
 Finally, deploy your project to Dagster+ using the `serverless` command:
 
