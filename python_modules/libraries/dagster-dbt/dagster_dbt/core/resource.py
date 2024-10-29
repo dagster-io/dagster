@@ -332,11 +332,13 @@ class DbtCliResource(ConfigurableResource):
 
         return os.fspath(Path(state_path).absolute().resolve())
 
-    def _get_unique_target_path(self, *, context: Optional[OpExecutionContext]) -> Path:
+    def _get_unique_target_path(
+        self, *, context: Optional[Union[OpExecutionContext, AssetExecutionContext]]
+    ) -> Path:
         """Get a unique target path for the dbt CLI invocation.
 
         Args:
-            context (Optional[OpExecutionContext]): The execution context.
+            context (Optional[Union[OpExecutionContext, AssetExecutionContext]]): The execution context.
 
         Returns:
             str: A unique target path for the dbt CLI invocation.
@@ -344,7 +346,7 @@ class DbtCliResource(ConfigurableResource):
         unique_id = str(uuid.uuid4())[:7]
         path = unique_id
         if context:
-            path = f"{context.op.name}-{context.run.run_id[:7]}-{unique_id}"
+            path = f"{context.op_execution_context.op.name}-{context.run.run_id[:7]}-{unique_id}"
 
         current_target_path = _get_dbt_target_path()
 
@@ -587,10 +589,6 @@ class DbtCliResource(ConfigurableResource):
         with suppress(DagsterInvalidPropertyError):
             assets_def = context.assets_def if context else None
 
-        context = (
-            context.op_execution_context if isinstance(context, AssetExecutionContext) else context
-        )
-
         target_path = target_path or self._get_unique_target_path(context=context)
         env = {
             # Allow IO streaming when running in Windows.
@@ -718,7 +716,7 @@ def parse_cli_vars_from_args(args: Sequence[str]) -> Dict[str, Any]:
 
 
 def _get_subset_selection_for_context(
-    context: OpExecutionContext,
+    context: Union[OpExecutionContext, AssetExecutionContext],
     manifest: Mapping[str, Any],
     select: Optional[str],
     exclude: Optional[str],
@@ -731,7 +729,7 @@ def _get_subset_selection_for_context(
     See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work.
 
     Args:
-        context (OpExecutionContext): The execution context for the current execution step.
+        context (Union[OpExecutionContext, AssetExecutionContext]): The execution context for the current execution step.
         manifest (Mapping[str, Any]): The dbt manifest blob.
         select (Optional[str]): A dbt selection string to select resources to materialize.
         exclude (Optional[str]): A dbt selection string to exclude resources from materializing.
@@ -782,7 +780,7 @@ def _get_subset_selection_for_context(
     # https://docs.getdbt.com/reference/node-selection/methods#the-path-method
     dbt_resource_props_by_output_name = get_dbt_resource_props_by_output_name(manifest)
     selected_dbt_non_test_resources = get_dbt_resource_names_for_output_names(
-        output_names=context.selected_output_names,
+        output_names=context.op_execution_context.selected_output_names,
         dbt_resource_props_by_output_name=dbt_resource_props_by_output_name,
         dagster_dbt_translator=dagster_dbt_translator,
     )
