@@ -11,7 +11,7 @@ If you're a GitHub or GitLab user, you can use our predefined workflows to seaml
 <Tabs groupId="method">
 <TabItem value="GitHub" label="With GitHub">
 
-If you're a GitHub user, our GitHub integration is the fastest way to get started. It uses a GitHub app and GitHub Actions to set up a repo containing skeleton code and configuration consistent with Dagster+'s best practices with a single click.
+If you're a GitHub user, our predefined workflows are the fastest way to get started. It uses a GitHub app and GitHub Actions to set up a repo containing skeleton code and configuration consistent with Dagster+'s best practices with a single click.
 
 When you create a new Dagster+ organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitHub integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/deployment/branch-deployments) using the Serverless agent.
 
@@ -30,7 +30,7 @@ When you create a new Dagster+ organization, you'll be prompted to choose Server
 
 <TabItem value="GitLab" label="With GitLab">
 
-If you're a GitLab user, our GitLab integration is the fastest way to get started. It uses a GitLab app to set up a repo containing skeleton code and CI/CD configuration consistent with Dagster+'s best practices with a single click.
+If you're a GitLab user, our predefined workflows are the fastest way to get started. It uses a GitLab app to set up a repo containing skeleton code and CI/CD configuration consistent with Dagster+'s best practices with a single click.
 
 When you create a new Dagster+ organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitLab integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/deployment/branch-deployments) using the Serverless agent.
 
