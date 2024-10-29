@@ -7,10 +7,11 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import public
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
 from dagster._utils.log import get_dagster_logger
 from looker_sdk.sdk.api40.methods import Looker40SDK
-from looker_sdk.sdk.api40.models import Dashboard, DashboardFilter, LookmlModelExplore
+from looker_sdk.sdk.api40.models import Dashboard, DashboardFilter, LookmlModelExplore, User
 
 logger = get_dagster_logger("dagster_looker")
 
@@ -21,6 +22,7 @@ class LookerInstanceData:
 
     explores_by_id: Dict[str, LookmlModelExplore]
     dashboards_by_id: Dict[str, Dashboard]
+    users_by_id: Dict[str, User]
 
     def to_state(self, sdk: Looker40SDK) -> Mapping[str, Any]:
         return {
@@ -31,6 +33,10 @@ class LookerInstanceData:
             "explores_by_id": {
                 explore_id: (sdk.serialize(api_model=explore_data).decode())  # type: ignore
                 for explore_id, explore_data in self.explores_by_id.items()
+            },
+            "users_by_id": {
+                user_id: (sdk.serialize(api_model=user_data).decode())  # type: ignore
+                for user_id, user_data in self.users_by_id.items()
             },
         }
 
@@ -48,7 +54,16 @@ class LookerInstanceData:
             for dashboard_id, serialized_looker_dashboard in state["dashboards_by_id"].items()
         }
 
-        return LookerInstanceData(explores_by_id=explores_by_id, dashboards_by_id=dashboards_by_id)
+        users_by_id = {
+            user_id: (sdk.deserialize(data=serialized_user, structure=User))  # type: ignore
+            for user_id, serialized_user in state["users_by_id"].items()
+        }
+
+        return LookerInstanceData(
+            explores_by_id=explores_by_id,
+            dashboards_by_id=dashboards_by_id,
+            users_by_id=users_by_id,
+        )
 
 
 @record
@@ -89,9 +104,17 @@ class LookmlView:
 class LookerStructureData:
     structure_type: LookerStructureType
     data: Union[LookmlView, LookmlModelExplore, DashboardFilter, Dashboard]
+    base_url: Optional[str] = None
 
 
 class DagsterLookerApiTranslator:
+    def __init__(self, looker_instance_data: Optional[LookerInstanceData]):
+        self._looker_instance_data = looker_instance_data
+
+    @property
+    def instance_data(self) -> Optional[LookerInstanceData]:
+        return self._looker_instance_data
+
     def get_view_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
         lookml_view = check.inst(looker_structure.data, LookmlView)
         return AssetKey(["view", lookml_view.view_name])
@@ -146,6 +169,11 @@ class DagsterLookerApiTranslator:
                     "dagster/kind/looker": "",
                     "dagster/kind/explore": "",
                 },
+                metadata={
+                    "dagster-looker/web_url": MetadataValue.url(
+                        f"{looker_structure.base_url}/explore/{check.not_none(lookml_explore.id).replace('::', '/')}"
+                    ),
+                },
             )
         elif isinstance(lookml_explore, DashboardFilter):
             return AssetSpec(key=self.get_asset_key(looker_structure))
@@ -158,6 +186,11 @@ class DagsterLookerApiTranslator:
 
     def get_dashboard_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
         looker_dashboard = check.inst(looker_structure.data, Dashboard)
+
+        user = None
+        if self.instance_data and looker_dashboard.user_id:
+            user = self.instance_data.users_by_id.get(looker_dashboard.user_id)
+
         return AssetSpec(
             key=self.get_asset_key(looker_structure),
             deps=list(
@@ -174,6 +207,12 @@ class DagsterLookerApiTranslator:
                 "dagster/kind/looker": "",
                 "dagster/kind/dashboard": "",
             },
+            metadata={
+                "dagster-looker/web_url": MetadataValue.url(
+                    f"{looker_structure.base_url}{looker_dashboard.url}"
+                ),
+            },
+            owners=[user.email] if user and user.email else None,
         )
 
     @public

@@ -32,7 +32,7 @@ def build_looker_pdt_assets_definitions(
     Returns:
         AssetsDefinition: The AssetsDefinitions of the executable assets for the given the list of refreshable PDTs.
     """
-    translator = dagster_looker_translator()
+    translator = dagster_looker_translator(None)
     result = []
     for request_start_pdt_build in request_start_pdt_builds:
 

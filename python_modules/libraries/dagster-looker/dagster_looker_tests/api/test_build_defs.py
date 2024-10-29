@@ -3,6 +3,7 @@ from typing import Iterator
 import pytest
 import responses
 from dagster import AssetKey, AssetSpec, Definitions, materialize
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster_looker import LookerFilter
 from dagster_looker.api.assets import build_looker_pdt_assets_definitions
 from dagster_looker.api.dagster_looker_api_translator import (
@@ -21,7 +22,9 @@ from dagster_looker_tests.api.mock_looker_data import (
     mock_lookml_models,
     mock_lookml_other_explore,
     mock_other_looker_dashboard,
+    mock_other_user,
     mock_start_pdt_build,
+    mock_user,
 )
 
 TEST_BASE_URL = "https://your.cloud.looker.com"
@@ -90,6 +93,12 @@ def looker_instance_data_mocks_fixture(
             body=sdk.serialize(api_model=mock_other_looker_dashboard),  # type: ignore
         )
 
+        responses.add(
+            method=responses.GET,
+            url=f"{TEST_BASE_URL}/api/4.0/users/search",
+            body=sdk.serialize(api_model=[mock_user, mock_other_user]),  # type: ignore
+        )
+
         yield response
 
 
@@ -130,12 +139,18 @@ def test_load_asset_specs(
         expected_lookml_view_asset_dep_key
     ]
     assert lookml_explore_asset.tags == {"dagster/kind/looker": "", "dagster/kind/explore": ""}
-
+    assert lookml_explore_asset.metadata.get("dagster-looker/web_url") == MetadataValue.url(
+        "https://your.cloud.looker.com/explore/my_model/my_explore"
+    )
     looker_dashboard_asset = asset_specs_by_key[expected_looker_dashboard_asset_key]
     assert [dep.asset_key for dep in looker_dashboard_asset.deps] == [
         expected_lookml_explore_asset_key
     ]
     assert looker_dashboard_asset.tags == {"dagster/kind/looker": "", "dagster/kind/dashboard": ""}
+    assert looker_dashboard_asset.owners == ["ben@dagsterlabs.com"]
+    assert looker_dashboard_asset.metadata.get("dagster-looker/web_url") == MetadataValue.url(
+        "https://your.cloud.looker.com/dashboards/1"
+    )
 
 
 @responses.activate
