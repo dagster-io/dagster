@@ -1049,6 +1049,10 @@
         ]
       },
       {
+        "title": "Looker",
+        "path": "/integrations/looker"
+      },
+      {
         "title": "OpenAI",
         "path": "/integrations/openai"
       },
@@ -1059,6 +1063,14 @@
       {
         "title": "Pandera",
         "path": "/integrations/pandera"
+      },
+      {
+        "title": "Power BI",
+        "path": "/integrations/powerbi"
+      },
+      {
+        "title": "Sigma",
+        "path": "/integrations/sigma"
       },
       {
         "title": "Spark",
@@ -1086,6 +1098,10 @@
             "path": "/integrations/snowflake/reference"
           }
         ]
+      },
+      {
+        "title": "Tableau",
+        "path": "/integrations/tableau"
       },
       {
         "title": "All integrations",
@@ -1559,6 +1575,10 @@
           {
             "title": "Shell (dagster-shell)",
             "path": "/_apidocs/libraries/dagster-shell"
+          },
+          {
+            "title": "Sigma (dagster-sigma)",
+            "path": "/_apidocs/libraries/dagster-sigma"
           },
           {
             "title": "Slack (dagster-slack)",
