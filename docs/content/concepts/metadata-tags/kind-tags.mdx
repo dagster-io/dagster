@@ -7,19 +7,9 @@ description: "Use kind tags to easily categorize assets within you Dagster proje
 
 Kind tags can help you quickly identify the underlying system or technology used for a given asset in the Dagster UI. These tags allow you to organize assets within a Dagster project and can be used to filter or search across all your assets.
 
-## Adding Compute Kinds to assets
+---
 
-You can add a single compute kind to any asset by providing a value to the `compute_kind` argument.
-
-```python
-@asset(compute_kind="dbt")
-def my_asset():
-    pass
-```
-
-When viewing the asset in the lineage view, the compute kind will be visible at the bottom the asset. <Image src="/images/concepts/metadata-tags/kinds/kind-tag.png" width={1039} height={484} />
-
-## Adding multiple kinds to an asset <Experimental />
+## Adding kinds to an asset
 
 You may add up to three kinds to the `kinds` argument, which can be useful to represent multiple technologies or systems that an asset is associated with. For example, an asset which is built by Python code and stored in Snowflake can be tagged with both `python` and `snowflake` kinds.
 
@@ -45,6 +35,33 @@ from dagster import AssetSpec, multi_asset
     ]
 )
 def my_multi_asset():
+    pass
+```
+
+Under the hood, these kind inputs are stored as tags on the asset. For more information, see [Tags](/concepts/metadata-tags/tags).
+
+When viewing the asset in the lineage view, the attached kinds will be visible at the bottom the asset.
+
+<center>
+  <Image
+    src="/images/concepts/metadata-tags/kinds/kinds.svg"
+    width="320"
+    height="198"
+  />
+</center>
+
+## Adding compute kinds to assets
+
+<Warning>
+  Using <mono>compute_kind</mono> has been superseded by the <mono>kinds</mono>{" "}
+  argument. We recommend using the <mono>kinds</mono> argument instead.
+</Warning>
+
+You can add a single compute kind to any asset by providing a value to the `compute_kind` argument.
+
+```python
+@asset(compute_kind="dbt")
+def my_asset():
     pass
 ```
 
