@@ -1,9 +1,13 @@
-from dagster_tableau import TableauCloudWorkspace
+from dagster_tableau import (
+    TableauCloudWorkspace,
+    build_tableau_executable_assets_definition,
+    load_tableau_asset_specs,
+)
 
 import dagster as dg
 
 # Connect to Tableau Cloud using the connected app credentials
-workspace = TableauCloudWorkspace(
+tableau_workspace = TableauCloudWorkspace(
     connected_app_client_id=dg.EnvVar("TABLEAU_CONNECTED_APP_CLIENT_ID"),
     connected_app_secret_id=dg.EnvVar("TABLEAU_CONNECTED_APP_SECRET_ID"),
     connected_app_secret_value=dg.EnvVar("TABLEAU_CONNECTED_APP_SECRET_VALUE"),
@@ -36,13 +40,33 @@ def tableau_run_failure_sensor(
                 )
 
 
-# We use Definitions.merge to combine the definitions from the Tableau workspace
-# and the Dagster definitions into a single set of definitions to load
-tableau_defs = workspace.build_defs()
-upstream_defs = dg.Definitions(
-    assets=[upstream_asset],
-    sensors=[tableau_run_failure_sensor],
-    resources={"tableau": workspace},
+tableau_specs = load_tableau_asset_specs(
+    workspace=tableau_workspace,
 )
 
-defs = dg.Definitions.merge(tableau_defs, upstream_defs)
+non_executable_asset_specs = [
+    spec
+    for spec in tableau_specs
+    if spec.tags.get("dagster-tableau/asset_type") == "data_source"
+]
+
+executable_asset_specs = [
+    spec
+    for spec in tableau_specs
+    if spec.tags.get("dagster-tableau/asset_type") in ["dashboard", "sheet"]
+]
+
+# Pass the sensor, Tableau resource, upstream asset, Tableau assets specs and executable assets definition at once
+defs = dg.Definitions(
+    assets=[
+        upstream_asset,
+        build_tableau_executable_assets_definition(
+            resource_key="tableau",
+            specs=executable_asset_specs,
+            refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
+        ),
+        *non_executable_asset_specs,
+    ],
+    sensors=[tableau_run_failure_sensor],
+    resources={"tableau": tableau_workspace},
+)
