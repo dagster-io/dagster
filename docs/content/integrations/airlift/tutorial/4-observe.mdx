@@ -1,0 +1,149 @@
+## Observing Assets
+
+The next step is to represent our Airflow workflows more richly by observing the data assets that are produced by our tasks. In order to do this, we must define the relevant assets in the Dagster code location.
+
+In our example, we have three sequential tasks:
+
+1. `load_raw_customers` loads a CSV file of raw customer data into duckdb.
+2. `run_dbt_model` builds a series of dbt models (from [jaffle shop](https://github.com/dbt-labs/jaffle_shop_duckdb)) combining customer, order, and payment data.
+3. `export_customers` exports a CSV representation of the final customer file from duckdb to disk.
+
+We will first create a set of asset specs that correspond to the assets produced by these tasks. We will then annotate these asset specs so that Dagster can associate them with the Airflow tasks that produce them.
+
+The first and third tasks involve a single table each. We can manually construct specs for these two tasks. Dagster provides the `assets_with_task_mappings` utility to annotate our asset specs with the tasks that produce them. Assets which are properly annotated will be materialized by the Airlift sensor once the corresponding task completes: These annotated specs are then provided to the `defs` argument to `build_defs_from_airflow_instance`.
+
+We will also create a set of dbt asset definitions for the `build_dbt_models` task. We can use the `dagster-dbt`-supplied decorator `@dbt_assets` to generate these definitions using Dagster's dbt integration.
+
+First, we'll construct AssetSpecs for the `load_raw_customers` and `export_customers` tasks:
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe.py startafter=start_asset_specs endbefore=end_asset_specs
+from dagster import AssetSpec
+
+raw_customers_spec = AssetSpec(key=["raw_data", "raw_customers"])
+export_customers_spec = AssetSpec(key="customers_csv", deps=["customers"])
+```
+
+Next, let's construct assets using the `@dbt_assets` decorator:
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe.py startafter=start_dbt_assets endbefore=end_dbt_assets
+import os
+from pathlib import Path
+
+from dagster import AssetExecutionContext
+from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+
+
+def dbt_project_path() -> Path:
+    env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
+    assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
+    return Path(env_val)
+
+
+@dbt_assets(
+    manifest=dbt_project_path() / "target" / "manifest.json",
+    project=DbtProject(dbt_project_path()),
+)
+def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+```
+
+Now, we can use the `assets_with_task_mappings` utility to associate these assets with the tasks that produce them:
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe.py startafter=start_task_mappings endbefore=end_task_mappings
+from dagster_airlift.core import assets_with_task_mappings
+
+mapped_assets = assets_with_task_mappings(
+    dag_id="rebuild_customers_list",
+    task_mappings={
+        "load_raw_customers": [raw_customers_spec],
+        "build_dbt_models": [dbt_project_assets],
+        "export_customers": [export_customers_spec],
+    },
+)
+```
+
+Finally, we can pass these definitions to `build_defs_from_airflow_instance`:
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe.py startafter=start_build_defs endbefore=end_build_defs
+from dagster import Definitions
+from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
+
+defs = build_defs_from_airflow_instance(
+    airflow_instance=AirflowInstance(
+        auth_backend=BasicAuthBackend(
+            webserver_url="http://localhost:8080",
+            username="admin",
+            password="admin",
+        ),
+        name="airflow_instance_one",
+    ),
+    defs=Definitions(
+        assets=mapped_assets,
+        resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
+    ),
+)
+```
+
+### Viewing observed assets
+
+Once your assets are set up, you should be able to reload your Dagster definitions and see a full representation of the dbt project and other data assets in your code.
+
+<p align="center">
+
+![Observed asset graph in Dagster](./images/observe.svg)
+
+</p>
+
+Kicking off a run of the DAG in Airflow, you should see the newly created assets materialize in Dagster as each task completes.
+
+_Note: There will be some delay between task completion and assets materializing in Dagster, managed by the sensor. This sensor runs every 30 seconds by default (you can reduce down to one second via the `minimum_interval_seconds` argument to `sensor`), so there will be some delay._
+
+### Adding partitions
+
+If your assets represent a time-partitioned data source, Airlift can automatically associate your materializations to the relevant partitions. In the case of `rebuild_customers_list`, data is daily partitioned in each created table, and as a result we've added a `@daily` cron schedule to the DAG to make sure it runs every day. We can likewise add a `DailyPartitionsDefinition` to each of our assets. Our Airflow DAG runs every day at midnight. So we'll create a `DailyPartitionsDefinition` that starts at midnight.
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe_with_partitions.py startafter=start_create_partitions endbefore=end_create_partitions
+from dagster import AssetExecutionContext, AssetSpec, DailyPartitionsDefinition, Definitions
+from dagster._time import get_current_datetime_midnight
+from dagster_airlift.core import (
+    AirflowInstance,
+    BasicAuthBackend,
+    assets_with_task_mappings,
+    build_defs_from_airflow_instance,
+)
+from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+
+# Pick your current date for the start date here.
+PARTITIONS_DEF = DailyPartitionsDefinition(start_date="2024-10-28")
+```
+
+Now, we can add this partitioning scheme to our assets:
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe_with_partitions.py startafter=start_partitioned_assets endbefore=end_partitioned_assets
+raw_customers_spec = AssetSpec(key=["raw_data", "raw_customers"], partitions_def=PARTITIONS_DEF)
+export_customers_spec = AssetSpec(
+    key="customers_csv", deps=["customers"], partitions_def=PARTITIONS_DEF
+)
+
+
+@dbt_assets(
+    manifest=dbt_project_path() / "target" / "manifest.json",
+    project=DbtProject(dbt_project_path()),
+    partitions_def=PARTITIONS_DEF,
+)
+def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+```
+
+Now, every time the sensor synthesizes a materialization for an asset, it will automatically have a partition associated with it.
+
+<p align="center">
+
+![Partitioned Materialization in Dagster](./images/partitioned_mat.png)
+
+</p>
+
+In order for partitioned assets to work out of the box with `dagster-airlift`, the following things need to be true:
+
+- The asset can only be time-window partitioned. This means static, dynamic, and multi partitioned definitions will require custom functionality.
+- The partitioning scheme must match up with the [logical_date / execution_date](https://airflow.apache.org/docs/apache-airflow/stable/faq.html#what-does-execution-date-mean) of corresponding Airflow runs. That is, each logical_date should correspond \_exactly\_ to a partition in Dagster.

@@ -1,0 +1,606 @@
+## Migrating Assets
+
+Once you have created corresponding definitions in Dagster to your Airflow tasks, you can proxy execution to Dagster on a per-task basis while Airflow is still controlling scheduling and orchestration. Once a task has been proxied, Airflow will kick off materializations of corresponding Dagster assets in place of executing the business logic of that task.
+
+To begin proxying tasks in a DAG, first you will need a file to track proxying state. `dagster-airlift` provides a CLI for scaffolding out this directory. Run the following command, ensuring that `AIRFLOW_HOME` is set as an environment variable, and `dagster-airlift[in-airflow]` is installed in your environment:
+
+```bash
+dagster-airlift proxy scaffold
+```
+
+This will build a `proxy_state` directory within your Airflow DAG directory. This directory contains a YAML file for each DAG in your Airflow instance. Let's take a look at the contents of the `rebuild_customers_list.yaml` file:
+
+```yaml file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/airflow_dags/proxied_state/rebuild_customers_list.yaml
+tasks:
+  - id: load_raw_customers
+    proxied: False
+  - id: build_dbt_models
+    proxied: False
+  - id: export_customers
+    proxied: False
+```
+
+Each YAML file contains a list of tasks in the DAG, with a `proxied` key set to `False` for each task. Once corresponding assets exist in Dagster for a given task, this key can be toggled to `True` for the task you wish to proxy.
+
+Next, you will need to modify your Airflow DAG to make it aware of the proxied state. This is already done in the example DAG:
+
+```python file=/integrations/airlift/tutorial/dags_truncated.py
+# Dags file can be found at tutorial_example/airflow_dags/dags.py
+from pathlib import Path
+
+from airflow import DAG
+from dagster_airlift.in_airflow import proxying_to_dagster
+from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
+
+dag = DAG("rebuild_customers_list", ...)
+
+...
+
+# Set this to True to begin the proxying process
+PROXYING = False
+
+if PROXYING:
+    proxying_to_dagster(
+        global_vars=globals(),
+        proxied_state=load_proxied_state_from_yaml(
+            Path(__file__).parent / "proxied_state"
+        ),
+    )
+```
+
+Set `PROXYING` to `True` or eliminate the `if` statement.
+
+The DAG will now display its proxied state in the Airflow UI.
+
+<p align="center">
+
+![Migration state rendering in Airflow UI](./images/state_in_airflow.png)
+
+</p>
+
+### Migrating individual tasks
+
+In order to proxy a task, you must do two things:
+
+1. First, ensure all associated assets are executable in Dagster by providing asset definitions in place of bare asset specs.
+2. The `proxied: False` status in the `proxied_state` YAML folder must be adjusted to `proxied: True`.
+
+Any task marked as proxied will use the `DefaultProxyToDagsterOperator` when executed as part of the DAG. This operator will use the Dagster GraphQL API to initiate a Dagster run of the assets corresponding to the task.
+
+The proxied file acts as the source of truth for proxied state. The information is attached to the DAG and then accessed by Dagster via the REST API.
+
+A task which has been proxied can be easily toggled back to run in Airflow (for example, if a bug in implementation was encountered) simply by editing the file to `proxied: False`.
+
+#### Supporting custom authorization
+
+If your Dagster deployment lives behind a custom auth backend, you can customize the Airflow-to-Dagster proxying behavior to authenticate to your backend. `proxying_to_dagster` can take a parameter `dagster_operator_klass`, which allows you to define a custom `BaseProxyToDagsterOperator` class. This allows you to override how a session is created. Let's say for example, your Dagster installation requires an access key to be set whenever a request is made, and that access key is set in an Airflow `Variable` called `my_api_key`. We can create a custom `BaseProxyToDagsterOperator` subclass which will retrieve that variable value and set it on the session, so that any requests to Dagster's graphql API will be made using that api key.
+
+```python file=/integrations/airlift/tutorial/custom_operator_examples/custom_proxy.py
+from pathlib import Path
+
+import requests
+from airflow import DAG
+from airflow.utils.context import Context
+from dagster_airlift.in_airflow import (
+    BaseProxyTaskToDagsterOperator,
+    proxying_to_dagster,
+)
+from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
+
+
+class CustomProxyToDagsterOperator(BaseProxyTaskToDagsterOperator):
+    def get_dagster_session(self, context: Context) -> requests.Session:
+        if "var" not in context:
+            raise ValueError("No variables found in context")
+        api_key = context["var"]["value"].get("my_api_key")
+        session = requests.Session()
+        session.headers.update({"Authorization": f"Bearer {api_key}"})
+        return session
+
+    def get_dagster_url(self, context: Context) -> str:
+        return "https://dagster.example.com/"
+
+
+dag = DAG(
+    dag_id="custom_proxy_example",
+)
+
+# At the end of your dag file
+proxying_to_dagster(
+    global_vars=globals(),
+    proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
+    build_from_task_fn=CustomProxyToDagsterOperator.build_from_task,
+)
+```
+
+#### Dagster Plus Authorization
+
+You can use a customer proxy operator to establish a connection to a Dagster plus deployment. The below example proxies to Dagster Plus using organization name, deployment name, and user token set as Airflow Variables. To set a Dagster+ user token, follow this guide: <https://docs.dagster.io/dagster-plus/account/managing-user-agent-tokens#managing-user-tokens>.
+
+```python file=/integrations/airlift/tutorial/custom_operator_examples/plus_proxy_operator.py
+import requests
+from airflow.utils.context import Context
+from dagster_airlift.in_airflow import BaseProxyTaskToDagsterOperator
+
+
+class DagsterCloudProxyOperator(BaseProxyTaskToDagsterOperator):
+    def get_variable(self, context: Context, var_name: str) -> str:
+        if "var" not in context:
+            raise ValueError("No variables found in context")
+        return context["var"]["value"][var_name]
+
+    def get_dagster_session(self, context: Context) -> requests.Session:
+        dagster_cloud_user_token = self.get_variable(
+            context, "dagster_cloud_user_token"
+        )
+        session = requests.Session()
+        session.headers.update({"Dagster-Cloud-Api-Token": dagster_cloud_user_token})
+        return session
+
+    def get_dagster_url(self, context: Context) -> str:
+        org_name = self.get_variable(context, "dagster_plus_organization_name")
+        deployment_name = self.get_variable(context, "dagster_plus_deployment_name")
+        return f"https://{org_name}.dagster.plus/{deployment_name}"
+```
+
+#### Migrating common operators
+
+For some common operator patterns, like using the BashOperator for DBT, Dagster supplies factories to build software defined assets for our tasks. In fact, the `@dbt_assets` decorator used earlier already backs its assets with definitions, so we can toggle the proxied state of the `build_dbt_models` task to `proxied: True` in the proxied state file:
+
+```yaml file=/integrations/airlift/tutorial/dbt_proxied.yaml
+tasks:
+  - id: load_raw_customers
+    proxied: False
+  - id: build_dbt_models
+    proxied: True
+  - id: export_customers
+    proxied: False
+```
+
+Run the following command to reload the Airflow DAG (again making sure that AIRFLOW_HOME is set as an environment variable):
+
+```bash
+airflow dags reserialize
+```
+
+You can now run the `rebuild_customers_list` DAG in Airflow, and the `build_dbt_models` task will be executed in a Dagster run:
+
+<p align="center">
+
+![dbt build executing in Dagster](./images/proxied_dag.png)
+
+</p>
+
+You'll note that we proxied a task in the _middle_ of the Airflow DAG. The Airflow DAG structure and execution history is stable in the Airflow UI, but execution of `build_dbt_models` has moved to Dagster.
+
+#### Migrating the remaining custom operators
+
+For all other operator types, we will need to build our own asset definitions. We recommend creating a factory function whose arguments match the inputs to your Airflow operator. Then, you can use this factory to build definitions for each Airflow task. Let's write equivalent Dagster code for the remaining tasks in the `rebuild_customers_list` DAG. First, let's take a look at the code for the `load_raw_customers` task.
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/airflow_dags/dags.py startafter=start_load endbefore=end_load
+load_raw_customers = LoadCSVToDuckDB(
+    task_id="load_raw_customers",
+    dag=dag,
+    loader_args=LoadCsvToDuckDbArgs(
+        table_name="raw_customers",
+        csv_path=CUSTOMERS_CSV_PATH,
+        duckdb_path=WAREHOUSE_PATH,
+        names=[
+            "id",
+            "first_name",
+            "last_name",
+        ],
+        duckdb_schema="raw_data",
+        duckdb_database_name="jaffle_shop",
+    ),
+)
+```
+
+Under the hood, this task is using a custom operator `LoadCSVToDuckDB`. We'll want to factor out the logic of this operator's `execute` method into a standalone function. The implementation of `LoadCSVToDuckDB` looks like this:
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/airflow_dags/csv_operators.py startafter=start_load endbefore=end_load
+# from tutorial_example/airflow_dags/csv_operators.py
+@dataclass
+class LoadCsvToDuckDbArgs:
+    table_name: str
+    csv_path: Path
+    duckdb_path: Path
+    names: List[str]
+    duckdb_schema: str
+    duckdb_database_name: str
+
+
+class LoadCSVToDuckDB(BaseOperator):
+    def __init__(
+        self,
+        loader_args: LoadCsvToDuckDbArgs,
+        *args,
+        **kwargs,
+    ):
+        self.loader_args = loader_args
+        super().__init__(*args, **kwargs)
+
+    def execute(self, context) -> None:
+        args = self.loader_args
+        # Ensure that path exists
+        if not args.csv_path.exists():
+            raise ValueError(f"CSV file not found at {args.csv_path}")
+        if not args.duckdb_path.exists():
+            raise ValueError(f"DuckDB database not found at {args.duckdb_path}")
+        # Duckdb database stored in airflow home
+        df = pd.read_csv(
+            args.csv_path,
+            names=args.names,
+        )
+
+        # Connect to DuckDB and create a new table
+        con = duckdb.connect(str(args.duckdb_path))
+        con.execute(f"CREATE SCHEMA IF NOT EXISTS {args.duckdb_schema}").fetchall()
+        con.execute(
+            f"CREATE TABLE IF NOT EXISTS {args.duckdb_database_name}.{args.duckdb_schema}.{args.table_name} AS SELECT * FROM df"
+        ).fetchall()
+        con.close()
+```
+
+We need to factor out the `execute` method's core implementation into a standalone function, and move this function into a "shared" location where both Dagster and Airflow can access it. In our example, we use the `shared` directory to store artifacts being shared between Dagster and Airflow, but in practice we recommend creating a module separate from both the Dagster and Airflow codebases so that you don't create unnecessary dependencies betwee your Dagster and Airflow installations. Copy the following into a new file called `tutorial_example/shared/load_csv_to_duckdb.py`:
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/shared/complete/load_csv_to_duckdb.py
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List
+
+import duckdb
+import pandas as pd
+
+
+@dataclass
+class LoadCsvToDuckDbArgs:
+    table_name: str
+    csv_path: Path
+    duckdb_path: Path
+    names: List[str]
+    duckdb_schema: str
+    duckdb_database_name: str
+
+
+def load_csv_to_duckdb(args: LoadCsvToDuckDbArgs) -> None:
+    # Ensure that path exists
+    if not args.csv_path.exists():
+        raise ValueError(f"CSV file not found at {args.csv_path}")
+    if not args.duckdb_path.exists():
+        raise ValueError(f"DuckDB database not found at {args.duckdb_path}")
+    # Duckdb database stored in airflow home
+    df = pd.read_csv(
+        args.csv_path,
+        names=args.names,
+    )
+
+    # Connect to DuckDB and create a new table
+    con = duckdb.connect(str(args.duckdb_path))
+    con.execute(f"CREATE SCHEMA IF NOT EXISTS {args.duckdb_schema}").fetchall()
+    con.execute(
+        f"CREATE TABLE IF NOT EXISTS {args.duckdb_database_name}.{args.duckdb_schema}.{args.table_name} AS SELECT * FROM df"
+    ).fetchall()
+    con.close()
+```
+
+We can refactor the `LoadCSVToDuckDB` operator to use this shared function.
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/airflow_dags/csv_operators_complete.py startafter=start_load endbefore=end_load
+# Completed versions of utilities can be found in tutorial_example/shared/complete/load_csv_to_duckdb.py
+from tutorial_example.shared.complete.load_csv_to_duckdb import (
+    LoadCsvToDuckDbArgs,
+    load_csv_to_duckdb,
+)
+
+
+class LoadCSVToDuckDB(BaseOperator):
+    def __init__(
+        self,
+        loader_args: LoadCsvToDuckDbArgs,
+        *args,
+        **kwargs,
+    ):
+        self.loader_args = loader_args
+        super().__init__(*args, **kwargs)
+
+    def execute(self, context) -> None:
+        load_csv_to_duckdb(self.loader_args)
+```
+
+We can also create a factory for constructing Dagster assets from this shared function, and call it using our previously-defined AssetSpec.
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/migrate.py startafter=start_load_factory endbefore=end_load_factory
+No match for startAfter value "start_load_factory"
+```
+
+We will map `raw_customers_asset` to our `load_raw_customers` task instead of the bare asset spec.
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/partial_migrate.py startafter=start_task_mappings endbefore=end_task_mappings
+mapped_assets = assets_with_task_mappings(
+    dag_id="rebuild_customers_list",
+    task_mappings={
+        "load_raw_customers": [raw_customers_asset],
+        "build_dbt_models": [dbt_project_assets],
+        "export_customers": [export_customers_spec],
+    },
+)
+```
+
+We can then toggle the proxied state of the `load_raw_customers` task in the `proxied_state` file to `True`:
+
+```yaml file=/integrations/airlift/tutorial/all_proxied.yaml
+tasks:
+  - id: load_raw_customers
+    proxied: True
+  - id: build_dbt_models
+    proxied: True
+  - id: export_customers
+    proxied: True
+```
+
+Run `reserialize` to reload the Airflow DAG:
+
+```bash
+airflow dags reserialize
+```
+
+And we should see the Airflow UI reflect that the `load_raw_customers` task is now proxied. <IMAGE HERE>
+
+Now, when we run the `rebuild_customers_list` DAG in Airflow, the `load_raw_customers` task will be executed in Dagster.
+
+We'll leave it as an exercise to the reader to migrate the `export_customers` task to Dagster. The process is similar to what we've outlined above:
+
+- Factor out the core logic of the operator into a standalone function in a shared location.
+- Create a factory function to build Dagster assets from this shared function.
+- Mark the task as proxied in the `proxied_state` file.
+
+At the end, your Dagster code should look something like this:
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/migrate.py startafter=start_migrate endbefore=end_migrate
+import os
+from pathlib import Path
+
+from dagster import (
+    AssetExecutionContext,
+    AssetsDefinition,
+    AssetSpec,
+    Definitions,
+    materialize,
+    multi_asset,
+)
+from dagster_airlift.core import (
+    AirflowInstance,
+    BasicAuthBackend,
+    assets_with_task_mappings,
+    build_defs_from_airflow_instance,
+)
+from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+
+from tutorial_example.shared.complete.export_duckdb_to_csv import (
+    ExportDuckDbToCsvArgs,
+    export_duckdb_to_csv,
+)
+
+# Completed version fo the load and export code can be found at tutorial_example/shared/complete.
+from tutorial_example.shared.complete.load_csv_to_duckdb import (
+    LoadCsvToDuckDbArgs,
+    load_csv_to_duckdb,
+)
+from tutorial_example.shared.constants import CUSTOMERS_CSV_PATH, WAREHOUSE_PATH
+
+
+def dbt_project_path() -> Path:
+    env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
+    assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
+    return Path(env_val)
+
+
+raw_customers_spec = AssetSpec(key=["raw_data", "raw_customers"])
+
+
+def load_csv_to_duckdb_asset(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> AssetsDefinition:
+    @multi_asset(name=f"load_{args.table_name}", specs=[spec])
+    def _multi_asset() -> None:
+        load_csv_to_duckdb(args)
+
+    return _multi_asset
+
+
+raw_customers_asset = load_csv_to_duckdb_asset(
+    spec=raw_customers_spec,
+    args=LoadCsvToDuckDbArgs(
+        table_name="raw_customers",
+        csv_path=CUSTOMERS_CSV_PATH,
+        duckdb_path=WAREHOUSE_PATH,
+        names=["id", "first_name", "last_name"],
+        duckdb_schema="raw_data",
+        duckdb_database_name="jaffle_shop",
+    ),
+)
+
+
+def export_duckdb_to_csv_defs(spec: AssetSpec, args: ExportDuckDbToCsvArgs) -> AssetsDefinition:
+    @multi_asset(name=f"export_{args.table_name}", specs=[spec])
+    def _multi_asset() -> None:
+        export_duckdb_to_csv(args)
+
+    return _multi_asset
+
+
+@dbt_assets(
+    manifest=dbt_project_path() / "target" / "manifest.json",
+    project=DbtProject(dbt_project_path()),
+)
+def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+
+
+mapped_assets = assets_with_task_mappings(
+    dag_id="rebuild_customers_list",
+    task_mappings={
+        "load_raw_customers": [
+            raw_customers_asset,
+        ],
+        "build_dbt_models":
+        # load rich set of assets from dbt project
+        [dbt_project_assets],
+        "export_customers": [
+            export_duckdb_to_csv_defs(
+                AssetSpec(key="customers_csv", deps=["customers"]),
+                ExportDuckDbToCsvArgs(
+                    table_name="customers",
+                    csv_path=CUSTOMERS_CSV_PATH,
+                    duckdb_path=WAREHOUSE_PATH,
+                    duckdb_database_name="jaffle_shop",
+                ),
+            )
+        ],
+    },
+)
+
+
+defs = build_defs_from_airflow_instance(
+    airflow_instance=AirflowInstance(
+        auth_backend=BasicAuthBackend(
+            webserver_url="http://localhost:8080",
+            username="admin",
+            password="admin",
+        ),
+        name="airflow_instance_one",
+    ),
+    defs=Definitions(
+        assets=mapped_assets,
+        resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
+    ),
+)
+```
+
+## Decomissioning an Airflow DAG
+
+Once we are confident in our migrated versions of the tasks, we can decommission the Airflow DAG. First, we can remove the DAG from our Airflow DAG directory.
+
+Next, we can strip the task associations from our Dagster definitions. This can be done by removing the `assets_with_task_mappings` call. We can use this opportunity to attach our assets to a `ScheduleDefinition` so that Dagster's scheduler can manage their execution:
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/standalone.py
+import os
+from pathlib import Path
+
+from dagster import (
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetExecutionContext,
+    AssetKey,
+    AssetsDefinition,
+    AssetSelection,
+    AssetSpec,
+    Definitions,
+    ScheduleDefinition,
+    asset_check,
+    multi_asset,
+)
+from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+
+# Code also invoked from Airflow
+from tutorial_example.shared.complete.export_duckdb_to_csv import (
+    ExportDuckDbToCsvArgs,
+    export_duckdb_to_csv,
+)
+from tutorial_example.shared.complete.load_csv_to_duckdb import (
+    LoadCsvToDuckDbArgs,
+    load_csv_to_duckdb,
+)
+from tutorial_example.shared.constants import CUSTOMERS_CSV_PATH, WAREHOUSE_PATH
+
+
+def dbt_project_path() -> Path:
+    env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
+    assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
+    return Path(env_val)
+
+
+def load_csv_to_duckdb_asset(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> AssetsDefinition:
+    @multi_asset(name=f"load_{args.table_name}", specs=[spec])
+    def _multi_asset() -> None:
+        load_csv_to_duckdb(args)
+
+    return _multi_asset
+
+
+def export_duckdb_to_csv_defs(spec: AssetSpec, args: ExportDuckDbToCsvArgs) -> AssetsDefinition:
+    @multi_asset(name=f"export_{args.table_name}", specs=[spec])
+    def _multi_asset() -> None:
+        export_duckdb_to_csv(args)
+
+    return _multi_asset
+
+
+@dbt_assets(
+    manifest=dbt_project_path() / "target" / "manifest.json",
+    project=DbtProject(dbt_project_path()),
+)
+def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+
+
+assets = [
+    load_csv_to_duckdb_asset(
+        AssetSpec(key=["raw_data", "raw_customers"]),
+        LoadCsvToDuckDbArgs(
+            table_name="raw_customers",
+            csv_path=CUSTOMERS_CSV_PATH,
+            duckdb_path=WAREHOUSE_PATH,
+            names=["id", "first_name", "last_name"],
+            duckdb_schema="raw_data",
+            duckdb_database_name="jaffle_shop",
+        ),
+    ),
+    dbt_project_assets,
+    export_duckdb_to_csv_defs(
+        AssetSpec(key="customers_csv", deps=["customers"]),
+        ExportDuckDbToCsvArgs(
+            table_name="customers",
+            csv_path=CUSTOMERS_CSV_PATH,
+            duckdb_path=WAREHOUSE_PATH,
+            duckdb_database_name="jaffle_shop",
+        ),
+    ),
+]
+
+
+@asset_check(asset=AssetKey(["customers_csv"]))
+def validate_exported_csv() -> AssetCheckResult:
+    csv_path = CUSTOMERS_CSV_PATH
+
+    if not csv_path.exists():
+        return AssetCheckResult(passed=False, description=f"Export CSV {csv_path} does not exist")
+
+    rows = len(csv_path.read_text().split("\n"))
+    if rows < 2:
+        return AssetCheckResult(
+            passed=False,
+            description=f"Export CSV {csv_path} is empty",
+            severity=AssetCheckSeverity.WARN,
+        )
+
+    return AssetCheckResult(
+        passed=True,
+        description=f"Export CSV {csv_path} exists",
+        metadata={"rows": rows},
+    )
+
+
+rebuild_customer_list_schedule = rebuild_customers_list_schedule = ScheduleDefinition(
+    name="rebuild_customers_list_schedule",
+    target=AssetSelection.assets(*assets),
+    cron_schedule="0 0 * * *",
+)
+
+
+defs = Definitions(
+    assets=assets,
+    schedules=[rebuild_customer_list_schedule],
+    asset_checks=[validate_exported_csv],
+    resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
+)
+```
