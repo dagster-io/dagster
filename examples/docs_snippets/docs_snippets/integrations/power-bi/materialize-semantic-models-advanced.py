@@ -16,18 +16,23 @@ power_bi_workspace = PowerBIWorkspace(
     workspace_id=dg.EnvVar("POWER_BI_WORKSPACE_ID"),
 )
 
+
 # Asset definition factory which triggers a semantic model refresh and sends a notification
 # once complete
 def build_semantic_model_refresh_and_notify_asset_def(
-    spec: dg.AssetSpec
+    spec: dg.AssetSpec,
 ) -> dg.AssetsDefinition:
     dataset_id = spec.metadata["dagster-powerbi/id"]
+
     @dg.multi_asset(specs=[spec], name=spec.key.to_python_identifier())
-    def rebuild_semantic_model(context: dg.AssetExecutionContext, power_bi: PowerBIWorkspace) -> None:
+    def rebuild_semantic_model(
+        context: dg.AssetExecutionContext, power_bi: PowerBIWorkspace
+    ) -> None:
         power_bi.trigger_and_poll_refresh(dataset_id)
         # Do some custom work after refreshing here, such as sending an email notification
 
     return rebuild_semantic_model
+
 
 # Load Power BI asset specs, and use our custom asset definition builder to
 # construct a definition for each semantic model
