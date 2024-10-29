@@ -38,7 +38,7 @@ pip install dagster dagster-sigma
 
 To load Sigma assets into the Dagster asset graph, you must first construct a <PyObject module="dagster_sigma" object="SigmaOrganization" /> resource, which allows Dagster to communicate with your Sigma organization. You'll need to supply your client ID and client secret alongside the base URL. See [Identify your API request URL](https://help.sigmacomputing.com/reference/get-started-sigma-api#identify-your-api-request-url) in the Sigma documentation for more information on how to find your base URL.
 
-Dagster can automatically load all datasets and workbooks ƒrom your Sigma workspace. Call the <PyObject module="dagster_sigma" object="SigmaOrganization" method="build_defs" /> function, which returns a `Definitions` object containing all the asset definitions for these Sigma assets.
+Dagster can automatically load all datasets and workbooks from your Sigma workspace as asset specs. Call the <PyObject module="dagster_sigma" method="load_sigma_asset_specs" /> function, which returns list of <PyObject object="AssetSpec" />s representing your Sigma assets. You can then include these asset specs in your <PyObject object="Definitions" /> object:
 
 ```python file=/integrations/sigma/representing-sigma-assets.py
 from dagster_sigma import SigmaBaseUrl, SigmaOrganization
@@ -56,7 +56,7 @@ defs = resource.build_defs()
 
 ### Customize asset definition metadata for Sigma assets
 
-By default, Dagster will generate asset keys for each Sigma asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_sigma" object="DagsterSigmaTranslator" /> subclass to the <PyObject module="dagster_sigma" object="SigmaOrganization" method="build_defs" /> function. This subclass can implement methods to customize the asset keys or specs for each Sigma asset type.
+By default, Dagster will generate asset keys for each Sigma asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_sigma" object="DagsterSigmaTranslator" /> subclass to the <PyObject module="dagster_sigma" method="load_sigma_asset_specs" /> function. This subclass can implement methods to customize the asset keys or specs for each Sigma asset type.
 
 ```python file=/integrations/sigma/customize-sigma-asset-defs.py
 from dagster_sigma import (
@@ -87,7 +87,7 @@ defs = resource.build_defs(dagster_sigma_translator=MyCustomSigmaTranslator)
 
 ### Load Sigma assets from multiple organizations
 
-Definitions from multiple Sigma organizations can be combined by instantiating multiple <PyObject module="dagster_sigma" object="SigmaOrganization" /> resources and merging their definitions. This lets you view all your Sigma assets in a single asset graph:
+Definitions from multiple Sigma organizations can be combined by instantiating multiple <PyObject module="dagster_sigma" object="SigmaOrganization" /> resources and merging their specs. This lets you view all your Sigma assets in a single asset graph:
 
 ```python file=/integrations/sigma/multiple-sigma-organizations.py
 from dagster_sigma import SigmaBaseUrl, SigmaOrganization

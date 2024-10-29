@@ -3,11 +3,12 @@ from dagster_sigma import (
     SigmaBaseUrl,
     SigmaOrganization,
     SigmaWorkbook,
+    load_sigma_asset_specs,
 )
 
 import dagster as dg
 
-resource = SigmaOrganization(
+sigma_organization = SigmaOrganization(
     base_url=SigmaBaseUrl.AWS_US,
     client_id=dg.EnvVar("SIGMA_CLIENT_ID"),
     client_secret=dg.EnvVar("SIGMA_CLIENT_SECRET"),
@@ -21,4 +22,7 @@ class MyCustomSigmaTranslator(DagsterSigmaTranslator):
         return super().get_asset_spec(data)._replace(owners=["my_team"])
 
 
-defs = resource.build_defs(dagster_sigma_translator=MyCustomSigmaTranslator)
+sigma_specs = load_sigma_asset_specs(
+    sigma_organization, dagster_sigma_translator=MyCustomSigmaTranslator
+)
+defs = dg.Definitions(assets=[*sigma_specs], resources={"sigma": sigma_organization})

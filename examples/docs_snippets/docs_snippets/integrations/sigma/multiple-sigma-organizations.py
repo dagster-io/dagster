@@ -1,4 +1,4 @@
-from dagster_sigma import SigmaBaseUrl, SigmaOrganization
+from dagster_sigma import SigmaBaseUrl, SigmaOrganization, load_sigma_asset_specs
 
 import dagster as dg
 
@@ -14,7 +14,14 @@ marketing_team_organization = SigmaOrganization(
     client_secret=dg.EnvVar("MARKETING_SIGMA_CLIENT_SECRET"),
 )
 
-defs = dg.Definitions.merge(
-    sales_team_organization.build_defs(),
-    marketing_team_organization.build_defs(),
+sales_team_specs = load_sigma_asset_specs(sales_team_organization)
+marketing_team_specs = load_sigma_asset_specs(marketing_team_organization)
+
+# Merge the specs into a single set of definitions
+defs = dg.Definitions(
+    assets=[*sales_team_specs, *marketing_team_specs],
+    resources={
+        "marketing_sigma": marketing_team_organization,
+        "sales_sigma": sales_team_organization,
+    },
 )

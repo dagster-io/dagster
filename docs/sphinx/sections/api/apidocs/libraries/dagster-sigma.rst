@@ -26,3 +26,5 @@ Assets (Sigma API)
 .. autoclass:: SigmaDataset
 
 .. autoclass:: SigmaWorkbook
+
+.. autofunction:: load_sigma_asset_specs
