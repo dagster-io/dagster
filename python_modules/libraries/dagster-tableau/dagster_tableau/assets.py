@@ -1,13 +1,6 @@
 from typing import Optional, Sequence, cast
 
-from dagster import (
-    AssetExecutionContext,
-    AssetsDefinition,
-    AssetSpec,
-    ObserveResult,
-    Output,
-    multi_asset,
-)
+from dagster import AssetExecutionContext, AssetsDefinition, AssetSpec, multi_asset
 from dagster._annotations import experimental
 
 from dagster_tableau.resources import BaseTableauWorkspace
@@ -49,47 +42,8 @@ def build_tableau_executable_assets_definition(
     def asset_fn(context: AssetExecutionContext):
         tableau = cast(BaseTableauWorkspace, getattr(context.resources, resource_key))
         with tableau.get_client() as client:
-            refreshed_workbooks = set()
-            for refreshable_workbook_id in refreshable_workbook_ids or []:
-                refreshed_workbooks.add(client.refresh_and_poll(refreshable_workbook_id))
-            for spec in specs:
-                data = client.get_view(spec.metadata.get("id"))
-                asset_key = spec.key
-                if (
-                    spec.metadata.get("workbook_id")
-                    and spec.metadata.get("workbook_id") in refreshed_workbooks
-                ):
-                    yield Output(
-                        value=None,
-                        output_name="__".join(asset_key.path),
-                        metadata={
-                            "workbook_id": data.workbook_id,
-                            "owner_id": data.owner_id,
-                            "name": data.name,
-                            "contentUrl": data.content_url,
-                            "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-                            if data.created_at
-                            else None,
-                            "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S")
-                            if data.updated_at
-                            else None,
-                        },
-                    )
-                else:
-                    yield ObserveResult(
-                        asset_key=asset_key,
-                        metadata={
-                            "workbook_id": data.workbook_id,
-                            "owner_id": data.owner_id,
-                            "name": data.name,
-                            "contentUrl": data.content_url,
-                            "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-                            if data.created_at
-                            else None,
-                            "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S")
-                            if data.updated_at
-                            else None,
-                        },
-                    )
+            yield from client.refresh_and_materialize_workbooks(
+                specs=specs, refreshable_workbook_ids=refreshable_workbook_ids
+            )
 
     return asset_fn
