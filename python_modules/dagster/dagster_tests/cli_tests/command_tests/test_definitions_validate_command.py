@@ -70,3 +70,12 @@ def test_invalid_project(options, monkeypatch):
         assert result.exit_code == 1
         assert "Validation failed" in result.output
         assert "Duplicate asset key: AssetKey(['my_asset'])" in result.output
+
+
+def test_env_var(monkeypatch):
+    with monkeypatch.context() as m:
+        m.chdir(VALID_PROJECT_PATH)
+        # Definitions in `gated_definitions.py` are gated by the "DAGSTER_IS_DEFS_VALIDATION_CLI" environment variable
+        result = invoke_validate(options=["-f", "valid_project/gated_definitions.py"])
+        assert result.exit_code == 0
+        assert "Validation successful for code location gated_definitions.py." in result.output

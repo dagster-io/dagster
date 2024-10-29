@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 
 import click
@@ -60,6 +61,8 @@ def validate_command_options(f):
     """,
 )
 def definitions_validate_command(log_level: str, log_format: str, **kwargs: ClickArgValue):
+    os.environ["DAGSTER_IS_DEFS_VALIDATION_CLI"] = "1"
+
     configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster")
 
