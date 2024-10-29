@@ -7,6 +7,7 @@ from dagster._core.definitions.definitions_load_context import (
     DefinitionsLoadContext,
     DefinitionsLoadType,
 )
+from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._serdes.utils import serialize_value
 from dagster._utils.env import environ
 from dagster._utils.hosted_user_process import recon_repository_from_origin
@@ -32,9 +33,12 @@ def looker_snapshot_command(**kwargs) -> None:
         recon_repo = recon_repository_from_origin(repository_origin)
         repo_def = recon_repo.get_definition()
 
-        load_data = repo_def.repository_load_data
-        serialize_value(load_data)
+        load_data3 = RepositoryLoadData(
+            reconstruction_metadata={
+                k: v.value for k, v in repo_def.repository_load_data.reconstruction_metadata.items()
+            }
+        )
 
         save_to = kwargs["save_to"]
         with open(save_to, "w") as file:
-            file.write(serialize_value(load_data))
+            file.write(serialize_value(load_data3))

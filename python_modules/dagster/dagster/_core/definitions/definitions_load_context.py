@@ -169,4 +169,6 @@ class StateBackedDefinitionsLoader(ABC, Generic[TState]):
 
         context.add_to_pending_reconstruction_metadata(self.defs_key, serialize_value(state))
 
-        return self.defs_from_state(state)
+        return self.defs_from_state(state).with_reconstruction_metadata(
+            {self.defs_key: serialize_value(state)}
+        )
