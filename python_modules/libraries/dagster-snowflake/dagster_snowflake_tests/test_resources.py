@@ -317,19 +317,20 @@ def test_fetch_last_updated_timestamps_missing_table():
             conn.cursor().execute(f"create table {table_name} (foo string)")
             conn.cursor().execute(f"insert into {table_name} values ('bar')")
 
+            reversed_table_name = table_name[::-1]
             with pytest.raises(ValueError):
                 freshness = fetch_last_updated_timestamps(
                     snowflake_connection=conn,
                     database="TESTDB",
                     # Second table does not exist, expects ValueError
-                    tables=[table_name, reversed(table_name)],
+                    tables=[table_name, reversed_table_name],
                     schema="TESTSCHEMA",
                 )
 
             freshness = fetch_last_updated_timestamps(
                 snowflake_connection=conn,
                 database="TESTDB",
-                tables=[table_name, reversed(table_name)],
+                tables=[table_name, reversed_table_name],
                 schema="TESTSCHEMA",
                 ignore_missing_tables=True,
             )
