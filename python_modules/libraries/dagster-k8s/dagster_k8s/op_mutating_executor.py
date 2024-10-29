@@ -70,6 +70,7 @@ class K8sOpMutatingOutput:
 
 
 class StepInputCacheKey(NamedTuple):
+    run_id: str
     step_key: str
     input_name: str
 
@@ -101,7 +102,9 @@ class K8sMutatingStepHandler(K8sStepHandler):
         # dagster type names should be garunteed unique, so this should be safe
         if step_input.dagster_type_key != K8sOpMutatingOutput.__name__:
             return {}
-        step_cache_key = StepInputCacheKey(step_context.step.key, step_input.name)
+        step_cache_key = StepInputCacheKey(
+            step_context.run_id, step_context.step.key, step_input.name
+        )
         if step_cache_key in self.step_input_cache:
             step_context.log.debug(f"cache hit for key {step_cache_key}")
             return self.step_input_cache[step_cache_key]
