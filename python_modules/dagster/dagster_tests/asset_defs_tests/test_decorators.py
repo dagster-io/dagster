@@ -3,6 +3,7 @@ from typing import Any
 import pytest
 from dagster import (
     AllPartitionMapping,
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     DagsterInvalidDefinitionError,
@@ -15,7 +16,6 @@ from dagster import (
     MultiPartitionMapping,
     MultiPartitionsDefinition,
     Nothing,
-    OpExecutionContext,
     Out,
     Output,
     StaticPartitionsDefinition,
@@ -553,7 +553,7 @@ def test_invoking_asset_with_deps():
 def test_invoking_asset_with_context():
     @asset
     def asset_with_context(context, arg1):
-        assert isinstance(context, OpExecutionContext)
+        assert isinstance(context, AssetExecutionContext)
         return arg1
 
     ctx = build_asset_context()
