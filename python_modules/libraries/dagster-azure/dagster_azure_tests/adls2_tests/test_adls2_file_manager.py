@@ -10,6 +10,7 @@ from dagster_azure.adls2 import (
     ADLS2FileManager,
     ADLS2Key,
     FakeADLS2Resource,
+    ADLS2Resource,
     adls2_file_manager,
 )
 
@@ -222,6 +223,29 @@ def test_adls_file_manager_resource_cloud_type(MockADLS2FileManager, MockADLS2Re
     assert did_it_run["it_ran"]
 
 
+def test_adls_file_handle_adls2_path_gov():
+    resource_config = {
+        "storage_account": "some-storage-account",
+        "credential": {
+            "key": "some-key",
+        },
+        "adls2_file_system": "some-file-system",
+        "adls2_prefix": "some-prefix",
+        "cloud_type": "government",
+    }
+    adls_client = ADLS2Resource(
+        storage_account=resource_config["storage_account"],
+        credential=ADLS2Key(key=resource_config["credential"]["key"]),
+        cloud_type=resource_config["cloud_type"],
+    )
+    adls_file_manager = ADLS2FileManager(
+        adls_client.adls2_client, resource_config["adls2_file_system"], resource_config["adls2_prefix"]
+    )
+    with mock.patch.object(adls_file_manager, 'write_data', return_value=ADLS2FileHandle(adls_client.storage_account, 
+                                adls_file_manager._file_system, 'some-key', adls_client.cloud_type)) as mock_write:
+        file_handle = adls_file_manager.write_data(b"mock data")
+        mock_write.assert_called_once_with(b"mock data")
+        assert "usgovcloudapi" in file_handle.adls2_path
 
 @mock.patch("dagster_azure.adls2.resources.ADLS2DefaultAzureCredential")
 @mock.patch("dagster_azure.adls2.resources.ADLS2Resource")
