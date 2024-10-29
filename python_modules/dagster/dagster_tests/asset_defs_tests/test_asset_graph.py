@@ -960,10 +960,16 @@ def test_serdes() -> None:
     @asset
     def a(): ...
 
+    @asset_check(asset=a)
+    def c(): ...
+
     @repository
     def repo():
-        return [a]
+        return [a, c]
 
     asset_graph = mock_workspace_from_repos([repo]).asset_graph
     for node in asset_graph.asset_nodes:
         assert node == deserialize_value(serialize_value(node))
+
+    check = next(iter(asset_graph.get_checks_for_asset(AssetKey("a"))))
+    assert check == deserialize_value(serialize_value(check))

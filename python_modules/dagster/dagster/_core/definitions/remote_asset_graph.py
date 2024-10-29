@@ -52,6 +52,7 @@ if TYPE_CHECKING:
     from dagster._core.remote_representation.external_data import AssetCheckNodeSnap, AssetNodeSnap
 
 
+@whitelist_for_serdes
 @record
 class RemoteAssetCheckNode:
     handle: RepositoryHandle
@@ -433,6 +434,16 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
     @property
     def asset_checks(self) -> Sequence["AssetCheckNodeSnap"]:
         return [node.asset_check for node in self.remote_asset_check_nodes_by_key.values()]
+
+    @cached_property
+    def _asset_check_nodes_by_asset_key(self) -> Mapping[AssetKey, Sequence[RemoteAssetCheckNode]]:
+        by_asset_key = {}
+        for node in self.remote_asset_check_nodes_by_key.values():
+            by_asset_key.setdefault(node.asset_check.asset_key, []).append(node)
+        return by_asset_key
+
+    def get_checks_for_asset(self, asset_key: AssetKey) -> Sequence[RemoteAssetCheckNode]:
+        return self._asset_check_nodes_by_asset_key.get(asset_key, [])
 
     @cached_property
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:

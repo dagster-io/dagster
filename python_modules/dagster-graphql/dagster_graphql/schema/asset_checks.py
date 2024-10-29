@@ -9,8 +9,8 @@ from dagster._core.definitions.asset_check_evaluation import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.remote_asset_graph import RemoteAssetCheckNode
 from dagster._core.events import DagsterEventType
-from dagster._core.remote_representation.external_data import AssetCheckNodeSnap
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionResolvedStatus,
@@ -110,8 +110,10 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
         self.timestamp = execution.create_timestamp
         self.stepKey = execution.event.step_key if execution.event else None
 
-    def resolve_status(self, graphene_info: "ResolveInfo") -> AssetCheckExecutionResolvedStatus:
-        return self._execution.resolve_status(graphene_info.context)
+    async def resolve_status(
+        self, graphene_info: "ResolveInfo"
+    ) -> AssetCheckExecutionResolvedStatus:
+        return await self._execution.resolve_status(graphene_info.context)
 
 
 class GrapheneAssetCheckCanExecuteIndividually(graphene.Enum):
@@ -136,9 +138,12 @@ class GrapheneAssetCheck(graphene.ObjectType):
     class Meta:
         name = "AssetCheck"
 
-    def __init__(self, asset_check: AssetCheckNodeSnap, can_execute_individually):
-        self._asset_check = asset_check
-        self._can_execute_individually = can_execute_individually
+    def __init__(
+        self,
+        remote_node: RemoteAssetCheckNode,
+    ):
+        self._remote_node = remote_node
+        self._asset_check = remote_node.asset_check
 
     def resolve_assetKey(self, _) -> AssetKey:
         return self._asset_check.asset_key
@@ -162,8 +167,14 @@ class GrapheneAssetCheck(graphene.ObjectType):
             else None
         )
 
-    def resolve_canExecuteIndividually(self, _) -> GrapheneAssetCheckCanExecuteIndividually:
-        return self._can_execute_individually
+    def resolve_canExecuteIndividually(self, _: ResolveInfo):
+        return (
+            GrapheneAssetCheckCanExecuteIndividually.CAN_EXECUTE
+            if len(self._remote_node.execution_set_entity_keys) <= 1
+            # NOTE: once we support multi checks, we'll need to add a case for
+            # non subsettable multi checks
+            else GrapheneAssetCheckCanExecuteIndividually.REQUIRES_MATERIALIZATION
+        )
 
     def resolve_blocking(self, _) -> bool:
         return self._asset_check.blocking

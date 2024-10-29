@@ -130,7 +130,9 @@ class AssetCheckExecutionRecord(
         )
         return [records_by_key.get(key) for key in keys]
 
-    def resolve_status(self, loading_context: LoadingContext) -> AssetCheckExecutionResolvedStatus:
+    async def resolve_status(
+        self, loading_context: LoadingContext
+    ) -> AssetCheckExecutionResolvedStatus:
         if self.status == AssetCheckExecutionRecordStatus.SUCCEEDED:
             return AssetCheckExecutionResolvedStatus.SUCCEEDED
         elif self.status == AssetCheckExecutionRecordStatus.FAILED:
@@ -138,7 +140,7 @@ class AssetCheckExecutionRecord(
         elif self.status == AssetCheckExecutionRecordStatus.PLANNED:
             # Asset checks stay in PLANNED status until the evaluation event arrives.
             # Check if the run is still active, and if not, return the actual status.
-            run_record = RunRecord.blocking_get(loading_context, self.run_id)
+            run_record = await RunRecord.gen(loading_context, self.run_id)
             if not run_record:
                 # Run deleted
                 return AssetCheckExecutionResolvedStatus.SKIPPED
@@ -158,7 +160,7 @@ class AssetCheckExecutionRecord(
     async def targets_latest_materialization(self, loading_context: LoadingContext) -> bool:
         from dagster._core.storage.event_log.base import AssetRecord
 
-        resolved_status = self.resolve_status(loading_context)
+        resolved_status = await self.resolve_status(loading_context)
         if resolved_status == AssetCheckExecutionResolvedStatus.IN_PROGRESS:
             # all in-progress checks execute against the latest version
             return True

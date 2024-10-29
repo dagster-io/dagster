@@ -13,7 +13,6 @@ from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import COMPUTE_KIND_TAG, LEGACY_COMPUTE_KIND_TAG
 
-from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.dagster_types import (
@@ -451,16 +450,12 @@ class ISolidDefinitionMixin:
                     )
                 )
             ]
-            asset_checks_loader = AssetChecksLoader(
-                context=graphene_info.context, asset_keys=[node.key for node in remote_nodes]
-            )
 
             base_deployment_context = graphene_info.context.get_base_deployment_context()
 
             return [
                 GrapheneAssetNode(
                     remote_node=remote_node,
-                    asset_checks_loader=asset_checks_loader,
                     # base_deployment_context will be None if we are not in a branch deployment
                     asset_graph_differ=AssetGraphDiffer.from_remote_repositories(
                         code_location_name=location.name,
