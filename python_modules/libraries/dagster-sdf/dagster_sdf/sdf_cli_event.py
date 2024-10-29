@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from typing import AbstractSet, Any, Dict, Iterator, Optional
+from typing import AbstractSet, Any, Dict, Iterator, Optional, Union
 
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
+    AssetExecutionContext,
     AssetMaterialization,
     OpExecutionContext,
     Output,
@@ -49,12 +50,12 @@ class SdfCliEventMessage:
     def to_default_asset_events(
         self,
         dagster_sdf_translator: DagsterSdfTranslator = DagsterSdfTranslator(),
-        context: Optional[OpExecutionContext] = None,
+        context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
     ) -> Iterator[SdfDagsterEventType]:
         """Convert an sdf CLI event to a set of corresponding Dagster events.
 
         Args:
-            context (Optional[OpExecutionContext]): The execution context.
+            context (Optional[Union[OpExecutionContext, AssetExecutionContext]]): The execution context.
 
         Returns:
             Iterator[Union[Output, AssetMaterialization]]:
@@ -74,7 +75,7 @@ class SdfCliEventMessage:
             return
 
         selected_output_names: AbstractSet[str] = (
-            context.selected_output_names if context else set()
+            context.op_execution_context.selected_output_names if context else set()
         )
 
         catalog = self.raw_event["ev_tb_catalog"]
