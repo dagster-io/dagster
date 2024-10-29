@@ -44,6 +44,9 @@ class ADLS2BaseResource(ConfigurableResource):
     credential: Union[ADLS2SASToken, ADLS2Key, ADLS2DefaultAzureCredential] = Field(
         discriminator="credential_type", description="The credentials with which to authenticate."
     )
+    cloud_type: Literal["public", "government"] = Field(
+        default="public", description="The Azure Cloud type. Either 'public' or 'government'."
+    )
 
 
 DEFAULT_AZURE_CREDENTIAL_CONFIG = DagsterField(
