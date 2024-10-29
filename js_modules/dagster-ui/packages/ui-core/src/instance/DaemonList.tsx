@@ -1,8 +1,8 @@
 import {Box, Checkbox, Group, Spinner, Table, Tag} from '@dagster-io/ui-components';
 
 import {DaemonHealth} from './DaemonHealth';
-import {DaemonStatusForListFragment} from './types/DaemonList.types';
 import {gql} from '../apollo-client';
+import {DaemonStatusForListFragment} from './types/DaemonList.types';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';

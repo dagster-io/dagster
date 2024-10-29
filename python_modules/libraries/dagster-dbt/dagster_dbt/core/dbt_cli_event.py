@@ -18,6 +18,7 @@ import dateutil.parser
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
+    AssetExecutionContext,
     AssetMaterialization,
     AssetObservation,
     OpExecutionContext,
@@ -120,9 +121,10 @@ def _build_column_lineage_metadata(
             dialect=sql_dialect,
         )
 
+    package_name = dbt_resource_props["package_name"]
     node_sql_path = target_path.joinpath(
         "compiled",
-        manifest["metadata"]["project_name"],
+        package_name,
         dbt_resource_props["original_file_path"],
     )
     optimized_node_ast = cast(
@@ -276,7 +278,7 @@ class DbtCliEventMessage:
         self,
         manifest: DbtManifestParam,
         dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
-        context: Optional[OpExecutionContext] = None,
+        context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
         target_path: Optional[Path] = None,
     ) -> Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
         """Convert a dbt CLI event to a set of corresponding Dagster events.
@@ -285,7 +287,7 @@ class DbtCliEventMessage:
             manifest (Union[Mapping[str, Any], str, Path]): The dbt manifest blob.
             dagster_dbt_translator (DagsterDbtTranslator): Optionally, a custom translator for
                 linking dbt nodes to Dagster assets.
-            context (Optional[OpExecutionContext]): The execution context.
+            context (Optional[Union[OpExecutionContext, AssetExecutionContext]]): The execution context.
             target_path (Optional[Path]): An explicit path to a target folder used to retrieve
                 dbt artifacts while generating events.
 

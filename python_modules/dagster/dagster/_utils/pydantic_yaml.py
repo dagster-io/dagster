@@ -3,7 +3,6 @@ from typing import Sequence, Type, TypeVar
 from pydantic import BaseModel, ValidationError, parse_obj_as
 
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
 from dagster._utils.source_position import (
     KeyPath,
     ValueAndSourcePositionTree,
@@ -36,26 +35,23 @@ def _parse_and_populate_model_with_annotated_errors(
     try:
         model = parse_obj_as(cls, obj_parse_root.value)
     except ValidationError as e:
-        if USING_PYDANTIC_1:
-            raise e
-        else:
-            line_errors = []
-            for error in e.errors():
-                key_path_in_obj = list(error["loc"])
-                source_position = obj_parse_root.source_position_tree.lookup(key_path_in_obj)
+        line_errors = []
+        for error in e.errors():
+            key_path_in_obj = list(error["loc"])
+            source_position = obj_parse_root.source_position_tree.lookup(key_path_in_obj)
 
-                file_key_path: KeyPath = list(obj_key_path_prefix) + key_path_in_obj
-                file_key_path_str = ".".join(str(part) for part in file_key_path)
-                line_errors.append(
-                    {**error, "loc": [file_key_path_str + " at " + str(source_position)]}
-                )
+            file_key_path: KeyPath = list(obj_key_path_prefix) + key_path_in_obj
+            file_key_path_str = ".".join(str(part) for part in file_key_path)
+            line_errors.append(
+                {**error, "loc": [file_key_path_str + " at " + str(source_position)]}
+            )
 
-            raise ValidationError.from_exception_data(  # type: ignore
-                title=e.title,  # type: ignore
-                line_errors=line_errors,
-                input_type="json",
-                hide_input=False,
-            ) from None
+        raise ValidationError.from_exception_data(
+            title=e.title,
+            line_errors=line_errors,
+            input_type="json",
+            hide_input=False,
+        ) from None
 
     populate_source_position_and_key_paths(
         model, obj_parse_root.source_position_tree, obj_key_path_prefix

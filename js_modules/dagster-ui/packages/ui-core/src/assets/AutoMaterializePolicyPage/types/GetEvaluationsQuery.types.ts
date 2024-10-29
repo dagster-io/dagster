@@ -1523,6 +1523,6 @@ export type GetEvaluationsSpecificPartitionQuery = {
   } | null;
 };
 
-export const GetEvaluationsQueryVersion = '7245007702d5b47f77048aa7fb61a01c5b139974f96b562b89f06c42af68c924';
+export const GetEvaluationsQueryVersion = '72294147655740415d3bdaf8de190465417ec4352927fbdcda7c65eadd75dd50';
 
-export const GetEvaluationsSpecificPartitionQueryVersion = '12b4456c4cf6852a8dc9f7e2ec0a46b4272e10558de5512695c40cdc7de1ff0f';
+export const GetEvaluationsSpecificPartitionQueryVersion = '3aa6fe76a74ae28f8d526c3f3c5bc0f1649caa503b302e604ddefdf2a76c6b81';

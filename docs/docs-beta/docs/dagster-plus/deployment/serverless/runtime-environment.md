@@ -43,8 +43,7 @@ setup(
 To add a package from a private GitHub repository, see: [Use private Python packages](#private-packages)
 
 ## Use a different Python version \{#python-version}
-
-The default Python version for Dagster+ Serverless is Python 3.8. Python versions 3.9 through 3.12 are also supported. You can specify the Python version you want to use in your GitHub or GitLab workflow, or by using the `dagster-cloud` CLI.
+The default Python version for Dagster+ Serverless is Python 3.9. Python versions 3.10 through 3.12 are also supported. You can specify the Python version you want to use in your GitHub or GitLab workflow, or by using the `dagster-cloud` CLI.
 
 <Tabs groupId="method">
 <TabItem value="GitHub" label="GitHub">

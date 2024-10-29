@@ -16,14 +16,9 @@ from dagster import (
 )
 from dagster._check import ParameterCheckError
 from dagster._config.pythonic_config import ConfigurableResource
-from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
-from dagster._core.definitions.freshness_policy_sensor_definition import (
-    FreshnessPolicySensorContext,
-    freshness_policy_sensor,
-)
 from dagster._core.definitions.multi_asset_sensor_definition import (
     MultiAssetSensorEvaluationContext,
 )
@@ -253,23 +248,6 @@ def sensor_multi_asset_with_cm(
     return RunRequest(my_cm_resource, run_config={}, tags={})
 
 
-@freshness_policy_sensor(asset_selection=AssetSelection.all())
-def sensor_freshness_policy(
-    my_resource: MyResource, not_called_context: FreshnessPolicySensorContext
-):
-    assert not_called_context.resources.my_resource.a_str == my_resource.a_str
-    return RunRequest(my_resource.a_str, run_config={}, tags={})
-
-
-@freshness_policy_sensor(asset_selection=AssetSelection.all())
-def sensor_freshness_policy_with_cm(
-    my_cm_resource: ResourceParam[str], not_called_context: FreshnessPolicySensorContext
-):
-    assert is_in_cm
-    assert not_called_context.resources.my_cm_resource == my_cm_resource
-    return RunRequest(my_cm_resource, run_config={}, tags={})
-
-
 @run_status_sensor(
     monitor_all_repositories=True, run_status=DagsterRunStatus.SUCCESS, request_job=the_job
 )
@@ -324,8 +302,6 @@ the_repo = Definitions(
         sensor_asset_no_context,
         sensor_multi_asset,
         sensor_multi_asset_with_cm,
-        sensor_freshness_policy,
-        sensor_freshness_policy_with_cm,
         sensor_run_status,
         sensor_run_status_with_cm,
         sensor_run_failure,
@@ -359,8 +335,8 @@ def workspace_fixture(instance_module_scoped):
         yield workspace
 
 
-@pytest.fixture(name="external_repo_struct_resources", scope="module")
-def external_repo_fixture(workspace_context_struct_resources: WorkspaceProcessContext):
+@pytest.fixture(name="remote_repo_struct_resources", scope="module")
+def remote_repo_fixture(workspace_context_struct_resources: WorkspaceProcessContext):
     repo_loc = next(
         iter(
             workspace_context_struct_resources.create_request_context()
@@ -415,7 +391,7 @@ def test_resources(
     caplog,
     instance: DagsterInstance,
     workspace_context_struct_resources,
-    external_repo_struct_resources,
+    remote_repo_struct_resources,
     sensor_name,
 ) -> None:
     assert not is_in_cm
@@ -434,18 +410,16 @@ def test_resources(
             the_job.execute_in_process(instance=instance)
             base_run_count = 1
 
-        external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
+        sensor = remote_repo_struct_resources.get_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         assert instance.get_runs_count() == base_run_count
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context_struct_resources, None)
@@ -453,88 +427,15 @@ def test_resources(
 
         assert instance.get_runs_count() == base_run_count + 1
         run = instance.get_runs()[0]
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
         assert ticks[0].run_keys == ["foo"]
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
             expected_run_ids=[run.run_id],
-        )
-    assert not is_in_cm
-
-
-@pytest.mark.parametrize(
-    "sensor_name",
-    [
-        "sensor_freshness_policy",
-        "sensor_freshness_policy_with_cm",
-    ],
-)
-def test_resources_freshness_policy_sensor(
-    caplog,
-    instance,
-    workspace_context_struct_resources,
-    external_repo_struct_resources,
-    sensor_name,
-) -> None:
-    assert not is_in_cm
-    freeze_datetime = create_datetime(
-        year=2019,
-        month=2,
-        day=27,
-        hour=23,
-        minute=59,
-        second=59,
-    ).astimezone(get_timezone("US/Central"))
-    original_time = freeze_datetime
-
-    with freeze_time(freeze_datetime):
-        external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
-        instance.add_instigator_state(
-            InstigatorState(
-                external_sensor.get_remote_origin(),
-                InstigatorType.SENSOR,
-                InstigatorStatus.RUNNING,
-            )
-        )
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
-        assert len(ticks) == 0
-
-    # We have to do two ticks because the first tick will be skipped due to the freshness policy
-    # sensor initializing its cursor
-    with freeze_time(freeze_datetime):
-        evaluate_sensors(workspace_context_struct_resources, None)
-        wait_for_all_runs_to_start(instance)
-    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
-    with freeze_time(freeze_datetime):
-        evaluate_sensors(workspace_context_struct_resources, None)
-        wait_for_all_runs_to_start(instance)
-
-    with freeze_time(freeze_datetime):
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
-        assert len(ticks) == 2
-        validate_tick(
-            ticks[0],
-            external_sensor,
-            freeze_datetime,
-            TickStatus.SKIPPED,
-            expected_run_ids=[],
-        )
-        validate_tick(
-            ticks[1],
-            external_sensor,
-            original_time,
-            TickStatus.SKIPPED,
-            expected_run_ids=[],
         )
     assert not is_in_cm
 
@@ -550,7 +451,7 @@ def test_resources_run_status_sensor(
     caplog,
     instance: DagsterInstance,
     workspace_context_struct_resources,
-    external_repo_struct_resources,
+    remote_repo_struct_resources,
     sensor_name,
 ) -> None:
     assert not is_in_cm
@@ -566,17 +467,15 @@ def test_resources_run_status_sensor(
     original_time = freeze_datetime
 
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
+        remote_sensor = remote_repo_struct_resources.get_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                remote_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(remote_sensor.get_remote_origin_id(), remote_sensor.selector_id)
         assert len(ticks) == 0
 
     # We have to do two ticks because the first tick will be skipped due to the run status
@@ -591,9 +490,7 @@ def test_resources_run_status_sensor(
         wait_for_all_runs_to_start(instance)
 
     with freeze_time(freeze_datetime):
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(remote_sensor.get_remote_origin_id(), remote_sensor.selector_id)
         assert len(ticks) == 2
 
         assert instance.get_runs_count() == 2
@@ -601,7 +498,7 @@ def test_resources_run_status_sensor(
         assert ticks[0].run_keys == ["foo"]
         validate_tick(
             ticks[0],
-            external_sensor,
+            remote_sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
             expected_run_ids=[run.run_id],
@@ -609,7 +506,7 @@ def test_resources_run_status_sensor(
 
         validate_tick(
             ticks[1],
-            external_sensor,
+            remote_sensor,
             original_time,
             TickStatus.SKIPPED,
             expected_run_ids=[],
@@ -628,7 +525,7 @@ def test_resources_run_failure_sensor(
     caplog,
     instance: DagsterInstance,
     workspace_context_struct_resources,
-    external_repo_struct_resources,
+    remote_repo_struct_resources,
     sensor_name,
 ) -> None:
     assert not is_in_cm
@@ -644,17 +541,15 @@ def test_resources_run_failure_sensor(
     original_time = freeze_datetime
 
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
+        remote_sensor = remote_repo_struct_resources.get_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                remote_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(remote_sensor.get_remote_origin_id(), remote_sensor.selector_id)
         assert len(ticks) == 0
 
     # We have to do two ticks because the first tick will be skipped due to the run status
@@ -669,9 +564,7 @@ def test_resources_run_failure_sensor(
         wait_for_all_runs_to_start(instance)
 
     with freeze_time(freeze_datetime):
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(remote_sensor.get_remote_origin_id(), remote_sensor.selector_id)
         assert len(ticks) == 2
 
         assert instance.get_runs_count() == 2
@@ -679,7 +572,7 @@ def test_resources_run_failure_sensor(
         assert ticks[0].run_keys == ["foo"]
         validate_tick(
             ticks[0],
-            external_sensor,
+            remote_sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
             expected_run_ids=[run.run_id],
@@ -687,7 +580,7 @@ def test_resources_run_failure_sensor(
 
         validate_tick(
             ticks[1],
-            external_sensor,
+            remote_sensor,
             original_time,
             TickStatus.SKIPPED,
             expected_run_ids=[],

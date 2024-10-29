@@ -7,6 +7,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._record import record
 
 from dagster_dbt.asset_utils import get_asset_check_key_for_test, is_non_asset_node
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
@@ -18,7 +19,8 @@ from dagster_dbt.utils import (
 )
 
 
-class DbtManifestAssetSelection(AssetSelection, arbitrary_types_allowed=True):
+@record
+class DbtManifestAssetSelection(AssetSelection):
     """Defines a selection of assets from a dbt manifest wrapper and a dbt selection string.
 
     Args:
@@ -44,6 +46,25 @@ class DbtManifestAssetSelection(AssetSelection, arbitrary_types_allowed=True):
     select: str
     dagster_dbt_translator: DagsterDbtTranslator
     exclude: str
+
+    def __eq__(self, other):
+        if not isinstance(other, DbtManifestAssetSelection):
+            return False
+
+        self_metadata = self.manifest.get("metadata")
+        other_metadata = other.manifest.get("metadata")
+
+        if not self_metadata or not other_metadata:
+            return super().__eq__(other)
+
+        # Compare metadata only since it uniquely identifies the manifest and the
+        # full manifest dictionary can be large
+        return (
+            self_metadata == other_metadata
+            and self.select == other.select
+            and self.dagster_dbt_translator == other.dagster_dbt_translator
+            and self.exclude == other.exclude
+        )
 
     @classmethod
     def build(

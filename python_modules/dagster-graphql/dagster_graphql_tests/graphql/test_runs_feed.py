@@ -3,6 +3,7 @@ from typing import Mapping, Optional
 
 import pytest
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.remote_representation.external_data import partition_set_snap_name_for_job_name
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import BACKFILL_ID_TAG
@@ -47,7 +48,7 @@ query RunsFeedEntryQuery($cursor: String, $limit: Int!, $filter: RunsFilter, $in
         message
       }
     }
-    runsFeedCountOrError(filter: $filter) {
+    runsFeedCountOrError(filter: $filter, includeRunsFromBackfills: $includeRunsFromBackfills) {
         ... on RunsFeedCount {
             count
         }
@@ -300,6 +301,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "includeRunsFromBackfills": True,
             },
         )
+        _assert_results_match_count_match_expected(result, 10)
         prev_run_time = None
         for res in result.data["runsFeedOrError"]["results"]:
             assert res["__typename"] == "Run"
@@ -749,7 +751,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 4
+        _assert_results_match_count_match_expected(result, 4)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -764,7 +766,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -778,7 +780,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -792,7 +794,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -806,7 +808,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 0
+        _assert_results_match_count_match_expected(result, 0)
 
     def test_get_runs_feed_filter_create_time(self, graphql_context):
         nothing_created_ts = get_current_timestamp()
@@ -929,7 +931,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
 
         partition_set_origin = RemotePartitionSetOrigin(
             repository_origin=repository.get_remote_origin(),
-            partition_set_name="foo_partition",
+            partition_set_name=partition_set_snap_name_for_job_name("foo"),
         )
         for _ in range(3):
             _create_run(graphql_context, job_name="foo")
@@ -941,7 +943,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
 
         partition_set_origin = RemotePartitionSetOrigin(
             repository_origin=repository.get_remote_origin(),
-            partition_set_name="bar_partition",
+            partition_set_name=partition_set_snap_name_for_job_name("bar"),
         )
         for _ in range(3):
             _create_run(graphql_context, job_name="bar")
@@ -1130,7 +1132,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -1145,7 +1147,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
     def test_get_runs_feed_filter_tags_and_status(self, graphql_context):
         if not self.supports_filtering():

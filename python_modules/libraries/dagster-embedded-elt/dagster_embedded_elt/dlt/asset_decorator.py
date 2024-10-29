@@ -7,8 +7,6 @@ from dagster import (
     _check as check,
     multi_asset,
 )
-from dagster._annotations import deprecated_param
-from dagster._core.definitions.tags import build_kind_tag
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
@@ -38,7 +36,6 @@ def build_dlt_asset_specs(
 
     """
     dagster_dlt_translator = dagster_dlt_translator or DagsterDltTranslator()
-    destination_type = dlt_pipeline.destination.destination_name
     return [
         AssetSpec(
             key=dagster_dlt_translator.get_asset_key(dlt_source_resource),
@@ -55,28 +52,19 @@ def build_dlt_asset_specs(
                 META_KEY_TRANSLATOR: dagster_dlt_translator,
             },
             owners=dagster_dlt_translator.get_owners(dlt_source_resource),
-            tags={
-                **build_kind_tag("dlt"),
-                **build_kind_tag(destination_type),
-                **dagster_dlt_translator.get_tags(dlt_source_resource),
-            },
+            tags=dagster_dlt_translator.get_tags(dlt_source_resource),
+            kinds=dagster_dlt_translator.get_kinds(dlt_source_resource, dlt_pipeline.destination),
         )
         for dlt_source_resource in dlt_source.selected_resources.values()
     ]
 
 
-@deprecated_param(
-    param="dlt_dagster_translator",
-    breaking_version="1.9",
-    additional_warn_text="Use `dagster_dlt_translator` instead.",
-)
 def dlt_assets(
     *,
     dlt_source: DltSource,
     dlt_pipeline: Pipeline,
     name: Optional[str] = None,
     group_name: Optional[str] = None,
-    dlt_dagster_translator: Optional[DagsterDltTranslator] = None,
     dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
@@ -87,7 +75,7 @@ def dlt_assets(
         dlt_pipeline (Pipeline): The dlt Pipeline defining the destination parameters.
         name (Optional[str], optional): The name of the op.
         group_name (Optional[str], optional): The name of the asset group.
-        dlt_dagster_translator (DltDagsterTranslator, optional): Customization object for defining asset parameters from dlt resources.
+        dagster_dlt_translator (DltDagsterTranslator, optional): Customization object for defining asset parameters from dlt resources.
 
     Examples:
         Loading Hubspot data to Snowflake with an auto materialize policy using the dlt verified source:
@@ -112,7 +100,7 @@ def dlt_assets(
                 ),
                 name="hubspot",
                 group_name="hubspot",
-                dlt_dagster_translator=HubspotDltDagsterTranslator(),
+                dagster_dlt_translator=HubspotDltDagsterTranslator(),
             )
             def hubspot_assets(context: AssetExecutionContext, dlt: DltDagsterResource):
                 yield from dlt.run(context=context)
@@ -139,7 +127,7 @@ def dlt_assets(
 
     """
     dagster_dlt_translator = check.inst_param(
-        dagster_dlt_translator or dlt_dagster_translator or DagsterDltTranslator(),
+        dagster_dlt_translator or DagsterDltTranslator(),
         "dagster_dlt_translator",
         DagsterDltTranslator,
     )

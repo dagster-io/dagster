@@ -18,7 +18,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
     overload,
 )
 
@@ -1249,9 +1248,9 @@ def set_param(
         raise _param_type_mismatch_exception(obj, (frozenset, set), param_name, additional_message)
 
     if not of_type:
-        return cast(T_Set, obj)
+        return obj
 
-    return _check_iterable_items(cast(T_Set, obj), of_type, "set")
+    return _check_iterable_items(obj, of_type, "set")
 
 
 def opt_set_param(
@@ -1267,13 +1266,13 @@ def opt_set_param(
     by of_type.
     """
     if obj is None:
-        return cast(T_Set, frozenset())
+        return frozenset()  # type: ignore # 2 hot 4 cast
     elif obj is not None and not isinstance(obj, (frozenset, set)):
         raise _param_type_mismatch_exception(obj, (frozenset, set), param_name, additional_message)
     elif not of_type:
-        return cast(T_Set, obj)
+        return obj
 
-    return _check_iterable_items(cast(T_Set, obj), of_type, "set")
+    return _check_iterable_items(obj, of_type, "set")
 
 
 @overload
@@ -1311,9 +1310,9 @@ def opt_nullable_set_param(
     elif not isinstance(obj, (frozenset, set)):
         raise _param_type_mismatch_exception(obj, (frozenset, set), param_name, additional_message)
     elif not of_type:
-        return cast(T_Set, obj)
+        return obj
 
-    return _check_iterable_items(cast(T_Set, obj), of_type, "set")
+    return _check_iterable_items(obj, of_type, "set")
 
 
 # ########################

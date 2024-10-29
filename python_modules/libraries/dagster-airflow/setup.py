@@ -24,18 +24,15 @@ setup(
     description="Airflow plugin for Dagster",
     url="https://github.com/dagster-io/dagster",
     classifiers=[
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_airflow_tests*"]),
     include_package_data=True,
-    python_requires=">=3.8,<3.13",
+    python_requires=">=3.9,<3.13",
     install_requires=[
         f"dagster{pin}",
-        "docker>=5.0.3,<6.0.0",
-        "urllib3<2",  # docker version pinned above requires this but has no pin
         "lazy_object_proxy",
         "setuptools<71.0.0",
         "pendulum",

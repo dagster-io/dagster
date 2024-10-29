@@ -4,7 +4,6 @@ Pydantic 1 and 2, while the general_tests do not.
 
 import pytest
 from dagster._model import DagsterModel
-from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
 from dagster._serdes.errors import SerializationError
 from dagster._serdes.serdes import (
     WhitelistMap,
@@ -54,7 +53,6 @@ def test_pydantic_alias_generator():
     assert deserialize_value(ser_o, whitelist_map=test_env) == o
 
 
-@pytest.mark.skipif(USING_PYDANTIC_1, reason="No serialization_alias in pydantic 1")
 def test_pydantic_serialization_alias():
     test_env = WhitelistMap.create()
 
@@ -77,7 +75,6 @@ def test_pydantic_serialization_alias():
         pack_value(o, whitelist_map=test_env)
 
 
-@pytest.mark.skipif(USING_PYDANTIC_1, reason="No validation_alias in pydantic 1")
 def test_pydantic_validation_alias():
     test_env = WhitelistMap.create()
 

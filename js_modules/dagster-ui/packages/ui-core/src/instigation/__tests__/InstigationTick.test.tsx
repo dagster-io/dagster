@@ -21,7 +21,7 @@ describe('TickTag', () => {
     it('renders skip reason if no run keys', async () => {
       const skippedTick = {...tick, status: InstigationTickStatus.SKIPPED};
 
-      render(<TickStatusTag tick={skippedTick} />);
+      render(<TickStatusTag tick={skippedTick} tickResultType="runs" />);
 
       const tag = screen.queryByText(/0 runs requested/i);
       expect(tag).toBeVisible();
@@ -35,7 +35,7 @@ describe('TickTag', () => {
     it('renders info about requested run count if run keys', async () => {
       const skippedTick = {...tick, status: InstigationTickStatus.SKIPPED, runKeys: ['foo', 'bar']};
 
-      render(<TickStatusTag tick={skippedTick} />);
+      render(<TickStatusTag tick={skippedTick} tickResultType="runs" />);
 
       const tag = screen.queryByText(/0 runs requested/i);
       expect(tag).toBeVisible();

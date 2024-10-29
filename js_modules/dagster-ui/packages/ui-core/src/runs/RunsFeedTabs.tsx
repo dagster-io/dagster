@@ -5,10 +5,9 @@ import {useLocation} from 'react-router-dom';
 import styled, {css} from 'styled-components';
 
 import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
-import {getRunFeedPath} from './RunsFeedUtils';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
-import {RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables} from './types/RunsFeedTabs.types';
 import {gql, useQuery} from '../apollo-client';
+import {RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables} from './types/RunsFeedTabs.types';
 import {RunStatus, RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -17,7 +16,7 @@ import {TabLink} from '../ui/TabLink';
 const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsFeedTab>) => {
   switch (selected) {
     case 'all':
-      return 'Runs | All runs';
+      return 'Runs | All';
     case 'failed':
       return 'Runs | Failed';
     case 'in-progress':
@@ -38,6 +37,7 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfill
       variables: {
         queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
         inProgressFilter: {...filter, statuses: Array.from(inProgressStatuses)},
+        includeRunsFromBackfills,
       },
     },
   );
@@ -64,31 +64,29 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfill
     const statusTokens = statuses.map((status) => ({token: 'status' as const, value: status}));
     return runsPathWithFilters(
       [...statusTokens, ...tokensMinusStatus],
-      getRunFeedPath(),
+      '/runs/',
       includeRunsFromBackfills,
     );
   };
 
   const tabs = (
     <Tabs selectedTabId={selectedTab}>
-      <TabLink id="all" title="All runs" to={urlForStatus([])} />
+      <TabLink id="all" title="Runs" to={urlForStatus([])} />
       <TabLink
         id="queued"
-        title={`Queued (${queuedCount})`}
+        title={queuedCount !== null ? `Queued (${queuedCount})` : `Queued`}
         to={urlForStatus(Array.from(queuedStatuses))}
       />
       <TabLink
         id="in-progress"
-        title={`In progress (${inProgressCount})`}
+        title={inProgressCount !== null ? `In progress (${inProgressCount})` : 'In progress'}
         to={urlForStatus(Array.from(inProgressStatuses))}
       />
       <TabLink id="failed" title="Failed" to={urlForStatus(Array.from(failedStatuses))} />
       <TabLink
         id="scheduled"
         title="Scheduled"
-        to={`${getRunFeedPath()}scheduled?${
-          includeRunsFromBackfills ? 'show_runs_within_backfills=true' : ''
-        }`}
+        to={`/runs/scheduled?${includeRunsFromBackfills ? 'show_runs_within_backfills=true' : ''}`}
       />
     </Tabs>
   );
@@ -121,7 +119,7 @@ export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
 
 export const useSelectedRunsFeedTab = (filterTokens: TokenizingFieldValue[]) => {
   const {pathname} = useLocation();
-  if (pathname === `${getRunFeedPath()}scheduled`) {
+  if (pathname === '/runs/scheduled') {
     return 'scheduled';
   }
   const statusTokens = new Set(
@@ -140,13 +138,23 @@ export const useSelectedRunsFeedTab = (filterTokens: TokenizingFieldValue[]) => 
 };
 
 export const RUN_FEED_TABS_COUNT_QUERY = gql`
-  query RunFeedTabsCountQuery($queuedFilter: RunsFilter!, $inProgressFilter: RunsFilter!) {
-    queuedCount: runsFeedCountOrError(filter: $queuedFilter) {
+  query RunFeedTabsCountQuery(
+    $queuedFilter: RunsFilter!
+    $inProgressFilter: RunsFilter!
+    $includeRunsFromBackfills: Boolean!
+  ) {
+    queuedCount: runsFeedCountOrError(
+      filter: $queuedFilter
+      includeRunsFromBackfills: $includeRunsFromBackfills
+    ) {
       ... on RunsFeedCount {
         count
       }
     }
-    inProgressCount: runsFeedCountOrError(filter: $inProgressFilter) {
+    inProgressCount: runsFeedCountOrError(
+      filter: $inProgressFilter
+      includeRunsFromBackfills: $includeRunsFromBackfills
+    ) {
       ... on RunsFeedCount {
         count
       }

@@ -91,11 +91,11 @@ def test_multiple_downstreams() -> None:
     assert len(a_result.child_results) == 2
 
     res1 = a_result.child_results[0]
-    assert res1.condition.description == "b,d"
+    assert res1.condition.name == "b, d"
     assert res1.child_results[0].condition == cond2
 
     res2 = a_result.child_results[1]
-    assert res2.condition.description == "c"
+    assert res2.condition.name == "c"
     assert res2.child_results[0].condition == cond3
 
 
@@ -126,16 +126,16 @@ def test_multiple_downstreams_nested() -> None:
 
     # the first condition is a bit gnarly, but it should resolve to b: ((d: eager) & ~in_progress)
     res1 = a_result.child_results[0]
-    assert res1.condition.description == "b"
+    assert res1.condition.name == "b"
     res1_and = res1.child_results[0]
     assert isinstance(res1_and.condition, AndAutomationCondition)
     res1_1 = res1_and.child_results[0].child_results[0]
-    assert res1_1.condition.description == "d"
+    assert res1_1.condition.name == "d"
     assert res1_1.child_results[0].condition == cond3
     res1_2 = res1_and.child_results[1]
     assert res1_2.condition == ~AutomationCondition.in_progress()
 
     # the second condition resolves to just (d: eager)
     res2 = a_result.child_results[1]
-    assert res2.condition.description == "d"
+    assert res2.condition.name == "d"
     assert res2.child_results[0].condition == cond3

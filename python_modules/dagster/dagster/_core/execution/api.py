@@ -1,11 +1,9 @@
 import sys
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
-    Dict,
     Iterator,
     List,
     Mapping,
@@ -46,9 +44,6 @@ from dagster._core.telemetry import log_dagster_event, log_repo_stats, telemetry
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
-
-if TYPE_CHECKING:
-    from dagster._core.execution.plan.outputs import StepOutputHandle
 
 ## Brief guide to the execution APIs
 # | function name               | operates over      | sync  | supports    | creates new DagsterRun  |
@@ -247,8 +242,6 @@ def execute_run(
     if isinstance(job, ReconstructableJob):
         job = job.with_repository_load_data(execution_plan.repository_load_data)
 
-    output_capture: Optional[Dict[StepOutputHandle, Any]] = {}
-
     _execute_run_iterable = ExecuteRunWithPlanIterable(
         execution_plan=execution_plan,
         iterator=job_execution_iterator,
@@ -261,7 +254,7 @@ def execute_run(
             run_config=dagster_run.run_config,
             raise_on_error=raise_on_error,
             executor_defs=None,
-            output_capture=output_capture,
+            output_capture=None,
         ),
     )
     event_list = list(_execute_run_iterable)

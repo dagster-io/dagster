@@ -7,6 +7,7 @@ import {
   Popover,
   Spinner,
   Subheading,
+  TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
@@ -93,6 +94,11 @@ export const AssetPartitions = ({
         .filter((s: AssetPartitionStatus) => DISPLAYED_STATUSES.includes(s)),
   });
 
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
+  });
+
   // Determine which axis we will show at the top of the page, if any.
   const timeDimensionIdx = selections.findIndex((s) => isTimeseriesDimension(s.dimension));
 
@@ -116,8 +122,8 @@ export const AssetPartitions = ({
         idx === 1 && focusedDimensionKeys[0]
           ? [selectionRangeWithSingleKey(focusedDimensionKeys[0], selections[0]!.dimension)]
           : timeDimensionIdx !== -1 && idx !== timeDimensionIdx
-          ? selections[timeDimensionIdx]!.selectedRanges
-          : undefined,
+            ? selections[timeDimensionIdx]!.selectedRanges
+            : undefined,
       ),
     );
   }, [assetHealth, selections, timeDimensionIdx, focusedDimensionKeys]);
@@ -141,8 +147,12 @@ export const AssetPartitions = ({
     const allKeys = dimension.partitionKeys;
     const sortType = getSort(sortTypes, idx, selections[idx]!.dimension.type);
 
+    // Apply the search filter
+    const searchLower = searchValue.toLocaleLowerCase().trim();
+    const filteredKeys = allKeys.filter((key) => key.toLowerCase().includes(searchLower));
+
     const getSelectionKeys = () =>
-      uniq(selectedRanges.flatMap(({start, end}) => allKeys.slice(start.idx, end.idx + 1)));
+      uniq(selectedRanges.flatMap(({start, end}) => filteredKeys.slice(start.idx, end.idx + 1)));
 
     if (isEqual(DISPLAYED_STATUSES, statusFilters)) {
       const result = getSelectionKeys();
@@ -155,7 +165,9 @@ export const AssetPartitions = ({
     );
     const getKeysWithStates = (states: AssetPartitionStatus[]) => {
       return healthRangesInSelection.flatMap((r) =>
-        states.some((s) => r.value.includes(s)) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
+        states.some((s) => r.value.includes(s))
+          ? filteredKeys.slice(r.start.idx, r.end.idx + 1)
+          : [],
       );
     };
 
@@ -174,7 +186,7 @@ export const AssetPartitions = ({
             r.end.idx >= idx &&
             !r.value.includes(AssetPartitionStatus.MISSING),
         );
-      result = allKeys.filter(
+      result = filteredKeys.filter(
         (a, pidx) => selectionKeys.includes(a) && (matching.includes(a) || isMissingForIndex(pidx)),
       );
     } else {
@@ -215,7 +227,6 @@ export const AssetPartitions = ({
           />
         </Box>
       )}
-
       <Box
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row', justifyContent: 'space-between'}}
@@ -244,11 +255,25 @@ export const AssetPartitions = ({
               data-testid={testId(`partitions-${selection.dimension.name}`)}
             >
               <Box
-                flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+                flex={{
+                  direction: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
                 background={Colors.backgroundDefault()}
                 border="bottom"
                 padding={{horizontal: 24, vertical: 8}}
               >
+                <Box style={{display: 'flex', flex: 1}}>
+                  <TextInput
+                    fill
+                    icon="search"
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    placeholder="Filter by name…"
+                  />
+                </Box>
                 <div>
                   {selection.dimension.name !== 'default' && (
                     <Box flex={{gap: 8, alignItems: 'center'}}>
@@ -326,7 +351,7 @@ export const AssetPartitions = ({
                   }
                   position="bottom-left"
                 >
-                  <SortButton style={{marginRight: '-16px'}} data-testid={`sort-${idx}`}>
+                  <SortButton data-testid={`sort-${idx}`}>
                     <Icon name="sort_by_alpha" color={Colors.accentGray()} />
                   </SortButton>
                 </Popover>

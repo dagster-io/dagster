@@ -159,7 +159,7 @@ class AssetDaemonScenarioState(ScenarioState):
                 if self.asset_graph.get(key).auto_observe_interval_minutes is not None
             },
             logger=self.logger,
-            allow_backfills=False,
+            emit_backfills=False,
         ).evaluate()
         check.is_list(new_run_requests, of_type=RunRequest)
         check.inst(new_cursor, AssetDaemonCursor)
@@ -192,7 +192,7 @@ class AssetDaemonScenarioState(ScenarioState):
             sensor = (
                 next(
                     iter(workspace.get_code_location("test_location").get_repositories().values())
-                ).get_external_sensor(self.sensor_name)
+                ).get_sensor(self.sensor_name)
                 if self.sensor_name
                 else None
             )
@@ -266,7 +266,9 @@ class AssetDaemonScenarioState(ScenarioState):
     def evaluate_tick_daemon(self):
         with freeze_time(self.current_time):
             run_requests, cursor, _ = self._evaluate_tick_daemon()
-        new_state = self.with_serialized_cursor(serialize_value(cursor))
+        new_state = self.with_serialized_cursor(serialize_value(cursor)).with_current_time_advanced(
+            seconds=1
+        )
         return new_state, run_requests
 
     def evaluate_tick(self, label: Optional[str] = None) -> "AssetDaemonScenarioState":

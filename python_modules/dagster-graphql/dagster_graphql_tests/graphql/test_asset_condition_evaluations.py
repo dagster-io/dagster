@@ -165,8 +165,7 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["autoMaterializeTicks"]) == 1
         tick = result.data["autoMaterializeTicks"][0]
         assert (
-            tick["autoMaterializeAssetEvaluationId"]
-            == success_2.tick_data.auto_materialize_evaluation_id
+            tick["autoMaterializeAssetEvaluationId"] == success_2.automation_condition_evaluation_id
         )
 
         result = execute_dagster_graphql(
@@ -186,7 +185,7 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         assert ticks[0]["timestamp"] == success_1.timestamp
         assert (
             ticks[0]["autoMaterializeAssetEvaluationId"]
-            == success_1.tick_data.auto_materialize_evaluation_id
+            == success_1.automation_condition_evaluation_id
         )
 
         cursor = ticks[0]["id"]
@@ -676,7 +675,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert record["numRequested"] == 0
 
         # all nodes in the tree
-        assert len(record["evaluationNodes"]) == 27
+        assert len(record["evaluationNodes"]) == 35
 
         rootNode = record["evaluationNodes"][0]
         assert rootNode["uniqueId"] == record["rootUniqueId"]
@@ -694,6 +693,14 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         ]
         assert rootNode["numTrue"] == 0
         assert len(rootNode["childUniqueIds"]) == 5
+
+        def _get_node(id):
+            return next(n for n in record["evaluationNodes"] if n["uniqueId"] == id)
+
+        not_any_deps_missing_node = _get_node(rootNode["childUniqueIds"][2])
+        any_deps_missing_node = _get_node(not_any_deps_missing_node["childUniqueIds"][0])
+        up_node = _get_node(any_deps_missing_node["childUniqueIds"][0])
+        assert up_node["expandedLabel"] == ["up", "((missing) AND (NOT (will_be_requested)))"]
 
         evaluationId = record["evaluationId"]
         uniqueId = rootNode["uniqueId"]

@@ -22,12 +22,12 @@ import * as React from 'react';
 import {Link, useParams, useRouteMatch} from 'react-router-dom';
 
 import {ResourceTabs} from './ResourceTabs';
+import {gql, useQuery} from '../apollo-client';
 import {
   ResourceDetailsFragment,
   ResourceRootQuery,
   ResourceRootQueryVariables,
 } from './types/ResourceRoot.types';
-import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';

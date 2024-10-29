@@ -53,7 +53,7 @@ export type JobMetadataQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
-    autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
+    automationCondition: {__typename: 'AutomationCondition'} | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
   }>;
   pipelineRunsOrError:
@@ -81,7 +81,7 @@ export type JobMetadataQuery = {
 export type JobMetadataAssetNodeFragment = {
   __typename: 'AssetNode';
   id: string;
-  autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
+  automationCondition: {__typename: 'AutomationCondition'} | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
 };
 
@@ -138,4 +138,4 @@ export type RunMetadataFragment = {
   }>;
 };
 
-export const JobMetadataQueryVersion = 'e44915164a1174b291978e4bee269eb293e3953dc6d5fa5831a731b2533e1bf5';
+export const JobMetadataQueryVersion = '489183f897f5a30e8c9883a6b96fcaa6141734c79613e5979baa3e5a15050efd';

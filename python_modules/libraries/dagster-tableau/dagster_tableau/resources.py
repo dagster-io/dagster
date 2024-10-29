@@ -4,28 +4,22 @@ import time
 import uuid
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import List, Mapping, Optional, Sequence, Type, Union
+from typing import Any, List, Mapping, Optional, Sequence, Type, Union
 
 import jwt
 import requests
 import tableauserverclient as TSC
 from dagster import (
-    AssetsDefinition,
+    AssetSpec,
     ConfigurableResource,
     Definitions,
     Failure,
-    ObserveResult,
-    Output,
     _check as check,
-    external_assets_from_specs,
     get_dagster_logger,
-    multi_asset,
 )
-from dagster._annotations import experimental
-from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionCacheableData,
-    CacheableAssetsDefinition,
-)
+from dagster._annotations import deprecated, experimental
+from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
+from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
 from tableauserverclient.server.endpoint.auth_endpoint import Auth
@@ -34,11 +28,14 @@ from dagster_tableau.translator import (
     DagsterTableauTranslator,
     TableauContentData,
     TableauContentType,
+    TableauTagSet,
     TableauWorkspaceData,
 )
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 DEFAULT_POLL_TIMEOUT = 600
+
+TABLEAU_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-tableau/reconstruction_metadata"
 
 
 @experimental
@@ -214,7 +211,7 @@ class BaseTableauClient:
     @property
     def workbook_graphql_query(self) -> str:
         return """
-            query workbooks($luid: String!) { 
+            query workbooks($luid: String!) {
               workbooks(filter: {luid: $luid}) {
                 luid
                 name
@@ -404,38 +401,10 @@ class BaseTableauWorkspace(ConfigurableResource):
             + list(data_sources_by_id.values()),
         )
 
-    def build_assets(
-        self,
-        refreshable_workbook_ids: Sequence[str],
-        dagster_tableau_translator: Type[DagsterTableauTranslator],
-    ) -> Sequence[CacheableAssetsDefinition]:
-        """Returns a set of CacheableAssetsDefinition which will load Tableau content from
-        the workspace and translates it into AssetSpecs, using the provided translator.
-
-        Args:
-            refreshable_workbook_ids (Sequence[str]): A list of workbook IDs. The workbooks provided must
-                have extracts as data sources and be refreshable in Tableau.
-
-                When materializing your Tableau assets, the workbooks provided are refreshed,
-                refreshing their sheets and dashboards before pulling their data in Dagster.
-
-                This feature is equivalent to selecting Refreshing Extracts for a workbook in Tableau UI
-                and only works for workbooks for which the data sources are extracts.
-                See https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_ref_workbooks_and_views.htm#update_workbook_now
-                for documentation.
-            dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
-                to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
-
-        Returns:
-            Sequence[CacheableAssetsDefinition]: A list of CacheableAssetsDefinitions which
-                will load the Tableau content.
-        """
-        return [
-            TableauCacheableAssetsDefinition(
-                self, refreshable_workbook_ids, dagster_tableau_translator
-            )
-        ]
-
+    @deprecated(
+        breaking_version="1.9.0",
+        additional_warn_text="Use dagster_tableau.load_tableau_asset_specs instead",
+    )
     def build_defs(
         self,
         refreshable_workbook_ids: Optional[Sequence[str]] = None,
@@ -461,13 +430,62 @@ class BaseTableauWorkspace(ConfigurableResource):
         Returns:
             Definitions: A Definitions object which will build and return the Power BI content.
         """
-        defs = Definitions(
-            assets=self.build_assets(
-                refreshable_workbook_ids=refreshable_workbook_ids or [],
-                dagster_tableau_translator=dagster_tableau_translator,
-            ),
+        from dagster_tableau.assets import build_tableau_executable_assets_definition
+
+        resource_key = "tableau"
+
+        asset_specs = load_tableau_asset_specs(self, dagster_tableau_translator)
+
+        non_executable_asset_specs = [
+            spec
+            for spec in asset_specs
+            if TableauTagSet.extract(spec.tags).asset_type == "data_source"
+        ]
+
+        executable_asset_specs = [
+            spec
+            for spec in asset_specs
+            if TableauTagSet.extract(spec.tags).asset_type in ["dashboard", "sheet"]
+        ]
+
+        return Definitions(
+            assets=[
+                build_tableau_executable_assets_definition(
+                    resource_key=resource_key,
+                    specs=executable_asset_specs,
+                    refreshable_workbook_ids=refreshable_workbook_ids,
+                ),
+                *non_executable_asset_specs,
+            ],
+            resources={resource_key: self},
         )
-        return defs
+
+
+@experimental
+def load_tableau_asset_specs(
+    workspace: BaseTableauWorkspace,
+    dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
+) -> Sequence[AssetSpec]:
+    """Returns a list of AssetSpecs representing the Tableau content in the workspace.
+
+    Args:
+        workspace (Union[TableauCloudWorkspace, TableauServerWorkspace]): The Tableau workspace to fetch assets from.
+        dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
+            to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
+
+    Returns:
+        List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
+    """
+    with workspace.process_config_and_initialize_cm() as initialized_workspace:
+        return check.is_list(
+            TableauWorkspaceDefsLoader(
+                workspace=initialized_workspace,
+                translator_cls=dagster_tableau_translator,
+            )
+            .build_defs()
+            .assets,
+            AssetSpec,
+        )
 
 
 @experimental
@@ -508,22 +526,19 @@ class TableauServerWorkspace(BaseTableauWorkspace):
         )
 
 
-class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
-    def __init__(
-        self,
-        workspace: BaseTableauWorkspace,
-        refreshable_workbook_ids: Sequence[str],
-        translator: Type[DagsterTableauTranslator],
-    ):
-        self._workspace = workspace
-        self._refreshable_workbook_ids = refreshable_workbook_ids
-        self._translator_cls = translator
-        super().__init__(unique_id=self._workspace.site_name)
+@record
+class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
+    workspace: BaseTableauWorkspace
+    translator_cls: Type[DagsterTableauTranslator]
 
-    def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
-        workspace_data: TableauWorkspaceData = self._workspace.fetch_tableau_workspace_data()
+    @property
+    def defs_key(self) -> str:
+        return f"{TABLEAU_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.site_name}"
+
+    def fetch_state(self) -> Sequence[Mapping[str, Any]]:
+        workspace_data: TableauWorkspaceData = self.workspace.fetch_tableau_workspace_data()
         return [
-            AssetsDefinitionCacheableData(extra_metadata=data.to_cached_data())
+            data.to_cached_data()
             for data in [
                 *workspace_data.workbooks_by_id.values(),
                 *workspace_data.sheets_by_id.values(),
@@ -532,99 +547,22 @@ class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
             ]
         ]
 
-    def build_definitions(
-        self, data: Sequence[AssetsDefinitionCacheableData]
-    ) -> Sequence[AssetsDefinition]:
+    def defs_from_state(self, state: Sequence[Mapping[str, Any]]) -> Definitions:
         workspace_data = TableauWorkspaceData.from_content_data(
-            self._workspace.site_name,
-            [
-                TableauContentData.from_cached_data(check.not_none(entry.extra_metadata))
-                for entry in data
-            ],
+            self.workspace.site_name,
+            [TableauContentData.from_cached_data(check.not_none(entry)) for entry in state],
         )
 
-        translator = self._translator_cls(context=workspace_data)
+        translator = self.translator_cls(context=workspace_data)
 
-        external_assets = external_assets_from_specs(
-            [
-                translator.get_asset_spec(content)
-                for content in workspace_data.data_sources_by_id.values()
-            ]
-        )
+        all_external_data = [
+            *workspace_data.data_sources_by_id.values(),
+            *workspace_data.sheets_by_id.values(),
+            *workspace_data.dashboards_by_id.values(),
+        ]
 
-        tableau_assets = self._build_tableau_assets_from_workspace_data(
-            workspace_data=workspace_data,
-            translator=translator,
-        )
+        all_external_asset_specs = [
+            translator.get_asset_spec(content) for content in all_external_data
+        ]
 
-        return external_assets + tableau_assets
-
-    def _build_tableau_assets_from_workspace_data(
-        self,
-        workspace_data: TableauWorkspaceData,
-        translator: DagsterTableauTranslator,
-    ) -> List[AssetsDefinition]:
-        @multi_asset(
-            name=f"tableau_sync_site_{self._workspace.site_name.replace('-', '_')}",
-            compute_kind="tableau",
-            can_subset=False,
-            specs=[
-                translator.get_asset_spec(content)
-                for content in [
-                    *workspace_data.sheets_by_id.values(),
-                    *workspace_data.dashboards_by_id.values(),
-                ]
-            ],
-            resource_defs={"tableau": self._workspace.get_resource_definition()},
-        )
-        def _assets(tableau: BaseTableauWorkspace):
-            with tableau.get_client() as client:
-                refreshed_workbooks = set()
-                for refreshable_workbook_id in self._refreshable_workbook_ids:
-                    refreshed_workbooks.add(client.refresh_and_poll(refreshable_workbook_id))
-                for view_id, view_content_data in [
-                    *workspace_data.sheets_by_id.items(),
-                    *workspace_data.dashboards_by_id.items(),
-                ]:
-                    data = client.get_view(view_id)
-                    if view_content_data.content_type == TableauContentType.SHEET:
-                        asset_key = translator.get_sheet_asset_key(view_content_data)
-                    elif view_content_data.content_type == TableauContentType.DASHBOARD:
-                        asset_key = translator.get_dashboard_asset_key(view_content_data)
-                    else:
-                        check.assert_never(view_content_data.content_type)
-                    if view_content_data.properties["workbook"]["luid"] in refreshed_workbooks:
-                        yield Output(
-                            value=None,
-                            output_name="__".join(asset_key.path),
-                            metadata={
-                                "workbook_id": data.workbook_id,
-                                "owner_id": data.owner_id,
-                                "name": data.name,
-                                "contentUrl": data.content_url,
-                                "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-                                if data.created_at
-                                else None,
-                                "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S")
-                                if data.updated_at
-                                else None,
-                            },
-                        )
-                    else:
-                        yield ObserveResult(
-                            asset_key=asset_key,
-                            metadata={
-                                "workbook_id": data.workbook_id,
-                                "owner_id": data.owner_id,
-                                "name": data.name,
-                                "contentUrl": data.content_url,
-                                "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-                                if data.created_at
-                                else None,
-                                "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S")
-                                if data.updated_at
-                                else None,
-                            },
-                        )
-
-        return [_assets]
+        return Definitions(assets=all_external_asset_specs)

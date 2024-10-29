@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 from typing import Callable, List, Optional
 from unittest.mock import MagicMock
@@ -8,8 +9,11 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    AssetSpec,
     AutomationCondition,
+    DagsterInstance,
     DailyPartitionsDefinition,
+    Definitions,
     GraphOut,
     HourlyPartitionsDefinition,
     LastPartitionMapping,
@@ -34,15 +38,14 @@ from dagster._core.definitions.partition import PartitionsDefinition, Partitions
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
-from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.remote_representation.external_data import (
-    asset_check_node_snaps_from_repo,
-    asset_node_snaps_from_repo,
-)
-from dagster._core.test_utils import freeze_time, instance_for_test
+from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation.external_data import RepositorySnap
+from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.test_utils import freeze_time, instance_for_test, mock_workspace_from_repos
+from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime, get_current_datetime
 
 
@@ -51,12 +54,12 @@ def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
     def repo():
         return assets + (asset_checks or [])
 
-    asset_node_snaps = asset_node_snaps_from_repo(repo)
-    selector = RepositorySelector(location_name="fake", repository_name="repo")
-    return RemoteAssetGraph.from_repository_selectors_and_asset_node_snaps(
-        [(selector, asset_node) for asset_node in asset_node_snaps],
-        [(selector, asset_check) for asset_check in asset_check_node_snaps_from_repo(repo)],
+    remote_repo = RemoteRepository(
+        RepositorySnap.from_def(repo),
+        repository_handle=RepositoryHandle.for_test(location_name="fake", repository_name="repo"),
+        instance=DagsterInstance.ephemeral(),
     )
+    return remote_repo.asset_graph
 
 
 @pytest.fixture(
@@ -86,7 +89,7 @@ def test_basics(asset_graph_from_assets):
     asset2_node = asset_graph.get(asset2.key)
     asset3_node = asset_graph.get(asset3.key)
 
-    assert asset_graph.all_asset_keys == {asset0.key, asset1.key, asset2.key, asset3.key}
+    assert asset_graph.get_all_asset_keys() == {asset0.key, asset1.key, asset2.key, asset3.key}
     assert not asset0_node.is_partitioned
     assert asset1_node.is_partitioned
     assert asset1_node.partitions_def == asset2_node.partitions_def
@@ -754,7 +757,11 @@ def test_toposort(
     asset_graph = asset_graph_from_assets([A, B, Ac, Bc])
 
     assert asset_graph.toposorted_asset_keys == [A.key, B.key]
-    assert asset_graph.toposorted_entity_keys == [A.key, Ac.check_key, B.key, Bc.check_key]
+    assert asset_graph.toposorted_entity_keys_by_level == [
+        [A.key],
+        [Ac.check_key, B.key],
+        [Bc.check_key],
+    ]
 
 
 def test_required_assets_and_checks_by_key_asset_decorator(
@@ -874,6 +881,58 @@ def test_multi_asset_check(
         assert asset_graph.get_execution_set_asset_and_check_keys(key) == {key}
 
 
+def test_multi_asset_with_many_specs():
+    @multi_asset(
+        name="metabase_questions",
+        compute_kind="metabase",
+        specs=[
+            AssetSpec(
+                key=["metabase", str(i)],
+                metadata={"id": str(i)},
+            )
+            for i in range(6000)
+        ],
+        can_subset=True,
+    )
+    def my_multi_asset_with_many_specs():
+        pass
+
+    defs = Definitions(assets=[my_multi_asset_with_many_specs])
+
+    start_time = time.time()
+    defs.get_all_job_defs()
+
+    end_time = time.time()
+
+    assert end_time - start_time < 15, "multi asset took too long to load"
+
+
+def test_check_deps(asset_graph_from_assets: Callable[..., BaseAssetGraph]) -> None:
+    @asset
+    def A() -> None: ...
+
+    one = AssetCheckSpec(name="one", asset="A", additional_deps=["B", "C"])
+    two = AssetCheckSpec(name="two", asset="B", additional_deps=["C", "D"])
+    three = AssetCheckSpec(name="three", asset="B")
+
+    @multi_asset_check(specs=[one, two, three])
+    def multi_check(): ...
+
+    asset_graph = asset_graph_from_assets([A, multi_check])
+
+    assert asset_graph.get(one.key).parent_entity_keys == {
+        AssetKey("A"),
+        AssetKey("B"),
+        AssetKey("C"),
+    }
+    assert asset_graph.get(two.key).parent_entity_keys == {
+        AssetKey("B"),
+        AssetKey("C"),
+        AssetKey("D"),
+    }
+    assert asset_graph.get(three.key).parent_entity_keys == {AssetKey("B")}
+
+
 def test_cross_code_location_partition_mapping() -> None:
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-01-01-00:00"))
     def a(): ...
@@ -889,14 +948,22 @@ def test_cross_code_location_partition_mapping() -> None:
     def repo_b():
         return [b]
 
-    a_nodes = asset_node_snaps_from_repo(repo_a)
-    b_nodes = asset_node_snaps_from_repo(repo_b)
-    selector = RepositorySelector(location_name="foo", repository_name="bar")
-    asset_graph = RemoteAssetGraph.from_repository_selectors_and_asset_node_snaps(
-        [(selector, asset_node) for asset_node in [*a_nodes, *b_nodes]], []
-    )
+    asset_graph = mock_workspace_from_repos([repo_a, repo_b]).asset_graph
 
     assert isinstance(
         asset_graph.get_partition_mapping(key=b.key, parent_asset_key=a.key),
         TimeWindowPartitionMapping,
     )
+
+
+def test_serdes() -> None:
+    @asset
+    def a(): ...
+
+    @repository
+    def repo():
+        return [a]
+
+    asset_graph = mock_workspace_from_repos([repo]).asset_graph
+    for node in asset_graph.asset_nodes:
+        assert node == deserialize_value(serialize_value(node))

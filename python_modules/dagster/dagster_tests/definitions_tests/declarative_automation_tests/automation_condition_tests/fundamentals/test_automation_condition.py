@@ -5,10 +5,7 @@ from dagster import AutoMaterializePolicy, AutomationCondition, Definitions, ass
 from dagster._check.functions import CheckError
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.remote_representation.external_data import (
-    ExternalRepositoryData,
-    external_repository_data_from_def,
-)
+from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
 
@@ -26,31 +23,33 @@ from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils
 )
 
 
-def test_missing_unpartitioned() -> None:
+@pytest.mark.asyncio
+async def test_missing_unpartitioned() -> None:
     state = AutomationConditionScenarioState(
         one_asset, automation_condition=AutomationCondition.missing()
     )
 
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 1
     original_value_hash = result.value_hash
 
     # still true
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 1
     assert result.value_hash == original_value_hash
 
     # after a run of A it's now False
-    state, result = state.with_runs(run_request("A")).evaluate("A")
+    state, result = await state.with_runs(run_request("A")).evaluate("A")
     assert result.true_subset.size == 0
     assert result.value_hash != original_value_hash
 
     # if we evaluate from scratch, it's also False
-    _, result = state.without_cursor().evaluate("A")
+    _, result = await state.without_cursor().evaluate("A")
     assert result.true_subset.size == 0
 
 
-def test_missing_time_partitioned() -> None:
+@pytest.mark.asyncio
+async def test_missing_time_partitioned() -> None:
     state = (
         AutomationConditionScenarioState(
             one_asset, automation_condition=AutomationCondition.missing()
@@ -60,22 +59,22 @@ def test_missing_time_partitioned() -> None:
         .with_current_time_advanced(days=6, minutes=1)
     )
 
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 6
 
     # still true
-    state, result = state.evaluate("A")
+    state, result = await state.evaluate("A")
     assert result.true_subset.size == 6
 
     # after two runs of A those partitions are now False
-    state, result = state.with_runs(
+    state, result = await state.with_runs(
         run_request("A", day_partition_key(time_partitions_start_datetime, 1)),
         run_request("A", day_partition_key(time_partitions_start_datetime, 3)),
     ).evaluate("A")
     assert result.true_subset.size == 4
 
     # if we evaluate from scratch, they're still False
-    _, result = state.without_cursor().evaluate("A")
+    _, result = await state.without_cursor().evaluate("A")
     assert result.true_subset.size == 4
 
 
@@ -95,7 +94,7 @@ def test_serialize_definitions_with_asset_condition() -> None:
     assert isinstance(serialized, str)
 
     serialized = serialize_value(
-        external_repository_data_from_def(Definitions(assets=[my_asset]).get_repository_def())
+        RepositorySnap.from_def(Definitions(assets=[my_asset]).get_repository_def())
     )
     assert isinstance(serialized, str)
 
@@ -114,12 +113,12 @@ def test_serialize_definitions_with_user_code_asset_condition() -> None:
         return 0
 
     serialized = serialize_value(
-        external_repository_data_from_def(Definitions(assets=[my_asset]).get_repository_def())
+        RepositorySnap.from_def(Definitions(assets=[my_asset]).get_repository_def())
     )
     assert isinstance(serialized, str)
     deserialized = deserialize_value(serialized)
-    assert isinstance(deserialized, ExternalRepositoryData)
-    external_assets = deserialized.external_asset_graph_data
+    assert isinstance(deserialized, RepositorySnap)
+    external_assets = deserialized.asset_nodes
     assert len(external_assets) == 1
     automation_condition = external_assets[0].automation_condition
     # it does not make its way onto the ExternalAssetNode

@@ -352,4 +352,4 @@ export type AssetCheckDetailsQuery = {
   }>;
 };
 
-export const AssetCheckDetailsQueryVersion = '371e01d6e3718d0ef48652ec614938af424d77ce9bc4e459f0f43c21309aedda';
+export const AssetCheckDetailsQueryVersion = '267b6f080c1d910b94d32eb42cc04214a427fb5ca9514b79ce973e98fbe788b1';

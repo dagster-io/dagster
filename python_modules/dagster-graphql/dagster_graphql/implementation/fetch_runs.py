@@ -28,7 +28,7 @@ from dagster._record import copy, record
 from dagster._time import datetime_from_timestamp
 from dagster._utils.warnings import disable_dagster_warnings
 
-from dagster_graphql.implementation.external import ensure_valid_config, get_external_job_or_raise
+from dagster_graphql.implementation.external import ensure_valid_config, get_remote_job_or_raise
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.asset_graph import GrapheneAssetLatestInfo
@@ -190,10 +190,8 @@ def get_assets_latest_info(
         return []
 
     asset_nodes = {
-        asset_key: graphene_info.context.get_asset_node(asset_key) for asset_key in asset_keys
+        asset_key: graphene_info.context.asset_graph.get(asset_key) for asset_key in asset_keys
     }
-
-    # asset_nodes = get_asset_nodes_by_asset_key(graphene_info, set(asset_keys))
 
     asset_records = AssetRecord.blocking_get_many(graphene_info.context, asset_keys)
 
@@ -256,10 +254,11 @@ def get_assets_latest_info(
     for asset_key in step_keys_by_asset.keys():
         asset_node = asset_nodes[asset_key]
         if asset_node:
+            handle = asset_node.resolve_to_singular_repo_scoped_node().repository_handle
             node_id = get_unique_asset_id(
                 asset_key,
-                asset_node.priority_repository_selector.repository_name,
-                asset_node.priority_repository_selector.location_name,
+                handle.repository_name,
+                handle.location_name,
             )
         else:
             node_id = get_unique_asset_id(asset_key)
@@ -327,9 +326,9 @@ def validate_pipeline_config(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_job = get_external_job_or_raise(graphene_info, selector)
-    ensure_valid_config(external_job, run_config)
-    return GraphenePipelineConfigValidationValid(pipeline_name=external_job.name)
+    remote_job = get_remote_job_or_raise(graphene_info, selector)
+    ensure_valid_config(remote_job, run_config)
+    return GraphenePipelineConfigValidationValid(pipeline_name=remote_job.name)
 
 
 def get_execution_plan(
@@ -341,11 +340,11 @@ def get_execution_plan(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_job = get_external_job_or_raise(graphene_info, selector)
-    ensure_valid_config(external_job, run_config)
+    remote_job = get_remote_job_or_raise(graphene_info, selector)
+    ensure_valid_config(remote_job, run_config)
     return GrapheneExecutionPlan(
-        graphene_info.context.get_external_execution_plan(
-            external_job=external_job,
+        graphene_info.context.get_execution_plan(
+            remote_job=remote_job,
             run_config=run_config,
             step_keys_to_execute=None,
             known_state=None,
@@ -665,11 +664,21 @@ def get_runs_feed_entries(
     )
 
 
-def get_runs_feed_count(graphene_info: "ResolveInfo", filters: Optional[RunsFilter]) -> int:
-    should_fetch_backfills = _filters_apply_to_backfills(filters) if filters else True
+def get_runs_feed_count(
+    graphene_info: "ResolveInfo", filters: Optional[RunsFilter], include_runs_from_backfills: bool
+) -> int:
+    # the UI is oriented toward showing runs that are part of a backfill, but the backend
+    # is oriented toward excluding runs that are part of a backfill, so negate include_runs_in_backfills
+    # to get the value to pass to the backend
+    exclude_subruns = not include_runs_from_backfills
+    should_fetch_backfills = exclude_subruns and (
+        _filters_apply_to_backfills(filters) if filters else True
+    )
     with disable_dagster_warnings():
         run_filters = (
-            copy(filters, exclude_subruns=True) if filters else RunsFilter(exclude_subruns=True)
+            copy(filters, exclude_subruns=exclude_subruns)
+            if filters
+            else RunsFilter(exclude_subruns=exclude_subruns)
         )
     if should_fetch_backfills:
         backfill_filters = _bulk_action_filters_from_run_filters(run_filters)

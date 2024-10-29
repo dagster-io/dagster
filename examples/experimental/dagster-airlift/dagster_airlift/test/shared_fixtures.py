@@ -7,7 +7,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Callable, Generator, List, Optional
 
-import mock
 import pytest
 import requests
 from dagster._core.test_utils import environ
@@ -74,21 +73,23 @@ def stand_up_airflow(
         preexec_fn=os.setsid,  # noqa  # fuck it we ball
         stdout=stdout_channel,
     )
-    # Give airflow a second to stand up
-    time.sleep(5)
-    initial_time = get_current_timestamp()
+    try:
+        # Give airflow a second to stand up
+        time.sleep(5)
+        initial_time = get_current_timestamp()
 
-    airflow_ready = False
-    while get_current_timestamp() - initial_time < 60:
-        if _airflow_is_ready():
-            airflow_ready = True
-            break
-        time.sleep(1)
+        airflow_ready = False
+        while get_current_timestamp() - initial_time < 60:
+            if _airflow_is_ready():
+                airflow_ready = True
+                break
+            time.sleep(1)
 
-    assert airflow_ready, "Airflow did not start within 30 seconds..."
-    yield process
-    # Kill process group, since process.kill and process.terminate do not work.
-    os.killpg(process.pid, signal.SIGKILL)
+        assert airflow_ready, "Airflow did not start within 30 seconds..."
+        yield process
+    finally:
+        # Kill process group, since process.kill and process.terminate do not work.
+        os.killpg(process.pid, signal.SIGKILL)
 
 
 @pytest.fixture(name="airflow_instance")
@@ -125,7 +126,15 @@ def dagster_dev_cmd(dagster_defs_path: str) -> List[str]:
 
 
 @pytest.fixture(name="dagster_dev")
-def setup_dagster(dagster_home: str, dagster_dev_cmd: List[str]) -> Generator[Any, None, None]:
+def setup_dagster(
+    airflow_instance: None, dagster_home: str, dagster_dev_cmd: List[str]
+) -> Generator[Any, None, None]:
+    with stand_up_dagster(dagster_dev_cmd) as process:
+        yield process
+
+
+@contextmanager
+def stand_up_dagster(dagster_dev_cmd: List[str]) -> Generator[subprocess.Popen, None, None]:
     """Stands up a dagster instance using the dagster dev CLI. dagster_defs_path must be provided
     by a fixture included in the callsite.
     """
@@ -135,46 +144,25 @@ def setup_dagster(dagster_home: str, dagster_dev_cmd: List[str]) -> Generator[An
         shell=False,
         preexec_fn=os.setsid,  # noqa
     )
-    # Give dagster a second to stand up
-    time.sleep(5)
+    try:
+        # Give dagster a second to stand up
+        time.sleep(5)
 
-    dagster_ready = False
-    initial_time = get_current_timestamp()
-    while get_current_timestamp() - initial_time < 60:
-        if _dagster_is_ready():
-            dagster_ready = True
-            break
-        time.sleep(1)
+        dagster_ready = False
+        initial_time = get_current_timestamp()
+        while get_current_timestamp() - initial_time < 60:
+            if _dagster_is_ready():
+                dagster_ready = True
+                break
+            time.sleep(1)
 
-    assert dagster_ready, "Dagster did not start within 30 seconds..."
-    yield process
-    os.killpg(process.pid, signal.SIGKILL)
+        assert dagster_ready, "Dagster did not start within 30 seconds..."
+        yield process
+    finally:
+        os.killpg(process.pid, signal.SIGKILL)
 
 
 ####################################################################################################
 # MISCELLANEOUS FIXTURES
 # Fixtures that are useful across contexts.
 ####################################################################################################
-
-VAR_DICT = {}
-
-
-def dummy_get_var(key: str, default: Any) -> Optional[str]:
-    return VAR_DICT.get(key, default)
-
-
-def dummy_set_var(key: str, value: str, session: Any) -> None:
-    return VAR_DICT.update({key: value})
-
-
-@pytest.fixture
-def sqlite_backend():
-    with environ({"AIRFLOW__CORE__SQL_ALCHEMY_CONN": "sqlite://"}):
-        yield
-
-
-@pytest.fixture
-def mock_airflow_variable():
-    with mock.patch("airflow.models.Variable.get", side_effect=dummy_get_var):
-        with mock.patch("airflow.models.Variable.set", side_effect=dummy_set_var):
-            yield

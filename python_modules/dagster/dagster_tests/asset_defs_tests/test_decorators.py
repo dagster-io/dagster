@@ -3,6 +3,7 @@ from typing import Any
 import pytest
 from dagster import (
     AllPartitionMapping,
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     DagsterInvalidDefinitionError,
@@ -15,7 +16,6 @@ from dagster import (
     MultiPartitionMapping,
     MultiPartitionsDefinition,
     Nothing,
-    OpExecutionContext,
     Out,
     Output,
     StaticPartitionsDefinition,
@@ -43,6 +43,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.decorators.config_mapping_decorator import config_mapping
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
+from dagster._core.definitions.tags import build_kind_tag
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.test_utils import ignore_warning, raise_exception_on_warnings
@@ -552,7 +553,7 @@ def test_invoking_asset_with_deps():
 def test_invoking_asset_with_context():
     @asset
     def asset_with_context(context, arg1):
-        assert isinstance(context, OpExecutionContext)
+        assert isinstance(context, AssetExecutionContext)
         return arg1
 
     ctx = build_asset_context()
@@ -915,6 +916,8 @@ def test_graph_asset_decorator_no_args():
 @ignore_warning("Parameter `resource_defs` .* is experimental")
 @ignore_warning("Parameter `tags` .* is experimental")
 @ignore_warning("Parameter `owners` .* is experimental")
+@ignore_warning("Parameter `auto_materialize_policy` .* is deprecated")
+@ignore_warning("Parameter `freshness_policy` .* is deprecated")
 @pytest.mark.parametrize(
     "automation_condition_arg",
     [
@@ -942,6 +945,7 @@ def test_graph_asset_with_args(automation_condition_arg):
         resource_defs={"foo": foo_resource},
         tags={"foo": "bar"},
         owners=["team:team1", "claire@dagsterlabs.com"],
+        code_version="v1",
         **automation_condition_arg,
     )
     def my_asset(x):
@@ -961,6 +965,7 @@ def test_graph_asset_with_args(automation_condition_arg):
         my_asset.automation_conditions_by_key[AssetKey("my_asset")] == AutomationCondition.eager()
     )
     assert my_asset.resource_defs["foo"] == foo_resource
+    assert my_asset.code_versions_by_key[AssetKey("my_asset")] == "v1"
 
 
 def test_graph_asset_partitioned():
@@ -994,6 +999,32 @@ def test_graph_asset_partition_mapping():
         return my_op(asset1)
 
     assert materialize_to_memory([asset1, my_asset], partition_key="a").success
+
+
+@ignore_warning("Parameter `kinds` of function")
+def test_graph_asset_kinds() -> None:
+    @asset()
+    def asset1(): ...
+
+    @op(ins={"in1": In(Nothing)})
+    def my_op(context) -> None:
+        pass
+
+    @graph_asset(ins={"asset1": AssetIn()}, kinds={"python"})
+    def my_graph_asset(asset1) -> None:
+        return my_op(asset1)
+
+    assert materialize_to_memory([asset1, my_graph_asset]).success
+
+    assert my_graph_asset.specs_by_key[AssetKey("my_graph_asset")].kinds == {"python"}
+    assert my_graph_asset.tags_by_key[AssetKey("my_graph_asset")] == build_kind_tag("python")
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Assets can have at most three kinds currently."
+    ):
+
+        @graph_asset(kinds={"python", "snowflake", "bigquery", "airflow"})
+        def assets2(): ...
 
 
 def test_graph_asset_w_key_prefix():
@@ -1097,6 +1128,8 @@ def test_graph_asset_w_config_mapping():
 @ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
 @ignore_warning("Parameter `auto_materialize_policy` is deprecated")
 @ignore_warning("Parameter `resource_defs`")
+@ignore_warning("Parameter `auto_materialize_policy`")
+@ignore_warning("Parameter `freshness_policy`")
 @pytest.mark.parametrize(
     "automation_condition_arg",
     [
@@ -1323,7 +1356,7 @@ def test_multi_asset_with_bare_resource():
 @ignore_warning("Static method `AutomationCondition.on_cron` is experimental")
 @ignore_warning("Static method `AutomationCondition.eager` is experimental")
 @ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
-@ignore_warning("Parameter `auto_materialize_policy` is deprecated")
+@ignore_warning("Parameter `auto_materialize_policy`")
 def test_multi_asset_with_automation_conditions():
     ac2 = AutomationCondition.on_cron("@daily")
     ac3 = AutomationCondition.eager()

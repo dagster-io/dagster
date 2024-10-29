@@ -169,6 +169,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         self._asset_check_nodes_by_key = {
             k: AssetCheckNode(
                 k,
+                [d.asset_key for d in v.get_spec_for_check_key(k).additional_deps],
                 v.get_spec_for_check_key(k).blocking,
                 v.get_spec_for_check_key(k).automation_condition,
             )
@@ -349,16 +350,16 @@ def executable_in_same_run(
 ):
     """Returns whether a child asset can be materialized in the same run as a parent asset."""
     from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
-    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+    from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
     from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
     child_node = asset_graph.get(child_key)
     parent_node = asset_graph.get(parent_key)
 
-    # if operating on a RemoteAssetGraph, must share a repository handle
-    if isinstance(asset_graph, RemoteAssetGraph):
-        child_handle = asset_graph.get_repository_selector(child_key)
-        parent_handle = asset_graph.get_repository_selector(parent_key)
+    # if operating on a RemoteWorkspaceAssetGraph, must share a repository handle
+    if isinstance(asset_graph, RemoteWorkspaceAssetGraph):
+        child_handle = asset_graph.get_repository_handle(child_key)
+        parent_handle = asset_graph.get_repository_handle(parent_key)
         if child_handle != parent_handle:
             return False
 

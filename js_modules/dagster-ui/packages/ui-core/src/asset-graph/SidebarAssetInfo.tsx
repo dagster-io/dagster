@@ -3,9 +3,9 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {GraphNode, displayNameForAssetKey, nodeDependsOnSelf, stepKeyForAsset} from './Utils';
+import {gql, useQuery} from '../apollo-client';
 import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
-import {gql, useQuery} from '../apollo-client';
 import {COMMON_COLLATOR} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
@@ -175,7 +175,11 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
       {assetMetadata.length > 0 && (
         <SidebarSection title="Metadata">
           <TableSchemaAssetContext.Provider
-            value={{assetKey, materializationMetadataEntries: latestEvent?.metadataEntries}}
+            value={{
+              assetKey,
+              materializationMetadataEntries: latestEvent?.metadataEntries,
+              definitionMetadataEntries: assetMetadata,
+            }}
           >
             <AssetMetadataTable
               assetMetadata={assetMetadata}

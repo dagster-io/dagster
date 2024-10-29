@@ -1,4 +1,3 @@
-import sys
 from typing import List, Optional
 
 import dagster
@@ -443,7 +442,6 @@ def test_validate_run_config():
         validate_run_config(job_requires_config)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8")
 def test_cached_property():
     from functools import cached_property
 

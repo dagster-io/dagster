@@ -52,8 +52,8 @@ This example creates a replication configuration in a `replication.yaml` file:
 ```yaml
 # replication.yaml
 
-SOURCE: MY_POSTGRES
-TARGET: MY_SNOWFLAKE
+source: MY_POSTGRES
+target: MY_SNOWFLAKE
 
 defaults:
   mode: full-refresh
@@ -75,8 +75,8 @@ This example creates a replication configuration using Python:
 
 ```python file=/integrations/embedded_elt/replication_config.py
 replication_config = {
-    "SOURCE": "MY_POSTGRES",
-    "TARGET": "MY_DUCKDB",
+    "source": "MY_POSTGRES",
+    "target": "MY_DUCKDB",
     "defaults": {"mode": "full-refresh", "object": "{stream_schema}_{stream_table}"},
     "streams": {
         "public.accounts": None,
@@ -128,7 +128,7 @@ sling_resource = SlingResource(
 
 A <PyObject module="dagster_embedded_elt.sling" object="SlingResource" /> takes a `connections` parameter, where each <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> represents a connection to a source or target database. You may provide as many connections to the `SlingResource` as needed.
 
-The `name` parameter in the <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> should match the `SOURCE` and `TARGET` keys in the replication configuration.
+The `name` parameter in the <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> should match the `source` and `target` keys in the replication configuration.
 
 You can pass a connection string or arbitrary keyword arguments to the <PyObject module="dagster_embedded_elt.sling" object="SlingConnectionResource" /> to specify the connection details. Refer to [Sling's connections reference](https://docs.slingdata.io/connections/database-connections) for the specific connection types and parameters.
 

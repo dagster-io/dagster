@@ -61,7 +61,7 @@ class AutomationTickEvaluationContext:
         auto_observe_asset_keys: AbstractSet[AssetKey],
         asset_selection: AssetSelection,
         logger: logging.Logger,
-        allow_backfills: bool,
+        emit_backfills: bool,
         default_condition: Optional[AutomationCondition] = None,
         evaluation_time: Optional[datetime.datetime] = None,
     ):
@@ -72,13 +72,14 @@ class AutomationTickEvaluationContext:
             )
             if default_condition or asset_graph.get(entity_key).automation_condition is not None
         }
+        self._total_keys = len(resolved_entity_keys)
         self._evaluation_id = evaluation_id
         self._evaluator = AutomationConditionEvaluator(
             entity_keys=resolved_entity_keys,
             default_condition=default_condition,
             instance=instance,
             asset_graph=asset_graph,
-            allow_backfills=allow_backfills,
+            emit_backfills=emit_backfills,
             cursor=cursor,
             evaluation_time=evaluation_time,
             logger=logger,
@@ -94,6 +95,10 @@ class AutomationTickEvaluationContext:
     @property
     def asset_graph(self) -> BaseAssetGraph:
         return self._evaluator.asset_graph
+
+    @property
+    def total_keys(self) -> int:
+        return self._total_keys
 
     def _legacy_build_auto_observe_run_requests(self) -> Sequence[RunRequest]:
         current_timestamp = self._evaluator.evaluation_time.timestamp()
@@ -137,7 +142,7 @@ class AutomationTickEvaluationContext:
             entity_subsets=entity_subsets,
             asset_graph=self.asset_graph,
             run_tags=self._materialize_run_tags,
-            allow_backfills=self._evaluator.allow_backfills,
+            emit_backfills=self._evaluator.emit_backfills,
         )
 
     def _get_updated_cursor(
@@ -304,9 +309,9 @@ def build_run_requests(
     entity_subsets: Sequence[EntitySubset],
     asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
-    allow_backfills: bool,
+    emit_backfills: bool,
 ) -> Sequence[RunRequest]:
-    if allow_backfills:
+    if emit_backfills:
         backfill_run_request, entity_subsets = _build_backfill_request(
             entity_subsets, asset_graph, run_tags
         )

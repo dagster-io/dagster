@@ -1,7 +1,12 @@
 from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental_param
+from dagster._annotations import (
+    PublicAttr,
+    experimental_param,
+    hidden_param,
+    only_allow_hidden_params_in_kwargs,
+)
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -17,17 +22,24 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
-from dagster._core.definitions.utils import (
-    DEFAULT_IO_MANAGER_KEY,
-    resolve_automation_condition,
-    validate_tags_strict,
-)
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, resolve_automation_condition
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
+from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
 
 @experimental_param(param="owners")
 @experimental_param(param="tags")
+@hidden_param(
+    param="freshness_policy",
+    breaking_version="1.10.0",
+    additional_warn_text="use freshness checks instead",
+)
+@hidden_param(
+    param="auto_materialize_policy",
+    breaking_version="1.10.0",
+    additional_warn_text="use `automation_condition` instead",
+)
 class AssetOut(
     NamedTuple(
         "_AssetOut",
@@ -45,7 +57,7 @@ class AssetOut(
             ("automation_condition", PublicAttr[Optional[AutomationCondition]]),
             ("backfill_policy", PublicAttr[Optional[BackfillPolicy]]),
             ("owners", PublicAttr[Optional[Sequence[str]]]),
-            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
+            ("tags", PublicAttr[Mapping[str, str]]),
         ],
     )
 ):
@@ -95,14 +107,13 @@ class AssetOut(
         metadata: Optional[Mapping[str, Any]] = None,
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,
-        freshness_policy: Optional[FreshnessPolicy] = None,
         automation_condition: Optional[AutomationCondition] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
-        # TODO: FOU-243
-        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        **kwargs,
     ):
+        only_allow_hidden_params_in_kwargs(AssetOut, kwargs)
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
 
@@ -124,10 +135,12 @@ class AssetOut(
             group_name=check.opt_str_param(group_name, "group_name"),
             code_version=check.opt_str_param(code_version, "code_version"),
             freshness_policy=check.opt_inst_param(
-                freshness_policy, "freshness_policy", FreshnessPolicy
+                kwargs.get("freshness_policy"), "freshness_policy", FreshnessPolicy
             ),
             automation_condition=check.opt_inst_param(
-                resolve_automation_condition(automation_condition, auto_materialize_policy),
+                resolve_automation_condition(
+                    automation_condition, kwargs.get("auto_materialize_policy")
+                ),
                 "automation_condition",
                 AutomationCondition,
             ),
@@ -135,7 +148,7 @@ class AssetOut(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
-            tags=validate_tags_strict(tags),
+            tags=normalize_tags(tags or {}, strict=True),
         )
 
     def to_out(self) -> Out:

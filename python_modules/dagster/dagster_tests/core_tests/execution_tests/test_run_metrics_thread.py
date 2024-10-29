@@ -5,6 +5,7 @@ from unittest.mock import patch
 import dagster._core.execution.run_metrics_thread as run_metrics_thread
 from dagster import DagsterInstance, DagsterRun
 from dagster._core.execution.telemetry import RunTelemetryData
+from dagster._utils.container import UNCONSTRAINED_CGROUP_MEMORY_LIMIT
 from pytest import fixture, mark
 
 
@@ -56,9 +57,8 @@ def test_get_container_metrics(mock_containerized_utilization_metrics):
         assert metrics
         assert isinstance(metrics, dict)
         assert metrics["container.cpu_usage_ms"] == 50000
+        assert metrics["container.cpu_usage_rate_ms"] == 80
         assert metrics["container.cpu_limit_ms"] == 100
-        assert metrics["container.cpu_cfs_period_us"] == 10000
-        assert metrics["container.cpu_cfs_quota_us"] == 1000
         assert metrics["container.memory_usage"] == 16384
         assert metrics["container.memory_limit"] == 65536
         assert metrics["container.memory_percent"] == 25
@@ -81,18 +81,56 @@ def test_get_container_metrics_missing_limits(mock_containerized_utilization_met
         return_value=mock_containerized_utilization_metrics,
     ):
         # should not throw
-        metrics = run_metrics_thread._get_container_metrics()  # noqa: SLF001
+        metrics = run_metrics_thread._get_container_metrics(  # noqa: SLF001
+            previous_cpu_usage_ms=49200, previous_measurement_timestamp=1000
+        )
 
         assert metrics
         assert isinstance(metrics, dict)
         assert metrics["container.cpu_usage_ms"] == 50000
+        assert metrics["container.cpu_usage_rate_ms"] == 80  # see previous test for calculation
         assert metrics["container.cpu_percent"] is None
         assert metrics["container.cpu_limit_ms"] is None
-        assert metrics["container.cpu_cfs_period_us"] is None
-        assert metrics["container.cpu_cfs_quota_us"] is None
         assert metrics["container.memory_usage"] == 16384
         assert metrics["container.memory_limit"] is None
         assert metrics["container.memory_percent"] is None
+
+
+@mark.parametrize(
+    "cpu_cfs_quota_us, cpu_cfs_period_us, cgroup_memory_limit, expected_cpu_limit_ms, expected_memory_limit",
+    [
+        (None, None, None, None, None),
+        (0, 0, 0, None, None),
+        (10, -1, -1, None, None),
+        (-1, 10, UNCONSTRAINED_CGROUP_MEMORY_LIMIT, None, None),
+    ],
+)
+def test_get_container_metrics_edge_conditions(
+    mock_containerized_utilization_metrics,
+    cpu_cfs_quota_us,
+    cpu_cfs_period_us,
+    cgroup_memory_limit,
+    expected_cpu_limit_ms,
+    expected_memory_limit,
+):
+    """These limits are not valid if none, negative or zero values are provided and we should ignore them."""
+    mock_containerized_utilization_metrics["cpu_cfs_quota_us"] = cpu_cfs_quota_us
+    mock_containerized_utilization_metrics["cpu_cfs_period_us"] = cpu_cfs_period_us
+    mock_containerized_utilization_metrics["memory_limit"] = cgroup_memory_limit
+
+    with patch(
+        "dagster._core.execution.run_metrics_thread.retrieve_containerized_utilization_metrics",
+        return_value=mock_containerized_utilization_metrics,
+    ):
+        # should not throw
+        metrics = run_metrics_thread._get_container_metrics(  # noqa: SLF001
+            previous_cpu_usage_ms=49200, previous_measurement_timestamp=1000
+        )
+
+        assert metrics
+        assert isinstance(metrics, dict)
+        assert metrics["container.cpu_limit_ms"] == expected_cpu_limit_ms
+        assert metrics["container.memory_limit"] == expected_memory_limit
 
 
 @mark.parametrize(
@@ -135,32 +173,52 @@ def test_start_run_metrics_thread(dagster_instance, dagster_run, mock_container_
     logger = logging.getLogger("test_run_metrics")
     logger.setLevel(logging.DEBUG)
 
-    with patch(
-        "dagster._core.execution.run_metrics_thread._get_container_metrics",
-        return_value=mock_container_metrics,
-    ):
+    with patch.object(dagster_instance.run_storage, "supports_run_telemetry", return_value=True):
         with patch(
-            "dagster._core.execution.run_metrics_thread._process_is_containerized",
-            return_value=True,
+            "dagster._core.execution.run_metrics_thread._get_container_metrics",
+            return_value=mock_container_metrics,
         ):
-            thread, shutdown = run_metrics_thread.start_run_metrics_thread(
-                dagster_instance,
-                dagster_run,
-                logger=logger,
-                container_metrics_enabled=True,
-                polling_interval=2.0,
-            )
+            with patch(
+                "dagster._core.execution.run_metrics_thread._process_is_containerized",
+                return_value=True,
+            ):
+                thread, shutdown = run_metrics_thread.start_run_metrics_thread(
+                    dagster_instance,
+                    dagster_run,
+                    logger=logger,
+                    polling_interval=2.0,
+                )
 
-            time.sleep(0.1)
+                time.sleep(0.1)
 
-            assert thread.is_alive()
+                assert thread.is_alive()
+                assert "Starting run metrics thread" in caplog.messages[0]
 
-            time.sleep(0.1)
-            shutdown.set()
+                time.sleep(0.1)
+                shutdown.set()
 
-            thread.join()
-            assert thread.is_alive() is False
-            assert "Starting run metrics thread" in caplog.messages[0]
+                thread.join()
+                assert thread.is_alive() is False
+                assert "Shutting down metrics capture thread" in caplog.messages[-1]
+
+
+def test_start_run_metrics_thread_without_run_storage_support(
+    dagster_instance, dagster_run, mock_container_metrics, caplog
+):
+    logger = logging.getLogger("test_run_metrics")
+    logger.setLevel(logging.DEBUG)
+
+    with patch.object(dagster_instance.run_storage, "supports_run_telemetry", return_value=False):
+        thread, shutdown = run_metrics_thread.start_run_metrics_thread(
+            dagster_instance,
+            dagster_run,
+            logger=logger,
+            polling_interval=2.0,
+        )
+
+        assert thread is None
+        assert shutdown is None
+        assert "Run telemetry is not supported" in caplog.messages[-1]
 
 
 def test_report_run_metrics(dagster_instance: DagsterInstance, dagster_run: DagsterRun):

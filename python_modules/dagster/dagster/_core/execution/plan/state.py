@@ -240,7 +240,7 @@ def _derive_state_of_past_run(
 ) -> Tuple[
     Sequence[str], Mapping[str, Mapping[str, Optional[Sequence[str]]]], Set[StepOutputHandle]
 ]:
-    from dagster._core.remote_representation import ExternalExecutionPlan
+    from dagster._core.remote_representation import RemoteExecutionPlan
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_inst_param(parent_run, "parent_run", DagsterRun)
@@ -267,7 +267,7 @@ def _derive_state_of_past_run(
             f"Could not load execution plan snapshot for run {parent_run_id}"
         )
 
-    execution_plan = ExternalExecutionPlan(execution_plan_snapshot=execution_plan_snapshot)
+    execution_plan = RemoteExecutionPlan(execution_plan_snapshot=execution_plan_snapshot)
 
     output_set: Set[StepOutputHandle] = set()
     observed_dynamic_outputs: Dict[str, Dict[str, List[str]]] = defaultdict(

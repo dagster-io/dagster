@@ -30,6 +30,7 @@ export const TickTagForRun = ({instigationSelector, instigationType, tickId}: Pr
       </Tag>
       <TickDetailsDialog
         isOpen={isOpen}
+        tickResultType="runs"
         onClose={() => setIsOpen(false)}
         instigationSelector={instigationSelector}
         tickId={tickId}

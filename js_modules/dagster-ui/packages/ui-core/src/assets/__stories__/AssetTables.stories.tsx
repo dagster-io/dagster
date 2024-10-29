@@ -1,14 +1,10 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {Box} from '@dagster-io/ui-components';
 
 import {StorybookProvider} from '../../testing/StorybookProvider';
-import {VirtualizedRepoAssetTable} from '../../workspace/VirtualizedRepoAssetTable';
-import {RepoAssetTableFragment} from '../../workspace/types/WorkspaceAssetsQuery.types';
 import {AssetsCatalogTable} from '../AssetsCatalogTable';
 import {
   AssetCatalogGroupTableMock,
   AssetCatalogTableMock,
-  AssetCatalogTableMockAssets,
   SingleAssetQueryLastRunFailed,
   SingleAssetQueryMaterializedStaleAndLate,
   SingleAssetQueryMaterializedWithLatestRun,
@@ -45,25 +41,6 @@ export const GlobalCatalogWithPrefix = () => {
     <StorybookProvider routerProps={{initialEntries: ['/']}}>
       <MockedProvider mocks={MOCKS}>
         <AssetsCatalogTable prefixPath={['dashboards']} setPrefixPath={() => {}} />
-      </MockedProvider>
-    </StorybookProvider>
-  );
-};
-
-export const RepoAssets = () => {
-  const assets: RepoAssetTableFragment[] = AssetCatalogTableMockAssets.filter(
-    (a) => !!a.definition,
-  ).map((a) => ({...a.definition!, assetKey: a.key}));
-
-  return (
-    <StorybookProvider routerProps={{initialEntries: ['/']}}>
-      <MockedProvider mocks={MOCKS}>
-        <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-          <VirtualizedRepoAssetTable
-            repoAddress={{name: 'repo', location: 'test.py'}}
-            assets={assets}
-          />
-        </Box>
       </MockedProvider>
     </StorybookProvider>
   );

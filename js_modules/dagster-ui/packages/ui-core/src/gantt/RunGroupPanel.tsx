@@ -3,12 +3,12 @@ import {useEffect} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {gql, useQuery} from '../apollo-client';
 import {
   RunGroupPanelQuery,
   RunGroupPanelQueryVariables,
   RunGroupPanelRunFragment,
 } from './types/RunGroupPanel.types';
-import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';

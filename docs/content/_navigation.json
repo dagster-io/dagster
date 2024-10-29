@@ -387,6 +387,14 @@
                 "path": "/concepts/dagster-pipes/aws-glue"
               },
               {
+                "title": "Dagster Pipes + AWS EMR",
+                "path": "/concepts/dagster-pipes/aws-emr"
+              },
+              {
+                "title": "Dagster Pipes + AWS EMR Serverless",
+                "path": "/concepts/dagster-pipes/aws-emr-serverless"
+              },
+              {
                 "title": "Dagster Pipes + AWS Lambda",
                 "path": "/concepts/dagster-pipes/aws-lambda"
               },
@@ -401,6 +409,10 @@
               {
                 "title": "Details and customization",
                 "path": "/concepts/dagster-pipes/dagster-pipes-details-and-customization"
+              },
+              {
+                "title": "Migrating from Step Launchers to Dagster Pipes",
+                "path": "/guides/migrations/from-step-launchers-to-pipes"
               }
             ]
           },
@@ -771,6 +783,10 @@
           {
             "title": "dagster_cloud.yaml",
             "path": "/dagster-plus/managing-deployments/dagster-cloud-yaml"
+          },
+          {
+            "title": "API Limits",
+            "path": "/dagster-plus/references/limits"
           }
         ]
       }
@@ -1045,7 +1061,7 @@
         "path": "/integrations/pandera"
       },
       {
-        "title": "PySpark",
+        "title": "Spark",
         "path": "/integrations/spark"
       },
       {
@@ -1529,6 +1545,10 @@
             "path": "/_apidocs/libraries/dagster-postgres"
           },
           {
+            "title": "PowerBI (dagster-powerbi)",
+            "path": "/_apidocs/libraries/dagster-powerbi"
+          },
+          {
             "title": "Prometheus (dagster-prometheus)",
             "path": "/_apidocs/libraries/dagster-prometheus"
           },
@@ -1563,6 +1583,10 @@
           {
             "title": "SSH / SFTP (dagster-ssh)",
             "path": "/_apidocs/libraries/dagster-ssh"
+          },
+          {
+            "title": "Tableau (dagster-tableau)",
+            "path": "/_apidocs/libraries/dagster-tableau"
           },
           {
             "title": "Twilio (dagster-twilio)",

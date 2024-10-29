@@ -83,5 +83,5 @@
     "remark-preset-prettier": "^0.4.1",
     "typescript": "5.4.5"
   },
-  "packageManager": "yarn@3.6.4"
+  "packageManager": "yarn@4.5.0"
 }

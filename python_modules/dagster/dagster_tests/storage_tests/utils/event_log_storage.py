@@ -60,6 +60,7 @@ from dagster._core.definitions.multi_dimensional_partitions import MultiPartitio
 from dagster._core.definitions.partition import PartitionKeyRange, StaticPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
     PartitionKeysTimeWindowPartitionsSubset,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
@@ -82,6 +83,7 @@ from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
+from dagster._core.loader import LoadingContextForTest
 from dagster._core.remote_representation.external_data import PartitionsSnap
 from dagster._core.remote_representation.origin import (
     InProcessCodeLocationOrigin,
@@ -125,7 +127,7 @@ def create_and_delete_test_runs(instance: DagsterInstance, run_ids: Sequence[str
             create_run_for_test(
                 instance,
                 run_id=run_id,
-                external_job_origin=RemoteJobOrigin(
+                remote_job_origin=RemoteJobOrigin(
                     RemoteRepositoryOrigin(
                         InProcessCodeLocationOrigin(
                             LoadableTargetOrigin(
@@ -2632,10 +2634,12 @@ class TestEventLogStorage:
         b = AssetKey(["b"])
         run_id = make_new_run_id()
 
-        def _assert_storage_matches(expected):
+        def _assert_storage_matches(expected, partition: Optional[str] = None):
             assert (
                 storage.get_latest_storage_id_by_partition(
-                    a, DagsterEventType.ASSET_MATERIALIZATION
+                    a,
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    partitions={partition} if partition else None,
                 )
                 == expected
             )
@@ -2676,6 +2680,10 @@ class TestEventLogStorage:
             # p2 materialized
             latest_storage_ids["p2"] = _store_partition_event(a, "p2")
             _assert_storage_matches(latest_storage_ids)
+
+            # check that we can filter for specific partitions
+            _assert_storage_matches({"p1": latest_storage_ids["p1"]}, partition="p1")
+            _assert_storage_matches({"p2": latest_storage_ids["p2"]}, partition="p2")
 
             # unrelated asset materialized
             _store_partition_event(b, "p1")
@@ -6012,3 +6020,37 @@ class TestEventLogStorage:
                 )
                 == set()
             )
+
+    def test_get_updated_asset_status_cache_values(
+        self, instance: DagsterInstance, storage: EventLogStorage
+    ):
+        partition_defs_by_key = {
+            AssetKey("hourly"): HourlyPartitionsDefinition("2020-01-01-00:00"),
+            AssetKey("daily"): DailyPartitionsDefinition("2020-01-01"),
+            AssetKey("static"): StaticPartitionsDefinition(["a", "b", "c"]),
+        }
+
+        assert storage.get_asset_status_cache_values(
+            partition_defs_by_key, LoadingContextForTest(instance)
+        ) == [
+            None,
+            None,
+            None,
+        ]
+
+        instance.report_runless_asset_event(
+            AssetMaterialization(asset_key="hourly", partition="2020-01-01-00:00")
+        )
+        instance.report_runless_asset_event(
+            AssetMaterialization(asset_key="daily", partition="2020-01-01"),
+        )
+        instance.report_runless_asset_event(AssetMaterialization(asset_key="static", partition="a"))
+
+        partition_defs = list(partition_defs_by_key.values())
+        for i, value in enumerate(
+            storage.get_asset_status_cache_values(
+                partition_defs_by_key, LoadingContextForTest(instance)
+            ),
+        ):
+            assert value is not None
+            assert len(value.deserialize_materialized_partition_subsets(partition_defs[i])) == 1

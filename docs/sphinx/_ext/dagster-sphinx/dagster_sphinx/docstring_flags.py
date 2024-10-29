@@ -3,7 +3,7 @@ from typing import List, Union
 
 import dagster._check as check
 import docutils.nodes as nodes
-from dagster._annotations import DeprecatedInfo, ExperimentalInfo
+from dagster._annotations import DeprecatedInfo, ExperimentalInfo, SupersededInfo
 
 from sphinx.util.docutils import SphinxDirective
 
@@ -15,7 +15,7 @@ from sphinx.util.docutils import SphinxDirective
 
 
 def inject_object_flag(
-    obj: object, info: Union[DeprecatedInfo, ExperimentalInfo], docstring: List[str]
+    obj: object, info: Union[SupersededInfo, DeprecatedInfo, ExperimentalInfo], docstring: List[str]
 ) -> None:
     if isinstance(info, DeprecatedInfo):
         additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
@@ -27,6 +27,10 @@ def inject_object_flag(
         message = (
             f"This API may break in future versions, even between dot releases.\n{additional_text}"
         )
+    elif isinstance(info, SupersededInfo):
+        additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
+        flag_type = "superseded"
+        message = f"This API has been superseded and it's usage is discouraged.\n{additional_text}"
     else:
         check.failed(f"Unexpected info type {type(info)}")
     for line in reversed([f".. flag:: {flag_type}", "", f"   {message}", ""]):

@@ -20,7 +20,7 @@ from dagster._core.origin import (
     JobPythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster._core.snap import JobSnapshot, create_job_snapshot_id
+from dagster._core.snap import JobSnap, create_job_snapshot_id
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 from dagster._utils.hosted_user_process import recon_job_from_origin
@@ -52,7 +52,7 @@ lambda_version = lambda: the_job
 
 
 def pid(pipeline_def):
-    return create_job_snapshot_id(JobSnapshot.from_job_def(pipeline_def))
+    return create_job_snapshot_id(JobSnap.from_job_def(pipeline_def))
 
 
 @job
@@ -194,7 +194,7 @@ def test_reconstruct_from_origin():
     assert recon_job.repository.container_context == origin.repository_origin.container_context
 
 
-def test_reconstructable_memoize():
+def test_reconstructable_memoize() -> None:
     recon_job = reconstructable(some_job)
 
     # warm the cache

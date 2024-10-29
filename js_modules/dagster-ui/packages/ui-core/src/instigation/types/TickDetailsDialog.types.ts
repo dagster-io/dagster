@@ -16,6 +16,8 @@ export type SelectedTickQuery = {
         tick: {
           __typename: 'InstigationTick';
           id: string;
+          requestedAssetMaterializationCount: number;
+          autoMaterializeAssetEvaluationId: number | null;
           tickId: string;
           status: Types.InstigationTickStatus;
           timestamp: number;
@@ -27,6 +29,12 @@ export type SelectedTickQuery = {
           originRunIds: Array<string>;
           logKey: Array<string> | null;
           runKeys: Array<string>;
+          requestedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+          requestedMaterializationsForAssets: Array<{
+            __typename: 'RequestedMaterializationsForAsset';
+            partitionKeys: Array<string>;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
           runs: Array<{__typename: 'Run'; id: string; status: Types.RunStatus}>;
           error: {
             __typename: 'PythonError';
@@ -51,4 +59,4 @@ export type SelectedTickQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const SelectedTickQueryVersion = '4a6a1911d0769b8b5bb17ed1415d3691da3d029d6760ab42dc56de6431fc1fb6';
+export const SelectedTickQueryVersion = 'b04d20d3144919de65317f84162ee6e238d78c53d5a9bd55410ce2a9cf6357d3';

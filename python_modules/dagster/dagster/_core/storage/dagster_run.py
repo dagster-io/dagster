@@ -20,7 +20,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
-from dagster._core.loader import InstanceLoadableBy
+from dagster._core.loader import InstanceLoadableBy, LoadingContext
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
@@ -41,8 +41,7 @@ from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleDefinition
     from dagster._core.definitions.sensor_definition import SensorDefinition
-    from dagster._core.instance import DagsterInstance
-    from dagster._core.remote_representation.external import ExternalSchedule, ExternalSensor
+    from dagster._core.remote_representation.external import RemoteSchedule, RemoteSensor
     from dagster._core.remote_representation.origin import RemoteJobOrigin
     from dagster._core.scheduler.instigation import InstigatorState
 
@@ -268,7 +267,7 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
     storage_field_names={
         "job_name": "pipeline_name",
         "job_snapshot_id": "pipeline_snapshot_id",
-        "external_job_origin": "external_pipeline_origin",
+        "remote_job_origin": "external_pipeline_origin",
         "job_code_origin": "pipeline_code_origin",
         "op_selection": "solid_selection",
         "resolved_op_selection": "solids_to_execute",
@@ -292,7 +291,7 @@ class DagsterRun(
             ("parent_run_id", Optional[str]),
             ("job_snapshot_id", Optional[str]),
             ("execution_plan_snapshot_id", Optional[str]),
-            ("external_job_origin", Optional["RemoteJobOrigin"]),
+            ("remote_job_origin", Optional["RemoteJobOrigin"]),
             ("job_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
             ("run_op_concurrency", Optional[RunOpConcurrency]),
@@ -326,7 +325,7 @@ class DagsterRun(
         parent_run_id: Optional[str] = None,
         job_snapshot_id: Optional[str] = None,
         execution_plan_snapshot_id: Optional[str] = None,
-        external_job_origin: Optional["RemoteJobOrigin"] = None,
+        remote_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
         run_op_concurrency: Optional[RunOpConcurrency] = None,
@@ -359,10 +358,10 @@ class DagsterRun(
 
         if status == DagsterRunStatus.QUEUED:
             check.inst_param(
-                external_job_origin,
-                "external_job_origin",
+                remote_job_origin,
+                "remote_job_origin",
                 RemoteJobOrigin,
-                "external_job_origin is required for queued runs",
+                "remote_job_origin is required for queued runs",
             )
 
         if run_id is None:
@@ -388,8 +387,8 @@ class DagsterRun(
             execution_plan_snapshot_id=check.opt_str_param(
                 execution_plan_snapshot_id, "execution_plan_snapshot_id"
             ),
-            external_job_origin=check.opt_inst_param(
-                external_job_origin, "external_job_origin", RemoteJobOrigin
+            remote_job_origin=check.opt_inst_param(
+                remote_job_origin, "remote_job_origin", RemoteJobOrigin
             ),
             job_code_origin=check.opt_inst_param(
                 job_code_origin, "job_code_origin", JobPythonOrigin
@@ -408,7 +407,7 @@ class DagsterRun(
             # https://github.com/dagster-io/dagster/issues/3181
 
             check.not_none(
-                self.external_job_origin,
+                self.remote_job_origin,
                 "external_pipeline_origin is required for queued runs",
             )
 
@@ -418,7 +417,7 @@ class DagsterRun(
         from dagster._core.remote_representation.origin import RemoteJobOrigin
 
         check.inst_param(origin, "origin", RemoteJobOrigin)
-        return self._replace(external_job_origin=origin)
+        return self._replace(remote_job_origin=origin)
 
     def with_tags(self, tags: Mapping[str, str]) -> Self:
         return self._replace(tags=tags)
@@ -431,11 +430,11 @@ class DagsterRun(
 
     def tags_for_storage(self) -> Mapping[str, str]:
         repository_tags = {}
-        if self.external_job_origin:
+        if self.remote_job_origin:
             # tag the run with a label containing the repository name / location name, to allow for
             # per-repository filtering of runs from the Dagster UI.
             repository_tags[REPOSITORY_LABEL_TAG] = (
-                self.external_job_origin.repository_origin.get_label()
+                self.remote_job_origin.repository_origin.get_label()
             )
 
         if not self.tags:
@@ -486,13 +485,13 @@ class DagsterRun(
 
     @staticmethod
     def tags_for_schedule(
-        schedule: Union["InstigatorState", "ExternalSchedule", "ScheduleDefinition"],
+        schedule: Union["InstigatorState", "RemoteSchedule", "ScheduleDefinition"],
     ) -> Mapping[str, str]:
         return {SCHEDULE_NAME_TAG: schedule.name}
 
     @staticmethod
     def tags_for_sensor(
-        sensor: Union["InstigatorState", "ExternalSensor", "SensorDefinition"],
+        sensor: Union["InstigatorState", "RemoteSensor", "SensorDefinition"],
     ) -> Mapping[str, str]:
         return {SENSOR_NAME_TAG: sensor.name}
 
@@ -575,13 +574,13 @@ class RunsFilter(IHaveNew):
 
     @staticmethod
     def for_schedule(
-        schedule: Union["ExternalSchedule", "InstigatorState", "ScheduleDefinition"],
+        schedule: Union["RemoteSchedule", "InstigatorState", "ScheduleDefinition"],
     ) -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_schedule(schedule))
 
     @staticmethod
     def for_sensor(
-        sensor: Union["ExternalSensor", "InstigatorState", "SensorDefinition"],
+        sensor: Union["RemoteSensor", "InstigatorState", "SensorDefinition"],
     ) -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_sensor(sensor))
 
@@ -643,12 +642,12 @@ class RunRecord(
 
     @classmethod
     def _blocking_batch_load(
-        cls, keys: Iterable[str], instance: "DagsterInstance"
+        cls, keys: Iterable[str], context: LoadingContext
     ) -> Iterable[Optional["RunRecord"]]:
         result_map: Dict[str, Optional[RunRecord]] = {run_id: None for run_id in keys}
 
         # this should be replaced with an async DB call
-        records = instance.get_run_records(RunsFilter(run_ids=list(result_map.keys())))
+        records = context.instance.get_run_records(RunsFilter(run_ids=list(result_map.keys())))
 
         for record in records:
             result_map[record.dagster_run.run_id] = record

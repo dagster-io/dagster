@@ -72,7 +72,9 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
         return sorted(
             list(
                 map(
-                    lambda key: to_config_type(self._represented_job.config_schema_snapshot, key),
+                    lambda key: to_config_type(
+                        self._represented_job.config_schema_snapshot.get_config_snap, key
+                    ),
                     self._represented_job.config_schema_snapshot.all_config_keys,
                 )
             ),
@@ -81,7 +83,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
 
     def resolve_rootConfigType(self, _graphene_info: ResolveInfo):
         return to_config_type(
-            self._represented_job.config_schema_snapshot,
+            self._represented_job.config_schema_snapshot.get_config_snap,
             self._represented_job.get_mode_def_snap(  # type: ignore  # (possible none)
                 self._mode or DEFAULT_MODE_NAME
             ).root_config_key,

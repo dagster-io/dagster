@@ -17,7 +17,6 @@ except ImportError:
 from dagster_airbyte.asset_defs import (
     build_airbyte_assets as build_airbyte_assets,
     load_assets_from_airbyte_instance as load_assets_from_airbyte_instance,
-    load_assets_from_airbyte_project as load_assets_from_airbyte_project,
 )
 from dagster_airbyte.ops import airbyte_sync_op as airbyte_sync_op
 from dagster_airbyte.resources import (

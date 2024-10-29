@@ -714,7 +714,6 @@ enum ChangeReason {
 
 type AssetDependency {
   asset: AssetNode!
-  inputName: String!
   partitionMapping: PartitionMapping
 }
 
@@ -775,7 +774,7 @@ type TeamAssetOwner {
 }
 
 union AssetPartitionStatuses =
-    DefaultPartitionStatuses
+  | DefaultPartitionStatuses
   | MultiPartitionStatuses
   | TimePartitionStatuses
 
@@ -836,6 +835,7 @@ type PartitionDefinition {
   type: PartitionDefinitionType!
   dimensionTypes: [DimensionDefinitionType!]!
   name: String
+  fmt: String
 }
 
 enum PartitionDefinitionType {
@@ -881,7 +881,7 @@ enum StaleCauseCategory {
 }
 
 union AssetChecksOrError =
-    AssetChecks
+  | AssetChecks
   | AssetCheckNeedsMigrationError
   | AssetCheckNeedsUserCodeUpgrade
   | AssetCheckNeedsAgentUpgradeError
@@ -974,7 +974,7 @@ type EvaluationStack {
 }
 
 union EvaluationStackEntry =
-    EvaluationStackListItemEntry
+  | EvaluationStackListItemEntry
   | EvaluationStackPathEntry
   | EvaluationStackMapKeyEntry
   | EvaluationStackMapValueEntry
@@ -1123,7 +1123,7 @@ type RunConfigValidationInvalid implements PipelineConfigValidationInvalid {
 }
 
 union PipelineConfigValidationResult =
-    InvalidSubsetError
+  | InvalidSubsetError
   | PipelineConfigValidationValid
   | RunConfigValidationInvalid
   | PipelineNotFoundError
@@ -1186,7 +1186,7 @@ type EventConnection {
 }
 
 union DagsterRunEvent =
-    ExecutionStepFailureEvent
+  | ExecutionStepFailureEvent
   | ExecutionStepInputEvent
   | ExecutionStepOutputEvent
   | ExecutionStepSkippedEvent
@@ -1305,7 +1305,7 @@ type PipelineRunLogsSubscriptionFailure {
 }
 
 union PipelineRunLogsSubscriptionPayload =
-    PipelineRunLogsSubscriptionSuccess
+  | PipelineRunLogsSubscriptionSuccess
   | PipelineRunLogsSubscriptionFailure
 
 type PipelineRunLogsSubscriptionSuccess {
@@ -1380,7 +1380,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
 }
 
 union PipelineSnapshotOrError =
-    PipelineNotFoundError
+  | PipelineNotFoundError
   | PipelineSnapshot
   | PipelineSnapshotNotFoundError
   | PythonError
@@ -1440,6 +1440,7 @@ type Run implements PipelineRun & RunsFeedEntry {
   hasConcurrencyKeySlots: Boolean!
   rootConcurrencyKeys: [String!]
   hasUnconstrainedRootNodes: Boolean!
+  hasRunMetricsEnabled: Boolean!
 }
 
 interface RunsFeedEntry {
@@ -1482,7 +1483,7 @@ union AssetOrError = Asset | AssetNotFoundError
 union AssetsOrError = AssetConnection | PythonError
 
 union DeletePipelineRunResult =
-    DeletePipelineRunSuccess
+  | DeletePipelineRunSuccess
   | UnauthorizedError
   | PythonError
   | RunNotFoundError
@@ -1496,7 +1497,7 @@ type DeleteRunMutation {
 }
 
 union ExecutionPlanOrError =
-    ExecutionPlan
+  | ExecutionPlan
   | RunConfigValidationInvalid
   | PipelineNotFoundError
   | InvalidSubsetError
@@ -1521,7 +1522,7 @@ type ReloadRepositoryLocationMutation {
 }
 
 union ReloadRepositoryLocationMutationResult =
-    WorkspaceLocationEntry
+  | WorkspaceLocationEntry
   | ReloadNotSupported
   | RepositoryLocationNotFound
   | UnauthorizedError
@@ -1573,7 +1574,7 @@ type ShutdownRepositoryLocationMutation {
 }
 
 union ShutdownRepositoryLocationMutationResult =
-    ShutdownRepositoryLocationSuccess
+  | ShutdownRepositoryLocationSuccess
   | RepositoryLocationNotFound
   | UnauthorizedError
   | PythonError
@@ -1601,7 +1602,7 @@ type TerminateRunMutation {
 }
 
 union TerminateRunResult =
-    TerminateRunSuccess
+  | TerminateRunSuccess
   | TerminateRunFailure
   | RunNotFoundError
   | UnauthorizedError
@@ -1656,7 +1657,11 @@ type AssetSelection {
   assetsOrError: AssetsOrError!
 }
 
-union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
+union ScheduleMutationResult =
+  | PythonError
+  | UnauthorizedError
+  | ScheduleStateResult
+  | ScheduleNotFoundError
 
 union ScheduleOrError = Schedule | ScheduleNotFoundError | PythonError
 
@@ -1716,8 +1721,9 @@ type AssetKey {
 }
 
 union LaunchBackfillResult =
-    LaunchBackfillSuccess
+  | LaunchBackfillSuccess
   | PartitionSetNotFoundError
+  | PartitionKeysNotFoundError
   | InvalidStepError
   | InvalidOutputError
   | RunConfigValidationInvalid
@@ -1730,13 +1736,18 @@ union LaunchBackfillResult =
   | ConflictingExecutionParamsError
   | NoModeProvidedError
 
+type PartitionKeysNotFoundError implements Error {
+  message: String!
+  partitionKeys: [String!]!
+}
+
 type LaunchBackfillSuccess {
   backfillId: String!
   launchedRunIds: [String]
 }
 
 union ConfigTypeOrError =
-    EnumConfigType
+  | EnumConfigType
   | CompositeConfigType
   | RegularConfigType
   | PipelineNotFoundError
@@ -1854,7 +1865,7 @@ interface DagsterType {
 }
 
 union DagsterTypeOrError =
-    RegularDagsterType
+  | RegularDagsterType
   | PipelineNotFoundError
   | DagsterTypeNotFoundError
   | PythonError
@@ -2951,14 +2962,14 @@ type RunConfigSchema {
 }
 
 union RunConfigSchemaOrError =
-    RunConfigSchema
+  | RunConfigSchema
   | PipelineNotFoundError
   | InvalidSubsetError
   | ModeNotFoundError
   | PythonError
 
 union LaunchRunResult =
-    LaunchRunSuccess
+  | LaunchRunSuccess
   | InvalidStepError
   | InvalidOutputError
   | RunConfigValidationInvalid
@@ -2972,7 +2983,7 @@ union LaunchRunResult =
   | NoModeProvidedError
 
 union LaunchRunReexecutionResult =
-    LaunchRunSuccess
+  | LaunchRunSuccess
   | InvalidStepError
   | InvalidOutputError
   | RunConfigValidationInvalid
@@ -3200,6 +3211,7 @@ type TableColumn {
   type: String!
   description: String
   constraints: TableColumnConstraints!
+  tags: [DefinitionTag!]!
 }
 
 type TableColumnConstraints {
@@ -3292,7 +3304,7 @@ type Query {
     filter: RunsFilter
     includeRunsFromBackfills: Boolean
   ): RunsFeedConnectionOrError!
-  runsFeedCountOrError(filter: RunsFilter): RunsFeedCountOrError!
+  runsFeedCountOrError(filter: RunsFilter, includeRunsFromBackfills: Boolean): RunsFeedCountOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!
@@ -3541,7 +3553,7 @@ type TestFields {
 }
 
 union AutoMaterializeAssetEvaluationRecordsOrError =
-    AutoMaterializeAssetEvaluationRecords
+  | AutoMaterializeAssetEvaluationRecords
   | AutoMaterializeAssetEvaluationNeedsMigrationError
 
 type AutoMaterializeAssetEvaluationRecords {
@@ -3578,7 +3590,7 @@ type PartitionSubsetDeserializationError implements Error {
 }
 
 union AutoMaterializeRuleEvaluationData =
-    TextRuleEvaluationData
+  | TextRuleEvaluationData
   | ParentMaterializedRuleEvaluationData
   | WaitingOnKeysRuleEvaluationData
 
@@ -3605,7 +3617,7 @@ type AssetConditionEvaluation {
 }
 
 union AssetConditionEvaluationNode =
-    UnpartitionedAssetConditionEvaluationNode
+  | UnpartitionedAssetConditionEvaluationNode
   | PartitionedAssetConditionEvaluationNode
   | SpecificPartitionAssetConditionEvaluationNode
 
@@ -3644,7 +3656,7 @@ type SpecificPartitionAssetConditionEvaluationNode {
 }
 
 union AssetConditionEvaluationRecordsOrError =
-    AssetConditionEvaluationRecords
+  | AssetConditionEvaluationRecords
   | AutoMaterializeAssetEvaluationNeedsMigrationError
 
 type AssetConditionEvaluationRecords {
@@ -3728,6 +3740,7 @@ type Mutation {
   ): ReportRunlessAssetEventsResult!
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
+  reexecutePartitionBackfill(reexecutionParams: ReexecutionParams): LaunchBackfillResult!
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
   logTelemetry(
     action: String!
@@ -3774,7 +3787,7 @@ type TerminateRunsResult {
 }
 
 union AssetWipeMutationResult =
-    AssetNotFoundError
+  | AssetNotFoundError
   | UnauthorizedError
   | PythonError
   | UnsupportedOperationError
@@ -3795,7 +3808,7 @@ type PartitionRange {
 }
 
 union ReportRunlessAssetEventsResult =
-    UnauthorizedError
+  | UnauthorizedError
   | PythonError
   | ReportRunlessAssetEventsSuccess
 
@@ -3822,7 +3835,7 @@ type LogTelemetrySuccess {
 }
 
 union AddDynamicPartitionResult =
-    AddDynamicPartitionSuccess
+  | AddDynamicPartitionSuccess
   | UnauthorizedError
   | PythonError
   | DuplicateDynamicPartitionError
@@ -3833,7 +3846,7 @@ type AddDynamicPartitionSuccess {
 }
 
 union DeleteDynamicPartitionsResult =
-    DeleteDynamicPartitionsSuccess
+  | DeleteDynamicPartitionsSuccess
   | UnauthorizedError
   | PythonError
 

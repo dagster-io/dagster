@@ -52,7 +52,7 @@ class PythonPackage:
                 self._extras_require = {}
             else:
                 self.name = project["name"]
-                self._install_requires = project["dependencies"]
+                self._install_requires = project.get("dependencies", [])
                 self._extras_require = project.get("optional-dependencies", {})
 
     @property
@@ -157,7 +157,11 @@ class PythonPackages:
             processed |= {str(path_dir)}
             assert path_dir.is_dir()
             if (path_dir / "setup.py").exists() or (path_dir / "pyproject.toml").exists():
-                packages.append(PythonPackage(path_dir))
+                try:
+                    packages.append(PythonPackage(path_dir))
+                except:
+                    logging.exception(f"Failed processing python package at {path_dir}")
+                    raise
 
         for package in sorted(packages):
             logging.info("  - " + package.name)

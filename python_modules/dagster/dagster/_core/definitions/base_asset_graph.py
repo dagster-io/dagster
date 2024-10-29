@@ -192,16 +192,18 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
     def __init__(
         self,
         key: AssetCheckKey,
+        additional_deps: Sequence[AssetKey],
         blocking: bool,
         automation_condition: Optional["AutomationCondition[AssetCheckKey]"],
     ):
         self.key = key
         self.blocking = blocking
         self._automation_condition = automation_condition
+        self._additional_deps = additional_deps
 
     @property
     def parent_entity_keys(self) -> AbstractSet[AssetKey]:
-        return {self.key.asset_key}
+        return {self.key.asset_key, *self._additional_deps}
 
     @property
     def child_entity_keys(self) -> AbstractSet[EntityKey]:
@@ -234,10 +236,13 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
     @property
     def nodes(self) -> Iterable[BaseEntityNode]:
-        return [*self._asset_nodes_by_key.values(), *self._asset_check_nodes_by_key.values()]
+        return [
+            *self._asset_nodes_by_key.values(),
+            *self._asset_check_nodes_by_key.values(),
+        ]
 
-    def has(self, asset_key: AssetKey) -> bool:
-        return asset_key in self._asset_nodes_by_key
+    def has(self, key: EntityKey) -> bool:
+        return key in self._asset_nodes_by_key or key in self._asset_check_nodes_by_key
 
     @overload
     def get(self, key: AssetKey) -> T_AssetNode: ...
@@ -265,29 +270,28 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             "downstream": {node.key: node.child_entity_keys for node in self.nodes},
         }
 
-    @cached_property
-    def all_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {node.key for node in self.asset_nodes}
+    def get_all_asset_keys(self) -> AbstractSet[AssetKey]:
+        return set(self._asset_nodes_by_key)
 
     @cached_property
     def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {node.key for node in self.asset_nodes if node.is_materializable}
+        return {key for key, node in self._asset_nodes_by_key.items() if node.is_materializable}
 
     @cached_property
     def observable_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {node.key for node in self.asset_nodes if node.is_observable}
+        return {key for key, node in self._asset_nodes_by_key.items() if node.is_observable}
 
     @cached_property
     def external_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {node.key for node in self.asset_nodes if node.is_external}
+        return {key for key, node in self._asset_nodes_by_key.items() if node.is_external}
 
     @cached_property
     def executable_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {node.key for node in self.asset_nodes if node.is_executable}
+        return {key for key, node in self._asset_nodes_by_key.items() if node.is_executable}
 
     @cached_property
     def unexecutable_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {node.key for node in self.asset_nodes if not node.is_executable}
+        return {key for key, node in self._asset_nodes_by_key.items() if not node.is_executable}
 
     @cached_property
     def toposorted_asset_keys(self) -> Sequence[AssetKey]:
@@ -301,16 +305,12 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         ]
 
     @cached_property
-    def toposorted_entity_keys(self) -> Sequence[EntityKey]:
-        """Return topologically sorted entity keys in graph. Keys with the same topological level are
+    def toposorted_entity_keys_by_level(self) -> Sequence[Sequence[EntityKey]]:
+        """Return topologically sorted levels for entity keys in graph. Keys with the same topological level are
         sorted alphabetically to provide stability.
         """
         sort_key = lambda e: (e, None) if isinstance(e, AssetKey) else (e.asset_key, e.name)
-        return [
-            item
-            for items_in_level in toposort(self.entity_dep_graph["upstream"], sort_key=sort_key)
-            for item in sorted(items_in_level, key=sort_key)
-        ]
+        return toposort(self.entity_dep_graph["upstream"], sort_key=sort_key)
 
     @cached_property
     def toposorted_asset_keys_by_level(self) -> Sequence[AbstractSet[AssetKey]]:
@@ -347,7 +347,8 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def root_executable_asset_keys(self) -> AbstractSet[AssetKey]:
         """Executable asset keys that have no executable parents."""
         return fetch_sources(
-            self.asset_dep_graph, self.observable_asset_keys | self.materializable_asset_keys
+            self.asset_dep_graph,
+            self.observable_asset_keys | self.materializable_asset_keys,
         )
 
     @property
@@ -357,7 +358,8 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     @cached_property
     def all_partitions_defs(self) -> Sequence[PartitionsDefinition]:
         return sorted(
-            set(node.partitions_def for node in self.asset_nodes if node.partitions_def), key=repr
+            set(node.partitions_def for node in self.asset_nodes if node.partitions_def),
+            key=repr,
         )
 
     @cached_property
@@ -676,7 +678,8 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
         all_assets = set(initial_subset.asset_keys)
         check.invariant(
-            len(initial_subset.asset_keys) == 1, "Multiple initial assets not yet supported"
+            len(initial_subset.asset_keys) == 1,
+            "Multiple initial assets not yet supported",
         )
         initial_asset_key = next(iter(initial_subset.asset_keys))
         queue = deque([initial_asset_key])
@@ -746,12 +749,14 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         self,
         dynamic_partitions_store: DynamicPartitionsStore,
         condition_fn: Callable[
-            [Iterable[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]], Tuple[bool, str]
+            [Iterable[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]],
+            Tuple[bool, str],
         ],
         initial_asset_partitions: Iterable[AssetKeyPartitionKey],
         evaluation_time: datetime,
     ) -> Tuple[
-        AbstractSet[AssetKeyPartitionKey], Sequence[Tuple[Iterable[AssetKeyPartitionKey], str]]
+        AbstractSet[AssetKeyPartitionKey],
+        Sequence[Tuple[Iterable[AssetKeyPartitionKey], str]],
     ]:
         """Returns asset partitions within the graph that satisfy supplied criteria.
 

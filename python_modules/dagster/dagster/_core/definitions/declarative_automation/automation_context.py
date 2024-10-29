@@ -1,10 +1,11 @@
 import datetime
+import inspect
 import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, Mapping, Optional, Type, TypeVar
 
 import dagster._check as check
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -22,7 +23,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     StructuredCursor,
 )
 from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
@@ -53,7 +53,7 @@ class AutomationContext(Generic[T_EntityKey]):
     create_time: datetime.datetime
 
     asset_graph_view: AssetGraphView
-    current_results_by_key: Mapping[EntityKey, AutomationResult]
+    request_subsets_by_key: Mapping[EntityKey, EntitySubset]
 
     parent_context: Optional["AutomationContext"]
 
@@ -68,12 +68,7 @@ class AutomationContext(Generic[T_EntityKey]):
         condition = check.not_none(
             evaluator.asset_graph.get(key).automation_condition or evaluator.default_condition
         )
-        condition_unqiue_id = condition.get_unique_id(parent_unique_id=None, index=None)
-
-        if condition.has_rule_condition and evaluator.allow_backfills:
-            raise DagsterInvalidDefinitionError(
-                "Cannot use AutoMaterializePolicies and request backfills. Please use AutomationCondition or set DECLARATIVE_AUTOMATION_REQUEST_BACKFILLS to False."
-            )
+        condition_unqiue_id = condition.get_node_unique_id(parent_unique_id=None, index=None)
 
         return AutomationContext(
             condition=condition,
@@ -81,7 +76,7 @@ class AutomationContext(Generic[T_EntityKey]):
             candidate_subset=evaluator.asset_graph_view.get_full_subset(key=key),
             create_time=get_current_datetime(),
             asset_graph_view=asset_graph_view,
-            current_results_by_key=evaluator.current_results_by_key,
+            request_subsets_by_key=evaluator.request_subsets_by_key,
             parent_context=None,
             _cursor=evaluator.cursor.get_previous_condition_cursor(key),
             _legacy_context=LegacyRuleEvaluationContext.create(key, evaluator)
@@ -96,7 +91,7 @@ class AutomationContext(Generic[T_EntityKey]):
         child_index: int,
         candidate_subset: EntitySubset[U_EntityKey],
     ) -> "AutomationContext[U_EntityKey]":
-        condition_unqiue_id = child_condition.get_unique_id(
+        condition_unqiue_id = child_condition.get_node_unique_id(
             parent_unique_id=self.condition_unique_id, index=child_index
         )
         return AutomationContext(
@@ -105,7 +100,7 @@ class AutomationContext(Generic[T_EntityKey]):
             candidate_subset=candidate_subset,
             create_time=get_current_datetime(),
             asset_graph_view=self.asset_graph_view,
-            current_results_by_key=self.current_results_by_key,
+            request_subsets_by_key=self.request_subsets_by_key,
             parent_context=self,
             _cursor=self._cursor,
             _legacy_context=self._legacy_context.for_child(
@@ -115,6 +110,11 @@ class AutomationContext(Generic[T_EntityKey]):
             else None,
             _root_log=self._root_log,
         )
+
+    async def evaluate_async(self) -> AutomationResult[T_EntityKey]:
+        if inspect.iscoroutinefunction(self.condition.evaluate):
+            return await self.condition.evaluate(self)
+        return self.condition.evaluate(self)
 
     @property
     def log(self) -> logging.Logger:
@@ -200,6 +200,11 @@ class AutomationContext(Generic[T_EntityKey]):
     def previous_evaluation_time(self) -> Optional[datetime.datetime]:
         """The `evaluation_time` value used on the previous tick's evaluation."""
         return self._cursor.temporal_context.effective_dt if self._cursor else None
+
+    @property
+    def previous_temporal_context(self) -> Optional[TemporalContext]:
+        """The `temporal_context` value used on the previous tick's evaluation."""
+        return self._cursor.temporal_context if self._cursor else None
 
     @property
     def legacy_context(self) -> LegacyRuleEvaluationContext:

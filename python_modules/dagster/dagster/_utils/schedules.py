@@ -637,7 +637,7 @@ def cron_string_iterator(
     # Croniter >= 1.4 returns 3 items
     cron_parts, nth_weekday_of_month, *_ = CroniterShim.expand(cron_string)
 
-    is_numeric = [len(part) == 1 and part[0] != "*" for part in cron_parts]
+    is_numeric = [len(part) == 1 and isinstance(part[0], int) for part in cron_parts]
     is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
 
     all_numeric_minutes = len(cron_parts[0]) > 0 and all(
@@ -657,7 +657,7 @@ def cron_string_iterator(
         if (
             all(is_numeric[0:3])
             and all(is_wildcard[3:])
-            and int(cron_parts[2][0]) <= MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL
+            and cron_parts[2][0] <= MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL
         ):  # monthly
             known_schedule_type = ScheduleType.MONTHLY
         elif all(is_numeric[0:2]) and is_numeric[4] and all(is_wildcard[2:4]):  # weekly
@@ -668,16 +668,16 @@ def cron_string_iterator(
             known_schedule_type = ScheduleType.HOURLY
 
     if is_numeric[1]:
-        expected_hour = int(cron_parts[1][0])
+        expected_hour = cron_parts[1][0]
 
     if all_numeric_minutes:
-        expected_minutes = [int(cron_part) for cron_part in cron_parts[0]]
+        expected_minutes = [cron_part for cron_part in cron_parts[0]]
 
     if is_numeric[2]:
-        expected_day = int(cron_parts[2][0])
+        expected_day = cron_parts[2][0]
 
     if is_numeric[4]:
-        expected_day_of_week = int(cron_parts[4][0])
+        expected_day_of_week = cron_parts[4][0]
 
     if known_schedule_type:
         start_datetime = datetime.datetime.fromtimestamp(

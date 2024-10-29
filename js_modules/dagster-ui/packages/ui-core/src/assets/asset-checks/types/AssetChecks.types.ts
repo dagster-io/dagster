@@ -227,4 +227,4 @@ export type AssetChecksQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetChecksQueryVersion = 'c72f90a5642aff4514b7b7e7529a960554d75aa0543485a8d6e40c613385df65';
+export const AssetChecksQueryVersion = '10c43c7b4730e25272f7cbdd61a86a03226f47faa4fee5ed8b1cea6ce5b7f68d';

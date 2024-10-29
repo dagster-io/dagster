@@ -17,9 +17,8 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
-from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils.cached_method import cached_method
-from pydantic import Field, validator
+from pydantic import Field, model_validator, validator
 
 from dagster_snowflake.constants import (
     SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER,
@@ -235,7 +234,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             "Indicate alternative database connection engine. Permissible option is "
             "'sqlalchemy' otherwise defaults to use the Snowflake Connector for Python."
         ),
-        is_required=False,
+        is_required=False,  # type: ignore
     )
 
     cache_column_metadata: Optional[str] = Field(
@@ -278,7 +277,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             )
         return v
 
-    @compat_model_validator(mode="before")
+    @model_validator(mode="before")
     def validate_authentication(cls, values):
         auths_set = 0
         auths_set += 1 if values.get("password") is not None else 0

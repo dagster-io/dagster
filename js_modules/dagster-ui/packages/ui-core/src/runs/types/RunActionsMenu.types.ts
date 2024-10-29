@@ -13,6 +13,7 @@ export type RunActionsMenuRunFragment = {
   status: Types.RunStatus;
   pipelineName: string;
   pipelineSnapshotId: string | null;
+  hasRunMetricsEnabled: boolean;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
   assetCheckSelection: Array<{
     __typename: 'AssetCheckhandle';
@@ -42,6 +43,7 @@ export type PipelineEnvironmentQuery = {
         pipelineSnapshotId: string | null;
         runConfigYaml: string;
         parentPipelineSnapshotId: string | null;
+        hasRunMetricsEnabled: boolean;
         repositoryOrigin: {
           __typename: 'RepositoryOrigin';
           id: string;
@@ -52,4 +54,4 @@ export type PipelineEnvironmentQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const PipelineEnvironmentQueryVersion = '762f0cd2639e98c470cecdb3d2f7ca4609bd77be7f916e0134021bd0b589da59';
+export const PipelineEnvironmentQueryVersion = '3b668b028997fb35b17b4d8a90a18b78dd8a70910f2c12aac63065c0584e3a10';

@@ -12,6 +12,7 @@ import medallion_silver from './kindtag-images/medallion-silver-color.svg';
 import notebook from './kindtag-images/notebook.svg';
 import pdf from './kindtag-images/pdf.svg';
 import seed from './kindtag-images/seed.svg';
+import sigma from './kindtag-images/sigma.svg';
 import source from './kindtag-images/source.svg';
 import table from './kindtag-images/table.svg';
 import task from './kindtag-images/task.svg';
@@ -135,7 +136,7 @@ import sql from './kindtag-images/tool-sql-color.svg';
 import sqlite from './kindtag-images/tool-sqlite-color.svg';
 import sqlmesh from './kindtag-images/tool-sqlmesh-color.svg';
 import sqlserver from './kindtag-images/tool-sqlserver-color.svg';
-import stepfuncitons from './kindtag-images/tool-stepfunctions-color.svg';
+import stepfunctions from './kindtag-images/tool-stepfunctions-color.svg';
 import stitch from './kindtag-images/tool-stitch-color.svg';
 import stripe from './kindtag-images/tool-stripe-color.svg';
 import tableau from './kindtag-images/tool-tableau-color.svg';
@@ -197,12 +198,14 @@ export type KnownTagType =
   | 'wandb'
   | 'databricks'
   | 'airflow'
+  | 'airliftmapped'
   | 'airtable'
   | 'omni'
   | 'datadog'
   | 'postgres'
   | 'postgresql'
   | 'stripe'
+  | 'sigma'
   | 'hightouch'
   | 'census'
   | 'hex'
@@ -306,10 +309,10 @@ export type KnownTagType =
   | 'soda'
   | 'sqlite'
   | 'sqlmesh'
-  | 'stepfuncitons'
-  | 'awsstepfuncitons'
-  | 'awssetepfunciton'
-  | 'setepfunciton'
+  | 'stepfunctions'
+  | 'awsstepfunctions'
+  | 'awsstepfunction'
+  | 'stepfunction'
   | 'thoughtspot'
   | 'trino'
   | 'twilio'
@@ -433,6 +436,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: airflow,
     content: 'Airflow',
   },
+  airliftmapped: {
+    icon: airflow,
+    content: 'Mapped',
+  },
   airtable: {
     icon: airtable,
     content: 'Airtable',
@@ -456,6 +463,11 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   stripe: {
     icon: stripe,
     content: 'Stripe',
+  },
+  sigma: {
+    icon: sigma,
+    content: 'Sigma',
+    blackAndWhite: true,
   },
   hightouch: {
     icon: hightouch,
@@ -879,20 +891,20 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: sqlmesh,
     content: 'SQLMesh',
   },
-  stepfuncitons: {
-    icon: stepfuncitons,
+  stepfunctions: {
+    icon: stepfunctions,
     content: 'Step Functions',
   },
-  awsstepfuncitons: {
-    icon: stepfuncitons,
+  awsstepfunctions: {
+    icon: stepfunctions,
     content: 'Step Functions',
   },
-  awssetepfunciton: {
-    icon: stepfuncitons,
+  awsstepfunction: {
+    icon: stepfunctions,
     content: 'Step Functions',
   },
-  setepfunciton: {
-    icon: stepfuncitons,
+  stepfunction: {
+    icon: stepfunctions,
     content: 'Step Functions',
   },
   thoughtspot: {

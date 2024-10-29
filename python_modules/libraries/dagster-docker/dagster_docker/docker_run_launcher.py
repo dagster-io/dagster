@@ -105,6 +105,12 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         container_kwargs = {**container_context.container_kwargs}
         labels = container_kwargs.pop("labels", {})
+
+        if "stop_timeout" in container_kwargs:
+            # This should work, but does not due to https://github.com/docker/docker-py/issues/3168
+            # Pull it out and apply it in the terminate() method instead
+            del container_kwargs["stop_timeout"]
+
         if isinstance(labels, list):
             labels = {key: "" for key in labels}
 
@@ -208,6 +214,9 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         container = self._get_container(run)
 
+        container_context = self.get_container_context(run)
+        stop_timeout = container_context.container_kwargs.get("stop_timeout")
+
         if not container:
             self._instance.report_engine_event(
                 message="Unable to get docker container to send termination request to.",
@@ -216,7 +225,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             )
             return False
 
-        container.stop()
+        container.stop(timeout=stop_timeout)
 
         return True
 

@@ -1,6 +1,6 @@
 replication_config = {
-    "SOURCE": "MY_POSTGRES",
-    "TARGET": "MY_DUCKDB",
+    "source": "MY_POSTGRES",
+    "target": "MY_DUCKDB",
     "defaults": {"mode": "full-refresh", "object": "{stream_schema}_{stream_table}"},
     "streams": {
         "public.accounts": None,

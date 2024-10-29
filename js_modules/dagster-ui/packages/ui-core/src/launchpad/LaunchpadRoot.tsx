@@ -31,7 +31,7 @@ export const AssetLaunchpad = ({
     <Dialog
       style={{height: '90vh', width: '80%'}}
       isOpen={open}
-      canEscapeKeyClose={true}
+      canEscapeKeyClose={false}
       canOutsideClickClose={true}
       onClose={() => setOpen(false)}
     >

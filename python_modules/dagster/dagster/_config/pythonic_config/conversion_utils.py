@@ -165,12 +165,12 @@ def _config_type_for_type_on_pydantic_field(
         from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
 
         # special case pydantic constrained types to their source equivalents
-        if safe_is_subclass(potential_dagster_type, ConstrainedStr):
+        if safe_is_subclass(potential_dagster_type, ConstrainedStr):  # type: ignore
             return StringSource
         # no FloatSource, so we just return float
-        elif safe_is_subclass(potential_dagster_type, ConstrainedFloat):
+        elif safe_is_subclass(potential_dagster_type, ConstrainedFloat):  # type: ignore
             potential_dagster_type = float
-        elif safe_is_subclass(potential_dagster_type, ConstrainedInt):
+        elif safe_is_subclass(potential_dagster_type, ConstrainedInt):  # type: ignore
             return IntSource
     except ImportError:
         # These types do not exist in Pydantic 2.x

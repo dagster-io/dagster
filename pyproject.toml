@@ -49,7 +49,7 @@ analyzeUnannotatedFunctions = false
 
 # Minimum version of Python on which code must run. This determines the standard library stubs used by
 # pyright.
-pythonVersion = "3.8"
+pythonVersion = "3.9"
 
 # Use "basic" ruleset. This differs from strict in several ways, but most
 # importantly it does not flag untyped code as an error.

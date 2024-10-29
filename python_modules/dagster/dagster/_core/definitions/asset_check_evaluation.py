@@ -3,6 +3,7 @@ from typing import Mapping, NamedTuple, Optional
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
 from dagster._core.definitions.events import AssetKey, MetadataValue
+from dagster._core.definitions.metadata import normalize_metadata
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -101,12 +102,16 @@ class AssetCheckEvaluation(
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
         description: Optional[str] = None,
     ):
+        normed_metadata = normalize_metadata(
+            check.dict_param(metadata, "metadata", key_type=str),
+        )
+
         return super(AssetCheckEvaluation, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             check_name=check.str_param(check_name, "check_name"),
             passed=check.bool_param(passed, "passed"),
-            metadata=check.dict_param(metadata, "metadata", key_type=str),
+            metadata=normed_metadata,
             target_materialization_data=check.opt_inst_param(
                 target_materialization_data,
                 "target_materialization_data",

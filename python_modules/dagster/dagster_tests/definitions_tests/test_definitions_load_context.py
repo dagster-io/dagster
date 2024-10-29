@@ -18,7 +18,7 @@ from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
     ReconstructableRepository,
-    repository_def_from_pointer,
+    initialize_repository_def_from_pointer,
     repository_def_from_target_def,
 )
 from dagster._core.definitions.repository_definition.repository_definition import (
@@ -85,7 +85,7 @@ def metadata_defs():
 
 
 def test_reconstruction_metadata():
-    repo = repository_def_from_target_def(metadata_defs, DefinitionsLoadType.INITIALIZATION)
+    repo = repository_def_from_target_def(metadata_defs)
     assert repo
     assert repo.assets_defs_by_key.keys() == {
         AssetKey("regular_asset"),
@@ -151,11 +151,11 @@ def load_type_test_defs() -> Definitions:
     return Definitions(assets=[foo], jobs=[foo_job])
 
 
-def test_definitions_load_type():
+def test_definitions_load_type() -> None:
     pointer = CodePointer.from_python_file(__file__, "load_type_test_defs", None)
 
     # Load type is INITIALIZATION so should not raise
-    assert repository_def_from_pointer(pointer, DefinitionsLoadType.INITIALIZATION, None)
+    assert initialize_repository_def_from_pointer(pointer)
 
     recon_job = ReconstructableJob(
         repository=ReconstructableRepository(pointer),

@@ -1,5 +1,15 @@
 import operator
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Generic, NamedTuple, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Generic,
+    Literal,
+    NamedTuple,
+    TypeVar,
+    Union,
+)
 
 from typing_extensions import Self
 
@@ -105,8 +115,10 @@ class EntitySubset(Generic[T_EntityKey]):
         return self._asset_graph_view.compute_child_subset(child_key, self)
 
     @cached_method
-    def compute_mapped_subset(self, to_key: U_EntityKey) -> "EntitySubset[U_EntityKey]":
-        return self._asset_graph_view.compute_mapped_subset(to_key, self)
+    def compute_mapped_subset(
+        self, to_key: U_EntityKey, direction: Literal["up", "down"]
+    ) -> "EntitySubset[U_EntityKey]":
+        return self._asset_graph_view.compute_mapped_subset(to_key, self, direction=direction)
 
     @property
     def size(self) -> int:

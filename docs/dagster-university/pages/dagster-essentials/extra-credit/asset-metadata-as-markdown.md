@@ -132,7 +132,7 @@ In Lesson 9, you created the `adhoc_request` asset. During materialization, the 
 At this point, the code for the `adhoc_request` asset should look like this:
 
 ```python
-from dagster import Config, asset, MaterializeResult, MetadataValue, get_dagster_logger
+from dagster import Config, asset, MaterializeResult, MetadataValue
 from dagster_duckdb import DuckDBResource
 
 import plotly.express as px

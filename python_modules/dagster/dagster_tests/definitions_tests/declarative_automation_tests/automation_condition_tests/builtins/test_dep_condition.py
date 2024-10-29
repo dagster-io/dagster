@@ -49,8 +49,9 @@ def get_hardcoded_condition():
     return HardcodedCondition(), true_set
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("is_any", [True, False])
-def test_dep_missing_unpartitioned(is_any: bool) -> None:
+async def test_dep_missing_unpartitioned(is_any: bool) -> None:
     inner_condition, true_set = get_hardcoded_condition()
     condition = (
         AutomationCondition.any_deps_match(inner_condition)
@@ -62,12 +63,12 @@ def test_dep_missing_unpartitioned(is_any: bool) -> None:
     )
 
     # neither parent is true
-    state, result = state.evaluate("C")
+    state, result = await state.evaluate("C")
     assert result.true_subset.size == 0
 
     # one parent true, still one false
     true_set.add(AssetKeyPartitionKey(AssetKey("A")))
-    state, result = state.evaluate("C")
+    state, result = await state.evaluate("C")
     if is_any:
         assert result.true_subset.size == 1
     else:
@@ -75,12 +76,13 @@ def test_dep_missing_unpartitioned(is_any: bool) -> None:
 
     # both parents true
     true_set.add(AssetKeyPartitionKey(AssetKey("B")))
-    state, result = state.evaluate("C")
+    state, result = await state.evaluate("C")
     assert result.true_subset.size == 1
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("is_any", [True, False])
-def test_dep_missing_partitioned(is_any: bool) -> None:
+async def test_dep_missing_partitioned(is_any: bool) -> None:
     inner_condition, true_set = get_hardcoded_condition()
     condition = (
         AutomationCondition.any_deps_match(inner_condition)
@@ -92,11 +94,11 @@ def test_dep_missing_partitioned(is_any: bool) -> None:
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     # no parents true
-    state, result = state.evaluate("C")
+    state, result = await state.evaluate("C")
     assert result.true_subset.size == 0
 
     true_set.add(AssetKeyPartitionKey(AssetKey("A"), "1"))
-    state, result = state.evaluate("C")
+    state, result = await state.evaluate("C")
     if is_any:
         # one parent is true for partition 1
         assert result.true_subset.size == 1
@@ -105,7 +107,7 @@ def test_dep_missing_partitioned(is_any: bool) -> None:
         assert result.true_subset.size == 0
 
     true_set.add(AssetKeyPartitionKey(AssetKey("A"), "2"))
-    state, result = state.evaluate("C")
+    state, result = await state.evaluate("C")
     if is_any:
         # both partitions 1 and 2 have at least one true parent
         assert result.true_subset.size == 2
@@ -114,7 +116,7 @@ def test_dep_missing_partitioned(is_any: bool) -> None:
         assert result.true_subset.size == 0
 
     true_set.add(AssetKeyPartitionKey(AssetKey("B"), "1"))
-    state, result = state.evaluate("C")
+    state, result = await state.evaluate("C")
     if is_any:
         assert result.true_subset.size == 2
     else:
@@ -122,7 +124,7 @@ def test_dep_missing_partitioned(is_any: bool) -> None:
         assert result.true_subset.size == 1
 
     true_set.add(AssetKeyPartitionKey(AssetKey("B"), "2"))
-    state, result = state.evaluate("C")
+    state, result = await state.evaluate("C")
     if is_any:
         assert result.true_subset.size == 2
     else:
@@ -130,6 +132,7 @@ def test_dep_missing_partitioned(is_any: bool) -> None:
         assert result.true_subset.size == 2
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("is_any", [True, False])
 @pytest.mark.parametrize("is_include", [True, False])
 @pytest.mark.parametrize(
@@ -143,7 +146,7 @@ def test_dep_missing_partitioned(is_any: bool) -> None:
         (2, ["B1", "B2"], 2),
     ],
 )
-def test_dep_missing_partitioned_selections(
+async def test_dep_missing_partitioned_selections(
     is_any: bool,
     is_include: bool,
     expected_initial_result_size: int,
@@ -166,10 +169,10 @@ def test_dep_missing_partitioned_selections(
         one_asset_depends_on_two, automation_condition=condition
     ).with_asset_properties(partitions_def=two_partitions_def)
     # all parents are missing
-    state, result = state.evaluate("C")
+    state, result = await state.evaluate("C")
     assert result.true_subset.size == expected_initial_result_size
     state = state.with_runs(*(run_request(s[0], s[1]) for s in materialized_asset_partitions))
-    state, result = state.evaluate("C")
+    state, result = await state.evaluate("C")
     assert result.true_subset.size == expected_final_result_size
 
 
@@ -185,7 +188,8 @@ complex_scenario_spec = ScenarioSpec(
 )
 
 
-def test_dep_missing_complex_include() -> None:
+@pytest.mark.asyncio
+async def test_dep_missing_complex_include() -> None:
     # true if any dependencies within the "bar" group are missing, or "A" is missing
     condition = AutomationCondition.any_deps_match(
         AutomationCondition.missing(),
@@ -193,21 +197,22 @@ def test_dep_missing_complex_include() -> None:
     state = AutomationConditionScenarioState(complex_scenario_spec, automation_condition=condition)
 
     # all start off as missing
-    state, result = state.evaluate("downstream")
+    state, result = await state.evaluate("downstream")
     assert result.true_subset.size == 1
 
     # A materialized, D and E still missing
     state = state.with_runs(run_request(["A"]))
-    state, result = state.evaluate("downstream")
+    state, result = await state.evaluate("downstream")
     assert result.true_subset.size == 1
 
     # D and E materialized, and all the other missing things are in the exclude selection
     state = state.with_runs(run_request(["D", "E"]))
-    state, result = state.evaluate("downstream")
+    state, result = await state.evaluate("downstream")
     assert result.true_subset.size == 0
 
 
-def test_dep_missing_complex_exclude() -> None:
+@pytest.mark.asyncio
+async def test_dep_missing_complex_exclude() -> None:
     # true if any dependencies are missing, ignoring A and anything in the "bar" group
     condition = AutomationCondition.any_deps_match(
         AutomationCondition.missing(),
@@ -215,15 +220,15 @@ def test_dep_missing_complex_exclude() -> None:
     state = AutomationConditionScenarioState(complex_scenario_spec, automation_condition=condition)
 
     # all start off as missing
-    state, result = state.evaluate("downstream")
+    state, result = await state.evaluate("downstream")
     assert result.true_subset.size == 1
 
     # B materialized, C still missing
     state = state.with_runs(run_request(["B"]))
-    state, result = state.evaluate("downstream")
+    state, result = await state.evaluate("downstream")
     assert result.true_subset.size == 1
 
     # C materialized, and all the other missing things are in the exclude selection
     state = state.with_runs(run_request(["C"]))
-    state, result = state.evaluate("downstream")
+    state, result = await state.evaluate("downstream")
     assert result.true_subset.size == 0

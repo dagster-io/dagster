@@ -227,6 +227,9 @@ def test_base_with_custom_tags_translator() -> None:
         def get_tags(self, stream_definition):
             return {"custom_tag": "custom_value"}
 
+        def get_kinds(self, stream_definition):
+            return ["sling", "foo"]
+
     @sling_assets(
         replication_config=replication_config_path,
         dagster_sling_translator=CustomSlingTranslator(),
@@ -237,6 +240,7 @@ def test_base_with_custom_tags_translator() -> None:
         assert my_sling_assets.tags_by_key[asset_key] == {
             "custom_tag": "custom_value",
             **build_kind_tag("sling"),
+            **build_kind_tag("foo"),
         }
 
 
@@ -469,7 +473,7 @@ def test_subset_with_run_config(
     }
 
 
-def test_relation_identifier(
+def test_table_name(
     csv_to_sqlite_dataworks_replication: SlingReplicationParam,
     path_to_temp_sqlite_db: str,
 ):
@@ -497,5 +501,5 @@ def test_relation_identifier(
     asset_materializations = res.get_asset_materialization_events()
     assert len(asset_materializations) == 1
     assert asset_materializations[0].materialization.metadata[
-        "dagster/relation_identifier"
+        "dagster/table_name"
     ] == TextMetadataValue(text="SLING_SQLITE.main.orders")

@@ -5,11 +5,7 @@ description: "Learn to create your own custom Declarative Automation conditions.
 
 # Creating custom Declarative Automation conditions
 
-<Note>
-  Declarative Automation is currently <strong>experimental</strong>.
-</Note>
-
-[Declarative Automation](/concepts/automation/declarative-automation) includes pre-built conditions to handle common use cases, such as executing on a periodic schedule or whenever an upstream dependency updates, but you can also customize conditions.
+[Declarative Automation](/concepts/automation/declarative-automation) includes pre-built conditions to handle common use cases, such as executing on a periodic schedule or whenever an upstream dependency updates, but the core system is extremely flexible and can be tailored to your specific needs.
 
 By the end of this guide, you'll understand how <PyObject object="AutomationCondition" pluralize /> work and how to create your own custom conditions.
 
@@ -26,7 +22,7 @@ Before continuing, you should be familiar with:
 
 ## How it works
 
-Each <PyObject object="AutomationCondition" /> consists of a set of **operands** and various **operators**. To create conditions that suit your specific needs, you can combine the operators and operands listed below. For example:
+Each <PyObject object="AutomationCondition" /> consists of a set of **operands** and various **operators**. To create conditions that suit your needs, you can combine the operators and operands listed below. For example:
 
 ```python
 from dagster import AutomationCondition
@@ -36,23 +32,24 @@ in_progress_or_failed_parents = AutomationCondition.any_deps_match(
 )
 ```
 
-This condition translates to **Any upstream dependencies (parents) part of an in-progress run or failed during the latest run**.
+This condition translates to **Any upstream dependencies (parents) are part of an in-progress run or failed during the latest run**.
 
 ### Operands
 
-Operands are base conditions which can be true or false about a given asset partition.
+Operands are base conditions which can be true or false about a given target. For partitioned assets, the target will be a given partition of the asset.
 
-| Operand                                     | Description                                                                                                                       |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `AutomationCondition.missing`               | The asset partition has never been materialized or observed                                                                       |
-| `AutomationCondition.in_progress`           | The asset partition is part of an in-progress run                                                                                 |
-| `AutomationCondition.failed`                | The asset partition failed to be materialized in its latest run                                                                   |
-| `AutomationCondition.newly_updated`         | The asset partition was materialized since the previous evaluation                                                                |
-| `AutomationCondition.newly_requested`       | The asset partition was requested on the previous evaluation                                                                      |
-| `AutomationCondition.code_version_changed`  | The asset has a new code version since the previous evaluation                                                                    |
-| `AutomationCondition.cron_tick_passed`      | A new tick of the provided cron schedule occurred since the previous evaluation                                                   |
-| `AutomationCondition.in_latest_time_window` | The asset partition falls within the latest time window of the asset’s <PyObject object="PartitionsDefinition" />, if applicable. |
-| `AutomationCondition.will_be_requested`     | The asset partition will be requested in this tick                                                                                |
+| Operand                                     | Description                                                                                                          |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `AutomationCondition.missing`               | Target has not been executed                                                                                         |
+| `AutomationCondition.in_progress`           | Target is part of an in-progress run                                                                                 |
+| `AutomationCondition.execution_failed`      | Target failed to be executed in its latest run                                                                       |
+| `AutomationCondition.newly_updated`         | Target was updated since the previous evaluation                                                                     |
+| `AutomationCondition.newly_requested`       | Target was requested on the previous evaluation                                                                      |
+| `AutomationCondition.code_version_changed`  | Target has a new code version since the previous evaluation                                                          |
+| `AutomationCondition.cron_tick_passed`      | A new tick of the provided cron schedule occurred since the previous evaluation                                      |
+| `AutomationCondition.in_latest_time_window` | Target falls within the latest time window of the asset’s <PyObject object="PartitionsDefinition" />, if applicable. |
+| `AutomationCondition.will_be_requested`     | Target will be requested in this tick                                                                                |
+| `AutomationCondition.initial_evaluation`    | This is the first evaluation of this condition                                                                       |
 
 ### Operators
 
@@ -90,7 +87,7 @@ The above conditions can be built into more complex expressions using the follow
         <code>|</code> (pipe)
       </td>
       <td>
-        OR; either condition must be true; ex: <code>A | B</code>
+        OR; either condition is true; ex: <code>A | B</code>
       </td>
     </tr>
     <tr>
@@ -98,7 +95,7 @@ The above conditions can be built into more complex expressions using the follow
         <code>&</code> (ampersand)
       </td>
       <td>
-        AND; both conditions must be true; ex: <code>A & B</code>
+        AND; both conditions are true; ex: <code>A & B</code>
       </td>
     </tr>
     <tr>
@@ -166,9 +163,9 @@ Finally, there are a set of pre-built conditions which make it easier to constru
 
 It's common to have use cases similar to pre-built policies but with minor differences. While it is always possible to copy the base implementation and modify it as needed, it can often be simpler to use the `.without()` method to remove the unwanted sub-conditions or add additional conditions with the `&` operator.
 
-### `AutomationCondition.eager()`: Ignoring missing dependencies
+### `AutomationCondition.eager()`: Ignoring missing upstream data
 
-By default, `AutomationCondition.eager()` will not materialize an asset partition if it has any missing dependencies. If it is expected to have missing upstream data, remove `~AutomationCondition.any_deps_missing()` from the eager policy to allow execution:
+By default, `AutomationCondition.eager()` will not materialize a target if it has any missing upstream data. If it is expected to have missing upstream data, remove `~AutomationCondition.any_deps_missing()` from the eager policy to allow execution:
 
 ```python
 from dagster import AutomationCondition
@@ -220,7 +217,7 @@ Note that these `ignore()` and `allow()` methods also work for composite conditi
 
 ## Describing conditions with labels
 
-When there are a large number of sub-conditions that make up an <PyObject object="AutomationCondition" />, it can be difficult to understand and troubleshoot the condition. To make conditions easier to understand, you can attach labels to sub-conditions, which will then display in the Dagster UI.
+When there are a large number of sub-conditions that make up an <PyObject object="AutomationCondition" />, it can be difficult to understand and troubleshoot the condition. To make conditions easier to understand, you can attach labels to sub-conditions, which will then be displayed in the Dagster UI.
 
 Arbitrary string labels can be attached to any node in the <PyObject object="AutomationCondition" /> tree by using the `with_label()` method, allowing you to describe the purpose of a specific sub-condition. For example:
 
@@ -253,6 +250,62 @@ src="/images/concepts/automation/declarative-automation/condition-label-expanded
 width={1576}
 height={593}
 />
+
+---
+
+## Arbitary Python AutomationConditions <Experimental />
+
+Some automation use cases require custom business logic that cannot be expressed with off-the-shelf components. In these cases, you can define AutomationConditions which execute arbitrary python code, and compose them with the built-in conditions.
+
+### Setup
+
+By default, Dagster executes `AutomationConditionSensorDefinitions` in a daemon process that does not have access to your user code. In order to execute arbitrary Python code, you'll need to update this to execute on your user code server. This is the same place that your `@sensor` methods are evaluated.
+
+<Note>
+  Automation condition evaluation can be more resource-intensive than a typical
+  sensor. A limit of 500 assets or checks per sensor is enforced.
+</Note>
+
+To do this, add an automation condition sensor to your definitions with the `use_user_code_server` flag set to `True`:
+
+```python
+import dagster as dg
+
+defs = dg.Definitions(
+  sensors=[dg.AutomationConditionSensorDefinition("automation_condition_sensor", target=dg.AssetSelection.all(), use_user_code_server=True)]
+)
+```
+
+This will allow your sensor to target automation conditions containing custom python code.
+
+### Defining a custom condition
+
+You can create your own subclass of `AutomationCondition`, defining the `evaluate()` method. For example, imagine you want to avoid executing anything on a company holiday. To do this, you can first define a condition which detects if it's currently a company holiday:
+
+```python
+import dagster as dg
+
+class IsCompanyHoliday(dg.AutomationCondition):
+  def evaluate(self, context: dg.AutomationContext) -> dg.AutomationResult:
+    if is_company_holiday(context.evaluation_time):
+      true_subset = context.candidate_subset
+    else:
+      true_subset = context.get_empty_subset()
+    return dg.AutomationResult(true_subset, context=context)
+
+```
+
+In this example, we build up a subset of the evaluated asset for which this condition is True. We use `EntitySubsets`, rather than a pure `True` / `False` to account for partitioned assets, for which individual partitions may have different results.
+
+In our case, the condition will be applied the same regardless of if it's partitioned or not, so we don't need to have any special logic to differntiate between these cases. If it's not a company holiday, we can return an empty subset (meaning that this condition is not true for any subset of the asset), and if it is a company holiday, we return the `candidate_subset`, which is the subset of the asset that we need to evaluate. This subset shrinks as we filter partitions out using the `&` condition, so if you have an expression `A & B`, and `A` returns the empty subset, then the candidate subset for `B` will be empty as well. This helps avoid expensive computation in cases where we know it won't impact the final output.
+
+Once this condition is defined, you can use this condition as part of a broader expression, for example:
+
+```python
+import dagster as dg
+
+condition = AutomationCondition.eager() & ~IsCompanyHoliday()
+```
 
 ---
 

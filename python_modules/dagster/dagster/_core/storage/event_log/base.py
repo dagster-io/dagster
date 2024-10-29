@@ -16,6 +16,7 @@ from dagster._core.assets import AssetDetails
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.event_api import (
     AssetRecordsFilter,
     EventHandlerFn,
@@ -31,10 +32,11 @@ from dagster._core.execution.stats import (
     build_run_stats_from_events,
     build_run_step_stats_from_events,
 )
-from dagster._core.instance import DagsterInstance, MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.loader import InstanceLoadableBy
+from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.loader import InstanceLoadableBy, LoadingContext
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
+from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._core.storage.sql import AlembicVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
 from dagster._utils import PrintFn
@@ -136,19 +138,34 @@ class AssetRecord(
 
     @classmethod
     def _blocking_batch_load(
-        cls, keys: Iterable[AssetKey], instance: DagsterInstance
+        cls, keys: Iterable[AssetKey], context: LoadingContext
     ) -> Iterable[Optional["AssetRecord"]]:
         records_by_key = {
             record.asset_entry.asset_key: record
-            for record in instance.get_asset_records(list(keys))
+            for record in context.instance.get_asset_records(list(keys))
         }
         return [records_by_key.get(key) for key in keys]
 
 
-class AssetCheckSummaryRecord(NamedTuple):
-    asset_check_key: AssetCheckKey
-    last_check_execution_record: Optional[AssetCheckExecutionRecord]
-    last_run_id: Optional[str]
+class AssetCheckSummaryRecord(
+    NamedTuple(
+        "_AssetCheckSummaryRecord",
+        [
+            ("asset_check_key", AssetCheckKey),
+            ("last_check_execution_record", Optional[AssetCheckExecutionRecord]),
+            ("last_run_id", Optional[str]),
+        ],
+    ),
+    InstanceLoadableBy[AssetCheckKey],
+):
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[AssetCheckKey], context: LoadingContext
+    ) -> Iterable[Optional["AssetCheckSummaryRecord"]]:
+        records_by_key = context.instance.event_log_storage.get_asset_check_summary_records(
+            list(keys)
+        )
+        return [records_by_key[key] for key in keys]
 
 
 class PlannedMaterializationInfo(NamedTuple):
@@ -446,7 +463,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def get_latest_storage_id_by_partition(
-        self, asset_key: AssetKey, event_type: DagsterEventType
+        self,
+        asset_key: AssetKey,
+        event_type: DagsterEventType,
+        partitions: Optional[Set[str]] = None,
     ) -> Mapping[str, int]:
         pass
 
@@ -634,3 +654,18 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     def default_run_scoped_event_tailer_offset(self) -> int:
         return 0
+
+    def get_asset_status_cache_values(
+        self,
+        partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]],
+        context: LoadingContext,
+    ) -> Sequence[Optional["AssetStatusCacheValue"]]:
+        """Get the cached status information for each asset."""
+        values = []
+        for asset_key, partitions_def in partitions_defs_by_key.items():
+            values.append(
+                get_and_update_asset_status_cache_value(
+                    self._instance, asset_key, partitions_def, loading_context=context
+                )
+            )
+        return values

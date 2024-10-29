@@ -12,6 +12,7 @@ from typing import Any, Dict, Iterator, List, Mapping, NamedTuple, Optional, Seq
 import orjson
 from dagster import (
     AssetCheckResult,
+    AssetExecutionContext,
     AssetMaterialization,
     AssetObservation,
     OpExecutionContext,
@@ -83,7 +84,9 @@ class DbtCliInvocation:
     project_dir: Path
     target_path: Path
     raise_on_error: bool
-    context: Optional[OpExecutionContext] = field(default=None, repr=False)
+    context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = field(
+        default=None, repr=False
+    )
     termination_timeout_seconds: float = field(
         init=False, default=DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS
     )
@@ -133,7 +136,7 @@ class DbtCliInvocation:
         project_dir: Path,
         target_path: Path,
         raise_on_error: bool,
-        context: Optional[OpExecutionContext],
+        context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
         adapter: Optional[BaseAdapter],
     ) -> "DbtCliInvocation":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in

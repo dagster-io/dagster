@@ -395,7 +395,7 @@ class ArtifactsIOManager(IOManager):
 
                 artifact_name = parameters.get("name")
                 if artifact_name is None:
-                    artifact_name = context.asset_key[0][0]  # name of asset
+                    artifact_name = context.asset_key.path[0]  # name of asset
 
                 partitions = [
                     (key, f"{artifact_name}.{ str(key).replace('|', '-')}")

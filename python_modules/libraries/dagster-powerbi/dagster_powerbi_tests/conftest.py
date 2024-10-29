@@ -2,7 +2,7 @@ from typing import Iterator
 
 import pytest
 import responses
-from dagster_powerbi.resource import BASE_API_URL
+from dagster_powerbi.resource import BASE_API_URL, generate_data_source_id
 from dagster_powerbi.translator import PowerBIContentData, PowerBIContentType, PowerBIWorkspaceData
 
 SAMPLE_DASH = {
@@ -91,7 +91,6 @@ SAMPLE_DATA_SOURCES = [
     {
         "datasourceType": "File",
         "connectionDetails": {"path": "c:\\users\\mimyersm\\desktop\\sales & marketing datas.xlsx"},
-        "datasourceId": "46c83f90-3eaa-4658-b716-2307bc56e74d",
         "gatewayId": "40800873-8e0d-4152-86e3-e6edeb2a738c",
     },
 ]
@@ -118,7 +117,11 @@ def workspace_data_fixture(workspace_id: str) -> PowerBIWorkspaceData:
     sample_semantic_model = SAMPLE_SEMANTIC_MODEL.copy()
 
     sample_data_sources = SAMPLE_DATA_SOURCES
-    sample_semantic_model["sources"] = [ds["datasourceId"] for ds in sample_data_sources]
+    data_sources = [
+        ds if "datasourceId" in ds else {"datasourceId": generate_data_source_id(ds), **ds}
+        for ds in sample_data_sources
+    ]
+    sample_semantic_model["sources"] = [ds["datasourceId"] for ds in data_sources]
 
     return PowerBIWorkspaceData(
         workspace_id=workspace_id,
@@ -141,7 +144,7 @@ def workspace_data_fixture(workspace_id: str) -> PowerBIWorkspaceData:
             ds["datasourceId"]: PowerBIContentData(
                 content_type=PowerBIContentType.DATA_SOURCE, properties=ds
             )
-            for ds in sample_data_sources
+            for ds in data_sources
         },
     )
 

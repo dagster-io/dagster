@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, Field
+from pydantic import ConfigDict, Field
 
 from schema.charts.utils import kubernetes
 from schema.charts.utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
@@ -16,18 +16,17 @@ class RunLauncherType(str, Enum):
 class CeleryWorkerQueue(BaseModel):
     replicaCount: int = Field(gt=0)
     name: str
-    labels: Optional[kubernetes.Labels]
-    nodeSelector: Optional[kubernetes.NodeSelector]
-    configSource: Optional[dict]
-    additionalCeleryArgs: Optional[List[str]]
+    labels: Optional[kubernetes.Labels] = None
+    nodeSelector: Optional[kubernetes.NodeSelector] = None
+    configSource: Optional[dict] = None
+    additionalCeleryArgs: Optional[List[str]] = None
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class CeleryK8sRunLauncherConfig(BaseModel):
     image: kubernetes.Image
-    imagePullPolicy: Optional[kubernetes.PullPolicy]
+    imagePullPolicy: Optional[kubernetes.PullPolicy] = None
     nameOverride: str
     configSource: dict
     workerQueues: List[CeleryWorkerQueue] = Field(min_items=1)
@@ -44,61 +43,58 @@ class CeleryK8sRunLauncherConfig(BaseModel):
     livenessProbe: kubernetes.LivenessProbe
     volumeMounts: List[kubernetes.VolumeMount]
     volumes: List[kubernetes.Volume]
-    labels: Optional[Dict[str, str]]
-    failPodOnRunFailure: Optional[bool]
-    schedulerName: Optional[str]
-    jobNamespace: Optional[str]
+    labels: Optional[Dict[str, str]] = None
+    failPodOnRunFailure: Optional[bool] = None
+    schedulerName: Optional[str] = None
+    jobNamespace: Optional[str] = None
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class RunK8sConfig(BaseModel):
-    containerConfig: Optional[Dict[str, Any]]
-    podSpecConfig: Optional[Dict[str, Any]]
-    podTemplateSpecMetadata: Optional[Dict[str, Any]]
-    jobSpecConfig: Optional[Dict[str, Any]]
-    jobMetadata: Optional[Dict[str, Any]]
+    containerConfig: Optional[Dict[str, Any]] = None
+    podSpecConfig: Optional[Dict[str, Any]] = None
+    podTemplateSpecMetadata: Optional[Dict[str, Any]] = None
+    jobSpecConfig: Optional[Dict[str, Any]] = None
+    jobMetadata: Optional[Dict[str, Any]] = None
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class K8sRunLauncherConfig(BaseModel):
-    image: Optional[kubernetes.Image]
+    image: Optional[kubernetes.Image] = None
     imagePullPolicy: kubernetes.PullPolicy
-    jobNamespace: Optional[str]
+    jobNamespace: Optional[str] = None
     loadInclusterConfig: bool
-    kubeconfigFile: Optional[str]
+    kubeconfigFile: Optional[str] = None
     envConfigMaps: List[kubernetes.ConfigMapEnvSource]
     envSecrets: List[kubernetes.SecretEnvSource]
     envVars: List[str]
     volumeMounts: List[kubernetes.VolumeMount]
     volumes: List[kubernetes.Volume]
-    labels: Optional[Dict[str, str]]
-    failPodOnRunFailure: Optional[bool]
-    resources: Optional[kubernetes.ResourceRequirements]
-    schedulerName: Optional[str]
-    securityContext: Optional[kubernetes.SecurityContext]
-    runK8sConfig: Optional[RunK8sConfig]
+    labels: Optional[Dict[str, str]] = None
+    failPodOnRunFailure: Optional[bool] = None
+    resources: Optional[kubernetes.ResourceRequirements] = None
+    schedulerName: Optional[str] = None
+    securityContext: Optional[kubernetes.SecurityContext] = None
+    runK8sConfig: Optional[RunK8sConfig] = None
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class RunLauncherConfig(BaseModel):
-    celeryK8sRunLauncher: Optional[CeleryK8sRunLauncherConfig]
-    k8sRunLauncher: Optional[K8sRunLauncherConfig]
-    customRunLauncher: Optional[ConfigurableClass]
+    celeryK8sRunLauncher: Optional[CeleryK8sRunLauncherConfig] = None
+    k8sRunLauncher: Optional[K8sRunLauncherConfig] = None
+    customRunLauncher: Optional[ConfigurableClass] = None
 
 
 class RunLauncher(BaseModel):
     type: RunLauncherType
     config: RunLauncherConfig
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "allOf": create_json_schema_conditionals(
                 {
                     RunLauncherType.CELERY: "celeryK8sRunLauncher",
@@ -106,4 +102,5 @@ class RunLauncher(BaseModel):
                     RunLauncherType.CUSTOM: "customRunLauncher",
                 }
             )
-        }
+        },
+    )

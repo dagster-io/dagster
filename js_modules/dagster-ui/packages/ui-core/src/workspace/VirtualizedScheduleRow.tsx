@@ -225,7 +225,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
         <RowCell>
           {tick ? (
             <div>
-              <TickStatusTag tick={tick} />
+              <TickStatusTag tick={tick} tickResultType="runs" />
             </div>
           ) : (
             <LoadingOrNone queryResult={scheduleQueryResult} />

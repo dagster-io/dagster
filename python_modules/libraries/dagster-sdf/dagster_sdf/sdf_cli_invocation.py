@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 import orjson
-from dagster import OpExecutionContext, get_dagster_logger
+from dagster import AssetExecutionContext, OpExecutionContext, get_dagster_logger
 from dagster._annotations import public
 from dagster._core.errors import DagsterExecutionInterruptedError
 from typing_extensions import Literal
@@ -44,7 +44,9 @@ class SdfCliInvocation:
     environment: str
     dagster_sdf_translator: DagsterSdfTranslator
     raise_on_error: bool
-    context: Optional[OpExecutionContext] = field(default=None, repr=False)
+    context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = field(
+        default=None, repr=False
+    )
     termination_timeout_seconds: float = field(
         init=False, default=DAGSTER_SDF_TERMINATION_TIMEOUT_SECONDS
     )
@@ -60,7 +62,7 @@ class SdfCliInvocation:
         environment: str,
         dagster_sdf_translator: DagsterSdfTranslator,
         raise_on_error: bool,
-        context: Optional[OpExecutionContext],
+        context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
     ) -> "SdfCliInvocation":
         # Create a subprocess that runs the sdf CLI command.
         process = subprocess.Popen(

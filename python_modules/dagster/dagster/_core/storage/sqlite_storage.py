@@ -86,6 +86,7 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
         return cls(base_dir, inst_data=inst_data)
 
     def register_instance(self, instance: "DagsterInstance") -> None:
+        super().register_instance(instance)
         if not self._run_storage.has_instance:
             self._run_storage.register_instance(instance)
         if not self._event_log_storage.has_instance:

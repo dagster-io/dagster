@@ -1,10 +1,10 @@
 import React from 'react';
 
+import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {
   AssetStaleStatusDataQuery,
   AssetStaleStatusDataQueryVariables,
 } from './types/AssetStaleStatusDataProvider.types';
-import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';

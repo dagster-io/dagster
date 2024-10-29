@@ -13,6 +13,7 @@ import {Link} from 'react-router-dom';
 
 import {LatestRunTag} from './LatestRunTag';
 import {ScheduleOrSensorTag} from './ScheduleOrSensorTag';
+import {gql, useQuery} from '../apollo-client';
 import {
   JobMetadataAssetNodeFragment,
   JobMetadataFragment,
@@ -20,7 +21,6 @@ import {
   JobMetadataQueryVariables,
   RunMetadataFragment,
 } from './types/JobMetadata.types';
-import {gql, useQuery} from '../apollo-client';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AutomaterializeDaemonStatusTag} from '../assets/AutomaterializeDaemonStatusTag';
 import {DagsterTag} from '../runs/RunTag';
@@ -87,7 +87,7 @@ export const JobMetadata = (props: Props) => {
         <JobScheduleOrSensorTag job={metadata.job} repoAddress={repoAddress} />
       ) : null}
       <LatestRunTag pipelineName={pipelineName} repoAddress={repoAddress} />
-      {metadata.assetNodes && metadata.assetNodes.some((a) => !!a.autoMaterializePolicy) && (
+      {metadata.assetNodes && metadata.assetNodes.some((a) => !!a.automationCondition) && (
         <AutomaterializeDaemonStatusTag />
       )}
       {metadata.runsForAssetScan ? (
@@ -214,7 +214,7 @@ export const JOB_METADATA_QUERY = gql`
 
   fragment JobMetadataAssetNode on AssetNode {
     id
-    autoMaterializePolicy {
+    automationCondition {
       __typename
     }
     assetKey {

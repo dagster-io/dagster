@@ -6,12 +6,13 @@ import string
 import sys
 import time
 from contextlib import ExitStack, contextmanager
-from typing import Any, Dict, Iterator, Literal, Mapping, Optional, Sequence, Set, TextIO
+from typing import Any, Dict, Iterator, Literal, Mapping, Optional, Sequence, Set, TextIO, Union
 
 import dagster._check as check
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
     PipesClientCompletedInvocation,
@@ -107,11 +108,13 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
                     client=self.client,
                     remote_log_name="stdout",
                     target_stream=sys.stdout,
+                    debug_info="reader for stdout",
                 ),
                 PipesDbfsLogReader(
                     client=self.client,
                     remote_log_name="stderr",
                     target_stream=sys.stderr,
+                    debug_info="reader fo stderr",
                 ),
             ]
         else:
@@ -124,7 +127,7 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
     def run(
         self,
         *,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         extras: Optional[PipesExtras] = None,
         task: jobs.SubmitTask,
         submit_args: Optional[Mapping[str, Any]] = None,
@@ -144,7 +147,7 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
                 variables in `spark_env_vars` (if there is an existing dictionary here, the Pipes environment
                 variables will be merged in). This doesn't require any special setup in the task code.
                 All other fields will be passed unaltered under the `tasks` arg to `WorkspaceClient.jobs.submit`.
-            context (OpExecutionContext): The context from the executing op or asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context from the executing op or asset.
             extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the
                 subprocess.
             submit_args (Optional[Mapping[str, Any]]): Additional keyword arguments that will be
@@ -184,7 +187,10 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
         return PipesClientCompletedInvocation(pipes_session)
 
     def _enrich_submit_task_dict(
-        self, context: OpExecutionContext, session: PipesSession, submit_task_dict: Dict[str, Any]
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        session: PipesSession,
+        submit_task_dict: Dict[str, Any],
     ) -> Dict[str, Any]:
         if "existing_cluster_id" in submit_task_dict:
             # we can't set env vars on an existing cluster
@@ -219,7 +225,9 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
     def get_task_fields_which_support_cli_parameters(self) -> Set[str]:
         return {"spark_python_task", "python_wheel_task"}
 
-    def _poll_til_success(self, context: OpExecutionContext, run_id: int) -> None:
+    def _poll_til_success(
+        self, context: Union[OpExecutionContext, AssetExecutionContext], run_id: int
+    ) -> None:
         # poll the Databricks run until it reaches RunResultState.SUCCESS, raising otherwise
 
         last_observed_state = None
@@ -333,7 +341,7 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
         cluster_log_root (Optional[str]): The root path on DBFS where the cluster logs are written.
             If set, this will be used to read stderr/stdout logs.
-        log_readers (Optional[Sequence[PipesLogReader]]): A set of readers for logs on DBFS.
+        log_readers (Optional[Sequence[PipesLogReader]]): A se of log readers for logs on DBFS.
     """
 
     def __init__(
@@ -355,6 +363,12 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
             params: PipesParams = {}
             params["path"] = stack.enter_context(dbfs_tempdir(self.dbfs_client))
             yield params
+
+    def messages_are_readable(self, params: PipesParams) -> bool:
+        try:
+            return self.dbfs_client.get_status(params["path"]) is not None
+        except Exception:
+            return False
 
     def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
         message_path = os.path.join(params["path"], f"{index}.json")
@@ -386,6 +400,7 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
         remote_log_name (Literal["stdout", "stderr"]): The name of the log file to read.
         target_stream (TextIO): The stream to which to forward log chunks that have been read.
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
+        debug_info (Optional[str]): An optional message containing debug information about the log reader.
     """
 
     def __init__(
@@ -395,6 +410,7 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
         remote_log_name: Literal["stdout", "stderr"],
         target_stream: TextIO,
         client: WorkspaceClient,
+        debug_info: Optional[str] = None,
     ):
         super().__init__(interval=interval, target_stream=target_stream)
         self.dbfs_client = files.DbfsAPI(client.api_client)
@@ -402,6 +418,14 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
         self.log_position = 0
         self.log_modification_time = None
         self.log_path = None
+        self._debug_info = debug_info
+
+    @property
+    def debug_info(self) -> Optional[str]:
+        return self._debug_info
+
+    def target_is_readable(self, params: PipesParams) -> bool:
+        return self._get_log_path(params) is not None
 
     def download_log_chunk(self, params: PipesParams) -> Optional[str]:
         log_path = self._get_log_path(params)
@@ -421,9 +445,6 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
                 return chunk
             except IOError:
                 return None
-
-    def target_is_readable(self, params: PipesParams) -> bool:
-        return self._get_log_path(params) is not None
 
     @property
     def name(self) -> str:

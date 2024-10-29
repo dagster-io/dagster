@@ -26,7 +26,7 @@ def test_monitor_source_asset_sensor(executor):
     ):
         asset_sensor_repo = repos["asset_sensor_repo"]
         with freeze_time(freeze_datetime):
-            the_sensor = asset_sensor_repo.get_external_sensor("monitor_source_asset_sensor")
+            the_sensor = asset_sensor_repo.get_sensor("monitor_source_asset_sensor")
             instance.start_sensor(the_sensor)
 
             evaluate_sensors(workspace_ctx, executor)

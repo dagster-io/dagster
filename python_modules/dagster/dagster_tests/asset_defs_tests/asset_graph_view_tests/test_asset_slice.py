@@ -11,8 +11,10 @@ from dagster import (
     PartitionsDefinition,
     StaticPartitionsDefinition,
     asset,
+    deserialize_value,
+    serialize_value,
 )
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, SerializableEntitySubset
 
 partitions_defs = [
     None,
@@ -65,3 +67,31 @@ def test_operations(
     _assert_matches_operation(and_res, operator.and_)
     sub_res = a.compute_difference(b)
     _assert_matches_operation(sub_res, operator.sub)
+
+
+@pytest.mark.parametrize("partitions_def", partitions_defs)
+def test_round_trip(partitions_def: Optional[PartitionsDefinition]) -> None:
+    @asset(partitions_def=partitions_def)
+    def foo() -> None: ...
+
+    defs = Definitions([foo])
+    instance = DagsterInstance.ephemeral()
+    asset_graph_view = AssetGraphView.for_test(defs, instance)
+
+    initial_subset = asset_graph_view.get_full_subset(key=foo.key)
+
+    inner_subset = deserialize_value(
+        serialize_value(initial_subset.convert_to_serializable_subset()), SerializableEntitySubset
+    )
+    subset = asset_graph_view.get_subset_from_serializable_subset(inner_subset)
+
+    assert subset is not None
+    assert (
+        initial_subset.expensively_compute_asset_partitions()
+        == subset.expensively_compute_asset_partitions()
+    )
+
+    # if asset is removed, don't error just return None
+    empty_asset_graph_view = AssetGraphView.for_test(Definitions(), instance)
+    subset = empty_asset_graph_view.get_subset_from_serializable_subset(inner_subset)
+    assert subset is None

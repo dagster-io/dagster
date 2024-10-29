@@ -5,8 +5,8 @@ import styled from 'styled-components';
 
 import {showSharedToaster} from './DomUtils';
 import {useCopyToClipboard} from './browser';
-import {PythonErrorChainFragment, PythonErrorFragment} from './types/PythonErrorFragment.types';
 import {gql} from '../apollo-client';
+import {PythonErrorChainFragment, PythonErrorFragment} from './types/PythonErrorFragment.types';
 import {ErrorSource} from '../graphql/types';
 import {MetadataEntries} from '../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';

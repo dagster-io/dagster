@@ -19,12 +19,18 @@ from dagster import (
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.api import execute_job
+from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external_data import partition_set_snap_name_for_job_name
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.migration.bigint_migration import run_bigint_migration
+from dagster._core.storage.runs.migration import BACKFILL_JOB_NAME_AND_TAGS, RUN_BACKFILL_ID
 from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._core.utils import make_new_run_id
 from dagster._daemon.types import DaemonHeartbeat
+from dagster._time import get_current_timestamp
 from dagster._utils import file_relative_path
 from sqlalchemy import inspect
 
@@ -890,3 +896,320 @@ def test_bigint_migration(hostname, conn_string):
                 assert len(_get_integer_id_tables(conn)) == 0
             with instance.schedule_storage.connect() as conn:
                 assert len(_get_integer_id_tables(conn)) == 0
+
+
+def test_add_backfill_id_column(hostname, conn_string):
+    from dagster._core.storage.runs.schema import RunsTable
+
+    new_columns = {"backfill_id"}
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            # use an old snapshot, it doesn't have the new column
+            __file__,
+            "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert get_columns(instance, "runs") & new_columns == set()
+
+            # these runs won't have an entry for backfill_id until after the data migration
+            run_not_in_backfill_pre_migration = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name="first_job_no_backfill",
+                    run_id=make_new_run_id(),
+                    tags=None,
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+            run_in_backfill_pre_migration = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name="first_job_in_backfill",
+                    run_id=make_new_run_id(),
+                    tags={BACKFILL_ID_TAG: "backfillid"},
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+
+            # exclude_subruns filter works before migration
+            assert len(instance.get_runs(filters=RunsFilter(exclude_subruns=True))) == 2
+
+            instance.upgrade()
+            assert instance.run_storage.has_built_index(RUN_BACKFILL_ID)
+
+            assert new_columns <= get_columns(instance, "runs")
+            run_not_in_backfill_post_migration = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name="second_job_no_backfill",
+                    run_id=make_new_run_id(),
+                    tags=None,
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+            run_in_backfill_post_migration = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name="second_job_in_backfill",
+                    run_id=make_new_run_id(),
+                    tags={BACKFILL_ID_TAG: "backfillid"},
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+
+            backfill_ids = {
+                row["run_id"]: row["backfill_id"]
+                for row in instance._run_storage.fetchall(
+                    db_select([RunsTable.c.run_id, RunsTable.c.backfill_id]).select_from(RunsTable)
+                )
+            }
+            assert backfill_ids[run_not_in_backfill_pre_migration.run_id] is None
+            assert backfill_ids[run_in_backfill_pre_migration.run_id] == "backfillid"
+            assert backfill_ids[run_not_in_backfill_post_migration.run_id] is None
+            assert backfill_ids[run_in_backfill_post_migration.run_id] == "backfillid"
+            # exclude_subruns filter works after migration, but should use new column
+            assert len(instance.get_runs(filters=RunsFilter(exclude_subruns=True))) == 3
+
+
+def test_add_runs_by_backfill_id_idx(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__,
+            "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert get_indexes(instance, "runs") & {"idx_runs_by_backfill_id"} == set()
+            instance.upgrade()
+            assert {"idx_runs_by_backfill_id"} <= get_indexes(instance, "runs")
+
+
+def test_add_backfill_tags(hostname, conn_string):
+    from dagster._core.storage.runs.schema import BackfillTagsTable
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__,
+            "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "backfill_tags" not in get_tables(instance)
+
+            before_migration = PartitionBackfill(
+                "before_tag_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={"before": "migration"},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(before_migration)
+
+            # filtering pre-migration relies on filtering runs, so add a run with the expected tags
+            pre_migration_run = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name="foo",
+                    run_id=make_new_run_id(),
+                    tags={"before": "migration", BACKFILL_ID_TAG: before_migration.backfill_id},
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+
+            # filtering by tags works before migration
+            assert (
+                instance.get_backfills(filters=BulkActionsFilter(tags={"before": "migration"}))[
+                    0
+                ].backfill_id
+                == before_migration.backfill_id
+            )
+
+            instance.upgrade()
+            assert "backfill_tags" in get_tables(instance)
+            after_migration = PartitionBackfill(
+                "after_tag_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={"after": "migration"},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(after_migration)
+
+            with instance.run_storage.connect() as conn:
+                rows = conn.execute(
+                    db_select(
+                        [
+                            BackfillTagsTable.c.backfill_id,
+                            BackfillTagsTable.c.key,
+                            BackfillTagsTable.c.value,
+                        ]
+                    )
+                ).fetchall()
+                assert len(rows) == 2
+                ids_to_tags = {row[0]: {row[1]: row[2]} for row in rows}
+                assert ids_to_tags.get(before_migration.backfill_id) == before_migration.tags
+                assert ids_to_tags[after_migration.backfill_id] == after_migration.tags
+
+                # filtering by tags works after migration
+                assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)
+                # delete the run that was added pre-migration to prove that tags filtering is happening on the
+                # backfill_tags table
+                instance.delete_run(pre_migration_run.run_id)
+                assert (
+                    instance.get_backfills(filters=BulkActionsFilter(tags={"before": "migration"}))[
+                        0
+                    ].backfill_id
+                    == before_migration.backfill_id
+                )
+                assert (
+                    instance.get_backfills(filters=BulkActionsFilter(tags={"after": "migration"}))[
+                        0
+                    ].backfill_id
+                    == after_migration.backfill_id
+                )
+
+
+def test_add_bulk_actions_job_name_column(hostname, conn_string):
+    from dagster._core.remote_representation.origin import (
+        GrpcServerCodeLocationOrigin,
+        RemotePartitionSetOrigin,
+        RemoteRepositoryOrigin,
+    )
+    from dagster._core.storage.runs.schema import BulkActionsTable
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            # use an old snapshot, it doesn't have the new column
+            __file__,
+            "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "job_name" not in get_columns(instance, "bulk_actions")
+            partition_set_origin = RemotePartitionSetOrigin(
+                repository_origin=RemoteRepositoryOrigin(
+                    code_location_origin=GrpcServerCodeLocationOrigin(
+                        host="localhost", port=1234, location_name="test_location"
+                    ),
+                    repository_name="the_repo",
+                ),
+                partition_set_name=partition_set_snap_name_for_job_name("before_migration"),
+            )
+            before_migration = PartitionBackfill(
+                "before_migration",
+                partition_set_origin=partition_set_origin,
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(before_migration)
+            # filtering pre-migration relies on filtering runs, so add a run with the expected job_name
+            pre_migration_run = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name=before_migration.job_name,
+                    run_id=make_new_run_id(),
+                    tags={BACKFILL_ID_TAG: before_migration.backfill_id},
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+            # filtering by job_name works before migration
+            assert (
+                instance.get_backfills(
+                    filters=BulkActionsFilter(job_name=before_migration.job_name)
+                )[0].backfill_id
+                == before_migration.backfill_id
+            )
+
+            instance.upgrade()
+
+            assert "job_name" in get_columns(instance, "bulk_actions")
+
+            partition_set_origin = RemotePartitionSetOrigin(
+                repository_origin=RemoteRepositoryOrigin(
+                    code_location_origin=GrpcServerCodeLocationOrigin(
+                        host="localhost", port=1234, location_name="test_location"
+                    ),
+                    repository_name="the_repo",
+                ),
+                partition_set_name=partition_set_snap_name_for_job_name("after_migration"),
+            )
+            after_migration = PartitionBackfill(
+                "after_migration",
+                partition_set_origin=partition_set_origin,
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(after_migration)
+
+            with instance.run_storage.connect() as conn:
+                rows = conn.execute(
+                    db_select([BulkActionsTable.c.key, BulkActionsTable.c.job_name])
+                ).fetchall()
+                assert len(rows) == 2
+                ids_to_job_name = {row[0]: row[1] for row in rows}
+                assert ids_to_job_name[before_migration.backfill_id] == before_migration.job_name
+                assert ids_to_job_name[after_migration.backfill_id] == after_migration.job_name
+
+                # filtering by job_name works after migration
+                assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)
+                # delete the run that was added pre-migration to prove that tags filtering is happening on the
+                # backfill_tags table
+                instance.delete_run(pre_migration_run.run_id)
+                assert (
+                    instance.get_backfills(
+                        filters=BulkActionsFilter(job_name=before_migration.job_name)
+                    )[0].backfill_id
+                    == before_migration.backfill_id
+                )
+                assert (
+                    instance.get_backfills(
+                        filters=BulkActionsFilter(job_name=after_migration.job_name)
+                    )[0].backfill_id
+                    == after_migration.backfill_id
+                )

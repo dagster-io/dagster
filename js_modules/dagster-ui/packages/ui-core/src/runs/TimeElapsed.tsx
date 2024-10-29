@@ -17,8 +17,12 @@ export const TimeElapsed = (props: Props) => {
   const timeout = useRef<ReturnType<typeof setTimeout>>();
 
   const clearTimers = useCallback(() => {
-    interval.current && clearInterval(interval.current);
-    timeout.current && clearTimeout(timeout.current);
+    if (interval.current) {
+      clearInterval(interval.current);
+    }
+    if (timeout.current) {
+      clearTimeout(timeout.current);
+    }
   }, []);
 
   useEffect(() => {

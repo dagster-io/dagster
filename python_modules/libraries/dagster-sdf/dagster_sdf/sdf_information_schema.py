@@ -18,6 +18,7 @@ import dagster._check as check
 import polars as pl
 from dagster import (
     AssetCheckSpec,
+    AssetExecutionContext,
     AssetKey,
     AssetObservation,
     AssetSpec,
@@ -33,7 +34,6 @@ from dagster._core.definitions.metadata import (
     TableMetadataSet,
     TableSchema,
 )
-from dagster._core.definitions.tags import build_kind_tag
 from dagster._record import IHaveNew, record_custom
 
 from dagster_sdf.asset_utils import exists_in_selected, get_info_schema_dir, get_output_dir
@@ -181,7 +181,7 @@ class SdfInformationSchema(IHaveNew):
                     column_schema=TableSchema(
                         columns=table_columns.get(table_row["table_id"], []),
                     ),
-                    relation_identifier=table_row["table_id"],
+                    table_name=table_row["table_id"],
                 ),
                 **(code_references if code_references else {}),
                 DAGSTER_SDF_TABLE_ID: table_row["table_id"],
@@ -218,9 +218,7 @@ class SdfInformationSchema(IHaveNew):
                             get_output_dir(self.target_dir, self.environment),
                         ),
                         metadata=metadata,
-                        tags={
-                            **build_kind_tag("sdf"),
-                        },
+                        kinds={"sdf"},
                         skippable=True,
                     )
                 )
@@ -292,10 +290,10 @@ class SdfInformationSchema(IHaveNew):
     def stream_asset_observations(
         self,
         dagster_sdf_translator: DagsterSdfTranslator,
-        context: Optional[OpExecutionContext] = None,
+        context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
     ) -> Iterator[SdfDagsterEventType]:
         selected_output_names: AbstractSet[str] = (
-            context.selected_output_names if context else set()
+            context.op_execution_context.selected_output_names if context else set()
         )
         tables = self.read_table("tables")
         tables = tables.filter(~pl.col("purpose").is_in(["system", "external-system"]))
@@ -326,7 +324,7 @@ class SdfInformationSchema(IHaveNew):
                     column_schema=TableSchema(
                         columns=table_columns.get(table_row["table_id"], []),
                     ),
-                    relation_identifier=table_row["table_id"],
+                    table_name=table_row["table_id"],
                 ),
                 **(code_references if code_references else {}),
                 DAGSTER_SDF_TABLE_ID: table_row["table_id"],

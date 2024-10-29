@@ -1,6 +1,7 @@
 import os
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 from functools import cached_property
 from queue import Queue
 from typing import (
@@ -52,8 +53,9 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.events import EngineEventData
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.invocation import BaseDirectExecutionContext
+from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._utils.error import (
     ExceptionInfo,
     SerializableErrorInfo,
@@ -79,7 +81,7 @@ class PipesMessageHandler:
     """Class to process :py:obj:`PipesMessage` objects received from a pipes process.
 
     Args:
-        context (OpExecutionContext): The context for the executing op/asset.
+        context (Union[OpExecutionContext, AssetExecutionContext]): The context for the executing op/asset.
         message_reader (PipesMessageReader): The message reader used to read messages from the
             external process.
     """
@@ -87,7 +89,11 @@ class PipesMessageHandler:
     # In the future it may make sense to merge PipesMessageReader and PipesMessageHandler, or
     # otherwise adjust their relationship. The current interaction between the two is a bit awkward,
     # but it would also be awkward to have a monolith that users extend.
-    def __init__(self, context: OpExecutionContext, message_reader: "PipesMessageReader") -> None:
+    def __init__(
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        message_reader: "PipesMessageReader",
+    ) -> None:
         self._context = context
         self._message_reader = message_reader
         # Queue is thread-safe
@@ -161,7 +167,9 @@ class PipesMessageHandler:
     # Type ignores because we currently validate in individual handlers
     def handle_message(self, message: PipesMessage) -> None:
         if self._received_closed_msg:
-            self._context.log.warn(f"[pipes] unexpected message received after closed: `{message}`")
+            self._context.log.warning(
+                f"[pipes] unexpected message received after closed: `{message}`"
+            )
 
         method = cast(Method, message["method"])
         if method == "opened":
@@ -293,13 +301,16 @@ class PipesSession:
             indicating the location from which the external process should load context data.
         message_reader_params (PipesParams): Parameters yielded by the message reader, indicating
             the location to which the external process should write messages.
+        created_at (datetime): The time at which the session was created. Useful as cutoff for
+            reading logs.
     """
 
     context_data: PipesContextData
     message_handler: PipesMessageHandler
     context_injector_params: PipesParams
     message_reader_params: PipesParams
-    context: OpExecutionContext
+    context: Union[OpExecutionContext, AssetExecutionContext]
+    created_at: datetime = field(default_factory=datetime.now)
 
     @cached_property
     def default_remote_invocation_info(self) -> Dict[str, str]:
@@ -330,9 +341,9 @@ class PipesSession:
             "dagster/job": self.context.job_name,
         }
 
-        if self.context.dagster_run.external_job_origin:
+        if self.context.dagster_run.remote_job_origin:
             tags["dagster/code-location"] = (
-                self.context.dagster_run.external_job_origin.repository_origin.code_location_origin.location_name
+                self.context.dagster_run.remote_job_origin.repository_origin.code_location_origin.location_name
             )
 
         if user := self.context.get_tag("dagster/user"):
@@ -466,7 +477,7 @@ class PipesSession:
 
 
 def build_external_execution_context_data(
-    context: OpExecutionContext,
+    context: Union[OpExecutionContext, AssetExecutionContext],
     extras: Optional[PipesExtras],
 ) -> "PipesContextData":
     asset_keys = (

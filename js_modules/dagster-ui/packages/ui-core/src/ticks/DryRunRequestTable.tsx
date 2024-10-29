@@ -1,10 +1,9 @@
-import {Box, Colors, Icon, Table, Tag} from '@dagster-io/ui-components';
-import qs from 'qs';
+import {Box, Button, Colors, Icon, Table, Tag} from '@dagster-io/ui-components';
 
+import {applyCreateSession, useExecutionSessionStorage} from '../app/ExecutionSessionStorage';
 import {RunRequestFragment} from './types/RunRequestFragment.types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {testId} from '../testing/testId';
-import {AnchorButton} from '../ui/AnchorButton';
 import {useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -45,23 +44,13 @@ export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}
               </Box>
             </td>
             <td>
-              <AnchorButton
-                icon={<Icon name="edit" />}
-                target="_blank"
-                to={workspacePathFromAddress(
-                  repoAddress,
-                  `/pipeline_or_job/${request.jobName ?? jobName}/playground/setup?${qs.stringify({
-                    mode,
-                    config: request.runConfigYaml,
-                    tags: request.tags,
-                    assetSelection: request.assetSelection?.map(({path}) => ({
-                      assetKey: {path},
-                    })),
-                  })}`,
-                )}
-              >
-                Open in Launchpad
-              </AnchorButton>
+              <OpenInLaunchpadButton
+                request={request}
+                mode={mode}
+                jobName={jobName}
+                repoAddress={repoAddress}
+                isJob={isJob}
+              />
             </td>
           </tr>
         );
@@ -90,4 +79,48 @@ function filterTags(tags: Array<{key: string; value: any}>) {
     // Exclude the tag that specifies the schedule if this is a schedule name
     return !['dagster/schedule_name'].includes(key);
   });
+}
+
+function OpenInLaunchpadButton({
+  mode,
+  request,
+  jobName,
+  isJob,
+  repoAddress,
+}: {
+  request: RunRequestFragment;
+  jobName?: string;
+  mode?: string;
+  repoAddress: RepoAddress;
+  isJob: boolean;
+}) {
+  const pipelineName = request.jobName ?? jobName;
+  const [_, onSave] = useExecutionSessionStorage(repoAddress, pipelineName!);
+
+  return (
+    <Button
+      icon={<Icon name="edit" />}
+      onClick={() => {
+        onSave((data) =>
+          applyCreateSession(data, {
+            mode,
+            runConfigYaml: request.runConfigYaml,
+            tags: request.tags,
+            assetSelection: request.assetSelection?.map(({path}) => ({
+              assetKey: {path},
+            })),
+          }),
+        );
+        window.open(
+          workspacePathFromAddress(
+            repoAddress,
+            `/${isJob ? 'jobs' : 'pipelines'}/${pipelineName}/playground`,
+          ),
+          '_blank',
+        );
+      }}
+    >
+      Open in Launchpad
+    </Button>
+  );
 }

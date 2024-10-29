@@ -143,7 +143,7 @@ def test_reconcile() -> None:
         instance=instance,
         cursor=AssetDaemonCursor.empty(),
         materialize_run_tags={},
-        allow_backfills=False,
+        emit_backfills=False,
         observe_run_tags={"tag1": "tag_value"},
         logger=logging.getLogger("dagster.amp"),
     ).evaluate()

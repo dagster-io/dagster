@@ -1,7 +1,7 @@
 import dagster as dg
 
 
-@dg.asset(automation_condition=dg.AutomationCondition.eager())
+@dg.asset(automation_condition=dg.AutomationCondition.missing().newly_true())
 def eager_asset() -> None: ...
 
 
@@ -14,9 +14,9 @@ defs = dg.Definitions(
     sensors=[
         dg.AutomationConditionSensorDefinition(
             name="all_assets",
-            asset_selection=dg.AssetSelection.all(),
+            target=dg.AssetSelection.all(),
             default_condition=dg.AutomationCondition.cron_tick_passed("*/5 * * * *"),
-            user_code=True,
+            use_user_code_server=True,
         )
     ],
 )
