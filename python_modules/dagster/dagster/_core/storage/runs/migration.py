@@ -302,35 +302,50 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn: Optional[PrintFn] = 
 
 def migrate_run_backfill_id(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
     """Utility method to add a backfill_id column to the runs table and populate it with the backfill_id of the run."""
+    from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
+
     if print_fn:
         print_fn("Querying run storage.")
 
-    for run in chunked_run_iterator(storage, print_fn):
-        if run.tags.get(BACKFILL_ID_TAG) is None:
-            continue
+    check.inst_param(storage, "run_storage", RunStorage)
 
-        add_backfill_id(
-            run_storage=storage, run_id=run.run_id, backfill_id=run.tags[BACKFILL_ID_TAG]
-        )
-
-
-def add_backfill_id(run_storage: RunStorage, run_id: str, backfill_id) -> None:
-    from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
-
-    check.str_param(run_id, "run_id")
-    check.inst_param(run_storage, "run_storage", RunStorage)
-
-    if not isinstance(run_storage, SqlRunStorage):
+    if not isinstance(storage, SqlRunStorage):
         return
 
-    with run_storage.connect() as conn:
-        conn.execute(
-            RunsTable.update()
-            .where(RunsTable.c.run_id == run_id)
-            .values(
-                backfill_id=backfill_id,
-            )
+    with storage.connect() as conn:
+        cursor = None
+        has_more = True
+        query = (
+            db_select([RunTagsTable.c.id, RunTagsTable.c.run_id, RunTagsTable.c.value])
+            .where(RunTagsTable.c.key == BACKFILL_ID_TAG)
+            .limit(CHUNK_SIZE)
+            .order_by(RunTagsTable.c.id)
         )
+
+        while has_more:
+            if cursor:
+                query = query.where(RunTagsTable.c.id > cursor)
+            res = storage.fetchall(query)
+            has_more = len(res) >= CHUNK_SIZE
+            for row in res:
+                cursor = row["id"]
+                run_id = row["run_id"]
+                backfill_id = row["value"]
+
+                add_backfill_id(conn, run_id=run_id, backfill_id=backfill_id)
+
+
+def add_backfill_id(conn, run_id: str, backfill_id: str) -> None:
+    check.str_param(run_id, "run_id")
+    check.str_param(backfill_id, "backfill_id")
+    conn.execute(
+        RunsTable.update()
+        .where(RunsTable.c.run_id == run_id)
+        .where(RunsTable.c.backfill_id.is_(None))
+        .values(
+            backfill_id=backfill_id,
+        )
+    )
 
 
 def migrate_backfill_job_name_and_tags(
