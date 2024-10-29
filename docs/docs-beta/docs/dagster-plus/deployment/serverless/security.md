@@ -28,13 +28,13 @@ In Serverless, code that uses the default [I/O manager](/guides/io-managers) is 
 
 However, this automatic change also means potentially sensitive data could be **stored** and not just processed or orchestrated by Dagster+.
 
-To prevent this, you can use [another I/O manager](/guides/io-managers#built-in) that stores data in your infrastructure or [adapt your code to avoid using an I/O manager](io-managers#before-you-begin).
+To prevent this, you can use [another I/O manager](/guides/io-managers#built-in) that stores data in your infrastructure or [adapt your code to avoid using an I/O manager](/guides/io-managers#before-you-begin).
 
 :::note
 You must have [boto3](https://pypi.org/project/boto3/) or `dagster-cloud[serverless]` installed as a project dependency otherwise the Dagster+ managed storage can fail and silently fall back to using the default I/O manager.
 :::
 
-## Adding environment variables and secrets {#adding-secrets}
+## Adding environment variables and secrets \{#adding-secrets}
 
 Often you'll need to securely access secrets from your jobs. Dagster+ supports several methods for adding secrets—refer to the [Dagster+ environment variables documentation](/dagster-plus/deployment/environment-variables) for more information.
 

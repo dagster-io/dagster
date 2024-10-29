@@ -10,7 +10,7 @@ Dagster+ Serverless is a fully managed version of Dagster+ and is the easiest wa
 
 ---
 
-## When to choose Serverless {#when-to-choose-serverless}
+## When to choose Serverless \{#when-to-choose-serverless}
 
 Serverless works best with workloads that primarily orchestrate other services or perform light computation. Most workloads fit into this category, especially those that orchestrate third-party SaaS products like cloud data warehouses and ETL tools.
 
@@ -23,7 +23,7 @@ If any of the following are applicable, you should select [Hybrid deployment](/d
 
 ---
 
-## Limitations {#limitations}
+## Limitations \{#limitations}
 
 Serverless is subject to the following limitations:
 
