@@ -1,3 +1,4 @@
+# type: ignore
 # start_migrate
 import os
 from pathlib import Path
