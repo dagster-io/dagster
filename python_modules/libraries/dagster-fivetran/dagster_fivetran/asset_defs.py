@@ -40,6 +40,7 @@ from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.utils import imap
 from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._utils import xor
 from dagster._utils.log import get_dagster_logger
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
@@ -156,7 +157,7 @@ def _build_fivetran_assets(
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
     check.invariant(
-        translator and connection_metadata, "Translator and connection_metadata required."
+        xor(translator, connection_metadata), "Translator and connection_metadata required."
     )
 
     translator_instance = translator() if translator else None
