@@ -350,5 +350,5 @@ def test_adls2_pickle_io_manager_uri(primary_endpoint, expected_uri_part):
     )
 
     path = UPath("my/path/to/object")
-    uri = io_manager._uri_for_path(path)
-    assert expected_uri_part in uri
+    message = io_manager.get_loading_input_log_message(path)
+    assert expected_uri_part in message
