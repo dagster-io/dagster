@@ -59,9 +59,9 @@ defs = dg.Definitions(assets=[*sigma_specs], resources={"sigma": sigma_organizat
 
 It is possible to load a subset of your Sigma assets by providing a <PyObject module="dagster_sigma" method="SigmaFilter" /> to the <PyObject module="dagster_sigma" method="load_sigma_asset_specs" /> function. All workbooks contained in the folders provided to your <PyObject module="dagster_sigma" method="SigmaFilter" /> will be fetched.
 
-Note that the content and size of Sigma organization may affect the performance of your Dagster deployments. Filtering the workbooks from which your Sigma assets will be loaded is particularly useful for improving loading times.
+Note that the content and size of Sigma organization may affect the performance of your Dagster deployments. Filtering the workbooks selection from which your Sigma assets will be loaded is particularly useful for improving loading times.
 
-```python file=/integrations/sigma/filter-workbooks-sigma-assets.py
+```python file=/integrations/sigma/filtering-sigma-assets.py
 from dagster_sigma import (
     SigmaBaseUrl,
     SigmaFilter,
