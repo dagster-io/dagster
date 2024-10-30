@@ -54,6 +54,12 @@ Also add to `.bash_profile` or whatever your startup script is.
 $ alias antlr4='java -Xmx500M -cp "/usr/local/lib/antlr-4.13.2-complete.jar:$CLASSPATH" org.antlr.v4.Tool'
 ```
 
+4. Install python runtime:
+
+```bash
+pip install antlr4-python3-runtime
+```
+
 ## Generate Python Parser
 
 Under the `python_modules/dagster/dagster/_core/definitions/asset_selection` directory, run

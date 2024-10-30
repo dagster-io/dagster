@@ -50,17 +50,17 @@ for file in files:
             file,
             [
                 "# type: ignore\n",
-                "from .AssetSelectionListener import AssetSelectionListener\n",
-                "from .AssetSelectionVisitor import AssetSelectionVisitor\n",
+                # "from .AssetSelectionListener import AssetSelectionListener\n",
+                # "from .AssetSelectionVisitor import AssetSelectionVisitor\n",
             ],
         )
-        find_and_replace(
-            file,
-            "ParseTreeListener",
-            "AssetSelectionListener",
-        )
-        find_and_replace(
-            file,
-            "ParseTreeVisitor",
-            "AssetSelectionVisitor",
-        )
+        # find_and_replace(
+        #     file,
+        #     "ParseTreeListener",
+        #     "AssetSelectionListener",
+        # )
+        # find_and_replace(
+        #     file,
+        #     "ParseTreeVisitor",
+        #     "AssetSelectionVisitor",
+        # )

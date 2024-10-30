@@ -1,7 +1,4 @@
 # type: ignore
-from .AssetSelectionListener import AssetSelectionListener
-from .AssetSelectionVisitor import AssetSelectionVisitor
-
 # flake8: noqa
 # Generated from AssetSelection.g4 by ANTLR 4.13.2
 # encoding: utf-8
@@ -923,15 +920,15 @@ class AssetSelectionParser(Parser):
         def assetExpr(self):
             return self.getTypedRuleContext(AssetSelectionParser.AssetExprContext, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterAssetExpression"):
                 listener.enterAssetExpression(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitAssetExpression"):
                 listener.exitAssetExpression(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitAssetExpression"):
                 return visitor.visitAssetExpression(self)
             else:
@@ -953,15 +950,15 @@ class AssetSelectionParser(Parser):
         def expr(self):
             return self.getTypedRuleContext(AssetSelectionParser.ExprContext, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterBothTraversalExpression"):
                 listener.enterBothTraversalExpression(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitBothTraversalExpression"):
                 listener.exitBothTraversalExpression(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitBothTraversalExpression"):
                 return visitor.visitBothTraversalExpression(self)
             else:
@@ -983,15 +980,15 @@ class AssetSelectionParser(Parser):
         def RPAREN(self):
             return self.getToken(AssetSelectionParser.RPAREN, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterParenthesizedExpression"):
                 listener.enterParenthesizedExpression(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitParenthesizedExpression"):
                 listener.exitParenthesizedExpression(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitParenthesizedExpression"):
                 return visitor.visitParenthesizedExpression(self)
             else:
@@ -1013,15 +1010,15 @@ class AssetSelectionParser(Parser):
         def AND(self):
             return self.getToken(AssetSelectionParser.AND, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterAndExpression"):
                 listener.enterAndExpression(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitAndExpression"):
                 listener.exitAndExpression(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitAndExpression"):
                 return visitor.visitAndExpression(self)
             else:
@@ -1040,15 +1037,15 @@ class AssetSelectionParser(Parser):
         def traversal(self):
             return self.getTypedRuleContext(AssetSelectionParser.TraversalContext, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterRightTraversalExpression"):
                 listener.enterRightTraversalExpression(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitRightTraversalExpression"):
                 listener.exitRightTraversalExpression(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitRightTraversalExpression"):
                 return visitor.visitRightTraversalExpression(self)
             else:
@@ -1064,15 +1061,15 @@ class AssetSelectionParser(Parser):
         def keyValueExpr(self):
             return self.getTypedRuleContext(AssetSelectionParser.KeyValueExprContext, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterKeyValueExpression"):
                 listener.enterKeyValueExpression(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitKeyValueExpression"):
                 listener.exitKeyValueExpression(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitKeyValueExpression"):
                 return visitor.visitKeyValueExpression(self)
             else:
@@ -1091,15 +1088,15 @@ class AssetSelectionParser(Parser):
         def expr(self):
             return self.getTypedRuleContext(AssetSelectionParser.ExprContext, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterNotExpression"):
                 listener.enterNotExpression(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitNotExpression"):
                 listener.exitNotExpression(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitNotExpression"):
                 return visitor.visitNotExpression(self)
             else:
@@ -1118,15 +1115,15 @@ class AssetSelectionParser(Parser):
         def expr(self):
             return self.getTypedRuleContext(AssetSelectionParser.ExprContext, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterLeftTraversalExpression"):
                 listener.enterLeftTraversalExpression(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitLeftTraversalExpression"):
                 listener.exitLeftTraversalExpression(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitLeftTraversalExpression"):
                 return visitor.visitLeftTraversalExpression(self)
             else:
@@ -1148,15 +1145,15 @@ class AssetSelectionParser(Parser):
         def OR(self):
             return self.getToken(AssetSelectionParser.OR, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterOrExpression"):
                 listener.enterOrExpression(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitOrExpression"):
                 listener.exitOrExpression(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitOrExpression"):
                 return visitor.visitOrExpression(self)
             else:
@@ -1181,15 +1178,15 @@ class AssetSelectionParser(Parser):
         def RPAREN(self):
             return self.getToken(AssetSelectionParser.RPAREN, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterFunctionCallExpression"):
                 listener.enterFunctionCallExpression(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitFunctionCallExpression"):
                 listener.exitFunctionCallExpression(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitFunctionCallExpression"):
                 return visitor.visitFunctionCallExpression(self)
             else:
@@ -1371,15 +1368,15 @@ class AssetSelectionParser(Parser):
         def getRuleIndex(self):
             return AssetSelectionParser.RULE_traversal
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterTraversal"):
                 listener.enterTraversal(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitTraversal"):
                 listener.exitTraversal(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitTraversal"):
                 return visitor.visitTraversal(self)
             else:
@@ -1441,15 +1438,15 @@ class AssetSelectionParser(Parser):
         def getRuleIndex(self):
             return AssetSelectionParser.RULE_functionName
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterFunctionName"):
                 listener.enterFunctionName(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitFunctionName"):
                 listener.exitFunctionName(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitFunctionName"):
                 return visitor.visitFunctionName(self)
             else:
@@ -1505,15 +1502,15 @@ class AssetSelectionParser(Parser):
         def value(self):
             return self.getTypedRuleContext(AssetSelectionParser.ValueContext, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterRepoKeyValuePair"):
                 listener.enterRepoKeyValuePair(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitRepoKeyValuePair"):
                 listener.exitRepoKeyValuePair(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitRepoKeyValuePair"):
                 return visitor.visitRepoKeyValuePair(self)
             else:
@@ -1535,15 +1532,15 @@ class AssetSelectionParser(Parser):
         def value(self):
             return self.getTypedRuleContext(AssetSelectionParser.ValueContext, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterGroupKeyValuePair"):
                 listener.enterGroupKeyValuePair(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitGroupKeyValuePair"):
                 listener.exitGroupKeyValuePair(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitGroupKeyValuePair"):
                 return visitor.visitGroupKeyValuePair(self)
             else:
@@ -1565,15 +1562,15 @@ class AssetSelectionParser(Parser):
         def value(self):
             return self.getTypedRuleContext(AssetSelectionParser.ValueContext, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterOwnerKeyValuePair"):
                 listener.enterOwnerKeyValuePair(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitOwnerKeyValuePair"):
                 listener.exitOwnerKeyValuePair(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitOwnerKeyValuePair"):
                 return visitor.visitOwnerKeyValuePair(self)
             else:
@@ -1601,15 +1598,15 @@ class AssetSelectionParser(Parser):
         def EQUAL(self):
             return self.getToken(AssetSelectionParser.EQUAL, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterTagKeyValuePair"):
                 listener.enterTagKeyValuePair(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitTagKeyValuePair"):
                 listener.exitTagKeyValuePair(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitTagKeyValuePair"):
                 return visitor.visitTagKeyValuePair(self)
             else:
@@ -1631,15 +1628,15 @@ class AssetSelectionParser(Parser):
         def value(self):
             return self.getTypedRuleContext(AssetSelectionParser.ValueContext, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterKindKeyValuePair"):
                 listener.enterKindKeyValuePair(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitKindKeyValuePair"):
                 listener.exitKindKeyValuePair(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitKindKeyValuePair"):
                 return visitor.visitKindKeyValuePair(self)
             else:
@@ -1738,15 +1735,15 @@ class AssetSelectionParser(Parser):
         def getRuleIndex(self):
             return AssetSelectionParser.RULE_value
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterValue"):
                 listener.enterValue(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitValue"):
                 listener.exitValue(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitValue"):
                 return visitor.visitValue(self)
             else:
@@ -1796,15 +1793,15 @@ class AssetSelectionParser(Parser):
         def QUOTED_STRING(self):
             return self.getToken(AssetSelectionParser.QUOTED_STRING, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterExactMatchAsset"):
                 listener.enterExactMatchAsset(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitExactMatchAsset"):
                 listener.exitExactMatchAsset(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitExactMatchAsset"):
                 return visitor.visitExactMatchAsset(self)
             else:
@@ -1820,15 +1817,15 @@ class AssetSelectionParser(Parser):
         def UNQUOTED_STRING(self):
             return self.getToken(AssetSelectionParser.UNQUOTED_STRING, 0)
 
-        def enterRule(self, listener: AssetSelectionListener):
+        def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterPrefixMatchAsset"):
                 listener.enterPrefixMatchAsset(self)
 
-        def exitRule(self, listener: AssetSelectionListener):
+        def exitRule(self, listener: ParseTreeListener):
             if hasattr(listener, "exitPrefixMatchAsset"):
                 listener.exitPrefixMatchAsset(self)
 
-        def accept(self, visitor: AssetSelectionVisitor):
+        def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitPrefixMatchAsset"):
                 return visitor.visitPrefixMatchAsset(self)
             else:
