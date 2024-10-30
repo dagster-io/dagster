@@ -5,6 +5,7 @@ import {
   Icon,
   MenuItem,
   MiddleTruncate,
+  NonIdealState,
   Popover,
   Subheading,
   Subtitle2,
@@ -158,8 +159,8 @@ export const AutomaterializeMiddlePanelWithData = ({
     return [];
   }, [partitionKeys]);
 
-  const runsFilter: RunsFilter = useMemo(
-    () => ({runIds: selectedEvaluation ? selectedEvaluation.runIds : []}),
+  const runsFilter: RunsFilter | null = useMemo(
+    () => (selectedEvaluation?.runIds.length ? {runIds: selectedEvaluation.runIds} : null),
     [selectedEvaluation],
   );
 
@@ -209,8 +210,16 @@ export const AutomaterializeMiddlePanelWithData = ({
           </Box>
           {flagLegacyRunsPage ? (
             <AutomaterializeRunsTable runIds={selectedEvaluation.runIds} />
-          ) : (
+          ) : runsFilter ? (
             <RunsFeedTableWithFilters filter={runsFilter} />
+          ) : (
+            <Box padding={{vertical: 12}}>
+              <NonIdealState
+                icon="run"
+                title="No runs launched"
+                description="No runs were launched by this evaluation."
+              />
+            </Box>
           )}
           <Box border="bottom" padding={{vertical: 12}}>
             <Subtitle2>Policy evaluation</Subtitle2>
