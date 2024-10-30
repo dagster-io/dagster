@@ -100,7 +100,6 @@ export const GET_EVALUATIONS_QUERY = gql`
             className
           }
         }
-        currentAutoMaterializeEvaluationId
       }
     }
 
