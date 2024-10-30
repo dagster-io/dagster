@@ -337,7 +337,7 @@ export type NewEvaluationNodeFragment = {
 export type AssetConditionEvaluationRecordFragment = {
   __typename: 'AssetConditionEvaluationRecord';
   id: string;
-  evaluationId: number;
+  evaluationId: any;
   numRequested: number;
   runIds: Array<string>;
   timestamp: number;
@@ -751,7 +751,7 @@ export type GetEvaluationsQuery = {
         records: Array<{
           __typename: 'AssetConditionEvaluationRecord';
           id: string;
-          evaluationId: number;
+          evaluationId: any;
           numRequested: number;
           runIds: Array<string>;
           timestamp: number;
@@ -1153,7 +1153,7 @@ export type GetEvaluationsQuery = {
 
 export type GetEvaluationsSpecificPartitionQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  evaluationId: Types.Scalars['Int']['input'];
+  evaluationId: Types.Scalars['BigInt']['input'];
   partition: Types.Scalars['String']['input'];
 }>;
 
@@ -1525,4 +1525,4 @@ export type GetEvaluationsSpecificPartitionQuery = {
 
 export const GetEvaluationsQueryVersion = '72294147655740415d3bdaf8de190465417ec4352927fbdcda7c65eadd75dd50';
 
-export const GetEvaluationsSpecificPartitionQueryVersion = '3aa6fe76a74ae28f8d526c3f3c5bc0f1649caa503b302e604ddefdf2a76c6b81';
+export const GetEvaluationsSpecificPartitionQueryVersion = 'd753be21aeea04a8cb0fa20e6933463ca16c19413df0741bd94b5a06dd8d1de7';

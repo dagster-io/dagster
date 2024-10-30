@@ -566,14 +566,14 @@ class GrapheneQuery(graphene.ObjectType):
     truePartitionsForAutomationConditionEvaluationNode = graphene.Field(
         non_null_list(graphene.String),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
-        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.BigInt)),
         nodeUniqueId=graphene.Argument(graphene.String),
         description="Retrieve the partition keys which were true for a specific automation condition evaluation node.",
     )
 
     autoMaterializeEvaluationsForEvaluationId = graphene.Field(
         GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
-        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.BigInt)),
         description=(
             "Retrieve the auto materialization evaluation records for a given evaluation ID."
         ),
@@ -582,7 +582,7 @@ class GrapheneQuery(graphene.ObjectType):
     assetConditionEvaluationForPartition = graphene.Field(
         GrapheneAssetConditionEvaluation,
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
-        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.BigInt)),
         partition=graphene.Argument(graphene.NonNull(graphene.String)),
         description="Retrieve the condition evaluation for an asset and partition.",
     )
@@ -597,7 +597,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     assetConditionEvaluationsForEvaluationId = graphene.Field(
         GrapheneAssetConditionEvaluationRecordsOrError,
-        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.BigInt)),
         description=("Retrieve the condition evaluation records for a given evaluation ID."),
     )
 

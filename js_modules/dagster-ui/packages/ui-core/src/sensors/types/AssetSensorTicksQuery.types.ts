@@ -40,7 +40,7 @@ export type AssetSensorTicksQuery = {
             status: Types.InstigationTickStatus;
             instigationType: Types.InstigationType;
             requestedAssetMaterializationCount: number;
-            autoMaterializeAssetEvaluationId: number | null;
+            autoMaterializeAssetEvaluationId: any | null;
             error: {
               __typename: 'PythonError';
               message: string;
