@@ -56,8 +56,10 @@ $ alias antlr4='java -Xmx500M -cp "/usr/local/lib/antlr-4.13.2-complete.jar:$CLA
 
 ## Generate Python Parser
 
-This will generate the lexer, listener, parser, and visitor files from the grammer file `AssetSelection.g4`.
+Under the `python_modules/dagster/dagster/_core/definitions/asset_selection` directory, run
 
 ```bash
 $ antlr4 -Dlanguage=Python3 -visitor AssetSelection.g4
 ```
+
+This will generate the lexer, listener, parser, and visitor files from the grammer file `AssetSelection.g4`.

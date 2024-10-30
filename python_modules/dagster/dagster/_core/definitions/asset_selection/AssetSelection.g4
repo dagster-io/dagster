@@ -2,18 +2,16 @@ grammar AssetSelection;
 
 // Root rule for parsing expressions
 expr
-    : primaryExpr                                  # ToPrimaryExpression
+    : assetExpr                                    # AssetExpression
+    | keyValueExpr                                 # KeyValueExpression
+    | traversal expr                               # LeftTraversalExpression
+    | traversal expr traversal                     # BothTraversalExpression
+    | expr traversal                               # RightTraversalExpression
     | NOT expr                                     # NotExpression
     | expr AND expr                                # AndExpression
     | expr OR expr                                 # OrExpression
-    ;
-
-// Primary expressions
-primaryExpr
-    : traversal? keyValueExpr traversal?            # KeyValueExpressionWithTraversal
-    | traversal? assetExpr traversal?               # AssetExpressionWithTraversal
-    | traversal? LPAREN expr RPAREN traversal?      # ParenthesizedExpressionWithTraversal
-    | functionName LPAREN arguments RPAREN         # FunctionCallExpression
+    | functionName LPAREN expr RPAREN              # FunctionCallExpression
+    | LPAREN expr RPAREN                           # ParenthesizedExpression
     ;
 
 // Traversal operators
@@ -30,11 +28,11 @@ functionName
 
 // Key-value expressions for specific attributes
 keyValueExpr
-    : TAG COLON value (EQUAL value)?                        # TagKeyValuePair
-    | OWNER COLON value                                     # OwnerKeyValuePair
-    | GROUP COLON value                                     # GroupKeyValuePair
-    | KIND COLON value                                      # KindKeyValuePair
-    | REPO COLON value                                      # RepoKeyValuePair
+    : TAG COLON value (EQUAL value)?               # TagKeyValuePair
+    | OWNER COLON value                            # OwnerKeyValuePair
+    | GROUP COLON value                            # GroupKeyValuePair
+    | KIND COLON value                             # KindKeyValuePair
+    | REPO COLON value                             # RepoKeyValuePair
     ;
 
 // Define the EQUAL token for tag:value=value syntax
@@ -46,15 +44,10 @@ value
     | UNQUOTED_STRING
     ;
 
-// Arguments for functions
-arguments
-    : expr
-    ;
-
 // Asset expressions
 assetExpr
-    : QUOTED_STRING                                       # ExactMatchAsset
-    | UNQUOTED_STRING                                     # PrefixMatchAsset
+    : QUOTED_STRING                                # ExactMatchAsset
+    | UNQUOTED_STRING                              # PrefixMatchAsset
     ;
 
 // Tokens for operators and keywords
