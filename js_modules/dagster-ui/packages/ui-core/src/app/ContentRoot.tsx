@@ -1,6 +1,6 @@
 import {ErrorBoundary, MainContent} from '@dagster-io/ui-components';
 import {memo, useEffect, useRef} from 'react';
-import {Switch, useLocation} from 'react-router-dom';
+import {Redirect, Switch, useLocation} from 'react-router-dom';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetsOverviewRoot} from 'shared/assets/AssetsOverviewRoot.oss';
 
@@ -88,7 +88,7 @@ export const ContentRoot = memo(() => {
             <InstanceConfig />
           </Route>
           <Route path="/locations" exact>
-            <CodeLocationsPage />
+            <Redirect to="/deployment/locations" />
           </Route>
           <Route path="/locations">
             <WorkspaceRoot />
