@@ -44,5 +44,10 @@ setup(
     },
     include_package_data=True,
     python_requires=">=3.8,<3.13",
+    entry_points={
+        "console_scripts": [
+            "dagster-sigma = dagster_sigma.cli:app",
+        ]
+    },
     zip_safe=False,
 )
