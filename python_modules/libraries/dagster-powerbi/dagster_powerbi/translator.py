@@ -201,7 +201,7 @@ class DagsterPowerBITranslator:
             deps=[dataset_key] if dataset_key else None,
             metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
             tags={**PowerBITagSet(asset_type="report")},
-            kinds={"powerbi", "notebook"},
+            kinds={"powerbi", "report"},
         )
 
     def get_semantic_model_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -230,7 +230,7 @@ class DagsterPowerBITranslator:
                 )
             },
             tags={**PowerBITagSet(asset_type="semantic_model")},
-            kinds={"powerbi", "view"},
+            kinds={"powerbi", "semantic model"},
         )
 
     def get_data_source_asset_key(self, data: PowerBIContentData) -> AssetKey:
