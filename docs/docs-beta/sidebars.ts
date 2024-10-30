@@ -40,6 +40,7 @@ const sidebars: SidebarsConfig = {
             'guides/databases',
             'guides/apis',
             'guides/io-managers',
+            'guides/managing-concurrency',
           ],
         },
         {
