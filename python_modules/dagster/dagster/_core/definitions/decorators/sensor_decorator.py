@@ -4,7 +4,7 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental_param
+from dagster._annotations import deprecated
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.events import AssetKey
@@ -32,7 +32,6 @@ if TYPE_CHECKING:
     )
 
 
-@experimental_param(param="target")
 def sensor(
     job_name: Optional[str] = None,
     *,
