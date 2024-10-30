@@ -27,7 +27,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, experimental_param, public
+from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_selection import (
@@ -570,7 +570,6 @@ def split_run_requests(
     return run_requests_for_backfill_daemon, run_requests_for_single_runs
 
 
-@experimental_param(param="target")
 class SensorDefinition(IHasInternalInit):
     """Define a sensor that initiates a set of runs based on some external state.
 

@@ -3,7 +3,6 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Callable, List, Mapping, Optional, Sequence, Set, Union, cast
 
 import dagster._check as check
-from dagster._annotations import experimental_param
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.run_request import RunRequest, SkipReason
@@ -36,7 +35,6 @@ if TYPE_CHECKING:
     )
 
 
-@experimental_param(param="target")
 def schedule(
     cron_schedule: Union[str, Sequence[str]],
     *,
