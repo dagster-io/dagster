@@ -427,7 +427,7 @@ export type AssetNode = {
   changedReasons: Array<ChangeReason>;
   computeKind: Maybe<Scalars['String']['output']>;
   configField: Maybe<ConfigTypeField>;
-  currentAutoMaterializeEvaluationId: Maybe<Scalars['Int']['output']>;
+  currentAutoMaterializeEvaluationId: Maybe<Scalars['BigInt']['output']>;
   dataVersion: Maybe<Scalars['String']['output']>;
   dataVersionByPartition: Array<Maybe<Scalars['String']['output']>>;
   dependedBy: Array<AssetDependency>;
@@ -6565,7 +6565,7 @@ export const buildAssetNode = (
     currentAutoMaterializeEvaluationId:
       overrides && overrides.hasOwnProperty('currentAutoMaterializeEvaluationId')
         ? overrides.currentAutoMaterializeEvaluationId!
-        : 6693,
+        : 'libero',
     dataVersion:
       overrides && overrides.hasOwnProperty('dataVersion') ? overrides.dataVersion! : 'a',
     dataVersionByPartition:
