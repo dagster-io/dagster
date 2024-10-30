@@ -44,10 +44,12 @@ files = [
 
 for file in files:
     fix_imports(file)
+    add_lines_to_start(file, ["# flake8: noqa\n"])
     if file == "AssetSelectionParser.py":
         add_lines_to_start(
             file,
             [
+                "# type: ignore\n",
                 "from .AssetSelectionListener import AssetSelectionListener\n",
                 "from .AssetSelectionVisitor import AssetSelectionVisitor\n",
             ],

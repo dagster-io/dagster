@@ -1,12 +1,14 @@
-import sys
-from typing import TextIO
+# type: ignore
+from .AssetSelectionListener import AssetSelectionListener
+from .AssetSelectionVisitor import AssetSelectionVisitor
 
+# flake8: noqa
 # Generated from AssetSelection.g4 by ANTLR 4.13.2
 # encoding: utf-8
 from antlr4 import *
-
-from .AssetSelectionListener import AssetSelectionListener
-from .AssetSelectionVisitor import AssetSelectionVisitor
+from io import StringIO
+import sys
+from typing import TextIO
 
 
 def serializedATN():
