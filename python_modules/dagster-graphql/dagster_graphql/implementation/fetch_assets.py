@@ -56,7 +56,6 @@ from dagster._core.storage.partition_status_cache import (
 from dagster_graphql.implementation.loader import StaleStatusLoader
 
 if TYPE_CHECKING:
-    from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
     from dagster_graphql.schema.asset_graph import (
         GrapheneAssetNode,
         GrapheneAssetNodeDefinitionCollision,
@@ -183,7 +182,6 @@ def get_asset_node_definition_collisions(
 def _graphene_asset_node(
     graphene_info: "ResolveInfo",
     remote_node: RemoteAssetNode,
-    asset_checks_loader: "AssetChecksLoader",
     stale_status_loader: Optional[StaleStatusLoader],
     dynamic_partitions_loader: CachingDynamicPartitionsLoader,
 ):
@@ -194,7 +192,6 @@ def _graphene_asset_node(
 
     return GrapheneAssetNode(
         remote_node=remote_node,
-        asset_checks_loader=asset_checks_loader,
         stale_status_loader=stale_status_loader,
         dynamic_partitions_loader=dynamic_partitions_loader,
         # base_deployment_context will be None if we are not in a branch deployment
@@ -215,8 +212,6 @@ def get_asset_nodes_by_asset_key(
     """If multiple repositories have asset nodes for the same asset key, chooses the asset node that
     has an op.
     """
-    from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
-
     stale_status_loader = StaleStatusLoader(
         instance=graphene_info.context.instance,
         asset_graph=lambda: graphene_info.context.asset_graph,
@@ -225,16 +220,10 @@ def get_asset_nodes_by_asset_key(
 
     dynamic_partitions_loader = CachingDynamicPartitionsLoader(graphene_info.context.instance)
 
-    asset_checks_loader = AssetChecksLoader(
-        context=graphene_info.context,
-        asset_keys=graphene_info.context.asset_graph.get_all_asset_keys(),
-    )
-
     return {
         remote_node.key: _graphene_asset_node(
             graphene_info,
             remote_node,
-            asset_checks_loader=asset_checks_loader,
             stale_status_loader=stale_status_loader,
             dynamic_partitions_loader=dynamic_partitions_loader,
         )
@@ -245,7 +234,6 @@ def get_asset_nodes_by_asset_key(
 def get_asset_node(
     graphene_info: "ResolveInfo", asset_key: AssetKey
 ) -> Union["GrapheneAssetNode", "GrapheneAssetNotFoundError"]:
-    from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
     from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
 
     check.inst_param(asset_key, "asset_key", AssetKey)
@@ -262,10 +250,6 @@ def get_asset_node(
             asset_graph=lambda: graphene_info.context.asset_graph,
             loading_context=graphene_info.context,
         ),
-        asset_checks_loader=AssetChecksLoader(
-            context=graphene_info.context,
-            asset_keys=[asset_key],
-        ),
         dynamic_partitions_loader=CachingDynamicPartitionsLoader(
             graphene_info.context.instance,
         ),
@@ -275,7 +259,6 @@ def get_asset_node(
 def get_asset(
     graphene_info: "ResolveInfo", asset_key: AssetKey
 ) -> Union["GrapheneAsset", "GrapheneAssetNotFoundError"]:
-    from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
     from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
     from dagster_graphql.schema.pipelines.pipeline import GrapheneAsset
 
@@ -291,10 +274,6 @@ def get_asset(
             graphene_info,
             graphene_info.context.asset_graph.get(asset_key),
             stale_status_loader=None,
-            asset_checks_loader=AssetChecksLoader(
-                context=graphene_info.context,
-                asset_keys=[asset_key],
-            ),
             dynamic_partitions_loader=CachingDynamicPartitionsLoader(
                 graphene_info.context.instance,
             ),

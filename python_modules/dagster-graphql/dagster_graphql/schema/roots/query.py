@@ -22,7 +22,6 @@ from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.workspace.permissions import Permissions
 
-from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.execution.backfill import get_asset_backfill_preview
 from dagster_graphql.implementation.external import (
     fetch_location_entry,
@@ -1038,11 +1037,6 @@ class GrapheneQuery(graphene.ObjectType):
         final_keys = [node.key for node in results]
         AssetRecord.prepare(graphene_info.context, final_keys)
 
-        asset_checks_loader = AssetChecksLoader(
-            context=graphene_info.context,
-            asset_keys=final_keys,
-        )
-
         def load_asset_graph() -> RemoteAssetGraph:
             if repo is not None:
                 return repo.asset_graph
@@ -1060,7 +1054,6 @@ class GrapheneQuery(graphene.ObjectType):
         nodes = [
             GrapheneAssetNode(
                 remote_node=remote_node,
-                asset_checks_loader=asset_checks_loader,
                 stale_status_loader=stale_status_loader,
                 dynamic_partitions_loader=dynamic_partitions_loader,
                 # base_deployment_context will be None if we are not in a branch deployment

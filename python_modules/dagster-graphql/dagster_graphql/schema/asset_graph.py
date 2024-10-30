@@ -33,13 +33,14 @@ from dagster._core.remote_representation.external_data import (
     TimeWindowPartitionsSnap,
 )
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
+from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.utils import is_valid_email
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from packaging import version
 
-from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.implementation.fetch_asset_checks import has_asset_checks
 from dagster_graphql.implementation.fetch_assets import (
@@ -51,7 +52,15 @@ from dagster_graphql.implementation.fetch_assets import (
 )
 from dagster_graphql.implementation.loader import StaleStatusLoader
 from dagster_graphql.schema import external
-from dagster_graphql.schema.asset_checks import AssetChecksOrErrorUnion, GrapheneAssetChecksOrError
+from dagster_graphql.schema.asset_checks import (
+    AssetChecksOrErrorUnion,
+    GrapheneAssetCheck,
+    GrapheneAssetCheckNeedsAgentUpgradeError,
+    GrapheneAssetCheckNeedsMigrationError,
+    GrapheneAssetCheckNeedsUserCodeUpgrade,
+    GrapheneAssetChecks,
+    GrapheneAssetChecksOrError,
+)
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializePolicy
 from dagster_graphql.schema.automation_condition import GrapheneAutomationCondition
@@ -158,13 +167,9 @@ class GrapheneAssetDependency(graphene.ObjectType):
         self,
         *,
         asset_key: AssetKey,
-        asset_checks_loader: AssetChecksLoader,
         partition_mapping: Optional[PartitionMapping] = None,
     ):
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
-        self._asset_checks_loader = check.inst_param(
-            asset_checks_loader, "asset_checks_loader", AssetChecksLoader
-        )
         self._partition_mapping = check.opt_inst_param(
             partition_mapping, "partition_mapping", PartitionMapping
         )
@@ -174,7 +179,6 @@ class GrapheneAssetDependency(graphene.ObjectType):
         remote_node = graphene_info.context.asset_graph.get(self._asset_key)
         return GrapheneAssetNode(
             remote_node=remote_node,
-            asset_checks_loader=self._asset_checks_loader,
         )
 
     def resolve_partitionMapping(
@@ -318,7 +322,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         self,
         *,
         remote_node: RemoteAssetNode,
-        asset_checks_loader: AssetChecksLoader,
         stale_status_loader: Optional[StaleStatusLoader] = None,
         dynamic_partitions_loader: Optional[CachingDynamicPartitionsLoader] = None,
         asset_graph_differ: Optional[AssetGraphDiffer] = None,
@@ -339,9 +342,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         self._dynamic_partitions_loader = check.opt_inst_param(
             dynamic_partitions_loader, "dynamic_partitions_loader", CachingDynamicPartitionsLoader
-        )
-        self._asset_checks_loader = check.inst_param(
-            asset_checks_loader, "asset_checks_loader", AssetChecksLoader
         )
         self._asset_graph_differ = check.opt_inst_param(
             asset_graph_differ, "asset_graph_differ", AssetGraphDiffer
@@ -774,15 +774,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not self._remote_node.child_keys:
             return []
 
-        asset_checks_loader = AssetChecksLoader(
-            context=graphene_info.context,
-            asset_keys=self._remote_node.child_keys,
-        )
-
         return [
             GrapheneAssetDependency(
                 asset_key=asset_key,
-                asset_checks_loader=asset_checks_loader,
             )
             for asset_key in self._remote_node.child_keys
         ]
@@ -800,15 +794,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not self._remote_node.parent_keys:
             return []
 
-        asset_checks_loader = AssetChecksLoader(
-            context=graphene_info.context,
-            asset_keys=self._remote_node.parent_keys,
-        )
-
         return [
             GrapheneAssetDependency(
                 asset_key=key,
-                asset_checks_loader=asset_checks_loader,
                 partition_mapping=self._remote_node.partition_mappings.get(key),
             )
             for key in self._remote_node.parent_keys
@@ -1279,8 +1267,54 @@ class GrapheneAssetNode(graphene.ObjectType):
         limit=None,
         pipeline: Optional[GraphenePipelineSelector] = None,
     ) -> AssetChecksOrErrorUnion:
-        return self._asset_checks_loader.get_checks_for_asset(
-            self._asset_node_snap.asset_key, limit, pipeline
+        remote_check_nodes = graphene_info.context.asset_graph.get_checks_for_asset(
+            self._asset_node_snap.asset_key
+        )
+        if not remote_check_nodes:
+            return GrapheneAssetChecks(checks=[])
+
+        asset_check_support = graphene_info.context.instance.get_asset_check_support()
+        if asset_check_support == AssetCheckInstanceSupport.NEEDS_MIGRATION:
+            return GrapheneAssetCheckNeedsMigrationError(
+                message="Asset checks require an instance migration. Run `dagster instance migrate`."
+            )
+        elif asset_check_support == AssetCheckInstanceSupport.NEEDS_AGENT_UPGRADE:
+            return GrapheneAssetCheckNeedsAgentUpgradeError(
+                "Asset checks require an agent upgrade to 1.5.0 or greater."
+            )
+        else:
+            check.invariant(
+                asset_check_support == AssetCheckInstanceSupport.SUPPORTED,
+                f"Unexpected asset check support status {asset_check_support}",
+            )
+
+        library_versions = graphene_info.context.get_dagster_library_versions(
+            self._repository_handle.location_name
+        )
+        code_location_version = (library_versions or {}).get("dagster")
+        if code_location_version and version.parse(code_location_version) < version.parse("1.5"):
+            return GrapheneAssetCheckNeedsUserCodeUpgrade(
+                message=(
+                    "Asset checks require dagster>=1.5. Upgrade your dagster"
+                    " version for this code location."
+                )
+            )
+        if pipeline:
+            remote_check_nodes = [
+                node
+                for node in remote_check_nodes
+                if node.handle.location_name == pipeline.repositoryLocationName
+                and node.handle.repository_name == pipeline.repositoryName
+                and pipeline.pipelineName in node.asset_check.job_names
+            ]
+
+        if limit:
+            remote_check_nodes = remote_check_nodes[:limit]
+
+        return GrapheneAssetChecks(
+            checks=[
+                GrapheneAssetCheck(remote_check_node) for remote_check_node in remote_check_nodes
+            ]
         )
 
 

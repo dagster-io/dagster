@@ -411,6 +411,9 @@ class BaseWorkspaceRequestContext(LoadingContext):
         job = self.get_full_job(job_selector)
         return job.job_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap(type_key)
 
+    def get_dagster_library_versions(self, location_name: str) -> Optional[Mapping[str, str]]:
+        return self.get_code_location(location_name).get_dagster_library_versions()
+
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def __init__(
