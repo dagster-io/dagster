@@ -125,7 +125,7 @@ export const SensorDetails = ({
                   setShowTestTickDialog(true);
                 }}
               >
-                Manual tick
+                Evaluate tick
               </Button>
             </Tooltip>
           </Box>
