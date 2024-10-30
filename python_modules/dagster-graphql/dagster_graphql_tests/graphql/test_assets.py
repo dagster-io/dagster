@@ -254,7 +254,7 @@ GET_ASSET_DATA_VERSIONS_BY_PARTITION = """
 
 
 GET_ASSET_NODES_FROM_KEYS = """
-    query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
+    query AssetNodeQuery($pipelineSelector: PipelineSelector, $assetKeys: [AssetKeyInput!]) {
         assetNodes(pipeline: $pipelineSelector, assetKeys: $assetKeys) {
             id
             hasMaterializePermission
@@ -1189,6 +1189,17 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             variables={
                 "pipelineSelector": selector,
                 "assetKeys": [{"path": ["asset_one"]}],
+            },
+        )
+        assert result.data
+        assert len(result.data["assetNodes"]) == 0
+
+    def test_asset_node_does_not_exist(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_NODES_FROM_KEYS,
+            variables={
+                "assetKeys": [{"path": ["does_not_exist"]}],
             },
         )
         assert result.data
