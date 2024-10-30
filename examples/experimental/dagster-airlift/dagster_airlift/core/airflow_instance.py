@@ -53,7 +53,9 @@ class AirflowInstance:
         return f"{self.auth_backend.get_webserver_url()}/api/v1"
 
     def list_dags(self) -> List["DagInfo"]:
-        response = self.auth_backend.get_session().get(f"{self.get_api_url()}/dags")
+        response = self.auth_backend.get_session().get(
+            f"{self.get_api_url()}/dags", params={"limit": 1000}
+        )
         if response.status_code == 200:
             dags = response.json()
             webserver_url = self.auth_backend.get_webserver_url()
