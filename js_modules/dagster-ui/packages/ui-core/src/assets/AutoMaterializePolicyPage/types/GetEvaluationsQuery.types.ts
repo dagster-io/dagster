@@ -733,7 +733,7 @@ export type GetEvaluationsQuery = {
     | {
         __typename: 'AssetNode';
         id: string;
-        currentAutoMaterializeEvaluationId: number | null;
+        currentAutoMaterializeEvaluationId: any | null;
         autoMaterializePolicy: {
           __typename: 'AutoMaterializePolicy';
           rules: Array<{

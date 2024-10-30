@@ -308,7 +308,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         limit=graphene.Argument(graphene.Int),
         pipeline=graphene.Argument(GraphenePipelineSelector),
     )
-    currentAutoMaterializeEvaluationId = graphene.Int()
+    currentAutoMaterializeEvaluationId = graphene.BigInt()
     targetingInstigators = non_null_list(GrapheneInstigator)
 
     class Meta:
