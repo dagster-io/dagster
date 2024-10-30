@@ -7,13 +7,12 @@ description: "Learn how to automate asset materialization using schedules and jo
 
 After creating some [asset definitions](/concepts/assets/software-defined-assets), you may want to automate their materialization.
 
-In this guide, we'll show you one method of accomplishing this by using schedules and jobs. To do this for ops, refer to the [Automating ops using schedules guide](/concepts/automation/schedules/automating-ops-schedules-jobs).
+In this guide, we'll show you one method of accomplishing this by using schedules. To do this for ops, refer to the [Automating ops using schedules guide](/concepts/automation/schedules/automating-ops-schedules-jobs).
 
 By the end of this guide, you'll be able to:
 
-- Create a job that materializes assets
-- Create a schedule
-- Add the new job and schedule to your project's <PyObject object="Definitions" /> object
+- Create a schedule that directly targets some assets
+- Add the new schedule to your project's <PyObject object="Definitions" /> object
 - Turn the schedule on
 
 ---
@@ -25,16 +24,13 @@ To follow this guide, you'll need:
 - **To install Dagster and the Dagster UI.** Refer to the [Installation guide](/getting-started/install) for more info and instructions.
 - **Familiarity with**:
   - [Asset definitions](/concepts/assets/software-defined-assets)
-  - [Jobs](/concepts/ops-jobs-graphs/jobs)
   - [Code locations](/concepts/code-locations) (<PyObject object="Definitions" />)
 
 ---
 
-## Step 1: Create a job
+## Step 1: Define some assets
 
-The first step in creating a schedule is to build a job that materializes some assets.
-
-Let's assume we already have a few assets in our project in a group named `ecommerce_assets`:
+The first step in creating a schedule is to define the target assets we want to materialize. Define a few assets in a group named `ecommerce_assets`:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_assets endbefore=end_assets
 @asset(group_name="ecommerce_assets")
@@ -47,31 +43,16 @@ def users_asset():
     return 2
 ```
 
-To create a job that materializes the assets in this group, we'll use <PyObject object="define_asset_job" />:
-
-```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_job endbefore=end_job
-ecommerce_job = define_asset_job(
-    "ecommerce_job", AssetSelection.groups("ecommerce_assets")
-)
-```
-
-To create the job, we:
-
-1. Imported <PyObject object="AssetSelection" /> and <PyObject object="define_asset_job" />
-2. Constructed the job using <PyObject object="define_asset_job" /> and name it `ecommerce_job`
-3. Selected all assets in the `ecommerce_assets` group using <PyObject object="AssetSelection" />. Only these assets will be materialized when the job runs.
-
-Refer to the [Asset jobs documentation](/concepts/assets/asset-jobs) for more info and examples.
-
 ---
 
 ## Step 2: Define the schedule
 
-Next, we'll construct the schedule using <PyObject object="ScheduleDefinition" /> and attach it to the job we created in [Step 1](#step-1-create-a-job).
+Next, we'll construct the schedule using <PyObject object="ScheduleDefinition" /> and use it to target the assets we created in [Step 1](#step-1-define-some-assets).
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_schedule endbefore=end_schedule
 ecommerce_schedule = ScheduleDefinition(
-    job=ecommerce_job,
+    name="ecommerce_schedule",
+    target=AssetSelection.groups("ecommerce_assets"),
     cron_schedule="15 5 * * 1-5",
     default_status=DefaultScheduleStatus.RUNNING,
 )
@@ -82,7 +63,7 @@ To build the schedule, we:
 1. Imported `DefaultScheduleStatus` and <PyObject object="ScheduleDefinition" /> from `dagster`
 2. Created a schedule using <PyObject object="ScheduleDefinition" /> that:
 
-   - Is attached to the `ecommerce_job` job
+   - Targets the assets we defined in Step 1 using `AssetSelection.groups`
    - Has a cron expression of `15 5 * * 1-5`, which translates to `Every Monday through Friday of every month at 5:15AM`
    - Is turned on by default (`default_status`). We'll discuss this more in [Step 4](#step-4-turn-the-schedule-on).
 
@@ -90,19 +71,25 @@ To build the schedule, we:
 
 ## Step 3: Update the Definitions object
 
-Next, we'll update our project's <PyObject object="Definitions" /> object to include the new job and schedule. This ensures the job and schedule are available to Dagster processes, such as the Dagster UI.
+Next, we'll update our project's <PyObject object="Definitions" /> object to include the new assets and schedule. This ensures the job and schedule are available to Dagster processes, such as the Dagster UI.
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_definitions endbefore=end_definitions
 defs = Definitions(
     assets=[orders_asset, users_asset],
-    jobs=[ecommerce_job],
     schedules=[ecommerce_schedule],
 )
 ```
 
+<Note>
+  We also could have passed our asset definitions directly as the `target` of
+  the schedule, and they would be automatically included as assets in the
+  `Definitions` object. Since we targeted them here using
+  `AssetSelection.groups`, we needed to include them separately in `assets`.
+</Note>
+
 At this point, your code should look like the following:
 
-```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py lines=3-12,14-23,27-30,35-40,45-49
+```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py lines=3-12,14-23,27-33,38-41
 from dagster import (
     AssetSelection,
     DefaultScheduleStatus,
@@ -123,19 +110,15 @@ def users_asset():
     return 2
 
 
-ecommerce_job = define_asset_job(
-    "ecommerce_job", AssetSelection.groups("ecommerce_assets")
-)
-
 ecommerce_schedule = ScheduleDefinition(
-    job=ecommerce_job,
+    name="ecommerce_schedule",
+    target=AssetSelection.groups("ecommerce_assets"),
     cron_schedule="15 5 * * 1-5",
     default_status=DefaultScheduleStatus.RUNNING,
 )
 
 defs = Definitions(
     assets=[orders_asset, users_asset],
-    jobs=[ecommerce_job],
     schedules=[ecommerce_schedule],
 )
 ```
@@ -187,7 +170,8 @@ You can set the schedule's default status using `DefaultScheduleStatus.RUNNING` 
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_schedule endbefore=end_schedule
 ecommerce_schedule = ScheduleDefinition(
-    job=ecommerce_job,
+    name="ecommerce_schedule",
+    target=AssetSelection.groups("ecommerce_assets"),
     cron_schedule="15 5 * * 1-5",
     default_status=DefaultScheduleStatus.RUNNING,
 )
@@ -216,7 +200,6 @@ That's it! At this point, you should have a working, running schedule in your Da
 
 | Name                                     | Description                                                                                                                                       |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="define_asset_job" />   | A function for defining a job from a selection of assets.                                                                                         |
 | <PyObject object="AssetSelection" />     | A class that defines a selection of assets. Typically used with <PyObject object="define_asset_job" />.                                           |
 | <PyObject object="ScheduleDefinition" /> | A class that defines a schedule and attaches it to a job.                                                                                         |
 | <PyObject object="Definitions" />        | The object that contains all the definitions defined within a code location. Definitions include assets, jobs, resources, schedules, and sensors. |
@@ -233,10 +216,6 @@ That's it! At this point, you should have a working, running schedule in your Da
   <ArticleListItem
     title="Testing schedules"
     href="/concepts/automation/schedules/testing"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Asset jobs"
-    href="/concepts/assets/asset-jobs"
   ></ArticleListItem>
   <ArticleListItem
     title="Automating data pipelines"
