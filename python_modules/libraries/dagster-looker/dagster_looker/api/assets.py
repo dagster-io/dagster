@@ -8,7 +8,7 @@ from dagster_looker.api.dagster_looker_api_translator import (
     LookerStructureData,
     LookerStructureType,
     LookmlView,
-    RequestStartPdtBuild,
+    PdtBuildDefinition,
 )
 from dagster_looker.api.resource import LookerResource
 
@@ -16,25 +16,26 @@ from dagster_looker.api.resource import LookerResource
 @experimental
 def build_looker_pdt_assets_definitions(
     resource_key: str,
-    request_start_pdt_builds: Sequence[RequestStartPdtBuild],
+    pdt_build_definitions: Sequence[PdtBuildDefinition],
     dagster_looker_translator: Type[DagsterLookerApiTranslator] = DagsterLookerApiTranslator,
 ) -> Sequence[AssetsDefinition]:
-    """Returns the AssetsDefinitions of the executable assets for the given the list of refreshable PDTs.
+    """Returns the AssetsDefinitions of the executable assets for the given the list of PDT build definitions.
 
     Args:
         resource_key (str): The resource key to use for the Looker resource.
-        request_start_pdt_builds (Optional[Sequence[RequestStartPdtBuild]]): A list of requests to start PDT builds.
+        pdt_build_definitions (Optional[Sequence[RequestStartPdtBuild]]): A list of PDTs
+            for which the assets will be created. These PDTs will be built when materializing the assets.
             See https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py
             for documentation on all available fields.
         dagster_looker_translator (Optional[DagsterLookerApiTranslator]): The translator to
             use to convert Looker structures into assets. Defaults to DagsterLookerApiTranslator.
 
     Returns:
-        AssetsDefinition: The AssetsDefinitions of the executable assets for the given the list of refreshable PDTs.
+        AssetsDefinition: The AssetsDefinitions of the executable assets for the given list of PDT build definitions.
     """
     translator = dagster_looker_translator()
     result = []
-    for request_start_pdt_build in request_start_pdt_builds:
+    for pdt_build_definition in pdt_build_definitions:
 
         @multi_asset(
             specs=[
@@ -42,32 +43,32 @@ def build_looker_pdt_assets_definitions(
                     LookerStructureData(
                         structure_type=LookerStructureType.VIEW,
                         data=LookmlView(
-                            view_name=request_start_pdt_build.view_name,
+                            view_name=pdt_build_definition.view_name,
                             sql_table_name=None,
                         ),
                     )
                 )
             ],
-            name=f"{request_start_pdt_build.model_name}_{request_start_pdt_build.view_name}",
+            name=f"{pdt_build_definition.model_name}_{pdt_build_definition.view_name}",
             required_resource_keys={resource_key},
         )
         def pdts(context: AssetExecutionContext):
             looker = cast(LookerResource, getattr(context.resources, resource_key))
 
             context.log.info(
-                f"Starting pdt build for Looker view `{request_start_pdt_build.view_name}` "
-                f"in Looker model `{request_start_pdt_build.model_name}`."
+                f"Starting pdt build for Looker view `{pdt_build_definition.view_name}` "
+                f"in Looker model `{pdt_build_definition.model_name}`."
             )
 
             materialize_pdt = looker.get_sdk().start_pdt_build(
-                model_name=request_start_pdt_build.model_name,
-                view_name=request_start_pdt_build.view_name,
-                force_rebuild=request_start_pdt_build.force_rebuild,
-                force_full_incremental=request_start_pdt_build.force_full_incremental,
-                workspace=request_start_pdt_build.workspace,
+                model_name=pdt_build_definition.model_name,
+                view_name=pdt_build_definition.view_name,
+                force_rebuild=pdt_build_definition.force_rebuild,
+                force_full_incremental=pdt_build_definition.force_full_incremental,
+                workspace=pdt_build_definition.workspace,
                 source=f"Dagster run {context.run_id}"
                 if context.run_id
-                else request_start_pdt_build.source,
+                else pdt_build_definition.source,
             )
 
             if not materialize_pdt.materialization_id:
