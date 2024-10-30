@@ -129,12 +129,12 @@ def build_deps_for_looker_view(
             for (_, source) in scope.selected_sources.values()
             if isinstance(source, exp.Table)
         ]
-    except Exception as e:
-        logger.warn(
+    except Exception:
+        logger.warning(
             f"Failed to optimize derived table SQL for view `{lookml_view_props['name']}`"
             f" in file `{lookml_view_path.name}`."
-            " The upstream dependencies for the view will be omitted.\n\n"
-            f"Exception: {e}"
+            " The upstream dependencies for the view will be omitted.\n\n",
+            exc_info=True,
         )
 
     return list(
