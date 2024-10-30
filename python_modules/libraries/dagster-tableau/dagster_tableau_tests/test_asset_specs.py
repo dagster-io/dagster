@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import responses
+from dagster._check.functions import CheckError
 from dagster._config.field_utils import EnvVar
 from dagster._core.test_utils import environ
 from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace, load_tableau_asset_specs
@@ -48,6 +49,56 @@ def test_fetch_tableau_workspace_data(
     assert len(actual_workspace_data.sheets_by_id) == 1
     assert len(actual_workspace_data.dashboards_by_id) == 1
     assert len(actual_workspace_data.data_sources_by_id) == 1
+
+
+@responses.activate
+@pytest.mark.parametrize(
+    "clazz,host_key,host_value",
+    [
+        (TableauServerWorkspace, "server_name", "fake_server_name"),
+        (TableauCloudWorkspace, "pod_name", "fake_pod_name"),
+    ],
+)
+def test_invalid_workbook(
+    clazz: Union[Type[TableauCloudWorkspace], Type[TableauServerWorkspace]],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    sign_in: MagicMock,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+    workbook_id: str,
+) -> None:
+    connected_app_client_id = uuid.uuid4().hex
+    connected_app_secret_id = uuid.uuid4().hex
+    connected_app_secret_value = uuid.uuid4().hex
+    username = "fake_username"
+
+    resource_args = {
+        "connected_app_client_id": connected_app_client_id,
+        "connected_app_secret_id": connected_app_secret_id,
+        "connected_app_secret_value": connected_app_secret_value,
+        "username": username,
+        "site_name": site_name,
+        host_key: host_value,
+    }
+
+    resource = clazz(**resource_args)  # type: ignore
+    resource.build_client()
+
+    # Test invalid workbook
+    get_workbook.return_value = {"data": {"workbooks": None}}
+    with pytest.raises(
+        CheckError, match=f"Invalid data for Tableau workbook for id {workbook_id}."
+    ):
+        resource.fetch_tableau_workspace_data()
+
+    # Test empty workbook
+    get_workbook.return_value = {"data": {"workbooks": []}}
+    with pytest.raises(
+        Exception, match=f"Could not retrieve data for Tableau workbook for id {workbook_id}."
+    ):
+        resource.fetch_tableau_workspace_data()
 
 
 @responses.activate

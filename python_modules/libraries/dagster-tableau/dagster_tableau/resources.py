@@ -404,7 +404,16 @@ class BaseTableauWorkspace(ConfigurableResource):
             dashboards_by_id = {}
             data_sources_by_id = {}
             for workbook_id in workbook_ids:
-                workbook_data = client.get_workbook(workbook_id=workbook_id)["data"]["workbooks"][0]
+                workbook = client.get_workbook(workbook_id=workbook_id)
+                workbook_data_list = check.is_list(
+                    workbook["data"]["workbooks"],
+                    additional_message=f"Invalid data for Tableau workbook for id {workbook_id}.",
+                )
+                if not workbook_data_list:
+                    raise Exception(
+                        f"Could not retrieve data for Tableau workbook for id {workbook_id}."
+                    )
+                workbook_data = workbook_data_list[0]
                 workbooks_by_id[workbook_id] = TableauContentData(
                     content_type=TableauContentType.WORKBOOK, properties=workbook_data
                 )
