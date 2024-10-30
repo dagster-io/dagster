@@ -14,10 +14,11 @@ import {
 import * as React from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {UserPreferences} from 'shared/app/UserSettingsDialog/UserPreferences.oss';
+import {getFeatureFlags} from 'shared/app/getFeatureFlags.oss';
 
 import {CodeLinkProtocolSelect} from '../../code-links/CodeLinkProtocol';
 import {showCustomAlert} from '../CustomAlertProvider';
-import {getFeatureFlags, setFeatureFlags} from '../Flags';
+import {setFeatureFlags} from '../Flags';
 import {useTrackEvent} from '../analytics';
 
 type OnCloseFn = (event: React.SyntheticEvent<HTMLElement>) => void;

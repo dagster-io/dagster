@@ -1,14 +1,9 @@
 import memoize from 'lodash/memoize';
 import {useMemo} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
-
-import {getJSONForKey} from '../hooks/useStateWithStorage';
+import {getFeatureFlags} from 'shared/app/getFeatureFlags.oss';
 
 export const DAGSTER_FLAGS_KEY = 'DAGSTER_FLAGS';
-
-export const getFeatureFlags: () => FeatureFlag[] = memoize(
-  () => getJSONForKey(DAGSTER_FLAGS_KEY) || [],
-);
 
 export const featureEnabled = memoize((flag: FeatureFlag) => getFeatureFlags().includes(flag));
 
