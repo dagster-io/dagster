@@ -164,6 +164,8 @@ def adls2_resource(context):
                 # or leave the object empty for no arguments
                 DefaultAzureCredential:
                     exclude_environment_credential: true
+                cloud_type: public
+                # str: The Azure Cloud type. Either 'public' or 'government.' Default is 'public'.
 
     """
     return _adls2_resource_from_config(context.resource_config)
