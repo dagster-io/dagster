@@ -10,7 +10,7 @@ export type AssetDaemonTickFragment = {
   status: Types.InstigationTickStatus;
   instigationType: Types.InstigationType;
   requestedAssetMaterializationCount: number;
-  autoMaterializeAssetEvaluationId: number | null;
+  autoMaterializeAssetEvaluationId: any | null;
   error: {
     __typename: 'PythonError';
     message: string;
@@ -49,7 +49,7 @@ export type AssetDaemonTicksQuery = {
     status: Types.InstigationTickStatus;
     instigationType: Types.InstigationType;
     requestedAssetMaterializationCount: number;
-    autoMaterializeAssetEvaluationId: number | null;
+    autoMaterializeAssetEvaluationId: any | null;
     error: {
       __typename: 'PythonError';
       message: string;

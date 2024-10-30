@@ -210,7 +210,7 @@ def create_graphene_auto_materialize_rules_with_rule_evaluations(
 
 class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
-    evaluationId = graphene.NonNull(graphene.Int)
+    evaluationId = graphene.NonNull(graphene.BigInt)
     numRequested = graphene.NonNull(graphene.Int)
     numSkipped = graphene.NonNull(graphene.Int)
     numDiscarded = graphene.NonNull(graphene.Int)
