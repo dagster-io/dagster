@@ -89,14 +89,14 @@ def test_invalid_workbook(
     # Test invalid workbook
     get_workbook.return_value = {"data": {"workbooks": None}}
     with pytest.raises(
-        CheckError, match="Object None is not a list. Got None with type <class 'NoneType'>."
+        CheckError, match=f"Invalid data for Tableau workbook for id {workbook_id}."
     ):
         resource.fetch_tableau_workspace_data()
 
     # Test empty workbook
     get_workbook.return_value = {"data": {"workbooks": []}}
     with pytest.raises(
-        Exception, match=f"Could not retrieve data for Tableau workbook for id {workbook_id}"
+        Exception, match=f"Could not retrieve data for Tableau workbook for id {workbook_id}."
     ):
         resource.fetch_tableau_workspace_data()
 

@@ -405,7 +405,10 @@ class BaseTableauWorkspace(ConfigurableResource):
             data_sources_by_id = {}
             for workbook_id in workbook_ids:
                 workbook = client.get_workbook(workbook_id=workbook_id)
-                workbook_data_list = check.is_list(workbook["data"]["workbooks"])
+                workbook_data_list = check.is_list(
+                    workbook["data"]["workbooks"],
+                    additional_message=f"Invalid data for Tableau workbook for id {workbook_id}.",
+                )
                 if not workbook_data_list:
                     raise Exception(
                         f"Could not retrieve data for Tableau workbook for id {workbook_id}."
