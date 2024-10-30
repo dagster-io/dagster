@@ -22,7 +22,6 @@ def test_adls2_file_manager_write(storage_account, file_system):
     adls2_mock = mock.MagicMock()
     adls2_mock.get_file_client.return_value = file_mock
     adls2_mock.account_name = storage_account
-    adls2_mock._cloud_type = "public"
     adls2_mock.primary_endpoint = "some-endpoint.dfs.core.windows.net"
     file_manager = ADLS2FileManager(adls2_mock, file_system, "some-key")
 
