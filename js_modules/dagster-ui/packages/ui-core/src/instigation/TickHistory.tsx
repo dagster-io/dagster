@@ -201,7 +201,7 @@ export const TicksTable = ({
           onClose={() => setLogTick(undefined)}
         />
       ) : null}
-      <Box padding={{vertical: 8, horizontal: 24}}>
+      <Box padding={{vertical: 12, horizontal: 24}}>
         <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
           {tabs}
           <Box flex={{direction: 'row', gap: 16}}>
