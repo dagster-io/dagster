@@ -1,6 +1,7 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
 from dagster_fivetran.asset_defs import (
+    DagsterFivetranTranslator as DagsterFivetranTranslator,
     build_fivetran_assets as build_fivetran_assets,
     load_assets_from_fivetran_instance as load_assets_from_fivetran_instance,
 )
