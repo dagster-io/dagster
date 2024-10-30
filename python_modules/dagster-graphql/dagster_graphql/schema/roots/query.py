@@ -1018,6 +1018,7 @@ class GrapheneQuery(graphene.ObjectType):
                 remote_nodes = [
                     graphene_info.context.asset_graph.get(asset_key)
                     for asset_key in resolved_asset_keys
+                    if graphene_info.context.asset_graph.has(asset_key)
                 ]
             else:
                 remote_nodes = [
