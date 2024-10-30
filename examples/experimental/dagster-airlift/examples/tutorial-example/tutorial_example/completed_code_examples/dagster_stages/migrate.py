@@ -1,16 +1,7 @@
-# type: ignore
-# start_migrate
 import os
 from pathlib import Path
 
-from dagster import (
-    AssetExecutionContext,
-    AssetsDefinition,
-    AssetSpec,
-    Definitions,
-    materialize,
-    multi_asset,
-)
+from dagster import AssetExecutionContext, AssetsDefinition, AssetSpec, Definitions, multi_asset
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
@@ -115,10 +106,3 @@ defs = build_defs_from_airflow_instance(
         resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
     ),
 )
-# end_migrate
-
-if __name__ == "__main__":
-    assert dbt_project_path().exists()
-    # print(dbt_project_path().absolute())
-    Definitions.validate_loadable(defs)
-    materialize(defs.get_asset_graph().assets_defs)

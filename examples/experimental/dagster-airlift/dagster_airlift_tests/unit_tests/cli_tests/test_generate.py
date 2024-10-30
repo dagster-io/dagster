@@ -1,13 +1,15 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from dagster_airlift._generate.generate import generate_tutorial
+import pytest
+from dagster_airlift._generate.generate import Stage, generate_tutorial
 
 
-def test_generate_tutorial() -> None:
+@pytest.mark.parametrize("stage", [val for val in Stage])
+def test_generate_tutorial(stage: Stage) -> None:
     with TemporaryDirectory() as temp_dir:
         temp_dir_path = Path(temp_dir)
-        generate_tutorial(temp_dir_path, "test")
+        generate_tutorial(temp_dir_path, "test", stage)
         tutorial_dir = temp_dir_path / "test-tutorial"
 
         expected_dirs = [

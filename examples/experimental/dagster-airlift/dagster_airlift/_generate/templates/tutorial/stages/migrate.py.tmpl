@@ -1,5 +1,3 @@
-# type: ignore
-# start_migrate
 import os
 from pathlib import Path
 
@@ -18,13 +16,10 @@ from dagster_airlift.core import (
     build_defs_from_airflow_instance,
 )
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
-
 from {{ PACKAGE_NAME_PLACEHOLDER }}.shared.complete.export_duckdb_to_csv import (
     ExportDuckDbToCsvArgs,
     export_duckdb_to_csv,
 )
-
-# Completed version fo the load and export code can be found at tutorial_example/shared/complete.
 from {{ PACKAGE_NAME_PLACEHOLDER }}.shared.complete.load_csv_to_duckdb import (
     LoadCsvToDuckDbArgs,
     load_csv_to_duckdb,
@@ -116,10 +111,3 @@ defs = build_defs_from_airflow_instance(
         resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
     ),
 )
-# end_migrate
-
-if __name__ == "__main__":
-    assert dbt_project_path().exists()
-    # print(dbt_project_path().absolute())
-    Definitions.validate_loadable(defs)
-    materialize(defs.get_asset_graph().assets_defs)
