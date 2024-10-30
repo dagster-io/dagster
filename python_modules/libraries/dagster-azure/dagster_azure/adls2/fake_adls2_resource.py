@@ -88,7 +88,7 @@ class FakeADLS2ServiceClient:
     @property
     def account_name(self):
         return self._account_name
-    
+
     @property
     def cloud_type(self):
         return self._cloud_type

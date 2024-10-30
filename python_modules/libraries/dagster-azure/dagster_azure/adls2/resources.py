@@ -61,7 +61,7 @@ ADLS2_CLIENT_CONFIG = {
         Enum("cloud_type", [EnumValue("public"), EnumValue("government")]),
         description="The Azure Cloud type. Either 'public' or 'government.'",
         is_required=False,
-        default_value="public"
+        default_value="public",
     ),
     "credential": DagsterField(
         Selector(
@@ -179,7 +179,7 @@ def adls2_resource(context):
             "adls2_file_system": DagsterField(
                 StringSource, description="ADLS Gen2 file system name"
             ),
-            "adls2_prefix": DagsterField(StringSource, is_required=False, default_value="dagster")
+            "adls2_prefix": DagsterField(StringSource, is_required=False, default_value="dagster"),
         },
     )
 )
@@ -213,5 +213,7 @@ def _adls2_resource_from_config(config) -> ADLS2Resource:
         credential = ADLS2SASToken(token=config["credential"]["sas"])
     else:
         credential = ADLS2Key(key=config["credential"]["key"])
-    
-    return ADLS2Resource(storage_account=storage_account, cloud_type=cloud_type, credential=credential)
+
+    return ADLS2Resource(
+        storage_account=storage_account, cloud_type=cloud_type, credential=credential
+    )

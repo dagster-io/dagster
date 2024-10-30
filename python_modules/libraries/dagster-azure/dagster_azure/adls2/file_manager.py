@@ -1,7 +1,7 @@
 import io
+import re
 import uuid
 from contextlib import contextmanager
-import re
 
 import dagster._check as check
 from dagster._core.storage.file_manager import (
@@ -40,7 +40,7 @@ class ADLS2FileHandle(FileHandle):
     def path_desc(self):
         """str: The file's ADLS2 URL."""
         return self.adls2_path
-    
+
     @property
     def subdomain(self):
         """str: The subdomain of the ADLS2 URL."""
@@ -113,7 +113,9 @@ class ADLS2FileManager(FileManager):
             file_system=self._file_system, file_path=adls2_key
         )
         adls2_file.upload_data(file_obj, overwrite=True)
-        return ADLS2FileHandle(self._client.account_name, self._file_system, adls2_key, self._client.primary_endpoint)
+        return ADLS2FileHandle(
+            self._client.account_name, self._file_system, adls2_key, self._client.primary_endpoint
+        )
 
     def get_full_key(self, file_key):
         return f"{self._prefix}/{file_key}"

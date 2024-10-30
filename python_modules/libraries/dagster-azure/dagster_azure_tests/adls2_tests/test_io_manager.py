@@ -1,6 +1,5 @@
-from uuid import uuid4
 from unittest import mock
-
+from uuid import uuid4
 
 import pytest
 from azure.storage.filedatalake import DataLakeLeaseClient
@@ -18,8 +17,6 @@ from dagster import (
     asset,
     build_input_context,
     build_output_context,
-    build_op_context,
-    configured,
     graph,
     op,
     resource,
@@ -41,7 +38,6 @@ from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pi
 from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
 from upath import UPath
-import pytest
 
 
 def fake_io_manager_factory(io_manager):
@@ -320,7 +316,6 @@ def test_asset_io_manager(storage_account, file_system, credential):
     assert result.success
 
 
-
 def test_with_fake_adls2_resource():
     job = define_inty_job(adls_io_resource=fake_adls2_resource)
 
@@ -333,6 +328,7 @@ def test_with_fake_adls2_resource():
 
     result = job.execute_in_process(run_config=run_config)
     assert result.success
+
 
 @pytest.mark.parametrize(
     "primary_endpoint, expected_uri_part",

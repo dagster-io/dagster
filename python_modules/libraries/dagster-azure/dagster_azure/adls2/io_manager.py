@@ -75,7 +75,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         except ResourceNotFoundError:
             return False
         return True
-    
+
     def get_subdomain(self) -> str:
         return re.search(r"(dfs.+$)", self.adls2_client.primary_endpoint).group(0)
 
