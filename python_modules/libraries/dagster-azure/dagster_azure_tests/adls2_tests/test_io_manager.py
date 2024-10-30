@@ -41,6 +41,7 @@ from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pi
 from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
 from upath import UPath
+import pytest
 
 
 def fake_io_manager_factory(io_manager):
@@ -333,10 +334,17 @@ def test_with_fake_adls2_resource():
     result = job.execute_in_process(run_config=run_config)
     assert result.success
 
-def test_adls2_pickle_io_manager_uri_government_cloud():
-    # Mock the ADLS2 client to simulate government cloud endpoint
+@pytest.mark.parametrize(
+    "primary_endpoint, expected_uri_part",
+    [
+        ("myaccount.dfs.core.usgovcloudapi.net", "dfs.core.usgovcloudapi.net"),
+        ("myaccount.dfs.core.windows.net", "dfs.core.windows.net"),
+    ],
+)
+def test_adls2_pickle_io_manager_uri(primary_endpoint, expected_uri_part):
+    # Mock the ADLS2 client to simulate different cloud endpoints
     mock_adls2_client = mock.MagicMock()
-    mock_adls2_client.primary_endpoint = "myaccount.dfs.core.usgovcloudapi.net"
+    mock_adls2_client.primary_endpoint = primary_endpoint
 
     io_manager = PickledObjectADLS2IOManager(
         file_system="my-file-system",
@@ -347,20 +355,4 @@ def test_adls2_pickle_io_manager_uri_government_cloud():
 
     path = UPath("my/path/to/object")
     uri = io_manager._uri_for_path(path)
-    assert "dfs.core.usgovcloudapi.net" in uri
-
-def test_adls2_pickle_io_manager_uri_public_cloud():
-    # Mock the ADLS2 client to simulate public cloud endpoint
-    mock_adls2_client = mock.MagicMock()
-    mock_adls2_client.primary_endpoint = "myaccount.dfs.core.windows.net"
-
-    io_manager = PickledObjectADLS2IOManager(
-        file_system="my-file-system",
-        adls2_client=mock_adls2_client,
-        blob_client=mock.MagicMock(),
-        lease_client_constructor=mock.MagicMock(),
-    )
-
-    path = UPath("my/path/to/object")
-    uri = io_manager._uri_for_path(path)
-    assert "dfs.core.windows.net" in uri
+    assert expected_uri_part in uri
