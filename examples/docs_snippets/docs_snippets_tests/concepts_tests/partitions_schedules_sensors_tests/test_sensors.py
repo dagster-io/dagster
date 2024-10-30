@@ -8,8 +8,8 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert im
     slack_on_run_failure,
 )
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import (
-    log_file_job,
-    my_directory_sensor,
+    my_asset,
+    my_job,
     my_s3_sensor,
     sensor_A,
     sensor_B,
@@ -29,16 +29,10 @@ def your_job_name():
     foo()
 
 
-def test_log_file_job():
-    result = log_file_job.execute_in_process(
-        run_config={"ops": {"process_file": {"config": {"filename": "test"}}}}
-    )
+def test_my_job():
+    defs = Definitions(assets=[my_asset], jobs=[my_job])
+    result = defs.get_job_def("my_job").execute_in_process()
     assert result.success
-
-
-def test_my_directory_sensor():
-    # TODO: Actually test
-    assert my_directory_sensor
 
 
 def test_interval_sensors():
