@@ -24,6 +24,7 @@ def test_adls2_file_manager_write(storage_account, file_system):
     adls2_mock.get_file_client.return_value = file_mock
     adls2_mock.account_name = storage_account
     adls2_mock._cloud_type = "public"
+    adls2_mock.primary_endpoint = "some-endpoint.dfs.core.windows.net"
     file_manager = ADLS2FileManager(adls2_mock, file_system, "some-key")
 
     foo_bytes = b"foo"
@@ -50,7 +51,7 @@ def test_adls2_file_manager_write(storage_account, file_system):
     assert file_mock.upload_data.call_count == 2
 
 
-def test_adls2_file_manager_read(storage_account, file_system):
+def test_adls2_file_manager_read(storage_account, file_system, primary_endpoint):
     state = {"called": 0}
     bar_bytes = b"bar"
 
@@ -73,7 +74,7 @@ def test_adls2_file_manager_read(storage_account, file_system):
 
     adls2_mock = ADLS2Mock()
     file_manager = ADLS2FileManager(adls2_mock, file_system, "some-key")
-    file_handle = ADLS2FileHandle(storage_account, file_system, "some-key/kdjfkjdkfjkd")
+    file_handle = ADLS2FileHandle(storage_account, file_system, "some-key/kdjfkjdkfjkd", primary_endpoint)
     with file_manager.read(file_handle) as file_obj:
         assert file_obj.read() == bar_bytes
 
@@ -236,16 +237,13 @@ def test_adls_file_handle_adls2_path(cloud_type):
     if cloud_type:
         resource_config["cloud_type"] = cloud_type
 
-    adls_client = ADLS2Resource(
-        storage_account=resource_config["storage_account"],
-        credential=ADLS2Key(key=resource_config["credential"]["key"]),
-        cloud_type=resource_config.get("cloud_type", "public"),
+    context = build_op_context(
+        resources={"file_manager": configured(adls2_file_manager)(resource_config)},
     )
-    adls_file_manager = ADLS2FileManager(
-        adls_client.adls2_client, resource_config["adls2_file_system"], resource_config["adls2_prefix"]
-    )
-    with mock.patch.object(adls_file_manager, 'write_data', return_value=ADLS2FileHandle(adls_client.storage_account, 
-                                adls_file_manager._file_system, 'some-key', adls_client.cloud_type)) as mock_write:
+    adls_file_manager = context.resources.file_manager
+    
+    with mock.patch.object(adls_file_manager, 'write_data', return_value=ADLS2FileHandle(adls_file_manager._client.account_name, 
+    adls_file_manager._file_system, 'some-key', adls_file_manager._client.primary_endpoint)) as mock_write:
         file_handle = adls_file_manager.write_data(b"mock data")
         mock_write.assert_called_once_with(b"mock data")
         if cloud_type == "government":

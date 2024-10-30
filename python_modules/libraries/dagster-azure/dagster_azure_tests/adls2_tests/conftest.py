@@ -12,6 +12,9 @@ def storage_account():
 def file_system():
     yield "dagster-azure-tests"
 
+@pytest.fixture(scope="session")
+def primary_endpoint():
+    yield "some-endpoint.dfs.core.windows.net"
 
 @pytest.fixture(scope="session")
 def credential():

@@ -83,6 +83,7 @@ class FakeADLS2ServiceClient:
         self._credential = mock.MagicMock()
         self._credential.account_key = credential
         self._file_systems = {}
+        self.primary_endpoint = f"https://{account_name}.dfs.core.windows.net"
 
     @property
     def account_name(self):
