@@ -59,6 +59,11 @@ THIRD_RESOURCES_TAGS = {
     "requests": {"cpu": "2500m", "memory": "1280Mi"},
 }
 
+FOURTH_RESOURCES_TAGS = {
+    "limits": {"cpu": "6000m", "memory": "3560Mi"},
+    "requests": {"cpu": "3500m", "memory": "2280Mi"},
+}
+
 
 @job(
     executor_def=k8s_job_executor,
@@ -666,5 +671,66 @@ def test_step_raw_k8s_config_inheritance(
     raw_k8s_config = container_context.run_k8s_config
 
     assert raw_k8s_config.container_config["resources"] == OTHER_RESOURCE_TAGS
+    assert raw_k8s_config.container_config["working_dir"] == "MY_WORKING_DIR"
+    assert raw_k8s_config.container_config["volume_mounts"] == OTHER_VOLUME_MOUNTS_TAGS
+
+
+def test_per_step_k8s_config(k8s_run_launcher_instance, python_origin_with_container_context):
+    container_context_config = {
+        "k8s": {
+            "run_k8s_config": {"container_config": {"volume_mounts": OTHER_VOLUME_MOUNTS_TAGS}},
+        }
+    }
+
+    python_origin = reconstructable(bar_with_tags_in_job_and_op).get_python_origin()
+
+    python_origin_with_container_context = python_origin._replace(
+        repository_origin=python_origin.repository_origin._replace(
+            container_context=container_context_config
+        )
+    )
+
+    # Verifies that k8s config for step pods is pulled from the container context and
+    # executor-level per_step_k8s_config, and that per_step_k8s_config precedes step_k8s_config
+    executor = _get_executor(
+        k8s_run_launcher_instance,
+        reconstructable(bar_with_tags_in_job_and_op),
+        {
+            "step_k8s_config": {  # injected into every step
+                "container_config": {
+                    "working_dir": "MY_WORKING_DIR",  # set on every step
+                    "resources": THIRD_RESOURCES_TAGS,  # overridden by the per_step level, so ignored
+                }
+            },
+            "per_step_k8s_config": {
+                "foo": {  # injected only for "foo" step
+                    "container_config": {
+                        "resources": FOURTH_RESOURCES_TAGS,
+                    }
+                }
+            },
+        },
+    )
+
+    run = create_run_for_test(
+        k8s_run_launcher_instance,
+        job_name="bar_with_tags_in_job_and_op",
+        job_code_origin=python_origin_with_container_context,
+    )
+
+    step_handler_context = _step_handler_context(
+        job_def=reconstructable(bar_with_tags_in_job_and_op),
+        dagster_run=run,
+        instance=k8s_run_launcher_instance,
+        executor=executor,
+    )
+
+    container_context = executor._step_handler._get_container_context(  # noqa: SLF001
+        step_handler_context
+    )
+
+    raw_k8s_config = container_context.run_k8s_config
+
+    assert raw_k8s_config.container_config["resources"] == FOURTH_RESOURCES_TAGS
     assert raw_k8s_config.container_config["working_dir"] == "MY_WORKING_DIR"
     assert raw_k8s_config.container_config["volume_mounts"] == OTHER_VOLUME_MOUNTS_TAGS
