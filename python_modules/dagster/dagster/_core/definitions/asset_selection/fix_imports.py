@@ -1,0 +1,26 @@
+def fix_imports(file_path):
+    with open(file_path, "r") as file:
+        lines = file.readlines()
+    updated_lines = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if "if sys.version_info[1] > 5:" in line or 'if "." in __name__:' in line:
+            updated_lines.append(lines[i + 1].strip())
+            i += 4
+        else:
+            updated_lines.append(line)
+            i += 1
+    with open(file_path, "w") as file:
+        file.writelines(updated_lines)
+
+
+files = [
+    "AssetSelectionLexer.py",
+    "AssetSelectionListener.py",
+    "AssetSelectionParser.py",
+    "AssetSelectionVisitor.py",
+]
+
+for file in files:
+    fix_imports(file)

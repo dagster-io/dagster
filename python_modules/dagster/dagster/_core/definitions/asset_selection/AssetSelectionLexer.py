@@ -1,12 +1,8 @@
 # Generated from AssetSelection.g4 by ANTLR 4.13.2
 import sys
+from typing import TextIO
 
 from antlr4 import *
-
-if sys.version_info[1] > 5:
-    from typing import TextIO
-else:
-    from typing.io import TextIO
 
 
 def serializedATN():

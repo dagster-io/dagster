@@ -1,14 +1,39 @@
 # Generated from AssetSelection.g4 by ANTLR 4.13.2
 from antlr4 import *
 
-if "." in __name__:
-    from .AssetSelectionParser import AssetSelectionParser
-else:
-    from AssetSelectionParser import AssetSelectionParser
+from .AssetSelectionParser import AssetSelectionParser
 
 
 # This class defines a complete listener for a parse tree produced by AssetSelectionParser.
 class AssetSelectionListener(ParseTreeListener):
+    # Enter a parse tree produced by AssetSelectionParser#AssetExpression.
+    def enterAssetExpression(self, ctx: AssetSelectionParser.AssetExpressionContext):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#AssetExpression.
+    def exitAssetExpression(self, ctx: AssetSelectionParser.AssetExpressionContext):
+        pass
+
+    # Enter a parse tree produced by AssetSelectionParser#BothTraversalExpression.
+    def enterBothTraversalExpression(
+        self, ctx: AssetSelectionParser.BothTraversalExpressionContext
+    ):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#BothTraversalExpression.
+    def exitBothTraversalExpression(self, ctx: AssetSelectionParser.BothTraversalExpressionContext):
+        pass
+
+    # Enter a parse tree produced by AssetSelectionParser#ParenthesizedExpression.
+    def enterParenthesizedExpression(
+        self, ctx: AssetSelectionParser.ParenthesizedExpressionContext
+    ):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#ParenthesizedExpression.
+    def exitParenthesizedExpression(self, ctx: AssetSelectionParser.ParenthesizedExpressionContext):
+        pass
+
     # Enter a parse tree produced by AssetSelectionParser#AndExpression.
     def enterAndExpression(self, ctx: AssetSelectionParser.AndExpressionContext):
         pass
@@ -17,12 +42,24 @@ class AssetSelectionListener(ParseTreeListener):
     def exitAndExpression(self, ctx: AssetSelectionParser.AndExpressionContext):
         pass
 
-    # Enter a parse tree produced by AssetSelectionParser#ToPrimaryExpression.
-    def enterToPrimaryExpression(self, ctx: AssetSelectionParser.ToPrimaryExpressionContext):
+    # Enter a parse tree produced by AssetSelectionParser#RightTraversalExpression.
+    def enterRightTraversalExpression(
+        self, ctx: AssetSelectionParser.RightTraversalExpressionContext
+    ):
         pass
 
-    # Exit a parse tree produced by AssetSelectionParser#ToPrimaryExpression.
-    def exitToPrimaryExpression(self, ctx: AssetSelectionParser.ToPrimaryExpressionContext):
+    # Exit a parse tree produced by AssetSelectionParser#RightTraversalExpression.
+    def exitRightTraversalExpression(
+        self, ctx: AssetSelectionParser.RightTraversalExpressionContext
+    ):
+        pass
+
+    # Enter a parse tree produced by AssetSelectionParser#KeyValueExpression.
+    def enterKeyValueExpression(self, ctx: AssetSelectionParser.KeyValueExpressionContext):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#KeyValueExpression.
+    def exitKeyValueExpression(self, ctx: AssetSelectionParser.KeyValueExpressionContext):
         pass
 
     # Enter a parse tree produced by AssetSelectionParser#NotExpression.
@@ -33,48 +70,22 @@ class AssetSelectionListener(ParseTreeListener):
     def exitNotExpression(self, ctx: AssetSelectionParser.NotExpressionContext):
         pass
 
+    # Enter a parse tree produced by AssetSelectionParser#LeftTraversalExpression.
+    def enterLeftTraversalExpression(
+        self, ctx: AssetSelectionParser.LeftTraversalExpressionContext
+    ):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#LeftTraversalExpression.
+    def exitLeftTraversalExpression(self, ctx: AssetSelectionParser.LeftTraversalExpressionContext):
+        pass
+
     # Enter a parse tree produced by AssetSelectionParser#OrExpression.
     def enterOrExpression(self, ctx: AssetSelectionParser.OrExpressionContext):
         pass
 
     # Exit a parse tree produced by AssetSelectionParser#OrExpression.
     def exitOrExpression(self, ctx: AssetSelectionParser.OrExpressionContext):
-        pass
-
-    # Enter a parse tree produced by AssetSelectionParser#KeyValueExpressionWithTraversal.
-    def enterKeyValueExpressionWithTraversal(
-        self, ctx: AssetSelectionParser.KeyValueExpressionWithTraversalContext
-    ):
-        pass
-
-    # Exit a parse tree produced by AssetSelectionParser#KeyValueExpressionWithTraversal.
-    def exitKeyValueExpressionWithTraversal(
-        self, ctx: AssetSelectionParser.KeyValueExpressionWithTraversalContext
-    ):
-        pass
-
-    # Enter a parse tree produced by AssetSelectionParser#AssetExpressionWithTraversal.
-    def enterAssetExpressionWithTraversal(
-        self, ctx: AssetSelectionParser.AssetExpressionWithTraversalContext
-    ):
-        pass
-
-    # Exit a parse tree produced by AssetSelectionParser#AssetExpressionWithTraversal.
-    def exitAssetExpressionWithTraversal(
-        self, ctx: AssetSelectionParser.AssetExpressionWithTraversalContext
-    ):
-        pass
-
-    # Enter a parse tree produced by AssetSelectionParser#ParenthesizedExpressionWithTraversal.
-    def enterParenthesizedExpressionWithTraversal(
-        self, ctx: AssetSelectionParser.ParenthesizedExpressionWithTraversalContext
-    ):
-        pass
-
-    # Exit a parse tree produced by AssetSelectionParser#ParenthesizedExpressionWithTraversal.
-    def exitParenthesizedExpressionWithTraversal(
-        self, ctx: AssetSelectionParser.ParenthesizedExpressionWithTraversalContext
-    ):
         pass
 
     # Enter a parse tree produced by AssetSelectionParser#FunctionCallExpression.
@@ -147,14 +158,6 @@ class AssetSelectionListener(ParseTreeListener):
 
     # Exit a parse tree produced by AssetSelectionParser#value.
     def exitValue(self, ctx: AssetSelectionParser.ValueContext):
-        pass
-
-    # Enter a parse tree produced by AssetSelectionParser#arguments.
-    def enterArguments(self, ctx: AssetSelectionParser.ArgumentsContext):
-        pass
-
-    # Exit a parse tree produced by AssetSelectionParser#arguments.
-    def exitArguments(self, ctx: AssetSelectionParser.ArgumentsContext):
         pass
 
     # Enter a parse tree produced by AssetSelectionParser#ExactMatchAsset.

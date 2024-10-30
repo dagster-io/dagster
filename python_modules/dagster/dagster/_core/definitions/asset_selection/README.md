@@ -62,4 +62,4 @@ Under the `python_modules/dagster/dagster/_core/definitions/asset_selection` dir
 $ antlr4 -Dlanguage=Python3 -visitor AssetSelection.g4
 ```
 
-This will generate the lexer, listener, parser, and visitor files from the grammer file `AssetSelection.g4`.
+This will generate the lexer, listener, parser, and visitor files from the grammar file `AssetSelection.g4`.
