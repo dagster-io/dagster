@@ -12,7 +12,7 @@ import {
   WorkspaceLocationNodeFragment,
   WorkspaceRepositoryFragment,
 } from './WorkspaceContext/types/WorkspaceQueries.types';
-import {buildRepoAddress} from './buildRepoAddress';
+import {DUNDER_REPO_NAME, buildRepoAddress} from './buildRepoAddress';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {workspacePathFromAddress} from './workspacePath';
 import {TimeFromNow} from '../ui/TimeFromNow';
@@ -47,11 +47,19 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
   (props: LocationRowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
     const {locationEntry, locationStatus, index} = props;
     const {name} = locationStatus;
+    const repoAddress = buildRepoAddress(DUNDER_REPO_NAME, name);
+
     return (
       <div ref={ref} data-index={index}>
         <RowGrid border="bottom">
           <RowCell>
-            <MiddleTruncate text={name} />
+            <Box flex={{direction: 'column', gap: 4}}>
+              <div style={{fontWeight: 500}}>
+                <Link to={workspacePathFromAddress(repoAddress)}>
+                  <MiddleTruncate text={name} />
+                </Link>
+              </div>
+            </Box>
           </RowCell>
           <RowCell>
             <div>

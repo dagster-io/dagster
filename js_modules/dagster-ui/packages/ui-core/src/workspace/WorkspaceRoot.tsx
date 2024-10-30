@@ -2,7 +2,6 @@ import {Box, MainContent, NonIdealState, SpinnerWithText} from '@dagster-io/ui-c
 import {useContext} from 'react';
 import {Redirect, Switch, useParams} from 'react-router-dom';
 
-import {CodeLocationNotFound} from './CodeLocationNotFound';
 import {GraphRoot} from './GraphRoot';
 import {WorkspaceContext} from './WorkspaceContext/WorkspaceContext';
 import {repoAddressAsHumanString} from './repoAddressAsString';
@@ -60,19 +59,6 @@ const RepoRouteContainer = () => {
         </Box>
       );
     }
-
-    const entryForLocation = workspaceState.locationEntries.find(
-      (entry) => entry.id === addressForPath.location,
-    );
-
-    return (
-      <Box padding={{vertical: 64}}>
-        <CodeLocationNotFound
-          repoAddress={addressForPath}
-          locationEntry={entryForLocation || null}
-        />
-      </Box>
-    );
   }
 
   return (
@@ -115,23 +101,26 @@ const RepoRouteContainer = () => {
       <Route path="/locations/:repoPath/definitions" exact>
         <Redirect to={workspacePathFromAddress(addressForPath, '/assets')} />
       </Route>
-      <Route
-        path={[
-          '/locations/:repoPath/assets',
-          '/locations/:repoPath/jobs',
-          '/locations/:repoPath/resources',
-          '/locations/:repoPath/schedules',
-          '/locations/:repoPath/sensors',
-          '/locations/:repoPath/graphs',
-          '/locations/:repoPath/ops/:name?',
-        ]}
-        exact
-      >
-        <CodeLocationDefinitionsRoot
-          repoAddress={addressForPath}
-          repository={matchingRepo.repository}
-        />
-      </Route>
+      {/* Avoid trying to render a definitions route if there is no actual repo available. */}
+      {matchingRepo ? (
+        <Route
+          path={[
+            '/locations/:repoPath/assets',
+            '/locations/:repoPath/jobs',
+            '/locations/:repoPath/resources',
+            '/locations/:repoPath/schedules',
+            '/locations/:repoPath/sensors',
+            '/locations/:repoPath/graphs',
+            '/locations/:repoPath/ops/:name?',
+          ]}
+          exact
+        >
+          <CodeLocationDefinitionsRoot
+            repoAddress={addressForPath}
+            repository={matchingRepo.repository}
+          />
+        </Route>
+      ) : null}
       <Route path={['/locations/:repoPath/*', '/locations/:repoPath/']}>
         <Redirect to={workspacePathFromAddress(addressForPath, '/assets')} />
       </Route>
