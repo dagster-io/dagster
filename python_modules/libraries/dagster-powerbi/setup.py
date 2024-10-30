@@ -14,7 +14,7 @@ def get_version() -> str:
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
-pin = "" if ver == "1!0+dev" or "rc" in ver else f"=={ver}"
+pin = ""
 setup(
     name="dagster_powerbi",
     version=ver,
