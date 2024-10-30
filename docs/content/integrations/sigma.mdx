@@ -55,6 +55,40 @@ sigma_specs = load_sigma_asset_specs(sigma_organization)
 defs = dg.Definitions(assets=[*sigma_specs], resources={"sigma": sigma_organization})
 ```
 
+## Load Sigma assets from filtered workbooks
+
+It is possible to load a subset of your Sigma assets by providing a <PyObject module="dagster_sigma" method="SigmaFilter" /> to the <PyObject module="dagster_sigma" method="load_sigma_asset_specs" /> function. All workbooks contained in the folders provided to your <PyObject module="dagster_sigma" method="SigmaFilter" /> will be fetched.
+
+Note that the content and size of Sigma organization may affect the performance of your Dagster deployments. Filtering the workbooks selection from which your Sigma assets will be loaded is particularly useful for improving loading times.
+
+```python file=/integrations/sigma/filtering-sigma-assets.py
+from dagster_sigma import (
+    SigmaBaseUrl,
+    SigmaFilter,
+    SigmaOrganization,
+    load_sigma_asset_specs,
+)
+
+import dagster as dg
+
+sigma_organization = SigmaOrganization(
+    base_url=SigmaBaseUrl.AWS_US,
+    client_id=dg.EnvVar("SIGMA_CLIENT_ID"),
+    client_secret=dg.EnvVar("SIGMA_CLIENT_SECRET"),
+)
+
+sigma_specs = load_sigma_asset_specs(
+    organization=sigma_organization,
+    sigma_filter=SigmaFilter(
+        workbook_folders=[
+            ["my_folder", "my_subfolder"],
+            ["my_folder", "my_other_subfolder"],
+        ]
+    ),
+)
+defs = dg.Definitions(assets=[*sigma_specs], resources={"sigma": sigma_organization})
+```
+
 ### Customize asset definition metadata for Sigma assets
 
 By default, Dagster will generate asset keys for each Sigma asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_sigma" object="DagsterSigmaTranslator" /> subclass to the <PyObject module="dagster_sigma" method="load_sigma_asset_specs" /> function. This subclass can implement methods to customize the asset keys or specs for each Sigma asset type.
