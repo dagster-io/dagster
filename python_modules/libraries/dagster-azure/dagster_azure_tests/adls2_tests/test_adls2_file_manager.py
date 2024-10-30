@@ -249,10 +249,10 @@ def test_adls_file_handle_adls2_path(cloud_type):
         adls_file_manager,
         "write_data",
         return_value=ADLS2FileHandle(
-            adls_file_manager._client.account_name,
-            adls_file_manager._file_system,
+            resource_config["storage_account"],
+            resource_config["adls2_file_system"],
             "some-key",
-            adls_file_manager._client.primary_endpoint,
+            adls_file_manager.get_client().primary_endpoint,
         ),
     ) as mock_write:
         file_handle = adls_file_manager.write_data(b"mock data")
