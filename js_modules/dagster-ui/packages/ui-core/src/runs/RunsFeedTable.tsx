@@ -89,7 +89,7 @@ export const RunsFeedTable = ({
         padding={{left: 24, right: 12}}
       >
         {actionBarComponents ?? <span />}
-        <Box flex={{gap: 12}} style={{marginRight: 8}}>
+        <Box flex={{gap: 12, alignItems: 'center'}} style={{marginRight: 8}}>
           <CursorHistoryControls {...paginationProps} style={{marginTop: 0}} />
           <RunBulkActionsMenu
             clearSelection={() => onToggleAll(false)}
@@ -190,12 +190,13 @@ export const RunsFeedTable = ({
 
 export const RunsFeedTableWithFilters = ({
   filter,
+  scroll,
   ...rest
 }: {
   filter: RunsFilter;
 } & Pick<
   RunsFeedTableProps,
-  'actionBarComponents' | 'belowActionBarComponents' | 'emptyState' | 'hideTags'
+  'actionBarComponents' | 'belowActionBarComponents' | 'emptyState' | 'hideTags' | 'scroll'
 >) => {
   const {entries, paginationProps, queryResult} = useRunsFeedEntries(filter, 'all', true);
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
@@ -218,7 +219,7 @@ export const RunsFeedTableWithFilters = ({
         loading={queryResult.loading}
         refetch={refreshState.refetch}
         paginationProps={paginationProps}
-        scroll={false}
+        scroll={scroll ?? false}
         {...rest}
       />
     );
