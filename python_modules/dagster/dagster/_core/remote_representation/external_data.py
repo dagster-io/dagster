@@ -45,7 +45,7 @@ from dagster._core.definitions import (
     ScheduleDefinition,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_job import is_base_asset_job_name
+from dagster._core.definitions.asset_job import is_reserved_asset_job_name
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -1567,7 +1567,7 @@ def _get_resource_job_usage(job_defs: Sequence[JobDefinition]) -> ResourceJobUsa
 
     for job_def in job_defs:
         job_name = job_def.name
-        if is_base_asset_job_name(job_name):
+        if is_reserved_asset_job_name(job_name):
             continue
 
         resource_usage: List[NodeHandleResourceUse] = []

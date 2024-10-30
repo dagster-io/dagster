@@ -25,7 +25,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_job import (
     IMPLICIT_ASSET_JOB_NAME,
     get_base_asset_job_lambda,
-    is_base_asset_job_name,
+    is_reserved_asset_job_name,
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.automation_condition_sensor_definition import (
@@ -194,7 +194,7 @@ def build_caching_repository_data_from_list(
                 raise DagsterInvalidDefinitionError(
                     f"Duplicate job definition found for {definition.describe_target()}"
                 )
-            if is_base_asset_job_name(definition.name):
+            if is_reserved_asset_job_name(definition.name):
                 raise DagsterInvalidDefinitionError(
                     f"Attempted to provide job called {definition.name} to repository, which "
                     "is a reserved name. Please rename the job."
