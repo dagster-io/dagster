@@ -208,7 +208,7 @@ class DagsterPowerBITranslator:
         return AssetKey(["semantic_model", _clean_asset_name(data.properties["name"])])
 
     def get_semantic_model_spec(self, data: PowerBIContentData) -> AssetSpec:
-        source_ids = data.properties["sources"]
+        source_ids = data.properties.get("sources", [])
         source_keys = [
             self.get_data_source_asset_key(self.workspace_data.data_sources_by_id[source_id])
             for source_id in source_ids

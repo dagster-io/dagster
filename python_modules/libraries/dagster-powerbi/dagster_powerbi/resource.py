@@ -18,6 +18,7 @@ from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.events import Failure
+from dagster._time import get_current_timestamp
 from dagster._utils.cached_method import cached_method
 from dagster._utils.security import non_secure_md5_hash_str
 from pydantic import Field, PrivateAttr
@@ -32,6 +33,8 @@ from dagster_powerbi.translator import (
 
 BASE_API_URL = "https://api.powerbi.com/v1.0/myorg"
 POWER_BI_RECONSTRUCTION_METADATA_KEY_PREFIX = "__power_bi"
+
+ADMIN_SCAN_TIMEOUT = 60
 
 
 def _clean_op_name(name: str) -> str:
@@ -247,12 +250,20 @@ class PowerBIWorkspace(ConfigurableResource):
         )
         scan_id = submission["id"]
 
+        now = get_current_timestamp()
+        start_time = now
+
         status = None
-        while status != "Succeeded":
+        while status != "Succeeded" and now - start_time < ADMIN_SCAN_TIMEOUT:
             scan_details = self._fetch_json(
                 endpoint=f"admin/workspaces/scanStatus/{scan_id}", group_scoped=False
             )
             status = scan_details["status"]
+            time.sleep(0.1)
+            now = get_current_timestamp()
+
+        if status != "Succeeded":
+            raise Failure(f"Scan not successful after {ADMIN_SCAN_TIMEOUT} seconds: {scan_details}")
 
         return self._fetch_json(
             endpoint=f"admin/workspaces/scanResult/{scan_id}", group_scoped=False
