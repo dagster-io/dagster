@@ -9,12 +9,13 @@ import {
   MiddleTruncate,
   Popover,
   Tooltip,
+  useDelayedState,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
+import {LoadingOrNone} from './VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from './WorkspaceContext/util';
 import {RepoAddress} from './types';
 import {
@@ -22,7 +23,7 @@ import {
   SingleScheduleQueryVariables,
 } from './types/VirtualizedScheduleRow.types';
 import {workspacePathFromAddress} from './workspacePath';
-import {gql, useLazyQuery} from '../apollo-client';
+import {gql, useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {InstigationStatus} from '../graphql/types';
@@ -71,21 +72,25 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
 
   const repo = useRepository(repoAddress);
 
-  const [querySchedule, scheduleQueryResult] = useLazyQuery<
-    SingleScheduleQuery,
-    SingleScheduleQueryVariables
-  >(SINGLE_SCHEDULE_QUERY, {
-    variables: {
-      selector: {
-        repositoryName: repoAddress.name,
-        repositoryLocationName: repoAddress.location,
-        scheduleName: name,
-      },
-    },
-    notifyOnNetworkStatusChange: true,
-  });
+  // Wait 100ms before querying in case we're scrolling the table really fast
+  const shouldQuery = useDelayedState(100);
 
-  const [queryScheduleAssetSelection, scheduleAssetSelectionQueryResult] = useLazyQuery<
+  const scheduleQueryResult = useQuery<SingleScheduleQuery, SingleScheduleQueryVariables>(
+    SINGLE_SCHEDULE_QUERY,
+    {
+      variables: {
+        selector: {
+          repositoryName: repoAddress.name,
+          repositoryLocationName: repoAddress.location,
+          scheduleName: name,
+        },
+      },
+      notifyOnNetworkStatusChange: true,
+      skip: !shouldQuery,
+    },
+  );
+
+  const scheduleAssetSelectionQueryResult = useQuery<
     ScheduleAssetSelectionQuery,
     ScheduleAssetSelectionQueryVariables
   >(SCHEDULE_ASSET_SELECTIONS_QUERY, {
@@ -96,14 +101,8 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
         scheduleName: name,
       },
     },
+    skip: !shouldQuery,
   });
-
-  useDelayedRowQuery(
-    React.useCallback(() => {
-      querySchedule();
-      queryScheduleAssetSelection();
-    }, [querySchedule, queryScheduleAssetSelection]),
-  );
 
   useQueryRefreshAtInterval(scheduleQueryResult, FIFTEEN_SECONDS);
   useQueryRefreshAtInterval(scheduleAssetSelectionQueryResult, FIFTEEN_SECONDS);

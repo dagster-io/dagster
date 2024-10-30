@@ -7,19 +7,20 @@ import {
   MenuItem,
   Popover,
   Tag,
+  useDelayedState,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
 import styled from 'styled-components';
 
-import {gql, useLazyQuery} from '../apollo-client';
+import {gql, useQuery} from '../apollo-client';
 import {
   SingleConcurrencyKeyQuery,
   SingleConcurrencyKeyQueryVariables,
 } from './types/VirtualizedInstanceConcurrencyTable.types';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
-import {LoadingOrNone, useDelayedRowQuery} from '../workspace/VirtualizedWorkspaceTable';
+import {LoadingOrNone} from '../workspace/VirtualizedWorkspaceTable';
 
 const TEMPLATE_COLUMNS = '1fr 150px 150px 150px 150px 150px';
 
@@ -98,14 +99,16 @@ const ConcurrencyRow = ({
   height: number;
   start: number;
 }) => {
-  const [queryJob, queryResult] = useLazyQuery<
-    SingleConcurrencyKeyQuery,
-    SingleConcurrencyKeyQueryVariables
-  >(SINGLE_CONCURRENCY_KEY_QUERY, {
-    variables: {concurrencyKey},
-  });
+  // Wait 100ms before querying in case we're scrolling the table really fast
+  const shouldQuery = useDelayedState(100);
+  const queryResult = useQuery<SingleConcurrencyKeyQuery, SingleConcurrencyKeyQueryVariables>(
+    SINGLE_CONCURRENCY_KEY_QUERY,
+    {
+      variables: {concurrencyKey},
+      skip: !shouldQuery,
+    },
+  );
 
-  useDelayedRowQuery(queryJob);
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const {data} = queryResult;

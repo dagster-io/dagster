@@ -1,14 +1,14 @@
-import {Box, MiddleTruncate} from '@dagster-io/ui-components';
+import {Box, MiddleTruncate, useDelayedState} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {CaptionText, LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
+import {CaptionText, LoadingOrNone} from './VirtualizedWorkspaceTable';
 import {buildPipelineSelector} from './WorkspaceContext/util';
 import {RepoAddress} from './types';
 import {SingleJobQuery, SingleJobQueryVariables} from './types/VirtualizedJobRow.types';
 import {workspacePathFromAddress} from './workspacePath';
-import {gql, useLazyQuery} from '../apollo-client';
+import {gql, useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {JobMenu} from '../instance/JobMenu';
 import {LastRunSummary} from '../instance/LastRunSummary';
@@ -32,15 +32,14 @@ interface JobRowProps {
 export const VirtualizedJobRow = (props: JobRowProps) => {
   const {name, isJob, repoAddress, start, height} = props;
 
-  const [queryJob, queryResult] = useLazyQuery<SingleJobQuery, SingleJobQueryVariables>(
-    SINGLE_JOB_QUERY,
-    {
-      variables: {
-        selector: buildPipelineSelector(repoAddress, name),
-      },
+  // Wait 100ms before querying in case we're scrolling the table really fast
+  const shouldQuery = useDelayedState(100);
+  const queryResult = useQuery<SingleJobQuery, SingleJobQueryVariables>(SINGLE_JOB_QUERY, {
+    variables: {
+      selector: buildPipelineSelector(repoAddress, name),
     },
-  );
-  useDelayedRowQuery(queryJob);
+    skip: !shouldQuery,
+  });
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const {data} = queryResult;
