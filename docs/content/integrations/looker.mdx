@@ -57,6 +57,36 @@ looker_specs = load_looker_asset_specs(looker_resource=looker_resource)
 defs = dg.Definitions(assets=[*looker_specs], resources={"looker": looker_resource})
 ```
 
+## Load Looker assets from filtered dashboards and explores
+
+It is possible to load a subset of your Looker assets by providing a <PyObject module="dagster_looker" method="LookerFilter" /> to the <PyObject module="dagster_looker" method="load_looker_asset_specs" /> function. All dashboards contained in the folders provided to your <PyObject module="dagster_looker" method="LookerFilter" /> will be fetched. Additionally, only the explores used in these dashboards will be fetched by passing `only_fetch_explores_used_in_dashboards=True` to you to your <PyObject module="dagster_looker" method="LookerFilter" />.
+
+Note that the content and size of Looker instance may affect the performance of your Dagster deployments. Filtering the dashboards and explores selection from which your Looker assets will be loaded is particularly useful for improving loading times.
+
+```python file=/integrations/looker/filtering-looker-assets.py
+from dagster_looker import LookerFilter, LookerResource, load_looker_asset_specs
+
+import dagster as dg
+
+looker_resource = LookerResource(
+    client_id=dg.EnvVar("LOOKERSDK_CLIENT_ID"),
+    client_secret=dg.EnvVar("LOOKERSDK_CLIENT_SECRET"),
+    base_url=dg.EnvVar("LOOKERSDK_HOST_URL"),
+)
+
+looker_specs = load_looker_asset_specs(
+    looker_resource=looker_resource,
+    looker_filter=LookerFilter(
+        dashboard_folders=[
+            ["my_folder", "my_subfolder"],
+            ["my_folder", "my_other_subfolder"],
+        ],
+        only_fetch_explores_used_in_dashboards=True,
+    ),
+)
+defs = dg.Definitions(assets=[*looker_specs], resources={"looker": looker_resource})
+```
+
 ### Customize asset definition metadata for Looker assets
 
 By default, Dagster will generate asset keys for each Looker asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_looker" object="DagsterLookerApiTranslator" /> subclass to the <PyObject module="dagster_looker" method="load_looker_asset_specs" /> function. This subclass can implement methods to customize the asset keys or specs for each Looker asset type.
