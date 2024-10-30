@@ -1,5 +1,97 @@
 # Changelog
 
+# 1.9.0 (core) / 0.25.0 (libraries)
+
+## Major changes since 1.8.0 (core) / 0.24.0 (libraries)
+
+### Automation
+
+- Declarative Automation, the system which enables setting per-asset `AutomationConditions`, is no longer experimental. We now recommend using this system in all cases where asset-centric orchestration is desired. A suite of built-in static constructors have been added for common usecases, such as `AutomationCondition.on_missing()` (which can fill in missing partitions of assets as soon as upstream data is available), and `AutomationCondition.all_deps_blocking_checks_passed()` (which can prevent materialization of assets until all upstream blocking checks have passed).
+- You can now assign `AutomationConditions` to asset checks, via the `automation_condition` parameter on `@asset_check` or `AssetCheckSpec`.
+- You can now assign `AutomationConditions` to observable source assets, via the `automation_condition` parameter on `@observable_source_asset`.
+- [experimental] You can now define custom subclasses of `AutomationCondition` to execute arbitrary Python code in the context of a broader expression. This allows you to compose built-in conditions with custom business logic.
+- The `target` arguments on schedules and sensors are now marked stable, allowing a stable way for schedules and sensors to target asset selections without needing to define a job.
+
+### Integrations
+
+- Introduced a slate of integrations with business intelligence (BI) tools, enabling dashboards, views, and reports to be represented in the Dagster asset graph.
+  - [Looker](https://docs.dagster.io/integrations/looker)
+  - [Power BI](https://docs.dagster.io/integrations/powerbi)
+  - [Sigma](https://docs.dagster.io/integrations/sigma)
+  - [Tableau](https://docs.dagster.io/integrations/tableau)
+- A rich set of metadata is now automatically collected by our suite of ELT integrations.
+  - The `dagster/table_name` metadata tag, containing the fully-qualified name of the destination model, has been added for Airbyte, dlt, Fivetran and Sling assets.
+  - The `dagster/row_count` metadata tag, containing the number of records loaded in the corresponding run, has been added for dlt and Sling assets.
+  - The `dagster/column_schema` metadata tag, containing column schema information of the destination tables, has been added for Fivetran assets.
+  - Column lineage information is now collected for Sling assets.
+- [dagster-pipes](https://docs.dagster.io/concepts/dagster-pipes) are replacing the now deprecated Step Launchers as the new recommended approach for executing remote Spark jobs. Three new [Pipes clients](https://docs.dagster.io/_apidocs/libraries/dagster-aws#clients) for running Spark applications on Amazon Web Services have been added:
+  - `dagster_aws.pipes.PipesGlueClient`
+  - `dagster_aws.pipes.PipesEMRServerlessClient`
+  - `dagster_aws.pipes.PipesEMRClient`
+
+### UI
+
+- Several changes have been made to the information architecture to make it easier to find what you’re looking for:
+  - Backfills have been moved from their own tab underneath the Overview page to entries within the table on the Runs page. This reflects the fact that backfills and runs are similar entities that share most properties. You can continue to use the legacy Runs page with the “Revert to legacy Runs page” user setting. ([GitHub Discussion](https://github.com/dagster-io/dagster/discussions/24898))
+  - “Jobs” is now a page reachable from the top-level navigation pane. It replaces the Jobs tab within the Overview page.
+  - “Automations” is now a page reachable from the top-level navigation pane. It replaces the schedule and sensor tabs within the Overview page.
+- `@asset` and `AssetSpec` now have a `kinds` attribute that enables specifying labels that show up on asset nodes in the asset graph in the UI. This supersedes the `compute_kind` attribute.
+
+## Changes since 1.8.13 (core) / 0.24.13 (libraries)
+
+### New
+
+- The `tags` parameter to `@asset` and `AssetSpec` is no longer marked as experimental.
+- The `@observable_source_asset` decorator now supports an `automation_condition` argument.
+- `AutomationCondition` and associated APIs are no longer marked as experimental.
+- Added a new `use_user_code_server` parameter to `AutomationConditionSensorDefinition`. If set, the sensor will be evaluated in the user code server (as traditional sensors are), allowing custom `AutomationCondition` subclasses to be evaluated.
+- Added a new column to the BulkActions table, a new column to the Runs table, and a new BackfillTags table to improve the performance of the Runs page. To take advantage of these performance improvements, run `dagster instance migrate`. This migration involves a schema migration to add the new columns and table, and a data migration to populate the new columns for historical backfills and runs.
+- Performance improvements when loading definitions with multi-assets with many asset keys.
+- [ui] The previously-experimental changes to the top nav are now enabled for all users.
+- [ui] Added new code location pages which provide information regarding library versions, metadata, and definitions.
+- [ui] The new version of the Runs page is now enabled by default. To use the legacy version of the Runs page, toggle the "Revert to legacy Runs page" user setting.
+- [ui] Clicking an asset with failed partitions on the asset health overview now takes you to a list of the failed partitions.
+- [ui] The Materialize button runs pre-flight checks more efficiently, resulting in faster run launch times.
+- [dagster-pipes] Added support for multi-container log streaming (thanks, [@MattyKuzyk](https://github.com/MattyKuzyk)!)
+- [dagster-docker] `container_kwargs.stop_timeout` can now be set when using the `DockerRunLauncher` or `docker_executor` to configure the amount of time that Docker will wait when terminating a run for it to clean up before forcibly stopping it with a SIGKILL signal.
+- [dagster-dbt] Performance improvements when loading definitions using `build_dbt_asset_selection`.
+
+### Bugfixes
+
+- [ui] Fixed redirect behavior on full pageloads of the legacy auto-materialize overview page.
+- [ui] Plots for assets that emit materialization and observation events at different rates no longer display a time period missing the more frequent event type.
+- [ui] Fixed issue causing scrolling to misbehave on the concurrency settings page.
+- [helm] The blockOpConcurrencyLimitedRuns section of queuedRunCoordinator now correctly templates the appropriate config.
+- [dagster-pipes] Fixed issue where k8s ops would fail after 4 hours (thanks, [@MattyKuzyk](https://github.com/MattyKuzyk)!)
+
+### Documentation
+
+- [dagster-dbt] Added guide for using dbt defer with Dagster branch deployments.
+- [docs] Step Launchers documentation has been removed and replaced with references to Dagster Pipes.
+- [docs] Fixed code example in Dagster Essentials (thanks, [@aleexharris](https://github.com/aleexharris)!)
+
+### Breaking Changes
+
+- `dagster` no longer supports Python 3.8, which hit EOL on 2024-10-07.
+- `dagster` now requires `pydantic>=2`.
+- By default, `AutomationConditionSensorDefinitions` will now emit backfills to handle cases where more than one partition of an asset is requested on a given tick. This allows that asset's `BackfillPolicy` to be respected. This feature can be disabled by setting `allow_backfills` to `False`.
+- Passing a custom `PartitionsDefinition` subclass into a `Definitions` object now issues an error instead of a deprecation warning.
+- `AssetExecutionContext` is no longer a subclass of `OpExecutionContext`. At this release, `AssetExecutionContext` and `OpExecutionContext` implement the same methods, but in the future, the methods implemented by each class may diverge. If you have written helper functions with `OpExecutionContext` type annotations, they may need to be updated to include `AssetExecutionContext` depending on your usage. Explicit calls to `isinstance(context, OpExecutionContext)` will now fail if `context` is an `AssetExecutionContext`.
+- The `asset_selection` parameter on `AutomationConditionSensorDefinition` has been renamed to `target`, to align with existing sensor APIs.
+- The experimental `freshness_policy_sensor` has been removed, as it relies on the long-deprecated `FreshnessPolicy` API.
+- The deprecated `external_assets_from_specs` and `external_asset_from_spec` methods have been removed. Users should use `AssetsDefinition(specs=[...])`, or pass specs directly into the `Definitions` object instead.
+- `AssetKey` objects can no longer be iterated over or indexed in to. This behavior was never an intended access pattern and in all observed cases was a mistake.
+- The `dagster/relation_identifier` metadata key has been renamed to `dagster/table_name`.
+- [dagster-ge] `dagster-ge` now only supports `great_expectations>=0.17.15`. The `ge_validation_op_factory` API has been replaced with the API previously called `ge_validation_op_factory_v3`.
+- [dagster-aws] Removed deprecated parameters from `dagster_aws.pipes.PipesGlueClient.run`.
+- [dagster-embedded-elt] Removed deprecated parameter `dlt_dagster_translator` from `@dlt_assets`. The `dagster_dlt_translator` parameter should be used instead.
+- [dagster-polars] Dropped support for saving storage-level arbitrary metadata via IOManagers.
+
+### Deprecations
+
+- The `DataBricksPysparkStepLauncher`, `EmrPySparkStepLauncher`, and any custom subclass of `StepLauncher` have been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning they will continue to function as they currently do for the foreseeable future. Their functionality has been superseded by the interfaces provided by `dagster-pipes`, and so future development work will be focused there.
+- The experimental `multi_asset_sensor` has been marked as deprecated, as its main use cases have been superseded by the `AutomationCondition` APIs. However, it will not be removed until version 2.0.0.
+
 ## 1.8.13 (core) / 0.24.13 (libraries)
 
 ### New
@@ -5830,7 +5922,7 @@ runLauncher:
 - [dagit] A “Copy config” button has been added to the run configuration dialog on Run pages.
 - [dagit] An “Open in Launchpad” button has been added to the run details page.
 - [dagit] The Run page now surfaces more information about start time and elapsed time in the header.
-- [dagster-dbt] The dbt_cloud_resource has a new `get_runs()` function to get a list of runs matching certain paramters from the dbt Cloud API (thanks @[kstennettlull](https://github.com/kstennettlull)!)
+- [dagster-dbt] The dbt_cloud_resource has a new `get_runs()` function to get a list of runs matching certain parameters from the dbt Cloud API (thanks @[kstennettlull](https://github.com/kstennettlull)!)
 - [dagster-snowflake] Added an `authenticator` field to the connection arguments for the `snowflake_resource` (thanks @swotai!).
 - [celery-docker] The celery docker executor has a new configuration entry `container_kwargs` that allows you to specify additional arguments to pass to your docker containers when they are run.
 
