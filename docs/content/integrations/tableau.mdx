@@ -131,7 +131,7 @@ tableau_workspace = TableauCloudWorkspace(
 class MyCustomTableauTranslator(DagsterTableauTranslator):
     def get_sheet_spec(self, data: TableauContentData) -> dg.AssetSpec:
         # We add a custom team owner tag to all sheets
-        return super().get_sheet_spec(data)._replace(owners=["my_team"])
+        return super().get_sheet_spec(data)._replace(owners=["team:my_team"])
 
 
 tableau_specs = load_tableau_asset_specs(
