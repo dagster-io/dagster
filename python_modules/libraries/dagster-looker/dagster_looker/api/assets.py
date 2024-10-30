@@ -1,6 +1,15 @@
-from typing import Sequence, Type, cast
+from pathlib import Path
+from typing import Optional, Sequence, Type, cast
 
-from dagster import AssetExecutionContext, AssetsDefinition, Failure, multi_asset
+import lkml
+from dagster import (
+    AssetExecutionContext,
+    AssetsDefinition,
+    AssetSpec,
+    Failure,
+    _check as check,
+    multi_asset,
+)
 from dagster._annotations import experimental
 
 from dagster_looker.api.dagster_looker_api_translator import (
@@ -10,7 +19,8 @@ from dagster_looker.api.dagster_looker_api_translator import (
     LookmlView,
     RequestStartPdtBuild,
 )
-from dagster_looker.api.resource import LookerResource
+from dagster_looker.api.resource import LookerApiDefsLoader, LookerFilter, LookerResource
+from dagster_looker.lkml.asset_utils import postprocess_loaded_structures
 
 
 @experimental
@@ -44,6 +54,8 @@ def build_looker_pdt_assets_definitions(
                         data=LookmlView(
                             view_name=request_start_pdt_build.view_name,
                             sql_table_name=None,
+                            local_file_path=None,
+                            view_props=None,
                         ),
                     )
                 )
@@ -85,3 +97,65 @@ def build_looker_pdt_assets_definitions(
         result.append(pdts)
 
     return result
+
+
+@experimental
+def load_looker_asset_specs_from_instance(
+    looker_resource: LookerResource,
+    dagster_looker_translator: Type[DagsterLookerApiTranslator] = DagsterLookerApiTranslator,
+    looker_filter: Optional[LookerFilter] = None,
+) -> Sequence[AssetSpec]:
+    """Returns a list of AssetSpecs representing the Looker structures.
+
+    Args:
+        looker_resource (LookerResource): The Looker resource to fetch assets from.
+        dagster_looker_translator (Type[DagsterLookerApiTranslator]): The translator to use
+            to convert Looker structures into AssetSpecs. Defaults to DagsterLookerApiTranslator.
+
+    Returns:
+        List[AssetSpec]: The set of AssetSpecs representing the Looker structures.
+    """
+    return check.is_list(
+        LookerApiDefsLoader(
+            looker_resource=looker_resource,
+            translator_cls=dagster_looker_translator,
+            looker_filter=looker_filter or LookerFilter(),
+        )
+        .build_defs()
+        .assets,
+        AssetSpec,
+    )
+
+
+@experimental
+def load_looker_view_specs_from_project(
+    project_dir: Path,
+    dagster_looker_translator: Type[DagsterLookerApiTranslator] = DagsterLookerApiTranslator,
+) -> Sequence[AssetSpec]:
+    view_specs = []
+    for lookml_view_path in project_dir.rglob("*.view.lkml"):
+        for lookml_view_props in lkml.load(lookml_view_path.read_text()).get("views", []):
+            lookml_view = (lookml_view_path, "view", lookml_view_props)
+            view_specs.append(lookml_view)
+    views_postprocessed = postprocess_loaded_structures(view_specs)
+
+    view_objs = [
+        LookmlView(
+            view_name=view[2]["name"],
+            sql_table_name=view[2].get("sql_table_name") or view[2]["name"],
+            local_file_path=view[0],
+            view_props=view[2],
+        )
+        for view in views_postprocessed
+    ]
+    translator_inst = dagster_looker_translator()
+
+    return [
+        translator_inst.get_asset_spec(
+            LookerStructureData(
+                structure_type=LookerStructureType.VIEW,
+                data=view_obj,
+            )
+        )
+        for view_obj in view_objs
+    ]

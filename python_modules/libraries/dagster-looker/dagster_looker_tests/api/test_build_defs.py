@@ -3,14 +3,18 @@ from typing import Iterator
 import pytest
 import responses
 from dagster import AssetKey, AssetSpec, Definitions, materialize
-from dagster_looker import LookerFilter
+from dagster_looker import (
+    LookerFilter,
+    LookerResource,
+    load_looker_asset_specs_from_instance,
+    load_looker_view_specs_from_project,
+)
 from dagster_looker.api.assets import build_looker_pdt_assets_definitions
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
     LookerStructureData,
     RequestStartPdtBuild,
 )
-from dagster_looker.api.resource import LookerResource, load_looker_asset_specs
 
 from dagster_looker_tests.api.mock_looker_data import (
     mock_check_pdt_build,
@@ -99,7 +103,7 @@ def test_load_asset_specs_filter(
 ) -> None:
     asset_specs_by_key = {
         spec.key: spec
-        for spec in load_looker_asset_specs(
+        for spec in load_looker_asset_specs_from_instance(
             looker_resource,
             looker_filter=LookerFilter(
                 dashboard_folders=[["my_folder", "my_subfolder"]],
@@ -117,7 +121,9 @@ def test_load_asset_specs_filter(
 def test_load_asset_specs(
     looker_resource: LookerResource, looker_instance_data_mocks: responses.RequestsMock
 ) -> None:
-    asset_specs_by_key = {spec.key: spec for spec in load_looker_asset_specs(looker_resource)}
+    asset_specs_by_key = {
+        spec.key: spec for spec in load_looker_asset_specs_from_instance(looker_resource)
+    }
 
     assert len(asset_specs_by_key) == 4
 
@@ -150,7 +156,7 @@ def test_build_defs_with_pdts(
     )
 
     defs = Definitions(
-        assets=[*pdts, *load_looker_asset_specs(looker_resource)],
+        assets=[*pdts, *load_looker_asset_specs_from_instance(looker_resource)],
         resources={resource_key: looker_resource},
     )
 
@@ -192,7 +198,11 @@ def test_custom_asset_specs(
     all_assets = (
         asset
         for asset in Definitions(
-            assets=[*load_looker_asset_specs(looker_resource, CustomDagsterLookerApiTranslator)],
+            assets=[
+                *load_looker_asset_specs_from_instance(
+                    looker_resource, CustomDagsterLookerApiTranslator
+                )
+            ],
         )
         .get_asset_graph()
         .assets_defs
@@ -203,3 +213,191 @@ def test_custom_asset_specs(
         for metadata in asset.metadata_by_key.values():
             assert metadata == expected_metadata
         assert all(key.path[0] == "my_prefix" for key in asset.keys)
+
+
+from dagster_looker_tests.looker_projects import test_retail_demo_path
+
+
+def test_load_view_deps() -> None:
+    my_looker_assets = load_looker_view_specs_from_project(project_dir=test_retail_demo_path)
+    asset_deps = {}
+    for spec in my_looker_assets:
+        asset_deps[spec.key] = {dep.asset_key for dep in spec.deps}
+
+    assert asset_deps == {
+        # Views
+        AssetKey(["view", "c360"]): {
+            AssetKey(["c360"]),
+        },
+        AssetKey(["view", "category_lookup"]): {
+            AssetKey(["looker-private-demo", "retail", "category_lookup"])
+        },
+        AssetKey(["view", "channels"]): {
+            AssetKey(["looker-private-demo", "retail", "channels"]),
+        },
+        AssetKey(["view", "customer_clustering_input"]): {
+            AssetKey(["customer_clustering_input"]),
+        },
+        AssetKey(["view", "customer_clustering_model"]): {
+            AssetKey(["customer_clustering_model"]),
+        },
+        AssetKey(["view", "customer_clustering_prediction"]): {
+            AssetKey(["view", "customer_clustering_prediction_base"]),
+            AssetKey(["view", "customer_clustering_prediction_centroid_ranks"]),
+        },
+        AssetKey(["view", "customer_clustering_prediction_aggregates"]): {
+            AssetKey(["view", "customer_clustering_prediction_base"])
+        },
+        AssetKey(["view", "customer_clustering_prediction_base"]): {
+            AssetKey(["view", "customer_clustering_input"]),
+            AssetKey(["view", "customer_clustering_model"]),
+        },
+        AssetKey(["view", "customer_clustering_prediction_centroid_ranks"]): {
+            AssetKey(["view", "customer_clustering_prediction_aggregates"])
+        },
+        AssetKey(["view", "customer_event_fact"]): {
+            AssetKey(["customer_event_fact"]),
+        },
+        AssetKey(["view", "customer_facts"]): {
+            AssetKey(["view", "transactions"]),
+        },
+        AssetKey(["view", "customer_support_fact"]): {
+            AssetKey(["customer_support_fact"]),
+        },
+        AssetKey(["view", "customer_transaction_fact"]): {
+            AssetKey(["customer_transaction_fact"]),
+        },
+        AssetKey(["view", "customer_transaction_sequence"]): {
+            AssetKey(["view", "products"]),
+            AssetKey(["view", "transactions"]),
+        },
+        AssetKey(["view", "customers"]): {
+            AssetKey(["looker-private-demo", "retail", "customers"]),
+        },
+        AssetKey(["view", "date_comparison"]): {
+            AssetKey(["date_comparison"]),
+        },
+        AssetKey(["view", "distances"]): {
+            AssetKey(["view", "stores"]),
+        },
+        AssetKey(["view", "events"]): {
+            AssetKey(["looker-private-demo", "retail", "events"]),
+        },
+        AssetKey(["view", "omni_channel_events"]): {
+            AssetKey(["looker-private-demo", "ecomm", "events"])
+        },
+        AssetKey(["view", "omni_channel_support_calls"]): {
+            AssetKey(["looker-private-demo", "call_center", "transcript_with_messages"])
+        },
+        AssetKey(["view", "omni_channel_support_calls__messages"]): {
+            AssetKey(["omni_channel_support_calls__messages"])
+        },
+        AssetKey(["view", "omni_channel_transactions"]): {
+            AssetKey(["looker-private-demo", "ecomm", "inventory_items"]),
+            AssetKey(["looker-private-demo", "ecomm", "order_items"]),
+            AssetKey(["looker-private-demo", "ecomm", "products"]),
+            AssetKey(["looker-private-demo", "ecomm", "users"]),
+            AssetKey(["looker-private-demo", "retail", "channels"]),
+            AssetKey(["looker-private-demo", "retail", "products"]),
+            AssetKey(["looker-private-demo", "retail", "transaction_detail"]),
+            AssetKey(["looker-private-demo", "retail", "us_stores"]),
+        },
+        AssetKey(["view", "omni_channel_transactions__transaction_details"]): {
+            AssetKey(["omni_channel_transactions__transaction_details"])
+        },
+        AssetKey(["view", "order_items"]): {
+            AssetKey(["view", "order_items_base"]),
+        },
+        AssetKey(["view", "order_items_base"]): {
+            AssetKey(["view", "products"]),
+            AssetKey(["view", "stores"]),
+            AssetKey(["view", "transactions"]),
+        },
+        AssetKey(["view", "order_metrics"]): {
+            AssetKey(["view", "order_items"]),
+        },
+        AssetKey(["view", "order_product"]): {
+            AssetKey(["view", "order_items"]),
+            AssetKey(["view", "orders"]),
+        },
+        AssetKey(["view", "order_purchase_affinity"]): {
+            AssetKey(["view", "order_product"]),
+            AssetKey(["view", "orders_by_product_loyal_users"]),
+            AssetKey(["view", "total_order_product"]),
+        },
+        AssetKey(["view", "orders"]): {
+            AssetKey(["view", "order_items"]),
+        },
+        AssetKey(["view", "orders_by_product_loyal_users"]): {
+            AssetKey(["view", "order_items"]),
+            AssetKey(["view", "product_loyal_users"]),
+        },
+        AssetKey(["view", "product_loyal_users"]): {
+            AssetKey(["view", "order_items"]),
+        },
+        AssetKey(["view", "products"]): {
+            AssetKey(["looker-private-demo", "retail", "products"]),
+        },
+        AssetKey(["view", "retail_clv_predict"]): {
+            AssetKey(["retail_ltv", "lpd_retail_clv_predict_tbl"])
+        },
+        AssetKey(["view", "stock_forecasting_category_week_facts_prior_year"]): {
+            AssetKey(["stock_forecasting_category_week_facts_prior_year"])
+        },
+        AssetKey(["view", "stock_forecasting_explore_base"]): {
+            AssetKey(["stock_forecasting_explore_base"])
+        },
+        AssetKey(["view", "stock_forecasting_input"]): {
+            AssetKey(["stock_forecasting_input"]),
+        },
+        AssetKey(["view", "stock_forecasting_prediction"]): {
+            AssetKey(["view", "stock_forecasting_input"]),
+            AssetKey(["view", "stock_forecasting_regression"]),
+        },
+        AssetKey(["view", "stock_forecasting_product_store_week_facts"]): {
+            AssetKey(["stock_forecasting_product_store_week_facts"])
+        },
+        AssetKey(["view", "stock_forecasting_product_store_week_facts_prior_year"]): {
+            AssetKey(["stock_forecasting_product_store_week_facts_prior_year"])
+        },
+        AssetKey(["view", "stock_forecasting_regression"]): {
+            AssetKey(["stock_forecasting_regression"])
+        },
+        AssetKey(["view", "stock_forecasting_store_week_facts_prior_year"]): {
+            AssetKey(["stock_forecasting_store_week_facts_prior_year"])
+        },
+        AssetKey(["view", "store_weather"]): {
+            AssetKey(["view", "distances"]),
+            AssetKey(["view", "weather_pivoted"]),
+        },
+        AssetKey(["view", "stores"]): {
+            AssetKey(["view", "transactions"]),
+        },
+        AssetKey(["view", "total_order_product"]): {
+            AssetKey(["view", "order_items"]),
+            AssetKey(["view", "order_metrics"]),
+            AssetKey(["view", "orders"]),
+        },
+        AssetKey(["view", "total_orders"]): {
+            AssetKey(["view", "orders"]),
+        },
+        AssetKey(["view", "transaction_detail"]): {
+            AssetKey(["transaction_detail"]),
+        },
+        AssetKey(["view", "transactions"]): {
+            AssetKey(["looker-private-demo", "retail", "transaction_detail"])
+        },
+        AssetKey(["view", "transactions__line_items"]): {
+            AssetKey(["transactions__line_items"]),
+        },
+        AssetKey(["view", "weather_pivoted"]): {
+            AssetKey(["view", "weather_raw"]),
+        },
+        AssetKey(["view", "weather_raw"]): {
+            AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_2016"]),
+            AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_2017"]),
+            AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_2018"]),
+            AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_2019"]),
+            AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_202_star"]),
+        },
+    }

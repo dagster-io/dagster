@@ -2,6 +2,8 @@ from dagster._core.libraries import DagsterLibraryRegistry
 
 from dagster_looker.api.assets import (
     build_looker_pdt_assets_definitions as build_looker_pdt_assets_definitions,
+    load_looker_asset_specs_from_instance as load_looker_asset_specs_from_instance,
+    load_looker_view_specs_from_project as load_looker_view_specs_from_project,
 )
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator as DagsterLookerApiTranslator,
@@ -12,7 +14,6 @@ from dagster_looker.api.dagster_looker_api_translator import (
 from dagster_looker.api.resource import (
     LookerFilter as LookerFilter,
     LookerResource as LookerResource,
-    load_looker_asset_specs as load_looker_asset_specs,
 )
 from dagster_looker.lkml.asset_specs import build_looker_asset_specs as build_looker_asset_specs
 from dagster_looker.lkml.dagster_looker_lkml_translator import (

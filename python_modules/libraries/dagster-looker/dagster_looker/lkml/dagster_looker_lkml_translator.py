@@ -2,7 +2,7 @@ import itertools
 import logging
 import re
 from pathlib import Path
-from typing import Any, Iterator, Literal, Mapping, Optional, Sequence, Tuple, cast
+from typing import Any, Callable, Iterator, Literal, Mapping, Optional, Sequence, Tuple, cast
 
 from dagster import AssetKey
 from dagster._annotations import experimental, public
@@ -71,7 +71,12 @@ def build_deps_for_looker_explore(
 
 
 def build_deps_for_looker_view(
-    dagster_looker_translator: "DagsterLookerLkmlTranslator",
+    get_asset_key_for_table: Callable[
+        [Tuple[Path, LookMLStructureType, Mapping[str, Any]]], AssetKey
+    ],
+    get_asset_key_for_view: Callable[
+        [Tuple[Path, LookMLStructureType, Mapping[str, Any]]], AssetKey
+    ],
     lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]],
 ) -> Sequence[AssetKey]:
     lookml_view_path, _, lookml_view_props = lookml_structure
@@ -85,8 +90,8 @@ def build_deps_for_looker_view(
         sqlglot_table = to_table(sql_table_name.replace("`", ""), dialect=sql_dialect)
 
         return [
-            dagster_looker_translator.get_asset_key(
-                lookml_structure=(
+            get_asset_key_for_table(
+                (
                     lookml_view_path,
                     "table",
                     {"table": sqlglot_table, "from_structure": lookml_view_props},
@@ -101,8 +106,8 @@ def build_deps_for_looker_view(
     upstream_view_pattern = re.compile(r"\${(.*?)\.SQL_TABLE_NAME\}")
     if upstream_looker_views_from_substitution := upstream_view_pattern.findall(derived_table_sql):
         return [
-            dagster_looker_translator.get_asset_key(
-                lookml_structure=(
+            get_asset_key_for_view(
+                (
                     lookml_view_path,
                     "view",
                     {"name": upstream_looker_view_name},
@@ -139,8 +144,8 @@ def build_deps_for_looker_view(
 
     return list(
         {
-            dagster_looker_translator.get_asset_key(
-                lookml_structure=(
+            get_asset_key_for_table(
+                (
                     lookml_view_path,
                     "table",
                     {"table": sqlglot_table, "from_structure": lookml_view_props},
@@ -256,7 +261,9 @@ class DagsterLookerLkmlTranslator:
 
         if lookml_structure_type == "view":
             return build_deps_for_looker_view(
-                dagster_looker_translator=self, lookml_structure=lookml_structure
+                get_asset_key_for_view=self.get_asset_key,
+                get_asset_key_for_table=self.get_asset_key,
+                lookml_structure=lookml_structure,
             )
 
         raise ValueError(

@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Type, cast
 
 from dagster import (
-    AssetSpec,
     ConfigurableResource,
     Definitions,
     _check as check,
@@ -81,7 +80,7 @@ class LookerResource(ConfigurableResource):
     @public
     @deprecated(
         breaking_version="1.9.0",
-        additional_warn_text="Use dagster_looker.load_looker_asset_specs instead",
+        additional_warn_text="Use dagster_looker.load_looker_asset_specs_from_instance instead",
     )
     def build_defs(
         self,
@@ -117,39 +116,15 @@ class LookerResource(ConfigurableResource):
             request_start_pdt_builds=request_start_pdt_builds or [],
             dagster_looker_translator=translator_cls,
         )
+        from dagster_looker.api.assets import load_looker_asset_specs_from_instance
 
         return Definitions(
-            assets=[*pdts, *load_looker_asset_specs(self, translator_cls, looker_filter)],
+            assets=[
+                *pdts,
+                *load_looker_asset_specs_from_instance(self, translator_cls, looker_filter),
+            ],
             resources={resource_key: self},
         )
-
-
-@experimental
-def load_looker_asset_specs(
-    looker_resource: LookerResource,
-    dagster_looker_translator: Type[DagsterLookerApiTranslator] = DagsterLookerApiTranslator,
-    looker_filter: Optional[LookerFilter] = None,
-) -> Sequence[AssetSpec]:
-    """Returns a list of AssetSpecs representing the Looker structures.
-
-    Args:
-        looker_resource (LookerResource): The Looker resource to fetch assets from.
-        dagster_looker_translator (Type[DagsterLookerApiTranslator]): The translator to use
-            to convert Looker structures into AssetSpecs. Defaults to DagsterLookerApiTranslator.
-
-    Returns:
-        List[AssetSpec]: The set of AssetSpecs representing the Looker structures.
-    """
-    return check.is_list(
-        LookerApiDefsLoader(
-            looker_resource=looker_resource,
-            translator_cls=dagster_looker_translator,
-            looker_filter=looker_filter or LookerFilter(),
-        )
-        .build_defs()
-        .assets,
-        AssetSpec,
-    )
 
 
 def build_folder_path(folder_id_to_folder: Dict[str, "Folder"], folder_id: str) -> List[str]:

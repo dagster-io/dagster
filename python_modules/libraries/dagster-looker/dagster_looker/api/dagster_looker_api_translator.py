@@ -1,5 +1,6 @@
 from enum import Enum
-from typing import Any, Dict, Mapping, Optional, Union
+from pathlib import Path
+from typing import Any, Dict, Mapping, Optional, Union, cast
 
 from dagster import (
     AssetKey,
@@ -11,6 +12,9 @@ from dagster._record import record
 from dagster._utils.log import get_dagster_logger
 from looker_sdk.sdk.api40.methods import Looker40SDK
 from looker_sdk.sdk.api40.models import Dashboard, DashboardFilter, LookmlModelExplore
+from sqlglot.expressions import Table
+
+from dagster_looker.lkml.dagster_looker_lkml_translator import build_deps_for_looker_view
 
 logger = get_dagster_logger("dagster_looker")
 
@@ -77,18 +81,26 @@ class LookerStructureType(Enum):
     VIEW = "view"
     EXPLORE = "explore"
     DASHBOARD = "dashboard"
+    TABLE = "table"
 
 
 @record
 class LookmlView:
     view_name: str
     sql_table_name: Optional[str]
+    local_file_path: Optional[Path]
+    view_props: Optional[Mapping[str, Any]]
+
+
+@record
+class UpstreamTable:
+    table: Table
 
 
 @record
 class LookerStructureData:
     structure_type: LookerStructureType
-    data: Union[LookmlView, LookmlModelExplore, DashboardFilter, Dashboard]
+    data: Union[LookmlView, LookmlModelExplore, DashboardFilter, Dashboard, UpstreamTable]
 
 
 class DagsterLookerApiTranslator:
@@ -97,9 +109,35 @@ class DagsterLookerApiTranslator:
         return AssetKey(["view", lookml_view.view_name])
 
     def get_view_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
-        _ = check.inst(looker_structure.data, LookmlView)
+        view = check.inst(looker_structure.data, LookmlView)
         return AssetSpec(
             key=self.get_asset_key(looker_structure),
+            kinds={
+                "looker",
+                "view",
+            },
+            deps=build_deps_for_looker_view(
+                get_asset_key_for_view=lambda view: self.get_asset_key(
+                    LookerStructureData(
+                        structure_type=LookerStructureType.VIEW,
+                        data=LookmlView(
+                            view_name=view[2]["name"],
+                            sql_table_name=view[2].get("sql_table_name") or view[2]["name"],
+                            local_file_path=view[0],
+                            view_props=view[2],
+                        ),
+                    )
+                ),
+                get_asset_key_for_table=lambda table: self.get_asset_key(
+                    LookerStructureData(
+                        structure_type=LookerStructureType.TABLE,
+                        data=UpstreamTable(table=table[2]["table"]),
+                    )
+                ),
+                lookml_structure=(view.local_file_path, "view", view.view_props),
+            )
+            if view.local_file_path and view.view_props
+            else [],
         )
 
     def get_explore_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
@@ -120,12 +158,16 @@ class DagsterLookerApiTranslator:
             explore_base_view = LookmlView(
                 view_name=check.not_none(lookml_explore.view_name),
                 sql_table_name=check.not_none(lookml_explore.sql_table_name),
+                local_file_path=None,
+                view_props=None,
             )
 
             explore_join_views = [
                 LookmlView(
                     view_name=check.not_none(lookml_explore_join.from_ or lookml_explore_join.name),
                     sql_table_name=lookml_explore_join.sql_table_name,
+                    local_file_path=None,
+                    view_props=None,
                 )
                 for lookml_explore_join in (lookml_explore.joins or [])
             ]
@@ -195,5 +237,12 @@ class DagsterLookerApiTranslator:
             return self.get_explore_asset_key(looker_structure)
         elif looker_structure.structure_type == LookerStructureType.DASHBOARD:
             return self.get_dashboard_asset_key(looker_structure)
+        elif looker_structure.structure_type == LookerStructureType.TABLE:
+            return AssetKey(
+                [
+                    part.name.replace("*", "_star")
+                    for part in cast(UpstreamTable, looker_structure.data).table.parts
+                ]
+            )
         else:
             check.assert_never(looker_structure.structure_type)
