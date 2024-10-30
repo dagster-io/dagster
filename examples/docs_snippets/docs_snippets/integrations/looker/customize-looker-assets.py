@@ -3,11 +3,12 @@ from dagster_looker import (
     LookerResource,
     LookerStructureData,
     LookerStructureType,
+    load_looker_asset_specs,
 )
 
 import dagster as dg
 
-resource = LookerResource(
+looker_resource = LookerResource(
     client_id=dg.EnvVar("LOOKERSDK_CLIENT_ID"),
     client_secret=dg.EnvVar("LOOKERSDK_CLIENT_SECRET"),
     base_url=dg.EnvVar("LOOKERSDK_HOST_URL"),
@@ -28,4 +29,7 @@ class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
         return asset_spec
 
 
-defs = resource.build_defs(dagster_looker_translator=CustomDagsterLookerApiTranslator())
+looker_specs = load_looker_asset_specs(
+    looker_resource, dagster_looker_translator=CustomDagsterLookerApiTranslator
+)
+defs = dg.Definitions(assets=[*looker_specs], resources={"looker": looker_resource})

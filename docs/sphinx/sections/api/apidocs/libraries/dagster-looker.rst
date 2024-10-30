@@ -27,6 +27,10 @@ Assets (Looker API)
 
 .. autoclass:: RequestStartPdtBuild
 
+.. autofunction:: load_looker_asset_specs
+
+.. autofunction:: build_looker_pdt_assets_definitions
+
 *************
 lkml (LookML)
 *************
