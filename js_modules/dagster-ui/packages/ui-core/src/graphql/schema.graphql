@@ -681,7 +681,7 @@ type AssetNode {
   hasReportRunlessAssetEventPermission: Boolean!
   hasAssetChecks: Boolean!
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
-  currentAutoMaterializeEvaluationId: Int
+  currentAutoMaterializeEvaluationId: BigInt
   targetingInstigators: [Instigator!]!
 }
 
@@ -957,6 +957,8 @@ type AssetCheckNeedsUserCodeUpgrade implements Error {
 type AssetCheckNeedsAgentUpgradeError implements Error {
   message: String!
 }
+
+scalar BigInt
 
 union Instigator = Schedule | Sensor
 
@@ -2580,8 +2582,6 @@ enum InstigationType {
   SENSOR
   AUTO_MATERIALIZE
 }
-
-scalar BigInt
 
 type InstigationStateNotFoundError implements Error {
   message: String!
