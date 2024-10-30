@@ -17,7 +17,7 @@ export type SelectedTickQuery = {
           __typename: 'InstigationTick';
           id: string;
           requestedAssetMaterializationCount: number;
-          autoMaterializeAssetEvaluationId: number | null;
+          autoMaterializeAssetEvaluationId: any | null;
           tickId: string;
           status: Types.InstigationTickStatus;
           timestamp: number;

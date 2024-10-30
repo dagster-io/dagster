@@ -2615,7 +2615,7 @@ type InstigationTick {
   requestedAssetKeys: [AssetKey!]!
   requestedAssetMaterializationCount: Int!
   requestedMaterializationsForAssets: [RequestedMaterializationsForAsset!]!
-  autoMaterializeAssetEvaluationId: Int
+  autoMaterializeAssetEvaluationId: BigInt
   instigationType: InstigationType!
 }
 
@@ -3355,15 +3355,15 @@ type Query {
   ): AutoMaterializeAssetEvaluationRecordsOrError
   truePartitionsForAutomationConditionEvaluationNode(
     assetKey: AssetKeyInput!
-    evaluationId: Int!
+    evaluationId: BigInt!
     nodeUniqueId: String
   ): [String!]!
   autoMaterializeEvaluationsForEvaluationId(
-    evaluationId: Int!
+    evaluationId: BigInt!
   ): AutoMaterializeAssetEvaluationRecordsOrError
   assetConditionEvaluationForPartition(
     assetKey: AssetKeyInput!
-    evaluationId: Int!
+    evaluationId: BigInt!
     partition: String!
   ): AssetConditionEvaluation
   assetConditionEvaluationRecordsOrError(
@@ -3372,7 +3372,7 @@ type Query {
     cursor: String
   ): AssetConditionEvaluationRecordsOrError
   assetConditionEvaluationsForEvaluationId(
-    evaluationId: Int!
+    evaluationId: BigInt!
   ): AssetConditionEvaluationRecordsOrError
   autoMaterializeTicks(
     dayRange: Int
@@ -3562,7 +3562,7 @@ type AutoMaterializeAssetEvaluationRecords {
 
 type AutoMaterializeAssetEvaluationRecord {
   id: ID!
-  evaluationId: Int!
+  evaluationId: BigInt!
   numRequested: Int!
   numSkipped: Int!
   numDiscarded: Int!
@@ -3665,7 +3665,7 @@ type AssetConditionEvaluationRecords {
 
 type AssetConditionEvaluationRecord {
   id: ID!
-  evaluationId: Int!
+  evaluationId: BigInt!
   runIds: [String!]!
   timestamp: Float!
   assetKey: AssetKey!

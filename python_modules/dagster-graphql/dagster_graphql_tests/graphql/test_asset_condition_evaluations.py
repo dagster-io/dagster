@@ -285,7 +285,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
 LEGACY_QUERY_FOR_SPECIFIC_PARTITION = (
     FRAGMENTS
     + """
-query GetPartitionEvaluationQuery($assetKey: AssetKeyInput!, $partition: String!, $evaluationId: Int!) {
+query GetPartitionEvaluationQuery($assetKey: AssetKeyInput!, $partition: String!, $evaluationId: BigInt!) {
     assetConditionEvaluationForPartition(assetKey: $assetKey, partition: $partition, evaluationId: $evaluationId) {
         ...evaluationFields
     }
@@ -296,7 +296,7 @@ query GetPartitionEvaluationQuery($assetKey: AssetKeyInput!, $partition: String!
 LEGACY_QUERY_FOR_EVALUATION_ID = (
     FRAGMENTS
     + """
-query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
+query GetEvaluationsForEvaluationIdQuery($evaluationId: BigInt!) {
     assetConditionEvaluationsForEvaluationId(evaluationId: $evaluationId) {
         ... on AssetConditionEvaluationRecords {
             records {
@@ -343,7 +343,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
 """
 
 TRUE_PARTITIONS_QUERY = """
-query GetTruePartitions($assetKey: AssetKeyInput!, $evaluationId: Int!, $nodeUniqueId: String!) {
+query GetTruePartitions($assetKey: AssetKeyInput!, $evaluationId: BigInt!, $nodeUniqueId: String!) {
     truePartitionsForAutomationConditionEvaluationNode(assetKey: $assetKey, evaluationId: $evaluationId, nodeUniqueId: $nodeUniqueId)
 }
 """
