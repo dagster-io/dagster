@@ -97,13 +97,13 @@ resource = PowerBIWorkspace(
 class MyCustomPowerBITranslator(DagsterPowerBITranslator):
     def get_report_spec(self, data: PowerBIContentData) -> dg.AssetSpec:
         # We add a team owner tag to all reports
-        return super().get_report_spec(data)._replace(owners=["my_team"])
+        return super().get_report_spec(data)._replace(owners=["team:my_team"])
 
     def get_semantic_model_spec(self, data: PowerBIContentData) -> dg.AssetSpec:
-        return super().get_semantic_model_spec(data)._replace(owners=["my_team"])
+        return super().get_semantic_model_spec(data)._replace(owners=["team:my_team"])
 
     def get_dashboard_spec(self, data: PowerBIContentData) -> dg.AssetSpec:
-        return super().get_dashboard_spec(data)._replace(owners=["my_team"])
+        return super().get_dashboard_spec(data)._replace(owners=["team:my_team"])
 
     def get_dashboard_asset_key(self, data: PowerBIContentData) -> dg.AssetKey:
         # We prefix all dashboard asset keys with "powerbi" for organizational
