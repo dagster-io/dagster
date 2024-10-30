@@ -1,5 +1,9 @@
+from pathlib import Path
+
 import click
 from structlog import get_logger
+
+from dagster_airlift._generate.generate import Stage
 
 logger = get_logger("dagster-airlift")
 
@@ -30,6 +34,27 @@ def scaffold():
     from dagster_airlift.in_airflow.scaffolding import scaffold_proxied_state
 
     scaffold_proxied_state(logger)
+
+
+@cli.group()
+def examples() -> None:
+    """Commands for scaffolding example code for the Dagster-Airlift package."""
+
+
+# create a tutorial command with a --stage argument
+@examples.command()
+@click.argument("path", type=click.Path(exists=False))
+@click.option("--module-prefix", type=click.STRING, default="example")
+@click.option(
+    "--stage",
+    type=click.Choice([val.value for val in Stage], case_sensitive=False),
+    default=Stage.initial.value,
+)
+def tutorial(path: str, module_prefix: str, stage: str) -> None:
+    """Scaffolds example code for the Dagster-Airlift package."""
+    from dagster_airlift._generate.generate import generate_tutorial
+
+    generate_tutorial(Path(path), module_prefix, Stage(stage))
 
 
 if __name__ == "__main__":

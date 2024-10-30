@@ -1,19 +1,23 @@
+import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from dagster_airlift._generate.generate import Stage, generate_tutorial
+from dagster_airlift._generate.generate import Stage
 
 
 @pytest.mark.parametrize("stage", [val for val in Stage])
 def test_generate_tutorial(stage: Stage) -> None:
     with TemporaryDirectory() as temp_dir:
+        subprocess.run(
+            ["dagster-airlift", "examples", "tutorial", temp_dir, "--stage", stage.value],
+            check=False,
+        )
         temp_dir_path = Path(temp_dir)
-        generate_tutorial(temp_dir_path, "test", stage)
-        tutorial_dir = temp_dir_path / "test-tutorial"
+        tutorial_dir = temp_dir_path / "example-tutorial"
 
         expected_dirs = [
-            "test_tutorial",
+            "example_tutorial",
             "data",
             "scripts",
         ]
