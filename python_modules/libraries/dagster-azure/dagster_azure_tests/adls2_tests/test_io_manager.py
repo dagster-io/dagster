@@ -1,4 +1,6 @@
 from uuid import uuid4
+from unittest import mock
+
 
 import pytest
 from azure.storage.filedatalake import DataLakeLeaseClient
@@ -16,6 +18,8 @@ from dagster import (
     asset,
     build_input_context,
     build_output_context,
+    build_op_context,
+    configured,
     graph,
     op,
     resource,
@@ -315,6 +319,7 @@ def test_asset_io_manager(storage_account, file_system, credential):
     assert result.success
 
 
+
 def test_with_fake_adls2_resource():
     job = define_inty_job(adls_io_resource=fake_adls2_resource)
 
@@ -327,3 +332,35 @@ def test_with_fake_adls2_resource():
 
     result = job.execute_in_process(run_config=run_config)
     assert result.success
+
+def test_adls2_pickle_io_manager_uri_government_cloud():
+    # Mock the ADLS2 client to simulate government cloud endpoint
+    mock_adls2_client = mock.MagicMock()
+    mock_adls2_client.primary_endpoint = "myaccount.dfs.core.usgovcloudapi.net"
+
+    io_manager = PickledObjectADLS2IOManager(
+        file_system="my-file-system",
+        adls2_client=mock_adls2_client,
+        blob_client=mock.MagicMock(),
+        lease_client_constructor=mock.MagicMock(),
+    )
+
+    path = UPath("my/path/to/object")
+    uri = io_manager._uri_for_path(path)
+    assert "dfs.core.usgovcloudapi.net" in uri
+
+def test_adls2_pickle_io_manager_uri_public_cloud():
+    # Mock the ADLS2 client to simulate public cloud endpoint
+    mock_adls2_client = mock.MagicMock()
+    mock_adls2_client.primary_endpoint = "myaccount.dfs.core.windows.net"
+
+    io_manager = PickledObjectADLS2IOManager(
+        file_system="my-file-system",
+        adls2_client=mock_adls2_client,
+        blob_client=mock.MagicMock(),
+        lease_client_constructor=mock.MagicMock(),
+    )
+
+    path = UPath("my/path/to/object")
+    uri = io_manager._uri_for_path(path)
+    assert "dfs.core.windows.net" in uri

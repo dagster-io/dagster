@@ -241,7 +241,7 @@ def test_adls_file_handle_adls2_path(cloud_type):
         resources={"file_manager": configured(adls2_file_manager)(resource_config)},
     )
     adls_file_manager = context.resources.file_manager
-    
+
     with mock.patch.object(adls_file_manager, 'write_data', return_value=ADLS2FileHandle(adls_file_manager._client.account_name, 
     adls_file_manager._file_system, 'some-key', adls_file_manager._client.primary_endpoint)) as mock_write:
         file_handle = adls_file_manager.write_data(b"mock data")
