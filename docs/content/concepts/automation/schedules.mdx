@@ -5,11 +5,11 @@ description: "Use schedules to run your pipelines at fixed time intervals."
 
 # Schedules
 
-Schedules are Dagster's way of supporting traditional methods of [automation](/concepts/automation), which allow you to specify when a [job](/concepts/ops-jobs-graphs/jobs) should run. Using schedules, you can define a fixed time interval to run a pipeline, such as daily, hourly, or Monday at 9:00 AM.
+Schedules are Dagster's approach to imperative [automation](/concepts/automation). Schedules specify a fixed time interval at which to conditionally execute a target. Some example time intervals expressible with a schedule are daily, hourly, or Monday at 9:00 AM.
 
-Each interval of a schedule is called a **tick**, which is an indication that a job should execute. Ticks kick off **runs**, which is a single instance of a job being executed.
+Each interval of a schedule is called a **tick**, which is an opportunity for one or more runs to be launched. Ticks kick off **runs**, which either materialize a selection of assets or execute a [job](/concepts/ops-jobs-graphs/jobs).
 
-When viewing a schedule in [Dagster's UI](/concepts/webserver/ui), you can see the schedule's definition, executing timezone, targeted jobs and partitions, as well as its tick and run history.
+When viewing a schedule in [Dagster's UI](/concepts/webserver/ui), you can see the schedule's definition, executing timezone, target, and tick/run history.
 
 ---
 
@@ -35,9 +35,9 @@ Before continuing, you should be familiar with:
 
 ## How it works
 
-Schedules run jobs at fixed time intervals and have two main components:
+Schedules launch runs at fixed time intervals and have two main components:
 
-- **A job**, which targets a selection of assets or ops
+- **A target**, which specifies a selection of assets to materialize or a job to execute
 - [**A cron expression**](https://en.wikipedia.org/wiki/Cron), which defines when the schedule runs. Simple and complex schedules are supported, allowing you to have fine-grained control over when runs are executed. With cron syntax, you can:
 
   - **Create custom schedules** like `Every hour from 9:00AM - 5:00PM` with cron expressions (`0 9-17 * * *`)
