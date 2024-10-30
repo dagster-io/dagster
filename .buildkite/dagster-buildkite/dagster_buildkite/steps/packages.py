@@ -310,6 +310,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "examples/with_great_expectations",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_9,
+        ],
     ),
     PackageSpec(
         "examples/with_pyspark",
@@ -636,6 +639,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-ge",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_9,
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-k8s",
