@@ -2,7 +2,6 @@ import {Box, Colors, Spinner, Tabs} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
 import {QueryResult} from '../apollo-client';
-import {useFeatureFlags} from '../app/Flags';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
@@ -17,8 +16,6 @@ interface Props<TData> {
 
 export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
   const {refreshState, tab} = props;
-
-  const {flagLegacyRunsPage} = useFeatureFlags();
 
   const automaterialize = useAutomaterializeDaemonStatus();
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
@@ -58,9 +55,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
           />
         ) : null}
         <TabLink id="resources" title="Resources" to="/overview/resources" />
-        {flagLegacyRunsPage ? (
-          <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
-        ) : null}
+        <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
       </Tabs>
       {refreshState ? (
         <Box style={{alignSelf: 'center'}}>
