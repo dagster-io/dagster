@@ -2,6 +2,7 @@ from dagster_tableau import (
     TableauCloudWorkspace,
     build_tableau_materializable_assets_definition,
     load_tableau_asset_specs,
+    parse_tableau_external_and_materializable_asset_specs,
 )
 
 import dagster as dg
@@ -44,17 +45,9 @@ tableau_specs = load_tableau_asset_specs(
     workspace=tableau_workspace,
 )
 
-external_asset_specs = [
-    spec
-    for spec in tableau_specs
-    if spec.tags.get("dagster-tableau/asset_type") == "data_source"
-]
-
-materializable_asset_specs = [
-    spec
-    for spec in tableau_specs
-    if spec.tags.get("dagster-tableau/asset_type") in ["dashboard", "sheet"]
-]
+external_asset_specs, materializable_asset_specs = (
+    parse_tableau_external_and_materializable_asset_specs(tableau_specs)
+)
 
 # Pass the sensor, Tableau resource, upstream asset, Tableau assets specs and materializable assets definition at once
 defs = dg.Definitions(
