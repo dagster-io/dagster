@@ -733,7 +733,6 @@ export type GetEvaluationsQuery = {
     | {
         __typename: 'AssetNode';
         id: string;
-        currentAutoMaterializeEvaluationId: any | null;
         autoMaterializePolicy: {
           __typename: 'AutoMaterializePolicy';
           rules: Array<{
@@ -1523,6 +1522,6 @@ export type GetEvaluationsSpecificPartitionQuery = {
   } | null;
 };
 
-export const GetEvaluationsQueryVersion = '72294147655740415d3bdaf8de190465417ec4352927fbdcda7c65eadd75dd50';
+export const GetEvaluationsQueryVersion = 'fb2fadc8e0c982926deb90a3889f2b705bb340a98ade6a7e28175cfa10e5a1b8';
 
 export const GetEvaluationsSpecificPartitionQueryVersion = 'd753be21aeea04a8cb0fa20e6933463ca16c19413df0741bd94b5a06dd8d1de7';
