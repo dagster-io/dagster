@@ -150,6 +150,45 @@ def workspace_data_fixture(workspace_id: str) -> PowerBIWorkspaceData:
 
 
 @pytest.fixture(
+    name="workspace_scan_data_api_mocks",
+)
+def workspace_scan_data_api_mocks_fixture(workspace_id: str) -> Iterator[responses.RequestsMock]:
+    with responses.RequestsMock() as response:
+        scan_id = "1234"
+        response.add(
+            method=responses.POST,
+            url=f"{BASE_API_URL}/admin/workspaces/getInfo?lineage=true&datasourceDetails=true&datasetSchema=true&datasetExpressions=true",
+            json={"id": scan_id},
+            status=200,
+        )
+
+        response.add(
+            method=responses.GET,
+            url=f"{BASE_API_URL}/admin/workspaces/scanStatus/{scan_id}",
+            json={"status": "Succeeded"},
+            status=200,
+        )
+
+        response.add(
+            method=responses.GET,
+            url=f"{BASE_API_URL}/admin/workspaces/scanResult/{scan_id}",
+            json={
+                "workspaces": [
+                    {
+                        "dashboards": [SAMPLE_DASH],
+                        "reports": [SAMPLE_REPORT],
+                        "datasets": [SAMPLE_SEMANTIC_MODEL],
+                        "datasourceInstances": SAMPLE_DATA_SOURCES,
+                    }
+                ]
+            },
+            status=200,
+        )
+
+        yield response
+
+
+@pytest.fixture(
     name="workspace_data_api_mocks",
 )
 def workspace_data_api_mocks_fixture(workspace_id: str) -> Iterator[responses.RequestsMock]:

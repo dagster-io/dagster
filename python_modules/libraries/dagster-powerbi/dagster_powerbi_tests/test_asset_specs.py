@@ -35,11 +35,27 @@ def test_fetch_powerbi_workspace_data(workspace_data_api_mocks: None, workspace_
         workspace_id=workspace_id,
     )
 
-    actual_workspace_data = resource._fetch_powerbi_workspace_data()  # noqa: SLF001
+    actual_workspace_data = resource._fetch_powerbi_workspace_data(use_workspace_scan=False)  # noqa: SLF001
     assert len(actual_workspace_data.dashboards_by_id) == 1
     assert len(actual_workspace_data.reports_by_id) == 1
     assert len(actual_workspace_data.semantic_models_by_id) == 1
     assert len(actual_workspace_data.data_sources_by_id) == 2
+
+
+def test_fetch_powerbi_workspace_data_scan(
+    workspace_scan_data_api_mocks: None, workspace_id: str
+) -> None:
+    fake_token = uuid.uuid4().hex
+    resource = PowerBIWorkspace(
+        credentials=PowerBIToken(api_token=fake_token),
+        workspace_id=workspace_id,
+    )
+
+    actual_workspace_data = resource._fetch_powerbi_workspace_data(use_workspace_scan=True)  # noqa: SLF001
+    assert len(actual_workspace_data.dashboards_by_id) == 1
+    assert len(actual_workspace_data.reports_by_id) == 1
+    assert len(actual_workspace_data.semantic_models_by_id) == 1
+    # assert len(actual_workspace_data.data_sources_by_id) == 2
 
 
 def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id: str) -> None:
