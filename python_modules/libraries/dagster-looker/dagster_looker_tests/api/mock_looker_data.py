@@ -9,6 +9,7 @@ from looker_sdk.sdk.api40.models import (
     LookmlModelExplore,
     LookmlModelNavExplore,
     MaterializePDT,
+    User,
 )
 
 mock_lookml_models = [
@@ -50,6 +51,8 @@ mock_looker_dashboard = Dashboard(
     dashboard_filters=[
         DashboardFilter(model="my_model", explore="my_explore"),
     ],
+    user_id="1",
+    url="/dashboards/1",
 )
 
 mock_other_looker_dashboard = Dashboard(
@@ -58,6 +61,15 @@ mock_other_looker_dashboard = Dashboard(
     dashboard_filters=[
         DashboardFilter(model="my_model", explore="my_other_explore"),
     ],
+    user_id="2",
+    url="/dashboards/2",
+)
+
+mock_user = User(id="1", email="ben@dagsterlabs.com")
+
+mock_other_user = User(
+    id="2",
+    email="rex@dagsterlabs.com",
 )
 
 mock_start_pdt_build = MaterializePDT(
