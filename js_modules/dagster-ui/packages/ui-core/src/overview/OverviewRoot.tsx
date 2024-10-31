@@ -1,9 +1,7 @@
 import {Redirect, Switch} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {OverviewActivityRoot} from './OverviewActivityRoot';
 import {OverviewResourcesRoot} from './OverviewResourcesRoot';
-import {featureEnabled} from '../app/Flags';
 import {Route} from '../app/Route';
 import {AutomaterializationRoot} from '../assets/auto-materialization/AutomaterializationRoot';
 import {InstanceBackfillsRoot} from '../instance/InstanceBackfillsRoot';
@@ -19,21 +17,8 @@ export const OverviewRoot = () => {
       <Route path="/overview/schedules" render={() => <Redirect to="/automation" />} />
       <Route path="/overview/sensors" render={() => <Redirect to="/automation" />} />
       <Route path="/overview/automation" render={() => <AutomaterializationRoot />} />
-      {featureEnabled(FeatureFlag.flagLegacyRunsPage)
-        ? [
-            <Route
-              path="/overview/backfills/:backfillId"
-              render={() => <BackfillPage />}
-              key="1"
-            />,
-            <Route
-              path="/overview/backfills"
-              exact
-              render={() => <InstanceBackfillsRoot />}
-              key="2"
-            />,
-          ]
-        : null}
+      <Route path="/overview/backfills/:backfillId" render={() => <BackfillPage />} />
+      <Route path="/overview/backfills" exact render={() => <InstanceBackfillsRoot />} />
       <Route path="/overview/resources">
         <OverviewResourcesRoot />
       </Route>
