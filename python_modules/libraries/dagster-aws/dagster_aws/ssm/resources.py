@@ -291,7 +291,7 @@ LEGACY_PARAMETERSTORE_SCHEMA = {
     "add_to_environment": LegacyDagsterField(
         bool,
         default_value=False,
-        description="Whether to add the paramters to the environment. Defaults to False.",
+        description="Whether to add the parameters to the environment. Defaults to False.",
     ),
 }
 

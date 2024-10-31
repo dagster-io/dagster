@@ -170,7 +170,7 @@ class ScenarioSpec:
 
                     assets.append(osa)
                 else:
-                    # strip out the relevant paramters from the spec
+                    # strip out the relevant parameters from the spec
                     params = {
                         "key",
                         "deps",

@@ -101,7 +101,7 @@ def event_list_hook(
         :py:class:`context <HookContext>`, and provides access to system
         information, such as loggers (context.log), resources (context.resources), the op
         (context.op) and its execution step (context.step) which triggers this hook.
-    - An `event_list` object is passed as the second paramter. It provides the full event list of the
+    - An `event_list` object is passed as the second parameter. It provides the full event list of the
         associated execution step.
 
     Args:
