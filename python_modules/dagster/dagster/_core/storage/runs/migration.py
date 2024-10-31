@@ -34,7 +34,6 @@ RUN_REPO_LABEL_TAGS = "run_repo_label_tags"
 BULK_ACTION_TYPES = "bulk_action_types"
 RUN_BACKFILL_ID = "run_backfill_id"
 BACKFILL_JOB_NAME_AND_TAGS = "backfill_job_name_and_tags"
-RUN_ASSETS = "run_assets"
 
 PrintFn: TypeAlias = Callable[[Any], None]
 MigrationFn: TypeAlias = Callable[[RunStorage, Optional[PrintFn]], None]
