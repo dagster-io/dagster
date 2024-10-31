@@ -24,3 +24,7 @@ Assets (PowerBI)
 .. autoclass:: PowerBIWorkspace
 
 .. autoclass:: DagsterPowerBITranslator
+
+.. autofunction:: load_powerbi_asset_specs
+
+.. autofunction:: build_semantic_model_refresh_asset_definition
