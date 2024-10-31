@@ -14,7 +14,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.test.definitions import lazy_definitions
-from dagster_tableau.assets import build_tableau_executable_assets_definition
+from dagster_tableau.assets import build_tableau_materializable_assets_definition
 from dagster_tableau.resources import TableauCloudWorkspace, load_tableau_asset_specs
 from dagster_tableau.translator import DagsterTableauTranslator
 
@@ -43,13 +43,13 @@ def cacheable_asset_defs_refreshable_workbooks():
         workspace=resource,
     )
 
-    non_executable_asset_specs = [
+    external_asset_specs = [
         spec
         for spec in tableau_specs
         if spec.tags.get("dagster-tableau/asset_type") == "data_source"
     ]
 
-    executable_asset_specs = [
+    materializable_asset_specs = [
         spec
         for spec in tableau_specs
         if spec.tags.get("dagster-tableau/asset_type") in ["dashboard", "sheet"]
@@ -59,12 +59,12 @@ def cacheable_asset_defs_refreshable_workbooks():
 
     return Definitions(
         assets=[
-            build_tableau_executable_assets_definition(
+            build_tableau_materializable_assets_definition(
                 resource_key=resource_key,
-                specs=executable_asset_specs,
+                specs=materializable_asset_specs,
                 refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
             ),
-            *non_executable_asset_specs,
+            *external_asset_specs,
         ],
         jobs=[define_asset_job("all_asset_job")],
         resources={resource_key: resource},

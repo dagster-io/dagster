@@ -1,6 +1,6 @@
 from dagster_tableau import (
     TableauCloudWorkspace,
-    build_tableau_executable_assets_definition,
+    build_tableau_materializable_assets_definition,
     load_tableau_asset_specs,
 )
 
@@ -20,27 +20,27 @@ tableau_specs = load_tableau_asset_specs(
     workspace=tableau_workspace,
 )
 
-non_executable_asset_specs = [
+external_asset_specs = [
     spec
     for spec in tableau_specs
     if spec.tags.get("dagster-tableau/asset_type") == "data_source"
 ]
 
-executable_asset_specs = [
+materializable_asset_specs = [
     spec
     for spec in tableau_specs
     if spec.tags.get("dagster-tableau/asset_type") in ["dashboard", "sheet"]
 ]
 
-# Use the asset definition builder to construct the definition for tableau executable assets
+# Use the asset definition builder to construct the definition for tableau materializable assets
 defs = dg.Definitions(
     assets=[
-        build_tableau_executable_assets_definition(
+        build_tableau_materializable_assets_definition(
             resource_key="tableau",
-            specs=executable_asset_specs,
+            specs=materializable_asset_specs,
             refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
         ),
-        *non_executable_asset_specs,
+        *external_asset_specs,
     ],
     resources={"tableau": tableau_workspace},
 )
