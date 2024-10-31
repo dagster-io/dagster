@@ -7,12 +7,12 @@ from dagster_tableau.resources import BaseTableauWorkspace
 
 
 @experimental
-def build_tableau_executable_assets_definition(
+def build_tableau_materializable_assets_definition(
     resource_key: str,
     specs: Sequence[AssetSpec],
     refreshable_workbook_ids: Optional[Sequence[str]] = None,
 ) -> AssetsDefinition:
-    """Returns the AssetsDefinition of the executable assets in the Tableau workspace.
+    """Returns the AssetsDefinition of the materializable assets in the Tableau workspace.
 
     Args:
         resource_key (str): The resource key to use for the Tableau resource.

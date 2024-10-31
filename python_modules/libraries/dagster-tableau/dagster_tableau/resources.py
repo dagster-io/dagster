@@ -488,7 +488,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         Returns:
             Definitions: A Definitions object which will build and return the Power BI content.
         """
-        from dagster_tableau.assets import build_tableau_executable_assets_definition
+        from dagster_tableau.assets import build_tableau_materializable_assets_definition
 
         resource_key = "tableau"
 
@@ -508,7 +508,7 @@ class BaseTableauWorkspace(ConfigurableResource):
 
         return Definitions(
             assets=[
-                build_tableau_executable_assets_definition(
+                build_tableau_materializable_assets_definition(
                     resource_key=resource_key,
                     specs=executable_asset_specs,
                     refreshable_workbook_ids=refreshable_workbook_ids,
