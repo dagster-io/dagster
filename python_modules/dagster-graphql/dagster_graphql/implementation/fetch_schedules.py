@@ -157,22 +157,17 @@ def get_schedules_or_error(
     return GrapheneSchedules(results=results)
 
 
-def get_schedules_for_pipeline(
-    graphene_info: ResolveInfo, pipeline_selector: JobSubsetSelector
+def get_schedules_for_job(
+    graphene_info: ResolveInfo, selector: JobSubsetSelector
 ) -> Sequence["GrapheneSchedule"]:
     from dagster_graphql.schema.schedules import GrapheneSchedule
 
-    check.inst_param(pipeline_selector, "pipeline_selector", JobSubsetSelector)
+    check.inst_param(selector, "selector", JobSubsetSelector)
 
-    location = graphene_info.context.get_code_location(pipeline_selector.location_name)
-    repository = location.get_repository(pipeline_selector.repository_name)
-    schedules = repository.get_schedules()
+    schedules = graphene_info.context.get_schedules_targeting_job(selector)
 
     results = []
     for schedule in schedules:
-        if schedule.job_name != pipeline_selector.job_name:
-            continue
-
         schedule_state = graphene_info.context.instance.get_instigator_state(
             schedule.get_remote_origin_id(),
             schedule.selector_id,

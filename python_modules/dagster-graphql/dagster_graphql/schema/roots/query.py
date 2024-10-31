@@ -386,7 +386,8 @@ class GrapheneQuery(graphene.ObjectType):
         description="Retrieve the number of entries for the Runs Feed after applying a filter.",
     )
     runTagKeysOrError = graphene.Field(
-        GrapheneRunTagKeysOrError, description="Retrieve the distinct tag keys from all runs."
+        GrapheneRunTagKeysOrError,
+        description="Retrieve the distinct tag keys from all runs.",
     )
     runTagsOrError = graphene.Field(
         GrapheneRunTagsOrError,
@@ -682,7 +683,9 @@ class GrapheneQuery(graphene.ObjectType):
 
     @capture_error
     def resolve_graphOrError(
-        self, graphene_info: ResolveInfo, selector: Optional[GrapheneGraphSelector] = None
+        self,
+        graphene_info: ResolveInfo,
+        selector: Optional[GrapheneGraphSelector] = None,
     ):
         assert selector is not None
         graph_selector = graph_selector_from_graphql(selector)
@@ -711,7 +714,10 @@ class GrapheneQuery(graphene.ObjectType):
         scheduleStatus: Optional[GrapheneInstigationStatus] = None,
     ):
         if scheduleStatus == GrapheneInstigationStatus.RUNNING:
-            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.DECLARED_IN_CODE}
+            instigator_statuses = {
+                InstigatorStatus.RUNNING,
+                InstigatorStatus.DECLARED_IN_CODE,
+            }
         elif scheduleStatus == GrapheneInstigationStatus.STOPPED:
             instigator_statuses = {InstigatorStatus.STOPPED}
         else:
@@ -756,7 +762,10 @@ class GrapheneQuery(graphene.ObjectType):
         sensorStatus: Optional[GrapheneInstigationStatus] = None,
     ):
         if sensorStatus == GrapheneInstigationStatus.RUNNING:
-            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.DECLARED_IN_CODE}
+            instigator_statuses = {
+                InstigatorStatus.RUNNING,
+                InstigatorStatus.DECLARED_IN_CODE,
+            }
         elif sensorStatus == GrapheneInstigationStatus.STOPPED:
             instigator_statuses = {InstigatorStatus.STOPPED}
         else:
@@ -875,13 +884,18 @@ class GrapheneQuery(graphene.ObjectType):
         selector = filter.to_selector() if filter is not None else None
         return GrapheneRunsFeedCount(
             get_runs_feed_count(
-                graphene_info, selector, include_runs_from_backfills=includeRunsFromBackfills
+                graphene_info,
+                selector,
+                include_runs_from_backfills=includeRunsFromBackfills,
             )
         )
 
     @capture_error
     def resolve_partitionSetsOrError(
-        self, graphene_info: ResolveInfo, repositorySelector: RepositorySelector, pipelineName: str
+        self,
+        graphene_info: ResolveInfo,
+        repositorySelector: RepositorySelector,
+        pipelineName: str,
     ):
         return get_partition_sets_or_error(
             graphene_info,
@@ -1000,19 +1014,8 @@ class GrapheneQuery(graphene.ObjectType):
                 if remote_node.group_name == group_name
             ]
         elif pipeline is not None:
-            job_name = pipeline.pipelineName
-            repo_sel = RepositorySelector.from_graphql_input(pipeline)
-            repo_loc_entry = graphene_info.context.get_location_entry(repo_sel.location_name)
-            repo_loc = repo_loc_entry.code_location if repo_loc_entry else None
-            if not repo_loc or not repo_loc.has_repository(repo_sel.repository_name):
-                return []
-
-            repo = repo_loc.get_repository(repo_sel.repository_name)
-            remote_nodes = [
-                remote_node
-                for remote_node in repo.asset_graph.asset_nodes
-                if job_name in remote_node.job_names
-            ]
+            selector = pipeline_selector_from_graphql(pipeline)
+            remote_nodes = graphene_info.context.get_assets_in_job(selector)
         else:
             if not use_all_asset_keys and resolved_asset_keys:
                 remote_nodes = [
@@ -1209,7 +1212,10 @@ class GrapheneQuery(graphene.ObjectType):
         cursor: Optional[str] = None,
     ):
         return fetch_auto_materialize_asset_evaluations(
-            graphene_info=graphene_info, graphene_asset_key=assetKey, cursor=cursor, limit=limit
+            graphene_info=graphene_info,
+            graphene_asset_key=assetKey,
+            cursor=cursor,
+            limit=limit,
         )
 
     def resolve_autoMaterializeEvaluationsForEvaluationId(
@@ -1243,7 +1249,10 @@ class GrapheneQuery(graphene.ObjectType):
         cursor: Optional[str] = None,
     ):
         return fetch_asset_condition_evaluation_records_for_asset_key(
-            graphene_info=graphene_info, graphene_asset_key=assetKey, cursor=cursor, limit=limit
+            graphene_info=graphene_info,
+            graphene_asset_key=assetKey,
+            cursor=cursor,
+            limit=limit,
         )
 
     def resolve_truePartitionsForAutomationConditionEvaluationNode(

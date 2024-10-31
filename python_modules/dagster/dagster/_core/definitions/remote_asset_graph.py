@@ -639,12 +639,12 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
                 asset_infos_by_key[key].append(
                     RepositoryScopedAssetInfo(
                         asset_node=asset_node,
-                        targeting_sensor_names=[
+                        targeting_sensor_names=sorted(
                             s.name for s in repo.get_sensors_targeting(asset_node.key)
-                        ],
-                        targeting_schedule_names=[
+                        ),
+                        targeting_schedule_names=sorted(
                             s.name for s in repo.get_schedules_targeting(asset_node.key)
-                        ],
+                        ),
                     )
                 )
             # NOTE: matches previous behavior of completely ignoring asset check collisions

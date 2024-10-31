@@ -29,8 +29,8 @@ from dagster_graphql.implementation.fetch_asset_checks import get_asset_checks_f
 from dagster_graphql.implementation.fetch_assets import get_assets_for_run, get_unique_asset_id
 from dagster_graphql.implementation.fetch_pipelines import get_job_reference_or_raise
 from dagster_graphql.implementation.fetch_runs import get_runs, get_stats, get_step_stats
-from dagster_graphql.implementation.fetch_schedules import get_schedules_for_pipeline
-from dagster_graphql.implementation.fetch_sensors import get_sensors_for_pipeline
+from dagster_graphql.implementation.fetch_schedules import get_schedules_for_job
+from dagster_graphql.implementation.fetch_sensors import get_sensors_for_job
 from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,
     apply_cursor_limit_reverse,
@@ -816,7 +816,7 @@ class GrapheneIPipelineSnapshotMixin:
             return []
 
         pipeline_selector = represented_pipeline.handle.to_selector()
-        schedules = get_schedules_for_pipeline(graphene_info, pipeline_selector)
+        schedules = get_schedules_for_job(graphene_info, pipeline_selector)
         return schedules
 
     def resolve_sensors(self, graphene_info: ResolveInfo):
@@ -827,7 +827,7 @@ class GrapheneIPipelineSnapshotMixin:
             return []
 
         pipeline_selector = represented_pipeline.handle.to_selector()
-        sensors = get_sensors_for_pipeline(graphene_info, pipeline_selector)
+        sensors = get_sensors_for_job(graphene_info, pipeline_selector)
         return sensors
 
     def resolve_parent_snapshot_id(self, _graphene_info: ResolveInfo):

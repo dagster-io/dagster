@@ -38,7 +38,9 @@ def get_remote_job_or_raise(graphene_info: "ResolveInfo", selector: JobSubsetSel
 
 
 def _get_remote_job_or_raise(
-    graphene_info: "ResolveInfo", selector: JobSubsetSelector, ignore_subset: bool = False
+    graphene_info: "ResolveInfo",
+    selector: JobSubsetSelector,
+    ignore_subset: bool = False,
 ) -> RemoteJob:
     from dagster_graphql.schema.errors import (
         GrapheneInvalidSubsetError,
@@ -49,7 +51,7 @@ def _get_remote_job_or_raise(
     ctx = graphene_info.context
     if not ctx.has_job(selector):
         raise UserFacingGraphQLError(GraphenePipelineNotFoundError(selector=selector))
-    elif ignore_subset:
+    elif ignore_subset or not selector.is_subset_selection:
         remote_job = ctx.get_full_job(selector)
     else:
         code_location = ctx.get_code_location(selector.location_name)
@@ -143,11 +145,15 @@ def fetch_repository(
     )
 
 
-def fetch_workspace(workspace_request_context: BaseWorkspaceRequestContext) -> "GrapheneWorkspace":
+def fetch_workspace(
+    workspace_request_context: BaseWorkspaceRequestContext,
+) -> "GrapheneWorkspace":
     from dagster_graphql.schema.external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 
     check.inst_param(
-        workspace_request_context, "workspace_request_context", BaseWorkspaceRequestContext
+        workspace_request_context,
+        "workspace_request_context",
+        BaseWorkspaceRequestContext,
     )
 
     nodes = [
@@ -168,7 +174,9 @@ def fetch_location_statuses(
     )
 
     check.inst_param(
-        workspace_request_context, "workspace_request_context", BaseWorkspaceRequestContext
+        workspace_request_context,
+        "workspace_request_context",
+        BaseWorkspaceRequestContext,
     )
 
     # passes the ID to the GrapheneWorkspaceLocationStatusEntry, so it can be overridden in Cloud

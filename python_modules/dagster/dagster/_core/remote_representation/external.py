@@ -206,7 +206,8 @@ class RemoteRepository:
         # NOTE: if a user's code location is at a version >= 1.9, then this step should
         # never be necessary, as this will be added in Definitions construction process
         default_sensor_selection = get_default_automation_condition_sensor_selection(
-            sensors=[data for data in sensor_datas.values()], asset_graph=self.asset_graph
+            sensors=[data for data in sensor_datas.values()],
+            asset_graph=self.asset_graph,
         )
         if default_sensor_selection is not None:
             default_sensor_data = SensorSnap(
@@ -432,7 +433,7 @@ class RemoteRepository:
         return job_name_mapping, asset_key_mapping
 
     @property
-    def _sensors_by_job_name(self) -> Mapping[str, Sequence["RemoteSensor"]]:
+    def sensors_by_job_name(self) -> Mapping[str, Sequence["RemoteSensor"]]:
         return self._sensor_mappings[0]
 
     @property
@@ -440,7 +441,7 @@ class RemoteRepository:
         return self._sensor_mappings[1]
 
     @cached_property
-    def _schedules_by_job_name(self) -> Mapping[str, Sequence["RemoteSchedule"]]:
+    def schedules_by_job_name(self) -> Mapping[str, Sequence["RemoteSchedule"]]:
         mapping = defaultdict(list)
         for schedule in self.get_schedules():
             mapping[schedule.job_name].append(schedule)
@@ -457,8 +458,8 @@ class RemoteRepository:
             sensors.update(self._sensors_by_asset_key[asset_key])
 
         for job_name in asset_snap.job_names:
-            if job_name != IMPLICIT_ASSET_JOB_NAME and job_name in self._sensors_by_job_name:
-                sensors.update(self._sensors_by_job_name[job_name])
+            if job_name != IMPLICIT_ASSET_JOB_NAME and job_name in self.sensors_by_job_name:
+                sensors.update(self.sensors_by_job_name[job_name])
 
         return sensors
 
@@ -469,8 +470,8 @@ class RemoteRepository:
 
         schedules = set()
         for job_name in asset_snap.job_names:
-            if job_name != IMPLICIT_ASSET_JOB_NAME and job_name in self._schedules_by_job_name:
-                schedules.update(self._schedules_by_job_name[job_name])
+            if job_name != IMPLICIT_ASSET_JOB_NAME and job_name in self.schedules_by_job_name:
+                schedules.update(self.schedules_by_job_name[job_name])
 
         return schedules
 
@@ -818,7 +819,8 @@ class RemoteSchedule:
     def __init__(self, schedule_snap: ScheduleSnap, handle: RepositoryHandle):
         self._schedule_snap = check.inst_param(schedule_snap, "schedule_snap", ScheduleSnap)
         self._handle = InstigatorHandle(
-            self._schedule_snap.name, check.inst_param(handle, "handle", RepositoryHandle)
+            self._schedule_snap.name,
+            check.inst_param(handle, "handle", RepositoryHandle),
         )
 
     @property
