@@ -1,10 +1,17 @@
-import {Box, Checkbox, MiddleTruncate, Tag, Tooltip} from '@dagster-io/ui-components';
-import {forwardRef, useCallback, useMemo} from 'react';
+import {
+  Box,
+  Checkbox,
+  MiddleTruncate,
+  Tag,
+  Tooltip,
+  useDelayedState,
+} from '@dagster-io/ui-components';
+import {forwardRef, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {AutomationTargetList} from './AutomationTargetList';
 import {AutomationRowGrid} from './VirtualizedAutomationRow';
-import {useLazyQuery} from '../apollo-client';
+import {useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
@@ -17,7 +24,7 @@ import {
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RowCell} from '../ui/VirtualizedTable';
 import {SENSOR_TYPE_META, SINGLE_SENSOR_QUERY} from '../workspace/VirtualizedSensorRow';
-import {LoadingOrNone, useDelayedRowQuery} from '../workspace/VirtualizedWorkspaceTable';
+import {LoadingOrNone} from '../workspace/VirtualizedWorkspaceTable';
 import {RepoAddress} from '../workspace/types';
 import {
   SingleSensorQuery,
@@ -37,20 +44,24 @@ export const VirtualizedAutomationSensorRow = forwardRef(
   (props: Props, ref: React.ForwardedRef<HTMLDivElement>) => {
     const {index, name, repoAddress, checked, onToggleChecked} = props;
 
-    const [querySensor, sensorQueryResult] = useLazyQuery<
-      SingleSensorQuery,
-      SingleSensorQueryVariables
-    >(SINGLE_SENSOR_QUERY, {
-      variables: {
-        selector: {
-          repositoryName: repoAddress.name,
-          repositoryLocationName: repoAddress.location,
-          sensorName: name,
-        },
-      },
-    });
+    // Wait 100ms before querying in case we're scrolling the table really fast
+    const shouldQuery = useDelayedState(100);
 
-    const [querySensorAssetSelection, sensorAssetSelectionQueryResult] = useLazyQuery<
+    const sensorQueryResult = useQuery<SingleSensorQuery, SingleSensorQueryVariables>(
+      SINGLE_SENSOR_QUERY,
+      {
+        variables: {
+          selector: {
+            repositoryName: repoAddress.name,
+            repositoryLocationName: repoAddress.location,
+            sensorName: name,
+          },
+        },
+        skip: !shouldQuery,
+      },
+    );
+
+    const sensorAssetSelectionQueryResult = useQuery<
       SensorAssetSelectionQuery,
       SensorAssetSelectionQueryVariables
     >(SENSOR_ASSET_SELECTIONS_QUERY, {
@@ -61,14 +72,8 @@ export const VirtualizedAutomationSensorRow = forwardRef(
           sensorName: name,
         },
       },
+      skip: !shouldQuery,
     });
-
-    useDelayedRowQuery(
-      useCallback(() => {
-        querySensor();
-        querySensorAssetSelection();
-      }, [querySensor, querySensorAssetSelection]),
-    );
 
     useQueryRefreshAtInterval(sensorQueryResult, FIFTEEN_SECONDS);
     useQueryRefreshAtInterval(sensorAssetSelectionQueryResult, FIFTEEN_SECONDS);

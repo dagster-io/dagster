@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Mono, Tag} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Mono, Tag, useDelayedState} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -7,7 +7,7 @@ import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu'
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
-import {QueryResult, gql, useLazyQuery} from '../../apollo-client';
+import {QueryResult, gql, useQuery} from '../../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {RunStatus} from '../../graphql/types';
@@ -17,7 +17,6 @@ import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
 import {CreatedByTagCell} from '../../runs/CreatedByTag';
 import {getBackfillPath} from '../../runs/RunsFeedUtils';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {useDelayedRowQuery} from '../../workspace/VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from '../../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
@@ -59,17 +58,18 @@ export const BackfillRowLoader = (props: {
 }) => {
   const {backfillId} = props;
 
-  const cancelableRuns = useLazyQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
+  // Wait 100ms before querying in case we're scrolling the table really fast
+  const shouldQuery = useDelayedState(100);
+
+  const statusQueryResult = useQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
     SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY,
     {
       variables: {backfillId},
       notifyOnNetworkStatusChange: true,
+      skip: !shouldQuery,
     },
   );
 
-  const [statusQueryFn, statusQueryResult] = cancelableRuns;
-
-  useDelayedRowQuery(statusQueryFn);
   useQueryRefreshAtInterval(statusQueryResult, FIFTEEN_SECONDS);
 
   const {data} = statusQueryResult;

@@ -7,16 +7,17 @@ import {
   MiddleTruncate,
   Tag,
   Tooltip,
+  useDelayedState,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
+import {LoadingOrNone} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
 import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
 import {workspacePathFromAddress} from './workspacePath';
-import {gql, useLazyQuery} from '../apollo-client';
+import {gql, useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {InstigationStatus, SensorType} from '../graphql/types';
@@ -60,20 +61,24 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
     height,
   } = props;
 
-  const [querySensor, sensorQueryResult] = useLazyQuery<
-    SingleSensorQuery,
-    SingleSensorQueryVariables
-  >(SINGLE_SENSOR_QUERY, {
-    variables: {
-      selector: {
-        repositoryName: repoAddress.name,
-        repositoryLocationName: repoAddress.location,
-        sensorName: name,
-      },
-    },
-  });
+  // Wait 100ms before querying in case we're scrolling the table really fast
+  const shouldQuery = useDelayedState(100);
 
-  const [querySensorAssetSelection, sensorAssetSelectionQueryResult] = useLazyQuery<
+  const sensorQueryResult = useQuery<SingleSensorQuery, SingleSensorQueryVariables>(
+    SINGLE_SENSOR_QUERY,
+    {
+      variables: {
+        selector: {
+          repositoryName: repoAddress.name,
+          repositoryLocationName: repoAddress.location,
+          sensorName: name,
+        },
+      },
+      skip: !shouldQuery,
+    },
+  );
+
+  const sensorAssetSelectionQueryResult = useQuery<
     SensorAssetSelectionQuery,
     SensorAssetSelectionQueryVariables
   >(SENSOR_ASSET_SELECTIONS_QUERY, {
@@ -84,14 +89,8 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
         sensorName: name,
       },
     },
+    skip: !shouldQuery,
   });
-
-  useDelayedRowQuery(
-    React.useCallback(() => {
-      querySensor();
-      querySensorAssetSelection();
-    }, [querySensor, querySensorAssetSelection]),
-  );
 
   useQueryRefreshAtInterval(sensorQueryResult, FIFTEEN_SECONDS);
   useQueryRefreshAtInterval(sensorAssetSelectionQueryResult, FIFTEEN_SECONDS);
