@@ -250,7 +250,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     requestedAssetKeys = non_null_list(GrapheneAssetKey)
     requestedAssetMaterializationCount = graphene.NonNull(graphene.Int)
     requestedMaterializationsForAssets = non_null_list(GrapheneRequestedMaterializationsForAsset)
-    autoMaterializeAssetEvaluationId = graphene.Field(graphene.BigInt)
+    autoMaterializeAssetEvaluationId = graphene.Field(graphene.ID)
     instigationType = graphene.NonNull(GrapheneInstigationType)
 
     class Meta:

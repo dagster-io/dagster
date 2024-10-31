@@ -133,7 +133,7 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["autoMaterializeTicks"]) == 1
         tick = result.data["autoMaterializeTicks"][0]
         assert tick["endTimestamp"] == end_timestamp
-        assert tick["autoMaterializeAssetEvaluationId"] == 3
+        assert tick["autoMaterializeAssetEvaluationId"] == "3"
         assert sorted(tick["requestedAssetKeys"], key=lambda x: x["path"][0]) == [
             {"path": ["bar"]},
             {"path": ["baz"]},
@@ -164,8 +164,8 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         )
         assert len(result.data["autoMaterializeTicks"]) == 1
         tick = result.data["autoMaterializeTicks"][0]
-        assert (
-            tick["autoMaterializeAssetEvaluationId"] == success_2.automation_condition_evaluation_id
+        assert tick["autoMaterializeAssetEvaluationId"] == str(
+            success_2.automation_condition_evaluation_id
         )
 
         result = execute_dagster_graphql(
@@ -183,9 +183,8 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         ticks = result.data["autoMaterializeTicks"]
         assert len(ticks) == 1
         assert ticks[0]["timestamp"] == success_1.timestamp
-        assert (
-            ticks[0]["autoMaterializeAssetEvaluationId"]
-            == success_1.automation_condition_evaluation_id
+        assert ticks[0]["autoMaterializeAssetEvaluationId"] == str(
+            success_1.automation_condition_evaluation_id
         )
 
         cursor = ticks[0]["id"]
@@ -285,7 +284,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
 LEGACY_QUERY_FOR_SPECIFIC_PARTITION = (
     FRAGMENTS
     + """
-query GetPartitionEvaluationQuery($assetKey: AssetKeyInput!, $partition: String!, $evaluationId: BigInt!) {
+query GetPartitionEvaluationQuery($assetKey: AssetKeyInput!, $partition: String!, $evaluationId: ID!) {
     assetConditionEvaluationForPartition(assetKey: $assetKey, partition: $partition, evaluationId: $evaluationId) {
         ...evaluationFields
     }
@@ -296,7 +295,7 @@ query GetPartitionEvaluationQuery($assetKey: AssetKeyInput!, $partition: String!
 LEGACY_QUERY_FOR_EVALUATION_ID = (
     FRAGMENTS
     + """
-query GetEvaluationsForEvaluationIdQuery($evaluationId: BigInt!) {
+query GetEvaluationsForEvaluationIdQuery($evaluationId: ID!) {
     assetConditionEvaluationsForEvaluationId(evaluationId: $evaluationId) {
         ... on AssetConditionEvaluationRecords {
             records {
@@ -343,7 +342,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
 """
 
 TRUE_PARTITIONS_QUERY = """
-query GetTruePartitions($assetKey: AssetKeyInput!, $evaluationId: BigInt!, $nodeUniqueId: String!) {
+query GetTruePartitions($assetKey: AssetKeyInput!, $evaluationId: ID!, $nodeUniqueId: String!) {
     truePartitionsForAutomationConditionEvaluationNode(assetKey: $assetKey, evaluationId: $evaluationId, nodeUniqueId: $nodeUniqueId)
 }
 """
@@ -386,7 +385,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
                     "assetKey": {"path": ["fresh_diamond_bottom"]},
                 },
             )
-            assert not results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"]
+            assert results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"] == "0"
 
         with patch(
             graphql_context.instance.__class__.__module__
@@ -408,7 +407,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
                 instigator["name"] == "my_auto_materialize_sensor"
                 for instigator in results.data["assetNodeOrError"]["targetingInstigators"]
             )
-            assert results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"] == 12345
+            assert results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"] == "12345"
 
     def _get_node(
         self, unique_id: str, evaluations: Sequence[Mapping[str, Any]]

@@ -13,9 +13,7 @@ export function useEvaluationsQueryResult({assetKey}: {assetKey: AssetKey}) {
         data.assetConditionEvaluationRecordsOrError?.__typename ===
         'AssetConditionEvaluationRecords'
       ) {
-        return data.assetConditionEvaluationRecordsOrError.records[
-          PAGE_SIZE - 1
-        ]?.evaluationId.toString();
+        return data.assetConditionEvaluationRecordsOrError.records[PAGE_SIZE - 1]?.evaluationId;
       }
       return undefined;
     },

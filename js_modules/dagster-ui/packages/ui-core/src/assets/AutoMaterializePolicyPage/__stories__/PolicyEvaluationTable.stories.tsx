@@ -33,7 +33,7 @@ export const NonPartitioned = () => {
     <PolicyEvaluationTable
       evaluationNodes={nodes}
       assetKeyPath={['foo', 'bar']}
-      evaluationId={1}
+      evaluationId="1"
       rootUniqueId="a"
       isLegacyEvaluation
       selectPartition={() => {}}
@@ -77,7 +77,7 @@ export const NewTableStyle = () => {
     <PolicyEvaluationTable
       evaluationNodes={nodes}
       assetKeyPath={['foo', 'bar']}
-      evaluationId={1}
+      evaluationId="1"
       rootUniqueId="a"
       isLegacyEvaluation={false}
       selectPartition={() => {}}
@@ -108,7 +108,7 @@ export const Partitioned = () => {
     <PolicyEvaluationTable
       evaluationNodes={nodes}
       assetKeyPath={['foo', 'bar']}
-      evaluationId={1}
+      evaluationId="1"
       rootUniqueId="a"
       isLegacyEvaluation
       selectPartition={() => {}}
@@ -133,7 +133,7 @@ export const SpecificPartition = () => {
     <PolicyEvaluationTable
       evaluationNodes={nodes}
       assetKeyPath={['foo', 'bar']}
-      evaluationId={1}
+      evaluationId="1"
       rootUniqueId="a"
       isLegacyEvaluation
       selectPartition={() => {}}

@@ -681,7 +681,7 @@ type AssetNode {
   hasReportRunlessAssetEventPermission: Boolean!
   hasAssetChecks: Boolean!
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
-  currentAutoMaterializeEvaluationId: BigInt
+  currentAutoMaterializeEvaluationId: ID
   targetingInstigators: [Instigator!]!
 }
 
@@ -957,8 +957,6 @@ type AssetCheckNeedsUserCodeUpgrade implements Error {
 type AssetCheckNeedsAgentUpgradeError implements Error {
   message: String!
 }
-
-scalar BigInt
 
 union Instigator = Schedule | Sensor
 
@@ -2583,6 +2581,8 @@ enum InstigationType {
   AUTO_MATERIALIZE
 }
 
+scalar BigInt
+
 type InstigationStateNotFoundError implements Error {
   message: String!
   name: String!
@@ -2615,7 +2615,7 @@ type InstigationTick {
   requestedAssetKeys: [AssetKey!]!
   requestedAssetMaterializationCount: Int!
   requestedMaterializationsForAssets: [RequestedMaterializationsForAsset!]!
-  autoMaterializeAssetEvaluationId: BigInt
+  autoMaterializeAssetEvaluationId: ID
   instigationType: InstigationType!
 }
 
@@ -3355,15 +3355,15 @@ type Query {
   ): AutoMaterializeAssetEvaluationRecordsOrError
   truePartitionsForAutomationConditionEvaluationNode(
     assetKey: AssetKeyInput!
-    evaluationId: BigInt!
+    evaluationId: ID!
     nodeUniqueId: String
   ): [String!]!
   autoMaterializeEvaluationsForEvaluationId(
-    evaluationId: BigInt!
+    evaluationId: ID!
   ): AutoMaterializeAssetEvaluationRecordsOrError
   assetConditionEvaluationForPartition(
     assetKey: AssetKeyInput!
-    evaluationId: BigInt!
+    evaluationId: ID!
     partition: String!
   ): AssetConditionEvaluation
   assetConditionEvaluationRecordsOrError(
@@ -3372,7 +3372,7 @@ type Query {
     cursor: String
   ): AssetConditionEvaluationRecordsOrError
   assetConditionEvaluationsForEvaluationId(
-    evaluationId: BigInt!
+    evaluationId: ID!
   ): AssetConditionEvaluationRecordsOrError
   autoMaterializeTicks(
     dayRange: Int
@@ -3562,7 +3562,7 @@ type AutoMaterializeAssetEvaluationRecords {
 
 type AutoMaterializeAssetEvaluationRecord {
   id: ID!
-  evaluationId: BigInt!
+  evaluationId: ID!
   numRequested: Int!
   numSkipped: Int!
   numDiscarded: Int!
@@ -3665,7 +3665,7 @@ type AssetConditionEvaluationRecords {
 
 type AssetConditionEvaluationRecord {
   id: ID!
-  evaluationId: BigInt!
+  evaluationId: ID!
   runIds: [String!]!
   timestamp: Float!
   assetKey: AssetKey!

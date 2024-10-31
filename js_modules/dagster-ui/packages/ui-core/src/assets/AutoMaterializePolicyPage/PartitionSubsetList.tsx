@@ -26,7 +26,7 @@ interface Props {
   description: string;
   status?: AssetConditionEvaluationStatus;
   assetKeyPath: string[];
-  evaluationId: number;
+  evaluationId: string;
   nodeUniqueId: string;
   selectPartition?: (partitionKey: string | null) => void;
 }
