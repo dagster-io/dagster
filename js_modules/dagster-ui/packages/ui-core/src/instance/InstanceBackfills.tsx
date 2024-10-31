@@ -125,8 +125,8 @@ export const InstanceBackfills = () => {
               <span style={{fontWeight: 'normal'}}>
                 {' '}
                 We&apos;re incorporating backfills into the <Link to="/runs/">Runs</Link> page to
-                unify the UI and provide one page to see everything that is running. The Backfills
-                page will be removed in a future release.{' '}
+                unify the UI and provide one page to see all of your executions. The Backfills page
+                will be removed in a future release.{' '}
                 <a
                   href="https://github.com/dagster-io/dagster/discussions/24898"
                   target="_blank"
