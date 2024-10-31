@@ -121,7 +121,7 @@ export const GET_EVALUATIONS_QUERY = gql`
 export const GET_EVALUATIONS_SPECIFIC_PARTITION_QUERY = gql`
   query GetEvaluationsSpecificPartitionQuery(
     $assetKey: AssetKeyInput!
-    $evaluationId: BigInt!
+    $evaluationId: ID!
     $partition: String!
   ) {
     assetConditionEvaluationForPartition(

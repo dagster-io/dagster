@@ -23,7 +23,7 @@ describe('PolicyEvaluationTable', () => {
       <PolicyEvaluationTable
         evaluationNodes={nodes}
         assetKeyPath={['foo', 'bar']}
-        evaluationId={1}
+        evaluationId="1"
         rootUniqueId="a"
         isLegacyEvaluation
         selectPartition={() => {}}
@@ -53,7 +53,7 @@ describe('PolicyEvaluationTable', () => {
       <PolicyEvaluationTable
         evaluationNodes={nodes}
         assetKeyPath={['foo', 'bar']}
-        evaluationId={1}
+        evaluationId="1"
         rootUniqueId="a"
         isLegacyEvaluation
         selectPartition={() => {}}
@@ -83,7 +83,7 @@ describe('PolicyEvaluationTable', () => {
       <PolicyEvaluationTable
         evaluationNodes={nodes}
         assetKeyPath={['foo', 'bar']}
-        evaluationId={1}
+        evaluationId="1"
         rootUniqueId="a"
         isLegacyEvaluation={false}
         selectPartition={() => {}}
@@ -124,7 +124,7 @@ describe('PolicyEvaluationTable', () => {
         <PolicyEvaluationTable
           evaluationNodes={nodes}
           assetKeyPath={['foo', 'bar']}
-          evaluationId={1}
+          evaluationId="1"
           rootUniqueId="a"
           isLegacyEvaluation
           selectPartition={() => {}}
@@ -170,7 +170,7 @@ describe('PolicyEvaluationTable', () => {
         <PolicyEvaluationTable
           evaluationNodes={nodes}
           assetKeyPath={['foo', 'bar']}
-          evaluationId={1}
+          evaluationId="1"
           rootUniqueId="a"
           isLegacyEvaluation={false}
           selectPartition={() => {}}

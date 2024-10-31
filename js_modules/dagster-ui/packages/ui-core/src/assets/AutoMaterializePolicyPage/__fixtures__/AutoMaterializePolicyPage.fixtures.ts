@@ -66,7 +66,7 @@ export const buildGetEvaluationsQuery = ({
 
 const ONE_MINUTE = 1000 * 60;
 
-export const TEST_EVALUATION_ID = 27;
+export const TEST_EVALUATION_ID = '27';
 
 export const buildEvaluationRecordsWithPartitions = () => {
   const now = Date.now();
@@ -84,37 +84,37 @@ export const buildEvaluationRecordsWithPartitions = () => {
     }),
     buildAssetConditionEvaluationRecord({
       id: 'f',
-      evaluationId: 24,
+      evaluationId: '24',
       timestamp: (now - ONE_MINUTE * 5) / 1000,
       numRequested: 2,
     }),
     buildAssetConditionEvaluationRecord({
       id: 'e',
-      evaluationId: 20,
+      evaluationId: '20',
       timestamp: (now - ONE_MINUTE * 4) / 1000,
       numRequested: 0,
     }),
     buildAssetConditionEvaluationRecord({
       id: 'd',
-      evaluationId: 13,
+      evaluationId: '13',
       timestamp: (now - ONE_MINUTE * 3) / 1000,
       numRequested: 2,
     }),
     buildAssetConditionEvaluationRecord({
       id: 'c',
       timestamp: (now - ONE_MINUTE * 2) / 1000,
-      evaluationId: 12,
+      evaluationId: '12',
       numRequested: 0,
     }),
     buildAssetConditionEvaluationRecord({
       id: 'b',
-      evaluationId: 4,
+      evaluationId: '4',
       timestamp: (now - ONE_MINUTE) / 1000,
       numRequested: 0,
     }),
     buildAssetConditionEvaluationRecord({
       id: 'a',
-      evaluationId: 0,
+      evaluationId: '0',
       timestamp: now / 1000,
       numRequested: 2,
     }),
@@ -132,13 +132,13 @@ export const buildEvaluationRecordsWithoutPartitions = () => {
     }),
     buildAssetConditionEvaluationRecord({
       id: 'f',
-      evaluationId: 24,
+      evaluationId: '24',
       timestamp: (now - ONE_MINUTE * 5) / 1000,
       numRequested: 0,
     }),
     buildAssetConditionEvaluationRecord({
       id: 'e',
-      evaluationId: 20,
+      evaluationId: '20',
       timestamp: (now - ONE_MINUTE * 4) / 1000,
       numRequested: 0,
     }),
@@ -249,7 +249,7 @@ export const Evaluations = {
           autoMaterializePolicy: buildAutoMaterializePolicy({
             rules: BASE_AUTOMATERIALIZE_RULES,
           }),
-          currentAutoMaterializeEvaluationId: 1000,
+          currentAutoMaterializeEvaluationId: '1000',
         }),
         assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
       },

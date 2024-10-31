@@ -22,7 +22,7 @@ import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable'
 interface Props {
   assetKeyPath: string[] | null;
   evaluationNodes: Evaluation[];
-  evaluationId: number;
+  evaluationId: string;
   rootUniqueId: string;
   isLegacyEvaluation: boolean;
   selectPartition: (partitionKey: string | null) => void;
@@ -111,7 +111,7 @@ const NewPolicyEvaluationTable = ({
   toggleExpanded,
 }: {
   assetKeyPath: string[] | null;
-  evaluationId: number;
+  evaluationId: string;
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
   flattenedRecords: FlattenedConditionEvaluation<NewEvaluationNodeFragment>[];
@@ -343,7 +343,7 @@ export const PartitionedPolicyEvaluationTable = ({
   selectPartition,
 }: {
   assetKeyPath: string[] | null;
-  evaluationId: number;
+  evaluationId: string;
   rootUniqueId: string;
   flattenedRecords: FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>[];
   expandedRecords: Set<string>;

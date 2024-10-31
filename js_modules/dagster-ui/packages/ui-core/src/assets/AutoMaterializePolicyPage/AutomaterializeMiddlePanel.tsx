@@ -25,7 +25,7 @@ import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 interface Props {
   assetKey: AssetKey;
-  selectedEvaluationId: number | undefined;
+  selectedEvaluationId: string | undefined;
   selectedEvaluation?: AssetConditionEvaluationRecordFragment;
   definition?: AssetViewDefinitionNodeFragment | null;
 }
@@ -55,7 +55,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
     {
       variables: {
         assetKey,
-        cursor: selectedEvaluationId ? `${selectedEvaluationId + 1}` : undefined,
+        cursor: selectedEvaluationId ? `${BigInt(selectedEvaluationId) + 1n}` : undefined,
         limit: 2,
       },
       skip,
