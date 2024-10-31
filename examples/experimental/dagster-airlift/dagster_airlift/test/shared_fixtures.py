@@ -1,6 +1,7 @@
 import os
 import signal
 import subprocess
+import sys
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -129,6 +130,11 @@ def dagster_dev_cmd(dagster_defs_path: str) -> List[str]:
 def setup_dagster(
     airflow_instance: None, dagster_home: str, dagster_dev_cmd: List[str]
 ) -> Generator[Any, None, None]:
+    # The version of airflow we use on 3.12 or greater (2.10.2) takes longer to reconcile the dags, and sometimes does it partially.
+    # We need to wait for all the dags to be loaded before we can start dagster.
+    # A better solution would be to poll the airflow instance for the existence of all expected dags, but this is a stopgap.
+    if sys.version_info >= (3, 12):
+        time.sleep(20)
     with stand_up_dagster(dagster_dev_cmd) as process:
         yield process
 
