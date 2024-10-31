@@ -31,6 +31,12 @@ class ParsedTableauAssetSpecs(
 def parse_tableau_external_and_materializable_asset_specs(
     specs: Sequence[AssetSpec],
 ) -> ParsedTableauAssetSpecs:
+    """Parses a list of Tableau AssetSpecs provided as input and return two lists of AssetSpecs,
+    one for the Tableau external assets and another one for the Tableau materializable assets.
+
+    In Tableau, data sources are considered external assets,
+    while sheets and dashboards are considered materializable assets.
+    """
     external_asset_specs = [
         spec for spec in specs if TableauTagSet.extract(spec.tags).asset_type == "data_source"
     ]
