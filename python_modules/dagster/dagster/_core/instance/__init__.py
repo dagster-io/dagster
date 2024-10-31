@@ -76,6 +76,7 @@ from dagster._core.storage.tags import (
     ROOT_RUN_ID_TAG,
     RUN_FAILURE_REASON_TAG,
 )
+from dagster._record import copy
 from dagster._serdes import ConfigurableClass
 from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
@@ -1805,6 +1806,16 @@ class DagsterInstance(DynamicPartitionsStore):
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
         ascending: bool = False,
     ) -> Sequence[DagsterRun]:
+        if filters and filters.asset_keys:
+            run_ids = self._get_run_ids_for_asset_keys(filters.asset_keys)
+
+            if not run_ids:
+                return []
+
+            filters = copy(
+                filters, run_ids=[*filters.run_ids, *run_ids] if filters.run_ids else run_ids
+            )
+
         return self._run_storage.get_runs(filters, cursor, limit, bucket_by, ascending)
 
     @traced
@@ -1814,10 +1825,30 @@ class DagsterInstance(DynamicPartitionsStore):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[str]:
+        if filters and filters.asset_keys:
+            run_ids = self._get_run_ids_for_asset_keys(filters.asset_keys)
+
+            if not run_ids:
+                return []
+
+            filters = copy(
+                filters, run_ids=[*filters.run_ids, *run_ids] if filters.run_ids else run_ids
+            )
+
         return self._run_storage.get_run_ids(filters, cursor=cursor, limit=limit)
 
     @traced
     def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
+        if filters and filters.asset_keys:
+            run_ids = self._get_run_ids_for_asset_keys(filters.asset_keys)
+
+            if not run_ids:
+                return 0
+
+            filters = copy(
+                filters, run_ids=[*filters.run_ids, *run_ids] if filters.run_ids else run_ids
+            )
+
         return self._run_storage.get_runs_count(filters)
 
     @public
@@ -1843,6 +1874,16 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             List[RunRecord]: List of run records stored in the run storage.
         """
+        if filters and filters.asset_keys:
+            run_ids = self._get_run_ids_for_asset_keys(filters.asset_keys)
+
+            if not run_ids:
+                return []
+
+            filters = copy(
+                filters, run_ids=[*filters.run_ids, *run_ids] if filters.run_ids else run_ids
+            )
+
         return self._run_storage.get_run_records(
             filters, limit, order_by, ascending, cursor, bucket_by
         )
@@ -1850,7 +1891,49 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
+        if runs_filter and runs_filter.asset_keys:
+            run_ids = self._get_run_ids_for_asset_keys(runs_filter.asset_keys)
+
+            if not run_ids:
+                return []
+
+            runs_filter = copy(
+                runs_filter,
+                run_ids=[*runs_filter.run_ids, *run_ids] if runs_filter.run_ids else run_ids,
+            )
+
         return self._run_storage.get_run_partition_data(runs_filter)
+
+    def _get_run_ids_for_asset_keys(self, asset_keys: Sequence[AssetKey]) -> Sequence[str]:
+        from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import EventRecordsFilter
+
+        run_ids = set()
+        for asset_key in asset_keys:
+            asset_materializations = set(
+                [
+                    event.run_id
+                    for event in self._event_storage.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                            asset_key=asset_key,
+                        )
+                    )
+                ]
+            )
+            asset_materialization_plans = set(
+                [
+                    event.run_id
+                    for event in self._event_storage.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                            asset_key=asset_key,
+                        )
+                    )
+                ]
+            )
+            run_ids.update(asset_materializations.union(asset_materialization_plans))
+        return list(run_ids)
 
     def wipe(self) -> None:
         self._run_storage.wipe()

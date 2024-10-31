@@ -153,8 +153,8 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     } else if (item.token === 'pipeline' || item.token === 'job') {
       obj.pipelineName = item.value;
     } else if (item.token === 'asset') {
-      obj.assets = obj.assets || [];
-      obj.assets.push(displayNameToAssetKey(item.value));
+      obj.assetKeys = obj.assetKeys || [];
+      obj.assetKeys.push(displayNameToAssetKey(item.value));
     } else if (item.token === 'id') {
       obj.runIds = obj.runIds || [];
       obj.runIds.push(item.value);

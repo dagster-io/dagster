@@ -525,8 +525,8 @@ class RunsFilter(IHaveNew):
             A list of run statuses to filter by. If blank, all run statuses will be allowed.
         tags (Optional[Dict[str, Union[str, List[str]]]]):
             A dictionary of run tags to query by. All tags specified here must be present for a given run to pass the filter.
-        assets (Optional[Set[AssetKey]]):
-            Name of the asset to query for. If blank, all assets will be accepted.
+        asset_keys (Optional[List[AssetKey]]):
+            Asset keys to query for. If blank, all assets will be accepted.
         snapshot_id (Optional[str]): The ID of the job snapshot to query for. Intended for internal use.
         updated_after (Optional[DateTime]): Filter by runs that were last updated before this datetime.
         created_before (Optional[DateTime]): Filter by runs that were created before this datetime.
@@ -537,7 +537,7 @@ class RunsFilter(IHaveNew):
     job_name: Optional[str]
     statuses: Sequence[DagsterRunStatus]
     tags: Mapping[str, Union[str, Sequence[str]]]
-    assets: Optional[Iterable[AssetKey]]
+    asset_keys: Optional[Sequence[AssetKey]]
     snapshot_id: Optional[str]
     updated_after: Optional[datetime]
     updated_before: Optional[datetime]
@@ -552,7 +552,7 @@ class RunsFilter(IHaveNew):
         job_name: Optional[str] = None,
         statuses: Optional[Sequence[DagsterRunStatus]] = None,
         tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
-        assets: Optional[Iterable[AssetKey]] = None,
+        asset_keys: Optional[Sequence[AssetKey]] = None,
         snapshot_id: Optional[str] = None,
         updated_after: Optional[datetime] = None,
         updated_before: Optional[datetime] = None,
@@ -568,7 +568,7 @@ class RunsFilter(IHaveNew):
             job_name=job_name,
             statuses=statuses or [],
             tags=tags or {},
-            assets=assets or set(),
+            asset_keys=asset_keys or [],
             snapshot_id=snapshot_id,
             updated_after=updated_after,
             updated_before=updated_before,

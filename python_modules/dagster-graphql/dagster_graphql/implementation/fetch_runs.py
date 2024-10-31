@@ -484,6 +484,7 @@ def _filters_apply_to_backfills(filters: RunsFilter) -> bool:
         or filters.updated_after is not None
         or filters.updated_before is not None
         or filters.snapshot_id is not None
+        or (filters.asset_keys is not None and len(filters.asset_keys) > 0)
     ):
         return False
     # if filtering by statuses and all are not valid backfill statuses, skip fetching backfills

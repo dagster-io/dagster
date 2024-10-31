@@ -7,11 +7,12 @@ from dagster._core.remote_representation.external_data import partition_set_snap
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import BACKFILL_ID_TAG
-from dagster._core.test_utils import create_run_for_test
+from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster._core.utils import make_new_backfill_id
 from dagster._time import get_current_timestamp
+from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.implementation.fetch_runs import RunsFeedCursor
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -1074,6 +1075,112 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
         _assert_results_match_count_match_expected(result, 3)
+
+    def test_get_runs_feed_filter_assets(self, graphql_context):
+        for _ in range(3):
+            _create_run(graphql_context)
+            time.sleep(CREATE_DELAY)
+            backfill_id = _create_backfill(graphql_context)
+            _create_run_for_backfill(
+                graphql_context,
+                backfill_id,
+            )
+
+        run1 = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": infer_job_selector(
+                        graphql_context,
+                        "two_assets_job",
+                    ),
+                }
+            },
+        )
+        assert run1.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+        run_id1 = run1.data["launchPipelineExecution"]["run"]["runId"]
+        poll_for_finished_run(graphql_context.instance, run_id1)
+        assert not run1.errors
+        assert run1.data
+
+        run2 = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": infer_job_selector(
+                        graphql_context,
+                        "two_assets_job",
+                        asset_selection=[{"path": ["asset_one"]}],
+                    ),
+                }
+            },
+        )
+        assert run2.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+        run_id2 = run2.data["launchPipelineExecution"]["run"]["runId"]
+        poll_for_finished_run(graphql_context.instance, run_id2)
+        assert not run2.errors
+        assert run2.data
+
+        no_filter = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": None,
+                "includeRunsFromBackfills": False,
+            },
+        )
+        assert not no_filter.errors
+        assert no_filter.data
+        _assert_results_match_count_match_expected(no_filter, 8)
+
+        with_filter = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"assetKeys": [{"path": ["asset_one"]}]},
+                "includeRunsFromBackfills": False,
+            },
+        )
+        assert not with_filter.errors
+        assert with_filter.data
+        _assert_results_match_count_match_expected(with_filter, 2)
+        assert with_filter.data["runsFeedOrError"]["results"][0]["id"] == run_id2
+        assert with_filter.data["runsFeedOrError"]["results"][1]["id"] == run_id1
+
+        with_selection_filter = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"assetKeys": [{"path": ["asset_two"]}]},
+                "includeRunsFromBackfills": False,
+            },
+        )
+        assert not with_selection_filter.errors
+        assert with_selection_filter.data
+        _assert_results_match_count_match_expected(with_selection_filter, 1)
+        assert with_selection_filter.data["runsFeedOrError"]["results"][0]["id"] == run_id1
+
+        with_nonexistent_filter = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"assetKeys": [{"path": ["non_existent"]}]},
+                "includeRunsFromBackfills": False,
+            },
+        )
+        assert not with_nonexistent_filter.errors
+        assert with_nonexistent_filter.data
+        _assert_results_match_count_match_expected(with_nonexistent_filter, 0)
 
     def test_get_runs_feed_filters_that_dont_apply_to_backfills(self, graphql_context):
         run = _create_run(graphql_context)

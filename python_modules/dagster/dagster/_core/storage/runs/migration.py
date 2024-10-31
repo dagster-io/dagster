@@ -8,14 +8,12 @@ from tqdm import tqdm
 from typing_extensions import Final, TypeAlias
 
 import dagster._check as check
-from dagster._core.events import ASSET_EVENTS
 from dagster._core.execution.job_backfill import PartitionBackfill
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunRecord
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.schema import (
     BackfillTagsTable,
     BulkActionsTable,
-    RunAssetsTable,
     RunsTable,
     RunTagsTable,
 )
@@ -52,7 +50,6 @@ REQUIRED_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
 # for `dagster instance reindex`, optionally run for better read performance
 OPTIONAL_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
     RUN_START_END: lambda: migrate_run_start_end,
-    RUN_ASSETS: lambda: migrate_run_assets,
 }
 
 CHUNK_SIZE = 100
@@ -398,46 +395,3 @@ def add_backfill_job_name(run_storage: RunStorage, backfill_id: str, job_name: s
             )
             .where(BulkActionsTable.c.key == backfill_id)
         )
-
-
-def migrate_run_assets(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
-    """Utility method that updates run assets using the completed event log."""
-    if print_fn:
-        print_fn("Querying run and event log storage.")
-
-    for run_record in chunked_run_records_iterator(storage, print_fn):
-        if run_record.dagster_run.status in UNSTARTED_RUN_STATUSES:
-            continue
-
-        add_run_assets(storage, run_record.dagster_run.run_id)
-
-
-def add_run_assets(run_storage: RunStorage, run_id: str) -> None:
-    from dagster._core.instance import DagsterInstance
-    from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
-
-    instance = check.inst_param(run_storage._instance, "instance", DagsterInstance)  # noqa: SLF001
-    run_asset_events = instance.all_logs(run_id, of_type=ASSET_EVENTS)
-
-    if not isinstance(run_storage, SqlRunStorage):
-        return
-
-    asset_keys = {
-        event.get_dagster_event().asset_key
-        for event in run_asset_events
-        if event.get_dagster_event().asset_key
-    }
-
-    with run_storage.connect() as conn:
-        try:
-            conn.execute(
-                RunAssetsTable.insert(),
-                [
-                    dict(run_id=run_id, asset_key=asset_key.to_string())
-                    for asset_key in asset_keys
-                    if asset_key
-                ],
-            )
-        except db_exc.IntegrityError:
-            # run asset already exists, swallow
-            pass

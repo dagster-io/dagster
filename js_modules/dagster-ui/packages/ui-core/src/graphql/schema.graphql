@@ -2355,7 +2355,7 @@ input RunsFilter {
   pipelineName: String
   tags: [ExecutionTag!]
   statuses: [RunStatus!]
-  assets: [AssetKeyInput!]
+  assetKeys: [AssetKeyInput!]
   snapshotId: String
   updatedAfter: Float
   updatedBefore: Float

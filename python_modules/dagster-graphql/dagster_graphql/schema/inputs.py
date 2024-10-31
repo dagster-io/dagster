@@ -42,7 +42,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
     pipelineName = graphene.InputField(graphene.String)
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
     statuses = graphene.List(graphene.NonNull(GrapheneRunStatus))
-    assets = graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
+    assetKeys = graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
     snapshotId = graphene.InputField(graphene.String)
     updatedAfter = graphene.InputField(graphene.Float)
     updatedBefore = graphene.InputField(graphene.Float)
@@ -66,10 +66,10 @@ class GrapheneRunsFilter(graphene.InputObjectType):
         else:
             statuses = None
 
-        if self.assets:
-            assets = {asset.to_asset_key() for asset in self.assets}
+        if self.assetKeys:
+            asset_keys = [asset.to_asset_key() for asset in self.assetKeys]
         else:
-            assets = None
+            asset_keys = None
 
         updated_before = datetime_from_timestamp(self.updatedBefore) if self.updatedBefore else None
         updated_after = datetime_from_timestamp(self.updatedAfter) if self.updatedAfter else None
@@ -81,7 +81,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
             job_name=self.pipelineName,
             tags=tags,
             statuses=statuses,
-            assets=assets,
+            asset_keys=asset_keys,
             snapshot_id=self.snapshotId,
             updated_before=updated_before,
             updated_after=updated_after,
