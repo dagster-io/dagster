@@ -43,12 +43,11 @@ export const AssetAutomaterializePolicyPage = ({
   const isFirstPage = !paginationProps.hasPrevCursor;
 
   const [selectedEvaluationId, setSelectedEvaluationId] = useQueryPersistedState<
-    number | undefined
+    string | undefined
   >({
     queryKey: 'evaluation',
     decode: (raw) => {
-      const value = parseInt(raw.evaluation);
-      return isNaN(value) ? undefined : value;
+      return raw.evaluation;
     },
     encode: (raw) => {
       // Reset the selected partition

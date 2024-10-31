@@ -6,7 +6,7 @@ import {
 } from '../types/PartitionSubsetListQuery.types';
 
 export const SAMPLE_ASSET_KEY_PATH = ['foo', 'bar'];
-export const SAMPLE_EVALUATION_ID = 1;
+export const SAMPLE_EVALUATION_ID = '1';
 export const SAMPLE_NODE_UNIQUE_ID = 'a1b2c3';
 export const SAMPLE_PARTITION_KEYS = ['partition-a', 'partition-b'];
 export const SAMPLE_MANY_PARTITIONS_COUNT = 100000;

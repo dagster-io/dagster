@@ -149,7 +149,7 @@ const AssetDetailRow = ({
   $height: number;
   assetKey: AssetKeyInput;
   partitionKeys?: string[];
-  evaluationId: number;
+  evaluationId: string;
 }) => {
   const numMaterializations = partitionKeys?.length || 1;
   const queryResult = useQuery<AssetGroupAndLocationQuery, AssetGroupAndLocationQueryVariables>(

@@ -248,7 +248,7 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
 
 class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
-    evaluationId = graphene.NonNull(graphene.BigInt)
+    evaluationId = graphene.NonNull(graphene.ID)
     runIds = non_null_list(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
 
