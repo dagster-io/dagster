@@ -353,9 +353,11 @@ class AssetBackfillData(NamedTuple):
                 materialized_subset = self.materialized_subset.get_partitions_subset(
                     asset_key, asset_graph
                 )
+                print(f"THE MATERIALIZED SUBSET IS {materialized_subset}")
                 failed_subset = self.failed_and_downstream_subset.get_partitions_subset(
                     asset_key, asset_graph
                 )
+                print(f"THE FAILED SUBSET IS {failed_subset}")
                 requested_subset = self.requested_subset.get_partitions_subset(
                     asset_key, asset_graph
                 )

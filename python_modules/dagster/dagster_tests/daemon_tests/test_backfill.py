@@ -2789,3 +2789,8 @@ def test_asset_backfill_from_asset_graph_subset_with_static_and_time_partitions(
     )
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+
+
+# test: asset that will fail on the first run and pass on the second. backfill N partitions of the asset.
+# after first iter, manually run retries of the runs to have them pass
+# run next iter of the backfill and confirm that the backfill gets a successful completion state
