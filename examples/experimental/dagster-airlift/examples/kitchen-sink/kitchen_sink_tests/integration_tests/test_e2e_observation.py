@@ -53,7 +53,7 @@ def test_observation_defs_are_observed(
     dagster_home: str,
 ) -> None:
     """Test that assets can load properly, and that observations register."""
-    from kitchen_sink.dagster_defs.airflow_instance import local_airflow_instance
+    from kitchen_sink.airflow_instance import local_airflow_instance
 
     af_instance = local_airflow_instance()
     dag_ids = [dag_info.dag_id for dag_info in af_instance.list_dags()]

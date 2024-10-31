@@ -2,7 +2,7 @@ from dagster import Definitions, asset
 from dagster_airlift.core import dag_defs, task_defs
 from dagster_airlift.core.load_defs import build_full_automapped_dags_from_airflow_instance
 
-from .airflow_instance import local_airflow_instance
+from ..airflow_instance import local_airflow_instance
 
 
 @asset
