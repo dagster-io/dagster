@@ -9,7 +9,6 @@ from dbt_example.dagster_defs.constants import LAKEHOUSE_DEPS
 from dbt_example.dagster_defs.lakehouse import lakehouse_assets_def, lakehouse_existence_check
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
 
-from .dbt_cloud_assets import get_dbt_cloud_assets
 from .federated_airflow_1 import get_other_team_airflow_assets, get_other_team_airflow_sensor
 from .federated_airflow_2 import (
     get_legacy_instance_airflow_assets,
@@ -23,6 +22,7 @@ automation_sensor = AutomationConditionSensorDefinition(
     default_status=DefaultSensorStatus.RUNNING,
     minimum_interval_seconds=1,
 )
+
 defs = Definitions(
     assets=[
         lakehouse_assets_def(
@@ -35,13 +35,12 @@ defs = Definitions(
         jaffle_shop_with_upstream,
         *get_other_team_airflow_assets(),
         *get_legacy_instance_airflow_assets(),
-        get_dbt_cloud_assets(),
     ],
     asset_checks=[lakehouse_existence_check(csv_path=CSV_PATH, duckdb_path=DB_PATH)],
     sensors=[
         get_other_team_airflow_sensor(),
-        get_legacy_instance_airflow_sensor(),
         automation_sensor,
+        get_legacy_instance_airflow_sensor(),
     ],
     resources={"dbt": jaffle_shop_resource()},
 )
