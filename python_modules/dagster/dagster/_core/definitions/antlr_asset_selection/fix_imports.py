@@ -15,16 +15,6 @@ def fix_imports(file_path):
         file.writelines(updated_lines)
 
 
-def find_and_replace(file_path, target_text, replacement_text):
-    with open(file_path, "r") as file:
-        file_contents = file.read()
-
-    updated_contents = file_contents.replace(target_text, replacement_text)
-
-    with open(file_path, "w") as file:
-        file.write(updated_contents)
-
-
 def add_lines_to_start(file_path, lines_to_add):
     with open(file_path, "r") as file:
         original_content = file.readlines()
@@ -50,17 +40,5 @@ for file in files:
             file,
             [
                 "# type: ignore\n",
-                # "from .AssetSelectionListener import AssetSelectionListener\n",
-                # "from .AssetSelectionVisitor import AssetSelectionVisitor\n",
             ],
         )
-        # find_and_replace(
-        #     file,
-        #     "ParseTreeListener",
-        #     "AssetSelectionListener",
-        # )
-        # find_and_replace(
-        #     file,
-        #     "ParseTreeVisitor",
-        #     "AssetSelectionVisitor",
-        # )

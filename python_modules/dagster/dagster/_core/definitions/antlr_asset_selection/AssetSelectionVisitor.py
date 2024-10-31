@@ -6,14 +6,12 @@ from .AssetSelectionParser import AssetSelectionParser
 
 
 class AssetSelectionVisitor(ParseTreeVisitor):
-    # Visit a parse tree produced by AssetSelectionParser#AssetExpression.
-    def visitAssetExpression(self, ctx: AssetSelectionParser.AssetExpressionContext):
+    # Visit a parse tree produced by AssetSelectionParser#start.
+    def visitStart(self, ctx: AssetSelectionParser.StartContext):
         return self.visitChildren(ctx)
 
-    # Visit a parse tree produced by AssetSelectionParser#BothTraversalExpression.
-    def visitBothTraversalExpression(
-        self, ctx: AssetSelectionParser.BothTraversalExpressionContext
-    ):
+    # Visit a parse tree produced by AssetSelectionParser#AssetExpression.
+    def visitAssetExpression(self, ctx: AssetSelectionParser.AssetExpressionContext):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by AssetSelectionParser#ParenthesizedExpression.
@@ -22,27 +20,21 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     ):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by AssetSelectionParser#UpTraversalExpression.
+    def visitUpTraversalExpression(self, ctx: AssetSelectionParser.UpTraversalExpressionContext):
+        return self.visitChildren(ctx)
+
     # Visit a parse tree produced by AssetSelectionParser#AndExpression.
     def visitAndExpression(self, ctx: AssetSelectionParser.AndExpressionContext):
-        return self.visitChildren(ctx)
-
-    # Visit a parse tree produced by AssetSelectionParser#RightTraversalExpression.
-    def visitRightTraversalExpression(
-        self, ctx: AssetSelectionParser.RightTraversalExpressionContext
-    ):
-        return self.visitChildren(ctx)
-
-    # Visit a parse tree produced by AssetSelectionParser#KeyValueExpression.
-    def visitKeyValueExpression(self, ctx: AssetSelectionParser.KeyValueExpressionContext):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by AssetSelectionParser#NotExpression.
     def visitNotExpression(self, ctx: AssetSelectionParser.NotExpressionContext):
         return self.visitChildren(ctx)
 
-    # Visit a parse tree produced by AssetSelectionParser#LeftTraversalExpression.
-    def visitLeftTraversalExpression(
-        self, ctx: AssetSelectionParser.LeftTraversalExpressionContext
+    # Visit a parse tree produced by AssetSelectionParser#DownTraversalExpression.
+    def visitDownTraversalExpression(
+        self, ctx: AssetSelectionParser.DownTraversalExpressionContext
     ):
         return self.visitChildren(ctx)
 
@@ -50,8 +42,18 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     def visitOrExpression(self, ctx: AssetSelectionParser.OrExpressionContext):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by AssetSelectionParser#AttributeExpression.
+    def visitAttributeExpression(self, ctx: AssetSelectionParser.AttributeExpressionContext):
+        return self.visitChildren(ctx)
+
     # Visit a parse tree produced by AssetSelectionParser#FunctionCallExpression.
     def visitFunctionCallExpression(self, ctx: AssetSelectionParser.FunctionCallExpressionContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#UpAndDownTraversalExpression.
+    def visitUpAndDownTraversalExpression(
+        self, ctx: AssetSelectionParser.UpAndDownTraversalExpressionContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by AssetSelectionParser#traversal.
@@ -62,24 +64,26 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     def visitFunctionName(self, ctx: AssetSelectionParser.FunctionNameContext):
         return self.visitChildren(ctx)
 
-    # Visit a parse tree produced by AssetSelectionParser#TagKeyValuePair.
-    def visitTagKeyValuePair(self, ctx: AssetSelectionParser.TagKeyValuePairContext):
+    # Visit a parse tree produced by AssetSelectionParser#TagAttributeExpr.
+    def visitTagAttributeExpr(self, ctx: AssetSelectionParser.TagAttributeExprContext):
         return self.visitChildren(ctx)
 
-    # Visit a parse tree produced by AssetSelectionParser#OwnerKeyValuePair.
-    def visitOwnerKeyValuePair(self, ctx: AssetSelectionParser.OwnerKeyValuePairContext):
+    # Visit a parse tree produced by AssetSelectionParser#OwnerAttributeExpr.
+    def visitOwnerAttributeExpr(self, ctx: AssetSelectionParser.OwnerAttributeExprContext):
         return self.visitChildren(ctx)
 
-    # Visit a parse tree produced by AssetSelectionParser#GroupKeyValuePair.
-    def visitGroupKeyValuePair(self, ctx: AssetSelectionParser.GroupKeyValuePairContext):
+    # Visit a parse tree produced by AssetSelectionParser#GroupAttributeExpr.
+    def visitGroupAttributeExpr(self, ctx: AssetSelectionParser.GroupAttributeExprContext):
         return self.visitChildren(ctx)
 
-    # Visit a parse tree produced by AssetSelectionParser#KindKeyValuePair.
-    def visitKindKeyValuePair(self, ctx: AssetSelectionParser.KindKeyValuePairContext):
+    # Visit a parse tree produced by AssetSelectionParser#KindAttributeExpr.
+    def visitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         return self.visitChildren(ctx)
 
-    # Visit a parse tree produced by AssetSelectionParser#RepoKeyValuePair.
-    def visitRepoKeyValuePair(self, ctx: AssetSelectionParser.RepoKeyValuePairContext):
+    # Visit a parse tree produced by AssetSelectionParser#CodeLocationAttributeExpr.
+    def visitCodeLocationAttributeExpr(
+        self, ctx: AssetSelectionParser.CodeLocationAttributeExprContext
+    ):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by AssetSelectionParser#value.
