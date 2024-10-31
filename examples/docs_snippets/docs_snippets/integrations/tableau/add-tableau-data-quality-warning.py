@@ -1,6 +1,6 @@
 from dagster_tableau import (
     TableauCloudWorkspace,
-    build_tableau_executable_assets_definition,
+    build_tableau_materializable_assets_definition,
     load_tableau_asset_specs,
 )
 
@@ -44,28 +44,28 @@ tableau_specs = load_tableau_asset_specs(
     workspace=tableau_workspace,
 )
 
-non_executable_asset_specs = [
+external_asset_specs = [
     spec
     for spec in tableau_specs
     if spec.tags.get("dagster-tableau/asset_type") == "data_source"
 ]
 
-executable_asset_specs = [
+materializable_asset_specs = [
     spec
     for spec in tableau_specs
     if spec.tags.get("dagster-tableau/asset_type") in ["dashboard", "sheet"]
 ]
 
-# Pass the sensor, Tableau resource, upstream asset, Tableau assets specs and executable assets definition at once
+# Pass the sensor, Tableau resource, upstream asset, Tableau assets specs and materializable assets definition at once
 defs = dg.Definitions(
     assets=[
         upstream_asset,
-        build_tableau_executable_assets_definition(
+        build_tableau_materializable_assets_definition(
             resource_key="tableau",
-            specs=executable_asset_specs,
+            specs=materializable_asset_specs,
             refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
         ),
-        *non_executable_asset_specs,
+        *external_asset_specs,
     ],
     sensors=[tableau_run_failure_sensor],
     resources={"tableau": tableau_workspace},

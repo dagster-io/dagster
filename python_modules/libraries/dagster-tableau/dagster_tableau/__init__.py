@@ -1,7 +1,7 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
 from dagster_tableau.assets import (
-    build_tableau_executable_assets_definition as build_tableau_executable_assets_definition,
+    build_tableau_materializable_assets_definition as build_tableau_materializable_assets_definition,
 )
 from dagster_tableau.resources import (
     TableauCloudWorkspace as TableauCloudWorkspace,
