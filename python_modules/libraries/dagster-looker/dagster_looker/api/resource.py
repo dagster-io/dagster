@@ -177,7 +177,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
 
     def defs_from_state(self, state: Mapping[str, Any]) -> Definitions:
         looker_instance_data = LookerInstanceData.from_state(self.looker_resource.get_sdk(), state)
-        translator = self.translator_cls()
+        translator = self.translator_cls(looker_instance_data)
         return self._build_defs_from_looker_instance_data(looker_instance_data, translator)
 
     def _build_defs_from_looker_instance_data(
@@ -187,14 +187,20 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     ) -> Definitions:
         explores = [
             dagster_looker_translator.get_asset_spec(
-                LookerStructureData(structure_type=LookerStructureType.EXPLORE, data=lookml_explore)
+                LookerStructureData(
+                    structure_type=LookerStructureType.EXPLORE,
+                    data=lookml_explore,
+                    base_url=self.looker_resource.base_url,
+                ),
             )
             for lookml_explore in looker_instance_data.explores_by_id.values()
         ]
         views = [
             dagster_looker_translator.get_asset_spec(
                 LookerStructureData(
-                    structure_type=LookerStructureType.DASHBOARD, data=looker_dashboard
+                    structure_type=LookerStructureType.DASHBOARD,
+                    data=looker_dashboard,
+                    base_url=self.looker_resource.base_url,
                 )
             )
             for looker_dashboard in looker_instance_data.dashboards_by_id.values()
@@ -335,7 +341,14 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
                 )
             )
 
+        user_ids_to_fetch = set()
+        for dashboard in dashboards_by_id.values():
+            if dashboard.user_id:
+                user_ids_to_fetch.update(dashboard.user_id)
+        users = sdk.search_users(id=",".join(user_ids_to_fetch))
+
         return LookerInstanceData(
             explores_by_id=explores_by_id,
             dashboards_by_id=dashboards_by_id,
+            users_by_id={check.not_none(user.id): user for user in users},
         )
