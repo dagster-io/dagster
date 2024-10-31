@@ -1,9 +1,9 @@
-from dagster import AssetSpec, Definitions, external_assets_from_specs
+from dagster import AssetsDefinition, AssetSpec, Definitions
 
 asset_one = AssetSpec("asset_one")
 asset_two = AssetSpec("asset_two", deps=[asset_one])
 
-defs = Definitions(assets=external_assets_from_specs([asset_one, asset_two]))
+defs = Definitions(assets=[AssetsDefinition(specs=[asset_one, asset_two])])
 
 
 def do_report_runless_asset_event(instance) -> None:

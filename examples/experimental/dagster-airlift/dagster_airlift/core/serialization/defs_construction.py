@@ -1,14 +1,8 @@
 from typing import AbstractSet, Any, Callable, Dict, Mapping, Set
 
-from dagster import (
-    AssetKey,
-    AssetSpec,
-    Definitions,
-    JsonMetadataValue,
-    UrlMetadataValue,
-    external_asset_from_spec,
-)
+from dagster import AssetKey, AssetSpec, Definitions, JsonMetadataValue, UrlMetadataValue
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.storage.tags import KIND_PREFIX
 
 from dagster_airlift.constants import AUTOMAPPED_TASK_METADATA_KEY

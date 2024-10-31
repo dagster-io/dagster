@@ -238,10 +238,6 @@ from dagster._core.definitions.executor_definition import (
     multiple_process_executor_requirements as multiple_process_executor_requirements,
     multiprocess_executor as multiprocess_executor,
 )
-from dagster._core.definitions.external_asset import (
-    external_asset_from_spec as external_asset_from_spec,
-    external_assets_from_specs as external_assets_from_specs,
-)
 from dagster._core.definitions.freshness_policy import FreshnessPolicy as FreshnessPolicy
 from dagster._core.definitions.graph_definition import GraphDefinition as GraphDefinition
 from dagster._core.definitions.hook_definition import HookDefinition as HookDefinition
