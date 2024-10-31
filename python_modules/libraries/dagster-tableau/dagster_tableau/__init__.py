@@ -1,5 +1,8 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
+from dagster_tableau.asset_utils import (
+    parse_tableau_external_and_materializable_asset_specs as parse_tableau_external_and_materializable_asset_specs,
+)
 from dagster_tableau.assets import (
     build_tableau_materializable_assets_definition as build_tableau_materializable_assets_definition,
 )
