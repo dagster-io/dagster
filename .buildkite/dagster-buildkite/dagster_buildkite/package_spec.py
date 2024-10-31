@@ -125,6 +125,7 @@ class PackageSpec:
     queue: Optional[BuildkiteQueue] = None
     run_pytest: bool = True
     always_run_if: Optional[Callable[[], bool]] = None
+    skip_if: Optional[Callable[[], str]] = None
 
     def __post_init__(self):
         if not self.name:
@@ -243,13 +244,17 @@ class PackageSpec:
 
     @property
     def skip_reason(self) -> Optional[str]:
-        # Memoize so we don't log twice
-        if self._should_skip is False:
+        if self._should_skip is None:
             return None
 
+        # Memoize so we don't log twice
         if self.always_run_if and self.always_run_if():
             self._should_skip = False
             return None
+        if self.skip_if and self.skip_if():
+            self._skip_reason = self.skip_if()
+            self._should_skip = True
+            return self._skip_reason
 
         if self._skip_reason:
             return self._skip_reason
