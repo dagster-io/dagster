@@ -23,6 +23,28 @@ query GetModelsQuery($environmentId: BigInt!, $first: Int) {
 }
 """
 
+GET_DBT_SOURCES_QUERY = """
+query GetSourcesQuery($environmentId: BigInt!, $first: Int) {
+  environment(id: $environmentId) {
+    definition {
+      sources(first: $first) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        edges {
+          node {
+            schema
+            uniqueId
+            tags
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
 VERIFICATION_QUERY = """
 query VerificationQuery($environmentId: BigInt!) {
   environment(id: $environmentId) {

@@ -393,7 +393,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/experimental/dagster-dlift/kitchen-sink",
         skip_if=skip_if_not_dlift_commit,
-        name=":dbt: :sink: Dbt Cloud-Lift Kitchen Sink",
+        name=":dbt: dlift live",
         env_vars=[
             "KS_DBT_CLOUD_ACCOUNT_ID",
             "KS_DBT_CLOUD_TOKEN",
