@@ -215,7 +215,8 @@ class DagsterPowerBITranslator:
         ]
         url = data.properties.get("webUrl")
 
-        for table in data.properties.get("tables", []):
+        tables = data.properties.get("tables")
+        for table in tables or []:
             source = table.get("source")
             source_key = _attempt_parse_m_query_source(source)
             if source_key:
@@ -227,7 +228,8 @@ class DagsterPowerBITranslator:
             metadata={
                 **PowerBIMetadataSet(
                     web_url=MetadataValue.url(url) if url else None, id=data.properties["id"]
-                )
+                ),
+                **({"tables": MetadataValue.json(tables)} if tables else {}),
             },
             tags={**PowerBITagSet(asset_type="semantic_model")},
             kinds={"powerbi", "semantic model"},
