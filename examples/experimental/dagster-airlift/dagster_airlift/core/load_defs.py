@@ -6,9 +6,9 @@ from dagster import (
     AssetSpec,
     Definitions,
     _check as check,
-    external_asset_from_spec,
 )
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
+from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_airlift.core.airflow_instance import AirflowInstance

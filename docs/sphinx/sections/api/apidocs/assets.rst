@@ -51,13 +51,6 @@ Refer to the `External asset dependencies <https://docs.dagster.io/concepts/asse
 
 .. autoclass:: ObserveResult
 
-External assets
----------------
-
-Refer to the `External assets <https://docs.dagster.io/concepts/assets/external-assets>`_ documentation for more information.
-
-.. autofunction:: external_assets_from_specs
-
 Dependencies
 ------------
 
