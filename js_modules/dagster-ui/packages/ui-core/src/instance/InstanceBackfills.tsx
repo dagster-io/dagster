@@ -1,19 +1,22 @@
 import {
+  Alert,
   Box,
   Colors,
   CursorPaginationControls,
   NonIdealState,
   Spinner,
 } from '@dagster-io/ui-components';
+import {Link} from 'react-router-dom';
 
 import {gql} from '../apollo-client';
 import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from './backfill/BackfillTable';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,
 } from './types/InstanceBackfills.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -103,6 +106,42 @@ export const InstanceBackfills = () => {
   const isDaemonHealthy = useIsBackfillDaemonHealthy();
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {loading, data} = queryResult;
+  const [didDismissBackfillPageAlert, setDidDismissBackfillPageAlert] =
+    useStateWithStorage<boolean>('new_backfill_location_alert', (json) => !!json);
+
+  interface AlertProps {
+    setDidDismissBackfillPageAlert: (didDismissBackfillPageAlert: boolean) => void;
+  }
+
+  const BackfillPageDeprecationAlert = (props: AlertProps) => {
+    const {setDidDismissBackfillPageAlert} = props;
+
+    return (
+      <Box padding={8} border="top-and-bottom">
+        <Alert
+          title={
+            <>
+              <span>Backfills are moving:</span>
+              <span style={{fontWeight: 'normal'}}>
+                {' '}
+                We&apos;re incorporating backfills into the <Link to="/runs/">Runs</Link> page to
+                unify the UI and provide one page to see all of your executions. The Backfills page
+                will be removed in a future release.{' '}
+                <a
+                  href="https://github.com/dagster-io/dagster/discussions/24898"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Share feedback
+                </a>{' '}
+              </span>
+            </>
+          }
+          onClose={() => setDidDismissBackfillPageAlert(true)}
+        />
+      </Box>
+    );
+  };
 
   const content = () => {
     if (loading && !data) {
@@ -167,6 +206,11 @@ export const InstanceBackfills = () => {
 
   return (
     <>
+      {!didDismissBackfillPageAlert ? (
+        <BackfillPageDeprecationAlert
+          setDidDismissBackfillPageAlert={setDidDismissBackfillPageAlert}
+        />
+      ) : null}
       <Box
         padding={{vertical: 12, horizontal: 20}}
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
