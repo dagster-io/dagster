@@ -1,6 +1,7 @@
 from typing import Any, Dict
 
-from dagster import Definitions, external_assets_from_specs
+from dagster import Definitions
+from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster_dbt.asset_specs import build_dbt_asset_specs
 
 
