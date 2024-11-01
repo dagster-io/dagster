@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping, Optional, Set
+from typing import Any, Iterable, Mapping, Optional, Set, Union
 
 from dagster import AssetKey, AutoMaterializePolicy, FreshnessPolicy, MetadataValue
 from dagster._annotations import public
@@ -99,7 +99,9 @@ class DagsterSlingTranslator:
         return AssetKey([self.target_prefix] + sanitized_components)
 
     @public
-    def get_deps_asset_key(self, stream_definition: Mapping[str, Any]) -> Iterable[AssetKey]:
+    def get_deps_asset_key(
+        self, stream_definition: Mapping[str, Any]
+    ) -> Union[AssetKey, Iterable[AssetKey]]:
         """A function that takes a stream name from a Sling replication config and returns a
         Dagster AssetKey for the dependencies of the replication stream.
 

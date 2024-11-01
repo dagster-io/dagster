@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Callable, Iterable, Mapping, Optional
+from typing import Any, Callable, Iterable, Mapping, Optional, Union
 
 from dagster import (
     AssetsDefinition,
@@ -9,6 +9,7 @@ from dagster import (
     _check as check,
     multi_asset,
 )
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 
@@ -116,6 +117,12 @@ def sling_assets(
         or DagsterSlingTranslator()
     )
 
+    def _coerce_iterator(val: Union[AssetKey, Iterable[AssetKey]]) -> Iterable[AssetKey]:
+        if isinstance(val, AssetKey):
+            return [val]
+        else:
+            return val
+
     return multi_asset(
         name=name,
         partitions_def=partitions_def,
@@ -125,7 +132,7 @@ def sling_assets(
         specs=[
             AssetSpec(
                 key=dagster_sling_translator.get_asset_key(stream),
-                deps=dagster_sling_translator.get_deps_asset_key(stream),
+                deps=_coerce_iterator(dagster_sling_translator.get_deps_asset_key(stream)),
                 description=dagster_sling_translator.get_description(stream),
                 metadata={
                     **dagster_sling_translator.get_metadata(stream),
