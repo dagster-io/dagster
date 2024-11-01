@@ -4,8 +4,8 @@ from pathlib import Path
 from dagster import AssetExecutionContext, AssetSpec, DailyPartitionsDefinition, Definitions
 from dagster._time import get_current_datetime_midnight
 from dagster_airlift.core import (
+    AirflowBasicAuthBackend,
     AirflowInstance,
-    BasicAuthBackend,
     assets_with_task_mappings,
     build_defs_from_airflow_instance,
 )
@@ -45,7 +45,7 @@ mapped_assets = assets_with_task_mappings(
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
-        auth_backend=BasicAuthBackend(
+        auth_backend=AirflowBasicAuthBackend(
             webserver_url="http://localhost:8080",
             username="admin",
             password="admin",
