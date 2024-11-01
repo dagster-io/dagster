@@ -5,6 +5,9 @@ import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
 import {
+  buildAsset,
+  buildAssetConnection,
+  buildAssetKey,
   buildPipeline,
   buildRepository,
   buildRepositoryLocation,
@@ -17,6 +20,7 @@ import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceConte
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {DagsterTag} from '../RunTag';
 import {
+  ASSETS_QUERY,
   RUN_TAG_KEYS_QUERY,
   RunFilterToken,
   RunsFilterInputProps,
@@ -26,7 +30,7 @@ import {
   useTagDataFilterValues,
 } from '../RunsFilterInput';
 import {buildRunTagValuesQueryMockedResponse} from '../__fixtures__/RunsFilterInput.fixtures';
-import {RunTagKeysQuery} from '../types/RunsFilterInput.types';
+import {AssetsQuery, RunTagKeysQuery} from '../types/RunsFilterInput.types';
 
 const workspaceMocks = buildWorkspaceMocks([
   buildWorkspaceLocationEntry({
@@ -56,6 +60,29 @@ const runTagKeysMock: MockedResponse<RunTagKeysQuery> = {
       __typename: 'Query',
       runTagKeysOrError: buildRunTagKeys({
         keys: [DagsterTag.Partition, DagsterTag.PartitionSet],
+      }),
+    },
+  },
+};
+
+const assetsMock: MockedResponse<AssetsQuery> = {
+  request: {
+    query: ASSETS_QUERY,
+  },
+  result: {
+    data: {
+      __typename: 'Query',
+      assetsOrError: buildAssetConnection({
+        nodes: [
+          buildAsset({
+            id: 'test.py.repo.["asset1"]',
+            key: buildAssetKey({path: ['asset1']}),
+          }),
+          buildAsset({
+            id: 'test.py.repo.["asset2"]',
+            key: buildAssetKey({path: ['asset2']}),
+          }),
+        ],
       }),
     },
   },
@@ -278,5 +305,29 @@ describe('<RunFilterInput  />', () => {
     expect(onChange).toHaveBeenCalledWith([
       {token: 'tag', value: `${DagsterTag.PartitionSet}=set1`},
     ]);
+  });
+
+  it('should call onChange with updated tokens when ASSET filter is updated', async () => {
+    const onChange = jest.fn();
+    const tokens: RunFilterToken[] = [];
+    const {getByText} = render(
+      <TestRunsFilterInput
+        tokens={tokens}
+        onChange={onChange}
+        enabledFilters={['asset']}
+        mocks={[assetsMock]}
+      />,
+    );
+
+    onChange.mockClear();
+
+    await userEvent.click(getByText('Filter'));
+    await userEvent.click(getByText('Asset'));
+
+    await waitFor(async () => {
+      await userEvent.click(getByText('asset1'));
+    });
+
+    expect(onChange).toHaveBeenCalledWith([{token: 'asset', value: 'asset1'}]);
   });
 });
