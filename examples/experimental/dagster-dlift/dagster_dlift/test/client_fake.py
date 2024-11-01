@@ -1,6 +1,7 @@
-from typing import Any, Dict, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Dict, Mapping, NamedTuple, Optional
 
 from dagster_dlift.client import DbtCloudClient
+from dagster_dlift.translator import DbtCloudContentType
 
 
 class ExpectedDiscoveryApiRequest(NamedTuple):
@@ -50,7 +51,7 @@ def build_definition_response(inner: Mapping[str, Any]) -> Mapping[str, Any]:
     return {"data": {"environment": {"definition": inner}}}
 
 
-def build_edge(unique_id: str, parents: Optional[Sequence[str]] = None) -> Mapping[str, Any]:
+def build_edge(unique_id: str, parents: Optional[AbstractSet[str]] = None) -> Mapping[str, Any]:
     node_dict: Dict[str, Any] = {"uniqueId": unique_id}
     if parents is not None:
         node_dict["parents"] = [{"uniqueId": parent} for parent in parents]
@@ -61,38 +62,18 @@ def build_page_info(has_next_page: bool = False, start_cursor: int = 0) -> Mappi
     return {"hasNextPage": has_next_page, "endCursor": start_cursor + 1}
 
 
-def build_model_response(
-    unique_id: str, parents: Sequence[str], has_next_page: bool = False, start_cursor: int = 0
+def build_response_for_type(
+    content_type: DbtCloudContentType,
+    unique_id: str,
+    parents: Optional[AbstractSet[str]] = None,
+    has_next_page: bool = False,
+    start_cursor: int = 0,
 ) -> Mapping[str, Any]:
+    # plural lowercase string. IE "models", "sources", "tests"
+    content_type_gql_str = f"{content_type.value.lower()}s"
     return build_definition_response(
         {
-            "models": {
-                "pageInfo": build_page_info(has_next_page, start_cursor),
-                "edges": [build_edge(unique_id, parents)],
-            }
-        }
-    )
-
-
-def build_source_response(
-    unique_id: str, has_next_page: bool = False, start_cursor: int = 0
-) -> Mapping[str, Any]:
-    return build_definition_response(
-        {
-            "sources": {
-                "pageInfo": build_page_info(has_next_page, start_cursor),
-                "edges": [build_edge(unique_id)],
-            }
-        }
-    )
-
-
-def build_test_response(
-    unique_id: str, parents: Sequence[str], has_next_page: bool = False, start_cursor: int = 0
-) -> Mapping[str, Any]:
-    return build_definition_response(
-        {
-            "tests": {
+            content_type_gql_str: {
                 "pageInfo": build_page_info(has_next_page, start_cursor),
                 "edges": [build_edge(unique_id, parents)],
             }
