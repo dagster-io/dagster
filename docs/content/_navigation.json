@@ -1413,6 +1413,10 @@
             "path": "/_apidocs/libraries/dagster-pipes"
           },
           {
+            "title": "Airlift (dagster-airlift)",
+            "path": "/_apidocs/libraries/dagster-airlift"
+          },
+          {
             "title": "Airbyte (dagster-airbyte)",
             "path": "/_apidocs/libraries/dagster-airbyte"
           },
