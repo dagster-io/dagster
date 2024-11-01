@@ -320,18 +320,21 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
 
         logger.debug("Fetching models and associated explore ids")
         # Get explore names from models
+        all_models = sdk.all_lookml_models(
+            fields=",".join(
+                [
+                    "name",
+                    "explores",
+                ]
+            )
+        )
         explores_for_model = {
             model.name: [explore.name for explore in (model.explores or []) if explore.name]
-            for model in sdk.all_lookml_models(
-                fields=",".join(
-                    [
-                        "name",
-                        "explores",
-                    ]
-                )
-            )
+            for model in all_models
             if model.name
         }
+        num_explores = sum(len(explores) for explores in explores_for_model.values())
+        logger.debug(f"Found {len(all_models)} models with {num_explores} explores")
 
         if self.looker_filter.only_fetch_explores_used_in_dashboards:
             used_explores = set()
@@ -347,6 +350,10 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
                 ]
                 for model_name, explore_names in explores_for_model.items()
             }
+            num_explores = sum(len(explores) for explores in explores_for_model.values())
+            logger.debug(
+                f"Filtering to {len(explores_for_model.keys())} models with {num_explores} explores"
+            )
 
         def fetch_explore(model_name, explore_name) -> Optional[Tuple[str, "LookmlModelExplore"]]:
             try:
