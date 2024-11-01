@@ -1,4 +1,5 @@
 from dagster_dlift.client import DbtCloudClient
+from dagster_dlift.utils import get_job_name
 from dlift_kitchen_sink.constants import EXPECTED_TAG
 from dlift_kitchen_sink.instance import get_instance
 
@@ -84,3 +85,28 @@ def test_get_tests(instance: DbtCloudClient, environment_id: int) -> None:
         "unique_stg_customers_customer_id",
         "unique_stg_orders_order_id",
     }
+
+
+def test_cloud_job_apis(instance: DbtCloudClient, environment_id: int, project_id: int) -> None:
+    """Tests that we can create / destroy a dagster job."""
+    job_id = instance.create_dagster_job(project_id, environment_id)
+    job_info = instance.get_job_info_by_id(job_id)
+    assert job_info["data"]["name"] == get_job_name(environment_id, project_id)
+    job_infos = instance.list_jobs(environment_id=environment_id)
+    assert job_id in {job_info["id"] for job_info in job_infos}
+
+    response = instance.trigger_job(job_id, steps=["dbt run --select tag:test"])
+    run_id = response["data"]["id"]
+    run_status = instance.poll_for_run_completion(run_id)
+    assert run_status == 10  # Indicates success
+    run_results = instance.get_run_results_json(run_id)
+    assert {result["unique_id"] for result in run_results["results"]} == {
+        "model.test_environment.customers",
+        "model.test_environment.stg_customers",
+        "model.test_environment.stg_orders",
+    }
+    instance.destroy_dagster_job(
+        project_id=project_id, environment_id=environment_id, job_id=job_id
+    )
+    job_infos = instance.list_jobs(environment_id=environment_id)
+    assert job_id not in {job_info["id"] for job_info in job_infos}
