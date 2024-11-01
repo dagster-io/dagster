@@ -247,15 +247,36 @@ class GrapheneAsset(graphene.ObjectType):
         after_timestamp = parse_timestamp(afterTimestampMillis)
         if partitionInLast and self._definition:
             partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
+            fetch_latest_by_partition = (
+                beforeTimestampMillis is None and afterTimestampMillis is None
+            )
+        else:
+            fetch_latest_by_partition = False
 
-        events = get_asset_materializations(
-            graphene_info,
-            self.key,
-            partitions=partitions,
-            before_timestamp=before_timestamp,
-            after_timestamp=after_timestamp,
-            limit=limit,
-        )
+        if fetch_latest_by_partition:
+            latest_storage_ids = sorted(
+                (
+                    graphene_info.context.instance.event_log_storage.get_latest_storage_id_by_partition(
+                        self._asset_node_snap.asset_key,
+                        DagsterEventType.ASSET_MATERIALIZATION,
+                        set(partitions) if partitions else None,
+                    )
+                ).values()
+            )
+            events = get_asset_materializations(
+                graphene_info,
+                asset_key=self.key,
+                storage_ids=latest_storage_ids,
+            )
+        else:
+            events = get_asset_materializations(
+                graphene_info,
+                self.key,
+                partitions=partitions,
+                before_timestamp=before_timestamp,
+                after_timestamp=after_timestamp,
+                limit=limit,
+            )
         return [GrapheneMaterializationEvent(event=event) for event in events]
 
     def resolve_assetObservations(
