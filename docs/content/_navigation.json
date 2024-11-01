@@ -917,6 +917,10 @@
         "path": "/integrations/airlift",
         "children": [
           {
+            "title": "Airflow Migration Tutorial",
+            "path": "/integrations/airlift/tutorial"
+          },
+          {
             "title": "Reference",
             "path": "/integrations/airlift/reference"
           },
