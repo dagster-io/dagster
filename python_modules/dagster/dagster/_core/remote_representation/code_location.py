@@ -147,11 +147,7 @@ class CodeLocation(AbstractContextManager):
         an op selection is specified, which requires access to the underlying JobDefinition
         to generate the subsetted pipeline snapshot.
         """
-        if (
-            not selector.op_selection
-            and not selector.asset_selection
-            and not selector.asset_check_selection
-        ):
+        if not selector.is_subset_selection:
             return self.get_repository(selector.repository_name).get_full_job(selector.job_name)
 
         repo_handle = self.get_repository(selector.repository_name).handle
@@ -258,7 +254,9 @@ class CodeLocation(AbstractContextManager):
             # assets, so we get the partition names using the assets.
             return PartitionNamesSnap(
                 partition_names=remote_repo.get_partition_names_for_asset_job(
-                    job_name=job_name, selected_asset_keys=selected_asset_keys, instance=instance
+                    job_name=job_name,
+                    selected_asset_keys=selected_asset_keys,
+                    instance=instance,
                 )
             )
 
@@ -392,7 +390,10 @@ class InProcessCodeLocation(CodeLocation):
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name
 
         self._repositories: Dict[str, RemoteRepository] = {}
-        for repo_name, repo_def in self._loaded_repositories.definitions_by_name.items():
+        for (
+            repo_name,
+            repo_def,
+        ) in self._loaded_repositories.definitions_by_name.items():
             self._repositories[repo_name] = RemoteRepository(
                 RepositorySnap.from_def(repo_def),
                 RepositoryHandle.from_location(repository_name=repo_name, code_location=self),
@@ -985,7 +986,11 @@ class GrpcServerCodeLocation(CodeLocation):
         check.sequence_param(partition_names, "partition_names", of_type=str)
 
         return sync_get_external_partition_set_execution_param_data_grpc(
-            self.client, repository_handle, partition_set_name, partition_names, instance
+            self.client,
+            repository_handle,
+            partition_set_name,
+            partition_names,
+            instance,
         )
 
     def get_notebook_data(self, notebook_path: str) -> bytes:

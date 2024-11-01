@@ -24,6 +24,7 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._config.snap import ConfigTypeSnap
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.remote_asset_graph import RemoteRepositoryAssetNode
 from dagster._core.definitions.selector import (
     JobSelector,
     JobSubsetSelector,
@@ -413,6 +414,46 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     def get_dagster_library_versions(self, location_name: str) -> Optional[Mapping[str, str]]:
         return self.get_code_location(location_name).get_dagster_library_versions()
+
+    def get_schedules_targeting_job(
+        self,
+        selector: Union[JobSubsetSelector, JobSelector],
+    ) -> Sequence[RemoteSchedule]:
+        repository = self.get_code_location(selector.location_name).get_repository(
+            selector.repository_name
+        )
+        return repository.schedules_by_job_name.get(selector.job_name, [])
+
+    def get_sensors_targeting_job(
+        self,
+        selector: Union[JobSubsetSelector, JobSelector],
+    ) -> Sequence[RemoteSensor]:
+        repository = self.get_code_location(selector.location_name).get_repository(
+            selector.repository_name
+        )
+        return repository.sensors_by_job_name.get(selector.job_name, [])
+
+    def get_assets_in_job(
+        self,
+        selector: Union[JobSubsetSelector, JobSelector],
+    ) -> Sequence[RemoteRepositoryAssetNode]:
+        if not self.has_code_location(selector.location_name):
+            return []
+
+        location = self.get_code_location(selector.location_name)
+        if not location.has_repository(selector.repository_name):
+            return []
+
+        repository = location.get_repository(selector.repository_name)
+        snaps = repository.get_asset_node_snaps(job_name=selector.job_name)
+
+        # use repository scoped nodes to match existing behavior,
+        # easily switched to workspace scope nodes by using self.asset_graph
+        return [
+            repository.asset_graph.get(snap.asset_key)
+            for snap in snaps
+            if repository.asset_graph.has(snap.asset_key)
+        ]
 
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):

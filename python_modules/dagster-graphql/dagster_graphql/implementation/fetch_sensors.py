@@ -153,22 +153,17 @@ def reset_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) ->
     return GrapheneSensor(sensor, sensor_state)
 
 
-def get_sensors_for_pipeline(
-    graphene_info: ResolveInfo, pipeline_selector: JobSubsetSelector
+def get_sensors_for_job(
+    graphene_info: ResolveInfo, selector: JobSubsetSelector
 ) -> Sequence["GrapheneSensor"]:
     from dagster_graphql.schema.sensors import GrapheneSensor
 
-    check.inst_param(pipeline_selector, "pipeline_selector", JobSubsetSelector)
+    check.inst_param(selector, "selector", JobSubsetSelector)
 
-    location = graphene_info.context.get_code_location(pipeline_selector.location_name)
-    repository = location.get_repository(pipeline_selector.repository_name)
-    sensors = repository.get_sensors()
+    sensors = graphene_info.context.get_sensors_targeting_job(selector)
 
     results = []
     for sensor in sensors:
-        if pipeline_selector.job_name not in [target.job_name for target in sensor.get_targets()]:
-            continue
-
         sensor_state = graphene_info.context.instance.get_instigator_state(
             sensor.get_remote_origin_id(),
             sensor.selector_id,

@@ -51,6 +51,10 @@ class JobSubsetSelector(IHaveNew):
             "solidSelection": self.op_selection,
         }
 
+    @property
+    def is_subset_selection(self) -> bool:
+        return bool(self.op_selection or self.asset_selection or self.asset_check_selection)
+
     def with_op_selection(self, op_selection: Optional[Sequence[str]]) -> "JobSubsetSelector":
         check.invariant(
             self.op_selection is None,
@@ -59,6 +63,13 @@ class JobSubsetSelector(IHaveNew):
         )
         return JobSubsetSelector(
             self.location_name, self.repository_name, self.job_name, op_selection
+        )
+
+    @property
+    def repository_selector(self) -> "RepositorySelector":
+        return RepositorySelector(
+            location_name=self.location_name,
+            repository_name=self.repository_name,
         )
 
 
@@ -107,6 +118,13 @@ class JobSelector(IHaveNew):
             location_name=graphql_data["repositoryLocationName"],
             repository_name=graphql_data["repositoryName"],
             job_name=graphql_data["jobName"],
+        )
+
+    @property
+    def repository_selector(self) -> "RepositorySelector":
+        return RepositorySelector(
+            location_name=self.location_name,
+            repository_name=self.repository_name,
         )
 
 
