@@ -3,6 +3,7 @@ import sys
 
 from liquid import Environment
 from liquid.ast import Node
+from liquid.builtin.literal import LiteralNode, Token
 from liquid.parse import expect, get_parser
 from liquid.stream import TokenStream
 from liquid.tag import Tag
@@ -39,8 +40,33 @@ class ConditionTag(Tag):
         return block
 
 
+TAG_DATE_START = sys.intern("date_start")
+TAG_DATE_END = sys.intern("date_end")
+
+
+class DateTag(Tag):
+    def __init__(self, env: Environment):
+        super().__init__(env)
+        self.parser = get_parser(self.env)
+
+    def parse(self, stream: TokenStream) -> Node:
+        expect(stream, TOKEN_TAG, value=self.name)
+        stream.next_token()
+        return LiteralNode(tok=Token(1, "date", "'2021-01-01'"))
+
+
+class DateStartTag(DateTag):
+    name = TAG_DATE_START
+
+
+class DateEndTag(DateTag):
+    name = TAG_DATE_END
+
+
 env = Environment()
 env.add_tag(ConditionTag)
+env.add_tag(DateStartTag)
+env.add_tag(DateEndTag)
 
 
 def best_effort_render_liquid_sql(model_name: str, filename: str, sql: str) -> str:
