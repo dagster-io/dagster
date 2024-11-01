@@ -50,4 +50,4 @@ def get_or_create_job(environment_id: int, project_id: int, client: UnscopedDbtC
             for job in client.list_jobs(environment_id=environment_id)
             if job["name"] == expected_job_name
         )
-    return client.create_dagster_job(project_id, environment_id)
+    return client.create_job(project_id, environment_id, expected_job_name)

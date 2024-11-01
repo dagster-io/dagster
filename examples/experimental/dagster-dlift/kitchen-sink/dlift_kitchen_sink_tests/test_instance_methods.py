@@ -88,7 +88,9 @@ def test_cloud_job_apis(
     instance: UnscopedDbtCloudClient, environment_id: int, project_id: int
 ) -> None:
     """Tests that we can create / destroy a dagster job."""
-    job_id = instance.create_dagster_job(project_id, environment_id)
+    job_id = instance.create_job(
+        project_id, environment_id, get_job_name(environment_id, project_id)
+    )
     job_info = instance.get_job_info_by_id(job_id)
     assert job_info["data"]["name"] == get_job_name(environment_id, project_id)
     job_infos = instance.list_jobs(environment_id=environment_id)
@@ -104,8 +106,6 @@ def test_cloud_job_apis(
         "model.test_environment.stg_customers",
         "model.test_environment.stg_orders",
     }
-    instance.destroy_dagster_job(
-        project_id=project_id, environment_id=environment_id, job_id=job_id
-    )
+    instance.destroy_dagster_job(job_id=job_id)
     job_infos = instance.list_jobs(environment_id=environment_id)
     assert job_id not in {job_info["id"] for job_info in job_infos}
