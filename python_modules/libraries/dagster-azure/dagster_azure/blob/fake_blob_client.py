@@ -13,10 +13,11 @@ class FakeBlobServiceClient:
     Wraps a ``mock.MagicMock``. Containers are implemented using an in-memory dict.
     """
 
-    def __init__(self, account_name, credential="fake-creds"):
+    def __init__(self, account_name, credential="fake-creds", cloud_type="public"):
         self._account_name = account_name
         self._credential = mock.MagicMock()
         self._credential.account_key = credential
+        self._cloud_type = cloud_type
         self._containers = {}
 
     @property
@@ -61,6 +62,10 @@ class FakeBlobContainerClient:
     @property
     def container_name(self):
         return self._container_name
+    
+    @property
+    def cloud_type(self):
+        return self._cloud_type
 
     def keys(self):
         return self._container.keys()
