@@ -293,7 +293,7 @@ def test_asset_deps_exception_derived_table(caplog: pytest.LogCaptureFixture) ->
     assert spec.key == AssetKey(["view", "exception_derived_table"])
     assert not spec.deps
     assert (
-        "Failed to optimize derived table SQL for view `exception_derived_table`"
+        "Failed to parse derived table SQL for view `exception_derived_table`"
         " in file `exception_derived_table.view.lkml`."
         " The upstream dependencies for the view will be omitted."
     ) in caplog.text
