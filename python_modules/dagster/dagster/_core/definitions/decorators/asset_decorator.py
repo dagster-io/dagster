@@ -22,7 +22,11 @@ from dagster._annotations import (
 )
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
+from dagster._core.definitions.asset_dep import (
+    AssetDep,
+    CoercibleToAssetDep,
+    coerce_to_deps_and_check_duplicates,
+)
 from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec, validate_kind_tags
@@ -60,11 +64,11 @@ from dagster._core.definitions.utils import (
     NoValueSentinel,
     resolve_automation_condition,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.tags import normalize_tags
-from dagster._utils.warnings import deprecation_warning, disable_dagster_warnings
+from dagster._utils.warnings import disable_dagster_warnings
 
 
 @overload
@@ -1141,40 +1145,4 @@ def make_asset_deps(deps: Optional[Iterable[CoercibleToAssetDep]]) -> Optional[I
     if deps is None:
         return None
 
-    # when AssetKey was a plain NamedTuple, it also happened to be Iterable[CoercibleToAssetKey]
-    # so continue to support it here
-    if isinstance(deps, AssetKey):
-        deprecation_warning(
-            subject="Passing a single AssetKey to deps",
-            breaking_version="1.10.0",
-        )
-        deps = [deps]
-
-    # expand any multi_assets into a list of keys
-    all_deps = []
-    for dep in deps:
-        if isinstance(dep, AssetsDefinition) and len(dep.keys) > 1:
-            all_deps.extend(dep.keys)
-        else:
-            all_deps.append(dep)
-
-    with disable_dagster_warnings():
-        dep_dict = {}
-        for dep in all_deps:
-            asset_dep = AssetDep.from_coercible(dep)
-
-            # we cannot do deduplication via a set because MultiPartitionMappings have an internal
-            # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
-            # for existing keys. If an asset is specified as a dependency more than once, only error if the
-            # dependency is different (ie has a different PartitionMapping)
-            if (
-                asset_dep.asset_key in dep_dict.keys()
-                and asset_dep != dep_dict[asset_dep.asset_key]
-            ):
-                raise DagsterInvariantViolationError(
-                    f"Cannot set a dependency on asset {asset_dep.asset_key} more than once per"
-                    " asset."
-                )
-            dep_dict[asset_dep.asset_key] = asset_dep
-
-    return list(dep_dict.values())
+    return coerce_to_deps_and_check_duplicates(deps, key=None)

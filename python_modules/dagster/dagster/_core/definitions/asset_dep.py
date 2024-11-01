@@ -11,6 +11,7 @@ from dagster._core.definitions.partition_mapping import (
 )
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -111,21 +112,43 @@ def _get_asset_key(arg: "CoercibleToAssetDep") -> AssetKey:
 
 def coerce_to_deps_and_check_duplicates(
     coercible_to_asset_deps: Optional[Iterable["CoercibleToAssetDep"]],
-    key: Union[AssetKey, AssetCheckKey],
+    key: Optional[Union[AssetKey, AssetCheckKey]],
 ) -> Sequence[AssetDep]:
-    dep_set = {}
-    if coercible_to_asset_deps:
-        for dep in coercible_to_asset_deps:
-            asset_dep = AssetDep.from_coercible(dep)
+    from dagster._core.definitions.assets import AssetsDefinition
 
-            # we cannot do deduplication via a set because MultiPartitionMappings have an internal
-            # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
-            # for existing keys.
-            if asset_dep.asset_key in dep_set.keys():
-                raise DagsterInvariantViolationError(
-                    f"Cannot set a dependency on asset {asset_dep.asset_key} more than once for"
-                    f" spec {key}"
-                )
-            dep_set[asset_dep.asset_key] = asset_dep
+    if not coercible_to_asset_deps:
+        return []
+
+    # when AssetKey was a plain NamedTuple, it also happened to be Iterable[CoercibleToAssetKey]
+    # so continue to support it here
+    if isinstance(coercible_to_asset_deps, AssetKey):
+        deprecation_warning(
+            subject="Passing a single AssetKey to deps",
+            breaking_version="1.10.0",
+        )
+        coercible_to_asset_deps = [coercible_to_asset_deps]
+
+    # expand any multi_assets into a list of keys
+    all_deps = []
+    for dep in coercible_to_asset_deps:
+        if isinstance(dep, AssetsDefinition) and len(dep.keys) > 1:
+            all_deps.extend(dep.keys)
+        else:
+            all_deps.append(dep)
+
+    dep_set = {}
+    for dep in all_deps:
+        asset_dep = AssetDep.from_coercible(dep)
+
+        # we cannot do deduplication via a set because MultiPartitionMappings have an internal
+        # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
+        # for existing keys. If an asset is specified as a dependency more than once, only error if the
+        # dependency is different (ie has a different PartitionMapping)
+        if asset_dep.asset_key in dep_set and asset_dep != dep_set[asset_dep.asset_key]:
+            key_msg = f"for spec {key}." if key else "per asset."
+            raise DagsterInvariantViolationError(
+                f"Cannot set a dependency on asset {asset_dep.asset_key} more than once {key_msg}"
+            )
+        dep_set[asset_dep.asset_key] = asset_dep
 
     return list(dep_set.values())
