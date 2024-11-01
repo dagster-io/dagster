@@ -656,6 +656,7 @@ def test_runs_over_time():
 def test_filtered_runs():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
+        asset_repo = get_asset_repo()
         run_id_1 = (
             repo.get_job("foo_job")
             .execute_in_process(instance=instance, tags={"run": "one"})
@@ -666,6 +667,7 @@ def test_filtered_runs():
             .execute_in_process(instance=instance, tags={"run": "two"})
             .run_id
         )
+        run_id_3 = asset_repo.get_job("foo_job").execute_in_process(instance=instance).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
             result = execute_dagster_graphql(
                 context,
@@ -702,6 +704,18 @@ def test_filtered_runs():
             run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
             assert len(run_ids) == 2
             assert set(run_ids) == set([run_id_1, run_id_2])
+
+        with define_out_of_process_context(__file__, "get_asset_repo", instance) as context:
+            # test asset key filter
+            result = execute_dagster_graphql(
+                context,
+                FILTERED_RUN_QUERY,
+                variables={"filter": {"assetKeys": [{"path": ["foo"]}]}},
+            )
+            assert result.data
+            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            assert len(run_ids) == 1
+            assert run_ids[0] == run_id_3
 
 
 def test_filtered_runs_status():
@@ -787,6 +801,39 @@ def test_filtered_runs_multiple_filters():
             assert started_run_with_tags.run_id in run_ids
             assert failed_run_with_tags.run_id not in run_ids
             assert started_run_without_tags.run_id not in run_ids
+
+
+def test_filtered_asset_runs_multiple_filters():
+    with instance_for_test() as instance:
+        asset_repo = get_asset_repo()
+
+        run_id_1 = (
+            asset_repo.get_job("foo_job")
+            .execute_in_process(instance=instance, tags={"foo": "bar"})
+            .run_id
+        )
+        run_id_2 = (
+            asset_repo.get_job("foo_job")
+            .execute_in_process(instance=instance, tags={"baz": "boom"})
+            .run_id
+        )
+
+        with define_out_of_process_context(__file__, "get_asset_repo", instance) as context:
+            result = execute_dagster_graphql(
+                context,
+                FILTERED_RUN_QUERY,
+                variables={
+                    "filter": {
+                        "tags": [{"key": "foo", "value": "bar"}],
+                        "assetKeys": [{"path": ["foo"]}],
+                    }
+                },
+            )
+            assert result.data
+            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            assert len(run_ids) == 1
+            assert run_id_1 in run_ids
+            assert run_id_2 not in run_ids
 
 
 def test_filtered_runs_count():
