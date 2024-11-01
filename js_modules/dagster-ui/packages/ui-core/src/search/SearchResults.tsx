@@ -59,8 +59,8 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
       return 'view_column';
     case AssetFilterSearchResultType.ColumnTag:
       return 'tag';
-    case AssetFilterSearchResultType.RelationIdentifier:
-      return 'link';
+    case AssetFilterSearchResultType.TableName:
+      return 'database';
     default:
       assertUnreachable(type);
   }
@@ -82,8 +82,8 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
       return 'Column';
     case AssetFilterSearchResultType.ColumnTag:
       return 'Column tag';
-    case AssetFilterSearchResultType.RelationIdentifier:
-      return 'Relation identifier';
+    case AssetFilterSearchResultType.TableName:
+      return 'Table name';
     default:
       assertUnreachable(type);
   }
