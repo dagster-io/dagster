@@ -65,6 +65,17 @@ Proxying
 .. autofunction:: proxying_to_dagster 
 
 .. autoclass:: BaseDagsterAssetsOperator
+    
+.. autofunction:: load_proxied_state_from_yaml
+
+Proxying State
+~~~~~~~~~~~~~~
+
+.. autoclass:: AirflowProxiedState
+
+.. autoclass:: DagProxiedState
+
+.. autoclass:: TaskProxiedState
 
 Task-level Proxying
 ~~~~~~~~~~~~~~~~~~~~
