@@ -13,7 +13,7 @@ from dagster_buildkite.utils import (
     has_dagster_airlift_changes,
     has_storage_test_fixture_changes,
     network_buildkite_container,
-    skip_if_not_dlift_commit,
+    skip_reason_if_no_dlift_changes,
 )
 
 
@@ -392,7 +392,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     # nightly build
     PackageSpec(
         "examples/experimental/dagster-dlift/kitchen-sink",
-        skip_if=skip_if_not_dlift_commit,
+        skip_if=skip_reason_if_no_dlift_changes,
         name=":dbt: dlift live",
         env_vars=[
             "KS_DBT_CLOUD_ACCOUNT_ID",

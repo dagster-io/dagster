@@ -315,8 +315,9 @@ def has_storage_test_fixture_changes():
         for path in ChangedFiles.all
     )
 
-
-def skip_if_not_dlift_commit():
+@functools.lru_cache(maxsize=None)
+def skip_reason_if_no_dlift_changes() -> Optional[str]:
+    print(f"CHECKING CHANGED FILES FOR DLIFT CHANGES: {ChangedFiles.all}")
     return (
         None
         if any("dagster-dlift" in str(path) for path in ChangedFiles.all)
