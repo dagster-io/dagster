@@ -594,7 +594,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         return overrides
 
-    def _get_run_task_kwargs_from_run(self, run: DagsterRun) -> Dict[str, Any]:
+    def _get_run_task_kwargs_from_run(self, run: DagsterRun) -> Mapping[str, Any]:
         run_task_kwargs = run.tags.get("ecs/run_task_kwargs")
         if run_task_kwargs:
             return json.loads(run_task_kwargs)
