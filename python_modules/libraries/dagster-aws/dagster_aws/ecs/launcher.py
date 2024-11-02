@@ -67,6 +67,8 @@ DEFAULT_WINDOWS_RESOURCES = {"cpu": "1024", "memory": "2048"}
 
 DEFAULT_LINUX_RESOURCES = {"cpu": "256", "memory": "512"}
 
+TAGS_TO_EXCLUDE_FROM_PROPAGATION = {"dagster/op_selection", "dagster/solid_selection"}
+
 DEFAULT_REGISTER_TASK_DEFINITION_RETRIES = 5
 DEFAULT_RUN_TASK_RETRIES = 5
 
@@ -194,10 +196,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             )
         if self.propagate_tags.get("allow_list"):
             # These tags are potentially very large and can cause ECS to fail to start a task. They also don't seem particularly useful in a task-tagging context
-            invalid_tags = {"dagster/op_selection", "dagster/solid_selection"}
             check.invariant(
-                invalid_tags - set(self.propagate_tags.get("allow_list", [])) == invalid_tags,
-                f"Cannot include {invalid_tags} in allow_list",
+                TAGS_TO_EXCLUDE_FROM_PROPAGATION - set(self.propagate_tags.get("allow_list", [])) == TAGS_TO_EXCLUDE_FROM_PROPAGATION,
+                f"Cannot include {TAGS_TO_EXCLUDE_FROM_PROPAGATION} in allow_list",
             )
 
         self._current_task_metadata = None
@@ -386,13 +387,14 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self._instance.add_run_tags(run_id, tags)
 
     def build_ecs_tags_for_run_task(self, run: DagsterRun, container_context: EcsContainerContext):
-        if any(tag["key"] == "dagster/run_id" for tag in container_context.run_ecs_tags):
-            raise Exception("Cannot override system ECS tag: dagster/run_id")
+        run_id_tag = "dagster/run_id"
+        if any(tag["key"] == run_id_tag for tag in container_context.run_ecs_tags):
+            raise Exception(f"Cannot override system ECS tag: {run_id_tag}")
 
         tags_to_propagate = self._get_tags_to_propagate_to_ecs_task(run)
 
         return [
-            {"key": "dagster/run_id", "value": run.run_id},
+            {"key": run_id_tag, "value": run.run_id},
             {"key": "dagster/job_name", "value": run.job_name},
             *container_context.run_ecs_tags,
             *tags_to_propagate,
@@ -401,19 +403,15 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def _get_tags_to_propagate_to_ecs_task(self, run: DagsterRun) -> List[Dict[str, str]]:
         # These tags often contain * or + characters which are not allowed in ECS tags.
         # They don't seem super useful from an observability perspective, so are excluded from the ECS tags
-        tags_to_exclude = (
-            "dagster/op_selection",
-            "dagster/solid_selection",
-        )
 
         tags_to_propagate = []
-        if self.propagate_tags:
+        if allow_list := (self.propagate_tags or {}).get("allow_list", []):
             # Add contextual Dagster run tags to ECS tags
-            if self.propagate_tags.get("allow_list"):
+            if allow_list:
                 tags_to_propagate = [
                     {"key": k, "value": v}
                     for k, v in run.tags.items()
-                    if k in self.propagate_tags["allow_list"] and k not in tags_to_exclude
+                    if k in self.propagate_tags["allow_list"] and k not in TAGS_TO_EXCLUDE_FROM_PROPAGATION
                 ]
         return tags_to_propagate
 
@@ -520,7 +518,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run_task_kwargs["tags"] = [
             *run_task_kwargs.get("tags", []),
             *self.build_ecs_tags_for_run_task(run, container_context),
-            *run_task_kwargs_from_run.pop("tags", []),
+            *run_task_kwargs_from_run.get("tags", []),
         ]
 
         run_task_kwargs.update(run_task_kwargs_from_run)
@@ -602,7 +600,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             return json.loads(run_task_kwargs)
         return {}
 
-    def terminate(self, run_id):
+    def terminate(self, run_id: str):
         tags = self._get_run_tags(run_id)
 
         run = self._instance.get_run_by_id(run_id)
