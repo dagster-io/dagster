@@ -51,7 +51,7 @@ prettier:
 	':!:README.md'` --write
 
 install_dev_python_modules:
-	python scripts/install_dev_python_modules.py -qqq
+	python scripts/install_dev_python_modules.py -q
 
 install_dev_python_modules_verbose:
 	python scripts/install_dev_python_modules.py
