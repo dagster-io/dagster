@@ -197,7 +197,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if self.propagate_tags.get("allow_list"):
             # These tags are potentially very large and can cause ECS to fail to start a task. They also don't seem particularly useful in a task-tagging context
             check.invariant(
-                TAGS_TO_EXCLUDE_FROM_PROPAGATION - set(self.propagate_tags.get("allow_list", [])) == TAGS_TO_EXCLUDE_FROM_PROPAGATION,
+                TAGS_TO_EXCLUDE_FROM_PROPAGATION - set(self.propagate_tags.get("allow_list", []))
+                == TAGS_TO_EXCLUDE_FROM_PROPAGATION,
                 f"Cannot include {TAGS_TO_EXCLUDE_FROM_PROPAGATION} in allow_list",
             )
 
@@ -411,7 +412,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 tags_to_propagate = [
                     {"key": k, "value": v}
                     for k, v in run.tags.items()
-                    if k in self.propagate_tags["allow_list"] and k not in TAGS_TO_EXCLUDE_FROM_PROPAGATION
+                    if k in self.propagate_tags["allow_list"]
+                    and k not in TAGS_TO_EXCLUDE_FROM_PROPAGATION
                 ]
         return tags_to_propagate
 
