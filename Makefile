@@ -57,7 +57,7 @@ install_dev_python_modules_verbose:
 	python scripts/install_dev_python_modules.py
 
 install_dev_python_modules_verbose_m1:
-	python scripts/install_dev_python_modules.py -qqq --include-prebuilt-grpcio-wheel
+	python scripts/install_dev_python_modules.py -q --include-prebuilt-grpcio-wheel
 
 graphql:
 	cd js_modules/dagster-ui/; make generate-graphql; make generate-perms
