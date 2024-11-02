@@ -41,102 +41,13 @@ Other requirements based on the dbt project could be needed. In most cases, inst
 
 ---
 
-## Step 2: Load your dbt project into Dagster
+## Step 2: Create a new Dagster Project
 
-Next, you'll load your dbt project into Dagster. Use the tabs to view instructions for how to accomplish this.
+In order to load a dbt project into dagster, we'll first have to create a new Dagster project (if you have a dagster project set up, you can skip this step).
 
-<TabGroup>
-<TabItem name="Select an option">
+Use `dagster project scaffold` to scaffold a Dagster project.
 
-Select one of the following to load your dbt project into Dagster:
-
-- [**Option 1:**](#option-1-create-a-single-dagster-file) Create a Dagster project in a single file
-- [**Option 2:**](#option-2-create-a-new-dagster-project) Create a new Dagster project that wraps a dbt project by using the `dagster-dbt` command line interface (CLI)
-- [**Option 3:**](#option-3-use-an-existing-dagster-project) Use an existing Dagster project
-
-</TabItem>
-<TabItem name="Option 1: Create a single Dagster file">
-
-### Option 1: Create a single Dagster file
-
-Running your dbt project with Dagster can be easily done after creating a single file. For this example, let's consider a basic use case - say you want to represent your dbt models as Dagster assets and run them daily at midnight.
-
-With your text editor of choice, create a Python file in the same directory as your dbt project directory and add the following code. Note that since this file contains [all Dagster definitions required for your code location](/concepts/code-locations), it is recommended to name it `definitions.py`.
-
-The following code assumes that your Python file and dbt project directory are adjacent in the same directory. If that's not the case, make sure to update the `RELATIVE_PATH_TO_MY_DBT_PROJECT` constant so that it points to your dbt project.
-
-```python file=/integrations/dbt/quickstart/with_single_file.py startafter=start_example endbefore=end_example
-from pathlib import Path
-
-from dagster import AssetExecutionContext, Definitions
-from dagster_dbt import (
-    DbtCliResource,
-    DbtProject,
-    build_schedule_from_dbt_selection,
-    dbt_assets,
-)
-
-RELATIVE_PATH_TO_MY_DBT_PROJECT = "./my_dbt_project"
-
-my_project = DbtProject(
-    project_dir=Path(__file__)
-    .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
-    .resolve(),
-)
-my_project.prepare_if_dev()
-
-
-@dbt_assets(manifest=my_project.manifest_path)
-def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-    yield from dbt.cli(["build"], context=context).stream()
-
-
-my_schedule = build_schedule_from_dbt_selection(
-    [my_dbt_assets],
-    job_name="materialize_dbt_models",
-    cron_schedule="0 0 * * *",
-    dbt_select="fqn:*",
-)
-
-defs = Definitions(
-    assets=[my_dbt_assets],
-    schedules=[my_schedule],
-    resources={
-        "dbt": DbtCliResource(project_dir=my_project),
-    },
-)
-```
-
-</TabItem>
-<TabItem name="Option 2: Create a new Dagster project">
-
-### Option 2: Create a new Dagster project
-
-This approach uses the `dagster-dbt` CLI to create a new Dagster project and wrap it around a dbt project. Running this command requires two arguments:
-
-- `--project-name` - The name of the Dagster project to be created. In our example, this will be `my_dagster_project`.
-- `--dbt-project-dir` - The path to the dbt project. In our example, this will be `./my_dbt_project`, which means our current location is in the directory where `my_dbt_project` is located.
-
-In our example, our command would look like this:
-
-```shell
-dagster-dbt project scaffold --project-name my_dagster_project --dbt-project-dir ./my_dbt_project
-```
-
-This command will create a new directory called `my_dagster_project/` inside the current directory. The new `my_dagster_project/` directory will contain a set of files that define a Dagster project to load the dbt project provided in `./my_dbt_project`.
-
-</TabItem>
-<TabItem name="Option 3: Use an existing Dagster project">
-
-### Option 3: Use an existing Dagster project
-
-Existing Dagster projects can also be used to run a dbt project. To do this, you'll need to:
-
-1. Use the [`dagster-dbt` library](/\_apidocs/libraries/dagster-dbt) to add <PyObject object="DbtProject" module="dagster_dbt" /> and <PyObject object="dbt_assets" module="dagster_dbt" decorator /> objects
-2. Add the new objects to your Dagster project's <PyObject object="Definitions" /> object
-
-**Note**: This example assumes that your existing Dagster project includes both `assets.py` and `definitions.py` files, among other required files like `setup.py` and `pyproject.toml`. For example, your project might look like this:
-
+You'll now have the following structure set up:
 ```shell
 my_dagster_project
 ├── __init__.py
@@ -147,112 +58,52 @@ my_dagster_project
 └── setup.py
 ```
 
-1. Change directories to the Dagster project directory:
+## Step 3: Add code to import dbt project
 
-   ```shell
-   cd my_dagster_project/
-   ```
-
-2. Create a Python file named `project.py` and add the following code:
-
-   ```python file=/integrations/dbt/quickstart/with_project.py startafter=start_dbt_project_example endbefore=end_dbt_project_example
+Now, we can import our dbt project. Add a new file `my_dagster_project/dbt_project.py` to your dagster project like so:
+```python file=/integrations/dbt/quickstart/with_project.py startafter=start_dbt_project_example endbefore=end_dbt_project_example
    from pathlib import Path
 
    from dagster_dbt import DbtProject
 
-   RELATIVE_PATH_TO_MY_DBT_PROJECT = "./my_dbt_project"
-
-   my_project = DbtProject(
-       project_dir=Path(__file__)
-       .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
-       .resolve(),
-   )
-   my_project.prepare_if_dev()
-   ```
-
-   The <PyObject object="DbtProject" module="dagster_dbt" /> object is a representation of the dbt project that assists with `manifest.json` preparation.
-
-3. In your project's `assets.py` file, add the following code:
-
-   ```python file=/integrations/dbt/quickstart/with_project.py startafter=start_dbt_assets_example endbefore=end_dbt_assets_example
-   from dagster import AssetExecutionContext
-   from dagster_dbt import DbtCliResource, dbt_assets
-
-   from .project import my_project
-
-   @dbt_assets(manifest=my_project.manifest_path)
-   def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-       yield from dbt.cli(["build"], context=context).stream()
-   ```
-
-   The <PyObject object="dbt_assets" module="dagster_dbt" decorator /> decorator allows Dagster to create a definition for how to compute a set of dbt resources, described by a `manifest.json`.
-
-4. In your project's `definitions.py` file, update the <PyObject object="Definitions" /> object to include the newly created objects:
-
-   ```python file=/integrations/dbt/quickstart/with_project.py startafter=start_dbt_definitions_example endbefore=end_dbt_definitions_example
-   from dagster import Definitions
-   from dagster_dbt import DbtCliResource
-
-   from .assets import my_dbt_assets
-   from .project import my_project
-
-   defs = Definitions(
-       ...,
-       assets=[
-           ...,
-           # Add the dbt assets alongside your other asset
-           my_dbt_assets,
-       ],
-       resources={
-           ...: ...,
-           # Add the dbt resource alongside your other resources
-           "dbt": DbtCliResource(project_dir=my_project),
-       },
+   proj = DbtProject.from_git(
+    "https://github.com/dagster-io/jaffle_shop", 
+    output_dir=RELATIVE_PATH_TO_MY_DBT_PROJECT
    )
    ```
 
-With these changes, your existing Dagster project is ready to run your dbt project.
+In your project's `assets.py` file, add the following code:
+```python file=/integrations/dbt/quickstart/with_project.py startafter=start_dbt_assets_example endbefore=end_dbt_assets_example
+from dagster import AssetExecutionContext
+from dagster_dbt import DbtCliResource, dbt_assets
 
-</TabItem>
-</TabGroup>
+from .project import proj 
 
----
+@dbt_assets(manifest=proj.get_manifest())
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+```
 
-## Step 3: Run your dbt project in the Dagster UI
+
+In your project's `definitions.py` file, include the asset and resource:
+```python
+from dagster import Definitions
+from dagster_dbt import DbtCliResource
+
+from .project import proj
+from .assets import my_dbt_assets
+
+defs = Definitions(
+  assets=[..., my_dbt_assets],
+  resources={"dbt": proj.get_resource()}
+)
+
+With these changes, your Dagster project is ready to run your dbt project.
+
+
+## Step 4: Run your dbt project in the Dagster UI
 
 Now that your code is ready, you can use the [Dagster UI](/concepts/webserver/ui) to take a look at your dbt project. Use the tabs to view instructions for starting the UI.
-
-<TabGroup>
-<TabItem name="Select an option">
-
-How you [start the UI](/guides/running-dagster-locally) depends on which approach you took to load your dbt project into Dagster:
-
-- **If you created a single Dagster file**, [use Option 1](#option-1-from-a-dagster-file)
-- **If you created a new Dagster project or used an existing project**, [use Option 2](#option-2-from-a-dagster-project)
-
-</TabItem>
-<TabItem name="Option 1: From a Dagster file">
-
-### Option 1: From a Dagster file
-
-1. Locate the Dagster file containing your definitions. If you created a single Dagster file in the [previous section (Option 1)](#option-1-create-a-single-dagster-file), this file will be `definitions.py`.
-
-2. To start Dagster's UI, run the following:
-
-   ```shell
-   dagster dev -f definitions.py
-   ```
-
-   Which will result in output similar to:
-
-   ```shell
-   Serving dagster-webserver on http://127.0.0.1:3000 in process 70635
-   ```
-
-</TabItem>
-<TabItem name="Option 2: From a Dagster project">
-
-### Option 2: From a Dagster project
 
 1. Change directories to the Dagster project directory:
 
@@ -271,9 +122,6 @@ How you [start the UI](/guides/running-dagster-locally) depends on which approac
    ```shell
    Serving dagster-webserver on http://127.0.0.1:3000 in process 70635
    ```
-
-</TabItem>
-</TabGroup>
 
 In your browser, navigate to <http://127.0.0.1:3000>. The page will display the asset graph for the job created by the schedule definition:
 

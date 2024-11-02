@@ -1,11 +1,14 @@
+import json
 import logging
 import os
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
 import yaml
 from dagster._annotations import public
-from dagster._record import IHaveNew, record_custom
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext, StateBackedDefinitionsLoader
+import subprocess
+from dagster._record import IHaveNew, record, record_custom
 from dagster._utils import run_with_concurrent_update_guard
 
 from dagster_dbt.errors import (
@@ -130,6 +133,54 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             .wait()
         )
 
+DBT_CORE_PROJECT_PREFIX = "DBT_CORE_PROJECT"
+
+class DbtProjectLoadContext(StateBackedDefinitionsLoader[Mapping[str, Any]]):
+    def __init__(self, project_ref: Union["LocalProjectRef", "RemoteProjectRef"]):
+        self.project_ref = project_ref
+
+    @property
+    def defs_key(self) -> str:
+        return f"{DBT_CORE_PROJECT_PREFIX}{self.project_ref.project_name}"
+
+    def fetch_state(self) -> Mapping[str, Any]:
+        return self.project_ref.create_manifest()
+    
+def make_manifest_locally(project_ref: Union["LocalProjectRef", "RemoteProjectRef"]) -> Mapping[str, Any]:
+    subprocess.run(["dbt" "deps"], env={"DBT_PROJECT_DIR": ...})
+    return json.loads(project_ref.target_dir.read_text())
+
+def pull_in_project(sha: str) -> None:
+    # Maybe requires git creds, but otherwise pretty straightforward.
+    ...
+
+@record
+class LocalProjectRef:
+    """If the dbt project is colocated with the Dagster project, use this to declare a reference to it."""
+    project_dir: Path
+    target_dir: Path
+    project_name: str
+
+    def create_manifest(self) -> Mapping[str, Any]:
+        return make_manifest_locally(self)
+        
+
+@record
+class RemoteProjectRef:
+    """If the dbt project is in a remote repository, specify the sha and target dir for it to be built in. Assumes target is in local_dst/target."""
+    sha: str
+    local_dst: Path
+    project_name: str
+
+    @property
+    def target_dir(self) -> Path:
+        return self.local_dst / "target"
+
+    def create_manifest(self) -> Mapping[str, Any]:
+        pull_in_project(self.sha)
+        return make_manifest_locally(self)
+        
+
 
 @record_custom
 class DbtProject(IHaveNew):
@@ -199,10 +250,7 @@ class DbtProject(IHaveNew):
 
     """
 
-    project_dir: Path
-    target_path: Path
-    target: Optional[str]
-    manifest_path: Path
+    project_ref: Union["LocalProjectRef", "RemoteProjectRef"]
     packaged_project_dir: Optional[Path]
     state_path: Optional[Path]
     has_uninstalled_deps: bool
@@ -210,16 +258,17 @@ class DbtProject(IHaveNew):
 
     def __new__(
         cls,
-        project_dir: Union[Path, str],
+        project_ref: Union[Path, str, "LocalProjectRef", "RemoteProjectRef"],
         *,
         target_path: Union[Path, str] = Path("target"),
         target: Optional[str] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
         state_path: Optional[Union[Path, str]] = None,
     ) -> "DbtProject":
-        project_dir = Path(project_dir)
-        if not project_dir.exists():
-            raise DagsterDbtProjectNotFoundError(f"project_dir {project_dir} does not exist.")
+        if isinstance(project_ref, (Path, str)):
+            project_ref = LocalProjectRef(Path(project_ref), target_path, "my_project") 
+
+        project_dir = project_ref.project_dir
 
         packaged_project_dir = Path(packaged_project_dir) if packaged_project_dir else None
         if not using_dagster_dev() and packaged_project_dir and packaged_project_dir.exists():
@@ -232,12 +281,7 @@ class DbtProject(IHaveNew):
         dependencies_path = project_dir.joinpath("dependencies.yml")
         packages_path = project_dir.joinpath("packages.yml")
 
-        dbt_project_yml_path = project_dir.joinpath("dbt_project.yml")
-        if not dbt_project_yml_path.exists():
-            raise DagsterDbtProjectYmlFileNotFoundError(
-                f"Did not find dbt_project.yml at expected path {dbt_project_yml_path}. "
-                f"Ensure the specified project directory respects all dbt project requirements."
-            )
+        # Not sure what to do with this stuff yet
         with open(project_dir.joinpath("dbt_project.yml")) as file:
             dbt_project_yml = yaml.safe_load(file)
         packages_install_path = project_dir.joinpath(
@@ -250,6 +294,7 @@ class DbtProject(IHaveNew):
 
         return super().__new__(
             cls,
+            project_ref=project_ref,
             project_dir=project_dir,
             target_path=target_path,
             target=target,
