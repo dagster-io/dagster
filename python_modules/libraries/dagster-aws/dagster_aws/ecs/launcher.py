@@ -599,7 +599,12 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def _get_run_task_kwargs_from_run(self, run: DagsterRun) -> Mapping[str, Any]:
         run_task_kwargs = run.tags.get("ecs/run_task_kwargs")
         if run_task_kwargs:
-            return json.loads(run_task_kwargs)
+            result = json.loads(run_task_kwargs)
+            check.invariant(
+                not isinstance(result, list),
+                f"Unexpected type for `ecs/run_task_kwargs` tag: {type(result)}",
+            )
+            return result
         return {}
 
     def terminate(self, run_id: str):
