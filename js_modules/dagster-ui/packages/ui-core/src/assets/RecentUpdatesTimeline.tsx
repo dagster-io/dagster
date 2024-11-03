@@ -151,60 +151,54 @@ export const RecentUpdatesTimeline = ({
           {bucketedMaterializations.map((bucket) => {
             const width = bucket.end - bucket.start;
             return (
-              <>
-                <TickWrapper
-                  key={bucket.start}
-                  style={{
-                    left: (100 * bucket.start) / buckets + '%',
-                    width: (100 * width) / buckets + '%',
-                  }}
-                >
-                  {bucket.materializations.map(({timestamp}) => {
-                    const bucketStartTime = startTimestamp + bucket.start * bucketTimeRange;
-                    const bucketEndTimestamp = startTimestamp + bucket.end * bucketTimeRange;
-                    const bucketRange = bucketEndTimestamp - bucketStartTime;
-                    const percent = (100 * (parseInt(timestamp) - bucketStartTime)) / bucketRange;
+              <TickWrapper
+                key={bucket.start}
+                style={{
+                  left: (100 * bucket.start) / buckets + '%',
+                  width: (100 * width) / buckets + '%',
+                }}
+              >
+                {bucket.materializations.map(({timestamp}) => {
+                  const bucketStartTime = startTimestamp + bucket.start * bucketTimeRange;
+                  const bucketEndTimestamp = startTimestamp + bucket.end * bucketTimeRange;
+                  const bucketRange = bucketEndTimestamp - bucketStartTime;
+                  const percent = (100 * (parseInt(timestamp) - bucketStartTime)) / bucketRange;
 
-                    return (
-                      <InnerTick
-                        key={timestamp}
-                        style={{
-                          // Make sure there's enough room to see the last tick.
-                          left: `min(calc(100% - ${INNER_TICK_WIDTH}px), ${percent}%`,
-                        }}
-                      />
-                    );
-                  })}
-                  <Popover
-                    position="top"
-                    interactionKind="hover"
-                    content={
-                      <Box flex={{direction: 'column', gap: 8}}>
-                        <Box padding={8} border="bottom">
-                          <Subtitle2>Updates</Subtitle2>
-                        </Box>
-                        <div style={{maxHeight: 'min(80vh, 300px)', overflow: 'scroll'}}>
-                          {bucket.materializations
-                            .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
-                            .map((materialization, index) => (
-                              <AssetUpdate
-                                assetKey={assetKey}
-                                event={materialization}
-                                key={index}
-                              />
-                            ))}
-                        </div>
+                  return (
+                    <InnerTick
+                      key={timestamp}
+                      style={{
+                        // Make sure there's enough room to see the last tick.
+                        left: `min(calc(100% - ${INNER_TICK_WIDTH}px), ${percent}%`,
+                      }}
+                    />
+                  );
+                })}
+                <Popover
+                  position="top"
+                  interactionKind="hover"
+                  content={
+                    <Box flex={{direction: 'column', gap: 8}}>
+                      <Box padding={8} border="bottom">
+                        <Subtitle2>Updates</Subtitle2>
                       </Box>
-                    }
-                  >
-                    <>
-                      <Tick>
-                        <TickText>{bucket.materializations.length}</TickText>
-                      </Tick>
-                    </>
-                  </Popover>
-                </TickWrapper>
-              </>
+                      <div style={{maxHeight: 'min(80vh, 300px)', overflow: 'scroll'}}>
+                        {bucket.materializations
+                          .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
+                          .map((materialization, index) => (
+                            <AssetUpdate assetKey={assetKey} event={materialization} key={index} />
+                          ))}
+                      </div>
+                    </Box>
+                  }
+                >
+                  <>
+                    <Tick>
+                      <TickText>{bucket.materializations.length}</TickText>
+                    </Tick>
+                  </>
+                </Popover>
+              </TickWrapper>
             );
           })}
           <TickLines />
