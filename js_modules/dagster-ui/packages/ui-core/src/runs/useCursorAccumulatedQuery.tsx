@@ -51,6 +51,7 @@ class AccumulatingDataFetcher<DataType, CursorType, ErrorType> {
       // continue requesting with updated cursors + accumulating data until
       // stop() is called or hasMore=false.
       while (this.hasMoreData && !this.stopped) {
+        const isFirstPage = !this.currentCursor;
         const {cursor, hasMore, data, error} = await this.fetchData(this.currentCursor);
         if (this.stopped) {
           break;
@@ -61,7 +62,11 @@ class AccumulatingDataFetcher<DataType, CursorType, ErrorType> {
         }
         this.currentCursor = cursor;
         this.hasMoreData = hasMore;
-        if (data.length > 0) {
+
+        // Emit an onData event - note that we always call onData after loading
+        // the first page, even if there is no data to display, so that consumers
+        // can implement a state transition from loading => empty.
+        if (isFirstPage || data.length > 0) {
           this.dataSoFar = this.dataSoFar.concat(data);
           this.onData(this.dataSoFar);
         }
