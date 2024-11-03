@@ -408,13 +408,12 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         tags_to_propagate = []
         if allow_list := (self.propagate_tags or {}).get("allow_list", []):
             # Add contextual Dagster run tags to ECS tags
-            if allow_list:
-                tags_to_propagate = [
-                    {"key": k, "value": v}
-                    for k, v in run.tags.items()
-                    if k in self.propagate_tags["allow_list"]
-                    and k not in TAGS_TO_EXCLUDE_FROM_PROPAGATION
-                ]
+            tags_to_propagate = [
+                {"key": k, "value": v}
+                for k, v in run.tags.items()
+                if k in allow_list
+                and k not in TAGS_TO_EXCLUDE_FROM_PROPAGATION
+            ]
         return tags_to_propagate
 
     def _get_run_tags(self, run_id: str) -> Tags:
