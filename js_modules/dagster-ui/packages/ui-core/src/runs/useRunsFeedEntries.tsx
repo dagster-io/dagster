@@ -11,9 +11,9 @@ import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {RunsFilter} from '../graphql/types';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 29;
 
-const RUNS_FEED_CURSOR_KEY = `runs_before`;
+export const RUNS_FEED_CURSOR_KEY = `runs_before`;
 
 export function useRunsFeedEntries(
   filter: RunsFilter,

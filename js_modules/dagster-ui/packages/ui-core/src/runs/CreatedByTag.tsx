@@ -122,6 +122,7 @@ export const CreatedByTag = ({repoAddress, tags, onAddTag}: Props) => {
   return (
     <TagActionsPopover
       data={tag}
+      childrenMiddleTruncate
       actions={[
         {
           label: 'Add to filter',

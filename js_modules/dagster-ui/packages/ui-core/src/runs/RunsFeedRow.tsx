@@ -104,6 +104,12 @@ export const RunsFeedRow = ({
             flex={{direction: 'row', alignItems: 'center', wrap: 'wrap'}}
             style={{gap: '4px 8px', lineHeight: 0}}
           >
+            {entry.__typename === 'PartitionBackfill' ? (
+              <Tag intent="none">
+                <span>Backfill</span>
+              </Tag>
+            ) : undefined}
+
             <RunRowTags
               run={{...entry, mode: 'default'}}
               isJob={true}
@@ -187,7 +193,7 @@ export const RunsFeedRow = ({
 };
 
 const TEMPLATE_COLUMNS =
-  '60px minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr) 140px 150px 120px 132px';
+  '60px minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1fr) 140px 150px 120px 132px';
 
 export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => {
   return (

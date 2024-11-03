@@ -18,6 +18,7 @@ import {
   RunTagValuesQuery,
   RunTagValuesQueryVariables,
 } from './types/RunsFilterInput.types';
+import {RUNS_FEED_CURSOR_KEY} from './useRunsFeedEntries';
 import {COMMON_COLLATOR} from '../app/Util';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunStatus, RunsFilter} from '../graphql/types';
@@ -104,7 +105,11 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
   return useQueryPersistedState<RunFilterToken[]>(
     useMemo(
       () => ({
-        encode: (tokens) => ({q: tokensAsStringArray(tokens), cursor: undefined}),
+        encode: (tokens) => ({
+          q: tokensAsStringArray(tokens),
+          cursor: undefined,
+          [RUNS_FEED_CURSOR_KEY]: undefined,
+        }),
         decode: ({q = []}) =>
           tokenizedValuesFromStringArray(q, RUN_PROVIDERS_EMPTY).filter(
             (t) =>
