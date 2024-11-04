@@ -27,7 +27,7 @@ export const TickLogDialog = ({
   onClose: () => void;
 }) => {
   const {data} = useQuery<TickLogEventsQuery, TickLogEventsQueryVariables>(TICK_LOG_EVENTS_QUERY, {
-    variables: {instigationSelector, tickId: Number(tick.tickId)},
+    variables: {instigationSelector, tickId: tick.tickId},
     notifyOnNetworkStatusChange: true,
   });
 
@@ -74,7 +74,7 @@ export const QueryfulTickLogsTable = ({instigationSelector, tick}: TickLogTableP
   const {data, loading} = useQuery<TickLogEventsQuery, TickLogEventsQueryVariables>(
     TICK_LOG_EVENTS_QUERY,
     {
-      variables: {instigationSelector, tickId: Number(tick.tickId)},
+      variables: {instigationSelector, tickId: tick.tickId},
     },
   );
 
@@ -153,7 +153,7 @@ export const QueryfulTickLogsTable = ({instigationSelector, tick}: TickLogTableP
 };
 
 const TICK_LOG_EVENTS_QUERY = gql`
-  query TickLogEventsQuery($instigationSelector: InstigationSelector!, $tickId: BigInt!) {
+  query TickLogEventsQuery($instigationSelector: InstigationSelector!, $tickId: ID!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
       ... on InstigationState {
         id

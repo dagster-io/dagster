@@ -459,7 +459,7 @@ query RepositorySensorsQuery($repositorySelector: RepositorySelector!, $sensorTy
 
 
 GET_TICKS_QUERY = """
-query TicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickStatus!], $tickId: BigInt!) {
+query TicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickStatus!], $tickId: ID!) {
   sensorOrError(sensorSelector: $sensorSelector) {
     __typename
     ... on PythonError {
@@ -1449,7 +1449,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     result = execute_dagster_graphql(
         graphql_context,
         GET_TICKS_QUERY,
-        variables={"sensorSelector": sensor_selector, "tickId": started_tick_id},
+        variables={"sensorSelector": sensor_selector, "tickId": str(started_tick_id)},
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 4
 
@@ -1459,7 +1459,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         variables={
             "sensorSelector": sensor_selector,
             "statuses": ["STARTED"],
-            "tickId": started_tick_id,
+            "tickId": str(started_tick_id),
         },
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
@@ -1476,7 +1476,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         variables={
             "sensorSelector": sensor_selector,
             "statuses": ["FAILURE"],
-            "tickId": failed_tick_id,
+            "tickId": str(failed_tick_id),
         },
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
@@ -1493,7 +1493,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         variables={
             "sensorSelector": sensor_selector,
             "statuses": ["SKIPPED"],
-            "tickId": skipped_tick_id,
+            "tickId": str(skipped_tick_id),
         },
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1

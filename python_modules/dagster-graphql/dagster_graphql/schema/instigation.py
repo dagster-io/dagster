@@ -541,7 +541,7 @@ class GrapheneInstigationState(graphene.ObjectType):
     runsCount = graphene.NonNull(graphene.Int)
     tick = graphene.Field(
         graphene.NonNull(GrapheneInstigationTick),
-        tickId=graphene.NonNull(graphene.BigInt),
+        tickId=graphene.NonNull(graphene.ID),
     )
     ticks = graphene.Field(
         non_null_list(GrapheneInstigationTick),
@@ -673,10 +673,10 @@ class GrapheneInstigationState(graphene.ObjectType):
     def resolve_tick(
         self,
         graphene_info: ResolveInfo,
-        tickId: int,
+        tickId: str,
     ) -> GrapheneInstigationTick:
         schedule_storage = check.not_none(graphene_info.context.instance.schedule_storage)
-        tick = schedule_storage.get_tick(tickId)
+        tick = schedule_storage.get_tick(int(tickId))
 
         return GrapheneInstigationTick(tick)
 
