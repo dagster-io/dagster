@@ -5,6 +5,7 @@ from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection impor
 )
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.storage.tags import KIND_PREFIX
 
 
 @pytest.mark.parametrize(
@@ -50,7 +51,7 @@ def test_antlr_tree(selection_str, expected_tree_str):
 
 @pytest.mark.parametrize(
     "selection_str",
-    ["not", "a b", "a and and", "a and", "sinks", "owner", "tag:foo="],
+    ["not", "a b", "a and and", "a and", "sinks", "owner", "tag:foo=", "owner:owner@owner.com"],
 )
 def test_antlr_tree_invalid(selection_str):
     with pytest.raises(Exception):
@@ -61,25 +62,39 @@ def test_antlr_tree_invalid(selection_str):
     "selection_str, expected_assets",
     [
         ('"a"', AssetSelection.assets("a")),
+        ("not a", AssetSelection.all() - AssetSelection.assets("a")),
+        ("a and b", AssetSelection.assets("a") & AssetSelection.assets("b")),
+        ("a or b", AssetSelection.assets("a") | AssetSelection.assets("b")),
+        ("+a", AssetSelection.assets("a").upstream(1)),
+        ("++a", AssetSelection.assets("a").upstream(2)),
+        ("a+", AssetSelection.assets("a").downstream(1)),
+        ("a++", AssetSelection.assets("a").downstream(2)),
         (
             "a* and *b",
             AssetSelection.assets("a").downstream() and AssetSelection.assets("b").upstream(),
         ),
+        ("sinks(a)", AssetSelection.assets("a").sinks()),
+        ("roots(c)", AssetSelection.assets("c").roots()),
+        ("tag:foo", AssetSelection.tag("foo", "")),
+        ("tag:foo=bar", AssetSelection.tag("foo", "bar")),
+        ('owner:"owner@owner.com"', AssetSelection.owner("owner@owner.com")),
+        ("group:my_group", AssetSelection.groups("my_group")),
+        ("kind:my_kind", AssetSelection.tag(f"{KIND_PREFIX}my_kind", "")),
     ],
 )
 def test_antlr_visit_basic(selection_str, expected_assets):
     # a -> b -> c
-    @asset
-    def a():
-        pass
+    @asset(tags={"foo": "bar"}, owners=["team:billing"])
+    def a(): ...
 
-    @asset
-    def b(a):
-        pass
+    @asset(deps=[a], kinds={"python", "snowflake"})
+    def b(): ...
 
-    @asset
-    def c(b):
-        pass
+    @asset(
+        deps=[b],
+        group_name="my_group",
+    )
+    def c(): ...
 
     assets = AntlrAssetSelectionParser(selection_str).assets()
     assert assets == expected_assets.assets()
