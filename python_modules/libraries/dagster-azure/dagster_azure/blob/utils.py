@@ -21,6 +21,8 @@ def _create_url(storage_account, subdomain, cloud_type: str = "public"):
         return f"https://{storage_account}.{subdomain}.core.windows.net/"
     elif cloud_type == "government":
         return f"https://{storage_account}.{subdomain}.core.usgovcloudapi.net/"
+    else:
+        raise ValueError(f"Unsupported cloud_type: {cloud_type}")
 
 
 def create_blob_client(
