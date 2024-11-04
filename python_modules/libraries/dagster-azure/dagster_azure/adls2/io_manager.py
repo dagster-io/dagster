@@ -77,7 +77,10 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         return True
 
     def get_subdomain(self) -> str:
-        return re.search(r"(dfs.+$)", self.adls2_client.primary_endpoint).group(0)
+        match = re.search(r"(dfs.+$)", self.adls2_client.primary_endpoint)
+        if not match:
+            raise ValueError("Could not extract subdomain from the primary endpoint.")
+        return match.group(0)
 
     def _uri_for_path(self, path: UPath, protocol: str = "abfss://") -> str:
         return f"{protocol}{self.file_system_client.file_system_name}@{self.file_system_client.account_name}.{self.get_subdomain()}/{path.as_posix()}"
