@@ -1004,7 +1004,7 @@ def test_propagate_tags_include_all(
     instance_cm,
     workspace,
     job,
-    external_job,
+    remote_job,
     ecs,
 ):
     with instance_cm(
@@ -1016,8 +1016,8 @@ def test_propagate_tags_include_all(
     ) as instance:
         run = instance.create_run_for_job(
             job,
-            external_job_origin=external_job.get_external_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
         test_tags = {**run_tags, "ecs/memory": "30720", "ecs/cpu": "4096"}
 
@@ -1043,15 +1043,15 @@ def test_propagate_tags_args_validated(
     instance_cm,
     workspace,
     job,
-    external_job,
+    remote_job,
     propagate_tags: Dict[str, Any],
 ):
     with pytest.raises(CheckError):
         with instance_cm({"propagate_tags": propagate_tags}) as instance:
             run = instance.create_run_for_job(
                 job,
-                external_job_origin=external_job.get_external_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
             )
             instance.launch_run(run.run_id, workspace)
 
