@@ -62,7 +62,7 @@ class FakeBlobContainerClient:
     @property
     def container_name(self):
         return self._container_name
-    
+
     @property
     def cloud_type(self):
         return self._cloud_type

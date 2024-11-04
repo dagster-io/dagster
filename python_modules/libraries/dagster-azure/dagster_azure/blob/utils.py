@@ -23,7 +23,9 @@ def _create_url(storage_account, subdomain, cloud_type: str = "public"):
         return f"https://{storage_account}.{subdomain}.core.usgovcloudapi.net/"
 
 
-def create_blob_client(storage_account, credential, cloud_type: str = "public") -> BlobServiceClient:
+def create_blob_client(
+    storage_account, credential, cloud_type: str = "public"
+) -> BlobServiceClient:
     """Create a Blob Storage client."""
     account_url = _create_url(storage_account, "blob", cloud_type)
     if hasattr(credential, "account_key"):

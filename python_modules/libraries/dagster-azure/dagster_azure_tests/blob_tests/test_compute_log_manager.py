@@ -29,6 +29,10 @@ EXPECTED_LOGS = [
 ]
 
 
+def test_create_blob_client():
+    pass
+
+
 @mock.patch("dagster_azure.blob.compute_log_manager.generate_blob_sas")
 @mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
 def test_compute_log_manager(
