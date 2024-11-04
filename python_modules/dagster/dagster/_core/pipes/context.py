@@ -34,6 +34,7 @@ from dagster_pipes import (
     PipesTimeWindow,
     _env_var_to_cli_argument,
     encode_param,
+    ESCAPE_CHARACTER
 )
 from typing_extensions import TypeAlias
 
@@ -530,7 +531,13 @@ def build_external_execution_context_data(
 
 
 def _convert_asset_key(asset_key: AssetKey) -> str:
-    return asset_key.to_user_string()
+    """Convert asset key to Pipes-compatible string representation.
+
+    This includes escaping forward slashes (/) with backslashes (\).
+    """
+    user_string = asset_key.to_user_string()
+    return user_string.replace("/", f"{ESCAPE_CHARACTER}/")
+    return
 
 
 def _convert_data_provenance(

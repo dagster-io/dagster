@@ -71,6 +71,31 @@ def test_get_materialize_result() -> None:
     assert called["yes"]
 
 
+
+def test_asset_key_parts() -> None:
+    called = {}
+
+    def _impl(context: PipesContext):
+        #breakpoint()
+        context.report_asset_materialization(metadata={"some_key": "some_value"}, asset_key=r"foo\\/bar")
+
+        #context.report_asset_materialization(metadata={r"some\\/key": "some_value"})
+        called["yes"] = True
+
+    @asset(key=["foo", "bar"])
+    def an_asset(context: AssetExecutionContext, inprocess_client: InProcessPipesClient):
+        return inprocess_client.run(context=context, fn=_impl).get_results()
+
+    result = execute_asset_through_def(
+        an_asset, resources={"inprocess_client": InProcessPipesClient()}
+    )
+    assert called["yes"]
+    assert result.success
+    mat_events = result.get_asset_materialization_events()
+    assert len(mat_events) == 1
+    assert mat_events[0].materialization.metadata["some_key"].value == "some_value"
+
+
 def test_get_double_report_error() -> None:
     called = {}
 

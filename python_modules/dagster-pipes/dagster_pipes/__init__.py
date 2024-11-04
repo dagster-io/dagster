@@ -36,6 +36,7 @@ from typing import (
     cast,
     final,
     get_args,
+    List,
 )
 
 if TYPE_CHECKING:
@@ -180,6 +181,47 @@ class PipesException(TypedDict):
 # ########################
 # ##### UTIL
 # ########################
+
+ESCAPE_CHARACTER = "\\"
+
+
+def de_escape_asset_key(asset_key: str) -> str:
+    """Removes the backward slashes escape characters from the asset key.
+
+    Example: "foo\\/bar" -> "foo/bar"
+    """
+    return asset_key.replace(ESCAPE_CHARACTER, "")
+
+
+def to_assey_key_path(asset_key: str) -> List[str]:
+    """Converts an asset key to a collection of key parts.
+
+    Forward slash (except escaped) is used as separator. De-escapes the key.
+    """
+    parts = []
+
+    prev_char = None
+    prev_part = None
+
+    for char in asset_key:
+        if char == "/" and prev_char != ESCAPE_CHARACTER:
+            parts.append(prev_part)
+            prev_part = ""
+        elif char == ESCAPE_CHARACTER:
+            pass
+        else:
+            prev_part = (prev_part or "") + char
+
+        prev_char = char
+
+    parts.append(prev_part)
+
+    return parts
+
+
+
+
+
 
 _T = TypeVar("_T")
 
