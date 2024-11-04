@@ -40,7 +40,9 @@ CoercibleToAssetSelection: TypeAlias = Union[
 ]
 
 
-def is_coercible_to_asset_selection(obj: object) -> TypeGuard[CoercibleToAssetSelection]:
+def is_coercible_to_asset_selection(
+    obj: object,
+) -> TypeGuard[CoercibleToAssetSelection]:
     # can coerce to (but is not already) an AssetSelection
     return isinstance(obj, str) or (
         isinstance(obj, Sequence)
@@ -108,7 +110,9 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
-    def assets(*assets_defs: Union[AssetsDefinition, CoercibleToAssetKey]) -> "KeysAssetSelection":
+    def assets(
+        *assets_defs: Union[AssetsDefinition, CoercibleToAssetKey],
+    ) -> "KeysAssetSelection":
         """Returns a selection that includes all of the provided assets and asset checks that target
         them.
 
@@ -140,7 +144,10 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
-    @deprecated(breaking_version="2.0", additional_warn_text="Use AssetSelection.assets instead.")
+    @deprecated(
+        breaking_version="2.0",
+        additional_warn_text="Use AssetSelection.assets instead.",
+    )
     def keys(*asset_keys: CoercibleToAssetKey) -> "KeysAssetSelection":
         """Returns a selection that includes assets with any of the provided keys and all asset
         checks that target them.
@@ -794,7 +801,7 @@ class RootsAssetSelection(ChainedAssetSelection):
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         selection = self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
-        return fetch_sources(asset_graph.asset_dep_graph, selection)
+        return fetch_sources(asset_graph, selection)
 
 
 @whitelist_for_serdes

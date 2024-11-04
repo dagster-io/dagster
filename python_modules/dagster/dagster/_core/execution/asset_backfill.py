@@ -28,7 +28,7 @@ from dagster._core.definitions.automation_tick_evaluation_context import (
     build_run_requests_from_asset_partitions,
     build_run_requests_with_backfill_policies,
 )
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -64,7 +64,7 @@ from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._core.utils import make_new_run_id
+from dagster._core.utils import make_new_run_id, toposort
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_current_timestamp
@@ -298,7 +298,7 @@ class AssetBackfillData(NamedTuple):
 
         root_partitioned_asset_keys = (
             KeysAssetSelection(selected_keys=list(target_partitioned_asset_keys))
-            .sources()
+            .roots()
             .resolve(asset_graph)
         )
 
@@ -331,7 +331,12 @@ class AssetBackfillData(NamedTuple):
 
         Orders keys in the same topological level alphabetically.
         """
-        return [k for k in asset_graph.toposorted_asset_keys if k in self.target_subset.asset_keys]
+        nodes: List[BaseAssetNode] = [asset_graph.get(key) for key in self.target_subset.asset_keys]
+        return [
+            item
+            for items_by_level in toposort({node.key: node.parent_keys for node in nodes})
+            for item in sorted(items_by_level)
+        ]
 
     def get_backfill_status_per_asset_key(
         self, asset_graph: BaseAssetGraph
@@ -438,7 +443,10 @@ class AssetBackfillData(NamedTuple):
 
     @classmethod
     def from_serialized(
-        cls, serialized: str, asset_graph: BaseAssetGraph, backfill_start_timestamp: float
+        cls,
+        serialized: str,
+        asset_graph: BaseAssetGraph,
+        backfill_start_timestamp: float,
     ) -> "AssetBackfillData":
         storage_dict = json.loads(serialized)
 
@@ -587,22 +595,28 @@ class AssetBackfillData(NamedTuple):
         return cls.empty(asset_graph_subset, backfill_start_timestamp, dynamic_partitions_store)
 
     def serialize(
-        self, dynamic_partitions_store: DynamicPartitionsStore, asset_graph: BaseAssetGraph
+        self,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        asset_graph: BaseAssetGraph,
     ) -> str:
         storage_dict = {
             "requested_runs_for_target_roots": self.requested_runs_for_target_roots,
             "serialized_target_subset": self.target_subset.to_storage_dict(
-                dynamic_partitions_store=dynamic_partitions_store, asset_graph=asset_graph
+                dynamic_partitions_store=dynamic_partitions_store,
+                asset_graph=asset_graph,
             ),
             "latest_storage_id": self.latest_storage_id,
             "serialized_requested_subset": self.requested_subset.to_storage_dict(
-                dynamic_partitions_store=dynamic_partitions_store, asset_graph=asset_graph
+                dynamic_partitions_store=dynamic_partitions_store,
+                asset_graph=asset_graph,
             ),
             "serialized_materialized_subset": self.materialized_subset.to_storage_dict(
-                dynamic_partitions_store=dynamic_partitions_store, asset_graph=asset_graph
+                dynamic_partitions_store=dynamic_partitions_store,
+                asset_graph=asset_graph,
             ),
             "serialized_failed_subset": self.failed_and_downstream_subset.to_storage_dict(
-                dynamic_partitions_store=dynamic_partitions_store, asset_graph=asset_graph
+                dynamic_partitions_store=dynamic_partitions_store,
+                asset_graph=asset_graph,
             ),
         }
         return json.dumps(storage_dict)
@@ -1115,7 +1129,8 @@ def execute_asset_backfill_iteration(
             # there was a framework error.
             run_waiting_to_cancel = instance.get_run_ids(
                 RunsFilter(
-                    tags={BACKFILL_ID_TAG: backfill.backfill_id}, statuses=IN_PROGRESS_RUN_STATUSES
+                    tags={BACKFILL_ID_TAG: backfill.backfill_id},
+                    statuses=IN_PROGRESS_RUN_STATUSES,
                 ),
                 limit=1,
             )
@@ -1202,7 +1217,8 @@ def get_canceling_asset_backfill_iteration_data(
         )
 
     failed_subset = AssetGraphSubset.from_asset_partition_set(
-        set(_get_failed_asset_partitions(instance_queryer, backfill_id, asset_graph)), asset_graph
+        set(_get_failed_asset_partitions(instance_queryer, backfill_id, asset_graph)),
+        asset_graph,
     )
     updated_backfill_data = AssetBackfillData(
         target_subset=asset_backfill_data.target_subset,
@@ -1640,16 +1656,25 @@ def should_backfill_atomic_asset_partitions_unit(
     for candidate in candidates_unit:
         candidate_asset_partition_string = f"Asset {candidate.asset_key.to_user_string()} {f'with partition {candidate.partition_key}' if candidate.partition_key is not None else ''}"
         if candidate not in target_subset:
-            return False, f"{candidate_asset_partition_string} is not targeted by backfill"
+            return (
+                False,
+                f"{candidate_asset_partition_string} is not targeted by backfill",
+            )
         elif candidate in failed_and_downstream_subset:
             return (
                 False,
                 f"{candidate_asset_partition_string} has failed or is downstream of a failed asset",
             )
         elif candidate in materialized_subset:
-            return False, f"{candidate_asset_partition_string} was already materialized by backfill"
+            return (
+                False,
+                f"{candidate_asset_partition_string} was already materialized by backfill",
+            )
         elif candidate in requested_subset:
-            return False, f"{candidate_asset_partition_string} was already requested by backfill"
+            return (
+                False,
+                f"{candidate_asset_partition_string} was already requested by backfill",
+            )
 
         parent_partitions_result = asset_graph.get_parents_partitions(
             dynamic_partitions_store, current_time, *candidate
@@ -1684,7 +1709,9 @@ def should_backfill_atomic_asset_partitions_unit(
 
 
 def _get_failed_asset_partitions(
-    instance_queryer: CachingInstanceQueryer, backfill_id: str, asset_graph: RemoteAssetGraph
+    instance_queryer: CachingInstanceQueryer,
+    backfill_id: str,
+    asset_graph: RemoteAssetGraph,
 ) -> Sequence[AssetKeyPartitionKey]:
     """Returns asset partitions that materializations were requested for as part of the backfill, but
     will not be materialized.

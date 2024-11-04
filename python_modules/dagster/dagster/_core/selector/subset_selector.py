@@ -31,6 +31,7 @@ from dagster._utils import check
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.base_asset_graph import BaseAssetGraph, T_AssetNode
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
 
@@ -226,20 +227,20 @@ def fetch_sinks(
 
 
 def fetch_sources(
-    graph: DependencyGraph[T_Hashable], within_selection: AbstractSet[T_Hashable]
-) -> AbstractSet[T_Hashable]:
+    graph: "BaseAssetGraph[T_AssetNode]", within_selection: AbstractSet[AssetKey]
+) -> AbstractSet[AssetKey]:
     """A source is a node that has no upstream dependencies within the provided selection.
     It can have other dependencies outside of the selection.
     """
-    dp: Dict[T_Hashable, bool] = {}
+    dp: Dict[AssetKey, bool] = {}
 
-    def has_upstream_within_selection(node: T_Hashable) -> bool:
-        if node not in dp:
-            dp[node] = any(
+    def has_upstream_within_selection(key: AssetKey) -> bool:
+        if key not in dp:
+            dp[key] = any(
                 parent_node in within_selection or has_upstream_within_selection(parent_node)
-                for parent_node in graph["upstream"].get(node, set()) - {node}
+                for parent_node in graph.get(key).parent_keys - {key}
             )
-        return dp[node]
+        return dp[key]
 
     return {node for node in within_selection if not has_upstream_within_selection(node)}
 

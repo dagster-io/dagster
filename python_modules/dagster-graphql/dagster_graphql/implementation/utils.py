@@ -56,7 +56,9 @@ def assert_permission_for_location(
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
-def require_permission_check(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
+def require_permission_check(
+    permission: str,
+) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
     def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
         @functools.wraps(fn)
         def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
@@ -72,7 +74,9 @@ def require_permission_check(permission: str) -> Callable[[GrapheneResolverFn], 
     return decorator
 
 
-def check_permission(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
+def check_permission(
+    permission: str,
+) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
     def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
         @functools.wraps(fn)
         def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
@@ -102,17 +106,21 @@ def has_permission_for_asset_graph(
     asset_keys = set(asset_selection or [])
     context = cast(BaseWorkspaceRequestContext, graphene_info.context)
 
-    # If any of the asset keys don't map to a location (e.g. because they are no longer in the
-    # graph) need deployment-wide permissions - no valid code location to check
-    if asset_keys.difference(asset_graph.repository_handles_by_key.keys()):
-        return context.has_permission(permission)
-
     if asset_keys:
-        selectors = [asset_graph.get_repository_handle(asset_key) for asset_key in asset_keys]
+        location_names = set()
+        for key in asset_keys:
+            if not asset_graph.has(key):
+                # If any of the asset keys don't map to a location (e.g. because they are no longer in the
+                # graph) need deployment-wide permissions - no valid code location to check
+                return context.has_permission(permission)
+            node = asset_graph.get(key)
+            location_names.add(
+                node.resolve_to_singular_repo_scoped_node().repository_handle.location_name
+            )
     else:
-        selectors = asset_graph.repository_handles_by_key.values()
-
-    location_names = set(s.location_name for s in selectors)
+        location_names = set(
+            handle.location_name for handle in asset_graph.repository_handles_by_key.values()
+        )
 
     if not location_names:
         return context.has_permission(permission)
@@ -359,7 +367,10 @@ class ExecutionMetadata(
 
 
 def apply_cursor_limit_reverse(
-    items: Sequence[str], cursor: Optional[str], limit: Optional[int], reverse: Optional[bool]
+    items: Sequence[str],
+    cursor: Optional[str],
+    limit: Optional[int],
+    reverse: Optional[bool],
 ) -> Sequence[str]:
     start = 0
     end = len(items)
