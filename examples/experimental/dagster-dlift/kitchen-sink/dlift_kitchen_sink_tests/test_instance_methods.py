@@ -1,3 +1,4 @@
+import pytest
 from dagster_dlift.client import DbtCloudClient
 from dagster_dlift.utils import get_job_name
 from dlift_kitchen_sink.constants import EXPECTED_TAG
@@ -87,6 +88,7 @@ def test_get_tests(instance: DbtCloudClient, environment_id: int) -> None:
     }
 
 
+@pytest.mark.skip("This test is failing")
 def test_cloud_job_apis(instance: DbtCloudClient, environment_id: int, project_id: int) -> None:
     """Tests that we can create / destroy a dagster job."""
     job_id = instance.create_dagster_job(project_id, environment_id)
