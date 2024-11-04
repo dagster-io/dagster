@@ -1,7 +1,7 @@
 import pytest
 
 from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
-    AntlrAssetSelection,
+    AntlrAssetSelectionParser,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.decorators.asset_decorator import asset
@@ -44,8 +44,17 @@ from dagster._core.definitions.decorators.asset_decorator import asset
     ],
 )
 def test_antlr_tree(selection_str, expected_tree_str):
-    asset_selection = AntlrAssetSelection(selection_str)
+    asset_selection = AntlrAssetSelectionParser(selection_str)
     assert asset_selection.tree_str == expected_tree_str
+
+
+@pytest.mark.parametrize(
+    "selection_str",
+    ["not", "a b", "a and and", "a and", "sinks", "owner", "tag:foo="],
+)
+def test_antlr_tree_invalid(selection_str):
+    with pytest.raises(Exception):
+        AntlrAssetSelectionParser(selection_str)
 
 
 @pytest.mark.parametrize(
@@ -72,5 +81,5 @@ def test_antlr_visit_basic(selection_str, expected_assets):
     def c(b):
         pass
 
-    assets = AntlrAssetSelection(selection_str).assets()
+    assets = AntlrAssetSelectionParser(selection_str).assets()
     assert assets == expected_assets.assets()
