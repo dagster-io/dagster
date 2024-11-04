@@ -1,4 +1,6 @@
+import multiprocessing
 import os
+from functools import partial
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Sequence, Set
 
@@ -230,6 +232,27 @@ def test_selections(
     assert my_dbt_assets.keys == expected_asset_keys
     assert my_dbt_assets.op.tags.get("dagster_dbt/select") == select
     assert my_dbt_assets.op.tags.get("dagster_dbt/exclude") == exclude
+
+
+def _get_snapshot_id(manifest, _):
+    @dbt_assets(
+        manifest=manifest,
+    )
+    def my_dbt_assets(): ...
+
+    job = Definitions(assets=[my_dbt_assets]).get_implicit_global_asset_job_def()
+    return job.get_job_snapshot_id()
+
+
+def test_snapshot_id(
+    test_jaffle_shop_manifest: Dict[str, Any],
+):
+    # we dont make strong guarantees about stable ids, but try to have the basic case stable
+
+    with multiprocessing.Pool(1) as pool:
+        results = pool.map(partial(_get_snapshot_id, test_jaffle_shop_manifest), range(5))
+
+    assert len(set(results)) == 1
 
 
 @pytest.mark.parametrize("name", [None, "custom"])
