@@ -212,7 +212,7 @@ class PipesMessageHandler:
         check.str_param(asset_key, "asset_key")
         check.opt_str_param(data_version, "data_version")
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-        resolved_asset_key = AssetKey.from_user_string(asset_key)
+        resolved_asset_key = AssetKey.from_escaped_user_string(asset_key)
         resolved_metadata = self._resolve_metadata(metadata)
         resolved_data_version = None if data_version is None else DataVersion(data_version)
         result = MaterializeResult(
@@ -235,7 +235,7 @@ class PipesMessageHandler:
         check.bool_param(passed, "passed")
         check.literal_param(severity, "severity", [x.value for x in AssetCheckSeverity])
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-        resolved_asset_key = AssetKey.from_user_string(asset_key)
+        resolved_asset_key = AssetKey.from_escaped_user_string(asset_key)
         resolved_metadata = self._resolve_metadata(metadata)
         resolved_severity = AssetCheckSeverity(severity)
         result = AssetCheckResult(
@@ -549,7 +549,11 @@ def build_external_execution_context_data(
 
 
 def _convert_asset_key(asset_key: AssetKey) -> str:
-    return asset_key.to_user_string()
+    r"""Convert asset key to Pipes-compatible string representation.
+
+    This includes escaping forward slashes (/) with backslashes (\).
+    """
+    return asset_key.to_escaped_user_string()
 
 
 def _convert_data_provenance(
