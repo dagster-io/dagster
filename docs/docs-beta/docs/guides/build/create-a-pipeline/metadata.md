@@ -116,9 +116,18 @@ Dagster+ provides rich visualization and navigation of column lineage in the Ass
 
 ## Linking assets with source code \{#source-code}
 
-import Experimental from '../../../partials/\_Experimental.md';
+import Preview from '../partials/\_Preview.md';
 
-<Experimental />
+<Preview />
+
+import Beta from '../partials/\_Beta.md';
+
+<Beta />
+
+import Superseded from '../partials/\_Superseded.md';
+
+<Superseded />
+
 
 To link assets with their source code, you can attach a **code reference**. Code references are a type of metadata that allow you to easily view those assets' source code from the Dagster UI, both in local development and in production.
 
