@@ -411,8 +411,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             tags_to_propagate = [
                 {"key": k, "value": v}
                 for k, v in run.tags.items()
-                if k in allow_list
-                and k not in TAGS_TO_EXCLUDE_FROM_PROPAGATION
+                if k in allow_list and k not in TAGS_TO_EXCLUDE_FROM_PROPAGATION
             ]
         return tags_to_propagate
 
