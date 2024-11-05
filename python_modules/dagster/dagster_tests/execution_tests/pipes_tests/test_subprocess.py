@@ -1,13 +1,10 @@
-import inspect
 import re
 import shutil
 import subprocess
-import textwrap
 import time
-from contextlib import contextmanager
 from multiprocessing import Process
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Iterator
+from typing import Iterator
 
 import pytest
 from dagster import op
@@ -54,17 +51,9 @@ from dagster._utils.env import environ
 from dagster._utils.warnings import ExperimentalWarning
 from dagster_pipes import DagsterPipesError
 
+from dagster_tests.execution_tests.pipes_tests.utils import temp_script
+
 _PYTHON_EXECUTABLE = shutil.which("python")
-
-
-@contextmanager
-def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
-    # drop the signature line
-    source = textwrap.dedent(inspect.getsource(script_fn).split("\n", 1)[1])
-    with NamedTemporaryFile() as file:
-        file.write(source.encode())
-        file.flush()
-        yield file.name
 
 
 @pytest.fixture
