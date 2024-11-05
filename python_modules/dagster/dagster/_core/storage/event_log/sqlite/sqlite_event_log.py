@@ -49,7 +49,10 @@ from dagster._core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._core.storage.sqlite import create_db_conn_string
+from dagster._core.storage.sqlite import (
+    LAST_KNOWN_STAMPED_SQLITE_ALEMBIC_REVISION,
+    create_db_conn_string,
+)
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
@@ -174,9 +177,18 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     db_revision, head_revision = check_alembic_revision(alembic_config, connection)
 
                     if not (db_revision and head_revision):
+                        table_names = db.inspect(engine).get_table_names()
+                        if "event_logs" in table_names:
+                            # The event_log table exists but the alembic version table does not. This means that the SQLite db was
+                            # initialized with SQLAlchemy 2.0 before https://github.com/dagster-io/dagster/pull/25740 was merged.
+                            # We should pin the alembic revision to the last known stamped revision before we unpinned SQLAlchemy 2.0
+                            # This should be safe because we have guarded all known migrations since then.
+                            rev_to_stamp = LAST_KNOWN_STAMPED_SQLITE_ALEMBIC_REVISION
+                        else:
+                            rev_to_stamp = "head"
                         SqlEventLogStorageMetadata.create_all(engine)
                         connection.execute(db.text("PRAGMA journal_mode=WAL;"))
-                        stamp_alembic_rev(alembic_config, connection)
+                        stamp_alembic_rev(alembic_config, connection, rev=rev_to_stamp)
                         safe_commit(connection)
 
                 break
