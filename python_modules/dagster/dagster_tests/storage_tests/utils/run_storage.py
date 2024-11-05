@@ -1951,3 +1951,11 @@ class TestRunStorage:
         assert len(two_runs) == 1
         assert two_runs[0].run_id == one
         assert two_runs[0].tags[REPOSITORY_LABEL_TAG] == "fake_repo_two@fake:fake"
+
+    def test_alembic_stamp(self, storage):
+        assert storage
+        self._skip_in_memory(storage)
+        alembic_version = storage.alembic_version()
+        assert alembic_version is not None
+        db_revision, head_revision = alembic_version
+        assert db_revision == head_revision

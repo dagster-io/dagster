@@ -45,6 +45,7 @@ from dagster._core.storage.sql import (
     create_engine,
     get_alembic_config,
     run_alembic_upgrade,
+    safe_commit,
     stamp_alembic_rev,
 )
 from dagster._core.storage.sqlalchemy_compat import db_select
@@ -176,6 +177,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                         SqlEventLogStorageMetadata.create_all(engine)
                         connection.execute(db.text("PRAGMA journal_mode=WAL;"))
                         stamp_alembic_rev(alembic_config, connection)
+                        safe_commit(connection)
 
                 break
             except (db_exc.DatabaseError, sqlite3.DatabaseError, sqlite3.OperationalError) as exc:

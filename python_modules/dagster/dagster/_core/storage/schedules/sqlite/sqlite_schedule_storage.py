@@ -19,6 +19,7 @@ from dagster._core.storage.sql import (
     create_engine,
     get_alembic_config,
     run_alembic_upgrade,
+    safe_commit,
     stamp_alembic_rev,
 )
 from dagster._core.storage.sqlite import create_db_conn_string, get_sqlite_version
@@ -70,6 +71,7 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                 connection.execute(db.text("PRAGMA journal_mode=WAL;"))
                 stamp_alembic_rev(alembic_config, connection)
                 should_migrate_data = True
+                safe_commit(connection)
 
         schedule_storage = cls(conn_string, inst_data)
         if should_migrate_data:
