@@ -6,6 +6,7 @@ from dagster import get_dagster_logger
 from dagster._annotations import experimental
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._record import record
+from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
 from requests.auth import HTTPBasicAuth
@@ -18,6 +19,7 @@ class FivetranContentType(Enum):
     DESTINATION = "destination"
 
 
+@whitelist_for_serdes
 @record
 class FivetranContentData:
     """A record representing a piece of content in a Fivetran workspace.
@@ -26,16 +28,6 @@ class FivetranContentData:
 
     content_type: FivetranContentType
     properties: Mapping[str, Any]
-
-    def to_cached_data(self) -> Mapping[str, Any]:
-        return {"content_type": self.content_type.value, "properties": self.properties}
-
-    @classmethod
-    def from_cached_data(cls, data: Mapping[Any, Any]) -> "FivetranContentData":
-        return cls(
-            content_type=FivetranContentType(data["content_type"]),
-            properties=data["properties"],
-        )
 
 
 @record
