@@ -243,8 +243,7 @@ def asset(
         output_required (bool): Whether the decorated function will always materialize an asset.
             Defaults to True. If False, the function can return None, which will not be materialized to
             storage and will halt execution of downstream assets.
-        automation_condition (AutomationCondition): (Experimental) A condition describing when
-            Dagster should materialize this asset.
+        automation_condition (AutomationCondition): A condition describing when Dagster should materialize this asset.
         backfill_policy (BackfillPolicy): (Experimental) Configure Dagster to backfill this asset according to its
             BackfillPolicy.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
