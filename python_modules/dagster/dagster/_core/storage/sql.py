@@ -64,11 +64,6 @@ _alembic_lock = threading.Lock()
 
 def stamp_alembic_rev(alembic_config: Config, conn: Connection, rev: str = "head") -> None:
     with _alembic_lock:
-        migration_context = MigrationContext.configure(conn)
-        db_revision = migration_context.get_current_revision()
-        if db_revision is not None:
-            # sanity check that another thread hasn't stamped a revision
-            return
         alembic_config.attributes["connection"] = conn
         stamp(alembic_config, rev)
 
