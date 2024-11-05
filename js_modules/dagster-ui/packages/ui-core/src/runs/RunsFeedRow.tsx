@@ -105,9 +105,7 @@ export const RunsFeedRow = ({
             style={{gap: '4px 8px', lineHeight: 0}}
           >
             {entry.__typename === 'PartitionBackfill' ? (
-              <Tag intent="none">
-                <span>Backfill</span>
-              </Tag>
+              <Tag intent="none">Backfill</Tag>
             ) : undefined}
 
             <RunRowTags
