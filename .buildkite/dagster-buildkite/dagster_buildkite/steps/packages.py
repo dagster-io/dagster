@@ -360,7 +360,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "examples/quickstart_snowflake",
-        pytest_tox_factors=["pypi"],
+        pytest_tox_factors=["pypi"],d
     ),
     PackageSpec(
         "examples/experimental/dagster-blueprints",
@@ -386,7 +386,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "examples/experimental/dagster-dlift",
-        name=":dlift",
+        name="dlift",
     ),
     # Runs against live dbt cloud instance, we only want to run on commits and on the
     # nightly build
