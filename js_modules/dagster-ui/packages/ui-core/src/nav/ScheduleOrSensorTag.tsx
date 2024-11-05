@@ -101,7 +101,7 @@ const MatchingSchedule = ({
           to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}
           style={{overflow: 'hidden', textOverflow: 'ellipsis'}}
         >
-          {humanCronString(cronSchedule, executionTimezone || 'UTC')}
+          {humanCronString(cronSchedule, {longTimezoneName: executionTimezone || 'UTC'})}
         </Link>
         {showSwitch ? (
           <ScheduleSwitch size="small" repoAddress={repoAddress} schedule={schedule} />
