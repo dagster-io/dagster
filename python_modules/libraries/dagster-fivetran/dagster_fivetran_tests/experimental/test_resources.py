@@ -2,7 +2,7 @@ import responses
 import uuid
 from typing import Callable
 
-from dagster_fivetran.v2 import FivetranWorkspace
+from dagster_fivetran.experimental import FivetranWorkspace
 
 
 @responses.activate
