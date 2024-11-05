@@ -39,6 +39,7 @@ SAMPLE_REPORT = {
     "datasetWorkspaceId": "a2122b8f-d7e1-42e8-be2b-a5e636ca3221",
     "users": [],
     "subscriptions": [],
+    "createdBy": "ben@dagsterlabs.com",
 }
 
 SAMPLE_SEMANTIC_MODEL = {
@@ -46,7 +47,6 @@ SAMPLE_SEMANTIC_MODEL = {
     "name": "Sales & Returns Sample v201912",
     "webUrl": "https://app.powerbi.com/groups/a2122b8f-d7e1-42e8-be2b-a5e636ca3221/datasets/8e9c85a1-7b33-4223-9590-76bde70f9a20",
     "addRowsAPIEnabled": False,
-    "configuredBy": "ben@elementl.com",
     "isRefreshable": True,
     "isEffectiveIdentityRequired": False,
     "isEffectiveIdentityRolesRequired": False,
@@ -58,6 +58,19 @@ SAMPLE_SEMANTIC_MODEL = {
     "upstreamDatasets": [],
     "users": [],
     "queryScaleOutSettings": {"autoSyncReadOnlyReplicas": True, "maxReadOnlyReplicas": 0},
+    "configuredBy": "chris@dagsterlabs.com",
+    "tables": [
+        {
+            "name": "sales",
+            "columns": [
+                {"name": "order_id", "dataType": "Int64"},
+                {"name": "product_id", "dataType": "Int64"},
+                {"name": "quantity", "dataType": "Int64"},
+                {"name": "price", "dataType": "Decimal"},
+                {"name": "order_date", "dataType": "DateTime"},
+            ],
+        }
+    ],
 }
 
 
@@ -78,6 +91,26 @@ OTHER_SAMPLE_SEMANTIC_MODEL = {
     "upstreamDatasets": [],
     "users": [],
     "queryScaleOutSettings": {"autoSyncReadOnlyReplicas": True, "maxReadOnlyReplicas": 0},
+    "tables": [
+        {
+            "name": "sales",
+            "columns": [
+                {"name": "order_id", "dataType": "Int64"},
+                {"name": "product_id", "dataType": "Int64"},
+                {"name": "quantity", "dataType": "Int64"},
+                {"name": "price", "dataType": "Decimal"},
+                {"name": "order_date", "dataType": "DateTime"},
+            ],
+        },
+        {
+            "name": "customers",
+            "columns": [
+                {"name": "customer_id", "dataType": "Int64"},
+                {"name": "customer_name", "dataType": "String"},
+                {"name": "customer_email", "dataType": "String"},
+            ],
+        },
+    ],
 }
 
 
@@ -266,3 +299,21 @@ def second_workspace_data_api_mocks_fixture(
     )
 
     yield workspace_data_api_mocks
+
+
+@pytest.fixture(
+    name="second_workspace_data",
+)
+def second_workspace_data_fixture(second_workspace_id: str) -> PowerBIWorkspaceData:
+    return PowerBIWorkspaceData(
+        workspace_id=second_workspace_id,
+        dashboards_by_id={},
+        reports_by_id={},
+        semantic_models_by_id={
+            OTHER_SAMPLE_SEMANTIC_MODEL["id"]: PowerBIContentData(
+                content_type=PowerBIContentType.SEMANTIC_MODEL,
+                properties=OTHER_SAMPLE_SEMANTIC_MODEL,
+            )
+        },
+        data_sources_by_id={},
+    )

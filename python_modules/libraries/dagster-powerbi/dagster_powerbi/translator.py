@@ -137,6 +137,18 @@ class PowerBIMetadataSet(NamespacedMetadataSet):
         return "dagster-powerbi"
 
 
+def _build_table_metadata(table: Dict[str, Any]) -> TableMetadataSet:
+    return TableMetadataSet(
+        table_name=table["name"],
+        column_schema=TableSchema(
+            columns=[
+                TableColumn(name=column["name"].lower(), type=column.get("dataType"))
+                for column in table["columns"]
+            ]
+        ),
+    )
+
+
 class DagsterPowerBITranslator:
     """Translator class which converts raw response data from the PowerBI API into AssetSpecs.
     Subclass this class to implement custom logic for each type of PowerBI content.
@@ -231,7 +243,7 @@ class DagsterPowerBITranslator:
         )
 
         for table in data.properties.get("tables", []):
-            source = table.get("source")
+            source = table.get("source", [])
             source_key = _attempt_parse_m_query_source(source)
             if source_key:
                 source_keys.append(source_key)
@@ -242,25 +254,12 @@ class DagsterPowerBITranslator:
         table_meta = {}
         if tables:
             if len(tables) == 1:
-                table = tables[0]
-                table_meta = TableMetadataSet(
-                    table_name=table["name"],
-                    column_schema=TableSchema(
-                        columns=[
-                            TableColumn(name=column["name"].lower(), type=column.get("dataType"))
-                            for column in table["columns"]
-                        ]
-                    ),
-                )
+                table_meta = _build_table_metadata(tables[0])
             else:
                 table_meta = {
-                    f"{table['name'].lower()}_schema": MetadataValue.table_schema(
-                        TableSchema(
-                            columns=[
-                                TableColumn(name=column["name"]) for column in table["columns"]
-                            ]
-                        )
-                    )
+                    f"{table['name'].lower()}_column_schema": _build_table_metadata(
+                        table
+                    ).column_schema
                     for table in tables
                 }
 

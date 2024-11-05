@@ -1,6 +1,7 @@
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags import build_kind_tag
 from dagster_powerbi import DagsterPowerBITranslator
 from dagster_powerbi.translator import PowerBIContentData, PowerBIWorkspaceData
@@ -48,6 +49,7 @@ def test_translator_report_spec(workspace_data: PowerBIWorkspaceData) -> None:
         **build_kind_tag("powerbi"),
         **build_kind_tag("report"),
     }
+    assert asset_spec.owners == ["ben@dagsterlabs.com"]
 
 
 def test_translator_semantic_model(workspace_data: PowerBIWorkspaceData) -> None:
@@ -66,11 +68,51 @@ def test_translator_semantic_model(workspace_data: PowerBIWorkspaceData) -> None
             "https://app.powerbi.com/groups/a2122b8f-d7e1-42e8-be2b-a5e636ca3221/datasets/8e9c85a1-7b33-4223-9590-76bde70f9a20"
         ),
         "dagster-powerbi/id": "8e9c85a1-7b33-4223-9590-76bde70f9a20",
+        "dagster/table_name": "sales",
+        "dagster/column_schema": TableSchema(
+            columns=[
+                TableColumn(name="order_id", type="Int64"),
+                TableColumn(name="product_id", type="Int64"),
+                TableColumn(name="quantity", type="Int64"),
+                TableColumn(name="price", type="Decimal"),
+                TableColumn(name="order_date", type="DateTime"),
+            ]
+        ),
     }
     assert asset_spec.tags == {
         "dagster-powerbi/asset_type": "semantic_model",
         **build_kind_tag("powerbi"),
         **build_kind_tag("semantic model"),
+    }
+    assert asset_spec.owners == ["chris@dagsterlabs.com"]
+
+
+def test_translator_semantic_model_many_tables(second_workspace_data: PowerBIWorkspaceData) -> None:
+    semantic_model = next(iter(second_workspace_data.semantic_models_by_id.values()))
+
+    translator = DagsterPowerBITranslator(second_workspace_data)
+    asset_spec = translator.get_asset_spec(semantic_model)
+    assert asset_spec.metadata == {
+        "dagster-powerbi/web_url": MetadataValue.url(
+            "https://app.powerbi.com/groups/a2122b8f-d7e1-42e8-be2b-a5e636ca3221/datasets/8e9c85a1-7b33-4223-9590-76bde70f9a20"
+        ),
+        "dagster-powerbi/id": "ae9c85a1-7b33-4223-9590-76bde70f9a20",
+        "sales_column_schema": TableSchema(
+            columns=[
+                TableColumn(name="order_id", type="Int64"),
+                TableColumn(name="product_id", type="Int64"),
+                TableColumn(name="quantity", type="Int64"),
+                TableColumn(name="price", type="Decimal"),
+                TableColumn(name="order_date", type="DateTime"),
+            ]
+        ),
+        "customers_column_schema": TableSchema(
+            columns=[
+                TableColumn(name="customer_id", type="Int64"),
+                TableColumn(name="customer_name", type="String"),
+                TableColumn(name="customer_email", type="String"),
+            ]
+        ),
     }
 
 
