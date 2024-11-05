@@ -14,7 +14,7 @@ null
 'group'
 'tag'
 'kind'
-'codelocation'
+'code_location'
 'sinks'
 'roots'
 null
@@ -37,7 +37,7 @@ OWNER
 GROUP
 TAG
 KIND
-CODELOCATION
+CODE_LOCATION
 SINKS
 ROOTS
 QUOTED_STRING

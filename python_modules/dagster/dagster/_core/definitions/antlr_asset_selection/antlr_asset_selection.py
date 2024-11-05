@@ -1,14 +1,18 @@
 from antlr4 import CommonTokenStream, InputStream
 
-from dagster._core.definitions.antlr_asset_selection.AssetSelectionLexer import AssetSelectionLexer
-from dagster._core.definitions.antlr_asset_selection.AssetSelectionParser import (
+from dagster._annotations import experimental
+from dagster._core.definitions.antlr_asset_selection.generated.AssetSelectionLexer import (
+    AssetSelectionLexer,
+)
+from dagster._core.definitions.antlr_asset_selection.generated.AssetSelectionParser import (
     AssetSelectionParser,
 )
-from dagster._core.definitions.antlr_asset_selection.AssetSelectionVisitor import (
+from dagster._core.definitions.antlr_asset_selection.generated.AssetSelectionVisitor import (
     AssetSelectionVisitor,
 )
 
 
+@experimental
 class AntlrAssetSelection:
     _visitor: AssetSelectionVisitor = AssetSelectionVisitor()
 

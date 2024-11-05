@@ -1,4 +1,3 @@
-# type: ignore
 # flake8: noqa
 # Generated from AssetSelection.g4 by ANTLR 4.13.2
 # encoding: utf-8
@@ -864,7 +863,7 @@ class AssetSelectionParser(Parser):
         "'group'",
         "'tag'",
         "'kind'",
-        "'codelocation'",
+        "'code_location'",
         "'sinks'",
         "'roots'",
     ]
@@ -885,7 +884,7 @@ class AssetSelectionParser(Parser):
         "GROUP",
         "TAG",
         "KIND",
-        "CODELOCATION",
+        "CODE_LOCATION",
         "SINKS",
         "ROOTS",
         "QUOTED_STRING",
@@ -926,7 +925,7 @@ class AssetSelectionParser(Parser):
     GROUP = 12
     TAG = 13
     KIND = 14
-    CODELOCATION = 15
+    CODE_LOCATION = 15
     SINKS = 16
     ROOTS = 17
     QUOTED_STRING = 18
@@ -1680,8 +1679,8 @@ class AssetSelectionParser(Parser):
             super().__init__(parser)
             self.copyFrom(ctx)
 
-        def CODELOCATION(self):
-            return self.getToken(AssetSelectionParser.CODELOCATION, 0)
+        def CODE_LOCATION(self):
+            return self.getToken(AssetSelectionParser.CODE_LOCATION, 0)
 
         def COLON(self):
             return self.getToken(AssetSelectionParser.COLON, 0)
@@ -1793,7 +1792,7 @@ class AssetSelectionParser(Parser):
                 localctx = AssetSelectionParser.CodeLocationAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 5)
                 self.state = 79
-                self.match(AssetSelectionParser.CODELOCATION)
+                self.match(AssetSelectionParser.CODE_LOCATION)
                 self.state = 80
                 self.match(AssetSelectionParser.COLON)
                 self.state = 81

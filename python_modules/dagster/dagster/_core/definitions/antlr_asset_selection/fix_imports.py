@@ -26,10 +26,10 @@ def add_lines_to_start(file_path, lines_to_add):
 
 
 files = [
-    "AssetSelectionLexer.py",
-    "AssetSelectionListener.py",
-    "AssetSelectionParser.py",
-    "AssetSelectionVisitor.py",
+    "generated/AssetSelectionLexer.py",
+    "generated/AssetSelectionListener.py",
+    "generated/AssetSelectionParser.py",
+    "generated/AssetSelectionVisitor.py",
 ]
 
 for file in files:
