@@ -28,7 +28,7 @@ try:
 
     __all__.extend(["PolarsBigQueryIOManager", "PolarsBigQueryTypeHandler"])
 except ImportError as e:
-    if "google-cloud-bigquery" in str(e):
+    if "google-cloud-bigquery" in str(e) or "dagster-polars[gcp]" in str(e):
         pass
     else:
         raise e
