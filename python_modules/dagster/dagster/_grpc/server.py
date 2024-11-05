@@ -1296,6 +1296,14 @@ class CouldNotStartServerProcess(Exception):
         )
 
 
+INCREASE_TIMEOUT_DAGSTER_YAML_MSG = """To increase the timeout, add the following to a dagster.yaml file, located in your $DAGSTER_HOME folder or the folder where you are running `dagster dev`:
+
+code_servers:
+  local_startup_timeout: <timeout value>
+
+"""
+
+
 def wait_for_grpc_server(
     server_process,
     client,
