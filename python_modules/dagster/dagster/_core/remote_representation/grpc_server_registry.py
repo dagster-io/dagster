@@ -79,6 +79,7 @@ class GrpcServerRegistry(AbstractContextManager):
         inject_env_vars_from_instance: bool = True,
         container_image: Optional[str] = None,
         container_context: Optional[Dict[str, Any]] = None,
+        additional_timeout_msg: Optional[str] = None,
     ):
         self.instance_ref = instance_ref
 
@@ -89,6 +90,9 @@ class GrpcServerRegistry(AbstractContextManager):
 
         self._heartbeat_ttl = check.int_param(heartbeat_ttl, "heartbeat_ttl")
         self._startup_timeout = check.int_param(startup_timeout, "startup_timeout")
+        self._additional_timeout_msg = check.opt_str_param(
+            additional_timeout_msg, "additional_timeout_msg"
+        )
 
         self._lock = threading.Lock()
 
@@ -193,6 +197,7 @@ class GrpcServerRegistry(AbstractContextManager):
                     inject_env_vars_from_instance=self._inject_env_vars_from_instance,
                     container_image=self._container_image,
                     container_context=self._container_context,
+                    additional_timeout_msg=self._additional_timeout_msg,
                 )
                 self._all_processes.append(server_process)
                 self._active_entries[origin_id] = ServerRegistryEntry(

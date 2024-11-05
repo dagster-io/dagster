@@ -80,6 +80,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
                 container_image=self._container_image,
                 container_context=self._container_context,
                 wait_for_processes_on_shutdown=True,
+                additional_timeout_msg="Set from --startup-timeout command line argument. ",
             )
         )
         self._origin = ManagedGrpcPythonEnvCodeLocationOrigin(

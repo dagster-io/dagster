@@ -75,6 +75,7 @@ from dagster._core.workspace.workspace import (
     WorkspaceSnapshot,
     location_status_from_location_entry,
 )
+from dagster._grpc.server import INCREASE_TIMEOUT_DAGSTER_YAML_MSG
 from dagster._time import get_current_timestamp
 from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -650,6 +651,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                     startup_timeout=instance.code_server_process_startup_timeout,
                     log_level=code_server_log_level,
                     wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
+                    additional_timeout_msg=INCREASE_TIMEOUT_DAGSTER_YAML_MSG,
                 )
             )
 
