@@ -3821,7 +3821,7 @@ __metadata:
     chartjs-plugin-zoom: "npm:^1.1.1"
     child-process: "npm:^1.0.2"
     codemirror: "npm:^5.65.2"
-    cronstrue: "npm:^1.84.0"
+    cronstrue: "npm:^2.51.0"
     dagre: "dagster-io/dagre#0.8.5"
     date-fns: "npm:^2.28.0"
     dayjs: "npm:^1.11.7"
@@ -10842,10 +10842,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cronstrue@npm:^1.84.0":
-  version: 1.125.0
-  resolution: "cronstrue@npm:1.125.0"
-  checksum: 10/cbf8691e93539e25007f0e0ddf57f9d221eea67b9d119a00c281b79dd773dd58a45e6337f691863e62f04a4a6e5312fdc78afdc377dd559f979c7ec0292411ce
+"cronstrue@npm:^2.51.0":
+  version: 2.51.0
+  resolution: "cronstrue@npm:2.51.0"
+  bin:
+    cronstrue: bin/cli.js
+  checksum: 10/8fd04d2151b14ac8a34a40e23cf5eb1faebe1406413f0fa05a92605e0c27d826d15cfae4337969807b5815453b6b1ca165611d23f20fcff44eed26dbe392e690
   languageName: node
   linkType: hard
 

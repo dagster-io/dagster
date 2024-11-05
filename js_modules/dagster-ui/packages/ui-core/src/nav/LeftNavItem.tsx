@@ -76,7 +76,9 @@ export const LeftNavItem = React.forwardRef(
             return (
               <div>
                 Schedule:{' '}
-                <strong>{humanCronString(cronSchedule, executionTimezone || 'UTC')}</strong>
+                <strong>
+                  {humanCronString(cronSchedule, {longTimezoneName: executionTimezone || 'UTC'})}
+                </strong>
               </div>
             );
           }

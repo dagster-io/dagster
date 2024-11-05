@@ -165,7 +165,11 @@ export const ScheduleDetails = (props: {
             <td>
               {cronSchedule ? (
                 <Group direction="row" spacing={8}>
-                  <span>{humanCronString(cronSchedule, executionTimezone || 'UTC')}</span>
+                  <span>
+                    {humanCronString(cronSchedule, {
+                      longTimezoneName: executionTimezone || 'UTC',
+                    })}
+                  </span>
                   <Code>({cronSchedule})</Code>
                 </Group>
               ) : (
