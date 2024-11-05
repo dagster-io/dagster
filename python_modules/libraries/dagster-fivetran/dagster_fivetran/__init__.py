@@ -14,7 +14,6 @@ from dagster_fivetran.resources import (
     fivetran_resource as fivetran_resource,
 )
 from dagster_fivetran.types import FivetranOutput as FivetranOutput
-from dagster_fivetran.v2.resources import FivetranWorkspace as FivetranWorkspace
 from dagster_fivetran.version import __version__ as __version__
 
 try:

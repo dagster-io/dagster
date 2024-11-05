@@ -1,0 +1,1 @@
+from dagster_fivetran.v2.resources import FivetranWorkspace as FivetranWorkspace
