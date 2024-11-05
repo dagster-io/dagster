@@ -167,6 +167,58 @@ describe('filterAssetDefinition', () => {
     expect(filterAssetDefinition(filters, definition)).toBe(true);
   });
 
+  it('does case in-sensitive matching', () => {
+    const tag = buildDefinitionTag({
+      key: 'test',
+      value: 'test',
+    });
+    const group = buildAssetGroupSelector({
+      groupName: 'groupName',
+      repositoryLocationName: 'repositoryLocationName',
+      repositoryName: 'repositoryName',
+    });
+    const repo = {
+      location: group.repositoryLocationName,
+      name: group.repositoryName,
+    };
+    const owner = buildTeamAssetOwner({
+      team: 'team1',
+    });
+    const filters = {
+      codeLocations: [repo],
+      groups: [
+        {
+          ...group,
+          groupName: group.groupName.toUpperCase(),
+        },
+      ],
+      kinds: ['COMPUTEkind1'],
+      changedInBranch: [ChangeReason.DEPENDENCIES, ChangeReason.PARTITIONS_DEFINITION],
+      owners: [
+        {
+          ...owner,
+          team: owner.team.toUpperCase(),
+        },
+      ],
+      tags: [{...tag, key: tag.key.toUpperCase(), value: tag.value.toUpperCase()}],
+    };
+    const definition = {
+      repository: buildRepository({
+        name: group.repositoryName,
+        location: buildRepositoryLocation({
+          name: group.repositoryLocationName,
+        }),
+      }),
+      groupName: group.groupName,
+      kinds: ['computeKind1'],
+      changedReasons: [ChangeReason.DEPENDENCIES, ChangeReason.PARTITIONS_DEFINITION],
+      owners: [owner],
+      tags: [tag],
+    };
+
+    expect(filterAssetDefinition(filters, definition)).toBe(true);
+  });
+
   (
     ['changedInBranch', 'kinds', 'groups', 'owners', 'codeLocations', 'tags'] as Array<
       keyof AssetFilterBaseType

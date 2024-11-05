@@ -10,7 +10,7 @@ import {
   DefinitionTag,
 } from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {doesFilterArrayMatchValueArray} from '../ui/Filters/useDefinitionTagFilter';
+import {Tag, doesFilterArrayMatchValueArray} from '../ui/Filters/useDefinitionTagFilter';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
@@ -158,7 +158,7 @@ export function filterAssetDefinition(
     if (
       !filters.groups.some((g) => {
         return (
-          g.groupName === nodeGroup?.groupName &&
+          g.groupName.toLowerCase() === nodeGroup?.groupName.toLowerCase() &&
           g.repositoryLocationName === nodeGroup.repositoryLocationName &&
           g.repositoryName === nodeGroup.repositoryName
         );
@@ -175,7 +175,13 @@ export function filterAssetDefinition(
       return false;
     }
   } else if (filters.kinds?.length) {
-    if (!kinds || !doesFilterArrayMatchValueArray(filters.kinds, kinds)) {
+    if (
+      !kinds ||
+      !doesFilterArrayMatchValueArray(
+        filters.kinds.map((kind) => kind.toLowerCase()),
+        kinds.map((kind) => kind.toLowerCase()),
+      )
+    ) {
       return false;
     }
   }
@@ -202,7 +208,9 @@ export function filterAssetDefinition(
     if (
       !definition?.owners?.length ||
       !filters.owners.some((owner) =>
-        definition.owners!.some((defOwner) => isEqual(defOwner, owner)),
+        definition.owners!.some((defOwner) =>
+          isEqual(lowerCaseOwner(defOwner), lowerCaseOwner(owner)),
+        ),
       )
     ) {
       return false;
@@ -216,11 +224,36 @@ export function filterAssetDefinition(
   } else if (filters.tags?.length) {
     if (
       !definition?.tags?.length ||
-      !doesFilterArrayMatchValueArray(filters.tags, definition.tags)
+      !doesFilterArrayMatchValueArray(
+        filters.tags.map(lowerCaseTag),
+        definition.tags.map(lowerCaseTag),
+      )
     ) {
       return false;
     }
   }
 
   return true;
+}
+
+function lowerCaseOwner(owner: AssetOwner) {
+  if (owner.__typename === 'TeamAssetOwner') {
+    return {
+      ...owner,
+      team: owner.team.toLowerCase(),
+    };
+  } else {
+    return {
+      ...owner,
+      email: owner.email.toLowerCase(),
+    };
+  }
+}
+
+function lowerCaseTag(tag: Tag) {
+  return {
+    ...tag,
+    key: tag.key.toLowerCase(),
+    value: tag.value?.toLowerCase(),
+  };
 }
