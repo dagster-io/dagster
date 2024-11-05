@@ -1,7 +1,10 @@
-# flake8: noqa
 # Generated from AssetSelection.g4 by ANTLR 4.13.2
 from antlr4 import *
-from .AssetSelectionParser import AssetSelectionParser
+
+if "." in __name__:
+    from .AssetSelectionParser import AssetSelectionParser
+else:
+    from AssetSelectionParser import AssetSelectionParser
 
 
 # This class defines a complete listener for a parse tree produced by AssetSelectionParser.

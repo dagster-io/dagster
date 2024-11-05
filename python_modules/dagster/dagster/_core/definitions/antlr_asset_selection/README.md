@@ -65,7 +65,16 @@ pip install antlr4-python3-runtime
 Under the `python_modules/dagster/dagster/_core/definitions/asset_selection` directory, run
 
 ```bash
-$ antlr4 -Dlanguage=Python3 -visitor AssetSelection.g4
+$ antlr4 -Dlanguage=Python3 -visitor AssetSelection.g4 -o generated
 ```
 
-This will generate the lexer, listener, parser, and visitor files from the grammar file `AssetSelection.g4`.
+This will generate the following files from the grammar file `AssetSelection.g4` in a `generated` folder:
+
+- `AssetSelection.interp`
+- `AssetSelection.tokens`
+- `AssetSelectionLexer.interp`
+- `AssetSelectionLexer.py`
+- `AssetSelectionLexer.tokens`
+- `AssetSelectionListener.py`
+- `AssetSelectionParser.py`
+- `AssetSelectionVisitor.py`
