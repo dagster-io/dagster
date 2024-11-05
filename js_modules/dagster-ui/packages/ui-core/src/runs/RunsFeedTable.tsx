@@ -19,7 +19,7 @@ import {RunFilterToken} from './RunsFilterInput';
 import {
   RunsFeedTableEntryFragment,
   RunsFeedTableEntryFragment_Run,
-} from './types/RunsFeedRow.types';
+} from './types/RunsFeedTableEntryFragment.types';
 import {useRunsFeedEntries} from './useRunsFeedEntries';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {RunsFilter} from '../graphql/types';

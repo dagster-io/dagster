@@ -12,13 +12,13 @@ import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 
 import {DagsterTag} from './RunTag';
 import {gql, useApolloClient, useLazyQuery} from '../apollo-client';
+import {RUNS_FEED_CURSOR_KEY} from './RunsFeedUtils';
 import {
   RunTagKeysQuery,
   RunTagKeysQueryVariables,
   RunTagValuesQuery,
   RunTagValuesQueryVariables,
 } from './types/RunsFilterInput.types';
-import {RUNS_FEED_CURSOR_KEY} from './useRunsFeedEntries';
 import {COMMON_COLLATOR} from '../app/Util';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunStatus, RunsFilter} from '../graphql/types';

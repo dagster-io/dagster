@@ -1,7 +1,8 @@
 import {useMemo} from 'react';
 
-import {RUNS_FEED_TABLE_ENTRY_FRAGMENT} from './RunsFeedRow';
+import {RUNS_FEED_TABLE_ENTRY_FRAGMENT} from './RunsFeedTableEntryFragment';
 import {useSelectedRunsFeedTab} from './RunsFeedTabs';
+import {RUNS_FEED_CURSOR_KEY} from './RunsFeedUtils';
 import {SCHEDULED_RUNS_LIST_QUERY} from './ScheduledRunListRoot';
 import {
   ScheduledRunsListQuery,
@@ -14,8 +15,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {RunsFilter} from '../graphql/types';
 
 const PAGE_SIZE = 30;
-
-export const RUNS_FEED_CURSOR_KEY = `runs_before`;
 
 export function useRunsFeedEntries(
   filter: RunsFilter,
