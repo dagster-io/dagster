@@ -236,6 +236,25 @@ export function filterAssetDefinition(
   return true;
 }
 
+const KEYS: Record<keyof AssetFilterType, '1'> = {
+  groups: '1',
+  kinds: '1',
+  changedInBranch: '1',
+  owners: '1',
+  tags: '1',
+  codeLocations: '1',
+  selectAllFilters: '1',
+};
+export function getAssetFilterStateQueryString() {
+  const params = new URLSearchParams(location.search);
+  return Object.keys(KEYS).reduce((soFar, key) => {
+    if (params.get(key)) {
+      return soFar + `&${key}=${params.get(key)}`;
+    }
+    return soFar;
+  }, '');
+}
+
 function lowerCaseOwner(owner: AssetOwner) {
   if (owner.__typename === 'TeamAssetOwner') {
     return {
