@@ -15,6 +15,7 @@ from dagster import (
     Noneable,
     Permissive,
     ScalarUnion,
+    Shape,
     StringSource,
     _check as check,
 )
@@ -66,6 +67,8 @@ DEFAULT_WINDOWS_RESOURCES = {"cpu": "1024", "memory": "2048"}
 
 DEFAULT_LINUX_RESOURCES = {"cpu": "256", "memory": "512"}
 
+TAGS_TO_EXCLUDE_FROM_PROPAGATION = {"dagster/op_selection", "dagster/solid_selection"}
+
 DEFAULT_REGISTER_TASK_DEFINITION_RETRIES = 5
 DEFAULT_RUN_TASK_RETRIES = 5
 
@@ -80,15 +83,16 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self,
         inst_data: Optional[ConfigurableClassData] = None,
         task_definition=None,
-        container_name="run",
-        secrets=None,
-        secrets_tag="dagster",
-        env_vars=None,
-        include_sidecars=False,
+        container_name: str = "run",
+        secrets: Optional[List[str]] = None,
+        secrets_tag: str = "dagster",
+        env_vars: Optional[Sequence[str]] = None,
+        include_sidecars: bool = False,
         use_current_ecs_task_config: bool = True,
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
         run_resources: Optional[Dict[str, Any]] = None,
         run_ecs_tags: Optional[List[Dict[str, Optional[str]]]] = None,
+        propagate_tags: Optional[Dict[str, Any]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -179,6 +183,24 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self.run_resources = check.opt_mapping_param(run_resources, "run_resources")
 
         self.run_ecs_tags = check.opt_sequence_param(run_ecs_tags, "run_ecs_tags")
+        self.propagate_tags = check.opt_dict_param(
+            propagate_tags,
+            "propagate_tags",
+            key_type=str,
+            value_type=List,
+        )
+        if self.propagate_tags:
+            check.invariant(
+                list(self.propagate_tags.keys()) == ["allow_list"],
+                "Only allow_list can be set for the propagate_tags config property",
+            )
+        if self.propagate_tags.get("allow_list"):
+            # These tags are potentially very large and can cause ECS to fail to start a task. They also don't seem particularly useful in a task-tagging context
+            check.invariant(
+                TAGS_TO_EXCLUDE_FROM_PROPAGATION - set(self.propagate_tags.get("allow_list", []))
+                == TAGS_TO_EXCLUDE_FROM_PROPAGATION,
+                f"Cannot include {TAGS_TO_EXCLUDE_FROM_PROPAGATION} in allow_list",
+            )
 
         self._current_task_metadata = None
         self._current_task = None
@@ -335,6 +357,19 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     " always be set by the run launcher."
                 ),
             ),
+            "propagate_tags": Field(
+                Shape(
+                    {
+                        "allow_list": Field(
+                            Array(str),
+                            is_required=True,
+                            description="List of specific tag keys from the Dagster run which should be propagated to the ECS task.",
+                        ),
+                    }
+                ),
+                is_required=False,
+                description="Configuration for propagating tags from Dagster runs to ECS tasks. Currently only exposes an allow list.",
+            ),
             **SHARED_ECS_SCHEMA,
         }
 
@@ -352,17 +387,35 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         }
         self._instance.add_run_tags(run_id, tags)
 
-    def build_ecs_tags_for_run_task(self, run, container_context: EcsContainerContext):
-        if any(tag["key"] == "dagster/run_id" for tag in container_context.run_ecs_tags):
-            raise Exception("Cannot override system ECS tag: dagster/run_id")
+    def build_ecs_tags_for_run_task(self, run: DagsterRun, container_context: EcsContainerContext):
+        run_id_tag = "dagster/run_id"
+        if any(tag["key"] == run_id_tag for tag in container_context.run_ecs_tags):
+            raise Exception(f"Cannot override system ECS tag: {run_id_tag}")
+
+        tags_to_propagate = self._get_tags_to_propagate_to_ecs_task(run)
 
         return [
-            {"key": "dagster/run_id", "value": run.run_id},
+            {"key": run_id_tag, "value": run.run_id},
             {"key": "dagster/job_name", "value": run.job_name},
             *container_context.run_ecs_tags,
+            *tags_to_propagate,
         ]
 
-    def _get_run_tags(self, run_id):
+    def _get_tags_to_propagate_to_ecs_task(self, run: DagsterRun) -> List[Dict[str, str]]:
+        # These tags often contain * or + characters which are not allowed in ECS tags.
+        # They don't seem super useful from an observability perspective, so are excluded from the ECS tags
+
+        tags_to_propagate = []
+        if allow_list := (self.propagate_tags or {}).get("allow_list", []):
+            # Add contextual Dagster run tags to ECS tags
+            tags_to_propagate = [
+                {"key": k, "value": v}
+                for k, v in run.tags.items()
+                if k in allow_list and k not in TAGS_TO_EXCLUDE_FROM_PROPAGATION
+            ]
+        return tags_to_propagate
+
+    def _get_run_tags(self, run_id: str) -> Tags:
         run = self._instance.get_run_by_id(run_id)
         tags = run.tags if run else {}
         arn = tags.get("ecs/task_arn")
@@ -434,6 +487,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         )
         command = self._get_command_args(args, context)
         image = self._get_image_for_run(context)
+        if image is None:
+            raise ValueError("Could not determine image for run")
 
         run_task_kwargs = self._run_task_kwargs(run, image, container_context)
 
@@ -458,12 +513,14 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             **cpu_and_memory_overrides,
             **task_overrides,
         }
+        run_task_kwargs_from_run = self._get_run_task_kwargs_from_run(run)
+
         run_task_kwargs["tags"] = [
             *run_task_kwargs.get("tags", []),
             *self.build_ecs_tags_for_run_task(run, container_context),
+            *run_task_kwargs_from_run.get("tags", []),
         ]
 
-        run_task_kwargs_from_run = self._get_run_task_kwargs_from_run(run)
         run_task_kwargs.update(run_task_kwargs_from_run)
 
         # launchType and capacityProviderStrategy are incompatible - prefer the latter if it is set
@@ -540,10 +597,15 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def _get_run_task_kwargs_from_run(self, run: DagsterRun) -> Mapping[str, Any]:
         run_task_kwargs = run.tags.get("ecs/run_task_kwargs")
         if run_task_kwargs:
-            return json.loads(run_task_kwargs)
+            result = json.loads(run_task_kwargs)
+            check.invariant(
+                not isinstance(result, list),
+                f"Unexpected type for `ecs/run_task_kwargs` tag: {type(result)}",
+            )
+            return result
         return {}
 
-    def terminate(self, run_id):
+    def terminate(self, run_id: str):
         tags = self._get_run_tags(run_id)
 
         run = self._instance.get_run_by_id(run_id)
@@ -583,10 +645,12 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def _get_run_task_definition_family(self, run: DagsterRun) -> str:
         return get_task_definition_family("run", check.not_none(run.remote_job_origin))
 
-    def _get_container_name(self, container_context) -> str:
+    def _get_container_name(self, container_context: EcsContainerContext) -> str:
         return container_context.container_name or self.container_name
 
-    def _run_task_kwargs(self, run, image, container_context) -> Dict[str, Any]:
+    def _run_task_kwargs(
+        self, run: DagsterRun, image: str, container_context: EcsContainerContext
+    ) -> Dict[str, Any]:
         """Return a dictionary of args to launch the ECS task, registering a new task
         definition if needed.
         """
@@ -772,11 +836,11 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         return False
 
-    def _is_transient_startup_failure(self, run, task):
-        if not task.get("stoppedReason"):
+    def _is_transient_startup_failure(self, run: DagsterRun, task: Dict[str, Any]):
+        if task.get("stoppedReason") is None:
             return False
         return run.status == DagsterRunStatus.STARTING and self._is_transient_stop_reason(
-            task.get("stoppedReason")
+            task.get("stoppedReason", "")
         )
 
     def check_run_worker_health(self, run: DagsterRun):
