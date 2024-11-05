@@ -23,6 +23,7 @@ from dagster._core.storage.event_log.base import (
 )
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.schedules.base import ScheduleStorage
+from dagster._core.storage.sql import AlembicVersion
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
@@ -343,6 +344,9 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def replace_job_origin(self, run: "DagsterRun", job_origin: "RemoteJobOrigin") -> None:
         return self._storage.run_storage.replace_job_origin(run, job_origin)
+
+    def alembic_version(self) -> Optional[AlembicVersion]:
+        return self._storage.run_storage.alembic_version()
 
 
 class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
