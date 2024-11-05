@@ -347,7 +347,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def root_executable_asset_keys(self) -> AbstractSet[AssetKey]:
         """Executable asset keys that have no executable parents."""
         return fetch_sources(
-            self.asset_dep_graph,
+            self,
             self.observable_asset_keys | self.materializable_asset_keys,
         )
 
