@@ -386,14 +386,14 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "examples/experimental/dagster-dlift",
-        name=":dbt: dlift",
+        name="dlift",
     ),
     # Runs against live dbt cloud instance, we only want to run on commits and on the
     # nightly build
     PackageSpec(
         "examples/experimental/dagster-dlift/kitchen-sink",
         skip_if=skip_if_not_dlift_commit,
-        name=":dbt: dlift live",
+        name="dlift-live",
         env_vars=[
             "KS_DBT_CLOUD_ACCOUNT_ID",
             "KS_DBT_CLOUD_PROJECT_ID",
