@@ -155,7 +155,6 @@ setup(
             "types-requests",  # version will be resolved against requests
             "types-simplejson",  # version will be resolved against simplejson
             "types-six",  # needed but not specified by grpcio
-            "types-sqlalchemy==1.4.53.34",  # later versions introduce odd errors
             "types-tabulate",  # version will be resolved against tabulate
             "types-tzlocal",  # version will be resolved against tzlocal
             "types-toml",  # version will be resolved against toml
