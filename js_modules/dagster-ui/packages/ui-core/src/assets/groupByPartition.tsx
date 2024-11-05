@@ -54,22 +54,9 @@ export function useGroupedEvents(
   loadedPartitionKeys: string[] | undefined,
 ) {
   return useMemo<AssetEventGroup[]>(() => {
-    let events = [...materializations, ...observations].sort(
+    const events = [...materializations, ...observations].sort(
       (b, a) => Number(a.timestamp) - Number(b.timestamp),
     );
-
-    // If we're graphing datapoints for an asset that has both materializations and
-    // observations, they may be emitted at different rates so "last 100 events" may
-    // cover different amounts of time. The graph is only 'valid' for the time range
-    // containing both data streams, so we clip it to that timestamp.
-    if (materializations.length && observations.length) {
-      const minMaterializationTimestamp = Math.min(
-        ...materializations.map((m) => Number(m.timestamp)),
-      );
-      const minObservationTimestamp = Math.min(...observations.map((m) => Number(m.timestamp)));
-      const nearerTimestamp = Math.max(minMaterializationTimestamp, minObservationTimestamp);
-      events = events.filter((e) => Number(e.timestamp) > nearerTimestamp);
-    }
 
     if (xAxis === 'partition' && loadedPartitionKeys) {
       return groupByPartition(events, loadedPartitionKeys);

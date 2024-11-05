@@ -4,6 +4,7 @@ import {useMemo} from 'react';
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey, AssetViewParams} from './types';
 import {gql, useQuery} from '../apollo-client';
+import {clipEventsToSharedMinimumTime} from './clipEventsToSharedMinimumTime';
 import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
@@ -67,8 +68,14 @@ export function useRecentAssetEvents(
 
   const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
-    const materializations = asset?.assetMaterializations || [];
-    const observations = asset?.assetObservations || [];
+    const loaded = {
+      materializations: asset?.assetMaterializations || [],
+      observations: asset?.assetObservations || [],
+    };
+
+    const {materializations, observations} = !loadUsingPartitionKeys
+      ? clipEventsToSharedMinimumTime(loaded.materializations, loaded.observations, 100)
+      : loaded;
 
     const allPartitionKeys = asset?.definition?.partitionKeys;
     const loadedPartitionKeys =
