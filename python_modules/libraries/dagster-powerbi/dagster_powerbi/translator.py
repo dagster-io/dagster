@@ -9,8 +9,9 @@ from dagster import (
 )
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
+from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -39,21 +40,20 @@ PARSE_M_QUERY_OBJECT = re.compile(r'\[Name="(?P<name>[^"]+)",Kind="(?P<kind>[^"]
 def _attempt_parse_m_query_source(sources: List[Dict[str, Any]]) -> Optional[AssetKey]:
     for source in sources:
         if "expression" in source:
-            if "Snowflake.Databases" in source["expression"]:
-                objects = PARSE_M_QUERY_OBJECT.findall(source["expression"])
-                objects_by_kind = {obj[1]: obj[0].lower() for obj in objects}
+            objects = PARSE_M_QUERY_OBJECT.findall(source["expression"])
+            objects_by_kind = {obj[1]: obj[0].lower() for obj in objects}
 
-                if "Schema" in objects_by_kind and "Table" in objects_by_kind:
-                    if "Database" in objects_by_kind:
-                        return AssetKey(
-                            [
-                                objects_by_kind["Database"],
-                                objects_by_kind["Schema"],
-                                objects_by_kind["Table"],
-                            ]
-                        )
-                    else:
-                        return AssetKey([objects_by_kind["Schema"], objects_by_kind["Table"]])
+            if "Schema" in objects_by_kind and "Table" in objects_by_kind:
+                if "Database" in objects_by_kind:
+                    return AssetKey(
+                        [
+                            objects_by_kind["Database"],
+                            objects_by_kind["Schema"],
+                            objects_by_kind["Table"],
+                        ]
+                    )
+                else:
+                    return AssetKey([objects_by_kind["Schema"], objects_by_kind["Table"]])
 
 
 @whitelist_for_serdes
@@ -137,6 +137,18 @@ class PowerBIMetadataSet(NamespacedMetadataSet):
         return "dagster-powerbi"
 
 
+def _build_table_metadata(table: Dict[str, Any]) -> TableMetadataSet:
+    return TableMetadataSet(
+        table_name=table["name"],
+        column_schema=TableSchema(
+            columns=[
+                TableColumn(name=column["name"].lower(), type=column.get("dataType"))
+                for column in table["columns"]
+            ]
+        ),
+    )
+
+
 class DagsterPowerBITranslator:
     """Translator class which converts raw response data from the PowerBI API into AssetSpecs.
     Subclass this class to implement custom logic for each type of PowerBI content.
@@ -170,6 +182,7 @@ class DagsterPowerBITranslator:
         )
 
     def get_dashboard_spec(self, data: PowerBIContentData) -> AssetSpec:
+        dashboard_id = data.properties["id"]
         tile_report_ids = [
             tile["reportId"] for tile in data.properties["tiles"] if "reportId" in tile
         ]
@@ -177,7 +190,10 @@ class DagsterPowerBITranslator:
             self.get_report_asset_key(self.workspace_data.reports_by_id[report_id])
             for report_id in tile_report_ids
         ]
-        url = data.properties.get("webUrl")
+        url = (
+            data.properties.get("webUrl")
+            or f"https://app.powerbi.com/groups/{self.workspace_data.workspace_id}/dashboards/{dashboard_id}"
+        )
 
         return AssetSpec(
             key=self.get_dashboard_asset_key(data),
@@ -191,10 +207,16 @@ class DagsterPowerBITranslator:
         return AssetKey(["report", _clean_asset_name(data.properties["name"])])
 
     def get_report_spec(self, data: PowerBIContentData) -> AssetSpec:
+        report_id = data.properties["id"]
         dataset_id = data.properties["datasetId"]
         dataset_data = self.workspace_data.semantic_models_by_id.get(dataset_id)
         dataset_key = self.get_semantic_model_asset_key(dataset_data) if dataset_data else None
-        url = data.properties.get("webUrl")
+        url = (
+            data.properties.get("webUrl")
+            or f"https://app.powerbi.com/groups/{self.workspace_data.workspace_id}/reports/{report_id}"
+        )
+
+        owner = data.properties.get("createdBy")
 
         return AssetSpec(
             key=self.get_report_asset_key(data),
@@ -202,24 +224,44 @@ class DagsterPowerBITranslator:
             metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
             tags={**PowerBITagSet(asset_type="report")},
             kinds={"powerbi", "report"},
+            owners=[owner] if owner else None,
         )
 
     def get_semantic_model_asset_key(self, data: PowerBIContentData) -> AssetKey:
         return AssetKey(["semantic_model", _clean_asset_name(data.properties["name"])])
 
     def get_semantic_model_spec(self, data: PowerBIContentData) -> AssetSpec:
+        dataset_id = data.properties["id"]
         source_ids = data.properties.get("sources", [])
         source_keys = [
             self.get_data_source_asset_key(self.workspace_data.data_sources_by_id[source_id])
             for source_id in source_ids
         ]
-        url = data.properties.get("webUrl")
+        url = (
+            data.properties.get("webUrl")
+            or f"https://app.powerbi.com/groups/{self.workspace_data.workspace_id}/datasets/{dataset_id}"
+        )
 
         for table in data.properties.get("tables", []):
-            source = table.get("source")
+            source = table.get("source", [])
             source_key = _attempt_parse_m_query_source(source)
             if source_key:
                 source_keys.append(source_key)
+
+        owner = data.properties.get("configuredBy")
+
+        tables = data.properties.get("tables")
+        table_meta = {}
+        if tables:
+            if len(tables) == 1:
+                table_meta = _build_table_metadata(tables[0])
+            else:
+                table_meta = {
+                    f"{table['name'].lower()}_column_schema": _build_table_metadata(
+                        table
+                    ).column_schema
+                    for table in tables
+                }
 
         return AssetSpec(
             key=self.get_semantic_model_asset_key(data),
@@ -227,10 +269,12 @@ class DagsterPowerBITranslator:
             metadata={
                 **PowerBIMetadataSet(
                     web_url=MetadataValue.url(url) if url else None, id=data.properties["id"]
-                )
+                ),
+                **table_meta,
             },
             tags={**PowerBITagSet(asset_type="semantic_model")},
             kinds={"powerbi", "semantic model"},
+            owners=[owner] if owner else None,
         )
 
     def get_data_source_asset_key(self, data: PowerBIContentData) -> AssetKey:
