@@ -37,21 +37,6 @@ class FivetranWorkspaceData:
 
     @classmethod
     def from_content_data(
-            cls, content_data: Sequence[FivetranContentData]
-    ) -> "FivetranWorkspaceData":
-        raise NotImplementedError()
-
-@record
-class FivetranWorkspaceData:
-    """A record representing all content in a Fivetran workspace.
-    Provided as context for the translator so that it can resolve dependencies between content.
-    """
-
-    connectors_by_id: Mapping[str, FivetranContentData]
-    destinations_by_id: Mapping[str, FivetranContentData]
-
-    @classmethod
-    def from_content_data(
         cls, content_data: Sequence[FivetranContentData]
     ) -> "FivetranWorkspaceData":
         raise NotImplementedError()
