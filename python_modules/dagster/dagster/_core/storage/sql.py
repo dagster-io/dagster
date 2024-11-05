@@ -64,6 +64,11 @@ _alembic_lock = threading.Lock()
 
 def stamp_alembic_rev(alembic_config: Config, conn: Connection, rev: str = "head") -> None:
     with _alembic_lock:
+        migration_context = MigrationContext.configure(conn)
+        db_revision = migration_context.get_current_revision()
+        if db_revision is not None:
+            # sanity check that another thread hasn't stamped a revision
+            return
         alembic_config.attributes["connection"] = conn
         stamp(alembic_config, rev)
 
@@ -76,6 +81,16 @@ def check_alembic_revision(alembic_config: Config, conn: Connection) -> AlembicV
         head_revision = script.as_revision_number("head")
 
     return (db_revision, head_revision)
+
+
+def safe_commit(conn: Connection) -> None:
+    """Commits to a connection if it is in a transaction. Supports compatibility across SQLAlchemy versions,
+    since older versions (1.3) have autocommit on transactions, instead of explicit commits.
+    """
+    if not conn.in_transaction():
+        return
+    if hasattr(conn, "commit"):
+        conn.commit()  # type: ignore
 
 
 def run_migrations_offline(

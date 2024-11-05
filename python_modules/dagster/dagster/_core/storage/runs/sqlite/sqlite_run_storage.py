@@ -27,9 +27,13 @@ from dagster._core.storage.sql import (
     get_alembic_config,
     run_alembic_downgrade,
     run_alembic_upgrade,
+    safe_commit,
     stamp_alembic_rev,
 )
-from dagster._core.storage.sqlite import create_db_conn_string
+from dagster._core.storage.sqlite import (
+    LAST_KNOWN_STAMPED_SQLITE_ALEMBIC_REVISION,
+    create_db_conn_string,
+)
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import mkdir_p
 
@@ -92,11 +96,22 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         should_mark_indexes = False
         with engine.connect() as connection:
             db_revision, head_revision = check_alembic_revision(alembic_config, connection)
+            table_names = db.inspect(engine).get_table_names()
             if not (db_revision and head_revision):
+                if "runs" in table_names:
+                    # The runs table exists but the alembic version table does not. This means that the SQLite db was
+                    # initialized with SQLAlchemy 2.0 before https://github.com/dagster-io/dagster/pull/25740 was merged.
+                    # We should pin the alembic revision to the last known stamped revision before we unpinned SQLAlchemy 2.0
+                    # This should be safe because we have guarded all known migrations since then.
+                    rev_to_stamp = LAST_KNOWN_STAMPED_SQLITE_ALEMBIC_REVISION
+                else:
+                    should_mark_indexes = True
+                    rev_to_stamp = "head"
+
                 RunStorageSqlMetadata.create_all(engine)
                 connection.execute(db.text("PRAGMA journal_mode=WAL;"))
-                stamp_alembic_rev(alembic_config, connection)
-                should_mark_indexes = True
+                stamp_alembic_rev(alembic_config, connection, rev=rev_to_stamp)
+                safe_commit(connection)
 
             table_names = db.inspect(engine).get_table_names()
             if "instance_info" not in table_names:

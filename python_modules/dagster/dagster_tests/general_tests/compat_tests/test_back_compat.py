@@ -1312,6 +1312,28 @@ def test_add_runs_by_backfill_id_idx():
             assert "idx_runs_by_backfill_id" in get_sqlite3_indexes(db_path, "runs")
 
 
+def test_bad_alembic_stamp():
+    # same snapshot file as above, but with sqlite db that was not alembic stamped
+    src_dir = file_relative_path(__file__, "snapshot_1_8_12_bad_alembic_stamp/sqlite")
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM alembic_version")
+        rows = cursor.fetchall()
+        conn.close()
+        assert len(rows) == 0
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "idx_runs_by_backfill_id" not in get_sqlite3_indexes(db_path, "runs")
+            instance.upgrade()
+            assert "idx_runs_by_backfill_id" in get_sqlite3_indexes(db_path, "runs")
+            alembic_version = instance.run_storage.alembic_version()
+            assert alembic_version
+            db_revision, head_revision = alembic_version
+            assert db_revision == head_revision
+
+
 def test_add_backfill_tags():
     src_dir = file_relative_path(
         __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
