@@ -110,7 +110,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if not os.path.exists(self.path_for_shard(INDEX_SHARD_NAME)):
             conn_string = self.conn_string_for_shard(INDEX_SHARD_NAME)
             engine = create_engine(conn_string, poolclass=NullPool)
-            self._initdb(engine)
+            self._initdb(engine, for_index_shard=True)
             self.reindex_events()
             self.reindex_assets()
 
@@ -166,7 +166,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         check.str_param(shard_name, "shard_name")
         return create_db_conn_string(self._base_dir, shard_name)
 
-    def _initdb(self, engine: Engine) -> None:
+    def _initdb(self, engine: Engine, for_index_shard=False) -> None:
         alembic_config = get_alembic_config(__file__)
 
         retry_limit = 10
@@ -178,7 +178,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
                     if not (db_revision and head_revision):
                         table_names = db.inspect(engine).get_table_names()
-                        if "event_logs" in table_names:
+                        if "event_logs" in table_names and for_index_shard:
                             # The event_log table exists but the alembic version table does not. This means that the SQLite db was
                             # initialized with SQLAlchemy 2.0 before https://github.com/dagster-io/dagster/pull/25740 was merged.
                             # We should pin the alembic revision to the last known stamped revision before we unpinned SQLAlchemy 2.0
