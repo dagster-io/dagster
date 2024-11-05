@@ -1362,10 +1362,10 @@ def test_add_backfill_tags():
             )
             instance.add_backfill(after_migration)
 
-            con = sqlite3.connect(db_path)
-            cursor = con.cursor()
-            cursor.execute("SELECT backfill_id, key, value FROM backfill_tags")
-            rows = cursor.fetchall()
+            with instance.run_storage.connect() as conn:
+                rows = conn.execute(
+                    db.text("SELECT backfill_id, key, value FROM backfill_tags")
+                ).fetchall()
 
             assert len(rows) == 2
             ids_to_tags = {row[0]: {row[1]: row[2]} for row in rows}
@@ -1473,10 +1473,8 @@ def test_add_bulk_actions_job_name_column():
             )
             instance.add_backfill(after_migration)
 
-            con = sqlite3.connect(db_path)
-            cursor = con.cursor()
-            cursor.execute("SELECT key, job_name FROM bulk_actions")
-            rows = cursor.fetchall()
+            with instance.run_storage.connect() as conn:
+                rows = conn.execute(db.text("SELECT key, job_name FROM bulk_actions")).fetchall()
 
             assert len(rows) == 3  # a backfill exists in the db snapshot
             ids_to_job_name = {row[0]: row[1] for row in rows}
@@ -1502,7 +1500,7 @@ def test_add_bulk_actions_job_name_column():
             )
 
             # test downgrade
-            instance._run_storage._alembic_downgrade(rev="1aca709bba64")
+            instance.run_storage._alembic_downgrade(rev="1aca709bba64")
 
             assert get_current_alembic_version(db_path) == "1aca709bba64"
             backfill_columns = get_sqlite3_columns(db_path, "bulk_actions")
