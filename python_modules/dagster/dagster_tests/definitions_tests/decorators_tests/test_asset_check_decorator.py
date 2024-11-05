@@ -81,6 +81,29 @@ def test_asset_check_decorator_name() -> None:
     assert spec.name == "check1"
 
 
+def test_asset_check_decorator_docstring_description() -> None:
+    @asset_check(asset="asset1")
+    def check1():
+        """Docstring."""
+        pass
+
+    assert (
+        check1.get_spec_for_check_key(AssetCheckKey(AssetKey(["asset1"]), "check1")).description
+        == "Docstring."
+    )
+
+
+def test_asset_check_decorator_parameter_description() -> None:
+    @asset_check(asset="asset1", description="parameter")
+    def check1():
+        """Docstring."""
+
+    assert (
+        check1.get_spec_for_check_key(AssetCheckKey(AssetKey(["asset1"]), "check1")).description
+        == "parameter"
+    )
+
+
 def test_asset_check_with_prefix() -> None:
     @asset(key_prefix="prefix")
     def asset1() -> None: ...
