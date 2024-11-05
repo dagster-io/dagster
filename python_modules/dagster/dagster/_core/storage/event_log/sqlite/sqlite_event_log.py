@@ -45,10 +45,14 @@ from dagster._core.storage.sql import (
     create_engine,
     get_alembic_config,
     run_alembic_upgrade,
+    safe_commit,
     stamp_alembic_rev,
 )
 from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._core.storage.sqlite import create_db_conn_string
+from dagster._core.storage.sqlite import (
+    LAST_KNOWN_STAMPED_SQLITE_ALEMBIC_REVISION,
+    create_db_conn_string,
+)
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
@@ -106,7 +110,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if not os.path.exists(self.path_for_shard(INDEX_SHARD_NAME)):
             conn_string = self.conn_string_for_shard(INDEX_SHARD_NAME)
             engine = create_engine(conn_string, poolclass=NullPool)
-            self._initdb(engine)
+            self._initdb(engine, for_index_shard=True)
             self.reindex_events()
             self.reindex_assets()
 
@@ -162,7 +166,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         check.str_param(shard_name, "shard_name")
         return create_db_conn_string(self._base_dir, shard_name)
 
-    def _initdb(self, engine: Engine) -> None:
+    def _initdb(self, engine: Engine, for_index_shard=False) -> None:
         alembic_config = get_alembic_config(__file__)
 
         retry_limit = 10
@@ -173,9 +177,19 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     db_revision, head_revision = check_alembic_revision(alembic_config, connection)
 
                     if not (db_revision and head_revision):
+                        table_names = db.inspect(engine).get_table_names()
+                        if "event_logs" in table_names and for_index_shard:
+                            # The event_log table exists but the alembic version table does not. This means that the SQLite db was
+                            # initialized with SQLAlchemy 2.0 before https://github.com/dagster-io/dagster/pull/25740 was merged.
+                            # We should pin the alembic revision to the last known stamped revision before we unpinned SQLAlchemy 2.0
+                            # This should be safe because we have guarded all known migrations since then.
+                            rev_to_stamp = LAST_KNOWN_STAMPED_SQLITE_ALEMBIC_REVISION
+                        else:
+                            rev_to_stamp = "head"
                         SqlEventLogStorageMetadata.create_all(engine)
                         connection.execute(db.text("PRAGMA journal_mode=WAL;"))
-                        stamp_alembic_rev(alembic_config, connection)
+                        stamp_alembic_rev(alembic_config, connection, rev=rev_to_stamp)
+                        safe_commit(connection)
 
                 break
             except (db_exc.DatabaseError, sqlite3.DatabaseError, sqlite3.OperationalError) as exc:

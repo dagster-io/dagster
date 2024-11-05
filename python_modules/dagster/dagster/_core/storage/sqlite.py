@@ -3,6 +3,8 @@ import sqlite3
 
 import dagster._check as check
 
+LAST_KNOWN_STAMPED_SQLITE_ALEMBIC_REVISION = "5771160a95ad"
+
 
 def create_db_conn_string(base_dir: str, db_name: str) -> str:
     check.str_param(base_dir, "base_dir")
