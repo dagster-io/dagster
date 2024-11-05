@@ -1,25 +1,21 @@
-from typing import Iterator, Callable
 import contextlib
+from typing import Callable, Iterator
 
 import pytest
-
 import responses
-
-from dagster_fivetran.experimental.resources import FIVETRAN_API_BASE, FIVETRAN_API_VERSION, FIVETRAN_CONNECTOR_ENDPOINT
+from dagster_fivetran.experimental.resources import (
+    FIVETRAN_API_BASE,
+    FIVETRAN_API_VERSION,
+    FIVETRAN_CONNECTOR_ENDPOINT,
+)
 
 SAMPLE_GROUPS = {
     "code": "Success",
     "message": "Operation performed.",
     "data": {
-        "items": [
-            {
-                "id": "group_id",
-                "name": "Group_Name",
-                "created_at": "2024-01-01T00:00:00Z"
-            }
-        ],
-        "nextCursor": "cursor_value"
-    }
+        "items": [{"id": "group_id", "name": "Group_Name", "created_at": "2024-01-01T00:00:00Z"}],
+        "nextCursor": "cursor_value",
+    },
 }
 
 SAMPLE_CONNECTORS_FOR_GROUP = {
@@ -37,14 +33,14 @@ SAMPLE_CONNECTORS_FOR_GROUP = {
                         {
                             "code": "resync_table_warning",
                             "message": "Resync Table Warning",
-                            "details": "string"
+                            "details": "string",
                         }
                     ],
                     "warnings": [
                         {
                             "code": "resync_table_warning",
                             "message": "Resync Table Warning",
-                            "details": "string"
+                            "details": "string",
                         }
                     ],
                     "schema_status": "ready",
@@ -52,12 +48,9 @@ SAMPLE_CONNECTORS_FOR_GROUP = {
                     "setup_state": "connected",
                     "sync_state": "scheduled",
                     "is_historical_sync": False,
-                    "rescheduled_for": "2024-12-01T15:43:29.013729Z"
+                    "rescheduled_for": "2024-12-01T15:43:29.013729Z",
                 },
-                "config": {
-                    "property1": {},
-                    "property2": {}
-                },
+                "config": {"property1": {}, "property2": {}},
                 "daily_sync_time": "14:00",
                 "succeeded_at": "2024-12-01T15:43:29.013729Z",
                 "sync_frequency": 360,
@@ -68,7 +61,7 @@ SAMPLE_CONNECTORS_FOR_GROUP = {
                         "title": "Test Title",
                         "status": "PASSED",
                         "message": "Test Passed",
-                        "details": "Test Details"
+                        "details": "Test Details",
                     }
                 ],
                 "source_sync_details": {},
@@ -80,7 +73,7 @@ SAMPLE_CONNECTORS_FOR_GROUP = {
                 "networking_method": "Directly",
                 "connect_card": {
                     "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkIjp7ImxvZ2luIjp0cnVlLCJ1c2VyIjoiX2FjY291bnR3b3J0aHkiLCJhY2NvdW50IjoiX21vb25iZWFtX2FjYyIsImdyb3VwIjoiX21vb25iZWFtIiwiY29ubmVjdG9yIjoiY29iYWx0X2VsZXZhdGlvbiIsIm1ldGhvZCI6IlBiZkNhcmQiLCJpZGVudGl0eSI6ZmFsc2V9LCJpYXQiOjE2Njc4MzA2MzZ9.YUMGUbzxW96xsKJLo4bTorqzx8Q19GTrUi3WFRFM8BU",
-                    "uri": "https://fivetran.com/connect-card/setup?auth=eyJ0eXAiOiJKV1QiLCJh..."
+                    "uri": "https://fivetran.com/connect-card/setup?auth=eyJ0eXAiOiJKV1QiLCJh...",
                 },
                 "pause_after_trial": False,
                 "data_delay_threshold": 0,
@@ -89,13 +82,13 @@ SAMPLE_CONNECTORS_FOR_GROUP = {
                 "local_processing_agent_id": "string",
                 "connect_card_config": {
                     "redirect_uri": "https://your.site/path",
-                    "hide_setup_guide": True
+                    "hide_setup_guide": True,
                 },
-                "hybrid_deployment_agent_id": "string"
+                "hybrid_deployment_agent_id": "string",
             }
         ],
-        "nextCursor": "cursor_value"
-    }
+        "nextCursor": "cursor_value",
+    },
 }
 
 SAMPLE_DESTINATION_DETAILS = {
@@ -115,7 +108,7 @@ SAMPLE_DESTINATION_DETAILS = {
                 "title": "Test Title",
                 "status": "PASSED",
                 "message": "Test Passed",
-                "details": "Test Details"
+                "details": "Test Details",
             }
         ],
         "local_processing_agent_id": "local_processing_agent_id",
@@ -139,9 +132,9 @@ SAMPLE_DESTINATION_DETAILS = {
             "databricks_connection_type": "Directly | PrivateLink | SshTunnel | ProxyAgent",
             "secret_value": "service_principal_secret_value",
             "oauth2_client_id": "string",
-            "personal_access_token": "string"
-        }
-    }
+            "personal_access_token": "string",
+        },
+    },
 }
 
 SAMPLE_CONNECTOR_DETAILS = {
@@ -157,14 +150,14 @@ SAMPLE_CONNECTOR_DETAILS = {
                 {
                     "code": "resync_table_warning",
                     "message": "Resync Table Warning",
-                    "details": "string"
+                    "details": "string",
                 }
             ],
             "warnings": [
                 {
                     "code": "resync_table_warning",
                     "message": "Resync Table Warning",
-                    "details": "string"
+                    "details": "string",
                 }
             ],
             "schema_status": "ready",
@@ -172,7 +165,7 @@ SAMPLE_CONNECTOR_DETAILS = {
             "setup_state": "connected",
             "sync_state": "scheduled",
             "is_historical_sync": False,
-            "rescheduled_for": "2024-12-01T15:43:29.013729Z"
+            "rescheduled_for": "2024-12-01T15:43:29.013729Z",
         },
         "daily_sync_time": "14:00",
         "succeeded_at": "2024-03-17T12:31:40.870504Z",
@@ -184,7 +177,7 @@ SAMPLE_CONNECTOR_DETAILS = {
                 "title": "Test Title",
                 "status": "PASSED",
                 "message": "Test Passed",
-                "details": "Test Details"
+                "details": "Test Details",
             }
         ],
         "source_sync_details": {},
@@ -196,31 +189,29 @@ SAMPLE_CONNECTOR_DETAILS = {
         "networking_method": "Directly",
         "connect_card": {
             "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkIjp7ImxvZ2luIjp0cnVlLCJ1c2VyIjoiX2FjY291bnR3b3J0aHkiLCJhY2NvdW50IjoiX21vb25iZWFtX2FjYyIsImdyb3VwIjoiX21vb25iZWFtIiwiY29ubmVjdG9yIjoiY29iYWx0X2VsZXZhdGlvbiIsIm1ldGhvZCI6IlBiZkNhcmQiLCJpZGVudGl0eSI6ZmFsc2V9LCJpYXQiOjE2Njc4MzA2MzZ9.YUMGUbzxW96xsKJLo4bTorqzx8Q19GTrUi3WFRFM8BU",
-            "uri": "https://fivetran.com/connect-card/setup?auth=eyJ0eXAiOiJKV1QiLCJh..."
+            "uri": "https://fivetran.com/connect-card/setup?auth=eyJ0eXAiOiJKV1QiLCJh...",
         },
         "pause_after_trial": False,
         "data_delay_threshold": 0,
         "data_delay_sensitivity": "NORMAL",
         "schedule_type": "auto",
         "local_processing_agent_id": "local_processing_agent_id",
-        "connect_card_config": {
-            "redirect_uri": "https://your.site/path",
-            "hide_setup_guide": True
-        },
+        "connect_card_config": {"redirect_uri": "https://your.site/path", "hide_setup_guide": True},
         "hybrid_deployment_agent_id": "hybrid_deployment_agent_id",
-        "config": {
-            "api_key": "your_15five_api_key"
-        }
-    }
+        "config": {"api_key": "your_15five_api_key"},
+    },
 }
+
 
 @pytest.fixture(name="connector_id")
 def connector_id_fixture() -> str:
     return "connector_id"
 
+
 @pytest.fixture(name="destination_id")
 def destination_id_fixture() -> str:
     return "destination_id"
+
 
 @pytest.fixture(name="group_id")
 def group_id_fixture() -> str:

@@ -1,16 +1,13 @@
-import responses
 import uuid
 from typing import Callable
 
+import responses
 from dagster_fivetran.experimental import FivetranWorkspace
 
 
 @responses.activate
 def test_basic_resource_request(
-    connector_id: str,
-    destination_id: str,
-    group_id: str,
-    workspace_data_api_mocks_fn: Callable
+    connector_id: str, destination_id: str, group_id: str, workspace_data_api_mocks_fn: Callable
 ) -> None:
     api_key = uuid.uuid4().hex
     api_secret = uuid.uuid4().hex
@@ -18,7 +15,6 @@ def test_basic_resource_request(
     resource = FivetranWorkspace(api_key=api_key, api_secret=api_secret)
 
     with workspace_data_api_mocks_fn() as response:
-
         client = resource.get_client()
         client.get_connector_details(connector_id=connector_id)
         client.get_connectors_for_group(group_id=group_id)

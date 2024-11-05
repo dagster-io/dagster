@@ -1,11 +1,10 @@
 import logging
-from typing import Any, Mapping, Optional
-from urllib.parse import urljoin
-import time
 import os
+import time
+from typing import Any, Mapping, Optional
 
 import requests
-from dagster import get_dagster_logger, __version__, Failure
+from dagster import Failure, __version__, get_dagster_logger
 from dagster._annotations import experimental
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._utils.cached_method import cached_method
@@ -14,7 +13,6 @@ from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
 from dagster_fivetran.experimental.translator import FivetranWorkspaceData
-
 
 FIVETRAN_API_BASE = "https://api.fivetran.com"
 FIVETRAN_API_VERSION = "v1"
@@ -141,7 +139,7 @@ class FivetranClient:
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request.
         """
-        return self._make_request("GET", f"groups")
+        return self._make_request("GET", "groups")
 
 
 class FivetranWorkspace(ConfigurableResource):
