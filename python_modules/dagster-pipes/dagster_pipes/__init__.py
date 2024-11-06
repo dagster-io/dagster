@@ -4,8 +4,13 @@ import datetime
 import json
 import logging
 import os
+import queue
+import subprocess
 import sys
+import tempfile
+import threading
 import time
+import traceback
 import warnings
 import zlib
 from abc import ABC, abstractmethod
@@ -721,6 +726,152 @@ class PipesDefaultContextLoader(PipesContextLoader):
             )
 
 
+class ExcThread(threading.Thread):
+    def run(self, *args, **kwargs):
+        self.exceptions = queue.Queue()
+
+        try:
+            super().run(*args, **kwargs)
+        except:
+            self.exceptions.put(sys.exc_info())
+
+    def join(self, *args, **kwargs):
+        super().join(*args, **kwargs)
+
+        while not self.exceptions.empty():
+            exc_info = self.exceptions.get()
+            sys.stderr.write(traceback.format_exception(*exc_info[1].with_traceback(exc_info[2])))
+
+
+class PipesStdioLogWriter(
+    PipesLogWriter[T_LogChannel]
+):  # log writers can potentially capture other type sof logs (for example, from Spark workers)
+    """Log writer which collects stdout and stderr of the current process should inherit from this class."""
+
+    LOGS_DIR_KEY = "logs_dir"
+
+    @abstractmethod
+    def make_channel(
+        self, params: PipesParams, stream: Literal["stdout", "stderr"]
+    ) -> T_LogChannel:
+        pass
+
+    @contextmanager
+    def open(self, params: PipesParams) -> Iterator[None]:
+        is_session_closed = threading.Event()
+        stdout_capturing_started = threading.Event()
+        stderr_capturing_started = threading.Event()
+
+        with ExitStack() as stack:
+            try:
+                stdout_channel = self.make_channel(params, stream="stdout")
+                stderr_channel = self.make_channel(params, stream="stderr")
+
+                stack.enter_context(
+                    stdout_channel.capture(stdout_capturing_started, is_session_closed)
+                )
+                stack.enter_context(
+                    stderr_channel.capture(stderr_capturing_started, is_session_closed)
+                )
+
+                # make sure capturing is working
+                stdout_capturing_started.wait()
+                stderr_capturing_started.wait()
+
+                time.sleep(0.1)  # make sure it's REALLY started
+
+                yield
+            finally:
+                is_session_closed.set()
+
+
+class PipesStdioLogWriterChannel(PipesLogWriterChannel):
+    """A base class for log writer channels that capture stdout and stderr of the current process."""
+
+    def __init__(self, stream: Literal["stdout", "stderr"], interval: float, name: str):
+        self.stream: Literal["stdout", "stderr"] = stream
+        self.interval = interval
+        self._name = name
+
+        self.error_messages = queue.Queue()
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @contextmanager
+    def capture(self, capturing_started: Event, is_session_closed: Event) -> Iterator[None]:
+        with tempfile.NamedTemporaryFile() as temp_file:
+            tee = subprocess.Popen(["tee", str(temp_file.name)], stdin=subprocess.PIPE)
+
+            # Cause tee's stdin to get a copy of our stdin/stdout (as well as that
+            # of any child processes we spawn)
+            if self.stream == "stdout":
+                os.dup2(cast(IO[bytes], tee.stdin).fileno(), sys.stdout.fileno())
+                sys.stdout.write(f"Starting {self.name}\n")
+            elif self.stream == "stderr":
+                os.dup2(cast(IO[bytes], tee.stdin).fileno(), sys.stderr.fileno())
+                sys.stderr.write(f"Starting {self.name}\n")
+            else:
+                raise ValueError(f"stream must be 'stdout' or 'stderr', got {self.stream}")
+
+            thread = ExcThread(
+                target=self.handler,
+                args=(
+                    temp_file.name,
+                    capturing_started,
+                    is_session_closed,
+                ),
+                daemon=True,
+                name=self.name,
+            )
+
+            try:
+                thread.start()
+
+                capturing_started.wait()
+
+                yield
+            finally:
+                thread.join()
+                tee.terminate()
+
+                while not self.error_messages.empty():
+                    sys.stderr.write(self.error_messages.get())
+
+    def handler(self, path: str, capturing_started: Event, is_session_closed: Event):
+        position = 0
+        with open(path, "r") as input_file:
+            SHOULD_EXIT = False
+
+            while True:
+                try:
+                    input_file.seek(position)
+                    chunk = input_file.read()[position:]
+                    position = input_file.tell()
+
+                    if chunk:
+                        self.write_chunk(chunk)
+
+                    if not capturing_started.is_set():
+                        capturing_started.set()
+
+                except Exception as e:
+                    self.error_messages.put(f"Exception in thread {self.name}:\n{e}")
+
+                time.sleep(self.interval)
+
+                if SHOULD_EXIT:
+                    return
+
+                if is_session_closed.is_set():
+                    SHOULD_EXIT = True
+
+    @abstractmethod
+    def write_chunk(self, chunk: str) -> None:
+        pass
+
+
 class PipesDefaultMessageWriter(PipesMessageWriter):
     """Message writer that writes messages to either a file or the stdout or stderr stream.
 
@@ -817,6 +968,47 @@ class PipesBufferedStreamMessageWriterChannel(PipesMessageWriterChannel):
 
 DAGSTER_PIPES_CONTEXT_ENV_VAR = "DAGSTER_PIPES_CONTEXT"
 DAGSTER_PIPES_MESSAGES_ENV_VAR = "DAGSTER_PIPES_MESSAGES"
+DAGSTER_PIPES_LOG_WRITER_KEY = "log_writer"
+
+
+class PipesStdioFileLogWriterChannel(PipesStdioLogWriterChannel):
+    """A log writer channel that writes stdout or stderr to a given file."""
+
+    def __init__(
+        self, output_path: str, stream: Literal["stdout", "stderr"], name: str, interval: float
+    ):
+        self.output_path = output_path
+
+        super().__init__(interval=interval, stream=stream, name=name)
+
+    def write_chunk(self, chunk: str) -> None:
+        # write the chunk to a file
+        with open(self.output_path, "a") as file:
+            file.write(chunk + "\n")
+
+
+class PipesStdioFileLogWriter(PipesStdioLogWriter):
+    """A log writer that writes stdout and stderr to "stdout" and "stderr" files in a given directory."""
+
+    def __init__(self, interval: float = 1):
+        self.interval = interval
+
+        super().__init__()
+
+    def make_channel(
+        self, params: PipesParams, stream: Literal["stdout", "stderr"]
+    ) -> "PipesStdioFileLogWriterChannel":
+        # TODO: maybe instead log to current directory by default
+        # and report the path in launched payload
+        logs_dir = params[self.LOGS_DIR_KEY]
+        os.makedirs(logs_dir, exist_ok=True)
+        output_path = os.path.join(os.path.join(logs_dir), stream)
+        return PipesStdioFileLogWriterChannel(
+            output_path=output_path,
+            stream=stream,
+            name=f"PipesStdioFileLogWriterChannel({stream}->{output_path})",
+            interval=self.interval,
+        )
 
 
 class PipesMappingParamsLoader(PipesParamsLoader):
