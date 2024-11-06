@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import time
-from enum import Enum
 from typing import Any, Mapping, Optional, Sequence, Tuple
 from urllib.parse import urljoin
 
@@ -20,14 +19,13 @@ from dagster import (
 from dagster._annotations import experimental
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
 from pydantic import Field, PrivateAttr
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
+from dagster_fivetran.translator import FivetranWorkspaceData
 from dagster_fivetran.types import FivetranOutput
 from dagster_fivetran.utils import get_fivetran_connector_url, get_fivetran_logs_url
 
@@ -445,39 +443,6 @@ def fivetran_resource(context: InitResourceContext) -> FivetranResource:
 # ------------------
 # Reworked resources
 # ------------------
-class FivetranContentType(Enum):
-    """Enum representing each object in Fivetran's ontology."""
-
-    CONNECTOR = "connector"
-    DESTINATION = "destination"
-
-
-@whitelist_for_serdes
-@record
-class FivetranContentData:
-    """A record representing a piece of content in a Fivetran workspace.
-    Includes the object's type and data as returned from the API.
-    """
-
-    content_type: FivetranContentType
-    properties: Mapping[str, Any]
-
-
-@record
-class FivetranWorkspaceData:
-    """A record representing all content in a Fivetran workspace.
-    Provided as context for the translator so that it can resolve dependencies between content.
-    """
-
-    connectors_by_id: Mapping[str, FivetranContentData]
-    destinations_by_id: Mapping[str, FivetranContentData]
-
-    @classmethod
-    def from_content_data(
-        cls, content_data: Sequence[FivetranContentData]
-    ) -> "FivetranWorkspaceData":
-        raise NotImplementedError()
-
 
 @experimental
 class FivetranClient:
