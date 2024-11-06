@@ -51,13 +51,17 @@ describe('Feature Flags with In-Memory Cache and BroadcastChannel', () => {
 
   it('should return default value for unset flags', () => {
     jest.isolateModules(() => {
-      const {featureEnabled} = require('../Flags');
+      const {featureEnabled, getFeatureFlags} = require('../Flags');
 
       const isEnabled = featureEnabled(FeatureFlag.__TestFlagDefaultTrue);
       expect(isEnabled).toBe(true);
 
       const isEnabled2 = featureEnabled(FeatureFlag.__TestFlagDefaultFalse);
       expect(isEnabled2).toBe(false);
+
+      expect(getFeatureFlags()[FeatureFlag.__TestFlagDefaultFalse]).toBe(false);
+      expect(getFeatureFlags()[FeatureFlag.__TestFlagDefaultTrue]).toBe(true);
+      expect(getFeatureFlags()[FeatureFlag.__TestFlagDefaultNone]).toBe(undefined);
     });
   });
 

@@ -60,7 +60,10 @@ initializeFeatureFlags();
  * Function to retrieve the current feature flags from the in-memory cache.
  */
 export const getFeatureFlags = (): FeatureFlagMap => {
-  return currentFeatureFlags;
+  return {
+    ...DEFAULT_FEATURE_FLAG_VALUES,
+    ...currentFeatureFlags,
+  };
 };
 
 /**
