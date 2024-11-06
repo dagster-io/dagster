@@ -1,6 +1,6 @@
 import pytest
 from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
-    AntlrAssetSelection,
+    AntlrAssetSelectionParser,
 )
 
 
@@ -41,5 +41,5 @@ from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection impor
     ],
 )
 def test_antlr_tree(selection_str, expected_tree_str):
-    asset_selection = AntlrAssetSelection(selection_str)
+    asset_selection = AntlrAssetSelectionParser(selection_str)
     assert asset_selection.tree_str == expected_tree_str

@@ -1,6 +1,5 @@
 from antlr4 import CommonTokenStream, InputStream
 
-from dagster._annotations import experimental
 from dagster._core.definitions.antlr_asset_selection.generated.AssetSelectionLexer import (
     AssetSelectionLexer,
 )
@@ -9,8 +8,7 @@ from dagster._core.definitions.antlr_asset_selection.generated.AssetSelectionPar
 )
 
 
-@experimental
-class AntlrAssetSelection:
+class AntlrAssetSelectionParser:
     def __init__(self, selection_str: str):
         lexer = AssetSelectionLexer(InputStream(selection_str))
         stream = CommonTokenStream(lexer)
