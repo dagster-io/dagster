@@ -1011,6 +1011,64 @@ class PipesStdioFileLogWriter(PipesStdioLogWriter):
         )
 
 
+class PipesDefaultLogWriterChannel(PipesStdioLogWriterChannel):
+    """A log writer channel that writes stdout or stderr via the message writer channel."""
+
+    def __init__(
+        self,
+        message_channel: PipesMessageWriterChannel,
+        stream: Literal["stdout", "stderr"],
+        name: str,
+        interval: float,
+    ):
+        self.message_channel = message_channel
+
+        super().__init__(interval=interval, stream=stream, name=name)
+
+    def write_chunk(self, chunk: str) -> None:
+        # write the chunk to a file
+        self.message_channel.write_message(
+            _make_message(
+                method="report_custom_message",  # maybe this needs new method types for stderr and stdout?
+                params={
+                    "stream": self.stream,
+                    "text": chunk,
+                },
+            )
+        )
+
+
+class PipesDefaultLogWriter(PipesStdioLogWriter):
+    """A log writer that writes stdout and stderr via the message writer channel."""
+
+    def __init__(self, interval: float = 1):
+        self.interval = interval
+        self._message_channel = None
+
+        super().__init__()
+
+    @property
+    def message_channel(self) -> PipesMessageWriterChannel:
+        if self._message_channel is None:
+            raise RuntimeError("message_channel is not set")
+        else:
+            return self._message_channel
+
+    @message_channel.setter
+    def message_channel(self, message_channel: PipesMessageWriterChannel):
+        self._message_channel = message_channel
+
+    def make_channel(
+        self, params: PipesParams, stream: Literal["stdout", "stderr"]
+    ) -> "PipesDefaultLogWriterChannel":
+        return PipesDefaultLogWriterChannel(
+            message_channel=self.message_channel,
+            stream=stream,
+            name=f"PipesDefaultLogWriterChannel({stream})",
+            interval=self.interval,
+        )
+
+
 class PipesMappingParamsLoader(PipesParamsLoader):
     """Params loader that extracts params from a Mapping provided at init time."""
 
@@ -1238,6 +1296,7 @@ def open_dagster_pipes(
     context_loader: Optional[PipesContextLoader] = None,
     message_writer: Optional[PipesMessageWriter] = None,
     params_loader: Optional[PipesParamsLoader] = None,
+    capture_stdio: bool = False,
 ) -> "PipesContext":
     """Initialize the Dagster Pipes context.
 
@@ -1256,6 +1315,8 @@ def open_dagster_pipes(
             :py:class:`PipesDefaultMessageWriter`.
         params_loader (Optional[PipesParamsLoader]): The params loader to use. Defaults to
             :py:class:`PipesEnvVarParamsLoader`.
+        capture_stdio (bool): Whether to capture stdout and stderr and send them back to Dagster
+            message_writer as messages. Defaults to False.
 
     Returns:
         PipesContext: The initialized context.
@@ -1267,7 +1328,9 @@ def open_dagster_pipes(
     if params_loader.is_dagster_pipes_process():
         context_loader = context_loader or PipesDefaultContextLoader()
         message_writer = message_writer or PipesDefaultMessageWriter()
-        context = PipesContext(params_loader, context_loader, message_writer)
+        context = PipesContext(
+            params_loader, context_loader, message_writer, capture_stdio=capture_stdio
+        )
     else:
         _emit_orchestration_inactive_warning()
         context = _get_mock()
@@ -1315,6 +1378,7 @@ class PipesContext:
         params_loader: PipesParamsLoader,
         context_loader: PipesContextLoader,
         message_writer: PipesMessageWriter,
+        capture_stdio: bool,
     ) -> None:
         context_params = params_loader.load_context_params()
         messages_params = params_loader.load_messages_params()
@@ -1322,7 +1386,13 @@ class PipesContext:
         self._data = self._io_stack.enter_context(context_loader.load_context(context_params))
         self._message_channel = self._io_stack.enter_context(message_writer.open(messages_params))
 
-        if message_writer.log_writer is not None:
+        if capture_stdio:
+            message_writer._log_writer = PipesDefaultLogWriter()  # noqa
+
+        if message_writer.has_log_writer:
+            if isinstance(message_writer.log_writer, PipesDefaultLogWriter):
+                message_writer.log_writer.message_channel = self._message_channel
+
             log_writer_params = messages_params.get(DAGSTER_PIPES_LOG_WRITER_KEY, {})
             self._io_stack.enter_context(message_writer.log_writer.open(log_writer_params))
 
