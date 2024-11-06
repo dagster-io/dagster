@@ -1,10 +1,9 @@
 import os
 import tempfile
 
+import pytest
 from airflow.models import DagBag, Variable
 from dagster_airflow import make_dagster_job_from_airflow_dag, make_ephemeral_airflow_db_resource
-
-from dagster_airflow_tests.marks import requires_local_db
 
 DAG_RUN_CONF_DAG = """
 from airflow import models
@@ -30,7 +29,7 @@ with models.DAG(
 """
 
 
-@requires_local_db
+@pytest.mark.requires_local_db
 def test_dag_run_conf_local() -> None:
     with tempfile.TemporaryDirectory() as dags_path:
         with open(os.path.join(dags_path, "dag.py"), "wb") as f:

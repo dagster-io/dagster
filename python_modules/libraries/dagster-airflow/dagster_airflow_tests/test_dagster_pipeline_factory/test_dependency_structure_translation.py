@@ -1,3 +1,4 @@
+import pytest
 from airflow import __version__ as airflow_version
 from airflow.models.dag import DAG
 from airflow.operators.dummy_operator import DummyOperator  # type: ignore
@@ -13,15 +14,13 @@ from dagster._core.snap import JobSnap
 from dagster._serdes import serialize_pp
 from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 
-from dagster_airflow_tests.marks import requires_no_db
-
 default_args = {
     "owner": "dagster",
     "start_date": days_ago(1),
 }
 
 
-@requires_no_db
+@pytest.mark.requires_no_db
 def test_one_task_dag(snapshot):
     if airflow_version >= "2.0.0":
         dag = DAG(
@@ -47,7 +46,7 @@ def test_one_task_dag(snapshot):
     )
 
 
-@requires_no_db
+@pytest.mark.requires_no_db
 def test_two_task_dag_no_dep(snapshot):
     if airflow_version >= "2.0.0":
         dag = DAG(
@@ -77,7 +76,7 @@ def test_two_task_dag_no_dep(snapshot):
     )
 
 
-@requires_no_db
+@pytest.mark.requires_no_db
 def test_two_task_dag_with_dep(snapshot):
     if airflow_version >= "2.0.0":
         dag = DAG(
@@ -109,7 +108,7 @@ def test_two_task_dag_with_dep(snapshot):
     )
 
 
-@requires_no_db
+@pytest.mark.requires_no_db
 def test_diamond_task_dag(snapshot):
     if airflow_version >= "2.0.0":
         dag = DAG(
@@ -151,7 +150,7 @@ def test_diamond_task_dag(snapshot):
     )
 
 
-@requires_no_db
+@pytest.mark.requires_no_db
 def test_multi_root_dag(snapshot):
     if airflow_version >= "2.0.0":
         dag = DAG(
@@ -193,7 +192,7 @@ def test_multi_root_dag(snapshot):
     )
 
 
-@requires_no_db
+@pytest.mark.requires_no_db
 def test_multi_leaf_dag(snapshot):
     if airflow_version >= "2.0.0":
         dag = DAG(
@@ -234,7 +233,7 @@ def test_multi_leaf_dag(snapshot):
     )
 
 
-@requires_no_db
+@pytest.mark.requires_no_db
 def test_complex_dag(snapshot):
     if airflow_version >= "2.0.0":
         dag = DAG(
@@ -489,7 +488,7 @@ def test_complex_dag(snapshot):
     )
 
 
-@requires_no_db
+@pytest.mark.requires_no_db
 def test_one_task_dag_to_job():
     if airflow_version >= "2.0.0":
         dag = DAG(
