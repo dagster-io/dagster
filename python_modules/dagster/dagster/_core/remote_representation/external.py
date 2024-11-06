@@ -202,6 +202,9 @@ class RemoteRepository:
             for sensor_snap in self.repository_snap.sensors
         }
 
+        if not self._instance.auto_materialize_use_sensors:
+            return sensor_datas
+
         # if necessary, create a default automation condition sensor
         # NOTE: if a user's code location is at a version >= 1.9, then this step should
         # never be necessary, as this will be added in Definitions construction process
