@@ -4,8 +4,12 @@ import datetime
 import json
 import logging
 import os
+import subprocess
 import sys
+import tempfile
+import threading
 import time
+import traceback
 import warnings
 import zlib
 from abc import ABC, abstractmethod
@@ -515,7 +519,7 @@ T_MessageChannel = TypeVar("T_MessageChannel", bound="PipesMessageWriterChannel"
 class PipesLogWriterChannel(ABC):
     @contextmanager
     @abstractmethod
-    def capture(self, capturing_started: Event) -> Iterator[None]: ...
+    def capture(self) -> Iterator[None]: ...
 
 
 T_LogChannel = TypeVar("T_LogChannel", bound=PipesLogWriterChannel)
@@ -618,10 +622,13 @@ T_BlobStoreMessageWriterChannel = TypeVar(
 
 
 class PipesBlobStoreMessageWriter(PipesMessageWriter[T_BlobStoreMessageWriterChannel]):
+    INCLUDE_STDIO_IN_MESSAGES_KEY: str = "include_stdio_in_messages"
+
     """Message writer channel that periodically uploads message chunks to some blob store endpoint."""
 
     def __init__(self, *, interval: float = 10):
         self.interval = interval
+        self._log_writer = None
 
     @contextmanager
     def open(self, params: PipesParams) -> Iterator[T_BlobStoreMessageWriterChannel]:
@@ -742,6 +749,154 @@ class PipesDefaultContextLoader(PipesContextLoader):
                 f'Invalid params for {self.__class__.__name__}, expected key "{self.FILE_PATH_KEY}"'
                 f' or "{self.DIRECT_KEY}", received {params}',
             )
+
+
+class ExcThread(threading.Thread):
+    """Utility class which captures exceptions and writes them to stderr after the thread has exited."""
+
+    def run(self, *args, **kwargs):
+        self.exceptions = Queue()
+
+        try:
+            super().run(*args, **kwargs)
+        except Exception:
+            self.exceptions.put(sys.exc_info())
+
+    def join(self, *args, **kwargs):
+        super().join(*args, **kwargs)
+
+        while not self.exceptions.empty():
+            exc_info = self.exceptions.get()
+            sys.stderr.write(traceback.format_exception(*exc_info))
+
+
+# log writers can potentially capture other type sof logs (for example, from Spark workers)
+# this class only handles capturing logs from the current process
+class PipesStdioLogWriter(PipesLogWriter[T_LogChannel]):
+    """Log writers which collects stdout and stderr of the current process should inherit from this class."""
+
+    @abstractmethod
+    def make_channel(
+        self, params: PipesParams, stream: Literal["stdout", "stderr"]
+    ) -> T_LogChannel:
+        pass
+
+    @contextmanager
+    def open(self, params: PipesParams) -> Iterator[None]:
+        with ExitStack() as stack:
+            stdout_channel = self.make_channel(params, stream="stdout")
+            stderr_channel = self.make_channel(params, stream="stderr")
+
+            stack.enter_context(stdout_channel.capture())
+            stack.enter_context(stderr_channel.capture())
+            yield
+
+
+class PipesStdioLogWriterChannel(PipesLogWriterChannel):
+    """A base class for log writer channels that capture stdout and stderr of the current process."""
+
+    WAIT_FOR_TEE_SECONDS: float = 1.0
+
+    def __init__(self, stream: Literal["stdout", "stderr"], interval: float, name: str):
+        self.stream: Literal["stdout", "stderr"] = stream
+        self.interval = interval
+        self._name = name
+
+        self.error_messages = Queue()
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def stdio(self) -> IO[str]:
+        if self.stream == "stdout":
+            return sys.stdout
+        elif self.stream == "stderr":
+            return sys.stderr
+        else:
+            raise ValueError(f"stream must be 'stdout' or 'stderr', got {self.stream}")
+
+    @contextmanager
+    def capture(self) -> Iterator[None]:
+        with tempfile.NamedTemporaryFile() as temp_file:
+            sys.stderr.write(f"Starting {self.name}\n")
+
+            capturing_started, capturing_should_stop = Event(), Event()
+
+            tee = subprocess.Popen(["tee", str(temp_file.name)], stdin=subprocess.PIPE)
+
+            # Cause tee's stdin to get a copy of our stdin/stdout (as well as that
+            # of any child processes we spawn)
+
+            stdio_fileno = self.stdio.fileno()
+            prev_fd = os.dup(stdio_fileno)
+            os.dup2(cast(IO[bytes], tee.stdin).fileno(), stdio_fileno)
+
+            thread = ExcThread(
+                target=self.handler,
+                args=(
+                    temp_file.name,
+                    capturing_started,
+                    capturing_should_stop,
+                ),
+                daemon=True,
+                name=self.name,
+            )
+
+            try:
+                thread.start()
+                capturing_started.wait()
+                yield
+            finally:
+                self.stdio.flush()
+                time.sleep(self.WAIT_FOR_TEE_SECONDS)
+                tee.terminate()
+                capturing_should_stop.set()
+                thread.join()
+
+                # undo dup2
+
+                os.dup2(prev_fd, stdio_fileno)
+
+                sys.stderr.write(f"Stopped {self.name}\n")
+
+                while not self.error_messages.empty():
+                    sys.stderr.write(self.error_messages.get())
+
+    def handler(
+        self,
+        path: str,
+        capturing_started: Event,
+        capturing_should_stop: Event,
+    ):
+        with open(path, "r") as input_file:
+            received_stop_event_at = None
+
+            while not (
+                received_stop_event_at is not None
+                and time.time() - received_stop_event_at > self.WAIT_FOR_TEE_SECONDS
+            ):
+                try:
+                    chunk = input_file.read()
+
+                    if chunk:
+                        self.write_chunk(chunk)
+
+                    if not capturing_started.is_set():
+                        capturing_started.set()
+
+                except Exception as e:
+                    self.error_messages.put(f"Exception in thread {self.name}:\n{e}")
+
+                if capturing_should_stop.is_set() and received_stop_event_at is None:
+                    received_stop_event_at = time.time()
+
+                time.sleep(self.interval)
+
+    @abstractmethod
+    def write_chunk(self, chunk: str) -> None:
+        pass
 
 
 class PipesDefaultMessageWriter(PipesMessageWriter):
@@ -905,6 +1060,48 @@ class PipesCliArgsParamsLoader(PipesParamsLoader):
     def load_messages_params(self) -> PipesParams:
         args, _ = self.parser.parse_known_args()
         return decode_param(args.dagster_pipes_messages)
+
+
+class PipesStdioFileLogWriterChannel(PipesStdioLogWriterChannel):
+    """A log writer channel that writes stdout or stderr to a given file."""
+
+    def __init__(
+        self, output_path: str, stream: Literal["stdout", "stderr"], name: str, interval: float
+    ):
+        self.output_path = output_path
+
+        super().__init__(interval=interval, stream=stream, name=name)
+
+    def write_chunk(self, chunk: str) -> None:
+        # write the chunk to a file
+        with open(self.output_path, "a") as file:
+            file.write(chunk)
+
+
+class PipesStdioFileLogWriter(PipesStdioLogWriter):
+    LOGS_DIR_KEY = "logs_dir"
+
+    """A log writer that writes stdout and stderr to "stdout" and "stderr" files in a given directory."""
+
+    def __init__(self, interval: float = 1.0):
+        self.interval = interval
+
+        super().__init__()
+
+    def make_channel(
+        self, params: PipesParams, stream: Literal["stdout", "stderr"]
+    ) -> "PipesStdioFileLogWriterChannel":
+        # TODO: maybe instead log to current directory by default
+        # and report the path in launched payload
+        logs_dir = params[self.LOGS_DIR_KEY]
+        os.makedirs(logs_dir, exist_ok=True)
+        output_path = os.path.join(os.path.join(logs_dir), stream)
+        return PipesStdioFileLogWriterChannel(
+            output_path=output_path,
+            stream=stream,
+            name=f"PipesStdioFileLogWriterChannel({stream}->{output_path})",
+            interval=self.interval,
+        )
 
 
 # ########################
