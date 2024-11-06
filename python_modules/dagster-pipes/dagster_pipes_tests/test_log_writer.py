@@ -6,12 +6,13 @@ from time import sleep
 
 from dagster_pipes import (
     PipesDefaultLogWriter,
+    PipesDefaultMessageWriter,
     PipesFileMessageWriterChannel,
     PipesStdioFileLogWriter,
 )
 
 
-def test_pipes_out_err_file_log_writer(capsys):
+def test_pipes_stdio_file_log_writer(capsys):
     with tempfile.TemporaryDirectory() as tempdir:
         with capsys.disabled(), PipesStdioFileLogWriter().open(
             {
@@ -47,10 +48,10 @@ def test_pipes_default_log_writer(capsys):
     with tempfile.NamedTemporaryFile() as file:
         message_channel = PipesFileMessageWriterChannel(file.name)
 
-        log_writer = PipesDefaultLogWriter(
-            message_channel=message_channel
-        )  # large interval will cause all lines to appear in a single message
-        with capsys.disabled(), log_writer.open({}):
+        log_writer = PipesDefaultLogWriter(message_channel=message_channel)
+        with capsys.disabled(), log_writer.open(
+            {PipesDefaultMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY: True}
+        ):
             print("Writing this to stdout")  # noqa
             print("And this to stderr", file=sys.stderr)  # noqa
         with open(file.name, "r") as log_file:

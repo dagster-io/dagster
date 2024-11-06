@@ -1684,9 +1684,7 @@ class PipesContext:
         """
         self._write_message("report_custom_message", {"payload": payload})
 
-    def log_external_stream(
-        self, stream: Literal["stdout", "stderr"], text: str, extras: Optional[PipesExtras] = None
-    ):
+    def log_external_stream(self, stream: str, text: str, extras: Optional[PipesExtras] = None):
         self._write_message(
             "log_external_stream", {"stream": stream, "text": text, "extras": extras or {}}
         )
