@@ -43,11 +43,10 @@ files = [
 
 for file in files:
     fix_imports(file)
-    add_lines_to_start(file, ["# flake8: noqa\n"])
-    if file == "generated/AssetSelectionParser.py":
-        add_lines_to_start(
-            file,
-            [
-                "# type: ignore\n",
-            ],
-        )
+    add_lines_to_start(
+        file,
+        [
+            "# flake8: noqa\n",
+            "# type: ignore\n",
+        ],
+    )

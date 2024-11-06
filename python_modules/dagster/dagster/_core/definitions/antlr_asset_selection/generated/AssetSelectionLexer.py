@@ -1,4 +1,5 @@
 # flake8: noqa
+# type: ignore
 # Generated from AssetSelection.g4 by ANTLR 4.13.2
 import sys
 from typing import TextIO
