@@ -958,7 +958,7 @@ def backfill_is_complete(
             instance.get_runs_ids(
                 filters=RunsFilter(
                     statuses=NOT_FINISHED_STATUSES,
-                    tags={"tags": {BACKFILL_ID_TAG: backfill_id}},
+                    tags={BACKFILL_ID_TAG: backfill_id},
                 ),
                 limit=1,
             )
