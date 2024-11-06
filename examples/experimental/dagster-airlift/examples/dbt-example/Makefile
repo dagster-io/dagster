@@ -6,7 +6,7 @@ endef
 
 export MAKEFILE_DIR := $(GET_MAKEFILE_DIR)
 export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
-export AIRFLOW_HOME := $(MAKEFILE_DIR)/.airflow_home
+export MIGRATING_AIRFLOW_HOME := $(MAKEFILE_DIR)/.migrating_airflow_home
 export DBT_PROJECT_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DAGSTER_URL := http://localhost:3333
@@ -24,22 +24,22 @@ dev_install:
 
 setup_local_env: 
 	$(MAKE) wipe
-	mkdir -p $(AIRFLOW_HOME)
+	mkdir -p $(MIGRATING_AIRFLOW_HOME)
 	mkdir -p $(DAGSTER_HOME)
 	chmod +x ../../scripts/airflow_setup.sh
-	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/airflow_dags
+	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags $(MIGRATING_AIRFLOW_HOME)
 	$(MAKE) dbt_setup
 
 not_proxied:
 	chmod +x ../../scripts/find_and_replace_in_yaml_dir.sh
-	../../scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/airflow_dags/proxied_state True False
+	../../scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state True False
 
 proxied: 
 	chmod +x ../../scripts/find_and_replace_in_yaml_dir.sh
-	../../scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/airflow_dags/proxied_state False True
+	../../scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state False True
 
 run_airflow:
-	airflow standalone
+	AIRFLOW_HOME=$(MIGRATING_AIRFLOW_HOME) airflow standalone
 
 run_peer:
 	dagster dev -m dbt_example.dagster_defs.peer -p 3333
