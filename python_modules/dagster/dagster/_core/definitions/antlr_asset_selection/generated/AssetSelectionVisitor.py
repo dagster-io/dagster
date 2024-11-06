@@ -1,11 +1,7 @@
+# flake8: noqa
 # Generated from AssetSelection.g4 by ANTLR 4.13.2
 from antlr4 import *
-
-if "." in __name__:
-    from .AssetSelectionParser import AssetSelectionParser
-else:
-    from AssetSelectionParser import AssetSelectionParser
-
+from .AssetSelectionParser import AssetSelectionParser
 # This class defines a complete generic visitor for a parse tree produced by AssetSelectionParser.
 
 
@@ -72,8 +68,8 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     def visitKeyExpr(self, ctx: AssetSelectionParser.KeyExprContext):
         return self.visitChildren(ctx)
 
-    # Visit a parse tree produced by AssetSelectionParser#KeySubstringExpr.
-    def visitKeySubstringExpr(self, ctx: AssetSelectionParser.KeySubstringExprContext):
+    # Visit a parse tree produced by AssetSelectionParser#KeySubsetExpr.
+    def visitKeySubsetExpr(self, ctx: AssetSelectionParser.KeySubsetExprContext):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by AssetSelectionParser#TagAttributeExpr.
