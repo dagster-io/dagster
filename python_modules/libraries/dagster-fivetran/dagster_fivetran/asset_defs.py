@@ -43,6 +43,7 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.log import get_dagster_logger
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
+from dagster_fivetran.translator import DagsterFivetranTranslator, FivetranConnectorTableProps
 from dagster_fivetran.utils import (
     generate_materializations,
     get_fivetran_connector_url,
@@ -51,50 +52,6 @@ from dagster_fivetran.utils import (
 
 DEFAULT_MAX_THREADPOOL_WORKERS = 10
 logger = get_dagster_logger()
-
-
-class FivetranConnectorTableProps(NamedTuple):
-    table: str
-    connector_id: str
-    name: str
-    connector_url: str
-    schemas: Mapping[str, Any]
-    database: Optional[str]
-    service: Optional[str]
-
-
-class DagsterFivetranTranslator:
-    def get_asset_key(self, props: FivetranConnectorTableProps) -> AssetKey:
-        """Get the AssetKey for a table synced by a Fivetran connector."""
-        return AssetKey(props.table.split("."))
-
-    def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
-        """Get the AssetSpec for a table synced by a Fivetran connector."""
-        schema_name, table_name = props.table.split(".")
-        schema_entry = next(
-            schema
-            for schema in props.schemas["schemas"].values()
-            if schema["name_in_destination"] == schema_name
-        )
-        table_entry = next(
-            table_entry
-            for table_entry in schema_entry["tables"].values()
-            if table_entry["name_in_destination"] == table_name
-        )
-
-        metadata = metadata_for_table(
-            table_entry,
-            props.connector_url,
-            database=props.database,
-            schema=schema_name,
-            table=table_name,
-        )
-
-        return AssetSpec(
-            key=self.get_asset_key(props),
-            metadata=metadata,
-            kinds={"fivetran", *({props.service} if props.service else set())},
-        )
 
 
 def _fetch_and_attach_col_metadata(
