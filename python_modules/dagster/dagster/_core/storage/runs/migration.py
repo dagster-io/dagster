@@ -325,6 +325,8 @@ def migrate_run_backfill_id(storage: RunStorage, print_fn: Optional[PrintFn] = N
         while has_more:
             if cursor:
                 query = base_query.where(RunTagsTable.c.id > cursor)
+            else:
+                query = base_query
             res = storage.fetchall(query)
             has_more = len(res) >= CHUNK_SIZE
             for row in res:
