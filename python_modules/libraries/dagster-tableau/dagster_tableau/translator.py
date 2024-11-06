@@ -8,6 +8,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._record import record
+from dagster._serdes import whitelist_for_serdes
 
 TABLEAU_PREFIX = "tableau/"
 
@@ -17,6 +18,7 @@ def _coerce_input_to_valid_name(name: str) -> str:
     return re.sub(r"[^a-z0-9A-Z.]+", "_", name).lower()
 
 
+@whitelist_for_serdes
 class TableauContentType(Enum):
     """Enum representing each object in Tableau's ontology."""
 
@@ -26,6 +28,7 @@ class TableauContentType(Enum):
     DATA_SOURCE = "data_source"
 
 
+@whitelist_for_serdes
 @record
 class TableauContentData:
     """A record representing a piece of content in Tableau.
@@ -35,17 +38,8 @@ class TableauContentData:
     content_type: TableauContentType
     properties: Mapping[str, Any]
 
-    def to_cached_data(self) -> Mapping[str, Any]:
-        return {"content_type": self.content_type.value, "properties": self.properties}
 
-    @classmethod
-    def from_cached_data(cls, data: Mapping[Any, Any]) -> "TableauContentData":
-        return cls(
-            content_type=TableauContentType(data["content_type"]),
-            properties=data["properties"],
-        )
-
-
+@whitelist_for_serdes
 @record
 class TableauWorkspaceData:
     """A record representing all content in a Tableau workspace.

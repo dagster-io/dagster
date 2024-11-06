@@ -596,7 +596,7 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]
     def fetch_state(self) -> Sequence[Mapping[str, Any]]:
         workspace_data: TableauWorkspaceData = self.workspace.fetch_tableau_workspace_data()
         return [
-            data.to_cached_data()
+            data
             for data in [
                 *workspace_data.workbooks_by_id.values(),
                 *workspace_data.sheets_by_id.values(),
@@ -608,7 +608,7 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]
     def defs_from_state(self, state: Sequence[Mapping[str, Any]]) -> Definitions:
         workspace_data = TableauWorkspaceData.from_content_data(
             self.workspace.site_name,
-            [TableauContentData.from_cached_data(check.not_none(entry)) for entry in state],
+            [check.not_none(entry) for entry in state],
         )
 
         translator = self.translator_cls(context=workspace_data)
