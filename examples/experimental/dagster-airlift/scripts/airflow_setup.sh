@@ -21,7 +21,7 @@ fi
 cat <<EOL > $AIRFLOW_HOME_DIR/airflow.cfg
 [core]
 dags_folder = $DAGS_FOLDER
-dagbag_import_timeout = 30000
+dagbag_import_timeout = 30
 load_examples = False
 [api]
 auth_backend = airflow.api.auth.backend.basic_auth

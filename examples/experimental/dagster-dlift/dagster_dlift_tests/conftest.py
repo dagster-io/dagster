@@ -74,9 +74,9 @@ def build_dagster_job_response(environment_id: int, project_id: int) -> Mapping[
 def build_expected_access_api_requests() -> Mapping[ExpectedAccessApiRequest, Any]:
     return {
         # List of jobs
-        ExpectedAccessApiRequest("/jobs/", params={"environment_id": 1}): {
-            "data": [build_dagster_job_response(1, 1)]
-        }
+        ExpectedAccessApiRequest(
+            "/jobs/", params={"environment_id": 1, "limit": 100, "offset": 0}
+        ): {"data": [build_dagster_job_response(1, 1)]}
     }
 
 

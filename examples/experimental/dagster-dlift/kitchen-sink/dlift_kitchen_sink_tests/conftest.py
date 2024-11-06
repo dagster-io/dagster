@@ -33,4 +33,4 @@ def ensure_cleanup(
             job["id"] for job in jobs if job["name"] == get_job_name(project_id, environment_id)
         }
         for job_id in adhoc_job_ids:
-            instance.destroy_dagster_job(environment_id, project_id, job_id)
+            instance.destroy_dagster_job(job_id)
