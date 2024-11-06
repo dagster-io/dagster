@@ -444,6 +444,7 @@ def fivetran_resource(context: InitResourceContext) -> FivetranResource:
 # Reworked resources
 # ------------------
 
+
 @experimental
 class FivetranClient:
     """This class exposes methods on top of the Fivetran REST API."""
