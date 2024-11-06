@@ -44,7 +44,8 @@ setup(
     extras_require={
         "kubernetes": ["kubernetes>=3.0.0", "cryptography>=2.0.0"],
         "test_airflow_2": [
-            "apache-airflow>=2.0.0,<2.8",
+            "apache-airflow>=2.0.0,<2.8",  # 2.8+ airflow breaks a bunch of tests
+            "pendulum<3.0.0",  # sub 2.8 blows up on pendulum 3
             "boto3>=1.26.7",
             # Flask-session 0.6 is incompatible with certain airflow-provided test
             # utilities.

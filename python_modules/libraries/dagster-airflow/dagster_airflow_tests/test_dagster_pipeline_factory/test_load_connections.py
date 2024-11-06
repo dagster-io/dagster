@@ -9,8 +9,6 @@ from airflow import __version__ as airflow_version
 from airflow.models import Connection
 from dagster_airflow import make_dagster_definitions_from_airflow_dags_path
 
-from dagster_airflow_tests.marks import requires_local_db
-
 LOAD_CONNECTION_DAG_FILE_AIRFLOW_2_CONTENTS = """
 import pendulum
 from airflow import DAG
@@ -48,7 +46,7 @@ with DAG(
 
 
 @pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
-@requires_local_db
+@pytest.mark.requires_local_db
 class TestConnectionsAirflow2(unittest.TestCase):
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.launch_run", return_value="run_id")
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.wait_for_run")
@@ -111,7 +109,7 @@ with DAG(
 
 
 @pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
-@requires_local_db
+@pytest.mark.requires_local_db
 class TestConnectionsAirflow1(unittest.TestCase):
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.launch_run", return_value="run_id")
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.wait_for_run")
