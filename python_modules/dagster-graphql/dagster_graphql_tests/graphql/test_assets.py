@@ -1905,6 +1905,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             return {stat["assetKey"]["path"][0]: stat for stat in response}
 
         # Confirm that when no runs are present, run returned is None
+        FAKE_KEY = "<key does not exist>"
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_LATEST_RUN_STATS,
@@ -1913,6 +1914,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                     {"path": "asset_1"},
                     {"path": "asset_2"},
                     {"path": "asset_3"},
+                    # fake key should not cause error
+                    {"path": FAKE_KEY},
                 ]
             },
         )
@@ -1923,6 +1926,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result["asset_1"]["latestRun"] is None
         assert result["asset_1"]["latestMaterialization"] is None
+        assert FAKE_KEY not in result
 
         # Test with 1 run on all assets
         first_run_id = _create_run(graphql_context, "failure_assets_job")
