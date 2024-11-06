@@ -81,24 +81,28 @@ def test_antlr_tree_invalid(selection_str):
     "selection_str, expected_assets",
     [
         ('"a"', AssetSelection.assets("a")),
-        ("not a", AssetSelection.all() - AssetSelection.assets("a")),
-        ("a and b", AssetSelection.assets("a") & AssetSelection.assets("b")),
-        ("a or b", AssetSelection.assets("a") | AssetSelection.assets("b")),
-        ("+a", AssetSelection.assets("a").upstream(1)),
-        ("++a", AssetSelection.assets("a").upstream(2)),
-        ("a+", AssetSelection.assets("a").downstream(1)),
-        ("a++", AssetSelection.assets("a").downstream(2)),
+        ('not "a"', AssetSelection.all() - AssetSelection.assets("a")),
+        ('"a" and "b"', AssetSelection.assets("a") & AssetSelection.assets("b")),
+        ('"a" or "b"', AssetSelection.assets("a") | AssetSelection.assets("b")),
+        ('+"a"', AssetSelection.assets("a").upstream(1)),
+        ('++"a"', AssetSelection.assets("a").upstream(2)),
+        ('"a"+', AssetSelection.assets("a").downstream(1)),
+        ('"a"++', AssetSelection.assets("a").downstream(2)),
         (
-            "a* and *b",
-            AssetSelection.assets("a").downstream() and AssetSelection.assets("b").upstream(),
+            '"a"* and *"b"',
+            AssetSelection.assets("a").downstream() & AssetSelection.assets("b").upstream(),
         ),
-        ("sinks(a)", AssetSelection.assets("a").sinks()),
-        ("roots(c)", AssetSelection.assets("c").roots()),
+        ('sinks("a")', AssetSelection.assets("a").sinks()),
+        ('roots("c")', AssetSelection.assets("c").roots()),
         ("tag:foo", AssetSelection.tag("foo", "")),
         ("tag:foo=bar", AssetSelection.tag("foo", "bar")),
         ('owner:"owner@owner.com"', AssetSelection.owner("owner@owner.com")),
         ("group:my_group", AssetSelection.groups("my_group")),
         ("kind:my_kind", AssetSelection.tag(f"{KIND_PREFIX}my_kind", "")),
+        (
+            "code_location:my_location",
+            CodeLocationAssetSelection(selected_code_location="my_location"),
+        ),
     ],
 )
 def test_antlr_visit_basic(selection_str, expected_assets):
@@ -115,22 +119,4 @@ def test_antlr_visit_basic(selection_str, expected_assets):
     )
     def c(): ...
 
-    defs = [a, b, c]
-
-    assert AntlrAssetSelectionParser(selection_str).asset_selection.resolve(
-        defs
-    ) == expected_assets.resolve(defs)
-
-
-def test_code_location() -> None:
-    @asset
-    def my_asset(): ...
-
-    # Selection can be instantiated.
-    selection = AntlrAssetSelectionParser("code_location:code_location1").asset_selection
-
-    assert selection == CodeLocationAssetSelection(selected_code_location="code_location1")
-
-    # But not resolved.
-    with pytest.raises(NotImplementedError):
-        selection.resolve([my_asset])
+    assert AntlrAssetSelectionParser(selection_str).asset_selection == expected_assets
