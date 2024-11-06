@@ -155,13 +155,13 @@ class AntlrAssetSelectionParser:
 
     def __init__(self, selection_str: str):
         lexer = AssetSelectionLexer(InputStream(selection_str))
-        lexer.removeErrorListeners()
+        lexer.removeErrorListeners()  # Remove the default listener that just writes to the console
         lexer.addErrorListener(AntlrInputErrorListener())
 
         stream = CommonTokenStream(lexer)
 
         parser = AssetSelectionParser(stream)
-        parser.removeErrorListeners()
+        parser.removeErrorListeners()  # Remove the default listener that just writes to the console
         parser.addErrorListener(AntlrInputErrorListener())
 
         self._tree = parser.start()
