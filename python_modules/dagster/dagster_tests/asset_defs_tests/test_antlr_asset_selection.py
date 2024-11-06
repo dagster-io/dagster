@@ -18,8 +18,8 @@ from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection impor
         ),
         ("kind:my_kind", "(start (expr (attributeExpr kind : (value my_kind))) <EOF>)"),
         (
-            "codelocation:my_location",
-            "(start (expr (attributeExpr codelocation : (value my_location))) <EOF>)",
+            "code_location:my_location",
+            "(start (expr (attributeExpr code_location : (value my_location))) <EOF>)",
         ),
         (
             '((("a")))',
