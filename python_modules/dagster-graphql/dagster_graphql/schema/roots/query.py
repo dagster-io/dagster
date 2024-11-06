@@ -1157,14 +1157,15 @@ class GrapheneQuery(graphene.ObjectType):
         asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys)
 
         remote_nodes = {
-            graphene_info.context.asset_graph.get(asset_key) for asset_key in asset_keys
+            graphene_info.context.asset_graph.get(asset_key)
+            for asset_key in asset_keys
+            if graphene_info.context.asset_graph.has(asset_key)
         }
 
         # Build mapping of asset key to the step keys required to generate the asset
         step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {
             remote_node.key: remote_node.resolve_to_singular_repo_scoped_node().asset_node_snap.op_names
             for remote_node in remote_nodes
-            if remote_node
         }
 
         AssetRecord.prepare(graphene_info.context, asset_keys)
