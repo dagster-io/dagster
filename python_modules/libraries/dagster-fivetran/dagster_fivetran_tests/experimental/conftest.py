@@ -3,7 +3,7 @@ from typing import Callable, Iterator
 
 import pytest
 import responses
-from dagster_fivetran.experimental.resources import (
+from dagster_fivetran.resources import (
     FIVETRAN_API_BASE,
     FIVETRAN_API_VERSION,
     FIVETRAN_CONNECTOR_ENDPOINT,
