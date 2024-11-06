@@ -1,4 +1,5 @@
 import os
+import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -15,6 +16,7 @@ from typing import (
     TypedDict,
     Union,
     cast,
+    Literal
 )
 
 from dagster_pipes import (
@@ -182,6 +184,8 @@ class PipesMessageHandler:
             self._handle_report_asset_check(**message["params"])  # type: ignore
         elif method == "log":
             self._handle_log(**message["params"])  # type: ignore
+        elif method == "log_stdio":
+            self._handle_log_stdio(**message["params"])  # type: ignore
         elif method == "report_custom_message":
             self._handle_extra_message(**message["params"])  # type: ignore
         else:
@@ -250,6 +254,13 @@ class PipesMessageHandler:
     def _handle_log(self, message: str, level: str = "info") -> None:
         check.str_param(message, "message")
         self._context.log.log(level, message)
+
+    def _handle_log_stdio(self, stream: Literal["stdout", "stderr"], text: str, extras: Optional[PipesExtras] = None):
+        # This should probably be handled in dedicated message type handlers
+        if stream == "stdout":
+            sys.stdout.write(text)
+        elif stream == "stderr":
+            sys.stderr.write(text)
 
     def _handle_extra_message(self, payload: Any):
         self._extra_msg_queue.put(payload)

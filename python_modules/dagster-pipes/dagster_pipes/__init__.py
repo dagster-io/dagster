@@ -69,6 +69,7 @@ Method = Literal[
     "report_asset_materialization",
     "report_asset_check",
     "report_custom_message",
+    "log_stdio",
 ]
 
 
@@ -1029,17 +1030,18 @@ class PipesDefaultLogWriterChannel(PipesStdioLogWriterChannel):
         # write the chunk to a file
         self.message_channel.write_message(
             _make_message(
-                method="report_custom_message",  # maybe this needs new method types for stderr and stdout?
+                method="log_stdio",
                 params={
                     "stream": self.stream,
                     "text": chunk,
+                    "extras": {}
                 },
             )
         )
 
 
 class PipesDefaultLogWriter(PipesStdioLogWriter):
-    """A log writer that writes stdout and stderr via the message writer channel."""
+    """[Experimental] A log writer that writes stdout and stderr via the message writer channel."""
 
     def __init__(self, interval: float = 1):
         self.interval = interval
@@ -1672,6 +1674,9 @@ class PipesContext:
             payload (Any): JSON serializable data.
         """
         self._write_message("report_custom_message", {"payload": payload})
+
+    def log_stdio(self, stream: Literal["stdout", "stderr"], text: str, extras: Optional[PipesExtras] = None):
+        self._write_message("log_stdio", {"stream": stream, "text": text, "extras": extras or {}})
 
     @property
     def log(self) -> logging.Logger:
