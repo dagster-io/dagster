@@ -30,7 +30,6 @@ afterAll(() => {
 
 global.ResizeObserver = ResizeObserver;
 
-// Define a minimal MessageEvent interface for the mock
 interface MockMessageEvent extends Event {
   data: any;
 }
@@ -99,5 +98,4 @@ class MockBroadcastChannel {
   }
 }
 
-// Assign the mock to the global object
 (global as any).BroadcastChannel = MockBroadcastChannel;
