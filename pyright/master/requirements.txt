@@ -104,6 +104,8 @@ wordcloud  # (quickstart-*)
 # that trigger type errors
 apache-airflow>2.7
 pendulum<3
+types-sqlalchemy==1.4.53.34
+
 
 ### EXAMPLES
 
