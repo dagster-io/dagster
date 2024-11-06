@@ -7,6 +7,7 @@ export type AssetCheckTableFragment = {
   name: string;
   description: string | null;
   canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+  jobNames: Array<string>;
   executionForLatestMaterialization: {
     __typename: 'AssetCheckExecution';
     id: string;

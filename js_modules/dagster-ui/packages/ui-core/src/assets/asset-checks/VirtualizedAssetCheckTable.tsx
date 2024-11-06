@@ -6,7 +6,7 @@ import styled from 'styled-components';
 
 import {ASSET_CHECK_EXECUTION_FRAGMENT, MetadataCell} from './AssetCheckDetailModal';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
-import {ExecuteChecksButton} from './ExecuteChecksButton';
+import {EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT, ExecuteChecksButton} from './ExecuteChecksButton';
 import {ExecuteChecksButtonAssetNodeFragment} from './types/ExecuteChecksButton.types';
 import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types';
 import {gql} from '../../apollo-client';
@@ -151,9 +151,11 @@ export const ASSET_CHECK_TABLE_FRAGMENT = gql`
     name
     description
     canExecuteIndividually
+    ...ExecuteChecksButtonCheckFragment
     executionForLatestMaterialization {
       ...AssetCheckExecutionFragment
     }
   }
   ${ASSET_CHECK_EXECUTION_FRAGMENT}
+  ${EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT}
 `;

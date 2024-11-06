@@ -186,6 +186,7 @@ export type SidebarAssetFragment = {
           __typename: 'AssetCheck';
           name: string;
           canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+          jobNames: Array<string>;
         }>;
       };
   configField: {
@@ -16301,6 +16302,7 @@ export type SidebarAssetQuery = {
                 __typename: 'AssetCheck';
                 name: string;
                 canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+                jobNames: Array<string>;
               }>;
             };
         configField: {
@@ -32285,4 +32287,4 @@ export type SidebarAssetQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const SidebarAssetQueryVersion = '9b663f86f85eefe4e680d6ee4289de9b9070f51449699ca7127e7a13d71fa422';
+export const SidebarAssetQueryVersion = 'e7a87f946b59bba70023bcdd280b18b94c9e227692b6495568e09065ab7a8249';
