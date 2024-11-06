@@ -1,2 +1,2 @@
-.*airflow_home
+.*airflow_home*
 .dagster_home
