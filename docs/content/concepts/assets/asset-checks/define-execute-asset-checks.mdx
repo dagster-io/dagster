@@ -143,8 +143,7 @@ To define multiple, similar asset checks, use a factory pattern. In the followin
 
 ```python file=/concepts/assets/asset_checks/factory.py
 from typing import Any, Mapping, Sequence
-
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from dagster import (
     AssetCheckResult,

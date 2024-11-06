@@ -4,8 +4,8 @@ import sys
 import tempfile
 from contextlib import contextmanager
 from typing import ContextManager, NoReturn, Optional, Tuple
+from unittest import mock
 
-import mock
 import pytest
 from click.testing import CliRunner
 from dagster import (

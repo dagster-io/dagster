@@ -1,5 +1,6 @@
+from unittest import mock
+
 import boto3
-import mock
 from dagster_airlift.mwaa import MwaaSessionAuthBackend
 
 

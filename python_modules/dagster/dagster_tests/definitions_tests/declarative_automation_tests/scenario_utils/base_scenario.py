@@ -18,9 +18,9 @@ from typing import (
     Tuple,
     Union,
 )
+from unittest import mock
 
 import dagster._check as check
-import mock
 import pytest
 from dagster import (
     AssetIn,

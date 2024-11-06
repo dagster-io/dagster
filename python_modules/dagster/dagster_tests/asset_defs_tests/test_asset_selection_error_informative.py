@@ -1,7 +1,7 @@
 import re
 import sys
+from unittest import mock
 
-import mock
 import pytest
 from dagster import AssetSelection, Definitions, asset, define_asset_job
 from dagster._core.errors import DagsterInvalidSubsetError

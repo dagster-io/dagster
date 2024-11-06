@@ -1,7 +1,7 @@
 import tempfile
 from contextlib import contextmanager
+from unittest import mock
 
-import mock
 import pytest
 from dagster._core.storage.legacy_storage import LegacyScheduleStorage
 from dagster._core.storage.schedules import SqliteScheduleStorage

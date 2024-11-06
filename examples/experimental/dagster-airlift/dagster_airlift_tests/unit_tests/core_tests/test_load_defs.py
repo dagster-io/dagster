@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import cast
+from unittest import mock
 
-import mock
 from dagster import (
     AssetKey,
     AssetsDefinition,
