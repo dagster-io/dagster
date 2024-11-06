@@ -38,11 +38,11 @@ class DagsterRunResult(NamedTuple):
         ):
             return False
         return self.has_remaining_retries
-    
+
     @property
     def should_retry_on_asset_or_op_failure(self) -> bool:
         return get_boolean_tag_value(self.tags.get(RETRY_ON_ASSET_OR_OP_FAILURE_TAG), True)
-    
+
     @property
     def failure_reason(self) -> Optional[str]:
         return self.tags.get(RUN_FAILURE_REASON_TAG)

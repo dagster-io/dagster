@@ -148,6 +148,7 @@ def setup_dagster(
         time.sleep(20)
     with stand_up_dagster(dagster_dev_cmd) as process:
         yield process
+    time.sleep(5)
 
 
 @contextmanager

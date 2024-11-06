@@ -15,6 +15,7 @@ from dagster_airlift.core import (
 from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
 
 from kitchen_sink.airflow_instance import local_airflow_instance
+from kitchen_sink.dagster_defs.retries_configured import just_fails, succeeds_on_final_retry
 
 
 def make_print_asset(key: str) -> AssetsDefinition:
@@ -146,6 +147,18 @@ def build_mapped_defs() -> Definitions:
                     dag_id="migrated_daily_interval_dag",
                     task_mappings={"my_task": [migrated_daily_interval_dag__partitioned]},
                 ),
+            ),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="migrated_asset_has_retries",
+                    task_mappings={"my_task": [succeeds_on_final_retry]},
+                )
+            ),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="migrated_asset_has_retries_not_step_failure",
+                    task_mappings={"my_task": [just_fails]},
+                )
             ),
         ),
     )

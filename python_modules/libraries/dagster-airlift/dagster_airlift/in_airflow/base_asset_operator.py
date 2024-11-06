@@ -11,8 +11,14 @@ from airflow.utils.context import Context
 from requests import Response
 
 from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY, TASK_ID_TAG_KEY
+from dagster_airlift.in_airflow.dagster_run_utils import (
+    PARENT_RUN_ID_TAG,
+    RETRY_NUMBER_TAG,
+    DagsterRunResult,
+)
 from dagster_airlift.in_airflow.gql_queries import (
     ASSET_NODES_QUERY,
+    RUNS_BY_TAG_QUERY,
     RUNS_QUERY,
     TRIGGER_ASSETS_MUTATION,
     VERIFICATION_QUERY,
@@ -140,16 +146,16 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
         launch_data = self.get_valid_graphql_response(response, "launchPipelineExecution")
         return launch_data["run"]["id"]
 
-    def get_dagster_run_status(
+    def get_dagster_run_obj(
         self, session: requests.Session, dagster_url: str, run_id: str
-    ) -> str:
+    ) -> Mapping[str, Any]:
         response = session.post(
             f"{dagster_url}/graphql",
             json={"query": RUNS_QUERY, "variables": {"runId": run_id}},
             # Timeout in seconds
             timeout=3,
         )
-        return self.get_valid_graphql_response(response, "runOrError")["status"]
+        return self.get_valid_graphql_response(response, "runOrError")
 
     def get_attribute_from_airflow_context(self, context: Context, attribute: str) -> Any:
         if attribute not in context or context[attribute] is None:
@@ -221,14 +227,76 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
             ),
         )
         logger.info("Waiting for dagster run completion...")
-        while status := self.get_dagster_run_status(session, dagster_url, run_id):
+        self.wait_for_run_and_retries(session=session, dagster_url=dagster_url, run_id=run_id)
+        logger.info("All runs completed successfully.")
+        return None
+
+    def wait_for_run(
+        self, session: requests.Session, dagster_url: str, run_id: str
+    ) -> DagsterRunResult:
+        while response := self.get_dagster_run_obj(session, dagster_url, run_id):
+            status = response["status"]
             if status in ["SUCCESS", "FAILURE", "CANCELED"]:
                 break
             time.sleep(self.dagster_run_status_poll_interval)
-        if status != "SUCCESS":
-            raise Exception(f"Dagster run {run_id} did not complete successfully.")
-        logger.info("All runs completed successfully.")
+        tags = {tag["key"]: tag["value"] for tag in response["tags"]}
+        return DagsterRunResult(status=response["status"], tags=tags)
+
+    def wait_for_run_and_retries(
+        self, session: requests.Session, dagster_url: str, run_id: str
+    ) -> None:
+        run_id_to_check = run_id
+        while result := self.wait_for_run(
+            session=session, dagster_url=dagster_url, run_id=run_id_to_check
+        ):
+            if result.success:
+                break
+            elif result.run_retries_configured and result.has_remaining_retries:
+                logger.info(
+                    f"Run {run_id} completed with {result.status} status ({result.retry_number}/{result.max_retries}). Waiting for retried run..."
+                )
+                run_id_to_check = self.search_for_retried_run(
+                    parent_run_id=run_id_to_check,
+                    expected_retry_number=result.retry_number + 1,
+                    session=session,
+                    dagster_url=dagster_url,
+                )
+                logger.info(f"Found retry {run_id_to_check}. Waiting for completion...")
+                continue
+            else:
+                raise Exception(
+                    f"Run {run_id_to_check} failed, and there are no remaining retries."
+                )
         return None
+
+    def make_runs_query_with_filter(
+        self, runs_filter: Mapping[str, Any], session: requests.Session, dagster_url: str
+    ) -> Sequence[Mapping[str, Any]]:
+        response = session.post(
+            f"{dagster_url}/graphql",
+            json={"query": RUNS_BY_TAG_QUERY, "variables": {"filter": runs_filter}},
+        )
+        return self.get_valid_graphql_response(response, "runsOrError")["results"]
+
+    def search_for_retried_run(
+        self,
+        parent_run_id: str,
+        expected_retry_number: int,
+        session: requests.Session,
+        dagster_url: str,
+    ) -> str:
+        runs_filter = _build_runs_filter_param(
+            tags={RETRY_NUMBER_TAG: str(expected_retry_number), PARENT_RUN_ID_TAG: parent_run_id}
+        )
+        while runs := self.make_runs_query_with_filter(
+            runs_filter=runs_filter, session=session, dagster_url=dagster_url
+        ):
+            if len(runs) == 0:
+                # Maybe use a new var here
+                time.sleep(self.dagster_run_status_poll_interval)
+                continue
+            return next(iter(runs))["id"]
+        raise Exception("Should never get here")
 
     def execute(self, context: Context) -> Any:
         # https://github.com/apache/airflow/discussions/24463
@@ -284,3 +352,7 @@ def _build_dagster_run_execution_params(
 
 def _is_asset_node_executable(asset_node: Mapping[str, Any]) -> bool:
     return bool(asset_node["jobs"])
+
+
+def _build_runs_filter_param(tags: Mapping[str, Any]) -> Mapping[str, Any]:
+    return {"tags": [{"key": key, "value": value} for key, value in tags.items()]}
