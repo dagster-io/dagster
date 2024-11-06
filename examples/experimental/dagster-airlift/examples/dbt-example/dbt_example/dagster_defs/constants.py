@@ -4,8 +4,13 @@ from pathlib import Path
 
 from dagster import AssetKey
 
+# Migrating airflow instance
 AIRFLOW_BASE_URL = "http://localhost:8080"
 AIRFLOW_INSTANCE_NAME = "my_airflow_instance"
+
+# Federated airflow instance
+FEDERATED_BASE_URL = "http://localhost:8081"
+FEDERATED_INSTANCE_NAME = "my_federated_airflow_instance"
 
 # Authentication credentials (lol)
 USERNAME = "admin"
