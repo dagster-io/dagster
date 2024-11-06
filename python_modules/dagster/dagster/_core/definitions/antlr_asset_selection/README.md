@@ -60,15 +60,15 @@ $ alias antlr4='java -Xmx500M -cp "/usr/local/lib/antlr-4.13.2-complete.jar:$CLA
 pip install antlr4-python3-runtime
 ```
 
-## Generate Python Parser
+## Generate ANTLR files
 
-Under the `python_modules/dagster/dagster/_core/definitions/asset_selection` directory, run
+Whenever you make changes to `AssetSelection.g4`, the ANTLR files need to be regenerated to reflect those changes. To generate the files, under run
 
 ```bash
-$ antlr4 -Dlanguage=Python3 -visitor AssetSelection.g4 -o generated
+$ make generated
 ```
 
-This will generate the following files from the grammar file `AssetSelection.g4` in a `generated` folder:
+This will generate the following files from the `AssetSelection.g4` grammar file in a `generated` folder:
 
 - `AssetSelection.interp`
 - `AssetSelection.tokens`
