@@ -29,7 +29,21 @@ DEFAULT_DAGSTER_RUN_STATUS_POLL_INTERVAL = 1
 
 
 class BaseDagsterAssetsOperator(BaseOperator, ABC):
-    """Interface for an operator which materializes dagster assets."""
+    """Interface for an operator which materializes dagster assets.
+
+    This operator needs to implement the following methods:
+
+        - get_dagster_session: Returns a requests session that can be used to make requests to the Dagster API.
+            This is where any additional authentication can be added.
+        - get_dagster_url: Returns the URL for the Dagster instance.
+        - filter_asset_nodes: Filters asset nodes (which are returned from Dagster's graphql API) to only include those
+            that should be triggered by the current task.
+
+    Optionally, these methods can be overridden as well:
+
+        - get_partition_key: Determines the partition key to use to trigger the dagster run. This method will only be
+            called if the underlying asset is partitioned.
+    """
 
     def __init__(
         self,

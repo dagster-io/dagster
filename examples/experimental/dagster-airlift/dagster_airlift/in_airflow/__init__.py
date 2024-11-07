@@ -16,6 +16,10 @@ from .dag_proxy_operator import (
     BaseProxyDAGToDagsterOperator as BaseProxyDAGToDagsterOperator,
     DefaultProxyDAGToDagsterOperator as DefaultProxyDAGToDagsterOperator,
 )
+from .proxied_state import (
+    AirflowProxiedState as AirflowProxiedState,
+    load_proxied_state_from_yaml as load_proxied_state_from_yaml,
+)
 from .proxying_fn import proxying_to_dagster as proxying_to_dagster
 from .task_proxy_operator import (
     BaseProxyTaskToDagsterOperator as BaseProxyTaskToDagsterOperator,

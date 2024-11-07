@@ -47,7 +47,6 @@ Objects for retrieving information about the Airflow/Dagster mapping:
 
 .. autoclass:: AirflowDefinitionsData
 
-.. currentmodule:: dagster_airlift.mwaa
 
 MWAA (dagster_airlift.mwaa)
 ---------------------------
@@ -55,6 +54,30 @@ MWAA (dagster_airlift.mwaa)
 
 .. autoclass:: MwaaSessionAuthBackend
 
+In Airflow (dagster_airlift.in_airflow)
+---------------------------------------
 
+.. currentmodule:: dagster_airlift.in_airflow
+
+Proxying
+^^^^^^^^^
+
+.. autofunction:: proxying_to_dagster 
+
+.. autoclass:: BaseDagsterAssetsOperator
+
+Task-level Proxying
+~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: BaseProxyTaskToDagsterOperator
+
+.. autoclass:: DefaultProxyTaskToDagsterOperator
+  
+Dag-level Proxying
+~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: BaseProxyDAGToDagsterOperator
+
+.. autoclass:: DefaultProxyDAGToDagsterOperator
 
 
