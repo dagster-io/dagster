@@ -7,9 +7,23 @@ from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection impor
 @pytest.mark.parametrize(
     "selection_str, expected_tree_str",
     [
-        ('"a"', '(start (expr (assetExpr "a")) <EOF>)'),
-        ('sinks("a")', '(start (expr (functionName sinks) ( (expr (assetExpr "a")) )) <EOF>)'),
-        ('roots("a")', '(start (expr (functionName roots) ( (expr (assetExpr "a")) )) <EOF>)'),
+        ("*", "(start (expr *) <EOF>)"),
+        (
+            "***+++",
+            "(start (expr (expr (traversal *) (expr (traversal *) (expr *))) (traversal + + +)) <EOF>)",
+        ),
+        ("key:a", "(start (expr (attributeExpr key : (value a))) <EOF>)"),
+        ("key_subset:a", "(start (expr (attributeExpr key_subset : (value a))) <EOF>)"),
+        ('key:"*/a+"', '(start (expr (attributeExpr key : (value "*/a+"))) <EOF>)'),
+        ('key_subset:"*/a+"', '(start (expr (attributeExpr key_subset : (value "*/a+"))) <EOF>)'),
+        (
+            "sinks(key:a)",
+            "(start (expr (functionName sinks) ( (expr (attributeExpr key : (value a))) )) <EOF>)",
+        ),
+        (
+            "roots(key:a)",
+            "(start (expr (functionName roots) ( (expr (attributeExpr key : (value a))) )) <EOF>)",
+        ),
         ("tag:foo=bar", "(start (expr (attributeExpr tag : (value foo) = (value bar))) <EOF>)"),
         ("owner:billing", "(start (expr (attributeExpr owner : (value billing))) <EOF>)"),
         (
@@ -22,21 +36,24 @@ from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection impor
             "(start (expr (attributeExpr code_location : (value my_location))) <EOF>)",
         ),
         (
-            '((("a")))',
-            '(start (expr ( (expr ( (expr ( (expr (assetExpr "a")) )) )) )) <EOF>)',
-        ),
-        ('not not "not"', '(start (expr not (expr not (expr (assetExpr "not")))) <EOF>)'),
-        (
-            '(roots("a") and owner:billing)*',
-            '(start (expr (expr ( (expr (expr (functionName roots) ( (expr (assetExpr "a")) )) and (expr (attributeExpr owner : (value billing)))) )) (traversal *)) <EOF>)',
+            "(((key:a)))",
+            "(start (expr ( (expr ( (expr ( (expr (attributeExpr key : (value a))) )) )) )) <EOF>)",
         ),
         (
-            '++("a"+)',
-            '(start (expr (traversal + +) (expr ( (expr (expr (assetExpr "a")) (traversal +)) ))) <EOF>)',
+            "not not key:not",
+            "(start (expr not (expr not (expr (attributeExpr key : (value not))))) <EOF>)",
         ),
         (
-            '"a"* and *"b"',
-            '(start (expr (expr (expr (assetExpr "a")) (traversal *)) and (expr (traversal *) (expr (assetExpr "b")))) <EOF>)',
+            "(roots(key:a) and owner:billing)*",
+            "(start (expr (expr ( (expr (expr (functionName roots) ( (expr (attributeExpr key : (value a))) )) and (expr (attributeExpr owner : (value billing)))) )) (traversal *)) <EOF>)",
+        ),
+        (
+            "++(key:a+)",
+            "(start (expr (traversal + +) (expr ( (expr (expr (attributeExpr key : (value a))) (traversal +)) ))) <EOF>)",
+        ),
+        (
+            "key:a* and *key:b",
+            "(start (expr (expr (expr (attributeExpr key : (value a))) (traversal *)) and (expr (traversal *) (expr (attributeExpr key : (value b))))) <EOF>)",
         ),
     ],
 )
