@@ -316,7 +316,8 @@ def has_storage_test_fixture_changes():
     )
 
 
-def skip_if_not_dlift_commit():
+def skip_if_not_dlift_commit() -> Optional[str]:
+    """If no dlift files are touched, then do NOT run. Even if on master."""
     return (
         None
         if any("dagster-dlift" in str(path) for path in ChangedFiles.all)
