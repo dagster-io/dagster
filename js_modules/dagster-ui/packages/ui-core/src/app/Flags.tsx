@@ -1,35 +1,133 @@
-import memoize from 'lodash/memoize';
-import {useMemo} from 'react';
+import {useEffect, useState} from 'react';
+import {DEFAULT_FEATURE_FLAG_VALUES} from 'shared/app/DefaultFeatureFlags.oss';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 
 export const DAGSTER_FLAGS_KEY = 'DAGSTER_FLAGS';
 
-export const getFeatureFlags: () => FeatureFlag[] = memoize(
-  () => getJSONForKey(DAGSTER_FLAGS_KEY) || [],
-);
+/**
+ * Type representing the mapping of feature flags to their boolean states.
+ */
+type FeatureFlagMap = Partial<Record<FeatureFlag, boolean>>;
 
-export const featureEnabled = memoize((flag: FeatureFlag) => getFeatureFlags().includes(flag));
+/**
+ * In-memory cache for feature flags.
+ */
+let currentFeatureFlags: FeatureFlagMap = {};
 
-type FlagMap = {
-  readonly [_ in FeatureFlag]: boolean;
-};
+/**
+ * Initialize the in-memory cache by loading from localStorage and handling migration.
+ */
+const initializeFeatureFlags = () => {
+  let flags = getJSONForKey(DAGSTER_FLAGS_KEY);
 
-export const useFeatureFlags = () => {
-  return useMemo(() => {
-    const flagSet = new Set(getFeatureFlags());
-    const all: Record<string, boolean> = {};
-    for (const flag in FeatureFlag) {
-      all[flag] = flagSet.has(flag as FeatureFlag);
-    }
-    return all as FlagMap;
-  }, []);
-};
-
-export const setFeatureFlags = (flags: FeatureFlag[]) => {
-  if (!(flags instanceof Array)) {
-    throw new Error('flags must be an array');
+  // Handle backward compatibility by migrating array to object
+  if (Array.isArray(flags)) {
+    const migratedFlags: FeatureFlagMap = {};
+    flags.forEach((flag: FeatureFlag) => {
+      migratedFlags[flag] = true;
+    });
+    setFeatureFlagsInternal(migratedFlags, false); // Prevent broadcasting during migration
+    flags = migratedFlags;
   }
+
+  currentFeatureFlags = flags || {};
+};
+
+/**
+ * Internal function to set feature flags without broadcasting.
+ * Used during initialization and migration.
+ */
+const setFeatureFlagsInternal = (flags: FeatureFlagMap, broadcast: boolean = true) => {
+  if (typeof flags !== 'object' || Array.isArray(flags)) {
+    throw new Error('flags must be an object mapping FeatureFlag to boolean values');
+  }
+  currentFeatureFlags = flags;
   localStorage.setItem(DAGSTER_FLAGS_KEY, JSON.stringify(flags));
+  if (broadcast) {
+    featureFlagsChannel.postMessage('updated');
+  }
+};
+
+// Initialize the BroadcastChannel
+const featureFlagsChannel = new BroadcastChannel('feature-flags');
+
+// Initialize feature flags on module load
+initializeFeatureFlags();
+
+/**
+ * Function to retrieve the current feature flags from the in-memory cache.
+ */
+export const getFeatureFlags = (): FeatureFlagMap => {
+  return {
+    ...DEFAULT_FEATURE_FLAG_VALUES,
+    ...currentFeatureFlags,
+  };
+};
+
+/**
+ * Function to check if a specific feature flag is enabled.
+ * Falls back to default values if the flag is unset.
+ */
+export const featureEnabled = (flag: FeatureFlag): boolean => {
+  if (flag in currentFeatureFlags) {
+    return currentFeatureFlags[flag]!;
+  }
+
+  // Return default value if flag is unset
+  return DEFAULT_FEATURE_FLAG_VALUES[flag] ?? false;
+};
+
+/**
+ * Hook to access feature flags within React components.
+ * Returns a flag map with resolved values (considering defaults).
+ */
+export const useFeatureFlags = (): Readonly<Record<FeatureFlag, boolean>> => {
+  const [flags, setFlags] = useState<Record<FeatureFlag, boolean>>(() => {
+    const allFlags: Partial<Record<FeatureFlag, boolean>> = {};
+
+    for (const flag in FeatureFlag) {
+      const key = flag as FeatureFlag;
+      if (key in currentFeatureFlags) {
+        allFlags[key] = currentFeatureFlags[key];
+      } else {
+        allFlags[key] = DEFAULT_FEATURE_FLAG_VALUES[key] ?? false;
+      }
+    }
+    return allFlags as Record<FeatureFlag, boolean>;
+  });
+
+  useEffect(() => {
+    const handleFlagsChange = () => {
+      const allFlags: Partial<Record<FeatureFlag, boolean>> = {};
+
+      for (const flag in FeatureFlag) {
+        const key = flag as FeatureFlag;
+        if (key in currentFeatureFlags) {
+          allFlags[key] = currentFeatureFlags[key];
+        } else {
+          allFlags[key] = DEFAULT_FEATURE_FLAG_VALUES[key] ?? false;
+        }
+      }
+      setFlags(allFlags as Record<FeatureFlag, boolean>);
+    };
+
+    // Listen for messages from the BroadcastChannel
+    featureFlagsChannel.addEventListener('message', handleFlagsChange);
+
+    return () => {
+      featureFlagsChannel.removeEventListener('message', handleFlagsChange);
+    };
+  }, []);
+
+  return flags;
+};
+
+/**
+ * Function to update feature flags.
+ * Updates the in-memory cache, persists to localStorage, and broadcasts the change.
+ */
+export const setFeatureFlags = (flags: FeatureFlagMap) => {
+  setFeatureFlagsInternal(flags);
 };

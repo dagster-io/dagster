@@ -53,30 +53,28 @@ interface DialogContentProps {
  */
 const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) => {
   const trackEvent = useTrackEvent();
-  const [flags, setFlags] = React.useState<FeatureFlag[]>(() => getFeatureFlags());
+  const [flags, setFlags] = React.useState(() => getFeatureFlags());
   const [reloading, setReloading] = React.useState(false);
 
-  const initialFlagState = React.useRef(JSON.stringify([...getFeatureFlags().sort()]));
+  const initialFlagState = React.useRef(JSON.stringify(getFeatureFlags()));
 
   React.useEffect(() => {
     setFeatureFlags(flags);
   });
 
   const toggleFlag = (flag: FeatureFlag) => {
-    const flagSet = new Set(flags);
-    trackEvent('feature-flag', {flag, enabled: !flagSet.has(flag)});
-    if (flagSet.has(flag)) {
-      flagSet.delete(flag);
-    } else {
-      flagSet.add(flag);
-    }
-    setFlags(Array.from(flagSet));
+    setFlags((flags) => {
+      trackEvent('feature-flag', {flag, enabled: !flags[flag]});
+      const copy = {...flags};
+      copy[flag] = !copy[flag];
+      return copy;
+    });
   };
 
   const [arePreferencesChanged, setAreaPreferencesChanged] = React.useState(false);
 
   const anyChange =
-    initialFlagState.current !== JSON.stringify([...flags.sort()]) || arePreferencesChanged;
+    initialFlagState.current !== JSON.stringify(getFeatureFlags()) || arePreferencesChanged;
 
   const handleClose = (event: React.SyntheticEvent<HTMLElement>) => {
     if (anyChange) {
@@ -94,11 +92,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
       key={key}
     >
       <div>{label || key}</div>
-      <Checkbox
-        format="switch"
-        checked={flags.includes(flagType)}
-        onChange={() => toggleFlag(flagType)}
-      />
+      <Checkbox format="switch" checked={!!flags[flagType]} onChange={() => toggleFlag(flagType)} />
     </Box>
   ));
 
