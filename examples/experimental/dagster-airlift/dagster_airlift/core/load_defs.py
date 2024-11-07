@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Iterable, Iterator, Optional
+from typing import Callable, Iterable, Iterator, Optional, Union
 
 from dagster import (
     AssetsDefinition,
@@ -308,7 +308,9 @@ def _apply_airflow_data_to_specs(
         yield assets_def.map_asset_specs(get_airflow_data_to_spec_mapper(serialized_data))
 
 
-def replace_assets_in_defs(defs: Definitions, assets: Iterable[AssetsDefinition]) -> Definitions:
+def replace_assets_in_defs(
+    defs: Definitions, assets: Iterable[Union[AssetSpec, AssetsDefinition]]
+) -> Definitions:
     return Definitions(
         assets=list(assets),
         asset_checks=defs.asset_checks,
