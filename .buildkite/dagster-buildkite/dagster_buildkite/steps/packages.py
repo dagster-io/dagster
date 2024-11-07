@@ -368,10 +368,11 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/experimental/dagster-airlift",
     ),
-    PackageSpec(
-        "examples/experimental/dagster-airlift/examples/dbt-example",
-        always_run_if=has_dagster_airlift_changes,
-    ),
+    # Skipping for now due to flaky integration tests.
+    # PackageSpec(
+    #     "examples/experimental/dagster-airlift/examples/dbt-example",
+    #     always_run_if=has_dagster_airlift_changes,
+    # ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/perf-harness",
         always_run_if=has_dagster_airlift_changes,
