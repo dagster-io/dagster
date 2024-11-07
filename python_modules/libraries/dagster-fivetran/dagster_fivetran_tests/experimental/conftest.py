@@ -14,7 +14,13 @@ SAMPLE_GROUPS = {
     "code": "Success",
     "message": "Operation performed.",
     "data": {
-        "items": [{"id": "group_id", "name": "Group_Name", "created_at": "2024-01-01T00:00:00Z"}],
+        "items": [
+            {
+                "id": "my_group_destination_id",
+                "name": "Group_Name",
+                "created_at": "2024-01-01T00:00:00Z",
+            }
+        ],
         "nextCursor": "cursor_value",
     },
 }
@@ -57,7 +63,7 @@ SAMPLE_CONNECTORS_FOR_GROUP = {
                 "daily_sync_time": "14:00",
                 "succeeded_at": "2024-12-01T15:43:29.013729Z",
                 "sync_frequency": 360,
-                "group_id": "group_id",
+                "group_id": "my_group_destination_id",
                 "connected_by": "user_id",
                 "setup_tests": [
                     {
@@ -100,13 +106,13 @@ SAMPLE_DESTINATION_DETAILS = {
     "code": "Success",
     "message": "Operation performed.",
     "data": {
-        "id": "destination_id",
+        "id": "my_group_destination_id",
         "service": "adls",
         "region": "GCP_US_EAST4",
         "networking_method": "Directly",
         "setup_status": "CONNECTED",
         "daylight_saving_time_enabled": True,
-        "group_id": "group_id",
+        "group_id": "my_group_destination_id",
         "time_zone_offset": "+3",
         "setup_tests": [
             {
@@ -177,7 +183,7 @@ SAMPLE_CONNECTOR_DETAILS = {
         "daily_sync_time": "14:00",
         "succeeded_at": "2024-03-17T12:31:40.870504Z",
         "sync_frequency": 1440,
-        "group_id": "group_id",
+        "group_id": "my_group_destination_id",
         "connected_by": "user_id",
         "setup_tests": [
             {
@@ -209,6 +215,169 @@ SAMPLE_CONNECTOR_DETAILS = {
     },
 }
 
+SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
+    "code": "Success",
+    "message": "Operation performed.",
+    "data": {
+        "enable_new_by_default": True,
+        "schemas": {
+            "property1": {
+                "name_in_destination": "schema_name_in_destination",
+                "enabled": True,
+                "tables": {
+                    "property1": {
+                        "sync_mode": "SOFT_DELETE",
+                        "name_in_destination": "table_name_in_destination",
+                        "enabled": True,
+                        "columns": {
+                            "property1": {
+                                "name_in_destination": "column_name_in_destination",
+                                "enabled": True,
+                                "hashed": False,
+                                "enabled_patch_settings": {
+                                    "allowed": False,
+                                    "reason": "...",
+                                    "reason_code": "SYSTEM_COLUMN",
+                                },
+                                "is_primary_key": True,
+                            },
+                            "property2": {
+                                "name_in_destination": "column_name_in_destination",
+                                "enabled": True,
+                                "hashed": False,
+                                "enabled_patch_settings": {
+                                    "allowed": False,
+                                    "reason": "...",
+                                    "reason_code": "SYSTEM_COLUMN",
+                                },
+                                "is_primary_key": True,
+                            },
+                        },
+                        "enabled_patch_settings": {
+                            "allowed": False,
+                            "reason": "...",
+                            "reason_code": "SYSTEM_TABLE",
+                        },
+                        "supports_columns_config": True,
+                    },
+                    "property2": {
+                        "sync_mode": "SOFT_DELETE",
+                        "name_in_destination": "table_name_in_destination",
+                        "enabled": True,
+                        "columns": {
+                            "property1": {
+                                "name_in_destination": "column_name_in_destination",
+                                "enabled": True,
+                                "hashed": False,
+                                "enabled_patch_settings": {
+                                    "allowed": False,
+                                    "reason": "...",
+                                    "reason_code": "SYSTEM_COLUMN",
+                                },
+                                "is_primary_key": True,
+                            },
+                            "property2": {
+                                "name_in_destination": "column_name_in_destination",
+                                "enabled": True,
+                                "hashed": False,
+                                "enabled_patch_settings": {
+                                    "allowed": False,
+                                    "reason": "...",
+                                    "reason_code": "SYSTEM_COLUMN",
+                                },
+                                "is_primary_key": True,
+                            },
+                        },
+                        "enabled_patch_settings": {
+                            "allowed": False,
+                            "reason": "...",
+                            "reason_code": "SYSTEM_TABLE",
+                        },
+                        "supports_columns_config": True,
+                    },
+                },
+            },
+            "property2": {
+                "name_in_destination": "schema_name_in_destination",
+                "enabled": True,
+                "tables": {
+                    "property1": {
+                        "sync_mode": "SOFT_DELETE",
+                        "name_in_destination": "table_name_in_destination",
+                        "enabled": True,
+                        "columns": {
+                            "property1": {
+                                "name_in_destination": "column_name_in_destination",
+                                "enabled": True,
+                                "hashed": False,
+                                "enabled_patch_settings": {
+                                    "allowed": False,
+                                    "reason": "...",
+                                    "reason_code": "SYSTEM_COLUMN",
+                                },
+                                "is_primary_key": True,
+                            },
+                            "property2": {
+                                "name_in_destination": "column_name_in_destination",
+                                "enabled": True,
+                                "hashed": False,
+                                "enabled_patch_settings": {
+                                    "allowed": False,
+                                    "reason": "...",
+                                    "reason_code": "SYSTEM_COLUMN",
+                                },
+                                "is_primary_key": True,
+                            },
+                        },
+                        "enabled_patch_settings": {
+                            "allowed": False,
+                            "reason": "...",
+                            "reason_code": "SYSTEM_TABLE",
+                        },
+                        "supports_columns_config": True,
+                    },
+                    "property2": {
+                        "sync_mode": "SOFT_DELETE",
+                        "name_in_destination": "table_name_in_destination",
+                        "enabled": True,
+                        "columns": {
+                            "property1": {
+                                "name_in_destination": "column_name_in_destination",
+                                "enabled": True,
+                                "hashed": False,
+                                "enabled_patch_settings": {
+                                    "allowed": False,
+                                    "reason": "...",
+                                    "reason_code": "SYSTEM_COLUMN",
+                                },
+                                "is_primary_key": True,
+                            },
+                            "property2": {
+                                "name_in_destination": "column_name_in_destination",
+                                "enabled": True,
+                                "hashed": False,
+                                "enabled_patch_settings": {
+                                    "allowed": False,
+                                    "reason": "...",
+                                    "reason_code": "SYSTEM_COLUMN",
+                                },
+                                "is_primary_key": True,
+                            },
+                        },
+                        "enabled_patch_settings": {
+                            "allowed": False,
+                            "reason": "...",
+                            "reason_code": "SYSTEM_TABLE",
+                        },
+                        "supports_columns_config": True,
+                    },
+                },
+            },
+        },
+        "schema_change_handling": "ALLOW_ALL",
+    },
+}
+
 
 @pytest.fixture(name="connector_id")
 def connector_id_fixture() -> str:
@@ -217,12 +386,12 @@ def connector_id_fixture() -> str:
 
 @pytest.fixture(name="destination_id")
 def destination_id_fixture() -> str:
-    return "destination_id"
+    return "my_group_destination_id"
 
 
 @pytest.fixture(name="group_id")
 def group_id_fixture() -> str:
-    return "group_id"
+    return "my_group_destination_id"
 
 
 @pytest.fixture(
@@ -252,6 +421,13 @@ def workspace_data_api_mocks_fixture(
             json=SAMPLE_DESTINATION_DETAILS,
             status=200,
         )
+
+        response.add(
+                method=responses.GET,
+                url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}/schemas",
+                json=SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
+                status=200,
+            )
 
         response.add(
             method=responses.GET,

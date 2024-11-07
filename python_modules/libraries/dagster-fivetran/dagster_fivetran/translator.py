@@ -50,7 +50,18 @@ class FivetranWorkspaceData:
     def from_content_data(
         cls, content_data: Sequence[FivetranContentData]
     ) -> "FivetranWorkspaceData":
-        raise NotImplementedError()
+        return cls(
+            connectors_by_id={
+                connector.properties["id"]: connector
+                for connector in content_data
+                if connector.content_type == FivetranContentType.CONNECTOR
+            },
+            destinations_by_id={
+                destination.properties["id"]: destination
+                for destination in content_data
+                if destination.content_type == FivetranContentType.DESTINATION
+            },
+        )
 
     def to_fivetran_connector_table_props_data(self) -> Sequence[FivetranConnectorTableProps]:
         """Method that converts a `FivetranWorkspaceData` object

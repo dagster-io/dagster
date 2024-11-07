@@ -20,11 +20,13 @@ def test_basic_resource_request(
     client.get_connectors_for_group(group_id=group_id)
     client.get_destination_details(destination_id=destination_id)
     client.get_groups()
+    client.get_schema_config_for_connector(connector_id=connector_id)
 
-    assert len(workspace_data_api_mocks.calls) == 4
+    assert len(workspace_data_api_mocks.calls) == 5
 
     assert "Basic" in workspace_data_api_mocks.calls[0].request.headers["Authorization"]
     assert connector_id in workspace_data_api_mocks.calls[0].request.url
     assert group_id in workspace_data_api_mocks.calls[1].request.url
     assert destination_id in workspace_data_api_mocks.calls[2].request.url
     assert "groups" in workspace_data_api_mocks.calls[3].request.url
+    assert f"{connector_id}/schemas" in workspace_data_api_mocks.calls[4].request.url
