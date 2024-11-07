@@ -47,6 +47,7 @@ import duckdb from './kindtag-images/tool-duckdb-color.svg';
 import excel from './kindtag-images/tool-excel-color.svg';
 import facebook from './kindtag-images/tool-facebook-color.svg';
 import fivetran from './kindtag-images/tool-fivetran-color.svg';
+import gcs from './kindtag-images/tool-gcs-color.svg';
 import gemini from './kindtag-images/tool-gemini-color.svg';
 import github from './kindtag-images/tool-github-color.svg';
 import gitlab from './kindtag-images/tool-gitlab-color.svg';
@@ -276,6 +277,7 @@ export type KnownTagType =
   | 'discord'
   | 'docker'
   | 'facebook'
+  | 'gcs'
   | 'gemini'
   | 'google'
   | 'graphql'
@@ -756,6 +758,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   facebook: {
     icon: facebook,
     content: 'Facebook',
+  },
+  gcs: {
+    icon: gcs,
+    content: 'GCS',
   },
   gemini: {
     icon: gemini,
