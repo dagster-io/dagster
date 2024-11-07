@@ -1,11 +1,9 @@
 import uuid
 from typing import Callable
 
-import responses
 from dagster_fivetran import FivetranWorkspace
 
 
-@responses.activate
 def test_basic_resource_request(
     connector_id: str, destination_id: str, group_id: str, workspace_data_api_mocks_fn: Callable
 ) -> None:
