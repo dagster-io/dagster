@@ -308,7 +308,6 @@ def replace_attributes(
     owners: Optional[Sequence[str]] = ...,
     tags: Optional[Mapping[str, str]] = ...,
     kinds: Optional[Set[str]] = ...,
-    auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
     partitions_def: Optional[PartitionsDefinition] = ...,
 ) -> "AssetSpec":
     """Returns a new AssetSpec with the specified attributes replaced."""
@@ -332,9 +331,6 @@ def replace_attributes(
         owners=owners if owners is not ... else spec.owners,
         tags=tags if tags is not ... else current_tags_without_kinds,
         kinds=kinds if kinds is not ... else spec.kinds,
-        auto_materialize_policy=auto_materialize_policy
-        if auto_materialize_policy is not ...
-        else spec.auto_materialize_policy,
         partitions_def=partitions_def if partitions_def is not ... else spec.partitions_def,
     )
 
