@@ -5,7 +5,7 @@ from typing import AbstractSet, Callable, Iterable
 import pytest
 from dagster import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster_airlift.core import AirflowInstance, BasicAuthBackend
+from dagster_airlift.core import AirflowBasicAuthBackend, AirflowInstance
 
 from .utils import (
     poll_for_materialization,
@@ -23,7 +23,7 @@ def test_migration_status(
     both the Airflow DAGs and the Dagster asset definitions.
     """
     instance = AirflowInstance(
-        auth_backend=BasicAuthBackend(
+        auth_backend=AirflowBasicAuthBackend(
             webserver_url="http://localhost:8080",
             username="admin",
             password="admin",

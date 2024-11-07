@@ -25,6 +25,17 @@ SLEEP_SECONDS = 1
 
 
 class AirflowAuthBackend(ABC):
+    """An abstract class that represents an authentication backend for an Airflow instance.
+
+    Requires two methods to be implemented by subclasses:
+    - get_session: Returns a requests.Session object that can be used to make requests to the Airflow instance, and handles authentication.
+    - get_webserver_url: Returns the base URL of the Airflow webserver.
+
+    The `dagster-airlift` package provides the following default implementations:
+    - :py:class:`dagster-airlift.core.AirflowBasicAuthBackend`: An authentication backend that uses Airflow's basic auth to authenticate with the Airflow instance.
+    - :py:class:`dagster-airlift.mwaa.MwaaSessionAuthBackend`: An authentication backend that uses AWS MWAA's web login token to authenticate with the Airflow instance (requires `dagster-airlift[mwaa]`).
+    """
+
     def get_session(self) -> requests.Session:
         raise NotImplementedError("This method must be implemented by subclasses.")
 
