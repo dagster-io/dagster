@@ -24,6 +24,7 @@ from dagster._core.definitions.output import Out
 from dagster._core.definitions.utils import resolve_automation_condition
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.tags import normalize_tags
+from dagster._utils.warnings import disable_dagster_warnings
 
 EMPTY_ASSET_KEY_SENTINEL = AssetKey([])
 
@@ -136,23 +137,24 @@ class AssetOut:
             "Cannot provide both spec and spec-related arguments (key, description, metadata, etc.)",
         )
 
-        self._spec = spec or AssetSpec(
-            key=AssetKey.from_coercible(key) if key is not None else EMPTY_ASSET_KEY_SENTINEL,
-            description=check.opt_str_param(description, "description"),
-            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
-            group_name=check.opt_str_param(group_name, "group_name"),
-            code_version=check.opt_str_param(code_version, "code_version"),
-            automation_condition=check.opt_inst_param(
-                resolve_automation_condition(automation_condition, auto_materialize_policy),
-                "automation_condition",
-                AutomationCondition,
-            ),
-            freshness_policy=check.opt_inst_param(
-                freshness_policy, "freshness_policy", FreshnessPolicy
-            ),
-            owners=check.opt_sequence_param(owners, "owners", of_type=str),
-            tags=normalize_tags(tags or {}, strict=True),
-        )
+        with disable_dagster_warnings():
+            self._spec = spec or AssetSpec(
+                key=AssetKey.from_coercible(key) if key is not None else EMPTY_ASSET_KEY_SENTINEL,
+                description=check.opt_str_param(description, "description"),
+                metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
+                group_name=check.opt_str_param(group_name, "group_name"),
+                code_version=check.opt_str_param(code_version, "code_version"),
+                automation_condition=check.opt_inst_param(
+                    resolve_automation_condition(automation_condition, auto_materialize_policy),
+                    "automation_condition",
+                    AutomationCondition,
+                ),
+                freshness_policy=check.opt_inst_param(
+                    freshness_policy, "freshness_policy", FreshnessPolicy
+                ),
+                owners=check.opt_sequence_param(owners, "owners", of_type=str),
+                tags=normalize_tags(tags or {}, strict=True),
+            )
         self.key_prefix = key_prefix
         self.dagster_type = dagster_type
         self.is_required = is_required
@@ -215,9 +217,8 @@ class AssetOut:
             deps=deps,
         )
 
-    @classmethod
+    @staticmethod
     def from_spec(
-        cls,
         spec: AssetSpec,
         dagster_type: Union[Type, DagsterType] = NoValueSentinel,
         is_required: bool = True,
@@ -240,7 +241,7 @@ class AssetOut:
         Returns:
             AssetOut: The AssetOut built from the spec.
         """
-        return cls(
+        return AssetOut(
             spec=spec,
             dagster_type=dagster_type,
             is_required=is_required,
