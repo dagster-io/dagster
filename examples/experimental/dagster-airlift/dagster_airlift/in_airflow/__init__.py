@@ -18,6 +18,8 @@ from .dag_proxy_operator import (
 )
 from .proxied_state import (
     AirflowProxiedState as AirflowProxiedState,
+    DagProxiedState as DagProxiedState,
+    TaskProxiedState as TaskProxiedState,
     load_proxied_state_from_yaml as load_proxied_state_from_yaml,
 )
 from .proxying_fn import proxying_to_dagster as proxying_to_dagster
