@@ -649,7 +649,11 @@ class FivetranWorkspace(ConfigurableResource):
 
                 schema_config = client.get_schema_config_for_connector(connector_id=connector_id)
 
-                augmented_connector_details = {**connector_details, "schema_config": schema_config}
+                augmented_connector_details = {
+                    **connector_details,
+                    "schema_config": schema_config,
+                    "destination_id": group_id,
+                }
                 connectors.append(
                     FivetranContentData(
                         content_type=FivetranContentType.CONNECTOR,
