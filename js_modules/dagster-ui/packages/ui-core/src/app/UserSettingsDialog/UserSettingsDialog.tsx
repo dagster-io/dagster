@@ -85,8 +85,6 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
     }
   };
 
-  console.log({visibleFlags});
-
   const experimentalSettings = visibleFlags.map(({key, label, flagType}) => (
     <Box
       padding={{vertical: 8}}

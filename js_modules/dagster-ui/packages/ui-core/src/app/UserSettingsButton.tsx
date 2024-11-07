@@ -9,8 +9,6 @@ export const UserSettingsButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const visibleFlags = useVisibleFeatureFlagRows();
 
-  console.log({visibleFlags});
-
   return (
     <>
       <TopNavButton onClick={() => setIsOpen(true)} title="User settings">
