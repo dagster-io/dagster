@@ -23,9 +23,6 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
     def visitStart(self, ctx: AssetSelectionParser.StartContext):
         return self.visit(ctx.expr())
 
-    def visitAssetExpression(self, ctx: AssetSelectionParser.AssetExpressionContext):
-        return self.visit(ctx.assetExpr())
-
     def visitParenthesizedExpression(
         self, ctx: AssetSelectionParser.ParenthesizedExpressionContext
     ):
@@ -41,9 +38,12 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
         right: AssetSelection = self.visit(ctx.expr(1))
         return left & right
 
+    def visitAllExpression(self, ctx: AssetSelectionParser.AllExpressionContext):
+        return AssetSelection.all(include_sources=True)
+
     def visitNotExpression(self, ctx: AssetSelectionParser.NotExpressionContext):
         selection: AssetSelection = self.visit(ctx.expr())
-        return AssetSelection.all() - selection
+        return AssetSelection.all(include_sources=True) - selection
 
     def visitDownTraversalExpression(
         self, ctx: AssetSelectionParser.DownTraversalExpressionContext
@@ -89,6 +89,14 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
         elif ctx.ROOTS():
             return "roots"
 
+    def visitKeyExpr(self, ctx: AssetSelectionParser.KeyExprContext):
+        value = self.visit(ctx.value())
+        return AssetSelection.assets(value)
+
+    def visitKeySubsetExpr(self, ctx: AssetSelectionParser.KeySubsetExprContext):
+        value = self.visit(ctx.value())
+        return AssetSelection.key_prefixes(value)
+
     def visitTagAttributeExpr(self, ctx: AssetSelectionParser.TagAttributeExprContext):
         key = self.visit(ctx.value(0))
         value = self.visit(ctx.value(1)) if ctx.EQUAL() else ""
@@ -117,14 +125,6 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
             return ctx.QUOTED_STRING().getText().strip('"')
         elif ctx.UNQUOTED_STRING():
             return ctx.UNQUOTED_STRING().getText()
-
-    def visitExactMatchAsset(self, ctx: AssetSelectionParser.ExactMatchAssetContext):
-        asset = ctx.QUOTED_STRING().getText().strip('"')
-        return AssetSelection.assets(asset)
-
-    def visitPrefixMatchAsset(self, ctx: AssetSelectionParser.PrefixMatchAssetContext):
-        asset = ctx.UNQUOTED_STRING().getText()
-        return AssetSelection.key_prefixes(asset)
 
 
 class AntlrAssetSelectionParser:

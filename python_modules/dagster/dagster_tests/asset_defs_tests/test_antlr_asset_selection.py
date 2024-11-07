@@ -31,7 +31,10 @@ from dagster._core.storage.tags import KIND_PREFIX
             "(start (expr (functionName roots) ( (expr (attributeExpr key : (value a))) )) <EOF>)",
         ),
         ("tag:foo=bar", "(start (expr (attributeExpr tag : (value foo) = (value bar))) <EOF>)"),
-        ("owner:billing", "(start (expr (attributeExpr owner : (value billing))) <EOF>)"),
+        (
+            'owner:"owner@owner.com"',
+            '(start (expr (attributeExpr owner : (value "owner@owner.com"))) <EOF>)',
+        ),
         (
             'group:"my_group"',
             '(start (expr (attributeExpr group : (value "my_group"))) <EOF>)',
@@ -46,8 +49,8 @@ from dagster._core.storage.tags import KIND_PREFIX
             "(start (expr ( (expr ( (expr ( (expr (attributeExpr key : (value a))) )) )) )) <EOF>)",
         ),
         (
-            "not not key:not",
-            "(start (expr not (expr not (expr (attributeExpr key : (value not))))) <EOF>)",
+            'not not key:"not"',
+            '(start (expr not (expr not (expr (attributeExpr key : (value "not"))))) <EOF>)',
         ),
         (
             "(roots(key:a) and owner:billing)*",
@@ -70,7 +73,16 @@ def test_antlr_tree(selection_str, expected_tree_str):
 
 @pytest.mark.parametrize(
     "selection_str",
-    ["not", "a b", "a and and", "a and", "sinks", "owner", "tag:foo=", "owner:owner@owner.com"],
+    [
+        "not",
+        "key:a key:b",
+        "key:a and and",
+        "key:a and",
+        "sinks",
+        "owner",
+        "tag:foo=",
+        "owner:owner@owner.com",
+    ],
 )
 def test_antlr_tree_invalid(selection_str):
     with pytest.raises(Exception):
@@ -80,20 +92,20 @@ def test_antlr_tree_invalid(selection_str):
 @pytest.mark.parametrize(
     "selection_str, expected_assets",
     [
-        ('"a"', AssetSelection.assets("a")),
-        ('not "a"', AssetSelection.all() - AssetSelection.assets("a")),
-        ('"a" and "b"', AssetSelection.assets("a") & AssetSelection.assets("b")),
-        ('"a" or "b"', AssetSelection.assets("a") | AssetSelection.assets("b")),
-        ('+"a"', AssetSelection.assets("a").upstream(1)),
-        ('++"a"', AssetSelection.assets("a").upstream(2)),
-        ('"a"+', AssetSelection.assets("a").downstream(1)),
-        ('"a"++', AssetSelection.assets("a").downstream(2)),
+        ("key:a", AssetSelection.assets("a")),
+        ("not key:a", AssetSelection.all(include_sources=True) - AssetSelection.assets("a")),
+        ("key:a and key:b", AssetSelection.assets("a") & AssetSelection.assets("b")),
+        ("key:a or key:b", AssetSelection.assets("a") | AssetSelection.assets("b")),
+        ("+key:a", AssetSelection.assets("a").upstream(1)),
+        ("++key:a", AssetSelection.assets("a").upstream(2)),
+        ("key:a+", AssetSelection.assets("a").downstream(1)),
+        ("key:a++", AssetSelection.assets("a").downstream(2)),
         (
-            '"a"* and *"b"',
+            "key:a* and *key:b",
             AssetSelection.assets("a").downstream() & AssetSelection.assets("b").upstream(),
         ),
-        ('sinks("a")', AssetSelection.assets("a").sinks()),
-        ('roots("c")', AssetSelection.assets("c").roots()),
+        ("sinks(key:a)", AssetSelection.assets("a").sinks()),
+        ("roots(key:c)", AssetSelection.assets("c").roots()),
         ("tag:foo", AssetSelection.tag("foo", "")),
         ("tag:foo=bar", AssetSelection.tag("foo", "bar")),
         ('owner:"owner@owner.com"', AssetSelection.owner("owner@owner.com")),
