@@ -33,7 +33,14 @@ class AirflowAuthBackend(ABC):
 
 
 class AirflowInstance:
-    """Docstring coming soon."""
+    """A class that represents a running Airflow Instance and provides methods for interacting with its REST API.
+
+    Args:
+        auth_backend (AirflowAuthBackend): The authentication backend to use when making requests to the Airflow instance.
+        name (str): The name of the Airflow instance. This will be prefixed to any assets automatically created using this instance.
+        batch_task_instance_limit (int): The number of task instances to query at a time when fetching task instances. Defaults to 100.
+        batch_dag_runs_limit (int): The number of dag runs to query at a time when fetching dag runs. Defaults to 100.
+    """
 
     def __init__(
         self,
