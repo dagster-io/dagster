@@ -21,7 +21,7 @@ export const RunTargetLink = ({
   repoAddress: RepoAddress | null;
 }) => {
   return isHiddenAssetGroupJob(run.pipelineName) ? (
-    <Box flex={{gap: 16, alignItems: 'end', wrap: 'wrap'}}>
+    <Box flex={{gap: 16, alignItems: 'end', wrap: 'wrap'}} style={{minWidth: 0, maxWidth: '100%'}}>
       <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} />
       <AssetCheckTagCollection assetChecks={run.assetCheckSelection} />
     </Box>
