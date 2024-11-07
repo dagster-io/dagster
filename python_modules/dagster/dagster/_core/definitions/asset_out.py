@@ -184,14 +184,43 @@ class AssetOut:
     ) -> AssetSpec:
         return replace_attributes(
             self._spec,
+            key=key,
             tags={**additional_tags, **self.tags} if self.tags else additional_tags,
             deps=deps,
         )
 
     @classmethod
-    def from_spec(cls, spec: AssetSpec) -> "AssetOut":
-        out = cls()
-        out._spec = spec
+    def from_spec(
+        cls,
+        spec: AssetSpec,
+        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
+        is_required: bool = True,
+        io_manager_key: Optional[str] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
+    ) -> "AssetOut":
+        """Builds an AssetOut from the passed spec.
+
+        Args:
+            spec (AssetSpec): The spec to build the AssetOut from.
+            dagster_type (Optional[Union[Type, DagsterType]]): The type of this output. Should only
+                be set if the correct type can not be inferred directly from the type signature of
+                the decorated function.
+            is_required (bool): Whether the presence of this field is required. (default: True)
+            io_manager_key (Optional[str]): The resource key of the IO manager used for this output.
+                (default: "io_manager").
+            backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified
+                asset.
+
+        Returns:
+            AssetOut: The AssetOut built from the spec.
+        """
+        out = cls(
+            dagster_type=dagster_type,
+            is_required=is_required,
+            io_manager_key=io_manager_key,
+            backfill_policy=backfill_policy,
+        )
+        out._spec = spec  # noqa: SLF001
         return out
 
     @property
