@@ -27,7 +27,7 @@ setup_local_env:
 	mkdir -p $(MIGRATING_AIRFLOW_HOME)
 	mkdir -p $(DAGSTER_HOME)
 	chmod +x ../../scripts/airflow_setup.sh
-	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags $(MIGRATING_AIRFLOW_HOME)
+	AIRFLOW_HOME=$(MIGRATING_AIRFLOW_HOME) ../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags
 	$(MAKE) dbt_setup
 
 not_proxied:
@@ -57,7 +57,7 @@ run_complete:
 	dagster dev -m dbt_example.dagster_defs.complete -p 3333
 
 wipe: ## Wipe out all the files created by the Makefile
-	rm -rf $(AIRFLOW_HOME) $(DAGSTER_HOME)
+	rm -rf $(MIGRATING_AIRFLOW_HOME) $(DAGSTER_HOME)
 
 wipe_dagster: ## Wipe out all the files created by the Makefile
 	rm -rf $$DAGSTER_HOME
