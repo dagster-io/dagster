@@ -224,16 +224,16 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
         "enable_new_by_default": True,
         "schemas": {
             "property1": {
-                "name_in_destination": "schema_name_in_destination",
+                "name_in_destination": "schema_name_in_destination_1",
                 "enabled": True,
                 "tables": {
                     "property1": {
                         "sync_mode": "SOFT_DELETE",
-                        "name_in_destination": "table_name_in_destination",
+                        "name_in_destination": "table_name_in_destination_1",
                         "enabled": True,
                         "columns": {
                             "property1": {
-                                "name_in_destination": "column_name_in_destination",
+                                "name_in_destination": "column_name_in_destination_1",
                                 "enabled": True,
                                 "hashed": False,
                                 "enabled_patch_settings": {
@@ -244,7 +244,7 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
                                 "is_primary_key": True,
                             },
                             "property2": {
-                                "name_in_destination": "column_name_in_destination",
+                                "name_in_destination": "column_name_in_destination_2",
                                 "enabled": True,
                                 "hashed": False,
                                 "enabled_patch_settings": {
@@ -264,11 +264,11 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
                     },
                     "property2": {
                         "sync_mode": "SOFT_DELETE",
-                        "name_in_destination": "table_name_in_destination",
+                        "name_in_destination": "table_name_in_destination_2",
                         "enabled": True,
                         "columns": {
                             "property1": {
-                                "name_in_destination": "column_name_in_destination",
+                                "name_in_destination": "column_name_in_destination_1",
                                 "enabled": True,
                                 "hashed": False,
                                 "enabled_patch_settings": {
@@ -279,7 +279,7 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
                                 "is_primary_key": True,
                             },
                             "property2": {
-                                "name_in_destination": "column_name_in_destination",
+                                "name_in_destination": "column_name_in_destination_2",
                                 "enabled": True,
                                 "hashed": False,
                                 "enabled_patch_settings": {
@@ -300,16 +300,16 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
                 },
             },
             "property2": {
-                "name_in_destination": "schema_name_in_destination",
+                "name_in_destination": "schema_name_in_destination_2",
                 "enabled": True,
                 "tables": {
                     "property1": {
                         "sync_mode": "SOFT_DELETE",
-                        "name_in_destination": "table_name_in_destination",
+                        "name_in_destination": "table_name_in_destination_1",
                         "enabled": True,
                         "columns": {
                             "property1": {
-                                "name_in_destination": "column_name_in_destination",
+                                "name_in_destination": "column_name_in_destination_1",
                                 "enabled": True,
                                 "hashed": False,
                                 "enabled_patch_settings": {
@@ -320,7 +320,7 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
                                 "is_primary_key": True,
                             },
                             "property2": {
-                                "name_in_destination": "column_name_in_destination",
+                                "name_in_destination": "column_name_in_destination_1",
                                 "enabled": True,
                                 "hashed": False,
                                 "enabled_patch_settings": {
@@ -340,11 +340,11 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
                     },
                     "property2": {
                         "sync_mode": "SOFT_DELETE",
-                        "name_in_destination": "table_name_in_destination",
+                        "name_in_destination": "table_name_in_destination_2",
                         "enabled": True,
                         "columns": {
                             "property1": {
-                                "name_in_destination": "column_name_in_destination",
+                                "name_in_destination": "column_name_in_destination_1",
                                 "enabled": True,
                                 "hashed": False,
                                 "enabled_patch_settings": {
@@ -355,7 +355,7 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
                                 "is_primary_key": True,
                             },
                             "property2": {
-                                "name_in_destination": "column_name_in_destination",
+                                "name_in_destination": "column_name_in_destination_2",
                                 "enabled": True,
                                 "hashed": False,
                                 "enabled_patch_settings": {
