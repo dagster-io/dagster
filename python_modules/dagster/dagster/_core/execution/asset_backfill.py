@@ -69,9 +69,6 @@ from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorksp
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_current_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
-from python_modules.dagster.dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
-    filter_runs_to_should_retry,
-)
 
 if TYPE_CHECKING:
     from dagster._core.execution.backfill import PartitionBackfill
@@ -936,7 +933,7 @@ def backfill_is_complete(
     backfill_id: str, backfill_data: AssetBackfillData, instance: DagsterInstance
 ):
     """A backfill is complete when:
-    1. all asset parttiions in the target subset have a materialization state (successful, failed, downstream of a failed partition).
+    1. all asset partitions in the target subset have a materialization state (successful, failed, downstream of a failed partition).
     2. there are no in progress runs for the backfill.
     3. there are no failed runs that will result in an automatic retry.
 
@@ -949,13 +946,17 @@ def backfill_is_complete(
     daemon continues to update the backfill data until all runs have finished in order to display the
     final partition statuses in the UI.
     """
+    from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
+        filter_runs_to_should_retry,
+    )
+
     # conditions are in order of least expensive to most expensive to check
     if (
         # Condition 1 - all asset partitions in the target subset have a materialization state
         backfill_data.all_targeted_partitions_have_materialization_status()
         # Condtition 2 - there are no in progress runs for the backfill
         and len(
-            instance.get_runs_ids(
+            instance.get_run_ids(
                 filters=RunsFilter(
                     statuses=NOT_FINISHED_STATUSES,
                     tags={BACKFILL_ID_TAG: backfill_id},
@@ -966,15 +967,17 @@ def backfill_is_complete(
         == 0
         # Condition 3 - there are no failed runs that will be retried
         and len(
-            filter_runs_to_should_retry(
-                instance.get_runs(
-                    filters=RunsFilter(
-                        tags={BACKFILL_ID_TAG: backfill_id},
-                        statuses=[DagsterRunStatus.FAILURE],
-                    )
-                ),
-                instance,
-                instance.run_retries_max_retries,
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(
+                        filters=RunsFilter(
+                            tags={BACKFILL_ID_TAG: backfill_id},
+                            statuses=[DagsterRunStatus.FAILURE],
+                        )
+                    ),
+                    instance,
+                    instance.run_retries_max_retries,
+                )
             )
         )
         == 0
@@ -1270,7 +1273,7 @@ def get_canceling_asset_backfill_iteration_data(
             " AssetGraphSubset object"
         )
 
-    failed_subset, _ = AssetGraphSubset.from_asset_partition_set(
+    failed_subset = AssetGraphSubset.from_asset_partition_set(
         set(_get_failed_asset_partitions(instance_queryer, backfill_id, asset_graph)),
         asset_graph,
     )
@@ -1343,7 +1346,7 @@ def _get_failed_and_downstream_asset_partitions(
     asset_graph: RemoteWorkspaceAssetGraph,
     instance_queryer: CachingInstanceQueryer,
     backfill_start_timestamp: float,
-) -> Tuple[AssetGraphSubset, bool]:
+) -> AssetGraphSubset:
     failed_and_downstream_subset = AssetGraphSubset.from_asset_partition_set(
         asset_graph.bfs_filter_asset_partitions(
             instance_queryer,
@@ -1768,7 +1771,7 @@ def _get_failed_asset_partitions(
     asset_graph: RemoteAssetGraph,
 ) -> Sequence[AssetKeyPartitionKey]:
     """Returns asset partitions that materializations were requested for as part of the backfill, but
-    were not successfully materialized.
+    will not be materialized.
 
     Includes canceled asset partitions. Implementation assumes that successful runs won't have any
     failed partitions.
