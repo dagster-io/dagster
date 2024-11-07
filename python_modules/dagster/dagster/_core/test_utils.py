@@ -53,7 +53,8 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.events import DagsterEvent
+from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 
 # test utils from separate light weight file since are exported top level
@@ -213,6 +214,38 @@ def register_managed_run_for_test(
         job_snapshot,
         execution_plan_snapshot,
         parent_job_snapshot,
+    )
+
+
+def mark_run_successful(instance: DagsterInstance, run: DagsterRun) -> None:
+    instance.handle_new_event(
+        EventLogEntry(
+            error_info=None,
+            level="debug",
+            user_message="",
+            run_id=run.run_id,
+            timestamp=time.time(),
+            dagster_event=DagsterEvent(
+                event_type_value=DagsterEventType.RUN_SUCCESS.value,
+                job_name=run.job_name,
+            ),
+        )
+    )
+
+
+def mark_run_failed(instance: DagsterInstance, run: DagsterRun) -> None:
+    instance.handle_new_event(
+        EventLogEntry(
+            error_info=None,
+            level="debug",
+            user_message="",
+            run_id=run.run_id,
+            timestamp=time.time(),
+            dagster_event=DagsterEvent(
+                event_type_value=DagsterEventType.RUN_FAILURE.value,
+                job_name=run.job_name,
+            ),
+        )
     )
 
 
