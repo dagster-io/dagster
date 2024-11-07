@@ -33,6 +33,8 @@ class AirflowAuthBackend(ABC):
 
 
 class AirflowInstance:
+    """Docstring coming soon."""
+
     def __init__(
         self,
         auth_backend: AirflowAuthBackend,
