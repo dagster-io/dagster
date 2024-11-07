@@ -12,6 +12,7 @@ from dagster_fivetran.utils import (
     get_fivetran_connector_url,
     metadata_for_table,
 )
+from dagster_fivetran.utils import get_fivetran_connector_url, metadata_for_table
 
 
 class FivetranConnectorTableProps(NamedTuple):
