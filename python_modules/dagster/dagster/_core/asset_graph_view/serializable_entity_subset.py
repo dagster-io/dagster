@@ -9,7 +9,7 @@ from dagster._core.definitions.partition import (
     PartitionsDefinition,
     PartitionsSubset,
 )
-from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
 from dagster._serdes.serdes import DataclassSerializer, whitelist_for_serdes
 
 EntitySubsetValue = Union[bool, PartitionsSubset]
@@ -72,7 +72,7 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
         if self.is_partitioned:
             # for some PartitionSubset types, we have access to the underlying partitions
             # definitions, so we can ensure those are identical
-            if isinstance(self.value, (BaseTimeWindowPartitionsSubset, AllPartitionsSubset)):
+            if isinstance(self.value, (TimeWindowPartitionsSubset, AllPartitionsSubset)):
                 return self.value.partitions_def == partitions_def
             else:
                 return partitions_def is not None
