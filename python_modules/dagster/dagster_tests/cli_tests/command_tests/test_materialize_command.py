@@ -174,6 +174,21 @@ def test_partition_range_multi_run_backfill_policy():
         )
 
 
+def test_group():
+    with instance_for_test() as instance:
+        result = invoke_materialize("group:group_name")
+        assert "RUN_SUCCESS" in result.output
+        event1 = instance.get_latest_materialization_event(AssetKey("grouped_asset1"))
+        event2 = instance.get_latest_materialization_event(AssetKey("grouped_asset2"))
+        assert event1 is not None and event2 is not None
+
+
+def test_group_missing():
+    result = invoke_materialize("group:non_existent_group")
+    assert "non_existent_group" in str(result.exception)
+    assert "were selected, but do not exist" in str(result.exception)
+
+
 def test_failure():
     result = invoke_materialize("fail_asset")
     assert result.exit_code == 1

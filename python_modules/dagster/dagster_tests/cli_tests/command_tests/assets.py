@@ -37,6 +37,14 @@ def single_run_partitioned_asset() -> None: ...
 def multi_run_partitioned_asset() -> None: ...
 
 
+@asset(group_name="group_name")
+def grouped_asset1() -> None: ...
+
+
+@asset(group_name="group_name")
+def grouped_asset2() -> None: ...
+
+
 @asset
 def fail_asset() -> None:
     raise Exception("failure")

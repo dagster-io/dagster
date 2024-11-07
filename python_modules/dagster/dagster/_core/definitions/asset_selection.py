@@ -492,6 +492,10 @@ class AssetSelection(ABC):
             tag_str = string[len("tag:") :]
             return cls.tag_string(tag_str)
 
+        elif string.startswith("group:"):
+            group_str = string[len("group:") :]
+            return cls.groups(group_str)
+
         check.failed(f"Invalid selection string: {string}")
 
     @classmethod
@@ -853,6 +857,15 @@ class GroupsAssetSelection(AssetSelection):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
+        if not allow_missing:
+            missing_groups = set(self.selected_groups) - asset_graph.all_group_names
+            if missing_groups:
+                raise DagsterInvalidSubsetError(
+                    f"Group(s) {[str(g) for g in missing_groups]} were selected, "
+                    "but do not exist. Make sure all groups are spelled correctly, "
+                    "and all AssetsDefinitions are correctly added to the `Definitions`."
+                )
+
         base_set = (
             asset_graph.get_all_asset_keys()
             if self.include_sources

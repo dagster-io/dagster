@@ -791,6 +791,10 @@ def test_from_string_tag():
     assert AssetSelection.from_string("tag:foo") == AssetSelection.tag("foo", "")
 
 
+def test_from_string_group():
+    assert AssetSelection.from_string("group:marketing") == AssetSelection.groups("marketing")
+
+
 def test_tag():
     @multi_asset(
         specs=[

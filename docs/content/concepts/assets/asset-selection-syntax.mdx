@@ -293,6 +293,62 @@ height={1508}
 </TabItem>
 </TabGroup>
 
+### Selecting a group of assets
+
+In this example we want to select all the assets in the `metrics` group.
+
+<TabGroup>
+<TabItem name="Python">
+
+To select an asset group, prefix the group name with `group:` or use `AssetSelection.groups("group_name")`.
+
+```python
+metrics_data_job = define_asset_job(
+    name="metrics_job", selection=["group:metrics"]
+)
+```
+
+```python
+metrics_data_job = define_asset_job(
+    name="metrics_job", selection=AssetSelection.groups("metrics")
+)
+```
+
+---
+
+</TabItem>
+<TabItem name="CLI">
+
+To select an asset group, prefix the group name with `group:`.
+
+```shell
+dagster asset list --select "group:metrics"
+dagster asset materialize --select "group:metrics"
+```
+
+---
+
+</TabItem>
+<TabItem name="Dagster UI">
+
+In the UI, you can simply use the Asset Group filter in the filters tab.
+
+Which would result in the following asset graph:
+
+<!-- ![Selection of a group of assets in the Dagster UI](/images/concepts/assets/asset-selection/select-group.png) -->
+
+<Image
+alt="Selection of a group of assets in the Dagster UI"
+src="/images/concepts/assets/asset-selection/select-group.png"
+width={3840}
+height={1940}
+/>
+
+---
+
+</TabItem>
+</TabGroup>
+
 ### Selecting an asset's entire lineage
 
 To select an asset's entire lineage, add an asterisk (`*`) before and after the asset key in the query.
