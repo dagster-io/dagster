@@ -603,12 +603,12 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]
                 *workspace_data.dashboards_by_id.values(),
                 *workspace_data.data_sources_by_id.values(),
             ]
-        ]
+        ]  # type: ignore
 
     def defs_from_state(self, state: Sequence[Mapping[str, Any]]) -> Definitions:
         workspace_data = TableauWorkspaceData.from_content_data(
             self.workspace.site_name,
-            [check.not_none(entry) for entry in state],
+            [check.not_none(entry) for entry in state],  # type: ignore
         )
 
         translator = self.translator_cls(context=workspace_data)
