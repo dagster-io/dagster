@@ -2,11 +2,12 @@ Airlift (dagster-airlift)
 =========================
 
 
-.. currentmodule:: dagster_airlift.core
 
 Core (dagster_airlift.core)
 ---------------------------
 
+.. currentmodule:: dagster_airlift.core
+    
 AirflowInstance
 ^^^^^^^^^^^^^^^^^
 
@@ -16,10 +17,15 @@ AirflowInstance
 
 .. autoclass:: AirflowBasicAuthBackend 
 
-.. currentmodule:: dagster_airlift.mwaa
+
+Assets & Definitions
+^^^^^^^^^^^^^^^^^^^^
+
+.. autofunction:: build_defs_from_airflow_instance
 
 MWAA (dagster_airlift.mwaa)
 ---------------------------
+.. currentmodule:: dagster_airlift.mwaa
 
 .. autoclass:: MwaaSessionAuthBackend
 

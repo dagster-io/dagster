@@ -1,3 +1,5 @@
+from dagster_airlift.core.serialization.serialized_data import DagInfo as DagInfo
+
 from .airflow_defs_data import AirflowDefinitionsData as AirflowDefinitionsData
 from .basic_auth import (
     AirflowAuthBackend as AirflowAuthBackend,
@@ -5,6 +7,7 @@ from .basic_auth import (
 )
 from .load_defs import (
     AirflowInstance as AirflowInstance,
+    DagSelectorFn as DagSelectorFn,
     build_airflow_mapped_defs as build_airflow_mapped_defs,
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
