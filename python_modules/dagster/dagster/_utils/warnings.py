@@ -28,7 +28,7 @@ def supersession_warning(
         return
 
     warnings.warn(
-        f"{subject} is superseded and it's usage is discouraged."
+        f"{subject} is superseded and its usage is discouraged."
         + ((" " + additional_warn_text) if additional_warn_text else ""),
         category=SupersessionWarning,
         stacklevel=stacklevel,
