@@ -1,6 +1,6 @@
 import os
+from unittest import mock
 
-import mock
 import pytest
 from click.testing import CliRunner
 from dagster import DagsterEventType, job, op, reconstructable

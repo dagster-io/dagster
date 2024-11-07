@@ -8,8 +8,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
 from typing import List, Optional, Sequence, Tuple, cast
+from unittest import mock
 
-import mock
 import pytest
 import sqlalchemy as db
 from dagster import (

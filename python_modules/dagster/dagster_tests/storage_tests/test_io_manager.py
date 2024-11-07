@@ -2,8 +2,8 @@ import os
 import tempfile
 import time
 from typing import Mapping
+from unittest import mock
 
-import mock
 import pytest
 from dagster import (
     AssetKey,

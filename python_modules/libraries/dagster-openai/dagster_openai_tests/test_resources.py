@@ -1,3 +1,5 @@
+from unittest.mock import ANY, MagicMock, patch
+
 import pytest
 from dagster import (
     AssetExecutionContext,
@@ -18,7 +20,6 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_openai import OpenAIResource, with_usage_metadata
-from mock import ANY, MagicMock, patch
 
 
 @patch("dagster_openai.resources.Client")

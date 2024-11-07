@@ -120,7 +120,6 @@ setup(
             "buildkite-test-collector",
             "docker",
             f"grpcio-tools>={GRPC_VERSION_FLOOR}",
-            "mock==3.0.5",
             "mypy-protobuf",
             "objgraph",
             "pytest-cov==5.0.0",

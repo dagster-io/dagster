@@ -9,7 +9,7 @@ from dagster import (
     Definitions,
     OpExecutionContext,
 )
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 
 def create_db_connection():
