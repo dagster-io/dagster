@@ -913,6 +913,16 @@
         ]
       },
       {
+        "title": "Airlift",
+        "path": "/integrations/airlift",
+        "children": [
+          {
+            "title": "Reference",
+            "path": "/integrations/airlift/reference"
+          }
+        ]
+      },
+      {
         "title": "Airflow",
         "path": "/integrations/airflow"
       },
