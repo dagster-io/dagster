@@ -1,14 +1,13 @@
-from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union
+from typing import Any, Mapping, Optional, Sequence, Type, Union
 
 import dagster._check as check
 from dagster._annotations import (
-    PublicAttr,
     experimental_param,
     hidden_param,
     only_allow_hidden_params_in_kwargs,
 )
 from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.asset_spec import AssetSpec, replace_attributes
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -22,10 +21,11 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
-from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, resolve_automation_condition
-from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
+from dagster._core.definitions.utils import resolve_automation_condition
+from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.tags import normalize_tags
-from dagster._utils.warnings import disable_dagster_warnings
+
+EMPTY_ASSET_KEY_SENTINEL = AssetKey([])
 
 
 @experimental_param(param="owners")
@@ -40,27 +40,7 @@ from dagster._utils.warnings import disable_dagster_warnings
     breaking_version="1.10.0",
     additional_warn_text="use `automation_condition` instead",
 )
-class AssetOut(
-    NamedTuple(
-        "_AssetOut",
-        [
-            ("key", PublicAttr[Optional[AssetKey]]),
-            ("key_prefix", PublicAttr[Optional[Sequence[str]]]),
-            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
-            ("io_manager_key", PublicAttr[str]),
-            ("description", PublicAttr[Optional[str]]),
-            ("is_required", PublicAttr[bool]),
-            ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
-            ("group_name", PublicAttr[Optional[str]]),
-            ("code_version", PublicAttr[Optional[str]]),
-            ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
-            ("automation_condition", PublicAttr[Optional[AutomationCondition]]),
-            ("backfill_policy", PublicAttr[Optional[BackfillPolicy]]),
-            ("owners", PublicAttr[Optional[Sequence[str]]]),
-            ("tags", PublicAttr[Mapping[str, str]]),
-        ],
-    )
-):
+class AssetOut:
     """Defines one of the assets produced by a :py:func:`@multi_asset <multi_asset>`.
 
     Attributes:
@@ -96,8 +76,15 @@ class AssetOut(
             attached to runs of the asset.
     """
 
-    def __new__(
-        cls,
+    _spec: AssetSpec
+    key_prefix: Optional[Sequence[str]]
+    dagster_type: Union[Type, DagsterType]
+    is_required: bool
+    io_manager_key: Optional[str]
+    backfill_policy: Optional[BackfillPolicy]
+
+    def __init__(
+        self,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         key: Optional[CoercibleToAssetKey] = None,
         dagster_type: Union[Type, DagsterType] = NoValueSentinel,
@@ -117,26 +104,16 @@ class AssetOut(
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
 
-        return super(AssetOut, cls).__new__(
-            cls,
-            key=AssetKey.from_coercible(key) if key is not None else None,
-            key_prefix=check.opt_list_param(key_prefix, "key_prefix", of_type=str),
-            dagster_type=(
-                NoValueSentinel
-                if dagster_type is NoValueSentinel
-                else resolve_dagster_type(dagster_type)
-            ),
+        check.invariant(
+            not (key_prefix and key), "Only one of key_prefix and key should be provided"
+        )
+
+        self._spec = AssetSpec(
+            key=AssetKey.from_coercible(key) if key is not None else EMPTY_ASSET_KEY_SENTINEL,
             description=check.opt_str_param(description, "description"),
-            is_required=check.bool_param(is_required, "is_required"),
-            io_manager_key=check.opt_str_param(
-                io_manager_key, "io_manager_key", default=DEFAULT_IO_MANAGER_KEY
-            ),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             group_name=check.opt_str_param(group_name, "group_name"),
             code_version=check.opt_str_param(code_version, "code_version"),
-            freshness_policy=check.opt_inst_param(
-                kwargs.get("freshness_policy"), "freshness_policy", FreshnessPolicy
-            ),
             automation_condition=check.opt_inst_param(
                 resolve_automation_condition(
                     automation_condition, kwargs.get("auto_materialize_policy")
@@ -144,12 +121,53 @@ class AssetOut(
                 "automation_condition",
                 AutomationCondition,
             ),
-            backfill_policy=check.opt_inst_param(
-                backfill_policy, "backfill_policy", BackfillPolicy
+            freshness_policy=check.opt_inst_param(
+                kwargs.get("freshness_policy"), "freshness_policy", FreshnessPolicy
             ),
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
             tags=normalize_tags(tags or {}, strict=True),
         )
+        self.key_prefix = key_prefix
+        self.dagster_type = dagster_type
+        self.is_required = is_required
+        self.io_manager_key = io_manager_key
+        self.backfill_policy = backfill_policy
+
+    @property
+    def key(self) -> Optional[AssetKey]:
+        return self._spec.key if self._spec.key != EMPTY_ASSET_KEY_SENTINEL else None
+
+    @property
+    def metadata(self) -> Optional[Mapping[str, Any]]:
+        return self._spec.metadata
+
+    @property
+    def description(self) -> Optional[str]:
+        return self._spec.description
+
+    @property
+    def group_name(self) -> Optional[str]:
+        return self._spec.group_name
+
+    @property
+    def code_version(self) -> Optional[str]:
+        return self._spec.code_version
+
+    @property
+    def freshness_policy(self) -> Optional[FreshnessPolicy]:
+        return self._spec.freshness_policy
+
+    @property
+    def automation_condition(self) -> Optional[AutomationCondition]:
+        return self._spec.automation_condition
+
+    @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return self._spec.owners
+
+    @property
+    def tags(self) -> Optional[Mapping[str, str]]:
+        return self._spec.tags
 
     def to_out(self) -> Out:
         return Out(
@@ -164,23 +182,17 @@ class AssetOut(
     def to_spec(
         self, key: AssetKey, deps: Sequence[AssetDep], additional_tags: Mapping[str, str] = {}
     ) -> AssetSpec:
-        with disable_dagster_warnings():
-            return AssetSpec.dagster_internal_init(
-                key=key,
-                metadata=self.metadata,
-                description=self.description,
-                skippable=not self.is_required,
-                group_name=self.group_name,
-                code_version=self.code_version,
-                freshness_policy=self.freshness_policy,
-                automation_condition=self.automation_condition,
-                owners=self.owners,
-                tags={**additional_tags, **self.tags} if self.tags else additional_tags,
-                deps=deps,
-                auto_materialize_policy=None,
-                partitions_def=None,
-                kinds=None,
-            )
+        return replace_attributes(
+            self._spec,
+            tags={**additional_tags, **self.tags} if self.tags else additional_tags,
+            deps=deps,
+        )
+
+    @classmethod
+    def from_spec(cls, spec: AssetSpec) -> "AssetOut":
+        out = cls()
+        out._spec = spec
+        return out
 
     @property
     def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
