@@ -919,6 +919,10 @@
           {
             "title": "Reference",
             "path": "/integrations/airlift/reference"
+          },
+          {
+            "title": "Tutorial",
+            "path": "/integrations/airlift/tutorial"
           }
         ]
       },
