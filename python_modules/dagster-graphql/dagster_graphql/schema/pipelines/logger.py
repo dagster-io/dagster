@@ -29,6 +29,12 @@ class GrapheneLogger(graphene.ObjectType):
 
     def resolve_configField(self, _: ResolveInfo):
         if self._logger_def_snap.config_field_snap:
+            try:
+                # config type may not be present if mode config mapped, null out gracefully
+                self._get_config_type(self._logger_def_snap.config_field_snap.type_key)
+            except KeyError:
+                return None
+
             return GrapheneConfigTypeField(
                 self._get_config_type,
                 field_snap=self._logger_def_snap.config_field_snap,
