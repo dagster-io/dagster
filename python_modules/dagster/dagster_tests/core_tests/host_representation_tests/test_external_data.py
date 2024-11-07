@@ -1259,6 +1259,36 @@ def test_external_assets_def_to_asset_node_snaps():
     ]
 
 
+def test_asst_specs_in_defs_snaps():
+    asset_node_snaps = _get_asset_node_snaps_from_definitions(
+        Definitions(
+            assets=[
+                AssetSpec("asset1"),
+                AssetSpec("asset2", deps=["asset1"]),
+            ]
+        )
+    )
+
+    assert len(asset_node_snaps) == 2
+
+    assert asset_node_snaps == [
+        AssetNodeSnap(
+            asset_key=AssetKey(["asset1"]),
+            parent_edges=[],
+            child_edges=[AssetChildEdgeSnap(child_asset_key=AssetKey("asset2"))],
+            execution_type=AssetExecutionType.UNEXECUTABLE,
+            group_name=DEFAULT_GROUP_NAME,
+        ),
+        AssetNodeSnap(
+            asset_key=AssetKey("asset2"),
+            parent_edges=[AssetParentEdgeSnap(parent_asset_key=AssetKey(["asset1"]))],
+            child_edges=[],
+            execution_type=AssetExecutionType.UNEXECUTABLE,
+            group_name=DEFAULT_GROUP_NAME,
+        ),
+    ]
+
+
 def test_historical_asset_node_snap_that_models_underlying_external_assets_def() -> None:
     assert not AssetNodeSnap(
         asset_key=AssetKey("asset_one"),
