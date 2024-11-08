@@ -9,6 +9,8 @@ from dagster_fivetran.resources import (
     FIVETRAN_CONNECTOR_ENDPOINT,
 )
 
+# Taken from Fivetran API documentation
+# https://fivetran.com/docs/rest-api/api-reference/groups/list-all-groups
 SAMPLE_GROUPS = {
     "code": "Success",
     "message": "Operation performed.",
@@ -18,6 +20,8 @@ SAMPLE_GROUPS = {
     },
 }
 
+# Taken from Fivetran API documentation
+# https://fivetran.com/docs/rest-api/api-reference/groups/list-all-connectors-in-group
 SAMPLE_CONNECTORS_FOR_GROUP = {
     "code": "Success",
     "message": "Operation performed.",
@@ -91,6 +95,8 @@ SAMPLE_CONNECTORS_FOR_GROUP = {
     },
 }
 
+# Taken from Fivetran API documentation
+# https://fivetran.com/docs/rest-api/api-reference/destinations/destination-details
 SAMPLE_DESTINATION_DETAILS = {
     "code": "Success",
     "message": "Operation performed.",
@@ -137,6 +143,8 @@ SAMPLE_DESTINATION_DETAILS = {
     },
 }
 
+# Taken from Fivetran API documentation
+# https://fivetran.com/docs/rest-api/api-reference/connectors/connector-details
 SAMPLE_CONNECTOR_DETAILS = {
     "code": "Success",
     "message": "Operation performed.",
