@@ -817,26 +817,29 @@ class RunStatusSensorDefinition(SensorDefinition):
                 if monitor_all_code_locations:
                     job_match = True
 
-                code_location_name = (
+                sensor_location_name = (
                     context.code_location_origin.location_name
                     if context.code_location_origin
                     else None
                 )
+                sensor_repo_name = context.repository_name
+                dagster_run_location_name = (
+                    dagster_run.remote_job_origin.repository_origin.code_location_origin.location_name
+                    if dagster_run.remote_job_origin
+                    else None
+                )
+                dagster_run_repo_name = (
+                    dagster_run.remote_job_origin.repository_origin.repository_name
+                    if dagster_run.remote_job_origin
+                    else None
+                )
 
                 # check if the run is in the current repository and (if provided) one of jobs specified in monitored_jobs
+                # note: this also matches when both are None for testing uses cases
                 if (
                     not job_match
-                    and
-                    # the job has a repository (not manually executed)
-                    dagster_run.remote_job_origin
-                    and
-                    # the job belongs to the current code location
-                    dagster_run.remote_job_origin.repository_origin.code_location_origin.location_name
-                    == code_location_name
-                    and
-                    # the job belongs to the current repository
-                    dagster_run.remote_job_origin.repository_origin.repository_name
-                    == context.repository_name
+                    and (sensor_location_name == dagster_run_location_name)
+                    and (sensor_repo_name == dagster_run_repo_name)
                 ):
                     if monitored_jobs:
                         if dagster_run.job_name in map(lambda x: x.name, current_repo_jobs):
