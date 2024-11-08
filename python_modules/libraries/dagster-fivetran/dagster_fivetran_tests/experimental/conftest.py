@@ -227,42 +227,38 @@ def group_id_fixture() -> str:
 
 
 @pytest.fixture(
-    name="workspace_data_api_mocks_fn",
+    name="workspace_data_api_mocks",
 )
-def workspace_data_api_mocks_fn_fixture(
+def workspace_data_api_mocks_fixture(
     connector_id: str, destination_id: str, group_id: str
-) -> Callable:
-    @contextlib.contextmanager
-    def _method() -> Iterator[responses.RequestsMock]:
-        with responses.RequestsMock() as response:
-            response.add(
-                method=responses.GET,
-                url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups",
-                json=SAMPLE_GROUPS,
-                status=200,
-            )
+) -> Iterator[responses.RequestsMock]:
+    with responses.RequestsMock() as response:
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups",
+            json=SAMPLE_GROUPS,
+            status=200,
+        )
 
-            response.add(
-                method=responses.GET,
-                url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{group_id}/connectors",
-                json=SAMPLE_CONNECTORS_FOR_GROUP,
-                status=200,
-            )
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{group_id}/connectors",
+            json=SAMPLE_CONNECTORS_FOR_GROUP,
+            status=200,
+        )
 
-            response.add(
-                method=responses.GET,
-                url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/destinations/{destination_id}",
-                json=SAMPLE_DESTINATION_DETAILS,
-                status=200,
-            )
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/destinations/{destination_id}",
+            json=SAMPLE_DESTINATION_DETAILS,
+            status=200,
+        )
 
-            response.add(
-                method=responses.GET,
-                url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}",
-                json=SAMPLE_CONNECTOR_DETAILS,
-                status=200,
-            )
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}",
+            json=SAMPLE_CONNECTOR_DETAILS,
+            status=200,
+        )
 
-            yield response
-
-    return _method
+        yield response
