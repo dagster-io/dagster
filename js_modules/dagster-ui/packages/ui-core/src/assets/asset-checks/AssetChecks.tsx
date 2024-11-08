@@ -272,11 +272,11 @@ export const AssetChecks = ({
               arrowSide="right"
             >
               <Box padding={{top: 12}} flex={{gap: 12, direction: 'column'}}>
-                <Body2>
-                  {selectedCheck.description ?? (
-                    <Caption color={Colors.textLight()}>No description provided</Caption>
-                  )}
-                </Body2>
+                {selectedCheck.description ? (
+                  <Description description={selectedCheck.description} maxHeight={260} />
+                ) : (
+                  <Caption color={Colors.textLight()}>No description provided</Caption>
+                )}
                 {/* {selectedCheck.dependencies?.length ? (
                   <Box flex={{direction: 'row', gap: 6}}>
                     {assetNode.dependencies.map((dep) => {
