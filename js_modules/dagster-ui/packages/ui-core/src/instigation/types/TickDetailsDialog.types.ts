@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type SelectedTickQueryVariables = Types.Exact<{
   instigationSelector: Types.InstigationSelector;
-  tickId: Types.Scalars['BigInt']['input'];
+  tickId: Types.Scalars['ID']['input'];
 }>;
 
 export type SelectedTickQuery = {
@@ -59,4 +59,4 @@ export type SelectedTickQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const SelectedTickQueryVersion = 'b04d20d3144919de65317f84162ee6e238d78c53d5a9bd55410ce2a9cf6357d3';
+export const SelectedTickQueryVersion = '10c228399d8224b30ce4520d24f0c6f675a534abc7cbe268b0c8cc870b3f0e90';
