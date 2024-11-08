@@ -34,7 +34,7 @@ setup(
     packages=find_packages(exclude=["dagster_managed_elements_tests*"]),
     include_package_data=True,
     python_requires=">=3.9,<3.13",
-    install_requires=[f"dagster{pin}", "requests", "click_spinner"],
+    install_requires=["dagster==1.9.1", "requests", "click_spinner"],
     zip_safe=False,
     entry_points={
         "console_scripts": [
