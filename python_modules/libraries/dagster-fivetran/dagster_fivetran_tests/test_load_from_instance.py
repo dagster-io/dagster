@@ -12,7 +12,7 @@ from dagster import (
     asset,
     io_manager,
 )
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.asset_spec import AssetSpec, replace_attributes
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
@@ -269,12 +269,13 @@ def test_load_from_instance(
 
 
 class CustomDagsterFivetranTranslator(DagsterFivetranTranslator):
-    def get_asset_key(self, props: FivetranConnectorTableProps) -> AssetKey:
-        return super().get_asset_key(props).with_prefix("my_prefix")
-
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
         asset_spec = super().get_asset_spec(props)
-        return asset_spec._replace(metadata={"foo": "bar", **asset_spec.metadata})
+        return replace_attributes(
+            asset_spec,
+            key=asset_spec.key.with_prefix("my_prefix"),
+            metadata={"foo": "bar", **asset_spec.metadata},
+        )
 
 
 @responses.activate
