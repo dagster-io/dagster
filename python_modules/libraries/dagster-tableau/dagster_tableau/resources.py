@@ -4,7 +4,7 @@ import time
 import uuid
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Any, List, Mapping, Optional, Sequence, Type, Union
+from typing import Any, List, Mapping, Optional, Sequence, Set, Type, Union
 
 import jwt
 import requests
@@ -399,10 +399,11 @@ class BaseTableauWorkspace(ConfigurableResource):
         with self.get_client() as client:
             workbook_ids = [workbook.id for workbook in client.get_workbooks()]
 
-            workbooks_by_id = {}
-            sheets_by_id = {}
-            dashboards_by_id = {}
-            data_sources_by_id = {}
+            workbooks: List[TableauContentData] = []
+            sheets: List[TableauContentData] = []
+            dashboards: List[TableauContentData] = []
+            data_sources: List[TableauContentData] = []
+            data_source_ids: Set[str] = set()
             for workbook_id in workbook_ids:
                 workbook = client.get_workbook(workbook_id=workbook_id)
                 workbook_data_list = check.is_list(
@@ -414,16 +415,21 @@ class BaseTableauWorkspace(ConfigurableResource):
                         f"Could not retrieve data for Tableau workbook for id {workbook_id}."
                     )
                 workbook_data = workbook_data_list[0]
-                workbooks_by_id[workbook_id] = TableauContentData(
-                    content_type=TableauContentType.WORKBOOK, properties=workbook_data
+                workbooks.append(
+                    TableauContentData(
+                        content_type=TableauContentType.WORKBOOK, properties=workbook_data
+                    )
                 )
 
                 for sheet_data in workbook_data["sheets"]:
                     sheet_id = sheet_data["luid"]
                     if sheet_id:
                         augmented_sheet_data = {**sheet_data, "workbook": {"luid": workbook_id}}
-                        sheets_by_id[sheet_id] = TableauContentData(
-                            content_type=TableauContentType.SHEET, properties=augmented_sheet_data
+                        sheets.append(
+                            TableauContentData(
+                                content_type=TableauContentType.SHEET,
+                                properties=augmented_sheet_data,
+                            )
                         )
 
                     for embedded_data_source_data in sheet_data.get(
@@ -433,10 +439,13 @@ class BaseTableauWorkspace(ConfigurableResource):
                             "parentPublishedDatasources", []
                         ):
                             data_source_id = published_data_source_data["luid"]
-                            if data_source_id and data_source_id not in data_sources_by_id:
-                                data_sources_by_id[data_source_id] = TableauContentData(
-                                    content_type=TableauContentType.DATA_SOURCE,
-                                    properties=published_data_source_data,
+                            if data_source_id and data_source_id not in data_source_ids:
+                                data_source_ids.add(data_source_id)
+                                data_sources.append(
+                                    TableauContentData(
+                                        content_type=TableauContentType.DATA_SOURCE,
+                                        properties=published_data_source_data,
+                                    )
                                 )
 
                 for dashboard_data in workbook_data["dashboards"]:
@@ -446,17 +455,16 @@ class BaseTableauWorkspace(ConfigurableResource):
                             **dashboard_data,
                             "workbook": {"luid": workbook_id},
                         }
-                        dashboards_by_id[dashboard_id] = TableauContentData(
-                            content_type=TableauContentType.DASHBOARD,
-                            properties=augmented_dashboard_data,
+                        dashboards.append(
+                            TableauContentData(
+                                content_type=TableauContentType.DASHBOARD,
+                                properties=augmented_dashboard_data,
+                            )
                         )
 
         return TableauWorkspaceData.from_content_data(
             self.site_name,
-            list(workbooks_by_id.values())
-            + list(sheets_by_id.values())
-            + list(dashboards_by_id.values())
-            + list(data_sources_by_id.values()),
+            workbooks + sheets + dashboards + data_sources,
         )
 
     @deprecated(
@@ -593,30 +601,16 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]
     def defs_key(self) -> str:
         return f"{TABLEAU_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.site_name}"
 
-    def fetch_state(self) -> Sequence[Mapping[str, Any]]:
-        workspace_data: TableauWorkspaceData = self.workspace.fetch_tableau_workspace_data()
-        return [
-            data.to_cached_data()
-            for data in [
-                *workspace_data.workbooks_by_id.values(),
-                *workspace_data.sheets_by_id.values(),
-                *workspace_data.dashboards_by_id.values(),
-                *workspace_data.data_sources_by_id.values(),
-            ]
-        ]
+    def fetch_state(self) -> TableauWorkspaceData:
+        return self.workspace.fetch_tableau_workspace_data()
 
-    def defs_from_state(self, state: Sequence[Mapping[str, Any]]) -> Definitions:
-        workspace_data = TableauWorkspaceData.from_content_data(
-            self.workspace.site_name,
-            [TableauContentData.from_cached_data(check.not_none(entry)) for entry in state],
-        )
-
-        translator = self.translator_cls(context=workspace_data)
+    def defs_from_state(self, state: TableauWorkspaceData) -> Definitions:
+        translator = self.translator_cls(context=state)
 
         all_external_data = [
-            *workspace_data.data_sources_by_id.values(),
-            *workspace_data.sheets_by_id.values(),
-            *workspace_data.dashboards_by_id.values(),
+            *state.data_sources_by_id.values(),
+            *state.sheets_by_id.values(),
+            *state.dashboards_by_id.values(),
         ]
 
         all_external_asset_specs = [

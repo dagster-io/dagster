@@ -12,7 +12,23 @@ from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOper
 
 
 class BaseProxyTaskToDagsterOperator(BaseDagsterAssetsOperator):
-    """An operator that proxies task execution to Dagster assets with metadata that map to this task's dag ID and task ID."""
+    """An operator that proxies task execution to Dagster assets with metadata that map to this task's dag ID and task ID.
+
+    For the DAG ID and task ID that this operator proxies, it expects there to be corresponding assets
+    in the linked Dagster deployment that have metadata entries with the key `dagster-airlift/task-mapping` that
+    map to this DAG ID and task ID. This metadata is typically set using the
+    :py:func:`dagster_airlift.core.assets_with_task_mappings` function.
+
+    The following methods must be implemented by subclasses:
+
+        - :py:meth:`get_dagster_session` (inherited from :py:class:`BaseDagsterAssetsOperator`)
+        - :py:meth:`get_dagster_url` (inherited from :py:class:`BaseDagsterAssetsOperator`)
+        - :py:meth:`build_from_task` A class method which takes the task to be proxied, and constructs
+            an instance of this operator from it.
+
+    There is a default implementation of this operator, :py:class:`DefaultProxyTaskToDagsterOperator`,
+    which is used by :py:func:`proxying_to_dagster` if no override operator is provided.
+    """
 
     def filter_asset_nodes(
         self, context: Context, asset_nodes: Sequence[Mapping[str, Any]]
@@ -31,6 +47,9 @@ class BaseProxyTaskToDagsterOperator(BaseDagsterAssetsOperator):
 class DefaultProxyTaskToDagsterOperator(BaseProxyTaskToDagsterOperator):
     """The default task proxying operator - which opens a blank session and expects the dagster URL to be set in the environment.
     The dagster url is expected to be set in the environment as DAGSTER_URL.
+
+    This operator should not be instantiated directly - it is instantiated by :py:func:`proxying_to_dagster` if no
+    override operator is provided.
     """
 
     def get_dagster_session(self, context: Context) -> requests.Session:

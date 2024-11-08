@@ -1,6 +1,6 @@
 from typing import Any
+from unittest import mock
 
-import mock
 import pytest
 
 from dagster._core.definitions.run_config import RunConfig

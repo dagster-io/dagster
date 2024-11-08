@@ -24,23 +24,28 @@ interface CursorPaginationQueryVariables {
  */
 export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVariables>(options: {
   query: DocumentNode;
-  nextCursorForResult: (result: T) => string | undefined;
   skip?: boolean;
   variables: Omit<TVars, 'cursor' | 'limit'>;
   pageSize: number;
-  getResultArray: (result: T | undefined) => any[];
   queryKey?: string;
+  getResultArray: (result: T | undefined) => any[];
+  nextCursorForResult: (result: T) => string | undefined;
+  hasMoreForResult?: (result: T) => boolean;
 }) {
   const [cursorStack, setCursorStack] = useState<string[]>(() => []);
   const [cursor, setCursor] = useQueryPersistedState<string | undefined>({
     queryKey: options.queryKey || 'cursor',
   });
 
-  const queryVars: any = {
-    ...options.variables,
-    cursor,
-    limit: options.pageSize + 1,
-  };
+  // If you don't provide a hasMoreForResult function for extracting hasMore from
+  // the response, we fall back to an old approach that fetched one extra item
+  // and used it's presence to determine if more items were available. If you use
+  // the old approach, your `nextCursorForResult` method needs to use
+  // `items[pageSize - 1]` NOT `items[items.length - 1]` to get the next cursor,
+  // or an item will be skipped when you advance.
+  //
+  const limit = options.hasMoreForResult ? options.pageSize : options.pageSize + 1;
+  const queryVars: any = {...options.variables, cursor, limit};
 
   const queryResult = useQuery<T, TVars>(options.query, {
     skip: options.skip,
@@ -49,9 +54,17 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
   });
 
   const resultArray = options.getResultArray(queryResult.data);
+
+  let hasNextCursor = false;
+  if (options.hasMoreForResult) {
+    hasNextCursor = queryResult.data ? options.hasMoreForResult(queryResult.data) : false;
+  } else {
+    hasNextCursor = resultArray.length === options.pageSize + 1;
+  }
+
   const paginationProps: CursorPaginationProps = {
     hasPrevCursor: !!cursor,
-    hasNextCursor: resultArray.length === options.pageSize + 1,
+    hasNextCursor,
     popCursor: () => {
       const nextStack = [...cursorStack];
       setCursor(nextStack.pop());

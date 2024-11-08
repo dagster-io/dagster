@@ -2,8 +2,8 @@ import datetime
 import random
 from collections import defaultdict
 from typing import List, NamedTuple, Optional
+from unittest import mock
 
-import mock
 import pytest
 from dagster import (
     AssetKey,

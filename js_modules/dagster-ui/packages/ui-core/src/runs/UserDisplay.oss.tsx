@@ -1,4 +1,4 @@
-import {BaseTag, Box, SubwayDot} from '@dagster-io/ui-components';
+import {BaseTag, Box, MiddleTruncate, SubwayDot} from '@dagster-io/ui-components';
 
 type Props = {
   email: string;
@@ -16,6 +16,12 @@ export function UserDisplay({email, isFilter}: Props) {
       {email}
     </Box>
   ) : (
-    <BaseTag key="user" icon={<div style={{margin: '0 4px 0 -4px'}}>{icon}</div>} label={email} />
+    <Box flex={{direction: 'row'}} style={{minWidth: 0, maxWidth: '100%'}}>
+      <BaseTag
+        key="user"
+        icon={<div style={{margin: '0 4px 0 -4px'}}>{icon}</div>}
+        label={<MiddleTruncate text={email} />}
+      />
+    </Box>
   );
 }

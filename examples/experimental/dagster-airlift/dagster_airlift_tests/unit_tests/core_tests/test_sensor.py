@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Sequence
+from unittest import mock
 
-import mock
 import pytest
 from dagster import (
     AssetCheckKey,

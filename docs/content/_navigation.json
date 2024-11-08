@@ -913,6 +913,24 @@
         ]
       },
       {
+        "title": "Airlift",
+        "path": "/integrations/airlift",
+        "children": [
+          {
+            "title": "Airflow Migration Tutorial",
+            "path": "/integrations/airlift/tutorial"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/airlift/reference"
+          },
+          {
+            "title": "Tutorial",
+            "path": "/integrations/airlift/tutorial"
+          }
+        ]
+      },
+      {
         "title": "Airflow",
         "path": "/integrations/airflow"
       },
@@ -1411,6 +1429,10 @@
           {
             "title": "Dagster Pipes (dagster-pipes)",
             "path": "/_apidocs/libraries/dagster-pipes"
+          },
+          {
+            "title": "Airlift (dagster-airlift)",
+            "path": "/_apidocs/libraries/dagster-airlift"
           },
           {
             "title": "Airbyte (dagster-airbyte)",

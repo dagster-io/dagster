@@ -1,7 +1,7 @@
 import re
+from unittest import mock
 
 import click
-import mock
 import pytest
 from click.testing import CliRunner
 from dagster._cli.schedule import (

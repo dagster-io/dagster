@@ -14,7 +14,7 @@ import styled from 'styled-components';
 
 import {CreatedByTagCell, CreatedByTagCellWrapper} from './CreatedByTag';
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
-import {RUN_ACTIONS_MENU_RUN_FRAGMENT, RunActionsMenu} from './RunActionsMenu';
+import {RunActionsMenu} from './RunActionsMenu';
 import {RunRowTags} from './RunRowTags';
 import {RunStatusTag, RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
@@ -22,14 +22,11 @@ import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {getBackfillPath} from './RunsFeedUtils';
 import {RunFilterToken} from './RunsFilterInput';
-import {gql} from '../apollo-client';
 import {RunTimeFragment} from './types/RunUtils.types';
-import {RunsFeedTableEntryFragment} from './types/RunsFeedRow.types';
+import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.types';
 import {RunStatus} from '../graphql/types';
 import {BackfillActionsMenu, backfillCanCancelRuns} from '../instance/backfill/BackfillActionsMenu';
-import {BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT} from '../instance/backfill/BackfillFragments';
 import {BackfillTarget} from '../instance/backfill/BackfillRow';
-import {PARTITION_SET_FOR_BACKFILL_TABLE_FRAGMENT} from '../instance/backfill/BackfillTable';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 import {appendCurrentQueryParams} from '../util/appendCurrentQueryParams';
 
@@ -104,6 +101,10 @@ export const RunsFeedRow = ({
             flex={{direction: 'row', alignItems: 'center', wrap: 'wrap'}}
             style={{gap: '4px 8px', lineHeight: 0}}
           >
+            {entry.__typename === 'PartitionBackfill' ? (
+              <Tag intent="none">Backfill</Tag>
+            ) : undefined}
+
             <RunRowTags
               run={{...entry, mode: 'default'}}
               isJob={true}
@@ -187,7 +188,7 @@ export const RunsFeedRow = ({
 };
 
 const TEMPLATE_COLUMNS =
-  '60px minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr) 140px 150px 120px 132px';
+  '60px minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1fr) 140px 150px 120px 132px';
 
 export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => {
   return (
@@ -216,60 +217,4 @@ const RowGrid = styled(Box)`
   ${CreatedByTagCellWrapper} {
     display: block;
   }
-`;
-
-export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`
-  fragment RunsFeedTableEntryFragment on RunsFeedEntry {
-    __typename
-    id
-    runStatus
-    creationTime
-    startTime
-    endTime
-    tags {
-      key
-      value
-    }
-    jobName
-    assetSelection {
-      ... on AssetKey {
-        path
-      }
-    }
-    assetCheckSelection {
-      name
-      assetKey {
-        path
-      }
-    }
-    ... on Run {
-      repositoryOrigin {
-        id
-        repositoryLocationName
-        repositoryName
-      }
-      ...RunActionsMenuRunFragment
-    }
-    ... on PartitionBackfill {
-      backfillStatus: status
-      partitionSetName
-      partitionSet {
-        id
-        ...PartitionSetForBackfillTableFragment
-      }
-      assetSelection {
-        path
-      }
-
-      hasCancelPermission
-      hasResumePermission
-      isAssetBackfill
-      numCancelable
-      ...BackfillStepStatusDialogBackfillFragment
-    }
-  }
-
-  ${RUN_ACTIONS_MENU_RUN_FRAGMENT}
-  ${PARTITION_SET_FOR_BACKFILL_TABLE_FRAGMENT}
-  ${BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT}
 `;

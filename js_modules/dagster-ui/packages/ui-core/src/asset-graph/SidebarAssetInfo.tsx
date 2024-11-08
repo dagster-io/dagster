@@ -195,7 +195,11 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
         <SidebarSection title="Partitions">
           <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 16}}>
             <p>{asset.partitionDefinition.description}</p>
-            <PartitionHealthSummary assetKey={asset.assetKey} data={partitionHealthData} />
+            <PartitionHealthSummary
+              assetKey={asset.assetKey}
+              partitionStats={liveData?.partitionStats}
+              data={partitionHealthData}
+            />
           </Box>
         </SidebarSection>
       )}

@@ -245,7 +245,7 @@ Mock resources can be provided directly using `materialize_to_memory`:
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_materialize_resources endbefore=end_materialize_resources
 from dagster import asset, materialize_to_memory, ConfigurableResource
-import mock
+from unittest import mock
 
 
 class MyServiceResource(ConfigurableResource): ...
@@ -384,7 +384,7 @@ If your ops rely on more complex resources, such as those that build separate cl
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_state_ops endbefore=end_new_resource_testing_with_state_ops dedent=4
 from dagster import ConfigurableResource, op
-import mock
+from unittest import mock
 
 class MyClient:
     ...

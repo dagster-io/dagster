@@ -78,12 +78,12 @@ Next, create a `Definitions` object using `build_defs_from_airflow_instance`. Yo
 
 ```python
 # tutorial_example/dagster_defs/stages/peer.py
-from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
+from dagster_airlift.core import AirflowInstance, AirflowBasicAuthBackend, build_defs_from_airflow_instance
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
         # other backends available (e.g. MwaaSessionAuthBackend)
-        auth_backend=BasicAuthBackend(
+        auth_backend=AirflowBasicAuthBackend(
             webserver_url="http://localhost:8080",
             username="admin",
             password="admin",
@@ -139,7 +139,7 @@ from dagster_airlift.core import AirflowInstance, build_defs_from_airflow_instan
 defs = Definitions.merge(
     build_defs_from_airflow_instance(
         airflow_instance=AirflowInstance(
-            auth_backend=BasicAuthBackend(
+            auth_backend=AirflowBasicAuthBackend(
                 webserver_url="http://yourcompany.com/instance_one",
                 username="admin",
                 password="admin",
@@ -149,7 +149,7 @@ defs = Definitions.merge(
     ),
     build_defs_from_airflow_instance(
         airflow_instance=AirflowInstance(
-            auth_backend=BasicAuthBackend(
+            auth_backend=AirflowBasicAuthBackend(
                 webserver_url="http://yourcompany.com/instance_two",
                 username="admin",
                 password="admin",
@@ -195,7 +195,7 @@ from pathlib import Path
 from dagster import AssetExecutionContext, AssetSpec, Definitions
 from dagster_airlift.core import (
     AirflowInstance,
-    BasicAuthBackend,
+    AirflowBasicAuthBackend,
     assets_with_task_mappings,
     build_defs_from_airflow_instance,
 )
@@ -228,7 +228,7 @@ mapped_assets = assets_with_task_mappings(
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
-        auth_backend=BasicAuthBackend(
+        auth_backend=AirflowBasicAuthBackend(
             webserver_url="http://localhost:8080",
             username="admin",
             password="admin",
@@ -269,7 +269,7 @@ from pathlib import Path
 from dagster import AssetExecutionContext, AssetSpec, Definitions, DailyPartitionsDefinition
 from dagster_airlift.core import (
     AirflowInstance,
-    BasicAuthBackend,
+    AirflowBasicAuthBackend,
     assets_with_task_mappings,
     build_defs_from_airflow_instance,
 )
@@ -306,7 +306,7 @@ mapped_assets = assets_with_task_mappings(
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
-        auth_backend=BasicAuthBackend(
+        auth_backend=AirflowBasicAuthBackend(
             webserver_url="http://localhost:8080",
             username="admin",
             password="admin",
@@ -523,7 +523,7 @@ from dagster import (
 )
 from dagster_airlift.core import (
     AirflowInstance,
-    BasicAuthBackend,
+    AirflowBasicAuthBackend,
     assets_with_task_mappings,
     build_defs_from_airflow_instance,
 )
@@ -604,7 +604,7 @@ mapped_assets = assets_with_task_mappings(
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
-        auth_backend=BasicAuthBackend(
+        auth_backend=AirflowBasicAuthBackend(
             webserver_url="http://localhost:8080",
             username="admin",
             password="admin",
@@ -770,7 +770,7 @@ import os
 from pathlib import Path
 
 from dagster import AssetCheckResult, AssetCheckSeverity, AssetKey, Definitions, asset_check
-from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
+from dagster_airlift.core import AirflowInstance, AirflowBasicAuthBackend, build_defs_from_airflow_instance
 
 
 # Attach a check to the DAG representation asset, which will be executed by Dagster
@@ -801,7 +801,7 @@ defs = Definitions.merge(
     build_defs_from_airflow_instance(
         airflow_instance=AirflowInstance(
             # other backends available (e.g. MwaaSessionAuthBackend)
-            auth_backend=BasicAuthBackend(
+            auth_backend=AirflowBasicAuthBackend(
                 webserver_url="http://localhost:8080",
                 username="admin",
                 password="admin",
@@ -839,7 +839,7 @@ from dagster import (
 )
 from dagster_airlift.core import (
     AirflowInstance,
-    BasicAuthBackend,
+    AirflowBasicAuthBackend,
     assets_with_task_mappings,
     build_defs_from_airflow_instance,
 )
@@ -942,7 +942,7 @@ def validate_exported_csv() -> AssetCheckResult:
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
-        auth_backend=BasicAuthBackend(
+        auth_backend=AirflowBasicAuthBackend(
             webserver_url="http://localhost:8080",
             username="admin",
             password="admin",
@@ -983,7 +983,7 @@ from pathlib import Path
 from dagster import AssetExecutionContext, AssetSpec, Definitions
 from dagster_airlift.core import (
     AirflowInstance,
-    BasicAuthBackend,
+    AirflowBasicAuthBackend,
     assets_with_dag_mappings,
     build_defs_from_airflow_instance,
 )
@@ -1018,7 +1018,7 @@ mapped_assets = assets_with_dag_mappings(
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
-        auth_backend=BasicAuthBackend(
+        auth_backend=AirflowBasicAuthBackend(
             webserver_url="http://localhost:8080",
             username="admin",
             password="admin",
@@ -1056,7 +1056,7 @@ from dagster import (
 )
 from dagster_airlift.core import (
     AirflowInstance,
-    BasicAuthBackend,
+    AirflowBasicAuthBackend,
     assets_with_dag_mappings,
     build_defs_from_airflow_instance,
 )
@@ -1132,7 +1132,7 @@ mapped_assets = assets_with_dag_mappings(
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
-        auth_backend=BasicAuthBackend(
+        auth_backend=AirflowBasicAuthBackend(
             webserver_url="http://localhost:8080",
             username="admin",
             password="admin",

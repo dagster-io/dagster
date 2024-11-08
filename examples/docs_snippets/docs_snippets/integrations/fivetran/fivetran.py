@@ -107,7 +107,7 @@ def scope_schedule_assets():
 
 
 def scope_add_downstream_assets():
-    import mock
+    from unittest import mock
 
     with mock.patch("dagster_snowflake_pandas.SnowflakePandasIOManager"):
         # start_add_downstream_assets

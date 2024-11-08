@@ -19,9 +19,9 @@ from dagster._time import get_current_timestamp
 # Sets up the airflow environment for testing. Running at localhost:8080.
 # Callsites are expected to provide implementations for dags_dir fixture.
 ####################################################################################################
-def _airflow_is_ready() -> bool:
+def _airflow_is_ready(port) -> bool:
     try:
-        response = requests.get("http://localhost:8080")
+        response = requests.get(f"http://localhost:{port}")
         return response.status_code == 200
     except:
         return False
@@ -44,7 +44,7 @@ def setup_fixture(airflow_home: Path, dags_dir: Path) -> Generator[Path, None, N
     }
     path_to_script = Path(__file__).parent.parent.parent / "scripts" / "airflow_setup.sh"
     subprocess.run(["chmod", "+x", path_to_script], check=True, env=temp_env)
-    subprocess.run([path_to_script, dags_dir], check=True, env=temp_env)
+    subprocess.run([path_to_script, dags_dir, airflow_home], check=True, env=temp_env)
     with environ(temp_env):
         yield airflow_home
 
@@ -65,6 +65,7 @@ def stand_up_airflow(
     airflow_cmd: List[str] = ["airflow", "standalone"],
     cwd: Optional[Path] = None,
     stdout_channel: Optional[int] = None,
+    port: int = 8080,
 ) -> Generator[subprocess.Popen, None, None]:
     process = subprocess.Popen(
         airflow_cmd,
@@ -81,7 +82,7 @@ def stand_up_airflow(
 
         airflow_ready = False
         while get_current_timestamp() - initial_time < 60:
-            if _airflow_is_ready():
+            if _airflow_is_ready(port):
                 airflow_ready = True
                 break
             time.sleep(1)

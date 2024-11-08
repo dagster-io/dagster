@@ -5,6 +5,13 @@ import yaml
 
 
 class TaskProxiedState(NamedTuple):
+    """A class to store the proxied state of a task.
+
+    Args:
+        task_id (str): The id of the task.
+        proxied (bool): A boolean indicating whether the task is proxied.
+    """
+
     task_id: str
     proxied: bool
 
@@ -23,6 +30,15 @@ class TaskProxiedState(NamedTuple):
 
 
 class DagProxiedState(NamedTuple):
+    """A class to store the proxied state of tasks in a dag.
+
+    Args:
+        tasks (Dict[str, TaskProxiedState]): A dictionary of task_id to TaskProxiedState. If the entire dag is proxied, or proxied state
+            is not set for a task, the task_id will not be present in this dictionary.
+        proxied (Optional[bool]): A boolean indicating whether the entire dag is proxied. If this is None, then the dag proxies at the task level (or
+        proxying state has not been set at all).
+    """
+
     proxied: Optional[bool]
     tasks: Dict[str, TaskProxiedState]
 
@@ -75,6 +91,13 @@ class DagProxiedState(NamedTuple):
 
 
 class AirflowProxiedState(NamedTuple):
+    """A class to store the proxied state of dags and tasks in Airflow.
+    Typically, this is constructed by :py:func:`load_proxied_state_from_yaml`.
+
+    Args:
+        dags (Dict[str, DagProxiedState]): A dictionary of dag_id to DagProxiedState.
+    """
+
     dags: Dict[str, DagProxiedState]
 
     def get_task_proxied_state(self, *, dag_id: str, task_id: str) -> Optional[bool]:
@@ -128,6 +151,38 @@ class ProxiedStateParsingError(Exception):
 
 
 def load_proxied_state_from_yaml(proxied_yaml_path: Path) -> AirflowProxiedState:
+    """Loads the proxied state from a directory of yaml files.
+
+    Expects the directory to contain yaml files, where each file corresponds to the id of a dag (ie: `dag_id.yaml`).
+    This directory is typically constructed using the `dagster-airlift` CLI:
+
+        .. code-block:: bash
+
+            AIRFLOW_HOME=... dagster-airlift proxy scaffold
+
+    The file should have either of the following structure.
+    In the case of task-level proxying:
+
+        .. code-block:: yaml
+
+                tasks:
+                    - id: task_id
+                      proxied: true
+                    - id: task_id
+                      proxied: false
+
+    In the case of dag-level proxying:
+
+        .. code-block:: yaml
+
+                proxied: true
+
+    Args:
+        proxied_yaml_path (Path): The path to the directory containing the yaml files.
+
+    Returns:
+        AirflowProxiedState: The proxied state of the dags and tasks in Airflow.
+    """
     # Expect proxied_yaml_path to be a directory, where each file represents a dag, and each
     # file in the subdir represents a task. The dictionary for each task should contain two keys;
     # id: the task id, and proxied: a boolean indicating whether the task has been proxied.

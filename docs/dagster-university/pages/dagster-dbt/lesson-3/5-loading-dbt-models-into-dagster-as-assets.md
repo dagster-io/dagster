@@ -63,7 +63,7 @@ We’ll only create one `@dbt_assets` definition for now, but in a later lesson,
    - We use the `dbt` argument (which is a `DbtCliResource`) to execute a dbt command through its `.cli` method.
    - The `.stream()` method fetches the events and results of this dbt execution.
      - This is one of multiple ways to get the Dagster events, such as what models materialized or tests passed. We recommend starting with this and exploring other methods in the future as your use cases grow (such as fetching the run artifacts after a run). In this case, the above line will execute `dbt run`.
-   - The results of the `stream` are a Python generator of what Dagster events happened. We used [`yield from`](https://pythonalgos.com/generator-functions-yield-and-yield-from-in-python/) (not just `yield`!) to have Dagster track asset materializations.
+   - The results of the `stream` are a Python generator of what Dagster events happened. We used `yield from` (not just `yield`!) to have Dagster track asset materializations.
 
 At this point, `dbt.py` should look like this:
 

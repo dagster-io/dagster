@@ -30,8 +30,37 @@ def get_session_info(mwaa: Any, env_name: str) -> Tuple[str, str]:
 
 
 class MwaaSessionAuthBackend(AirflowAuthBackend):
-    def __init__(self, mwaa_client: Any, env_name: str) -> None:
-        self.mwaa_client = mwaa_client
+    """A :py:class:`dagster_airlift.core.AirflowAuthBackend` that authenticates to AWS MWAA.
+
+    Under the hood, this class uses the MWAA boto3 session to request a web login token and then
+    uses the token to authenticate to the MWAA web server.
+
+    Args:
+        mwaa_session (boto3.Session): The boto3 MWAA session
+        env_name (str): The name of the MWAA environment
+
+    Examples:
+        Creating an AirflowInstance pointed at a MWAA environment.
+
+        .. code-block:: python
+
+            import boto3
+            from dagster_airlift.mwaa import MwaaSessionAuthBackend
+            from dagster_airlift.core import AirflowInstance
+
+            boto_session = boto3.Session(profile_name="my_profile", region_name="us-west-2")
+            af_instance = AirflowInstance(
+                name="my-mwaa-instance",
+                auth_backend=MwaaSessionAuthBackend(
+                    mwaa_session=boto_session,
+                    env_name="my-mwaa-env"
+                )
+            )
+
+    """
+
+    def __init__(self, mwaa_session: boto3.Session, env_name: str) -> None:
+        self.mwaa_client = mwaa_session
         self.env_name = env_name
         # Session info is generated when we either try to retrieve a session or retrieve the web server url
         self._session_info: Optional[Tuple[str, str]] = None
@@ -40,7 +69,7 @@ class MwaaSessionAuthBackend(AirflowAuthBackend):
     def from_profile(region: str, env_name: str, profile_name: Optional[str] = None):
         boto_session = boto3.Session(profile_name=profile_name, region_name=region)
         mwaa = boto_session.client("mwaa")
-        return MwaaSessionAuthBackend(mwaa_client=mwaa, env_name=env_name)
+        return MwaaSessionAuthBackend(mwaa_session=mwaa, env_name=env_name)
 
     def get_session(self) -> requests.Session:
         # Get the session info

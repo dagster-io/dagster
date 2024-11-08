@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import cast
+from unittest import mock
 
-import mock
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -32,7 +32,7 @@ from dagster_airlift.core import (
     task_defs,
 )
 from dagster_airlift.core.load_defs import build_full_automapped_dags_from_airflow_instance
-from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
+from dagster_airlift.core.multiple_tasks import assets_with_multiple_task_mappings
 from dagster_airlift.core.serialization.compute import (
     build_airlift_metadata_mapping_info,
     compute_serialized_data,
@@ -512,11 +512,15 @@ def test_multiple_tasks_dag_defs() -> None:
                     Definitions(assets=[other_asset]),
                 ),
             ),
-            targeted_by_multiple_tasks(
-                Definitions([scheduled_twice]),
-                task_handles=[
-                    {"dag_id": "weekly_dag", "task_id": "task1"},
-                    {"dag_id": "daily_dag", "task_id": "task1"},
+            Definitions(
+                assets=[
+                    *assets_with_multiple_task_mappings(
+                        assets=[scheduled_twice],
+                        task_handles=[
+                            {"dag_id": "weekly_dag", "task_id": "task1"},
+                            {"dag_id": "daily_dag", "task_id": "task1"},
+                        ],
+                    )
                 ],
             ),
         ),
@@ -544,12 +548,14 @@ def test_mixed_multiple_tasks_single_task_mapping_defs_sep_dags() -> None:
                     Definitions(assets=[single_targeted_asset]),
                 ),
             ),
-            targeted_by_multiple_tasks(
-                Definitions([double_targeted_asset]),
-                task_handles=[
-                    {"dag_id": "weekly_dag", "task_id": "task1"},
-                    {"dag_id": "daily_dag", "task_id": "task1"},
-                ],
+            Definitions(
+                assets_with_multiple_task_mappings(
+                    assets=[double_targeted_asset],
+                    task_handles=[
+                        {"dag_id": "weekly_dag", "task_id": "task1"},
+                        {"dag_id": "daily_dag", "task_id": "task1"},
+                    ],
+                )
             ),
         ),
     )
@@ -591,12 +597,16 @@ def test_mixed_multiple_task_single_task_mapping_same_dags() -> None:
             }
         ),
         defs=Definitions.merge(
-            targeted_by_multiple_tasks(
-                Definitions([double_targeted_asset]),
-                task_handles=[
-                    {"dag_id": "weekly_dag", "task_id": "task1"},
-                    {"dag_id": "daily_dag", "task_id": "task1"},
-                ],
+            Definitions(
+                assets=[
+                    *assets_with_multiple_task_mappings(
+                        assets=[double_targeted_asset],
+                        task_handles=[
+                            {"dag_id": "weekly_dag", "task_id": "task1"},
+                            {"dag_id": "daily_dag", "task_id": "task1"},
+                        ],
+                    )
+                ]
             ),
             dag_defs(
                 "weekly_dag",
@@ -643,12 +653,14 @@ def test_mixed_multiple_task_single_task_mapping_same_task() -> None:
             }
         ),
         defs=Definitions.merge(
-            targeted_by_multiple_tasks(
-                Definitions([double_targeted_asset]),
-                task_handles=[
-                    {"dag_id": "weekly_dag", "task_id": "task1"},
-                    {"dag_id": "daily_dag", "task_id": "task1"},
-                ],
+            Definitions(
+                assets=assets_with_multiple_task_mappings(
+                    assets=[double_targeted_asset],
+                    task_handles=[
+                        {"dag_id": "weekly_dag", "task_id": "task1"},
+                        {"dag_id": "daily_dag", "task_id": "task1"},
+                    ],
+                )
             ),
             dag_defs(
                 "weekly_dag",

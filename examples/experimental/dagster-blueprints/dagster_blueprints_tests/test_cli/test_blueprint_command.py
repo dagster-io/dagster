@@ -3,8 +3,8 @@ import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List
+from unittest import mock
 
-import mock
 import pytest
 from click.testing import CliRunner
 

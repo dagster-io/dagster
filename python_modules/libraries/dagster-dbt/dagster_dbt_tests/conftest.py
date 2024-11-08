@@ -196,3 +196,19 @@ def test_dependencies_manifest_fixture() -> Dict[str, Any]:
         test_dependencies_path,
         build_project=True,
     ).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_dependencies_manifest_windows", scope="session")
+def test_dependencies_manifest_windows_fixture(
+    test_dependencies_manifest: Dict[str, Any],
+) -> Dict[str, Any]:
+    return {
+        **test_dependencies_manifest,
+        "nodes": {
+            node: {
+                **node_details,
+                "original_file_path": node_details.get("original_file_path").replace("/", "\\"),
+            }
+            for node, node_details in test_dependencies_manifest["nodes"].items()
+        },
+    }

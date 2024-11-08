@@ -700,7 +700,7 @@ def new_resource_testing_with_state_ops() -> None:
     # start_new_resource_testing_with_state_ops
 
     from dagster import ConfigurableResource, op
-    import mock
+    from unittest import mock
 
     class MyClient:
         ...

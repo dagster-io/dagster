@@ -1,8 +1,8 @@
 import enum
 from abc import ABC, abstractmethod
 from typing import List, Mapping, Optional
+from unittest import mock
 
-import mock
 import pytest
 from dagster import (
     AssetExecutionContext,

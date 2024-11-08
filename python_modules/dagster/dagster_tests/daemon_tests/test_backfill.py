@@ -4,9 +4,9 @@ import random
 import string
 import sys
 import time
+from unittest import mock
 
 import dagster._check as check
-import mock
 import pytest
 from dagster import (
     AllPartitionMapping,
