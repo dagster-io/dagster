@@ -1,5 +1,4 @@
-import contextlib
-from typing import Callable, Iterator
+from typing import Iterator
 
 import pytest
 import responses

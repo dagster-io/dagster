@@ -1,11 +1,14 @@
 import uuid
-import responses
 
+import responses
 from dagster_fivetran import FivetranWorkspace
 
 
 def test_basic_resource_request(
-    connector_id: str, destination_id: str, group_id: str, workspace_data_api_mocks: responses.RequestsMock
+    connector_id: str,
+    destination_id: str,
+    group_id: str,
+    workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
     api_key = uuid.uuid4().hex
     api_secret = uuid.uuid4().hex
