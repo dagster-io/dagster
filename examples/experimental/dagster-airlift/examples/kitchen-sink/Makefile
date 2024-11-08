@@ -22,7 +22,7 @@ setup_local_env:
 	mkdir -p $(AIRFLOW_HOME)
 	mkdir -p $(DAGSTER_HOME)
 	chmod +x ../../scripts/airflow_setup.sh
-	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/kitchen_sink/airflow_dags
+	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/kitchen_sink/airflow_dags $(AIRFLOW_HOME)
 
 run_airflow:
 	airflow standalone

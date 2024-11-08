@@ -6,6 +6,7 @@ from typing import Iterable, List, Optional
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.step_builder import BuildkiteQueue
 from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.utils import (
     BuildkiteStep,
@@ -381,6 +382,8 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "KS_DBT_CLOUD_ACCESS_URL",
             "KS_DBT_CLOUD_DISCOVERY_API_URL",
         ],
+        timeout_in_minutes=30,
+        queue=BuildkiteQueue.DOCKER,
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/perf-harness",
