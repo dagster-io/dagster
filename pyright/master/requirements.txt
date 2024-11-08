@@ -135,7 +135,7 @@ types-sqlalchemy==1.4.53.34
 -e examples/experimental/dagster-blueprints
 -e examples/experimental/dagster-airlift[mwaa,dbt,test] # (includes airflow dependencies)
 -e examples/experimental/dagster-dlift
--e examples/experimental/dagster-airlift/examples/dbt-example
+-e examples/starlift-demo
 -e examples/experimental/dagster-airlift/examples/kitchen-sink
 -e examples/experimental/dagster-dlift/kitchen-sink
 -e examples/experimental/dagster-airlift/examples/perf-harness

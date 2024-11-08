@@ -373,7 +373,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     # Runs against live dbt cloud instance, we only want to run on commits and on the
     # nightly build
     PackageSpec(
-        "examples/experimental/dagster-airlift/examples/dbt-example",
+        "examples/starlift-demo",
         skip_if=skip_if_not_airlift_or_dlift_commit,
         env_vars=[
             "KS_DBT_CLOUD_ACCOUNT_ID",
