@@ -442,7 +442,7 @@ def all_api_mocks_fixture(
     destination_id: str,
     group_id: str,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
-) -> responses.RequestsMock:
+) -> Iterator[responses.RequestsMock]:
     fetch_workspace_data_api_mocks.add(
         method=responses.GET,
         url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}",
