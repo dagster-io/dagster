@@ -39,7 +39,6 @@ from dagster._core.definitions.tags import build_kind_tag
 from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.utils import imap
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.log import get_dagster_logger
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
@@ -324,7 +323,6 @@ def build_fivetran_assets(
     )
 
 
-@whitelist_for_serdes
 class FivetranConnectionMetadata(
     NamedTuple(
         "_FivetranConnectionMetadata",
@@ -386,9 +384,16 @@ class FivetranConnectionMetadata(
                 "connector_id": self.connector_id,
                 "io_manager_key": io_manager_key,
                 "storage_kind": self.service,
-                "connection_metadata": self,
+                "connection_metadata": self.to_serializable_repr(),
             },
         )
+
+    def to_serializable_repr(self) -> Any:
+        return self._asdict()
+
+    @staticmethod
+    def from_serializable_repr(rep: Any) -> "FivetranConnectionMetadata":
+        return FivetranConnectionMetadata(**rep)
 
 
 def _build_fivetran_assets_from_metadata(
@@ -404,7 +409,9 @@ def _build_fivetran_assets_from_metadata(
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
     storage_kind = cast(Optional[str], metadata.get("storage_kind"))
 
-    connection_metadata = metadata["connection_metadata"]
+    connection_metadata = FivetranConnectionMetadata.from_serializable_repr(
+        metadata["connection_metadata"]
+    )
 
     return _build_fivetran_assets(
         connector_id=connector_id,
