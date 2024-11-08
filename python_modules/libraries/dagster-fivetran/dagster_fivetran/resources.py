@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import time
+from enum import Enum
 from typing import Any, Mapping, Optional, Sequence, Tuple
 from urllib.parse import urljoin
 
@@ -41,6 +42,14 @@ FIVETRAN_CONNECTOR_PATH = f"{FIVETRAN_CONNECTOR_ENDPOINT}/"
 
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
+
+
+class FivetranConnectorSetupStateType(Enum):
+    """Enum representing each setup state for a connector in Fivetran's ontology."""
+
+    INCOMPLETE = "incomplete"
+    CONNECTED = "connected"
+    BROKEN = "broken"
 
 
 class FivetranResource(ConfigurableResource):
@@ -643,8 +652,11 @@ class FivetranWorkspace(ConfigurableResource):
             for connector_details in connectors_details:
                 connector_id = connector_details["id"]
 
-                setup_state = connector_details.get("status", {}).get("setup_state")
-                if setup_state and setup_state in ("incomplete", "broken"):
+                setup_state = connector_details["status"]["setup_state"]
+                if setup_state in (
+                    FivetranConnectorSetupStateType.INCOMPLETE,
+                    FivetranConnectorSetupStateType.BROKEN,
+                ):
                     continue
 
                 schema_config = client.get_schema_config_for_connector(connector_id=connector_id)
