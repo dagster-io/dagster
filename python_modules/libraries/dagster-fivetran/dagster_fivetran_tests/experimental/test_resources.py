@@ -8,7 +8,7 @@ def test_basic_resource_request(
     connector_id: str,
     destination_id: str,
     group_id: str,
-    workspace_data_api_mocks: responses.RequestsMock,
+    all_api_mocks: responses.RequestsMock,
 ) -> None:
     api_key = uuid.uuid4().hex
     api_secret = uuid.uuid4().hex
@@ -22,11 +22,11 @@ def test_basic_resource_request(
     client.get_groups()
     client.get_schema_config_for_connector(connector_id=connector_id)
 
-    assert len(workspace_data_api_mocks.calls) == 5
+    assert len(all_api_mocks.calls) == 5
 
-    assert "Basic" in workspace_data_api_mocks.calls[0].request.headers["Authorization"]
-    assert connector_id in workspace_data_api_mocks.calls[0].request.url
-    assert group_id in workspace_data_api_mocks.calls[1].request.url
-    assert destination_id in workspace_data_api_mocks.calls[2].request.url
-    assert "groups" in workspace_data_api_mocks.calls[3].request.url
-    assert f"{connector_id}/schemas" in workspace_data_api_mocks.calls[4].request.url
+    assert "Basic" in all_api_mocks.calls[0].request.headers["Authorization"]
+    assert connector_id in all_api_mocks.calls[0].request.url
+    assert group_id in all_api_mocks.calls[1].request.url
+    assert destination_id in all_api_mocks.calls[2].request.url
+    assert "groups" in all_api_mocks.calls[3].request.url
+    assert f"{connector_id}/schemas" in all_api_mocks.calls[4].request.url

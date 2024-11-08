@@ -397,9 +397,9 @@ def group_id_fixture() -> str:
 
 
 @pytest.fixture(
-    name="workspace_data_api_mocks",
+    name="fetch_workspace_data_api_mocks",
 )
-def workspace_data_api_mocks_fixture(
+def fetch_workspace_data_api_mocks_fixture(
     connector_id: str, destination_id: str, group_id: str
 ) -> Iterator[responses.RequestsMock]:
     with responses.RequestsMock() as response:
@@ -425,17 +425,27 @@ def workspace_data_api_mocks_fixture(
         )
 
         response.add(
-                method=responses.GET,
-                url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}/schemas",
-                json=SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
-                status=200,
-            )
-
-        response.add(
             method=responses.GET,
-            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}",
-            json=SAMPLE_CONNECTOR_DETAILS,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}/schemas",
+            json=SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
             status=200,
         )
 
         yield response
+
+
+@pytest.fixture(
+    name="all_api_mocks",
+)
+def all_api_mocks_fixture(
+    connector_id: str, destination_id: str, group_id: str, fetch_workspace_data_api_mocks: responses.RequestsMock
+) -> responses.RequestsMock:
+    fetch_workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}",
+        json=SAMPLE_CONNECTOR_DETAILS,
+        status=200,
+    )
+    yield fetch_workspace_data_api_mocks
+
+
