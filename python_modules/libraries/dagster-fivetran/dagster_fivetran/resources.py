@@ -4,11 +4,12 @@ import logging
 import os
 import time
 from enum import Enum
-from typing import Any, Mapping, Optional, Sequence, Tuple
+from typing import Any, Mapping, Optional, Sequence, Tuple, Type
 from urllib.parse import urljoin
 
 import requests
 from dagster import (
+    Definitions,
     Failure,
     InitResourceContext,
     MetadataValue,
@@ -19,7 +20,9 @@ from dagster import (
 )
 from dagster._annotations import experimental
 from dagster._config.pythonic_config import ConfigurableResource
+from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
 from pydantic import Field, PrivateAttr
@@ -27,6 +30,7 @@ from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
 from dagster_fivetran.translator import (
+    DagsterFivetranTranslator,
     FivetranContentData,
     FivetranContentType,
     FivetranWorkspaceData,
@@ -42,6 +46,8 @@ FIVETRAN_CONNECTOR_PATH = f"{FIVETRAN_CONNECTOR_ENDPOINT}/"
 
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
+
+FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-fivetran/reconstruction_metadata"
 
 
 class FivetranConnectorSetupStateType(Enum):
@@ -674,3 +680,26 @@ class FivetranWorkspace(ConfigurableResource):
                 )
 
         return FivetranWorkspaceData.from_content_data(connectors + destinations)
+
+
+@record
+class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
+    workspace: FivetranWorkspace
+    translator_cls: Type[DagsterFivetranTranslator]
+
+    @property
+    def defs_key(self) -> str:
+        return f"{FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.site_name}"
+
+    def fetch_state(self) -> FivetranWorkspaceData:
+        return self.workspace.fetch_fivetran_workspace_data()
+
+    def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:
+        translator = self.translator_cls()
+
+        all_asset_specs = [
+            translator.get_asset_spec(props)
+            for props in state.to_fivetran_connector_table_props_data()
+        ]
+
+        return Definitions(assets=all_asset_specs)
