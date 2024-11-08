@@ -11,6 +11,7 @@ from dagster_fivetran.ops import (
 )
 from dagster_fivetran.resources import (
     FivetranResource as FivetranResource,
+    FivetranWorkspace as FivetranWorkspace,
     fivetran_resource as fivetran_resource,
 )
 from dagster_fivetran.types import FivetranOutput as FivetranOutput
