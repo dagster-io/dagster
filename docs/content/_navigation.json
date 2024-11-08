@@ -935,6 +935,10 @@
               {
                 "title": "Part 4: Migrating assets",
                 "path": "/integrations/airlift/tutorial/migrate"
+              },
+              {
+                "title": "Part 5: Decomissioning the Airflow DAG",
+                "path": "/integrations/airlift/tutorial/decomission"
               }
             ]
           },
