@@ -8,7 +8,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionEvaluation,
     AutomationConditionSnapshot,
 )
-from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -272,7 +271,6 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
     def __init__(
         self,
         record: AutoMaterializeAssetEvaluationRecord,
-        partitions_def: Optional[PartitionsDefinition],
     ):
         evaluation_with_run_ids = record.get_evaluation_with_run_ids()
         root_evaluation = evaluation_with_run_ids.evaluation
