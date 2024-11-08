@@ -438,7 +438,10 @@ def fetch_workspace_data_api_mocks_fixture(
     name="all_api_mocks",
 )
 def all_api_mocks_fixture(
-    connector_id: str, destination_id: str, group_id: str, fetch_workspace_data_api_mocks: responses.RequestsMock
+    connector_id: str,
+    destination_id: str,
+    group_id: str,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> responses.RequestsMock:
     fetch_workspace_data_api_mocks.add(
         method=responses.GET,
@@ -447,5 +450,3 @@ def all_api_mocks_fixture(
         status=200,
     )
     yield fetch_workspace_data_api_mocks
-
-

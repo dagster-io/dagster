@@ -4,7 +4,9 @@ import responses
 from dagster_fivetran import FivetranWorkspace
 
 
-def test_fetch_fivetran_workspace_data(fetch_workspace_data_api_mocks: responses.RequestsMock) -> None:
+def test_fetch_fivetran_workspace_data(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
     api_key = uuid.uuid4().hex
     api_secret = uuid.uuid4().hex
 
