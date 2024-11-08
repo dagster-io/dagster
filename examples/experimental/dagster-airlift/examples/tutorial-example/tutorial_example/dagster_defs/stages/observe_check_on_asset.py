@@ -19,7 +19,7 @@ from dagster_airlift.core import (
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
 
-@asset_check(asset=AssetKey(["airflow_instance_one", "dag", "rebuild_customers_list"]))
+@asset_check(asset=AssetKey(["customers_csv"]))
 def validate_exported_csv() -> AssetCheckResult:
     csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
 

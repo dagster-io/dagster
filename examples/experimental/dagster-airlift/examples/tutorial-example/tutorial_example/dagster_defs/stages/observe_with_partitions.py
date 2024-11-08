@@ -1,7 +1,16 @@
 import os
 from pathlib import Path
 
-from dagster import AssetExecutionContext, AssetSpec, DailyPartitionsDefinition, Definitions
+from dagster import (
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetExecutionContext,
+    AssetKey,
+    AssetSpec,
+    DailyPartitionsDefinition,
+    Definitions,
+    asset_check,
+)
 from dagster._time import get_current_datetime_midnight
 from dagster_airlift.core import (
     AirflowBasicAuthBackend,
@@ -12,6 +21,28 @@ from dagster_airlift.core import (
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
 PARTITIONS_DEF = DailyPartitionsDefinition(start_date=get_current_datetime_midnight())
+
+
+@asset_check(asset=AssetKey(["customers_csv"]))
+def validate_exported_csv() -> AssetCheckResult:
+    csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
+
+    if not csv_path.exists():
+        return AssetCheckResult(passed=False, description=f"Export CSV {csv_path} does not exist")
+
+    rows = len(csv_path.read_text().split("\n"))
+    if rows < 2:
+        return AssetCheckResult(
+            passed=False,
+            description=f"Export CSV {csv_path} is empty",
+            severity=AssetCheckSeverity.WARN,
+        )
+
+    return AssetCheckResult(
+        passed=True,
+        description=f"Export CSV {csv_path} exists",
+        metadata={"rows": rows},
+    )
 
 
 def dbt_project_path() -> Path:
@@ -55,5 +86,6 @@ defs = build_defs_from_airflow_instance(
     defs=Definitions(
         assets=mapped_assets,
         resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
+        asset_checks=[validate_exported_csv],
     ),
 )
