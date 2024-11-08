@@ -128,20 +128,11 @@ def get_additional_required_keys(
     graphene_info: "ResolveInfo",
     asset_keys: AbstractSet[AssetKey],
 ) -> List["AssetKey"]:
-    asset_nodes_by_key = get_asset_nodes_by_asset_key(graphene_info)
+    asset_nodes = {graphene_info.context.asset_graph.get(asset_key) for asset_key in asset_keys}
 
-    # the set of atomic execution ids that any of the input asset keys are a part of
-    required_execution_set_identifiers = {
-        asset_nodes_by_key[asset_key].asset_node_snap.execution_set_identifier
-        for asset_key in asset_keys
-    } - {None}
-
-    # the set of all asset keys that are part of the required execution sets
-    required_asset_keys = {
-        asset_node.asset_node_snap.asset_key
-        for asset_node in asset_nodes_by_key.values()
-        if asset_node.asset_node_snap.execution_set_identifier in required_execution_set_identifiers
-    }
+    required_asset_keys = set()
+    for asset_node in asset_nodes:
+        required_asset_keys.update(asset_node.execution_set_asset_keys)
 
     return list(required_asset_keys - asset_keys)
 

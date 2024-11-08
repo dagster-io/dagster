@@ -188,6 +188,14 @@ GET_ASSET_LATEST_RUN_STATS = """
     }
 """
 
+ADDITIONAL_REQUIRED_KEYS_QUERY = """
+  query AdditionalRequiredKeysQuery($assetKeys: [AssetKeyInput!]!) {
+    assetNodeAdditionalRequiredKeys(assetKeys: $assetKeys) {
+      path
+    }
+  }
+"""
+
 GET_ASSET_DATA_VERSIONS = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
         assetNodes(pipeline: $pipelineSelector, assetKeys: $assetKeys) {
@@ -1007,6 +1015,18 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         )
         assert result.data
         snapshot.assert_match(result.data)
+
+    def test_additional_required_keys_query(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            ADDITIONAL_REQUIRED_KEYS_QUERY,
+            variables={
+                "assetKeys": [{"path": ["int_asset"]}],
+            },
+        )
+        required_keys = result.data["assetNodeAdditionalRequiredKeys"]
+        assert len(required_keys) == 1
+        assert required_keys == [{"path": ["str_asset"]}]
 
     def test_get_partitioned_asset_key_materialization(
         self, graphql_context: WorkspaceRequestContext, snapshot
