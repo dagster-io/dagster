@@ -215,6 +215,8 @@ SAMPLE_CONNECTOR_DETAILS = {
     },
 }
 
+# Taken from Fivetran API documentation
+# https://fivetran.com/docs/rest-api/api-reference/connector-schema/connector-schema-config
 SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
     "code": "Success",
     "message": "Operation performed.",
