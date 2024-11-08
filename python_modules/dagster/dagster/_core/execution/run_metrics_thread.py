@@ -34,7 +34,7 @@ def _process_is_containerized() -> bool:
     file = "/proc/1/exe"
     if os.path.isfile(file) and os.access(file, os.R_OK):
         target = os.readlink(file)
-        return os.path.split(target)[-1] != "init"
+        return os.path.split(target)[-1] == "init"
 
     # /proc/1/exe should exist on linux; if it doesn't, we don't know what kind of system we're on
     return False
