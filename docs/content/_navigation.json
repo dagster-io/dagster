@@ -923,6 +923,10 @@
               {
                 "title": "Part 1: Setup local Airflow",
                 "path": "/integrations/airlift/tutorial/setup"
+              },
+              {
+                "title": "Part 2: Peering to the Airflow Instance",
+                "path": "/integrations/airlift/tutorial/peer"
               }
             ]
           },

@@ -90,3 +90,36 @@ In order to make spin-up more efficient, `dagster-airlift` caches the state of t
 ### Automating changes to code locations
 
 If changes to your Airflow instance are controlled via a ci/cd process, you can add a step to automatically induce a redeploy of the relevant code location. See the docs [here](https://docs.dagster.io/concepts/webserver/graphql-client#reloading-all-repositories-in-a-repository-location) on using the graphql client to do this.
+
+### Peering to multiple Airflow instances
+
+Airlift supports peering to multiple Airflow instances, as you can invoke `build_defs_from_airflow_instance` multiple times and combine them with `Definitions.merge`:
+
+```python
+from dagster import Definitions
+
+from dagster_airlift.core import AirflowInstance, build_defs_from_airflow_instance
+
+defs = Definitions.merge(
+    build_defs_from_airflow_instance(
+        airflow_instance=AirflowInstance(
+            auth_backend=BasicAuthBackend(
+                webserver_url="http://yourcompany.com/instance_one",
+                username="admin",
+                password="admin",
+            ),
+            name="airflow_instance_one",
+        )
+    ),
+    build_defs_from_airflow_instance(
+        airflow_instance=AirflowInstance(
+            auth_backend=BasicAuthBackend(
+                webserver_url="http://yourcompany.com/instance_two",
+                username="admin",
+                password="admin",
+            ),
+            name="airflow_instance_two",
+        )
+    ),
+)
+```
