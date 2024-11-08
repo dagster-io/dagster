@@ -43,20 +43,26 @@ def build_sensor_for_freshness_checks(
     """Builds a sensor which kicks off evaluation of freshness checks.
 
     This sensor will kick off an execution of a check in the following cases:
+
     - The check has never been executed before.
-    - The check has been executed before, and the previous result was a success, but it is again
-    possible for the check to be overdue based on the `dagster/fresh_until_timestamp` metadata
-    on the check result.
+
+    - The check has been executed before, and the previous result was a success, but it
+      is again possible for the check to be overdue based on the `dagster/fresh_until_timestamp`
+      metadata on the check result.
 
     Note that we will not execute if:
-    - The freshness check has been executed before, and the previous result was a failure. This is
-    because whichever run materializes/observes the run to bring the check back to a passing
-    state will end up also running the check anyway, so until that run occurs, there's no point
-    in evaluating the check.
-    - The freshness check has been executed before, and the previous result was a success, but it is
-    not possible for the check to be overdue based on the `dagster/fresh_until_timestamp`
-    metadata on the check result. Since the check cannot be overdue, we know the check
-    result would not change with an additional execution.
+
+    - The freshness check has been executed before, and the previous result was a failure.
+      This is because whichever run materializes/observes the run to bring the check back to
+      a passing state will end up also running the check anyway, so until that run occurs,
+      there's no point in evaluating the check.
+
+    - The freshness check has been executed before, and the previous result was a success,
+      but it is not possible for the check to be overdue based on the
+      `dagster/fresh_until_timestamp` metadata on the check result. Since the check cannot
+      be overdue, we know the check result would not change with an additional execution.
+      For this reason the checks targeted by this sensor should not be included in jobs
+      that materialize their assets.
 
     Args:
         freshness_checks (Sequence[AssetChecksDefinition]): The freshness checks to evaluate.
