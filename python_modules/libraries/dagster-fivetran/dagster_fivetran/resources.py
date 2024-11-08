@@ -605,6 +605,7 @@ class FivetranWorkspace(ConfigurableResource):
     to interact with Fivetran APIs.
     """
 
+    account_id: str = Field(description="The Fivetran account ID.")
     api_key: str = Field(description="The Fivetran API key to use for this resource.")
     api_secret: str = Field(description="The Fivetran API secret to use for this resource.")
     request_max_retries: int = Field(
@@ -689,7 +690,7 @@ class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]
 
     @property
     def defs_key(self) -> str:
-        return f"{FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.site_name}"
+        return f"{FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.account_id}"
 
     def fetch_state(self) -> FivetranWorkspaceData:
         return self.workspace.fetch_fivetran_workspace_data()
