@@ -390,7 +390,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
-        "examples/experimental/dagster-airlift/examples/tutorial-example",
+        "examples/airlift-migration-tutorial",
         always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(

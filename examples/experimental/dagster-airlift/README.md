@@ -36,4 +36,4 @@ Airlift depends on the the availability of Airflow’s REST API. Airflow’s RES
 
 # Tutorial
 
-We've provided a tutorial to help get you started with airlift tooling and process, which can be found [here](https://github.com/dagster-io/airlift-tutorial).
+We've provided a tutorial to help get you started with airlift tooling and process, which can be found [here](https://github.com/dagster-io/airlift-migration-tutorial).

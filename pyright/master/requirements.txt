@@ -139,5 +139,5 @@ types-sqlalchemy==1.4.53.34
 -e examples/experimental/dagster-airlift/examples/kitchen-sink
 -e examples/experimental/dagster-dlift/kitchen-sink
 -e examples/experimental/dagster-airlift/examples/perf-harness
--e examples/experimental/dagster-airlift/examples/tutorial-example
+-e examples/airlift-migration-tutorial
 -e examples/use_case_repository[dev]

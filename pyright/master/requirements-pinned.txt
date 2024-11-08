@@ -586,7 +586,7 @@ tqdm==4.66.5
 traitlets==5.14.3
 trio==0.27.0
 trio-websocket==0.11.1
--e examples/experimental/dagster-airlift/examples/tutorial-example
+-e examples/airlift-migration-tutorial
 -e examples/tutorial_notebook_assets
 twilio==9.3.6
 twine==1.15.0
