@@ -64,10 +64,6 @@ class DagsterFivetranTranslator:
     Subclass this class to implement custom logic for each type of Fivetran content.
     """
 
-    def get_asset_key(self, props: FivetranConnectorTableProps) -> AssetKey:
-        """Get the AssetKey for a table synced by a Fivetran connector."""
-        return AssetKey(props.table.split("."))
-
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
         """Get the AssetSpec for a table synced by a Fivetran connector."""
         schema_name, table_name = props.table.split(".")
@@ -91,7 +87,7 @@ class DagsterFivetranTranslator:
         )
 
         return AssetSpec(
-            key=self.get_asset_key(props),
+            key=AssetKey(props.table.split(".")),
             metadata=metadata,
             kinds={"fivetran", *({props.service} if props.service else set())},
         )

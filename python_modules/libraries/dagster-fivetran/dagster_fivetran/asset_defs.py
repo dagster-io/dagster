@@ -122,9 +122,9 @@ def _build_fivetran_assets(
     tracked_asset_keys = {
         table: AssetKey([*asset_key_prefix, *table.split(".")])
         if not translator_instance or not connection_metadata
-        else translator_instance.get_asset_key(
+        else translator_instance.get_asset_spec(
             FivetranConnectorTableProps(table=table, **connection_metadata._asdict())
-        )
+        ).key
         for table in destination_tables
     }
     user_facing_asset_keys = table_to_asset_key_map or tracked_asset_keys
