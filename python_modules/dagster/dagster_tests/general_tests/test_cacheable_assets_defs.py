@@ -267,7 +267,8 @@ def test_group_cached_assets():
             my_lame_group_sel.resolve(
                 my_cacheable_assets_cool.build_definitions(
                     my_cacheable_assets_cool.compute_cacheable_data()
-                )
+                ),
+                allow_missing=True,
             )
         )
         == 0

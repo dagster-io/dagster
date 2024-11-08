@@ -31,6 +31,8 @@ def test_no_selection():
                 "differently_partitioned_asset",
                 "downstream_asset",
                 "fail_asset",
+                "grouped_asset1",
+                "grouped_asset2",
                 "multi_run_partitioned_asset",
                 "partitioned_asset",
                 "single_run_partitioned_asset",
