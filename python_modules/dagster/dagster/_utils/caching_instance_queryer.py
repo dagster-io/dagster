@@ -193,7 +193,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 value = False
             else:
                 dagster_run = self.instance.get_run_by_id(planned_materialization_info.run_id)
-                value = dagster_run is not None and dagster_run.status in IN_PROGRESS_RUN_STATUSES
+                value = dagster_run is not None and dagster_run.status in [
+                    *IN_PROGRESS_RUN_STATUSES,
+                    # an asset is considered to be "in progress" if there is planned work for it that has not
+                    # yet completed, which is not identical to the "in progress" status of the run
+                    DagsterRunStatus.QUEUED,
+                ]
 
         return SerializableEntitySubset(key=asset_key, value=value)
 
