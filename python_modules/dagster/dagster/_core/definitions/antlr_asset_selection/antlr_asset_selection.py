@@ -93,9 +93,9 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
         value = self.visit(ctx.value())
         return AssetSelection.assets(value)
 
-    def visitKeySubsetExpr(self, ctx: AssetSelectionParser.KeySubsetExprContext):
+    def visitKeySubstringExpr(self, ctx: AssetSelectionParser.KeySubstringExprContext):
         value = self.visit(ctx.value())
-        return AssetSelection.key_prefixes(value)
+        return AssetSelection.key_substring(value)
 
     def visitTagAttributeExpr(self, ctx: AssetSelectionParser.TagAttributeExprContext):
         key = self.visit(ctx.value(0))

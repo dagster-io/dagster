@@ -93,6 +93,9 @@ def test_antlr_tree_invalid(selection_str):
     "selection_str, expected_assets",
     [
         ("key:a", AssetSelection.assets("a")),
+        ('key:"*/a+"', AssetSelection.assets("*/a+")),
+        ("key_substring:a", AssetSelection.key_substring("a")),
+        ('key_substring:"*/a+"', AssetSelection.key_substring("*/a+")),
         ("not key:a", AssetSelection.all(include_sources=True) - AssetSelection.assets("a")),
         ("key:a and key:b", AssetSelection.assets("a") & AssetSelection.assets("b")),
         ("key:a or key:b", AssetSelection.assets("a") | AssetSelection.assets("b")),
