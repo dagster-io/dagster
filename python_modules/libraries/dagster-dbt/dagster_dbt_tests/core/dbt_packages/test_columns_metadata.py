@@ -745,11 +745,17 @@ EXPECTED_COLUMN_LINEAGE_FOR_DEPENDENCIES_PROJECT = {
 }
 
 
+@pytest.mark.parametrize(
+    "use_windows_manifest",
+    [False, True],
+)
 def test_column_lineage_dependencies(
     test_dependencies_manifest: Dict[str, Any],
+    test_dependencies_manifest_windows: Dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
     mocker: MockFixture,
     capsys,
+    use_windows_manifest: bool,
 ) -> None:
     # Patch get_relation_from_adapter so that we can track how often
     # relations are queried from the adapter vs cached
@@ -759,7 +765,11 @@ def test_column_lineage_dependencies(
     dbt = DbtCliResource(project_dir=os.fspath(test_dependencies_path))
     dbt.cli(["--quiet", "build", "--exclude", "resource_type:test"]).wait()
 
-    @dbt_assets(manifest=test_dependencies_manifest)
+    @dbt_assets(
+        manifest=test_dependencies_manifest_windows
+        if use_windows_manifest
+        else test_dependencies_manifest
+    )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         cli_invocation = dbt.cli(["build"], context=context).stream().fetch_column_metadata()
         yield from cli_invocation
