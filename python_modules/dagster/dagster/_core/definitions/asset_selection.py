@@ -204,17 +204,22 @@ class AssetSelection(ABC):
     def key_substring(
         key_substring: str, include_sources: bool = False
     ) -> "KeySubstringAssetSelection":
-        """Returns a selection that includes assets that match any of the provided key subsets and all the asset checks that target them.
+        """Returns a selection that includes assets whose string representation contains the provided substring and all the asset checks that target it.
 
         Args:
-            include_sources (bool): If True, then include source assets matching the key subset(s)
+            include_sources (bool): If True, then include source assets matching the substring
                 in the selection.
 
         Examples:
             .. code-block:: python
 
-              # match any asset key where the subsets are ["a", "b"] or ["a", "b", "c"]
-              AssetSelection.key_subsets(["a", "b"], ["a", "b", "c"])
+              # match any asset key containing "bc"
+              # e.g. AssetKey(["a", "bcd"]) would match, but not AssetKey(["ab", "cd"]).
+              AssetSelection.key_substring("bc")
+
+              # match any asset key containing "b/c"
+              # e.g. AssetKey(["ab", "cd"]) would match.
+              AssetSelection.key_substring("b/c")
         """
         return KeySubstringAssetSelection(
             selected_key_substring=key_substring, include_sources=include_sources
