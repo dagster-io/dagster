@@ -927,6 +927,10 @@
               {
                 "title": "Part 2: Peering to the Airflow Instance",
                 "path": "/integrations/airlift/tutorial/peer"
+              },
+              {
+                "title": "Part 3: Observing assets",
+                "path": "/integrations/airlift/tutorial/observe"
               }
             ]
           },
