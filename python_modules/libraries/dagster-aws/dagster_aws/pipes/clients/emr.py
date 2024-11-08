@@ -146,7 +146,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
             try:
                 self._add_log_readers(context, start_response)
                 wait_response = self._wait_for_completion(context, start_response)
-                self._read_remaining_logs(context, wait_response)
+                self._read_application_logs(context, session, wait_response)
                 return PipesClientCompletedInvocation(
                     session, metadata=self._extract_dagster_metadata(wait_response)
                 )
@@ -287,11 +287,20 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
                         ),
                     )
 
-    def _read_remaining_logs(
+    def _read_application_logs(
         self,
         context: Union[OpExecutionContext, AssetExecutionContext],
+        session: PipesSession,
         response: "DescribeClusterOutputTypeDef",
     ):
+        if (
+            isinstance(self.message_reader, PipesS3MessageReader)
+            and self.message_reader.include_stdio_in_messages
+        ):
+            # driver logs already have been consumed from Pipes messages
+            # no need to read any files from S3
+            return
+
         cluster_id = response["Cluster"]["Id"]  # type: ignore
         logs_uri = response.get("Cluster", {}).get("LogUri", {})
 
@@ -358,7 +367,9 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
             metadata["AWS EMR Cluster ID"] = cluster_id
 
         if log_uri := cluster.get("LogUri"):
-            metadata["AWS EMR Log URI"] = MetadataValue.path(log_uri)
+            # LogUri originally points to a shared S3 bucket where logs from all clusters are stored
+            # which is not very useful
+            metadata["AWS EMR Log URI"] = MetadataValue.path(log_uri + f"{cluster_id}")
 
         if cluster_id:
             metadata["AWS EMR Cluster"] = MetadataValue.url(

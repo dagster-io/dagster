@@ -645,7 +645,17 @@ class PipesBlobStoreMessageWriter(PipesMessageWriter[T_BlobStoreMessageWriterCha
         """
         channel = self.make_channel(params)
         with channel.buffered_upload_loop():
-            yield channel
+            if params.get(self.INCLUDE_STDIO_IN_MESSAGES_KEY):
+                log_writer = PipesDefaultLogWriter(message_channel=channel)
+
+                maybe_open_log_writer = log_writer.open(
+                    params.get(PipesLogWriter.LOG_WRITER_KEY, {})
+                )
+            else:
+                maybe_open_log_writer = nullcontext()
+
+            with maybe_open_log_writer:
+                yield channel
 
     @abstractmethod
     def make_channel(self, params: PipesParams) -> T_BlobStoreMessageWriterChannel: ...
