@@ -590,5 +590,9 @@
   {
     "url": "https://release-1-9-0.dagster.dagster-docs.io/",
     "version": "1.9.0"
+  },
+  {
+    "url": "https://release-1-9-1.dagster.dagster-docs.io/",
+    "version": "1.9.1"
   }
 ]
