@@ -697,7 +697,7 @@ def load_fivetran_asset_specs(
             to convert Fivetran content into AssetSpecs. Defaults to DagsterFivetranTranslator.
 
     Returns:
-        List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
+        List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
     """
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
         return check.is_list(
