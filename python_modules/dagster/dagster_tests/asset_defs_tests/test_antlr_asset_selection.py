@@ -13,9 +13,12 @@ from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection impor
             "(start (expr (expr (traversal *) (expr (traversal *) (expr *))) (traversal + + +)) <EOF>)",
         ),
         ("key:a", "(start (expr (attributeExpr key : (value a))) <EOF>)"),
-        ("key_subset:a", "(start (expr (attributeExpr key_subset : (value a))) <EOF>)"),
+        ("key_substring:a", "(start (expr (attributeExpr key_substring : (value a))) <EOF>)"),
         ('key:"*/a+"', '(start (expr (attributeExpr key : (value "*/a+"))) <EOF>)'),
-        ('key_subset:"*/a+"', '(start (expr (attributeExpr key_subset : (value "*/a+"))) <EOF>)'),
+        (
+            'key_substring:"*/a+"',
+            '(start (expr (attributeExpr key_substring : (value "*/a+"))) <EOF>)',
+        ),
         (
             "sinks(key:a)",
             "(start (expr (functionName sinks) ( (expr (attributeExpr key : (value a))) )) <EOF>)",

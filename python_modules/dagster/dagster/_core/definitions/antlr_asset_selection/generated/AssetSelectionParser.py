@@ -2,6 +2,8 @@
 # type: ignore
 # Generated from AssetSelection.g4 by ANTLR 4.13.2
 # encoding: utf-8
+from antlr4 import *
+from io import StringIO
 import sys
 from typing import TextIO
 
@@ -868,7 +870,7 @@ class AssetSelectionParser(Parser):
         "')'",
         "','",
         "'key'",
-        "'key_subset'",
+        "'key_substring'",
         "'owner'",
         "'group'",
         "'tag'",
@@ -891,7 +893,7 @@ class AssetSelectionParser(Parser):
         "RPAREN",
         "COMMA",
         "KEY",
-        "KEY_SUBSET",
+        "KEY_SUBSTRING",
         "OWNER",
         "GROUP",
         "TAG",
@@ -925,7 +927,7 @@ class AssetSelectionParser(Parser):
     RPAREN = 9
     COMMA = 10
     KEY = 11
-    KEY_SUBSET = 12
+    KEY_SUBSTRING = 12
     OWNER = 13
     GROUP = 14
     TAG = 15
@@ -1677,36 +1679,6 @@ class AssetSelectionParser(Parser):
             else:
                 return visitor.visitChildren(self)
 
-    class KeySubsetExprContext(AttributeExprContext):
-        def __init__(
-            self, parser, ctx: ParserRuleContext
-        ):  # actually a AssetSelectionParser.AttributeExprContext
-            super().__init__(parser)
-            self.copyFrom(ctx)
-
-        def KEY_SUBSET(self):
-            return self.getToken(AssetSelectionParser.KEY_SUBSET, 0)
-
-        def COLON(self):
-            return self.getToken(AssetSelectionParser.COLON, 0)
-
-        def value(self):
-            return self.getTypedRuleContext(AssetSelectionParser.ValueContext, 0)
-
-        def enterRule(self, listener: ParseTreeListener):
-            if hasattr(listener, "enterKeySubsetExpr"):
-                listener.enterKeySubsetExpr(self)
-
-        def exitRule(self, listener: ParseTreeListener):
-            if hasattr(listener, "exitKeySubsetExpr"):
-                listener.exitKeySubsetExpr(self)
-
-        def accept(self, visitor: ParseTreeVisitor):
-            if hasattr(visitor, "visitKeySubsetExpr"):
-                return visitor.visitKeySubsetExpr(self)
-            else:
-                return visitor.visitChildren(self)
-
     class KindAttributeExprContext(AttributeExprContext):
         def __init__(
             self, parser, ctx: ParserRuleContext
@@ -1764,6 +1736,36 @@ class AssetSelectionParser(Parser):
         def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitCodeLocationAttributeExpr"):
                 return visitor.visitCodeLocationAttributeExpr(self)
+            else:
+                return visitor.visitChildren(self)
+
+    class KeySubstringExprContext(AttributeExprContext):
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a AssetSelectionParser.AttributeExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def KEY_SUBSTRING(self):
+            return self.getToken(AssetSelectionParser.KEY_SUBSTRING, 0)
+
+        def COLON(self):
+            return self.getToken(AssetSelectionParser.COLON, 0)
+
+        def value(self):
+            return self.getTypedRuleContext(AssetSelectionParser.ValueContext, 0)
+
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterKeySubstringExpr"):
+                listener.enterKeySubstringExpr(self)
+
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitKeySubstringExpr"):
+                listener.exitKeySubstringExpr(self)
+
+        def accept(self, visitor: ParseTreeVisitor):
+            if hasattr(visitor, "visitKeySubstringExpr"):
+                return visitor.visitKeySubstringExpr(self)
             else:
                 return visitor.visitChildren(self)
 

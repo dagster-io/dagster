@@ -69,8 +69,8 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     def visitKeyExpr(self, ctx: AssetSelectionParser.KeyExprContext):
         return self.visitChildren(ctx)
 
-    # Visit a parse tree produced by AssetSelectionParser#KeySubsetExpr.
-    def visitKeySubsetExpr(self, ctx: AssetSelectionParser.KeySubsetExprContext):
+    # Visit a parse tree produced by AssetSelectionParser#KeySubstringExpr.
+    def visitKeySubstringExpr(self, ctx: AssetSelectionParser.KeySubstringExprContext):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by AssetSelectionParser#TagAttributeExpr.
