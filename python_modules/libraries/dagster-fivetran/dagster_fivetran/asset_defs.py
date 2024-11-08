@@ -427,7 +427,7 @@ class FivetranConnectionMetadata(
                 "connector_id": self.connector_id,
                 "io_manager_key": io_manager_key,
                 "storage_kind": self.service,
-                "connection_metadata": tuple(self),
+                "connection_metadata": self._asdict(),
             },
         )
 
@@ -445,7 +445,7 @@ def _build_fivetran_assets_from_metadata(
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
     storage_kind = cast(Optional[str], metadata.get("storage_kind"))
 
-    connection_metadata = FivetranConnectionMetadata(*metadata["connection_metadata"])
+    connection_metadata = FivetranConnectionMetadata(**metadata["connection_metadata"])
 
     return _build_fivetran_assets(
         connector_id=connector_id,
