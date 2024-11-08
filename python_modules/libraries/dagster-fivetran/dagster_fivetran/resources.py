@@ -20,6 +20,7 @@ from dagster import (
 )
 from dagster._annotations import experimental
 from dagster._config.pythonic_config import ConfigurableResource
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._record import record
@@ -681,6 +682,33 @@ class FivetranWorkspace(ConfigurableResource):
                 )
 
         return FivetranWorkspaceData.from_content_data(connectors + destinations)
+
+
+@experimental
+def load_fivetran_asset_specs(
+    workspace: FivetranWorkspace,
+    dagster_fivetran_translator: Type[DagsterFivetranTranslator] = DagsterFivetranTranslator,
+) -> Sequence[AssetSpec]:
+    """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
+
+    Args:
+        workspace (FivetranWorkspace): The Fivetran workspace to fetch assets from.
+        dagster_fivetran_translator (Type[DagsterFivetranTranslator]): The translator to use
+            to convert Fivetran content into AssetSpecs. Defaults to DagsterFivetranTranslator.
+
+    Returns:
+        List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
+    """
+    with workspace.process_config_and_initialize_cm() as initialized_workspace:
+        return check.is_list(
+            FivetranWorkspaceDefsLoader(
+                workspace=initialized_workspace,
+                translator_cls=dagster_fivetran_translator,
+            )
+            .build_defs()
+            .assets,
+            AssetSpec,
+        )
 
 
 @record
