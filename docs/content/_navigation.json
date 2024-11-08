@@ -1288,6 +1288,10 @@
               {
                 "title": "Validating data with Dagster Type factories",
                 "path": "/guides/dagster/dagster_type_factories"
+              },
+              {
+                "title": "Migrating from Spark Step Launchers to Dagster Pipes",
+                "path": "/guides/migrations/from-step-launchers-to-pipes#migrating-from-spark-step-launchers-to-dagster-pipes"
               }
             ]
           },
