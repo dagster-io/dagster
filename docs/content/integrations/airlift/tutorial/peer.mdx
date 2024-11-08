@@ -59,7 +59,13 @@ height={198}
 
 </p>
 
-If we kick off a run of the `rebuild_customers_list` DAG in Airflow, we should see the corresponding asset materialize in Dagster.
+Let's kick off a run of the `reubild_customers_list` DAG in Airflow.
+
+```bash
+airflow dags backfill rebuild_customers_list --start-date $(shell date +"%Y-%m-%d")
+```
+
+When this run has completed in Airflow, we should be able to navigate to the Dagster UI, and see that the Dagster has registered a materialization corresponding to that successful run.
 
 <p align="center">
 
@@ -72,7 +78,103 @@ height={198}
 
 </p>
 
+Run the following command to clean the Airflow and Dagster run history (we just do this so we can run the same example backfill in the future). Under the hood, this just deletes runs from Airflow and asset materializations from Dagster.
+
+```bash
+make clean
+```
+
 _Note: When the code location loads, Dagster will query the Airflow REST API in order to build a representation of your DAGs. In order for Dagster to reflect changes to your DAGs, you will need to reload your code location._
+
+## Asset checks as User Acceptance Tests
+
+Once you have peered your Airflow DAGs in Dagster, regardless of migration progress, you can begin to add asset checks to your Dagster code. In Dagster, Asset checks can be used to validate the quality of your data assets, and can provide additional observability and value on top of your Airflow DAG even before migration starts.
+
+Asset checks can both act as useful _user acceptance tests_ to ensure that any migration steps taken are successful, as well as _outlive_ the migration itself.
+
+For example, we're going to add an asset check to ensure that the final `customers` CSV output exists, and has a nonzero number of rows.
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/peer_with_check.py
+import os
+from pathlib import Path
+
+from dagster import AssetCheckResult, AssetCheckSeverity, AssetKey, Definitions, asset_check
+from dagster_airlift.core import (
+    AirflowBasicAuthBackend,
+    AirflowInstance,
+    build_defs_from_airflow_instance,
+)
+
+
+# Attach a check to the DAG representation asset, which will be executed by Dagster
+# any time the DAG is run in Airflow
+@asset_check(asset=AssetKey(["airflow_instance_one", "dag", "rebuild_customers_list"]))
+def validate_exported_csv() -> AssetCheckResult:
+    csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
+
+    if not csv_path.exists():
+        return AssetCheckResult(passed=False, description=f"Export CSV {csv_path} does not exist")
+
+    rows = len(csv_path.read_text().split("\n"))
+    if rows < 2:
+        return AssetCheckResult(
+            passed=False,
+            description=f"Export CSV {csv_path} is empty",
+            severity=AssetCheckSeverity.WARN,
+        )
+
+    return AssetCheckResult(
+        passed=True,
+        description=f"Export CSV {csv_path} exists",
+        metadata={"rows": rows},
+    )
+
+
+defs = Definitions.merge(
+    build_defs_from_airflow_instance(
+        airflow_instance=AirflowInstance(
+            # other backends available (e.g. MwaaSessionAuthBackend)
+            auth_backend=AirflowBasicAuthBackend(
+                webserver_url="http://localhost:8080",
+                username="admin",
+                password="admin",
+            ),
+            name="airflow_instance_one",
+        )
+    ),
+    Definitions(asset_checks=[validate_exported_csv]),
+)
+```
+
+Once we reload the code location, we'll see a tab `checks` indicating the presence of an asset check on our `rebuild_customers_list` asset.
+
+<Image
+alt="Asset Check on Peered Dag"
+src="/images/integrations/airlift/asset_check_peered_dag.png"
+width={822}
+height={178}
+/>
+
+Let's run the backfill again:
+
+```bash
+airflow dags backfill rebuild_customers_list --start-date $(shell date +"%Y-%m-%d")
+```
+
+And we'll see that the asset check executed successfully in Dagster (indicated by the green check mark).
+
+<Image
+alt="Asset Check Success!"
+src="/images/integrations/airlift/peer_check_success.png"
+width={822}
+height={178}
+/>
+
+Let's again wipe materializations and runs for tutorial purposes.
+
+```bash
+make clean
+```
 
 ## Next Steps
 

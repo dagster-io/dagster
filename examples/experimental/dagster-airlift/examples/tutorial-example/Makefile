@@ -12,6 +12,14 @@ export TUTORIAL_DBT_PROJECT_DIR := $(MAKEFILE_DIR)/tutorial_example/shared/dbt
 export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/tutorial_example/shared/dbt
 export DAGSTER_URL := http://localhost:3000
 
+# Detect OS and use appropriate date command
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+    TOMORROW_DATE := $(shell date -v+1d +"%Y-%m-%d")
+else
+    TOMORROW_DATE := $(shell date -d "+1 day" +"%Y-%m-%d")
+endif
+
 help:
 	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
@@ -43,6 +51,13 @@ dagster_run:
 
 backfill_today:
 	airflow dags backfill rebuild_customers_list --start-date $(shell date +"%Y-%m-%d")
+
+clean:
+	airflow db clean --yes --clean-before-timestamp $(TOMORROW_DATE)
+	dagster asset wipe --all --noprompt
+
+
+
 
 
 update_readme_snippets:
