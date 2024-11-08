@@ -947,8 +947,8 @@
             "path": "/integrations/airlift/reference"
           },
           {
-            "title": "Tutorial",
-            "path": "/integrations/airlift/tutorial"
+            "title": "DAG-level migration",
+            "path": "/integrations/airlift/full_dag"
           }
         ]
       },
