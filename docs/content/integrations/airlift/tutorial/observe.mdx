@@ -196,3 +196,7 @@ In order for partitioned assets to work out of the box with `dagster-airlift`, t
 
 - The asset can only be time-window partitioned. This means static, dynamic, and multi partitioned definitions will require custom functionality.
 - The partitioning scheme must match up with the [logical_date / execution_date](https://airflow.apache.org/docs/apache-airflow/stable/faq.html#what-does-execution-date-mean) of corresponding Airflow runs. That is, each logical_date should correspond \_exactly\_ to a partition in Dagster.
+
+## Next steps
+
+Next, it's time to begin migrating our Airflow DAG code to Dagster. Follow along with the Migrate step [here](/integrations/airlift/tutorial/migrate)

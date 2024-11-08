@@ -931,6 +931,10 @@
               {
                 "title": "Part 3: Observing assets",
                 "path": "/integrations/airlift/tutorial/observe"
+              },
+              {
+                "title": "Part 4: Migrating assets",
+                "path": "/integrations/airlift/tutorial/migrate"
               }
             ]
           },
