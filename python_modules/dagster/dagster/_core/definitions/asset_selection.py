@@ -14,6 +14,7 @@ from dagster._core.definitions.asset_key import (
     AssetKey,
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
+    CoercibleToAssetKeySubset,
     asset_keys_from_defs_and_coercibles,
     key_prefix_from_coercible,
 )
@@ -198,6 +199,28 @@ class AssetSelection(ABC):
         _asset_key_prefixes = [key_prefix_from_coercible(key_prefix) for key_prefix in key_prefixes]
         return KeyPrefixesAssetSelection(
             selected_key_prefixes=_asset_key_prefixes, include_sources=include_sources
+        )
+
+    @public
+    @staticmethod
+    def key_subsets(
+        *key_subsets: CoercibleToAssetKeySubset, include_sources: bool = False
+    ) -> "KeySubsetsAssetSelection":
+        """Returns a selection that includes assets that match any of the provided key subsets and all the asset checks that target them.
+
+        Args:
+            include_sources (bool): If True, then include source assets matching the key subset(s)
+                in the selection.
+
+        Examples:
+            .. code-block:: python
+
+              # match any asset key where the subsets are ["a", "b"] or ["a", "b", "c"]
+              AssetSelection.key_subsets(["a", "b"], ["a", "b", "c"])
+        """
+        _asset_key_subsets = [key_prefix_from_coercible(key_subset) for key_subset in key_subsets]
+        return KeySubsetsAssetSelection(
+            selected_key_subsets=_asset_key_subsets, include_sources=include_sources
         )
 
     @public
@@ -1016,6 +1039,37 @@ class KeyPrefixesAssetSelection(AssetSelection):
             return f"key_prefix:{key_prefix_strs[0]}"
         else:
             return f"key_prefix:({' or '.join(key_prefix_strs)})"
+
+
+@whitelist_for_serdes
+@record
+class KeySubsetsAssetSelection(AssetSelection):
+    selected_key_subsets: Sequence[Sequence[str]]
+    include_sources: bool
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        base_set = (
+            asset_graph.get_all_asset_keys()
+            if self.include_sources
+            else asset_graph.materializable_asset_keys
+        )
+        return {
+            key
+            for key in base_set
+            if any("".join(subset) in key.to_user_string() for subset in self.selected_key_subsets)
+        }
+
+    def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
+        return self
+
+    def __str__(self) -> str:
+        key_subset_strs = ["/".join(key_subset) for key_subset in self.selected_key_subsets]
+        if len(self.selected_key_subsets) == 1:
+            return f"key_subset:{key_subset_strs[0]}"
+        else:
+            return f"key_subset:({' or '.join(key_subset_strs)})"
 
 
 def _fetch_all_upstream(
