@@ -386,7 +386,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         queue=BuildkiteQueue.DOCKER,
     ),
     PackageSpec(
-        "examples/experimental/dagster-airlift/examples/perf-harness",
+        "examples/experimental/dagster-airlift/perf-harness",
         always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
@@ -394,7 +394,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
-        "examples/experimental/dagster-airlift/examples/kitchen-sink",
+        "examples/experimental/dagster-airlift/kitchen-sink",
         always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
