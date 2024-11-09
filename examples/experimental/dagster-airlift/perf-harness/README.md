@@ -18,7 +18,7 @@ Sanity check run
 perf-harness 1 1
 ```
 
-Then check `experimental/dagster-airlift/examples/perf-harness/perf_harness/shared`. You should see a file
+Then check `experimental/dagster-airlift/perf-harness/perf_harness/shared`. You should see a file
 `1_dags_1_tasks_perf_output.txt` with airlift timings.
 
 The first argument to `perf-harness` is the number of dags, the second is the number of tasks.

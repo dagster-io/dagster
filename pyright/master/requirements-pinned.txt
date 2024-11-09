@@ -420,7 +420,7 @@ pathable==0.4.3
 pathspec==0.12.1
 pathvalidate==3.2.1
 pendulum==2.1.2
--e examples/experimental/dagster-airlift/examples/perf-harness
+-e examples/experimental/dagster-airlift/perf-harness
 pexpect==4.9.0
 pillow==11.0.0
 pip==24.2
