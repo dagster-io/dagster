@@ -40,6 +40,7 @@ import datadog from './kindtag-images/tool-datadog-color.svg';
 import datahub from './kindtag-images/tool-datahub-color.svg';
 import dbt from './kindtag-images/tool-dbt-color.svg';
 import delta_lake from './kindtag-images/tool-deltalake-color.svg';
+import denodo from './kindtag-images/tool-denodo-color.svg';
 import discord from './kindtag-images/tool-discord-color.svg';
 import dlthub from './kindtag-images/tool-dlthub-color.svg';
 import docker from './kindtag-images/tool-docker-color.svg';
@@ -631,6 +632,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   deltalake: {
     icon: delta_lake,
     content: 'Delta Lake',
+  },
+  denodo: {
+    icon: denodo,
+    content: 'Denodo',
   },
   parquet: {
     icon: parquet,
