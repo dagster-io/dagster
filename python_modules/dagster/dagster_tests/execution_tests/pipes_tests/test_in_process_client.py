@@ -3,6 +3,7 @@ from dagster import (
     AssetCheckResult,
     AssetCheckSpec,
     AssetExecutionContext,
+    AssetKey,
     AssetSpec,
     Definitions,
     ExecuteInProcessResult,
@@ -12,6 +13,7 @@ from dagster import (
     asset_check,
     instance_for_test,
     job,
+    load_assets_from_current_module,
     multi_asset,
     op,
 )
@@ -124,6 +126,84 @@ def test_get_materialize_result() -> None:
     assert mat_events[0].materialization.metadata["some_key"].value == "some_value"
     assert mat_events[0].materialization.metadata["extra_metadata"].value == "my_value"
     assert called["yes"]
+
+
+@asset(
+    key=["key0"],
+    check_specs=[
+        AssetCheckSpec(name="check_one", asset="key0"),
+    ],
+)
+def key_will_contain_slashes_implicit(
+    context: AssetExecutionContext, inprocess_client: InProcessPipesClient
+):
+    def _impl(context: PipesContext):
+        context.report_asset_materialization(
+            metadata={"some_key": "some_value"},
+        )
+
+        context.report_asset_check("check_one", passed=True, metadata={"key_one": "value_one"})
+
+    mat_result = inprocess_client.run(context=context, fn=_impl).get_materialize_result()
+
+    check_result_one = mat_result.check_result_named("check_one")
+    assert check_result_one.passed is True
+    assert check_result_one.metadata["key_one"].value == "value_one"
+
+    return mat_result
+
+
+def test_asset_key_with_slashes_implicit() -> None:
+    all_assets = load_assets_from_current_module(key_prefix="foo/bar")
+    an_asset_with_slash = next(a for a in all_assets if a.key == AssetKey(["foo/bar", "key0"]))  # type: ignore
+
+    result = execute_asset_through_def(
+        an_asset_with_slash, resources={"inprocess_client": InProcessPipesClient()}
+    )
+    assert result.success
+    mat_events = result.get_asset_materialization_events()
+    assert len(mat_events) == 1
+    assert mat_events[0].materialization.metadata["some_key"].value == "some_value"
+
+
+@asset(
+    key=["key1"],
+    check_specs=[
+        AssetCheckSpec(name="check_one", asset="key1"),
+    ],
+)
+def key_will_contain_slashes_explicit(
+    context: AssetExecutionContext, inprocess_client: InProcessPipesClient
+):
+    def _impl(context: PipesContext):
+        context.report_asset_materialization(
+            metadata={"some_key": "some_value"}, asset_key=r"foo\/bar/key1"
+        )
+
+        context.report_asset_check(
+            "check_one", passed=True, asset_key=r"foo\/bar/key1", metadata={"key_one": "value_one"}
+        )
+
+    mat_result = inprocess_client.run(context=context, fn=_impl).get_materialize_result()
+
+    check_result_one = mat_result.check_result_named("check_one")
+    assert check_result_one.passed is True
+    assert check_result_one.metadata["key_one"].value == "value_one"
+
+    return mat_result
+
+
+def test_asset_key_with_slashes_explicit() -> None:
+    all_assets = load_assets_from_current_module(key_prefix="foo/bar")
+    an_asset_with_slash = next(a for a in all_assets if a.key == AssetKey(["foo/bar", "key1"]))  # type: ignore
+
+    result = execute_asset_through_def(
+        an_asset_with_slash, resources={"inprocess_client": InProcessPipesClient()}
+    )
+    assert result.success
+    mat_events = result.get_asset_materialization_events()
+    assert len(mat_events) == 1
+    assert mat_events[0].materialization.metadata["some_key"].value == "some_value"
 
 
 def test_get_double_report_error() -> None:
