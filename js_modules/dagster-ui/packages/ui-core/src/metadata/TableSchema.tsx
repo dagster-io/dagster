@@ -26,6 +26,7 @@ import {
   UrlMetadataEntry,
 } from '../graphql/types';
 import {Description} from '../pipelines/Description';
+import {buildTagString} from '../ui/tagAsString';
 
 type ITableSchema = TableSchemaFragment;
 
@@ -121,6 +122,13 @@ export const TableSchema = ({
             <tr key={column.name}>
               <td>
                 <Mono>{column.name}</Mono>
+                {column.tags && (
+                  <Box flex={{gap: 4, wrap: 'wrap'}} margin={{top: 4}}>
+                    {column.tags.map((tag, i) => (
+                      <Tag key={i}>{buildTagString(tag)}</Tag>
+                    ))}
+                  </Box>
+                )}
               </td>
               <td>
                 <Box flex={{wrap: 'wrap', gap: 4, alignItems: 'center'}}>

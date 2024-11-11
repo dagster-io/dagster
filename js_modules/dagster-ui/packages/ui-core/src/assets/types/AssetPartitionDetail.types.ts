@@ -160,6 +160,7 @@ export type AssetPartitionDetailQuery = {
                       name: string;
                       description: string | null;
                       type: string;
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       constraints: {
                         __typename: 'TableColumnConstraints';
                         nullable: boolean;
@@ -182,6 +183,7 @@ export type AssetPartitionDetailQuery = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -357,6 +359,7 @@ export type AssetPartitionDetailQuery = {
                       name: string;
                       description: string | null;
                       type: string;
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       constraints: {
                         __typename: 'TableColumnConstraints';
                         nullable: boolean;
@@ -379,6 +382,7 @@ export type AssetPartitionDetailQuery = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -443,6 +447,6 @@ export type AssetPartitionStaleQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetPartitionDetailQueryVersion = '28870c41f2273a0902fce19339a88df2c306e167d833832f21b4945e26035d10';
+export const AssetPartitionDetailQueryVersion = '7f951ecf11bbeaa37e3444caf175a92feae9cb16dfd09bb8ad46f600f3a7711c';
 
 export const AssetPartitionStaleQueryVersion = '4215f4014e9d7592142e1775c4b07377703e913389396f9ca14dc6bb779ce764';

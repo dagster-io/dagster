@@ -113,6 +113,7 @@ export type SidebarAssetFragment = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -135,6 +136,7 @@ export type SidebarAssetFragment = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -877,6 +879,7 @@ export type SidebarAssetFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -899,6 +902,7 @@ export type SidebarAssetFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -2157,6 +2161,7 @@ export type SidebarAssetFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -2179,6 +2184,7 @@ export type SidebarAssetFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -3437,6 +3443,7 @@ export type SidebarAssetFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -3459,6 +3466,7 @@ export type SidebarAssetFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -4708,6 +4716,7 @@ export type SidebarAssetFragment = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -4730,6 +4739,7 @@ export type SidebarAssetFragment = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -5994,6 +6004,7 @@ export type SidebarAssetFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -6016,6 +6027,7 @@ export type SidebarAssetFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -7274,6 +7286,7 @@ export type SidebarAssetFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -7296,6 +7309,7 @@ export type SidebarAssetFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -8554,6 +8568,7 @@ export type SidebarAssetFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -8576,6 +8591,7 @@ export type SidebarAssetFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -9825,6 +9841,7 @@ export type SidebarAssetFragment = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -9847,6 +9864,7 @@ export type SidebarAssetFragment = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -11111,6 +11129,7 @@ export type SidebarAssetFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -11133,6 +11152,7 @@ export type SidebarAssetFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -12391,6 +12411,7 @@ export type SidebarAssetFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -12413,6 +12434,7 @@ export type SidebarAssetFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -13671,6 +13693,7 @@ export type SidebarAssetFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -13693,6 +13716,7 @@ export type SidebarAssetFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -14942,6 +14966,7 @@ export type SidebarAssetFragment = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -14964,6 +14989,7 @@ export type SidebarAssetFragment = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -16224,6 +16250,7 @@ export type SidebarAssetQuery = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -16246,6 +16273,7 @@ export type SidebarAssetQuery = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -16997,6 +17025,11 @@ export type SidebarAssetQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -17022,6 +17055,11 @@ export type SidebarAssetQuery = {
                               name: string;
                               description: string | null;
                               type: string;
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                               constraints: {
                                 __typename: 'TableColumnConstraints';
                                 nullable: boolean;
@@ -18283,6 +18321,11 @@ export type SidebarAssetQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -18308,6 +18351,11 @@ export type SidebarAssetQuery = {
                               name: string;
                               description: string | null;
                               type: string;
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                               constraints: {
                                 __typename: 'TableColumnConstraints';
                                 nullable: boolean;
@@ -19569,6 +19617,11 @@ export type SidebarAssetQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -19594,6 +19647,11 @@ export type SidebarAssetQuery = {
                               name: string;
                               description: string | null;
                               type: string;
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                               constraints: {
                                 __typename: 'TableColumnConstraints';
                                 nullable: boolean;
@@ -20846,6 +20904,7 @@ export type SidebarAssetQuery = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -20868,6 +20927,7 @@ export type SidebarAssetQuery = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -22137,6 +22197,11 @@ export type SidebarAssetQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -22162,6 +22227,11 @@ export type SidebarAssetQuery = {
                               name: string;
                               description: string | null;
                               type: string;
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                               constraints: {
                                 __typename: 'TableColumnConstraints';
                                 nullable: boolean;
@@ -23423,6 +23493,11 @@ export type SidebarAssetQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -23448,6 +23523,11 @@ export type SidebarAssetQuery = {
                               name: string;
                               description: string | null;
                               type: string;
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                               constraints: {
                                 __typename: 'TableColumnConstraints';
                                 nullable: boolean;
@@ -24709,6 +24789,11 @@ export type SidebarAssetQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -24734,6 +24819,11 @@ export type SidebarAssetQuery = {
                               name: string;
                               description: string | null;
                               type: string;
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                               constraints: {
                                 __typename: 'TableColumnConstraints';
                                 nullable: boolean;
@@ -25986,6 +26076,7 @@ export type SidebarAssetQuery = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -26008,6 +26099,7 @@ export type SidebarAssetQuery = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -27277,6 +27369,11 @@ export type SidebarAssetQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -27302,6 +27399,11 @@ export type SidebarAssetQuery = {
                               name: string;
                               description: string | null;
                               type: string;
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                               constraints: {
                                 __typename: 'TableColumnConstraints';
                                 nullable: boolean;
@@ -28563,6 +28665,11 @@ export type SidebarAssetQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -28588,6 +28695,11 @@ export type SidebarAssetQuery = {
                               name: string;
                               description: string | null;
                               type: string;
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                               constraints: {
                                 __typename: 'TableColumnConstraints';
                                 nullable: boolean;
@@ -29849,6 +29961,11 @@ export type SidebarAssetQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -29874,6 +29991,11 @@ export type SidebarAssetQuery = {
                               name: string;
                               description: string | null;
                               type: string;
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                               constraints: {
                                 __typename: 'TableColumnConstraints';
                                 nullable: boolean;
@@ -31126,6 +31248,7 @@ export type SidebarAssetQuery = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -31148,6 +31271,7 @@ export type SidebarAssetQuery = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -32287,4 +32411,4 @@ export type SidebarAssetQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const SidebarAssetQueryVersion = 'e7a87f946b59bba70023bcdd280b18b94c9e227692b6495568e09065ab7a8249';
+export const SidebarAssetQueryVersion = '93a3d84b13e1be3e32ea74d05e8d77b37e4bab1dd09573f2c2765cf50d9096e2';
