@@ -21,6 +21,8 @@ from typing import (
     overload,
 )
 
+from dagster._check.record import is_record
+
 TypeOrTupleOfTypes = Union[type, Tuple[type, ...]]
 Numeric = Union[int, float]
 T = TypeVar("T")
@@ -28,6 +30,7 @@ U = TypeVar("U")
 V = TypeVar("V")
 
 TTypeOrTupleOfTTypes = Union[Type[T], Tuple[Type[T], ...]]
+
 
 # This module contains runtime type-checking code used throughout Dagster. It is divided into three
 # sections:
@@ -1106,11 +1109,38 @@ def sequence_param(
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Sequence[T]:
+    """Ensures argument obj is a Sequence.
+
+    Despite technically being a sequences, str and bytes are not allowed as they are
+    almost always unintended and cause bugs.
+
+    If the of_type argument is provided, also ensures that sequence items conform to the
+    type specified by of_type.
+    """
     ttype = type(obj)
     # isinstance check against abc is costly, so try to handle common cases with cheapest check possible
-    if not (ttype is list or ttype is tuple or isinstance(obj, collections.abc.Sequence)):
+    if not (
+        ttype is list
+        or ttype is tuple
+        # even though str/bytes are technically sequences
+        # its likely not desired so error unless allow_str is set
+        or (
+            isinstance(obj, collections.abc.Sequence)
+            and (ttype not in (str, bytes))
+            and not is_record(obj)
+        )
+    ):
+        if ttype in (str, bytes):
+            msg = f"{ttype.__name__} is a disallowed Sequence type due to its likeliness to cause bugs."
+            additional_message = (
+                msg if additional_message is None else f"{msg} {additional_message}"
+            )
+
         raise _param_type_mismatch_exception(
-            obj, (collections.abc.Sequence,), param_name, additional_message
+            obj,
+            collections.abc.Sequence,
+            param_name,
+            additional_message,
         )
 
     if not of_type:
@@ -1125,13 +1155,38 @@ def opt_sequence_param(
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Sequence[T]:
+    """Ensures argument obj is a Sequence or None, returning an empty list when None.
+
+    Despite technically being a sequences, str and bytes are not allowed as they are
+    almost always unintended and cause bugs.
+
+    If the of_type argument is provided, also ensures that sequence items conform to the
+    type specified by of_type.
+    """
     ttype = type(obj)
     if obj is None:
         return []
     # isinstance check against abc is costly, so try to handle common cases with cheapest check possible
-    elif not (ttype is list or ttype is tuple or isinstance(obj, collections.abc.Sequence)):
+    elif not (
+        ttype is list
+        or ttype is tuple
+        or (
+            isinstance(obj, collections.abc.Sequence)
+            and ttype not in (bytes, str)
+            and not is_record(obj)
+        )
+    ):
+        if ttype in (str, bytes):
+            msg = f"{ttype.__name__} is a disallowed Sequence type due to its likeliness to cause bugs."
+            additional_message = (
+                msg if additional_message is None else f"{msg} {additional_message}"
+            )
+
         raise _param_type_mismatch_exception(
-            obj, (collections.abc.Sequence,), param_name, additional_message
+            obj,
+            collections.abc.Sequence,
+            param_name,
+            additional_message,
         )
     elif of_type is not None:
         return _check_iterable_items(obj, of_type, "sequence")
@@ -1182,9 +1237,17 @@ def iterable_param(
 ) -> Iterable[T]:
     ttype = type(obj)
     # isinstance check against abc is costly, so try to handle common cases with cheapest check possible
-    if not (ttype is list or ttype is tuple or isinstance(obj, collections.abc.Iterable)):
+    if not (
+        ttype is list
+        or ttype is tuple
+        or (
+            isinstance(obj, collections.abc.Iterable)
+            and ttype not in (str, bytes)
+            and not is_record(obj)
+        )
+    ):
         raise _param_type_mismatch_exception(
-            obj, (collections.abc.Iterable,), param_name, additional_message
+            obj, collections.abc.Iterable, param_name, additional_message
         )
 
     if not of_type:
@@ -1520,7 +1583,7 @@ def is_tuple(
     `of_shape` defines a fixed-length tuple type-- each element must match the corresponding element
     in `of_shape`. Passing both `of_type` and `of_shape` will raise an error.
     """
-    if not isinstance(obj, tuple):
+    if not isinstance(obj, tuple) or is_record(obj):
         raise _type_mismatch_error(obj, tuple, additional_message)
 
     if of_type is None and of_shape is None:
@@ -1577,7 +1640,7 @@ def tuple_elem(
 
     value = ddict.get(key)
 
-    if isinstance(value, tuple):
+    if isinstance(value, tuple) and not is_record(value):
         if not of_type:
             return value
 
@@ -1601,7 +1664,7 @@ def opt_tuple_elem(
     if value is None:
         return tuple()
 
-    if isinstance(value, tuple):
+    if isinstance(value, tuple) and not is_record(value):
         if not of_type:
             return value
 
