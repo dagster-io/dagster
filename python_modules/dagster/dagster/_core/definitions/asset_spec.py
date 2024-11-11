@@ -38,6 +38,7 @@ from dagster._core.storage.tags import KIND_PREFIX
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.internal_init import IHasInternalInit
 from dagster._utils.tags import normalize_tags
+from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
@@ -308,7 +309,6 @@ def replace_attributes(
     owners: Optional[Sequence[str]] = ...,
     tags: Optional[Mapping[str, str]] = ...,
     kinds: Optional[Set[str]] = ...,
-    auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
     partitions_def: Optional[PartitionsDefinition] = ...,
 ) -> "AssetSpec":
     """Returns a new AssetSpec with the specified attributes replaced."""
@@ -317,26 +317,26 @@ def replace_attributes(
         for tag_key, tag_value in spec.tags.items()
         if not tag_key.startswith(KIND_PREFIX)
     }
-    return spec.dagster_internal_init(
-        key=key if key is not ... else spec.key,
-        deps=deps if deps is not ... else spec.deps,
-        description=description if description is not ... else spec.description,
-        metadata=metadata if metadata is not ... else spec.metadata,
-        skippable=skippable if skippable is not ... else spec.skippable,
-        group_name=group_name if group_name is not ... else spec.group_name,
-        code_version=code_version if code_version is not ... else spec.code_version,
-        freshness_policy=freshness_policy if freshness_policy is not ... else spec.freshness_policy,
-        automation_condition=automation_condition
-        if automation_condition is not ...
-        else spec.automation_condition,
-        owners=owners if owners is not ... else spec.owners,
-        tags=tags if tags is not ... else current_tags_without_kinds,
-        kinds=kinds if kinds is not ... else spec.kinds,
-        auto_materialize_policy=auto_materialize_policy
-        if auto_materialize_policy is not ...
-        else spec.auto_materialize_policy,
-        partitions_def=partitions_def if partitions_def is not ... else spec.partitions_def,
-    )
+    with disable_dagster_warnings():
+        return spec.dagster_internal_init(
+            key=key if key is not ... else spec.key,
+            deps=deps if deps is not ... else spec.deps,
+            description=description if description is not ... else spec.description,
+            metadata=metadata if metadata is not ... else spec.metadata,
+            skippable=skippable if skippable is not ... else spec.skippable,
+            group_name=group_name if group_name is not ... else spec.group_name,
+            code_version=code_version if code_version is not ... else spec.code_version,
+            freshness_policy=freshness_policy
+            if freshness_policy is not ...
+            else spec.freshness_policy,
+            automation_condition=automation_condition
+            if automation_condition is not ...
+            else spec.automation_condition,
+            owners=owners if owners is not ... else spec.owners,
+            tags=tags if tags is not ... else current_tags_without_kinds,
+            kinds=kinds if kinds is not ... else spec.kinds,
+            partitions_def=partitions_def if partitions_def is not ... else spec.partitions_def,
+        )
 
 
 def merge_attributes(
@@ -354,19 +354,20 @@ def merge_attributes(
         for tag_key, tag_value in spec.tags.items()
         if not tag_key.startswith(KIND_PREFIX)
     }
-    return spec.dagster_internal_init(
-        key=spec.key,
-        deps=[*spec.deps, *(deps if deps is not ... else [])],
-        description=spec.description,
-        metadata={**spec.metadata, **(metadata if metadata is not ... else {})},
-        skippable=spec.skippable,
-        group_name=spec.group_name,
-        code_version=spec.code_version,
-        freshness_policy=spec.freshness_policy,
-        automation_condition=spec.automation_condition,
-        owners=[*spec.owners, *(owners if owners is not ... else [])],
-        tags={**current_tags_without_kinds, **(tags if tags is not ... else {})},
-        kinds={*spec.kinds, *(kinds if kinds is not ... else {})},
-        auto_materialize_policy=spec.auto_materialize_policy,
-        partitions_def=spec.partitions_def,
-    )
+    with disable_dagster_warnings():
+        return spec.dagster_internal_init(
+            key=spec.key,
+            deps=[*spec.deps, *(deps if deps is not ... else [])],
+            description=spec.description,
+            metadata={**spec.metadata, **(metadata if metadata is not ... else {})},
+            skippable=spec.skippable,
+            group_name=spec.group_name,
+            code_version=spec.code_version,
+            freshness_policy=spec.freshness_policy,
+            automation_condition=spec.automation_condition,
+            owners=[*spec.owners, *(owners if owners is not ... else [])],
+            tags={**current_tags_without_kinds, **(tags if tags is not ... else {})},
+            kinds={*spec.kinds, *(kinds if kinds is not ... else {})},
+            auto_materialize_policy=spec.auto_materialize_policy,
+            partitions_def=spec.partitions_def,
+        )
