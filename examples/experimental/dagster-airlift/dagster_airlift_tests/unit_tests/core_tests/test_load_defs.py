@@ -34,6 +34,7 @@ from dagster_airlift.core import (
 from dagster_airlift.core.load_defs import (
     build_full_automapped_dags_from_airflow_instance,
     enrich_airflow_mapped_assets,
+    load_airflow_dag_asset_specs,
 )
 from dagster_airlift.core.multiple_tasks import assets_with_multiple_task_mappings
 from dagster_airlift.core.serialization.compute import (
@@ -779,3 +780,27 @@ def test_enrich() -> None:
     # Asset metadata properties have been glommed onto the asset
     spec = next(iter(assets_def.specs))
     assert spec.metadata["Dag ID"] == "dag"
+
+
+def test_load_dags() -> None:
+    dag_assets = load_airflow_dag_asset_specs(
+        airflow_instance=make_instance({"dag": ["task"]}),
+    )
+    assert len(dag_assets) == 1
+    dag_asset = next(iter(dag_assets))
+    assert dag_asset.key == make_default_dag_asset_key("test_instance", "dag")
+
+
+def test_load_dags_upstream() -> None:
+    upstream_task_spec = AssetSpec(
+        key="a", metadata=metadata_for_task_mapping(task_id="task", dag_id="dag")
+    )
+    dag_assets = load_airflow_dag_asset_specs(
+        airflow_instance=make_instance({"dag": ["task"]}),
+        mapped_assets=[upstream_task_spec],
+    )
+    assert len(dag_assets) == 1
+    dag_asset_spec = next(iter(dag_assets))
+    assert dag_asset_spec.key == make_default_dag_asset_key("test_instance", "dag")
+    assert len(list(dag_asset_spec.deps)) == 1
+    assert next(iter(dag_asset_spec.deps)).asset_key == AssetKey("a")
