@@ -23,6 +23,7 @@ export type AssetChecksQuery = {
                 __typename: 'AssetCheck';
                 name: string;
                 canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+                jobNames: Array<string>;
                 description: string | null;
                 executionForLatestMaterialization: {
                   __typename: 'AssetCheckExecution';
@@ -155,6 +156,11 @@ export type AssetChecksQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -180,6 +186,11 @@ export type AssetChecksQuery = {
                               name: string;
                               description: string | null;
                               type: string;
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                               constraints: {
                                 __typename: 'TableColumnConstraints';
                                 nullable: boolean;
@@ -227,4 +238,4 @@ export type AssetChecksQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetChecksQueryVersion = '10c43c7b4730e25272f7cbdd61a86a03226f47faa4fee5ed8b1cea6ce5b7f68d';
+export const AssetChecksQueryVersion = 'ed071f864343935794bcbd3986de1b466c73783303bc45a7a1e3506b2fa89d7b';

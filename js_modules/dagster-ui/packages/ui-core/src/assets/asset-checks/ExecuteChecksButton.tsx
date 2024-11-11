@@ -22,7 +22,7 @@ export const ExecuteChecksButton = ({
   label?: string;
   icon?: boolean;
 }) => {
-  const {assetKey, jobNames, repository} = assetNode;
+  const {assetKey, jobNames: assetJobNames, repository} = assetNode;
   const [launching, setLaunching] = useState(false);
   const {permissions, disabledReasons} = usePermissionsForLocation(repository.location.name);
 
@@ -63,8 +63,17 @@ export const ExecuteChecksButton = ({
     );
   }
 
-  const jobName = jobNames[0];
-  if (!jobName) {
+  const commonCheckJobNames = checks.reduce((commonJobNames, check) => {
+    return commonJobNames.filter((name: string) => check.jobNames.includes(name));
+  }, checks[0]?.jobNames || []);
+
+  // Ideally all the checks have a common job name, but sub 1.5.10 user code versions
+  // do not report job names for checks so fallback to the original behavior that was
+  // here of using the first job name of the asset.
+  const resolvedJobName =
+    commonCheckJobNames.length > 0 ? commonCheckJobNames[0] : assetJobNames[0];
+
+  if (!resolvedJobName) {
     return (
       <Tooltip content="No jobs were found to execute the selected checks">
         <Button icon={iconEl} disabled>
@@ -80,7 +89,7 @@ export const ExecuteChecksButton = ({
       executionMetadata: {},
       runConfigData: '{}',
       selector: {
-        jobName,
+        jobName: resolvedJobName,
         repositoryLocationName: repository.location.name,
         repositoryName: repository.name,
         assetSelection: [],
@@ -106,6 +115,7 @@ export const EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT = gql`
   fragment ExecuteChecksButtonCheckFragment on AssetCheck {
     name
     canExecuteIndividually
+    jobNames
   }
 `;
 

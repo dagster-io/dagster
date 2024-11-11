@@ -155,6 +155,7 @@ export type LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -177,6 +178,7 @@ export type LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -332,6 +334,7 @@ export type LogsScrollingTableMessageFragment_EngineEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -354,6 +357,7 @@ export type LogsScrollingTableMessageFragment_EngineEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -514,6 +518,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -536,6 +541,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -680,6 +686,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -702,6 +709,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -838,6 +846,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -860,6 +869,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -993,6 +1003,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -1015,6 +1026,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -1207,6 +1219,7 @@ export type LogsScrollingTableMessageFragment_HandledOutputEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -1229,6 +1242,7 @@ export type LogsScrollingTableMessageFragment_HandledOutputEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -1404,6 +1418,7 @@ export type LogsScrollingTableMessageFragment_LoadedInputEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -1426,6 +1441,7 @@ export type LogsScrollingTableMessageFragment_LoadedInputEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -1583,6 +1599,7 @@ export type LogsScrollingTableMessageFragment_MaterializationEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -1605,6 +1622,7 @@ export type LogsScrollingTableMessageFragment_MaterializationEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -1746,6 +1764,7 @@ export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -1768,6 +1787,7 @@ export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -1903,6 +1923,7 @@ export type LogsScrollingTableMessageFragment_ObservationEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -1925,6 +1946,7 @@ export type LogsScrollingTableMessageFragment_ObservationEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -2062,6 +2084,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -2084,6 +2107,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -2230,6 +2254,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitStartedEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -2252,6 +2277,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitStartedEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -2388,6 +2414,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitSuccessEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -2410,6 +2437,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitSuccessEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -2644,6 +2672,7 @@ export type LogsScrollingTableMessageFragment_StepExpectationResultEvent = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -2666,6 +2695,7 @@ export type LogsScrollingTableMessageFragment_StepExpectationResultEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -2803,6 +2833,7 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartedEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -2825,6 +2856,7 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartedEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -2961,6 +2993,7 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartingEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -2983,6 +3016,7 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartingEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;

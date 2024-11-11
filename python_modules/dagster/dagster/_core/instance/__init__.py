@@ -2329,10 +2329,10 @@ class DagsterInstance(DynamicPartitionsStore):
 
         Args:
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
-            partition_key (Sequence[str]): Partition key to delete.
+            partition_key (str): Partition key to delete.
         """
         check.str_param(partitions_def_name, "partitions_def_name")
-        check.sequence_param(partition_key, "partition_key", of_type=str)
+        check.str_param(partition_key, "partition_key")
         self._event_storage.delete_dynamic_partition(partitions_def_name, partition_key)
 
     @public
