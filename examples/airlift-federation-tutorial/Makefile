@@ -35,7 +35,7 @@ airflow_setup: wipe
 	mkdir -p $$DAGSTER_HOME
 	chmod +x $(MAKEFILE_DIR)/scripts/airflow_setup.sh
 	$(MAKEFILE_DIR)/scripts/airflow_setup.sh $(MAKEFILE_DIR)/airlift_federation_tutorial/upstream_airflow_dags $(UPSTREAM_AIRFLOW_HOME) 8081
-	$(MAKEFILE_DIR)/scripts/airflow_setup.sh $(MAKEFILE_DIR)/airlift_federation_tutorial/upstream_airflow_dags $(DOWNSTREAM_AIRFLOW_HOME) 8082
+	$(MAKEFILE_DIR)/scripts/airflow_setup.sh $(MAKEFILE_DIR)/airlift_federation_tutorial/downstream_airflow_dags $(DOWNSTREAM_AIRFLOW_HOME) 8082
 
 upstream_airflow_run:
 	AIRFLOW_HOME=$(UPSTREAM_AIRFLOW_HOME) airflow standalone
