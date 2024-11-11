@@ -13,6 +13,9 @@ import requests
 from dagster._core.test_utils import environ
 from dagster._time import get_current_timestamp
 
+from dagster_airlift.core.airflow_instance import AirflowInstance
+from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
+
 
 ####################################################################################################
 # AIRFLOW SETUP FIXTURES
@@ -21,8 +24,15 @@ from dagster._time import get_current_timestamp
 ####################################################################################################
 def _airflow_is_ready(port) -> bool:
     try:
-        response = requests.get(f"http://localhost:{port}")
-        return response.status_code == 200
+        af_instance = AirflowInstance(
+            auth_backend=AirflowBasicAuthBackend(
+                webserver_url=f"http://localhost:{port}",
+                username="admin",
+                password="admin",
+            ),
+            name="test",
+        )
+        return len(af_instance.list_dags()) > 0
     except:
         return False
 
@@ -105,9 +115,9 @@ def airflow_instance_fixture(setup: None) -> Generator[subprocess.Popen, None, N
 # Sets up the dagster environment for testing. Running at localhost:3333.
 # Callsites are expected to provide implementations for dagster_defs_path fixture.
 ####################################################################################################
-def _dagster_is_ready() -> bool:
+def _dagster_is_ready(port: int) -> bool:
     try:
-        response = requests.get("http://localhost:3333")
+        response = requests.get(f"http://localhost:{port}")
         return response.status_code == 200
     except:
         return False
@@ -141,7 +151,9 @@ def setup_dagster(
 
 
 @contextmanager
-def stand_up_dagster(dagster_dev_cmd: List[str]) -> Generator[subprocess.Popen, None, None]:
+def stand_up_dagster(
+    dagster_dev_cmd: List[str], port: int = 3333
+) -> Generator[subprocess.Popen, None, None]:
     """Stands up a dagster instance using the dagster dev CLI. dagster_defs_path must be provided
     by a fixture included in the callsite.
     """
@@ -158,7 +170,7 @@ def stand_up_dagster(dagster_dev_cmd: List[str]) -> Generator[subprocess.Popen, 
         dagster_ready = False
         initial_time = get_current_timestamp()
         while get_current_timestamp() - initial_time < 60:
-            if _dagster_is_ready():
+            if _dagster_is_ready(port):
                 dagster_ready = True
                 break
             time.sleep(1)
