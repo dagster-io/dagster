@@ -781,6 +781,7 @@ export type AssetViewDefinitionQuery = {
                       name: string;
                       description: string | null;
                       type: string;
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       constraints: {
                         __typename: 'TableColumnConstraints';
                         nullable: boolean;
@@ -803,6 +804,7 @@ export type AssetViewDefinitionQuery = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -972,6 +974,11 @@ export type AssetViewDefinitionQuery = {
                                   name: string;
                                   description: string | null;
                                   type: string;
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                   constraints: {
                                     __typename: 'TableColumnConstraints';
                                     nullable: boolean;
@@ -997,6 +1004,11 @@ export type AssetViewDefinitionQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -2262,6 +2274,11 @@ export type AssetViewDefinitionQuery = {
                                   name: string;
                                   description: string | null;
                                   type: string;
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                   constraints: {
                                     __typename: 'TableColumnConstraints';
                                     nullable: boolean;
@@ -2287,6 +2304,11 @@ export type AssetViewDefinitionQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -3552,6 +3574,11 @@ export type AssetViewDefinitionQuery = {
                                   name: string;
                                   description: string | null;
                                   type: string;
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                   constraints: {
                                     __typename: 'TableColumnConstraints';
                                     nullable: boolean;
@@ -3577,6 +3604,11 @@ export type AssetViewDefinitionQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -4829,6 +4861,7 @@ export type AssetViewDefinitionQuery = {
                             name: string;
                             description: string | null;
                             type: string;
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                             constraints: {
                               __typename: 'TableColumnConstraints';
                               nullable: boolean;
@@ -4854,6 +4887,7 @@ export type AssetViewDefinitionQuery = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -6127,6 +6161,11 @@ export type AssetViewDefinitionQuery = {
                                   name: string;
                                   description: string | null;
                                   type: string;
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                   constraints: {
                                     __typename: 'TableColumnConstraints';
                                     nullable: boolean;
@@ -6152,6 +6191,11 @@ export type AssetViewDefinitionQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -7417,6 +7461,11 @@ export type AssetViewDefinitionQuery = {
                                   name: string;
                                   description: string | null;
                                   type: string;
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                   constraints: {
                                     __typename: 'TableColumnConstraints';
                                     nullable: boolean;
@@ -7442,6 +7491,11 @@ export type AssetViewDefinitionQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -8707,6 +8761,11 @@ export type AssetViewDefinitionQuery = {
                                   name: string;
                                   description: string | null;
                                   type: string;
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                   constraints: {
                                     __typename: 'TableColumnConstraints';
                                     nullable: boolean;
@@ -8732,6 +8791,11 @@ export type AssetViewDefinitionQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -9984,6 +10048,7 @@ export type AssetViewDefinitionQuery = {
                             name: string;
                             description: string | null;
                             type: string;
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                             constraints: {
                               __typename: 'TableColumnConstraints';
                               nullable: boolean;
@@ -10009,6 +10074,7 @@ export type AssetViewDefinitionQuery = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -11282,6 +11348,11 @@ export type AssetViewDefinitionQuery = {
                                   name: string;
                                   description: string | null;
                                   type: string;
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                   constraints: {
                                     __typename: 'TableColumnConstraints';
                                     nullable: boolean;
@@ -11307,6 +11378,11 @@ export type AssetViewDefinitionQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -12572,6 +12648,11 @@ export type AssetViewDefinitionQuery = {
                                   name: string;
                                   description: string | null;
                                   type: string;
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                   constraints: {
                                     __typename: 'TableColumnConstraints';
                                     nullable: boolean;
@@ -12597,6 +12678,11 @@ export type AssetViewDefinitionQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -13862,6 +13948,11 @@ export type AssetViewDefinitionQuery = {
                                   name: string;
                                   description: string | null;
                                   type: string;
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                   constraints: {
                                     __typename: 'TableColumnConstraints';
                                     nullable: boolean;
@@ -13887,6 +13978,11 @@ export type AssetViewDefinitionQuery = {
                                 name: string;
                                 description: string | null;
                                 type: string;
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                                 constraints: {
                                   __typename: 'TableColumnConstraints';
                                   nullable: boolean;
@@ -15139,6 +15235,7 @@ export type AssetViewDefinitionQuery = {
                             name: string;
                             description: string | null;
                             type: string;
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                             constraints: {
                               __typename: 'TableColumnConstraints';
                               nullable: boolean;
@@ -15164,6 +15261,7 @@ export type AssetViewDefinitionQuery = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -17052,6 +17150,7 @@ export type AssetViewDefinitionNodeFragment = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -17074,6 +17173,7 @@ export type AssetViewDefinitionNodeFragment = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -17229,6 +17329,7 @@ export type AssetViewDefinitionNodeFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -17251,6 +17352,7 @@ export type AssetViewDefinitionNodeFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -18509,6 +18611,7 @@ export type AssetViewDefinitionNodeFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -18531,6 +18634,7 @@ export type AssetViewDefinitionNodeFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -19789,6 +19893,7 @@ export type AssetViewDefinitionNodeFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -19811,6 +19916,7 @@ export type AssetViewDefinitionNodeFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -21060,6 +21166,7 @@ export type AssetViewDefinitionNodeFragment = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -21082,6 +21189,7 @@ export type AssetViewDefinitionNodeFragment = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -22346,6 +22454,7 @@ export type AssetViewDefinitionNodeFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -22368,6 +22477,7 @@ export type AssetViewDefinitionNodeFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -23626,6 +23736,7 @@ export type AssetViewDefinitionNodeFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -23648,6 +23759,7 @@ export type AssetViewDefinitionNodeFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -24906,6 +25018,7 @@ export type AssetViewDefinitionNodeFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -24928,6 +25041,7 @@ export type AssetViewDefinitionNodeFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -26177,6 +26291,7 @@ export type AssetViewDefinitionNodeFragment = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -26199,6 +26314,7 @@ export type AssetViewDefinitionNodeFragment = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -27463,6 +27579,7 @@ export type AssetViewDefinitionNodeFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -27485,6 +27602,7 @@ export type AssetViewDefinitionNodeFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -28743,6 +28861,7 @@ export type AssetViewDefinitionNodeFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -28765,6 +28884,7 @@ export type AssetViewDefinitionNodeFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -30023,6 +30143,7 @@ export type AssetViewDefinitionNodeFragment = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -30045,6 +30166,7 @@ export type AssetViewDefinitionNodeFragment = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -31294,6 +31416,7 @@ export type AssetViewDefinitionNodeFragment = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -31316,6 +31439,7 @@ export type AssetViewDefinitionNodeFragment = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -32448,4 +32572,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '2b6586d94dc182b9af5a43d75956fcd486a25a83691f5706fd1aa240c14f7683';
+export const AssetViewDefinitionQueryVersion = '50f492ac4a6ea268a3e8c2a54c80ad63cee4aa97a56da4c7659d0200746abe1a';

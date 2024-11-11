@@ -128,6 +128,7 @@ export type AssetCheckExecutionFragment = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -150,6 +151,7 @@ export type AssetCheckExecutionFragment = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -307,6 +309,7 @@ export type AssetCheckDetailsQuery = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -329,6 +332,7 @@ export type AssetCheckDetailsQuery = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -352,4 +356,4 @@ export type AssetCheckDetailsQuery = {
   }>;
 };
 
-export const AssetCheckDetailsQueryVersion = '267b6f080c1d910b94d32eb42cc04214a427fb5ca9514b79ce973e98fbe788b1';
+export const AssetCheckDetailsQueryVersion = '7380d168a78d6cdc049c41434d80385f47955b21a368612cde00450983bf16cd';

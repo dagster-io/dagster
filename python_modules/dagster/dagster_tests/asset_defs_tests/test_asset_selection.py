@@ -544,9 +544,11 @@ def test_asset_selection_type_checking():
     test = KeysAssetSelection(selected_keys=valid_asset_key_sequence)
     assert isinstance(test, KeysAssetSelection)
 
-    # These 2 *should* error but requires making check.sequence not accept str
-    GroupsAssetSelection(selected_groups=invalid_argument, include_sources=False)
-    KeyPrefixesAssetSelection(selected_key_prefixes=invalid_argument, include_sources=False)
+    with pytest.raises(CheckError):
+        GroupsAssetSelection(selected_groups=invalid_argument, include_sources=False)
+
+    with pytest.raises(CheckError):
+        KeyPrefixesAssetSelection(selected_key_prefixes=invalid_argument, include_sources=False)
 
     test = KeyPrefixesAssetSelection(
         selected_key_prefixes=valid_string_sequence_sequence, include_sources=False

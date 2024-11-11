@@ -8,10 +8,14 @@ from dagster import (
     Definitions,
     ExecuteInProcessResult,
     MaterializeResult,
+    OpExecutionContext,
     asset,
     asset_check,
+    instance_for_test,
+    job,
     load_assets_from_current_module,
     multi_asset,
+    op,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.errors import DagsterInvariantViolationError
@@ -27,6 +31,29 @@ def execute_asset_through_def(assets_def, resources) -> ExecuteInProcessResult:
         .get_implicit_global_asset_job_def()
         .execute_in_process()
     )
+
+
+def test_op() -> None:
+    called = {}
+
+    def _impl(context: PipesContext):
+        context.log.info("hello")
+        called["yes"] = True
+
+    @op
+    def an_op(context: OpExecutionContext, inprocess_client: InProcessPipesClient):
+        return inprocess_client.run(context=context, fn=_impl).get_results()
+
+    @job
+    def a_job():
+        an_op()
+
+    with instance_for_test() as instance:
+        result = a_job.execute_in_process(
+            resources={"inprocess_client": InProcessPipesClient()}, instance=instance
+        )
+    assert called["yes"]
+    assert result.success
 
 
 def test_basic_materialization() -> None:

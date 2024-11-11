@@ -134,6 +134,7 @@ export type PipelineExplorerRootQuery = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -156,6 +157,7 @@ export type PipelineExplorerRootQuery = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -1602,4 +1604,4 @@ export type PipelineExplorerRootQuery = {
       };
 };
 
-export const PipelineExplorerRootQueryVersion = '1f4f59887e61c18131ed51466b9275d9851a209733178f92b7500f969be28e5a';
+export const PipelineExplorerRootQueryVersion = '983c2ad55930c1f8f2333af0de694a7172105cf5ba60ccd10a1226bf17173232';

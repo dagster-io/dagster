@@ -21,7 +21,7 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.loader import InstanceLoadableBy, LoadingContext
+from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, RunsFilter
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
@@ -82,7 +82,7 @@ class AssetStatusCacheValue(
             ("earliest_in_progress_materialization_event_id", Optional[int]),
         ],
     ),
-    InstanceLoadableBy[Tuple[AssetKey, PartitionsDefinition]],
+    LoadableBy[Tuple[AssetKey, PartitionsDefinition]],
 ):
     """Set of asset fields that reflect partition materialization status. This is used to display
     global partition status in the asset view.

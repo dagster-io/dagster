@@ -213,6 +213,7 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -235,6 +236,7 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -390,6 +392,7 @@ export type RunDagsterRunEventFragment_EngineEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -412,6 +415,7 @@ export type RunDagsterRunEventFragment_EngineEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -572,6 +576,7 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -594,6 +599,7 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -738,6 +744,7 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -760,6 +767,7 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -896,6 +904,7 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -918,6 +927,7 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -1051,6 +1061,7 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -1073,6 +1084,7 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -1265,6 +1277,7 @@ export type RunDagsterRunEventFragment_HandledOutputEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -1287,6 +1300,7 @@ export type RunDagsterRunEventFragment_HandledOutputEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -1462,6 +1476,7 @@ export type RunDagsterRunEventFragment_LoadedInputEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -1484,6 +1499,7 @@ export type RunDagsterRunEventFragment_LoadedInputEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -1642,6 +1658,7 @@ export type RunDagsterRunEventFragment_MaterializationEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -1664,6 +1681,7 @@ export type RunDagsterRunEventFragment_MaterializationEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -1805,6 +1823,7 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -1827,6 +1846,7 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -1962,6 +1982,7 @@ export type RunDagsterRunEventFragment_ObservationEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -1984,6 +2005,7 @@ export type RunDagsterRunEventFragment_ObservationEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -2121,6 +2143,7 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -2143,6 +2166,7 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -2289,6 +2313,7 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -2311,6 +2336,7 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -2447,6 +2473,7 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -2469,6 +2496,7 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -2703,6 +2731,7 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent = {
                 name: string;
                 description: string | null;
                 type: string;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 constraints: {
                   __typename: 'TableColumnConstraints';
                   nullable: boolean;
@@ -2725,6 +2754,7 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -2862,6 +2892,7 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -2884,6 +2915,7 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -3020,6 +3052,7 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -3042,6 +3075,7 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;

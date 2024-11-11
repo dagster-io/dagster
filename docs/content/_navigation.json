@@ -170,7 +170,7 @@
             "path": "/concepts/partitions-schedules-sensors/sensors"
           },
           {
-            "title": "Declarative Automation (Experimental)",
+            "title": "Declarative Automation",
             "children": [
               {
                 "title": "Overview",
@@ -1291,7 +1291,7 @@
               },
               {
                 "title": "Migrating from Spark Step Launchers to Dagster Pipes",
-                "path": "/guides/migrations/from-step-launchers-to-pipes#migrating-from-spark-step-launchers-to-dagster-pipes"
+                "path": "/guides/migrations/from-step-launchers-to-pipes"
               }
             ]
           },
