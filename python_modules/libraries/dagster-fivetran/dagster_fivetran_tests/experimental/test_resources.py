@@ -3,8 +3,8 @@ from dagster_fivetran import FivetranWorkspace
 
 
 def test_basic_resource_request(
-        api_key: str,
-        api_secret: str,
+    api_key: str,
+    api_secret: str,
     connector_id: str,
     destination_id: str,
     group_id: str,
