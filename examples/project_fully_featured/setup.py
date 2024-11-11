@@ -24,7 +24,6 @@ setup(
         "dbt-duckdb",
         "dbt-snowflake",
         "duckdb!=0.3.3, <= 6.0.0",  # missing wheels
-        "mock",
         "pandas",
         "pyarrow>=4.0.0",
         "pyspark",

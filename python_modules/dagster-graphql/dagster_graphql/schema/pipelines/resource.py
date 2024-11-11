@@ -32,6 +32,12 @@ class GrapheneResource(graphene.ObjectType):
 
     def resolve_configField(self, _graphene_info: ResolveInfo):
         if self._resource_def_snap.config_field_snap:
+            try:
+                # config type may not be present if mode config mapped, null out gracefully
+                self._get_config_type(self._resource_def_snap.config_field_snap.type_key)
+            except KeyError:
+                return None
+
             return GrapheneConfigTypeField(
                 get_config_type=self._get_config_type,
                 field_snap=self._resource_def_snap.config_field_snap,

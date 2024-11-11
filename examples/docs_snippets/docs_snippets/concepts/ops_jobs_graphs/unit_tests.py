@@ -172,7 +172,7 @@ def context_op(context: OpExecutionContext):
 # start_test_op_with_resource_client
 
 from dagster import ConfigurableResource
-import mock
+from unittest import mock
 
 
 class Client:
@@ -407,7 +407,7 @@ def test_data_assets():
 
 # start_materialize_resources
 from dagster import asset, materialize_to_memory, ConfigurableResource
-import mock
+from unittest import mock
 
 
 class MyServiceResource(ConfigurableResource): ...

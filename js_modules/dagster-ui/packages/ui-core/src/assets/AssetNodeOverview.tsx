@@ -317,17 +317,19 @@ export const AssetNodeOverview = ({
       </AttributeAndValue>
 
       <AttributeAndValue label="Code location">
-        <Box flex={{direction: 'column'}}>
+        <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
           <AssetDefinedInMultipleReposNotice
             assetKey={cachedOrLiveAssetNode.assetKey}
             loadedFromRepo={repoAddress!}
           />
-          <RepositoryLink repoAddress={repoAddress!} />
-          {location && (
-            <Caption color={Colors.textLighter()}>
-              Loaded {dayjs.unix(location.updatedTimestamp).fromNow()}
-            </Caption>
-          )}
+          <Box flex={{direction: 'column'}}>
+            <RepositoryLink repoAddress={repoAddress!} />
+            {location && (
+              <Caption color={Colors.textLighter()}>
+                Loaded {dayjs.unix(location.updatedTimestamp).fromNow()}
+              </Caption>
+            )}
+          </Box>
         </Box>
       </AttributeAndValue>
       <AttributeAndValue label="Owners">

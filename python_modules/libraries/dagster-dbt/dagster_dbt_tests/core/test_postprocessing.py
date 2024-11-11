@@ -2,8 +2,8 @@ import json
 import os
 from decimal import Decimal
 from typing import Any, Dict, cast
+from unittest import mock
 
-import mock
 import pytest
 from dagster import (
     AssetExecutionContext,

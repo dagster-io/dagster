@@ -125,7 +125,7 @@ def _build_column_lineage_metadata(
     node_sql_path = target_path.joinpath(
         "compiled",
         package_name,
-        dbt_resource_props["original_file_path"],
+        dbt_resource_props["original_file_path"].replace("\\", "/"),
     )
     optimized_node_ast = cast(
         exp.Query,

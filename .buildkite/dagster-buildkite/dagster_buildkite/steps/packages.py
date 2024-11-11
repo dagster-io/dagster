@@ -6,6 +6,7 @@ from typing import Iterable, List, Optional
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.step_builder import BuildkiteQueue
 from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.utils import (
     BuildkiteStep,
@@ -13,6 +14,7 @@ from dagster_buildkite.utils import (
     has_dagster_airlift_changes,
     has_storage_test_fixture_changes,
     network_buildkite_container,
+    skip_if_not_airlift_or_dlift_commit,
     skip_if_not_dlift_commit,
 )
 
@@ -368,11 +370,21 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/experimental/dagster-airlift",
     ),
-    # Skipping for now due to flaky integration tests.
-    # PackageSpec(
-    #     "examples/experimental/dagster-airlift/examples/dbt-example",
-    #     always_run_if=has_dagster_airlift_changes,
-    # ),
+    # Runs against live dbt cloud instance, we only want to run on commits and on the
+    # nightly build
+    PackageSpec(
+        "examples/experimental/dagster-airlift/examples/dbt-example",
+        skip_if=skip_if_not_airlift_or_dlift_commit,
+        env_vars=[
+            "KS_DBT_CLOUD_ACCOUNT_ID",
+            "KS_DBT_CLOUD_PROJECT_ID",
+            "KS_DBT_CLOUD_TOKEN",
+            "KS_DBT_CLOUD_ACCESS_URL",
+            "KS_DBT_CLOUD_DISCOVERY_API_URL",
+        ],
+        timeout_in_minutes=30,
+        queue=BuildkiteQueue.DOCKER,
+    ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/perf-harness",
         always_run_if=has_dagster_airlift_changes,

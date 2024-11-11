@@ -5,6 +5,7 @@ from dagster import (
     AssetKey,
     _check as check,
 )
+from dagster._annotations import PublicAttr
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
@@ -29,9 +30,19 @@ class TaskInfo:
 @whitelist_for_serdes
 @record
 class DagInfo:
+    """A record containing information about a given airflow dag.
+
+    Users should not instantiate this class directly. It is provided when customizing which DAGs are included
+    in the generated definitions using the `dag_selector_fn` argument of :py:func:`build_defs_from_airflow_instance`.
+
+    Attributes:
+        metadata (Dict[str, Any]): The metadata associated with the dag, retrieved by the Airflow REST API:
+            https://airflow.apache.org/docs/apache-airflow/stable/stable-rest-api-ref.html#operation/get_dags
+    """
+
     webserver_url: str
     dag_id: str
-    metadata: Dict[str, Any]
+    metadata: PublicAttr[Dict[str, Any]]
 
     @property
     def url(self) -> str:

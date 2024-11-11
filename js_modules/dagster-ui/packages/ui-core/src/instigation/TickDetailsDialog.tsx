@@ -82,7 +82,7 @@ const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: In
   const [activeTab, setActiveTab] = useState<'result' | 'logs'>('result');
 
   const {data} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(JOB_SELECTED_TICK_QUERY, {
-    variables: {instigationSelector, tickId: tickId || 0},
+    variables: {instigationSelector, tickId: tickId || ''},
     skip: !tickId,
   });
 
@@ -284,7 +284,7 @@ function PartitionsTable({partitions}: {partitions: DynamicPartitionsRequestResu
 }
 
 const JOB_SELECTED_TICK_QUERY = gql`
-  query SelectedTickQuery($instigationSelector: InstigationSelector!, $tickId: BigInt!) {
+  query SelectedTickQuery($instigationSelector: InstigationSelector!, $tickId: ID!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
       ... on InstigationState {
         id

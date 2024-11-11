@@ -7,8 +7,8 @@ import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence, Union, cast
+from unittest import mock
 
-import mock
 from dagster import (
     AssetExecutionContext,
     AssetKey,

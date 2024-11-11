@@ -1,7 +1,7 @@
 import time
 from contextlib import ExitStack
+from unittest import mock
 
-import mock
 import pytest
 from dagster import job, op
 from dagster._core.execution.plan.instance_concurrency_context import (

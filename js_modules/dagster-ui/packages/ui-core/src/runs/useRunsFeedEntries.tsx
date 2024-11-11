@@ -1,5 +1,8 @@
-import {RUNS_FEED_TABLE_ENTRY_FRAGMENT} from './RunsFeedRow';
+import {useMemo} from 'react';
+
+import {RUNS_FEED_TABLE_ENTRY_FRAGMENT} from './RunsFeedTableEntryFragment';
 import {useSelectedRunsFeedTab} from './RunsFeedTabs';
+import {RUNS_FEED_CURSOR_KEY} from './RunsFeedUtils';
 import {SCHEDULED_RUNS_LIST_QUERY} from './ScheduledRunListRoot';
 import {
   ScheduledRunsListQuery,
@@ -11,9 +14,7 @@ import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {RunsFilter} from '../graphql/types';
 
-const PAGE_SIZE = 25;
-
-const RUNS_FEED_CURSOR_KEY = `runs_before`;
+const PAGE_SIZE = 30;
 
 export function useRunsFeedEntries(
   filter: RunsFilter,
@@ -30,11 +31,17 @@ export function useRunsFeedEntries(
     pageSize: PAGE_SIZE,
     variables: {filter, includeRunsFromBackfills},
     skip: isScheduled,
-    nextCursorForResult: (runs) => {
-      if (runs.runsFeedOrError.__typename !== 'RunsFeedConnection') {
+    nextCursorForResult: (data) => {
+      if (data.runsFeedOrError.__typename !== 'RunsFeedConnection') {
         return undefined;
       }
-      return runs.runsFeedOrError.hasMore ? runs.runsFeedOrError.cursor : undefined;
+      return data.runsFeedOrError.hasMore ? data.runsFeedOrError.cursor : undefined;
+    },
+    hasMoreForResult: (data) => {
+      if (data.runsFeedOrError.__typename !== 'RunsFeedConnection') {
+        return false;
+      }
+      return data.runsFeedOrError.hasMore;
     },
     getResultArray: (data) => {
       if (!data || data.runsFeedOrError.__typename !== 'RunsFeedConnection') {
@@ -46,8 +53,11 @@ export function useRunsFeedEntries(
 
   const data = queryResult.data || queryResult.previousData;
 
-  const entries =
-    data?.runsFeedOrError.__typename === 'RunsFeedConnection' ? data?.runsFeedOrError.results : [];
+  const entries = useMemo(() => {
+    return data?.runsFeedOrError.__typename === 'RunsFeedConnection'
+      ? data?.runsFeedOrError.results
+      : [];
+  }, [data]);
 
   const scheduledQueryResult = useQuery<ScheduledRunsListQuery, ScheduledRunsListQueryVariables>(
     SCHEDULED_RUNS_LIST_QUERY,

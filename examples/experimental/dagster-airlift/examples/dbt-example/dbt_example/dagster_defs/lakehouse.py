@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import List, Mapping, Optional, Sequence
 
 from dagster import AssetKey, AssetSpec, multi_asset
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
@@ -17,19 +17,36 @@ def lakehouse_asset_key(*, csv_path) -> AssetKey:
 
 
 def specs_from_lakehouse(
-    *, csv_path: Path, automation_condition: Optional[AutomationCondition] = None
+    *,
+    csv_path: Path,
+    automation_condition: Optional[AutomationCondition] = None,
+    upstreams_map: Optional[Mapping[AssetKey, Sequence[AssetKey]]] = None,
 ) -> Sequence[AssetSpec]:
+    key = lakehouse_asset_key(csv_path=csv_path)
     return [
         AssetSpec(
-            key=lakehouse_asset_key(csv_path=csv_path), automation_condition=automation_condition
+            key=lakehouse_asset_key(csv_path=csv_path),
+            automation_condition=automation_condition,
+            deps=upstreams_map.get(key, []) if upstreams_map else [],
         )
     ]
 
 
 def lakehouse_assets_def(
-    *, csv_path: Path, duckdb_path: Path, columns: List[str]
+    *,
+    csv_path: Path,
+    duckdb_path: Path,
+    columns: List[str],
+    automation_condition: Optional[AutomationCondition] = None,
+    upstreams_map: Optional[Mapping[AssetKey, Sequence[AssetKey]]] = None,
 ) -> AssetsDefinition:
-    @multi_asset(specs=specs_from_lakehouse(csv_path=csv_path))
+    @multi_asset(
+        specs=specs_from_lakehouse(
+            csv_path=csv_path,
+            automation_condition=automation_condition,
+            upstreams_map=upstreams_map,
+        )
+    )
     def _multi_asset() -> None:
         load_csv_to_duckdb(
             csv_path=csv_path,

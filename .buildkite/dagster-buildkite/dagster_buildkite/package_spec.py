@@ -125,7 +125,7 @@ class PackageSpec:
     queue: Optional[BuildkiteQueue] = None
     run_pytest: bool = True
     always_run_if: Optional[Callable[[], bool]] = None
-    skip_if: Optional[Callable[[], str]] = None
+    skip_if: Optional[Callable[[], Optional[str]]] = None
 
     def __post_init__(self):
         if not self.name:
@@ -244,26 +244,39 @@ class PackageSpec:
 
     @property
     def skip_reason(self) -> Optional[str]:
-        if self._should_skip is None:
-            return None
+        """Provides a message if this package's steps should be skipped on this run, and no message if the package's steps should be run.
+        We actually use this to determine whether or not to run the package.
 
-        # Memoize so we don't log twice
+        Because we use an archaic version of python to build our images, we can't use `cached_property`, and so we reinvent the wheel here with
+        self._should_skip and self._skip_reason. When we determine definitively that a package should or shouldn't be skipped, we cache the result on self._should_skip
+        as a boolean (it starts out as None), and cache the skip reason (or lack thereof) on self._skip_reason.
+        """
+        # If self._should_skip is not None, then the result is cached on self._skip_reason and we can return it.
+        if self._should_skip is not None:
+            if self._should_skip is True:
+                assert (
+                    self._skip_reason is not None
+                ), "Expected skip reason to be set if self._should_skip is True."
+            return self._skip_reason
+
+        # If the result is not cached, check for NO_SKIP signifier first, so that it always
+        # takes precedent.
+        if message_contains("NO_SKIP"):
+            logging.info(f"Building {self.name} because NO_SKIP set")
+            self._should_skip = False
+            return None
         if self.always_run_if and self.always_run_if():
             self._should_skip = False
+            self._skip_reason = None
             return None
         if self.skip_if and self.skip_if():
             self._skip_reason = self.skip_if()
             self._should_skip = True
             return self._skip_reason
 
-        if self._skip_reason:
-            return self._skip_reason
-
-        if message_contains("NO_SKIP"):
-            logging.info(f"Building {self.name} because NO_SKIP set")
-            self._should_skip = False
-            return None
-
+        # Take account of feature_branch changes _after_ skip_if so that skip_if
+        # takes precedent. This way, integration tests can run on branch but won't be
+        # forced to run on every master commit.
         if not is_feature_branch(os.getenv("BUILDKITE_BRANCH", "")):
             logging.info(f"Building {self.name} we're not on a feature branch")
             self._should_skip = False

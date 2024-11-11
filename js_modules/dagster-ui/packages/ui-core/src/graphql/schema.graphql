@@ -2559,7 +2559,7 @@ type InstigationState {
   typeSpecificData: InstigationTypeSpecificData
   runs(limit: Int): [Run!]!
   runsCount: Int!
-  tick(tickId: BigInt!): InstigationTick!
+  tick(tickId: ID!): InstigationTick!
   ticks(
     dayRange: Int
     dayOffset: Int
@@ -2580,8 +2580,6 @@ enum InstigationType {
   SENSOR
   AUTO_MATERIALIZE
 }
-
-scalar BigInt
 
 type InstigationStateNotFoundError implements Error {
   message: String!

@@ -9,12 +9,12 @@ from dagster_dlift.gql_queries import (
     GET_DBT_TESTS_QUERY,
     VERIFICATION_QUERY,
 )
-from dagster_dlift.utils import get_job_name
 
 ENVIRONMENTS_SUBPATH = "environments/"
+LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
 
 
-class DbtCloudClient:
+class UnscopedDbtCloudClient:
     def __init__(
         self,
         # Can be found on the Account Info page of dbt.
@@ -153,7 +153,7 @@ class DbtCloudClient:
             )
         ]
 
-    def create_dagster_job(self, project_id: int, environment_id: int) -> int:
+    def create_job(self, *, environment_id: int, project_id: int, job_name: str) -> int:
         """Creats a dbt cloud job spec'ed to do what dagster expects."""
         session = self.get_session()
         response = self.ensure_valid_response(
@@ -163,7 +163,7 @@ class DbtCloudClient:
                     "account_id": self.account_id,
                     "environment_id": environment_id,
                     "project_id": project_id,
-                    "name": get_job_name(environment_id=environment_id, project_id=project_id),
+                    "name": job_name,
                     "description": "A job that runs dbt models, sources, and tests.",
                     "job_type": "other",
                 },
@@ -172,8 +172,12 @@ class DbtCloudClient:
         ).json()
         return response["data"]["id"]
 
-    def destroy_dagster_job(self, project_id: int, environment_id: int, job_id: int) -> None:
+    def destroy_dagster_job(self, job_id: int) -> None:
         """Destroys a dagster job."""
+        session = self.get_session()
+        self.ensure_valid_response(session.delete(f"{self.get_api_v2_url()}/jobs/{job_id}"))
+
+    def destroy_job(self, job_id: int) -> None:
         session = self.get_session()
         self.ensure_valid_response(session.delete(f"{self.get_api_v2_url()}/jobs/{job_id}"))
 
@@ -184,9 +188,19 @@ class DbtCloudClient:
         ).json()
 
     def list_jobs(self, environment_id: int) -> Sequence[Mapping[str, Any]]:
-        return self.make_access_api_request("/jobs/", params={"environment_id": environment_id})[
-            "data"
-        ]
+        results = []
+        while jobs := self.make_access_api_request(
+            "/jobs/",
+            params={
+                "environment_id": environment_id,
+                "limit": LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT,
+                "offset": len(results),
+            },
+        )["data"]:
+            results.extend(jobs)
+            if len(jobs) < LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT:
+                break
+        return results
 
     def trigger_job(self, job_id: int, steps: Optional[Sequence[str]] = None) -> Mapping[str, Any]:
         session = self.get_session()

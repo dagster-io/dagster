@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 from dagster._core.errors import DagsterError
-from dagster_airlift.core import AirflowInstance, BasicAuthBackend
+from dagster_airlift.core import AirflowBasicAuthBackend, AirflowInstance
 
 from .conftest import assert_link_exists
 
@@ -13,7 +13,7 @@ def test_airflow_instance(airflow_instance: None) -> None:
     Airflow is loaded with one dag (print_dag) which contains two tasks (print_task, downstream_print_task).
     """
     instance = AirflowInstance(
-        auth_backend=BasicAuthBackend(
+        auth_backend=AirflowBasicAuthBackend(
             webserver_url="http://localhost:8080", username="admin", password="admin"
         ),
         name="airflow_instance",

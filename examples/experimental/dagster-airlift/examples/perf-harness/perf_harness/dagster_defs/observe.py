@@ -3,8 +3,8 @@ from typing import List
 from dagster import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_airlift.core import (
+    AirflowBasicAuthBackend,
     AirflowInstance,
-    BasicAuthBackend,
     build_defs_from_airflow_instance,
     dag_defs,
     task_defs,
@@ -15,7 +15,7 @@ from perf_harness.shared.constants import get_num_assets, get_num_dags, get_num_
 from .constants import AIRFLOW_BASE_URL, AIRFLOW_INSTANCE_NAME, PASSWORD, USERNAME
 
 airflow_instance = AirflowInstance(
-    auth_backend=BasicAuthBackend(
+    auth_backend=AirflowBasicAuthBackend(
         webserver_url=AIRFLOW_BASE_URL, username=USERNAME, password=PASSWORD
     ),
     name=AIRFLOW_INSTANCE_NAME,

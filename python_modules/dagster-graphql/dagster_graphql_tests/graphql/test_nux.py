@@ -1,4 +1,5 @@
-import mock
+from unittest import mock
+
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 SET_NUX_SEEN_MUTATION = """

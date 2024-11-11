@@ -10,8 +10,8 @@ from dagster import (
     multi_asset,
 )
 from dagster_airlift.core import (
+    AirflowBasicAuthBackend,
     AirflowInstance,
-    BasicAuthBackend,
     assets_with_task_mappings,
     build_defs_from_airflow_instance,
 )
@@ -92,7 +92,7 @@ mapped_assets = assets_with_task_mappings(
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
-        auth_backend=BasicAuthBackend(
+        auth_backend=AirflowBasicAuthBackend(
             webserver_url="http://localhost:8080",
             username="admin",
             password="admin",

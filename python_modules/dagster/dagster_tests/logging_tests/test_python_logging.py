@@ -1,7 +1,7 @@
 import logging
 from typing import Mapping, Optional, Sequence, Union
+from unittest import mock
 
-import mock
 import pytest
 from dagster import get_dagster_logger, reconstructable, resource
 from dagster._core.definitions.decorators import op

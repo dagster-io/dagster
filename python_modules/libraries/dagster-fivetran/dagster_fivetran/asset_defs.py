@@ -39,10 +39,10 @@ from dagster._core.definitions.tags import build_kind_tag
 from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.utils import imap
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.log import get_dagster_logger
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
+from dagster_fivetran.translator import DagsterFivetranTranslator, FivetranConnectorTableProps
 from dagster_fivetran.utils import (
     generate_materializations,
     get_fivetran_connector_url,
@@ -51,50 +51,6 @@ from dagster_fivetran.utils import (
 
 DEFAULT_MAX_THREADPOOL_WORKERS = 10
 logger = get_dagster_logger()
-
-
-class FivetranConnectorTableProps(NamedTuple):
-    table: str
-    connector_id: str
-    name: str
-    connector_url: str
-    schemas: Mapping[str, Any]
-    database: Optional[str]
-    service: Optional[str]
-
-
-class DagsterFivetranTranslator:
-    def get_asset_key(self, props: FivetranConnectorTableProps) -> AssetKey:
-        """Get the AssetKey for a table synced by a Fivetran connector."""
-        return AssetKey(props.table.split("."))
-
-    def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
-        """Get the AssetSpec for a table synced by a Fivetran connector."""
-        schema_name, table_name = props.table.split(".")
-        schema_entry = next(
-            schema
-            for schema in props.schemas["schemas"].values()
-            if schema["name_in_destination"] == schema_name
-        )
-        table_entry = next(
-            table_entry
-            for table_entry in schema_entry["tables"].values()
-            if table_entry["name_in_destination"] == table_name
-        )
-
-        metadata = metadata_for_table(
-            table_entry,
-            props.connector_url,
-            database=props.database,
-            schema=schema_name,
-            table=table_name,
-        )
-
-        return AssetSpec(
-            key=self.get_asset_key(props),
-            metadata=metadata,
-            kinds={"fivetran", *({props.service} if props.service else set())},
-        )
 
 
 def _fetch_and_attach_col_metadata(
@@ -165,9 +121,9 @@ def _build_fivetran_assets(
     tracked_asset_keys = {
         table: AssetKey([*asset_key_prefix, *table.split(".")])
         if not translator_instance or not connection_metadata
-        else translator_instance.get_asset_key(
+        else translator_instance.get_asset_spec(
             FivetranConnectorTableProps(table=table, **connection_metadata._asdict())
-        )
+        ).key
         for table in destination_tables
     }
     user_facing_asset_keys = table_to_asset_key_map or tracked_asset_keys
@@ -367,7 +323,6 @@ def build_fivetran_assets(
     )
 
 
-@whitelist_for_serdes
 class FivetranConnectionMetadata(
     NamedTuple(
         "_FivetranConnectionMetadata",
@@ -429,9 +384,16 @@ class FivetranConnectionMetadata(
                 "connector_id": self.connector_id,
                 "io_manager_key": io_manager_key,
                 "storage_kind": self.service,
-                "connection_metadata": self,
+                "connection_metadata": self.to_serializable_repr(),
             },
         )
+
+    def to_serializable_repr(self) -> Any:
+        return self._asdict()
+
+    @staticmethod
+    def from_serializable_repr(rep: Any) -> "FivetranConnectionMetadata":
+        return FivetranConnectionMetadata(**rep)
 
 
 def _build_fivetran_assets_from_metadata(
@@ -447,7 +409,9 @@ def _build_fivetran_assets_from_metadata(
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
     storage_kind = cast(Optional[str], metadata.get("storage_kind"))
 
-    connection_metadata = metadata["connection_metadata"]
+    connection_metadata = FivetranConnectionMetadata.from_serializable_repr(
+        metadata["connection_metadata"]
+    )
 
     return _build_fivetran_assets(
         connector_id=connector_id,

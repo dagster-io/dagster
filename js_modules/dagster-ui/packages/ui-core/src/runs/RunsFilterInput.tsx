@@ -12,6 +12,7 @@ import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 
 import {DagsterTag} from './RunTag';
 import {gql, useApolloClient, useLazyQuery} from '../apollo-client';
+import {RUNS_FEED_CURSOR_KEY} from './RunsFeedUtils';
 import {
   RunTagKeysQuery,
   RunTagKeysQueryVariables,
@@ -104,7 +105,11 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
   return useQueryPersistedState<RunFilterToken[]>(
     useMemo(
       () => ({
-        encode: (tokens) => ({q: tokensAsStringArray(tokens), cursor: undefined}),
+        encode: (tokens) => ({
+          q: tokensAsStringArray(tokens),
+          cursor: undefined,
+          [RUNS_FEED_CURSOR_KEY]: undefined,
+        }),
         decode: ({q = []}) =>
           tokenizedValuesFromStringArray(q, RUN_PROVIDERS_EMPTY).filter(
             (t) =>

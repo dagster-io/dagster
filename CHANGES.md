@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.9.1 (core) / 0.25.1 (libraries)
+
+### New
+
+- `dagster project scaffold` now has an option to create dagster projects from templates with excluded files/filepaths.
+- [ui] Filters in the asset catalog now persist when navigating subdirectories.
+- [ui] The Run page now displays the partition(s) a run was for.
+- [ui] Filtering on owners/groups/tags is now case-insensitive.
+- [dagster-tableau] the helper function `parse_tableau_external_and_materializable_asset_specs` is now available to parse a list of Tableau asset specs into a list of external asset specs and materializable asset specs.
+- [dagster-looker] Looker assets now by default have owner and URL metadata.
+- [dagster-k8s] Added a per_step_k8s_config configuration option to the k8s_job_executor, allowing the k8s configuration of individual steps to be configured at run launch time (thanks @Kuhlwein!)
+- [dagster-fivetran] Introduced `DagsterFivetranTranslator` to customize assets loaded from Fivetran.
+- [dagster-snowflake] `dagster_snowflake.fetch_last_updated_timestamps` now supports ignoring tables not found in Snowflake instead of raising an error.
+
+### Bugfixes
+
+- Fixed issue which would cause a `default_automation_condition_sensor` to be constructed for user code servers running on dagster version < 1.9.0 even if the legacy `auto_materialize: use_sensors` configuration setting was set to `False`.
+- Fixed an issue where running `dagster instance migrate` on Dagster version 1.9.0 constructed a SQL query that exceeded the maximum allowed depth.
+- Fixed an issue where wiping a dynamically partitioned asset causes an error.
+- [dagster-polars] `ImportError`s are no longer raised when bigquery libraries are not installed [#25708]
+
+### Documentation
+
+- [dagster-dbt] A guide on how to use dbt defer with Dagster branch deployments has been added to the dbt reference.
+
 # 1.9.0 (core) / 0.25.0 (libraries)
 
 ## Major changes since 1.8.0 (core) / 0.24.0 (libraries)

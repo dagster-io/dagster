@@ -8,7 +8,7 @@ import {
   ifPlural,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useMemo, useRef} from 'react';
+import React, {useEffect, useMemo, useRef} from 'react';
 
 import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunTableEmptyState} from './RunTableEmptyState';
@@ -19,7 +19,7 @@ import {RunFilterToken} from './RunsFilterInput';
 import {
   RunsFeedTableEntryFragment,
   RunsFeedTableEntryFragment_Run,
-} from './types/RunsFeedRow.types';
+} from './types/RunsFeedTableEntryFragment.types';
 import {useRunsFeedEntries} from './useRunsFeedEntries';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {RunsFilter} from '../graphql/types';
@@ -81,6 +81,20 @@ export const RunsFeedTable = ({
   );
   const backfillsExcluded = selectedEntries.length - selectedRuns.length;
 
+  const resetScrollOnLoad = useRef(false);
+  useEffect(() => {
+    // When you click "Next page" from the bottom of page 1, we show the indeterminate
+    // loading state and want to scroll to the top when the new results arrive. It looks
+    // bad to do it immediately, and the `entries` can also change on their own (and
+    // sometimes with new rows), so we do this explicitly for pagination cases using a ref.
+    if (!loading && resetScrollOnLoad.current) {
+      resetScrollOnLoad.current = false;
+      if (parentRef.current) {
+        parentRef.current.scrollTop = 0;
+      }
+    }
+  }, [loading]);
+
   const actionBar = (
     <Box flex={{direction: 'column', gap: 8}}>
       <Box
@@ -90,7 +104,23 @@ export const RunsFeedTable = ({
       >
         {actionBarComponents ?? <span />}
         <Box flex={{gap: 12, alignItems: 'center'}} style={{marginRight: 8}}>
-          <CursorHistoryControls {...paginationProps} style={{marginTop: 0}} />
+          <CursorHistoryControls
+            style={{marginTop: 0}}
+            hasPrevCursor={paginationProps.hasPrevCursor}
+            hasNextCursor={paginationProps.hasNextCursor}
+            popCursor={() => {
+              resetScrollOnLoad.current = true;
+              paginationProps.popCursor();
+            }}
+            advanceCursor={() => {
+              resetScrollOnLoad.current = true;
+              paginationProps.advanceCursor();
+            }}
+            reset={() => {
+              resetScrollOnLoad.current = true;
+              paginationProps.reset();
+            }}
+          />
           <RunBulkActionsMenu
             clearSelection={() => onToggleAll(false)}
             selected={selectedRuns}
@@ -122,27 +152,37 @@ export const RunsFeedTable = ({
   );
 
   function content() {
+    const header = (
+      <RunsFeedTableHeader
+        checkbox={
+          <CheckAllBox
+            checkedCount={checkedIds.size}
+            totalCount={entries.length}
+            onToggleAll={onToggleAll}
+          />
+        }
+      />
+    );
+
     if (entries.length === 0 && !loading) {
       const anyFilter = !!Object.keys(filter || {}).length;
       if (emptyState) {
         return <>{emptyState()}</>;
       }
 
-      return <RunTableEmptyState anyFilter={anyFilter} />;
+      return (
+        <div style={{overflow: 'hidden'}}>
+          {header}
+          <RunTableEmptyState anyFilter={anyFilter} />
+        </div>
+      );
     }
+
     return (
       <div style={{overflow: 'hidden'}}>
         <IndeterminateLoadingBar $loading={loading} />
         <Container ref={parentRef} style={scroll ? {overflow: 'auto'} : {overflow: 'visible'}}>
-          <RunsFeedTableHeader
-            checkbox={
-              <CheckAllBox
-                checkedCount={checkedIds.size}
-                totalCount={entries.length}
-                onToggleAll={onToggleAll}
-              />
-            }
-          />
+          {header}
           {entries.length === 0 && loading && (
             <Box flex={{direction: 'row', justifyContent: 'center'}} padding={32}>
               <SpinnerWithText label="Loading runs…" />

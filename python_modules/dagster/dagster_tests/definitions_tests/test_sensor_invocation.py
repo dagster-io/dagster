@@ -1838,3 +1838,86 @@ def test_reject_invalid_asset_check_keys():
 
         with pytest.warns(DeprecationWarning, match="asset check keys"):
             asset2_sensor.evaluate_tick(ctx)
+
+
+def test_run_status_sensor_eval_tick_testing() -> None:
+    # Ensure run status senors can be tested including exercising the logic
+    # provided by us. Useful for ensuring its been defined correctly.
+
+    @job
+    def certain_job(): ...
+
+    @job
+    def other_job(): ...
+
+    @job
+    def job_1(): ...
+
+    @job
+    def job_2(): ...
+
+    @job
+    def job_3(): ...
+
+    @run_status_sensor(
+        monitored_jobs=[certain_job],
+        request_job=job_1,
+        run_status=DagsterRunStatus.SUCCESS,
+    )
+    def sensor_1():
+        return RunRequest(
+            job_name="job_1",
+        )
+
+    @run_status_sensor(
+        monitored_jobs=[certain_job],
+        request_job=job_2,
+        run_status=DagsterRunStatus.SUCCESS,
+    )
+    def sensor_2():
+        return RunRequest(
+            job_name="job_2",
+        )
+
+    @run_status_sensor(
+        monitored_jobs=[other_job],
+        request_job=job_3,
+        run_status=DagsterRunStatus.SUCCESS,
+    )
+    def sensor_3():
+        return RunRequest(
+            job_name="job_3",
+        )
+
+    instance = DagsterInstance.ephemeral()
+
+    sensors = [sensor_1, sensor_2, sensor_3]
+    cursors = {}
+
+    result = job_1.execute_in_process(instance=instance)
+    assert result.success
+
+    # the first run of a status sensor starts tracking from that point,
+    # so run each one and save the cursor
+    for s in sensors:
+        ctx = build_sensor_context(instance=instance)
+        data = s.evaluate_tick(ctx)
+        cursors[s] = data.cursor
+
+    # execute the target job
+    result = certain_job.execute_in_process(instance=instance)
+    assert result.success
+
+    # evaluate all sensors
+    requested_jobs = set()
+    for s in sensors:
+        ctx = build_sensor_context(
+            instance=instance,
+            cursor=cursors[s],
+        )
+        data = s.evaluate_tick(ctx)
+        for request in data.run_requests or []:
+            requested_jobs.add(request.job_name)
+
+    # assert the expected response amongst sensors
+    assert requested_jobs == {"job_1", "job_2"}
