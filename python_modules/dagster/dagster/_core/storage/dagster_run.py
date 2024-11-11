@@ -20,7 +20,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
-from dagster._core.loader import InstanceLoadableBy, LoadingContext
+from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
@@ -612,7 +612,7 @@ class RunRecord(
             ("end_time", Optional[float]),
         ],
     ),
-    InstanceLoadableBy[str],
+    LoadableBy[str],
 ):
     """Internal representation of a run record, as stored in a
     :py:class:`~dagster._core.storage.runs.RunStorage`.

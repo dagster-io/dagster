@@ -58,11 +58,9 @@ class LoadingContext(ABC):
     def loaders(self) -> Dict[Type, Tuple[DataLoader, BlockingDataLoader]]:
         raise NotImplementedError()
 
-    def get_loaders_for(
-        self, ttype: Type["InstanceLoadableBy"]
-    ) -> Tuple[DataLoader, BlockingDataLoader]:
+    def get_loaders_for(self, ttype: Type["LoadableBy"]) -> Tuple[DataLoader, BlockingDataLoader]:
         if ttype not in self.loaders:
-            if not issubclass(ttype, InstanceLoadableBy):
+            if not issubclass(ttype, LoadableBy):
                 check.failed(f"{ttype} is not Loadable")
 
             batch_load_fn = partial(ttype._batch_load, context=self)  # noqa
@@ -83,7 +81,7 @@ class LoadingContext(ABC):
 # Expected there may be other "Loadable" base classes based on what is needed to load.
 
 
-class InstanceLoadableBy(ABC, Generic[TKey]):
+class LoadableBy(ABC, Generic[TKey]):
     """Make An object Loadable by ID of type TKey using a DagsterInstance."""
 
     @classmethod

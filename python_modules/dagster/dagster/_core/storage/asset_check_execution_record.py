@@ -5,7 +5,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.events.log import DagsterEventType, EventLogEntry
-from dagster._core.loader import InstanceLoadableBy, LoadingContext
+from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
 from dagster._serdes.serdes import deserialize_value
 from dagster._time import utc_datetime_from_naive
@@ -52,7 +52,7 @@ class AssetCheckExecutionRecord(
             ("create_timestamp", float),
         ],
     ),
-    InstanceLoadableBy[AssetCheckKey],
+    LoadableBy[AssetCheckKey],
 ):
     def __new__(
         cls,

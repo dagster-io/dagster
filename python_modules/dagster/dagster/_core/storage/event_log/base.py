@@ -33,7 +33,7 @@ from dagster._core.execution.stats import (
     build_run_step_stats_from_events,
 )
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.loader import InstanceLoadableBy, LoadingContext
+from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
@@ -129,7 +129,7 @@ class AssetEntry(
 
 class AssetRecord(
     NamedTuple("_NamedTuple", [("storage_id", int), ("asset_entry", AssetEntry)]),
-    InstanceLoadableBy[AssetKey],
+    LoadableBy[AssetKey],
 ):
     """Internal representation of an asset record, as stored in a :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
 
@@ -156,7 +156,7 @@ class AssetCheckSummaryRecord(
             ("last_run_id", Optional[str]),
         ],
     ),
-    InstanceLoadableBy[AssetCheckKey],
+    LoadableBy[AssetCheckKey],
 ):
     @classmethod
     def _blocking_batch_load(
