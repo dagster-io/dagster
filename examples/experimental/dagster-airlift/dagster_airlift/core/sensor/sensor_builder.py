@@ -37,7 +37,7 @@ from dagster_airlift.constants import (
     EFFECTIVE_TIMESTAMP_METADATA_KEY,
     TASK_ID_TAG_KEY,
 )
-from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
+from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData, MappedAsset
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagRun, TaskInstance
 from dagster_airlift.core.sensor.event_translation import (
     AssetEvent,
@@ -80,7 +80,7 @@ def check_keys_for_asset_keys(
 
 def build_airflow_polling_sensor_defs(
     *,
-    mapped_defs: Definitions,
+    mapped_assets: Iterable[MappedAsset],
     airflow_instance: AirflowInstance,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
@@ -105,7 +105,7 @@ def build_airflow_polling_sensor_defs(
         Definitions: A `Definitions` object containing the constructed sensor.
     """
     airflow_data = AirflowDefinitionsData(
-        airflow_instance=airflow_instance, mapped_defs=mapped_defs
+        airflow_instance=airflow_instance, mapped_assets=mapped_assets
     )
 
     @sensor(
@@ -390,7 +390,7 @@ def automapped_tasks_asset_keys(
     asset_keys_to_emit = set()
     asset_keys = airflow_data.asset_keys_in_task(dag_run.dag_id, task_instance.task_id)
     for asset_key in asset_keys:
-        spec = airflow_data.mapped_defs.get_assets_def(asset_key).get_asset_spec(asset_key)
+        spec = airflow_data.all_asset_specs_by_key[asset_key]
         if spec.metadata.get(AUTOMAPPED_TASK_METADATA_KEY):
             asset_keys_to_emit.add(asset_key)
     return asset_keys_to_emit

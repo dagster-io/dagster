@@ -1,6 +1,6 @@
-from typing import AbstractSet, Any, Callable, Dict, Mapping, Set
+from typing import AbstractSet, Any, Callable, Dict, Mapping, Sequence, Set
 
-from dagster import AssetKey, AssetSpec, Definitions, JsonMetadataValue, UrlMetadataValue
+from dagster import AssetKey, AssetSpec, JsonMetadataValue, UrlMetadataValue
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.storage.tags import KIND_PREFIX
@@ -103,13 +103,13 @@ def get_airflow_data_to_spec_mapper(
     return _fn
 
 
-def construct_dag_assets_defs(serialized_data: SerializedAirflowDefinitionsData) -> Definitions:
-    return Definitions(
-        [
-            make_dag_external_asset(serialized_data.instance_name, dag_data)
-            for dag_data in serialized_data.dag_datas.values()
-        ]
-    )
+def construct_dag_assets_defs(
+    serialized_data: SerializedAirflowDefinitionsData,
+) -> Sequence[AssetsDefinition]:
+    return [
+        make_dag_external_asset(serialized_data.instance_name, dag_data)
+        for dag_data in serialized_data.dag_datas.values()
+    ]
 
 
 def key_for_automapped_task_asset(instance_name, dag_id, task_id) -> AssetKey:
@@ -139,7 +139,7 @@ def metadata_for_automapped_task_asset(task_info: TaskInfo) -> Mapping[str, Any]
 
 def construct_automapped_dag_assets_defs(
     serialized_data: SerializedAirflowDefinitionsData,
-) -> Definitions:
+) -> Sequence[AssetsDefinition]:
     dag_specs = []
     task_specs = []
     for dag_data in serialized_data.dag_datas.values():
@@ -186,7 +186,7 @@ def construct_automapped_dag_assets_defs(
             )
         )
 
-    return Definitions(assets=task_specs + dag_specs)
+    return task_specs + dag_specs
 
 
 def make_default_dag_asset_key(instance_name: str, dag_id: str) -> AssetKey:
