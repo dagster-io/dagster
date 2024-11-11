@@ -1,4 +1,5 @@
 from typing import Iterator
+import uuid
 
 import pytest
 import responses
@@ -379,6 +380,16 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
         "schema_change_handling": "ALLOW_ALL",
     },
 }
+
+
+@pytest.fixture(name="api_key")
+def api_key_fixture() -> str:
+    return uuid.uuid4().hex
+
+
+@pytest.fixture(name="api_secret")
+def api_secret_fixture() -> str:
+    return uuid.uuid4().hex
 
 
 @pytest.fixture(name="connector_id")
