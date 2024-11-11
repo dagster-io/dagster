@@ -6,7 +6,7 @@ from typing import Any, Iterator, Literal, Mapping, Optional, Sequence, Tuple, c
 
 from dagster import AssetKey
 from dagster._annotations import experimental, public
-from sqlglot import exp, parse_one, to_table
+from sqlglot import ParseError, exp, parse_one, to_table
 from sqlglot.optimizer import Scope, build_scope, optimize
 
 from dagster_looker.lkml.liquid_utils import best_effort_render_liquid_sql
@@ -129,7 +129,7 @@ def build_deps_for_looker_view(
                 validate_qualify_columns=False,
             )
             ast_to_evaluate = optimized_derived_table_ast
-        except Exception:
+        except ParseError:
             pass
         root_scope = build_scope(ast_to_evaluate)
 
