@@ -2878,11 +2878,11 @@ def test_asset_backfill_not_complete_until_retries_complete(
             error_info=None,
             level="debug",
             user_message="",
-            run_id=run.run_id,
+            run_id=retried_run.run_id,
             timestamp=time.time(),
             dagster_event=DagsterEvent(
                 event_type_value=DagsterEventType.RUN_SUCCESS.value,
-                job_name=run.job_name,
+                job_name=retried_run.job_name,
             ),
         )
     )
