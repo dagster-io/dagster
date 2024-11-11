@@ -352,9 +352,12 @@ def enrich_airflow_mapped_assets(
 def load_airflow_dag_asset_specs(
     airflow_instance: AirflowInstance,
     mapped_assets: Optional[Sequence[MappedAsset]] = None,
+    dag_selector_fn: Optional[DagSelectorFn] = None,
 ) -> Sequence[AssetSpec]:
     """Load asset specs for Airflow DAGs from the provided :py:class:`AirflowInstance`, and link upstreams from mapped assets."""
     serialized_data = AirflowInstanceDefsLoader(
-        airflow_instance=airflow_instance, mapped_assets=mapped_assets or []
+        airflow_instance=airflow_instance,
+        mapped_assets=mapped_assets or [],
+        dag_selector_fn=dag_selector_fn,
     ).get_or_fetch_state()
     return list(spec_iterator(construct_dag_assets_defs(serialized_data)))

@@ -1,5 +1,7 @@
 import os
+import shutil
 import subprocess
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator
 
@@ -66,3 +68,23 @@ def dagster_fixture(
     finally:
         if process:
             process.terminate()
+
+
+@contextmanager
+def replace_file(old_file: Path, new_file: Path) -> Generator[None, None, None]:
+    backup_file = old_file.with_suffix(old_file.suffix + ".bak")
+    try:
+        if old_file.exists():
+            shutil.copy2(old_file, backup_file)
+        if new_file.exists():
+            shutil.copy2(new_file, old_file)
+        else:
+            raise FileNotFoundError(f"New file {new_file} not found")
+        yield
+    finally:
+        if backup_file.exists():
+            shutil.copy2(backup_file, old_file)
+            backup_file.unlink()
+
+
+ORIG_DEFS_FILE = makefile_dir() / "airlift_federation_tutorial" / "dagster_defs" / "definitions.py"
