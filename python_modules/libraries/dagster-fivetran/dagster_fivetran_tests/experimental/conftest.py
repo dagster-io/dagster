@@ -1,5 +1,5 @@
-from typing import Iterator
 import uuid
+from typing import Iterator
 
 import pytest
 import responses
