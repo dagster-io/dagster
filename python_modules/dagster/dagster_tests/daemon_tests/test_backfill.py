@@ -2936,7 +2936,7 @@ def test_asset_backfill_not_complete_if_automatic_retry_could_happen(
         assert run.tags[BACKFILL_ID_TAG] == backfill_id
         assert run.tags["custom_tag_key"] == "custom_tag_value"
         assert step_succeeded(instance, run, "foo")
-        assert step_failed(instance, run, "always_fails")
+        assert step_failed(instance, run, "pass_on_retry")
 
     # since the failed runs should have automatic retries launched for them, the backfill should not
     # be considered complete, even though the targeted asset partitions have a completed state
