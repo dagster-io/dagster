@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Sequence
 
 import requests
 from dagster import _check as check
+from dagster._annotations import public
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterError
 from dagster._record import record
@@ -265,7 +266,19 @@ class AirflowInstance:
                 f"Failed to fetch dag runs for {dag_ids}. Status code: {response.status_code}, Message: {response.text}"
             )
 
+    @public
     def trigger_dag(self, dag_id: str, logical_date: Optional[datetime.datetime] = None) -> str:
+        """Trigger a dag run for the given dag_id.
+
+        Does not wait for the run to finish. To wait for the completed run to finish, use :py:meth:`wait_for_run_completion`.
+
+        Args:
+            dag_id (str): The dag id to trigger.
+            logical_date (Optional[datetime.datetime]): The Airflow logical_date to use for the dag run. If not provided, the current time will be used. Previously known as execution_date in Airflow; find more information in the Airflow docs: https://airflow.apache.org/docs/apache-airflow/stable/faq.html#what-does-execution-date-mean
+
+        Returns:
+            str: The dag run id.
+        """
         params = {} if not logical_date else {"logical_date": logical_date.isoformat()}
         response = self.auth_backend.get_session().post(
             f"{self.get_api_url()}/dags/{dag_id}/dagRuns",
@@ -303,7 +316,18 @@ class AirflowInstance:
                 f"Failed to unpause dag {dag_id}. Status code: {response.status_code}, Message: {response.text}"
             )
 
+    @public
     def wait_for_run_completion(self, dag_id: str, run_id: str, timeout: int = 30) -> None:
+        """Given a run ID of an airflow dag, wait for that run to reach a completed state.
+
+        Args:
+            dag_id (str): The dag id.
+            run_id (str): The run id.
+            timeout (int): The number of seconds to wait before timing out.
+
+        Returns:
+            None
+        """
         start_time = get_current_datetime()
         while get_current_datetime() - start_time < datetime.timedelta(seconds=timeout):
             dag_run = self.get_dag_run(dag_id, run_id)
@@ -314,7 +338,17 @@ class AirflowInstance:
             )  # Sleep for a second before checking again. This way we don't flood the rest API with requests.
         raise DagsterError(f"Timed out waiting for airflow run {run_id} to finish.")
 
+    @public
     def get_run_state(self, dag_id: str, run_id: str) -> str:
+        """Given a run ID of an airflow dag, return the state of that run.
+
+        Args:
+            dag_id (str): The dag id.
+            run_id (str): The run id.
+
+        Returns:
+            str: The state of the run. Will be one of the states defined by Airflow.
+        """
         return self.get_dag_run(dag_id, run_id).state
 
     def delete_run(self, dag_id: str, run_id: str) -> None:
