@@ -23,6 +23,7 @@ export type AssetChecksQuery = {
                 __typename: 'AssetCheck';
                 name: string;
                 canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+                jobNames: Array<string>;
                 description: string | null;
                 executionForLatestMaterialization: {
                   __typename: 'AssetCheckExecution';
@@ -227,4 +228,4 @@ export type AssetChecksQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetChecksQueryVersion = '10c43c7b4730e25272f7cbdd61a86a03226f47faa4fee5ed8b1cea6ce5b7f68d';
+export const AssetChecksQueryVersion = 'b92fe3766ccefb19ece1f05abcb720b4c6661fbe6a43d0957e52433bea5d989b';
