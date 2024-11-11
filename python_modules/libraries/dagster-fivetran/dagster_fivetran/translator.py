@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, cast
 
+from dagster._utils.cached_method import cached_method
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._record import record
