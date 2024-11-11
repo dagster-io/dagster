@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 import boto3
 import dagster._check as check
-from dagster import PipesClient
+from dagster import MetadataValue, PipesClient
 from dagster._annotations import experimental, public
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -146,7 +147,9 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
                 self._add_log_readers(context, start_response)
                 wait_response = self._wait_for_completion(context, start_response)
                 self._read_remaining_logs(context, wait_response)
-                return PipesClientCompletedInvocation(session)
+                return PipesClientCompletedInvocation(
+                    session, metadata=self._extract_dagster_metadata(wait_response)
+                )
 
             except DagsterExecutionInterruptedError:
                 if self.forward_termination:
@@ -341,6 +344,28 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
                         debug_info=f"log reader for container {container_id} {stdio}",
                     ),
                 )
+
+    def _extract_dagster_metadata(
+        self, response: "DescribeClusterOutputTypeDef"
+    ) -> RawMetadataMapping:
+        metadata: RawMetadataMapping = {}
+
+        region = self.client.meta.region_name
+
+        cluster = response["Cluster"]
+
+        if cluster_id := cluster.get("Id"):
+            metadata["AWS EMR Cluster ID"] = cluster_id
+
+        if log_uri := cluster.get("LogUri"):
+            metadata["AWS EMR Log URI"] = MetadataValue.path(log_uri)
+
+        if cluster_id:
+            metadata["AWS EMR Cluster"] = MetadataValue.url(
+                f"https://{region}.console.aws.amazon.com/emr/home?region={region}#/clusterDetails/{cluster_id}"
+            )
+
+        return metadata
 
     def _terminate(
         self,
