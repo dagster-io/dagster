@@ -440,3 +440,27 @@ def test_graph_multi_asset_out_from_spec() -> None:
 
     outs = materialize([no_annotation_asset])
     assert outs.success
+
+
+def test_graph_multi_asset_out_from_spec_deps() -> None:
+    @op
+    def layered_op(x):
+        return x + 1
+
+    @op
+    def inner_op(context):
+        return 1
+
+    # Currently, cannot specify deps on AssetOut.from_spec
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @graph_multi_asset(
+            outs={
+                "out1": AssetOut.from_spec(AssetSpec(key="my_key", deps={"my_upstream_asset"})),
+                "out2": AssetOut.from_spec(
+                    AssetSpec(key="my_other_key", deps={"my_upstream_asset"})
+                ),
+            }
+        )
+        def no_annotation_asset():
+            return layered_op(inner_op()), layered_op(inner_op())

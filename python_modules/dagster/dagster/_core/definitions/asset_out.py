@@ -5,6 +5,7 @@ from dagster._annotations import (
     experimental_param,
     hidden_param,
     only_allow_hidden_params_in_kwargs,
+    public,
 )
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec, replace_attributes
@@ -22,10 +23,14 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.utils import resolve_automation_condition
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
+# Unfortunate, since AssetOut stores nearly all of the properties of
+# an AssetSpec except for the key, we use a sentinel value to represent
+# an unspecified key
 EMPTY_ASSET_KEY_SENTINEL = AssetKey([])
 
 
@@ -138,6 +143,10 @@ class AssetOut:
         )
 
         with disable_dagster_warnings():
+            # This is a bit of a hack, since technically AssetOut does not hold all of the
+            # properties of an AssetSpec - chiefly, it is missing a key. Still, this reduces
+            # the amount of code duplication storing each of the properties in both AssetOut
+            # and AssetSpec, and allows us to implement the from_spec method below.
             self._spec = spec or AssetSpec(
                 key=AssetKey.from_coercible(key) if key is not None else EMPTY_ASSET_KEY_SENTINEL,
                 description=check.opt_str_param(description, "description"),
@@ -214,9 +223,10 @@ class AssetOut:
             self._spec,
             key=key,
             tags={**additional_tags, **self.tags} if self.tags else additional_tags,
-            deps=deps,
+            deps=[*self._spec.deps, *deps],
         )
 
+    @public
     @staticmethod
     def from_spec(
         spec: AssetSpec,
@@ -241,6 +251,10 @@ class AssetOut:
         Returns:
             AssetOut: The AssetOut built from the spec.
         """
+        if spec.deps:
+            raise DagsterInvalidDefinitionError(
+                "Currently, cannot build AssetOut from spec with deps"
+            )
         return AssetOut(
             spec=spec,
             dagster_type=dagster_type,
