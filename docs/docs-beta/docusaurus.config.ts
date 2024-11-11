@@ -99,6 +99,11 @@ const config: Config = {
           docId: 'api/index',
           position: 'left',
         },
+        {
+          label: 'Versions',
+          type: 'docsVersionDropdown',
+          position: 'left'
+        },
         //{
         //  label: 'Changelog',
         //  type: 'doc',
