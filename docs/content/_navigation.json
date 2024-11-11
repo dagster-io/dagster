@@ -170,7 +170,7 @@
             "path": "/concepts/partitions-schedules-sensors/sensors"
           },
           {
-            "title": "Declarative Automation (Experimental)",
+            "title": "Declarative Automation",
             "children": [
               {
                 "title": "Overview",
