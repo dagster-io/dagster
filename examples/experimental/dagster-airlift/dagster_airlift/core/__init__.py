@@ -8,7 +8,6 @@ from .basic_auth import (
 from .load_defs import (
     AirflowInstance as AirflowInstance,
     DagSelectorFn as DagSelectorFn,
-    build_airflow_mapped_defs as build_airflow_mapped_defs,
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
 from .multiple_tasks import (
