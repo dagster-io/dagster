@@ -18,7 +18,6 @@ const FallthroughRoot = lazy(() =>
   import('shared/app/FallthroughRoot.oss').then((mod) => ({default: mod.FallthroughRoot})),
 );
 const AssetsGlobalGraphRoot = lazy(() => import('../assets/AssetsGlobalGraphRoot'));
-const CodeLocationsPage = lazy(() => import('../instance/CodeLocationsPage'));
 const InstanceConfig = lazy(() => import('../instance/InstanceConfig'));
 const InstanceConcurrencyPage = lazy(() => import('../instance/InstanceConcurrency'));
 const InstanceHealthPage = lazy(() => import('../instance/InstanceHealthPage'));

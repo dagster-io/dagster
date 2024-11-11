@@ -3811,6 +3811,8 @@ __metadata:
     "@vx/shape": "npm:^0.0.192"
     amator: "npm:^1.1.0"
     ansi-to-react: "npm:^5.1.0"
+    antlr4ts: "npm:0.5.0-alpha.4"
+    antlr4ts-cli: "npm:0.5.0-alpha.4"
     babel-jest: "npm:^29.7.0"
     babel-loader: "npm:9.1.2"
     babel-plugin-graphql-tag: "npm:^3.3.0"
@@ -8697,6 +8699,22 @@ __metadata:
     react: ^16.3.2
     react-dom: ^16.3.2
   checksum: 10/7827ab1b53fb5824114df08181f464d05ebb962ced207c15d3fd07d21d4fdfe1b8892981ebe3416a0a03917928040f964d2a0e3e6d750ef25690ef98d5d5afe3
+  languageName: node
+  linkType: hard
+
+"antlr4ts-cli@npm:0.5.0-alpha.4":
+  version: 0.5.0-alpha.4
+  resolution: "antlr4ts-cli@npm:0.5.0-alpha.4"
+  bin:
+    antlr4ts: ./antlr4ts
+  checksum: 10/ca8cbf6df44081c9dd1ec9bf129adc042e345bc39e817a7c33d5a0cbd45be24f29419135522762a0e77f0be95e970483ab5679c7d94838772457df759fc7627a
+  languageName: node
+  linkType: hard
+
+"antlr4ts@npm:0.5.0-alpha.4":
+  version: 0.5.0-alpha.4
+  resolution: "antlr4ts@npm:0.5.0-alpha.4"
+  checksum: 10/d572047607e5dcbae1ee1f33f604cf2769fe279cb52d850c86a09548d55c97704055033afe5e0b91c33488ba73377a755fafcb50d106993a9323f746ca2dd187
   languageName: node
   linkType: hard
 
