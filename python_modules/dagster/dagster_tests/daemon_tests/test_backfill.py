@@ -91,10 +91,6 @@ from dagster._time import get_current_timestamp
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
 
-from python_modules.dagster.dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
-    consume_new_runs_for_automatic_reexecution,
-)
-
 default_resource_defs = resource_defs = {"io_manager": fs_io_manager}
 
 
@@ -2995,6 +2991,86 @@ def test_asset_backfill_not_complete_if_automatic_retry_could_happen(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+
+
+def test_asset_backfill_fails_if_retries_fail(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    del remote_repo
+    backfill_id = "run_retries_backfill"
+    partition_keys = static_partitions.get_partition_keys()
+    asset_selection = [AssetKey("foo"), AssetKey("pass_on_retry"), AssetKey("always_fails")]
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=workspace_context.create_request_context().asset_graph,
+            backfill_id=backfill_id,
+            tags={"custom_tag_key": "custom_tag_value", MAX_RETRIES_TAG: "2"},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_start(instance, timeout=30)
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    assert instance.get_runs_count() == 3
+    runs = reversed(list(instance.get_runs()))
+    for run in runs:
+        assert run.tags[BACKFILL_ID_TAG] == backfill_id
+        assert run.tags["custom_tag_key"] == "custom_tag_value"
+        assert step_succeeded(instance, run, "foo")
+        assert step_failed(instance, run, "pass_on_retry")
+
+    # since the failed runs should have automatic retries launched for them, the backfill should not
+    # be considered complete, even though the targeted asset partitions have a completed state
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.asset_backfill_data.all_targeted_partitions_have_materialization_status()
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    runs = instance.get_run_records()
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_process_context=workspace_context, run_records=runs
+        )
+    )
+    wait_for_all_runs_to_finish(instance, timeout=30)
+    assert instance.get_runs_count() == 6
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    # retry limit hasn't been hit, so backfill still in progress
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    runs = instance.get_run_records()
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_process_context=workspace_context, run_records=runs
+        )
+    )
+    wait_for_all_runs_to_finish(instance, timeout=30)
+    assert instance.get_runs_count() == 9
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED_FAILED
 
 
 def test_asset_backfill_retries_make_downstreams_runnable(
