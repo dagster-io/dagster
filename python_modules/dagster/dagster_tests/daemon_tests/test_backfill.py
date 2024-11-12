@@ -3122,6 +3122,8 @@ def test_asset_backfill_retries_make_downstreams_runnable(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     assert instance.get_runs_count() == 1
     backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.asset_backfill_data
     assert (
         backfill.asset_backfill_data.materialized_subset.num_partitions_and_non_partitioned_assets
         == 0
