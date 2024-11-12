@@ -23,6 +23,7 @@ def get_fivetran_connector_table_name(schema_name: str, table_name: str) -> str:
     return f"{schema_name}.{table_name}"
 
 
+# TODO: move to translator.py and make table_data a FivetranTable object
 def metadata_for_table(
     table_data: Mapping[str, Any],
     connector_url: str,

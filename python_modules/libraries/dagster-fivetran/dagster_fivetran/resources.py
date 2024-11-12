@@ -32,8 +32,9 @@ from requests.exceptions import RequestException
 
 from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
-    FivetranContentData,
-    FivetranContentType,
+    FivetranConnector,
+    FivetranDestination,
+    FivetranSchemaConfig,
     FivetranWorkspaceData,
 )
 from dagster_fivetran.types import FivetranOutput
@@ -640,8 +641,9 @@ class FivetranWorkspace(ConfigurableResource):
         Returns:
             FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
         """
-        connectors = []
-        destinations = []
+        connectors_by_id = {}
+
+        destinations_by_id = {}
 
         client = self.get_client()
         groups = client.get_groups()["items"]
@@ -650,38 +652,38 @@ class FivetranWorkspace(ConfigurableResource):
             group_id = group["id"]
 
             destination_details = client.get_destination_details(destination_id=group_id)
-            destinations.append(
-                FivetranContentData(
-                    content_type=FivetranContentType.DESTINATION, properties=destination_details
-                )
+            destinations_by_id[group_id] = FivetranDestination(
+                id=group_id,
+                database=destination_details.get("config", {}).get("database"),
+                service=destination_details["service"],
             )
 
             connectors_details = client.get_connectors_for_group(group_id=group_id)["items"]
             for connector_details in connectors_details:
-                connector_id = connector_details["id"]
-
-                setup_state = connector_details["status"]["setup_state"]
-                if setup_state in (
+                if connector_details["status"]["setup_state"] in (
                     FivetranConnectorSetupStateType.INCOMPLETE,
                     FivetranConnectorSetupStateType.BROKEN,
                 ):
                     continue
 
-                schema_config = client.get_schema_config_for_connector(connector_id=connector_id)
-
-                augmented_connector_details = {
-                    **connector_details,
-                    "schema_config": schema_config,
-                    "destination_id": group_id,
-                }
-                connectors.append(
-                    FivetranContentData(
-                        content_type=FivetranContentType.CONNECTOR,
-                        properties=augmented_connector_details,
-                    )
+                connector_id = connector_details["id"]
+                schema_config_details = client.get_schema_config_for_connector(
+                    connector_id=connector_id
                 )
 
-        return FivetranWorkspaceData.from_content_data(connectors + destinations)
+                connectors_by_id[group_id] = FivetranConnector(
+                    id=connector_id,
+                    name=connector_details["schema"],
+                    service=connector_details["service"],
+                    schema_config=FivetranSchemaConfig.from_schema_config_details(
+                        schema_config_details=schema_config_details
+                    ),
+                    destination_id=group_id,
+                )
+
+        return FivetranWorkspaceData(
+            connectors_by_id=connectors_by_id, destinations_by_id=destinations_by_id
+        )
 
 
 @experimental
