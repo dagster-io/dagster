@@ -1829,9 +1829,12 @@ def _get_failed_asset_partitions(
                 start=run.tags[ASSET_PARTITION_RANGE_START_TAG],
                 end=run.tags[ASSET_PARTITION_RANGE_END_TAG],
             )
+            asset_partition_candidates = []
             for asset_key in failed_asset_keys:
-                asset_partition_candidates = asset_graph.get_partitions_in_range(
-                    asset_key, partition_range, instance_queryer
+                asset_partition_candidates.extend(
+                    asset_graph.get_partitions_in_range(
+                        asset_key, partition_range, instance_queryer
+                    )
                 )
         else:
             # a regular backfill run that run on a single partition

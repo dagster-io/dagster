@@ -3040,6 +3040,7 @@ def test_asset_backfill_fails_if_retries_fail(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill(backfill_id)
     assert backfill
+    assert backfill.asset_backfill_data
     assert backfill.asset_backfill_data.all_targeted_partitions_have_materialization_status()
     assert backfill.status == BulkActionStatus.REQUESTED
 
