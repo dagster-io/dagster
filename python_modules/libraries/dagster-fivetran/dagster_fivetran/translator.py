@@ -40,7 +40,7 @@ class FivetranConnector:
         connector_details: Mapping[str, Any],
         destination_details: Mapping[str, Any],
         schema_config_details: Mapping[str, Any],
-    ) -> "FivetranDestination":
+    ) -> "FivetranConnector":
         return cls(
             id=connector_details["id"],
             name=connector_details["schema"],
