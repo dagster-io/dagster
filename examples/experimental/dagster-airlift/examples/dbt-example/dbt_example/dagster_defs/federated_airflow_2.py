@@ -1,6 +1,7 @@
-from typing import Sequence
+from typing import Iterable, Sequence
 
 from dagster import AssetsDefinition, Definitions, SensorDefinition
+from dagster._core.definitions.asset_spec import replace_asset_attributes
 from dagster_airlift.core import (
     AirflowBasicAuthBackend,
     AirflowInstance,
@@ -8,7 +9,7 @@ from dagster_airlift.core import (
 )
 
 from .constants import LEGACY_FEDERATED_BASE_URL, LEGACY_FEDERATED_INSTANCE_NAME, PASSWORD, USERNAME
-from .utils import with_group
+from .utils import all_assets_defs
 
 airflow_instance = AirflowInstance(
     auth_backend=AirflowBasicAuthBackend(
@@ -22,15 +23,15 @@ def get_federated_airflow_defs() -> Definitions:
     return build_defs_from_airflow_instance(airflow_instance=airflow_instance)
 
 
+def federated_airflow_assets() -> Sequence[AssetsDefinition]:
+    return all_assets_defs(get_federated_airflow_defs())
+
+
 def get_legacy_instance_airflow_sensor() -> SensorDefinition:
     defs = get_federated_airflow_defs()
     assert defs.sensors
     return next(iter(defs.sensors))
 
 
-def get_legacy_instance_airflow_assets() -> Sequence[AssetsDefinition]:
-    defs = get_federated_airflow_defs()
-    return [
-        with_group(assets_def, "legacy_airflow")
-        for assets_def in defs.get_repository_def().assets_defs_by_key.values()
-    ]
+def get_legacy_instance_airflow_assets() -> Iterable[AssetsDefinition]:
+    return replace_asset_attributes(federated_airflow_assets(), group_name="legacy_airflow")

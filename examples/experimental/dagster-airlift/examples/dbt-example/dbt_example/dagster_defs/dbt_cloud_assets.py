@@ -1,4 +1,5 @@
-from dagster import AssetsDefinition, multi_asset
+from dagster import AssetsDefinition, AutomationCondition, multi_asset
+from dagster._core.definitions.asset_spec import replace_asset_attributes
 
 from .constants import DBT_UPSTREAMS
 from .dbt_cloud_utils import (
@@ -8,7 +9,6 @@ from .dbt_cloud_utils import (
     get_project,
     relevant_check_specs,
 )
-from .utils import eager
 
 
 def get_dbt_cloud_assets() -> AssetsDefinition:
@@ -17,7 +17,9 @@ def get_dbt_cloud_assets() -> AssetsDefinition:
     filtered_specs = filter_specs_by_tag(dbt_cloud_project.get_asset_specs(), EXPECTED_TAG)
     specs_with_dbt_core_deps = add_deps(DBT_UPSTREAMS, filtered_specs)
     # Dbt cloud assets will run every time the upstream dags run.
-    specs_with_eager_automation = eager(specs_with_dbt_core_deps)
+    specs_with_eager_automation = replace_asset_attributes(
+        specs_with_dbt_core_deps, automation_condition=AutomationCondition.eager()
+    )
 
     @multi_asset(
         specs=specs_with_eager_automation,

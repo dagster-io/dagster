@@ -1,6 +1,7 @@
-from typing import Sequence
+from typing import Iterable
 
 from dagster import AssetsDefinition, Definitions, SensorDefinition
+from dagster._core.definitions.asset_spec import replace_asset_attributes
 from dagster_airlift.core import (
     AirflowBasicAuthBackend,
     AirflowInstance,
@@ -13,7 +14,7 @@ from .constants import (
     PASSWORD,
     USERNAME,
 )
-from .utils import with_group
+from .utils import all_assets_defs
 
 airflow_instance = AirflowInstance(
     auth_backend=AirflowBasicAuthBackend(
@@ -33,9 +34,6 @@ def get_other_team_airflow_sensor() -> SensorDefinition:
     return next(iter(defs.sensors))
 
 
-def get_other_team_airflow_assets() -> Sequence[AssetsDefinition]:
-    defs = get_federated_airflow_defs()
-    return [
-        with_group(assets_def, "upstream_team_airflow")
-        for assets_def in defs.get_repository_def().assets_defs_by_key.values()
-    ]
+def get_other_team_airflow_assets() -> Iterable[AssetsDefinition]:
+    assets_defs = all_assets_defs(get_federated_airflow_defs())
+    return replace_asset_attributes(assets=assets_defs, group_name="upstream_team_airflow")
