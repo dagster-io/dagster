@@ -943,6 +943,11 @@
             ]
           },
           {
+            "title": "Airflow Federation Tutorial",
+            "path": "/integrations/airlift/federation-tutorial/overview",
+            "children": []
+          },
+          {
             "title": "Reference",
             "path": "/integrations/airlift/reference"
           },
