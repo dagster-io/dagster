@@ -11,7 +11,7 @@ SPECIAL_KIND_ORDERS = [
         "dag",
         "task",
     ],
-    ["table", "view", "source", "seed", "file", "dashboard", "notebook"],
+    ["table", "view", "semanticmodel", "source", "seed", "file", "dashboard", "report", "notebook"],
     [
         "csv",
         "pdf",

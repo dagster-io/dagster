@@ -194,6 +194,7 @@ export type KnownTagType =
   | 'duckdb'
   | 'tensorflow'
   | 'pandas'
+  | 'semanticmodel'
   | 'googlesheets'
   | 'sql'
   | 'wandb'
@@ -340,6 +341,7 @@ export type KnownTagType =
   | 'seed'
   | 'file'
   | 'dashboard'
+  | 'report'
   | 'notebook'
   | 'csv'
   | 'pdf'
@@ -1017,6 +1019,16 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   file: {
     icon: file,
     content: 'File',
+    blackAndWhite: true,
+  },
+  semanticmodel: {
+    icon: table,
+    content: 'Semantic Model',
+    blackAndWhite: true,
+  },
+  report: {
+    icon: notebook,
+    content: 'Report',
     blackAndWhite: true,
   },
   dashboard: {
