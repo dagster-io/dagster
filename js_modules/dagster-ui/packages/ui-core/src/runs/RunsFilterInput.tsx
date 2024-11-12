@@ -439,7 +439,8 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     name: 'Partition',
     icon: 'partition',
     initialSuggestions: partitionValues,
-    getNoSuggestionsPlaceholder: (query) => (query ? 'Invalid partition' : 'Type or paste a partition'),
+    getNoSuggestionsPlaceholder: (query) =>
+      query ? 'Invalid partition' : 'Type or paste a partition',
 
     state: useMemo(() => {
       return tokens
