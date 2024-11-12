@@ -19,7 +19,7 @@ from dagster_airlift.core.sensor.event_translation import (
 )
 from dagster_airlift.core.sensor.sensor_builder import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
-    build_airflow_polling_sensor_defs,
+    build_airflow_polling_sensor,
 )
 from dagster_airlift.core.serialization.compute import DagSelectorFn, compute_serialized_data
 from dagster_airlift.core.serialization.defs_construction import (
@@ -223,11 +223,15 @@ def build_defs_from_airflow_instance(
 
     return Definitions.merge(
         defs_with_airflow_assets,
-        build_airflow_polling_sensor_defs(
-            mapped_assets=mapped_and_constructed_assets,
-            airflow_instance=airflow_instance,
-            minimum_interval_seconds=sensor_minimum_interval_seconds,
-            event_transformer_fn=event_transformer_fn,
+        Definitions(
+            sensors=[
+                build_airflow_polling_sensor(
+                    mapped_assets=mapped_and_constructed_assets,
+                    airflow_instance=airflow_instance,
+                    minimum_interval_seconds=sensor_minimum_interval_seconds,
+                    event_transformer_fn=event_transformer_fn,
+                )
+            ]
         ),
     )
 
@@ -280,10 +284,14 @@ def build_full_automapped_dags_from_airflow_instance(
     resolved_defs = replace_assets_in_defs(defs=defs, assets=airflow_assets)
     return Definitions.merge(
         resolved_defs,
-        build_airflow_polling_sensor_defs(
-            minimum_interval_seconds=sensor_minimum_interval_seconds,
-            mapped_assets=airflow_assets,
-            airflow_instance=airflow_instance,
+        Definitions(
+            sensors=[
+                build_airflow_polling_sensor(
+                    minimum_interval_seconds=sensor_minimum_interval_seconds,
+                    mapped_assets=airflow_assets,
+                    airflow_instance=airflow_instance,
+                )
+            ]
         ),
     )
 
