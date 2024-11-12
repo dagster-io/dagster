@@ -108,6 +108,7 @@ def replace_file(old_file: Path, new_file: Path) -> Generator[None, None, None]:
 
 
 ORIG_DEFS_FILE = makefile_dir() / "airlift_federation_tutorial" / "dagster_defs" / "definitions.py"
+SNIPPETS_DIR = makefile_dir() / "snippets"
 
 
 def assert_successful_dag_run(af_instance: AirflowInstance, dag_id: str) -> None:

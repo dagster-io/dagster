@@ -1,24 +1,37 @@
 import subprocess
+from pathlib import Path
 from typing import Generator
 
 import pytest
 import requests
-from airlift_federation_tutorial_tests.conftest import ORIG_DEFS_FILE, makefile_dir, replace_file
+from airlift_federation_tutorial_tests.conftest import (
+    ORIG_DEFS_FILE,
+    SNIPPETS_DIR,
+    makefile_dir,
+    replace_file,
+)
 from dagster_airlift.in_airflow.gql_queries import ASSET_NODES_QUERY
 from dagster_airlift.test.shared_fixtures import stand_up_dagster
 
-STAGE_FILE = ORIG_DEFS_FILE.parent / "stages" / "with_specs.py"
+OBSERVE_COMPLETE_FILE = ORIG_DEFS_FILE.parent / "stages" / "observe_complete.py"
+OBSERVE_WITH_DEPS_FILE = ORIG_DEFS_FILE.parent / "stages" / "observe_with_deps.py"
+OBSERVE_SNIPPETS_FILE = SNIPPETS_DIR / "observe.py"
 
 
 @pytest.fixture
-def completed_stage() -> Generator[None, None, None]:
-    with replace_file(ORIG_DEFS_FILE, STAGE_FILE):
+def stage_file(request: pytest.FixtureRequest) -> Path:
+    return request.param
+
+
+@pytest.fixture
+def simulate_stage(stage_file: Path) -> Generator[None, None, None]:
+    with replace_file(ORIG_DEFS_FILE, stage_file):
         yield
 
 
 @pytest.fixture(name="dagster_dev")
 def dagster_fixture(
-    warehouse_airflow: subprocess.Popen, metrics_airflow: subprocess.Popen, completed_stage: None
+    warehouse_airflow: subprocess.Popen, metrics_airflow: subprocess.Popen, simulate_stage: None
 ) -> Generator[subprocess.Popen, None, None]:
     process = None
     try:
@@ -32,7 +45,12 @@ def dagster_fixture(
             process.terminate()
 
 
-def test_with_specs(dagster_dev: subprocess.Popen) -> None:
+@pytest.mark.parametrize(
+    "stage_file",
+    [OBSERVE_COMPLETE_FILE, OBSERVE_WITH_DEPS_FILE, OBSERVE_SNIPPETS_FILE],
+    indirect=True,
+)
+def test_stage(dagster_dev: subprocess.Popen, stage_file: Path) -> None:
     response = requests.post(
         # Timeout in seconds
         "http://localhost:3000/graphql",
@@ -40,4 +58,4 @@ def test_with_specs(dagster_dev: subprocess.Popen) -> None:
         timeout=3,
     )
     assert response.status_code == 200
-    assert len(response.json()["data"]["assetNodes"]) == 2
+    assert len(response.json()["data"]["assetNodes"]) > 0
