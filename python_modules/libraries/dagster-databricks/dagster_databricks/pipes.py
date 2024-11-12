@@ -9,6 +9,7 @@ from contextlib import ExitStack, contextmanager
 from typing import Any, Dict, Iterator, Literal, Mapping, Optional, Sequence, Set, TextIO, Union
 
 import dagster._check as check
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -184,7 +185,9 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
                     self.client.jobs.cancel_run(run_id)
                     self._poll_til_terminating(run_id)
 
-        return PipesClientCompletedInvocation(pipes_session)
+        return PipesClientCompletedInvocation(
+            pipes_session, metadata=self._extract_dagster_metadata(run_id)
+        )
 
     def _enrich_submit_task_dict(
         self,
@@ -219,6 +222,11 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
                 **(self.env or {}),
                 **pipes_env_vars,
             }
+
+        submit_task_dict["tags"] = {
+            **submit_task_dict.get("tags", {}),
+            **session.default_remote_invocation_info,
+        }
 
         return submit_task_dict
 
@@ -276,6 +284,18 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
         if run.state is None:
             check.failed("Databricks job run state is None")
         return run.state
+
+    def _extract_dagster_metadata(self, run_id: int) -> RawMetadataMapping:
+        metadata: RawMetadataMapping = {}
+
+        run = self.client.jobs.get_run(run_id)
+
+        metadata["Databricks Job Run ID"] = str(run_id)
+
+        if run_page_url := run.run_page_url:
+            metadata["Databricks Job Run URL"] = run_page_url
+
+        return metadata
 
 
 _CONTEXT_FILENAME = "context.json"
