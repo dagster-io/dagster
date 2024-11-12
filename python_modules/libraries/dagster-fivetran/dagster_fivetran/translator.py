@@ -59,7 +59,7 @@ class FivetranDestination:
 
     id: str
     database: Optional[str]
-    service: Optional[str]
+    service: str
 
     @classmethod
     def from_destination_details(
