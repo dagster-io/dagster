@@ -1,16 +1,16 @@
 import responses
 from dagster_fivetran import FivetranWorkspace
 
+from dagster_fivetran_tests.experimental.conftest import TEST_API_KEY, TEST_API_SECRET
+
 
 def test_basic_resource_request(
-    api_key: str,
-    api_secret: str,
     connector_id: str,
     destination_id: str,
     group_id: str,
     all_api_mocks: responses.RequestsMock,
 ) -> None:
-    resource = FivetranWorkspace(api_key=api_key, api_secret=api_secret)
+    resource = FivetranWorkspace(api_key=TEST_API_KEY, api_secret=TEST_API_SECRET)
 
     client = resource.get_client()
     client.get_connector_details(connector_id=connector_id)

@@ -2,13 +2,13 @@ from typing import Callable
 
 from dagster_fivetran import FivetranWorkspace
 
+from dagster_fivetran_tests.experimental.conftest import TEST_API_KEY, TEST_API_SECRET
+
 
 def test_fivetran_workspace_data_to_fivetran_connector_table_props_data(
-    api_key: str,
-    api_secret: str,
     fetch_workspace_data_api_mocks: Callable,
 ) -> None:
-    resource = FivetranWorkspace(api_key=api_key, api_secret=api_secret)
+    resource = FivetranWorkspace(api_key=TEST_API_KEY, api_secret=TEST_API_SECRET)
 
     actual_workspace_data = resource.fetch_fivetran_workspace_data()
     table_props_data = actual_workspace_data.to_fivetran_connector_table_props_data()

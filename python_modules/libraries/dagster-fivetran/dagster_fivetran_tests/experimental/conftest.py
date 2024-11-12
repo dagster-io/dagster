@@ -1,4 +1,3 @@
-import uuid
 from typing import Iterator
 
 import pytest
@@ -381,15 +380,8 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
     },
 }
 
-
-@pytest.fixture(name="api_key")
-def api_key_fixture() -> str:
-    return uuid.uuid4().hex
-
-
-@pytest.fixture(name="api_secret")
-def api_secret_fixture() -> str:
-    return uuid.uuid4().hex
+TEST_API_KEY = "test_api_key"
+TEST_API_SECRET = "test_api_secret"
 
 
 @pytest.fixture(name="connector_id")
