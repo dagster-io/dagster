@@ -7,6 +7,7 @@ from dagster import (
     AssetMaterialization,
     DefaultSensorStatus,
     RunRequest,
+    SensorDefinition,
     SensorEvaluationContext,
     SensorResult,
     _check as check,
@@ -14,7 +15,6 @@ from dagster import (
 )
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetObservation
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -78,13 +78,13 @@ def check_keys_for_asset_keys(
                 yield check_spec.key
 
 
-def build_airflow_polling_sensor_defs(
+def build_airflow_polling_sensor(
     *,
     mapped_assets: Iterable[MappedAsset],
     airflow_instance: AirflowInstance,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
-) -> Definitions:
+) -> SensorDefinition:
     """The constructed sensor polls the Airflow instance for activity, and inserts asset events into Dagster's event log.
 
     The sensor decides which Airflow dags and tasks to monitor by inspecting the metadata of the passed-in Definitions object `mapped_defs`.
@@ -190,7 +190,7 @@ def build_airflow_polling_sensor_defs(
             else None,
         )
 
-    return Definitions(sensors=[airflow_dag_sensor])
+    return airflow_dag_sensor
 
 
 def sorted_asset_events(
