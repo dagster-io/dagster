@@ -954,7 +954,7 @@ def backfill_is_complete(
     if (
         # Condition 1 - all asset partitions in the target subset have a materialization state
         backfill_data.all_targeted_partitions_have_materialization_status()
-        # Condtition 2 - there are no in progress runs for the backfill
+        # Condition 2 - there are no in progress runs for the backfill
         and len(
             instance.get_run_ids(
                 filters=RunsFilter(

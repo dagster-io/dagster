@@ -2868,11 +2868,12 @@ def test_asset_backfill_not_complete_until_retries_complete(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill(backfill_id)
     assert backfill
+    assert backfill.asset_backfill_data
     assert backfill.asset_backfill_data.all_targeted_partitions_have_materialization_status()
     assert backfill.status == BulkActionStatus.REQUESTED
 
     # manually mark the run as successful to show that the backfill will be marked as complete
-    # since there are no in prgress runs
+    # since there are no in progress runs
     instance.handle_new_event(
         EventLogEntry(
             error_info=None,
@@ -2943,6 +2944,7 @@ def test_asset_backfill_not_complete_if_automatic_retry_could_happen(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill(backfill_id)
     assert backfill
+    assert backfill.asset_backfill_data
     assert backfill.asset_backfill_data.all_targeted_partitions_have_materialization_status()
     assert backfill.status == BulkActionStatus.REQUESTED
 
