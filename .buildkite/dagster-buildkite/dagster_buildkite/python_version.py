@@ -5,7 +5,7 @@ from typing import List
 from dagster_buildkite.utils import is_release_branch, safe_getenv
 
 
-class AvailablePythonVersion(str, Enum):
+class AvailablePythonVersion(Enum):
     # Ordering is important here, because some steps will take the highest/lowest available version.
     V3_9 = "3.9"
     V3_10 = "3.10"
@@ -60,6 +60,6 @@ class AvailablePythonVersion(str, Enum):
 
     @classmethod
     def to_tox_factor(cls, version: "AvailablePythonVersion") -> str:
-        ver_parts = version.split(".")
+        ver_parts = version.value.split(".")
         major, minor = ver_parts[0], ver_parts[1]
         return f"py{major}{minor}"

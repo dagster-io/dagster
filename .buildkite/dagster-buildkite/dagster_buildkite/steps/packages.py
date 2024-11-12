@@ -92,7 +92,7 @@ def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: List[str]) -> List[
 # ########################
 
 
-def airflow_extra_cmds(version: str, _) -> List[str]:
+def airflow_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     return [
         'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",
@@ -160,9 +160,9 @@ deploy_docker_example_extra_cmds = [
 ]
 
 
-def celery_extra_cmds(version: str, _) -> List[str]:
+def celery_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     return [
-        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
         "pushd python_modules/libraries/dagster-celery",
         # Run the rabbitmq db. We are in docker running docker
@@ -178,7 +178,7 @@ def celery_extra_cmds(version: str, _) -> List[str]:
     ]
 
 
-def celery_docker_extra_cmds(version: str, _) -> List[str]:
+def celery_docker_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     return celery_extra_cmds(version, _) + [
         "pushd python_modules/libraries/dagster-celery-docker/dagster_celery_docker_tests/",
         "docker-compose up -d --remove-orphans",
@@ -192,9 +192,9 @@ def celery_docker_extra_cmds(version: str, _) -> List[str]:
     ]
 
 
-def docker_extra_cmds(version: str, _) -> List[str]:
+def docker_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     return [
-        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
         "pushd python_modules/libraries/dagster-docker/dagster_docker_tests/",
         "docker-compose up -d --remove-orphans",
@@ -230,9 +230,9 @@ mysql_extra_cmds = [
 ]
 
 
-def k8s_extra_cmds(version: str, _) -> List[str]:
+def k8s_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     return [
-        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
     ]
 
