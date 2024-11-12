@@ -71,10 +71,13 @@ from dagster._core.storage.dagster_run import (
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
+    BACKFILL_ID_TAG,
+    BACKFILL_TAGS,
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
     RESUME_RETRY_TAG,
     ROOT_RUN_ID_TAG,
+    TAGS_TO_MAYBE_OMIT_ON_RETRY,
     TAGS_TO_OMIT_ON_RETRY,
     WILL_RETRY_TAG,
 )
@@ -1633,6 +1636,7 @@ class DagsterInstance(DynamicPartitionsStore):
         run_config: Optional[Mapping[str, Any]] = None,
         use_parent_run_tags: bool = False,
     ) -> DagsterRun:
+        from dagster._core.execution.backfill import BulkActionStatus
         from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
         from dagster._core.execution.plan.state import KnownExecutionState
         from dagster._core.remote_representation import CodeLocation, RemoteJob
@@ -1650,11 +1654,21 @@ class DagsterInstance(DynamicPartitionsStore):
         parent_run_id = parent_run.run_id
 
         # these can differ from remote_job.tags if tags were added at launch time
-        parent_run_tags = (
-            {key: val for key, val in parent_run.tags.items() if key not in TAGS_TO_OMIT_ON_RETRY}
-            if use_parent_run_tags
-            else {}
-        )
+        parent_run_tags = {}
+        if use_parent_run_tags:
+            parent_run_tags = {
+                key: val
+                for key, val in parent_run.tags.items()
+                if key not in TAGS_TO_OMIT_ON_RETRY and key not in TAGS_TO_MAYBE_OMIT_ON_RETRY
+            }
+            # if the run was part of a backfill and the backfill is complete, we do not want the
+            # retry to be considered part of the backfill, so remove all backfill-related tags
+            if parent_run.tags.get(BACKFILL_ID_TAG) is not None:
+                backfill = self.get_backfill(parent_run.tags[BACKFILL_ID_TAG])
+                if backfill.status == BulkActionStatus.REQUESTED:
+                    for tag in BACKFILL_TAGS:
+                        if parent_run.tags.get(tag) is not None:
+                            parent_run_tags[tag] = parent_run.tags[tag]
 
         tags = merge_dicts(
             remote_job.tags,
