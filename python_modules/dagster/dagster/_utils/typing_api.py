@@ -52,12 +52,7 @@ def is_closed_python_list_type(ttype):
     origin = get_origin(ttype)
     args = get_args(ttype)
 
-    return (
-        origin is list
-        and args != ()
-        # py3.7 compat
-        and type(args[0]) != typing.TypeVar
-    )
+    return origin is list and args != ()
 
 
 def is_closed_python_dict_type(ttype):
@@ -73,13 +68,7 @@ def is_closed_python_dict_type(ttype):
     origin = get_origin(ttype)
     args = get_args(ttype)
 
-    return (
-        origin is dict
-        and args != ()
-        # py3.7 compat
-        and type(args[0]) != typing.TypeVar
-        and type(args[1]) != typing.TypeVar
-    )
+    return origin is dict and args != ()
 
 
 def is_closed_python_tuple_type(ttype):
@@ -107,12 +96,7 @@ def is_closed_python_set_type(ttype):
     origin = get_origin(ttype)
     args = get_args(ttype)
 
-    return (
-        origin is set
-        and args != ()
-        # py3.7 compat
-        and type(args[0]) != typing.TypeVar
-    )
+    return origin is set and args != ()
 
 
 def get_optional_inner_type(ttype):

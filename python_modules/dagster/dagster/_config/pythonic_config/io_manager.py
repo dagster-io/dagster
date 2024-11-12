@@ -22,14 +22,6 @@ from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from dagster._utils.cached_method import cached_method
 
-try:
-    from functools import cached_property  # type: ignore  # (py37 compat)
-except ImportError:
-
-    class cached_property:
-        pass
-
-
 TIOManagerValue = TypeVar("TIOManagerValue", bound=IOManager)
 
 
