@@ -19,7 +19,6 @@ import {
   buildDimensionPartitionKeys,
   buildInstance,
   buildMaterializationEvent,
-  buildMode,
   buildPartitionDefinition,
   buildPartitionRunConfig,
   buildPartitionTags,
@@ -444,16 +443,7 @@ export const buildLaunchAssetLoaderGenericJobMock = (jobName: string) => {
     result: {
       data: {
         __typename: 'Query',
-        pipelineOrError: {
-          id: '8e2d3f9597c4a45bb52fe9ab5656419f4329d4fb',
-          modes: [
-            buildMode({
-              id: 'da3055161c528f4c839339deb4a362ec1be4f079-default',
-              resources: [],
-            }),
-          ],
-          __typename: 'Pipeline',
-        },
+        resourcesOrError: {__typename: 'ResourceConnection', resources: []},
       },
     },
   };
@@ -472,84 +462,18 @@ export const LaunchAssetLoaderResourceJob7Mock: MockedResponse<LaunchAssetLoader
   result: {
     data: {
       __typename: 'Query',
-      pipelineOrError: {
-        id: '8e2d3f9597c4a45bb52fe9ab5656419f4329d4fb',
-        modes: [
+      resourcesOrError: {
+        __typename: 'ResourceConnection',
+        resources: [
           {
-            id: 'da3055161c528f4c839339deb4a362ec1be4f079-default',
-            resources: [
-              {
-                name: 'io_manager',
-                description:
-                  'Built-in filesystem IO manager that stores and retrieves values using pickling.',
-                configField: {
-                  name: 'config',
-                  isRequired: false,
-                  configType: {
-                    __typename: 'CompositeConfigType',
-                    key: 'Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851',
-                    description: null,
-                    isSelector: false,
-                    typeParamKeys: [],
-                    fields: [
-                      {
-                        name: 'base_dir',
-                        description: null,
-                        isRequired: false,
-                        configTypeKey: 'StringSourceType',
-                        defaultValueAsJson: null,
-                        __typename: 'ConfigTypeField',
-                      },
-                    ],
-                    recursiveConfigTypes: [
-                      {
-                        __typename: 'CompositeConfigType',
-                        key: 'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                        description: null,
-                        isSelector: true,
-                        typeParamKeys: [],
-                        fields: [
-                          {
-                            name: 'env',
-                            description: null,
-                            isRequired: true,
-                            configTypeKey: 'String',
-                            defaultValueAsJson: null,
-                            __typename: 'ConfigTypeField',
-                          },
-                        ],
-                      },
-                      {
-                        __typename: 'RegularConfigType',
-                        givenName: 'String',
-                        key: 'String',
-                        description: '',
-                        isSelector: false,
-                        typeParamKeys: [],
-                      },
-                      {
-                        __typename: 'ScalarUnionConfigType',
-                        key: 'StringSourceType',
-                        description: null,
-                        isSelector: false,
-                        typeParamKeys: [
-                          'String',
-                          'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                        ],
-                        scalarTypeKey: 'String',
-                        nonScalarTypeKey: 'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                      },
-                    ],
-                  },
-                  __typename: 'ConfigTypeField',
-                },
-                __typename: 'Resource',
-              },
-            ],
-            __typename: 'Mode',
+            name: 'io_manager',
+            configField: {
+              isRequired: false,
+              __typename: 'ConfigTypeField',
+            },
+            __typename: 'Resource',
           },
         ],
-        __typename: 'Pipeline',
       },
     },
   },
@@ -567,84 +491,18 @@ export const LaunchAssetLoaderResourceJob8Mock: MockedResponse<LaunchAssetLoader
   result: {
     data: {
       __typename: 'Query',
-      pipelineOrError: {
-        id: '8689a9dcd052f769b73d73dfe57e89065dac369d',
-        modes: [
+      resourcesOrError: {
+        __typename: 'ResourceConnection',
+        resources: [
           {
-            id: '719d9b2c592b98ae0f4a7ec570cae0a06667db31-default',
-            resources: [
-              {
-                name: 'io_manager',
-                description:
-                  'Built-in filesystem IO manager that stores and retrieves values using pickling.',
-                configField: {
-                  name: 'config',
-                  isRequired: false,
-                  configType: {
-                    __typename: 'CompositeConfigType',
-                    key: 'Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851',
-                    description: null,
-                    isSelector: false,
-                    typeParamKeys: [],
-                    fields: [
-                      {
-                        name: 'base_dir',
-                        description: null,
-                        isRequired: false,
-                        configTypeKey: 'StringSourceType',
-                        defaultValueAsJson: null,
-                        __typename: 'ConfigTypeField',
-                      },
-                    ],
-                    recursiveConfigTypes: [
-                      {
-                        __typename: 'CompositeConfigType',
-                        key: 'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                        description: null,
-                        isSelector: true,
-                        typeParamKeys: [],
-                        fields: [
-                          {
-                            name: 'env',
-                            description: null,
-                            isRequired: true,
-                            configTypeKey: 'String',
-                            defaultValueAsJson: null,
-                            __typename: 'ConfigTypeField',
-                          },
-                        ],
-                      },
-                      {
-                        __typename: 'RegularConfigType',
-                        givenName: 'String',
-                        key: 'String',
-                        description: '',
-                        isSelector: false,
-                        typeParamKeys: [],
-                      },
-                      {
-                        __typename: 'ScalarUnionConfigType',
-                        key: 'StringSourceType',
-                        description: null,
-                        isSelector: false,
-                        typeParamKeys: [
-                          'String',
-                          'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                        ],
-                        scalarTypeKey: 'String',
-                        nonScalarTypeKey: 'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                      },
-                    ],
-                  },
-                  __typename: 'ConfigTypeField',
-                },
-                __typename: 'Resource',
-              },
-            ],
-            __typename: 'Mode',
+            name: 'io_manager',
+            configField: {
+              isRequired: false,
+              __typename: 'ConfigTypeField',
+            },
+            __typename: 'Resource',
           },
         ],
-        __typename: 'Pipeline',
       },
     },
   },
@@ -663,16 +521,7 @@ export const LaunchAssetLoaderResourceMyAssetJobMock: MockedResponse<LaunchAsset
     result: {
       data: {
         __typename: 'Query',
-        pipelineOrError: {
-          id: '8689a9dcd052f769b73d73dfe57e89065dac369d',
-          modes: [
-            buildMode({
-              id: '719d9b2c592b98ae0f4a7ec570cae0a06667db31-default',
-              resources: [],
-            }),
-          ],
-          __typename: 'Pipeline',
-        },
+        resourcesOrError: {__typename: 'ResourceConnection', resources: []},
       },
     },
   };
