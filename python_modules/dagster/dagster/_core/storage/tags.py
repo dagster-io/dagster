@@ -102,6 +102,9 @@ RUN_METRICS_POLLING_INTERVAL_TAG = f"{HIDDEN_TAG_PREFIX}run_metrics_polling_inte
 RUN_METRICS_PYTHON_RUNTIME_TAG = f"{HIDDEN_TAG_PREFIX}python_runtime_metrics"
 
 
+TAGS_TO_OMIT_ON_RETRY = {*RUN_METRIC_TAGS, RUN_FAILURE_REASON_TAG}
+
+
 class TagType(Enum):
     # Custom tag provided by a user
     USER_PROVIDED = "USER_PROVIDED"

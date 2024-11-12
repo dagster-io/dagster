@@ -5,7 +5,7 @@ from dagster import DagsterInstance, job, op, reconstructable, repository
 from dagster._core.execution.api import execute_job
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.storage.tags import RESUME_RETRY_TAG, SYSTEM_TAG_PREFIX
 from dagster._core.test_utils import (
     environ,
     instance_for_test,
@@ -84,7 +84,7 @@ def failed_run_fixture(instance):
         result = execute_job(
             reconstructable(conditional_fail_job),
             instance=instance,
-            tags={"fizz": "buzz", "foo": "not bar!"},
+            tags={"fizz": "buzz", "foo": "not bar!", f"{SYSTEM_TAG_PREFIX}run_metrics": "true"},
         )
 
     assert not result.success
@@ -155,6 +155,7 @@ def test_create_reexecuted_run_from_failure_tags(
 
     assert run.tags["foo"] == "not bar!"
     assert run.tags["fizz"] == "not buzz!!"
+    assert f"{SYSTEM_TAG_PREFIX}run_metrics" not in run.tags
 
 
 def test_create_reexecuted_run_all_steps(
