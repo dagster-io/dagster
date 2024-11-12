@@ -243,12 +243,6 @@ class AssetGraphSubset(NamedTuple):
         )
 
     @classmethod
-    def empty(cls):
-        return AssetGraphSubset(
-            partitions_subsets_by_asset_key={}, non_partitioned_asset_keys=set()
-        )
-
-    @classmethod
     def from_asset_partition_set(
         cls,
         asset_partitions_set: AbstractSet[AssetKeyPartitionKey],

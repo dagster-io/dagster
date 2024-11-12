@@ -1286,7 +1286,7 @@ def get_canceling_asset_backfill_iteration_data(
                 instance_queryer,
                 backfill_id,
                 asset_graph,
-                materialized_subset=AssetGraphSubset.empty(),
+                materialized_subset=updated_materialized_subset,
             )
         ),
         asset_graph,
@@ -1296,8 +1296,7 @@ def get_canceling_asset_backfill_iteration_data(
         latest_storage_id=asset_backfill_data.latest_storage_id,
         requested_runs_for_target_roots=asset_backfill_data.requested_runs_for_target_roots,
         materialized_subset=updated_materialized_subset,
-        failed_and_downstream_subset=asset_backfill_data.failed_and_downstream_subset
-        | failed_subset,
+        failed_and_downstream_subset=failed_subset,
         requested_subset=asset_backfill_data.requested_subset,
         backfill_start_time=TimestampWithTimezone(backfill_start_timestamp, "UTC"),
     )
