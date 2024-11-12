@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import time
+from enum import Enum
 from typing import Any, Mapping, Optional, Sequence, Tuple
 from urllib.parse import urljoin
 
@@ -25,7 +26,11 @@ from pydantic import Field, PrivateAttr
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
-from dagster_fivetran.translator import FivetranWorkspaceData
+from dagster_fivetran.translator import (
+    FivetranContentData,
+    FivetranContentType,
+    FivetranWorkspaceData,
+)
 from dagster_fivetran.types import FivetranOutput
 from dagster_fivetran.utils import get_fivetran_connector_url, get_fivetran_logs_url
 
@@ -37,6 +42,14 @@ FIVETRAN_CONNECTOR_PATH = f"{FIVETRAN_CONNECTOR_ENDPOINT}/"
 
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
+
+
+class FivetranConnectorSetupStateType(Enum):
+    """Enum representing each setup state for a connector in Fivetran's ontology."""
+
+    INCOMPLETE = "incomplete"
+    CONNECTED = "connected"
+    BROKEN = "broken"
 
 
 class FivetranResource(ConfigurableResource):
@@ -550,6 +563,17 @@ class FivetranClient:
         """
         return self._make_request("GET", f"groups/{group_id}/connectors")
 
+    def get_schema_config_for_connector(self, connector_id: str) -> Mapping[str, Any]:
+        """Fetches the connector schema config for a given connector from the Fivetran API.
+
+        Args:
+            connector_id (str): The Fivetran Connector ID.
+
+        Returns:
+            Dict[str, Any]: Parsed json data from the response to this request.
+        """
+        return self._make_request("GET", f"connectors/{connector_id}/schemas")
+
     def get_destination_details(self, destination_id: str) -> Mapping[str, Any]:
         """Fetches details about a given destination from the Fivetran API.
 
@@ -608,4 +632,45 @@ class FivetranWorkspace(ConfigurableResource):
         Returns:
             FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
         """
-        raise NotImplementedError()
+        connectors = []
+        destinations = []
+
+        client = self.get_client()
+        groups = client.get_groups()["items"]
+
+        for group in groups:
+            group_id = group["id"]
+
+            destination_details = client.get_destination_details(destination_id=group_id)
+            destinations.append(
+                FivetranContentData(
+                    content_type=FivetranContentType.DESTINATION, properties=destination_details
+                )
+            )
+
+            connectors_details = client.get_connectors_for_group(group_id=group_id)["items"]
+            for connector_details in connectors_details:
+                connector_id = connector_details["id"]
+
+                setup_state = connector_details["status"]["setup_state"]
+                if setup_state in (
+                    FivetranConnectorSetupStateType.INCOMPLETE,
+                    FivetranConnectorSetupStateType.BROKEN,
+                ):
+                    continue
+
+                schema_config = client.get_schema_config_for_connector(connector_id=connector_id)
+
+                augmented_connector_details = {
+                    **connector_details,
+                    "schema_config": schema_config,
+                    "destination_id": group_id,
+                }
+                connectors.append(
+                    FivetranContentData(
+                        content_type=FivetranContentType.CONNECTOR,
+                        properties=augmented_connector_details,
+                    )
+                )
+
+        return FivetranWorkspaceData.from_content_data(connectors + destinations)
