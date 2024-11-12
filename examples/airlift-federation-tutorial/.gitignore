@@ -1,6 +1,7 @@
 *.**airflow_home*
 *.dagster_home*
 customers.csv
+*.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

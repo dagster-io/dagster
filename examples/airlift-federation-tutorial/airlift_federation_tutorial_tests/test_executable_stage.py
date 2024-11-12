@@ -18,7 +18,7 @@ def completed_stage() -> Generator[None, None, None]:
 
 @pytest.fixture(name="dagster_dev")
 def dagster_fixture(
-    upstream_airflow: subprocess.Popen, downstream_airflow: subprocess.Popen, completed_stage: None
+    warehouse_airflow: subprocess.Popen, metrics_airflow: subprocess.Popen, completed_stage: None
 ) -> Generator[subprocess.Popen, None, None]:
     process = None
     try:

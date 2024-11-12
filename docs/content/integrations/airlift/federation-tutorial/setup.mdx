@@ -44,16 +44,16 @@ Finally, let's run the two Airflow instances with environment variables set:
 In one shell run:
 
 ```bash
-make upstream_airflow_run
+make warehouse_airflow_run
 ```
 
 In a separate shell, run:
 
 ```bash
-make downstream_airflow_run
+make metrics_airflow_run
 ```
 
-This will run two Airflow Web UIs, one for each Airflow instance. You should now be able to access the upstream Airflow UI at `http://localhost:8081`, with the default username and password set to `admin`.
+This will run two Airflow Web UIs, one for each Airflow instance. You should now be able to access the warehouse Airflow UI at `http://localhost:8081`, with the default username and password set to `admin`.
 
 You should be able to see the `load_customers` DAG in the Airflow UI.
 
@@ -64,7 +64,7 @@ width={1484}
 height={300}
 />
 
-Similarly, you should be able to access the downstream Airflow UI at `http://localhost:8082`, with the default username and password set to `admin`.
+Similarly, you should be able to access the metrics Airflow UI at `http://localhost:8082`, with the default username and password set to `admin`.
 
 You should be able to see the `customer_metrics` DAG in the Airflow UI.
 
