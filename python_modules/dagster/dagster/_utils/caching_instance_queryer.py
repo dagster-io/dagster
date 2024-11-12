@@ -186,10 +186,21 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             # be launched, and then run B completes before run A. In these cases, the computation
             # below will consider the asset to not be in progress, as the latest planned event
             # will be associated with a completed run.
+            asset_record = self.get_asset_record(asset_key)
+            last_materialized_run_id = (
+                asset_record.asset_entry.last_materialization_record.run_id
+                if asset_record and asset_record.asset_entry.last_materialization_record
+                else None
+            )
             planned_materialization_info = (
                 self.instance.event_log_storage.get_latest_planned_materialization_info(asset_key)
             )
-            if not planned_materialization_info:
+            if (
+                not planned_materialization_info
+                # if the latest materialization happened in the same run as the latest planned materialization,
+                # it's no longer in progress
+                or last_materialized_run_id == planned_materialization_info.run_id
+            ):
                 value = False
             else:
                 dagster_run = self.instance.get_run_by_id(planned_materialization_info.run_id)
