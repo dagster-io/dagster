@@ -23,14 +23,11 @@ def test_fetch_fivetran_workspace_data(
 
 
 def test_translator_spec(
-    account_id: str,
-    api_key: str,
-    api_secret: str,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
-    with environ({"FIVETRAN_API_KEY": api_key, "FIVETRAN_API_SECRET": api_secret}):
+    with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
         resource = FivetranWorkspace(
-            account_id=account_id,
+            account_id=TEST_ACCOUNT_ID,
             api_key=EnvVar("FIVETRAN_API_KEY"),
             api_secret=EnvVar("FIVETRAN_API_SECRET"),
         )
