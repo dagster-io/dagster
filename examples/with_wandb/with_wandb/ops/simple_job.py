@@ -17,7 +17,7 @@ MY_FIRST_LIST = "my_first_list"
     )
 )
 def create_my_first_list() -> List[int]:
-    """Example writing a simple Python list into an W&B Artifact.
+    """Example writing a simple Python list into a W&B Artifact.
 
     The list is pickled in the Artifact. We can configure the Artifact name and type with the
     metadata object.

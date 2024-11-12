@@ -13,7 +13,7 @@ from dagster import AssetIn, asset
     },
 )
 def create_my_first_list() -> List[int]:
-    """Example writing a simple Python list into an W&B Artifact.
+    """Example writing a simple Python list into a W&B Artifact.
 
     The list is pickled in the Artifact. We configure the Artifact type with the
     metadata object.
