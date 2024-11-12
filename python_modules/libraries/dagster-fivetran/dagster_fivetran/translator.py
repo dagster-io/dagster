@@ -34,6 +34,23 @@ class FivetranConnector:
     def url(self) -> str:
         return f"https://fivetran.com/dashboard/connectors/{self.service}/{self.name}"
 
+    @classmethod
+    def from_api_details(
+        cls,
+        connector_details: Mapping[str, Any],
+        destination_details: Mapping[str, Any],
+        schema_config_details: Mapping[str, Any],
+    ) -> "FivetranDestination":
+        return cls(
+            id=connector_details["id"],
+            name=connector_details["schema"],
+            service=connector_details["service"],
+            schema_config=FivetranSchemaConfig.from_schema_config_details(
+                schema_config_details=schema_config_details
+            ),
+            destination_id=destination_details["id"],
+        )
+
 
 @whitelist_for_serdes
 @record
@@ -43,6 +60,16 @@ class FivetranDestination:
     id: str
     database: Optional[str]
     service: Optional[str]
+
+    @classmethod
+    def from_destination_details(
+        cls, destination_details: Mapping[str, Any]
+    ) -> "FivetranDestination":
+        return cls(
+            id=destination_details["id"],
+            database=destination_details.get("config", {}).get("database"),
+            service=destination_details["service"],
+        )
 
 
 @whitelist_for_serdes

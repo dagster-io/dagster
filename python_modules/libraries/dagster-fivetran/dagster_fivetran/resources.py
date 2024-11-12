@@ -34,7 +34,6 @@ from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnector,
     FivetranDestination,
-    FivetranSchemaConfig,
     FivetranWorkspaceData,
 )
 from dagster_fivetran.types import FivetranOutput
@@ -652,10 +651,10 @@ class FivetranWorkspace(ConfigurableResource):
             group_id = group["id"]
 
             destination_details = client.get_destination_details(destination_id=group_id)
-            destinations_by_id[group_id] = FivetranDestination(
-                id=group_id,
-                database=destination_details.get("config", {}).get("database"),
-                service=destination_details["service"],
+            destination_id = destination_details["id"]
+
+            destinations_by_id[destination_id] = FivetranDestination.from_destination_details(
+                destination_details=destination_details
             )
 
             connectors_details = client.get_connectors_for_group(group_id=group_id)["items"]
@@ -671,14 +670,10 @@ class FivetranWorkspace(ConfigurableResource):
                     connector_id=connector_id
                 )
 
-                connectors_by_id[group_id] = FivetranConnector(
-                    id=connector_id,
-                    name=connector_details["schema"],
-                    service=connector_details["service"],
-                    schema_config=FivetranSchemaConfig.from_schema_config_details(
-                        schema_config_details=schema_config_details
-                    ),
-                    destination_id=group_id,
+                connectors_by_id[connector_id] = FivetranConnector.from_api_details(
+                    connector_details=connector_details,
+                    destination_details=destination_details,
+                    schema_config_details=schema_config_details,
                 )
 
         return FivetranWorkspaceData(
