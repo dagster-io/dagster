@@ -192,18 +192,32 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 if asset_record and asset_record.asset_entry.last_materialization_record
                 else None
             )
-            planned_materialization_info = (
-                self.instance.event_log_storage.get_latest_planned_materialization_info(asset_key)
-            )
+
+            planned_materialization_run_id = None
+            if self.instance.event_log_storage.asset_records_have_last_planned_materialization_storage_id:
+                planned_materialization_run_id = (
+                    asset_record.asset_entry.last_planned_materialization_run_id
+                    if asset_record
+                    else None
+                )
+            else:
+                planned_materialization_info = (
+                    self.instance.event_log_storage.get_latest_planned_materialization_info(
+                        asset_key
+                    )
+                )
+                planned_materialization_run_id = (
+                    planned_materialization_info.run_id if planned_materialization_info else None
+                )
             if (
-                not planned_materialization_info
+                not planned_materialization_run_id
                 # if the latest materialization happened in the same run as the latest planned materialization,
                 # it's no longer in progress
-                or last_materialized_run_id == planned_materialization_info.run_id
+                or last_materialized_run_id == planned_materialization_run_id
             ):
                 value = False
             else:
-                dagster_run = self.instance.get_run_by_id(planned_materialization_info.run_id)
+                dagster_run = self.instance.get_run_by_id(planned_materialization_run_id)
                 value = dagster_run is not None and dagster_run.status in [
                     *IN_PROGRESS_RUN_STATUSES,
                     # an asset is considered to be "in progress" if there is planned work for it that has not
