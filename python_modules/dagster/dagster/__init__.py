@@ -598,6 +598,7 @@ from dagster._core.types.python_dict import Dict as Dict
 from dagster._core.types.python_set import Set as Set
 from dagster._core.types.python_tuple import Tuple as Tuple
 from dagster._loggers import (
+    JsonLogFormatter as JsonLogFormatter,
     colored_console_logger as colored_console_logger,
     default_loggers as default_loggers,
     default_system_loggers as default_system_loggers,
