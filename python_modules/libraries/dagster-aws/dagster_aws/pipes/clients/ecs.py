@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 import boto3
 import botocore
 import dagster._check as check
-from dagster import DagsterInvariantViolationError, PipesClient
+from dagster import DagsterInvariantViolationError, MetadataValue, PipesClient
 from dagster._annotations import experimental, public
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -153,6 +154,12 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                 overrides  # assign in case overrides was created here as an empty dict
             )
 
+            # inject Dagster tags
+            tags = list(run_task_params.get("tags", []))
+            for key, value in session.default_remote_invocation_info.items():
+                tags.append({"key": key, "value": value})
+            run_task_params["tags"] = tags
+
             response = self._client.run_task(**run_task_params)
 
             if len(response["tasks"]) > 1:
@@ -257,7 +264,9 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                 raise
 
         context.log.info(f"[pipes] ECS task {task_arn} completed")
-        return PipesClientCompletedInvocation(session)
+        return PipesClientCompletedInvocation(
+            session, metadata=self._extract_dagster_metadata(response)
+        )
 
     def _wait_for_completion(
         self, start_response: "RunTaskResponseTypeDef", cluster: Optional[str] = None
@@ -271,6 +280,24 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
 
         waiter.wait(**params)
         return self._client.describe_tasks(**params)
+
+    def _extract_dagster_metadata(
+        self, response: "DescribeTasksResponseTypeDef"
+    ) -> RawMetadataMapping:
+        metadata: RawMetadataMapping = {}
+
+        region = self._client.meta.region_name
+
+        task = response["tasks"][0]
+
+        task_id = task["taskArn"].split("/")[-1]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+        cluster = task["clusterArn"].split("/")[-1]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+
+        metadata["AWS ECS Task URL"] = MetadataValue.url(
+            f"https://{region}.console.aws.amazon.com/ecs/v2/clusters/{cluster}/tasks/{task_id}"
+        )
+
+        return metadata
 
     def _terminate(
         self,

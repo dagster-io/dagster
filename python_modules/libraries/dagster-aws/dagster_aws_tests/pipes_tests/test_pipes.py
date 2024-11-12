@@ -868,6 +868,7 @@ def test_ecs_pipes(
         assert mat and mat.asset_materialization
         assert isinstance(mat.asset_materialization.metadata["bar"], MarkdownMetadataValue)
         assert mat.asset_materialization.metadata["bar"].value == "baz"
+        assert "AWS ECS Task URL" in mat.asset_materialization.metadata
         assert mat.asset_materialization.tags
         assert mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
         assert mat.asset_materialization.tags[DATA_VERSION_IS_USER_PROVIDED_TAG]
