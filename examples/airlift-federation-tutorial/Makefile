@@ -7,8 +7,8 @@ endef
 MAKEFILE_DIR := $(GET_MAKEFILE_DIR)
 export TUTORIAL_EXAMPLE_DIR := $(MAKEFILE_DIR)
 export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
-export UPSTREAM_AIRFLOW_HOME := $(MAKEFILE_DIR)/.upstream_airflow_home
-export DOWNSTREAM_AIRFLOW_HOME := $(MAKEFILE_DIR)/.downstream_airflow_home
+export WAREHOUSE_AIRFLOW_HOME := $(MAKEFILE_DIR)/.warehouse_airflow_home
+export METRICS_AIRFLOW_HOME := $(MAKEFILE_DIR)/.metrics_airflow_home
 export DAGSTER_URL := http://localhost:3000
 
 # Detect OS and use appropriate date command
@@ -30,18 +30,18 @@ airflow_install:
 	uv pip install -e $(MAKEFILE_DIR)
 
 airflow_setup: wipe
-	mkdir -p $$UPSTREAM_AIRFLOW_HOME
-	mkdir -p $$DOWNSTREAM_AIRFLOW_HOME
+	mkdir -p $$WAREHOUSE_AIRFLOW_HOME
+	mkdir -p $$METRICS_AIRFLOW_HOME
 	mkdir -p $$DAGSTER_HOME
 	chmod +x $(MAKEFILE_DIR)/scripts/airflow_setup.sh
-	$(MAKEFILE_DIR)/scripts/airflow_setup.sh $(MAKEFILE_DIR)/airlift_federation_tutorial/upstream_airflow_dags $(UPSTREAM_AIRFLOW_HOME) 8081
-	$(MAKEFILE_DIR)/scripts/airflow_setup.sh $(MAKEFILE_DIR)/airlift_federation_tutorial/downstream_airflow_dags $(DOWNSTREAM_AIRFLOW_HOME) 8082
+	$(MAKEFILE_DIR)/scripts/airflow_setup.sh $(MAKEFILE_DIR)/airlift_federation_tutorial/warehouse_airflow_dags $(WAREHOUSE_AIRFLOW_HOME) 8081
+	$(MAKEFILE_DIR)/scripts/airflow_setup.sh $(MAKEFILE_DIR)/airlift_federation_tutorial/metrics_airflow_dags $(METRICS_AIRFLOW_HOME) 8082
 
-upstream_airflow_run:
-	AIRFLOW_HOME=$(UPSTREAM_AIRFLOW_HOME) airflow standalone
+warehouse_airflow_run:
+	AIRFLOW_HOME=$(WAREHOUSE_AIRFLOW_HOME) airflow standalone
 
-downstream_airflow_run:
-	AIRFLOW_HOME=$(DOWNSTREAM_AIRFLOW_HOME) airflow standalone
+metrics_airflow_run:
+	AIRFLOW_HOME=$(METRICS_AIRFLOW_HOME) airflow standalone
 
 dagster_run:
 	dagster dev -m airlift_federation_tutorial.dagster_defs.definitions -p 3000
@@ -54,5 +54,5 @@ update_readme_snippets:
 	python ../../scripts/update_readme_snippets.py $(MAKEFILE_DIR)/README.md
 
 wipe:
-	rm -rf $$UPSTREAM_AIRFLOW_HOME $$DOWNSTREAM_AIRFLOW_HOME $$DAGSTER_HOME
+	rm -rf $$WAREHOUSE_AIRFLOW_HOME $$METRICS_AIRFLOW_HOME $$DAGSTER_HOME
 
