@@ -54,7 +54,6 @@ import {PipelineSelector} from '../graphql/types';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {testId} from '../testing/testId';
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -900,24 +899,14 @@ export const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
           id
           resources {
             name
-            description
             configField {
-              name
               isRequired
-              configType {
-                ...ConfigTypeSchemaFragment
-                recursiveConfigTypes {
-                  ...ConfigTypeSchemaFragment
-                }
-              }
             }
           }
         }
       }
     }
   }
-
-  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;
 
 export const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`

@@ -480,67 +480,8 @@ export const LaunchAssetLoaderResourceJob7Mock: MockedResponse<LaunchAssetLoader
             resources: [
               {
                 name: 'io_manager',
-                description:
-                  'Built-in filesystem IO manager that stores and retrieves values using pickling.',
                 configField: {
-                  name: 'config',
                   isRequired: false,
-                  configType: {
-                    __typename: 'CompositeConfigType',
-                    key: 'Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851',
-                    description: null,
-                    isSelector: false,
-                    typeParamKeys: [],
-                    fields: [
-                      {
-                        name: 'base_dir',
-                        description: null,
-                        isRequired: false,
-                        configTypeKey: 'StringSourceType',
-                        defaultValueAsJson: null,
-                        __typename: 'ConfigTypeField',
-                      },
-                    ],
-                    recursiveConfigTypes: [
-                      {
-                        __typename: 'CompositeConfigType',
-                        key: 'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                        description: null,
-                        isSelector: true,
-                        typeParamKeys: [],
-                        fields: [
-                          {
-                            name: 'env',
-                            description: null,
-                            isRequired: true,
-                            configTypeKey: 'String',
-                            defaultValueAsJson: null,
-                            __typename: 'ConfigTypeField',
-                          },
-                        ],
-                      },
-                      {
-                        __typename: 'RegularConfigType',
-                        givenName: 'String',
-                        key: 'String',
-                        description: '',
-                        isSelector: false,
-                        typeParamKeys: [],
-                      },
-                      {
-                        __typename: 'ScalarUnionConfigType',
-                        key: 'StringSourceType',
-                        description: null,
-                        isSelector: false,
-                        typeParamKeys: [
-                          'String',
-                          'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                        ],
-                        scalarTypeKey: 'String',
-                        nonScalarTypeKey: 'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                      },
-                    ],
-                  },
                   __typename: 'ConfigTypeField',
                 },
                 __typename: 'Resource',
@@ -575,67 +516,8 @@ export const LaunchAssetLoaderResourceJob8Mock: MockedResponse<LaunchAssetLoader
             resources: [
               {
                 name: 'io_manager',
-                description:
-                  'Built-in filesystem IO manager that stores and retrieves values using pickling.',
                 configField: {
-                  name: 'config',
                   isRequired: false,
-                  configType: {
-                    __typename: 'CompositeConfigType',
-                    key: 'Shape.18b2faaf1efd505374f7f25fcb61ed59bd5be851',
-                    description: null,
-                    isSelector: false,
-                    typeParamKeys: [],
-                    fields: [
-                      {
-                        name: 'base_dir',
-                        description: null,
-                        isRequired: false,
-                        configTypeKey: 'StringSourceType',
-                        defaultValueAsJson: null,
-                        __typename: 'ConfigTypeField',
-                      },
-                    ],
-                    recursiveConfigTypes: [
-                      {
-                        __typename: 'CompositeConfigType',
-                        key: 'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                        description: null,
-                        isSelector: true,
-                        typeParamKeys: [],
-                        fields: [
-                          {
-                            name: 'env',
-                            description: null,
-                            isRequired: true,
-                            configTypeKey: 'String',
-                            defaultValueAsJson: null,
-                            __typename: 'ConfigTypeField',
-                          },
-                        ],
-                      },
-                      {
-                        __typename: 'RegularConfigType',
-                        givenName: 'String',
-                        key: 'String',
-                        description: '',
-                        isSelector: false,
-                        typeParamKeys: [],
-                      },
-                      {
-                        __typename: 'ScalarUnionConfigType',
-                        key: 'StringSourceType',
-                        description: null,
-                        isSelector: false,
-                        typeParamKeys: [
-                          'String',
-                          'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                        ],
-                        scalarTypeKey: 'String',
-                        nonScalarTypeKey: 'Selector.2571019f1a5201853d11032145ac3e534067f214',
-                      },
-                    ],
-                  },
                   __typename: 'ConfigTypeField',
                 },
                 __typename: 'Resource',
