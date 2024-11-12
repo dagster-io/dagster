@@ -1,7 +1,7 @@
-import uuid
-
 import responses
 from dagster_fivetran import FivetranWorkspace
+
+from dagster_fivetran_tests.experimental.conftest import TEST_API_KEY, TEST_API_SECRET
 
 
 def test_basic_resource_request(
@@ -10,10 +10,7 @@ def test_basic_resource_request(
     group_id: str,
     all_api_mocks: responses.RequestsMock,
 ) -> None:
-    api_key = uuid.uuid4().hex
-    api_secret = uuid.uuid4().hex
-
-    resource = FivetranWorkspace(api_key=api_key, api_secret=api_secret)
+    resource = FivetranWorkspace(api_key=TEST_API_KEY, api_secret=TEST_API_SECRET)
 
     client = resource.get_client()
     client.get_connector_details(connector_id=connector_id)

@@ -122,7 +122,15 @@ def _build_fivetran_assets(
         table: AssetKey([*asset_key_prefix, *table.split(".")])
         if not translator_instance or not connection_metadata
         else translator_instance.get_asset_spec(
-            FivetranConnectorTableProps(table=table, **connection_metadata._asdict())
+            FivetranConnectorTableProps(
+                table=table,
+                connector_id=connection_metadata.connector_id,
+                name=connection_metadata.name,
+                connector_url=connection_metadata.connector_url,
+                schema_config=connection_metadata.schemas,
+                database=connection_metadata.database,
+                service=connection_metadata.service,
+            )
         ).key
         for table in destination_tables
     }
@@ -155,7 +163,15 @@ def _build_fivetran_assets(
             )
             if not translator_instance or not connection_metadata
             else translator_instance.get_asset_spec(
-                FivetranConnectorTableProps(table=table, **connection_metadata._asdict())
+                FivetranConnectorTableProps(
+                    table=table,
+                    connector_id=connection_metadata.connector_id,
+                    name=connection_metadata.name,
+                    connector_url=connection_metadata.connector_url,
+                    schema_config=connection_metadata.schemas,
+                    database=connection_metadata.database,
+                    service=connection_metadata.service,
+                )
             )
             for table in tracked_asset_keys.keys()
         ],

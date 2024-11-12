@@ -19,6 +19,10 @@ def get_fivetran_logs_url(connector_details: Mapping[str, Any]) -> str:
     return f"{get_fivetran_connector_url(connector_details)}/logs"
 
 
+def get_fivetran_connector_table_name(schema_name: str, table_name: str) -> str:
+    return f"{schema_name}.{table_name}"
+
+
 def metadata_for_table(
     table_data: Mapping[str, Any],
     connector_url: str,

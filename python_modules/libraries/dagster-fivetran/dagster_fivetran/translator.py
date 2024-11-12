@@ -1,12 +1,17 @@
 from enum import Enum
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, cast
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._utils.cached_method import cached_method
 
-from dagster_fivetran.utils import metadata_for_table
+from dagster_fivetran.utils import (
+    get_fivetran_connector_table_name,
+    get_fivetran_connector_url,
+    metadata_for_table,
+)
 
 
 class FivetranConnectorTableProps(NamedTuple):
@@ -14,7 +19,7 @@ class FivetranConnectorTableProps(NamedTuple):
     connector_id: str
     name: str
     connector_url: str
-    schemas: Mapping[str, Any]
+    schema_config: Mapping[str, Any]
     database: Optional[str]
     service: Optional[str]
 
@@ -63,11 +68,51 @@ class FivetranWorkspaceData:
             },
         )
 
+    @cached_method
     def to_fivetran_connector_table_props_data(self) -> Sequence[FivetranConnectorTableProps]:
         """Method that converts a `FivetranWorkspaceData` object
         to a collection of `FivetranConnectorTableProps` objects.
         """
-        raise NotImplementedError()
+        data: List[FivetranConnectorTableProps] = []
+
+        for connector_id, connector_data in self.connectors_by_id.items():
+            connector_details = connector_data.properties
+            connector_name = connector_details["schema"]
+            connector_url = get_fivetran_connector_url(connector_details)
+
+            schema_config = connector_details["schema_config"]
+
+            destination_details = self.destinations_by_id[
+                connector_details["destination_id"]
+            ].properties
+            database = destination_details.get("config", {}).get("database")
+            service = destination_details.get("service")
+
+            schemas_data = cast(Dict[str, Any], schema_config["schemas"])
+            for schema in schemas_data.values():
+                if schema["enabled"]:
+                    schema_name = schema["name_in_destination"]
+                    schema_tables: Dict[str, Dict[str, Any]] = cast(
+                        Dict[str, Dict[str, Any]], schema["tables"]
+                    )
+                    for table in schema_tables.values():
+                        if table["enabled"]:
+                            table_name = table["name_in_destination"]
+                            data.append(
+                                FivetranConnectorTableProps(
+                                    table=get_fivetran_connector_table_name(
+                                        schema_name=schema_name, table_name=table_name
+                                    ),
+                                    connector_id=connector_id,
+                                    name=connector_name,
+                                    connector_url=connector_url,
+                                    schema_config=schema_config,
+                                    database=database,
+                                    service=service,
+                                )
+                            )
+
+        return data
 
 
 class DagsterFivetranTranslator:
@@ -80,7 +125,7 @@ class DagsterFivetranTranslator:
         schema_name, table_name = props.table.split(".")
         schema_entry = next(
             schema
-            for schema in props.schemas["schemas"].values()
+            for schema in props.schema_config["schemas"].values()
             if schema["name_in_destination"] == schema_name
         )
         table_entry = next(
