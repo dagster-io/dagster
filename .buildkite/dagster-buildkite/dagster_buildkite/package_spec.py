@@ -162,9 +162,13 @@ class PackageSpec:
                     if v not in unsupported_python_versions
                 ]
 
-                pytest_python_versions = sorted(
-                    list(set(default_python_versions) - set(unsupported_python_versions))
-                )
+                pytest_python_versions = [
+                    AvailablePythonVersion(v)
+                    for v in sorted(
+                        set(e.value for e in default_python_versions)
+                        - set(e.value for e in unsupported_python_versions)
+                    )
+                ]
                 # Use highest supported python version if no defaults_match
                 if len(pytest_python_versions) == 0:
                     pytest_python_versions = [supported_python_versions[-1]]

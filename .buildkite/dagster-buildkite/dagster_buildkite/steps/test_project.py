@@ -49,16 +49,16 @@ def build_test_project_steps() -> List[GroupStep]:
                 " $${GOOGLE_APPLICATION_CREDENTIALS}",
                 "export"
                 " BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project-base:py"
-                + version
+                + version.value
                 + "-"
                 + TEST_PROJECT_BASE_IMAGE_VERSION,
                 # build and tag test image
                 "export"
                 " TEST_PROJECT_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project:$${BUILDKITE_BUILD_ID}-"
-                + version,
+                + version.value,
                 "git config --global --add safe.directory /workdir",
                 "./python_modules/dagster-test/dagster_test/test_project/build.sh "
-                + version
+                + version.value
                 + " $${TEST_PROJECT_IMAGE}",
                 #
                 # push the built image
@@ -67,7 +67,7 @@ def build_test_project_steps() -> List[GroupStep]:
             )
             .on_python_image(
                 # py version can be bumped when rebuilt
-                f"buildkite-build-test-project-image:py{AvailablePythonVersion.V3_11}-{BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION}",
+                f"buildkite-build-test-project-image:py{AvailablePythonVersion.V3_11.value}-{BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION}",
                 [
                     "AIRFLOW_HOME",
                     "AWS_ACCOUNT_ID",

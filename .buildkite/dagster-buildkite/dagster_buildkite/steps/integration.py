@@ -6,7 +6,11 @@ from dagster_buildkite.defines import (
     GCP_CREDS_LOCAL_FILE,
     LATEST_DAGSTER_RELEASE,
 )
-from dagster_buildkite.package_spec import PackageSpec, UnsupportedVersionsFunction
+from dagster_buildkite.package_spec import (
+    PackageSpec,
+    PytestExtraCommandsFunction,
+    UnsupportedVersionsFunction,
+)
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.step_builder import BuildkiteQueue
 from dagster_buildkite.steps.test_project import test_project_depends_fn
@@ -60,12 +64,12 @@ def build_backcompat_suite_steps() -> List[BuildkiteTopLevelStep]:
     )
 
 
-def backcompat_extra_cmds(_, factor: str) -> List[str]:
+def backcompat_extra_cmds(_, factor: Optional[str]) -> List[str]:
     tox_factor_map = {
         "user-code-latest-release": LATEST_DAGSTER_RELEASE,
         "user-code-earliest-release": EARLIEST_TESTED_RELEASE,
     }
-
+    assert factor
     webserver_version = DAGSTER_CURRENT_BRANCH
     webserver_library_version = _get_library_version(webserver_version)
     user_code_version = tox_factor_map[factor]
@@ -163,7 +167,7 @@ def build_auto_materialize_perf_suite_steps():
 
 def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _):
     return [
-        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
         "pushd integration_tests/test_suites/daemon-test-suite/monitoring_daemon_tests/",
         "docker-compose up -d --remove-orphans",
@@ -182,7 +186,7 @@ def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _):
 # ########################
 
 
-def build_k8s_suite_steps():
+def build_k8s_suite_steps() -> List[BuildkiteTopLevelStep]:
     pytest_tox_factors = ["-default", "-subchart"]
     directory = os.path.join("integration_tests", "test_suites", "k8s-test-suite")
     return build_integration_suite_steps(
@@ -201,7 +205,7 @@ def build_k8s_suite_steps():
 def build_integration_suite_steps(
     directory: str,
     pytest_tox_factors: Optional[List[str]],
-    pytest_extra_cmds: Optional[Callable] = None,
+    pytest_extra_cmds: Optional[PytestExtraCommandsFunction] = None,
     queue=None,
     always_run_if: Optional[Callable[[], bool]] = None,
     unsupported_python_versions: Optional[
@@ -229,19 +233,19 @@ def build_integration_suite_steps(
     ).build_steps()
 
 
-def k8s_integration_suite_pytest_extra_cmds(version: str, _) -> List[str]:
+def k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     return [
-        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
         "aws ecr get-login --no-include-email --region us-west-2 | sh",
     ]
 
 
-def celery_k8s_integration_suite_pytest_extra_cmds(version: str, _) -> List[str]:
+def celery_k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     cmds = [
         'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",
-        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
         "aws ecr get-login --no-include-email --region us-west-2 | sh",
     ]
