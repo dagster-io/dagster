@@ -12,6 +12,7 @@ from airlift_federation_tutorial.constants import (
     CUSTOMERS_TABLE_NAME,
     DUCKDB_PATH,
 )
+from dagster._time import get_current_datetime_midnight
 
 
 def load_customers() -> None:
@@ -34,6 +35,7 @@ def load_customers() -> None:
 with DAG(
     dag_id="load_customers",
     is_paused_upon_creation=False,
+    start_date=get_current_datetime_midnight(),
 ) as dag:
     PythonOperator(
         task_id="load_customers_to_warehouse",
@@ -46,6 +48,7 @@ for dag_id in ["load_orders", "load_products", "load_payments", "load_sales"]:
     with DAG(
         dag_id=dag_id,
         is_paused_upon_creation=False,
+        start_date=get_current_datetime_midnight(),
     ) as dag:
         PythonOperator(
             task_id="task",

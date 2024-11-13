@@ -16,6 +16,8 @@ from dagster_airlift.test.shared_fixtures import stand_up_dagster
 OBSERVE_COMPLETE_FILE = ORIG_DEFS_FILE.parent / "stages" / "observe_complete.py"
 OBSERVE_WITH_DEPS_FILE = ORIG_DEFS_FILE.parent / "stages" / "observe_with_deps.py"
 OBSERVE_SNIPPETS_FILE = SNIPPETS_DIR / "observe.py"
+EXECUTABLE_AND_DA_FILE = ORIG_DEFS_FILE.parent / "stages" / "executable_and_da.py"
+FEDERATED_EXECUTION_SNIPPETS_FILE = SNIPPETS_DIR / "federated_execution.py"
 
 
 @pytest.fixture
@@ -47,7 +49,13 @@ def dagster_fixture(
 
 @pytest.mark.parametrize(
     "stage_file",
-    [OBSERVE_COMPLETE_FILE, OBSERVE_WITH_DEPS_FILE, OBSERVE_SNIPPETS_FILE],
+    [
+        OBSERVE_COMPLETE_FILE,
+        OBSERVE_WITH_DEPS_FILE,
+        OBSERVE_SNIPPETS_FILE,
+        FEDERATED_EXECUTION_SNIPPETS_FILE,
+        EXECUTABLE_AND_DA_FILE,
+    ],
     indirect=True,
 )
 def test_stage(dagster_dev: subprocess.Popen, stage_file: Path) -> None:

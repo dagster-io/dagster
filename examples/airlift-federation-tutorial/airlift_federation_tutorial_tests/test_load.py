@@ -3,21 +3,21 @@ import subprocess
 import requests
 from airlift_federation_tutorial_tests.conftest import (
     assert_successful_dag_run,
-    downstream_instance,
-    upstream_instance,
+    metrics_instance,
+    warehouse_instance,
 )
 from dagster_airlift.in_airflow.gql_queries import VERIFICATION_QUERY
 
 
-def test_load_upstream(upstream_airflow: subprocess.Popen) -> None:
-    af_instance = upstream_instance()
-    assert len(af_instance.list_dags()) == 11
+def test_load_warehouse(warehouse_airflow: subprocess.Popen) -> None:
+    af_instance = warehouse_instance()
+    assert len(af_instance.list_dags()) == 5
     assert_successful_dag_run(af_instance, "load_customers")
 
 
-def test_load_downstream(downstream_airflow: subprocess.Popen) -> None:
-    assert len(downstream_instance().list_dags()) == 11
-    assert_successful_dag_run(downstream_instance(), "customer_metrics")
+def test_load_metrics(metrics_airflow: subprocess.Popen) -> None:
+    assert len(metrics_instance().list_dags()) == 5
+    assert_successful_dag_run(metrics_instance(), "customer_metrics")
 
 
 def test_load_dagster(dagster_dev: subprocess.Popen) -> None:

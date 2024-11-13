@@ -50,22 +50,10 @@ customer_metrics_dag_asset = replace_attributes(
                 dag_selector_fn=lambda dag: dag.dag_id == "customer_metrics",
             )
         )
-        # Add a dependency on the load_customers_dag_asset
     ),
     deps=[load_customers_dag_asset],
     automation_condition=AutomationCondition.eager(),
 )
-
-
-@multi_asset(specs=[customer_metrics_dag_asset])
-def run_customer_metrics() -> MaterializeResult:
-    run_id = metrics_airflow_instance.trigger_dag("customer_metrics")
-    metrics_airflow_instance.wait_for_run_completion("customer_metrics", run_id)
-    if metrics_airflow_instance.get_run_state("customer_metrics", run_id) == "success":
-        return MaterializeResult(asset_key=customer_metrics_dag_asset.key)
-    else:
-        raise Exception("Dag run failed.")
-
 
 warehouse_sensor = build_airflow_polling_sensor(
     mapped_assets=[load_customers_dag_asset],
@@ -76,14 +64,48 @@ metrics_sensor = build_airflow_polling_sensor(
     airflow_instance=metrics_airflow_instance,
 )
 
+
+# start_multi_asset
+@multi_asset(specs=[customer_metrics_dag_asset])
+def run_customer_metrics() -> MaterializeResult:
+    run_id = metrics_airflow_instance.trigger_dag("customer_metrics")
+    metrics_airflow_instance.wait_for_run_completion("customer_metrics", run_id)
+    if metrics_airflow_instance.get_run_state("customer_metrics", run_id) == "success":
+        return MaterializeResult(asset_key=customer_metrics_dag_asset.key)
+    else:
+        raise Exception("Dag run failed.")
+
+
+# end_multi_asset
+
+# start_multi_asset_defs
+defs = Definitions(
+    assets=[load_customers_dag_asset, run_customer_metrics],
+    sensors=[warehouse_sensor, metrics_sensor],
+)
+# end_multi_asset_defs
+
+# start_eager
+from dagster import AutomationCondition
+
+customer_metrics_dag_asset = replace_attributes(
+    customer_metrics_dag_asset,
+    automation_condition=AutomationCondition.eager(),
+)
+# end_eager
+
+# start_automation_sensor
 automation_sensor = AutomationConditionSensorDefinition(
     name="automation_sensor",
     target="*",
     default_status=DefaultSensorStatus.RUNNING,
     minimum_interval_seconds=1,
 )
+# end_automation_sensor
 
+# start_complete_defs
 defs = Definitions(
     assets=[load_customers_dag_asset, run_customer_metrics],
     sensors=[warehouse_sensor, metrics_sensor, automation_sensor],
 )
+# end_complete_defs
