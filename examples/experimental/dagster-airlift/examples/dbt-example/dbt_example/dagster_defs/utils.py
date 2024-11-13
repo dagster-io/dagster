@@ -1,6 +1,6 @@
 from typing import Mapping, Sequence
 
-from dagster import AssetsDefinition, AssetSpec, AutomationCondition, Definitions, Nothing
+from dagster import AssetsDefinition, Definitions, Nothing
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
     stringify_asset_key_to_input_name,
@@ -8,39 +8,8 @@ from dagster._core.definitions.decorators.decorator_assets_definition_builder im
 from dagster._core.definitions.input import In
 
 
-def eager_asset(assets_def: AssetsDefinition) -> AssetsDefinition:
-    return assets_def.map_asset_specs(
-        lambda spec: spec._replace(automation_condition=AutomationCondition.eager())
-        if spec.automation_condition is None
-        else spec
-    )
-
-
-def apply_eager_automation(defs: Definitions) -> Definitions:
-    assets = []
-    for asset in defs.assets or []:
-        if not isinstance(asset, AssetsDefinition):
-            continue
-        if not asset.keys:
-            continue
-        assets.append(
-            asset.map_asset_specs(
-                lambda spec: spec._replace(automation_condition=AutomationCondition.eager())
-                if spec.automation_condition is None
-                else spec
-            )
-        )
-    return Definitions(
-        assets=assets,
-        asset_checks=defs.asset_checks,
-        sensors=defs.sensors,
-        schedules=defs.schedules,
-        resources=defs.resources,
-    )
-
-
-def with_group(assets_def: AssetsDefinition, group_name: str) -> AssetsDefinition:
-    return assets_def.map_asset_specs(lambda spec: spec._replace(group_name=group_name))
+def all_assets_defs(defs: Definitions) -> Sequence[AssetsDefinition]:
+    return list(defs.get_repository_def().assets_defs_by_key.values())
 
 
 def with_deps(
@@ -90,7 +59,3 @@ def with_deps(
         execution_type=assets_def.execution_type,
         auto_materialize_policies_by_key=assets_def.auto_materialize_policies_by_key,
     )
-
-
-def eager(specs: Sequence[AssetSpec]) -> Sequence[AssetSpec]:
-    return [spec._replace(automation_condition=AutomationCondition.eager()) for spec in specs]

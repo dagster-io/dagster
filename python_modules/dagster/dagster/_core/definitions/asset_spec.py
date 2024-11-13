@@ -10,6 +10,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Union,
 )
 
 import dagster._check as check
@@ -20,6 +21,7 @@ from dagster._annotations import (
     only_allow_hidden_params_in_kwargs,
     public,
 )
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -292,6 +294,76 @@ class AssetSpec(
         return self._replace(
             metadata={**self.metadata, SYSTEM_METADATA_KEY_IO_MANAGER_KEY: io_manager_key}
         )
+
+
+def to_assets_defs(
+    assets: Iterable[Union[AssetSpec, AssetsDefinition]],
+) -> Iterable[AssetsDefinition]:
+    for asset in assets:
+        if isinstance(asset, AssetSpec):
+            yield AssetsDefinition(specs=[asset])
+        else:
+            yield asset
+
+
+def replace_asset_attributes(
+    assets: Iterable[Union[AssetSpec, AssetsDefinition]],
+    *,
+    key: CoercibleToAssetKey = ...,
+    deps: Optional[Iterable["CoercibleToAssetDep"]] = ...,
+    description: Optional[str] = ...,
+    metadata: Optional[Mapping[str, Any]] = ...,
+    skippable: bool = ...,
+    group_name: Optional[str] = ...,
+    code_version: Optional[str] = ...,
+    freshness_policy: Optional[FreshnessPolicy] = ...,
+    automation_condition: Optional[AutomationCondition] = ...,
+    owners: Optional[Sequence[str]] = ...,
+    tags: Optional[Mapping[str, str]] = ...,
+    kinds: Optional[Set[str]] = ...,
+    partitions_def: Optional[PartitionsDefinition] = ...,
+) -> Iterable[AssetsDefinition]:
+    for asset in assets:
+        if isinstance(asset, AssetSpec):
+            yield AssetsDefinition(
+                specs=[
+                    replace_attributes(
+                        asset,
+                        key=key,
+                        deps=deps,
+                        description=description,
+                        metadata=metadata,
+                        skippable=skippable,
+                        group_name=group_name,
+                        code_version=code_version,
+                        freshness_policy=freshness_policy,
+                        automation_condition=automation_condition,
+                        owners=owners,
+                        tags=tags,
+                        kinds=kinds,
+                        partitions_def=partitions_def,
+                    )
+                ]
+            )
+        else:
+            yield asset.map_asset_specs(
+                lambda spec: replace_attributes(
+                    spec,
+                    key=key,
+                    deps=deps,
+                    description=description,
+                    metadata=metadata,
+                    skippable=skippable,
+                    group_name=group_name,
+                    code_version=code_version,
+                    freshness_policy=freshness_policy,
+                    automation_condition=automation_condition,
+                    owners=owners,
+                    tags=tags,
+                    kinds=kinds,
+                    partitions_def=partitions_def,
+                )
+            )
 
 
 def replace_attributes(
