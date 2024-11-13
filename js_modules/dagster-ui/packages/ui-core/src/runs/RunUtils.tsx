@@ -144,20 +144,6 @@ export async function handleLaunchMultipleResult(
       // using open with multiple runs will spam new tabs
       if (options.behavior === 'open') {
         openInSameTab();
-      } else {
-        // toast is more preferred
-        await showSharedToaster({
-          intent: 'success',
-          message: (
-            <div>
-              Launched run <Mono>{individualResult.run.id.slice(0, 8)}</Mono>
-            </div>
-          ),
-          action: {
-            text: 'View',
-            href: history.createHref({pathname, search}),
-          },
-        });
       }
       document.dispatchEvent(new CustomEvent('run-launched'));
     } else if (individualResult.__typename === 'PythonError') {
@@ -195,6 +181,15 @@ export async function handleLaunchMultipleResult(
 
   const queryString = `/runs?${params.toString()}`;
   history.push(queryString);
+
+  await showSharedToaster({
+    intent: 'success',
+    message: <div>Launched {successfulRunIds.length} runs</div>,
+    action: {
+      text: 'View',
+      href: history.createHref({pathname: queryString}),
+    },
+  });
 }
 
 function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment) {

@@ -32,7 +32,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {ExecutionParams, SensorSelector} from '../graphql/types';
+import {SensorSelector} from '../graphql/types';
 import {useLaunchMultipleRunsWithTelemetry} from '../launchpad/useLaunchMultipleRunsWithTelemetry';
 import {SET_CURSOR_MUTATION} from '../sensors/EditCursorDialog';
 import {
@@ -84,7 +84,6 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   const [error, setError] = useState<PythonErrorFragment | null>(null);
   const [sensorExecutionData, setSensorExecutionData] =
     useState<SensorDryRunInstigationTick | null>(null);
-  const [executionParamsList, setExecutionParamsList] = useState<ExecutionParams[]>([]);
 
   const sensorSelector: SensorSelector = useMemo(
     () => ({
@@ -93,6 +92,14 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       repositoryName: repoAddress.name,
     }),
     [repoAddress, name],
+  );
+
+  const executionParamsList = useMemo(
+    () =>
+      sensorExecutionData && sensorSelector
+        ? buildExecutionParamsListSensor(sensorExecutionData, sensorSelector)
+        : [],
+    [sensorSelector, sensorExecutionData],
   );
 
   const submitTest = useCallback(async () => {
@@ -110,7 +117,6 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           setError(data.evaluationResult.error);
         } else {
           setSensorExecutionData(data);
-          setExecutionParamsList(buildExecutionParamsListSensor(data, sensorSelector));
         }
       } else if (data?.__typename === 'SensorNotFoundError') {
         showCustomAlert({
@@ -138,7 +144,13 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     }
     setLaunching(true);
 
-    await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
+    try {
+      if (executionParamsList) {
+        await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
+      }
+    } catch (e) {
+      console.error(e);
+    }
 
     setLaunching(false);
     onClose();
@@ -166,7 +178,6 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
             onClick={() => {
               setSensorExecutionData(null);
               setError(null);
-              setExecutionParamsList([]);
             }}
           >
             Test again
