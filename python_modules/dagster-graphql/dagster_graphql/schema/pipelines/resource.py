@@ -6,7 +6,12 @@ from dagster._config.snap import ConfigTypeSnap
 from dagster._core.snap import ResourceDefSnap
 
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
-from dagster_graphql.schema.util import ResolveInfo
+from dagster_graphql.schema.errors import (
+    GrapheneInvalidSubsetError,
+    GraphenePipelineNotFoundError,
+    GraphenePythonError,
+)
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneResource(graphene.ObjectType):
@@ -44,3 +49,21 @@ class GrapheneResource(graphene.ObjectType):
             )
 
         return None
+
+
+class GrapheneResourceConnection(graphene.ObjectType):
+    class Meta:
+        name = "ResourceConnection"
+
+    resources = non_null_list(GrapheneResource)
+
+
+class GrapheneResourcesOrError(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneResourceConnection,
+            GraphenePipelineNotFoundError,
+            GrapheneInvalidSubsetError,
+            GraphenePythonError,
+        )
+        name = "ResourcesOrError"
