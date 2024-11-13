@@ -30,6 +30,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import IHaveNew, record_custom
 from dagster._utils.cached_method import cached_method
+from dagster._utils.log import get_dagster_logger
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
 
@@ -42,6 +43,8 @@ from dagster_sigma.translator import (
 )
 
 SIGMA_PARTNER_ID_TAG = {"X-Sigma-Partner-Id": "dagster"}
+
+logger = get_dagster_logger("dagster_sigma")
 
 
 @record_custom
@@ -153,8 +156,16 @@ class SigmaOrganization(ConfigurableResource):
             **(query_params or {}),
             "limit": limit,
         }
-        result = await self._fetch_json_async(endpoint, query_params=query_params)
+
+        result = await self._fetch_json_async(endpoint, query_params=query_params_with_limit)
         entries.extend(result["entries"])
+        logger.debug(
+            "Fetched %s\n  Query params %s\n  Received %s entries%s",
+            endpoint,
+            query_params_with_limit,
+            len(entries),
+            ", fetching additional results" if result.get("hasMore") else "",
+        )
 
         while result.get("hasMore"):
             next_page = result["nextPage"]
@@ -166,7 +177,13 @@ class SigmaOrganization(ConfigurableResource):
                 endpoint, query_params=query_params_with_limit_and_page
             )
             entries.extend(result["entries"])
-
+            logger.debug(
+                "Fetched %s\n  Query params %s\n  Received %s entries%s",
+                endpoint,
+                query_params_with_limit_and_page,
+                len(result["entries"]),
+                ", fetching additional results" if result.get("hasMore") else "",
+            )
         return entries
 
     @cached_method
@@ -225,9 +242,12 @@ class SigmaOrganization(ConfigurableResource):
         """
         deps_by_dataset_inode = defaultdict(set)
 
+        logger.debug("Fetching dataset dependencies")
+
         raw_workbooks = await self._fetch_workbooks()
 
         async def process_workbook(workbook: Dict[str, Any]) -> None:
+            logger.info("Inferring dataset dependencies for workbook %s", workbook["workbookId"])
             queries = await self._fetch_queries_for_workbook(workbook["workbookId"])
             queries_by_element_id = defaultdict(list)
             for query in queries:
@@ -299,6 +319,7 @@ class SigmaOrganization(ConfigurableResource):
         workbooks = await self._fetch_workbooks()
 
         async def process_workbook(workbook: Dict[str, Any]) -> None:
+            logger.info("Fetching column data from workbook %s", workbook["workbookId"])
             pages = await self._fetch_pages_for_workbook(workbook["workbookId"])
             elements = [
                 element
@@ -342,6 +363,8 @@ class SigmaOrganization(ConfigurableResource):
 
     async def load_workbook_data(self, raw_workbook_data: Dict[str, Any]) -> SigmaWorkbook:
         workbook_deps = set()
+
+        logger.info("Fetching data for workbook %s", raw_workbook_data["workbookId"])
 
         pages = await self._fetch_pages_for_workbook(raw_workbook_data["workbookId"])
         elements = [
@@ -394,6 +417,7 @@ class SigmaOrganization(ConfigurableResource):
         """
         _sigma_filter = sigma_filter or SigmaFilter()
 
+        logger.info("Beginning Sigma organization data fetch")
         raw_workbooks = await self._fetch_workbooks()
         workbooks_to_fetch = []
         if _sigma_filter.workbook_folders:
@@ -420,6 +444,7 @@ class SigmaOrganization(ConfigurableResource):
             await self._fetch_dataset_columns_by_inode() if fetch_column_data else {}
         )
 
+        logger.info("Fetching dataset data")
         for dataset in await self._fetch_datasets():
             inode = _inode_from_url(dataset["url"])
             datasets.append(
