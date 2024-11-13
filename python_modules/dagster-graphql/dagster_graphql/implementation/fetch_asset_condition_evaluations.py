@@ -94,7 +94,11 @@ def fetch_true_partitions_for_evaluation_node(
     root_evaluation = record.get_evaluation_with_run_ids().evaluation
     for evaluation in root_evaluation.iter_nodes():
         if evaluation.condition_snapshot.unique_id == node_unique_id:
-            return list(evaluation.true_subset.subset_value.get_partition_keys())
+            return (
+                list(evaluation.true_subset.subset_value.get_partition_keys())
+                if evaluation.true_subset.is_partitioned
+                else ["None"]
+            )
     check.failed("No matching unique id found")
 
 
