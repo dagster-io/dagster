@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import AbstractSet, Any, Mapping, Optional, Type
+from typing import AbstractSet, Any, Iterable, Mapping, Optional, Type
 
 from typing_extensions import TypeVar
 
@@ -54,13 +54,13 @@ class NamespacedKVSet(ABC, DagsterModel):
     def _strip_namespace_from_key(key: str) -> str:
         return key.split("/", 1)[1]
 
-    def keys(self) -> AbstractSet[str]:
-        return {
+    def keys(self) -> Iterable[str]:
+        return [
             self._namespaced_key(key)
             for key in model_fields(self).keys()
             # getattr returns the pydantic property on the subclass
             if getattr(self, key) is not None
-        }
+        ]
 
     def __getitem__(self, key: str) -> Any:
         # getattr returns the pydantic property on the subclass

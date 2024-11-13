@@ -724,7 +724,8 @@ def get_deps(
                 asset_deps[unique_id].add(parent_unique_id)
 
     frozen_asset_deps = {
-        unique_id: frozenset(parent_ids) for unique_id, parent_ids in asset_deps.items()
+        unique_id: frozenset(asset_deps[unique_id])
+        for unique_id in sorted(asset_deps)  # sort to stabilize job snapshots
     }
 
     return frozen_asset_deps
