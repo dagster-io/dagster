@@ -218,7 +218,9 @@ def test_build_defs_with_scheduled_plans(
 
     defs = Definitions(
         assets=[
-            build_dashboard_notification_assets_definition(resource_key, spec, destination)
+            build_dashboard_notification_assets_definition(
+                resource_key, spec, "my_notification", destination
+            )
             if spec.tags.get("dagster-looker/asset_type") == "dashboard"
             else spec
             for spec in specs

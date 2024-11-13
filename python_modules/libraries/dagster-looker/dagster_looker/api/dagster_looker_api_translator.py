@@ -206,7 +206,9 @@ class DagsterLookerApiTranslator:
 
     def get_dashboard_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
         looker_dashboard = check.inst(looker_structure.data, Dashboard)
-        return AssetKey(f"{check.not_none(looker_dashboard.title)}_{looker_dashboard.id}")
+        return AssetKey(
+            _clean_asset_name(f"{(check.not_none(looker_dashboard.title))}_{looker_dashboard.id}")
+        )
 
     def get_dashboard_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
         looker_dashboard = check.inst(looker_structure.data, Dashboard)

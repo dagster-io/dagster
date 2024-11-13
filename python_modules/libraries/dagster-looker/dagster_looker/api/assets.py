@@ -93,6 +93,7 @@ def build_looker_pdt_assets_definitions(
 def build_dashboard_notification_assets_definition(
     resource_key: str,
     asset_spec: AssetSpec,
+    name: str,
     destination: ScheduledPlanDestination,
 ) -> AssetsDefinition:
     """Bulds an AssetsDefinition for a Looker dashboard which, when materialized, will refresh the
@@ -101,6 +102,7 @@ def build_dashboard_notification_assets_definition(
     Args:
         resource_key (str): The resource key to use for the Looker resource.
         asset_spec (AssetSpec): The asset spec for the Looker dashboard.
+        name (str): The name of the scheduled plan, used as e.g. the email subject.
         destination (ScheduledPlanDestination): The destination to send the notification to.
             See https://cloud.google.com/looker/docs/reference/looker-api/latest/types/ScheduledPlanDestination
     for documentation on all available fields.
@@ -117,7 +119,9 @@ def build_dashboard_notification_assets_definition(
 
         looker.get_sdk().scheduled_plan_run_once(
             WriteScheduledPlan(
-                dashboard_id=looker_data.id, scheduled_plan_destination=[destination]
+                name=name,
+                dashboard_id=looker_data.id,
+                scheduled_plan_destination=[destination],
             )
         )
 
