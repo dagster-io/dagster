@@ -20,7 +20,6 @@ class FivetranConnectorTableProps(NamedTuple):
     service: Optional[str]
 
 
-@whitelist_for_serdes
 class FivetranConnectorSetupStateType(Enum):
     """Enum representing each setup state for a connector in Fivetran's ontology."""
 
@@ -38,7 +37,7 @@ class FivetranConnector:
     name: str
     service: str
     group_id: str
-    setup_state: FivetranConnectorSetupStateType
+    setup_state: str
 
     @property
     def url(self) -> str:
@@ -50,7 +49,7 @@ class FivetranConnector:
 
     @property
     def is_connected(self) -> bool:
-        return self.setup_state is FivetranConnectorSetupStateType.CONNECTED
+        return self.setup_state == FivetranConnectorSetupStateType.CONNECTED.value
 
     @classmethod
     def from_connector_details(
@@ -62,7 +61,7 @@ class FivetranConnector:
             name=connector_details["schema"],
             service=connector_details["service"],
             group_id=connector_details["group_id"],
-            setup_state=FivetranConnectorSetupStateType(connector_details["status"]["setup_state"]),
+            setup_state=connector_details["status"]["setup_state"],
         )
 
 
