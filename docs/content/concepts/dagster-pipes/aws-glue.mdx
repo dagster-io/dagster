@@ -13,7 +13,7 @@ The [dagster-aws](/\_apidocs/libraries/dagster-aws) integration library provides
 
 ## Prerequisites
 
-- **In the orchestration environment**, you'll need to:
+- **In the Dagster environment**, you'll need to:
 
   - Install the following packages:
 
@@ -28,11 +28,11 @@ The [dagster-aws](/\_apidocs/libraries/dagster-aws) integration library provides
 - **In AWS**:
 
   - An existing AWS account
-  - An AWS Glue job with a Python 3.8+ runtime environment
+  - An AWS Glue job with a Python 3.9+ runtime environment
 
 ---
 
-## Step 1: Provide the dagster-pipes module
+## Step 1: Provide the dagster-pipes module in your Glue environment
 
 Provide the `dagster-pipes` module to the AWS Glue job either by installing it in the Glue job environment or packaging it along with the job script.
 

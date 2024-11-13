@@ -2,6 +2,37 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+## Migrating to 1.9.0
+
+## Database migration
+
+- This release includes database schema and data migrations to improve the performance of the Runs page. We highly recommend running these migrations to avoid slow page loads of the new Runs page. The migration will add a new column to the `runs` table, a new column to the `bulk_actions` table and a new `backfill_tags` table. A data migration will populate the new columns and table. Run `dagster instance migrate` to run the schema and data migration.
+
+## Notable behavior changes
+
+- Backfills have been moved from their own tab underneath the Overview page to entries within the table on the Runs page. This reflects the fact that backfills and runs are similar entities that share most properties. You can continue to use the legacy Runs page with the “Revert to legacy Runs page” user setting. ([GitHub Discussion](https://github.com/dagster-io/dagster/discussions/24898))
+- By default, `AutomationConditionSensorDefinitions` will now emit backfills to handle cases where more than one partition of an asset is requested on a given tick. This allows that asset's `BackfillPolicy` to be respected. This feature can be disabled by setting `allow_backfills` to `False` on the sensor definition.
+
+## Deprecations
+
+- The `DataBricksPysparkStepLauncher`, `EmrPySparkStepLauncher`, and any custom subclass of `StepLauncher` have been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning they will continue to function as they currently do for the foreseeable future. Their functionality has been superseded by the interfaces provided by `dagster-pipes`, and so future development work will be focused there.
+- The experimental `@multi_asset_sensor` has been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning it will continue to function as it currently does for the foreseeable future. Its functionality has been largely superseded by the `AutomationCondition` system.
+
+## Breaking changes
+
+- `dagster` no longer supports Python 3.8, which hit EOL on 2024-10-07.
+- `dagster` now requires `pydantic>=2` .
+- Passing a custom `PartitionsDefinition` subclass into a `Definitions` object now issues an error instead of a deprecation warning.
+- `AssetExecutionContext` is no longer a subclass of `OpExecutionContext`. At this release, `AssetExecutionContext` and `OpExecutionContext` implement the same methods, but in the future, the methods implemented by each class may diverge. If you have written helper functions with `OpExecutionContext` type annotations, they may need to be updated to include `AssetExecutionContext` depending on your usage. Explicit calls to `isinstance(context, OpExecutionContext)` will now fail if `context` is an `AssetExecutionContext`.
+- The `dagster/relation_identifier` metadata key has been renamed to `dagster/table_name`.
+- The `asset_selection` parameter on `AutomationConditionSensorDefinition` has been renamed to `target`, to align with existing sensor APIs.
+- The experimental `freshness_policy_sensor` has been removed, as it relies on the long-deprecated `FreshnessPolicy` API.
+- The deprecated `external_assets_from_specs` and `external_asset_from_spec` methods have been removed. Users should use `AssetsDefinition(specs=[...])`, or pass specs directly into the `Definitions` object instead.
+- `AssetKey` objects can no longer be iterated over or indexed in to. This behavior was never an intended access pattern and in all observed cases was a mistake.
+- [dagster-ge] `dagster-ge` now only supports `great_expectations>=0.17.15`. The `ge_validation_op_factory` API has been replaced with the API previously called `ge_validation_op_factory_v3`.
+- [dagster-aws] Removed deprecated parameters from `dagster_aws.pipes.PipesGlueClient.run`.
+- [dagster-embedded-elt] Removed deprecated parameter `dlt_dagster_translator` from `@dlt_assets`. The `dagster_dlt_translator` parameter should be used instead.
+
 ## Migrating to 1.8.0
 
 ### Notable behavior changes

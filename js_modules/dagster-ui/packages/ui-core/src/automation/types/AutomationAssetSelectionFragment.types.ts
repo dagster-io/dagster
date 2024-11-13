@@ -15,7 +15,7 @@ export type AutomationAssetSelectionFragment = {
           definition: {
             __typename: 'AssetNode';
             id: string;
-            autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
+            automationCondition: {__typename: 'AutomationCondition'} | null;
           } | null;
         }>;
       }
@@ -38,6 +38,6 @@ export type AssetSelectionNodeFragment = {
   definition: {
     __typename: 'AssetNode';
     id: string;
-    autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
+    automationCondition: {__typename: 'AutomationCondition'} | null;
   } | null;
 };

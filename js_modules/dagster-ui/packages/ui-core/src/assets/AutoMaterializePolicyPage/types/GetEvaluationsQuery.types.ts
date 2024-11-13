@@ -112,6 +112,7 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -134,6 +135,7 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -267,6 +269,7 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -289,6 +292,7 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -337,7 +341,7 @@ export type NewEvaluationNodeFragment = {
 export type AssetConditionEvaluationRecordFragment = {
   __typename: 'AssetConditionEvaluationRecord';
   id: string;
-  evaluationId: number;
+  evaluationId: string;
   numRequested: number;
   runIds: Array<string>;
   timestamp: number;
@@ -479,6 +483,7 @@ export type AssetConditionEvaluationRecordFragment = {
                       name: string;
                       description: string | null;
                       type: string;
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       constraints: {
                         __typename: 'TableColumnConstraints';
                         nullable: boolean;
@@ -501,6 +506,7 @@ export type AssetConditionEvaluationRecordFragment = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -653,6 +659,7 @@ export type AssetConditionEvaluationRecordFragment = {
                       name: string;
                       description: string | null;
                       type: string;
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       constraints: {
                         __typename: 'TableColumnConstraints';
                         nullable: boolean;
@@ -675,6 +682,7 @@ export type AssetConditionEvaluationRecordFragment = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -733,7 +741,6 @@ export type GetEvaluationsQuery = {
     | {
         __typename: 'AssetNode';
         id: string;
-        currentAutoMaterializeEvaluationId: number | null;
         autoMaterializePolicy: {
           __typename: 'AutoMaterializePolicy';
           rules: Array<{
@@ -751,7 +758,7 @@ export type GetEvaluationsQuery = {
         records: Array<{
           __typename: 'AssetConditionEvaluationRecord';
           id: string;
-          evaluationId: number;
+          evaluationId: string;
           numRequested: number;
           runIds: Array<string>;
           timestamp: number;
@@ -893,6 +900,11 @@ export type GetEvaluationsQuery = {
                               name: string;
                               description: string | null;
                               type: string;
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                               constraints: {
                                 __typename: 'TableColumnConstraints';
                                 nullable: boolean;
@@ -918,6 +930,7 @@ export type GetEvaluationsQuery = {
                             name: string;
                             description: string | null;
                             type: string;
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                             constraints: {
                               __typename: 'TableColumnConstraints';
                               nullable: boolean;
@@ -1073,6 +1086,11 @@ export type GetEvaluationsQuery = {
                               name: string;
                               description: string | null;
                               type: string;
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                               constraints: {
                                 __typename: 'TableColumnConstraints';
                                 nullable: boolean;
@@ -1098,6 +1116,7 @@ export type GetEvaluationsQuery = {
                             name: string;
                             description: string | null;
                             type: string;
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                             constraints: {
                               __typename: 'TableColumnConstraints';
                               nullable: boolean;
@@ -1153,7 +1172,7 @@ export type GetEvaluationsQuery = {
 
 export type GetEvaluationsSpecificPartitionQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  evaluationId: Types.Scalars['Int']['input'];
+  evaluationId: Types.Scalars['ID']['input'];
   partition: Types.Scalars['String']['input'];
 }>;
 
@@ -1293,6 +1312,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
                       name: string;
                       description: string | null;
                       type: string;
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       constraints: {
                         __typename: 'TableColumnConstraints';
                         nullable: boolean;
@@ -1315,6 +1335,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -1467,6 +1488,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
                       name: string;
                       description: string | null;
                       type: string;
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       constraints: {
                         __typename: 'TableColumnConstraints';
                         nullable: boolean;
@@ -1489,6 +1511,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -1523,6 +1546,6 @@ export type GetEvaluationsSpecificPartitionQuery = {
   } | null;
 };
 
-export const GetEvaluationsQueryVersion = '72294147655740415d3bdaf8de190465417ec4352927fbdcda7c65eadd75dd50';
+export const GetEvaluationsQueryVersion = '22cc08d87eec75cfec1f054f4d222b5a2478c47fc1a6788024d5902e3b7db197';
 
-export const GetEvaluationsSpecificPartitionQueryVersion = '3aa6fe76a74ae28f8d526c3f3c5bc0f1649caa503b302e604ddefdf2a76c6b81';
+export const GetEvaluationsSpecificPartitionQueryVersion = '7c47ec6fee7ebf9edf6c5d57294f5a603e6a599884841eb211a1de9422c3791c';

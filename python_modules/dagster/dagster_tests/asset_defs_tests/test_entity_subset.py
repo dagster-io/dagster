@@ -18,7 +18,6 @@ from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset 
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
-    PartitionKeysTimeWindowPartitionsSubset,
     PersistedTimeWindow,
     TimeWindowPartitionsSubset,
 )
@@ -82,16 +81,6 @@ def test_all_subset(partitions_def: Optional[PartitionsDefinition]) -> None:
                     end=TimestampWithTimezone(create_datetime(2020, 1, 5).timestamp(), "UTC"),
                 ),
             ],
-        ),
-        PartitionKeysTimeWindowPartitionsSubset(
-            partitions_def=DailyPartitionsDefinition("2020-01-01"),
-            included_partition_keys={
-                "2020-01-01",
-                "2020-01-04",
-                "2022-01-02",
-                "2022-01-03",
-                "2022-01-04",
-            },
         ),
         DefaultPartitionsSubset(subset={"a", "b", "c", "d", "e"}),
         AllPartitionsSubset(

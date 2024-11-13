@@ -33,8 +33,7 @@ from dagster._serdes.serdes import (
 class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):
     """Serializes NamedTuples with fields that are mappings containing PartitionsSubsets.
 
-    This is necessary because PartitionKeysTimeWindowPartitionsSubsets are not serializable,
-    so we convert them to TimeWindowPartitionsSubsets.
+    This is necessary because not all subsets are serializable.
     """
 
     def before_pack(self, value: NamedTuple) -> NamedTuple:
@@ -43,8 +42,7 @@ class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):
             if isinstance(field_value, Mapping) and all(
                 isinstance(v, PartitionsSubset) for v in field_value.values()
             ):
-                # PartitionKeysTimeWindowPartitionsSubsets are not serializable, so
-                # we convert them to TimeWindowPartitionsSubsets
+                # Converts non-serializable subsets to serializable ones
                 subsets_by_key = {k: v.to_serializable_subset() for k, v in field_value.items()}
 
                 # If the mapping is keyed by AssetKey wrap it in a SerializableNonScalarKeyMapping
@@ -339,7 +337,7 @@ class AssetGraphSubset(NamedTuple):
         for key, value in serialized_dict["partitions_subsets_by_asset_key"].items():
             asset_key = AssetKey.from_user_string(key)
 
-            if asset_key not in asset_graph.all_asset_keys:
+            if not asset_graph.has(asset_key):
                 if not allow_partial:
                     raise DagsterDefinitionChangedDeserializationError(
                         f"Asset {key} existed at storage-time, but no longer does"
@@ -374,8 +372,10 @@ class AssetGraphSubset(NamedTuple):
             partitions_subsets_by_asset_key[asset_key] = partitions_def.deserialize_subset(value)
 
         non_partitioned_asset_keys = {
-            AssetKey.from_user_string(key) for key in serialized_dict["non_partitioned_asset_keys"]
-        } & asset_graph.all_asset_keys
+            asset_key
+            for key in serialized_dict["non_partitioned_asset_keys"]
+            if asset_graph.has((asset_key := AssetKey.from_user_string(key)))
+        }
 
         return AssetGraphSubset(
             partitions_subsets_by_asset_key=partitions_subsets_by_asset_key,

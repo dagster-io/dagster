@@ -21,16 +21,13 @@ from typing_extensions import Self, dataclass_transform
 
 import dagster._check as check
 from dagster._check import EvalContext, build_check_call_str
+from dagster._check.record import RECORD_MARKER_FIELD, RECORD_MARKER_VALUE, is_record
 
 ImportFrom = check.ImportFrom  # re-expose for convenience
 TType = TypeVar("TType", bound=Type)
 TVal = TypeVar("TVal")
 
 
-_RECORD_MARKER_VALUE = object()
-_RECORD_MARKER_FIELD = (
-    "__checkrepublic__"  # "I do want to release this as checkrepublic one day" - schrockn
-)
 _RECORD_ANNOTATIONS_FIELD = "__record_annotations__"
 _CHECKED_NEW = "__checked_new__"
 _DEFAULTS_NEW = "__defaults_new__"
@@ -130,16 +127,17 @@ def _namedtuple_record_transform(
     # the default namedtuple record cannot handle subclasses that have different fields from their
     # parents if both are records
     base.__repr__ = _repr
+    nt_iter = base.__iter__
+    base.__iter__ = _banned_iter
+    base.__getitem__ = _banned_idx
 
     # these will override an implementation on the class if it exists
     new_class_dict = {
         **{n: getattr(base, n) for n in field_set.keys()},
         "_fields": base._fields,
-        "__iter__": _banned_iter,
-        "__getitem__": _banned_idx,
-        "__hidden_iter__": base.__iter__,
+        "__hidden_iter__": nt_iter,
         "__hidden_replace__": base._replace,
-        _RECORD_MARKER_FIELD: _RECORD_MARKER_VALUE,
+        RECORD_MARKER_FIELD: RECORD_MARKER_VALUE,
         _RECORD_ANNOTATIONS_FIELD: field_set,
         _NAMED_TUPLE_BASE_NEW_FIELD: nt_new,
         _REMAPPING_FIELD: field_to_new_mapping or {},
@@ -322,10 +320,8 @@ class IHaveNew:
 
         def __new__(cls, **kwargs) -> Self: ...
 
-
-def is_record(obj) -> bool:
-    """Whether or not this object was produced by a record decorator."""
-    return getattr(obj, _RECORD_MARKER_FIELD, None) == _RECORD_MARKER_VALUE
+        # let type checker know these objects are sortable (by way of being a namedtuple)
+        def __lt__(self, other) -> bool: ...
 
 
 def has_generated_new(obj) -> bool:

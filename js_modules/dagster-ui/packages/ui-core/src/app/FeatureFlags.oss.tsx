@@ -3,7 +3,10 @@ export enum FeatureFlag {
   flagDisableWebsockets = 'flagDisableWebsockets',
   flagSidebarResources = 'flagSidebarResources',
   flagDisableAutoLoadDefaults = 'flagDisableAutoLoadDefaults',
-  flagLegacyNav = 'flagLegacyNav',
-  flagCodeLocationPage = 'flagCodeLocationPage',
-  flagRunsFeed = 'flagRunsFeed',
+  flagLegacyRunsPage = 'flagLegacyRunsPage',
+
+  // Flags for tests
+  __TestFlagDefaultNone = '__TestFlagDefaultNone',
+  __TestFlagDefaultTrue = '__TestFlagDefaultTrue',
+  __TestFlagDefaultFalse = '__TestFlagDefaultFalse',
 }

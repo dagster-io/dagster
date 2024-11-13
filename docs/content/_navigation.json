@@ -170,7 +170,7 @@
             "path": "/concepts/partitions-schedules-sensors/sensors"
           },
           {
-            "title": "Declarative Automation (Experimental)",
+            "title": "Declarative Automation",
             "children": [
               {
                 "title": "Overview",
@@ -387,6 +387,14 @@
                 "path": "/concepts/dagster-pipes/aws-glue"
               },
               {
+                "title": "Dagster Pipes + AWS EMR",
+                "path": "/concepts/dagster-pipes/aws-emr"
+              },
+              {
+                "title": "Dagster Pipes + AWS EMR Serverless",
+                "path": "/concepts/dagster-pipes/aws-emr-serverless"
+              },
+              {
                 "title": "Dagster Pipes + AWS Lambda",
                 "path": "/concepts/dagster-pipes/aws-lambda"
               },
@@ -401,6 +409,10 @@
               {
                 "title": "Details and customization",
                 "path": "/concepts/dagster-pipes/dagster-pipes-details-and-customization"
+              },
+              {
+                "title": "Migrating from Step Launchers to Dagster Pipes",
+                "path": "/guides/migrations/from-step-launchers-to-pipes"
               }
             ]
           },
@@ -901,6 +913,46 @@
         ]
       },
       {
+        "title": "Airlift",
+        "path": "/integrations/airlift",
+        "children": [
+          {
+            "title": "Airflow Migration Tutorial",
+            "path": "/integrations/airlift/tutorial/overview",
+            "children": [
+              {
+                "title": "Part 1: Setup local Airflow",
+                "path": "/integrations/airlift/tutorial/setup"
+              },
+              {
+                "title": "Part 2: Peering to the Airflow Instance",
+                "path": "/integrations/airlift/tutorial/peer"
+              },
+              {
+                "title": "Part 3: Observing assets",
+                "path": "/integrations/airlift/tutorial/observe"
+              },
+              {
+                "title": "Part 4: Migrating assets",
+                "path": "/integrations/airlift/tutorial/migrate"
+              },
+              {
+                "title": "Part 5: Decomissioning the Airflow DAG",
+                "path": "/integrations/airlift/tutorial/decomission"
+              }
+            ]
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/airlift/reference"
+          },
+          {
+            "title": "DAG-level migration",
+            "path": "/integrations/airlift/full_dag"
+          }
+        ]
+      },
+      {
         "title": "Airflow",
         "path": "/integrations/airflow"
       },
@@ -1037,6 +1089,10 @@
         ]
       },
       {
+        "title": "Looker",
+        "path": "/integrations/looker"
+      },
+      {
         "title": "OpenAI",
         "path": "/integrations/openai"
       },
@@ -1049,7 +1105,15 @@
         "path": "/integrations/pandera"
       },
       {
-        "title": "PySpark",
+        "title": "Power BI",
+        "path": "/integrations/powerbi"
+      },
+      {
+        "title": "Sigma",
+        "path": "/integrations/sigma"
+      },
+      {
+        "title": "Spark",
         "path": "/integrations/spark"
       },
       {
@@ -1074,6 +1138,10 @@
             "path": "/integrations/snowflake/reference"
           }
         ]
+      },
+      {
+        "title": "Tableau",
+        "path": "/integrations/tableau"
       },
       {
         "title": "All integrations",
@@ -1242,6 +1310,10 @@
               {
                 "title": "Validating data with Dagster Type factories",
                 "path": "/guides/dagster/dagster_type_factories"
+              },
+              {
+                "title": "Migrating from Spark Step Launchers to Dagster Pipes",
+                "path": "/guides/migrations/from-step-launchers-to-pipes"
               }
             ]
           },
@@ -1383,6 +1455,10 @@
           {
             "title": "Dagster Pipes (dagster-pipes)",
             "path": "/_apidocs/libraries/dagster-pipes"
+          },
+          {
+            "title": "Airlift (dagster-airlift)",
+            "path": "/_apidocs/libraries/dagster-airlift"
           },
           {
             "title": "Airbyte (dagster-airbyte)",
@@ -1533,6 +1609,10 @@
             "path": "/_apidocs/libraries/dagster-postgres"
           },
           {
+            "title": "PowerBI (dagster-powerbi)",
+            "path": "/_apidocs/libraries/dagster-powerbi"
+          },
+          {
             "title": "Prometheus (dagster-prometheus)",
             "path": "/_apidocs/libraries/dagster-prometheus"
           },
@@ -1543,6 +1623,10 @@
           {
             "title": "Shell (dagster-shell)",
             "path": "/_apidocs/libraries/dagster-shell"
+          },
+          {
+            "title": "Sigma (dagster-sigma)",
+            "path": "/_apidocs/libraries/dagster-sigma"
           },
           {
             "title": "Slack (dagster-slack)",
@@ -1567,6 +1651,10 @@
           {
             "title": "SSH / SFTP (dagster-ssh)",
             "path": "/_apidocs/libraries/dagster-ssh"
+          },
+          {
+            "title": "Tableau (dagster-tableau)",
+            "path": "/_apidocs/libraries/dagster-tableau"
           },
           {
             "title": "Twilio (dagster-twilio)",

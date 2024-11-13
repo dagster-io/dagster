@@ -159,7 +159,7 @@ export const SensorDetails = ({
                     style={{marginTop: '-2px'}}
                   >
                     <TimestampDisplay timestamp={latestTick.timestamp} timeFormat={TIME_FORMAT} />
-                    <TickStatusTag tick={latestTick} />
+                    <TickStatusTag tick={latestTick} tickResultType="runs" />
                   </Box>
                 </>
               ) : (

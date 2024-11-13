@@ -1,13 +1,19 @@
 import re
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, List, Mapping, NamedTuple, Optional, Sequence, TypeVar, Union
+
+from dagster_pipes import to_assey_key_path
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
 ASSET_KEY_DELIMITER = "/"
+ASSET_KEY_ESCAPE_CHARACTER = "\\"
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -19,7 +25,11 @@ def parse_asset_key_string(s: str) -> Sequence[str]:
 
 
 @whitelist_for_serdes
-class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
+@record_custom(
+    checked=False,
+    field_to_new_mapping={"parts": "path"},
+)
+class AssetKey(IHaveNew):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
 
@@ -39,28 +49,30 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
             strings represent the hierarchical structure of the asset_key.
     """
 
-    def __new__(cls, path: Union[str, Sequence[str]]):
-        if isinstance(path, str):
-            path = [path]
-        else:
-            path = list(check.sequence_param(path, "path", of_type=str))
+    # Originally AssetKey contained "path" as a list. In order to change to using a tuple, we now have
+    parts: Sequence[str]  # with path available as a property defined below still returning a list.
 
-        return super(AssetKey, cls).__new__(cls, path=path)
+    def __new__(
+        cls,
+        path: Union[str, Sequence[str]],
+    ):
+        if isinstance(path, str):
+            parts = (path,)
+        else:
+            parts = tuple(check.sequence_param(path, "path", of_type=str))
+
+        return super().__new__(cls, parts=parts)
+
+    @public
+    @cached_property
+    def path(self) -> Sequence[str]:
+        return list(self.parts)
 
     def __str__(self):
         return f"AssetKey({self.path})"
 
     def __repr__(self):
         return f"AssetKey({self.path})"
-
-    def __hash__(self):
-        return hash(tuple(self.path))
-
-    def __eq__(self, other):
-        if other.__class__ is not self.__class__:
-            return False
-
-        return self.path == other.path
 
     def to_string(self) -> str:
         """E.g. '["first_component", "second_component"]'."""
@@ -72,6 +84,13 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
     def to_user_string(self) -> str:
         """E.g. "first_component/second_component"."""
         return ASSET_KEY_DELIMITER.join(self.path)
+
+    def to_escaped_user_string(self) -> str:
+        r"""Similar to to_user_string, but escapes slashes in the path components with backslashes.
+
+        E.g. ["first_component", "second/component"] -> "first_component/second\/component"
+        """
+        return ASSET_KEY_DELIMITER.join([part.replace("/", "\\/") for part in self.path])
 
     def to_python_identifier(self, suffix: Optional[str] = None) -> str:
         """Build a valid Python identifier based on the asset key that can be used for
@@ -87,6 +106,11 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
     @staticmethod
     def from_user_string(asset_key_string: str) -> "AssetKey":
         return AssetKey(asset_key_string.split(ASSET_KEY_DELIMITER))
+
+    @staticmethod
+    def from_escaped_user_string(asset_key_string: str) -> "AssetKey":
+        """Inverse of to_escaped_user_string."""
+        return AssetKey(to_assey_key_path(asset_key_string))
 
     @staticmethod
     def from_db_string(asset_key_string: Optional[str]) -> Optional["AssetKey"]:
@@ -149,6 +173,21 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
     def with_prefix(self, prefix: "CoercibleToAssetKeyPrefix") -> "AssetKey":
         prefix = key_prefix_from_coercible(prefix)
         return AssetKey(list(prefix) + list(self.path))
+
+    if not TYPE_CHECKING:
+        # hide these from type checker so it doesn't believe AssetKey is iterable/indexable
+        def __iter__(self):
+            raise DagsterInvariantViolationError(
+                "You have attempted to iterate a single AssetKey object. "
+                "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug."
+            )
+
+        def __getitem__(self, _):
+            raise DagsterInvariantViolationError(
+                "You have attempted to index directly in to the AssetKey object. "
+                "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug. "
+                "Use asset_key.path instead to access the list of key components."
+            )
 
 
 CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]

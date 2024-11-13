@@ -11,7 +11,6 @@ from dagster._core.definitions.metadata.source_code import (
     LocalFileCodeReference,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1, USING_PYDANTIC_2
 from dagster_blueprints.blueprint import Blueprint, DagsterBuildDefinitionsFromConfigError
 from dagster_blueprints.load_from_yaml import YamlBlueprintsLoader, load_defs_from_yaml
 from pydantic import ValidationError
@@ -42,7 +41,7 @@ def test_single_file_single_blueprint() -> None:
         path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
         per_file_blueprint_type=SimpleAssetBlueprint,
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {AssetKey("asset1")}
 
     metadata = defs.get_assets_def("asset1").metadata_by_key[AssetKey("asset1")]
     code_references_metadata = CodeReferencesMetadataSet.extract(metadata)
@@ -61,7 +60,10 @@ def test_dir_of_single_blueprints() -> None:
         path=Path(__file__).parent / "yaml_files" / "dir_of_single_blueprints",
         per_file_blueprint_type=SimpleAssetBlueprint,
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset2"), AssetKey("asset3")}
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {
+        AssetKey("asset2"),
+        AssetKey("asset3"),
+    }
 
     for asset_key, expected_filename in (
         (AssetKey("asset2"), "single_blueprint1.yaml"),
@@ -139,15 +141,14 @@ def test_empty_dir() -> None:
         path=Path(__file__).parent / "yaml_files" / "dir_with_no_yaml_files",
         per_file_blueprint_type=SimpleAssetBlueprint,
     )
-    assert len(set(defs.get_asset_graph().all_asset_keys)) == 0
+    assert len(set(defs.get_asset_graph().get_all_asset_keys())) == 0
 
 
 def test_model_validation_error() -> None:
     class DifferentFieldsAssetBlueprint(Blueprint):
         keykey: str
 
-    match = "" if USING_PYDANTIC_1 else "yaml_files/single_blueprint.yaml"
-    with pytest.raises(ValidationError, match=match):
+    with pytest.raises(ValidationError, match="yaml_files/single_blueprint.yaml"):
         load_defs_from_yaml(
             path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
             per_file_blueprint_type=DifferentFieldsAssetBlueprint,
@@ -159,7 +160,7 @@ def test_single_file_union_of_blueprints() -> None:
         path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
         per_file_blueprint_type=Union[SimpleAssetBlueprint, SimpleJobBlueprint],
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {AssetKey("asset1")}
 
 
 def test_single_file_union_of_blueprints_discriminated_union() -> None:
@@ -184,7 +185,7 @@ def test_single_file_union_of_blueprints_discriminated_union() -> None:
         path=Path(__file__).parent / "yaml_files" / "single_blueprint_with_type.yaml",
         per_file_blueprint_type=Union[SameFieldsAssetBlueprint1, SameFieldsAssetBlueprint2],
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {AssetKey("asset1")}
 
 
 class SourceFileNameAssetBlueprint(Blueprint):
@@ -202,7 +203,7 @@ def test_source_file_name() -> None:
         path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
         per_file_blueprint_type=SourceFileNameAssetBlueprint,
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {AssetKey("asset1")}
 
     metadata = defs.get_assets_def("asset1").metadata_by_key[AssetKey("asset1")]
     assert metadata["source_file_name"] == "single_blueprint.yaml"
@@ -236,7 +237,7 @@ def test_additional_resources() -> None:
         resources={"some_resource": "some_value"},
     )
 
-    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {AssetKey("asset1")}
 
 
 def test_yaml_blueprints_loader_additional_resources() -> None:
@@ -256,21 +257,10 @@ def test_yaml_blueprints_loader_additional_resources() -> None:
         per_file_blueprint_type=SimpleAssetBlueprintNeedsResource,
     ).load_defs(resources={"some_resource": "some_value"})
 
-    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {AssetKey("asset1")}
 
 
-@pytest.mark.parametrize(
-    "pydantic_version",
-    [
-        pytest.param(
-            1, id="pydantic1", marks=pytest.mark.skipif(USING_PYDANTIC_2, reason="Pydantic >= 2.0")
-        ),
-        pytest.param(
-            2, id="pydantic2", marks=pytest.mark.skipif(USING_PYDANTIC_1, reason="Pydantic < 2.0")
-        ),
-    ],
-)
-def test_loader_schema(snapshot, pydantic_version: int) -> None:
+def test_loader_schema(snapshot) -> None:
     class SimpleAssetBlueprint(Blueprint):
         key: str
 
@@ -279,8 +269,6 @@ def test_loader_schema(snapshot, pydantic_version: int) -> None:
     model_schema = loader.model_json_schema()
     snapshot.assert_match(model_schema)
 
-    # Pydantic 1 JSON schema has the blueprint as a definition rather than a top-level object
-    # Pydantic 2 JSON schema has the blueprint as a top-level object
     if model_schema["title"] == "ParsingModel[SimpleAssetBlueprint]":
         assert model_schema["$ref"] == "#/definitions/SimpleAssetBlueprint"
         model_schema = model_schema["definitions"]["SimpleAssetBlueprint"]
@@ -291,18 +279,7 @@ def test_loader_schema(snapshot, pydantic_version: int) -> None:
     assert set(model_keys) == {"key"}
 
 
-@pytest.mark.parametrize(
-    "pydantic_version",
-    [
-        pytest.param(
-            1, id="pydantic1", marks=pytest.mark.skipif(USING_PYDANTIC_2, reason="Pydantic >= 2.0")
-        ),
-        pytest.param(
-            2, id="pydantic2", marks=pytest.mark.skipif(USING_PYDANTIC_1, reason="Pydantic < 2.0")
-        ),
-    ],
-)
-def test_loader_schema_sequence(snapshot, pydantic_version: int) -> None:
+def test_loader_schema_sequence(snapshot) -> None:
     class SimpleAssetBlueprint(Blueprint):
         key: str
 
@@ -316,18 +293,7 @@ def test_loader_schema_sequence(snapshot, pydantic_version: int) -> None:
     assert model_schema["type"] == "array"
 
 
-@pytest.mark.parametrize(
-    "pydantic_version",
-    [
-        pytest.param(
-            1, id="pydantic1", marks=pytest.mark.skipif(USING_PYDANTIC_2, reason="Pydantic >= 2.0")
-        ),
-        pytest.param(
-            2, id="pydantic2", marks=pytest.mark.skipif(USING_PYDANTIC_1, reason="Pydantic < 2.0")
-        ),
-    ],
-)
-def test_loader_schema_union(snapshot, pydantic_version: int) -> None:
+def test_loader_schema_union(snapshot) -> None:
     class FooAssetBlueprint(Blueprint):
         type: Literal["foo"] = "foo"
         number: int
@@ -357,7 +323,7 @@ def test_single_file_many_blueprints() -> None:
         path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
         per_file_blueprint_type=List[SimpleAssetBlueprint],
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {
         AssetKey("asset1"),
         AssetKey("asset2"),
         AssetKey("asset3"),
@@ -367,7 +333,7 @@ def test_single_file_many_blueprints() -> None:
         path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
         per_file_blueprint_type=Sequence[SimpleAssetBlueprint],
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {
         AssetKey("asset1"),
         AssetKey("asset2"),
         AssetKey("asset3"),
@@ -380,9 +346,9 @@ def test_single_file_many_blueprints() -> None:
 def test_single_file_many_blueprints_builtin_list() -> None:
     defs = load_defs_from_yaml(
         path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
-        per_file_blueprint_type=list[SimpleAssetBlueprint],  # type: ignore
+        per_file_blueprint_type=list[SimpleAssetBlueprint],
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {
         AssetKey("asset1"),
         AssetKey("asset2"),
         AssetKey("asset3"),
@@ -421,7 +387,7 @@ def test_dir_of_many_blueprints() -> None:
         path=Path(__file__).parent / "yaml_files" / "dir_of_lists_of_blueprints",
         per_file_blueprint_type=List[SimpleAssetBlueprint],
     )
-    assert set(defs.get_asset_graph().all_asset_keys) == {
+    assert set(defs.get_asset_graph().get_all_asset_keys()) == {
         AssetKey("asset1"),
         AssetKey("asset2"),
         AssetKey("asset3"),

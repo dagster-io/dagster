@@ -23,6 +23,7 @@ from schema.charts.dagster.subschema.compute_log_manager import (
     S3ComputeLogManager as S3ComputeLogManagerModel,
 )
 from schema.charts.dagster.subschema.daemon import (
+    BlockOpConcurrencyLimitedRuns,
     ConfigurableClass,
     Daemon,
     QueuedRunCoordinatorConfig,
@@ -44,6 +45,7 @@ from schema.charts.dagster.subschema.run_launcher import (
 )
 from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
+from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
 
@@ -338,7 +340,7 @@ def test_k8s_run_launcher_security_context(template: HelmTemplate):
                     envVars=[],
                     volumeMounts=[],
                     volumes=[],
-                    securityContext=sacred_rites_of_debugging,
+                    securityContext=kubernetes.SecurityContext.parse_obj(sacred_rites_of_debugging),
                 )
             ),
         )
@@ -601,6 +603,10 @@ def test_queued_run_coordinator_config(
                         dequeueIntervalSeconds=dequeue_interval_seconds,
                         dequeueUseThreads=True,
                         dequeueNumWorkers=dequeue_num_workers,
+                        blockOpConcurrencyLimitedRuns=BlockOpConcurrencyLimitedRuns(
+                            enabled=True,
+                            opConcurrencySlotBuffer=0,
+                        ),
                     )
                 ),
             )
@@ -631,6 +637,14 @@ def test_queued_run_coordinator_config(
         assert run_coordinator_config["tag_concurrency_limits"] == [
             tag_concurrency_limit.dict() for tag_concurrency_limit in tag_concurrency_limits
         ]
+        assert run_coordinator_config["block_op_concurrency_limited_runs"]
+        assert run_coordinator_config["block_op_concurrency_limited_runs"]["enabled"] is True
+        assert (
+            run_coordinator_config["block_op_concurrency_limited_runs"][
+                "op_concurrency_slot_buffer"
+            ]
+            == 0
+        )
 
 
 def test_custom_run_coordinator_config(template: HelmTemplate):

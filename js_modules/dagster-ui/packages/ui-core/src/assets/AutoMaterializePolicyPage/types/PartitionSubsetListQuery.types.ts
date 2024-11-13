@@ -4,7 +4,7 @@ import * as Types from '../../../graphql/types';
 
 export type PartitionSubsetListQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  evaluationId: Types.Scalars['Int']['input'];
+  evaluationId: Types.Scalars['ID']['input'];
   nodeUniqueId: Types.Scalars['String']['input'];
 }>;
 
@@ -13,4 +13,4 @@ export type PartitionSubsetListQuery = {
   truePartitionsForAutomationConditionEvaluationNode: Array<string>;
 };
 
-export const PartitionSubsetListQueryVersion = 'a99c32a24510b715ad4a4d31421bdd663549665193b4a40bfee5e8238b586313';
+export const PartitionSubsetListQueryVersion = '9a560790b6c1828137f31532f5879cfb6611d9ca8c14b7f315464510b6a4bd75';

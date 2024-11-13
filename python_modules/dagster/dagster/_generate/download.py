@@ -11,11 +11,13 @@ from dagster._generate.generate import _should_skip_file
 # Examples aren't that can't be downloaded from the dagster project CLI
 EXAMPLES_TO_IGNORE = [
     "deploy_k8s_beta",
-    "docs_snippets",
     "docs_beta_snippets",
+    "docs_snippets",
     "experimental",
-    "temp_pins.txt",
     "use_case_repository",
+    "pyproject.toml",
+    "README.md",
+    "temp_pins.txt",
 ]
 # Hardcoded list of available examples. The list is tested against the examples folder in this mono
 # repo to make sure it's up-to-date.
@@ -31,6 +33,7 @@ AVAILABLE_EXAMPLES = [
     "deploy_k8s",
     "development_to_production",
     "feature_graph_backed_assets",
+    "getting_started_etl_tutorial",
     "project_analytics",
     "project_dagster_university_start",
     "project_du_dbt_starter",

@@ -15,7 +15,6 @@ from dagster import (
     DagsterUnknownPartitionError,
     DailyPartitionsDefinition,
     Definitions,
-    FreshnessPolicy,
     Output,
     RunConfig,
     RunRequest,
@@ -24,12 +23,10 @@ from dagster import (
     StaticPartitionsDefinition,
     asset,
     asset_sensor,
-    build_freshness_policy_sensor_context,
     build_multi_asset_sensor_context,
     build_run_status_sensor_context,
     build_sensor_context,
     define_asset_job,
-    freshness_policy_sensor,
     job,
     materialize,
     multi_asset,
@@ -50,7 +47,6 @@ from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster._core.execution.build_resources import build_resources
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
 
@@ -411,31 +407,6 @@ def test_multi_asset_sensor_with_source_assets() -> None:
         run_requests = cast(List[RunRequest], my_sensor(ctx))
         assert len(run_requests) == 1
         assert run_requests[0].partition_key == "2023-03-01"
-
-
-def test_freshness_policy_sensor_invocation_resources() -> None:
-    class MyResource(ConfigurableResource):
-        a_str: str
-
-    @freshness_policy_sensor(asset_selection=AssetSelection.all())
-    def freshness_sensor(context, my_resource: MyResource) -> None:
-        assert context.minutes_overdue == 10
-        assert context.previous_minutes_overdue is None
-        assert my_resource.a_str == "bar"
-
-    with build_resources({"my_resource": MyResource(a_str="bar")}) as resources:
-        context = build_freshness_policy_sensor_context(
-            sensor_name="status_sensor",
-            asset_key=AssetKey("a"),
-            freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
-            minutes_overdue=10,
-            # This is a bit gross right now, but FressnessPolicySensorContext is not a subclass of
-            # SensorEvaluationContext and isn't set up to be a context manager
-            # Direct invocation of freshness policy sensors should be rare anyway
-            resources=resources,
-        )
-
-        freshness_sensor(context)
 
 
 def test_run_status_sensor_invocation_resources() -> None:
@@ -857,43 +828,6 @@ def test_run_failure_w_run_request():
         return RunRequest(run_key=None, run_config={}, tags={})
 
     assert basic_sensor_w_arg(context).run_config == {}
-
-
-def test_freshness_policy_sensor():
-    @freshness_policy_sensor(asset_selection=AssetSelection.all())
-    def freshness_sensor(context):
-        assert context.minutes_overdue == 10
-        assert context.previous_minutes_overdue is None
-
-    context = build_freshness_policy_sensor_context(
-        sensor_name="status_sensor",
-        asset_key=AssetKey("a"),
-        freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
-        minutes_overdue=10,
-    )
-
-    freshness_sensor(context)
-
-
-def test_freshness_policy_sensor_params_out_of_order():
-    @freshness_policy_sensor(
-        name="some_name",
-        asset_selection=AssetSelection.all(),
-        minimum_interval_seconds=10,
-        description="foo",
-    )
-    def freshness_sensor(context):
-        assert context.minutes_overdue == 10
-        assert context.previous_minutes_overdue is None
-
-    context = build_freshness_policy_sensor_context(
-        sensor_name="some_name",
-        asset_key=AssetKey("a"),
-        freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
-        minutes_overdue=10,
-    )
-
-    freshness_sensor(context)
 
 
 def test_multi_asset_sensor():
@@ -1904,3 +1838,86 @@ def test_reject_invalid_asset_check_keys():
 
         with pytest.warns(DeprecationWarning, match="asset check keys"):
             asset2_sensor.evaluate_tick(ctx)
+
+
+def test_run_status_sensor_eval_tick_testing() -> None:
+    # Ensure run status senors can be tested including exercising the logic
+    # provided by us. Useful for ensuring its been defined correctly.
+
+    @job
+    def certain_job(): ...
+
+    @job
+    def other_job(): ...
+
+    @job
+    def job_1(): ...
+
+    @job
+    def job_2(): ...
+
+    @job
+    def job_3(): ...
+
+    @run_status_sensor(
+        monitored_jobs=[certain_job],
+        request_job=job_1,
+        run_status=DagsterRunStatus.SUCCESS,
+    )
+    def sensor_1():
+        return RunRequest(
+            job_name="job_1",
+        )
+
+    @run_status_sensor(
+        monitored_jobs=[certain_job],
+        request_job=job_2,
+        run_status=DagsterRunStatus.SUCCESS,
+    )
+    def sensor_2():
+        return RunRequest(
+            job_name="job_2",
+        )
+
+    @run_status_sensor(
+        monitored_jobs=[other_job],
+        request_job=job_3,
+        run_status=DagsterRunStatus.SUCCESS,
+    )
+    def sensor_3():
+        return RunRequest(
+            job_name="job_3",
+        )
+
+    instance = DagsterInstance.ephemeral()
+
+    sensors = [sensor_1, sensor_2, sensor_3]
+    cursors = {}
+
+    result = job_1.execute_in_process(instance=instance)
+    assert result.success
+
+    # the first run of a status sensor starts tracking from that point,
+    # so run each one and save the cursor
+    for s in sensors:
+        ctx = build_sensor_context(instance=instance)
+        data = s.evaluate_tick(ctx)
+        cursors[s] = data.cursor
+
+    # execute the target job
+    result = certain_job.execute_in_process(instance=instance)
+    assert result.success
+
+    # evaluate all sensors
+    requested_jobs = set()
+    for s in sensors:
+        ctx = build_sensor_context(
+            instance=instance,
+            cursor=cursors[s],
+        )
+        data = s.evaluate_tick(ctx)
+        for request in data.run_requests or []:
+            requested_jobs.add(request.job_name)
+
+    # assert the expected response amongst sensors
+    assert requested_jobs == {"job_1", "job_2"}

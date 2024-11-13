@@ -8,7 +8,6 @@ from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.remote_representation import RemoteSensor, TargetSnap
 from dagster._core.remote_representation.external import CompoundID
-from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
 
@@ -95,7 +94,6 @@ class GrapheneSensor(graphene.ObjectType):
     def __init__(
         self,
         remote_sensor: RemoteSensor,
-        repository_handle: RepositoryHandle,
         sensor_state: Optional[InstigatorState],
         batch_loader: Optional[RepositoryScopedBatchLoader] = None,
     ):
@@ -122,7 +120,7 @@ class GrapheneSensor(graphene.ObjectType):
             sensorType=remote_sensor.sensor_type.value,
             assetSelection=GrapheneAssetSelection(
                 asset_selection=remote_sensor.asset_selection,
-                repository_handle=repository_handle,
+                repository_handle=remote_sensor.handle.repository_handle,
             )
             if remote_sensor.asset_selection
             else None,

@@ -69,7 +69,7 @@ def test_with_source_code_references_wrapper(moms_flower_shop_target_dir: Path) 
 
     defs = Definitions(assets=with_source_code_references([my_flower_shop_assets]))
 
-    assets = defs.get_asset_graph().all_asset_keys
+    assets = defs.get_asset_graph().get_all_asset_keys()
 
     for asset_key in assets:
         asset_metadata = defs.get_assets_def(asset_key).specs_by_key[asset_key].metadata

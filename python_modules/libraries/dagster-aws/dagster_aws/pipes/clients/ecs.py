@@ -1,13 +1,15 @@
 from pprint import pformat
-from typing import TYPE_CHECKING, Any, Dict, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
 import boto3
 import botocore
 import dagster._check as check
-from dagster import DagsterInvariantViolationError, PipesClient
+from dagster import DagsterInvariantViolationError, MetadataValue, PipesClient
 from dagster._annotations import experimental, public
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClientCompletedInvocation,
@@ -60,7 +62,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
     def run(
         self,
         *,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         run_task_params: "RunTaskRequestRequestTypeDef",
         extras: Optional[Dict[str, Any]] = None,
         pipes_container_name: Optional[str] = None,
@@ -68,7 +70,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         """Run ECS tasks, enriched with the pipes protocol.
 
         Args:
-            context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context of the currently executing Dagster op or asset.
             run_task_params (dict): Parameters for the ``run_task`` boto3 ECS client call.
                 Must contain ``taskDefinition`` key.
                 See `Boto3 API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs/client/run_task.html#run-task>`_
@@ -151,6 +153,12 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             run_task_params["overrides"] = (  # pyright: ignore (reportGeneralTypeIssues)
                 overrides  # assign in case overrides was created here as an empty dict
             )
+
+            # inject Dagster tags
+            tags = list(run_task_params.get("tags", []))
+            for key, value in session.default_remote_invocation_info.items():
+                tags.append({"key": key, "value": value})
+            run_task_params["tags"] = tags
 
             response = self._client.run_task(**run_task_params)
 
@@ -256,7 +264,9 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                 raise
 
         context.log.info(f"[pipes] ECS task {task_arn} completed")
-        return PipesClientCompletedInvocation(session)
+        return PipesClientCompletedInvocation(
+            session, metadata=self._extract_dagster_metadata(response)
+        )
 
     def _wait_for_completion(
         self, start_response: "RunTaskResponseTypeDef", cluster: Optional[str] = None
@@ -271,9 +281,27 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         waiter.wait(**params)
         return self._client.describe_tasks(**params)
 
+    def _extract_dagster_metadata(
+        self, response: "DescribeTasksResponseTypeDef"
+    ) -> RawMetadataMapping:
+        metadata: RawMetadataMapping = {}
+
+        region = self._client.meta.region_name
+
+        task = response["tasks"][0]
+
+        task_id = task["taskArn"].split("/")[-1]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+        cluster = task["clusterArn"].split("/")[-1]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+
+        metadata["AWS ECS Task URL"] = MetadataValue.url(
+            f"https://{region}.console.aws.amazon.com/ecs/v2/clusters/{cluster}/tasks/{task_id}"
+        )
+
+        return metadata
+
     def _terminate(
         self,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         wait_response: "DescribeTasksResponseTypeDef",
         cluster: Optional[str] = None,
     ):

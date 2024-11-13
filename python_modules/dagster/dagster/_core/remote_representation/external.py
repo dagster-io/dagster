@@ -23,6 +23,9 @@ from dagster import AssetSelection
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
+from dagster._core.definitions.automation_condition_sensor_definition import (
+    DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
+)
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
@@ -40,6 +43,7 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     SensorType,
 )
+from dagster._core.definitions.utils import get_default_automation_condition_sensor_selection
 from dagster._core.errors import DagsterError
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.instance import DagsterInstance
@@ -86,7 +90,6 @@ from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_key import EntityKey
     from dagster._core.definitions.remote_asset_graph import RemoteRepositoryAssetGraph
     from dagster._core.scheduler.instigation import InstigatorState
     from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
@@ -191,9 +194,6 @@ class RemoteRepository:
     def get_utilized_env_vars(self) -> Mapping[str, Sequence[EnvVarConsumer]]:
         return self._utilized_env_vars
 
-    def get_default_auto_materialize_sensor_name(self) -> str:
-        return "default_automation_condition_sensor"
-
     @property
     @cached_method
     def _sensors(self) -> Dict[str, "RemoteSensor"]:
@@ -202,81 +202,32 @@ class RemoteRepository:
             for sensor_snap in self.repository_snap.sensors
         }
 
-        if self._instance.auto_materialize_use_sensors:
-            asset_graph = self.asset_graph
+        if not self._instance.auto_materialize_use_sensors:
+            return sensor_datas
 
-            has_any_auto_observe_source_assets = False
-
-            existing_automation_condition_sensors = {
-                sensor_name: sensor
-                for sensor_name, sensor in sensor_datas.items()
-                if sensor.sensor_type in (SensorType.AUTO_MATERIALIZE, SensorType.AUTOMATION)
-            }
-
-            covered_entity_keys: Set[EntityKey] = set()
-            for sensor in existing_automation_condition_sensors.values():
-                selection = check.not_none(sensor.asset_selection)
-                covered_entity_keys = covered_entity_keys.union(
-                    # for now, all asset checks are handled by the same asset as their asset
-                    selection.resolve(asset_graph) | selection.resolve_checks(asset_graph)
-                )
-
-            default_sensor_entity_keys = set()
-            for entity_key in asset_graph.materializable_asset_keys | asset_graph.asset_check_keys:
-                if not asset_graph.get(entity_key).automation_condition:
-                    continue
-
-                if entity_key not in covered_entity_keys:
-                    default_sensor_entity_keys.add(entity_key)
-
-            for asset_key in asset_graph.observable_asset_keys:
-                if (
-                    asset_graph.get(asset_key).auto_observe_interval_minutes is None
-                    and asset_graph.get(asset_key).automation_condition is None
-                ):
-                    continue
-
-                has_any_auto_observe_source_assets = True
-
-                if asset_key not in covered_entity_keys:
-                    default_sensor_entity_keys.add(asset_key)
-
-            if default_sensor_entity_keys:
-                default_sensor_asset_check_keys = {
-                    key for key in default_sensor_entity_keys if isinstance(key, AssetCheckKey)
-                }
-                # Use AssetSelection.all if the default sensor is the only sensor - otherwise
-                # enumerate the assets that are not already included in some other
-                # non-default sensor
-                default_sensor_asset_selection = AssetSelection.all(
-                    include_sources=has_any_auto_observe_source_assets
-                )
-                # if there are any asset checks, include them
-                if default_sensor_asset_check_keys:
-                    default_sensor_asset_selection |= AssetSelection.all_asset_checks()
-
-                for sensor in existing_automation_condition_sensors.values():
-                    default_sensor_asset_selection = (
-                        default_sensor_asset_selection - check.not_none(sensor.asset_selection)
-                    )
-
-                default_sensor_data = SensorSnap(
-                    name=self.get_default_auto_materialize_sensor_name(),
-                    job_name=None,
-                    op_selection=None,
-                    asset_selection=default_sensor_asset_selection,
-                    mode=None,
-                    min_interval=30,
-                    description=None,
-                    target_dict={},
-                    metadata=None,
-                    default_status=None,
-                    sensor_type=SensorType.AUTO_MATERIALIZE,
-                    run_tags=None,
-                )
-                sensor_datas[default_sensor_data.name] = RemoteSensor(
-                    default_sensor_data, self._handle
-                )
+        # if necessary, create a default automation condition sensor
+        # NOTE: if a user's code location is at a version >= 1.9, then this step should
+        # never be necessary, as this will be added in Definitions construction process
+        default_sensor_selection = get_default_automation_condition_sensor_selection(
+            sensors=[data for data in sensor_datas.values()],
+            asset_graph=self.asset_graph,
+        )
+        if default_sensor_selection is not None:
+            default_sensor_data = SensorSnap(
+                name=DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
+                job_name=None,
+                op_selection=None,
+                asset_selection=default_sensor_selection,
+                mode=None,
+                min_interval=30,
+                description=None,
+                target_dict={},
+                metadata=None,
+                default_status=None,
+                sensor_type=SensorType.AUTO_MATERIALIZE,
+                run_tags=None,
+            )
+            sensor_datas[default_sensor_data.name] = RemoteSensor(default_sensor_data, self._handle)
 
         return sensor_datas
 
@@ -466,6 +417,18 @@ class RemoteRepository:
                 try:
                     keys = sensor.asset_selection.resolve(self.asset_graph)
                     for key in keys:
+                        # only count an asset as targeted by an automation condition sensor if it
+                        # has an automation condition
+                        if sensor.sensor_type in (
+                            SensorType.AUTO_MATERIALIZE,
+                            SensorType.AUTOMATION,
+                        ):
+                            node_snap = self.get_asset_node_snap(key)
+                            if not node_snap or not (
+                                node_snap.automation_condition
+                                or node_snap.automation_condition_snapshot
+                            ):
+                                continue
                         asset_key_mapping[key].append(sensor)
                 except DagsterError:
                     pass
@@ -473,7 +436,7 @@ class RemoteRepository:
         return job_name_mapping, asset_key_mapping
 
     @property
-    def _sensors_by_job_name(self) -> Mapping[str, Sequence["RemoteSensor"]]:
+    def sensors_by_job_name(self) -> Mapping[str, Sequence["RemoteSensor"]]:
         return self._sensor_mappings[0]
 
     @property
@@ -481,7 +444,7 @@ class RemoteRepository:
         return self._sensor_mappings[1]
 
     @cached_property
-    def _schedules_by_job_name(self) -> Mapping[str, Sequence["RemoteSchedule"]]:
+    def schedules_by_job_name(self) -> Mapping[str, Sequence["RemoteSchedule"]]:
         mapping = defaultdict(list)
         for schedule in self.get_schedules():
             mapping[schedule.job_name].append(schedule)
@@ -498,8 +461,8 @@ class RemoteRepository:
             sensors.update(self._sensors_by_asset_key[asset_key])
 
         for job_name in asset_snap.job_names:
-            if job_name != IMPLICIT_ASSET_JOB_NAME and job_name in self._sensors_by_job_name:
-                sensors.update(self._sensors_by_job_name[job_name])
+            if job_name != IMPLICIT_ASSET_JOB_NAME and job_name in self.sensors_by_job_name:
+                sensors.update(self.sensors_by_job_name[job_name])
 
         return sensors
 
@@ -510,8 +473,8 @@ class RemoteRepository:
 
         schedules = set()
         for job_name in asset_snap.job_names:
-            if job_name != IMPLICIT_ASSET_JOB_NAME and job_name in self._schedules_by_job_name:
-                schedules.update(self._schedules_by_job_name[job_name])
+            if job_name != IMPLICIT_ASSET_JOB_NAME and job_name in self.schedules_by_job_name:
+                schedules.update(self.schedules_by_job_name[job_name])
 
         return schedules
 
@@ -544,14 +507,13 @@ class RemoteJob(RepresentedJob):
         if job_data_snap:
             self._active_preset_dict = {ap.name: ap for ap in job_data_snap.active_presets}
             self._name = job_data_snap.name
-            self._snapshot_id = self._job_index.job_snapshot_id
 
         elif job_ref_snap:
             self._active_preset_dict = {ap.name: ap for ap in job_ref_snap.active_presets}
             self._name = job_ref_snap.name
             if ref_to_data_fn is None:
                 check.failed("ref_to_data_fn must be passed when using deferred snapshots")
-            self._snapshot_id = job_ref_snap.snapshot_id
+
         else:
             check.failed("Expected either job data or ref, got neither")
 
@@ -671,6 +633,13 @@ class RemoteJob(RepresentedJob):
     @property
     def job_snapshot(self) -> JobSnap:
         return self._job_index.job_snapshot
+
+    @property
+    def _snapshot_id(self) -> str:
+        if self._job_ref_snap:
+            return self._job_ref_snap.snapshot_id
+
+        return self._job_index.job_snapshot_id
 
     @property
     def computed_job_snapshot_id(self) -> str:
@@ -853,7 +822,8 @@ class RemoteSchedule:
     def __init__(self, schedule_snap: ScheduleSnap, handle: RepositoryHandle):
         self._schedule_snap = check.inst_param(schedule_snap, "schedule_snap", ScheduleSnap)
         self._handle = InstigatorHandle(
-            self._schedule_snap.name, check.inst_param(handle, "handle", RepositoryHandle)
+            self._schedule_snap.name,
+            check.inst_param(handle, "handle", RepositoryHandle),
         )
 
     @property

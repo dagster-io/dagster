@@ -57,6 +57,7 @@ export function useGroupedEvents(
     const events = [...materializations, ...observations].sort(
       (b, a) => Number(a.timestamp) - Number(b.timestamp),
     );
+
     if (xAxis === 'partition' && loadedPartitionKeys) {
       return groupByPartition(events, loadedPartitionKeys);
     } else {

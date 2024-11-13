@@ -528,6 +528,17 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
             if run_id in unrequested_run_ids
         ]
 
+    @property
+    def automation_condition_evaluation_id(self) -> int:
+        """Returns a unique identifier for the current automation condition evaluation. In general,
+        this will be identical to the current tick id, but in cases where an evaluation needs to
+        be retried, an override value may be set.
+        """
+        if self.tick_data.auto_materialize_evaluation_id is not None:
+            return self.tick_data.auto_materialize_evaluation_id
+        else:
+            return self.tick_id
+
 
 @whitelist_for_serdes(
     old_storage_names={"JobTickData"},

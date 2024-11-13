@@ -11,13 +11,14 @@ import {useCallback, useMemo} from 'react';
 import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 
 import {DagsterTag} from './RunTag';
+import {gql, useApolloClient, useLazyQuery} from '../apollo-client';
+import {RUNS_FEED_CURSOR_KEY} from './RunsFeedUtils';
 import {
   RunTagKeysQuery,
   RunTagKeysQueryVariables,
   RunTagValuesQuery,
   RunTagValuesQueryVariables,
 } from './types/RunsFilterInput.types';
-import {gql, useApolloClient, useLazyQuery} from '../apollo-client';
 import {COMMON_COLLATOR} from '../app/Util';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunStatus, RunsFilter} from '../graphql/types';
@@ -104,7 +105,11 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
   return useQueryPersistedState<RunFilterToken[]>(
     useMemo(
       () => ({
-        encode: (tokens) => ({q: tokensAsStringArray(tokens), cursor: undefined}),
+        encode: (tokens) => ({
+          q: tokensAsStringArray(tokens),
+          cursor: undefined,
+          [RUNS_FEED_CURSOR_KEY]: undefined,
+        }),
         decode: ({q = []}) =>
           tokenizedValuesFromStringArray(q, RUN_PROVIDERS_EMPTY).filter(
             (t) =>
@@ -434,7 +439,8 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     name: 'Partition',
     icon: 'partition',
     initialSuggestions: partitionValues,
-    getNoSuggestionsPlaceholder: (query) => (query ? 'Invalid ID' : 'Type or paste a backfill ID'),
+    getNoSuggestionsPlaceholder: (query) =>
+      query ? 'Invalid partition' : 'Type or paste a partition',
 
     state: useMemo(() => {
       return tokens
@@ -499,8 +505,8 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       } else if (value.type === DagsterTag.User) {
         return <UserDisplay email={value.value!} isFilter />;
       } else if (value.type === DagsterTag.Automaterialize) {
-        icon = <Icon name="auto_materialize_policy" />;
-        labelValue = 'Auto-materialize policy';
+        icon = <Icon name="automation_condition" />;
+        labelValue = 'Automation condition';
       }
       return (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
@@ -511,7 +517,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     },
     getStringValue: (x) => {
       if (x.type === DagsterTag.Automaterialize) {
-        return 'Auto-materialize policy';
+        return 'Automation condition';
       }
       return x.value!;
     },

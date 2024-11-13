@@ -8,8 +8,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
 from typing import List, Optional, Sequence, Tuple, cast
+from unittest import mock
 
-import mock
 import pytest
 import sqlalchemy as db
 from dagster import (
@@ -57,11 +57,14 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-from dagster._core.definitions.partition import PartitionKeyRange, StaticPartitionsDefinition
+from dagster._core.definitions.partition import (
+    AllPartitionsSubset,
+    PartitionKeyRange,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
-    PartitionKeysTimeWindowPartitionsSubset,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
@@ -83,6 +86,7 @@ from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
+from dagster._core.loader import LoadingContextForTest
 from dagster._core.remote_representation.external_data import PartitionsSnap
 from dagster._core.remote_representation.origin import (
     InProcessCodeLocationOrigin,
@@ -2633,10 +2637,12 @@ class TestEventLogStorage:
         b = AssetKey(["b"])
         run_id = make_new_run_id()
 
-        def _assert_storage_matches(expected):
+        def _assert_storage_matches(expected, partition: Optional[str] = None):
             assert (
                 storage.get_latest_storage_id_by_partition(
-                    a, DagsterEventType.ASSET_MATERIALIZATION
+                    a,
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    partitions={partition} if partition else None,
                 )
                 == expected
             )
@@ -2677,6 +2683,10 @@ class TestEventLogStorage:
             # p2 materialized
             latest_storage_ids["p2"] = _store_partition_event(a, "p2")
             _assert_storage_matches(latest_storage_ids)
+
+            # check that we can filter for specific partitions
+            _assert_storage_matches({"p1": latest_storage_ids["p1"]}, partition="p1")
+            _assert_storage_matches({"p2": latest_storage_ids["p2"]}, partition="p2")
 
             # unrelated asset materialized
             _store_partition_event(b, "p1")
@@ -3264,16 +3274,11 @@ class TestEventLogStorage:
         run_id_1 = make_new_run_id()
 
         partitions_def = DailyPartitionsDefinition("2023-01-01")
-        partitions_subset = (
-            PartitionsSnap.from_def(partitions_def)
-            .get_partitions_definition()
-            .subset_with_partition_keys(
-                partitions_def.get_partition_keys_in_range(
-                    PartitionKeyRange("2023-01-05", "2023-01-10")
-                )
-            )
+        partitions_subset = AllPartitionsSubset(
+            partitions_def=partitions_def,
+            dynamic_partitions_store=instance,
+            current_time=get_current_datetime(),
         )
-        assert isinstance(partitions_subset, PartitionKeysTimeWindowPartitionsSubset)
 
         with create_and_delete_test_runs(instance, [run_id_1]):
             with pytest.raises(
@@ -6023,7 +6028,9 @@ class TestEventLogStorage:
             AssetKey("static"): StaticPartitionsDefinition(["a", "b", "c"]),
         }
 
-        assert storage.get_asset_status_cache_values(partition_defs_by_key) == [
+        assert storage.get_asset_status_cache_values(
+            partition_defs_by_key, LoadingContextForTest(instance)
+        ) == [
             None,
             None,
             None,
@@ -6038,6 +6045,10 @@ class TestEventLogStorage:
         instance.report_runless_asset_event(AssetMaterialization(asset_key="static", partition="a"))
 
         partition_defs = list(partition_defs_by_key.values())
-        for i, value in enumerate(storage.get_asset_status_cache_values(partition_defs_by_key)):
+        for i, value in enumerate(
+            storage.get_asset_status_cache_values(
+                partition_defs_by_key, LoadingContextForTest(instance)
+            ),
+        ):
             assert value is not None
             assert len(value.deserialize_materialized_partition_subsets(partition_defs[i])) == 1

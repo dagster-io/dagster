@@ -63,7 +63,7 @@ parser.add_argument(
 
 parser.add_argument(
     "--override-partition-limit",
-    action=argparse.BooleanOptionalAction,  # type: ignore  # (3.9+ only)
+    action=argparse.BooleanOptionalAction,
     default=True,
     help=(
         "Override the `SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD` with the value of"

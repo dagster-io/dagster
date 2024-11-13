@@ -109,4 +109,6 @@ export const StyledButtonText = styled.span`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: left;
+  flex: 1;
 `;

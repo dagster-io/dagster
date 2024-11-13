@@ -1,4 +1,8 @@
+import base64
+
+import responses
 from dagster._utils.merger import deep_merge_dicts
+from responses import matchers
 
 DEFAULT_CONNECTOR_ID = "some_connector"
 DEFAULT_CONNECTOR_ID_2 = "some_other_connector"
@@ -278,3 +282,45 @@ def get_sample_columns_response():
             },
         },
     }
+
+
+def mock_responses(ft_resource, multiple_connectors=False):
+    b64_encoded_auth_str = base64.b64encode(b"some_key:some_secret").decode("utf-8")
+    expected_auth_header = {"Authorization": f"Basic {b64_encoded_auth_str}"}
+    responses.add(
+        method=responses.GET,
+        url=ft_resource.api_base_url + "groups",
+        json=get_sample_groups_response(),
+        status=200,
+        match=[matchers.header_matcher(expected_auth_header)],
+    )
+    responses.add(
+        method=responses.GET,
+        url=ft_resource.api_base_url + "destinations/some_group",
+        json=(get_sample_destination_details_response()),
+        status=200,
+        match=[matchers.header_matcher(expected_auth_header)],
+    )
+    responses.add(
+        method=responses.GET,
+        url=ft_resource.api_base_url + "groups/some_group/connectors",
+        json=(
+            get_sample_connectors_response_multiple()
+            if multiple_connectors
+            else get_sample_connectors_response()
+        ),
+        status=200,
+        match=[matchers.header_matcher(expected_auth_header)],
+    )
+
+    responses.add(
+        responses.GET,
+        f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas",
+        json=get_complex_sample_connector_schema_config(),
+    )
+    if multiple_connectors:
+        responses.add(
+            responses.GET,
+            f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID_2}/schemas",
+            json=get_complex_sample_connector_schema_config("_xyz1", "_abc"),
+        )

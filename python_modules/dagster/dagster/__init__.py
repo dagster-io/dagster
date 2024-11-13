@@ -238,17 +238,7 @@ from dagster._core.definitions.executor_definition import (
     multiple_process_executor_requirements as multiple_process_executor_requirements,
     multiprocess_executor as multiprocess_executor,
 )
-from dagster._core.definitions.external_asset import (
-    external_asset_from_spec as external_asset_from_spec,
-    external_assets_from_specs as external_assets_from_specs,
-)
 from dagster._core.definitions.freshness_policy import FreshnessPolicy as FreshnessPolicy
-from dagster._core.definitions.freshness_policy_sensor_definition import (
-    FreshnessPolicySensorContext as FreshnessPolicySensorContext,
-    FreshnessPolicySensorDefinition as FreshnessPolicySensorDefinition,
-    build_freshness_policy_sensor_context as build_freshness_policy_sensor_context,
-    freshness_policy_sensor as freshness_policy_sensor,
-)
 from dagster._core.definitions.graph_definition import GraphDefinition as GraphDefinition
 from dagster._core.definitions.hook_definition import HookDefinition as HookDefinition
 from dagster._core.definitions.input import (
@@ -608,6 +598,7 @@ from dagster._core.types.python_dict import Dict as Dict
 from dagster._core.types.python_set import Set as Set
 from dagster._core.types.python_tuple import Tuple as Tuple
 from dagster._loggers import (
+    JsonLogFormatter as JsonLogFormatter,
     colored_console_logger as colored_console_logger,
     default_loggers as default_loggers,
     default_system_loggers as default_system_loggers,

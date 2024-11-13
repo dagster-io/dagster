@@ -299,6 +299,48 @@ def test_fetch_last_updated_timestamps_empty():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.importorskip(
+    "snowflake.sqlalchemy", reason="sqlalchemy is not available in the test environment"
+)
+@pytest.mark.integration
+def test_fetch_last_updated_timestamps_missing_table():
+    with SnowflakeResource(
+        connector="sqlalchemy",
+        account=os.getenv("SNOWFLAKE_ACCOUNT"),
+        user=os.environ["SNOWFLAKE_USER"],
+        password=os.getenv("SNOWFLAKE_PASSWORD"),
+        database="TESTDB",
+        schema="TESTSCHEMA",
+    ).get_connection() as conn:
+        table_name = f"test_table_{str(uuid.uuid4()).replace('-', '_')}".lower()
+        try:
+            conn.cursor().execute(f"create table {table_name} (foo string)")
+            conn.cursor().execute(f"insert into {table_name} values ('bar')")
+
+            reversed_table_name = table_name[::-1]
+            with pytest.raises(ValueError):
+                freshness = fetch_last_updated_timestamps(
+                    snowflake_connection=conn,
+                    database="TESTDB",
+                    # Second table does not exist, expects ValueError
+                    tables=[table_name, reversed_table_name],
+                    schema="TESTSCHEMA",
+                )
+
+            freshness = fetch_last_updated_timestamps(
+                snowflake_connection=conn,
+                database="TESTDB",
+                tables=[table_name, reversed_table_name],
+                schema="TESTSCHEMA",
+                ignore_missing_tables=True,
+            )
+            assert table_name in freshness
+            assert len(freshness) == 1
+        finally:
+            conn.cursor().execute(f"drop table if exists {table_name}")
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 @pytest.mark.integration
 @pytest.mark.parametrize("db_str", [None, "TESTDB"], ids=["db_from_resource", "db_from_param"])
 def test_fetch_last_updated_timestamps(db_str: str):

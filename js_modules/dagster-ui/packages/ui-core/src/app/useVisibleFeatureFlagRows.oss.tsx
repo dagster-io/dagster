@@ -21,33 +21,11 @@ export const useVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagDebugConsoleLogging,
   },
   {
-    key: 'Revert to legacy navigation',
+    key: 'Revert to legacy Runs page',
+    flagType: FeatureFlag.flagLegacyRunsPage,
     label: (
       <>
-        Revert to legacy navigation (
-        <a
-          href="https://github.com/dagster-io/dagster/discussions/21370"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Learn more
-        </a>
-        )
-      </>
-    ),
-    flagType: FeatureFlag.flagLegacyNav,
-  },
-  {
-    key: 'New code location page',
-    flagType: FeatureFlag.flagCodeLocationPage,
-  },
-  // Uncomment once we're ready for this to go live
-  {
-    key: 'New Runs page',
-    flagType: FeatureFlag.flagRunsFeed,
-    label: (
-      <>
-        New Runs page (
+        Revert to legacy Runs page (
         <a
           href="https://github.com/dagster-io/dagster/discussions/24898"
           target="_blank"

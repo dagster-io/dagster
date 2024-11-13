@@ -1,7 +1,7 @@
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_airlift.core import (
+    AirflowBasicAuthBackend,
     AirflowInstance,
-    BasicAuthBackend,
     assets_with_task_mappings,
     build_defs_from_airflow_instance,
 )
@@ -13,7 +13,7 @@ from .constants import AIRFLOW_BASE_URL, AIRFLOW_INSTANCE_NAME, PASSWORD, USERNA
 from .jaffle_shop import jaffle_shop_assets, jaffle_shop_resource
 
 airflow_instance = AirflowInstance(
-    auth_backend=BasicAuthBackend(
+    auth_backend=AirflowBasicAuthBackend(
         webserver_url=AIRFLOW_BASE_URL, username=USERNAME, password=PASSWORD
     ),
     name=AIRFLOW_INSTANCE_NAME,

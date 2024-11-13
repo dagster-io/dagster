@@ -1,5 +1,4 @@
 import json
-import sys
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from pprint import pformat
@@ -22,18 +21,15 @@ POLARS_DATA_FRAME_ANNOTATIONS = [
     Mapping[str, pl.DataFrame],
     type(None),
     None,
+    dict[str, pl.DataFrame],
 ]
 
 POLARS_LAZY_FRAME_ANNOTATIONS = [
     pl.LazyFrame,
     Dict[str, pl.LazyFrame],
     Mapping[str, pl.LazyFrame],
+    dict[str, pl.DataFrame],
 ]
-
-
-if sys.version >= "3.9":
-    POLARS_DATA_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  #  type: ignore # ignore needed with Python < 3.9
-    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  #  type: ignore # ignore needed with Python < 3.9
 
 
 def cast_polars_single_value_to_dagster_table_types(val: Any):

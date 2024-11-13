@@ -1,8 +1,8 @@
+import {gql} from '../apollo-client';
 import {
   PartitionMatrixSolidHandleFragment,
   PartitionMatrixStepRunFragment,
 } from './types/useMatrixData.types';
-import {gql} from '../apollo-client';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {GanttChartLayout} from '../gantt/Constants';
 import {GanttChartMode} from '../gantt/GanttChart';

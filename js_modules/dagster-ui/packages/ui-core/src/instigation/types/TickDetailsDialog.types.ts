@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type SelectedTickQueryVariables = Types.Exact<{
   instigationSelector: Types.InstigationSelector;
-  tickId: Types.Scalars['BigInt']['input'];
+  tickId: Types.Scalars['ID']['input'];
 }>;
 
 export type SelectedTickQuery = {
@@ -16,6 +16,8 @@ export type SelectedTickQuery = {
         tick: {
           __typename: 'InstigationTick';
           id: string;
+          requestedAssetMaterializationCount: number;
+          autoMaterializeAssetEvaluationId: string | null;
           tickId: string;
           status: Types.InstigationTickStatus;
           timestamp: number;
@@ -27,6 +29,12 @@ export type SelectedTickQuery = {
           originRunIds: Array<string>;
           logKey: Array<string> | null;
           runKeys: Array<string>;
+          requestedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+          requestedMaterializationsForAssets: Array<{
+            __typename: 'RequestedMaterializationsForAsset';
+            partitionKeys: Array<string>;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
           runs: Array<{__typename: 'Run'; id: string; status: Types.RunStatus}>;
           error: {
             __typename: 'PythonError';
@@ -51,4 +59,4 @@ export type SelectedTickQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const SelectedTickQueryVersion = '4a6a1911d0769b8b5bb17ed1415d3691da3d029d6760ab42dc56de6431fc1fb6';
+export const SelectedTickQueryVersion = '10c228399d8224b30ce4520d24f0c6f675a534abc7cbe268b0c8cc870b3f0e90';

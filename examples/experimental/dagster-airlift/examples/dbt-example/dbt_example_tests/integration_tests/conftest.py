@@ -28,7 +28,7 @@ def local_env_fixture() -> Generator[None, None, None]:
 
 @pytest.fixture(name="dags_dir")
 def dags_dir_fixture() -> Path:
-    return makefile_dir() / "dbt_example" / "airflow_dags"
+    return makefile_dir() / "dbt_example" / "migrating_airflow_dags"
 
 
 @pytest.fixture(name="airflow_home")
@@ -39,6 +39,6 @@ def airflow_home_fixture(local_env: None) -> Path:
 @pytest.fixture(name="airflow_instance")
 def airflow_instance_fixture(local_env: None) -> Generator[subprocess.Popen, None, None]:
     with stand_up_airflow(
-        airflow_cmd=["make", "run_airflow"], env=os.environ, cwd=makefile_dir()
+        airflow_cmd=["make", "run_migrating_airflow"], env=os.environ, cwd=makefile_dir()
     ) as process:
         yield process

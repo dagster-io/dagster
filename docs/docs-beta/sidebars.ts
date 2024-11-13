@@ -44,6 +44,7 @@ const sidebars: SidebarsConfig = {
             'guides/databases',
             'guides/apis',
             'guides/io-managers',
+            'guides/managing-concurrency',
           ],
         },
         {
@@ -61,6 +62,7 @@ const sidebars: SidebarsConfig = {
         'guides/schedules',
         'guides/sensors',
         'guides/asset-sensors',
+        'guides/automation',
         //'guides/declarative-automation',
       ],
     },

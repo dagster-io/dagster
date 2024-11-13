@@ -1,6 +1,5 @@
 import json
-
-from mock import patch
+from unittest.mock import patch
 
 
 @patch("dagster_msteams.client.TeamsClient.post_message")

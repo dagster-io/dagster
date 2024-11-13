@@ -22,7 +22,7 @@ import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable'
 interface Props {
   assetKeyPath: string[] | null;
   evaluationNodes: Evaluation[];
-  evaluationId: number;
+  evaluationId: string;
   rootUniqueId: string;
   isLegacyEvaluation: boolean;
   selectPartition: (partitionKey: string | null) => void;
@@ -111,7 +111,7 @@ const NewPolicyEvaluationTable = ({
   toggleExpanded,
 }: {
   assetKeyPath: string[] | null;
-  evaluationId: number;
+  evaluationId: string;
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
   flattenedRecords: FlattenedConditionEvaluation<NewEvaluationNodeFragment>[];
@@ -131,13 +131,13 @@ const NewPolicyEvaluationTable = ({
       <tbody>
         {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
           const {userLabel, uniqueId, numTrue, numCandidates, expandedLabel} = evaluation;
-          const anyCandidatePartitions = typeof numCandidates === 'number' && numCandidates > 0;
+          const anyCandidatePartitions = numCandidates === null || numCandidates > 0;
           const status =
             numTrue === 0 && !anyCandidatePartitions
               ? AssetConditionEvaluationStatus.SKIPPED
               : numTrue > 0
-              ? AssetConditionEvaluationStatus.TRUE
-              : AssetConditionEvaluationStatus.FALSE;
+                ? AssetConditionEvaluationStatus.TRUE
+                : AssetConditionEvaluationStatus.FALSE;
 
           let endTimestamp, startTimestamp;
           if ('endTimestamp' in evaluation) {
@@ -205,7 +205,7 @@ const NewPolicyEvaluationTable = ({
                   <PolicyEvaluationStatusTag status={status} />
                 </td>
               )}
-              {isPartitioned ? <td>{numCandidates || '0'}</td> : null}
+              {isPartitioned ? <td>{numCandidates === null ? 'All' : numCandidates}</td> : null}
               <td>
                 {startTimestamp && endTimestamp ? (
                   <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} showMsec />
@@ -343,7 +343,7 @@ export const PartitionedPolicyEvaluationTable = ({
   selectPartition,
 }: {
   assetKeyPath: string[] | null;
-  evaluationId: number;
+  evaluationId: string;
   rootUniqueId: string;
   flattenedRecords: FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>[];
   expandedRecords: Set<string>;

@@ -29,8 +29,8 @@ from dagster_graphql.implementation.fetch_asset_checks import get_asset_checks_f
 from dagster_graphql.implementation.fetch_assets import get_assets_for_run, get_unique_asset_id
 from dagster_graphql.implementation.fetch_pipelines import get_job_reference_or_raise
 from dagster_graphql.implementation.fetch_runs import get_runs, get_stats, get_step_stats
-from dagster_graphql.implementation.fetch_schedules import get_schedules_for_pipeline
-from dagster_graphql.implementation.fetch_sensors import get_sensors_for_pipeline
+from dagster_graphql.implementation.fetch_schedules import get_schedules_for_job
+from dagster_graphql.implementation.fetch_sensors import get_sensors_for_job
 from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,
     apply_cursor_limit_reverse,
@@ -701,7 +701,11 @@ class GrapheneIPipelineSnapshotMixin:
         return sorted(
             list(
                 map(
-                    lambda dt: to_dagster_type(represented_pipeline.job_snapshot, dt.key),
+                    lambda dt: to_dagster_type(
+                        represented_pipeline.job_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap,
+                        represented_pipeline.job_snapshot.config_schema_snapshot.get_config_snap,
+                        dt.key,
+                    ),
                     [t for t in represented_pipeline.dagster_type_snaps if t.name],
                 )
             ),
@@ -720,7 +724,8 @@ class GrapheneIPipelineSnapshotMixin:
             )
 
         return to_dagster_type(
-            represented_pipeline.job_snapshot,
+            represented_pipeline.job_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap,
+            represented_pipeline.job_snapshot.config_schema_snapshot.get_config_snap,
             represented_pipeline.get_dagster_type_by_name(dagsterTypeName).key,
         )
 
@@ -731,12 +736,12 @@ class GrapheneIPipelineSnapshotMixin:
             represented_pipeline.dep_structure_index,
         )
 
-    def resolve_modes(self, _graphene_info: ResolveInfo):
+    def resolve_modes(self, graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()
         return [
             GrapheneMode(
-                represented_pipeline.config_schema_snapshot,
-                represented_pipeline.identifying_job_snapshot_id,
+                represented_pipeline.config_schema_snapshot.get_config_snap,
+                self.resolve_id(graphene_info),
                 mode_def_snap,
             )
             for mode_def_snap in sorted(
@@ -811,7 +816,7 @@ class GrapheneIPipelineSnapshotMixin:
             return []
 
         pipeline_selector = represented_pipeline.handle.to_selector()
-        schedules = get_schedules_for_pipeline(graphene_info, pipeline_selector)
+        schedules = get_schedules_for_job(graphene_info, pipeline_selector)
         return schedules
 
     def resolve_sensors(self, graphene_info: ResolveInfo):
@@ -822,7 +827,7 @@ class GrapheneIPipelineSnapshotMixin:
             return []
 
         pipeline_selector = represented_pipeline.handle.to_selector()
-        sensors = get_sensors_for_pipeline(graphene_info, pipeline_selector)
+        sensors = get_sensors_for_job(graphene_info, pipeline_selector)
         return sensors
 
     def resolve_parent_snapshot_id(self, _graphene_info: ResolveInfo):

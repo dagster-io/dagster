@@ -194,6 +194,10 @@ def test_pipes_client(
         assert re.search(r"hello from databricks stdout\n", captured.out, re.MULTILINE)
         assert re.search(r"hello from databricks stderr\n", captured.err, re.MULTILINE)
 
+    # check Databricks metadata automatically added to materialization
+    assert "Databricks Job Run ID" in mats[0].metadata
+    assert "Databricks Job Run URL" in mats[0].metadata
+
 
 @pytest.mark.skipif(IS_BUILDKITE, reason="Not configured to run on BK yet.")
 def test_nonexistent_entry_point(databricks_client: WorkspaceClient):  # noqa: F811

@@ -459,7 +459,7 @@ query RepositorySensorsQuery($repositorySelector: RepositorySelector!, $sensorTy
 
 
 GET_TICKS_QUERY = """
-query TicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickStatus!], $tickId: BigInt!) {
+query TicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickStatus!], $tickId: ID!) {
   sensorOrError(sensorSelector: $sensorSelector) {
     __typename
     ... on PythonError {
@@ -563,7 +563,6 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
             ("run_status", "RUN_STATUS"),
             ("single_asset_sensor", "ASSET"),
             ("many_asset_sensor", "MULTI_ASSET"),
-            ("fresh_sensor", "FRESHNESS_POLICY"),
             ("the_failure_sensor", "RUN_STATUS"),
         ],
     )
@@ -1450,7 +1449,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     result = execute_dagster_graphql(
         graphql_context,
         GET_TICKS_QUERY,
-        variables={"sensorSelector": sensor_selector, "tickId": started_tick_id},
+        variables={"sensorSelector": sensor_selector, "tickId": str(started_tick_id)},
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 4
 
@@ -1460,7 +1459,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         variables={
             "sensorSelector": sensor_selector,
             "statuses": ["STARTED"],
-            "tickId": started_tick_id,
+            "tickId": str(started_tick_id),
         },
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
@@ -1477,7 +1476,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         variables={
             "sensorSelector": sensor_selector,
             "statuses": ["FAILURE"],
-            "tickId": failed_tick_id,
+            "tickId": str(failed_tick_id),
         },
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
@@ -1494,7 +1493,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         variables={
             "sensorSelector": sensor_selector,
             "statuses": ["SKIPPED"],
-            "tickId": skipped_tick_id,
+            "tickId": str(skipped_tick_id),
         },
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
@@ -1656,16 +1655,21 @@ def test_asset_selection(graphql_context):
 
     assert (
         result.data["sensorOrError"]["assetSelection"]["assetSelectionString"]
-        == "fresh_diamond_bottom or asset_with_automation_condition"
+        == "fresh_diamond_bottom or asset_with_automation_condition or asset_with_custom_automation_condition"
     )
     assert result.data["sensorOrError"]["assetSelection"]["assetKeys"] == [
         {"path": ["asset_with_automation_condition"]},
+        {"path": ["asset_with_custom_automation_condition"]},
         {"path": ["fresh_diamond_bottom"]},
     ]
     assert result.data["sensorOrError"]["assetSelection"]["assets"] == [
         {
             "key": {"path": ["asset_with_automation_condition"]},
             "definition": {"assetKey": {"path": ["asset_with_automation_condition"]}},
+        },
+        {
+            "key": {"path": ["asset_with_custom_automation_condition"]},
+            "definition": {"assetKey": {"path": ["asset_with_custom_automation_condition"]}},
         },
         {
             "key": {"path": ["fresh_diamond_bottom"]},
@@ -1675,6 +1679,9 @@ def test_asset_selection(graphql_context):
     assert result.data["sensorOrError"]["assetSelection"]["assetsOrError"]["nodes"] == [
         {
             "key": {"path": ["asset_with_automation_condition"]},
+        },
+        {
+            "key": {"path": ["asset_with_custom_automation_condition"]},
         },
         {
             "key": {"path": ["fresh_diamond_bottom"]},

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 const defaultTheme = require('tailwindcss/defaultTheme');
+const colors = require('tailwindcss/colors')
 
 module.exports = {
   important: 'html',
@@ -62,6 +63,7 @@ module.exports = {
           100: '#F5F4F2',
           50: '#FAF9F7',
         },
+        orange: colors.orange,
       },
       animation: {
         wiggle: 'wiggle 1s ease-in-out infinite',

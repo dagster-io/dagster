@@ -7,7 +7,7 @@ description: Represent your Sigma assets in Dagster
 
 <ExperimentalCallout />
 
-This guide provides instructions for using Dagster with Sigma. Your Sigma assets, including datasets and workbooks, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Sigma assets and upstream data assets you are already modeling in Dagster.
+This guide provides instructions for using Dagster with Sigma using the `dagster-sigma` library. Your Sigma assets, including datasets and workbooks, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Sigma assets and upstream data assets you are already modeling in Dagster.
 
 ## What you'll learn
 
@@ -17,6 +17,7 @@ This guide provides instructions for using Dagster with Sigma. Your Sigma assets
 <details>
   <summary>Prerequisites</summary>
 
+- The `dagster-sigma` library installed in your environment
 - Familiarity with asset definitions and the Dagster asset graph
 - Familiarity with Dagster resources
 - Familiarity with Sigma concepts, like datasets and workbooks
@@ -25,30 +26,72 @@ This guide provides instructions for using Dagster with Sigma. Your Sigma assets
 
 </details>
 
+## Set up your environment
+
+To get started, you'll need to install the `dagster` and `dagster-sigma` Python packages:
+
+```bash
+pip install dagster dagster-sigma
+```
+
 ## Represent Sigma assets in the asset graph
 
-To load Sigma assets into the Dagster asset graph, you must first construct a `SigmaOrganization` resource, which allows Dagster to communicate with your Sigma organization. You'll need to supply your client ID and client secret alongside the base URL. See [Identify your API request URL](https://help.sigmacomputing.com/reference/get-started-sigma-api#identify-your-api-request-url) in the Sigma documentation for more information on how to find your base URL.
+To load Sigma assets into the Dagster asset graph, you must first construct a <PyObject module="dagster_sigma" object="SigmaOrganization" /> resource, which allows Dagster to communicate with your Sigma organization. You'll need to supply your client ID and client secret alongside the base URL. See [Identify your API request URL](https://help.sigmacomputing.com/reference/get-started-sigma-api#identify-your-api-request-url) in the Sigma documentation for more information on how to find your base URL.
 
-Dagster can automatically load all datasets and workbooks ƒrom your Sigma workspace. Call the `build_defs()` function, which returns a `Definitions` object containing all the asset definitions for these Sigma assets.
+Dagster can automatically load all datasets and workbooks from your Sigma workspace as asset specs. Call the <PyObject module="dagster_sigma" method="load_sigma_asset_specs" /> function, which returns list of <PyObject object="AssetSpec" />s representing your Sigma assets. You can then include these asset specs in your <PyObject object="Definitions" /> object:
 
 ```python file=/integrations/sigma/representing-sigma-assets.py
-from dagster_sigma import SigmaBaseUrl, SigmaOrganization
+from dagster_sigma import SigmaBaseUrl, SigmaOrganization, load_sigma_asset_specs
 
-from dagster import EnvVar
+import dagster as dg
 
-resource = SigmaOrganization(
+sigma_organization = SigmaOrganization(
     base_url=SigmaBaseUrl.AWS_US,
-    client_id=EnvVar("SIGMA_CLIENT_ID"),
-    client_secret=EnvVar("SIGMA_CLIENT_SECRET"),
+    client_id=dg.EnvVar("SIGMA_CLIENT_ID"),
+    client_secret=dg.EnvVar("SIGMA_CLIENT_SECRET"),
 )
 
+sigma_specs = load_sigma_asset_specs(sigma_organization)
+defs = dg.Definitions(assets=[*sigma_specs], resources={"sigma": sigma_organization})
+```
 
-defs = resource.build_defs()
+## Load Sigma assets from filtered workbooks
+
+It is possible to load a subset of your Sigma assets by providing a <PyObject module="dagster_sigma" method="SigmaFilter" /> to the <PyObject module="dagster_sigma" method="load_sigma_asset_specs" /> function. All workbooks contained in the folders provided to your <PyObject module="dagster_sigma" method="SigmaFilter" /> will be fetched.
+
+Note that the content and size of Sigma organization may affect the performance of your Dagster deployments. Filtering the workbooks selection from which your Sigma assets will be loaded is particularly useful for improving loading times.
+
+```python file=/integrations/sigma/filtering-sigma-assets.py
+from dagster_sigma import (
+    SigmaBaseUrl,
+    SigmaFilter,
+    SigmaOrganization,
+    load_sigma_asset_specs,
+)
+
+import dagster as dg
+
+sigma_organization = SigmaOrganization(
+    base_url=SigmaBaseUrl.AWS_US,
+    client_id=dg.EnvVar("SIGMA_CLIENT_ID"),
+    client_secret=dg.EnvVar("SIGMA_CLIENT_SECRET"),
+)
+
+sigma_specs = load_sigma_asset_specs(
+    organization=sigma_organization,
+    sigma_filter=SigmaFilter(
+        workbook_folders=[
+            ["my_folder", "my_subfolder"],
+            ["my_folder", "my_other_subfolder"],
+        ]
+    ),
+)
+defs = dg.Definitions(assets=[*sigma_specs], resources={"sigma": sigma_organization})
 ```
 
 ### Customize asset definition metadata for Sigma assets
 
-By default, Dagster will generate asset keys for each Sigma asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom `DagsterSigmaTranslator` subclass to the `build_defs()` function. This subclass can implement methods to customize the asset keys or specs for each Sigma asset type.
+By default, Dagster will generate asset keys for each Sigma asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_sigma" object="DagsterSigmaTranslator" /> subclass to the <PyObject module="dagster_sigma" method="load_sigma_asset_specs" /> function. This subclass can implement methods to customize the asset keys or specs for each Sigma asset type.
 
 ```python file=/integrations/sigma/customize-sigma-asset-defs.py
 from dagster_sigma import (
@@ -56,50 +99,68 @@ from dagster_sigma import (
     SigmaBaseUrl,
     SigmaOrganization,
     SigmaWorkbook,
+    load_sigma_asset_specs,
 )
 
-from dagster import AssetSpec, EnvVar
+import dagster as dg
 
-resource = SigmaOrganization(
+sigma_organization = SigmaOrganization(
     base_url=SigmaBaseUrl.AWS_US,
-    client_id=EnvVar("SIGMA_CLIENT_ID"),
-    client_secret=EnvVar("SIGMA_CLIENT_SECRET"),
+    client_id=dg.EnvVar("SIGMA_CLIENT_ID"),
+    client_secret=dg.EnvVar("SIGMA_CLIENT_SECRET"),
 )
 
 
-# A translator class lets us customize properties of the built
-# Sigma assets, such as the owners or asset key
+# A translator class lets us customize properties of the built Sigma assets, such as the owners or asset key
 class MyCustomSigmaTranslator(DagsterSigmaTranslator):
-    def get_workbook_spec(self, data: SigmaWorkbook) -> AssetSpec:
-        # We add a custom team owner tag to all reports
-        return super().get_workbook_spec(data)._replace(owners=["my_team"])
+    def get_asset_spec(self, data: SigmaWorkbook) -> dg.AssetSpec:
+        # Adds a custom team owner tag for all Sigma assets
+        return super().get_asset_spec(data)._replace(owners=["team:my_team"])
 
 
-defs = resource.build_defs(dagster_sigma_translator=MyCustomSigmaTranslator)
+sigma_specs = load_sigma_asset_specs(
+    sigma_organization, dagster_sigma_translator=MyCustomSigmaTranslator
+)
+defs = dg.Definitions(assets=[*sigma_specs], resources={"sigma": sigma_organization})
 ```
 
 ### Load Sigma assets from multiple organizations
 
-Definitions from multiple Sigma organizations can be combined by instantiating multiple `SigmaOrganization` resources and merging their definitions. This lets you view all your Sigma assets in a single asset graph:
+Definitions from multiple Sigma organizations can be combined by instantiating multiple <PyObject module="dagster_sigma" object="SigmaOrganization" /> resources and merging their specs. This lets you view all your Sigma assets in a single asset graph:
 
 ```python file=/integrations/sigma/multiple-sigma-organizations.py
-from dagster_sigma import SigmaBaseUrl, SigmaOrganization
+from dagster_sigma import SigmaBaseUrl, SigmaOrganization, load_sigma_asset_specs
 
-from dagster import Definitions, EnvVar
+import dagster as dg
 
 sales_team_organization = SigmaOrganization(
     base_url=SigmaBaseUrl.AWS_US,
-    client_id=EnvVar("SALES_SIGMA_CLIENT_ID"),
-    client_secret=EnvVar("SALES_SIGMA_CLIENT_SECRET"),
+    client_id=dg.EnvVar("SALES_SIGMA_CLIENT_ID"),
+    client_secret=dg.EnvVar("SALES_SIGMA_CLIENT_SECRET"),
 )
 
 marketing_team_organization = SigmaOrganization(
     base_url=SigmaBaseUrl.AWS_US,
-    client_id=EnvVar("MARKETING_SIGMA_CLIENT_ID"),
-    client_secret=EnvVar("MARKETING_SIGMA_CLIENT_SECRET"),
+    client_id=dg.EnvVar("MARKETING_SIGMA_CLIENT_ID"),
+    client_secret=dg.EnvVar("MARKETING_SIGMA_CLIENT_SECRET"),
 )
-defs = Definitions.merge(
-    sales_team_organization.build_defs(),
-    marketing_team_organization.build_defs(),
+
+sales_team_specs = load_sigma_asset_specs(sales_team_organization)
+marketing_team_specs = load_sigma_asset_specs(marketing_team_organization)
+
+# Merge the specs into a single set of definitions
+defs = dg.Definitions(
+    assets=[*sales_team_specs, *marketing_team_specs],
+    resources={
+        "marketing_sigma": marketing_team_organization,
+        "sales_sigma": sales_team_organization,
+    },
 )
 ```
+
+### Related
+
+- [`dagster-sigma` API reference](/\_apidocs/libraries/dagster-sigma)
+- [Asset definitions](/concepts/assets/software-defined-assets)
+- [Resources](/concepts/resources)
+- [Using environment variables and secrets](/guides/dagster/using-environment-variables-and-secrets)

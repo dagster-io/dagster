@@ -29,6 +29,15 @@ def test_static_partitions(partition_keys: Sequence[str]):
     assert static_partitions.get_partition_keys() == partition_keys
 
 
+def test_static_partition_string_input() -> None:
+    # maintain backcompat by allowing str for Sequence[str] here
+    # str is technically a Sequence[str] so type wise things should still be sound,
+    # though this behavior was certainly not intentional
+    static_partitions = StaticPartitionsDefinition("abcdef")
+
+    assert static_partitions.get_partition_keys() == "abcdef"
+
+
 def test_invalid_partition_key():
     with pytest.raises(DagsterInvalidDefinitionError, match="'...'"):
         StaticPartitionsDefinition(["foo", "foo...bar"])

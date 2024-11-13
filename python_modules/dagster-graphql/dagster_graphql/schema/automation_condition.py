@@ -1,6 +1,6 @@
 import graphene
-from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionSnapshot,
 )
 
 from dagster_graphql.schema.asset_condition_evaluations import get_expanded_label
@@ -14,8 +14,8 @@ class GrapheneAutomationCondition(graphene.ObjectType):
     class Meta:
         name = "AutomationCondition"
 
-    def __init__(self, automation_condition: AutomationCondition):
+    def __init__(self, snapshot: AutomationConditionSnapshot):
         super().__init__(
-            label=automation_condition.get_label(),
-            expandedLabel=get_expanded_label(automation_condition),
+            label=snapshot.node_snapshot.label,
+            expandedLabel=get_expanded_label(snapshot),
         )

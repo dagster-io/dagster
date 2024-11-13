@@ -26,9 +26,9 @@ import asset_plot from '../icon-svgs/asset_plot.svg';
 import assignment from '../icon-svgs/assignment.svg';
 import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
 import attach_file from '../icon-svgs/attach_file.svg';
-import auto_materialize_policy from '../icon-svgs/auto_materialize_policy.svg';
 import auto_observe from '../icon-svgs/auto_observe.svg';
 import automation from '../icon-svgs/automation.svg';
+import automation_condition from '../icon-svgs/automation_condition.svg';
 import backfill from '../icon-svgs/backfill.svg';
 import badge from '../icon-svgs/badge.svg';
 import bar_chart from '../icon-svgs/bar_chart.svg';
@@ -198,6 +198,7 @@ import key_command from '../icon-svgs/key_command.svg';
 import key_option from '../icon-svgs/key_option.svg';
 import key_return from '../icon-svgs/key_return.svg';
 import key_shift from '../icon-svgs/key_shift.svg';
+import label from '../icon-svgs/label.svg';
 import launch from '../icon-svgs/launch.svg';
 import launchpad from '../icon-svgs/launchpad.svg';
 import layers from '../icon-svgs/layers.svg';
@@ -424,7 +425,7 @@ export const Icons = {
   assignment,
   assignment_turned_in,
   attach_file,
-  auto_materialize_policy,
+  automation_condition,
   auto_observe,
   automation,
   backfill,
@@ -596,6 +597,7 @@ export const Icons = {
   key_option,
   key_return,
   key_shift,
+  label,
   launch,
   launchpad,
   layers,

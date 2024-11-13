@@ -281,7 +281,7 @@ class AutoMaterializeLaunchContext:
             ):
                 try:
                     raise Exception(
-                        "Unable to reach the code server. Auto-materialization will resume once the code server is available."
+                        "Unable to reach the code server. Automation condition evaluation will resume once the code server is available."
                     ) from exception_value
                 except:
                     error_data = DaemonErrorCapture.on_exception(sys.exc_info())
@@ -330,10 +330,6 @@ class AutoMaterializeLaunchContext:
 
 class AssetDaemon(DagsterDaemon):
     def __init__(self, settings: Mapping[str, Any], pre_sensor_interval_seconds: int):
-        self._initialized_evaluation_id = False
-        self._evaluation_id_lock = threading.Lock()
-        self._next_evaluation_id = None
-
         self._pre_sensor_interval_seconds = pre_sensor_interval_seconds
         self._last_pre_sensor_submit_time = None
 
@@ -359,46 +355,6 @@ class AssetDaemon(DagsterDaemon):
             else f"{repo_name}@{location_name}"
         )
         return f" for {sensor.name} in {repo_name}"
-
-    def _initialize_evaluation_id(
-        self,
-        instance: DagsterInstance,
-    ):
-        # Find the largest stored evaluation ID across all auto-materialize cursor
-        # to initialize the thread-safe evaluation ID counter
-        with self._evaluation_id_lock:
-            sensor_states = check.not_none(instance.schedule_storage).all_instigator_state(
-                instigator_type=InstigatorType.SENSOR
-            )
-
-            self._next_evaluation_id = 0
-            for sensor_state in sensor_states:
-                if not (
-                    sensor_state.sensor_instigator_data
-                    and sensor_state.sensor_instigator_data.sensor_type
-                    and sensor_state.sensor_instigator_data.sensor_type.is_handled_by_asset_daemon
-                ):
-                    continue
-
-                compressed_cursor = sensor_state.sensor_instigator_data.cursor
-                if compressed_cursor:
-                    stored_evaluation_id = asset_daemon_cursor_from_instigator_serialized_cursor(
-                        compressed_cursor, None
-                    ).evaluation_id
-                    self._next_evaluation_id = max(self._next_evaluation_id, stored_evaluation_id)
-
-            stored_cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
-            self._next_evaluation_id = max(self._next_evaluation_id, stored_cursor.evaluation_id)
-
-            self._initialized_evaluation_id = True
-
-    def _get_next_evaluation_id(self):
-        # Thread-safe way to generate a new evaluation ID across multiple
-        # workers running asset policy sensors at once
-        with self._evaluation_id_lock:
-            check.invariant(self._initialized_evaluation_id)
-            self._next_evaluation_id = self._next_evaluation_id + 1
-            return self._next_evaluation_id
 
     def core_loop(
         self,
@@ -471,8 +427,6 @@ class AssetDaemon(DagsterDaemon):
 
         workspace = workspace_process_context.create_request_context()
 
-        if not self._initialized_evaluation_id:
-            self._initialize_evaluation_id(instance)
         sensors_and_repos: Sequence[Tuple[Optional[RemoteSensor], Optional[RemoteRepository]]] = []
 
         if use_auto_materialize_sensors:
@@ -493,15 +447,10 @@ class AssetDaemon(DagsterDaemon):
             if not eligible_sensors_and_repos:
                 return
 
-            all_auto_materialize_states = {
+            all_sensor_states = {
                 sensor_state.selector_id: sensor_state
                 for sensor_state in instance.all_instigator_state(
                     instigator_type=InstigatorType.SENSOR
-                )
-                if (
-                    sensor_state.sensor_instigator_data
-                    and sensor_state.sensor_instigator_data.sensor_type
-                    and sensor_state.sensor_instigator_data.sensor_type.is_handled_by_asset_daemon
                 )
             }
 
@@ -517,13 +466,11 @@ class AssetDaemon(DagsterDaemon):
                         self._logger.info(
                             "Translating legacy cursor into a new cursor for each new automation policy sensor"
                         )
-                        all_auto_materialize_states = (
-                            self._create_initial_sensor_cursors_from_raw_cursor(
-                                instance,
-                                eligible_sensors_and_repos,
-                                all_auto_materialize_states,
-                                pre_sensor_cursor,
-                            )
+                        all_sensor_states = self._create_initial_sensor_cursors_from_raw_cursor(
+                            instance,
+                            eligible_sensors_and_repos,
+                            all_sensor_states,
+                            pre_sensor_cursor,
                         )
 
                     set_has_migrated_to_sensors(instance)
@@ -533,8 +480,8 @@ class AssetDaemon(DagsterDaemon):
                     self._logger.info(
                         "Renaming any states corresponding to the legacy default name"
                     )
-                    all_auto_materialize_states = self._copy_default_auto_materialize_sensor_states(
-                        instance, all_auto_materialize_states
+                    all_sensor_states = self._copy_default_auto_materialize_sensor_states(
+                        instance, all_sensor_states
                     )
                     set_has_migrated_sensor_names(instance)
 
@@ -543,7 +490,7 @@ class AssetDaemon(DagsterDaemon):
             for sensor, repo in eligible_sensors_and_repos:
                 selector_id = sensor.selector_id
                 if sensor.get_current_instigator_state(
-                    all_auto_materialize_states.get(selector_id)
+                    all_sensor_states.get(selector_id)
                 ).is_running:
                     sensors_and_repos.append((sensor, repo))
 
@@ -554,12 +501,12 @@ class AssetDaemon(DagsterDaemon):
                     None,
                 )  # Represents that there's a single set of ticks with no underlying sensor
             )
-            all_auto_materialize_states = {}
+            all_sensor_states = {}
 
         for sensor, repo in sensors_and_repos:
             if sensor:
                 selector_id = sensor.selector.get_id()
-                auto_materialize_state = all_auto_materialize_states.get(selector_id)
+                auto_materialize_state = all_sensor_states.get(selector_id)
             else:
                 selector_id = None
                 auto_materialize_state = None
@@ -617,7 +564,7 @@ class AssetDaemon(DagsterDaemon):
         self,
         instance: DagsterInstance,
         sensors_and_repos: Sequence[Tuple[RemoteSensor, RemoteRepository]],
-        all_auto_materialize_states: Mapping[str, InstigatorState],
+        all_sensor_states: Mapping[str, InstigatorState],
         pre_sensor_cursor: AssetDaemonCursor,
     ) -> Mapping[str, InstigatorState]:
         start_status = (
@@ -645,7 +592,7 @@ class AssetDaemon(DagsterDaemon):
                 ),
             )
 
-            if all_auto_materialize_states.get(sensor.selector_id):
+            if all_sensor_states.get(sensor.selector_id):
                 instance.update_instigator_state(new_auto_materialize_state)
             else:
                 instance.add_instigator_state(new_auto_materialize_state)
@@ -657,16 +604,21 @@ class AssetDaemon(DagsterDaemon):
     def _copy_default_auto_materialize_sensor_states(
         self,
         instance: DagsterInstance,
-        all_auto_materialize_states: Mapping[str, InstigatorState],
+        all_sensor_states: Mapping[str, InstigatorState],
     ) -> Mapping[str, InstigatorState]:
         """Searches for sensors named `default_auto_materialize_sensor` and copies their state
         to a sensor in the same repository named `default_automation_condition_sensor`.
         """
-        result = dict(all_auto_materialize_states)
+        result = dict(all_sensor_states)
 
-        for instigator_state in all_auto_materialize_states.values():
-            # only migrate instigators with the name "default_auto_materialize_sensor"
-            if instigator_state.origin.instigator_name != "default_auto_materialize_sensor":
+        for instigator_state in all_sensor_states.values():
+            # only migrate instigators with the name "default_auto_materialize_sensor" and are
+            # handled by the asset daemon
+            if instigator_state.origin.instigator_name != "default_auto_materialize_sensor" and (
+                instigator_state.sensor_instigator_data
+                and instigator_state.sensor_instigator_data.sensor_type
+                and instigator_state.sensor_instigator_data.sensor_type.is_handled_by_asset_daemon
+            ):
                 continue
             new_sensor_origin = instigator_state.origin._replace(
                 instigator_name="default_automation_condition_sensor"
@@ -679,7 +631,7 @@ class AssetDaemon(DagsterDaemon):
             )
             new_sensor_selector_id = new_sensor_origin.get_selector().get_id()
             result[new_sensor_selector_id] = new_auto_materialize_state
-            if all_auto_materialize_states.get(new_sensor_selector_id):
+            if all_sensor_states.get(new_sensor_selector_id):
                 instance.update_instigator_state(new_auto_materialize_state)
             else:
                 instance.add_instigator_state(new_auto_materialize_state)
@@ -744,7 +696,7 @@ class AssetDaemon(DagsterDaemon):
                     repo_asset_graph
                 )
             else:
-                eligible_keys = asset_graph.all_asset_keys
+                eligible_keys = asset_graph.get_all_asset_keys()
 
             auto_materialize_entity_keys = {
                 target_key
@@ -801,18 +753,29 @@ class AssetDaemon(DagsterDaemon):
 
             # Determine if the most recent tick requires retrying
             retry_tick: Optional[InstigatorTick] = None
-
+            override_evaluation_id: Optional[int] = None
             if latest_tick:
+                can_resume = (
+                    get_current_timestamp() - latest_tick.timestamp
+                ) <= MAX_TIME_TO_RESUME_TICK_SECONDS
+
+                # the evaluation ids not matching indicates that the tick failed or crashed before
+                # the cursor could be written, so no new runs could have been launched and it's
+                # safe to re-evaluate things from scratch in a new tick without retrying anything
+                previous_cursor_written = (
+                    latest_tick.automation_condition_evaluation_id == stored_cursor.evaluation_id
+                )
+
+                if can_resume and not previous_cursor_written:
+                    # if the tick failed before writing a cursor, we don't want to advance the
+                    # evaluation id yet
+                    override_evaluation_id = latest_tick.automation_condition_evaluation_id
+
                 # If the previous tick matches the stored cursor's evaluation ID, check if it failed
                 # or crashed partway through execution and needs to be resumed
                 # Don't resume very old ticks though in case the daemon crashed for a long time and
                 # then restarted
-                if (
-                    get_current_timestamp() - latest_tick.timestamp
-                    <= MAX_TIME_TO_RESUME_TICK_SECONDS
-                    and latest_tick.tick_data.auto_materialize_evaluation_id
-                    == stored_cursor.evaluation_id
-                ):
+                if can_resume and previous_cursor_written:
                     if latest_tick.status == TickStatus.STARTED:
                         self._logger.warn(
                             f"Tick for evaluation {stored_cursor.evaluation_id}{print_group_name} was interrupted part-way through, resuming"
@@ -831,17 +794,18 @@ class AssetDaemon(DagsterDaemon):
                                 error=None,
                                 timestamp=evaluation_time.timestamp(),
                                 end_timestamp=None,
-                            ),
+                            )._replace(
+                                # make sure to override the evaluation id to stay on the previous value
+                                auto_materialize_evaluation_id=latest_tick.automation_condition_evaluation_id
+                            )
                         )
+                    # otherwise, tick completed normally, no need to do anything
                 else:
-                    # (The evaluation IDs not matching indicates that the tick failed or crashed before
-                    # the cursor could be written, so no runs have been launched and it's safe to
-                    # re-evaluate things from scratch in a new tick without retrying anything)
                     if latest_tick.status == TickStatus.STARTED:
                         # Old tick that won't be resumed - move it into a SKIPPED state so it isn't
                         # left dangling in STARTED
                         self._logger.warn(
-                            f"Moving dangling STARTED tick from evaluation {latest_tick.tick_data.auto_materialize_evaluation_id}{print_group_name} into SKIPPED"
+                            f"Moving dangling STARTED tick from evaluation {latest_tick.automation_condition_evaluation_id}{print_group_name} into SKIPPED"
                         )
                         latest_tick = latest_tick.with_status(status=TickStatus.SKIPPED)
                         instance.update_tick(latest_tick)
@@ -849,10 +813,6 @@ class AssetDaemon(DagsterDaemon):
             if retry_tick:
                 tick = retry_tick
             else:
-                # Evaluation ID will always be monotonically increasing, but will not always
-                # be auto-incrementing by 1 once there are multiple AMP evaluations happening in
-                # parallel
-                next_evaluation_id = self._get_next_evaluation_id()
                 tick = instance.create_tick(
                     TickData(
                         instigator_origin_id=instigator_origin_id,
@@ -863,7 +823,9 @@ class AssetDaemon(DagsterDaemon):
                         status=TickStatus.STARTED,
                         timestamp=evaluation_time.timestamp(),
                         selector_id=instigator_selector_id,
-                        auto_materialize_evaluation_id=next_evaluation_id,
+                        # we only set the auto_materialize_evaluation_id if it is not equal to the
+                        # current tick id
+                        auto_materialize_evaluation_id=override_evaluation_id,
                     )
                 )
 
@@ -891,7 +853,7 @@ class AssetDaemon(DagsterDaemon):
             error_info = DaemonErrorCapture.on_exception(
                 exc_info=sys.exc_info(),
                 logger=self._logger,
-                log_message="Auto-materialize daemon caught an error",
+                log_message="Automation condition daemon caught an error",
             )
 
         yield error_info
@@ -910,7 +872,7 @@ class AssetDaemon(DagsterDaemon):
         is_retry: bool,
         instigator_state: Optional[InstigatorState],
     ):
-        evaluation_id = check.not_none(tick.tick_data.auto_materialize_evaluation_id)
+        evaluation_id = tick.automation_condition_evaluation_id
 
         instance = workspace_process_context.instance
 

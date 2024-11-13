@@ -25,7 +25,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_job import (
     IMPLICIT_ASSET_JOB_NAME,
     get_base_asset_job_lambda,
-    is_base_asset_job_name,
+    is_reserved_asset_job_name,
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.automation_condition_sensor_definition import (
@@ -48,7 +48,7 @@ from dagster._core.definitions.partitioned_schedule import (
 from dagster._core.definitions.repository_definition.repository_data import CachingRepositoryData
 from dagster._core.definitions.repository_definition.valid_definitions import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
-    RepositoryListDefinition,
+    RepositoryElementDefinition,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -57,7 +57,6 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -161,7 +160,7 @@ def _process_resolved_job(
 
 
 def build_caching_repository_data_from_list(
-    repository_definitions: Sequence[RepositoryListDefinition],
+    repository_definitions: Sequence[RepositoryElementDefinition],
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -195,7 +194,7 @@ def build_caching_repository_data_from_list(
                 raise DagsterInvalidDefinitionError(
                     f"Duplicate job definition found for {definition.describe_target()}"
                 )
-            if is_base_asset_job_name(definition.name):
+            if is_reserved_asset_job_name(definition.name):
                 raise DagsterInvalidDefinitionError(
                     f"Attempted to provide job called {definition.name} to repository, which "
                     "is a reserved name. Please rename the job."
@@ -319,10 +318,12 @@ def build_caching_repository_data_from_list(
     assets_without_keys = [ad for ad in assets_defs if not ad.keys]
     asset_graph = AssetGraph.from_assets(
         [
-            *assets_defs_by_key.values(),
+            # Ensure that the same AssetsDefinition doesn't need to be considered twice by the graph if
+            # it produces multiple asset keys
+            *set(assets_defs_by_key.values()),
             *assets_without_keys,
             *asset_checks_defs,
-            *source_assets_by_key.values(),
+            *source_assets_by_key.values(),  # only ever one key per source asset so no need to dedupe
         ]
     )
     if assets_defs or asset_checks_defs or source_assets:
@@ -541,10 +542,8 @@ def _validate_auto_materialize_sensors(
 def _validate_partitions_definition(partitions_def: PartitionsDefinition) -> None:
     if not isinstance(partitions_def, VALID_PARTITIONS_DEFINITION_CLASSES):
         valid_names = ", ".join([cls.__name__ for cls in VALID_PARTITIONS_DEFINITION_CLASSES])
-        deprecation_warning(
-            "Support for custom PartitionsDefinition subclasses",
-            breaking_version="1.9.0",
-            additional_warn_text="All passed-in PartitionsDefinition"
+        raise DagsterInvalidDefinitionError(
+            "Custom PartitionsDefinition subclasses are not supported. All passed-in PartitionsDefinition"
             f" objects must be an instance of one of ({valid_names})."
             f" Found instance of {type(partitions_def).__name__}",
         )

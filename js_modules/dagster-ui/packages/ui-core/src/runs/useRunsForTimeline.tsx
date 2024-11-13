@@ -1,12 +1,13 @@
 import {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 
 import {HourlyDataCache, getHourlyBuckets} from './HourlyDataCache/HourlyDataCache';
-import {doneStatuses} from './RunStatuses';
+import {doneStatuses, inProgressStatuses} from './RunStatuses';
 import {TimelineRow, TimelineRun} from './RunTimelineTypes';
 import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {overlap} from './batchRunsForTimeline';
 import {fetchPaginatedBucketData, fetchPaginatedData} from './fetchPaginatedBucketData';
 import {getAutomationForRun} from './getAutomationForRun';
+import {QueryResult, gql, useApolloClient} from '../apollo-client';
 import {
   CompletedRunTimelineQuery,
   CompletedRunTimelineQueryVariables,
@@ -17,11 +18,10 @@ import {
   OngoingRunTimelineQueryVariables,
   RunTimelineFragment,
 } from './types/useRunsForTimeline.types';
-import {QueryResult, gql, useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {InstigationStatus, RunStatus, RunsFilter} from '../graphql/types';
+import {InstigationStatus, RunsFilter} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -255,7 +255,7 @@ export const useRunsForTimeline = ({
             variables: {
               inProgressFilter: {
                 ...runsFilter,
-                statuses: [RunStatus.CANCELING, RunStatus.STARTED],
+                statuses: Array.from(inProgressStatuses),
               },
               cursor,
               limit: batchLimit,

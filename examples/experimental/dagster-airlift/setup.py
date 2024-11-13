@@ -17,9 +17,17 @@ def get_version() -> str:
 ver = get_version()
 pin = "" if ver == "1!0+dev" else NON_EDITABLE_INSTALL_DAGSTER_PIN
 
+# The [in-airflow] subpackage does not have a setup dependency on Airflow because
+# Airflow cannot be installed via setup.py reliably. Instead, users need to install
+# from a constraints file as recommended by the Airflow project.
+# However, to ensure a reliable test and tutorial setup, we pin a version of Airflow
+# that is compatible with the current version of dagster-airlift for all supported
+# versions of python.
+# Eventually, we could consider adding a test suite that runs across different versions of airflow
+# to ensure compatibility.
 AIRFLOW_REQUIREMENTS = [
     # Requirements for python versions under 3.12.
-    "apache-airflow>=2.0.0; python_version < '3.12'",
+    "apache-airflow==2.7.3; python_version < '3.12'",
     "pendulum>=2.0.0,<3.0.0; python_version < '3.12'",
     # Requirements for python versions 3.12 and above.
     "apache-airflow>=2.9.0; python_version >= '3.12'",
@@ -31,10 +39,12 @@ AIRFLOW_REQUIREMENTS = [
     "connexion<3.0.0",
 ]
 
+CLI_REQUIREMENTS = ["click", "structlog"]
+
 
 setup(
     name="dagster-airlift",
-    version="0.0.26",
+    version="0.0.27",
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
@@ -46,7 +56,6 @@ setup(
         "dagster-airlift"
     ),
     classifiers=[
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
@@ -55,18 +64,20 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_airlift_tests*", "examples*"]),
-    requires=["click"],
+    requires=CLI_REQUIREMENTS,
     extras_require={
         "core": [
             f"dagster{pin}",
+            *CLI_REQUIREMENTS,
         ],
         # [in-airflow] doesn't directly have a dependency on airflow because Airflow cannot be installed via setup.py reliably. Instead, users need to install from a constraints
         # file as recommended by the Airflow project.
-        "in-airflow": [],
+        "in-airflow": CLI_REQUIREMENTS,
         # [tutorial] includes additional dependencies needed to run the tutorial. Namely, the dagster-webserver and the constrained airflow packages.
         "tutorial": [
             "dagster-webserver",
             *AIRFLOW_REQUIREMENTS,
+            *CLI_REQUIREMENTS,
         ],
         "mwaa": [
             "boto3>=1.18.0"
@@ -80,6 +91,7 @@ setup(
             "boto3",
             "dagster-webserver",
             *AIRFLOW_REQUIREMENTS,
+            *CLI_REQUIREMENTS,
         ],
     },
     entry_points={

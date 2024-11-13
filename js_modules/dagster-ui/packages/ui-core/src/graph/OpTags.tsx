@@ -12,6 +12,7 @@ import medallion_silver from './kindtag-images/medallion-silver-color.svg';
 import notebook from './kindtag-images/notebook.svg';
 import pdf from './kindtag-images/pdf.svg';
 import seed from './kindtag-images/seed.svg';
+import sigma from './kindtag-images/sigma.svg';
 import source from './kindtag-images/source.svg';
 import table from './kindtag-images/table.svg';
 import task from './kindtag-images/task.svg';
@@ -46,6 +47,7 @@ import duckdb from './kindtag-images/tool-duckdb-color.svg';
 import excel from './kindtag-images/tool-excel-color.svg';
 import facebook from './kindtag-images/tool-facebook-color.svg';
 import fivetran from './kindtag-images/tool-fivetran-color.svg';
+import gcs from './kindtag-images/tool-gcs-color.svg';
 import gemini from './kindtag-images/tool-gemini-color.svg';
 import github from './kindtag-images/tool-github-color.svg';
 import gitlab from './kindtag-images/tool-gitlab-color.svg';
@@ -192,17 +194,20 @@ export type KnownTagType =
   | 'duckdb'
   | 'tensorflow'
   | 'pandas'
+  | 'semanticmodel'
   | 'googlesheets'
   | 'sql'
   | 'wandb'
   | 'databricks'
   | 'airflow'
+  | 'airliftmapped'
   | 'airtable'
   | 'omni'
   | 'datadog'
   | 'postgres'
   | 'postgresql'
   | 'stripe'
+  | 'sigma'
   | 'hightouch'
   | 'census'
   | 'hex'
@@ -273,6 +278,7 @@ export type KnownTagType =
   | 'discord'
   | 'docker'
   | 'facebook'
+  | 'gcs'
   | 'gemini'
   | 'google'
   | 'graphql'
@@ -335,6 +341,7 @@ export type KnownTagType =
   | 'seed'
   | 'file'
   | 'dashboard'
+  | 'report'
   | 'notebook'
   | 'csv'
   | 'pdf'
@@ -433,6 +440,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: airflow,
     content: 'Airflow',
   },
+  airliftmapped: {
+    icon: airflow,
+    content: 'Mapped',
+  },
   airtable: {
     icon: airtable,
     content: 'Airtable',
@@ -456,6 +467,11 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   stripe: {
     icon: stripe,
     content: 'Stripe',
+  },
+  sigma: {
+    icon: sigma,
+    content: 'Sigma',
+    blackAndWhite: true,
   },
   hightouch: {
     icon: hightouch,
@@ -745,6 +761,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: facebook,
     content: 'Facebook',
   },
+  gcs: {
+    icon: gcs,
+    content: 'GCS',
+  },
   gemini: {
     icon: gemini,
     content: 'Gemini',
@@ -999,6 +1019,16 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   file: {
     icon: file,
     content: 'File',
+    blackAndWhite: true,
+  },
+  semanticmodel: {
+    icon: table,
+    content: 'Semantic Model',
+    blackAndWhite: true,
+  },
+  report: {
+    icon: notebook,
+    content: 'Report',
     blackAndWhite: true,
   },
   dashboard: {

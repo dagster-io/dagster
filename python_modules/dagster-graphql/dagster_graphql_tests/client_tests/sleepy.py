@@ -20,7 +20,7 @@ def sleeper(context, units):
 
 
 class GiverConfig(Config):
-    units: typing.List[int] = Field(default_value=[1, 1, 1, 1])
+    units: typing.List[int] = Field(default_value=[1, 1, 1, 1])  # type: ignore
 
 
 @op(

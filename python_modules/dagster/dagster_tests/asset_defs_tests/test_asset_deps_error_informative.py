@@ -2,8 +2,8 @@ import re
 import sys
 import time
 from typing import List
+from unittest import mock
 
-import mock
 import pytest
 from dagster import AssetIn, AssetKey, Definitions, asset
 from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names

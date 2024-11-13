@@ -1,14 +1,14 @@
 from dataclasses import dataclass
-from typing import Iterable, Iterator, Optional
+from typing import Callable, Iterable, Iterator, Optional, Union
 
 from dagster import (
     AssetsDefinition,
     AssetSpec,
     Definitions,
     _check as check,
-    external_asset_from_spec,
 )
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
+from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_airlift.core.airflow_instance import AirflowInstance
@@ -20,13 +20,16 @@ from dagster_airlift.core.sensor.sensor_builder import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     build_airflow_polling_sensor_defs,
 )
-from dagster_airlift.core.serialization.compute import compute_serialized_data
+from dagster_airlift.core.serialization.compute import DagSelectorFn, compute_serialized_data
 from dagster_airlift.core.serialization.defs_construction import (
     construct_automapped_dag_assets_defs,
     construct_dag_assets_defs,
     get_airflow_data_to_spec_mapper,
 )
-from dagster_airlift.core.serialization.serialized_data import SerializedAirflowDefinitionsData
+from dagster_airlift.core.serialization.serialized_data import (
+    DagInfo,
+    SerializedAirflowDefinitionsData,
+)
 from dagster_airlift.core.utils import get_metadata_key
 
 
@@ -35,6 +38,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
     airflow_instance: AirflowInstance
     explicit_defs: Definitions
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS
+    dag_selector_fn: Optional[Callable[[DagInfo], bool]] = None
 
     @property
     def defs_key(self) -> str:
@@ -42,7 +46,9 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
 
     def fetch_state(self) -> SerializedAirflowDefinitionsData:
         return compute_serialized_data(
-            airflow_instance=self.airflow_instance, defs=self.explicit_defs
+            airflow_instance=self.airflow_instance,
+            defs=self.explicit_defs,
+            dag_selector_fn=self.dag_selector_fn,
         )
 
     def defs_from_state(
@@ -58,10 +64,12 @@ def build_airflow_mapped_defs(
     *,
     airflow_instance: AirflowInstance,
     defs: Optional[Definitions] = None,
+    dag_selector_fn: Optional[DagSelectorFn] = None,
 ) -> Definitions:
     return AirflowInstanceDefsLoader(
         airflow_instance=airflow_instance,
         explicit_defs=defs or Definitions(),
+        dag_selector_fn=dag_selector_fn,
     ).build_defs()
 
 
@@ -72,8 +80,145 @@ def build_defs_from_airflow_instance(
     defs: Optional[Definitions] = None,
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
+    dag_selector_fn: Optional[DagSelectorFn] = None,
 ) -> Definitions:
-    mapped_defs = build_airflow_mapped_defs(airflow_instance=airflow_instance, defs=defs)
+    """Builds a :py:class:`dagster.Definitions` object from an Airflow instance.
+
+    For every DAG in the Airflow instance, this function will create a Dagster asset for the DAG
+    with an asset key instance_name/dag/dag_id. It will also create a sensor that polls the Airflow
+    instance for DAG runs and emits Dagster events for each successful run.
+
+    An optional `defs` argument can be provided, where the user can pass in a :py:class:`dagster.Definitions`
+    object containing assets which are mapped to Airflow DAGs and tasks. These assets will be enriched with
+    metadata from the Airflow instance, and placed upstream of the automatically generated DAG assets.
+
+    An optional `event_transformer_fn` can be provided, which allows the user to modify the Dagster events
+    produced by the sensor. The function takes the Dagster events produced by the sensor and returns a sequence
+    of Dagster events.
+
+    An optional `dag_selector_fn` can be provided, which allows the user to filter which DAGs assets are created for.
+    The function takes a :py:class:`dagster_airlift.core.serialization.serialized_data.DagInfo` object and returns a
+    boolean indicating whether the DAG should be included.
+
+    Args:
+        airflow_instance (AirflowInstance): The Airflow instance to build assets and the sensor from.
+        defs: Optional[Definitions]: A :py:class:`dagster.Definitions` object containing assets that are
+            mapped to Airflow DAGs and tasks.
+        sensor_minimum_interval_seconds (int): The minimum interval in seconds between sensor runs.
+        event_transformer_fn (DagsterEventTransformerFn): A function that allows for modifying the Dagster events
+            produced by the sensor.
+        dag_selector_fn (Optional[DagSelectorFn]): A function that allows for filtering which DAGs assets are created for.
+
+    Returns:
+        Definitions: A :py:class:`dagster.Definitions` object containing the assets and sensor.
+
+    Examples:
+        Building a :py:class:`dagster.Definitions` object from an Airflow instance.
+
+        .. code-block:: python
+
+            from dagster_airlift.core import (
+                AirflowInstance,
+                AirflowBasicAuthBackend,
+                build_defs_from_airflow_instance,
+            )
+
+            from .constants import AIRFLOW_BASE_URL, AIRFLOW_INSTANCE_NAME, PASSWORD, USERNAME
+
+            airflow_instance = AirflowInstance(
+                auth_backend=AirflowBasicAuthBackend(
+                    webserver_url=AIRFLOW_BASE_URL, username=USERNAME, password=PASSWORD
+                ),
+                name=AIRFLOW_INSTANCE_NAME,
+            )
+
+
+            defs = build_defs_from_airflow_instance(airflow_instance=airflow_instance)
+
+        Providing task-mapped assets to the function.
+
+        .. code-block:: python
+
+            from dagster import Definitions
+            from dagster_airlift.core import (
+                AirflowInstance,
+                AirflowBasicAuthBackend,
+                assets_with_task_mappings,
+                build_defs_from_airflow_instance,
+            )
+            ...
+
+
+            defs = build_defs_from_airflow_instance(
+                airflow_instance=airflow_instance, # same as above
+                defs=Definitions(
+                    assets=assets_with_task_mappings(
+                        dag_id="rebuild_iris_models",
+                        task_mappings={
+                            "my_task": [AssetSpec("my_first_asset"), AssetSpec("my_second_asset")],
+                        },
+                    ),
+                ),
+            )
+
+        Providing a custom event transformer function.
+
+        .. code-block:: python
+
+            from typing import Sequence
+            from dagster import Definitions, SensorEvaluationContext
+            from dagster_airlift.core import (
+                AirflowInstance,
+                AirflowBasicAuthBackend,
+                AssetEvent,
+                assets_with_task_mappings,
+                build_defs_from_airflow_instance,
+                AirflowDefinitionsData,
+            )
+            ...
+
+            def add_tags_to_events(
+                context: SensorEvaluationContext,
+                defs_data: AirflowDefinitionsData,
+                events: Sequence[AssetEvent]
+            ) -> Sequence[AssetEvent]:
+                altered_events = []
+                for event in events:
+                    altered_events.append(event._replace(tags={"my_tag": "my_value"}))
+                return altered_events
+
+            defs = build_defs_from_airflow_instance(
+                airflow_instance=airflow_instance, # same as above
+                event_transformer_fn=add_tags_to_events,
+            )
+
+        Filtering which DAGs assets are created for.
+
+        .. code-block:: python
+
+            from dagster import Definitions
+            from dagster_airlift.core import (
+                AirflowInstance,
+                AirflowBasicAuthBackend,
+                AssetEvent,
+                assets_with_task_mappings,
+                build_defs_from_airflow_instance,
+                DagInfo,
+            )
+            ...
+
+            def only_include_dag(dag_info: DagInfo) -> bool:
+                return dag_info.dag_id == "my_dag_id"
+
+            defs = build_defs_from_airflow_instance(
+                airflow_instance=airflow_instance, # same as above
+                dag_selector_fn=only_include_dag,
+            )
+
+    """
+    mapped_defs = build_airflow_mapped_defs(
+        airflow_instance=airflow_instance, defs=defs, dag_selector_fn=dag_selector_fn
+    )
     return Definitions.merge(
         mapped_defs,
         build_airflow_polling_sensor_defs(
@@ -97,7 +242,7 @@ class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[SerializedAirflowDef
 
     def fetch_state(self) -> SerializedAirflowDefinitionsData:
         return compute_serialized_data(
-            airflow_instance=self.airflow_instance, defs=self.explicit_defs
+            airflow_instance=self.airflow_instance, defs=self.explicit_defs, dag_selector_fn=None
         )
 
     def defs_from_state(
@@ -163,7 +308,9 @@ def _apply_airflow_data_to_specs(
         yield assets_def.map_asset_specs(get_airflow_data_to_spec_mapper(serialized_data))
 
 
-def replace_assets_in_defs(defs: Definitions, assets: Iterable[AssetsDefinition]) -> Definitions:
+def replace_assets_in_defs(
+    defs: Definitions, assets: Iterable[Union[AssetSpec, AssetsDefinition]]
+) -> Definitions:
     return Definitions(
         assets=list(assets),
         asset_checks=defs.asset_checks,

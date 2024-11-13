@@ -33,35 +33,41 @@ type MetadataRowKey = 'image';
 
 interface Props {
   repoAddress: RepoAddress;
-  locationEntry: WorkspaceRepositoryLocationNode;
-  locationStatus: LocationStatusEntryFragment;
+  locationEntry: WorkspaceRepositoryLocationNode | null;
+  locationStatus: LocationStatusEntryFragment | null;
 }
 
 export const CodeLocationOverviewRoot = (props: Props) => {
   const {repoAddress, locationStatus, locationEntry} = props;
 
-  const {displayMetadata} = locationEntry;
+  const {displayMetadata} = locationEntry || {};
   const metadataForDetails: Record<MetadataRowKey, {key: string; value: string} | null> =
     useMemo(() => {
       return {
-        image: displayMetadata.find(({key}) => key === 'image') || null,
+        image: displayMetadata?.find(({key}) => key === 'image') || null,
       };
     }, [displayMetadata]);
 
   const metadataAsYaml = useMemo(() => {
-    return yaml.stringify(Object.fromEntries(displayMetadata.map(({key, value}) => [key, value])));
+    return yaml.stringify(
+      Object.fromEntries((displayMetadata || []).map(({key, value}) => [key, value])),
+    );
   }, [displayMetadata]);
 
   const libraryVersions = useMemo(() => {
-    return locationEntry.locationOrLoadError?.__typename === 'RepositoryLocation'
-      ? locationEntry.locationOrLoadError.dagsterLibraryVersions
+    return locationEntry?.locationOrLoadError?.__typename === 'RepositoryLocation'
+      ? locationEntry?.locationOrLoadError.dagsterLibraryVersions
       : null;
   }, [locationEntry]);
 
   return (
     <>
       <Box padding={{horizontal: 24}} border="bottom">
-        <CodeLocationTabs selectedTab="overview" repoAddress={repoAddress} />
+        <CodeLocationTabs
+          selectedTab="overview"
+          repoAddress={repoAddress}
+          locationEntry={locationEntry}
+        />
       </Box>
       <CodeLocationOverviewSectionHeader label="Details" />
       {/* Fixed table layout to contain overflowing strings in right column */}
@@ -84,9 +90,11 @@ export const CodeLocationOverviewRoot = (props: Props) => {
           <tr>
             <td>Updated</td>
             <td>
-              <div style={{whiteSpace: 'nowrap'}}>
-                <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
-              </div>
+              {locationStatus ? (
+                <div style={{whiteSpace: 'nowrap'}}>
+                  <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
+                </div>
+              ) : null}
             </td>
           </tr>
           {metadataForDetails.image ? (
@@ -148,18 +156,20 @@ const QueryfulCodeLocationOverviewRoot = ({repoAddress}: {repoAddress: RepoAddre
         );
       }
 
-      return (
-        <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
-          <CodeLocationNotFound repoAddress={repoAddress} locationEntry={locationEntry || null} />
-        </Box>
-      );
+      if (!locationEntry && !locationStatus) {
+        return (
+          <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
+            <CodeLocationNotFound repoAddress={repoAddress} locationEntry={locationEntry || null} />
+          </Box>
+        );
+      }
     }
 
     return (
       <CodeLocationOverviewRoot
         repoAddress={repoAddress}
-        locationEntry={locationEntry}
-        locationStatus={locationStatus}
+        locationEntry={locationEntry || null}
+        locationStatus={locationStatus || null}
       />
     );
   };

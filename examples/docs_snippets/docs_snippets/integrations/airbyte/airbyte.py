@@ -28,16 +28,6 @@ def scope_define_cloud_instance() -> None:
     # end_define_cloud_instance
 
 
-def scope_load_assets_from_airbyte_project():
-    # start_load_assets_from_airbyte_project
-    from dagster_airbyte import load_assets_from_airbyte_project
-
-    airbyte_assets = load_assets_from_airbyte_project(
-        project_dir="path/to/airbyte/project",
-    )
-    # end_load_assets_from_airbyte_project
-
-
 def scope_load_assets_from_airbyte_instance():
     from dagster_airbyte import AirbyteResource
     from dagster import EnvVar
@@ -55,26 +45,6 @@ def scope_load_assets_from_airbyte_instance():
     # Use the airbyte_instance resource we defined in Step 1
     airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
     # end_load_assets_from_airbyte_instance
-
-
-def scope_airbyte_project_config():
-    from dagster_airbyte import AirbyteResource
-
-    airbyte_instance = AirbyteResource(
-        host="localhost",
-        port="8000",
-    )
-    # start_airbyte_project_config
-    from dagster_airbyte import load_assets_from_airbyte_project
-
-    from dagster import with_resources
-
-    # Use the airbyte_instance resource we defined in Step 1
-    airbyte_assets = with_resources(
-        [load_assets_from_airbyte_project(project_dir="path/to/airbyte/project")],
-        {"airbyte": airbyte_instance},
-    )
-    # end_airbyte_project_config
 
 
 def scope_manually_define_airbyte_assets():
@@ -140,7 +110,7 @@ def scope_airbyte_cloud_manual_config():
 
 
 def scope_add_downstream_assets():
-    import mock
+    from unittest import mock
 
     with mock.patch("dagster_snowflake_pandas.SnowflakePandasIOManager"):
         # start_add_downstream_assets
@@ -188,7 +158,7 @@ def scope_add_downstream_assets():
 
 
 def scope_add_downstream_assets_w_deps():
-    import mock
+    from unittest import mock
 
     with mock.patch("dagster_snowflake.SnowflakeResource"):
         # start_with_deps_add_downstream_assets
@@ -239,7 +209,7 @@ def scope_add_downstream_assets_w_deps():
 
 
 def scope_add_downstream_assets_cloud():
-    import mock
+    from unittest import mock
 
     with mock.patch("dagster_snowflake_pandas.SnowflakePandasIOManager"):
         # start_add_downstream_assets_cloud
@@ -293,7 +263,7 @@ def scope_add_downstream_assets_cloud():
 
 
 def scope_add_downstream_assets_cloud_with_deps():
-    import mock
+    from unittest import mock
 
     with mock.patch("dagster_snowflake.SnowflakeResource"):
         # start_with_deps_add_downstream_assets_cloud

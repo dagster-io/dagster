@@ -112,7 +112,7 @@ def signups(hackernews_api: DataGeneratorResource) -> MaterializeResult:
     )
 ```
 
-Verify this new asset works by reloading your definitions and materializing the `signups` asset. If you navigate to the `hackernews_api`'s resource page from earlier, you’ll notice its **Uses** value now says `2`: one for the asset using it and another for the job using this asset. Click on the number and ensure that your `signups` asset uses the `hackernews_api` resource.
+Verify this new asset works by reloading your definitions and materializing the `signups` asset. If you navigate to the `hackernews_api`'s resource page from earlier, you’ll notice its **Uses** value now says `1`. Click on the number and ensure that your `signups` asset uses the `hackernews_api` resource.
 
 <Image
 alt="Indicating how many times a resource is used in the Dagster UI"

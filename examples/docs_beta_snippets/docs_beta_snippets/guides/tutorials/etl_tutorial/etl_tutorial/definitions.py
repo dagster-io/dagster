@@ -219,7 +219,7 @@ product_category_partition = dg.StaticPartitionsDefinition(
     partitions_def=product_category_partition,
     group_name="analysis",
     compute_kind="duckdb",
-    auto_materialize_policy=dg.AutoMaterializePolicy.eager(),
+    automation_condition=dg.AutomationCondition.eager(),
 )
 def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
     product_category_str = context.partition_key

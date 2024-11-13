@@ -35,6 +35,7 @@ export enum AssetFilterSearchResultType {
   AssetGroup = 'AssetFilterSearchResultType.AssetGroup',
   Column = 'AssetFilterSearchResultType.Column',
   ColumnTag = 'AssetFilterSearchResultType.ColumnTag',
+  TableName = 'AssetFilterSearchResultType.TableName',
 }
 
 export function isAssetFilterSearchResultType(
@@ -47,7 +48,8 @@ export function isAssetFilterSearchResultType(
     type === AssetFilterSearchResultType.Owner ||
     type === AssetFilterSearchResultType.Tag ||
     type === AssetFilterSearchResultType.Column ||
-    type === AssetFilterSearchResultType.ColumnTag
+    type === AssetFilterSearchResultType.ColumnTag ||
+    type === AssetFilterSearchResultType.TableName
   );
 }
 

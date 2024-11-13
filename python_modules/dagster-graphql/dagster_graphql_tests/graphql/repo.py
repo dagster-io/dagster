@@ -68,7 +68,6 @@ from dagster import (
     dagster_type_loader,
     daily_partitioned_config,
     define_asset_job,
-    freshness_policy_sensor,
     graph,
     job,
     logger,
@@ -101,7 +100,12 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import PartitionedConfig
 from dagster._core.definitions.reconstruct import ReconstructableRepository
-from dagster._core.definitions.sensor_definition import RunRequest, SensorDefinition, SkipReason
+from dagster._core.definitions.sensor_definition import (
+    RunRequest,
+    SensorDefinition,
+    SensorType,
+    SkipReason,
+)
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.log_manager import coerce_valid_log_level
@@ -1235,10 +1239,6 @@ def define_sensors():
     def many_asset_sensor(_):
         pass
 
-    @freshness_policy_sensor(asset_selection=AssetSelection.all())
-    def fresh_sensor(_):
-        pass
-
     @run_failure_sensor
     def the_failure_sensor():
         pass
@@ -1249,8 +1249,10 @@ def define_sensors():
 
     auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_auto_materialize_sensor",
-        asset_selection=AssetSelection.assets(
-            "fresh_diamond_bottom", "asset_with_automation_condition"
+        target=AssetSelection.assets(
+            "fresh_diamond_bottom",
+            "asset_with_automation_condition",
+            "asset_with_custom_automation_condition",
         ),
     )
 
@@ -1269,7 +1271,6 @@ def define_sensors():
         run_status,
         single_asset_sensor,
         many_asset_sensor,
-        fresh_sensor,
         the_failure_sensor,
         auto_materialize_sensor,
         every_asset_sensor,
@@ -1801,6 +1802,18 @@ def asset_with_compute_storage_kinds():
 def asset_with_automation_condition() -> None: ...
 
 
+class MyAutomationCondition(AutomationCondition):
+    @property
+    def name(self) -> str:
+        return "some_custom_name"
+
+    def evaluate(self): ...
+
+
+@asset(automation_condition=MyAutomationCondition().since_last_handled())
+def asset_with_custom_automation_condition() -> None: ...
+
+
 fresh_diamond_assets_job = define_asset_job(
     "fresh_diamond_assets_job", AssetSelection.assets(fresh_diamond_bottom).upstream()
 )
@@ -2117,6 +2130,7 @@ def define_assets():
         multi_asset_with_kinds,
         asset_with_compute_storage_kinds,
         asset_with_automation_condition,
+        asset_with_custom_automation_condition,
     ]
 
 
@@ -2153,13 +2167,21 @@ test_repo._name = "test_repo"  # noqa: SLF001
 
 
 def _targets_asset_job(instigator: Union[ScheduleDefinition, SensorDefinition]) -> bool:
+    if isinstance(instigator, SensorDefinition) and instigator.sensor_type in (
+        # these rely on asset selections, which are invalid with the repos constructed
+        # using the legacy dictionary pattern
+        SensorType.AUTOMATION,
+        SensorType.AUTO_MATERIALIZE,
+    ):
+        return True
     try:
         return instigator.job_name in asset_job_names or instigator.has_anonymous_job
     except DagsterInvalidDefinitionError:  # thrown when `job_name` is invalid
         return False
 
 
-# asset jobs are incompatible with dict repository so we exclude them and any schedules/sensors that target them
+# asset jobs are incompatible with dict repository so we exclude them and any schedules/sensors that target them,
+# e.g. AutomationConditionSensorDefinitions
 @repository(default_executor_def=in_process_executor)
 def test_dict_repo():
     return {

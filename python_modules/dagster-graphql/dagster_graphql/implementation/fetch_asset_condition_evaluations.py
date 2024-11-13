@@ -4,7 +4,6 @@ import dagster._check as check
 from dagster import AssetKey
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
-from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 from dagster_graphql.schema.asset_condition_evaluations import (
     GrapheneAssetConditionEvaluation,
     GrapheneAssetConditionEvaluationRecord,
@@ -41,23 +40,9 @@ def _get_graphene_records_from_evaluations(
     graphene_info: "ResolveInfo",
     evaluation_records: Sequence[AutoMaterializeAssetEvaluationRecord],
 ) -> GrapheneAssetConditionEvaluationRecords:
-    asset_keys = {record.key for record in evaluation_records}
-
-    partitions_defs = {}
-
-    nodes = get_asset_nodes_by_asset_key(graphene_info)
-    for asset_key in asset_keys:
-        asset_node = nodes.get(asset_key)
-        partitions_defs[asset_key] = (
-            asset_node.asset_node_snap.partitions.get_partitions_definition()
-            if asset_node and asset_node.asset_node_snap.partitions
-            else None
-        )
-
     return GrapheneAssetConditionEvaluationRecords(
         records=[
-            GrapheneAssetConditionEvaluationRecord(evaluation, partitions_defs[evaluation.key])
-            for evaluation in evaluation_records
+            GrapheneAssetConditionEvaluationRecord(evaluation) for evaluation in evaluation_records
         ]
     )
 
@@ -109,7 +94,11 @@ def fetch_true_partitions_for_evaluation_node(
     root_evaluation = record.get_evaluation_with_run_ids().evaluation
     for evaluation in root_evaluation.iter_nodes():
         if evaluation.condition_snapshot.unique_id == node_unique_id:
-            return list(evaluation.true_subset.subset_value.get_partition_keys())
+            return (
+                list(evaluation.true_subset.subset_value.get_partition_keys())
+                if evaluation.true_subset.is_partitioned
+                else ["None"]
+            )
     check.failed("No matching unique id found")
 
 

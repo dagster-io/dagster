@@ -17,7 +17,6 @@ from dagster import (
     AssetMaterialization,
     Output,
     _check as check,
-    asset,
     file_relative_path,
     job,
     op,
@@ -31,23 +30,23 @@ from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.remote_representation.external_data import StaticPartitionsSnap
+from dagster._core.remote_representation.external_data import (
+    StaticPartitionsSnap,
+    partition_set_snap_name_for_job_name,
+)
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
-from dagster._core.snap.job_snapshot import JobSnap
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import migrate_event_log_data
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
+from dagster._core.storage.runs.migration import BACKFILL_JOB_NAME_AND_TAGS, RUN_BACKFILL_ID
 from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._core.storage.tags import (
-    COMPUTE_KIND_TAG,
-    LEGACY_COMPUTE_KIND_TAG,
-    REPOSITORY_LABEL_TAG,
-)
+from dagster._core.storage.tags import BACKFILL_ID_TAG, REPOSITORY_LABEL_TAG
+from dagster._core.utils import make_new_run_id
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
@@ -949,6 +948,7 @@ def test_add_bulk_actions_columns():
                 "body",
                 "action_type",
                 "selector_id",
+                "job_name",
             } == set(get_sqlite3_columns(db_path, "bulk_actions"))
             assert "idx_bulk_actions_action_type" in get_sqlite3_indexes(db_path, "bulk_actions")
             assert "idx_bulk_actions_selector_id" in get_sqlite3_indexes(db_path, "bulk_actions")
@@ -1175,6 +1175,360 @@ def test_add_primary_keys():
             assert daemon_heartbeats_id_count == daemon_heartbeats_row_count
 
 
+def test_add_backfill_id_column():
+    from dagster._core.storage.runs.schema import RunsTable
+
+    src_dir = file_relative_path(
+        __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        columns = get_sqlite3_columns(db_path, "runs")
+        assert {
+            "id",
+            "run_id",
+            "snapshot_id",
+            "pipeline_name",
+            "mode",
+            "status",
+            "run_body",
+            "partition",
+            "partition_set",
+            "create_timestamp",
+            "update_timestamp",
+            "start_time",
+            "end_time",
+        } == set(columns)
+        assert "backfill_id" not in columns
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            # these runs won't have an entry for backfill_id until after the data migration
+            run_not_in_backfill_pre_migration = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name="first_job_no_backfill",
+                    run_id=make_new_run_id(),
+                    tags=None,
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+            run_in_backfill_pre_migration = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name="first_job_in_backfill",
+                    run_id=make_new_run_id(),
+                    tags={BACKFILL_ID_TAG: "backfillid"},
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+
+            # exclude_subruns filter works before migration
+            assert len(instance.get_runs(filters=RunsFilter(exclude_subruns=True))) == 2
+
+            instance.upgrade()
+            assert instance.run_storage.has_built_index(RUN_BACKFILL_ID)
+
+            columns = get_sqlite3_columns(db_path, "runs")
+            assert {
+                "id",
+                "run_id",
+                "snapshot_id",
+                "pipeline_name",
+                "mode",
+                "status",
+                "run_body",
+                "partition",
+                "partition_set",
+                "create_timestamp",
+                "update_timestamp",
+                "start_time",
+                "end_time",
+                "backfill_id",
+            } == set(columns)
+
+            run_not_in_backfill_post_migration = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name="second_job_no_backfill",
+                    run_id=make_new_run_id(),
+                    tags=None,
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+            run_in_backfill_post_migration = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name="second_job_in_backfill",
+                    run_id=make_new_run_id(),
+                    tags={BACKFILL_ID_TAG: "backfillid"},
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+
+            backfill_ids = {
+                row["run_id"]: row["backfill_id"]
+                for row in instance._run_storage.fetchall(
+                    db_select([RunsTable.c.run_id, RunsTable.c.backfill_id]).select_from(RunsTable)
+                )
+            }
+            assert backfill_ids[run_not_in_backfill_pre_migration.run_id] is None
+            assert backfill_ids[run_in_backfill_pre_migration.run_id] == "backfillid"
+            assert backfill_ids[run_not_in_backfill_post_migration.run_id] is None
+            assert backfill_ids[run_in_backfill_post_migration.run_id] == "backfillid"
+
+            # exclude_subruns filter works after migration, but should use new column
+            assert len(instance.get_runs(filters=RunsFilter(exclude_subruns=True))) == 3
+
+            # test downgrade
+            instance._run_storage._alembic_downgrade(rev="284a732df317")
+
+            assert get_current_alembic_version(db_path) == "284a732df317"
+            columns = get_sqlite3_columns(db_path, "runs")
+            assert {
+                "id",
+                "run_id",
+                "snapshot_id",
+                "pipeline_name",
+                "mode",
+                "status",
+                "run_body",
+                "partition",
+                "partition_set",
+                "create_timestamp",
+                "update_timestamp",
+                "start_time",
+                "end_time",
+            } == set(columns)
+            assert "backfill_id" not in columns
+
+
+def test_add_runs_by_backfill_id_idx():
+    src_dir = file_relative_path(
+        __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "idx_runs_by_backfill_id" not in get_sqlite3_indexes(db_path, "runs")
+            instance.upgrade()
+            assert "idx_runs_by_backfill_id" in get_sqlite3_indexes(db_path, "runs")
+
+
+def test_bad_alembic_stamp():
+    # same snapshot file as above, but with sqlite db that was not alembic stamped
+    src_dir = file_relative_path(__file__, "snapshot_1_8_12_bad_alembic_stamp/sqlite")
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM alembic_version")
+        rows = cursor.fetchall()
+        conn.close()
+        assert len(rows) == 0
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "idx_runs_by_backfill_id" not in get_sqlite3_indexes(db_path, "runs")
+            instance.upgrade()
+            assert "idx_runs_by_backfill_id" in get_sqlite3_indexes(db_path, "runs")
+            alembic_version = instance.run_storage.alembic_version()
+            assert alembic_version
+            db_revision, head_revision = alembic_version
+            assert db_revision == head_revision
+
+
+def test_add_backfill_tags():
+    src_dir = file_relative_path(
+        __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        assert "backfill_tags" not in get_sqlite3_tables(db_path)
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            before_migration = PartitionBackfill(
+                "before_tag_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={"before": "migration"},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(before_migration)
+            # filtering pre-migration relies on filtering runs, so add a run with the expected tags
+            pre_migration_run = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name="foo",
+                    run_id=make_new_run_id(),
+                    tags={"before": "migration", BACKFILL_ID_TAG: before_migration.backfill_id},
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+
+            # filtering by tags works before migration
+            assert (
+                instance.get_backfills(filters=BulkActionsFilter(tags={"before": "migration"}))[
+                    0
+                ].backfill_id
+                == before_migration.backfill_id
+            )
+
+            instance.upgrade()
+            assert "backfill_tags" in get_sqlite3_tables(db_path)
+
+            after_migration = PartitionBackfill(
+                "after_tag_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={"after": "migration"},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(after_migration)
+
+            with instance.run_storage.connect() as conn:
+                rows = conn.execute(
+                    db.text("SELECT backfill_id, key, value FROM backfill_tags")
+                ).fetchall()
+
+            assert len(rows) == 2
+            ids_to_tags = {row[0]: {row[1]: row[2]} for row in rows}
+            assert ids_to_tags.get(before_migration.backfill_id) == before_migration.tags
+            assert ids_to_tags[after_migration.backfill_id] == after_migration.tags
+
+            # filtering by tags works after migration
+            assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)
+            # delete the run that was added pre-migration to prove that tags filtering is happening on the
+            # backfill_tags table
+            instance.delete_run(pre_migration_run.run_id)
+            assert (
+                instance.get_backfills(filters=BulkActionsFilter(tags={"before": "migration"}))[
+                    0
+                ].backfill_id
+                == before_migration.backfill_id
+            )
+            assert (
+                instance.get_backfills(filters=BulkActionsFilter(tags={"after": "migration"}))[
+                    0
+                ].backfill_id
+                == after_migration.backfill_id
+            )
+
+            # test downgrade
+            instance._run_storage._alembic_downgrade(rev="1aca709bba64")
+            assert get_current_alembic_version(db_path) == "1aca709bba64"
+            assert "backfill_tags" not in get_sqlite3_tables(db_path)
+
+
+def test_add_bulk_actions_job_name_column():
+    from dagster._core.remote_representation.origin import (
+        GrpcServerCodeLocationOrigin,
+        RemotePartitionSetOrigin,
+        RemoteRepositoryOrigin,
+    )
+
+    src_dir = file_relative_path(
+        __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        backfill_columns = get_sqlite3_columns(db_path, "bulk_actions")
+        assert "job_name" not in backfill_columns
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            partition_set_origin = RemotePartitionSetOrigin(
+                repository_origin=RemoteRepositoryOrigin(
+                    code_location_origin=GrpcServerCodeLocationOrigin(
+                        host="localhost", port=1234, location_name="test_location"
+                    ),
+                    repository_name="the_repo",
+                ),
+                partition_set_name=partition_set_snap_name_for_job_name("before_migration"),
+            )
+            before_migration = PartitionBackfill(
+                "before_job_migration",
+                partition_set_origin=partition_set_origin,
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(before_migration)
+            # filtering pre-migration relies on filtering runs, so add a run with the expected job_name
+            pre_migration_run = instance.run_storage.add_run(
+                DagsterRun(
+                    job_name=before_migration.job_name,
+                    run_id=make_new_run_id(),
+                    tags={BACKFILL_ID_TAG: before_migration.backfill_id},
+                    status=DagsterRunStatus.NOT_STARTED,
+                )
+            )
+
+            # filtering by job_name works before migration
+            assert (
+                instance.get_backfills(
+                    filters=BulkActionsFilter(job_name=before_migration.job_name)
+                )[0].backfill_id
+                == before_migration.backfill_id
+            )
+
+            instance.upgrade()
+
+            backfill_columns = get_sqlite3_columns(db_path, "bulk_actions")
+            assert "job_name" in backfill_columns
+
+            partition_set_origin = RemotePartitionSetOrigin(
+                repository_origin=RemoteRepositoryOrigin(
+                    code_location_origin=GrpcServerCodeLocationOrigin(
+                        host="localhost", port=1234, location_name="test_location"
+                    ),
+                    repository_name="the_repo",
+                ),
+                partition_set_name=partition_set_snap_name_for_job_name("after_migration"),
+            )
+            after_migration = PartitionBackfill(
+                "after_job_migration",
+                partition_set_origin=partition_set_origin,
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(after_migration)
+
+            with instance.run_storage.connect() as conn:
+                rows = conn.execute(db.text("SELECT key, job_name FROM bulk_actions")).fetchall()
+
+            assert len(rows) == 3  # a backfill exists in the db snapshot
+            ids_to_job_name = {row[0]: row[1] for row in rows}
+            assert ids_to_job_name[before_migration.backfill_id] == before_migration.job_name
+            assert ids_to_job_name[after_migration.backfill_id] == after_migration.job_name
+
+            # filtering by job_name works after migration
+            assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)
+            # delete the run that was added pre-migration to prove that tags filtering is happening on the
+            # backfill_tags table
+            instance.delete_run(pre_migration_run.run_id)
+            assert (
+                instance.get_backfills(
+                    filters=BulkActionsFilter(job_name=before_migration.job_name)
+                )[0].backfill_id
+                == before_migration.backfill_id
+            )
+            assert (
+                instance.get_backfills(
+                    filters=BulkActionsFilter(job_name=after_migration.job_name)
+                )[0].backfill_id
+                == after_migration.backfill_id
+            )
+
+            # test downgrade
+            instance.run_storage._alembic_downgrade(rev="1aca709bba64")
+
+            assert get_current_alembic_version(db_path) == "1aca709bba64"
+            backfill_columns = get_sqlite3_columns(db_path, "bulk_actions")
+            assert "job_name" not in backfill_columns
+
+
 # Prior to 0.10.0, it was possible to have `Materialization` events with no asset key.
 # `AssetMaterialization` is _supposed_ to runtime-check for null `AssetKey`, but it doesn't, so we
 # can deserialize a `Materialization` with a null asset key directly to an `AssetMaterialization`.
@@ -1295,28 +1649,3 @@ def test_known_execution_state_step_output_version_serialization() -> None:
     ]
 
     assert deserialize_value(serialized, KnownExecutionState) == known_state
-
-
-def test_legacy_compute_kind_tag_backcompat() -> None:
-    legacy_tags = {LEGACY_COMPUTE_KIND_TAG: "foo"}
-    with pytest.warns(DeprecationWarning, match="Legacy compute kind tag"):
-
-        @asset(op_tags=legacy_tags)
-        def legacy_asset():
-            pass
-
-        assert legacy_asset.op.tags[COMPUTE_KIND_TAG] == "foo"
-
-    with pytest.warns(DeprecationWarning, match="Legacy compute kind tag"):
-
-        @op(tags=legacy_tags)
-        def legacy_op():
-            pass
-
-        assert legacy_op.tags[COMPUTE_KIND_TAG] == "foo"
-
-    legacy_snap_path = file_relative_path(__file__, "1_7_9_kind_op_job_snap.gz")
-    legacy_snap = deserialize_value(
-        GzipFile(legacy_snap_path, mode="r").read().decode("utf-8"), JobSnap
-    )
-    assert create_snapshot_id(legacy_snap) == "8db90f128b7eaa5c229bdde372e39d5cbecdc7e4"

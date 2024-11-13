@@ -10,8 +10,11 @@ from dagster_fivetran.ops import (
 )
 from dagster_fivetran.resources import (
     FivetranResource as FivetranResource,
+    FivetranWorkspace as FivetranWorkspace,
     fivetran_resource as fivetran_resource,
+    load_fivetran_asset_specs as load_fivetran_asset_specs,
 )
+from dagster_fivetran.translator import DagsterFivetranTranslator as DagsterFivetranTranslator
 from dagster_fivetran.types import FivetranOutput as FivetranOutput
 from dagster_fivetran.version import __version__ as __version__
 

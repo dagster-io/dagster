@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 from typing import Callable, List, Optional
 from unittest.mock import MagicMock
@@ -8,9 +9,11 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    AssetSpec,
     AutomationCondition,
     DagsterInstance,
     DailyPartitionsDefinition,
+    Definitions,
     GraphOut,
     HourlyPartitionsDefinition,
     LastPartitionMapping,
@@ -86,7 +89,7 @@ def test_basics(asset_graph_from_assets):
     asset2_node = asset_graph.get(asset2.key)
     asset3_node = asset_graph.get(asset3.key)
 
-    assert asset_graph.all_asset_keys == {asset0.key, asset1.key, asset2.key, asset3.key}
+    assert asset_graph.get_all_asset_keys() == {asset0.key, asset1.key, asset2.key, asset3.key}
     assert not asset0_node.is_partitioned
     assert asset1_node.is_partitioned
     assert asset1_node.partitions_def == asset2_node.partitions_def
@@ -754,7 +757,11 @@ def test_toposort(
     asset_graph = asset_graph_from_assets([A, B, Ac, Bc])
 
     assert asset_graph.toposorted_asset_keys == [A.key, B.key]
-    assert asset_graph.toposorted_entity_keys == [A.key, Ac.check_key, B.key, Bc.check_key]
+    assert asset_graph.toposorted_entity_keys_by_level == [
+        [A.key],
+        [Ac.check_key, B.key],
+        [Bc.check_key],
+    ]
 
 
 def test_required_assets_and_checks_by_key_asset_decorator(
@@ -874,6 +881,58 @@ def test_multi_asset_check(
         assert asset_graph.get_execution_set_asset_and_check_keys(key) == {key}
 
 
+def test_multi_asset_with_many_specs():
+    @multi_asset(
+        name="metabase_questions",
+        compute_kind="metabase",
+        specs=[
+            AssetSpec(
+                key=["metabase", str(i)],
+                metadata={"id": str(i)},
+            )
+            for i in range(6000)
+        ],
+        can_subset=True,
+    )
+    def my_multi_asset_with_many_specs():
+        pass
+
+    defs = Definitions(assets=[my_multi_asset_with_many_specs])
+
+    start_time = time.time()
+    defs.get_all_job_defs()
+
+    end_time = time.time()
+
+    assert end_time - start_time < 15, "multi asset took too long to load"
+
+
+def test_check_deps(asset_graph_from_assets: Callable[..., BaseAssetGraph]) -> None:
+    @asset
+    def A() -> None: ...
+
+    one = AssetCheckSpec(name="one", asset="A", additional_deps=["B", "C"])
+    two = AssetCheckSpec(name="two", asset="B", additional_deps=["C", "D"])
+    three = AssetCheckSpec(name="three", asset="B")
+
+    @multi_asset_check(specs=[one, two, three])
+    def multi_check(): ...
+
+    asset_graph = asset_graph_from_assets([A, multi_check])
+
+    assert asset_graph.get(one.key).parent_entity_keys == {
+        AssetKey("A"),
+        AssetKey("B"),
+        AssetKey("C"),
+    }
+    assert asset_graph.get(two.key).parent_entity_keys == {
+        AssetKey("B"),
+        AssetKey("C"),
+        AssetKey("D"),
+    }
+    assert asset_graph.get(three.key).parent_entity_keys == {AssetKey("B")}
+
+
 def test_cross_code_location_partition_mapping() -> None:
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-01-01-00:00"))
     def a(): ...
@@ -901,10 +960,16 @@ def test_serdes() -> None:
     @asset
     def a(): ...
 
+    @asset_check(asset=a)
+    def c(): ...
+
     @repository
     def repo():
-        return [a]
+        return [a, c]
 
     asset_graph = mock_workspace_from_repos([repo]).asset_graph
     for node in asset_graph.asset_nodes:
         assert node == deserialize_value(serialize_value(node))
+
+    check = next(iter(asset_graph.get_checks_for_asset(AssetKey("a"))))
+    assert check == deserialize_value(serialize_value(check))

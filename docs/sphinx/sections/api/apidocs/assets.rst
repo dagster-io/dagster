@@ -51,13 +51,6 @@ Refer to the `External asset dependencies <https://docs.dagster.io/concepts/asse
 
 .. autoclass:: ObserveResult
 
-External assets
----------------
-
-Refer to the `External assets <https://docs.dagster.io/concepts/assets/external-assets>`_ documentation for more information.
-
-.. autofunction:: external_assets_from_specs
-
 Dependencies
 ------------
 
@@ -94,20 +87,14 @@ Refer to the `Asset observation <https://docs.dagster.io/concepts/assets/asset-o
 
 .. autoclass:: AssetObservation
 
-Auto-materialize and freshness policies
+Declarative Automation
 ---------------------------------------
 
-Refer to the `Auto-materialize policies <https://docs.dagster.io/concepts/assets/asset-auto-execution>`_ documentation for more information.
-
-.. autoclass:: AutoMaterializePolicy
-
-.. autoclass:: AutoMaterializeRule
-
-.. autoclass:: AutomationConditionSensorDefinition
+Refer to the `Declarative Automation <https://docs.dagster.io/concepts/automation/declarative-automation>`_ documentation for more information.
 
 .. autoclass:: AutomationCondition
 
-.. autoclass:: FreshnessPolicy
+.. autoclass:: AutomationConditionSensorDefinition
 
 Asset values
 ------------

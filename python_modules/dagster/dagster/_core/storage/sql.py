@@ -78,6 +78,16 @@ def check_alembic_revision(alembic_config: Config, conn: Connection) -> AlembicV
     return (db_revision, head_revision)
 
 
+def safe_commit(conn: Connection) -> None:
+    """Commits to a connection if it is in a transaction. Supports compatibility across SQLAlchemy versions,
+    since older versions (1.3) have autocommit on transactions, instead of explicit commits.
+    """
+    if not conn.in_transaction():
+        return
+    if hasattr(conn, "commit"):
+        conn.commit()  # type: ignore
+
+
 def run_migrations_offline(
     context: EnvironmentContext, config: Config, target_metadata: db.MetaData
 ) -> None:

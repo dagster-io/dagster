@@ -82,7 +82,7 @@ def _get_deprecation_kwargs(attr: str) -> Mapping[str, Any]:
     return deprecation_kwargs
 
 
-class AssetExecutionContext(OpExecutionContext):
+class AssetExecutionContext:
     def __init__(self, op_execution_context: OpExecutionContext) -> None:
         self._op_execution_context = check.inst_param(
             op_execution_context, "op_execution_context", OpExecutionContext
@@ -382,6 +382,12 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def partition_keys(self) -> Sequence[str]:
         return self.op_execution_context.partition_keys
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def has_partition_key_range(self) -> bool:
+        return self.op_execution_context.has_partition_key_range
 
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public

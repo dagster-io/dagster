@@ -23,6 +23,7 @@ from typing import (
     Generic,
     Iterable,
     Iterator,
+    List,
     Literal,
     Mapping,
     Optional,
@@ -180,6 +181,49 @@ class PipesException(TypedDict):
 # ########################
 # ##### UTIL
 # ########################
+
+ESCAPE_CHARACTER = "\\"
+
+
+def de_escape_asset_key(asset_key: str) -> str:
+    r"""Removes the backward slashes escape characters from the asset key.
+
+    Example: "foo\/bar" -> "foo/bar"
+    """
+    # make sure to keep any standalone backslashes since they may be
+    # coming from the original (non-escaped) key
+    return asset_key.replace(ESCAPE_CHARACTER + "/", "/")
+
+
+def to_assey_key_path(asset_key: str) -> List[str]:
+    """Converts an asset key to a collection of key parts.
+
+    Forward slash (except escaped) is used as separator. De-escapes the key.
+    """
+    parts = []
+    current_part = []
+    escape_next = False
+
+    for char in asset_key:
+        if escape_next:
+            # Include escaped character (including backslash itself) in the current part
+            current_part.append(ESCAPE_CHARACTER + char)
+            escape_next = False
+        elif char == ESCAPE_CHARACTER:
+            escape_next = True
+        elif char == "/":
+            parts.append("".join(current_part))
+            current_part = []
+        else:
+            current_part.append(char)
+
+    # Add the final part to parts
+    if current_part:
+        parts.append("".join(current_part))
+
+    # De-escape each part, ensuring standalone backslashes remain intact
+    return [de_escape_asset_key(part) for part in parts]
+
 
 _T = TypeVar("_T")
 

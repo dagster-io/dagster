@@ -295,7 +295,7 @@ class ArtifactsIOManager(IOManager):
                         context.log.warning(
                             "You've included a 'serialization_module' in the"
                             " 'wandb_artifact_configuration' settings. However, this doesn't have"
-                            " any impact when the output is already an W&B object like e.g Table or"
+                            " any impact when the output is already a W&B object like e.g Table or"
                             " Image."
                         )
                     # Adds the WBValue object using the class name as the name for the file
@@ -395,7 +395,7 @@ class ArtifactsIOManager(IOManager):
 
                 artifact_name = parameters.get("name")
                 if artifact_name is None:
-                    artifact_name = context.asset_key[0][0]  # name of asset
+                    artifact_name = context.asset_key.path[0]  # name of asset
 
                 partitions = [
                     (key, f"{artifact_name}.{ str(key).replace('|', '-')}")

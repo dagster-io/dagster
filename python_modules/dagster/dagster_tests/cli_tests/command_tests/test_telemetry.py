@@ -26,7 +26,6 @@ from dagster import (
     resource,
 )
 from dagster._cli.job import job_execute_command
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.input import InputContext
@@ -298,28 +297,6 @@ def test_get_stats_from_remote_repo_freshness_policies(instance):
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_assets_with_freshness_policies_in_repo"] == "1"
-
-
-# TODO: FOU-243
-@pytest.mark.skip("obsolete EAGER vs. LAZY distinction")
-def test_get_status_from_remote_repo_auto_materialize_policy(instance):
-    @asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
-    def asset1(): ...
-
-    @asset
-    def asset2(): ...
-
-    @asset(auto_materialize_policy=AutoMaterializePolicy.eager())
-    def asset3(): ...
-
-    remote_repo = RemoteRepository(
-        RepositorySnap.from_def(Definitions(assets=[asset1, asset2, asset3]).get_repository_def()),
-        repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
-    )
-    stats = get_stats_from_remote_repo(remote_repo)
-    assert stats["num_assets_with_eager_auto_materialize_policies_in_repo"] == "1"
-    assert stats["num_assets_with_lazy_auto_materialize_policies_in_repo"] == "1"
 
 
 def test_get_stats_from_remote_repo_code_versions(instance):

@@ -33,7 +33,7 @@ The W&B Dagster integration provides a W&B-specific Dagster resource and I/O Man
 
 ### Installation
 
-To use this integration you will need a Weights and Biases account. Then you will need an W&B API Key, a W&B entity (user or team), and a W&B project. Full installation details can be found on [the Weights and Biases website here](https://docs.wandb.ai/guides/integrations/other/dagster).
+To use this integration you will need a Weights and Biases account. Then you will need a W&B API Key, a W&B entity (user or team), and a W&B project. Full installation details can be found on [the Weights and Biases website here](https://docs.wandb.ai/guides/integrations/other/dagster).
 
 **Note** that Weights & Biases do offer a free cloud account for personal (non-corporate) use. Check out their [pricing page](https://wandb.ai/site/pricing) for details.
 

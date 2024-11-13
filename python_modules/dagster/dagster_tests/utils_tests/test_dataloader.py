@@ -5,7 +5,7 @@ from typing import Iterable, List, NamedTuple
 from unittest import mock
 
 import pytest
-from dagster._core.loader import InstanceLoadableBy, LoadingContext
+from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._model import DagsterModel
 from dagster._utils.aiodataloader import DataLoader
 
@@ -139,14 +139,12 @@ def test_bad_load_fn():
     asyncio.run(_test())
 
 
-class LoadableThing(
-    NamedTuple("_LoadableThing", [("key", str), ("val", int)]), InstanceLoadableBy[str]
-):
+class LoadableThing(NamedTuple("_LoadableThing", [("key", str), ("val", int)]), LoadableBy[str]):
     @classmethod
     def _blocking_batch_load(
-        cls, keys: Iterable[str], instance: mock.MagicMock
+        cls, keys: Iterable[str], context: mock.MagicMock
     ) -> List["LoadableThing"]:
-        instance.query(keys)
+        context.query(keys)
         return [LoadableThing(key, random.randint(0, 100000)) for key in keys]
 
 

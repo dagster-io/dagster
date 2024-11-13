@@ -1,6 +1,6 @@
 from typing import Optional, Tuple
+from unittest import mock
 
-import mock
 from dagster import (
     AssetKey,
     DailyPartitionsDefinition,

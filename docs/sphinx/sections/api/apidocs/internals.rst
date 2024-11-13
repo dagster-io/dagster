@@ -214,8 +214,10 @@ Exception handling
 
 ----
 
-Step Launchers (Experimental)
------------------------------
+Step Launchers (Superseded)
+---------------------------
+
+Learn how to migrate from Step Launchers to Dagster Pipes in the `migration guide <https://docs.dagster.io/guides/migrations/from-step-launchers-to-pipes>`_.
 
 .. currentmodule:: dagster
 

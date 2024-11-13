@@ -1,7 +1,7 @@
 import {gql} from '../../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../../overview/BasicInstigationStateFragment';
-import {RESOURCE_ENTRY_FRAGMENT} from '../../resources/WorkspaceResourcesRoot';
+import {RESOURCE_ENTRY_FRAGMENT} from '../../resources/WorkspaceResourcesQuery';
 import {SENSOR_SWITCH_FRAGMENT} from '../../sensors/SensorSwitch';
 import {REPOSITORY_INFO_FRAGMENT} from '../RepositoryInformation';
 
@@ -106,11 +106,19 @@ export const LOCATION_WORKSPACE_QUERY = gql`
       status
       ...BasicInstigationStateFragment
     }
+    tags {
+      key
+      value
+    }
   }
 
   fragment WorkspaceSensor on Sensor {
     id
     name
+    tags {
+      key
+      value
+    }
     targets {
       mode
       pipelineName

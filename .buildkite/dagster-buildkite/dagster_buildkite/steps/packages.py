@@ -6,6 +6,7 @@ from typing import Iterable, List, Optional
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.step_builder import BuildkiteQueue
 from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.utils import (
     BuildkiteStep,
@@ -13,6 +14,8 @@ from dagster_buildkite.utils import (
     has_dagster_airlift_changes,
     has_storage_test_fixture_changes,
     network_buildkite_container,
+    skip_if_not_airlift_or_dlift_commit,
+    skip_if_not_dlift_commit,
 )
 
 
@@ -89,7 +92,7 @@ def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: List[str]) -> List[
 # ########################
 
 
-def airflow_extra_cmds(version: str, _) -> List[str]:
+def airflow_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     return [
         'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",
@@ -157,9 +160,9 @@ deploy_docker_example_extra_cmds = [
 ]
 
 
-def celery_extra_cmds(version: str, _) -> List[str]:
+def celery_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     return [
-        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
         "pushd python_modules/libraries/dagster-celery",
         # Run the rabbitmq db. We are in docker running docker
@@ -175,7 +178,7 @@ def celery_extra_cmds(version: str, _) -> List[str]:
     ]
 
 
-def celery_docker_extra_cmds(version: str, _) -> List[str]:
+def celery_docker_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     return celery_extra_cmds(version, _) + [
         "pushd python_modules/libraries/dagster-celery-docker/dagster_celery_docker_tests/",
         "docker-compose up -d --remove-orphans",
@@ -189,9 +192,9 @@ def celery_docker_extra_cmds(version: str, _) -> List[str]:
     ]
 
 
-def docker_extra_cmds(version: str, _) -> List[str]:
+def docker_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     return [
-        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
         "pushd python_modules/libraries/dagster-docker/dagster_docker_tests/",
         "docker-compose up -d --remove-orphans",
@@ -227,9 +230,9 @@ mysql_extra_cmds = [
 ]
 
 
-def k8s_extra_cmds(version: str, _) -> List[str]:
+def k8s_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     return [
-        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
     ]
 
@@ -272,7 +275,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/with_airflow",
         unsupported_python_versions=[
-            AvailablePythonVersion.V3_9,
             AvailablePythonVersion.V3_10,
             AvailablePythonVersion.V3_11,
             AvailablePythonVersion.V3_12,
@@ -288,15 +290,19 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/docs_snippets",
         pytest_extra_cmds=docs_snippets_extra_cmds,
-        unsupported_python_versions=[
-            # dependency on 3.9-incompatible extension libs
-            AvailablePythonVersion.V3_9,
-            # dagster-airflow dep
-            AvailablePythonVersion.V3_12,
-        ],
+        # The docs_snippets test suite also installs a ton of packages in the same environment,
+        # which is liable to cause dependency collisions. It's not necessary to test all these
+        # snippets in all python versions since we are testing the core code exercised by the
+        # snippets against all supported python versions.
+        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
     ),
     PackageSpec(
         "examples/docs_beta_snippets",
+        # The docs_snippets test suite also installs a ton of packages in the same environment,
+        # which is liable to cause dependency collisions. It's not necessary to test all these
+        # snippets in all python versions since we are testing the core code exercised by the
+        # snippets against all supported python versions.
+        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
         pytest_tox_factors=["all", "integrations"],
     ),
     PackageSpec(
@@ -307,6 +313,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "examples/with_great_expectations",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_9,
+        ],
     ),
     PackageSpec(
         "examples/with_pyspark",
@@ -361,9 +370,20 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/experimental/dagster-airlift",
     ),
+    # Runs against live dbt cloud instance, we only want to run on commits and on the
+    # nightly build
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/dbt-example",
-        always_run_if=has_dagster_airlift_changes,
+        skip_if=skip_if_not_airlift_or_dlift_commit,
+        env_vars=[
+            "KS_DBT_CLOUD_ACCOUNT_ID",
+            "KS_DBT_CLOUD_PROJECT_ID",
+            "KS_DBT_CLOUD_TOKEN",
+            "KS_DBT_CLOUD_ACCESS_URL",
+            "KS_DBT_CLOUD_DISCOVERY_API_URL",
+        ],
+        timeout_in_minutes=30,
+        queue=BuildkiteQueue.DOCKER,
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/perf-harness",
@@ -376,6 +396,24 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/kitchen-sink",
         always_run_if=has_dagster_airlift_changes,
+    ),
+    PackageSpec(
+        "examples/experimental/dagster-dlift",
+        name="dlift",
+    ),
+    # Runs against live dbt cloud instance, we only want to run on commits and on the
+    # nightly build
+    PackageSpec(
+        "examples/experimental/dagster-dlift/kitchen-sink",
+        skip_if=skip_if_not_dlift_commit,
+        name="dlift-live",
+        env_vars=[
+            "KS_DBT_CLOUD_ACCOUNT_ID",
+            "KS_DBT_CLOUD_PROJECT_ID",
+            "KS_DBT_CLOUD_TOKEN",
+            "KS_DBT_CLOUD_ACCESS_URL",
+            "KS_DBT_CLOUD_DISCOVERY_API_URL",
+        ],
     ),
 ]
 
@@ -418,7 +456,10 @@ def tox_factors_for_folder(tests_folder_name: str) -> List[str]:
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/automation",
-        unsupported_python_versions=[AvailablePythonVersion.V3_12],
+        # automation is internal code that doesn't need to be tested in every python version. The
+        # test suite also installs a ton of packages in the same environment, which is liable to
+        # cause dependency collisions.
+        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
     ),
     PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
     PackageSpec(
@@ -428,8 +469,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "api_tests",
             "asset_defs_tests",
             "cli_tests",
-            "core_tests_pydantic1",
-            "core_tests_pydantic2",
+            "core_tests",
             "daemon_sensor_tests",
             "daemon_tests",
             "definitions_tests",
@@ -437,8 +477,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "general_tests_old_protobuf",
             "launcher_tests",
             "logging_tests",
-            "model_tests_pydantic1",
-            "model_tests_pydantic2",
+            "model_tests",
             "scheduler_tests",
             "storage_tests",
             "storage_tests_sqlalchemy_1_3",
@@ -496,16 +535,12 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
             f"{deps_factor}-{command_factor}"
-            for deps_factor in ["dbt17", "dbt18", "pydantic1"]
+            for deps_factor in ["dbt17", "dbt18"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
         ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-snowflake",
-        pytest_tox_factors=[
-            "pydantic1",
-            "pydantic2",
-        ],
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
     ),
     PackageSpec(
@@ -560,10 +595,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-databricks",
-        pytest_tox_factors=[
-            "pydantic1",
-            "pydantic2",
-        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-docker",
@@ -640,6 +671,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-ge",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_9,
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-k8s",

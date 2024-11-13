@@ -41,7 +41,7 @@ class SourcePositionTree(NamedTuple):
 
 
 class ValueAndSourcePositionTree(NamedTuple):
-    """An tree-like object (like a JSON-structured dict) and an accompanying SourcePositionTree.
+    """A tree-like object (like a JSON-structured dict) and an accompanying SourcePositionTree.
 
     Each tree node in the SourcePositionTree is expected to correspond to in value.
     """

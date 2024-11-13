@@ -681,7 +681,7 @@ type AssetNode {
   hasReportRunlessAssetEventPermission: Boolean!
   hasAssetChecks: Boolean!
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
-  currentAutoMaterializeEvaluationId: Int
+  currentAutoMaterializeEvaluationId: ID
   targetingInstigators: [Instigator!]!
 }
 
@@ -774,7 +774,7 @@ type TeamAssetOwner {
 }
 
 union AssetPartitionStatuses =
-    DefaultPartitionStatuses
+  | DefaultPartitionStatuses
   | MultiPartitionStatuses
   | TimePartitionStatuses
 
@@ -835,6 +835,7 @@ type PartitionDefinition {
   type: PartitionDefinitionType!
   dimensionTypes: [DimensionDefinitionType!]!
   name: String
+  fmt: String
 }
 
 enum PartitionDefinitionType {
@@ -880,7 +881,7 @@ enum StaleCauseCategory {
 }
 
 union AssetChecksOrError =
-    AssetChecks
+  | AssetChecks
   | AssetCheckNeedsMigrationError
   | AssetCheckNeedsUserCodeUpgrade
   | AssetCheckNeedsAgentUpgradeError
@@ -973,7 +974,7 @@ type EvaluationStack {
 }
 
 union EvaluationStackEntry =
-    EvaluationStackListItemEntry
+  | EvaluationStackListItemEntry
   | EvaluationStackPathEntry
   | EvaluationStackMapKeyEntry
   | EvaluationStackMapValueEntry
@@ -1122,7 +1123,7 @@ type RunConfigValidationInvalid implements PipelineConfigValidationInvalid {
 }
 
 union PipelineConfigValidationResult =
-    InvalidSubsetError
+  | InvalidSubsetError
   | PipelineConfigValidationValid
   | RunConfigValidationInvalid
   | PipelineNotFoundError
@@ -1185,7 +1186,7 @@ type EventConnection {
 }
 
 union DagsterRunEvent =
-    ExecutionStepFailureEvent
+  | ExecutionStepFailureEvent
   | ExecutionStepInputEvent
   | ExecutionStepOutputEvent
   | ExecutionStepSkippedEvent
@@ -1304,7 +1305,7 @@ type PipelineRunLogsSubscriptionFailure {
 }
 
 union PipelineRunLogsSubscriptionPayload =
-    PipelineRunLogsSubscriptionSuccess
+  | PipelineRunLogsSubscriptionSuccess
   | PipelineRunLogsSubscriptionFailure
 
 type PipelineRunLogsSubscriptionSuccess {
@@ -1379,7 +1380,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
 }
 
 union PipelineSnapshotOrError =
-    PipelineNotFoundError
+  | PipelineNotFoundError
   | PipelineSnapshot
   | PipelineSnapshotNotFoundError
   | PythonError
@@ -1482,7 +1483,7 @@ union AssetOrError = Asset | AssetNotFoundError
 union AssetsOrError = AssetConnection | PythonError
 
 union DeletePipelineRunResult =
-    DeletePipelineRunSuccess
+  | DeletePipelineRunSuccess
   | UnauthorizedError
   | PythonError
   | RunNotFoundError
@@ -1496,7 +1497,7 @@ type DeleteRunMutation {
 }
 
 union ExecutionPlanOrError =
-    ExecutionPlan
+  | ExecutionPlan
   | RunConfigValidationInvalid
   | PipelineNotFoundError
   | InvalidSubsetError
@@ -1521,7 +1522,7 @@ type ReloadRepositoryLocationMutation {
 }
 
 union ReloadRepositoryLocationMutationResult =
-    WorkspaceLocationEntry
+  | WorkspaceLocationEntry
   | ReloadNotSupported
   | RepositoryLocationNotFound
   | UnauthorizedError
@@ -1573,7 +1574,7 @@ type ShutdownRepositoryLocationMutation {
 }
 
 union ShutdownRepositoryLocationMutationResult =
-    ShutdownRepositoryLocationSuccess
+  | ShutdownRepositoryLocationSuccess
   | RepositoryLocationNotFound
   | UnauthorizedError
   | PythonError
@@ -1601,7 +1602,7 @@ type TerminateRunMutation {
 }
 
 union TerminateRunResult =
-    TerminateRunSuccess
+  | TerminateRunSuccess
   | TerminateRunFailure
   | RunNotFoundError
   | UnauthorizedError
@@ -1656,7 +1657,11 @@ type AssetSelection {
   assetsOrError: AssetsOrError!
 }
 
-union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
+union ScheduleMutationResult =
+  | PythonError
+  | UnauthorizedError
+  | ScheduleStateResult
+  | ScheduleNotFoundError
 
 union ScheduleOrError = Schedule | ScheduleNotFoundError | PythonError
 
@@ -1716,7 +1721,7 @@ type AssetKey {
 }
 
 union LaunchBackfillResult =
-    LaunchBackfillSuccess
+  | LaunchBackfillSuccess
   | PartitionSetNotFoundError
   | PartitionKeysNotFoundError
   | InvalidStepError
@@ -1742,7 +1747,7 @@ type LaunchBackfillSuccess {
 }
 
 union ConfigTypeOrError =
-    EnumConfigType
+  | EnumConfigType
   | CompositeConfigType
   | RegularConfigType
   | PipelineNotFoundError
@@ -1860,7 +1865,7 @@ interface DagsterType {
 }
 
 union DagsterTypeOrError =
-    RegularDagsterType
+  | RegularDagsterType
   | PipelineNotFoundError
   | DagsterTypeNotFoundError
   | PythonError
@@ -2554,7 +2559,7 @@ type InstigationState {
   typeSpecificData: InstigationTypeSpecificData
   runs(limit: Int): [Run!]!
   runsCount: Int!
-  tick(tickId: BigInt!): InstigationTick!
+  tick(tickId: ID!): InstigationTick!
   ticks(
     dayRange: Int
     dayOffset: Int
@@ -2575,8 +2580,6 @@ enum InstigationType {
   SENSOR
   AUTO_MATERIALIZE
 }
-
-scalar BigInt
 
 type InstigationStateNotFoundError implements Error {
   message: String!
@@ -2610,7 +2613,7 @@ type InstigationTick {
   requestedAssetKeys: [AssetKey!]!
   requestedAssetMaterializationCount: Int!
   requestedMaterializationsForAssets: [RequestedMaterializationsForAsset!]!
-  autoMaterializeAssetEvaluationId: Int
+  autoMaterializeAssetEvaluationId: ID
   instigationType: InstigationType!
 }
 
@@ -2957,14 +2960,14 @@ type RunConfigSchema {
 }
 
 union RunConfigSchemaOrError =
-    RunConfigSchema
+  | RunConfigSchema
   | PipelineNotFoundError
   | InvalidSubsetError
   | ModeNotFoundError
   | PythonError
 
 union LaunchRunResult =
-    LaunchRunSuccess
+  | LaunchRunSuccess
   | InvalidStepError
   | InvalidOutputError
   | RunConfigValidationInvalid
@@ -2978,7 +2981,7 @@ union LaunchRunResult =
   | NoModeProvidedError
 
 union LaunchRunReexecutionResult =
-    LaunchRunSuccess
+  | LaunchRunSuccess
   | InvalidStepError
   | InvalidOutputError
   | RunConfigValidationInvalid
@@ -3257,6 +3260,7 @@ type Query {
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError!
   workspaceLocationEntryOrError(name: String!): WorkspaceLocationEntryOrError
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
+  resourcesOrError(pipelineSelector: PipelineSelector!): ResourcesOrError!
   pipelineSnapshotOrError(
     snapshotId: String
     activePipelineSelector: PipelineSelector
@@ -3269,7 +3273,9 @@ type Query {
     scheduleStatus: InstigationStatus
   ): SchedulesOrError!
   topLevelResourceDetailsOrError(resourceSelector: ResourceSelector!): ResourceDetailsOrError!
-  allTopLevelResourceDetailsOrError(repositorySelector: RepositorySelector!): ResourcesOrError!
+  allTopLevelResourceDetailsOrError(
+    repositorySelector: RepositorySelector!
+  ): ResourceDetailsListOrError!
   utilizedEnvVarsOrError(repositorySelector: RepositorySelector!): EnvVarWithConsumersOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(
@@ -3350,15 +3356,15 @@ type Query {
   ): AutoMaterializeAssetEvaluationRecordsOrError
   truePartitionsForAutomationConditionEvaluationNode(
     assetKey: AssetKeyInput!
-    evaluationId: Int!
+    evaluationId: ID!
     nodeUniqueId: String
   ): [String!]!
   autoMaterializeEvaluationsForEvaluationId(
-    evaluationId: Int!
+    evaluationId: ID!
   ): AutoMaterializeAssetEvaluationRecordsOrError
   assetConditionEvaluationForPartition(
     assetKey: AssetKeyInput!
-    evaluationId: Int!
+    evaluationId: ID!
     partition: String!
   ): AssetConditionEvaluation
   assetConditionEvaluationRecordsOrError(
@@ -3367,7 +3373,7 @@ type Query {
     cursor: String
   ): AssetConditionEvaluationRecordsOrError
   assetConditionEvaluationsForEvaluationId(
-    evaluationId: Int!
+    evaluationId: ID!
   ): AssetConditionEvaluationRecordsOrError
   autoMaterializeTicks(
     dayRange: Int
@@ -3403,6 +3409,16 @@ type WorkspaceLocationStatusEntry {
   permissions: [Permission!]!
 }
 
+union ResourcesOrError =
+  | ResourceConnection
+  | PipelineNotFoundError
+  | InvalidSubsetError
+  | PythonError
+
+type ResourceConnection {
+  resources: [Resource!]!
+}
+
 union GraphOrError = Graph | GraphNotFoundError | PythonError
 
 type Graph implements SolidContainer {
@@ -3430,7 +3446,7 @@ input GraphSelector {
 
 union ResourceDetailsOrError = ResourceDetails | ResourceNotFoundError | PythonError
 
-union ResourcesOrError = ResourceDetailsList | RepositoryNotFoundError | PythonError
+union ResourceDetailsListOrError = ResourceDetailsList | RepositoryNotFoundError | PythonError
 
 type ResourceDetailsList {
   results: [ResourceDetails!]!
@@ -3548,7 +3564,7 @@ type TestFields {
 }
 
 union AutoMaterializeAssetEvaluationRecordsOrError =
-    AutoMaterializeAssetEvaluationRecords
+  | AutoMaterializeAssetEvaluationRecords
   | AutoMaterializeAssetEvaluationNeedsMigrationError
 
 type AutoMaterializeAssetEvaluationRecords {
@@ -3557,7 +3573,7 @@ type AutoMaterializeAssetEvaluationRecords {
 
 type AutoMaterializeAssetEvaluationRecord {
   id: ID!
-  evaluationId: Int!
+  evaluationId: ID!
   numRequested: Int!
   numSkipped: Int!
   numDiscarded: Int!
@@ -3585,7 +3601,7 @@ type PartitionSubsetDeserializationError implements Error {
 }
 
 union AutoMaterializeRuleEvaluationData =
-    TextRuleEvaluationData
+  | TextRuleEvaluationData
   | ParentMaterializedRuleEvaluationData
   | WaitingOnKeysRuleEvaluationData
 
@@ -3612,7 +3628,7 @@ type AssetConditionEvaluation {
 }
 
 union AssetConditionEvaluationNode =
-    UnpartitionedAssetConditionEvaluationNode
+  | UnpartitionedAssetConditionEvaluationNode
   | PartitionedAssetConditionEvaluationNode
   | SpecificPartitionAssetConditionEvaluationNode
 
@@ -3651,7 +3667,7 @@ type SpecificPartitionAssetConditionEvaluationNode {
 }
 
 union AssetConditionEvaluationRecordsOrError =
-    AssetConditionEvaluationRecords
+  | AssetConditionEvaluationRecords
   | AutoMaterializeAssetEvaluationNeedsMigrationError
 
 type AssetConditionEvaluationRecords {
@@ -3660,7 +3676,7 @@ type AssetConditionEvaluationRecords {
 
 type AssetConditionEvaluationRecord {
   id: ID!
-  evaluationId: Int!
+  evaluationId: ID!
   runIds: [String!]!
   timestamp: Float!
   assetKey: AssetKey!
@@ -3782,7 +3798,7 @@ type TerminateRunsResult {
 }
 
 union AssetWipeMutationResult =
-    AssetNotFoundError
+  | AssetNotFoundError
   | UnauthorizedError
   | PythonError
   | UnsupportedOperationError
@@ -3803,7 +3819,7 @@ type PartitionRange {
 }
 
 union ReportRunlessAssetEventsResult =
-    UnauthorizedError
+  | UnauthorizedError
   | PythonError
   | ReportRunlessAssetEventsSuccess
 
@@ -3830,7 +3846,7 @@ type LogTelemetrySuccess {
 }
 
 union AddDynamicPartitionResult =
-    AddDynamicPartitionSuccess
+  | AddDynamicPartitionSuccess
   | UnauthorizedError
   | PythonError
   | DuplicateDynamicPartitionError
@@ -3841,7 +3857,7 @@ type AddDynamicPartitionSuccess {
 }
 
 union DeleteDynamicPartitionsResult =
-    DeleteDynamicPartitionsSuccess
+  | DeleteDynamicPartitionsSuccess
   | UnauthorizedError
   | PythonError
 

@@ -1,21 +1,18 @@
-import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Set
 
 from airflow import DAG
-from airflow.models import BaseOperator, Variable
-from airflow.utils.session import create_session
+from airflow.models import BaseOperator
 
 from dagster_airlift.in_airflow.dag_proxy_operator import (
     BaseProxyDAGToDagsterOperator,
     DefaultProxyDAGToDagsterOperator,
 )
-from dagster_airlift.in_airflow.proxied_state import AirflowProxiedState, DagProxiedState
+from dagster_airlift.in_airflow.proxied_state import AirflowProxiedState
 from dagster_airlift.in_airflow.task_proxy_operator import (
     BaseProxyTaskToDagsterOperator,
     DefaultProxyTaskToDagsterOperator,
 )
-from dagster_airlift.utils import get_local_proxied_state_dir
 
 
 def proxying_to_dagster(
@@ -30,9 +27,16 @@ def proxying_to_dagster(
         [DAG], BaseProxyDAGToDagsterOperator
     ] = DefaultProxyDAGToDagsterOperator.build_from_dag,
 ) -> None:
-    """Uses passed-in dictionary to alter dags and tasks to proxy to dagster.
-    Uses a proxied dictionary to determine the proxied status for each task within each dag.
-    Should only ever be the last line in a dag file.
+    """Proxies tasks and dags to Dagster based on provided proxied state.
+    Expects a dictionary of in-scope global variables to be provided (typically retrieved with `globals()`), and a proxied state dictionary
+    (typically retrieved with :py:func:`load_proxied_state_from_yaml`) for dags in that global state. This function will modify in-place the
+    dictionary of global variables to replace proxied tasks with appropriate Dagster operators.
+
+    In the case of task-level proxying, the proxied tasks will be replaced with new operators that are constructed by the provided `build_from_task_fn`.
+    A default implementation of this function is provided in `DefaultProxyTaskToDagsterOperator`.
+    In the case of dag-level proxying, the entire dag structure will be replaced with a single task that is constructed by the provided `build_from_dag_fn`.
+    A default implementation of this function is provided in `DefaultProxyDAGToDagsterOperator`.
+
 
     Args:
         global_vars (Dict[str, Any]): The global variables in the current context. In most cases, retrieved with `globals()` (no import required).
@@ -40,6 +44,98 @@ def proxying_to_dagster(
             https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html#loading-dags
         proxied_state (AirflowMigrationState): The proxied state for the dags.
         logger (Optional[logging.Logger]): The logger to use. Defaults to logging.getLogger("dagster_airlift").
+
+
+    Examples:
+        Typical usage of this function is to be called at the end of a dag file, retrieving proxied_state from an accompanying `proxied_state` path.
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from airflow import DAG
+            from airflow.operators.python import PythonOperator
+            from dagster._time import get_current_datetime_midnight
+            from dagster_airlift.in_airflow import proxying_to_dagster
+            from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
+
+
+            with DAG(
+                dag_id="daily_interval_dag",
+                ...,
+            ) as minute_dag:
+                PythonOperator(task_id="my_task", python_callable=...)
+
+            # At the end of the dag file, so we can ensure dags are loaded into globals.
+            proxying_to_dagster(
+                proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
+                global_vars=globals(),
+            )
+
+        You can also provide custom implementations of the `build_from_task_fn` function to customize the behavior of task-level proxying.
+
+        .. code-block:: python
+
+            from dagster_airlift.in_airflow import proxying_to_dagster, BaseProxyTaskToDagsterOperator
+            from airflow.models.operator import BaseOperator
+
+            ... # Dag code here
+
+            class CustomAuthTaskProxyOperator(BaseProxyTaskToDagsterOperator):
+                def get_dagster_session(self, context: Context) -> requests.Session:
+                    # Add custom headers to the session
+                    return requests.Session(headers={"Authorization": "Bearer my_token"})
+
+                def get_dagster_url(self, context: Context) -> str:
+                    # Use a custom environment variable for the dagster url
+                    return os.environ["CUSTOM_DAGSTER_URL"]
+
+                @classmethod
+                def build_from_task(cls, task: BaseOperator) -> "CustomAuthTaskProxyOperator":
+                    # Custom logic to build the operator from the task (task_id should remain the same)
+                    if task.task_id == "my_task_needs_more_retries":
+                        return CustomAuthTaskProxyOperator(task_id=task_id, retries=3)
+                    else:
+                        return CustomAuthTaskProxyOperator(task_id=task_id)
+
+            proxying_to_dagster(
+                proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
+                global_vars=globals(),
+                build_from_task_fn=CustomAuthTaskProxyOperator.build_from_task,
+            )
+
+        You can do the same for dag-level proxying by providing a custom implementation of the `build_from_dag_fn` function.
+
+        .. code-block:: python
+
+            from dagster_airlift.in_airflow import proxying_to_dagster, BaseProxyDAGToDagsterOperator
+            from airflow.models.dag import DAG
+
+            ... # Dag code here
+
+            class CustomAuthDAGProxyOperator(BaseProxyDAGToDagsterOperator):
+                def get_dagster_session(self, context: Context) -> requests.Session:
+                    # Add custom headers to the session
+                    return requests.Session(headers={"Authorization": "Bearer my_token"})
+
+                def get_dagster_url(self, context: Context) -> str:
+                    # Use a custom environment variable for the dagster url
+                    return os.environ["CUSTOM_DAGSTER_URL"]
+
+                @classmethod
+                def build_from_dag(cls, dag: DAG) -> "CustomAuthDAGProxyOperator":
+                    # Custom logic to build the operator from the dag (DAG id should remain the same)
+                    if dag.dag_id == "my_dag_needs_more_retries":
+                        return CustomAuthDAGProxyOperator(task_id="custom override", retries=3, dag=dag)
+                    else:
+                        return CustomAuthDAGProxyOperator(task_id="basic_override", dag=dag)
+
+            proxying_to_dagster(
+                proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
+                global_vars=globals(),
+                build_from_dag_fn=CustomAuthDAGProxyOperator.build_from_dag,
+            )
+
     """
     caller_module = global_vars.get("__module__")
     suffix = f" in module `{caller_module}`" if caller_module else ""
@@ -91,7 +187,6 @@ def proxying_to_dagster(
         dag.task_dict[override_task.task_id] = override_task
     for dag in task_level_proxying_dags:
         logger.debug(f"Tagging dag {dag.dag_id} as proxied.")
-        set_proxied_state_for_dag_if_changed(dag.dag_id, proxied_state.dags[dag.dag_id], logger)
         proxied_state_for_dag = proxied_state.dags[dag.dag_id]
         num_proxied_tasks = len(
             [
@@ -132,36 +227,3 @@ def proxying_to_dagster(
         logger.debug(f"Proxied tasks {proxied_tasks} in dag {dag.dag_id}.")
     logging.debug(f"Proxied {len(task_level_proxying_dags)}.")
     logging.debug(f"Completed switching proxied tasks to dagster{suffix}.")
-
-
-def set_proxied_state_for_dag_if_changed(
-    dag_id: str, proxied_state: DagProxiedState, logger: logging.Logger
-) -> None:
-    if get_local_proxied_state_dir():
-        logger.info(
-            "Executing in local mode. Not setting proxied state in airflow metadata database, and instead expect dagster to be pointed at proxied state via DAGSTER_AIRLIFT_PROXIED_STATE_DIR env var."
-        )
-        return
-    else:
-        prev_proxied_state = get_proxied_state_var_for_dag(dag_id)
-        if prev_proxied_state is None or prev_proxied_state != proxied_state:
-            logger.info(
-                f"Migration state for dag {dag_id} has changed. Setting proxied state in airflow metadata database via Variable."
-            )
-            set_proxied_state_var_for_dag(dag_id, proxied_state)
-
-
-def get_proxied_state_var_for_dag(dag_id: str) -> Optional[DagProxiedState]:
-    proxied_var = Variable.get(f"{dag_id}_dagster_proxied_state", None)
-    if not proxied_var:
-        return None
-    return DagProxiedState.from_dict(json.loads(proxied_var))
-
-
-def set_proxied_state_var_for_dag(dag_id: str, proxied_state: DagProxiedState) -> None:
-    with create_session() as session:
-        Variable.set(
-            key=f"{dag_id}_dagster_proxied_state",
-            value=json.dumps(proxied_state.to_dict()),
-            session=session,
-        )

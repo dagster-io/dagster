@@ -110,6 +110,7 @@ export type TypeExplorerFragment_ListDagsterType = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -132,6 +133,7 @@ export type TypeExplorerFragment_ListDagsterType = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -1357,6 +1359,7 @@ export type TypeExplorerFragment_NullableDagsterType = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -1379,6 +1382,7 @@ export type TypeExplorerFragment_NullableDagsterType = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;
@@ -2604,6 +2608,7 @@ export type TypeExplorerFragment_RegularDagsterType = {
               name: string;
               description: string | null;
               type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               constraints: {
                 __typename: 'TableColumnConstraints';
                 nullable: boolean;
@@ -2626,6 +2631,7 @@ export type TypeExplorerFragment_RegularDagsterType = {
             name: string;
             description: string | null;
             type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             constraints: {
               __typename: 'TableColumnConstraints';
               nullable: boolean;

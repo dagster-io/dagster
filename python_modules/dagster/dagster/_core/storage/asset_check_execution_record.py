@@ -5,8 +5,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.events.log import DagsterEventType, EventLogEntry
-from dagster._core.instance import DagsterInstance
-from dagster._core.loader import InstanceLoadableBy, LoadingContext
+from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
 from dagster._serdes.serdes import deserialize_value
 from dagster._time import utc_datetime_from_naive
@@ -53,7 +52,7 @@ class AssetCheckExecutionRecord(
             ("create_timestamp", float),
         ],
     ),
-    InstanceLoadableBy[AssetCheckKey],
+    LoadableBy[AssetCheckKey],
 ):
     def __new__(
         cls,
@@ -124,14 +123,16 @@ class AssetCheckExecutionRecord(
 
     @classmethod
     def _blocking_batch_load(
-        cls, keys: Iterable[AssetCheckKey], instance: DagsterInstance
+        cls, keys: Iterable[AssetCheckKey], context: LoadingContext
     ) -> Iterable[Optional["AssetCheckExecutionRecord"]]:
-        records_by_key = instance.event_log_storage.get_latest_asset_check_execution_by_key(
+        records_by_key = context.instance.event_log_storage.get_latest_asset_check_execution_by_key(
             list(keys)
         )
         return [records_by_key.get(key) for key in keys]
 
-    def resolve_status(self, loading_context: LoadingContext) -> AssetCheckExecutionResolvedStatus:
+    async def resolve_status(
+        self, loading_context: LoadingContext
+    ) -> AssetCheckExecutionResolvedStatus:
         if self.status == AssetCheckExecutionRecordStatus.SUCCEEDED:
             return AssetCheckExecutionResolvedStatus.SUCCEEDED
         elif self.status == AssetCheckExecutionRecordStatus.FAILED:
@@ -139,7 +140,7 @@ class AssetCheckExecutionRecord(
         elif self.status == AssetCheckExecutionRecordStatus.PLANNED:
             # Asset checks stay in PLANNED status until the evaluation event arrives.
             # Check if the run is still active, and if not, return the actual status.
-            run_record = RunRecord.blocking_get(loading_context, self.run_id)
+            run_record = await RunRecord.gen(loading_context, self.run_id)
             if not run_record:
                 # Run deleted
                 return AssetCheckExecutionResolvedStatus.SKIPPED
@@ -156,15 +157,15 @@ class AssetCheckExecutionRecord(
         else:
             check.failed(f"Unexpected status {self.status}")
 
-    def targets_latest_materialization(self, loading_context: LoadingContext) -> bool:
+    async def targets_latest_materialization(self, loading_context: LoadingContext) -> bool:
         from dagster._core.storage.event_log.base import AssetRecord
 
-        resolved_status = self.resolve_status(loading_context)
+        resolved_status = await self.resolve_status(loading_context)
         if resolved_status == AssetCheckExecutionResolvedStatus.IN_PROGRESS:
             # all in-progress checks execute against the latest version
             return True
 
-        asset_record = AssetRecord.blocking_get(loading_context, self.key.asset_key)
+        asset_record = await AssetRecord.gen(loading_context, self.key.asset_key)
         latest_materialization = (
             asset_record.asset_entry.last_materialization_record if asset_record else None
         )
@@ -197,10 +198,10 @@ class AssetCheckExecutionRecord(
         ]:
             # the evaluation didn't complete, so we don't have target_materialization_data, so check if
             # the check's run executed after the materializations as a fallback
-            latest_materialization_run_record = RunRecord.blocking_get(
+            latest_materialization_run_record = await RunRecord.gen(
                 loading_context, latest_materialization_run_id
             )
-            check_run_record = RunRecord.blocking_get(loading_context, self.run_id)
+            check_run_record = await RunRecord.gen(loading_context, self.run_id)
             return bool(
                 latest_materialization_run_record
                 and check_run_record

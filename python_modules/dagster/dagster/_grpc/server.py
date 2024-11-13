@@ -1296,7 +1296,21 @@ class CouldNotStartServerProcess(Exception):
         )
 
 
-def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
+INCREASE_TIMEOUT_DAGSTER_YAML_MSG = """To increase the timeout, add the following to a dagster.yaml file, located in your $DAGSTER_HOME folder or the folder where you are running `dagster dev`:
+
+code_servers:
+  local_startup_timeout: <timeout value>
+
+"""
+
+
+def wait_for_grpc_server(
+    server_process,
+    client,
+    subprocess_args,
+    timeout=60,
+    additional_timeout_msg: Optional[str] = None,
+):
     start_time = time.time()
 
     last_error = None
@@ -1310,7 +1324,7 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
 
         if timeout > 0 and (time.time() - start_time > timeout):
             raise Exception(
-                f"Timed out waiting for gRPC server to start after {timeout}s with arguments:"
+                f"Timed out waiting for gRPC server to start after {timeout}s. {additional_timeout_msg}Launched with arguments:"
                 f" \"{' '.join(subprocess_args)}\". Most recent connection error: {last_error}"
             )
 
@@ -1341,6 +1355,7 @@ def open_server_process(
     container_image: Optional[str] = None,
     container_context: Optional[Dict[str, Any]] = None,
     enable_metrics: bool = False,
+    additional_timeout_msg: Optional[str] = None,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
@@ -1395,7 +1410,13 @@ def open_server_process(
     )
 
     try:
-        wait_for_grpc_server(server_process, client, subprocess_args, timeout=startup_timeout)
+        wait_for_grpc_server(
+            server_process,
+            client,
+            subprocess_args,
+            timeout=startup_timeout,
+            additional_timeout_msg=additional_timeout_msg,
+        )
     except:
         if server_process.poll() is None:
             server_process.terminate()
@@ -1443,6 +1464,7 @@ class GrpcServerProcess:
         inject_env_vars_from_instance: bool = True,
         container_image: Optional[str] = None,
         container_context: Optional[Dict[str, Any]] = None,
+        additional_timeout_msg: Optional[str] = None,
     ):
         self.port = None
         self.socket = None
@@ -1484,6 +1506,7 @@ class GrpcServerProcess:
                 inject_env_vars_from_instance=inject_env_vars_from_instance,
                 container_image=container_image,
                 container_context=container_context,
+                additional_timeout_msg=additional_timeout_msg,
             )
         else:
             self.socket = safe_tempfile_path_unmanaged()
@@ -1505,6 +1528,7 @@ class GrpcServerProcess:
                 inject_env_vars_from_instance=inject_env_vars_from_instance,
                 container_image=container_image,
                 container_context=container_context,
+                additional_timeout_msg=additional_timeout_msg,
             )
 
         if server_process is None:

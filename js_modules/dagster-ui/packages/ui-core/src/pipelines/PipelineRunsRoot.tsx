@@ -60,12 +60,12 @@ interface Props {
 }
 
 export const PipelineRunsRoot = (props: Props) => {
-  const {flagRunsFeed} = useFeatureFlags();
+  const {flagLegacyRunsPage} = useFeatureFlags();
 
-  if (flagRunsFeed) {
-    return <PipelineRunsFeedRoot {...props} />;
-  } else {
+  if (flagLegacyRunsPage) {
     return <PipelineRunsRootOld {...props} />;
+  } else {
+    return <PipelineRunsFeedRoot {...props} />;
   }
 };
 

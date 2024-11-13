@@ -6446,7 +6446,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dompurify@npm:^3.0.5":
+"dompurify@npm:^3.0.5 <3.1.7":
   version: 3.1.6
   resolution: "dompurify@npm:3.1.6"
   checksum: 10c0/3de1cca187c78d3d8cb4134fc2985b644d6a81f6b4e024c77cfb04c1c2f38544ccf7b0ea37a48ce22fcca64594170ed7c22252574c75b801c44345cdd7b06c64
@@ -8401,8 +8401,8 @@ __metadata:
   linkType: hard
 
 "http-proxy-middleware@npm:^2.0.3":
-  version: 2.0.6
-  resolution: "http-proxy-middleware@npm:2.0.6"
+  version: 2.0.7
+  resolution: "http-proxy-middleware@npm:2.0.7"
   dependencies:
     "@types/http-proxy": "npm:^1.17.8"
     http-proxy: "npm:^1.18.1"
@@ -8414,7 +8414,7 @@ __metadata:
   peerDependenciesMeta:
     "@types/express":
       optional: true
-  checksum: 10c0/25a0e550dd1900ee5048a692e0e9b2b6339d06d487a705d90c47e359e9c6561d648cd7862d001d090e651c9efffa1b6e5160fcf1f299b5fa4935f76e9754eb11
+  checksum: 10c0/8d00a61eb215b83826460b07489d8bb095368ec16e02a9d63e228dcf7524e7c20d61561e5476de1391aecd4ec32ea093279cdc972115b311f8e0a95a24c9e47e
   languageName: node
   linkType: hard
 
@@ -10104,8 +10104,8 @@ __metadata:
   linkType: hard
 
 "mermaid@npm:^10.4.0":
-  version: 10.9.1
-  resolution: "mermaid@npm:10.9.1"
+  version: 10.9.3
+  resolution: "mermaid@npm:10.9.3"
   dependencies:
     "@braintree/sanitize-url": "npm:^6.0.1"
     "@types/d3-scale": "npm:^4.0.3"
@@ -10116,7 +10116,7 @@ __metadata:
     d3-sankey: "npm:^0.12.3"
     dagre-d3-es: "npm:7.0.10"
     dayjs: "npm:^1.11.7"
-    dompurify: "npm:^3.0.5"
+    dompurify: "npm:^3.0.5 <3.1.7"
     elkjs: "npm:^0.9.0"
     katex: "npm:^0.16.9"
     khroma: "npm:^2.0.0"
@@ -10127,7 +10127,7 @@ __metadata:
     ts-dedent: "npm:^2.2.0"
     uuid: "npm:^9.0.0"
     web-worker: "npm:^1.2.0"
-  checksum: 10c0/034f326682e3e478e4bd85e418cfef00773db4432301b858247c8d4bf813e67fa1901e8548fc490eafe4c9c215c9fb96dead73007ff317ee99973cf4f63c8791
+  checksum: 10c0/5f60222b34f4d27f18575f95a428e80135f0bbb3c1aade8de65e8d6c30a4f28a22f0547fcdb01d9bfcad95715631e8dc84017b7dd297bbb292ff3465dc887a16
   languageName: node
   linkType: hard
 

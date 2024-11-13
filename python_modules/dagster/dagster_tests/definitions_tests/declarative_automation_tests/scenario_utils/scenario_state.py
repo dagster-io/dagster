@@ -7,8 +7,8 @@ import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence, Union, cast
+from unittest import mock
 
-import mock
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -170,7 +170,7 @@ class ScenarioSpec:
 
                     assets.append(osa)
                 else:
-                    # strip out the relevant paramters from the spec
+                    # strip out the relevant parameters from the spec
                     params = {
                         "key",
                         "deps",

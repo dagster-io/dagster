@@ -19,7 +19,11 @@ from dagster import (
 )
 from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef
+from dagster._core.definitions.step_launcher import (
+    StepLauncher,
+    StepRunRef,
+    _step_launcher_supersession,
+)
 from dagster._core.errors import DagsterInvariantViolationError, raise_execution_interrupts
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.events.log import EventLogEntry
@@ -35,7 +39,7 @@ from dagster._serdes import deserialize_value
 from dagster._utils.backoff import backoff
 from dagster_pyspark.utils import build_pyspark_zip
 from databricks.sdk.core import DatabricksError
-from databricks.sdk.service import iam, jobs
+from databricks.sdk.service import iam
 
 from dagster_databricks import databricks_step_main
 from dagster_databricks.configs import (
@@ -169,6 +173,7 @@ DAGSTER_SYSTEM_ENV_VARS = {
         ),
     }
 )
+@_step_launcher_supersession
 def databricks_pyspark_step_launcher(
     context: InitResourceContext,
 ) -> "DatabricksPySparkStepLauncher":
@@ -188,6 +193,7 @@ def databricks_pyspark_step_launcher(
     return DatabricksPySparkStepLauncher(**context.resource_config)
 
 
+@_step_launcher_supersession
 class DatabricksPySparkStepLauncher(StepLauncher):
     def __init__(
         self,
@@ -478,9 +484,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         for permission, accessors in input_permissions.items():
             access_control_list.extend(
                 [
-                    jobs.JobAccessControlRequest.from_dict(
-                        {"permission_level": permission, **accessor}
-                    )
+                    iam.AccessControlRequest.from_dict({"permission_level": permission, **accessor})
                     for accessor in accessors
                 ]
             )

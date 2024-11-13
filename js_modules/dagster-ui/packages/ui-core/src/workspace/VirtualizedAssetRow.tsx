@@ -1,6 +1,7 @@
 import {Box, Caption, Checkbox, Colors, Icon, Skeleton} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 import styled from 'styled-components';
 
 import {RepoAddress} from './types';
@@ -67,12 +68,17 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
   } = props;
 
   const liveData = useLiveDataOrLatestMaterializationDebounced(path, type);
-  const linkUrl = assetDetailsPathForKey(
+  let linkUrl = assetDetailsPathForKey(
     {path},
     {
       view: type === 'folder' ? 'folder' : undefined,
     },
   );
+
+  if (type === 'folder') {
+    // Forward filters
+    linkUrl += getAssetFilterStateQueryString();
+  }
 
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (onToggleChecked && e.target instanceof HTMLInputElement) {

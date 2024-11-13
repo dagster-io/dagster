@@ -88,6 +88,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
     const assetKey = assetKeys[0]!;
     return (
       <TagActionsPopover
+        childrenMiddleTruncate
         data={{key: '', value: ''}}
         actions={[
           {
@@ -105,13 +106,13 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
       >
         {useTags ? (
           <Tag intent="none" interactive icon="asset">
-            {displayNameForAssetKey(assetKey)}
+            <MiddleTruncate text={displayNameForAssetKey(assetKey)} />
           </Tag>
         ) : (
           <Link to={assetDetailsPathForKey(assetKey)}>
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <Icon color={Colors.accentGray()} name="asset" size={16} />
-              {displayNameForAssetKey(assetKey)}
+              <MiddleTruncate text={displayNameForAssetKey(assetKey)} />
             </Box>
           </Link>
         )}
@@ -176,16 +177,17 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
       <TagActionsPopover
         data={{key: '', value: ''}}
         actions={[{label: 'View asset check', to: assetDetailsPathForAssetCheck(check)}]}
+        childrenMiddleTruncate
       >
         {useTags ? (
           <Tag intent="none" interactive icon="asset_check">
-            {labelForAssetCheck(check)}
+            <MiddleTruncate text={labelForAssetCheck(check)} />
           </Tag>
         ) : (
           <Link to={assetDetailsPathForAssetCheck(check)}>
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <Icon color={Colors.accentGray()} name="asset_check" size={16} />
-              {labelForAssetCheck(check)}
+              <MiddleTruncate text={labelForAssetCheck(check)} />
             </Box>
           </Link>
         )}

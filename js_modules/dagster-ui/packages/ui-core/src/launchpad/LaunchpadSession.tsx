@@ -262,7 +262,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
         deletePropertyPath(runConfigData, path);
       }
       onSaveSession({runConfigYaml: yaml.stringify(runConfigData)});
-    } catch (err) {
+    } catch {
       showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
       return;
     }
@@ -282,7 +282,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
         mergeYaml(rootDefaultYaml, currentSession.runConfigYaml, {sortMapEntries: true}) !==
         mergeYaml({}, currentSession.runConfigYaml, {sortMapEntries: true})
       );
-    } catch (err) {
+    } catch {
       return false;
     }
   }, [currentSession.runConfigYaml, rootDefaultYaml]);
@@ -291,7 +291,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     const config = runConfigSchema ? scaffoldPipelineConfig(runConfigSchema) : {};
     try {
       onSaveSession({runConfigYaml: mergeYaml(config, currentSession.runConfigYaml)});
-    } catch (err) {
+    } catch {
       showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
     }
   };
@@ -324,7 +324,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
 
     try {
       yaml.parse(configYamlOrEmpty);
-    } catch (err) {
+    } catch {
       showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
       return;
     }

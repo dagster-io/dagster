@@ -48,11 +48,9 @@ from dagster._utils import hash_collection
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
-    from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
-        PendingRepositoryDefinition,
         RepositoryDefinition,
         RepositoryLoadData,
     )
@@ -115,11 +113,7 @@ class ReconstructableRepository(
         return self._replace(repository_load_data=metadata)
 
     def get_definition(self) -> "RepositoryDefinition":
-        from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
-
-        return repository_def_from_pointer(
-            self.pointer, DefinitionsLoadType.RECONSTRUCTION, self.repository_load_data
-        )
+        return reconstruct_repository_def_from_pointer(self.pointer, self.repository_load_data)
 
     def get_reconstructable_job(self, name: str) -> "ReconstructableJob":
         return ReconstructableJob(self, name)
@@ -571,7 +565,6 @@ def bootstrap_standalone_recon_job(pointer: CodePointer) -> ReconstructableJob:
 LoadableDefinition: TypeAlias = Union[
     "JobDefinition",
     "RepositoryDefinition",
-    "PendingRepositoryDefinition",
     "GraphDefinition",
     "Sequence[Union[AssetsDefinition, SourceAsset]]",
 ]
@@ -594,10 +587,7 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.repository_definition import (
-        PendingRepositoryDefinition,
-        RepositoryDefinition,
-    )
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._utils.test.definitions import LazyDefinitions
 
     if not (
@@ -606,7 +596,6 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
             (
                 JobDefinition,
                 RepositoryDefinition,
-                PendingRepositoryDefinition,
                 GraphDefinition,
                 Definitions,
                 LazyDefinitions,
@@ -648,10 +637,7 @@ def def_from_pointer(
 
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.repository_definition import (
-        PendingRepositoryDefinition,
-        RepositoryDefinition,
-    )
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._utils.test.definitions import LazyDefinitions
 
     if isinstance(
@@ -659,7 +645,6 @@ def def_from_pointer(
         (
             GraphDefinition,
             JobDefinition,
-            PendingRepositoryDefinition,
             RepositoryDefinition,
             LazyDefinitions,
         ),
@@ -695,41 +680,29 @@ def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
 @overload
 def repository_def_from_target_def(
     target: Union["RepositoryDefinition", "JobDefinition", "GraphDefinition"],
-    load_type: "DefinitionsLoadType",
-    repository_load_data: Optional["RepositoryLoadData"] = None,
-) -> "RepositoryDefinition": ...
+) -> Optional["RepositoryDefinition"]: ...
 
 
 @overload
 def repository_def_from_target_def(
     target: object,
-    load_type: "DefinitionsLoadType",
-    repository_load_data: Optional["RepositoryLoadData"] = None,
-) -> None: ...
+) -> Optional["RepositoryDefinition"]: ...
 
 
-def repository_def_from_target_def(
-    target: object,
-    load_type: "DefinitionsLoadType",
-    repository_load_data: Optional["RepositoryLoadData"] = None,
+def _repository_def_from_target_def_inner(
+    target: object, repository_load_data: Optional["RepositoryLoadData"]
 ) -> Optional["RepositoryDefinition"]:
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.definitions_class import Definitions
-    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
         SINGLETON_REPOSITORY_NAME,
         CachingRepositoryData,
-        PendingRepositoryDefinition,
         RepositoryDefinition,
     )
     from dagster._core.definitions.source_asset import SourceAsset
     from dagster._utils.test.definitions import LazyDefinitions
-
-    DefinitionsLoadContext.set(
-        DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
-    )
 
     # LazyDefinitions is a private test utility
     if isinstance(target, LazyDefinitions):
@@ -737,10 +710,10 @@ def repository_def_from_target_def(
 
     if isinstance(target, Definitions):
         # reassign to handle both repository and pending repo case
-        target = target.get_inner_repository()
+        return target.get_repository_def()
 
     # special case - we can wrap a single job in a repository
-    if isinstance(target, (JobDefinition, GraphDefinition)):
+    elif isinstance(target, (JobDefinition, GraphDefinition)):
         # consider including job name in generated repo name
         return RepositoryDefinition(
             name=get_ephemeral_repository_name(target.name),
@@ -755,32 +728,89 @@ def repository_def_from_target_def(
         )
     elif isinstance(target, RepositoryDefinition):
         return target
-    elif isinstance(target, PendingRepositoryDefinition):
-        # must load repository from scratch
-        if repository_load_data is None:
-            return target.compute_repository_definition()
-        # can use the cached data to more efficiently load data
-        return target.reconstruct_repository_definition(repository_load_data)
     else:
         return None
 
 
-def repository_def_from_pointer(
-    pointer: CodePointer,
-    load_type: "DefinitionsLoadType",
-    repository_load_data: Optional["RepositoryLoadData"] = None,
-) -> "RepositoryDefinition":
+def repository_def_from_target_def(
+    target: object,
+) -> Optional["RepositoryDefinition"]:
     from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 
+    repo_def = _repository_def_from_target_def_inner(target, None)
+    return (
+        repo_def.replace_reconstruction_metadata(
+            DefinitionsLoadContext.get().get_pending_reconstruction_metadata()
+        )
+        if repo_def
+        else None
+    )
+
+
+def initialize_repository_def_from_pointer(
+    pointer: CodePointer,
+) -> "RepositoryDefinition":
+    """Initialize a repository definition from a code pointer
+    as part of an initial load.
+    """
+    from dagster._core.definitions.definitions_load_context import (
+        DefinitionsLoadContext,
+        DefinitionsLoadType,
+    )
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
+
     DefinitionsLoadContext.set(
-        DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
+        DefinitionsLoadContext(
+            load_type=DefinitionsLoadType.INITIALIZATION, repository_load_data=None
+        )
     )
     target = def_from_pointer(pointer)
-    repo_def = repository_def_from_target_def(target, load_type, repository_load_data)
+    repo_def = _repository_def_from_target_def_inner(
+        target,
+        None,
+    )
     if not repo_def:
         raise DagsterInvariantViolationError(
             f"CodePointer ({pointer.describe()}) must resolve to a "
             "RepositoryDefinition, JobDefinition, or JobDefinition. "
             f"Received a {type(target)}"
         )
-    return repo_def
+
+    return check.inst(repo_def, RepositoryDefinition).replace_reconstruction_metadata(
+        DefinitionsLoadContext.get().get_pending_reconstruction_metadata()
+    )
+
+
+def reconstruct_repository_def_from_pointer(
+    pointer: CodePointer,
+    repository_load_data: Optional["RepositoryLoadData"] = None,
+) -> "RepositoryDefinition":
+    """Reconstruct a repository definition from a code pointer,
+    avoiding recomputation of expensive load functions.
+    """
+    from dagster._core.definitions.definitions_load_context import (
+        DefinitionsLoadContext,
+        DefinitionsLoadType,
+    )
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
+
+    DefinitionsLoadContext.set(
+        DefinitionsLoadContext(
+            load_type=DefinitionsLoadType.RECONSTRUCTION, repository_load_data=repository_load_data
+        )
+    )
+    target = def_from_pointer(pointer)
+    repo_def = _repository_def_from_target_def_inner(
+        target,
+        repository_load_data,
+    )
+    if not repo_def:
+        raise DagsterInvariantViolationError(
+            f"CodePointer ({pointer.describe()}) must resolve to a "
+            "RepositoryDefinition, JobDefinition, or JobDefinition. "
+            f"Received a {type(target)}"
+        )
+
+    return check.inst(repo_def, RepositoryDefinition).replace_reconstruction_metadata(
+        DefinitionsLoadContext.get().get_pending_reconstruction_metadata()
+    )

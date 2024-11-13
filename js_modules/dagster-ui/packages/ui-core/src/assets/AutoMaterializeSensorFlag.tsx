@@ -1,8 +1,8 @@
+import {gql, useQuery} from '../apollo-client';
 import {
   AutoMaterializeSensorFlagQuery,
   AutoMaterializeSensorFlagQueryVariables,
 } from './types/AutoMaterializeSensorFlag.types';
-import {gql, useQuery} from '../apollo-client';
 
 type FlagState = 'unknown' | 'has-sensor-amp' | 'has-global-amp';
 

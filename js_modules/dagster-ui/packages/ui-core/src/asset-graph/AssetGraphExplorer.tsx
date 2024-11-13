@@ -16,6 +16,7 @@ import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import * as React from 'react';
 import {useLayoutEffect, useMemo, useState} from 'react';
+import {AssetGraphAssetSelectionInput} from 'shared/asset-graph/AssetGraphAssetSelectionInput.oss';
 import {useAssetGraphExplorerFilters} from 'shared/asset-graph/useAssetGraphExplorerFilters.oss';
 import styled from 'styled-components';
 
@@ -71,7 +72,6 @@ import {
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
-import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
 type AssetNode = AssetNodeForGraphQueryFragment;
@@ -721,14 +721,13 @@ const AssetGraphExplorerWithData = ({
                   )}
                   <div>{filterButton}</div>
                   <GraphQueryInputFlexWrap>
-                    <GraphQueryInput
-                      type="asset_graph"
+                    <AssetGraphAssetSelectionInput
                       items={graphQueryItems}
                       value={explorerPath.opsQuery}
                       placeholder="Type an asset subset…"
-                      onChange={(opsQuery) =>
-                        onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')
-                      }
+                      onChange={(opsQuery: string) => {
+                        onChangeExplorerPath({...explorerPath, opsQuery}, 'replace');
+                      }}
                       popoverPosition="bottom-left"
                     />
                   </GraphQueryInputFlexWrap>

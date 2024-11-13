@@ -35,8 +35,6 @@ Resources (Sling)
 
 .. autoclass:: SlingConnectionResource
 
-----
-
 *******************************
 dlt (dagster-embedded-elt.dlt)
 *******************************

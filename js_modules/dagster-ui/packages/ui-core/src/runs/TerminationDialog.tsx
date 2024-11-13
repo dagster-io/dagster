@@ -17,8 +17,8 @@ import * as React from 'react';
 
 import {NavigationBlock} from './NavigationBlock';
 import {TERMINATE_MUTATION} from './RunUtils';
-import {TerminateMutation, TerminateMutationVariables} from './types/RunUtils.types';
 import {useMutation} from '../apollo-client';
+import {TerminateMutation, TerminateMutationVariables} from './types/RunUtils.types';
 import {getSharedToaster} from '../app/DomUtils';
 import {TerminateRunPolicy} from '../graphql/types';
 import {testId} from '../testing/testId';

@@ -31,7 +31,11 @@ export const CodeLocationDefinitionsRoot = (props: Props) => {
     <Box style={{height: '100%', overflow: 'hidden'}} flex={{direction: 'column'}}>
       <CodeLocationPageHeader repoAddress={repoAddress} />
       <Box padding={{horizontal: 24}} border="bottom">
-        <CodeLocationTabs selectedTab="definitions" repoAddress={repoAddress} />
+        <CodeLocationTabs
+          selectedTab="definitions"
+          repoAddress={repoAddress}
+          locationEntry={locationEntry}
+        />
       </Box>
       <Box style={{overflow: 'hidden'}} flex={{direction: 'row', grow: 1}}>
         <Box

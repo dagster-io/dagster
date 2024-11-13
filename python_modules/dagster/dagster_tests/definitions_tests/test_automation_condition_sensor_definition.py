@@ -7,6 +7,10 @@ from dagster._core.definitions.automation_condition_sensor_definition import (
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.instance import DagsterInstance
+from dagster_test.toys.auto_materializing.large_graph import AssetLayerConfig, build_assets
 
 
 @pytest.mark.parametrize(
@@ -17,12 +21,12 @@ def test_constructor(selection: AssetSelection, user_code: bool) -> None:
     tags = {"apple": "banana", "orange": "kiwi"}
     automation_sensor = AutomationConditionSensorDefinition(
         "foo",
-        asset_selection=selection,
+        target=selection,
         run_tags=tags,
         description="fdsjkl",
         default_status=DefaultSensorStatus.RUNNING,
         minimum_interval_seconds=50,
-        user_code=user_code,
+        use_user_code_server=user_code,
     )
     assert automation_sensor.name == "foo"
     assert automation_sensor.run_tags == tags
@@ -42,10 +46,51 @@ def test_constructor(selection: AssetSelection, user_code: bool) -> None:
 def test_default_condition() -> None:
     with pytest.raises(ParameterCheckError, match="non-user-code"):
         AutomationConditionSensorDefinition(
-            "foo", asset_selection="*", default_condition=AutomationCondition.eager()
+            "foo", target="*", default_condition=AutomationCondition.eager()
         )
 
     sensor = AutomationConditionSensorDefinition(
-        "foo", asset_selection="*", default_condition=AutomationCondition.eager(), user_code=True
+        "foo",
+        target="*",
+        default_condition=AutomationCondition.eager(),
+        use_user_code_server=True,
     )
     assert sensor.default_condition == AutomationCondition.eager()
+
+
+def test_limits() -> None:
+    sensor = AutomationConditionSensorDefinition("foo", target="*", use_user_code_server=True)
+
+    defs = Definitions(
+        assets=build_assets(
+            "test",
+            layer_configs=[AssetLayerConfig(1000)],
+            automation_condition=AutomationCondition.eager(),
+        )
+    )
+    with pytest.raises(DagsterInvalidInvocationError, match='"foo" targets 1000 assets or checks'):
+        sensor(
+            build_sensor_context(
+                instance=DagsterInstance.ephemeral(),
+                repository_def=defs.get_repository_def(),
+            ),
+        )
+
+    # more than 500 total assets, but only 400 with a condition
+    with_condition = build_assets(
+        "cond",
+        layer_configs=[AssetLayerConfig(400)],
+        automation_condition=AutomationCondition.eager(),
+    )
+    without_condition = build_assets(
+        "no_cond",
+        layer_configs=[AssetLayerConfig(400)],
+        automation_condition=None,
+    )
+    defs = Definitions(assets=[*with_condition, *without_condition])
+    sensor(
+        build_sensor_context(
+            instance=DagsterInstance.ephemeral(),
+            repository_def=defs.get_repository_def(),
+        ),
+    )

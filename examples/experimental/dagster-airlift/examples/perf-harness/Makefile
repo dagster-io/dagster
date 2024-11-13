@@ -6,7 +6,6 @@ endef
 
 MAKEFILE_DIR := $(GET_MAKEFILE_DIR)
 export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
-export DAGSTER_AIRLIFT_PROXIED_STATE_DIR := $(MAKEFILE_DIR)/perf_harness/airflow_dags/proxied_state
 export AIRFLOW_HOME := $(MAKEFILE_DIR)/.airflow_home
 export DAGSTER_URL := http://localhost:3333
 
@@ -52,7 +51,7 @@ setup_local_env: scaffold_observe
 	mkdir -p $$AIRFLOW_HOME
 	mkdir -p $$DAGSTER_HOME
 	chmod +x ../../scripts/airflow_setup.sh
-	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/perf_harness/airflow_dags
+	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/perf_harness/airflow_dags $(AIRFLOW_HOME)
 
 run_perf_scenarios_test:
 	perf-harness 1 1 1

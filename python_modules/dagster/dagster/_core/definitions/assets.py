@@ -1406,6 +1406,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 io_manager_def=None,
                 observe_fn=None,
                 op_tags=None,
+                automation_condition=None,
                 auto_observe_interval_minutes=None,
                 freshness_policy=None,
                 _required_resource_keys=None,

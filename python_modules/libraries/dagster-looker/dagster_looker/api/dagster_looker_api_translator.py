@@ -2,14 +2,16 @@ from enum import Enum
 from typing import Any, Dict, Mapping, Optional, Union
 
 from dagster import (
+    AssetKey,
     AssetSpec,
     _check as check,
 )
 from dagster._annotations import public
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
 from dagster._utils.log import get_dagster_logger
 from looker_sdk.sdk.api40.methods import Looker40SDK
-from looker_sdk.sdk.api40.models import Dashboard, DashboardFilter, LookmlModelExplore
+from looker_sdk.sdk.api40.models import Dashboard, DashboardFilter, LookmlModelExplore, User
 
 logger = get_dagster_logger("dagster_looker")
 
@@ -20,6 +22,7 @@ class LookerInstanceData:
 
     explores_by_id: Dict[str, LookmlModelExplore]
     dashboards_by_id: Dict[str, Dashboard]
+    users_by_id: Dict[str, User]
 
     def to_state(self, sdk: Looker40SDK) -> Mapping[str, Any]:
         return {
@@ -30,6 +33,10 @@ class LookerInstanceData:
             "explores_by_id": {
                 explore_id: (sdk.serialize(api_model=explore_data).decode())  # type: ignore
                 for explore_id, explore_data in self.explores_by_id.items()
+            },
+            "users_by_id": {
+                user_id: (sdk.serialize(api_model=user_data).decode())  # type: ignore
+                for user_id, user_data in self.users_by_id.items()
             },
         }
 
@@ -47,7 +54,16 @@ class LookerInstanceData:
             for dashboard_id, serialized_looker_dashboard in state["dashboards_by_id"].items()
         }
 
-        return LookerInstanceData(explores_by_id=explores_by_id, dashboards_by_id=dashboards_by_id)
+        users_by_id = {
+            user_id: (sdk.deserialize(data=serialized_user, structure=User))  # type: ignore
+            for user_id, serialized_user in state["users_by_id"].items()
+        }
+
+        return LookerInstanceData(
+            explores_by_id=explores_by_id,
+            dashboards_by_id=dashboards_by_id,
+            users_by_id=users_by_id,
+        )
 
 
 @record
@@ -88,17 +104,41 @@ class LookmlView:
 class LookerStructureData:
     structure_type: LookerStructureType
     data: Union[LookmlView, LookmlModelExplore, DashboardFilter, Dashboard]
+    base_url: Optional[str] = None
 
 
 class DagsterLookerApiTranslator:
-    def get_view_asset_spec(self, lookml_view: LookmlView) -> AssetSpec:
+    def __init__(self, looker_instance_data: Optional[LookerInstanceData]):
+        self._looker_instance_data = looker_instance_data
+
+    @property
+    def instance_data(self) -> Optional[LookerInstanceData]:
+        return self._looker_instance_data
+
+    def get_view_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
+        lookml_view = check.inst(looker_structure.data, LookmlView)
+        return AssetKey(["view", lookml_view.view_name])
+
+    def get_view_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
+        _ = check.inst(looker_structure.data, LookmlView)
         return AssetSpec(
-            key=["view", lookml_view.view_name],
+            key=self.get_asset_key(looker_structure),
         )
 
-    def get_explore_asset_spec(
-        self, lookml_explore: Union[LookmlModelExplore, DashboardFilter]
-    ) -> AssetSpec:
+    def get_explore_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
+        lookml_explore = check.inst(looker_structure.data, (LookmlModelExplore, DashboardFilter))
+        if isinstance(lookml_explore, LookmlModelExplore):
+            return AssetKey(check.not_none(lookml_explore.id))
+        elif isinstance(lookml_explore, DashboardFilter):
+            lookml_model_name = check.not_none(lookml_explore.model)
+            lookml_explore_name = check.not_none(lookml_explore.explore)
+            return AssetKey(f"{lookml_model_name}::{lookml_explore_name}")
+        else:
+            check.assert_never(lookml_explore)
+
+    def get_explore_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
+        lookml_explore = check.inst(looker_structure.data, (LookmlModelExplore, DashboardFilter))
+
         if isinstance(lookml_explore, LookmlModelExplore):
             explore_base_view = LookmlView(
                 view_name=check.not_none(lookml_explore.view_name),
@@ -114,10 +154,14 @@ class DagsterLookerApiTranslator:
             ]
 
             return AssetSpec(
-                key=check.not_none(lookml_explore.id),
+                key=self.get_asset_key(looker_structure),
                 deps=list(
                     {
-                        self.get_view_asset_spec(lookml_view).key
+                        self.get_view_asset_spec(
+                            LookerStructureData(
+                                structure_type=LookerStructureType.VIEW, data=lookml_view
+                            )
+                        ).key
                         for lookml_view in [explore_base_view, *explore_join_views]
                     }
                 ),
@@ -125,19 +169,37 @@ class DagsterLookerApiTranslator:
                     "dagster/kind/looker": "",
                     "dagster/kind/explore": "",
                 },
+                metadata={
+                    "dagster-looker/web_url": MetadataValue.url(
+                        f"{looker_structure.base_url}/explore/{check.not_none(lookml_explore.id).replace('::', '/')}"
+                    ),
+                },
             )
         elif isinstance(lookml_explore, DashboardFilter):
-            lookml_model_name = check.not_none(lookml_explore.model)
-            lookml_explore_name = check.not_none(lookml_explore.explore)
+            return AssetSpec(key=self.get_asset_key(looker_structure))
+        else:
+            check.assert_never(lookml_explore)
 
-            return AssetSpec(key=f"{lookml_model_name}::{lookml_explore_name}")
+    def get_dashboard_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
+        looker_dashboard = check.inst(looker_structure.data, Dashboard)
+        return AssetKey(f"{check.not_none(looker_dashboard.title)}_{looker_dashboard.id}")
 
-    def get_dashboard_asset_spec(self, looker_dashboard: Dashboard) -> AssetSpec:
+    def get_dashboard_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
+        looker_dashboard = check.inst(looker_structure.data, Dashboard)
+
+        user = None
+        if self.instance_data and looker_dashboard.user_id:
+            user = self.instance_data.users_by_id.get(looker_dashboard.user_id)
+
         return AssetSpec(
-            key=f"{check.not_none(looker_dashboard.title)}_{looker_dashboard.id}",
+            key=self.get_asset_key(looker_structure),
             deps=list(
                 {
-                    self.get_explore_asset_spec(dashboard_filter).key
+                    self.get_explore_asset_spec(
+                        LookerStructureData(
+                            structure_type=LookerStructureType.EXPLORE, data=dashboard_filter
+                        )
+                    ).key
                     for dashboard_filter in looker_dashboard.dashboard_filters or []
                 }
             ),
@@ -145,21 +207,32 @@ class DagsterLookerApiTranslator:
                 "dagster/kind/looker": "",
                 "dagster/kind/dashboard": "",
             },
+            metadata={
+                "dagster-looker/web_url": MetadataValue.url(
+                    f"{looker_structure.base_url}{looker_dashboard.url}"
+                ),
+            },
+            owners=[user.email] if user and user.email else None,
         )
 
     @public
     def get_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
         if looker_structure.structure_type == LookerStructureType.VIEW:
-            data = check.inst(looker_structure.data, LookmlView)
-
-            return self.get_view_asset_spec(data)
+            return self.get_view_asset_spec(looker_structure)
         if looker_structure.structure_type == LookerStructureType.EXPLORE:
-            data = check.inst(looker_structure.data, (LookmlModelExplore, DashboardFilter))
-
-            return self.get_explore_asset_spec(data)
+            return self.get_explore_asset_spec(looker_structure)
         elif looker_structure.structure_type == LookerStructureType.DASHBOARD:
-            data = check.inst(looker_structure.data, Dashboard)
+            return self.get_dashboard_asset_spec(looker_structure)
+        else:
+            check.assert_never(looker_structure.structure_type)
 
-            return self.get_dashboard_asset_spec(data)
+    @public
+    def get_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
+        if looker_structure.structure_type == LookerStructureType.VIEW:
+            return self.get_view_asset_key(looker_structure)
+        if looker_structure.structure_type == LookerStructureType.EXPLORE:
+            return self.get_explore_asset_key(looker_structure)
+        elif looker_structure.structure_type == LookerStructureType.DASHBOARD:
+            return self.get_dashboard_asset_key(looker_structure)
         else:
             check.assert_never(looker_structure.structure_type)

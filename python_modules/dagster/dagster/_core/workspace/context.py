@@ -22,8 +22,16 @@ from typing import (
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._config.snap import ConfigTypeSnap
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.selector import JobSelector, JobSubsetSelector, RepositorySelector
+from dagster._core.definitions.remote_asset_graph import RemoteRepositoryAssetNode
+from dagster._core.definitions.selector import (
+    JobSelector,
+    JobSubsetSelector,
+    RepositorySelector,
+    ScheduleSelector,
+    SensorSelector,
+)
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterCodeLocationNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -52,6 +60,9 @@ from dagster._core.remote_representation.origin import (
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
+from dagster._core.snap.dagster_types import DagsterTypeSnap
+from dagster._core.snap.mode import ResourceDefSnap
+from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._core.workspace.permissions import (
     PermissionResult,
@@ -65,15 +76,13 @@ from dagster._core.workspace.workspace import (
     WorkspaceSnapshot,
     location_status_from_location_entry,
 )
+from dagster._grpc.server import INCREASE_TIMEOUT_DAGSTER_YAML_MSG
 from dagster._time import get_current_timestamp
 from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import (
-        RemoteWorkspaceAssetGraph,
-        RemoteWorkspaceAssetNode,
-    )
+    from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
     from dagster._core.remote_representation import (
         PartitionConfigSnap,
         PartitionExecutionErrorSnap,
@@ -340,12 +349,6 @@ class BaseWorkspaceRequestContext(LoadingContext):
     def get_base_deployment_context(self) -> Optional["BaseWorkspaceRequestContext"]:
         return None
 
-    def get_asset_node(self, asset_key: AssetKey) -> Optional["RemoteWorkspaceAssetNode"]:
-        if not self.get_workspace_snapshot().asset_graph.has(asset_key):
-            return None
-
-        return self.get_workspace_snapshot().asset_graph.get(asset_key)
-
     def get_repository(
         self, selector: Union[RepositorySelector, RepositoryHandle]
     ) -> RemoteRepository:
@@ -353,19 +356,115 @@ class BaseWorkspaceRequestContext(LoadingContext):
             selector.repository_name
         )
 
-    def get_sensor(self, selector: InstigatorHandle) -> RemoteSensor:
-        return (
-            self.get_code_location(selector.location_name)
-            .get_repository(selector.repository_name)
-            .get_sensor(selector.instigator_name)
-        )
+    def get_sensor(
+        self, selector: Union[InstigatorHandle, SensorSelector]
+    ) -> Optional[RemoteSensor]:
+        if not self.has_code_location(selector.location_name):
+            return None
 
-    def get_schedule(self, selector: InstigatorHandle) -> RemoteSchedule:
-        return (
-            self.get_code_location(selector.location_name)
-            .get_repository(selector.repository_name)
-            .get_schedule(selector.instigator_name)
+        location = self.get_code_location(selector.location_name)
+
+        if not location.has_repository(selector.repository_name):
+            return None
+
+        repository = location.get_repository(selector.repository_name)
+        if not repository.has_sensor(selector.instigator_name):
+            return None
+
+        return repository.get_sensor(selector.instigator_name)
+
+    def get_schedule(
+        self, selector: Union[InstigatorHandle, ScheduleSelector]
+    ) -> Optional[RemoteSchedule]:
+        if not self.has_code_location(selector.location_name):
+            return None
+
+        location = self.get_code_location(selector.location_name)
+
+        if not location.has_repository(selector.repository_name):
+            return None
+
+        repository = location.get_repository(selector.repository_name)
+        if not repository.has_schedule(selector.instigator_name):
+            return None
+
+        return repository.get_schedule(selector.instigator_name)
+
+    def get_node_def(
+        self,
+        job_selector: Union[JobSubsetSelector, JobSelector],
+        node_def_name: str,
+    ) -> Union[OpDefSnap, GraphDefSnap]:
+        job = self.get_full_job(job_selector)
+        return job.get_node_def_snap(node_def_name)
+
+    def get_config_type(
+        self,
+        job_selector: Union[JobSubsetSelector, JobSelector],
+        type_key: str,
+    ) -> ConfigTypeSnap:
+        job = self.get_full_job(job_selector)
+        return job.config_schema_snapshot.get_config_snap(type_key)
+
+    def get_dagster_type(
+        self,
+        job_selector: Union[JobSubsetSelector, JobSelector],
+        type_key: str,
+    ) -> DagsterTypeSnap:
+        job = self.get_full_job(job_selector)
+        return job.job_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap(type_key)
+
+    def get_resources(
+        self,
+        job_selector: Union[JobSubsetSelector, JobSelector],
+    ) -> Sequence[ResourceDefSnap]:
+        job = self.get_full_job(job_selector)
+        if not job.mode_def_snaps:
+            return []
+        return job.mode_def_snaps[0].resource_def_snaps
+
+    def get_dagster_library_versions(self, location_name: str) -> Optional[Mapping[str, str]]:
+        return self.get_code_location(location_name).get_dagster_library_versions()
+
+    def get_schedules_targeting_job(
+        self,
+        selector: Union[JobSubsetSelector, JobSelector],
+    ) -> Sequence[RemoteSchedule]:
+        repository = self.get_code_location(selector.location_name).get_repository(
+            selector.repository_name
         )
+        return repository.schedules_by_job_name.get(selector.job_name, [])
+
+    def get_sensors_targeting_job(
+        self,
+        selector: Union[JobSubsetSelector, JobSelector],
+    ) -> Sequence[RemoteSensor]:
+        repository = self.get_code_location(selector.location_name).get_repository(
+            selector.repository_name
+        )
+        return repository.sensors_by_job_name.get(selector.job_name, [])
+
+    def get_assets_in_job(
+        self,
+        selector: Union[JobSubsetSelector, JobSelector],
+    ) -> Sequence[RemoteRepositoryAssetNode]:
+        if not self.has_code_location(selector.location_name):
+            return []
+
+        location = self.get_code_location(selector.location_name)
+        if not location.has_repository(selector.repository_name):
+            return []
+
+        repository = location.get_repository(selector.repository_name)
+        snaps = repository.get_asset_node_snaps(job_name=selector.job_name)
+
+        # use repository scoped nodes to match existing behavior,
+        # easily switched to workspace scope nodes by using self.asset_graph
+        return [
+            repository.asset_graph.get(snap.asset_key)
+            for snap in snaps
+            if repository.asset_graph.has(snap.asset_key)
+        ]
 
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):
@@ -562,6 +661,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                     startup_timeout=instance.code_server_process_startup_timeout,
                     log_level=code_server_log_level,
                     wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
+                    additional_timeout_msg=INCREASE_TIMEOUT_DAGSTER_YAML_MSG,
                 )
             )
 

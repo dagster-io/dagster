@@ -59,8 +59,10 @@ if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
 
 
-def is_base_asset_job_name(name: str) -> bool:
-    return name == IMPLICIT_ASSET_JOB_NAME
+def is_reserved_asset_job_name(name: str) -> bool:
+    from dagster._core.definitions.target import ANONYMOUS_ASSET_JOB_PREFIX
+
+    return name == IMPLICIT_ASSET_JOB_NAME or name.startswith(ANONYMOUS_ASSET_JOB_PREFIX)
 
 
 def get_base_asset_job_lambda(

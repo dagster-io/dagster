@@ -44,7 +44,7 @@ def order_forecast_model(daily_order_summary: pd.DataFrame) -> np.ndarray:
 def predicted_orders(
     daily_order_summary: pd.DataFrame, order_forecast_model: np.ndarray
 ) -> pd.DataFrame:
-    """Predicted orders for the next 30 days based on the fit paramters."""
+    """Predicted orders for the next 30 days based on the fit parameters."""
     a, b = tuple(order_forecast_model)
     start_date = daily_order_summary.order_date.max()
     future_dates = pd.date_range(start=start_date, end=start_date + pd.DateOffset(days=30))

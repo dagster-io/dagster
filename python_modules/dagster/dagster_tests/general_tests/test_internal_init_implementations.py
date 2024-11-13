@@ -39,7 +39,10 @@ def test_dagster_internal_init_class_follow_rules(cls: Type):
         " dagster_internal_init methods cannot have default values"
     )
 
-    assert all(p.kind == Parameter.KEYWORD_ONLY for p in dagster_internal_init_params.values()), (
+    assert all(
+        p.kind == Parameter.KEYWORD_ONLY or (p.name == "kwargs" and p.kind == Parameter.VAR_KEYWORD)
+        for p in dagster_internal_init_params.values()
+    ), (
         f"{cls.__name__}.dagster_internal_init has one or more positional arguments,"
         " dagster_internal_init methods can only have keyword-only arguments"
     )

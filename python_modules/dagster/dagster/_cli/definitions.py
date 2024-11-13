@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 
 import click
@@ -54,12 +55,17 @@ def validate_command_options(f):
     This command indicates which code locations contain errors, and which ones can be successfully loaded. 
     Code locations containing errors are considered invalid, otherwise valid.
     
+    When running, this command sets the environment variable `DAGSTER_IS_DEFS_VALIDATION_CLI=1`. 
+    This environment variable can be used to control the behavior of your code in validation mode.
+    
     This command returns an exit code 1 when errors are found, otherwise an exit code 0.
     
     This command should be run in a Python environment where the `dagster` package is installed.
     """,
 )
 def definitions_validate_command(log_level: str, log_format: str, **kwargs: ClickArgValue):
+    os.environ["DAGSTER_IS_DEFS_VALIDATION_CLI"] = "1"
+
     configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster")
 

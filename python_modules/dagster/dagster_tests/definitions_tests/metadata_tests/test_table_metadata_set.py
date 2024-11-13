@@ -31,12 +31,24 @@ def test_table_metadata_set() -> None:
     assert TableMetadataSet.extract(dict(TableMetadataSet())) == TableMetadataSet()
 
 
-def test_relation_identifier() -> None:
-    table_metadata = TableMetadataSet(relation_identifier="my_database.my_schema.my_table")
+def test_table_name() -> None:
+    table_metadata = TableMetadataSet(table_name="my_database.my_schema.my_table")
 
     dict_table_metadata = dict(table_metadata)
-    assert dict_table_metadata == {"dagster/relation_identifier": "my_database.my_schema.my_table"}
+    assert dict_table_metadata == {"dagster/table_name": "my_database.my_schema.my_table"}
     AssetMaterialization(asset_key="a", metadata=dict_table_metadata)
+
+
+def test_legacy_table_name() -> None:
+    table_metadata = TableMetadataSet.extract(
+        {"dagster/relation_identifier": "my_database.my_schema.my_table"}
+    )
+    assert table_metadata.table_name == "my_database.my_schema.my_table"
+
+    table_metadata = TableMetadataSet.extract(
+        {"dagster/table_name": "real value", "dagster/relation_identifier": "redundant"}
+    )
+    assert table_metadata.table_name == "real value"
 
 
 def test_row_count() -> None:

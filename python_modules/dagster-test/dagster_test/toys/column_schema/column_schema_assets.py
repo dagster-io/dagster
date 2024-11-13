@@ -10,6 +10,15 @@ from dagster import MaterializeResult, TableColumn, TableSchema, asset
     compute_kind="dbt",
     description="asset_one_description",
     group_name="group1",
+    metadata={
+        "dagster/column_schema": TableSchema(
+            columns=[
+                TableColumn("asset-1-col", "string", tags={"tag_key": "value"}),
+                TableColumn("col-2", "string", tags={"tag_key2": "value2"}),
+            ]
+        ),
+        "dagster/table_name": "asset_one_table",
+    },
 )
 def column_schema_asset():
     table_schema = TableSchema(
@@ -28,6 +37,15 @@ def column_schema_asset():
     compute_kind="pandas",
     description="asset_two_description",
     group_name="group2",
+    metadata={
+        "dagster/column_schema": TableSchema(
+            columns=[
+                TableColumn("asset-2-col", "string", tags={"k": "v"}),
+                TableColumn("col-2", "string", tags={"k2": "v2"}),
+            ]
+        ),
+        "dagster/table_name": "asset_two_table",
+    },
 )
 def column_schema_asset_2():
     table_schema = TableSchema(
@@ -45,6 +63,9 @@ def column_schema_asset_2():
     compute_kind="Plot",
     description="random_columns_asset_description",
     group_name="random",
+    metadata={
+        "dagster/table_name": "random_columns_table",
+    },
 )
 def random_columns_asset():
     selected_numbers = set()

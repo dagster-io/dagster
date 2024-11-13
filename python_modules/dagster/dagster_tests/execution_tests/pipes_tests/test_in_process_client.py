@@ -3,13 +3,19 @@ from dagster import (
     AssetCheckResult,
     AssetCheckSpec,
     AssetExecutionContext,
+    AssetKey,
     AssetSpec,
     Definitions,
     ExecuteInProcessResult,
     MaterializeResult,
+    OpExecutionContext,
     asset,
     asset_check,
+    instance_for_test,
+    job,
+    load_assets_from_current_module,
     multi_asset,
+    op,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.errors import DagsterInvariantViolationError
@@ -27,6 +33,29 @@ def execute_asset_through_def(assets_def, resources) -> ExecuteInProcessResult:
     )
 
 
+def test_op() -> None:
+    called = {}
+
+    def _impl(context: PipesContext):
+        context.log.info("hello")
+        called["yes"] = True
+
+    @op
+    def an_op(context: OpExecutionContext, inprocess_client: InProcessPipesClient):
+        return inprocess_client.run(context=context, fn=_impl).get_results()
+
+    @job
+    def a_job():
+        an_op()
+
+    with instance_for_test() as instance:
+        result = a_job.execute_in_process(
+            resources={"inprocess_client": InProcessPipesClient()}, instance=instance
+        )
+    assert called["yes"]
+    assert result.success
+
+
 def test_basic_materialization() -> None:
     called = {}
 
@@ -36,7 +65,9 @@ def test_basic_materialization() -> None:
 
     @asset
     def an_asset(context: AssetExecutionContext, inprocess_client: InProcessPipesClient):
-        return inprocess_client.run(context=context, fn=_impl).get_results()
+        return inprocess_client.run(
+            context=context, fn=_impl, metadata={"extra_key": "value"}
+        ).get_results()
 
     result = execute_asset_through_def(
         an_asset, resources={"inprocess_client": InProcessPipesClient()}
@@ -46,6 +77,29 @@ def test_basic_materialization() -> None:
     mat_events = result.get_asset_materialization_events()
     assert len(mat_events) == 1
     assert mat_events[0].materialization.metadata["some_key"].value == "some_value"
+    assert mat_events[0].materialization.metadata["extra_key"].value == "value"
+
+
+def test_implicit_materialization() -> None:
+    called = {}
+
+    def _impl(context: PipesContext):
+        called["yes"] = True
+
+    @asset
+    def an_asset(context: AssetExecutionContext, inprocess_client: InProcessPipesClient):
+        return inprocess_client.run(
+            context=context, fn=_impl, metadata={"extra_key": "value"}
+        ).get_results()
+
+    result = execute_asset_through_def(
+        an_asset, resources={"inprocess_client": InProcessPipesClient()}
+    )
+    assert called["yes"]
+    assert result.success
+    mat_events = result.get_asset_materialization_events()
+    assert len(mat_events) == 1
+    assert mat_events[0].materialization.metadata["extra_key"].value == "value"
 
 
 def test_get_materialize_result() -> None:
@@ -59,7 +113,9 @@ def test_get_materialize_result() -> None:
     def an_asset(
         context: AssetExecutionContext, inprocess_client: InProcessPipesClient
     ) -> MaterializeResult:
-        return inprocess_client.run(context=context, fn=_impl).get_materialize_result()
+        return inprocess_client.run(
+            context=context, fn=_impl, metadata={"extra_metadata": "my_value"}
+        ).get_materialize_result()
 
     result = execute_asset_through_def(
         an_asset, resources={"inprocess_client": InProcessPipesClient()}
@@ -68,7 +124,86 @@ def test_get_materialize_result() -> None:
     mat_events = result.get_asset_materialization_events()
     assert len(mat_events) == 1
     assert mat_events[0].materialization.metadata["some_key"].value == "some_value"
+    assert mat_events[0].materialization.metadata["extra_metadata"].value == "my_value"
     assert called["yes"]
+
+
+@asset(
+    key=["key0"],
+    check_specs=[
+        AssetCheckSpec(name="check_one", asset="key0"),
+    ],
+)
+def key_will_contain_slashes_implicit(
+    context: AssetExecutionContext, inprocess_client: InProcessPipesClient
+):
+    def _impl(context: PipesContext):
+        context.report_asset_materialization(
+            metadata={"some_key": "some_value"},
+        )
+
+        context.report_asset_check("check_one", passed=True, metadata={"key_one": "value_one"})
+
+    mat_result = inprocess_client.run(context=context, fn=_impl).get_materialize_result()
+
+    check_result_one = mat_result.check_result_named("check_one")
+    assert check_result_one.passed is True
+    assert check_result_one.metadata["key_one"].value == "value_one"
+
+    return mat_result
+
+
+def test_asset_key_with_slashes_implicit() -> None:
+    all_assets = load_assets_from_current_module(key_prefix="foo/bar")
+    an_asset_with_slash = next(a for a in all_assets if a.key == AssetKey(["foo/bar", "key0"]))  # type: ignore
+
+    result = execute_asset_through_def(
+        an_asset_with_slash, resources={"inprocess_client": InProcessPipesClient()}
+    )
+    assert result.success
+    mat_events = result.get_asset_materialization_events()
+    assert len(mat_events) == 1
+    assert mat_events[0].materialization.metadata["some_key"].value == "some_value"
+
+
+@asset(
+    key=["key1"],
+    check_specs=[
+        AssetCheckSpec(name="check_one", asset="key1"),
+    ],
+)
+def key_will_contain_slashes_explicit(
+    context: AssetExecutionContext, inprocess_client: InProcessPipesClient
+):
+    def _impl(context: PipesContext):
+        context.report_asset_materialization(
+            metadata={"some_key": "some_value"}, asset_key=r"foo\/bar/key1"
+        )
+
+        context.report_asset_check(
+            "check_one", passed=True, asset_key=r"foo\/bar/key1", metadata={"key_one": "value_one"}
+        )
+
+    mat_result = inprocess_client.run(context=context, fn=_impl).get_materialize_result()
+
+    check_result_one = mat_result.check_result_named("check_one")
+    assert check_result_one.passed is True
+    assert check_result_one.metadata["key_one"].value == "value_one"
+
+    return mat_result
+
+
+def test_asset_key_with_slashes_explicit() -> None:
+    all_assets = load_assets_from_current_module(key_prefix="foo/bar")
+    an_asset_with_slash = next(a for a in all_assets if a.key == AssetKey(["foo/bar", "key1"]))  # type: ignore
+
+    result = execute_asset_through_def(
+        an_asset_with_slash, resources={"inprocess_client": InProcessPipesClient()}
+    )
+    assert result.success
+    mat_events = result.get_asset_materialization_events()
+    assert len(mat_events) == 1
+    assert mat_events[0].materialization.metadata["some_key"].value == "some_value"
 
 
 def test_get_double_report_error() -> None:
@@ -136,18 +271,22 @@ def test_with_asset_checks() -> None:
     # Bug in MaterializeResult type inference
     # def an_asset(context: AssetExecutionContext, inprocess_client: InProcessPipesClient) -> MaterializeResult:
     def an_asset(context: AssetExecutionContext, inprocess_client: InProcessPipesClient):
-        mat_result = inprocess_client.run(context=context, fn=_impl).get_materialize_result()
+        mat_result = inprocess_client.run(
+            context=context, fn=_impl, metadata={"extra_metadata": "my_value"}
+        ).get_materialize_result()
         assert len(mat_result.check_results) == 2
 
         check_result_one = mat_result.check_result_named("check_one")
         assert check_result_one.passed is True
         assert check_result_one.severity == AssetCheckSeverity.ERROR
         assert check_result_one.metadata["key_one"].value == "value_one"
+        assert check_result_one.metadata["extra_metadata"].value == "my_value"
 
         check_result_two = mat_result.check_result_named("check_two")
         assert check_result_two.passed is False
         assert check_result_two.severity == AssetCheckSeverity.WARN
         assert check_result_two.metadata["key_two"].value == "value_two"
+        assert check_result_two.metadata["extra_metadata"].value == "my_value"
 
         called["yes"] = True
         return mat_result

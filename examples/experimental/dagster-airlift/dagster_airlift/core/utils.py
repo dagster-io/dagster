@@ -31,6 +31,10 @@ def airflow_kind_dict() -> dict:
     return {f"{KIND_PREFIX}airflow": ""}
 
 
+def airlift_mapped_kind_dict() -> dict:
+    return {f"{KIND_PREFIX}airliftmapped": ""}
+
+
 def spec_iterator(
     assets: Optional[
         Iterable[Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]]

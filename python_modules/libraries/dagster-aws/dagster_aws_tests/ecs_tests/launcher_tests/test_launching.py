@@ -2,6 +2,7 @@ import copy
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Dict, List, Set
 
 import pytest
 from botocore.exceptions import ClientError
@@ -968,6 +969,90 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, remote_job):
             job_code_origin=remote_job.get_python_origin(),
         )
         with pytest.raises(Exception, match="Cannot override system ECS tag: dagster/run_id"):
+            instance.launch_run(run.run_id, workspace)
+
+
+@pytest.mark.parametrize(
+    [
+        "run_tags",
+        "expected_ecs_tag_keys",
+        "allow_list",
+    ],
+    [
+        (
+            {
+                "dagster/partition_key": "abc",
+                "dagster/git_commit_hash": "b54e4ddfbf2f4f661cdb312b6f3dd49de6139c94",
+            },
+            {"dagster/run_id", "dagster/job_name"},
+            [],
+        ),
+        (
+            {
+                "dagster/partition_key": "abc",
+                "dagster/git_commit_hash": "b54e4ddfbf2f4f661cdb312b6f3dd49de6139c94",
+            },
+            {"dagster/partition_key", "dagster/job_name", "dagster/run_id"},
+            ["dagster/partition_key"],
+        ),
+    ],
+)
+def test_propagate_tags_include_all(
+    run_tags: Dict[str, str],
+    expected_ecs_tag_keys: Set[str],
+    allow_list: List[str],
+    instance_cm,
+    workspace,
+    job,
+    remote_job,
+    ecs,
+):
+    with instance_cm(
+        {
+            "propagate_tags": {
+                "allow_list": allow_list,
+            },
+        }
+    ) as instance:
+        run = instance.create_run_for_job(
+            job,
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
+        )
+        test_tags = {**run_tags, "ecs/memory": "30720", "ecs/cpu": "4096"}
+
+        instance.add_run_tags(run.run_id, test_tags)
+        instance.launch_run(run.run_id, workspace)
+
+        run_tags.update({"dagster/run_id": run.run_id})
+        initial_tasks = ecs.list_tasks()
+        tasks = ecs.describe_tasks(tasks=initial_tasks["taskArns"])
+        tags = tasks["tasks"][1]["tags"]
+        expected_ecs_tag_keys.add("dagster/run_id")
+        assert set([tag["key"] for tag in tags]) == expected_ecs_tag_keys
+
+
+@pytest.mark.parametrize(
+    ["propagate_tags"],
+    [
+        [{"allow_list": ["dagster/op_selection"]}],
+        [{"allow_list": ["dagster/solid_selection", "dagster/git_commit_hash"]}],
+    ],
+)
+def test_propagate_tags_args_validated(
+    instance_cm,
+    workspace,
+    job,
+    remote_job,
+    propagate_tags: Dict[str, Any],
+):
+    with pytest.raises(CheckError):
+        with instance_cm({"propagate_tags": propagate_tags}) as instance:
+            run = instance.create_run_for_job(
+                job,
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
+            )
             instance.launch_run(run.run_id, workspace)
 
 

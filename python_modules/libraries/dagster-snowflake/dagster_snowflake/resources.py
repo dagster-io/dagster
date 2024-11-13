@@ -17,9 +17,8 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
-from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils.cached_method import cached_method
-from pydantic import Field, validator
+from pydantic import Field, model_validator, validator
 
 from dagster_snowflake.constants import (
     SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER,
@@ -235,7 +234,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             "Indicate alternative database connection engine. Permissible option is "
             "'sqlalchemy' otherwise defaults to use the Snowflake Connector for Python."
         ),
-        is_required=False,
+        is_required=False,  # type: ignore
     )
 
     cache_column_metadata: Optional[str] = Field(
@@ -278,7 +277,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             )
         return v
 
-    @compat_model_validator(mode="before")
+    @model_validator(mode="before")
     def validate_authentication(cls, values):
         auths_set = 0
         auths_set += 1 if values.get("password") is not None else 0
@@ -729,6 +728,7 @@ def fetch_last_updated_timestamps(
     schema: str,
     tables: Sequence[str],
     database: Optional[str] = None,
+    ignore_missing_tables: Optional[bool] = False,
 ) -> Mapping[str, datetime]:
     """Fetch the last updated times of a list of tables in Snowflake.
 
@@ -742,6 +742,8 @@ def fetch_last_updated_timestamps(
         tables (Sequence[str]): A list of table names to fetch the last updated time for.
         database (Optional[str]): The database of the table. Only required if the connection
             has not been set with a database.
+        ignore_missing_tables (Optional[bool]): If True, tables not found in Snowflake
+            will be excluded from the result.
 
     Returns:
         Mapping[str, datetime]: A dictionary of table names to their last updated time in UTC.
@@ -767,6 +769,8 @@ def fetch_last_updated_timestamps(
     result_correct_case = {}
     for table_name in tables:
         if table_name.upper() not in result_mapping:
+            if ignore_missing_tables:
+                continue
             raise ValueError(f"Table {table_name} could not be found.")
         last_altered = result_mapping[table_name.upper()]
         check.invariant(

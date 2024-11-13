@@ -78,22 +78,24 @@ def assets_with_task_mappings(
     this information. It is a list of dictionaries with keys "dag_id" and "task_id".
 
     Example:
-    .. code-block:: python
-        from dagster import AssetSpec, Definitions, asset
-        from dagster_airlift.core import assets_with_task_mappings
 
-        @asset
-        def asset_one() -> None: ...
+        .. code-block:: python
 
-        defs = Definitions(
-            assets=assets_with_task_mappings(
-                dag_id="dag_one",
-                task_mappings={
-                    "task_one": [asset_one],
-                    "task_two": [AssetSpec(key="asset_two"), AssetSpec(key="asset_three")],
-                },
+            from dagster import AssetSpec, Definitions, asset
+            from dagster_airlift.core import assets_with_task_mappings
+
+            @asset
+            def asset_one() -> None: ...
+
+            defs = Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="dag_one",
+                    task_mappings={
+                        "task_one": [asset_one],
+                        "task_two": [AssetSpec(key="asset_two"), AssetSpec(key="asset_three")],
+                    },
+                )
             )
-        )
     """
     assets_list = []
     for task_id, assets in task_mappings.items():
@@ -124,7 +126,9 @@ def assets_with_dag_mappings(
     this information. It is a list of strings, where each string is a dag_id which the asset is associated with.
 
     Example:
+
     .. code-block:: python
+
         from dagster import AssetSpec, Definitions, asset
         from dagster_airlift.core import assets_with_dag_mappings
 

@@ -1,4 +1,5 @@
 import datetime
+import inspect
 import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, Mapping, Optional, Type, TypeVar
@@ -9,6 +10,7 @@ from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
+    AutomationResult,
 )
 from dagster._core.definitions.declarative_automation.legacy.legacy_context import (
     LegacyRuleEvaluationContext,
@@ -21,7 +23,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     StructuredCursor,
 )
 from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
@@ -69,11 +70,6 @@ class AutomationContext(Generic[T_EntityKey]):
         )
         condition_unqiue_id = condition.get_node_unique_id(parent_unique_id=None, index=None)
 
-        if condition.has_rule_condition and evaluator.emit_backfills:
-            raise DagsterInvalidDefinitionError(
-                "Cannot use AutoMaterializePolicies and request backfills. Please use AutomationCondition or set DECLARATIVE_AUTOMATION_REQUEST_BACKFILLS to False."
-            )
-
         return AutomationContext(
             condition=condition,
             condition_unique_id=condition_unqiue_id,
@@ -114,6 +110,11 @@ class AutomationContext(Generic[T_EntityKey]):
             else None,
             _root_log=self._root_log,
         )
+
+    async def evaluate_async(self) -> AutomationResult[T_EntityKey]:
+        if inspect.iscoroutinefunction(self.condition.evaluate):
+            return await self.condition.evaluate(self)
+        return self.condition.evaluate(self)
 
     @property
     def log(self) -> logging.Logger:

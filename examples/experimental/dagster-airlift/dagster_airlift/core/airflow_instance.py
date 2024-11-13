@@ -1,7 +1,7 @@
 import datetime
 import time
 from abc import ABC
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 import requests
 from dagster import _check as check
@@ -25,6 +25,17 @@ SLEEP_SECONDS = 1
 
 
 class AirflowAuthBackend(ABC):
+    """An abstract class that represents an authentication backend for an Airflow instance.
+
+    Requires two methods to be implemented by subclasses:
+    - get_session: Returns a requests.Session object that can be used to make requests to the Airflow instance, and handles authentication.
+    - get_webserver_url: Returns the base URL of the Airflow webserver.
+
+    The `dagster-airlift` package provides the following default implementations:
+    - :py:class:`dagster-airlift.core.AirflowBasicAuthBackend`: An authentication backend that uses Airflow's basic auth to authenticate with the Airflow instance.
+    - :py:class:`dagster-airlift.mwaa.MwaaSessionAuthBackend`: An authentication backend that uses AWS MWAA's web login token to authenticate with the Airflow instance (requires `dagster-airlift[mwaa]`).
+    """
+
     def get_session(self) -> requests.Session:
         raise NotImplementedError("This method must be implemented by subclasses.")
 
@@ -33,6 +44,15 @@ class AirflowAuthBackend(ABC):
 
 
 class AirflowInstance:
+    """A class that represents a running Airflow Instance and provides methods for interacting with its REST API.
+
+    Args:
+        auth_backend (AirflowAuthBackend): The authentication backend to use when making requests to the Airflow instance.
+        name (str): The name of the Airflow instance. This will be prefixed to any assets automatically created using this instance.
+        batch_task_instance_limit (int): The number of task instances to query at a time when fetching task instances. Defaults to 100.
+        batch_dag_runs_limit (int): The number of dag runs to query at a time when fetching dag runs. Defaults to 100.
+    """
+
     def __init__(
         self,
         auth_backend: AirflowAuthBackend,
@@ -53,7 +73,9 @@ class AirflowInstance:
         return f"{self.auth_backend.get_webserver_url()}/api/v1"
 
     def list_dags(self) -> List["DagInfo"]:
-        response = self.auth_backend.get_session().get(f"{self.get_api_url()}/dags")
+        response = self.auth_backend.get_session().get(
+            f"{self.get_api_url()}/dags", params={"limit": 1000}
+        )
         if response.status_code == 200:
             dags = response.json()
             webserver_url = self.auth_backend.get_webserver_url()
@@ -243,10 +265,11 @@ class AirflowInstance:
                 f"Failed to fetch dag runs for {dag_ids}. Status code: {response.status_code}, Message: {response.text}"
             )
 
-    def trigger_dag(self, dag_id: str) -> str:
+    def trigger_dag(self, dag_id: str, logical_date: Optional[datetime.datetime] = None) -> str:
+        params = {} if not logical_date else {"logical_date": logical_date.isoformat()}
         response = self.auth_backend.get_session().post(
             f"{self.get_api_url()}/dags/{dag_id}/dagRuns",
-            json={},
+            json=params,
         )
         if response.status_code != 200:
             raise DagsterError(
@@ -268,6 +291,17 @@ class AirflowInstance:
             run_id=run_id,
             metadata=response.json(),
         )
+
+    def unpause_dag(self, dag_id: str) -> None:
+        response = self.auth_backend.get_session().patch(
+            f"{self.get_api_url()}/dags",
+            json={"is_paused": False},
+            params={"dag_id_pattern": dag_id},
+        )
+        if response.status_code != 200:
+            raise DagsterError(
+                f"Failed to unpause dag {dag_id}. Status code: {response.status_code}, Message: {response.text}"
+            )
 
     def wait_for_run_completion(self, dag_id: str, run_id: str, timeout: int = 30) -> None:
         start_time = get_current_datetime()

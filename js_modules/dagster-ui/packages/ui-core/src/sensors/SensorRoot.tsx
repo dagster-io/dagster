@@ -5,15 +5,14 @@ import {Redirect, useParams} from 'react-router-dom';
 import {SensorDetails} from './SensorDetails';
 import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
-import {SensorPageAutomaterialize} from './SensorPageAutomaterialize';
 import {SensorPreviousRuns} from './SensorPreviousRuns';
+import {gql, useQuery} from '../apollo-client';
 import {
   SensorAssetSelectionQuery,
   SensorAssetSelectionQueryVariables,
   SensorRootQuery,
   SensorRootQueryVariables,
 } from './types/SensorRoot.types';
-import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -24,6 +23,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TickHistoryTimeline, TicksTable} from '../instigation/TickHistory';
+import {TickResultType} from '../ticks/TickStatusTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -134,31 +134,13 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
       ? selectionQueryResult.data.sensorOrError.assetSelection
       : null;
 
-  if (
+  const isAutomationSensor =
     sensorOrError.sensorType === SensorType.AUTO_MATERIALIZE ||
-    sensorOrError.sensorType === SensorType.AUTOMATION
-  ) {
-    const assetDaemonStatus = instance.daemonHealth.ampDaemonStatus;
-    return (
-      <Page>
-        <SensorDetails
-          repoAddress={repoAddress}
-          sensor={sensorOrError}
-          daemonHealth={assetDaemonStatus.healthy}
-          refreshState={refreshState}
-          assetSelection={assetSelection || null}
-        />
-        <SensorPageAutomaterialize
-          repoAddress={repoAddress}
-          sensor={sensorOrError}
-          daemonStatus={assetDaemonStatus}
-          loading={loading}
-        />
-      </Page>
-    );
-  }
+    sensorOrError.sensorType === SensorType.AUTOMATION;
 
   const sensorDaemonStatus = instance.daemonHealth.sensorDaemonStatus;
+
+  const tickResultType: TickResultType = isAutomationSensor ? 'materializations' : 'runs';
 
   return (
     <Page>
@@ -173,11 +155,17 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
         sensorDaemonStatus={sensorDaemonStatus}
         padding={{vertical: 16, horizontal: 24}}
       />
-      <TickHistoryTimeline repoAddress={repoAddress} name={sensorOrError.name} {...variables} />
+      <TickHistoryTimeline
+        tickResultType={tickResultType}
+        repoAddress={repoAddress}
+        name={sensorOrError.name}
+        {...variables}
+      />
       <Box margin={{top: 32}} border="top">
         {selectedTab === 'evaluations' ? (
           <TicksTable
             tabs={tabs}
+            tickResultType={tickResultType}
             repoAddress={repoAddress}
             name={sensorOrError.name}
             setParentStatuses={setStatuses}

@@ -1,4 +1,5 @@
-import mock
+from unittest import mock
+
 from dagster_aws.s3 import S3FileHandle, S3FileManager
 
 import dagster as dg

@@ -24,7 +24,6 @@ setup(
     description="Package for mlflow Dagster framework components.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-mlflow",
     classifiers=[
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: Apache Software License",
@@ -32,7 +31,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_mlflow_tests*"]),
     include_package_data=True,
-    python_requires=">=3.8,<3.13",
+    python_requires=">=3.9,<3.13",
     install_requires=[f"dagster{pin}", "mlflow", "pandas"],
     zip_safe=False,
 )

@@ -1,6 +1,6 @@
 import asyncio
+from unittest import mock
 
-import mock
 from dagster import AssetExecutionContext, AssetKey, MonthlyPartitionsDefinition
 from dagster._core.definitions.materialize import materialize
 from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets

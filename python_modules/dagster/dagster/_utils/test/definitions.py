@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from typing import Any, Callable, Generic, Iterator, Mapping, Optional, TypeVar
 
+from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import (
     DefinitionsLoadContext,
@@ -193,12 +194,14 @@ def scoped_reconstruction_metadata(
         DefinitionsLoadContext.set(prev_context)
 
 
-def unwrap_reconstruction_metadata(defs: Definitions) -> Mapping[str, Any]:
+def unwrap_reconstruction_metadata(repo_def: RepositoryDefinition) -> Mapping[str, Any]:
     """Takes the metadata from a Definitions object and unwraps the CodeLocationReconstructionMetadataValue
     metadata values into a dictionary.
     """
     return {
         k: metadata_value.value
-        for k, metadata_value in defs.metadata.items()
+        for k, metadata_value in check.not_none(
+            repo_def.repository_load_data
+        ).reconstruction_metadata.items()
         if isinstance(metadata_value, CodeLocationReconstructionMetadataValue)
     }

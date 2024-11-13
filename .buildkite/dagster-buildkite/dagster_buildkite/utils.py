@@ -100,7 +100,7 @@ BuildkiteStep: TypeAlias = Union[CommandStep, GroupStep, TriggerStep, WaitStep, 
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
 BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
 
-UV_PIN = "uv==0.4.8"
+UV_PIN = "uv==0.4.30"
 
 
 def is_command_step(step: BuildkiteStep) -> TypeGuard[CommandStep]:
@@ -308,11 +308,33 @@ def has_dagster_airlift_changes():
 
 
 @functools.lru_cache(maxsize=None)
+def skip_if_not_airlift_or_dlift_commit() -> Optional[str]:
+    """If no dlift or airlift files are touched, then do NOT run. Even if on master."""
+    return (
+        None
+        if (
+            any("dagster-dlift" in str(path) for path in ChangedFiles.all)
+            or any("dagster-airlift" in str(path) for path in ChangedFiles.all)
+        )
+        else "Not an airlift or dlift commit"
+    )
+
+
+@functools.lru_cache(maxsize=None)
 def has_storage_test_fixture_changes():
     # Attempt to ensure that changes to TestRunStorage and TestEventLogStorage suites trigger integration
     return any(
         Path("python_modules/dagster/dagster_tests/storage_tests/utils") in path.parents
         for path in ChangedFiles.all
+    )
+
+
+def skip_if_not_dlift_commit() -> Optional[str]:
+    """If no dlift files are touched, then do NOT run. Even if on master."""
+    return (
+        None
+        if any("dagster-dlift" in str(path) for path in ChangedFiles.all)
+        else "Not a dlift commit"
     )
 
 

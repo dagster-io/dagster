@@ -469,7 +469,7 @@ def default_metadata_from_dbt_resource_props(
         **DbtMetadataSet(materialization_type=materialization_type),
         **TableMetadataSet(
             column_schema=column_schema,
-            relation_identifier=relation_name,
+            table_name=relation_name,
         ),
     }
 
@@ -724,7 +724,8 @@ def get_deps(
                 asset_deps[unique_id].add(parent_unique_id)
 
     frozen_asset_deps = {
-        unique_id: frozenset(parent_ids) for unique_id, parent_ids in asset_deps.items()
+        unique_id: frozenset(asset_deps[unique_id])
+        for unique_id in sorted(asset_deps)  # sort to stabilize job snapshots
     }
 
     return frozen_asset_deps
@@ -825,7 +826,7 @@ def build_dbt_multi_asset_args(
                 **dagster_dbt_translator.get_tags(dbt_resource_props),
             },
             group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),
-            code_version=default_code_version_fn(dbt_resource_props),
+            code_version=dagster_dbt_translator.get_code_version(dbt_resource_props),
             freshness_policy=dagster_dbt_translator.get_freshness_policy(dbt_resource_props),
             automation_condition=dagster_dbt_translator.get_automation_condition(
                 dbt_resource_props
@@ -988,7 +989,7 @@ def get_asset_deps(
                 metadata=metadata,
                 is_required=False,
                 dagster_type=Nothing,
-                code_version=default_code_version_fn(dbt_resource_props),
+                code_version=dagster_dbt_translator.get_code_version(dbt_resource_props),
             ),
         )
 

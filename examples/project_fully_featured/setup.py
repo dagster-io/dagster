@@ -6,7 +6,6 @@ setup(
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     classifiers=[
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Operating System :: OS Independent",
@@ -25,7 +24,6 @@ setup(
         "dbt-duckdb",
         "dbt-snowflake",
         "duckdb!=0.3.3, <= 6.0.0",  # missing wheels
-        "mock",
         "pandas",
         "pyarrow>=4.0.0",
         "pyspark",

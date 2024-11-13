@@ -52,6 +52,7 @@ if TYPE_CHECKING:
     from dagster._core.remote_representation.external_data import AssetCheckNodeSnap, AssetNodeSnap
 
 
+@whitelist_for_serdes
 @record
 class RemoteAssetCheckNode:
     handle: RepositoryHandle
@@ -403,13 +404,20 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
 
     @property
     @abstractmethod
-    def remote_asset_check_nodes_by_key(self) -> Mapping[AssetCheckKey, RemoteAssetCheckNode]: ...
+    def remote_asset_check_nodes_by_key(
+        self,
+    ) -> Mapping[AssetCheckKey, RemoteAssetCheckNode]: ...
 
     ##### COMMON ASSET GRAPH INTERFACE
     @cached_property
     def _asset_check_nodes_by_key(self) -> Mapping[AssetCheckKey, AssetCheckNode]:
         return {
-            k: AssetCheckNode(k, v.asset_check.blocking, v.asset_check.automation_condition)
+            k: AssetCheckNode(
+                k,
+                v.asset_check.additional_asset_keys,
+                v.asset_check.blocking,
+                v.asset_check.automation_condition,
+            )
             for k, v in self.remote_asset_check_nodes_by_key.items()
         }
 
@@ -426,6 +434,16 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
     @property
     def asset_checks(self) -> Sequence["AssetCheckNodeSnap"]:
         return [node.asset_check for node in self.remote_asset_check_nodes_by_key.values()]
+
+    @cached_property
+    def _asset_check_nodes_by_asset_key(self) -> Mapping[AssetKey, Sequence[RemoteAssetCheckNode]]:
+        by_asset_key = {}
+        for node in self.remote_asset_check_nodes_by_key.values():
+            by_asset_key.setdefault(node.asset_check.asset_key, []).append(node)
+        return by_asset_key
+
+    def get_checks_for_asset(self, asset_key: AssetKey) -> Sequence[RemoteAssetCheckNode]:
+        return self._asset_check_nodes_by_asset_key.get(asset_key, [])
 
     @cached_property
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
@@ -541,10 +559,24 @@ class RemoteRepositoryAssetGraph(RemoteAssetGraph[RemoteRepositoryAssetNode]):
         )
 
 
-@record
 class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
-    remote_asset_nodes_by_key: Mapping[AssetKey, RemoteWorkspaceAssetNode]
-    remote_asset_check_nodes_by_key: Mapping[AssetCheckKey, RemoteAssetCheckNode]
+    def __init__(
+        self,
+        remote_asset_nodes_by_key: Mapping[AssetKey, RemoteWorkspaceAssetNode],
+        remote_asset_check_nodes_by_key: Mapping[AssetCheckKey, RemoteAssetCheckNode],
+    ):
+        self._remote_asset_nodes_by_key = remote_asset_nodes_by_key
+        self._remote_asset_check_nodes_by_key = remote_asset_check_nodes_by_key
+
+    @property
+    def remote_asset_nodes_by_key(self) -> Mapping[AssetKey, RemoteWorkspaceAssetNode]:
+        return self._remote_asset_nodes_by_key
+
+    @property
+    def remote_asset_check_nodes_by_key(
+        self,
+    ) -> Mapping[AssetCheckKey, RemoteAssetCheckNode]:
+        return self._remote_asset_check_nodes_by_key
 
     @property
     def _asset_nodes_by_key(self) -> Mapping[AssetKey, RemoteWorkspaceAssetNode]:
@@ -607,12 +639,12 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
                 asset_infos_by_key[key].append(
                     RepositoryScopedAssetInfo(
                         asset_node=asset_node,
-                        targeting_sensor_names=[
+                        targeting_sensor_names=sorted(
                             s.name for s in repo.get_sensors_targeting(asset_node.key)
-                        ],
-                        targeting_schedule_names=[
+                        ),
+                        targeting_schedule_names=sorted(
                             s.name for s in repo.get_schedules_targeting(asset_node.key)
-                        ],
+                        ),
                     )
                 )
             # NOTE: matches previous behavior of completely ignoring asset check collisions
@@ -636,7 +668,9 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         )
 
 
-def _warn_on_duplicate_nodes(nodes_with_multiple: Sequence[RemoteWorkspaceAssetNode]) -> None:
+def _warn_on_duplicate_nodes(
+    nodes_with_multiple: Sequence[RemoteWorkspaceAssetNode],
+) -> None:
     # Split the nodes into materializable, observable, and unexecutable nodes. Observable and
     # unexecutable `AssetNodeSnap` represent both source and external assets-- the
     # "External" in "AssetNodeSnap" is unrelated to the "external" in "external asset", this
@@ -645,7 +679,8 @@ def _warn_on_duplicate_nodes(nodes_with_multiple: Sequence[RemoteWorkspaceAssetN
     observable_duplicates: Mapping[AssetKey, Sequence[str]] = {}
     for node in nodes_with_multiple:
         check.invariant(
-            len(node.repo_scoped_asset_infos) > 1, "only perform check on nodes with multiple defs"
+            len(node.repo_scoped_asset_infos) > 1,
+            "only perform check on nodes with multiple defs",
         )
         observable_locations = []
         materializable_locations = []

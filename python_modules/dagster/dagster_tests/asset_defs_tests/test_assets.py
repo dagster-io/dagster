@@ -47,7 +47,6 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
-from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -2263,21 +2262,6 @@ def test_asset_with_tags():
         def asset2(): ...
 
 
-def test_asset_with_storage_kind_tag() -> None:
-    @asset(tags={**StorageKindTagSet(storage_kind="snowflake")})
-    def asset1(): ...
-
-    assert asset1.specs_by_key[asset1.key].tags == {"dagster/storage_kind": "snowflake"}
-
-    @asset(tags={**StorageKindTagSet(storage_kind="snowflake"), "a": "b"})
-    def asset2(): ...
-
-    assert asset2.specs_by_key[asset2.key].tags == {
-        "dagster/storage_kind": "snowflake",
-        "a": "b",
-    }
-
-
 def test_asset_spec_with_tags():
     @multi_asset(specs=[AssetSpec("asset1", tags={"a": "b"})])
     def assets(): ...
@@ -2402,3 +2386,31 @@ def test_multiple_keys_per_output_name():
         AssetsDefinition(
             node_def=op1, keys_by_output_name={"out1": AssetKey("a"), "out2": AssetKey("a")}
         )
+
+
+def test_iterate_over_single_key() -> None:
+    key = AssetKey("ouch")
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="You have attempted to iterate a single AssetKey object. "
+        "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug.",
+    ):
+        [_ for _ in key]  # type: ignore # good job type checker
+
+
+def test_index_in_to_key() -> None:
+    key = AssetKey("ouch")
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="You have attempted to index directly in to the AssetKey object. "
+        "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug. "
+        "Use asset_key.path instead to access the list of key components.",
+    ):
+        key[0][0]  # type: ignore # good job type checker
+
+
+def test_asset_dep_backcompat() -> None:
+    # AssetKey used to be an iterable tuple, which unintentionally made this work so continue supporting it
+
+    @asset(deps=AssetKey("oops"))  # type: ignore # good job type checker
+    def _(): ...

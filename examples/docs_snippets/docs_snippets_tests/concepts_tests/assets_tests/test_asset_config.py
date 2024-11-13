@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 
 from docs_snippets.concepts.assets.asset_config import (
     MyDownstreamAssetConfig,

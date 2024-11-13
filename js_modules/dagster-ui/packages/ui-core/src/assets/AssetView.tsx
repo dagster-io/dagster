@@ -413,8 +413,8 @@ function getQueryForVisibleAssets(
       view === 'lineage' && lineageScope === 'upstream'
         ? `${depthStr}"${token}"`
         : view === 'lineage' && lineageScope === 'downstream'
-        ? `"${token}"${depthStr}`
-        : `${depthStr}"${token}"${depthStr}`;
+          ? `"${token}"${depthStr}`
+          : `${depthStr}"${token}"${depthStr}`;
 
     return {
       query,

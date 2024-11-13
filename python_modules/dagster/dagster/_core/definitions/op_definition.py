@@ -44,10 +44,9 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.storage.tags import COMPUTE_KIND_TAG, LEGACY_COMPUTE_KIND_TAG
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._utils import IHasInternalInit
-from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
+from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer
@@ -183,7 +182,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             input_defs=check.sequence_param(resolved_input_defs, "input_defs", InputDefinition),
             output_defs=check.sequence_param(output_defs, "output_defs", OutputDefinition),
             description=description,
-            tags=_normalize_op_tags(check.opt_mapping_param(tags, "tags", key_type=str)),
+            tags=(check.opt_mapping_param(tags, "tags", key_type=str)),
             positional_inputs=positional_inputs,
         )
 
@@ -583,18 +582,6 @@ def _validate_context_type_hint(fn):
                 f"Cannot annotate `context` parameter with type {params[0].annotation}. `context`"
                 " must be annotated with AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext, or left blank."
             )
-
-
-def _normalize_op_tags(tags: Mapping[str, str]) -> Mapping[str, str]:
-    if LEGACY_COMPUTE_KIND_TAG in tags:
-        deprecation_warning(
-            "Legacy compute kind tag '{LEGACY_COMPUTE_KIND_TAG}'",
-            breaking_version="1.9.0",
-            additional_warn_text="Please set the compute kind using the `compute_kind` argument on asset/op definition APIs.",
-        )
-        return {COMPUTE_KIND_TAG: tags[LEGACY_COMPUTE_KIND_TAG], **tags}
-    else:
-        return tags
 
 
 def _is_result_object_type(ttype):

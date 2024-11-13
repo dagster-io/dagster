@@ -1,19 +1,20 @@
+from pathlib import Path
+from typing import Dict
+
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    return "1!0+dev"
-    # Uncomment when ready to publish
-    # version: Dict[str, str] = {}
-    # with open(Path(__file__).parent / "dagster_tableau/version.py", encoding="utf8") as fp:
-    #     exec(fp.read(), version)
+    version: Dict[str, str] = {}
+    with open(Path(__file__).parent / "dagster_tableau/version.py", encoding="utf8") as fp:
+        exec(fp.read(), version)
 
-    # return version["__version__"]
+    return version["__version__"]
 
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
-pin = "" if ver == "1!0+dev" else f"=={ver}"
+pin = "" if ver == "1!0+dev" or "rc" in ver else f"=={ver}"
 setup(
     name="dagster_tableau",
     version=get_version(),
@@ -26,7 +27,6 @@ setup(
         "dagster-tableau"
     ),
     classifiers=[
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
@@ -38,9 +38,10 @@ setup(
     install_requires=[
         f"dagster{pin}",
         "pyjwt[crypto]",
-        "tableauserverclient",
+        # Datasources endpoint were added in 0.32
+        "tableauserverclient>=0.32",
     ],
     include_package_data=True,
-    python_requires=">=3.8,<3.13",
+    python_requires=">=3.9,<3.13",
     zip_safe=False,
 )

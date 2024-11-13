@@ -122,7 +122,7 @@ class EvalContext(NamedTuple):
             return type(ref.__forward_arg__, (_LazyImportPlaceholder,), {})
         try:
             if sys.version_info <= (3, 9):
-                return ref._evaluate(  # noqa
+                return ref._evaluate(  # noqa # type: ignore
                     globalns=self.get_merged_ns(),
                     localns={},
                 )

@@ -1,10 +1,10 @@
 import React from 'react';
 
+import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {
   AssetGraphLiveQuery,
   AssetGraphLiveQueryVariables,
 } from './types/AssetBaseDataProvider.types';
-import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {
   LiveDataForNode,
   buildLiveDataForNode,

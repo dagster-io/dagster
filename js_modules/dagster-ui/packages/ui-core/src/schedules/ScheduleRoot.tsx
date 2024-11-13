@@ -6,6 +6,7 @@ import {SCHEDULE_ASSET_SELECTIONS_QUERY} from './ScheduleAssetSelectionsQuery';
 import {ScheduleDetails} from './ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
+import {gql, useQuery} from '../apollo-client';
 import {
   ScheduleAssetSelectionQuery,
   ScheduleAssetSelectionQueryVariables,
@@ -17,7 +18,6 @@ import {
   ScheduleRootQueryVariables,
 } from './types/ScheduleRoot.types';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
-import {gql, useQuery} from '../apollo-client';
 import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -44,7 +44,7 @@ export const ScheduleRoot = (props: Props) => {
 
   const {repoAddress} = props;
   const {scheduleName} = useParams<{scheduleName: string}>();
-  const {flagRunsFeed} = useFeatureFlags();
+  const {flagLegacyRunsPage} = useFeatureFlags();
 
   useDocumentTitle(`Schedule: ${scheduleName}`);
 
@@ -120,15 +120,20 @@ export const ScheduleRoot = (props: Props) => {
               />
             ) : null}
             {selectedTab === 'ticks' ? (
-              <TicksTable tabs={tabs} repoAddress={repoAddress} name={scheduleOrError.name} />
-            ) : flagRunsFeed ? (
-              <RunsFeedTableWithFilters filter={runsFilter} />
-            ) : (
+              <TicksTable
+                tabs={tabs}
+                tickResultType="runs"
+                repoAddress={repoAddress}
+                name={scheduleOrError.name}
+              />
+            ) : flagLegacyRunsPage ? (
               <SchedulePreviousRuns
                 repoAddress={repoAddress}
                 schedule={scheduleOrError}
                 tabs={tabs}
               />
+            ) : (
+              <RunsFeedTableWithFilters filter={runsFilter} actionBarComponents={tabs} />
             )}
           </Page>
         );

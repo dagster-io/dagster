@@ -250,7 +250,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     requestedAssetKeys = non_null_list(GrapheneAssetKey)
     requestedAssetMaterializationCount = graphene.NonNull(graphene.Int)
     requestedMaterializationsForAssets = non_null_list(GrapheneRequestedMaterializationsForAsset)
-    autoMaterializeAssetEvaluationId = graphene.Field(graphene.Int)
+    autoMaterializeAssetEvaluationId = graphene.Field(graphene.ID)
     instigationType = graphene.NonNull(GrapheneInstigationType)
 
     class Meta:
@@ -271,7 +271,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
             cursor=tick.cursor,
             logKey=tick.log_key,
             endTimestamp=tick.end_timestamp,
-            autoMaterializeAssetEvaluationId=tick.tick_data.auto_materialize_evaluation_id,
+            autoMaterializeAssetEvaluationId=tick.automation_condition_evaluation_id,
         )
 
     def resolve_id(self, _):
@@ -541,7 +541,7 @@ class GrapheneInstigationState(graphene.ObjectType):
     runsCount = graphene.NonNull(graphene.Int)
     tick = graphene.Field(
         graphene.NonNull(GrapheneInstigationTick),
-        tickId=graphene.NonNull(graphene.BigInt),
+        tickId=graphene.NonNull(graphene.ID),
     )
     ticks = graphene.Field(
         non_null_list(GrapheneInstigationTick),
@@ -673,10 +673,10 @@ class GrapheneInstigationState(graphene.ObjectType):
     def resolve_tick(
         self,
         graphene_info: ResolveInfo,
-        tickId: int,
+        tickId: str,
     ) -> GrapheneInstigationTick:
         schedule_storage = check.not_none(graphene_info.context.instance.schedule_storage)
-        tick = schedule_storage.get_tick(tickId)
+        tick = schedule_storage.get_tick(int(tickId))
 
         return GrapheneInstigationTick(tick)
 

@@ -14,7 +14,7 @@ from typing import (
     Set,
 )
 
-from dagster._annotations import deprecated, experimental
+from dagster._annotations import experimental
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
@@ -52,7 +52,6 @@ if TYPE_CHECKING:
     )
 
 
-@deprecated(breaking_version="1.9")
 @whitelist_for_serdes
 class MaterializeOnRequiredForFreshnessRule(
     AutoMaterializeRule, NamedTuple("_MaterializeOnRequiredForFreshnessRule", [])

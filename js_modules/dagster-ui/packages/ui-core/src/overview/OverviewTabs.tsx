@@ -2,7 +2,6 @@ import {Box, Colors, Spinner, Tabs} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
 import {QueryResult} from '../apollo-client';
-import {useFeatureFlags} from '../app/Flags';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
@@ -18,8 +17,6 @@ interface Props<TData> {
 export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
   const {refreshState, tab} = props;
 
-  const {flagLegacyNav, flagRunsFeed} = useFeatureFlags();
-
   const automaterialize = useAutomaterializeDaemonStatus();
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
   const {enableAssetHealthOverviewPreview} = useContext(AssetFeatureContext);
@@ -31,12 +28,6 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
         {enableAssetHealthOverviewPreview && (
           <TabLink id="asset-health" title="Asset health" to="/overview/asset-health" />
         )}
-        {/* These are flagged individually because the links must be children of `Tabs`: */}
-        {flagLegacyNav ? <TabLink id="jobs" title="Jobs" to="/overview/jobs" /> : null}
-        {flagLegacyNav ? (
-          <TabLink id="schedules" title="Schedules" to="/overview/schedules" />
-        ) : null}
-        {flagLegacyNav ? <TabLink id="sensors" title="Sensors" to="/overview/sensors" /> : null}
         {automaterializeSensorsFlagState === 'has-global-amp' ? (
           <TabLink
             id="amp"
@@ -64,9 +55,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
           />
         ) : null}
         <TabLink id="resources" title="Resources" to="/overview/resources" />
-        {flagRunsFeed ? null : (
-          <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
-        )}
+        <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
       </Tabs>
       {refreshState ? (
         <Box style={{alignSelf: 'center'}}>

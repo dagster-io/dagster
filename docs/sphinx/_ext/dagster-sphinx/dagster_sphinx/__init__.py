@@ -6,11 +6,13 @@ from dagster._annotations import (
     get_deprecated_params,
     get_experimental_info,
     get_experimental_params,
+    get_superseded_info,
     has_deprecated_params,
     has_experimental_params,
     is_deprecated,
     is_experimental,
     is_public,
+    is_superseded,
 )
 from dagster._record import get_original_class, is_record
 from typing_extensions import Literal, TypeAlias
@@ -120,6 +122,9 @@ def process_docstring(
 
     if is_deprecated(obj):
         inject_object_flag(obj, get_deprecated_info(obj), lines)
+
+    if is_superseded(obj):
+        inject_object_flag(obj, get_superseded_info(obj), lines)
 
     if has_deprecated_params(obj):
         params = get_deprecated_params(obj)

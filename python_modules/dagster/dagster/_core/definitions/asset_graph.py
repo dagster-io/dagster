@@ -169,6 +169,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         self._asset_check_nodes_by_key = {
             k: AssetCheckNode(
                 k,
+                [d.asset_key for d in v.get_spec_for_check_key(k).additional_deps],
                 v.get_spec_for_check_key(k).blocking,
                 v.get_spec_for_check_key(k).automation_condition,
             )
@@ -297,7 +298,8 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             return (
                 assets_def.unique_id
                 if (
-                    not assets_def.can_subset
+                    assets_def.is_executable
+                    and not assets_def.can_subset
                     and (len(assets_def.keys) > 1 or assets_def.check_keys)
                 )
                 else None

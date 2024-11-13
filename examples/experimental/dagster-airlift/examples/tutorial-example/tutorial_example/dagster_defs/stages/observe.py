@@ -1,14 +1,44 @@
 import os
 from pathlib import Path
 
-from dagster import AssetExecutionContext, AssetSpec, Definitions
+from dagster import (
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetExecutionContext,
+    AssetKey,
+    AssetSpec,
+    Definitions,
+    asset_check,
+)
 from dagster_airlift.core import (
+    AirflowBasicAuthBackend,
     AirflowInstance,
-    BasicAuthBackend,
     assets_with_task_mappings,
     build_defs_from_airflow_instance,
 )
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+
+
+@asset_check(asset=AssetKey(["airflow_instance_one", "dag", "rebuild_customers_list"]))
+def validate_exported_csv() -> AssetCheckResult:
+    csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
+
+    if not csv_path.exists():
+        return AssetCheckResult(passed=False, description=f"Export CSV {csv_path} does not exist")
+
+    rows = len(csv_path.read_text().split("\n"))
+    if rows < 2:
+        return AssetCheckResult(
+            passed=False,
+            description=f"Export CSV {csv_path} is empty",
+            severity=AssetCheckSeverity.WARN,
+        )
+
+    return AssetCheckResult(
+        passed=True,
+        description=f"Export CSV {csv_path} exists",
+        metadata={"rows": rows},
+    )
 
 
 def dbt_project_path() -> Path:
@@ -37,7 +67,7 @@ mapped_assets = assets_with_task_mappings(
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
-        auth_backend=BasicAuthBackend(
+        auth_backend=AirflowBasicAuthBackend(
             webserver_url="http://localhost:8080",
             username="admin",
             password="admin",
@@ -47,5 +77,6 @@ defs = build_defs_from_airflow_instance(
     defs=Definitions(
         assets=mapped_assets,
         resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
+        asset_checks=[validate_exported_csv],
     ),
 )

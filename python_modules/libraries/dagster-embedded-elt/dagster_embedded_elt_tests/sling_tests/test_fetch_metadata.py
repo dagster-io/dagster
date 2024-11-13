@@ -1,4 +1,5 @@
-import mock
+from unittest import mock
+
 from dagster import AssetExecutionContext, AssetKey
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import (

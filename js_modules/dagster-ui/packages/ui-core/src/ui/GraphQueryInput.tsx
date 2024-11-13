@@ -28,7 +28,7 @@ import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport
 import {GraphExplorerSolidFragment} from '../pipelines/types/GraphExplorer.types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
-interface GraphQueryInputProps {
+export interface GraphQueryInputProps {
   intent?: Intent;
   items: GraphQueryItem[];
   value: string;
@@ -332,7 +332,9 @@ export const GraphQueryInput = React.memo(
               placeholder={placeholderTextForItems(props.placeholder, props.items)}
               onChange={(e: React.ChangeEvent<any>) => {
                 setPendingValue(e.target.value);
-                props.autoApplyChanges && props.onChange(e.target.value);
+                if (props.autoApplyChanges) {
+                  props.onChange(e.target.value);
+                }
               }}
               onFocus={() => {
                 if (!flattenGraphsEnabled) {

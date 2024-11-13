@@ -1,5 +1,6 @@
 import re
 from enum import Enum
+from functools import cached_property
 from typing import Any, Dict, List, Mapping, Optional, Set, Type, cast
 
 from pydantic import BaseModel, ConfigDict
@@ -28,21 +29,12 @@ from dagster._core.errors import (
     DagsterInvalidPythonicConfigDefinitionError,
 )
 from dagster._model.pydantic_compat_layer import (
-    USING_PYDANTIC_2,
     ModelFieldCompat,
     PydanticUndefined,
     model_config,
     model_fields,
 )
 from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD
-
-try:
-    from functools import cached_property  # type: ignore  # (py37 compat)
-except ImportError:
-
-    class cached_property:
-        pass
-
 
 INTERNAL_MARKER = "__internal__"
 
@@ -75,16 +67,9 @@ class MakeConfigCacheable(BaseModel):
     # - Frozen, to avoid complexity caused by mutation.
     # - arbitrary_types_allowed, to allow non-model class params to be validated with isinstance.
     # - Avoid pydantic reading a cached property class as part of the schema.
-    if USING_PYDANTIC_2:
-        model_config = ConfigDict(  # type: ignore
-            frozen=True, arbitrary_types_allowed=True, ignored_types=(cached_property,)
-        )
-    else:
-
-        class Config:
-            frozen = True
-            arbitrary_types_allowed = True
-            keep_untouched = (cached_property,)
+    model_config = ConfigDict(
+        frozen=True, arbitrary_types_allowed=True, ignored_types=(cached_property,)
+    )
 
     def __setattr__(self, name: str, value: Any):
         from dagster._config.pythonic_config.resource import ConfigurableResourceFactory
@@ -200,9 +185,21 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         the appropriate config classes. For example, discriminated unions are represented
         in Dagster config as dicts with a single key, which is the discriminator value.
         """
-        modified_data = {}
-        for key, value in config_dict.items():
-            field = model_fields(self).get(key)
+        # In order to respect aliases on pydantic fields, we need to keep track of
+        # both the the field_key which is they key for the field on the pydantic model
+        # and the config_key which is the post alias resolution name which is
+        # the key for that field in the incoming config_dict
+        modified_data_by_config_key = {}
+        field_info_by_config_key = {
+            field.alias if field.alias else field_key: (field_key, field)
+            for field_key, field in model_fields(self).items()
+        }
+        for config_key, value in config_dict.items():
+            field_info = field_info_by_config_key.get(config_key)
+            field = None
+            field_key = config_key
+            if field_info:
+                field_key, field = field_info
 
             if field and field.discriminator:
                 nested_dict = value
@@ -221,7 +218,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 )
                 discriminated_value, nested_values = nested_items[0]
 
-                modified_data[key] = {
+                modified_data_by_config_key[config_key] = {
                     **nested_values,
                     discriminator_key: discriminated_value,
                 }
@@ -233,21 +230,32 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 and value in field.annotation.__members__
                 and value not in [member.value for member in field.annotation]  # type: ignore
             ):
-                modified_data[key] = field.annotation.__members__[value].value
+                modified_data_by_config_key[config_key] = field.annotation.__members__[value].value
             elif field and safe_is_subclass(field.annotation, Config) and isinstance(value, dict):
-                modified_data[key] = field.annotation._get_non_default_public_field_values_cls(  # noqa: SLF001
-                    value
+                modified_data_by_config_key[field_key] = (
+                    field.annotation._get_non_default_public_field_values_cls(  # noqa: SLF001
+                        value
+                    )
                 )
             else:
-                modified_data[key] = value
+                modified_data_by_config_key[config_key] = value
 
-        for key, field in model_fields(self).items():
-            if field.is_required() and key not in modified_data:
-                modified_data[key] = field.default if field.default != PydanticUndefined else None
+        for field_key, field in model_fields(self).items():
+            config_key = field.alias if field.alias else field_key
+            if field.is_required() and config_key not in modified_data_by_config_key:
+                modified_data_by_config_key[config_key] = (
+                    field.default if field.default != PydanticUndefined else None
+                )
 
-        super().__init__(**modified_data)
-        if USING_PYDANTIC_2:
-            self.__dict__ = ensure_env_vars_set_post_init(self.__dict__, modified_data)
+        super().__init__(**modified_data_by_config_key)
+
+        modified_data_by_field_key = {}
+        for config_key, value in modified_data_by_config_key.items():
+            field_info = field_info_by_config_key.get(config_key)
+            field_key = field_info[0] if field_info else config_key
+            modified_data_by_field_key[field_key] = value
+
+        self.__dict__ = ensure_env_vars_set_post_init(self.__dict__, modified_data_by_field_key)
 
     def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
         """Converts this Config object to a Dagster config dictionary, in the same format as the dictionary
@@ -387,12 +395,7 @@ class PermissiveConfig(Config):
 
     # Pydantic config for this class
     # Cannot use kwargs for base class as this is not support for pydantic<1.8
-    if USING_PYDANTIC_2:
-        model_config = ConfigDict(extra="allow")  # type: ignore
-    else:
-
-        class Config:
-            extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 def infer_schema_from_config_class(

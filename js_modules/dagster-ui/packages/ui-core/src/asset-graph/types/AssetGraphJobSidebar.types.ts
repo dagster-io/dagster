@@ -131,6 +131,7 @@ export type AssetGraphSidebarQuery = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -153,6 +154,7 @@ export type AssetGraphSidebarQuery = {
                   name: string;
                   description: string | null;
                   type: string;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   constraints: {
                     __typename: 'TableColumnConstraints';
                     nullable: boolean;
@@ -1315,4 +1317,4 @@ export type AssetGraphSidebarQuery = {
       };
 };
 
-export const AssetGraphSidebarQueryVersion = '78297700fcddf38c7f95b5aeb73ff1a55ddf05b4a53d7a85388831ca520ec5f8';
+export const AssetGraphSidebarQueryVersion = 'dec086c5cc4b9fb1ab796679125eb4b628b8f60510e23293a401e70d4b69cca2';

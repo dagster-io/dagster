@@ -26,6 +26,7 @@ one_parent_daily = one_parent.with_asset_properties(partitions_def=daily_partiti
 two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_partitions)
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ["expected_value_hash", "condition", "scenario_spec", "materialize_A"],
     [
@@ -38,11 +39,11 @@ two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_parti
         ("dd74c7cfe19d869931ea4aad9ee10127", SC.on_cron("0 * * * *"), two_parents, False),
         ("861f8e40d4624d49c4ebdd034c8e1e84", SC.on_cron("0 * * * *"), two_parents_daily, False),
         # same as above
-        ("dfb268e321e2e7aa7b0e2e71fa674e06", SC.eager(), one_parent, False),
-        ("781252e1a53db1ecd5938b0da61dba0b", SC.eager(), one_parent, True),
-        ("293186887409aac2fe99b09bd633c64b", SC.eager(), one_parent_daily, False),
-        ("c92d9d5181b4d0a6c7ab5d1c6e26962a", SC.eager(), two_parents, False),
-        ("911bcc4f8904ec6dae85f6aaf78f5ee5", SC.eager(), two_parents_daily, False),
+        ("f8237121a2848d3bef57376d2c3908a1", SC.eager(), one_parent, False),
+        ("814fbbf023768be85417e19dfc3ed446", SC.eager(), one_parent, True),
+        ("771796e08a6d705df7cb25f86debb109", SC.eager(), one_parent_daily, False),
+        ("60461372601abf65f9a290f8287d20c2", SC.eager(), two_parents, False),
+        ("c955823e087245ecc3a4dd1e42344984", SC.eager(), two_parents_daily, False),
         # missing condition is invariant to changes other than partitions def changes
         ("6d7809c4949e3d812d7eddfb1b60d529", SC.missing(), one_parent, False),
         ("6d7809c4949e3d812d7eddfb1b60d529", SC.missing(), one_parent, True),
@@ -51,16 +52,16 @@ two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_parti
         ("7f852ab7408c67e0830530d025505a37", SC.missing(), one_parent_daily, False),
     ],
 )
-def test_value_hash(
+async def test_value_hash(
     condition: SC, scenario_spec: ScenarioSpec, expected_value_hash: str, materialize_A: bool
 ) -> None:
     state = AutomationConditionScenarioState(
         scenario_spec, automation_condition=condition
     ).with_current_time("2024-01-01T00:00")
 
-    state, _ = state.evaluate("downstream")
+    state, _ = await state.evaluate("downstream")
     if materialize_A:
         state = state.with_runs(run_request("A"))
 
-    state, result = state.evaluate("downstream")
+    state, result = await state.evaluate("downstream")
     assert result.value_hash == expected_value_hash

@@ -1,3 +1,4 @@
+import functools
 import inspect
 import logging
 from collections import defaultdict
@@ -26,7 +27,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, experimental_param, public
+from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_selection import (
@@ -242,6 +243,10 @@ class SensorEvaluationContext:
     @property
     def sensor_name(self) -> str:
         return check.not_none(self._sensor_name, "Only valid when sensor name provided")
+
+    @functools.cached_property
+    def caching_dynamic_partitions_loader(self):
+        return CachingDynamicPartitionsLoader(self.instance) if self.instance_ref else None
 
     def merge_resources(self, resources_dict: Mapping[str, Any]) -> "SensorEvaluationContext":
         """Merge the specified resources into this context.
@@ -565,7 +570,6 @@ def split_run_requests(
     return run_requests_for_backfill_daemon, run_requests_for_single_runs
 
 
-@experimental_param(param="target")
 class SensorDefinition(IHasInternalInit):
     """Define a sensor that initiates a set of runs based on some external state.
 
@@ -1030,10 +1034,6 @@ class SensorDefinition(IHasInternalInit):
                 *_run_requests_with_base_asset_jobs(run_requests, context, asset_selection)
             ]
 
-        dynamic_partitions_store = (
-            CachingDynamicPartitionsLoader(context.instance) if context.instance_ref else None
-        )
-
         # Run requests may contain an invalid target, or a partition key that does not exist.
         # We will resolve these run requests, applying the target and partition config/tags.
         resolved_run_requests = []
@@ -1072,7 +1072,7 @@ class SensorDefinition(IHasInternalInit):
                     run_request.with_resolved_tags_and_config(
                         target_definition=selected_job,
                         current_time=None,
-                        dynamic_partitions_store=dynamic_partitions_store,
+                        dynamic_partitions_store=context.caching_dynamic_partitions_loader,
                         dynamic_partitions_requests=dynamic_partitions_requests,
                     )
                 )

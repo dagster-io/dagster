@@ -40,8 +40,8 @@ export const ScheduleOrSensorTag = ({
       scheduleCount && sensorCount
         ? `${scheduleCount + sensorCount} schedules/sensors`
         : scheduleCount
-        ? `${scheduleCount} schedules`
-        : `${sensorCount} sensors`;
+          ? `${scheduleCount} schedules`
+          : `${sensorCount} sensors`;
 
     const icon = scheduleCount > 1 ? 'schedule' : 'sensors';
 
@@ -101,7 +101,7 @@ const MatchingSchedule = ({
           to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}
           style={{overflow: 'hidden', textOverflow: 'ellipsis'}}
         >
-          {humanCronString(cronSchedule, executionTimezone || 'UTC')}
+          {humanCronString(cronSchedule, {longTimezoneName: executionTimezone || 'UTC'})}
         </Link>
         {showSwitch ? (
           <ScheduleSwitch size="small" repoAddress={repoAddress} schedule={schedule} />

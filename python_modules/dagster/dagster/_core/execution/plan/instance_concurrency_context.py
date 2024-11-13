@@ -13,6 +13,8 @@ INITIAL_INTERVAL_VALUE = 1
 STEP_UP_BASE = 1.1
 MAX_CONCURRENCY_CLAIM_BLOCKED_INTERVAL = 15
 
+MAX_ALLOWED_PRIORITY = 2**31 - 1
+
 
 class InstanceConcurrencyContext:
     """This class is used to manage instance-scoped concurrency for a given run. It wraps the
@@ -57,8 +59,11 @@ class InstanceConcurrencyContext:
             to_clear.append(step_key)
 
         for step_key in to_clear:
-            del self._pending_timeouts[step_key]
-            del self._pending_claim_counts[step_key]
+            if step_key in self._pending_timeouts:
+                del self._pending_timeouts[step_key]
+            if step_key in self._pending_claim_counts:
+                del self._pending_claim_counts[step_key]
+
             self._pending_claims.remove(step_key)
 
         self._context_guard = False
@@ -105,6 +110,12 @@ class InstanceConcurrencyContext:
             self._pending_claims.add(step_key)
 
         priority = self._run_priority + step_priority
+
+        if abs(priority) > MAX_ALLOWED_PRIORITY:
+            raise Exception(
+                f"Tried to claim a concurrency slot with a priority {priority} that was not in the allowed range of a 32-bit signed integer."
+            )
+
         claim_status = self._instance.event_log_storage.claim_concurrency_slot(
             concurrency_key, self._run_id, step_key, priority
         )

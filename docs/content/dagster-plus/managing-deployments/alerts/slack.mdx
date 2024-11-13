@@ -32,9 +32,13 @@ To follow the steps in this guide, you'll need:
 
 ---
 
-## Step 2: Invite the Dagster+ bot to Slack channels
+## Step 2: Add the Dagster Cloud bot to Slack channels
 
-After the app is installed in your Slack workspace, invite the `@Dagster+` bot user to the channel where notifications should be sent.
+After the app is installed in your Slack workspace, you can add the `@Dagster Cloud` bot user to the channels where notifications should be sent.
+
+You can do that by going into the channel settings, selecting the `Integrations` tab and selecting `Add an App`.
+
+You can also make a post in a channel to the `@Dagster Cloud` bot user and you will be prompted to add it to the channel.
 
 ---
 
@@ -65,7 +69,7 @@ Creating an alert policy can be done using the Dagster+ UI or the `dagster-cloud
 To define a Slack alert policy in code, use the following keys to configure the alert:
 
 - `notification_service.slack.slack_workspace_name` - The name of the Slack workspace connected to Dagster+
-- `notification_service.slack.slack_channel_name` - The name of the Slack channel the `@Dagster+` user is a member of
+- `notification_service.slack.slack_channel_name` - The name of the Slack channel the `@Dagster Cloud` user is a member of
 
 ```yaml file=/dagster_cloud/alerts/slack_policy.yaml
 # alert_policies.yaml
@@ -100,7 +104,7 @@ Refer to the [Managing alerts using the `dagster-cloud` CLI](/dagster-plus/manag
 
 ## Disconnecting Slack
 
-To disconnect Dagster+ from Slack, remove the Dagster+ app from your Slack workspace. Refer to [Slack's documentation](https://slack.com/help/articles/360003125231-Remove-apps-and-custom-integrations-from-your-workspace#remove-an-app) for more info and instructions.
+To disconnect Dagster+ from Slack, remove the Dagster Cloud app from your Slack workspace. Refer to [Slack's documentation](https://slack.com/help/articles/360003125231-Remove-apps-and-custom-integrations-from-your-workspace#remove-an-app) for more info and instructions.
 
 Once the app is removed, refresh the **Alerts** page in Dagster+ and the **Connect to Slack** option will be displayed.
 

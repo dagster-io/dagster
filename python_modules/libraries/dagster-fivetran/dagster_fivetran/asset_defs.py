@@ -13,6 +13,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Type,
     Union,
     cast,
 )
@@ -41,6 +42,7 @@ from dagster._core.utils import imap
 from dagster._utils.log import get_dagster_logger
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
+from dagster_fivetran.translator import DagsterFivetranTranslator, FivetranConnectorTableProps
 from dagster_fivetran.utils import (
     generate_materializations,
     get_fivetran_connector_url,
@@ -105,11 +107,32 @@ def _build_fivetran_assets(
     op_tags: Optional[Mapping[str, Any]],
     asset_tags: Optional[Mapping[str, Any]],
     max_threadpool_workers: int = DEFAULT_MAX_THREADPOOL_WORKERS,
+    translator: Optional[Type[DagsterFivetranTranslator]] = None,
+    connection_metadata: Optional["FivetranConnectionMetadata"] = None,
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
+    check.invariant(
+        (translator and connection_metadata) or not translator,
+        "Translator and connection_metadata required.",
+    )
+
+    translator_instance = translator() if translator else None
 
     tracked_asset_keys = {
-        table: AssetKey([*asset_key_prefix, *table.split(".")]) for table in destination_tables
+        table: AssetKey([*asset_key_prefix, *table.split(".")])
+        if not translator_instance or not connection_metadata
+        else translator_instance.get_asset_spec(
+            FivetranConnectorTableProps(
+                table=table,
+                connector_id=connection_metadata.connector_id,
+                name=connection_metadata.name,
+                connector_url=connection_metadata.connector_url,
+                schema_config=connection_metadata.schemas,
+                database=connection_metadata.database,
+                service=connection_metadata.service,
+            )
+        ).key
+        for table in destination_tables
     }
     user_facing_asset_keys = table_to_asset_key_map or tracked_asset_keys
     tracked_asset_key_to_user_facing_asset_key = {
@@ -137,6 +160,18 @@ def _build_fivetran_assets(
                     **build_kind_tag("fivetran"),
                     **(asset_tags or {}),
                 },
+            )
+            if not translator_instance or not connection_metadata
+            else translator_instance.get_asset_spec(
+                FivetranConnectorTableProps(
+                    table=table,
+                    connector_id=connection_metadata.connector_id,
+                    name=connection_metadata.name,
+                    connector_url=connection_metadata.connector_url,
+                    schema_config=connection_metadata.schemas,
+                    database=connection_metadata.database,
+                    service=connection_metadata.service,
+                )
             )
             for table in tracked_asset_keys.keys()
         ],
@@ -330,7 +365,9 @@ class FivetranConnectionMetadata(
             for schema in schemas_inner.values():
                 if schema["enabled"]:
                     schema_name = schema["name_in_destination"]
-                    schema_tables = cast(Dict[str, Dict[str, Any]], schema["tables"])
+                    schema_tables: Dict[str, Dict[str, Any]] = cast(
+                        Dict[str, Dict[str, Any]], schema["tables"]
+                    )
                     for table in schema_tables.values():
                         if table["enabled"]:
                             table_name = table["name_in_destination"]
@@ -363,8 +400,16 @@ class FivetranConnectionMetadata(
                 "connector_id": self.connector_id,
                 "io_manager_key": io_manager_key,
                 "storage_kind": self.service,
+                "connection_metadata": self.to_serializable_repr(),
             },
         )
+
+    def to_serializable_repr(self) -> Any:
+        return self._asdict()
+
+    @staticmethod
+    def from_serializable_repr(rep: Any) -> "FivetranConnectionMetadata":
+        return FivetranConnectionMetadata(**rep)
 
 
 def _build_fivetran_assets_from_metadata(
@@ -373,11 +418,16 @@ def _build_fivetran_assets_from_metadata(
     poll_interval: float,
     poll_timeout: Optional[float],
     fetch_column_metadata: bool,
+    translator: Optional[Type[DagsterFivetranTranslator]] = None,
 ) -> AssetsDefinition:
     metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
     connector_id = cast(str, metadata["connector_id"])
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
     storage_kind = cast(Optional[str], metadata.get("storage_kind"))
+
+    connection_metadata = FivetranConnectionMetadata.from_serializable_repr(
+        metadata["connection_metadata"]
+    )
 
     return _build_fivetran_assets(
         connector_id=connector_id,
@@ -400,6 +450,8 @@ def _build_fivetran_assets_from_metadata(
         fetch_column_metadata=fetch_column_metadata,
         infer_missing_tables=False,
         op_tags=None,
+        translator=translator,
+        connection_metadata=connection_metadata,
     )[0]
 
 
@@ -416,6 +468,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         poll_interval: float,
         poll_timeout: Optional[float],
         fetch_column_metadata: bool,
+        translator: Optional[Type[DagsterFivetranTranslator]] = None,
     ):
         self._fivetran_resource_def = fivetran_resource_def
         if isinstance(fivetran_resource_def, FivetranResource):
@@ -445,6 +498,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._poll_interval = poll_interval
         self._poll_timeout = poll_timeout
         self._fetch_column_metadata = fetch_column_metadata
+        self._translator = translator
 
         contents = hashlib.sha1()
         contents.update(",".join(key_prefix).encode("utf-8"))
@@ -535,6 +589,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
                 poll_interval=self._poll_interval,
                 poll_timeout=self._poll_timeout,
                 fetch_column_metadata=self._fetch_column_metadata,
+                translator=self._translator,
             )
             for meta in data
         ]
@@ -548,7 +603,7 @@ def _clean_name(name: str) -> str:
 def load_assets_from_fivetran_instance(
     fivetran: Union[FivetranResource, ResourceDefinition],
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    connector_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+    connector_to_group_fn: Optional[Callable[[str], Optional[str]]] = None,
     io_manager_key: Optional[str] = None,
     connector_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
     connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]] = None,
@@ -559,6 +614,7 @@ def load_assets_from_fivetran_instance(
     poll_interval: float = DEFAULT_POLL_INTERVAL,
     poll_timeout: Optional[float] = None,
     fetch_column_metadata: bool = True,
+    translator: Optional[Type[DagsterFivetranTranslator]] = None,
 ) -> CacheableAssetsDefinition:
     """Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
     about defined connectors at initialization time, and will error on workspace load if the Fivetran
@@ -627,6 +683,21 @@ def load_assets_from_fivetran_instance(
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
 
     check.invariant(
+        not (
+            (
+                key_prefix
+                or connector_to_group_fn
+                or io_manager_key
+                or connector_to_io_manager_key_fn
+                or connector_to_asset_key_fn
+            )
+            and translator
+        ),
+        "Cannot specify key_prefix, connector_to_group_fn, io_manager_key, connector_to_io_manager_key_fn, or connector_to_asset_key_fn when translator is specified",
+    )
+    connector_to_group_fn = connector_to_group_fn or _clean_name
+
+    check.invariant(
         not io_manager_key or not connector_to_io_manager_key_fn,
         "Cannot specify both io_manager_key and connector_to_io_manager_key_fn",
     )
@@ -644,4 +715,5 @@ def load_assets_from_fivetran_instance(
         poll_interval=poll_interval,
         poll_timeout=poll_timeout,
         fetch_column_metadata=fetch_column_metadata,
+        translator=translator,
     )

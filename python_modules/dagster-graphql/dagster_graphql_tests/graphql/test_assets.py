@@ -188,6 +188,14 @@ GET_ASSET_LATEST_RUN_STATS = """
     }
 """
 
+ADDITIONAL_REQUIRED_KEYS_QUERY = """
+  query AdditionalRequiredKeysQuery($assetKeys: [AssetKeyInput!]!) {
+    assetNodeAdditionalRequiredKeys(assetKeys: $assetKeys) {
+      path
+    }
+  }
+"""
+
 GET_ASSET_DATA_VERSIONS = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
         assetNodes(pipeline: $pipelineSelector, assetKeys: $assetKeys) {
@@ -254,7 +262,7 @@ GET_ASSET_DATA_VERSIONS_BY_PARTITION = """
 
 
 GET_ASSET_NODES_FROM_KEYS = """
-    query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
+    query AssetNodeQuery($pipelineSelector: PipelineSelector, $assetKeys: [AssetKeyInput!]) {
         assetNodes(pipeline: $pipelineSelector, assetKeys: $assetKeys) {
             id
             hasMaterializePermission
@@ -1008,6 +1016,18 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         snapshot.assert_match(result.data)
 
+    def test_additional_required_keys_query(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            ADDITIONAL_REQUIRED_KEYS_QUERY,
+            variables={
+                "assetKeys": [{"path": ["int_asset"]}],
+            },
+        )
+        required_keys = result.data["assetNodeAdditionalRequiredKeys"]
+        assert len(required_keys) == 1
+        assert required_keys == [{"path": ["str_asset"]}]
+
     def test_get_partitioned_asset_key_materialization(
         self, graphql_context: WorkspaceRequestContext, snapshot
     ):
@@ -1189,6 +1209,17 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             variables={
                 "pipelineSelector": selector,
                 "assetKeys": [{"path": ["asset_one"]}],
+            },
+        )
+        assert result.data
+        assert len(result.data["assetNodes"]) == 0
+
+    def test_asset_node_does_not_exist(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_NODES_FROM_KEYS,
+            variables={
+                "assetKeys": [{"path": ["does_not_exist"]}],
             },
         )
         assert result.data
@@ -1894,6 +1925,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             return {stat["assetKey"]["path"][0]: stat for stat in response}
 
         # Confirm that when no runs are present, run returned is None
+        FAKE_KEY = "<key does not exist>"
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_LATEST_RUN_STATS,
@@ -1902,6 +1934,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                     {"path": "asset_1"},
                     {"path": "asset_2"},
                     {"path": "asset_3"},
+                    # fake key should not cause error
+                    {"path": FAKE_KEY},
                 ]
             },
         )
@@ -1912,6 +1946,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result["asset_1"]["latestRun"] is None
         assert result["asset_1"]["latestMaterialization"] is None
+        assert FAKE_KEY not in result
 
         # Test with 1 run on all assets
         first_run_id = _create_run(graphql_context, "failure_assets_job")
@@ -2625,6 +2660,16 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         condition = automation_condition_asset[0]["automationCondition"]
         assert condition["label"] == "eager"
         assert "(in_latest_time_window)" in condition["expandedLabel"]
+
+        custom_automation_condition_asset = [
+            a
+            for a in result.data["assetNodes"]
+            if a["id"] == 'test.test_repo.["asset_with_custom_automation_condition"]'
+        ]
+        assert len(custom_automation_condition_asset) == 1
+        condition = custom_automation_condition_asset[0]["automationCondition"]
+        assert condition["label"] is None
+        assert condition["expandedLabel"] == ["(some_custom_name)", "SINCE", "(handled)"]
 
     def test_tags(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(

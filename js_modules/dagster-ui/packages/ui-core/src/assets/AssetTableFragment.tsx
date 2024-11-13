@@ -23,8 +23,9 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
         dynamicPartitionsDefinitionName
       }
     }
-    autoMaterializePolicy {
-      policyType
+    automationCondition {
+      label
+      expandedLabel
     }
     description
     owners {
