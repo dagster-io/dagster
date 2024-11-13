@@ -80,14 +80,14 @@ class FivetranTable:
     enabled: bool
     name_in_destination: str
     # We keep the raw data for columns to add it as `column_info in the metadata.
-    columns: Mapping[str, Any]
+    columns: Optional[Mapping[str, Any]]
 
     @classmethod
     def from_table_details(cls, table_details: Mapping[str, Any]) -> "FivetranTable":
         return cls(
             enabled=table_details["enabled"],
             name_in_destination=table_details["name_in_destination"],
-            columns=table_details["columns"],
+            columns=table_details.get("columns"),
         )
 
 

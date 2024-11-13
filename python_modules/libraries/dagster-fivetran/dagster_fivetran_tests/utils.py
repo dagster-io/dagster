@@ -122,9 +122,6 @@ def get_complex_sample_connector_schema_config(
                                 "allowed": False,
                                 "reason_code": "SYSTEM_TABLE",
                             },
-                            "columns": {
-                                "column_1": {"name_in_destination": "column_1", "enabled": False},
-                            },
                         },
                     },
                 },
@@ -147,9 +144,6 @@ def get_complex_sample_connector_schema_config(
                                 "allowed": False,
                                 "reason_code": "OTHER",
                                 "reason": "Permission denied",
-                            },
-                            "columns": {
-                                "column_1": {"name_in_destination": "column_1", "enabled": False},
                             },
                         },
                     },
@@ -174,9 +168,6 @@ def get_complex_sample_connector_schema_config(
                                 "allowed": False,
                                 "reason_code": "OTHER",
                                 "reason": "Permission denied",
-                            },
-                            "columns": {
-                                "column_1": {"name_in_destination": "column_1", "enabled": False},
                             },
                         },
                     },
