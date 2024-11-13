@@ -1511,6 +1511,10 @@ type LaunchRunMutation {
   Output: LaunchRunResult!
 }
 
+type LaunchMultipleRunsMutation {
+  Output: LaunchMultipleRunsResult!
+}
+
 type LaunchRunReexecutionMutation {
   Output: LaunchRunReexecutionResult!
 }
@@ -2980,6 +2984,10 @@ union LaunchRunResult =
   | ConflictingExecutionParamsError
   | NoModeProvidedError
 
+type LaunchMultipleRunsResult {
+  launchMultipleRunsResult: [LaunchRunResult!]!
+}
+
 union LaunchRunReexecutionResult =
   | LaunchRunSuccess
   | InvalidStepError
@@ -3691,6 +3699,7 @@ type AutomationConditionEvaluationNode {
 type Mutation {
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
+  launchMultipleRuns(executionParamsList: [ExecutionParams!]!): LaunchMultipleRunsResult!
   launchPipelineReexecution(
     executionParams: ExecutionParams
     reexecutionParams: ReexecutionParams
