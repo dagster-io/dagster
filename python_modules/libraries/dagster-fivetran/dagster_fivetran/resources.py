@@ -33,6 +33,7 @@ from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnector,
     FivetranDestination,
+    FivetranSchemaConfig,
     FivetranWorkspaceData,
 )
 from dagster_fivetran.types import FivetranOutput
@@ -632,8 +633,8 @@ class FivetranWorkspace(ConfigurableResource):
             FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
         """
         connectors_by_id = {}
-
         destinations_by_id = {}
+        schema_configs_by_connector_id = {}
 
         client = self.get_client()
         groups = client.get_groups()["items"]
@@ -649,19 +650,28 @@ class FivetranWorkspace(ConfigurableResource):
 
             connectors_details = client.get_connectors_for_group(group_id=group_id)["items"]
             for connector_details in connectors_details:
-                connector = FivetranConnector.from_api_details(
+                connector = FivetranConnector.from_connector_details(
                     connector_details=connector_details,
-                    destination_details=destination_details,
-                    schema_config_details=client.get_schema_config_for_connector(
-                        connector_id=connector_details["id"]
-                    ),
                 )
 
-                if not connector.has_bad_status:
-                    connectors_by_id[connector.id] = connector
+                if connector.has_bad_setup_state:
+                    continue
+
+                connectors_by_id[connector.id] = connector
+
+                schema_config_details = client.get_schema_config_for_connector(
+                    connector_id=connector.id
+                )
+                schema_config = FivetranSchemaConfig.from_schema_config_details(
+                    schema_config_details=schema_config_details
+                )
+
+                schema_configs_by_connector_id[connector.id] = schema_config
 
         return FivetranWorkspaceData(
-            connectors_by_id=connectors_by_id, destinations_by_id=destinations_by_id
+            connectors_by_id=connectors_by_id,
+            destinations_by_id=destinations_by_id,
+            schema_configs_by_connector_id=schema_configs_by_connector_id,
         )
 
 
