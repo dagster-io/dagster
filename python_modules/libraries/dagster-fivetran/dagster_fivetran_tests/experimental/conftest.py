@@ -380,6 +380,7 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
     },
 }
 
+TEST_ACCOUNT_ID = "test_account_id"
 TEST_API_KEY = "test_api_key"
 TEST_API_SECRET = "test_api_secret"
 
