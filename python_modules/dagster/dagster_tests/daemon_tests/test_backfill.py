@@ -3159,6 +3159,7 @@ def test_asset_backfill_retries_make_downstreams_runnable(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.asset_backfill_data
     assert (
         backfill.asset_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets
         == 0
