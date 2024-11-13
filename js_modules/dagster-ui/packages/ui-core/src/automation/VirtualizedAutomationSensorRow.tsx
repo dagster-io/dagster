@@ -8,6 +8,7 @@ import {
 } from '@dagster-io/ui-components';
 import {forwardRef, useMemo} from 'react';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components';
 
 import {AutomationTargetList} from './AutomationTargetList';
 import {AutomationRowGrid} from './VirtualizedAutomationRow';
@@ -21,6 +22,7 @@ import {
   SensorAssetSelectionQuery,
   SensorAssetSelectionQueryVariables,
 } from '../sensors/types/SensorRoot.types';
+import {EvaluateTickButtonSensor} from '../ticks/EvaluateTickButtonSensor';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RowCell} from '../ui/VirtualizedTable';
 import {SENSOR_TYPE_META, SINGLE_SENSOR_QUERY} from '../workspace/VirtualizedSensorRow';
@@ -88,6 +90,12 @@ export const VirtualizedAutomationSensorRow = forwardRef(
       return data.sensorOrError;
     }, [data]);
 
+    const cursor =
+      sensorData &&
+      sensorData.sensorState.typeSpecificData &&
+      sensorData.sensorState.typeSpecificData.__typename === 'SensorData' &&
+      sensorData.sensorState.typeSpecificData.lastCursor;
+
     const onChange = (e: React.FormEvent<HTMLInputElement>) => {
       if (onToggleChecked && e.target instanceof HTMLInputElement) {
         const {checked} = e.target;
@@ -136,16 +144,38 @@ export const VirtualizedAutomationSensorRow = forwardRef(
             </Tooltip>
           </RowCell>
           <RowCell>
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
-              {/* Keyed so that a new switch is always rendered, otherwise it's reused and animates on/off */}
+            <Box
+              flex={{
+                direction: 'row',
+                gap: 8,
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+              }}
+            >
+              <Box flex={{grow: 1, gap: 8}}>
+                {/* Keyed so that a new switch is always rendered, otherwise it's reused and animates on/off */}
+                {sensorData ? (
+                  <SensorSwitch key={name} repoAddress={repoAddress} sensor={sensorData} />
+                ) : (
+                  <div style={{width: 30}} />
+                )}
+                <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>
+                  <MiddleTruncate text={name} />
+                </Link>
+              </Box>
               {sensorData ? (
-                <SensorSwitch key={name} repoAddress={repoAddress} sensor={sensorData} />
+                <EvaluateTickButtonSensorWrapper>
+                  <EvaluateTickButtonSensor
+                    cursor={cursor || ''}
+                    name={sensorData?.name || ''}
+                    repoAddress={repoAddress}
+                    jobName={sensorData?.targets?.[0]?.pipelineName || ''}
+                    sensorType={sensorData.sensorType}
+                  />
+                </EvaluateTickButtonSensorWrapper>
               ) : (
                 <div style={{width: 30}} />
               )}
-              <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>
-                <MiddleTruncate text={name} />
-              </Link>
             </Box>
           </RowCell>
           <RowCell>
@@ -205,3 +235,9 @@ export const VirtualizedAutomationSensorRow = forwardRef(
     );
   },
 );
+
+const EvaluateTickButtonSensorWrapper = styled.div`
+  button {
+    height: 24px;
+  }
+`;
