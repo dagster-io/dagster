@@ -154,14 +154,14 @@ def _get_cached_status_for_asset(instance, asset_key):
     return asset_records[0].asset_entry.cached_status
 
 
-def test_asset_single_wipe_cache(instance_runner):
+def test_asset_single_wipe_cache(instance_runner) -> None:
     instance, runner = instance_runner
     job_one.execute_in_process(instance=instance)
     job_two.execute_in_process(instance=instance)
     asset_1 = AssetKey("asset_1")
     asset_2 = AssetKey("asset_2")
 
-    dummy_cache_value = AssetStatusCacheValue(1, "foo", "bar")
+    dummy_cache_value = AssetStatusCacheValue(latest_storage_id=1)
     for key in [asset_1, asset_2]:
         instance.update_asset_cached_status_data(key, dummy_cache_value)
         assert _get_cached_status_for_asset(instance, key) == dummy_cache_value
@@ -182,7 +182,7 @@ def test_asset_multi_wipe_cache(instance_runner):
     asset_2 = AssetKey("asset_2")
     asset_3 = AssetKey(["path", "to", "asset_3"])
 
-    dummy_cache_value = AssetStatusCacheValue(1, "foo", "bar")
+    dummy_cache_value = AssetStatusCacheValue(latest_storage_id=1)
     for key in [asset_1, asset_2, asset_3]:
         instance.update_asset_cached_status_data(key, dummy_cache_value)
         assert _get_cached_status_for_asset(instance, key) == dummy_cache_value
@@ -206,7 +206,7 @@ def test_asset_wipe_all_cache_status_values(instance_runner):
     asset_2 = AssetKey("asset_2")
     asset_3 = AssetKey(["path", "to", "asset_3"])
 
-    dummy_cache_value = AssetStatusCacheValue(1, "foo", "bar")
+    dummy_cache_value = AssetStatusCacheValue(latest_storage_id=1)
     for key in [asset_2, asset_3]:
         instance.update_asset_cached_status_data(key, dummy_cache_value)
         assert _get_cached_status_for_asset(instance, key) == dummy_cache_value
