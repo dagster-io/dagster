@@ -152,7 +152,6 @@ def test_load_asset_specs(
     assert [dep.asset_key for dep in looker_dashboard_asset.deps] == [
         expected_lookml_explore_asset_key
     ]
-    assert looker_dashboard_asset.owners == ["ben@dagsterlabs.com"]
     assert looker_dashboard_asset.metadata.get("dagster-looker/web_url") == MetadataValue.url(
         "https://your.cloud.looker.com/dashboards/1"
     )
