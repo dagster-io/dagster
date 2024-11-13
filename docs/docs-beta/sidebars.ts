@@ -46,7 +46,12 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'Integrate',
-          items: ['guides/ingesting-data', 'guides/transform-dbt', 'guides/non-python'],
+          items: [
+            'guides/ingesting-data',
+            'guides/transform-dbt',
+            'guides/non-python',
+            'guides/report-events-to-datadog',
+          ],
         },
       ],
     },
