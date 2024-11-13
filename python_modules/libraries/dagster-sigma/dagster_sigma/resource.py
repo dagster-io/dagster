@@ -387,7 +387,7 @@ class SigmaOrganization(ConfigurableResource):
 
     @cached_method
     async def build_organization_data(
-        self, sigma_filter: Optional[SigmaFilter], skip_fetch_column_data: bool
+        self, sigma_filter: Optional[SigmaFilter], fetch_column_data: bool
     ) -> SigmaOrganizationData:
         """Retrieves all workbooks and datasets in the Sigma organization and builds a
         SigmaOrganizationData object representing the organization's assets.
@@ -417,7 +417,7 @@ class SigmaOrganization(ConfigurableResource):
         deps_by_dataset_inode = await self._fetch_dataset_upstreams_by_inode()
 
         columns_by_dataset_inode = (
-            await self._fetch_dataset_columns_by_inode() if not skip_fetch_column_data else {}
+            await self._fetch_dataset_columns_by_inode() if fetch_column_data else {}
         )
 
         for dataset in await self._fetch_datasets():
@@ -441,7 +441,7 @@ class SigmaOrganization(ConfigurableResource):
         self,
         dagster_sigma_translator: Type[DagsterSigmaTranslator] = DagsterSigmaTranslator,
         sigma_filter: Optional[SigmaFilter] = None,
-        skip_fetch_column_data: bool = False,
+        fetch_column_data: bool = True,
     ) -> Definitions:
         """Returns a Definitions object representing the Sigma content in the organization.
 
@@ -454,7 +454,7 @@ class SigmaOrganization(ConfigurableResource):
         """
         return Definitions(
             assets=load_sigma_asset_specs(
-                self, dagster_sigma_translator, sigma_filter, skip_fetch_column_data
+                self, dagster_sigma_translator, sigma_filter, fetch_column_data
             )
         )
 
@@ -466,7 +466,7 @@ def load_sigma_asset_specs(
         [SigmaOrganizationData], DagsterSigmaTranslator
     ] = DagsterSigmaTranslator,
     sigma_filter: Optional[SigmaFilter] = None,
-    skip_fetch_column_data: bool = False,
+    fetch_column_data: bool = True,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Sigma content in the organization.
 
@@ -475,7 +475,7 @@ def load_sigma_asset_specs(
         dagster_sigma_translator (Callable[[SigmaOrganizationData], DagsterSigmaTranslator]): The translator to use
             to convert Sigma content into AssetSpecs. Defaults to DagsterSigmaTranslator.
         sigma_filter (Optional[SigmaFilter]): Filters the set of Sigma objects to fetch.
-        skip_fetch_column_data (bool): Whether to skip fetching column data for datasets, which can be slow.
+        fetch_column_data (bool): Whether to fetch column data for datasets, which can be slow.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Sigma content in the organization.
@@ -486,7 +486,7 @@ def load_sigma_asset_specs(
                 organization=initialized_organization,
                 translator_cls=dagster_sigma_translator,
                 sigma_filter=sigma_filter,
-                skip_fetch_column_data=skip_fetch_column_data,
+                fetch_column_data=fetch_column_data,
             )
             .build_defs()
             .assets,
@@ -512,7 +512,7 @@ class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganization
     organization: SigmaOrganization
     translator_cls: Callable[[SigmaOrganizationData], DagsterSigmaTranslator]
     sigma_filter: Optional[SigmaFilter] = None
-    skip_fetch_column_data: bool = False
+    fetch_column_data: bool = True
 
     @property
     def defs_key(self) -> str:
@@ -521,7 +521,7 @@ class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganization
     def fetch_state(self) -> SigmaOrganizationData:
         return asyncio.run(
             self.organization.build_organization_data(
-                sigma_filter=self.sigma_filter, skip_fetch_column_data=self.skip_fetch_column_data
+                sigma_filter=self.sigma_filter, fetch_column_data=self.fetch_column_data
             )
         )
 
