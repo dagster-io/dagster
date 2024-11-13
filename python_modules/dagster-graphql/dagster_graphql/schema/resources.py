@@ -242,4 +242,4 @@ class GrapheneResourceDetailsList(graphene.ObjectType):
 class GrapheneResourceDetailsListOrError(graphene.Union):
     class Meta:
         types = (GrapheneResourceDetailsList, GrapheneRepositoryNotFoundError, GraphenePythonError)
-        name = "ResourcesOrError"
+        name = "ResourceDetailsListOrError"
