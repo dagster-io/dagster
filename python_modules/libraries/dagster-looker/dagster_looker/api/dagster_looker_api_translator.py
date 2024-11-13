@@ -211,10 +211,6 @@ class DagsterLookerApiTranslator:
     def get_dashboard_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
         looker_dashboard = check.inst(looker_structure.data, Dashboard)
 
-        user = None
-        if self.instance_data and looker_dashboard.user_id:
-            user = self.instance_data.users_by_id.get(looker_dashboard.user_id)
-
         return AssetSpec(
             key=self.get_asset_key(looker_structure),
             deps=list(
