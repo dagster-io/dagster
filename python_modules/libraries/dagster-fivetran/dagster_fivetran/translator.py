@@ -49,8 +49,8 @@ class FivetranConnector:
         return self.group_id
 
     @property
-    def has_bad_setup_state(self) -> bool:
-        return self.setup_state is not FivetranConnectorSetupStateType.CONNECTED
+    def is_connected(self) -> bool:
+        return self.setup_state is FivetranConnectorSetupStateType.CONNECTED
 
     @classmethod
     def from_connector_details(

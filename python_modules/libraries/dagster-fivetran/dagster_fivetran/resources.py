@@ -654,7 +654,7 @@ class FivetranWorkspace(ConfigurableResource):
                     connector_details=connector_details,
                 )
 
-                if connector.has_bad_setup_state:
+                if not connector.is_connected:
                     continue
 
                 connectors_by_id[connector.id] = connector
