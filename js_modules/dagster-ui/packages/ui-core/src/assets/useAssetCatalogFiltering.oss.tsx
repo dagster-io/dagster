@@ -194,13 +194,8 @@ export function useAssetCatalogFiltering<
     [filterFn, assets],
   ) as T[];
 
-  // const filtersByKey = useMemo((): A => {
-  //   return {};
-  // }, []);
-
   return {
     activeFiltersJsx: components.activeFiltersJsx,
-    // filtersByKey,
     filterButton: components.button,
     isFiltered,
     filterFn,
