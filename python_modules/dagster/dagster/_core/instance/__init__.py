@@ -1669,7 +1669,7 @@ class DagsterInstance(DynamicPartitionsStore):
                 # if the run was part of a backfill and the backfill is complete, we do not want the
                 # retry to be considered part of the backfill, so remove all backfill-related tags
                 backfill = self.get_backfill(parent_run.tags[BACKFILL_ID_TAG])
-                if backfill.status == BulkActionStatus.REQUESTED:
+                if backfill and backfill.status == BulkActionStatus.REQUESTED:
                     for tag in BACKFILL_TAGS:
                         if parent_run.tags.get(tag) is not None:
                             parent_run_tags[tag] = parent_run.tags[tag]
