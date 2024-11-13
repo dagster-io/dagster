@@ -44,7 +44,7 @@ def _build_paginated_response(
 
     return {
         "entries": items_to_return,
-        "hasMore": has_more,
+        "hasMore": str(has_more).lower(),
         "total": len(items),
         "nextPage": next_page,
     }

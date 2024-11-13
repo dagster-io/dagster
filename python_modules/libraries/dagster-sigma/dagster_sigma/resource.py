@@ -167,7 +167,7 @@ class SigmaOrganization(ConfigurableResource):
             ", fetching additional results" if result.get("hasMore") else "",
         )
 
-        while result.get("hasMore"):
+        while result.get("hasMore") == "true":
             next_page = result["nextPage"]
             query_params_with_limit_and_page = {
                 **query_params_with_limit,
