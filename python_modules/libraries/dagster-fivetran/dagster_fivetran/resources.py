@@ -698,6 +698,23 @@ def load_fivetran_asset_specs(
 
     Returns:
         List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
+
+    Examples:
+        Loading the asset specs for a given Fivetran workspace:
+
+        .. code-block:: python
+            from dagster_fivetran import FivetranWorkspace, load_fivetran_asset_specs
+
+            import dagster as dg
+
+            fivetran_workspace = FivetranWorkspace(
+                account_id=dg.EnvVar("FIVETRAN_ACCOUNT_ID"),
+                api_key=dg.EnvVar("FIVETRAN_API_KEY"),
+                api_secret=dg.EnvVar("FIVETRAN_API_SECRET"),
+            )
+
+            fivetran_specs = load_fivetran_asset_specs(fivetran_workspace)
+            defs = dg.Definitions(assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
     """
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
         return check.is_list(
