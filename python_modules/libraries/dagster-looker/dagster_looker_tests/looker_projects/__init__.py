@@ -7,3 +7,4 @@ test_exception_derived_table_path = projects_path.joinpath("test_exception_deriv
 test_refinements = projects_path.joinpath("test_refinements")
 test_extensions = projects_path.joinpath("test_extensions")
 test_liquid_path = projects_path.joinpath("test_liquid")
+test_union_no_distinct_path = projects_path.joinpath("test_union_no_distinct")
