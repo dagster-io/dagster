@@ -52,7 +52,7 @@ def my_asset():
     # read the data in the input file and write out a derived version
 ```
 
-You can write a sensor that watches for changes to the input file and requests a run to re-materialize `my_asset` each time it encounters one:
+You can write a sensor that watches for changes to the input file and requests a run to re-materialize `my_asset` each time a change occurs:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_job_sensor_marker endbefore=end_asset_job_sensor_marker
 from dagster import sensor, RunRequest
