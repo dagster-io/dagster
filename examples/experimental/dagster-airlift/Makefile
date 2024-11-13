@@ -5,7 +5,7 @@ adhoc_pypi:
 	@chmod +x scripts/increment_pypi_version.sh
 	@./scripts/increment_pypi_version.sh
 
-# Mirrors the tutorial to the dagster-airlift-tutorial repo: https://github.com/dagster-io/airlift-tutorial
+# Mirrors the tutorial to the dagster-airlift-migration-tutorial repo: https://github.com/dagster-io/airlift-migration-tutorial
 mirror_tutorial:
 	@chmod +x scripts/mirror_tutorial.sh
 	@./scripts/mirror_tutorial.sh
@@ -14,7 +14,7 @@ mirror_tutorial:
 # - Enforces that we're on master
 # - Bumps the version in setup.py
 # - Pushes the changes to PyPI
-# - Mirrors the tutorial to the dagster-airlift-tutorial repo
+# - Mirrors the tutorial to the dagster-airlift-migration-tutorial repo
 # - Creates a release branch
 # - Pushes the release branch to origin
 adhoc_release:

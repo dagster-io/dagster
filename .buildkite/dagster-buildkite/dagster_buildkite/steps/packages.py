@@ -373,7 +373,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     # Runs against live dbt cloud instance, we only want to run on commits and on the
     # nightly build
     PackageSpec(
-        "examples/experimental/dagster-airlift/examples/dbt-example",
+        "examples/starlift-demo",
         skip_if=skip_if_not_airlift_or_dlift_commit,
         env_vars=[
             "KS_DBT_CLOUD_ACCOUNT_ID",
@@ -386,15 +386,15 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         queue=BuildkiteQueue.DOCKER,
     ),
     PackageSpec(
-        "examples/experimental/dagster-airlift/examples/perf-harness",
+        "examples/experimental/dagster-airlift/perf-harness",
         always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
-        "examples/experimental/dagster-airlift/examples/tutorial-example",
+        "examples/airlift-migration-tutorial",
         always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
-        "examples/experimental/dagster-airlift/examples/kitchen-sink",
+        "examples/experimental/dagster-airlift/kitchen-sink",
         always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(

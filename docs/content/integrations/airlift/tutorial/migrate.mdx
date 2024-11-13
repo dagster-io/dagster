@@ -10,7 +10,7 @@ To begin proxying tasks in a DAG, first you will need a file to track proxying s
 
 Given our example DAG `rebuild_customers_list` with three tasks, `load_raw_customers`, `run_dbt_model`, and `export_customers`, `proxied_state/rebuild_customers_list.yaml` should look like the following:
 
-```yaml file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/airflow_dags/proxied_state/rebuild_customers_list.yaml
+```yaml file=../../airlift-migration-tutorial/tutorial_example/airflow_dags/proxied_state/rebuild_customers_list.yaml
 tasks:
   - id: load_raw_customers
     proxied: False
@@ -22,7 +22,7 @@ tasks:
 
 Next, you will need to modify your Airflow DAG to make it aware of the proxied state. This is already done in the example DAG:
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/snippets/dags_truncated.py
+```python file=../../airlift-migration-tutorial/tutorial_example/snippets/dags_truncated.py
 # Dags file can be found at tutorial_example/airflow_dags/dags.py
 from pathlib import Path
 
@@ -76,7 +76,7 @@ A task which has been proxied can be easily toggled back to run in Airflow (for 
 
 For some common operator patterns, like our dbt operator, Dagster supplies factories to build software defined assets for our tasks. In fact, the `@dbt_assets` decorator used earlier already backs its assets with definitions, so we can toggle the proxied state of the `build_dbt_models` task to `proxied: True` in the proxied state file:
 
-```yaml file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/snippets/dbt_proxied.yaml
+```yaml file=../../airlift-migration-tutorial/tutorial_example/snippets/dbt_proxied.yaml
 tasks:
   - id: load_raw_customers
     proxied: False
@@ -109,7 +109,7 @@ For all other operator types, we will need to build our own asset definitions. W
 
 For example, our `load_raw_customers` task uses a custom `LoadCSVToDuckDB` operator. We'll define a function `load_csv_to_duckdb_defs` factory to build corresponding software-defined assets. Similarly for `export_customers` we'll define a function `export_duckdb_to_csv_defs` to build SDAs:
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/migrate.py
+```python file=../../airlift-migration-tutorial/tutorial_example/dagster_defs/stages/migrate.py
 import os
 from pathlib import Path
 
@@ -232,7 +232,7 @@ if __name__ == "__main__":
 
 We can then toggle the proxied state of the remaining tasks in the `proxied_state` file:
 
-```yaml file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/snippets/all_proxied.yaml
+```yaml file=../../airlift-migration-tutorial/tutorial_example/snippets/all_proxied.yaml
 tasks:
   - id: load_raw_customers
     proxied: True

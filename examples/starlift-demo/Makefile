@@ -12,6 +12,8 @@ export FEDERATED_AIRFLOW_HOME_2 := $(MAKEFILE_DIR)/.federated_airflow_home_2
 export DBT_PROJECT_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DAGSTER_URL := http://localhost:3333
+export AIRLIFT_MODULE_DIR := $(MAKEFILE_DIR)/../experimental/dagster-airlift
+export DLIFT_MODULE_DIR := $(MAKEFILE_DIR)/../experimental/dagster-dlift
 
 help:
 	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -21,8 +23,8 @@ dbt_setup: ## Initialize dbt project
 
 dev_install:
 	pip install uv && \
-	uv pip install -e ../../../dagster-dlift && \
-	uv pip install -e ../../../dagster-airlift[test]
+	uv pip install -e $(DLIFT_MODULE_DIR) && \
+	uv pip install -e $(AIRLIFT_MODULE_DIR)[test]
 	uv pip install -e .
 
 setup_local_env: 
@@ -31,19 +33,19 @@ setup_local_env:
 	mkdir -p $(FEDERATED_AIRFLOW_HOME_1)
 	mkdir -p $(FEDERATED_AIRFLOW_HOME_2)
 	mkdir -p $(DAGSTER_HOME)
-	chmod +x ../../scripts/airflow_setup.sh
-	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags $(MIGRATING_AIRFLOW_HOME)
-	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/federated_airflow_dags_1 $(FEDERATED_AIRFLOW_HOME_1) 8081
-	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/federated_airflow_dags_2 $(FEDERATED_AIRFLOW_HOME_2) 8082
+	chmod +x $(AIRLIFT_MODULE_DIR)/scripts/airflow_setup.sh
+	$(AIRLIFT_MODULE_DIR)/scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags $(MIGRATING_AIRFLOW_HOME)
+	$(AIRLIFT_MODULE_DIR)/scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/federated_airflow_dags_1 $(FEDERATED_AIRFLOW_HOME_1) 8081
+	$(AIRLIFT_MODULE_DIR)/scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/federated_airflow_dags_2 $(FEDERATED_AIRFLOW_HOME_2) 8082
 	$(MAKE) dbt_setup
 
 not_proxied:
-	chmod +x ../../scripts/find_and_replace_in_yaml_dir.sh
-	../../scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state True False
+	chmod +x $(AIRLIFT_MODULE_DIR)/scripts/find_and_replace_in_yaml_dir.sh
+	$(AIRLIFT_MODULE_DIR)/scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state True False
 
 proxied: 
-	chmod +x ../../scripts/find_and_replace_in_yaml_dir.sh
-	../../scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state False True
+	chmod +x $(AIRLIFT_MODULE_DIR)/scripts/find_and_replace_in_yaml_dir.sh
+	$(AIRLIFT_MODULE_DIR)/scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state False True
 
 run_migrating_airflow:
 	AIRFLOW_HOME=$(MIGRATING_AIRFLOW_HOME) airflow standalone

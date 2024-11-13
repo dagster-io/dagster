@@ -17,7 +17,7 @@ When migrating an entire DAG at once, we'll want to create assets which map to t
 
 For our `rebuild_customers_list` DAG, let's take a look at what the new observation code looks like:
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/observe_dag_level.py
+```python file=../../airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_dag_level.py
 import os
 from pathlib import Path
 
@@ -79,7 +79,7 @@ Now, instead of getting a materialization when a particular task completes, each
 
 Recall that in the [task-by-task migration step](/integrations/airlift/tutorial/migrate), we "proxy" execution on a task by task basis, which is controlled by a yaml document. For DAG-mapped assets, execution is proxied on a per-DAG basis. Proxying execution to Dagster will require all assets mapped to that DAG be _executable_ within Dagster. Let's take a look at some fully migrated code mapped to DAGs instead of tasks:
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/migrate_dag_level.py
+```python file=../../airlift-migration-tutorial/tutorial_example/dagster_defs/stages/migrate_dag_level.py
 import os
 from pathlib import Path
 
@@ -192,13 +192,13 @@ if __name__ == "__main__":
 
 Now that all of our assets are fully executable, we can create a simple yaml file to proxy execution for the whole dag:
 
-```yaml file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/snippets/rebuild_customers_list.yaml
+```yaml file=../../airlift-migration-tutorial/tutorial_example/snippets/rebuild_customers_list.yaml
 proxied: True
 ```
 
 We will similarly use `proxying_to_dagster` at the end of our DAG file (the code is exactly the same here as it was for the per-task migration step)
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/snippets/dags_truncated.py
+```python file=../../airlift-migration-tutorial/tutorial_example/snippets/dags_truncated.py
 # Dags file can be found at tutorial_example/airflow_dags/dags.py
 from pathlib import Path
 

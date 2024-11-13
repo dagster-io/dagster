@@ -16,7 +16,7 @@ cd "$temp_dir"
 echo "Initializing git repository..."
 git init
 echo "Adding remote..."
-git remote add origin git@github.com:dagster-io/airlift-tutorial.git
+git remote add origin git@github.com:dagster-io/airlift-migration-tutorial.git
 echo "Fetching and resetting..."
 git fetch origin
 git reset --soft origin/main

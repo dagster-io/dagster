@@ -5,7 +5,7 @@ airflow dags into dagster as assets.
 
 ### Try it out
 
-From the root of the `dbt-example` directory, run the `dev_install` make command to install python dependencies.
+From the root of the `starlift-demo` directory, run the `dev_install` make command to install python dependencies.
 
 ```bash
 make dev_install

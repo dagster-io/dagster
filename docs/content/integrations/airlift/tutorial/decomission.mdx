@@ -6,7 +6,7 @@ Once we are confident in our migrated versions of the tasks, we can decommission
 
 Next, we can strip the task associations from our Dagster definitions. This can be done by removing the `assets_with_task_mappings` call. We can use this opportunity to attach our assets to a `ScheduleDefinition` so that Dagster's scheduler can manage their execution:
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/standalone.py
+```python file=../../airlift-migration-tutorial/tutorial_example/dagster_defs/stages/standalone.py
 import os
 from pathlib import Path
 
