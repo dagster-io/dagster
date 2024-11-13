@@ -953,6 +953,10 @@
               {
                 "title": "Part 2: Observe dag lineage in Dagster",
                 "path": "/integrations/airlift/federation-tutorial/observe"
+              },
+              {
+                "title": "Part 3: Federate across Airflow instances",
+                "path": "/integrations/airlift/federation-tutorial/federated-execution"
               }
             ]
           },
