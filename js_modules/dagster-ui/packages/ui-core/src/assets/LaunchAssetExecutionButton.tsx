@@ -54,7 +54,6 @@ import {PipelineSelector} from '../graphql/types';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {testId} from '../testing/testId';
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -878,8 +877,8 @@ export const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
     $repositoryLocationName: String!
     $repositoryName: String!
   ) {
-    pipelineOrError(
-      params: {
+    resourcesOrError(
+      pipelineSelector: {
         pipelineName: $pipelineName
         repositoryName: $repositoryName
         repositoryLocationName: $repositoryLocationName
@@ -894,30 +893,16 @@ export const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
       ... on PipelineNotFoundError {
         message
       }
-      ... on Pipeline {
-        id
-        modes {
-          id
-          resources {
-            name
-            description
-            configField {
-              name
-              isRequired
-              configType {
-                ...ConfigTypeSchemaFragment
-                recursiveConfigTypes {
-                  ...ConfigTypeSchemaFragment
-                }
-              }
-            }
+      ... on ResourceConnection {
+        resources {
+          name
+          configField {
+            isRequired
           }
         }
       }
     }
   }
-
-  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;
 
 export const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
@@ -959,15 +944,14 @@ async function checkIfResourcesRequireConfig({
       repositoryLocationName: repoAddress.location,
     },
   });
-  const pipeline = resourceResult.data.pipelineOrError;
-  if (pipeline.__typename !== 'Pipeline') {
+  const resourceConnection = resourceResult.data.resourcesOrError;
+  if (resourceConnection.__typename !== 'ResourceConnection') {
     return {
-      error: pipeline.message,
+      error: resourceConnection.message,
       requiredConfigPresent: false,
     };
   }
-
-  const resources = pipeline.modes[0]!.resources.filter((r) =>
+  const resources = resourceConnection.resources.filter((r) =>
     requiredResourceKeys.includes(r.name),
   );
   return {
