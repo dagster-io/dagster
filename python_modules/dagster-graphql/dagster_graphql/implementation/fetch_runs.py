@@ -491,16 +491,12 @@ def _filters_apply_to_backfills(filters: RunsFilter) -> bool:
     return True
 
 
-def _filters_contain_backfill_id(filters: RunsFilter) -> bool:
-    return filters.tags and filters.tags.get(BACKFILL_ID_TAG) is not None
-
-
 def _bulk_action_filters_from_run_filters(filters: RunsFilter) -> BulkActionsFilter:
     converted_statuses = (
         _bulk_action_statuses_from_run_statuses(filters.statuses) if filters.statuses else None
     )
     backfill_ids = None
-    if filters.tags and filters.tags.get(BACKFILL_ID_TAG) is not None:
+    if filters.tags.get(BACKFILL_ID_TAG) is not None:
         backfill_ids = filters.tags[BACKFILL_ID_TAG]
         if isinstance(backfill_ids, str):
             backfill_ids = [backfill_ids]
@@ -615,7 +611,7 @@ def get_runs_feed_entries(
 
     # if we are not showing runs within backfills and the backfill_id filter is set, we know
     # there will be no results, so we can skip fetching runs
-    should_fetch_runs = not (exclude_subruns and _filters_contain_backfill_id(run_filters))
+    should_fetch_runs = not (exclude_subruns and run_filters.tags.get(BACKFILL_ID_TAG) is not None)
     if should_fetch_runs:
         runs = [
             GrapheneRun(run)
