@@ -1,3 +1,12 @@
+# Decomissioning an Airflow DAG
+
+Previously, we completed migration of our Airflow DAG to Dagster assets. If you haven't finished that stage yet, please follow along [here](/integrations/airlift/tutorial/migrate).
+
+Once we are confident in our migrated versions of the tasks, we can decommission the Airflow DAG. First, we can remove the DAG from our Airflow DAG directory.
+
+Next, we can strip the task associations from our Dagster definitions. This can be done by removing the `assets_with_task_mappings` call. We can use this opportunity to attach our assets to a `ScheduleDefinition` so that Dagster's scheduler can manage their execution:
+
+```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/standalone.py
 import os
 from pathlib import Path
 
@@ -120,3 +129,4 @@ defs = Definitions(
     asset_checks=[validate_exported_csv],
     resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
 )
+```

@@ -8,11 +8,13 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     AssetSpec,
+    DailyPartitionsDefinition,
     Definitions,
     asset_check,
     materialize,
     multi_asset,
 )
+from dagster._time import get_current_datetime_midnight
 from dagster_airlift.core import (
     AirflowBasicAuthBackend,
     AirflowInstance,
@@ -24,6 +26,8 @@ from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 # Code also invoked from Airflow
 from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
 from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load_csv_to_duckdb
+
+PARTITIONS_DEF = DailyPartitionsDefinition(start_date=get_current_datetime_midnight())
 
 
 def dbt_project_path() -> Path:
@@ -55,6 +59,7 @@ def export_duckdb_to_csv_defs(spec: AssetSpec, args: ExportDuckDbToCsvArgs) -> A
 @dbt_assets(
     manifest=dbt_project_path() / "target" / "manifest.json",
     project=DbtProject(dbt_project_path()),
+    partitions_def=PARTITIONS_DEF,
 )
 def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
@@ -65,7 +70,7 @@ mapped_assets = assets_with_task_mappings(
     task_mappings={
         "load_raw_customers": [
             load_csv_to_duckdb_asset(
-                AssetSpec(key=["raw_data", "raw_customers"]),
+                AssetSpec(key=["raw_data", "raw_customers"], partitions_def=PARTITIONS_DEF),
                 LoadCsvToDuckDbArgs(
                     table_name="raw_customers",
                     csv_path=airflow_dags_path() / "raw_customers.csv",
@@ -81,7 +86,7 @@ mapped_assets = assets_with_task_mappings(
         [dbt_project_assets],
         "export_customers": [
             export_duckdb_to_csv_defs(
-                AssetSpec(key="customers_csv", deps=["customers"]),
+                AssetSpec(key="customers_csv", deps=["customers"], partitions_def=PARTITIONS_DEF),
                 ExportDuckDbToCsvArgs(
                     table_name="customers",
                     csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
