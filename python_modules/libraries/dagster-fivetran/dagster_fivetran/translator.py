@@ -24,6 +24,7 @@ class FivetranConnectorTableProps(NamedTuple):
     service: Optional[str]
 
 
+@whitelist_for_serdes
 class FivetranContentType(Enum):
     """Enum representing each object in Fivetran's ontology."""
 
@@ -42,6 +43,7 @@ class FivetranContentData:
     properties: Mapping[str, Any]
 
 
+@whitelist_for_serdes
 @record
 class FivetranWorkspaceData:
     """A record representing all content in a Fivetran workspace.
