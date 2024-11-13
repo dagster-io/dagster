@@ -1295,14 +1295,11 @@ class AllPartitionsSubset(
         return other
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        from dagster._core.definitions.time_window_partitions import (
-            BaseTimeWindowPartitionsSubset,
-            TimeWindowPartitionsSubset,
-        )
+        from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
 
         if self == other:
             return self.partitions_def.empty_subset()
-        elif isinstance(other, BaseTimeWindowPartitionsSubset):
+        elif isinstance(other, TimeWindowPartitionsSubset):
             return TimeWindowPartitionsSubset.from_all_partitions_subset(self) - other
         return self.partitions_def.empty_subset().with_partition_keys(
             set(self.get_partition_keys()).difference(set(other.get_partition_keys()))

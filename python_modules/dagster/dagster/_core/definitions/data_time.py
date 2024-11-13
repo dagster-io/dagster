@@ -26,8 +26,8 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessMinutes
 from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
     TimeWindowPartitionsDefinition,
+    TimeWindowPartitionsSubset,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventLogRecord
@@ -90,7 +90,7 @@ class CachingDataTimeResolver:
             )
         )
 
-        if not isinstance(partition_subset, BaseTimeWindowPartitionsSubset):
+        if not isinstance(partition_subset, TimeWindowPartitionsSubset):
             check.failed(f"Invalid partition subset {type(partition_subset)}")
 
         sorted_time_windows = sorted(partition_subset.included_time_windows)
