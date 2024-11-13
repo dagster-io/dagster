@@ -3717,7 +3717,7 @@ export type PythonError = Error & {
 
 export type Query = {
   __typename: 'Query';
-  allTopLevelResourceDetailsOrError: ResourcesOrError;
+  allTopLevelResourceDetailsOrError: ResourceDetailsListOrError;
   assetBackfillPreview: Array<AssetPartitions>;
   assetCheckExecutions: Array<AssetCheckExecution>;
   assetConditionEvaluationForPartition: Maybe<AssetConditionEvaluation>;
@@ -3755,6 +3755,7 @@ export type Query = {
   pipelineSnapshotOrError: PipelineSnapshotOrError;
   repositoriesOrError: RepositoriesOrError;
   repositoryOrError: RepositoryOrError;
+  resourcesOrError: ResourcesOrError;
   runConfigSchemaOrError: RunConfigSchemaOrError;
   runGroupOrError: RunGroupOrError;
   runIdsOrError: RunIdsOrError;
@@ -3950,6 +3951,10 @@ export type QueryRepositoriesOrErrorArgs = {
 
 export type QueryRepositoryOrErrorArgs = {
   repositorySelector: RepositorySelector;
+};
+
+export type QueryResourcesOrErrorArgs = {
+  pipelineSelector: PipelineSelector;
 };
 
 export type QueryRunConfigSchemaOrErrorArgs = {
@@ -4260,6 +4265,11 @@ export type Resource = {
   name: Scalars['String']['output'];
 };
 
+export type ResourceConnection = {
+  __typename: 'ResourceConnection';
+  resources: Array<Resource>;
+};
+
 export type ResourceDetails = {
   __typename: 'ResourceDetails';
   assetKeysUsing: Array<AssetKey>;
@@ -4281,6 +4291,11 @@ export type ResourceDetailsList = {
   __typename: 'ResourceDetailsList';
   results: Array<ResourceDetails>;
 };
+
+export type ResourceDetailsListOrError =
+  | PythonError
+  | RepositoryNotFoundError
+  | ResourceDetailsList;
 
 export type ResourceDetailsOrError = PythonError | ResourceDetails | ResourceNotFoundError;
 
@@ -4420,7 +4435,11 @@ export type ResourceSelector = {
   resourceName: Scalars['String']['input'];
 };
 
-export type ResourcesOrError = PythonError | RepositoryNotFoundError | ResourceDetailsList;
+export type ResourcesOrError =
+  | InvalidSubsetError
+  | PipelineNotFoundError
+  | PythonError
+  | ResourceConnection;
 
 export type ResumeBackfillResult = PythonError | ResumeBackfillSuccess | UnauthorizedError;
 
@@ -12203,6 +12222,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('PythonError')
           ? ({} as PythonError)
           : buildPythonError({}, relationshipsToOmit),
+    resourcesOrError:
+      overrides && overrides.hasOwnProperty('resourcesOrError')
+        ? overrides.resourcesOrError!
+        : relationshipsToOmit.has('InvalidSubsetError')
+          ? ({} as InvalidSubsetError)
+          : buildInvalidSubsetError({}, relationshipsToOmit),
     runConfigSchemaOrError:
       overrides && overrides.hasOwnProperty('runConfigSchemaOrError')
         ? overrides.runConfigSchemaOrError!
@@ -12771,6 +12796,18 @@ export const buildResource = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'perferendis',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'fuga',
+  };
+};
+
+export const buildResourceConnection = (
+  overrides?: Partial<ResourceConnection>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ResourceConnection'} & ResourceConnection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ResourceConnection');
+  return {
+    __typename: 'ResourceConnection',
+    resources: overrides && overrides.hasOwnProperty('resources') ? overrides.resources! : [],
   };
 };
 

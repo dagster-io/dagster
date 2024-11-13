@@ -61,6 +61,7 @@ from dagster._core.remote_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.snap.dagster_types import DagsterTypeSnap
+from dagster._core.snap.mode import ResourceDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._core.workspace.permissions import (
@@ -412,6 +413,15 @@ class BaseWorkspaceRequestContext(LoadingContext):
     ) -> DagsterTypeSnap:
         job = self.get_full_job(job_selector)
         return job.job_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap(type_key)
+
+    def get_resources(
+        self,
+        job_selector: Union[JobSubsetSelector, JobSelector],
+    ) -> Sequence[ResourceDefSnap]:
+        job = self.get_full_job(job_selector)
+        if not job.mode_def_snaps:
+            return []
+        return job.mode_def_snaps[0].resource_def_snaps
 
     def get_dagster_library_versions(self, location_name: str) -> Optional[Mapping[str, str]]:
         return self.get_code_location(location_name).get_dagster_library_versions()
