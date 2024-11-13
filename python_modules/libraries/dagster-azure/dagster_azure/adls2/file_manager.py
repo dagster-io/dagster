@@ -122,6 +122,3 @@ class ADLS2FileManager(FileManager):
 
     def delete_local_temp(self):
         self._temp_file_manager.close()
-
-    def get_client(self):
-        return self._client
