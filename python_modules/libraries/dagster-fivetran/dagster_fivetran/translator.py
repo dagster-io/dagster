@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
 
 from dagster._core.definitions.asset_key import AssetKey
@@ -19,6 +20,14 @@ class FivetranConnectorTableProps(NamedTuple):
     service: Optional[str]
 
 
+class FivetranConnectorSetupStateType(Enum):
+    """Enum representing each setup state for a connector in Fivetran's ontology."""
+
+    INCOMPLETE = "incomplete"
+    CONNECTED = "connected"
+    BROKEN = "broken"
+
+
 @whitelist_for_serdes
 @record
 class FivetranConnector:
@@ -29,6 +38,7 @@ class FivetranConnector:
     service: str
     schema_config: "FivetranSchemaConfig"
     destination_id: str
+    has_bad_status: bool
 
     @property
     def url(self) -> str:
@@ -49,6 +59,11 @@ class FivetranConnector:
                 schema_config_details=schema_config_details
             ),
             destination_id=destination_details["id"],
+            has_bad_status=connector_details["status"]["setup_state"]
+            in (
+                FivetranConnectorSetupStateType.INCOMPLETE,
+                FivetranConnectorSetupStateType.BROKEN,
+            ),
         )
 
 

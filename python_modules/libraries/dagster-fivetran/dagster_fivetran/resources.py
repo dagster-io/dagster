@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import time
-from enum import Enum
 from typing import Any, Mapping, Optional, Sequence, Tuple, Type
 from urllib.parse import urljoin
 
@@ -49,14 +48,6 @@ FIVETRAN_CONNECTOR_PATH = f"{FIVETRAN_CONNECTOR_ENDPOINT}/"
 DEFAULT_POLL_INTERVAL = 10
 
 FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-fivetran/reconstruction_metadata"
-
-
-class FivetranConnectorSetupStateType(Enum):
-    """Enum representing each setup state for a connector in Fivetran's ontology."""
-
-    INCOMPLETE = "incomplete"
-    CONNECTED = "connected"
-    BROKEN = "broken"
 
 
 class FivetranResource(ConfigurableResource):
@@ -651,30 +642,23 @@ class FivetranWorkspace(ConfigurableResource):
             group_id = group["id"]
 
             destination_details = client.get_destination_details(destination_id=group_id)
-            destination_id = destination_details["id"]
-
-            destinations_by_id[destination_id] = FivetranDestination.from_destination_details(
+            destination = FivetranDestination.from_destination_details(
                 destination_details=destination_details
             )
+            destinations_by_id[destination.id] = destination
 
             connectors_details = client.get_connectors_for_group(group_id=group_id)["items"]
             for connector_details in connectors_details:
-                if connector_details["status"]["setup_state"] in (
-                    FivetranConnectorSetupStateType.INCOMPLETE,
-                    FivetranConnectorSetupStateType.BROKEN,
-                ):
-                    continue
-
-                connector_id = connector_details["id"]
-                schema_config_details = client.get_schema_config_for_connector(
-                    connector_id=connector_id
-                )
-
-                connectors_by_id[connector_id] = FivetranConnector.from_api_details(
+                connector = FivetranConnector.from_api_details(
                     connector_details=connector_details,
                     destination_details=destination_details,
-                    schema_config_details=schema_config_details,
+                    schema_config_details=client.get_schema_config_for_connector(
+                        connector_id=connector_details["id"]
+                    ),
                 )
+
+                if not connector.has_bad_status:
+                    connectors_by_id[connector.id] = connector
 
         return FivetranWorkspaceData(
             connectors_by_id=connectors_by_id, destinations_by_id=destinations_by_id
