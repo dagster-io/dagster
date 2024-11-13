@@ -18,6 +18,7 @@ import {useDefinitionTagFilter, useTagsForAssets} from '../ui/Filters/useDefinit
 import {useAssetKindsForAssets, useKindFilter} from '../ui/Filters/useKindFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {AssetFilterType} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 const EMPTY_ARRAY: any[] = [];
 
@@ -194,8 +195,13 @@ export function useAssetCatalogFiltering<
     [filterFn, assets],
   ) as T[];
 
+  // const filtersByKey = useMemo((): A => {
+  //   return {};
+  // }, []);
+
   return {
     activeFiltersJsx: components.activeFiltersJsx,
+    // filtersByKey,
     filterButton: components.button,
     isFiltered,
     filterFn,

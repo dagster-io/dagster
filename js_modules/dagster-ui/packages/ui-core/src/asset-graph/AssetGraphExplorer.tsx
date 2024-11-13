@@ -725,9 +725,9 @@ const AssetGraphExplorerWithData = ({
                       items={graphQueryItems}
                       value={explorerPath.opsQuery}
                       placeholder="Type an asset subset…"
-                      onChange={(opsQuery) =>
-                        onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')
-                      }
+                      onChange={(opsQuery: string) => {
+                        onChangeExplorerPath({...explorerPath, opsQuery}, 'replace');
+                      }}
                       popoverPosition="bottom-left"
                     />
                   </GraphQueryInputFlexWrap>
