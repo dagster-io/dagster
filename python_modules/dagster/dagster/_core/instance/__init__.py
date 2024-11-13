@@ -1661,9 +1661,13 @@ class DagsterInstance(DynamicPartitionsStore):
                 for key, val in parent_run.tags.items()
                 if key not in TAGS_TO_OMIT_ON_RETRY and key not in TAGS_TO_MAYBE_OMIT_ON_RETRY
             }
-            # if the run was part of a backfill and the backfill is complete, we do not want the
-            # retry to be considered part of the backfill, so remove all backfill-related tags
+            # for all tags in TAGS_TO_MAYBE_OMIT_ON_RETRY, add a condition that determines
+            # whether the tag should be added to the retried run
+
+            # condition for BACKFILL_ID_TAG, PARENT_BACKFILL_ID_TAG, ROOT_BACKFILL_ID_TAG
             if parent_run.tags.get(BACKFILL_ID_TAG) is not None:
+                # if the run was part of a backfill and the backfill is complete, we do not want the
+                # retry to be considered part of the backfill, so remove all backfill-related tags
                 backfill = self.get_backfill(parent_run.tags[BACKFILL_ID_TAG])
                 if backfill.status == BulkActionStatus.REQUESTED:
                     for tag in BACKFILL_TAGS:
