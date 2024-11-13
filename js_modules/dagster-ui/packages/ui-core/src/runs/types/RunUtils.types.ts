@@ -42,6 +42,64 @@ export type LaunchPipelineExecutionMutation = {
     | {__typename: 'UnauthorizedError'};
 };
 
+export type LaunchMultipleRunsMutationVariables = Types.Exact<{
+  executionParamsList: Array<Types.ExecutionParams> | Types.ExecutionParams;
+}>;
+
+export type LaunchMultipleRunsMutation = {
+  __typename: 'Mutation';
+  launchMultipleRuns: {
+    __typename: 'LaunchMultipleRunsResult';
+    launchMultipleRunsResult: Array<
+      | {__typename: 'ConflictingExecutionParamsError'; message: string}
+      | {__typename: 'InvalidOutputError'}
+      | {__typename: 'InvalidStepError'}
+      | {__typename: 'InvalidSubsetError'; message: string}
+      | {
+          __typename: 'LaunchRunSuccess';
+          run: {
+            __typename: 'Run';
+            id: string;
+            status: Types.RunStatus;
+            runConfigYaml: string;
+            mode: string;
+            resolvedOpSelection: Array<string> | null;
+            pipeline:
+              | {__typename: 'PipelineSnapshot'; name: string}
+              | {__typename: 'UnknownPipeline'; name: string};
+            tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+          };
+        }
+      | {__typename: 'NoModeProvidedError'}
+      | {__typename: 'PipelineNotFoundError'; message: string}
+      | {__typename: 'PresetNotFoundError'; preset: string; message: string}
+      | {
+          __typename: 'PythonError';
+          message: string;
+          stack: Array<string>;
+          errorChain: Array<{
+            __typename: 'ErrorChainLink';
+            isExplicitLink: boolean;
+            error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+          }>;
+        }
+      | {
+          __typename: 'RunConfigValidationInvalid';
+          errors: Array<
+            | {__typename: 'FieldNotDefinedConfigError'; message: string}
+            | {__typename: 'FieldsNotDefinedConfigError'; message: string}
+            | {__typename: 'MissingFieldConfigError'; message: string}
+            | {__typename: 'MissingFieldsConfigError'; message: string}
+            | {__typename: 'RuntimeMismatchConfigError'; message: string}
+            | {__typename: 'SelectorTypeConfigError'; message: string}
+          >;
+        }
+      | {__typename: 'RunConflict'}
+      | {__typename: 'UnauthorizedError'}
+    >;
+  };
+};
+
 export type DeleteMutationVariables = Types.Exact<{
   runId: Types.Scalars['String']['input'];
 }>;
@@ -167,6 +225,8 @@ export type RunTimeFragment = {
 };
 
 export const LaunchPipelineExecutionVersion = '292088c4a697aca6be1d3bbc0cfc45d8a13cdb2e75cfedc64b68c6245ea34f89';
+
+export const LaunchMultipleRunsVersion = '0f134a9c5feaec95e0f5b419803a3d303800cedcd475f9890fa694522b440560';
 
 export const DeleteVersion = '3c61c79b99122910e754a8863e80dc5ed479a0c23cc1a9d9878d91e603fc0dfe';
 

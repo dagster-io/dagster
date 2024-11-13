@@ -13,14 +13,15 @@ import {
   Subheading,
   Tag,
   TextInput,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {RunRequestTable} from './DryRunRequestTable';
 import {DynamicPartitionRequests} from './DynamicPartitionRequests';
-import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
 import {gql, useMutation} from '../apollo-client';
+import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
 import {
   SensorDryRunMutation,
   SensorDryRunMutationVariables,
@@ -31,15 +32,18 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
+import {ExecutionParams, SensorSelector} from '../graphql/types';
+import {useLaunchMultipleRunsWithTelemetry} from '../launchpad/useLaunchMultipleRunsWithTelemetry';
 import {SET_CURSOR_MUTATION} from '../sensors/EditCursorDialog';
 import {
   SetSensorCursorMutation,
   SetSensorCursorMutationVariables,
 } from '../sensors/types/EditCursorDialog.types';
 import {testId} from '../testing/testId';
+import {buildExecutionParamsListSensor} from '../util/buildExecutionParamsList';
 import {RepoAddress} from '../workspace/types';
 
-type DryRunInstigationTick = Extract<
+export type SensorDryRunInstigationTick = Extract<
   SensorDryRunMutation['sensorDryRun'],
   {__typename: 'DryRunInstigationTick'}
 >;
@@ -76,12 +80,13 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   const [cursor, setCursor] = useState(currentCursor);
 
   const [submitting, setSubmitting] = useState(false);
+  const [launching, setLaunching] = useState(false);
   const [error, setError] = useState<PythonErrorFragment | null>(null);
-  const [sensorExecutionData, setSensorExecutionData] = useState<DryRunInstigationTick | null>(
-    null,
-  );
+  const [sensorExecutionData, setSensorExecutionData] =
+    useState<SensorDryRunInstigationTick | null>(null);
+  const [executionParamsList, setExecutionParamsList] = useState<ExecutionParams[]>([]);
 
-  const sensorSelector = useMemo(
+  const sensorSelector: SensorSelector = useMemo(
     () => ({
       sensorName: name,
       repositoryLocationName: repoAddress.location,
@@ -105,6 +110,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           setError(data.evaluationResult.error);
         } else {
           setSensorExecutionData(data);
+          setExecutionParamsList(buildExecutionParamsListSensor(data, sensorSelector));
         }
       } else if (data?.__typename === 'SensorNotFoundError') {
         showCustomAlert({
@@ -120,16 +126,47 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     setSubmitting(false);
   }, [sensorDryRun, sensorSelector, cursor, name]);
 
+  const launchMultipleRunsWithTelemetry = useLaunchMultipleRunsWithTelemetry();
+
+  const canLaunchAll = useMemo(() => {
+    return executionParamsList != null && executionParamsList.length > 0;
+  }, [executionParamsList]);
+
+  const onLaunchAll = async () => {
+    if (!canLaunchAll) {
+      return;
+    }
+    setLaunching(true);
+
+    await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
+
+    setLaunching(false);
+    onClose();
+  };
+
   const buttons = useMemo(() => {
+    if (launching) {
+      return <Box flex={{direction: 'row', gap: 8}}></Box>;
+    }
+
     if (sensorExecutionData || error) {
       return (
         <Box flex={{direction: 'row', gap: 8}}>
-          <Button>Launch all</Button>
+          <Tooltip
+            canShow={!canLaunchAll || launching}
+            content="Preparing to launch runs"
+            placement="top-end"
+          >
+            <Button disabled={!canLaunchAll || launching} onClick={onLaunchAll}>
+              <div>Launch all</div>
+            </Button>
+          </Tooltip>
           <Button
             data-testid={testId('test-again')}
             onClick={() => {
               setSensorExecutionData(null);
               setError(null);
+              setExecutionParamsList([]);
             }}
           >
             Test again
@@ -156,7 +193,9 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
         </Box>
       );
     }
-  }, [sensorExecutionData, error, submitting, onClose, submitTest]);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sensorExecutionData, error, submitting, launching, onClose, submitTest, canLaunchAll]);
 
   const [cursorState, setCursorState] = useState<'Unpersisted' | 'Persisting' | 'Persisted'>(
     'Unpersisted',
@@ -209,6 +248,14 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   }, [sensorExecutionData?.evaluationResult?.cursor, sensorSelector, setCursorMutation]);
 
   const content = useMemo(() => {
+    if (launching) {
+      return (
+        <Box flex={{direction: 'row', gap: 8, justifyContent: 'center', alignItems: 'center'}}>
+          <Spinner purpose="body-text" />
+          <div>Launching runs</div>
+        </Box>
+      );
+    }
     if (sensorExecutionData || error) {
       const runRequests = sensorExecutionData?.evaluationResult?.runRequests;
       const numRunRequests = runRequests?.length || 0;
@@ -341,6 +388,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     sensorExecutionData,
     error,
     submitting,
+    launching,
     currentCursor,
     cursorState,
     onPersistCursorValue,
