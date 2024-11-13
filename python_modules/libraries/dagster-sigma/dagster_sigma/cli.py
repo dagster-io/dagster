@@ -41,6 +41,14 @@ def sigma_snapshot_command(**kwargs) -> None:
         repo_def = recon_repo.get_definition()
 
         load_data = load_data if pending_data else repo_def.repository_load_data
+        load_data = RepositoryLoadData(
+            reconstruction_metadata={
+                k: v for k, v in load_data.reconstruction_metadata.items() if k.startswith("sigma_")
+            }
+        )
+        if not load_data.reconstruction_metadata:
+            raise click.UsageError("No Sigma data found in the repository")
+        click.echo(f"Saving {len(load_data.reconstruction_metadata)} cached Sigma data")
 
         save_to = kwargs["save_to"]
         with open(save_to, "w") as file:
