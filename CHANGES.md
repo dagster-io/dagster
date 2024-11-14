@@ -32,7 +32,7 @@
 ### Documentation
 
 - Community-hosted integrations are now listed on the [Integrations](https://docs.dagster.io/integrations) page.
-- Fixed a typo in the label for superseeded APIs. (Thanks, [@matt-weingarten](https://github.com/matt-weingarten)!)
+- Fixed a typo in the label for superseded APIs. (Thanks, [@matt-weingarten](https://github.com/matt-weingarten)!)
 
 
 ### Deprecations
