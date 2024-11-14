@@ -32,8 +32,8 @@
 ### Documentation
 
 - Community-hosted integrations are now listed on the [Integrations](https://docs.dagster.io/integrations) page.
+- Added a [tutorial](https://docs.dagster.io/integrations/airlift/tutorial/overview), [reference page](https://docs.dagster.io/integrations/airlift/reference) and [API docs](https://docs.dagster.io/_apidocs/libraries/dagster-airlift) for `dagster-airlift`.
 - Fixed a typo in the label for superseded APIs. (Thanks, [@matt-weingarten](https://github.com/matt-weingarten)!)
-
 
 ### Deprecations
 
