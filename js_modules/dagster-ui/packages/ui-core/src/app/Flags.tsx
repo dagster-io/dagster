@@ -12,7 +12,7 @@ export const DAGSTER_FLAGS_KEY = 'DAGSTER_FLAGS';
 type FeatureFlagMap = Partial<Record<FeatureFlag, boolean>>;
 
 /**
- * In-memory cache for feature flags.
+ * In-memory cache for feature flags, excludes default values.
  */
 let currentFeatureFlags: FeatureFlagMap = {};
 
@@ -56,14 +56,12 @@ const featureFlagsChannel = new BroadcastChannel('feature-flags');
 // Initialize feature flags on module load
 initializeFeatureFlags();
 
-/**
- * Function to retrieve the current feature flags from the in-memory cache.
- */
-export const getFeatureFlags = (): FeatureFlagMap => {
-  return {
-    ...DEFAULT_FEATURE_FLAG_VALUES,
-    ...currentFeatureFlags,
-  };
+export const getFeatureFlagsWithoutDefaultValues = (): FeatureFlagMap => {
+  return currentFeatureFlags;
+};
+
+export const getFeatureFlagDefaults = (): FeatureFlagMap => {
+  return DEFAULT_FEATURE_FLAG_VALUES;
 };
 
 /**

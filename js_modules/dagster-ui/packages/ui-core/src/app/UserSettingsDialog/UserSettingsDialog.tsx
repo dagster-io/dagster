@@ -17,7 +17,11 @@ import {UserPreferences} from 'shared/app/UserSettingsDialog/UserPreferences.oss
 
 import {CodeLinkProtocolSelect} from '../../code-links/CodeLinkProtocol';
 import {showCustomAlert} from '../CustomAlertProvider';
-import {getFeatureFlags, setFeatureFlags} from '../Flags';
+import {
+  getFeatureFlagDefaults,
+  getFeatureFlagsWithoutDefaultValues,
+  setFeatureFlags,
+} from '../Flags';
 import {useTrackEvent} from '../analytics';
 
 type OnCloseFn = (event: React.SyntheticEvent<HTMLElement>) => void;
@@ -53,10 +57,12 @@ interface DialogContentProps {
  */
 const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) => {
   const trackEvent = useTrackEvent();
-  const [flags, setFlags] = React.useState(() => getFeatureFlags());
+  const [flags, setFlags] = React.useState(() => getFeatureFlagsWithoutDefaultValues());
   const [reloading, setReloading] = React.useState(false);
 
-  const initialFlagState = React.useRef(JSON.stringify(getFeatureFlags()));
+  const initialFlagState = React.useRef(JSON.stringify(getFeatureFlagsWithoutDefaultValues()));
+
+  const defaultValues = getFeatureFlagDefaults();
 
   React.useEffect(() => {
     setFeatureFlags(flags);
@@ -73,8 +79,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
 
   const [arePreferencesChanged, setAreaPreferencesChanged] = React.useState(false);
 
-  const anyChange =
-    initialFlagState.current !== JSON.stringify(getFeatureFlags()) || arePreferencesChanged;
+  const anyChange = initialFlagState.current !== JSON.stringify(flags) || arePreferencesChanged;
 
   const handleClose = (event: React.SyntheticEvent<HTMLElement>) => {
     if (anyChange) {
@@ -92,7 +97,11 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
       key={key}
     >
       <div>{label || key}</div>
-      <Checkbox format="switch" checked={!!flags[flagType]} onChange={() => toggleFlag(flagType)} />
+      <Checkbox
+        format="switch"
+        checked={flags[flagType] === undefined ? !!defaultValues[flagType] : !!flags[flagType]}
+        onChange={() => toggleFlag(flagType)}
+      />
     </Box>
   ));
 
