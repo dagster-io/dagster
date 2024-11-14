@@ -2,6 +2,9 @@ import pytest
 from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
     AntlrAssetSelectionParser,
 )
+from dagster._core.definitions.asset_selection import AssetSelection, CodeLocationAssetSelection
+from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.storage.tags import KIND_PREFIX
 
 
 @pytest.mark.parametrize(
@@ -28,7 +31,10 @@ from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection impor
             "(start (expr (functionName roots) ( (expr (attributeExpr key : (value a))) )) <EOF>)",
         ),
         ("tag:foo=bar", "(start (expr (attributeExpr tag : (value foo) = (value bar))) <EOF>)"),
-        ("owner:billing", "(start (expr (attributeExpr owner : (value billing))) <EOF>)"),
+        (
+            'owner:"owner@owner.com"',
+            '(start (expr (attributeExpr owner : (value "owner@owner.com"))) <EOF>)',
+        ),
         (
             'group:"my_group"',
             '(start (expr (attributeExpr group : (value "my_group"))) <EOF>)',
@@ -43,8 +49,8 @@ from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection impor
             "(start (expr ( (expr ( (expr ( (expr (attributeExpr key : (value a))) )) )) )) <EOF>)",
         ),
         (
-            "not not key:not",
-            "(start (expr not (expr not (expr (attributeExpr key : (value not))))) <EOF>)",
+            'not not key:"not"',
+            '(start (expr not (expr not (expr (attributeExpr key : (value "not"))))) <EOF>)',
         ),
         (
             "(roots(key:a) and owner:billing)*",
@@ -63,3 +69,69 @@ from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection impor
 def test_antlr_tree(selection_str, expected_tree_str):
     asset_selection = AntlrAssetSelectionParser(selection_str)
     assert asset_selection.tree_str == expected_tree_str
+
+
+@pytest.mark.parametrize(
+    "selection_str",
+    [
+        "not",
+        "key:a key:b",
+        "key:a and and",
+        "key:a and",
+        "sinks",
+        "owner",
+        "tag:foo=",
+        "owner:owner@owner.com",
+    ],
+)
+def test_antlr_tree_invalid(selection_str):
+    with pytest.raises(Exception):
+        AntlrAssetSelectionParser(selection_str)
+
+
+@pytest.mark.parametrize(
+    "selection_str, expected_assets",
+    [
+        ("key:a", AssetSelection.assets("a")),
+        ('key:"*/a+"', AssetSelection.assets("*/a+")),
+        ("key_substring:a", AssetSelection.key_substring("a")),
+        ('key_substring:"*/a+"', AssetSelection.key_substring("*/a+")),
+        ("not key:a", AssetSelection.all(include_sources=True) - AssetSelection.assets("a")),
+        ("key:a and key:b", AssetSelection.assets("a") & AssetSelection.assets("b")),
+        ("key:a or key:b", AssetSelection.assets("a") | AssetSelection.assets("b")),
+        ("+key:a", AssetSelection.assets("a").upstream(1)),
+        ("++key:a", AssetSelection.assets("a").upstream(2)),
+        ("key:a+", AssetSelection.assets("a").downstream(1)),
+        ("key:a++", AssetSelection.assets("a").downstream(2)),
+        (
+            "key:a* and *key:b",
+            AssetSelection.assets("a").downstream() & AssetSelection.assets("b").upstream(),
+        ),
+        ("sinks(key:a)", AssetSelection.assets("a").sinks()),
+        ("roots(key:c)", AssetSelection.assets("c").roots()),
+        ("tag:foo", AssetSelection.tag("foo", "")),
+        ("tag:foo=bar", AssetSelection.tag("foo", "bar")),
+        ('owner:"owner@owner.com"', AssetSelection.owner("owner@owner.com")),
+        ("group:my_group", AssetSelection.groups("my_group")),
+        ("kind:my_kind", AssetSelection.tag(f"{KIND_PREFIX}my_kind", "")),
+        (
+            "code_location:my_location",
+            CodeLocationAssetSelection(selected_code_location="my_location"),
+        ),
+    ],
+)
+def test_antlr_visit_basic(selection_str, expected_assets):
+    # a -> b -> c
+    @asset(tags={"foo": "bar"}, owners=["team:billing"])
+    def a(): ...
+
+    @asset(deps=[a], kinds={"python", "snowflake"})
+    def b(): ...
+
+    @asset(
+        deps=[b],
+        group_name="my_group",
+    )
+    def c(): ...
+
+    assert AntlrAssetSelectionParser(selection_str).asset_selection == expected_assets
