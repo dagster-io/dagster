@@ -494,13 +494,13 @@ class AssetSelection(ABC):
         return {handle for handle in asset_graph.asset_check_keys if handle.asset_key in asset_keys}
 
     @classmethod
-    def from_string(cls, string: str) -> "AssetSelection":
+    def from_string(cls, string: str, include_sources=False) -> "AssetSelection":
         from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
             AntlrAssetSelectionParser,
         )
 
         try:
-            return AntlrAssetSelectionParser(string).asset_selection
+            return AntlrAssetSelectionParser(string, include_sources).asset_selection
         except:
             pass
         if string == "*":

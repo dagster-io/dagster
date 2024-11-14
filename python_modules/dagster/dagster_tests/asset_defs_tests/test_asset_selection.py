@@ -806,7 +806,7 @@ def test_deserialize_old_all_asset_selection():
 
 
 def test_from_string():
-    assert AssetSelection.from_string("*") == AssetSelection.all(include_sources=True)
+    assert AssetSelection.from_string("*") == AssetSelection.all(include_sources=False)
     assert AssetSelection.from_string("my_asset") == AssetSelection.assets("my_asset")
     assert AssetSelection.from_string("*my_asset") == AssetSelection.assets("my_asset").upstream(
         depth=MAX_NUM, include_self=True

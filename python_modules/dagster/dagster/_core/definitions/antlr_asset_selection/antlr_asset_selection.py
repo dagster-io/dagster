@@ -20,6 +20,9 @@ class AntlrInputErrorListener(ErrorListener):
 
 
 class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
+    def __init__(self, include_sources: bool):
+        self.include_sources = include_sources
+
     def visitStart(self, ctx: AssetSelectionParser.StartContext):
         return self.visit(ctx.expr())
 
@@ -39,11 +42,11 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
         return left & right
 
     def visitAllExpression(self, ctx: AssetSelectionParser.AllExpressionContext):
-        return AssetSelection.all(include_sources=True)
+        return AssetSelection.all(include_sources=self.include_sources)
 
     def visitNotExpression(self, ctx: AssetSelectionParser.NotExpressionContext):
         selection: AssetSelection = self.visit(ctx.expr())
-        return AssetSelection.all(include_sources=True) - selection
+        return AssetSelection.all(include_sources=self.include_sources) - selection
 
     def visitDownTraversalExpression(
         self, ctx: AssetSelectionParser.DownTraversalExpressionContext
@@ -128,9 +131,7 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
 
 
 class AntlrAssetSelectionParser:
-    _visitor: AntlrAssetSelectionVisitor = AntlrAssetSelectionVisitor()
-
-    def __init__(self, selection_str: str):
+    def __init__(self, selection_str: str, include_sources: bool = False):
         lexer = AssetSelectionLexer(InputStream(selection_str))
         lexer.removeErrorListeners()  # Remove the default listener that just writes to the console
         lexer.addErrorListener(AntlrInputErrorListener())
@@ -143,7 +144,7 @@ class AntlrAssetSelectionParser:
 
         self._tree = parser.start()
         self._tree_str = self._tree.toStringTree(recog=parser)
-        self._asset_selection = self._visitor.visit(self._tree)
+        self._asset_selection = AntlrAssetSelectionVisitor(include_sources).visit(self._tree)
 
     @property
     def tree_str(self) -> str:
