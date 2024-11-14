@@ -56,7 +56,7 @@ Use the project scaffold command for this project.
    ```
 
 The project should have this structure. 
-
+<!-- vale off -->
 ```
 dagster-etl-tutorial/
 ├── data/
@@ -71,10 +71,11 @@ dagster-etl-tutorial/
 ├── setup.cfg
 ├── setup.py
 ```
+<!-- vale on -->
 
 ## Dagster Project Structure
 
-In the root directory there are three configuration files that are common in Python package management. These manage dependencies and identifies the Dagster modules in the project. The etl_tutorial folder is where our Dagster definition for this code location exists. The data directory is where the raw data for the project is stored and we will reference these files in our software-defined assets. 
+In the root directory there are three configuration files that are common in Python package management. These manage dependencies and identifies the Dagster modules in the project. The etl_tutorial folder is where our Dagster definition for this code location exists. The data directory is where the raw data for the project is stored and we will reference these files in our software-defined assets.
 
 ### File/Directory Descriptions
 
@@ -96,7 +97,7 @@ In the root directory there are three configuration files that are common in Pyt
 
 - Set up a Python virtual environment and installed Dagster
 - Setup project scaffold
-- How a Dagster project is structured and what these files do 
+- How a Dagster project is structured and what these files do
 
 ## Next steps
 

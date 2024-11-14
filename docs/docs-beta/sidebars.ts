@@ -12,9 +12,9 @@ const sidebars: SidebarsConfig = {
       label: 'Tutorial',
       collapsed: false,
       items: [
-        'tutorial/01-etl-tutorial-introduction',
-        'tutorial/02-your-first-asset',
-        'tutorial/03-asset-dependencies-and-checks',
+        'tutorial/etl-tutorial-introduction',
+        'tutorial/your-first-asset',
+        'tutorial/asset-dependencies-and-checks',
       ],
     },
     {
