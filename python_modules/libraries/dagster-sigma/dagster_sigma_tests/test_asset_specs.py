@@ -22,7 +22,7 @@ def test_snapshot_cli_rehydrate(sigma_auth_token: str, sigma_sample_data: None) 
             sigma_snapshot_command,
             args=[
                 "-f",
-                str(Path(__file__).parent / "pending_repo.py"),
+                str(Path(__file__).parent / "pending_repo_snapshot.py"),
                 "--save-to",
                 str(temp_file),
             ],
@@ -34,7 +34,7 @@ def test_snapshot_cli_rehydrate(sigma_auth_token: str, sigma_sample_data: None) 
         with environ({"SIGMA_SNAPSHOT_PATH": str(temp_file)}):
             repository_def = initialize_repository_def_from_pointer(
                 CodePointer.from_python_file(
-                    str(Path(__file__).parent / "pending_repo.py"), "defs", None
+                    str(Path(__file__).parent / "pending_repo_snapshot.py"), "defs", None
                 ),
             )
             assert len(repository_def.assets_defs_by_key) == 2 + 1
