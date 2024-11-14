@@ -72,11 +72,19 @@ To add a new back-compat test for postgres, follow the following steps:
        postgres_url: "postgresql://test:test@localhost:5432/test"
    ```
 1. Wipe, if you haven’t already dagster run wipe
-1. Start dagster-webserver and execute a run, to ensure that both the run db and per-run event_log dbs are created.
-1. Create a pg dump file
-   - `mkdir python_modules/libraries/dagster-postgres/dagster_postgres_tests/compat_tests/<my_schema_change>/postgres`
-   - `pg_dump test > python_modules/libraries/dagster-postgres/dagster_postgres_tests/compat_tests/<my_schema_change>/postgres/pg_dump.txt`
-1. Write your back compat test, loading your snapshot directory
+2. Start postgres instance
+3. ```shell
+   docker-compose -f python_modules/libraries/dagster-postgres/dagster_postgres_tests/docker-compose.yml up
+   ```
+4. Apply current migration scripts:
+5. ```shell
+   dagster instance migrate
+   ```
+6. Start dagster-webserver and execute a run, to ensure that both the run db and per-run event_log dbs are created.
+7. Create a pg dump file
+   - `mkdir -p python_modules/libraries/dagster-postgres/dagster_postgres_tests/compat_tests/<my_schema_change>/postgres`
+   - `pg_dump -h 127.0.0.1 -U test -d test > python_modules/libraries/dagster-postgres/dagster_postgres_tests/compat_tests/<my_schema_change>/postgres/pg_dump.txt`
+8. Write your back compat test, loading your snapshot directory
 
 ### mysql
 
@@ -105,11 +113,18 @@ To add a new back-compat test for mysql, follow the following steps:
        mysql_url: "mysql+mysqlconnector://test:test@localhost:3306/test"
    ```
 3. Wipe, if you haven’t already dagster run wipe
-4. Start dagster-webserver and execute a run, to ensure that both the run db and per-run event_log dbs are created.
-5. Create a mysql dump file
-   - `mkdir python_modules/libraries/dagster-mysql/dagster_mysql_tests/compat_tests/<my_schema_change>/mysql`
-   - `mysqldump test > python_modules/libraries/dagster-mysql/dagster_mysql_tests/compat_tests/<my_schema_change>/mysql/mysql_dump.sql -p`
-6. Write your back compat test, loading your snapshot directory
+4. Start mysql instance
+3. ```shell
+   docker-compose -f python_modules/libraries/dagster-mysql/dagster_mysql_tests/docker-compose.yml up test-mysql-db
+   ```
+4. Apply current migration scripts:
+5. ```shell
+   dagster instance migrate
+   ```
+6. Start dagster-webserver and execute a run, to ensure that both the run db and per-run event_log dbs are created.
+7. Create a mysql dump file
+   - `mysqldump test > python_modules/libraries/dagster-mysql/dagster_mysql_tests/compat_tests/<my_schema_change>.sql`
+8. Write your back compat test, loading your snapshot directory
 
 ### Adding a data migration
 
