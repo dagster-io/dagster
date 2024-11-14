@@ -61,7 +61,7 @@ SAMPLE_CONNECTORS_FOR_GROUP = {
                 },
                 "config": {"property1": {}, "property2": {}},
                 "daily_sync_time": "14:00",
-                "succeeded_at": "2024-12-01T15:43:29.013729Z",
+                "succeeded_at": "2024-12-01T15:45:29.013729Z",
                 "sync_frequency": 360,
                 "group_id": "my_group_destination_id",
                 "connected_by": "user_id",
@@ -75,7 +75,7 @@ SAMPLE_CONNECTORS_FOR_GROUP = {
                 ],
                 "source_sync_details": {},
                 "service_version": 0,
-                "created_at": "2024-12-01T15:43:29.013729Z",
+                "created_at": "2024-12-01T15:41:29.013729Z",
                 "failed_at": "2024-12-01T15:43:29.013729Z",
                 "private_link_id": "string",
                 "proxy_agent_id": "string",
@@ -181,7 +181,7 @@ SAMPLE_CONNECTOR_DETAILS = {
             "rescheduled_for": "2024-12-01T15:43:29.013729Z",
         },
         "daily_sync_time": "14:00",
-        "succeeded_at": "2024-03-17T12:31:40.870504Z",
+        "succeeded_at": "2024-12-01T15:45:29.013729Z",
         "sync_frequency": 1440,
         "group_id": "my_group_destination_id",
         "connected_by": "user_id",
@@ -195,8 +195,8 @@ SAMPLE_CONNECTOR_DETAILS = {
         ],
         "source_sync_details": {},
         "service_version": 0,
-        "created_at": "2023-12-01T15:43:29.013729Z",
-        "failed_at": "2024-04-01T18:13:25.043659Z",
+        "created_at": "2024-12-01T15:41:29.013729Z",
+        "failed_at": "2024-12-01T15:43:29.013729Z",
         "private_link_id": "private_link_id",
         "proxy_agent_id": "proxy_agent_id",
         "networking_method": "Directly",
@@ -380,6 +380,8 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
     },
 }
 
+SAMPLE_SUCCESS_MESSAGE = {"code": "Success", "message": "Operation performed."}
+
 TEST_ACCOUNT_ID = "test_account_id"
 TEST_API_KEY = "test_api_key"
 TEST_API_SECRET = "test_api_secret"
@@ -451,6 +453,30 @@ def all_api_mocks_fixture(
         method=responses.GET,
         url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}",
         json=SAMPLE_CONNECTOR_DETAILS,
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.PATCH,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}",
+        json=SAMPLE_CONNECTOR_DETAILS,
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.POST,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}/force",
+        json=SAMPLE_SUCCESS_MESSAGE,
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.POST,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}/resync",
+        json=SAMPLE_SUCCESS_MESSAGE,
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.POST,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}/schemas/tables/resync",
+        json=SAMPLE_SUCCESS_MESSAGE,
         status=200,
     )
     yield fetch_workspace_data_api_mocks

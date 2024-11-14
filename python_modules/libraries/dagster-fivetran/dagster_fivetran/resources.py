@@ -33,6 +33,7 @@ from requests.exceptions import RequestException
 from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnector,
+    FivetranConnectorScheduleType,
     FivetranDestination,
     FivetranSchemaConfig,
     FivetranWorkspaceData,
@@ -595,43 +596,28 @@ class FivetranClient:
         """
         return self._make_request("GET", "groups")
 
-    # TODO: update
-    def update_connector(
-        self, connector_id: str, properties: Optional[Mapping[str, Any]] = None
-    ) -> Mapping[str, Any]:
-        """Updates properties of a Fivetran Connector.
-
-        Args:
-            connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
-                "Setup" tab of a given connector in the Fivetran UI.
-            properties (Dict[str, Any]): The properties to be updated. For a comprehensive list of
-                properties, see the [Fivetran docs](https://fivetran.com/docs/rest-api/connectors#modifyaconnector).
-
-        Returns:
-            Dict[str, Any]: Parsed json data representing the API response.
-        """
-        return self._make_connector_request(
-            method="PATCH", endpoint=connector_id, data=json.dumps(properties)
-        )
-
-    # TODO: update
-    def update_schedule_type(
-        self, connector_id: str, schedule_type: Optional[str] = None
+    def update_schedule_type_for_connector(
+        self, connector_id: str, schedule_type: str
     ) -> Mapping[str, Any]:
         """Updates the schedule type property of the connector to either "auto" or "manual".
 
         Args:
             connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
                 "Setup" tab of a given connector in the Fivetran UI.
-            schedule_type (Optional[str]): Either "auto" (to turn the schedule on) or "manual" (to
+            schedule_type (str): Either "auto" (to turn the schedule on) or "manual" (to
                 turn it off).
 
         Returns:
             Dict[str, Any]: Parsed json data representing the API response.
         """
-        if schedule_type not in ["auto", "manual"]:
-            check.failed(f"schedule_type must be either 'auto' or 'manual': got '{schedule_type}'")
-        return self.update_connector(connector_id, properties={"schedule_type": schedule_type})
+        if not FivetranConnectorScheduleType.has_value(schedule_type):
+            check.failed(
+                f"The schedule_type for a connector must be in {FivetranConnectorScheduleType.values()}: "
+                f"got '{schedule_type}'"
+            )
+        return self._make_connector_request(
+            method="PATCH", endpoint=connector_id, data=json.dumps({"schedule_type": schedule_type})
+        )
 
     def start_sync(self, connector_id: str) -> None:
         """Initiates a sync of a Fivetran connector.
@@ -640,9 +626,6 @@ class FivetranClient:
             connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
                 "Setup" tab of a given connector in the Fivetran UI.
 
-        Returns:
-            Dict[str, Any]: Parsed json data representing the connector details API response after
-                the sync is started.
         """
         request_fn = partial(
             self._make_connector_request, method="POST", endpoint=f"{connector_id}/force"
@@ -659,10 +642,6 @@ class FivetranClient:
                 "Setup" tab of a given connector in the Fivetran UI.
             resync_parameters (Optional[Dict[str, List[str]]]): Optional resync parameters to send to the Fivetran API.
                 An example payload can be found here: https://fivetran.com/docs/rest-api/connectors#request_7
-
-        Returns:
-            Dict[str, Any]: Parsed json data representing the connector details API response after
-                the resync is started.
         """
         request_fn = partial(
             self._make_connector_request,
@@ -679,7 +658,7 @@ class FivetranClient:
     def _start_sync(self, request_fn: Callable, connector_id: str) -> None:
         if self.disable_schedule_on_trigger:
             self._log.info("Disabling Fivetran sync schedule.")
-            self.update_schedule_type(connector_id, "manual")
+            self.update_schedule_type_for_connector(connector_id, "manual")
         connector = FivetranConnector.from_connector_details(
             connector_details=self.get_connector_details(connector_id)
         )
@@ -712,7 +691,7 @@ class FivetranClient:
             initial_last_sync_completion (datetime.datetime): The timestamp of the last completed sync
                 (successful or otherwise) for this connector, prior to running this method.
             poll_interval (float): The time (in seconds) that will be waited between successive polls.
-            poll_timeout (float): The maximum time that will waited before this operation is timed
+            poll_timeout (float): The maximum time that will wait before this operation is timed
                 out. By default, this will never time out.
 
         Returns:
@@ -744,19 +723,16 @@ class FivetranClient:
             # Sleep for the configured time interval before polling again.
             time.sleep(poll_interval)
 
-        raw_connector_details = self.get_connector_details(connector_id)
-        connector = FivetranConnector.from_connector_details(
-            connector_details=self.get_connector_details(connector_id)
-        )
+        post_raw_connector_details = self.get_connector_details(connector_id)
         if not curr_last_sync_succeeded:
             raise Failure(
                 f"Sync for connector '{connector_id}' failed!",
                 metadata={
-                    "connector_details": MetadataValue.json(raw_connector_details),
+                    "connector_details": MetadataValue.json(post_raw_connector_details),
                     "log_url": MetadataValue.url(connector.url),
                 },
             )
-        return raw_connector_details
+        return post_raw_connector_details
 
     def sync_and_poll(
         self,
@@ -770,7 +746,7 @@ class FivetranClient:
             connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
                 "Setup" tab of a given connector in the Fivetran UI.
             poll_interval (float): The time (in seconds) that will be waited between successive polls.
-            poll_timeout (float): The maximum time that will waited before this operation is timed
+            poll_timeout (float): The maximum time that will wait before this operation is timed
                 out. By default, this will never time out.
 
         Returns:
