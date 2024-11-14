@@ -15,7 +15,7 @@ import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import * as React from 'react';
-import {useLayoutEffect, useMemo, useState} from 'react';
+import {useCallback, useLayoutEffect, useMemo, useState} from 'react';
 import {AssetGraphAssetSelectionInput} from 'shared/asset-graph/AssetGraphAssetSelectionInput.oss';
 import {useAssetGraphExplorerFilters} from 'shared/asset-graph/useAssetGraphExplorerFilters.oss';
 import styled from 'styled-components';
@@ -335,6 +335,13 @@ const AssetGraphExplorerWithData = ({
       }
     },
     [viewportEl, layout],
+  );
+
+  const onChangeAssetSelection = useCallback(
+    (opsQuery: string) => {
+      onChangeExplorerPath({...explorerPath, opsQuery}, 'replace');
+    },
+    [explorerPath, onChangeExplorerPath],
   );
 
   const [lastRenderedLayout, setLastRenderedLayout] = React.useState<AssetGraphLayout | null>(null);
@@ -725,9 +732,7 @@ const AssetGraphExplorerWithData = ({
                       items={graphQueryItems}
                       value={explorerPath.opsQuery}
                       placeholder="Type an asset subset…"
-                      onChange={(opsQuery: string) => {
-                        onChangeExplorerPath({...explorerPath, opsQuery}, 'replace');
-                      }}
+                      onChange={onChangeAssetSelection}
                       popoverPosition="bottom-left"
                     />
                   </GraphQueryInputFlexWrap>
