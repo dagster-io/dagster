@@ -1102,7 +1102,7 @@ def run_status_sensor(
         )
 
         if jobs and monitor_all:
-            DagsterInvalidDefinitionError(
+            raise DagsterInvalidDefinitionError(
                 f"Cannot specify both {'monitor_all_code_locations' if monitor_all_code_locations else 'monitor_all_repositories'} and"
                 f" {'monitored_jobs' if monitored_jobs else 'job_selection'}."
             )
