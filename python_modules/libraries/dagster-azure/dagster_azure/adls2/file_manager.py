@@ -2,6 +2,7 @@ import io
 import re
 import uuid
 from contextlib import contextmanager
+from typing import Optional
 
 import dagster._check as check
 from dagster._core.storage.file_manager import (
@@ -15,7 +16,9 @@ from dagster._core.storage.file_manager import (
 class ADLS2FileHandle(FileHandle):
     """A reference to a file on ADLS2."""
 
-    def __init__(self, account: str, file_system: str, key: str, primary_endpoint: str):
+    def __init__(
+        self, account: str, file_system: str, key: str, primary_endpoint: Optional[str] = None
+    ):
         self._account = check.str_param(account, "account")
         self._file_system = check.str_param(file_system, "file_system")
         self._key = check.str_param(key, "key")
