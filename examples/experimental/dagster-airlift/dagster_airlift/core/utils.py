@@ -1,4 +1,14 @@
-from typing import TYPE_CHECKING, Iterable, Iterator, Optional, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterable,
+    Iterator,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 from dagster import (
     AssetsDefinition,
@@ -6,6 +16,7 @@ from dagster import (
     SourceAsset,
     _check as check,
 )
+from dagster._core.definitions.asset_spec import merge_attributes, replace_attributes
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.errors import DagsterInvariantViolationError
@@ -105,3 +116,63 @@ def peered_dag_handles_for_spec(spec: AssetSpec) -> Set["DagHandle"]:
         DagHandle(dag_id=dag_handle_dict["dag_id"])
         for dag_handle_dict in spec.metadata[PEERED_DAG_MAPPING_METADATA_KEY]
     }
+
+
+AssetSpecPredicate = Callable[[AssetSpec], bool]
+
+
+class AssetSpecSequence(Sequence[AssetSpec]):
+    def __init__(self, asset_specs: Sequence[AssetSpec], can_transform: bool = True):
+        self._asset_specs = asset_specs
+        self._can_transform = can_transform
+
+    def __getitem__(self, item: int) -> AssetSpec:
+        return self._asset_specs[item]
+
+    def __len__(self) -> int:
+        return len(self._asset_specs)
+
+    def __iter__(self) -> Iterator[AssetSpec]:
+        return iter(self._asset_specs)
+
+    def split(
+        self, include: Callable[[AssetSpec], bool]
+    ) -> Tuple["AssetSpecSequence", "AssetSpecSequence"]:
+        return AssetSpecSequence(
+            [asset_spec for asset_spec in self if include(asset_spec)], can_transform=False
+        ), AssetSpecSequence(
+            [asset_spec for asset_spec in self if not include(asset_spec)], can_transform=False
+        )
+
+    def filter(self, where: AssetSpecPredicate) -> "AssetSpecSequence":
+        return AssetSpecSequence(
+            [asset_spec for asset_spec in self if where(asset_spec)], can_transform=False
+        )
+
+    def replace_attributes(
+        self, attrs: dict, where: Callable[[AssetSpec], bool]
+    ) -> "AssetSpecSequence":
+        if not self._can_transform:
+            raise Exception("Cannot transform this sequence")
+        return AssetSpecSequence(
+            [
+                replace_attributes(asset_spec, **attrs) if where(asset_spec) else asset_spec
+                for asset_spec in self
+            ],
+        )
+
+    def merge_attributes(
+        self, attrs: dict, where: Callable[[AssetSpec], bool]
+    ) -> "AssetSpecSequence":
+        # We only want to perform operations on the full set of asset specs. This removes the footgun where
+        # there are multiple sets of assets floating around, and we perform a transformation on a subset, but
+        # then provide the wrong subset to Definitions.
+        # The idea would be that we always provide the full set of assets to Definitions
+        if not self._can_transform:
+            raise Exception("Cannot transform this sequence")
+        return AssetSpecSequence(
+            [
+                merge_attributes(asset_spec, **attrs) if where(asset_spec) else asset_spec
+                for asset_spec in self
+            ],
+        )

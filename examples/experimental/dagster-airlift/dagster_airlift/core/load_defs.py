@@ -31,7 +31,7 @@ from dagster_airlift.core.serialization.serialized_data import (
     DagInfo,
     SerializedAirflowDefinitionsData,
 )
-from dagster_airlift.core.utils import get_metadata_key, spec_iterator
+from dagster_airlift.core.utils import AssetSpecSequence, get_metadata_key, spec_iterator
 
 
 @dataclass
@@ -353,11 +353,11 @@ def load_airflow_dag_asset_specs(
     airflow_instance: AirflowInstance,
     mapped_assets: Optional[Sequence[MappedAsset]] = None,
     dag_selector_fn: Optional[DagSelectorFn] = None,
-) -> Sequence[AssetSpec]:
+) -> AssetSpecSequence:
     """Load asset specs for Airflow DAGs from the provided :py:class:`AirflowInstance`, and link upstreams from mapped assets."""
     serialized_data = AirflowInstanceDefsLoader(
         airflow_instance=airflow_instance,
         mapped_assets=mapped_assets or [],
         dag_selector_fn=dag_selector_fn,
     ).get_or_fetch_state()
-    return list(spec_iterator(construct_dag_assets_defs(serialized_data)))
+    return AssetSpecSequence(list(spec_iterator(construct_dag_assets_defs(serialized_data))))

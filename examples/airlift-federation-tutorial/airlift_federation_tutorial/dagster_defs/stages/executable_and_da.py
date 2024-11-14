@@ -1,15 +1,10 @@
-from typing import AbstractSet
-
+import dagster_airlift.core.predicates as predicates
 from dagster import (
     AutomationConditionSensorDefinition,
     DefaultSensorStatus,
     Definitions,
     MaterializeResult,
     multi_asset,
-)
-from dagster._core.definitions.asset_spec import merge_attributes
-from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
 )
 from dagster_airlift.core import (
     AirflowBasicAuthBackend,
@@ -36,40 +31,25 @@ metrics_airflow_instance = AirflowInstance(
     name="metrics",
 )
 
-
-def dag_id_matches(spec, dag_ids: AbstractSet[str]) -> bool:
-    return spec.metadata.get("Dag ID") in dag_ids
-
-
-warehouse_specs = load_airflow_dag_asset_specs(airflow_instance=warehouse_airflow_instance)
-
-load_customers_dag_specs = [
-    spec for spec in warehouse_specs if dag_id_matches(spec, {"load_customers"})
-]
-
-is_customer_dag = lambda spec: dag_id_matches(spec, {"customer_metrics"})
-
-metrics_specs = [
-    merge_attributes(
-        spec, deps=load_customers_dag_specs, automation_condition=AutomationCondition.eager()
-    )
-    if not is_customer_dag(spec)
-    else spec
-    for spec in load_airflow_dag_asset_specs(airflow_instance=metrics_airflow_instance)
-]
-
-customer_metrics, remaining_metrics_specs = (
-    [spec for spec in metrics_specs if is_customer_dag(spec)],
-    [spec for spec in metrics_specs if not is_customer_dag(spec)],
+warehouse_specs = load_airflow_dag_asset_specs(
+    airflow_instance=warehouse_airflow_instance,
 )
 
+is_customer_metrics = predicates.dag_name_in({"customer_metrics"})
+is_load_customers = predicates.dag_name_in({"load_customers"})
+metrics_specs = load_airflow_dag_asset_specs(
+    airflow_instance=metrics_airflow_instance,
+).merge_attributes({"deps": warehouse_specs.filter(is_load_customers)}, where=is_customer_metrics)
 
-@multi_asset(specs=customer_metrics)
+customer_metrics_specs, rest_of_metrics_specs = metrics_specs.split(is_customer_metrics)
+
+
+@multi_asset(specs=[customer_metrics_specs[0]])
 def run_customer_metrics() -> MaterializeResult:
     run_id = metrics_airflow_instance.trigger_dag("customer_metrics")
     metrics_airflow_instance.wait_for_run_completion("customer_metrics", run_id)
     if metrics_airflow_instance.get_run_state("customer_metrics", run_id) == "success":
-        return MaterializeResult(asset_key=customer_metrics[0].key)
+        return MaterializeResult(asset_key=customer_metrics_specs[0].key)
     else:
         raise Exception("Dag run failed.")
 
@@ -91,6 +71,6 @@ automation_sensor = AutomationConditionSensorDefinition(
 )
 
 defs = Definitions(
-    assets=[run_customer_metrics, *remaining_metrics_specs, *warehouse_specs],
+    assets=[run_customer_metrics, *warehouse_specs, *rest_of_metrics_specs],
     sensors=[warehouse_sensor, metrics_sensor, automation_sensor],
 )
