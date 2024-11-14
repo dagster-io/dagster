@@ -49,6 +49,7 @@ def test_adls2_file_manager_write(storage_account, file_system):
     assert file_mock.upload_data.call_count == 2
 
 
+@pytest.mark.parametrize("primary_endpoint", [None, "dfs.core.windows.net"])
 def test_adls2_file_manager_read(storage_account, file_system, primary_endpoint):
     state = {"called": 0}
     bar_bytes = b"bar"
@@ -72,9 +73,13 @@ def test_adls2_file_manager_read(storage_account, file_system, primary_endpoint)
 
     adls2_mock = ADLS2Mock()
     file_manager = ADLS2FileManager(adls2_mock, file_system, "some-key")
-    file_handle = ADLS2FileHandle(
-        storage_account, file_system, "some-key/kdjfkjdkfjkd", primary_endpoint
-    )
+    if primary_endpoint is None:
+        # emulate legacy behavior
+        file_handle = ADLS2FileHandle(storage_account, file_system, "some-key/kdjfkjdkfjkd")
+    else:
+        file_handle = ADLS2FileHandle(
+            storage_account, file_system, "some-key/kdjfkjdkfjkd", primary_endpoint
+        )
     with file_manager.read(file_handle) as file_obj:
         assert file_obj.read() == bar_bytes
 

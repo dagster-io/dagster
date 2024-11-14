@@ -22,7 +22,7 @@ class ADLS2FileHandle(FileHandle):
         self._account = check.str_param(account, "account")
         self._file_system = check.str_param(file_system, "file_system")
         self._key = check.str_param(key, "key")
-        self._primary_endpoint = check.str_param(primary_endpoint, "primary_endpoint")
+        self._primary_endpoint = check.opt_str_param(primary_endpoint, "primary_endpoint")
 
     @property
     def account(self):
