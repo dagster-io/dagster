@@ -74,7 +74,7 @@ from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     RESUME_RETRY_TAG,
     ROOT_RUN_ID_TAG,
-    RUN_FAILURE_REASON_TAG,
+    TAGS_TO_OMIT_ON_RETRY,
 )
 from dagster._serdes import ConfigurableClass
 from dagster._time import get_current_datetime, get_current_timestamp
@@ -1645,7 +1645,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         # these can differ from remote_job.tags if tags were added at launch time
         parent_run_tags = (
-            {key: val for key, val in parent_run.tags.items() if key != RUN_FAILURE_REASON_TAG}
+            {key: val for key, val in parent_run.tags.items() if key not in TAGS_TO_OMIT_ON_RETRY}
             if use_parent_run_tags
             else {}
         )
@@ -2329,10 +2329,10 @@ class DagsterInstance(DynamicPartitionsStore):
 
         Args:
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
-            partition_key (Sequence[str]): Partition key to delete.
+            partition_key (str): Partition key to delete.
         """
         check.str_param(partitions_def_name, "partitions_def_name")
-        check.sequence_param(partition_key, "partition_key", of_type=str)
+        check.str_param(partition_key, "partition_key")
         self._event_storage.delete_dynamic_partition(partitions_def_name, partition_key)
 
     @public

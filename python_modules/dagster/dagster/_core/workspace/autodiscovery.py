@@ -46,6 +46,10 @@ def loadable_targets_from_python_package(
     return loadable_targets_from_loaded_module(module)
 
 
+def _format_loadable_def(module: ModuleType, loadable_target: LoadableTarget) -> str:
+    return f"{module.__name__}.{loadable_target.attribute}"
+
+
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
     from dagster._core.definitions import JobDefinition
     from dagster._utils.test.definitions import LazyDefinitions
@@ -64,8 +68,12 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
 
     if loadable_defs:
         if len(loadable_defs) > 1:
+            loadable_def_names = ", ".join(
+                _format_loadable_def(module, loadable_def) for loadable_def in loadable_defs
+            )
             raise DagsterInvariantViolationError(
-                "Cannot have more than one Definitions object defined at module scope"
+                "Cannot have more than one Definitions object defined at module scope."
+                f" Found Definitions objects: {loadable_def_names}"
             )
 
         return loadable_defs

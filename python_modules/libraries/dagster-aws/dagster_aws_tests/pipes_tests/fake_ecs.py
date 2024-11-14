@@ -34,6 +34,10 @@ class LocalECSMockClient:
             str, SimulatedTaskRun
         ] = {}  # mapping of TaskDefinitionArn to TaskDefinition
 
+    @property
+    def meta(self):
+        return self.ecs_client.meta
+
     def get_waiter(self, waiter_name: str):
         return WaiterMock(self, waiter_name)
 

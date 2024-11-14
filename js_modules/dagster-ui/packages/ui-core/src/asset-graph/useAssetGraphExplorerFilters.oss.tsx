@@ -1,6 +1,6 @@
+import {AssetGraphFilterBar} from 'shared/asset-graph/AssetGraphFilterBar.oss';
 import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 
-import {AssetGraphFilterBar} from './AssetGraphFilterBar';
 import {AssetGraphViewType, GraphNode} from './Utils';
 
 type Props = {

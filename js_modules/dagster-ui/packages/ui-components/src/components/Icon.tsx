@@ -198,6 +198,7 @@ import key_command from '../icon-svgs/key_command.svg';
 import key_option from '../icon-svgs/key_option.svg';
 import key_return from '../icon-svgs/key_return.svg';
 import key_shift from '../icon-svgs/key_shift.svg';
+import label from '../icon-svgs/label.svg';
 import launch from '../icon-svgs/launch.svg';
 import launchpad from '../icon-svgs/launchpad.svg';
 import layers from '../icon-svgs/layers.svg';
@@ -596,6 +597,7 @@ export const Icons = {
   key_option,
   key_return,
   key_shift,
+  label,
   launch,
   launchpad,
   layers,

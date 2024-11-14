@@ -28,7 +28,7 @@ import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport
 import {GraphExplorerSolidFragment} from '../pipelines/types/GraphExplorer.types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
-interface GraphQueryInputProps {
+export interface GraphQueryInputProps {
   intent?: Intent;
   items: GraphQueryItem[];
   value: string;

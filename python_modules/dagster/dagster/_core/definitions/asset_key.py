@@ -2,6 +2,8 @@ import re
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, List, Mapping, NamedTuple, Optional, Sequence, TypeVar, Union
 
+from dagster_pipes import to_assey_key_path
+
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, public
@@ -11,6 +13,7 @@ from dagster._serdes import whitelist_for_serdes
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
 ASSET_KEY_DELIMITER = "/"
+ASSET_KEY_ESCAPE_CHARACTER = "\\"
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -82,6 +85,13 @@ class AssetKey(IHaveNew):
         """E.g. "first_component/second_component"."""
         return ASSET_KEY_DELIMITER.join(self.path)
 
+    def to_escaped_user_string(self) -> str:
+        r"""Similar to to_user_string, but escapes slashes in the path components with backslashes.
+
+        E.g. ["first_component", "second/component"] -> "first_component/second\/component"
+        """
+        return ASSET_KEY_DELIMITER.join([part.replace("/", "\\/") for part in self.path])
+
     def to_python_identifier(self, suffix: Optional[str] = None) -> str:
         """Build a valid Python identifier based on the asset key that can be used for
         operation names or I/O manager keys.
@@ -96,6 +106,11 @@ class AssetKey(IHaveNew):
     @staticmethod
     def from_user_string(asset_key_string: str) -> "AssetKey":
         return AssetKey(asset_key_string.split(ASSET_KEY_DELIMITER))
+
+    @staticmethod
+    def from_escaped_user_string(asset_key_string: str) -> "AssetKey":
+        """Inverse of to_escaped_user_string."""
+        return AssetKey(to_assey_key_path(asset_key_string))
 
     @staticmethod
     def from_db_string(asset_key_string: Optional[str]) -> Optional["AssetKey"]:

@@ -137,6 +137,7 @@ export type TypeExplorerContainerQuery = {
                           name: string;
                           description: string | null;
                           type: string;
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           constraints: {
                             __typename: 'TableColumnConstraints';
                             nullable: boolean;
@@ -159,6 +160,7 @@ export type TypeExplorerContainerQuery = {
                         name: string;
                         description: string | null;
                         type: string;
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         constraints: {
                           __typename: 'TableColumnConstraints';
                           nullable: boolean;
@@ -1298,4 +1300,4 @@ export type TypeExplorerContainerQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const TypeExplorerContainerQueryVersion = '6beecfab311124e730a6430cc0411ba20dc4cb207f73f3d00f7552d2d94d9670';
+export const TypeExplorerContainerQueryVersion = '06929dd49151d44a43bb7f4ad7d8b77e5be60eb8fe6103585f0aaa12613d74c9';

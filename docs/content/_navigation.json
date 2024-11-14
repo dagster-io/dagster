@@ -170,7 +170,7 @@
             "path": "/concepts/partitions-schedules-sensors/sensors"
           },
           {
-            "title": "Declarative Automation (Experimental)",
+            "title": "Declarative Automation",
             "children": [
               {
                 "title": "Overview",
@@ -918,15 +918,37 @@
         "children": [
           {
             "title": "Airflow Migration Tutorial",
-            "path": "/integrations/airlift/tutorial"
+            "path": "/integrations/airlift/tutorial/overview",
+            "children": [
+              {
+                "title": "Part 1: Setup local Airflow",
+                "path": "/integrations/airlift/tutorial/setup"
+              },
+              {
+                "title": "Part 2: Peering to the Airflow Instance",
+                "path": "/integrations/airlift/tutorial/peer"
+              },
+              {
+                "title": "Part 3: Observing assets",
+                "path": "/integrations/airlift/tutorial/observe"
+              },
+              {
+                "title": "Part 4: Migrating assets",
+                "path": "/integrations/airlift/tutorial/migrate"
+              },
+              {
+                "title": "Part 5: Decomissioning the Airflow DAG",
+                "path": "/integrations/airlift/tutorial/decomission"
+              }
+            ]
           },
           {
             "title": "Reference",
             "path": "/integrations/airlift/reference"
           },
           {
-            "title": "Tutorial",
-            "path": "/integrations/airlift/tutorial"
+            "title": "DAG-level migration",
+            "path": "/integrations/airlift/full_dag"
           }
         ]
       },
@@ -1291,7 +1313,7 @@
               },
               {
                 "title": "Migrating from Spark Step Launchers to Dagster Pipes",
-                "path": "/guides/migrations/from-step-launchers-to-pipes#migrating-from-spark-step-launchers-to-dagster-pipes"
+                "path": "/guides/migrations/from-step-launchers-to-pipes"
               }
             ]
           },

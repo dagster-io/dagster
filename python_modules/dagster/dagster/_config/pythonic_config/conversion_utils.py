@@ -4,15 +4,20 @@ from typing import Any, Dict, List, Literal, Mapping, Optional, Type, TypeVar, U
 
 from typing_extensions import Annotated, get_args, get_origin
 
+import dagster._check as check
 from dagster import (
     Enum as DagsterEnum,
     EnumValue as DagsterEnumValue,
+    Field,
+    Selector,
 )
 from dagster._config.config_type import Array, ConfigType, Noneable
+from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, convert_potential_field
 from dagster._config.post_process import resolve_defaults
 from dagster._config.pythonic_config.attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.validate import validate_config
 from dagster._core.definitions.definition_config_schema import DefinitionConfigSchema
@@ -22,19 +27,6 @@ from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
-
-try:
-    from functools import cached_property  # type: ignore  # (py37 compat)
-except ImportError:
-
-    class cached_property:
-        pass
-
-
-import dagster._check as check
-from dagster import Field, Selector
-from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, convert_potential_field
-from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._model.pydantic_compat_layer import ModelFieldCompat, PydanticUndefined, model_fields
 from dagster._utils.typing_api import is_closed_python_optional_type
 

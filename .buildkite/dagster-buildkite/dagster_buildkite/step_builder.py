@@ -109,7 +109,7 @@ class CommandStepBuilder:
             raise Exception(f"Unsupported python version for test image: {ver}.")
 
         return self.on_python_image(
-            image=f"buildkite-test:py{ver}-{BUILDKITE_TEST_IMAGE_VERSION}",
+            image=f"buildkite-test:py{ver.value}-{BUILDKITE_TEST_IMAGE_VERSION}",
             env=env,
         )
 

@@ -92,6 +92,7 @@ from dagster_graphql.implementation.fetch_ticks import get_instigation_ticks
 from dagster_graphql.implementation.loader import StaleStatusLoader
 from dagster_graphql.implementation.run_config_schema import resolve_run_config_schema_or_error
 from dagster_graphql.implementation.utils import (
+    UserFacingGraphQLError,
     capture_error,
     graph_selector_from_graphql,
     pipeline_selector_from_graphql,
@@ -163,6 +164,11 @@ from dagster_graphql.schema.pipelines.pipeline import (
     GrapheneEventConnectionOrError,
     GraphenePipeline,
     GrapheneRunOrError,
+)
+from dagster_graphql.schema.pipelines.resource import (
+    GrapheneResource,
+    GrapheneResourceConnection,
+    GrapheneResourcesOrError,
 )
 from dagster_graphql.schema.pipelines.snapshot import GraphenePipelineSnapshotOrError
 from dagster_graphql.schema.resources import (
@@ -242,6 +248,12 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GraphenePipelineOrError),
         params=graphene.NonNull(GraphenePipelineSelector),
         description="Retrieve a job by its location name, repository name, and job name.",
+    )
+
+    resourcesOrError = graphene.Field(
+        graphene.NonNull(GrapheneResourcesOrError),
+        pipelineSelector=graphene.NonNull(GraphenePipelineSelector),
+        description="Retrieve the list of resources for a given job.",
     )
 
     pipelineSnapshotOrError = graphene.Field(
@@ -805,6 +817,32 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_pipelineOrError(self, graphene_info: ResolveInfo, params: GraphenePipelineSelector):
         return GraphenePipeline(
             get_remote_job_or_raise(graphene_info, pipeline_selector_from_graphql(params))
+        )
+
+    @capture_error
+    def resolve_resourcesOrError(
+        self, graphene_info: ResolveInfo, pipelineSelector: GraphenePipelineSelector
+    ) -> Sequence[GrapheneResource]:
+        from dagster_graphql.schema.errors import GraphenePipelineNotFoundError
+
+        job_selector = pipeline_selector_from_graphql(pipelineSelector)
+
+        if not graphene_info.context.has_job(job_selector):
+            raise UserFacingGraphQLError(GraphenePipelineNotFoundError(selector=job_selector))
+
+        check.invariant(
+            not job_selector.is_subset_selection,
+            "resourcesOrError only accepts non-subsetted selectors",
+        )
+
+        def _get_config_type(key: str):
+            return graphene_info.context.get_config_type(job_selector, key)
+
+        return GrapheneResourceConnection(
+            resources=[
+                GrapheneResource(_get_config_type, resource_snap)
+                for resource_snap in graphene_info.context.get_resources(job_selector)
+            ]
         )
 
     def resolve_pipelineRunsOrError(

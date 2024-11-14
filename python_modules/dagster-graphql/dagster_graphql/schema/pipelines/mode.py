@@ -23,16 +23,16 @@ class GrapheneMode(graphene.ObjectType):
     def __init__(
         self,
         get_config_type: Callable[[str], ConfigTypeSnap],
-        pipeline_snapshot_id: str,
+        job_graphql_id: str,
         mode_def_snap: ModeDefSnap,
     ):
         super().__init__()
         self._mode_def_snap = check.inst_param(mode_def_snap, "mode_def_snap", ModeDefSnap)
         self._get_config_type = get_config_type
-        self._job_snapshot_id = pipeline_snapshot_id
+        self._job_graphql_id = job_graphql_id
 
     def resolve_id(self, _graphene_info: ResolveInfo):
-        return f"{self._job_snapshot_id}-{self._mode_def_snap.name}"
+        return f"{self._job_graphql_id}-{self._mode_def_snap.name}"
 
     def resolve_name(self, _graphene_info: ResolveInfo):
         return self._mode_def_snap.name

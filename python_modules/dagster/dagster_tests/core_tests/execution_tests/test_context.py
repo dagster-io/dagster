@@ -24,6 +24,8 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.repository_definition.repository_definition import (
@@ -408,3 +410,57 @@ def test_get_context():
         assert context == AssetExecutionContext.get()
 
     assert materialize([a]).success
+
+
+def test_graph_multi_asset_out_from_spec() -> None:
+    @op
+    def layered_op(x):
+        return x + 1
+
+    @op
+    def inner_op(context):
+        return 1
+
+    @graph_multi_asset(
+        outs={
+            "out1": AssetOut.from_spec(AssetSpec(key="my_key", kinds={"python", "s3"})),
+            "out2": AssetOut.from_spec(
+                AssetSpec(key="my_other_key", kinds={"python", "snowflake"})
+            ),
+        }
+    )
+    def no_annotation_asset():
+        return layered_op(inner_op()), layered_op(inner_op())
+
+    assert len(no_annotation_asset.specs_by_key) == 2
+    my_key_spec = no_annotation_asset.specs_by_key[AssetKey("my_key")]
+    assert my_key_spec.kinds == {"python", "s3"}
+    my_other_key_spec = no_annotation_asset.specs_by_key[AssetKey("my_other_key")]
+    assert my_other_key_spec.kinds == {"python", "snowflake"}
+
+    outs = materialize([no_annotation_asset])
+    assert outs.success
+
+
+def test_graph_multi_asset_out_from_spec_deps() -> None:
+    @op
+    def layered_op(x):
+        return x + 1
+
+    @op
+    def inner_op(context):
+        return 1
+
+    # Currently, cannot specify deps on AssetOut.from_spec
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @graph_multi_asset(
+            outs={
+                "out1": AssetOut.from_spec(AssetSpec(key="my_key", deps={"my_upstream_asset"})),
+                "out2": AssetOut.from_spec(
+                    AssetSpec(key="my_other_key", deps={"my_upstream_asset"})
+                ),
+            }
+        )
+        def no_annotation_asset():
+            return layered_op(inner_op()), layered_op(inner_op())

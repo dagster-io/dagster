@@ -10,7 +10,6 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.partition_mapping import PartitionMapping, UpstreamPartitionsResult
 from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
     TimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -128,14 +127,14 @@ class TimeWindowPartitionMapping(
 
     def _validated_input_partitions_subset(
         self, param_name: str, subset: Optional[PartitionsSubset]
-    ) -> BaseTimeWindowPartitionsSubset:
+    ) -> TimeWindowPartitionsSubset:
         if isinstance(subset, AllPartitionsSubset):
             return TimeWindowPartitionsSubset.from_all_partitions_subset(subset)
         else:
             return check.inst_param(
-                cast(BaseTimeWindowPartitionsSubset, subset),
+                cast(TimeWindowPartitionsSubset, subset),
                 param_name,
-                BaseTimeWindowPartitionsSubset,
+                TimeWindowPartitionsSubset,
             )
 
     def _validated_input_partitions_def(
@@ -224,7 +223,7 @@ class TimeWindowPartitionMapping(
         self,
         from_partitions_def: TimeWindowPartitionsDefinition,
         to_partitions_def: TimeWindowPartitionsDefinition,
-        from_partitions_subset: BaseTimeWindowPartitionsSubset,
+        from_partitions_subset: TimeWindowPartitionsSubset,
         start_offset: int,
         end_offset: int,
         current_time: Optional[datetime],
@@ -242,8 +241,8 @@ class TimeWindowPartitionMapping(
             mapping_downstream_to_upstream (bool): True if from_partitions_def is the downstream
                 partitions def and to_partitions_def is the upstream partitions def.
         """
-        if not isinstance(from_partitions_subset, BaseTimeWindowPartitionsSubset):
-            check.failed("from_partitions_subset must be a BaseTimeWindowPartitionsSubset")
+        if not isinstance(from_partitions_subset, TimeWindowPartitionsSubset):
+            check.failed("from_partitions_subset must be a TimeWindowPartitionsSubset")
 
         if not isinstance(from_partitions_def, TimeWindowPartitionsDefinition):
             check.failed("from_partitions_def must be a TimeWindowPartitionsDefinition")
@@ -391,7 +390,7 @@ class TimeWindowPartitionMapping(
         self,
         from_partitions_def: TimeWindowPartitionsDefinition,
         to_partitions_def: TimeWindowPartitionsDefinition,
-        from_partitions_subset: BaseTimeWindowPartitionsSubset,
+        from_partitions_subset: TimeWindowPartitionsSubset,
         start_offset: int,
         end_offset: int,
         current_time: Optional[datetime],

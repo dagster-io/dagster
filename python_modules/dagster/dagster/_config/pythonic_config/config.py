@@ -1,5 +1,6 @@
 import re
 from enum import Enum
+from functools import cached_property
 from typing import Any, Dict, List, Mapping, Optional, Set, Type, cast
 
 from pydantic import BaseModel, ConfigDict
@@ -34,14 +35,6 @@ from dagster._model.pydantic_compat_layer import (
     model_fields,
 )
 from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD
-
-try:
-    from functools import cached_property  # type: ignore  # (py37 compat)
-except ImportError:
-
-    class cached_property:
-        pass
-
 
 INTERNAL_MARKER = "__internal__"
 

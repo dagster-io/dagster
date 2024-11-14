@@ -8,7 +8,7 @@ from dagster import AssetKey, _seven
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
 from dagster._core.errors import DagsterError, DagsterInvariantViolationError
 from dagster._core.execution.asset_backfill import (
     AssetBackfillStatus,
@@ -163,7 +163,7 @@ class GrapheneAssetBackfillTargetPartitions(graphene.ObjectType):
     def __init__(self, partition_subset: PartitionsSubset):
         from dagster_graphql.schema.partition_sets import GraphenePartitionKeyRange
 
-        if isinstance(partition_subset, BaseTimeWindowPartitionsSubset):
+        if isinstance(partition_subset, TimeWindowPartitionsSubset):
             ranges = [
                 GraphenePartitionKeyRange(start, end)
                 for start, end in partition_subset.get_partition_key_ranges(

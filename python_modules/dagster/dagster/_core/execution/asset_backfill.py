@@ -38,7 +38,6 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
@@ -1326,7 +1325,7 @@ def _partition_subset_str(
     partition_subset: PartitionsSubset,
     partitions_def: PartitionsDefinition,
 ):
-    if isinstance(partition_subset, BaseTimeWindowPartitionsSubset) and isinstance(
+    if isinstance(partition_subset, TimeWindowPartitionsSubset) and isinstance(
         partitions_def, TimeWindowPartitionsDefinition
     ):
         return ", ".join(

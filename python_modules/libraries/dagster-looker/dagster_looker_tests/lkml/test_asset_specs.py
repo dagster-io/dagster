@@ -15,6 +15,7 @@ from dagster_looker_tests.looker_projects import (
     test_liquid_path,
     test_refinements,
     test_retail_demo_path,
+    test_union_no_distinct_path,
 )
 
 
@@ -292,10 +293,18 @@ def test_asset_deps_exception_derived_table(caplog: pytest.LogCaptureFixture) ->
     assert spec.key == AssetKey(["view", "exception_derived_table"])
     assert not spec.deps
     assert (
-        "Failed to optimize derived table SQL for view `exception_derived_table`"
+        "Failed to parse derived table SQL for view `exception_derived_table`"
         " in file `exception_derived_table.view.lkml`."
         " The upstream dependencies for the view will be omitted."
     ) in caplog.text
+
+
+def test_union_no_distinct_table(caplog: pytest.LogCaptureFixture) -> None:
+    [spec] = build_looker_asset_specs(project_dir=test_union_no_distinct_path)
+
+    assert spec.key == AssetKey(["view", "union_table"])
+    # Ensure we parse out the union correctly
+    assert len(list(spec.deps)) == 2
 
 
 def test_liquid(caplog: pytest.LogCaptureFixture) -> None:

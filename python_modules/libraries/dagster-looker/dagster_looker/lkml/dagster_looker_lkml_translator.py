@@ -6,10 +6,11 @@ from typing import Any, Iterator, Literal, Mapping, Optional, Sequence, Tuple, c
 
 from dagster import AssetKey
 from dagster._annotations import experimental, public
-from sqlglot import exp, parse_one, to_table
+from sqlglot import ParseError, exp, parse_one, to_table
 from sqlglot.optimizer import Scope, build_scope, optimize
 
 from dagster_looker.lkml.liquid_utils import best_effort_render_liquid_sql
+from dagster_looker.lkml.sqlglot_utils import custom_bigquery_dialect_inst
 
 LookMLStructureType = Literal["dashboard", "explore", "table", "view"]
 
@@ -75,14 +76,15 @@ def build_deps_for_looker_view(
     lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]],
 ) -> Sequence[AssetKey]:
     lookml_view_path, _, lookml_view_props = lookml_structure
-    sql_dialect = "bigquery"
 
     # https://cloud.google.com/looker/docs/derived-tables
     derived_table_sql: Optional[str] = lookml_view_props.get("derived_table", {}).get("sql")
     if not derived_table_sql:
         # https://cloud.google.com/looker/docs/reference/param-view-sql-table-name
         sql_table_name = lookml_view_props.get("sql_table_name") or lookml_view_props["name"]
-        sqlglot_table = to_table(sql_table_name.replace("`", ""), dialect=sql_dialect)
+        sqlglot_table = to_table(
+            sql_table_name.replace("`", ""), dialect=custom_bigquery_dialect_inst
+        )
 
         return [
             dagster_looker_translator.get_asset_key(
@@ -116,12 +118,20 @@ def build_deps_for_looker_view(
         rendered_liquid_sql = best_effort_render_liquid_sql(
             lookml_view_props["name"], lookml_view_path.name, derived_table_sql
         )
-        optimized_derived_table_ast = optimize(
-            parse_one(sql=rendered_liquid_sql, dialect=sql_dialect),
-            dialect=sql_dialect,
-            validate_qualify_columns=False,
+        parsed_derived_table_ast = parse_one(
+            sql=rendered_liquid_sql, dialect=custom_bigquery_dialect_inst
         )
-        root_scope = build_scope(optimized_derived_table_ast)
+        ast_to_evaluate = parsed_derived_table_ast
+        try:
+            optimized_derived_table_ast = optimize(
+                parsed_derived_table_ast,
+                dialect=custom_bigquery_dialect_inst,
+                validate_qualify_columns=False,
+            )
+            ast_to_evaluate = optimized_derived_table_ast
+        except ParseError:
+            pass
+        root_scope = build_scope(ast_to_evaluate)
 
         upstream_sqlglot_tables = [
             source
@@ -131,7 +141,7 @@ def build_deps_for_looker_view(
         ]
     except Exception as e:
         logger.warn(
-            f"Failed to optimize derived table SQL for view `{lookml_view_props['name']}`"
+            f"Failed to parse derived table SQL for view `{lookml_view_props['name']}`"
             f" in file `{lookml_view_path.name}`."
             " The upstream dependencies for the view will be omitted.\n\n"
             f"Exception: {e}"

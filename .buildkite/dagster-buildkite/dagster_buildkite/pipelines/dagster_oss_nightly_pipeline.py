@@ -54,7 +54,7 @@ def build_dagster_oss_nightly_steps() -> List[BuildkiteStep]:
                 ],
             ),
             PackageSpec(
-                "examples/experimental/dagster-airlift/examples/dbt-example",
+                "examples/starlift-demo",
                 name="airlift-demo-live-tests",
                 env_vars=[
                     "KS_DBT_CLOUD_ACCOUNT_ID",

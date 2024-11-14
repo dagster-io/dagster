@@ -31,7 +31,6 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.remote_asset_graph import RemoteAssetNode
 from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
     PartitionRangeStatus,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -525,7 +524,7 @@ def build_partition_statuses(
         " in_progress_partitions_subset to be of the same type",
     )
 
-    if isinstance(materialized_partitions_subset, BaseTimeWindowPartitionsSubset):
+    if isinstance(materialized_partitions_subset, TimeWindowPartitionsSubset):
         ranges = fetch_flattened_time_window_ranges(
             {
                 PartitionRangeStatus.MATERIALIZED: materialized_partitions_subset,

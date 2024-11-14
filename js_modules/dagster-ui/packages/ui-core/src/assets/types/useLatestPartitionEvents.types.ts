@@ -130,6 +130,7 @@ export type AssetOverviewMetadataEventsQuery = {
                       name: string;
                       description: string | null;
                       type: string;
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       constraints: {
                         __typename: 'TableColumnConstraints';
                         nullable: boolean;
@@ -152,6 +153,7 @@ export type AssetOverviewMetadataEventsQuery = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -300,6 +302,7 @@ export type AssetOverviewMetadataEventsQuery = {
                       name: string;
                       description: string | null;
                       type: string;
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       constraints: {
                         __typename: 'TableColumnConstraints';
                         nullable: boolean;
@@ -322,6 +325,7 @@ export type AssetOverviewMetadataEventsQuery = {
                     name: string;
                     description: string | null;
                     type: string;
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     constraints: {
                       __typename: 'TableColumnConstraints';
                       nullable: boolean;
@@ -356,4 +360,4 @@ export type AssetOverviewMetadataEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetOverviewMetadataEventsQueryVersion = '388bdfe77b56430feeb8849d7da1cd0390a8c8c39ddc3c28c9fcd509fb79741b';
+export const AssetOverviewMetadataEventsQueryVersion = '1bf2710b1d02317f55bbda64310593c0d4d6987bd8bac69da7d4d6b103b17691';

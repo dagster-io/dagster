@@ -295,7 +295,7 @@ class ArtifactsIOManager(IOManager):
                         context.log.warning(
                             "You've included a 'serialization_module' in the"
                             " 'wandb_artifact_configuration' settings. However, this doesn't have"
-                            " any impact when the output is already an W&B object like e.g Table or"
+                            " any impact when the output is already a W&B object like e.g Table or"
                             " Image."
                         )
                     # Adds the WBValue object using the class name as the name for the file

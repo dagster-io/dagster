@@ -3260,6 +3260,7 @@ type Query {
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError!
   workspaceLocationEntryOrError(name: String!): WorkspaceLocationEntryOrError
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
+  resourcesOrError(pipelineSelector: PipelineSelector!): ResourcesOrError!
   pipelineSnapshotOrError(
     snapshotId: String
     activePipelineSelector: PipelineSelector
@@ -3272,7 +3273,9 @@ type Query {
     scheduleStatus: InstigationStatus
   ): SchedulesOrError!
   topLevelResourceDetailsOrError(resourceSelector: ResourceSelector!): ResourceDetailsOrError!
-  allTopLevelResourceDetailsOrError(repositorySelector: RepositorySelector!): ResourcesOrError!
+  allTopLevelResourceDetailsOrError(
+    repositorySelector: RepositorySelector!
+  ): ResourceDetailsListOrError!
   utilizedEnvVarsOrError(repositorySelector: RepositorySelector!): EnvVarWithConsumersOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(
@@ -3406,6 +3409,16 @@ type WorkspaceLocationStatusEntry {
   permissions: [Permission!]!
 }
 
+union ResourcesOrError =
+  | ResourceConnection
+  | PipelineNotFoundError
+  | InvalidSubsetError
+  | PythonError
+
+type ResourceConnection {
+  resources: [Resource!]!
+}
+
 union GraphOrError = Graph | GraphNotFoundError | PythonError
 
 type Graph implements SolidContainer {
@@ -3433,7 +3446,7 @@ input GraphSelector {
 
 union ResourceDetailsOrError = ResourceDetails | ResourceNotFoundError | PythonError
 
-union ResourcesOrError = ResourceDetailsList | RepositoryNotFoundError | PythonError
+union ResourceDetailsListOrError = ResourceDetailsList | RepositoryNotFoundError | PythonError
 
 type ResourceDetailsList {
   results: [ResourceDetails!]!

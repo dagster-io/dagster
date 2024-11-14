@@ -133,6 +133,7 @@ export type MetadataEntryFragment_TableMetadataEntry = {
         name: string;
         description: string | null;
         type: string;
+        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
         constraints: {
           __typename: 'TableColumnConstraints';
           nullable: boolean;
@@ -156,6 +157,7 @@ export type MetadataEntryFragment_TableSchemaMetadataEntry = {
       name: string;
       description: string | null;
       type: string;
+      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
       constraints: {
         __typename: 'TableColumnConstraints';
         nullable: boolean;
@@ -222,6 +224,7 @@ export type TableMetadataEntryFragment = {
         name: string;
         description: string | null;
         type: string;
+        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
         constraints: {
           __typename: 'TableColumnConstraints';
           nullable: boolean;
@@ -243,6 +246,7 @@ export type TableSchemaForMetadataEntryFragment = {
       name: string;
       description: string | null;
       type: string;
+      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
       constraints: {
         __typename: 'TableColumnConstraints';
         nullable: boolean;

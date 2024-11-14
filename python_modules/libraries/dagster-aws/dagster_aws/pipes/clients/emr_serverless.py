@@ -6,6 +6,7 @@ import boto3
 import dagster._check as check
 from dagster import DagsterInvariantViolationError, PipesClient
 from dagster._annotations import experimental, public
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -113,7 +114,9 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
                 completion_response = self._wait_for_completion(context, start_response)
                 context.log.info(f"[pipes] {self.AWS_SERVICE_NAME} workload is complete!")
                 self._read_messages(context, session, completion_response)
-                return PipesClientCompletedInvocation(session)
+                return PipesClientCompletedInvocation(
+                    session, metadata=self._extract_dagster_metadata(completion_response)
+                )
 
             except DagsterExecutionInterruptedError:
                 if self.forward_termination:
@@ -131,14 +134,9 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
     ) -> "StartJobRunRequestRequestTypeDef":
         # inject Dagster tags
         tags = params.get("tags", {})
-        tags = {
-            **tags,
-            "dagster/run_id": context.run.run_id,
-        }
+        params["tags"] = {**tags, **session.default_remote_invocation_info}
 
-        params["tags"] = tags
         # inject env variables via --conf spark.executorEnv.env.<key>=<value>
-
         dagster_env_vars = {}
 
         dagster_env_vars.update(session.get_bootstrap_env_vars())
@@ -166,10 +164,19 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         params: "StartJobRunRequestRequestTypeDef",
     ) -> "StartJobRunResponseTypeDef":
         response = self.client.start_job_run(**params)
+        application_id = response["applicationId"]
         job_run_id = response["jobRunId"]
-        context.log.info(
-            f"[pipes] {self.AWS_SERVICE_NAME} job started with job_run_id {job_run_id}"
+
+        # this URL is only valid for an hour
+        # so we don't include it in the output metadata
+        dashboard_url = self.client.get_dashboard_for_job_run(
+            applicationId=application_id, jobRunId=job_run_id
         )
+
+        context.log.info(
+            f"[pipes] {self.AWS_SERVICE_NAME} job started with job_run_id {job_run_id}. Dashboard URL: {dashboard_url}"
+        )
+
         return response
 
     def _wait_for_completion(
@@ -317,6 +324,21 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
                         debug_info=output_stream,
                     ),
                 )
+
+    def _extract_dagster_metadata(self, response: "GetJobRunResponseTypeDef") -> RawMetadataMapping:
+        metadata: RawMetadataMapping = {}
+
+        job_run = response["jobRun"]
+
+        metadata["AWS EMR Serverless Application ID"] = job_run["applicationId"]
+        metadata["AWS EMR Serverless Job Run ID"] = job_run["jobRunId"]
+
+        # TODO: it would be great to add a url to EMR Studio page for this run
+        # such urls look like: https://es-638xhdetxum2td9nc3a45evmn.emrstudio-prod.eu-north-1.amazonaws.com/#/serverless-applications/00fm4oe0607u5a1d
+        # but we need to get the Studio ID from the application_id
+        # which is not possible with the current AWS API
+
+        return metadata
 
     def _terminate(
         self,

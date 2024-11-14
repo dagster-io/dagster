@@ -69,6 +69,19 @@ module.exports = createRule({
           });
         }
       }
+
+      if (importPath.startsWith('js_modules/dagster-ui/packages/ui-core/src')) {
+        context.report({
+          node,
+          messageId: 'invalidSharedImport',
+          fix: (fixer) => {
+            return fixer.replaceText(
+              node.source,
+              `'${importPath.replace('js_modules/dagster-ui/packages/ui-core/src', 'shared')}'`,
+            );
+          },
+        });
+      }
     }
 
     return {
