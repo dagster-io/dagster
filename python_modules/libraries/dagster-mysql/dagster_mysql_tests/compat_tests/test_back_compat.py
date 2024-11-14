@@ -791,3 +791,34 @@ def test_add_bulk_actions_job_name_column(conn_string):
                     )[0].backfill_id
                     == after_migration.backfill_id
                 )
+
+
+def test_add_run_tags_run_id_idx(conn_string):
+    hostname, port = _reconstruct_from_file(
+        conn_string,
+        # use an old snapshot, it has the bulk actions table but not the new columns
+        file_relative_path(
+            __file__, "snapshot_1_8_12_pre_add_backfill_id_column_to_runs_table.sql"
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname, port=port)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            # Before migration
+            assert "run_tags" in get_tables(instance)
+            assert "idx_run_tags" in get_indexes(instance, "run_tags")
+            assert "idx_run_tags_run_id" not in get_indexes(instance, "run_tags")
+
+            # After upgrade
+            instance.upgrade()
+
+            assert "run_tags" in get_tables(instance)
+            assert "idx_run_tags" not in get_indexes(instance, "run_tags")
+            assert "idx_run_tags_run_id" in get_indexes(instance, "run_tags")
