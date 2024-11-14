@@ -495,27 +495,34 @@ class AssetSelection(ABC):
 
     @classmethod
     def from_string(cls, string: str) -> "AssetSelection":
-        if string == "*":
-            return cls.all()
+        from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
+            AntlrAssetSelectionParser,
+        )
 
-        parts = parse_clause(string)
-        if parts is not None:
-            key_selection = cls.assets(parts.item_name)
-            if parts.up_depth and parts.down_depth:
-                selection = key_selection.upstream(parts.up_depth) | key_selection.downstream(
-                    parts.down_depth
-                )
-            elif parts.up_depth:
-                selection = key_selection.upstream(parts.up_depth)
-            elif parts.down_depth:
-                selection = key_selection.downstream(parts.down_depth)
-            else:
-                selection = key_selection
-            return selection
+        try:
+            return AntlrAssetSelectionParser(string).asset_selection
+        except:
+            if string == "*":
+                return cls.all()
 
-        elif string.startswith("tag:"):
-            tag_str = string[len("tag:") :]
-            return cls.tag_string(tag_str)
+            parts = parse_clause(string)
+            if parts is not None:
+                key_selection = cls.assets(parts.item_name)
+                if parts.up_depth and parts.down_depth:
+                    selection = key_selection.upstream(parts.up_depth) | key_selection.downstream(
+                        parts.down_depth
+                    )
+                elif parts.up_depth:
+                    selection = key_selection.upstream(parts.up_depth)
+                elif parts.down_depth:
+                    selection = key_selection.downstream(parts.down_depth)
+                else:
+                    selection = key_selection
+                return selection
+
+            elif string.startswith("tag:"):
+                tag_str = string[len("tag:") :]
+                return cls.tag_string(tag_str)
 
         check.failed(f"Invalid selection string: {string}")
 

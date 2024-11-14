@@ -150,5 +150,5 @@ class AntlrAssetSelectionParser:
         return self._tree_str
 
     @property
-    def asset_selection(self) -> AssetSelection:
+    def asset_selection(self) -> "AssetSelection":
         return self._asset_selection
