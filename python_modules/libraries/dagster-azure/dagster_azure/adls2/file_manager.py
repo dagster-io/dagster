@@ -44,6 +44,8 @@ class ADLS2FileHandle(FileHandle):
     @property
     def subdomain(self):
         """str: The subdomain of the ADLS2 URL."""
+        if not self._primary_endpoint:
+            return "dfs.core.windows.net"
         return re.search(r"(dfs.+$)", self._primary_endpoint).group(0)
 
     @property
