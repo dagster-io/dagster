@@ -315,7 +315,7 @@ jupyterlab==4.2.5
 jupyterlab-pygments==0.3.0
 jupyterlab-server==2.27.3
 jupyterlab-widgets==3.0.13
--e examples/experimental/dagster-airlift/examples/kitchen-sink
+-e examples/experimental/dagster-airlift/kitchen-sink
 kiwisolver==1.4.7
 kombu==5.4.2
 kopf==1.37.2
