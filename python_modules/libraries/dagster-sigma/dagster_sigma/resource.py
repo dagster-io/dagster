@@ -38,7 +38,7 @@ from dagster._utils.log import get_dagster_logger
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
 
-from dagster_sigma.cli import SNAPSHOT_ENV_VAR_NAME
+from dagster_sigma.cli import SIGMA_RECON_DATA_PREFIX, SNAPSHOT_ENV_VAR_NAME
 from dagster_sigma.translator import (
     DagsterSigmaTranslator,
     SigmaDataset,
@@ -555,7 +555,7 @@ class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganization
 
     @property
     def defs_key(self) -> str:
-        return f"sigma_{self.organization.client_id}"
+        return f"{SIGMA_RECON_DATA_PREFIX}{self.organization.client_id}"
 
     def fetch_state(self) -> SigmaOrganizationData:
         if self.snapshot and self.defs_key in self.snapshot.reconstruction_metadata:
