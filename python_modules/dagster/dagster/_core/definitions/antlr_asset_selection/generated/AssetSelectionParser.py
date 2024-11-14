@@ -1,13 +1,11 @@
+# flake8: noqa
+# type: ignore
 # Generated from AssetSelection.g4 by ANTLR 4.13.2
 # encoding: utf-8
-import sys
-
 from antlr4 import *
-
-if sys.version_info[1] > 5:
-    from typing import TextIO
-else:
-    from typing.io import TextIO
+from io import StringIO
+import sys
+from typing import TextIO
 
 
 def serializedATN():
