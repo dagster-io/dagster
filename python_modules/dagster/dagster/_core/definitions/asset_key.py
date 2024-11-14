@@ -192,6 +192,7 @@ class AssetKey(IHaveNew):
 
 CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]
 CoercibleToAssetKeyPrefix = Union[str, Sequence[str]]
+CoercibleToAssetKeySubset = Union[str, Sequence[str]]
 
 
 def check_opt_coercible_to_asset_key_prefix_param(
