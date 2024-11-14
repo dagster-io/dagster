@@ -1,3 +1,5 @@
+from typing import Sequence
+
 import dagster._check as check
 import pytest
 from dagster import (
@@ -12,10 +14,17 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.automation_condition_sensor_definition import (
+    DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
+)
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.definitions.resource_definition import resource
@@ -335,3 +344,41 @@ def test_multiple_wrapped_cached_assets():
             )
             == 1
         )
+
+
+def test_automation_condition_sensor_definition() -> None:
+    class AutomationConditionCacheableAsset(CacheableAssetsDefinition):
+        def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
+            return [AssetsDefinitionCacheableData(group_name="cacheable")]
+
+        def build_definitions(self, data) -> Sequence[AssetsDefinition]:
+            @asset(
+                name=self.unique_id,
+                automation_condition=AutomationCondition.eager() if self.unique_id == "x" else None,
+                group_name=data[0].group_name,
+            )
+            def _asset() -> None: ...
+
+            return [_asset]
+
+    # will have a default automation condition sensor
+    with scoped_definitions_load_context():
+        defs = Definitions(assets=[AutomationConditionCacheableAsset("x")])
+        default_sensor = defs.get_sensor_def(DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME)
+        assert default_sensor.asset_selection == AssetSelection.all()
+        assert len(defs.get_repository_def().sensor_defs) == 1
+
+    with scoped_definitions_load_context():
+        # will not have a default automation condition sensor
+        defs = Definitions(assets=[AutomationConditionCacheableAsset("y")])
+        assert len(defs.get_repository_def().sensor_defs) == 0
+
+    with scoped_definitions_load_context():
+
+        @repository
+        def repo() -> Sequence:
+            return [AutomationConditionCacheableAsset("x")]
+
+        assert isinstance(repo, RepositoryDefinition)
+        assert len(repo.sensor_defs) == 1
+        assert repo.sensor_defs[0].name == DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME
