@@ -1,26 +1,21 @@
 // Generated from /Users/marcosalazar/code/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
 
-import {ATN} from 'antlr4ts/atn/ATN';
-import {ATNDeserializer} from 'antlr4ts/atn/ATNDeserializer';
 import {FailedPredicateException} from 'antlr4ts/FailedPredicateException';
-import {NotNull} from 'antlr4ts/Decorators';
 import {NoViableAltException} from 'antlr4ts/NoViableAltException';
-import {Override} from 'antlr4ts/Decorators';
 import {Parser} from 'antlr4ts/Parser';
 import {ParserRuleContext} from 'antlr4ts/ParserRuleContext';
-import {ParserATNSimulator} from 'antlr4ts/atn/ParserATNSimulator';
-import {ParseTreeListener} from 'antlr4ts/tree/ParseTreeListener';
-import {ParseTreeVisitor} from 'antlr4ts/tree/ParseTreeVisitor';
 import {RecognitionException} from 'antlr4ts/RecognitionException';
 import {RuleContext} from 'antlr4ts/RuleContext';
 //import { RuleVersion } from "antlr4ts/RuleVersion";
-import {TerminalNode} from 'antlr4ts/tree/TerminalNode';
 import {Token} from 'antlr4ts/Token';
 import {TokenStream} from 'antlr4ts/TokenStream';
 import {Vocabulary} from 'antlr4ts/Vocabulary';
 import {VocabularyImpl} from 'antlr4ts/VocabularyImpl';
-
+import {ATN} from 'antlr4ts/atn/ATN';
+import {ATNDeserializer} from 'antlr4ts/atn/ATNDeserializer';
+import {ParserATNSimulator} from 'antlr4ts/atn/ParserATNSimulator';
 import * as Utils from 'antlr4ts/misc/Utils';
+import {TerminalNode} from 'antlr4ts/tree/TerminalNode';
 
 import {AssetSelectionListener} from './AssetSelectionListener';
 import {AssetSelectionVisitor} from './AssetSelectionVisitor';
@@ -152,7 +147,7 @@ export class AssetSelectionParser extends Parser {
   }
   // @RuleVersion(0)
   public start(): StartContext {
-    let _localctx: StartContext = new StartContext(this._ctx, this.state);
+    const _localctx: StartContext = new StartContext(this._ctx, this.state);
     this.enterRule(_localctx, 0, AssetSelectionParser.RULE_start);
     try {
       this.enterOuterAlt(_localctx, 1);
@@ -184,11 +179,11 @@ export class AssetSelectionParser extends Parser {
       _p = 0;
     }
 
-    let _parentctx: ParserRuleContext = this._ctx;
-    let _parentState: number = this.state;
+    const _parentctx: ParserRuleContext = this._ctx;
+    const _parentState: number = this.state;
     let _localctx: ExprContext = new ExprContext(this._ctx, _parentState);
     let _prevctx: ExprContext = _localctx;
-    let _startState: number = 2;
+    const _startState: number = 2;
     this.enterRecursionRule(_localctx, 2, AssetSelectionParser.RULE_expr, _p);
     try {
       let _alt: number;
@@ -379,7 +374,7 @@ export class AssetSelectionParser extends Parser {
   }
   // @RuleVersion(0)
   public traversal(): TraversalContext {
-    let _localctx: TraversalContext = new TraversalContext(this._ctx, this.state);
+    const _localctx: TraversalContext = new TraversalContext(this._ctx, this.state);
     this.enterRule(_localctx, 4, AssetSelectionParser.RULE_traversal);
     try {
       let _alt: number;
@@ -436,7 +431,7 @@ export class AssetSelectionParser extends Parser {
   }
   // @RuleVersion(0)
   public functionName(): FunctionNameContext {
-    let _localctx: FunctionNameContext = new FunctionNameContext(this._ctx, this.state);
+    const _localctx: FunctionNameContext = new FunctionNameContext(this._ctx, this.state);
     this.enterRule(_localctx, 6, AssetSelectionParser.RULE_functionName);
     let _la: number;
     try {
@@ -590,7 +585,7 @@ export class AssetSelectionParser extends Parser {
   }
   // @RuleVersion(0)
   public value(): ValueContext {
-    let _localctx: ValueContext = new ValueContext(this._ctx, this.state);
+    const _localctx: ValueContext = new ValueContext(this._ctx, this.state);
     this.enterRule(_localctx, 10, AssetSelectionParser.RULE_value);
     let _la: number;
     try {

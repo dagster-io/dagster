@@ -1,16 +1,12 @@
 // Generated from /Users/marcosalazar/code/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
 
-import {ATN} from 'antlr4ts/atn/ATN';
-import {ATNDeserializer} from 'antlr4ts/atn/ATNDeserializer';
 import {CharStream} from 'antlr4ts/CharStream';
 import {Lexer} from 'antlr4ts/Lexer';
-import {LexerATNSimulator} from 'antlr4ts/atn/LexerATNSimulator';
-import {NotNull} from 'antlr4ts/Decorators';
-import {Override} from 'antlr4ts/Decorators';
-import {RuleContext} from 'antlr4ts/RuleContext';
 import {Vocabulary} from 'antlr4ts/Vocabulary';
 import {VocabularyImpl} from 'antlr4ts/VocabularyImpl';
-
+import {ATN} from 'antlr4ts/atn/ATN';
+import {ATNDeserializer} from 'antlr4ts/atn/ATNDeserializer';
+import {LexerATNSimulator} from 'antlr4ts/atn/LexerATNSimulator';
 import * as Utils from 'antlr4ts/misc/Utils';
 
 export class AssetSelectionLexer extends Lexer {

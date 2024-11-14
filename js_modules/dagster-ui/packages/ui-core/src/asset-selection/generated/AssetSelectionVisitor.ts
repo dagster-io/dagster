@@ -2,29 +2,31 @@
 
 import {ParseTreeVisitor} from 'antlr4ts/tree/ParseTreeVisitor';
 
-import {AttributeExpressionContext} from './AssetSelectionParser';
-import {UpTraversalExpressionContext} from './AssetSelectionParser';
-import {UpAndDownTraversalExpressionContext} from './AssetSelectionParser';
-import {DownTraversalExpressionContext} from './AssetSelectionParser';
-import {NotExpressionContext} from './AssetSelectionParser';
-import {AndExpressionContext} from './AssetSelectionParser';
-import {OrExpressionContext} from './AssetSelectionParser';
-import {FunctionCallExpressionContext} from './AssetSelectionParser';
-import {ParenthesizedExpressionContext} from './AssetSelectionParser';
-import {AllExpressionContext} from './AssetSelectionParser';
-import {KeyExprContext} from './AssetSelectionParser';
-import {KeySubstringExprContext} from './AssetSelectionParser';
-import {TagAttributeExprContext} from './AssetSelectionParser';
-import {OwnerAttributeExprContext} from './AssetSelectionParser';
-import {GroupAttributeExprContext} from './AssetSelectionParser';
-import {KindAttributeExprContext} from './AssetSelectionParser';
-import {CodeLocationAttributeExprContext} from './AssetSelectionParser';
-import {StartContext} from './AssetSelectionParser';
-import {ExprContext} from './AssetSelectionParser';
-import {TraversalContext} from './AssetSelectionParser';
-import {FunctionNameContext} from './AssetSelectionParser';
-import {AttributeExprContext} from './AssetSelectionParser';
-import {ValueContext} from './AssetSelectionParser';
+import {
+  AllExpressionContext,
+  AndExpressionContext,
+  AttributeExprContext,
+  AttributeExpressionContext,
+  CodeLocationAttributeExprContext,
+  DownTraversalExpressionContext,
+  ExprContext,
+  FunctionCallExpressionContext,
+  FunctionNameContext,
+  GroupAttributeExprContext,
+  KeyExprContext,
+  KeySubstringExprContext,
+  KindAttributeExprContext,
+  NotExpressionContext,
+  OrExpressionContext,
+  OwnerAttributeExprContext,
+  ParenthesizedExpressionContext,
+  StartContext,
+  TagAttributeExprContext,
+  TraversalContext,
+  UpAndDownTraversalExpressionContext,
+  UpTraversalExpressionContext,
+  ValueContext,
+} from './AssetSelectionParser';
 
 /**
  * This interface defines a complete generic visitor for a parse tree produced

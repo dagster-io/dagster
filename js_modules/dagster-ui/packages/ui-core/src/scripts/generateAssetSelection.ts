@@ -8,4 +8,13 @@ execSync(
   `antlr4ts -visitor -o ./src/asset-selection/generated ${ASSET_SELECTION_GRAMMAR_FILE_PATH}`,
 );
 
-execSync(`yarn prettier ./src/asset-selection/generated/*.ts --write`);
+const files = [
+  'AssetSelectionLexer.ts',
+  'AssetSelectionListener.ts',
+  'AssetSelectionParser.ts',
+  'AssetSelectionVisitor.ts',
+];
+
+files.forEach((file) => {
+  execSync(`yarn prettier ./src/asset-selection/generated/${file} --write`);
+});
