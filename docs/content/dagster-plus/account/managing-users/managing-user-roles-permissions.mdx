@@ -8,25 +8,20 @@ title: Understanding role-based access control in Dagster+ | Dagster Docs
 
 Role-based access control (RBAC) enables you to grant specific permissions to users in your organization, ensuring that Dagster users have access to what they require in Dagster+, and no more.
 
-In this guide, we'll cover how RBAC works in Dagster+, how to assign roles to users, and the granular permissions for each user role.
+In this guide, we'll cover how RBAC works in Dagster+, how to assign roles to users, and the granular permissions for each user role. <Note> All roles are enforced both in Dagster+ and the [GraphQL API](https://docs.dagster.io/concepts/webserver/graphql) </Note>
 
 ---
 
-## Dagster+ user roles
+## Dagster+ Pro user roles
 
-Dagster+ uses a hierarchical model for RBAC, meaning that the most permissive roles include permissions from the roles beneath them. The following user roles are currently supported, in order from the **most** permissive to the **least** permissive:
+Dagster+ Pro employs a flexible approach to user roles and permissions. This system is built on two fundamental concepts:
 
-- Organization Admin
-- Admin
-- Editor
-- Launcher (Pro plans only)
-- Viewer
-
-For example, the **Admin** user role includes permissions specific to this role and all permissions in the **Editor**, **Launcher**, and **Viewer** user roles. Refer to the [User permissions reference](#user-permissions-reference) for the full list of user permissions in Dagster+.
-
-### User role enforcement
-
-All user roles are enforced both in Dagster+ and the [GraphQL API](/concepts/webserver/graphql).
+1. **Permission scope** - Permissions are context-specific, falling into two main categories:
+   - Organization-wide settings (for example, "Create Teams")
+   - Deployment-specific actions (for example, "Launch and Cancel Backfills")
+2. **Role types** - Dagster+ supports two types of roles:
+   - **Default roles:** Hierarchical roles, based on sensible defaults provided by Dagster.
+   - **Custom roles:** Roles you define with specific sets of permissions to match your organization's needs.
 
 ### Teams
 
@@ -34,11 +29,47 @@ Dagster+ Pro users can create teams of users and assign default permission sets.
 
 ---
 
+## Creating custom roles
+
+1. Navigate to the **Organization Settings** page.
+2. Click the Roles tab.
+3. Click the **Create new role** button.
+4. Select a name and icon.
+5. Provide a brief description.
+6. Choose deployment or organization type depending on where you want your role applied.
+7. Select the permissions you want to apply to the role. Note that you can base your role off of an existing role for ease of creation.
+
+## Editing custom roles
+
+1. Navigate to the **Organization Settings** page.
+2. Click the Roles tab.
+3. Click the edit button next to the role you want to edit.
+4. Make your changes.
+5. Save your changes.
+6. You will see a confirmation dialog including the changes that have been made.
+
+---
+
+## Deleting custom roles
+
+If you no longer need a custom role, you can delete it from the edit dialog.
+
+1. Navigate to the **Organization Settings** page.
+2. Click the Roles tab.
+3. Click the edit button next to the role you want to delete.
+4. At the bottom of the edit dialog, click **Delete role**.
+
+Note that if the role is currently assigned to any users, you will need to reassign them to a different role before deleting the role.
+
+<Warning>Deleting a role is a permanent action and cannot be undone.</Warning>
+
+---
+
 ## Assigning user and team roles
 
-With the exception of the **Organization Admin** role, user and team roles are set on a per-deployment basis.
-
 Organization Admins have access to the entire organization, including all [full deployments](/dagster-plus/managing-deployments/managing-deployments), [code locations](/dagster-plus/managing-deployments/code-locations), and [Branch Deployments](/dagster-plus/managing-deployments/branch-deployments).
+
+For custom roles, you will have to define if the role applies to the organization settings, or deployment settings.
 
 <table>
   <thead>
