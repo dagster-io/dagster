@@ -5,37 +5,35 @@
 ### New
 
 - Introduced a new constructor, `AssetOut.from_spec`, that will construct an `AssetOut` from an `AssetSpec`.
-- Added the ability to pass arbitrary metadata to `PipesClientCompletedInvocation`. This metadata will be attached to all materializations and asset checks stored during the pipes invocation.
-- [dagster-aws] Added option to propogate tags to ECS tasks when using the `EcsRunLauncher`. (Thanks [@zyd14](https://github.com/zyd14)!)
+- [dagster-aws] Added option to propagate tags to ECS tasks when using the `EcsRunLauncher`. (Thanks, [@zyd14](https://github.com/zyd14)!)
 - [dagster-dbt] You can now implement `DagsterDbtTranslator.get_code_version` to customize the code version for your dbt assets. (Thanks, [@Grzyblon](https://github.com/Grzyblon)!)
+- [dagster-pipes] Added the ability to pass arbitrary metadata to `PipesClientCompletedInvocation`. This metadata will be attached to all materializations and asset checks stored during the pipes invocation.
 - [dagster-powerbi] During a full workspace scan, owner and column metadata is now automatically attached to assets.
-- [ui] Column tags are now displayed in the `Coloumn name` section of the asset overview page.
+- [ui] Column tags are now displayed in the `Column name` section of the asset overview page.
 - [ui] Introduced an icon for the `gcs` (Google Cloud Storage) kind tag.
 - [ui] Introduced icons for `report` and `semanticmodel` kind tags.
 - [ui] The tooltip for a tag containing a cron expression now shows a human-readable, timezone-aware cron string.
-- [ui] Asset check descriptions are now sourced from docstrings and rendered in the UI. (Thanks [@marijncv](https://github.com/marijncv)!)
+- [ui] Asset check descriptions are now sourced from docstrings and rendered in the UI. (Thanks, [@marijncv](https://github.com/marijncv)!)
 
 ### Bugfixes
 
-- Fixed an issue with `AutomationCondition.execution_in_progress` which would cause it to evaluate to True for unpartitioned assets that were part of a run that was in progress, even if the asset itself had already been materialized.
+- Fixed an issue with `AutomationCondition.execution_in_progress` which would cause it to evaluate to `True` for unpartitioned assets that were part of a run that was in progress, even if the asset itself had already been materialized.
 - Fixed an issue with `AutomationCondition.run_in_progress` that would cause it to ignore queued runs.
 - Fixed an issue that would cause a `default_automation_condition_sensor` to be constructed for user code servers running on dagster version `< 1.9.0` even if the legacy `auto_materialize: use_sensors` configuration setting was set to `False`.
 - [dagster-dbt] Fixed an issue where the SQL filepath for a dbt model was incorrectly resolved when the dbt manifest file was built on a Windows machine, but executed on a Unix machine.
-- [dagster-pipes] Asset keys containing embedded “/” characters now work correctly with Dagster Pipes.
-- [ui] Fixed an issue with executing asset checks where the wrong job name was used in some situations. The correct job is now launched.
-- [ui] Fixed issue which would cause the "Partitions evaluated" label to incorrectly display "0" in cases where all partitions were evaluated.
+- [dagster-pipes] Asset keys containing embedded `/` characters now work correctly with Dagster Pipes.
+- [ui] Fixed an issue when executing asset checks where the wrong job name was used in some situations. The correct job name is now used.
 - [ui] Selecting assets with 100k+ partitions no longer causes the asset graph to temporarily freeze.
 - [ui] Fixed an issue that could cause a GraphQL error on certain pages after removing an asset.
-- [ui] The Asset Events page no longer truncates event history in cases where both materialization and observation events are present.
+- [ui] The asset events page no longer truncates event history in cases where both materialization and observation events are present.
 - [ui] The backfill coordinator logs tab no longer sits in a loading state when no logs are available to display.
-- [ui] Fixed issue which would cause the "Partitions evaluated" label on an asset's automation history page to incorrectly display "0" on in cases where all partitions were evaluated.
+- [ui] Fixed issue which would cause the "Partitions evaluated" label on an asset's automation history page to incorrectly display `0` in cases where all partitions were evaluated.
 
 ### Documentation
 
 - Community-hosted integrations are now listed on the [Integrations](https://docs.dagster.io/integrations) page.
-- Grammar fixes. (Thanks [@matt-weingarten](https://github.com/matt-weingarten)!)
+- Fixed a typo in the label for superseeded APIs. (Thanks, [@matt-weingarten](https://github.com/matt-weingarten)!)
 
-### Breaking Changes
 
 ### Deprecations
 
