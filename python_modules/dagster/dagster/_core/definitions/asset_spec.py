@@ -347,6 +347,7 @@ def merge_attributes(
     owners: Sequence[str] = ...,
     tags: Mapping[str, str] = ...,
     kinds: Set[str] = ...,
+    automation_condition: AutomationCondition = ...,
 ) -> "AssetSpec":
     """Returns a new AssetSpec with the specified attributes merged with the current attributes."""
     current_tags_without_kinds = {
