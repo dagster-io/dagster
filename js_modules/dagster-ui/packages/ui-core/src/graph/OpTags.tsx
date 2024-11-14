@@ -85,6 +85,7 @@ import linear from './kindtag-images/tool-linear-color.svg';
 import linkedin from './kindtag-images/tool-linkedin-color.svg';
 import llama from './kindtag-images/tool-llama-color.svg';
 import looker from './kindtag-images/tool-looker-color.svg';
+import mariadb from './kindtag-images/tool-mariadb-color.svg';
 import matplotlib from './kindtag-images/tool-matplotlib-color.svg';
 import meltano from './kindtag-images/tool-meltano-color.svg';
 import meta from './kindtag-images/tool-meta-color.svg';
@@ -380,6 +381,7 @@ export type KnownTagType =
   | 'hadoop'
   | 'impala'
   | 'kafka'
+  | 'mariadb'
   | 'minio'
   | 'pinot'
   | 'presto'
@@ -1125,7 +1127,7 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     content: 'Doris',
   },
   druid: {
-    icon: cockroachdb,
+    icon: druid,
     content: 'Druid',
   },
   elasticsearch: {
@@ -1147,6 +1149,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   kafka: {
     icon: kafka,
     content: 'Kafka',
+  },
+  mariadb: {
+    icon: mariadb,
+    content: "MariaDB",
   },
   minio: {
     icon: minio,
