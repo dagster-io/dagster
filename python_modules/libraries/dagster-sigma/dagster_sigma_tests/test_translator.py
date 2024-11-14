@@ -77,7 +77,7 @@ def test_dataset_translation_custom_translator() -> None:
         def get_asset_key(self, data: SigmaDataset) -> AssetKey:
             return super().get_asset_key(data).with_prefix("sigma")
 
-        def get_asset_spec(self, asset_key: AssetKey, data: SigmaDataset) -> AssetSpec:
+        def get_asset_spec(self, data: SigmaDataset) -> AssetSpec:
             spec = super().get_asset_spec(data)
             if isinstance(data, SigmaDataset):
                 return spec._replace(description="Custom description")
@@ -91,7 +91,7 @@ def test_dataset_translation_custom_translator() -> None:
 
     translator = MyCustomTranslator(SigmaOrganizationData(workbooks=[], datasets=[sample_dataset]))
 
-    asset_spec = translator.get_asset_spec(translator.get_asset_key(sample_dataset), sample_dataset)
+    asset_spec = translator.get_asset_spec(sample_dataset)
 
     assert asset_spec.key.path == ["sigma", "Orders_Dataset"]
     assert asset_spec.description == "Custom description"
