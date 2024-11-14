@@ -495,14 +495,14 @@ class AssetSelection(ABC):
 
     @classmethod
     def from_string(cls, string: str) -> "AssetSelection":
-        from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
-            AntlrAssetSelectionParser,
-        )
+        # from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
+        #     AntlrAssetSelectionParser,
+        # )
 
-        try:
-            return AntlrAssetSelectionParser(string).asset_selection
-        except:
-            pass
+        # try:
+        #     return AntlrAssetSelectionParser(string).asset_selection
+        # except:
+        #     pass
         if string == "*":
             return cls.all()
 
