@@ -46,6 +46,7 @@ from dagster._core.definitions.asset_selection import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
+from dagster._core.selector.subset_selector import MAX_NUM
 from dagster._serdes import deserialize_value
 from dagster._serdes.serdes import _WHITELIST_MAP
 from typing_extensions import TypeAlias
@@ -804,7 +805,33 @@ def test_deserialize_old_all_asset_selection():
     assert not new_unserialized_value.include_sources
 
 
-def test_from_string_tag():
+def test_from_string():
+    assert AssetSelection.from_string("*") == AssetSelection.all(include_sources=True)
+    assert AssetSelection.from_string("my_asset") == AssetSelection.assets("my_asset")
+    assert AssetSelection.from_string("*my_asset") == AssetSelection.assets("my_asset").upstream(
+        depth=MAX_NUM, include_self=True
+    )
+    assert AssetSelection.from_string("+my_asset") == AssetSelection.assets("my_asset").upstream(
+        depth=1, include_self=True
+    )
+    assert AssetSelection.from_string("++my_asset") == AssetSelection.assets("my_asset").upstream(
+        depth=2, include_self=True
+    )
+    assert AssetSelection.from_string("my_asset*") == AssetSelection.assets("my_asset").downstream(
+        depth=MAX_NUM, include_self=True
+    )
+    assert AssetSelection.from_string("my_asset+") == AssetSelection.assets("my_asset").downstream(
+        depth=1, include_self=True
+    )
+    assert AssetSelection.from_string("my_asset++") == AssetSelection.assets("my_asset").downstream(
+        depth=2, include_self=True
+    )
+    assert AssetSelection.from_string("+my_asset+") == AssetSelection.assets("my_asset").downstream(
+        depth=1, include_self=True
+    ) | AssetSelection.assets("my_asset").upstream(depth=1, include_self=True)
+    assert AssetSelection.from_string("*my_asset*") == AssetSelection.assets("my_asset").downstream(
+        depth=MAX_NUM, include_self=True
+    ) | AssetSelection.assets("my_asset").upstream(depth=MAX_NUM, include_self=True)
     assert AssetSelection.from_string("tag:foo=bar") == AssetSelection.tag("foo", "bar")
     assert AssetSelection.from_string("tag:foo") == AssetSelection.tag("foo", "")
 

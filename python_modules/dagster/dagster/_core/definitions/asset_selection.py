@@ -502,27 +502,28 @@ class AssetSelection(ABC):
         try:
             return AntlrAssetSelectionParser(string).asset_selection
         except:
-            if string == "*":
-                return cls.all()
+            pass
+        if string == "*":
+            return cls.all()
 
-            parts = parse_clause(string)
-            if parts is not None:
-                key_selection = cls.assets(parts.item_name)
-                if parts.up_depth and parts.down_depth:
-                    selection = key_selection.upstream(parts.up_depth) | key_selection.downstream(
-                        parts.down_depth
-                    )
-                elif parts.up_depth:
-                    selection = key_selection.upstream(parts.up_depth)
-                elif parts.down_depth:
-                    selection = key_selection.downstream(parts.down_depth)
-                else:
-                    selection = key_selection
-                return selection
+        parts = parse_clause(string)
+        if parts is not None:
+            key_selection = cls.assets(parts.item_name)
+            if parts.up_depth and parts.down_depth:
+                selection = key_selection.upstream(parts.up_depth) | key_selection.downstream(
+                    parts.down_depth
+                )
+            elif parts.up_depth:
+                selection = key_selection.upstream(parts.up_depth)
+            elif parts.down_depth:
+                selection = key_selection.downstream(parts.down_depth)
+            else:
+                selection = key_selection
+            return selection
 
-            elif string.startswith("tag:"):
-                tag_str = string[len("tag:") :]
-                return cls.tag_string(tag_str)
+        elif string.startswith("tag:"):
+            tag_str = string[len("tag:") :]
+            return cls.tag_string(tag_str)
 
         check.failed(f"Invalid selection string: {string}")
 
