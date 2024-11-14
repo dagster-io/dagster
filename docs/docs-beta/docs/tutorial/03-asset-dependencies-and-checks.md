@@ -18,12 +18,12 @@ The DAG or Directed Acyclic Graph is a key part of Dagster. This is an improveme
 
 ## What you'll learn
 
-- Creating downstream Assets 
-- How to make an [asset check](guides/asset-checks.md)
+- Creating [Asset Dependencies](guides/asset-dependencies.md) 
+- How to make an [Asset Check](guides/asset-checks.md)
 
-## Creating a downstream asset
+## Creating a Downstream asset
 
-Now that we have all of our raw data loaded and staged into the duckdb database our next step is to merge it together. The data structure that of a fact table (sales data) with 2 dimensions off of it (sales reps and products). To accomplish that in SQL we will bring in our sales_data table and then left join on sales reps and products on their respective id columns. Additionally, we will keep this view concise and only have relevant columns for analysis.
+Now that we have all of our raw data loaded and staged into the DuckDB database our next step is to merge it together. The data structure that of a fact table (sales data) with 2 dimensions off of it (sales reps and products). To accomplish that in SQL we will bring in our sales_data table and then left join on sales reps and products on their respective id columns. Additionally, we will keep this view concise and only have relevant columns for analysis.
 
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="89" lineEnd="132"/>
 
@@ -36,12 +36,27 @@ Data Quality is critical in analytics. Just like in a factory producing cars, ma
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="134" lineEnd="149"/>
 
 
+## Materialize the Assets
 
-## Materialize These things
+We need to add the asset and asset check we just made to the definitions object. 
 
-Go back into the UI, refresh definitions and materialize this asset
+Your Definitions object should now look like this:
 
-[Screenshot of the asset details page and asset check]
+  ```python 
+  defs = dg.Definitions(
+    assets=[products,
+        sales_reps,
+        sales_data,
+        joined_data,
+    ],
+    asset_checks=[missing_dimension_check],
+    resources={"duckdb": DuckDBResource(database="data/mydb.duckdb")},
+  )
+  ```
+
+Go back into the UI, reload definitions, and materialize the joined_data asset. If you navigate to the asset details page, there is tab for asset checks where you can see the run history and metadata. 
+
+  ![2048 resolution](/images/tutorial/etl-tutorial/asset-check.png)
 
 ## What you've learned
 
@@ -51,4 +66,4 @@ Go back into the UI, refresh definitions and materialize this asset
 
 ## Next steps
 
-- Continue this tutorial with your [Partitions](/tutorial/02-your-first-asset)
+- Continue this tutorial with your [Partitions](/tutorial/04-partitions)

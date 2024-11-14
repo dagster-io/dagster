@@ -8,7 +8,7 @@ last_update:
 
 # Your First Software Defined Asset
 
-Now that we have the raw data files and the Dagster project setup lets create some loading those csv's into duckdb. 
+Now that we have the raw data files and the Dagster project setup lets create some loading those csv's into DuckDB. 
 
 Asset definitions enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed.
 
@@ -17,14 +17,14 @@ Asset definitions enable a declarative approach to data management, in which cod
 ## What you'll learn
 
 - Creating our initial definitions object
-- Adding a duckdb resource
+- Adding a DuckDB resource
 - Building some basic software defined assets 
 
 ## Building definitions object
 
-The definitions object [need docs reference] in Dagster serves as the central configuration point for defining and organizing various components within a Dagster Project. It acts as a container that holds all the necessary configurations for a code location, ensuring that everything is organized and easily accessible. 
+The [definitions](/api/definitions) object in Dagster serves as the central configuration point for defining and organizing various components within a Dagster Project. It acts as a container that holds all the necessary configurations for a code location, ensuring that everything is organized and easily accessible. 
 
-1. Creating Definitions object and duckdb resource
+1. Creating Definitions object and DuckDB resource
 
 Open the definitions.py file and add the following import statements and definitions object. 
 
@@ -70,34 +70,37 @@ Now to pull these assets into our definitions object, add them to the empty list
 
   ```python
   defs = dg.Definitions(
-    assets=[products,
-        sales_reps,
-        sales_data,
-    ],
-    resources={"duckdb": DuckDBResource(database="data/mydb.duckdb")}
-    ),
+      assets=[products,
+          sales_reps,
+          sales_data,
+      ],
+      resources={"duckdb": DuckDBResource(database="data/mydb.duckdb")},
+  )
   ```
 
 ## Materialize Assets
 
-Lets fire up Dagster and materialize these assets. If you are not in the project root directory navigate there now. 
+Let's fire up Dagster and materialize these assets. If you are not in the project root directory navigate there now. 
+
+  ```bash title="Navigate to Project Directory"
+    cd getting_started_etl_tutorial
+  ```
 
 Run the `dagster dev` command. Dagster should open up in your browser. Navigate to the Global asset lineage page. You should see this
 
-[screenshot of global asset lineage]
+   ![2048 resolution](/images/tutorial/etl-tutorial/etl-tutorial-first-asset-lineage.png)
 
-Click on products and then materilize. Navigate to the jobs screen. 
+Click on products and then materialize. Navigate to the runs tab and select the most recent run. 
 
-[screenshot of run]
+   ![2048 resolution](/images/tutorial/etl-tutorial/first-asset-run.png)
 
-Do the same for sales_reps, and sales_data. from 
+Do the same for sales_reps and sales_data. Now we have all our ingestion assets materialized
 
 ## What you've learned
 
 - Created a Dagster Definition
 - Built our ingestion assets
 
-
 ## Next steps
 
-- Continue this tutorial with your [Asset Dependencies](/tutorial/02-your-first-asset)
+- Continue this tutorial with your [Asset Dependencies and Checks](/tutorial/03-asset-dependencies-and-checks)

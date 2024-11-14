@@ -9,7 +9,6 @@ last_update:
 # Build your first ETL pipeline
 
 Welcome to this hands-on tutorial where you'll learn how to build an ETL pipeline with Dagster while exploring key parts of Dagster.
-If you haven't already, complete the [Quick Start](/getting-started/quickstart) tutorial to get familiar with Dagster.
 
 ## What you'll learn
 
@@ -36,9 +35,9 @@ First, set up a new Dagster project.
 2. Create a virtual environment and activate it:
 
    ```bash title="Create a virtual environment"
-   python -m venv venv
-   source venv/bin/activate
-   # On Windows, use `venv\Scripts\activate`
+   python -m venv dagster_tutorial 
+   source dagster_tutorial/bin/activate
+   # On Windows, use `dagster_tutorial\Scripts\activate`
    ```
 
 3. Install Dagster and the required dependencies:
@@ -52,23 +51,22 @@ First, set up a new Dagster project.
 Next we will get the raw data for the project. As well as the project scaffold, Dagster has several pre-built scaffolds you can install depending on your use case. You can see the full up to date list by running. `dagster project list-examples`
 
 Use the project scaffold command for this project. 
-
    ```bash title="ETL Project Scaffold"
-      dagster project from-example --getting_started_etl_tutorial
+      dagster project from-example --example getting_started_etl_tutorial
    ```
 
 The project should have this structure. 
 
 ```
 dagster-etl-tutorial/
-├── etl_tutorial/
-│   └── definitions.py
 ├── data/
 │   └── products.csv
 │   └── sales_data.csv
 │   └── sales_reps.csv
 │   └── sample_request/
 │       └── request.json
+├── etl_tutorial/
+│   └── definitions.py
 ├── pyproject.toml
 ├── setup.cfg
 ├── setup.py
@@ -78,20 +76,21 @@ dagster-etl-tutorial/
 
 In the root directory there are three configuration files that are common in Python package management. These manage dependencies and identifies the Dagster modules in the project. The etl_tutorial folder is where our Dagster definition for this code location exists. The data directory is where the raw data for the project is stored and we will reference these files in our software-defined assets. 
 
-
 ### File/Directory Descriptions
+
+#### Dagster files
 
 - **etl_tutorial/**: This is a Python module that contains your Dagster code. It is the main directory where you will define your assets, jobs, schedules, sensors, and resources.
 
   - **definitions.py**: This file is typically used to define jobs, schedules, and sensors. It organizes the various components of your Dagster project. This allows Dagster to load the definitions in a module.
+
+#### Python files
 
 - **pyproject.toml**: This file is used to specify build system requirements and package metadata for Python projects. It is part of the Python packaging ecosystem.
 
 - **setup.cfg**: This file is used for configuration of your Python package. It can include metadata about the package, dependencies, and other configuration options.
 
 - **setup.py**: This script is used to build and distribute your Python package. It is a standard file in Python projects for specifying package details.
-
-
 
 ## What you've learned
 
