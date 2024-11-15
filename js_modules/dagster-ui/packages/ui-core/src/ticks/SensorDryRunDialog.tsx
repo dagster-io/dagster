@@ -16,16 +16,17 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
+import {useLaunchMultipleRunsWithTelemetry} from 'shared/launchpad/useLaunchMultipleWithTelemetry.oss';
 import styled from 'styled-components';
 
 import {RunRequestTable} from './DryRunRequestTable';
 import {DynamicPartitionRequests} from './DynamicPartitionRequests';
-import {gql, useMutation} from '../apollo-client';
 import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
 import {
   SensorDryRunMutation,
   SensorDryRunMutationVariables,
 } from './types/SensorDryRunDialog.types';
+import {gql, useMutation} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -33,7 +34,6 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {SensorSelector} from '../graphql/types';
-import {useLaunchMultipleRunsWithTelemetry} from '../launchpad/useLaunchMultipleRunsWithTelemetry';
 import {SET_CURSOR_MUTATION} from '../sensors/EditCursorDialog';
 import {
   SetSensorCursorMutation,
