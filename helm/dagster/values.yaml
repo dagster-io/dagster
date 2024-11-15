@@ -761,6 +761,7 @@ postgresql:
 
   # Used by init container to check that db is running. (Even if enabled:false)
   image:
+    registry: "docker.io"
     repository: "library/postgres"
     tag: "14.6"
     pullPolicy: IfNotPresent
