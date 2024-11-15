@@ -67,7 +67,7 @@ from dagster._core.storage.tags import KIND_PREFIX
     ],
 )
 def test_antlr_tree(selection_str, expected_tree_str):
-    asset_selection = AntlrAssetSelectionParser(selection_str)
+    asset_selection = AntlrAssetSelectionParser(selection_str, include_sources=True)
     assert asset_selection.tree_str == expected_tree_str
 
 
@@ -134,4 +134,7 @@ def test_antlr_visit_basic(selection_str, expected_assets):
     )
     def c(): ...
 
-    assert AntlrAssetSelectionParser(selection_str).asset_selection == expected_assets
+    assert (
+        AntlrAssetSelectionParser(selection_str, include_sources=True).asset_selection
+        == expected_assets
+    )
