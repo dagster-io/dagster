@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, List, Mapping, NamedTuple, Optional, Sequence, Tuple
+from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
 
 from dagster import Failure
 from dagster._core.definitions.asset_key import AssetKey
@@ -80,22 +80,30 @@ class FivetranConnector:
         return self.paused
 
     @property
-    def sync_status(self) -> Tuple[datetime, bool, str]:
-        """Gets details about the status of the Fivetran connector.
+    def last_sync_completed_at(self) -> datetime:
+        """Gets the datetime of the last completed sync of the Fivetran connector.
 
         Returns:
-            Tuple[datetime.datetime, bool, str]:
-                Tuple representing the timestamp of the last completed sync, if it succeeded, and
-                the currently reported sync status.
+            datetime.datetime:
+                The datetime of the last completed sync of the Fivetran connector.
         """
         succeeded_at = parser.parse(self.succeeded_at or MIN_TIME_STR)
         failed_at = parser.parse(self.failed_at or MIN_TIME_STR)
 
-        return (
-            max(succeeded_at, failed_at),
-            succeeded_at > failed_at,
-            self.sync_state,
-        )
+        return max(succeeded_at, failed_at)
+
+    @property
+    def is_last_sync_successful(self) -> bool:
+        """Gets a boolean representing whether the last completed sync of the Fivetran connector was successful or not.
+
+        Returns:
+            bool:
+                Whether the last completed sync of the Fivetran connector was successful or not.
+        """
+        succeeded_at = parser.parse(self.succeeded_at or MIN_TIME_STR)
+        failed_at = parser.parse(self.failed_at or MIN_TIME_STR)
+
+        return succeeded_at > failed_at
 
     def assert_syncable(self) -> bool:
         """Confirms that the connector can be sync. Will raise a Failure in the event that

@@ -1,8 +1,8 @@
-import datetime
 import json
 import logging
 import os
 import time
+from datetime import datetime, timedelta
 from functools import partial
 from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Type
 from urllib.parse import urljoin
@@ -171,7 +171,7 @@ class FivetranResource(ConfigurableResource):
         if connector_details["status"]["setup_state"] != "connected":
             raise Failure(f"Connector '{connector_id}' cannot be synced as it has not been setup")
 
-    def get_connector_sync_status(self, connector_id: str) -> Tuple[datetime.datetime, bool, str]:
+    def get_connector_sync_status(self, connector_id: str) -> Tuple[datetime, bool, str]:
         """Gets details about the status of the most recent Fivetran sync operation for a given
         connector.
 
@@ -296,7 +296,7 @@ class FivetranResource(ConfigurableResource):
     def poll_sync(
         self,
         connector_id: str,
-        initial_last_sync_completion: datetime.datetime,
+        initial_last_sync_completion: datetime,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
     ) -> Mapping[str, Any]:
@@ -318,7 +318,7 @@ class FivetranResource(ConfigurableResource):
         Returns:
             Dict[str, Any]: Parsed json data representing the API response.
         """
-        poll_start = datetime.datetime.now()
+        poll_start = datetime.now()
         while True:
             (
                 curr_last_sync_completion,
@@ -330,12 +330,10 @@ class FivetranResource(ConfigurableResource):
             if curr_last_sync_completion > initial_last_sync_completion:
                 break
 
-            if poll_timeout and datetime.datetime.now() > poll_start + datetime.timedelta(
-                seconds=poll_timeout
-            ):
+            if poll_timeout and datetime.now() > poll_start + timedelta(seconds=poll_timeout):
                 raise Failure(
                     f"Sync for connector '{connector_id}' timed out after "
-                    f"{datetime.datetime.now() - poll_start}."
+                    f"{datetime.now() - poll_start}."
                 )
 
             # Sleep for the configured time interval before polling again.
@@ -664,9 +662,6 @@ class FivetranClient:
         )
         connector.assert_syncable()
         request_fn()
-        connector = FivetranConnector.from_connector_details(
-            connector_details=self.get_connector_details(connector_id)
-        )
         self._log.info(
             f"Sync initialized for connector_id={connector_id}. View this sync in the Fivetran"
             " UI: " + connector.url
@@ -675,7 +670,7 @@ class FivetranClient:
     def poll_sync(
         self,
         connector_id: str,
-        initial_last_sync_completion: datetime.datetime,
+        previous_sync_completed_at: datetime,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
     ) -> Mapping[str, Any]:
@@ -688,7 +683,7 @@ class FivetranClient:
         Args:
             connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
                 "Setup" tab of a given connector in the Fivetran UI.
-            initial_last_sync_completion (datetime.datetime): The timestamp of the last completed sync
+            previous_sync_completed_at (datetime.datetime): The datetime of the previous completed sync
                 (successful or otherwise) for this connector, prior to running this method.
             poll_interval (float): The time (in seconds) that will be waited between successive polls.
             poll_timeout (float): The maximum time that will wait before this operation is timed
@@ -697,34 +692,27 @@ class FivetranClient:
         Returns:
             Dict[str, Any]: Parsed json data representing the API response.
         """
-        poll_start = datetime.datetime.now()
+        poll_start = datetime.now()
         while True:
             connector = FivetranConnector.from_connector_details(
                 connector_details=self.get_connector_details(connector_id)
             )
-            (
-                curr_last_sync_completion,
-                curr_last_sync_succeeded,
-                curr_sync_state,
-            ) = connector.sync_status
-            self._log.info(f"Polled '{connector_id}'. Status: [{curr_sync_state}]")
+            self._log.info(f"Polled '{connector_id}'. Status: [{connector.sync_state}]")
 
-            if curr_last_sync_completion > initial_last_sync_completion:
+            if connector.last_sync_completed_at > previous_sync_completed_at:
                 break
 
-            if poll_timeout and datetime.datetime.now() > poll_start + datetime.timedelta(
-                seconds=poll_timeout
-            ):
+            if poll_timeout and datetime.now() > poll_start + timedelta(seconds=poll_timeout):
                 raise Failure(
                     f"Sync for connector '{connector_id}' timed out after "
-                    f"{datetime.datetime.now() - poll_start}."
+                    f"{datetime.now() - poll_start}."
                 )
 
             # Sleep for the configured time interval before polling again.
             time.sleep(poll_interval)
 
         post_raw_connector_details = self.get_connector_details(connector_id)
-        if not curr_last_sync_succeeded:
+        if not connector.is_last_sync_successful:
             raise Failure(
                 f"Sync for connector '{connector_id}' failed!",
                 metadata={
@@ -801,11 +789,10 @@ class FivetranClient:
         connector = FivetranConnector.from_connector_details(
             connector_details=self.get_connector_details(connector_id)
         )
-        init_last_sync_timestamp, _, _ = connector.sync_status
-        sync_fn(connector_id)
+        sync_fn(connector_id=connector_id)
         final_details = self.poll_sync(
-            connector_id,
-            init_last_sync_timestamp,
+            connector_id=connector_id,
+            previous_sync_completed_at=connector.last_sync_completed_at,
             poll_interval=poll_interval,
             poll_timeout=poll_timeout,
         )
