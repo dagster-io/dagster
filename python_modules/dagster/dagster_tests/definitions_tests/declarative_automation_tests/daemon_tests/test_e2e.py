@@ -14,6 +14,8 @@ from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.execution.backfill import PartitionBackfill
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.remote_representation.external import RemoteSensor
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.scheduler.instigation import (
@@ -113,14 +115,9 @@ def get_workspace_request_context(
 
 
 @contextmanager
-def get_grpc_workspace_request_context(filename: str):
-    with instance_for_test(
-        overrides={
-            "run_launcher": {
-                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                "class": "SyncInMemoryRunLauncher",
-            },
-        }
+def get_grpc_workspace_request_context(filename: str, instance_ref: Optional[InstanceRef] = None):
+    with (
+        DagsterInstance.from_ref(instance_ref) if instance_ref else instance_for_test()
     ) as instance:
         with GrpcServerProcess(
             instance_ref=instance.get_ref(),
@@ -148,7 +145,10 @@ def get_threadpool_executor():
 
 
 def _execute_ticks(
-    context: WorkspaceProcessContext, threadpool_executor: InheritContextThreadPoolExecutor
+    context: WorkspaceProcessContext,
+    threadpool_executor: InheritContextThreadPoolExecutor,
+    submit_threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None,
+    debug_crash_flags=None,
 ) -> None:
     """Evaluates a single tick for all automation condition sensors across the workspace.
     Evaluates an iteration of both the AssetDaemon and the SensorDaemon as either can handle
@@ -160,7 +160,8 @@ def _execute_ticks(
             context,
             threadpool_executor=threadpool_executor,
             amp_tick_futures=asset_daemon_futures,
-            debug_crash_flags={},
+            debug_crash_flags=debug_crash_flags or {},
+            submit_threadpool_executor=submit_threadpool_executor,
         )
     )
 
@@ -419,12 +420,14 @@ def test_default_condition() -> None:
 
 
 def test_non_subsettable_check() -> None:
-    with get_workspace_request_context(
-        ["check_not_subsettable"]
-    ) as context, get_threadpool_executor() as executor:
+    with get_grpc_workspace_request_context(
+        "check_not_subsettable"
+    ) as context, get_threadpool_executor() as executor, InheritContextThreadPoolExecutor(
+        max_workers=5
+    ) as submit_executor:
         time = datetime.datetime(2024, 8, 17, 1, 35)
         with freeze_time(time):
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor, submit_executor)
 
             # eager asset materializes
             runs = _get_runs_for_latest_ticks(context)
