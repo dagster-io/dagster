@@ -304,6 +304,7 @@ class AssetSpec(
         skippable: bool = ...,
         group_name: Optional[str] = ...,
         code_version: Optional[str] = ...,
+        automation_condition: Optional[AutomationCondition] = ...,
         owners: Optional[Sequence[str]] = ...,
         tags: Optional[Mapping[str, str]] = ...,
         kinds: Optional[Set[str]] = ...,
@@ -325,7 +326,9 @@ class AssetSpec(
                 group_name=group_name if group_name is not ... else self.group_name,
                 code_version=code_version if code_version is not ... else self.code_version,
                 freshness_policy=self.freshness_policy,
-                automation_condition=self.automation_condition,
+                automation_condition=automation_condition
+                if automation_condition is not ...
+                else self.automation_condition,
                 owners=owners if owners is not ... else self.owners,
                 tags=tags if tags is not ... else current_tags_without_kinds,
                 kinds=kinds if kinds is not ... else self.kinds,

@@ -1,5 +1,4 @@
 from dagster import Definitions
-from dagster._core.definitions.asset_spec import replace_attributes
 from dagster_airlift.core import (
     AirflowBasicAuthBackend,
     AirflowInstance,
@@ -33,16 +32,15 @@ load_customers_dag_asset = next(
         )
     )
 )
-customer_metrics_dag_asset = replace_attributes(
-    next(
-        iter(
-            load_airflow_dag_asset_specs(
-                airflow_instance=metrics_airflow_instance,
-                dag_selector_fn=lambda dag: dag.dag_id == "customer_metrics",
-            )
+customer_metrics_dag_asset = next(
+    iter(
+        load_airflow_dag_asset_specs(
+            airflow_instance=metrics_airflow_instance,
+            dag_selector_fn=lambda dag: dag.dag_id == "customer_metrics",
         )
-        # Add a dependency on the load_customers_dag_asset
-    ),
+    )
+    # Add a dependency on the load_customers_dag_asset
+).replace_attributes(
     deps=[load_customers_dag_asset],
 )
 
