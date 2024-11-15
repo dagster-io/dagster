@@ -123,7 +123,7 @@ def get_grpc_workspace_request_context(filename: str, instance_ref: Optional[Ins
             instance_ref=instance.get_ref(),
             loadable_target_origin=get_loadable_target_origin(filename),
             max_workers=4,
-            wait_on_exit=False,
+            wait_on_exit=True,
         ) as server_process:
             target = GrpcServerTarget(
                 host="localhost",
