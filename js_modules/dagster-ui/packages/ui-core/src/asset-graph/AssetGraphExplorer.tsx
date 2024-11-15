@@ -134,12 +134,12 @@ export const AssetGraphExplorer = (props: Props) => {
       clearAssetSelection: React.useCallback(() => {
         onChangeExplorerPath(
           {
-            ...explorerPath,
+            ...explorerPathRef.current,
             opsQuery: '',
           },
           'push',
         );
-      }, [explorerPath, onChangeExplorerPath]),
+      }, [explorerPathRef, onChangeExplorerPath]),
     });
 
   useLayoutEffect(() => {
