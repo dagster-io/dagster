@@ -25,7 +25,7 @@ def upgrade():
                 ["key", "value", "run_id"],
                 unique=True,
                 postgresql_concurrently=True,
-                mysql_length={"key": 255, "value": 255, "run_id": 255},
+                mysql_length={"key": 64, "value": 64, "run_id": 255},
             )
         if has_index("run_tags", "idx_run_tags"):
             op.drop_index(
@@ -44,7 +44,7 @@ def downgrade():
                 ["key", "value"],
                 unique=False,
                 postgresql_concurrently=True,
-                mysql_length={"key": 255, "value": 255},
+                mysql_length={"key": 64, "value": 64},
             )
         if has_index("run_tags", "idx_run_tags_run_id"):
             op.drop_index(
