@@ -6029,7 +6029,7 @@ class TestEventLogStorage:
         }
 
         assert storage.get_asset_status_cache_values(
-            partition_defs_by_key, LoadingContextForTest(instance)
+            partition_defs_by_key.items(), LoadingContextForTest(instance)
         ) == [
             None,
             None,
@@ -6047,7 +6047,7 @@ class TestEventLogStorage:
         partition_defs = list(partition_defs_by_key.values())
         for i, value in enumerate(
             storage.get_asset_status_cache_values(
-                partition_defs_by_key, LoadingContextForTest(instance)
+                partition_defs_by_key.items(), LoadingContextForTest(instance)
             ),
         ):
             assert value is not None
