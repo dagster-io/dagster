@@ -593,6 +593,7 @@ class FivetranClient:
         return self._make_request("GET", "groups")
 
 
+@experimental
 class FivetranWorkspace(ConfigurableResource):
     """This class represents a Fivetran workspace and provides utilities
     to interact with Fivetran APIs.
