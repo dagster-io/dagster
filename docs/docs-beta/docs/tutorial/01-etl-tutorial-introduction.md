@@ -35,7 +35,7 @@ To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
-- Familiarity with SQL or Python data manipulation libraries (pandas or polars).
+- Familiarity with SQL or Python data manipulation libraries (Pandas or Polars).
 - Understanding of data pipelines and the extract, transform, and load process.
 </details>
 
@@ -46,7 +46,7 @@ First, set up a new Dagster project.
 
 1. Open your terminal and create a new directory for your project:
 
-   ```bash 
+   ```bash
    mkdir dagster-etl-tutorial
    cd dagster-etl-tutorial
    ```
@@ -70,7 +70,7 @@ First, set up a new Dagster project.
 
 3. Install Dagster and the required dependencies:
 
-   ```bash 
+   ```bash
    pip install dagster dagster-webserver pandas dagster-duckdb
    ```
 
@@ -83,7 +83,7 @@ Next, you'll create the project directories and files for this tutorial with the
    ```
 
 Your project should have this structure:
-<!-- vale off -->
+{/* vale off */}
 ```
 dagster-etl-tutorial/
 ├── data/
@@ -98,7 +98,7 @@ dagster-etl-tutorial/
 ├── setup.cfg
 ├── setup.py
 ```
-<!-- vale on -->
+{/* vale on */}
 
 :::info
 Dagster has several example projects you can install depending on your use case. To see the full list, run `dagster project list-examples`. For more information on the `dagster project` command, see the [API documentation](https://docs-preview.dagster.io/api/cli#dagster-project).
@@ -133,7 +133,7 @@ The data directory contains the raw data files for the project. We will referenc
 
 Start the Dagster webserver from your project's root directory. If you are not in the project root directory navigate there now.
 
-  ```bash 
+  ```bash
     cd getting_started_etl_tutorial
   ```
 

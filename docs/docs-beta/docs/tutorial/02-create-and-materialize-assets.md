@@ -39,7 +39,7 @@ Open the `definitions.py` file in the `etl_tutorial` directory and copy the foll
 
 ## 3. Create Assets
 
-Software defined [assets](/api/assets) are the main building block in Dagster. An asset is composed of the asset key which is how its identified, a op which is a function that is invoked to produce the asset and upstream dependencies that the asset depends on. You can read more about our philosophy behind the asset centric approach [here](https://dagster.io/blog/software-defined-assets). 
+Software defined [assets](/api/assets) are the main building block in Dagster. An asset is composed of the asset key which is how its identified, a op which is a function that is invoked to produce the asset and upstream dependencies that the asset depends on. You can read more about our philosophy behind the [asset centric approach](https://dagster.io/blog/software-defined-assets).
 
 ### Products asset
 
@@ -92,4 +92,4 @@ Click materialize all. Navigate to the runs tab and select the most recent run. 
 
 ## Next steps
 
-- Continue this tutorial with your [Asset Dependencies and Checks](/tutorial/03-asset-dependencies-and-checks)
+- Continue this tutorial with your [Asset Dependencies and Checks](/tutorial/03-creating-a-downstream-asset)
