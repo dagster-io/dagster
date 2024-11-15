@@ -14,6 +14,7 @@ TEST_PREVIOUS_MAX_TIME_STR = "2024-12-01T15:43:29.013729Z"
 TEST_ACCOUNT_ID = "test_account_id"
 TEST_API_KEY = "test_api_key"
 TEST_API_SECRET = "test_api_secret"
+TEST_ANOTHER_ACCOUNT_ID = "test_another_account_id"
 
 # Taken from Fivetran API documentation
 # https://fivetran.com/docs/rest-api/api-reference/groups/list-all-groups

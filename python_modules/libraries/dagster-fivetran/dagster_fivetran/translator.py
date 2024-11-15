@@ -5,6 +5,7 @@ from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
 from dagster import Failure
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
 from dagster._record import as_dict, record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
@@ -248,6 +249,14 @@ class FivetranWorkspaceData:
         return data
 
 
+class FivetranMetadataSet(NamespacedMetadataSet):
+    connector_id: Optional[str] = None
+
+    @classmethod
+    def namespace(cls) -> str:
+        return "dagster-fivetran"
+
+
 class DagsterFivetranTranslator:
     """Translator class which converts a `FivetranConnectorTableProps` object into AssetSpecs.
     Subclass this class to implement custom logic for each type of Fivetran content.
@@ -275,8 +284,10 @@ class DagsterFivetranTranslator:
             table=table_name,
         )
 
+        augmented_metadata = {**metadata, **FivetranMetadataSet(connector_id=props.connector_id)}
+
         return AssetSpec(
             key=AssetKey(props.table.split(".")),
-            metadata=metadata,
+            metadata=augmented_metadata,
             kinds={"fivetran", *({props.service} if props.service else set())},
         )

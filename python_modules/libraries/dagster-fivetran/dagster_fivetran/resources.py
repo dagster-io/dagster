@@ -3,16 +3,18 @@ import logging
 import os
 import time
 from datetime import datetime, timedelta
-from functools import partial
-from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Type
+from functools import lru_cache, partial
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Type, Union
 from urllib.parse import urljoin
 
 import requests
 from dagster import (
+    AssetExecutionContext,
     Definitions,
     Failure,
     InitResourceContext,
     MetadataValue,
+    OpExecutionContext,
     __version__,
     _check as check,
     get_dagster_logger,
@@ -890,7 +892,24 @@ class FivetranWorkspace(ConfigurableResource):
             schema_configs_by_connector_id=schema_configs_by_connector_id,
         )
 
+    def sync_and_poll(
+        self, context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None
+    ):
+        raise NotImplementedError()
 
+    def __eq__(self, other):
+        return (
+            isinstance(other, FivetranWorkspace)
+            and self.account_id == other.account_id
+            and self.api_key == other.api_key
+            and self.api_secret == other.api_secret
+        )
+
+    def __hash__(self):
+        return hash(self.account_id + self.api_key + self.api_secret)
+
+
+@lru_cache(maxsize=None)
 @experimental
 def load_fivetran_asset_specs(
     workspace: FivetranWorkspace,
