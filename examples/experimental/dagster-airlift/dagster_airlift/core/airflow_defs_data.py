@@ -1,8 +1,8 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import AbstractSet, Mapping, Set
+from typing import AbstractSet, Mapping, Sequence, Set, Union
 
-from dagster import AssetKey, AssetSpec, Definitions
+from dagster import AssetKey, AssetsDefinition, AssetSpec
 from dagster._annotations import public
 from dagster._record import record
 
@@ -18,8 +18,11 @@ from dagster_airlift.core.utils import (
     is_peered_dag_asset_spec,
     is_task_mapped_asset_spec,
     peered_dag_handles_for_spec,
+    spec_iterator,
     task_handles_for_spec,
 )
+
+MappedAsset = Union[AssetSpec, AssetsDefinition]
 
 
 @record
@@ -32,7 +35,7 @@ class AirflowDefinitionsData:
     """
 
     airflow_instance: AirflowInstance
-    mapped_defs: Definitions
+    airflow_mapped_assets: Sequence[MappedAsset]
 
     @public
     @property
@@ -41,12 +44,16 @@ class AirflowDefinitionsData:
         return self.airflow_instance.name
 
     @cached_property
+    def all_asset_specs(self) -> Sequence[AssetSpec]:
+        return list(spec_iterator(self.airflow_mapped_assets))
+
+    @cached_property
     def mapping_info(self) -> AirliftMetadataMappingInfo:
-        return build_airlift_metadata_mapping_info(self.mapped_defs)
+        return build_airlift_metadata_mapping_info(self.airflow_mapped_assets)
 
     @cached_property
     def all_asset_specs_by_key(self) -> Mapping[AssetKey, AssetSpec]:
-        return {spec.key: spec for spec in self.mapped_defs.get_all_asset_specs()}
+        return {spec.key: spec for spec in self.all_asset_specs}
 
     @public
     def task_ids_in_dag(self, dag_id: str) -> Set[str]:
@@ -64,7 +71,7 @@ class AirflowDefinitionsData:
     @cached_property
     def mapped_asset_keys_by_task_handle(self) -> Mapping[TaskHandle, AbstractSet[AssetKey]]:
         asset_keys_per_handle = defaultdict(set)
-        for spec in self.mapped_defs.get_all_asset_specs():
+        for spec in self.all_asset_specs:
             if is_task_mapped_asset_spec(spec):
                 task_handles = task_handles_for_spec(spec)
                 for task_handle in task_handles:
@@ -74,7 +81,7 @@ class AirflowDefinitionsData:
     @cached_property
     def mapped_asset_keys_by_dag_handle(self) -> Mapping[DagHandle, AbstractSet[AssetKey]]:
         asset_keys_per_handle = defaultdict(set)
-        for spec in self.mapped_defs.get_all_asset_specs():
+        for spec in self.all_asset_specs:
             if is_dag_mapped_asset_spec(spec):
                 dag_handles = dag_handles_for_spec(spec)
                 for dag_handle in dag_handles:
@@ -84,7 +91,7 @@ class AirflowDefinitionsData:
     @cached_property
     def peered_dag_asset_keys_by_dag_handle(self) -> Mapping[DagHandle, AbstractSet[AssetKey]]:
         asset_keys_per_handle = defaultdict(set)
-        for spec in self.mapped_defs.get_all_asset_specs():
+        for spec in self.all_asset_specs:
             if is_peered_dag_asset_spec(spec):
                 dag_handles = peered_dag_handles_for_spec(spec)
                 for dag_handle in dag_handles:
