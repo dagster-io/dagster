@@ -158,7 +158,7 @@ monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
     compute_kind="duckdb",
     group_name="analysis",
     deps=[joined_data],
-    auto_materialize_policy=dg.AutoMaterializePolicy.eager(), # need to adjust to declarative automation
+    auto_materialize_policy=dg.AutoMaterializePolicy.eager(),  # need to adjust to declarative automation
 )
 def monthly_sales_performance(
     context: dg.AssetExecutionContext, duckdb: DuckDBResource
@@ -313,7 +313,9 @@ def adhoc_request(
     with duckdb.get_connection() as conn:
         preview_df = conn.execute(query).fetchdf()
 
-    return dg.MaterializeResult(metadata={"preview": dg.MetadataValue.md(preview_df.to_markdown(index=False))})
+    return dg.MaterializeResult(
+        metadata={"preview": dg.MetadataValue.md(preview_df.to_markdown(index=False))}
+    )
 
 
 adhoc_request_job = dg.define_asset_job(

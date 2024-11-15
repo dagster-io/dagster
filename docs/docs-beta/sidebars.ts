@@ -13,8 +13,8 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: [
         'tutorial/etl-tutorial-introduction',
-        'tutorial/your-first-asset',
-        'tutorial/asset-dependencies-and-checks',
+        'tutorial/create-and-materialize-assets',
+        'tutorial/creating-a-downstream-asset',
       ],
     },
     {
