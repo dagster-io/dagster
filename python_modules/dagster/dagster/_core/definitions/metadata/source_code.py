@@ -144,7 +144,7 @@ def _with_code_source_single_definition(
             }
 
     return assets_def.map_asset_specs(
-        lambda spec: spec._replace(metadata=metadata_by_key[spec.key])
+        lambda spec: spec.replace_attributes(metadata=metadata_by_key[spec.key])
     )
 
 
@@ -279,7 +279,7 @@ def _convert_local_path_to_git_path_single_definition(
         }
 
     return assets_def.map_asset_specs(
-        lambda spec: spec._replace(metadata=metadata_by_key[spec.key])
+        lambda spec: spec.replace_attributes(metadata=metadata_by_key[spec.key])
     )
 
 

@@ -45,10 +45,9 @@ def enrich_spec_with_airflow_task_metadata(
     tasks: AbstractSet[TaskHandle],
     serialized_data: SerializedAirflowDefinitionsData,
 ) -> AssetSpec:
-    tags = {**spec.tags, **airlift_mapped_kind_dict()}
-    return spec._replace(
-        metadata={**spec.metadata, **metadata_for_mapped_tasks(tasks, serialized_data)},
-        tags=tags,
+    return spec.merge_attributes(
+        metadata=metadata_for_mapped_tasks(tasks, serialized_data),
+        tags=airlift_mapped_kind_dict(),
     )
 
 
@@ -65,10 +64,9 @@ def enrich_spec_with_airflow_dag_metadata(
     dags: AbstractSet[DagHandle],
     serialized_data: SerializedAirflowDefinitionsData,
 ) -> AssetSpec:
-    tags = {**spec.tags, **airlift_mapped_kind_dict()}
-    return spec._replace(
-        metadata={**spec.metadata, **metadata_for_mapped_dags(dags, serialized_data)},
-        tags=tags,
+    return spec.merge_attributes(
+        metadata=metadata_for_mapped_dags(dags, serialized_data),
+        tags=airlift_mapped_kind_dict(),
     )
 
 
