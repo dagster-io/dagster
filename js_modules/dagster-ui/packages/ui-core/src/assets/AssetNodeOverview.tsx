@@ -60,7 +60,7 @@ import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraph
 import {CodeLink, getCodeReferenceKey} from '../code-links/CodeLink';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {AssetKind, isCanonicalStorageKindTag, isSystemTag} from '../graph/KindTags';
-import {CodeReferencesMetadataEntry, IntMetadataEntry} from '../graphql/types';
+import {IntMetadataEntry} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {isCanonicalRowCountMetadataEntry} from '../metadata/MetadataEntry';
 import {
@@ -296,10 +296,7 @@ export const AssetNodeOverview = ({
 
   const tableNameMetadata = assetNode?.metadataEntries?.find(isCanonicalTableNameEntry);
   const uriMetadata = assetNode?.metadataEntries?.find(isCanonicalUriEntry);
-
-  const codeSource = assetNode?.metadataEntries?.find((m) => isCanonicalCodeSourceEntry(m)) as
-    | CodeReferencesMetadataEntry
-    | undefined;
+  const codeSource = assetNode?.metadataEntries?.find(isCanonicalCodeSourceEntry);
 
   const renderDefinitionSection = () => (
     <Box flex={{direction: 'column', gap: 12}}>
@@ -626,7 +623,7 @@ export const AssetNodeOverview = ({
               showHeader
               showTimestamps
               showFilter
-              hideTableSchema
+              hideEntriesShownOnOverview
               observations={[]}
               definitionMetadata={assetMetadata}
               definitionLoadTimestamp={assetNodeLoadTimestamp}

@@ -33,7 +33,9 @@ import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';
 import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+
 const TIME_FORMAT = {showSeconds: true, showTimezone: true};
+
 export const HIDDEN_METADATA_ENTRY_LABELS = new Set([
   'dagster_dbt/select',
   'dagster_dbt/exclude',
