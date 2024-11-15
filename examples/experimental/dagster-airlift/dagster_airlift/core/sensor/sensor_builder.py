@@ -80,7 +80,7 @@ def check_keys_for_asset_keys(
 
 def build_airflow_polling_sensor(
     *,
-    mapped_assets: Iterable[MappedAsset],
+    mapped_assets: Sequence[MappedAsset],
     airflow_instance: AirflowInstance,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
