@@ -148,10 +148,10 @@ def my_eager_check() -> dg.AssetCheckResult:
     return dg.AssetCheckResult(passed=True)
 
 
-AssetCheckSpec(
+dg.AssetCheckSpec(
     "my_cron_check",
     asset=dg.AssetKey("orders"),
-    automation_condition=AutomationCondition.on_cron("@daily"),
+    automation_condition=dg.AutomationCondition.on_cron("@daily"),
 )
 ```
 
