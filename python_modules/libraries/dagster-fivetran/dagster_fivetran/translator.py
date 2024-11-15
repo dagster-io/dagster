@@ -1,17 +1,13 @@
 from enum import Enum
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, cast
+from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._record import record
+from dagster._record import as_dict, record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 
-from dagster_fivetran.utils import (
-    get_fivetran_connector_table_name,
-    get_fivetran_connector_url,
-    metadata_for_table,
-)
+from dagster_fivetran.utils import get_fivetran_connector_table_name, metadata_for_table
 
 
 class FivetranConnectorTableProps(NamedTuple):
@@ -19,28 +15,133 @@ class FivetranConnectorTableProps(NamedTuple):
     connector_id: str
     name: str
     connector_url: str
-    schema_config: Mapping[str, Any]
+    schema_config: "FivetranSchemaConfig"
     database: Optional[str]
     service: Optional[str]
 
 
-@whitelist_for_serdes
-class FivetranContentType(Enum):
-    """Enum representing each object in Fivetran's ontology."""
+class FivetranConnectorSetupStateType(Enum):
+    """Enum representing each setup state for a connector in Fivetran's ontology."""
 
-    CONNECTOR = "connector"
-    DESTINATION = "destination"
+    INCOMPLETE = "incomplete"
+    CONNECTED = "connected"
+    BROKEN = "broken"
 
 
 @whitelist_for_serdes
 @record
-class FivetranContentData:
-    """A record representing a piece of content in a Fivetran workspace.
-    Includes the object's type and data as returned from the API.
-    """
+class FivetranConnector:
+    """Represents a Fivetran connector, based on data as returned from the API."""
 
-    content_type: FivetranContentType
-    properties: Mapping[str, Any]
+    id: str
+    name: str
+    service: str
+    group_id: str
+    setup_state: str
+
+    @property
+    def url(self) -> str:
+        return f"https://fivetran.com/dashboard/connectors/{self.service}/{self.name}"
+
+    @property
+    def destination_id(self) -> str:
+        return self.group_id
+
+    @property
+    def is_connected(self) -> bool:
+        return self.setup_state == FivetranConnectorSetupStateType.CONNECTED.value
+
+    @classmethod
+    def from_connector_details(
+        cls,
+        connector_details: Mapping[str, Any],
+    ) -> "FivetranConnector":
+        return cls(
+            id=connector_details["id"],
+            name=connector_details["schema"],
+            service=connector_details["service"],
+            group_id=connector_details["group_id"],
+            setup_state=connector_details["status"]["setup_state"],
+        )
+
+
+@whitelist_for_serdes
+@record
+class FivetranDestination:
+    """Represents a Fivetran destination, based on data as returned from the API."""
+
+    id: str
+    database: Optional[str]
+    service: str
+
+    @classmethod
+    def from_destination_details(
+        cls, destination_details: Mapping[str, Any]
+    ) -> "FivetranDestination":
+        return cls(
+            id=destination_details["id"],
+            database=destination_details.get("config", {}).get("database"),
+            service=destination_details["service"],
+        )
+
+
+@whitelist_for_serdes
+@record
+class FivetranTable:
+    """Represents a Fivetran table, based on data as returned from the API."""
+
+    enabled: bool
+    name_in_destination: str
+    # We keep the raw data for columns to add it as `column_info in the metadata.
+    columns: Optional[Mapping[str, Any]]
+
+    @classmethod
+    def from_table_details(cls, table_details: Mapping[str, Any]) -> "FivetranTable":
+        return cls(
+            enabled=table_details["enabled"],
+            name_in_destination=table_details["name_in_destination"],
+            columns=table_details.get("columns"),
+        )
+
+
+@whitelist_for_serdes
+@record
+class FivetranSchema:
+    """Represents a Fivetran schema, based on data as returned from the API."""
+
+    enabled: bool
+    name_in_destination: str
+    tables: Mapping[str, "FivetranTable"]
+
+    @classmethod
+    def from_schema_details(cls, schema_details: Mapping[str, Any]) -> "FivetranSchema":
+        return cls(
+            enabled=schema_details["enabled"],
+            name_in_destination=schema_details["name_in_destination"],
+            tables={
+                table_key: FivetranTable.from_table_details(table_details=table_details)
+                for table_key, table_details in schema_details["tables"].items()
+            },
+        )
+
+
+@whitelist_for_serdes
+@record
+class FivetranSchemaConfig:
+    """Represents a Fivetran schema config, based on data as returned from the API."""
+
+    schemas: Mapping[str, FivetranSchema]
+
+    @classmethod
+    def from_schema_config_details(
+        cls, schema_config_details: Mapping[str, Any]
+    ) -> "FivetranSchemaConfig":
+        return cls(
+            schemas={
+                schema_key: FivetranSchema.from_schema_details(schema_details=schema_details)
+                for schema_key, schema_details in schema_config_details["schemas"].items()
+            }
+        )
 
 
 @whitelist_for_serdes
@@ -50,25 +151,9 @@ class FivetranWorkspaceData:
     Provided as context for the translator so that it can resolve dependencies between content.
     """
 
-    connectors_by_id: Mapping[str, FivetranContentData]
-    destinations_by_id: Mapping[str, FivetranContentData]
-
-    @classmethod
-    def from_content_data(
-        cls, content_data: Sequence[FivetranContentData]
-    ) -> "FivetranWorkspaceData":
-        return cls(
-            connectors_by_id={
-                connector.properties["id"]: connector
-                for connector in content_data
-                if connector.content_type == FivetranContentType.CONNECTOR
-            },
-            destinations_by_id={
-                destination.properties["id"]: destination
-                for destination in content_data
-                if destination.content_type == FivetranContentType.DESTINATION
-            },
-        )
+    connectors_by_id: Mapping[str, FivetranConnector]
+    destinations_by_id: Mapping[str, FivetranDestination]
+    schema_configs_by_connector_id: Mapping[str, FivetranSchemaConfig]
 
     @cached_method
     def to_fivetran_connector_table_props_data(self) -> Sequence[FivetranConnectorTableProps]:
@@ -77,40 +162,26 @@ class FivetranWorkspaceData:
         """
         data: List[FivetranConnectorTableProps] = []
 
-        for connector_id, connector_data in self.connectors_by_id.items():
-            connector_details = connector_data.properties
-            connector_name = connector_details["schema"]
-            connector_url = get_fivetran_connector_url(connector_details)
+        for connector in self.connectors_by_id.values():
+            destination = self.destinations_by_id[connector.destination_id]
+            schema_config = self.schema_configs_by_connector_id[connector.id]
 
-            schema_config = connector_details["schema_config"]
-
-            destination_details = self.destinations_by_id[
-                connector_details["destination_id"]
-            ].properties
-            database = destination_details.get("config", {}).get("database")
-            service = destination_details.get("service")
-
-            schemas_data = cast(Dict[str, Any], schema_config["schemas"])
-            for schema in schemas_data.values():
-                if schema["enabled"]:
-                    schema_name = schema["name_in_destination"]
-                    schema_tables: Dict[str, Dict[str, Any]] = cast(
-                        Dict[str, Dict[str, Any]], schema["tables"]
-                    )
-                    for table in schema_tables.values():
-                        if table["enabled"]:
-                            table_name = table["name_in_destination"]
+            for schema in schema_config.schemas.values():
+                if schema.enabled:
+                    for table in schema.tables.values():
+                        if table.enabled:
                             data.append(
                                 FivetranConnectorTableProps(
                                     table=get_fivetran_connector_table_name(
-                                        schema_name=schema_name, table_name=table_name
+                                        schema_name=schema.name_in_destination,
+                                        table_name=table.name_in_destination,
                                     ),
-                                    connector_id=connector_id,
-                                    name=connector_name,
-                                    connector_url=connector_url,
+                                    connector_id=connector.id,
+                                    name=connector.name,
+                                    connector_url=connector.url,
                                     schema_config=schema_config,
-                                    database=database,
-                                    service=service,
+                                    database=destination.database,
+                                    service=destination.service,
                                 )
                             )
 
@@ -127,17 +198,17 @@ class DagsterFivetranTranslator:
         schema_name, table_name = props.table.split(".")
         schema_entry = next(
             schema
-            for schema in props.schema_config["schemas"].values()
-            if schema["name_in_destination"] == schema_name
+            for schema in props.schema_config.schemas.values()
+            if schema.name_in_destination == schema_name
         )
         table_entry = next(
             table_entry
-            for table_entry in schema_entry["tables"].values()
-            if table_entry["name_in_destination"] == table_name
+            for table_entry in schema_entry.tables.values()
+            if table_entry.name_in_destination == table_name
         )
 
         metadata = metadata_for_table(
-            table_entry,
+            as_dict(table_entry),
             props.connector_url,
             database=props.database,
             schema=schema_name,
