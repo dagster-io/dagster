@@ -5,15 +5,15 @@ import {FilterTag, FilterTagHighlightedText} from '../ui/BaseFilters/useFilter';
 export const AssetGraphFilterBar = ({
   activeFiltersJsx,
   right,
-  explorerPath,
-  clearExplorerPath,
+  clearAssetSelection,
+  assetSelection,
 }: {
   activeFiltersJsx: JSX.Element[];
   right?: JSX.Element;
-  clearExplorerPath: () => void;
-  explorerPath: string;
+  clearAssetSelection: () => void;
+  assetSelection: string;
 }) => {
-  if (!activeFiltersJsx.length && !explorerPath) {
+  if (!activeFiltersJsx.length && !assetSelection) {
     return null;
   }
   return (
@@ -23,17 +23,17 @@ export const AssetGraphFilterBar = ({
     >
       <Box flex={{gap: 12, alignItems: 'center', direction: 'row', grow: 1}}>
         {activeFiltersJsx}
-        {explorerPath ? (
+        {assetSelection ? (
           <FilterTag
             label={
               <Box flex={{direction: 'row', alignItems: 'center'}}>
                 Asset selection is&nbsp;
-                <FilterTagHighlightedText tooltipText={explorerPath}>
-                  {explorerPath}
+                <FilterTagHighlightedText tooltipText={assetSelection}>
+                  {assetSelection}
                 </FilterTagHighlightedText>
               </Box>
             }
-            onRemove={clearExplorerPath}
+            onRemove={clearAssetSelection}
           />
         ) : null}
       </Box>

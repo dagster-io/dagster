@@ -3,10 +3,11 @@ import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.o
 
 import {AssetGraphViewType, GraphNode} from './Utils';
 
-type Props = {
+export type Props = {
   nodes: GraphNode[];
-  clearExplorerPath: () => void;
-  explorerPath: string;
+  clearAssetSelection: () => void;
+  setAssetSelection: (selection: string) => void;
+  assetSelection: string;
   viewType: AssetGraphViewType;
   loading: boolean;
 };
@@ -14,9 +15,9 @@ type Props = {
 export function useAssetGraphExplorerFilters({
   nodes,
   viewType,
-  explorerPath,
+  assetSelection,
   loading,
-  clearExplorerPath,
+  clearAssetSelection,
 }: Props) {
   const ret = useAssetCatalogFiltering({
     assets: nodes,
@@ -30,8 +31,8 @@ export function useAssetGraphExplorerFilters({
     filterBar: (
       <AssetGraphFilterBar
         activeFiltersJsx={ret.activeFiltersJsx}
-        explorerPath={explorerPath}
-        clearExplorerPath={clearExplorerPath}
+        assetSelection={assetSelection}
+        clearAssetSelection={clearAssetSelection}
       />
     ),
   };
