@@ -654,13 +654,13 @@ class FivetranClient:
         self._start_sync(request_fn=request_fn, connector_id=connector_id)
 
     def _start_sync(self, request_fn: Callable, connector_id: str) -> None:
-        if self.disable_schedule_on_trigger:
-            self._log.info("Disabling Fivetran sync schedule.")
-            self.update_schedule_type_for_connector(connector_id, "manual")
         connector = FivetranConnector.from_connector_details(
             connector_details=self.get_connector_details(connector_id)
         )
         connector.assert_syncable()
+        if self.disable_schedule_on_trigger:
+            self._log.info("Disabling Fivetran sync schedule.")
+            self.update_schedule_type_for_connector(connector_id, "manual")
         request_fn()
         self._log.info(
             f"Sync initialized for connector_id={connector_id}. View this sync in the Fivetran"
