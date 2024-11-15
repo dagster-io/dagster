@@ -4,7 +4,7 @@ import {
   Colors,
   Icon,
   Popover,
-  Spinner,
+  Skeleton,
   Subtitle2,
   Tag,
   useViewport,
@@ -120,30 +120,33 @@ export const RecentUpdatesTimeline = ({
 
   if (loading) {
     return (
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-        <Subtitle2>Recent updates</Subtitle2>
-        <Spinner purpose="body-text" />
+      <Box flex={{direction: 'column', gap: 4}}>
+        <Box flex={{direction: 'row'}}>
+          <Subtitle2>Recent updates</Subtitle2>
+        </Box>
+        <Skeleton $width="100%" $height={32} />
+        <Box padding={{top: 4}} flex={{justifyContent: 'space-between'}}>
+          <Skeleton $width={70} $height="1em" style={{minHeight: '1em'}} />
+          <Skeleton $width={70} $height="1em" style={{minHeight: '1em'}} />
+        </Box>
       </Box>
     );
   }
 
-  if (!materializations?.length) {
-    return (
-      <Box flex={{direction: 'column', gap: 8}}>
-        <Subtitle2>Recent updates</Subtitle2>
-        <Caption color={Colors.textLighter()}>No materialization events found</Caption>
-      </Box>
-    );
-  }
+  const count = materializations?.length ?? 0;
 
   return (
     <Box flex={{direction: 'column', gap: 4}}>
       <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
         <Subtitle2>Recent updates</Subtitle2>
         <Caption color={Colors.textLighter()}>
-          {materializations.length === 100
+          {count === 100
             ? 'Last 100 updates'
-            : `Showing all ${materializations.length} updates`}
+            : count === 0
+              ? 'No materialization events found'
+              : count === 1
+                ? 'Showing one update'
+                : `Showing all ${count} updates`}
         </Caption>
       </Box>
       <Box border="all" padding={6 as any} style={{height: 32, overflow: 'hidden'}}>
