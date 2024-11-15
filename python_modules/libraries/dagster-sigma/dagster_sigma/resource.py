@@ -144,7 +144,7 @@ class SigmaOrganization(ConfigurableResource):
                 async with aiohttp.ClientSession() as session:
                     async with session.request(
                         method=method,
-                        url=f"{self.base_url}/v2/{endpoint}",
+                        url=url,
                         headers={
                             "Accept": "application/json",
                             "Authorization": f"Bearer {self.api_token}",
