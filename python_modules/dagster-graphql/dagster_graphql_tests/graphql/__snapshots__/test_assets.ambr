@@ -406,6 +406,14 @@
           }),
         }),
         dict({
+          'id': 'test.test_repo.["not_included_asset"]',
+          'key': dict({
+            'path': list([
+              'not_included_asset',
+            ]),
+          }),
+        }),
+        dict({
           'id': 'test.test_repo.["one"]',
           'key': dict({
             'path': list([
@@ -826,6 +834,11 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test.test_repo.["no_multipartitions_1"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["not_included_asset"]',
       }),
       dict({
         'freshnessInfo': None,
