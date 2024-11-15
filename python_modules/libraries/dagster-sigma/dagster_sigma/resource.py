@@ -139,18 +139,29 @@ class SigmaOrganization(ConfigurableResource):
         if query_params:
             url = f"{url}?{urllib.parse.urlencode(query_params)}"
 
-        async with aiohttp.ClientSession() as session:
-            async with session.request(
-                method=method,
-                url=f"{self.base_url}/v2/{endpoint}",
-                headers={
-                    "Accept": "application/json",
-                    "Authorization": f"Bearer {self.api_token}",
-                    **SIGMA_PARTNER_ID_TAG,
-                },
-            ) as response:
-                response.raise_for_status()
-                return await response.json()
+        while True:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.request(
+                        method=method,
+                        url=f"{self.base_url}/v2/{endpoint}",
+                        headers={
+                            "Accept": "application/json",
+                            "Authorization": f"Bearer {self.api_token}",
+                            **SIGMA_PARTNER_ID_TAG,
+                        },
+                    ) as response:
+                        response.raise_for_status()
+                        return await response.json()
+            except ClientResponseError as e:
+                # rate limit is 4
+                if e.status in (429, 500) and os.getenv(SNAPSHOT_ENV_VAR_NAME):
+                    logger.warning(
+                        "Encountered serverside error or rate limit, retrying", stack_info=True
+                    )
+                    await asyncio.sleep(5)
+                else:
+                    raise
 
     async def _fetch_json_async_paginated_entries(
         self, endpoint: str, query_params: Optional[Dict[str, Any]] = None, limit: int = 1000
