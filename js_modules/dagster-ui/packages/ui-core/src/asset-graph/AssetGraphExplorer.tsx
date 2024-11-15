@@ -131,7 +131,7 @@ export const AssetGraphExplorer = (props: Props) => {
         },
         [explorerPathRef, onChangeExplorerPath],
       ),
-      clearExplorerPath: React.useCallback(() => {
+      clearAssetSelection: React.useCallback(() => {
         onChangeExplorerPath(
           {
             ...explorerPath,
