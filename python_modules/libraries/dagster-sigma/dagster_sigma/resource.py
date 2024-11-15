@@ -472,12 +472,22 @@ class SigmaOrganization(ConfigurableResource):
             workbook_filter_strings = [
                 "/".join(folder).lower() for folder in _sigma_filter.workbook_folders
             ]
+            logger.debug("Filtering workbooks by folders %s", workbook_filter_strings)
             for workbook in raw_workbooks:
                 workbook_path = str(workbook["path"]).lower()
                 if any(
                     workbook_path.startswith(folder_str) for folder_str in workbook_filter_strings
                 ):
+                    logger.debug(
+                        "Including workbook %s in folder %s", workbook["name"], workbook_path
+                    )
                     workbooks_to_fetch.append(workbook)
+                else:
+                    logger.debug(
+                        "Discarding workbook %s in folder %s which does not match filter",
+                        workbook["name"],
+                        workbook_path,
+                    )
         else:
             workbooks_to_fetch = raw_workbooks
 
