@@ -1,18 +1,22 @@
 import {Box} from '@dagster-io/ui-components';
+import {useCallback} from 'react';
 
 import {FilterTag, FilterTagHighlightedText} from '../ui/BaseFilters/useFilter';
 
 export const AssetGraphFilterBar = ({
   activeFiltersJsx,
   right,
-  clearAssetSelection,
   assetSelection,
+  setAssetSelection,
 }: {
   activeFiltersJsx: JSX.Element[];
   right?: JSX.Element;
-  clearAssetSelection: () => void;
   assetSelection: string;
+  setAssetSelection: (selection: string) => void;
 }) => {
+  const clearAssetSelection = useCallback(() => {
+    setAssetSelection('');
+  }, [setAssetSelection]);
   if (!activeFiltersJsx.length && !assetSelection) {
     return null;
   }

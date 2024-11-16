@@ -5,7 +5,6 @@ import {AssetGraphViewType, GraphNode} from './Utils';
 
 export type Props = {
   nodes: GraphNode[];
-  clearAssetSelection: () => void;
   setAssetSelection: (selection: string) => void;
   assetSelection: string;
   viewType: AssetGraphViewType;
@@ -17,7 +16,7 @@ export function useAssetGraphExplorerFilters({
   viewType,
   assetSelection,
   loading,
-  clearAssetSelection,
+  setAssetSelection,
 }: Props) {
   const ret = useAssetCatalogFiltering({
     assets: nodes,
@@ -32,7 +31,7 @@ export function useAssetGraphExplorerFilters({
       <AssetGraphFilterBar
         activeFiltersJsx={ret.activeFiltersJsx}
         assetSelection={assetSelection}
-        clearAssetSelection={clearAssetSelection}
+        setAssetSelection={setAssetSelection}
       />
     ),
   };
