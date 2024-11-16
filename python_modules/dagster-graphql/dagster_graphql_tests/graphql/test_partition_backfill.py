@@ -10,9 +10,9 @@ from dagster import (
     asset,
     define_asset_job,
 )
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.execution.asset_backfill import (
     AssetBackfillIterationResult,
     execute_asset_backfill_iteration,
@@ -33,7 +33,6 @@ from dagster._core.test_utils import create_run_for_test, environ
 from dagster._core.utils import make_new_backfill_id
 from dagster._seven import get_system_temp_directory
 from dagster._utils import safe_tempfile_path
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster_graphql.client.query import (
     LAUNCH_PARTITION_BACKFILL_MUTATION,
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -239,27 +238,25 @@ def _get_run_stats(partition_statuses):
     }
 
 
-def _execute_asset_backfill_iteration_no_side_effects(
-    graphql_context, backfill_id: str, asset_graph: RemoteWorkspaceAssetGraph
-) -> None:
+def _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id: str) -> None:
     """Executes an asset backfill iteration and updates the serialized asset backfill data.
     However, does not execute side effects i.e. launching runs.
     """
     backfill = graphql_context.instance.get_backfill(backfill_id)
     asset_backfill_data = backfill.asset_backfill_data
     result = None
-    instance_queryer = CachingInstanceQueryer(
-        graphql_context.instance,
-        asset_graph,
-        graphql_context,
-        asset_backfill_data.backfill_start_datetime,
+    asset_graph_view = AssetGraphView(
+        temporal_context=TemporalContext(
+            effective_dt=asset_backfill_data.backfill_start_datetime, last_event_id=None
+        ),
+        instance=graphql_context.instance,
+        asset_graph=graphql_context.asset_graph,
     )
     with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
         for result in execute_asset_backfill_iteration_inner(
             backfill_id=backfill_id,
             asset_backfill_data=asset_backfill_data,
-            instance_queryer=instance_queryer,
-            asset_graph=asset_graph,
+            asset_graph_view=asset_graph_view,
             backfill_start_timestamp=asset_backfill_data.backfill_start_timestamp,
             logger=logging.getLogger("fake_logger"),
         ):
@@ -273,10 +270,12 @@ def _execute_asset_backfill_iteration_no_side_effects(
 
     updated_backfill = backfill.with_asset_backfill_data(
         result.backfill_data.with_run_requests_submitted(
-            result.run_requests, asset_graph=asset_graph, instance_queryer=instance_queryer
+            result.run_requests,
+            asset_graph=graphql_context.asset_graph,
+            instance_queryer=asset_graph_view.get_inner_queryer_for_back_compat(),
         ),
         dynamic_partitions_store=graphql_context.instance,
-        asset_graph=asset_graph,
+        asset_graph=graphql_context.asset_graph,
     )
     graphql_context.instance.update_backfill(updated_backfill)
 
@@ -295,12 +294,11 @@ def _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id):
 def _mock_asset_backfill_runs(
     graphql_context,
     asset_key: AssetKey,
-    asset_graph: RemoteWorkspaceAssetGraph,
     backfill_id: str,
     status: DagsterRunStatus,
     partition_key: Optional[str],
 ):
-    partitions_def = asset_graph.get(asset_key).partitions_def
+    partitions_def = graphql_context.asset_graph.get(asset_key).partitions_def
 
     @asset(
         partitions_def=partitions_def,
@@ -656,10 +654,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         # Update asset backfill data to contain requested partition, but does not execute side effects,
         # since launching the run will cause test process will hang forever.
-        code_location = graphql_context.get_code_location("test")
-        repository = code_location.get_repository("test_repo")
-        asset_graph = repository.asset_graph
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
 
         # Launch the run that runs forever
         selector = infer_job_selector(graphql_context, "hanging_partition_asset_job")
@@ -732,10 +727,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         # Update asset backfill data to contain requested partition, but does not execute side effects,
         # since launching the run will cause test process will hang forever.
-        code_location = graphql_context.get_code_location("test")
-        repository = code_location.get_repository("test_repo")
-        asset_graph = repository.asset_graph
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
 
         # Launch the run that runs forever
         selector = infer_job_selector(graphql_context, "hanging_partition_asset_job")
@@ -1043,11 +1035,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
 
-        code_location = graphql_context.get_code_location("test")
-        repository = code_location.get_repository("test_repo")
-        asset_graph = repository.asset_graph
-
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
 
         for partition, status in [
             ("a", DagsterRunStatus.SUCCESS),
@@ -1056,11 +1044,9 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             ("e", DagsterRunStatus.SUCCESS),
             ("f", DagsterRunStatus.FAILURE),
         ]:
-            _mock_asset_backfill_runs(
-                graphql_context, asset_key, asset_graph, backfill_id, status, partition
-            )
+            _mock_asset_backfill_runs(graphql_context, asset_key, backfill_id, status, partition)
 
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1086,10 +1072,6 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert asset_partition_status_counts[0]["numPartitionsFailed"] == 2
 
     def test_asset_backfill_status_with_upstream_failure(self, graphql_context):
-        code_location = graphql_context.get_code_location("test")
-        repository = code_location.get_repository("test_repo")
-        asset_graph = repository.asset_graph
-
         asset_keys = [
             AssetKey("unpartitioned_upstream_of_partitioned"),
             AssetKey("upstream_daily_partitioned_asset"),
@@ -1112,25 +1094,23 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
 
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
         _mock_asset_backfill_runs(
             graphql_context,
             AssetKey("unpartitioned_upstream_of_partitioned"),
-            asset_graph,
             backfill_id,
             DagsterRunStatus.SUCCESS,
             None,
         )
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
         _mock_asset_backfill_runs(
             graphql_context,
             AssetKey("upstream_daily_partitioned_asset"),
-            asset_graph,
             backfill_id,
             DagsterRunStatus.FAILURE,
             "2023-01-09",
         )
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1557,10 +1537,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 10
 
     def test_reexecute_asset_backfill_from_failure(self, graphql_context):
-        code_location = graphql_context.get_code_location("test")
-        repository = code_location.get_repository("test_repo")
-        asset_graph = repository.asset_graph
-
         asset_keys = [
             AssetKey("unpartitioned_upstream_of_partitioned"),
             AssetKey("upstream_daily_partitioned_asset"),
@@ -1583,25 +1559,23 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
 
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
         _mock_asset_backfill_runs(
             graphql_context,
             AssetKey("unpartitioned_upstream_of_partitioned"),
-            asset_graph,
             backfill_id,
             DagsterRunStatus.SUCCESS,
             None,
         )
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
         _mock_asset_backfill_runs(
             graphql_context,
             AssetKey("upstream_daily_partitioned_asset"),
-            asset_graph,
             backfill_id,
             DagsterRunStatus.FAILURE,
             "2023-01-09",
         )
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
 
         # mark backfill as completed so we can retry it
         backfill = graphql_context.instance.get_backfill(backfill_id)
@@ -1654,10 +1628,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_reexecute_successful_asset_backfill(self, graphql_context):
-        code_location = graphql_context.get_code_location("test")
-        repository = code_location.get_repository("test_repo")
-        asset_graph = repository.asset_graph
-
         asset_keys = [
             AssetKey("unpartitioned_upstream_of_partitioned"),
             AssetKey("upstream_daily_partitioned_asset"),
@@ -1679,25 +1649,23 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
 
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
         _mock_asset_backfill_runs(
             graphql_context,
             AssetKey("unpartitioned_upstream_of_partitioned"),
-            asset_graph,
             backfill_id,
             DagsterRunStatus.SUCCESS,
             None,
         )
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
         _mock_asset_backfill_runs(
             graphql_context,
             AssetKey("upstream_daily_partitioned_asset"),
-            asset_graph,
             backfill_id,
             DagsterRunStatus.SUCCESS,
             "2023-01-09",
         )
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
 
         # mark backfill as complete so we can retry it
         backfill = graphql_context.instance.get_backfill(backfill_id)
@@ -1741,10 +1709,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_reexecute_asset_backfill_still_in_progress(self, graphql_context):
-        code_location = graphql_context.get_code_location("test")
-        repository = code_location.get_repository("test_repo")
-        asset_graph = repository.asset_graph
-
         asset_keys = [
             AssetKey("unpartitioned_upstream_of_partitioned"),
             AssetKey("upstream_daily_partitioned_asset"),
@@ -1767,25 +1731,23 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
 
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
         _mock_asset_backfill_runs(
             graphql_context,
             AssetKey("unpartitioned_upstream_of_partitioned"),
-            asset_graph,
             backfill_id,
             DagsterRunStatus.SUCCESS,
             None,
         )
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
         _mock_asset_backfill_runs(
             graphql_context,
             AssetKey("upstream_daily_partitioned_asset"),
-            asset_graph,
             backfill_id,
             DagsterRunStatus.FAILURE,
             "2023-01-09",
         )
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
 
         # try to retry the backfill while it is still in progress
         result = execute_dagster_graphql(
@@ -1865,10 +1827,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_reexecute_asset_backfill_twice(self, graphql_context):
-        code_location = graphql_context.get_code_location("test")
-        repository = code_location.get_repository("test_repo")
-        asset_graph = repository.asset_graph
-
         asset_keys = [
             AssetKey("unpartitioned_upstream_of_partitioned"),
             AssetKey("upstream_daily_partitioned_asset"),
@@ -1891,25 +1849,23 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
 
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
         _mock_asset_backfill_runs(
             graphql_context,
             AssetKey("unpartitioned_upstream_of_partitioned"),
-            asset_graph,
             backfill_id,
             DagsterRunStatus.SUCCESS,
             None,
         )
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
         _mock_asset_backfill_runs(
             graphql_context,
             AssetKey("upstream_daily_partitioned_asset"),
-            asset_graph,
             backfill_id,
             DagsterRunStatus.FAILURE,
             "2023-01-09",
         )
-        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id)
 
         # mark backfill as completed so we can retry it
         backfill = graphql_context.instance.get_backfill(backfill_id)
@@ -1939,19 +1895,18 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
         _execute_asset_backfill_iteration_no_side_effects(
-            graphql_context, retried_backfill.backfill_id, asset_graph
+            graphql_context, retried_backfill.backfill_id
         )
         # mark some partitions failed so we can retry again
         _mock_asset_backfill_runs(
             graphql_context,
             AssetKey("upstream_daily_partitioned_asset"),
-            asset_graph,
             retried_backfill.backfill_id,
             DagsterRunStatus.FAILURE,
             "2023-01-09",
         )
         _execute_asset_backfill_iteration_no_side_effects(
-            graphql_context, retried_backfill.backfill_id, asset_graph
+            graphql_context, retried_backfill.backfill_id
         )
 
         # refetch the backfill to get the updated statuses of all assets
