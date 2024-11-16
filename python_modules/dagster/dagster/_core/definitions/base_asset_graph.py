@@ -910,9 +910,7 @@ class ToposortedPriorityQueue:
         else:
             execution_set_keys = {asset_key}
 
-        level = max(
-            self._toposort_level_by_asset_key[asset_key] for asset_key in execution_set_keys
-        )
+        level = self._toposort_level_by_asset_key[asset_key]
 
         return ToposortedPriorityQueue.QueueItem(
             level,
