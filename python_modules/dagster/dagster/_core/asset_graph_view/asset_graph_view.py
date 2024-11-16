@@ -6,9 +6,12 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
+    Iterable,
     Literal,
     NamedTuple,
     Optional,
+    Sequence,
+    Tuple,
     Type,
     TypeVar,
 )
@@ -35,6 +38,7 @@ from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
     from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
         ValidAssetSubset,
@@ -171,6 +175,126 @@ class AssetGraphView(LoadingContext):
         else:
             return None
 
+    def bfs_filter_subsets(
+        self,
+        condition_fn: Callable[
+            [AssetGraphSubset], Tuple[AssetGraphSubset, Iterable[Tuple[AssetGraphSubset, str]]]
+        ],
+        initial_subset: "AssetGraphSubset",
+        current_time: datetime,
+        include_full_execution_set: bool,
+    ) -> "AssetGraphSubset":
+        """Returns subset within the graph that satisfy supplied criteria.
+
+        - Are >= initial_subset
+        - Asset matches the condition_fn
+        - Any of their ancestors >= initial_subset match the condition_fn.
+
+        Visits parents before children.
+        """
+        from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+
+        all_assets = set(initial_subset.asset_keys)
+
+        queued_subsets_by_asset_key: Dict[AssetKey, EntitySubset] = {}
+
+        entity_subsets = []
+        for serializable_entity_subset in initial_subset.iterate_asset_subsets(self._asset_graph):
+            entity_subset = self.get_subset_from_serializable_subset(serializable_entity_subset)
+
+            if not entity_subset:
+                raise Exception(
+                    f"Could not compute initial entity subset from {serializable_entity_subset}"
+                )
+            queued_subsets_by_asset_key[entity_subset.key] = entity_subset
+
+            entity_subsets.append(entity_subset)
+
+        from dagster._core.definitions.base_asset_graph import ToposortedSubsetPriorityQueue
+
+        queue = ToposortedSubsetPriorityQueue(self, entity_subsets, include_full_execution_set=True)
+
+        result = AssetGraphSubset()
+
+        all_failed_subsets_and_reasons: Sequence[Tuple[AssetGraphSubset, str]] = []
+
+        covered_subset = AssetGraphSubset()
+
+        while len(queue) > 0:
+            candidate_asset_graph_subset = queue.dequeue()
+            covered_subset = covered_subset | candidate_asset_graph_subset
+
+            passed_subset, failed_subsets_and_reasons = condition_fn(candidate_asset_graph_subset)
+
+            result |= passed_subset
+
+            all_failed_subsets_and_reasons.extend(failed_subsets_and_reasons)
+
+            for serializable_entity_subset in passed_subset.iterate_asset_subsets(
+                self._asset_graph
+            ):
+                entity_subset = self.get_subset_from_serializable_subset(serializable_entity_subset)
+                if not entity_subset:
+                    raise Exception(
+                        f"Could not compute passed entity subset from {serializable_entity_subset}"
+                    )
+
+                for child_key in self.asset_graph.get(entity_subset.key).child_keys:
+                    child_subset = self.compute_child_subset(child_key, entity_subset)
+
+            # for each entity in the passed subset
+
+            # add each of the child entity keys of the subset that passed to the queue
+            # if they haven't been seen before
+
+            if condition_fn(asset_key, partitions_subset):
+                result |= AssetGraphSubset(
+                    non_partitioned_asset_keys={asset_key} if partitions_subset is None else set(),
+                    partitions_subsets_by_asset_key=(
+                        {asset_key: partitions_subset} if partitions_subset is not None else {}
+                    ),
+                )
+
+                for child_key in self.get(asset_key).child_keys:
+                    partition_mapping = self.get_partition_mapping(child_key, asset_key)
+                    child_partitions_def = self.get(child_key).partitions_def
+
+                    if child_partitions_def:
+                        if partitions_subset is None:
+                            child_partitions_subset = (
+                                child_partitions_def.subset_with_all_partitions(
+                                    current_time=current_time,
+                                    dynamic_partitions_store=dynamic_partitions_store,
+                                )
+                            )
+                            queued_subsets_by_asset_key[child_key] = child_partitions_subset
+                        else:
+                            child_partitions_subset = (
+                                partition_mapping.get_downstream_partitions_for_partitions(
+                                    partitions_subset,
+                                    check.not_none(self.get(asset_key).partitions_def),
+                                    downstream_partitions_def=child_partitions_def,
+                                    dynamic_partitions_store=dynamic_partitions_store,
+                                    current_time=current_time,
+                                )
+                            )
+                            prior_child_partitions_subset = queued_subsets_by_asset_key.get(
+                                child_key
+                            )
+                            queued_subsets_by_asset_key[child_key] = (
+                                child_partitions_subset
+                                if not prior_child_partitions_subset
+                                else child_partitions_subset | prior_child_partitions_subset
+                            )
+                    else:
+                        child_partitions_subset = None
+
+                    if child_key not in all_assets:
+                        queue.append(child_key)
+                        all_assets.add(child_key)
+
+        return result
+
     @cached_method
     def get_full_subset(self, *, key: T_EntityKey) -> EntitySubset[T_EntityKey]:
         partitions_def = self._get_partitions_def(key)
@@ -226,6 +350,20 @@ class AssetGraphView(LoadingContext):
             else bool(asset_partitions)
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+
+    def compute_execution_set_subsets(
+        self, entity_subset: EntitySubset
+    ) -> Iterable[EntitySubset[AssetKey]]:
+        asset_key = entity_subset.key
+        execution_set_keys = self._asset_graph.get(asset_key).execution_set_asset_keys
+        return [
+            EntitySubset(
+                self,
+                key,
+                value=_ValidatedEntitySubsetValue(entity_subset.get_internal_value()),
+            )
+            for key in execution_set_keys
+        ]
 
     def compute_parent_subset(
         self, parent_key: AssetKey, subset: EntitySubset[T_EntityKey]

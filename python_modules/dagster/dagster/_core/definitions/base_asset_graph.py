@@ -25,6 +25,8 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy
@@ -919,6 +921,129 @@ class ToposortedPriorityQueue:
             sort_key_for_asset_partition(self._asset_graph, asset_partition),
             [AssetKeyPartitionKey(ak, asset_partition.partition_key) for ak in execution_set_keys],
         )
+
+    def __len__(self) -> int:
+        return len(self._heap)
+
+
+class ToposortedSubsetPriorityQueue:
+    """Queue that returns parent subsets before their children."""
+
+    @total_ordering
+    class QueueItem(NamedTuple):
+        level: int
+        subset: AssetGraphSubset
+
+        def __eq__(self, other: object) -> bool:
+            if isinstance(other, ToposortedPriorityQueue.QueueItem):
+                return self.level == other.level
+            return False
+
+        def __lt__(self, other: object) -> bool:
+            if isinstance(other, ToposortedPriorityQueue.QueueItem):
+                return self.level < other.level
+            raise TypeError()
+
+    def __init__(
+        self,
+        asset_graph_view: AssetGraphView,
+        entity_subsets: Iterable[EntitySubset],
+        include_full_execution_set: bool,
+    ):
+        self._asset_graph_view = asset_graph_view
+        self._asset_graph = asset_graph_view.asset_graph
+        self._include_full_execution_set = include_full_execution_set
+
+        self._toposort_level_by_asset_key = {
+            asset_key: i
+            for i, asset_keys in enumerate(
+                asset_graph_view.asset_graph.toposorted_asset_keys_by_level
+            )
+            for asset_key in asset_keys
+        }
+        self._heap = [self._queue_item(entity_subset) for entity_subset in entity_subsets]
+        heapify(self._heap)
+
+    def enqueue(self, entity_subset: EntitySubset) -> None:
+        heappush(self._heap, self._queue_item(entity_subset))
+
+    def dequeue(self) -> AssetGraphSubset:
+        # For multi-assets, will include all required multi-asset keys if
+        # include_full_execution_set is set to True.
+        return heappop(self._heap).subset
+
+    def _queue_item(self, entity_subset: EntitySubset) -> "ToposortedSubsetPriorityQueue.QueueItem":
+        asset_key = entity_subset.key
+
+        if self._include_full_execution_set:
+            execution_set_keys = self._asset_graph.get(asset_key).execution_set_asset_keys
+            entity_subsets = self._asset_graph_view.compute_execution_set_subsets(entity_subset)
+        else:
+            entity_subsets = [entity_subset]
+            execution_set_keys = {asset_key}
+
+        level = max(
+            self._toposort_level_by_asset_key[asset_key] for asset_key in execution_set_keys
+        )
+
+        asset_graph_subset = AssetGraphSubset.from_entity_subsets(entity_subsets)
+
+        return ToposortedSubsetPriorityQueue.QueueItem(level, asset_graph_subset)
+
+    def __len__(self) -> int:
+        return len(self._heap)
+
+
+class ToposortedAssetKeyPriorityQueue:
+    """Queue that returns parent subsets before their children."""
+
+    @total_ordering
+    class QueueItem(NamedTuple):
+        level: int
+        subset: AssetGraphSubset
+
+        def __eq__(self, other: object) -> bool:
+            if isinstance(other, ToposortedPriorityQueue.QueueItem):
+                return self.level == other.level
+            return False
+
+        def __lt__(self, other: object) -> bool:
+            if isinstance(other, ToposortedPriorityQueue.QueueItem):
+                return self.level < other.level
+            raise TypeError()
+
+    def __init__(
+        self,
+        asset_graph_view: AssetGraphView,
+        asset_keys: Iterable[AssetKey],
+    ):
+        self._asset_graph_view = asset_graph_view
+        self._asset_graph = asset_graph_view.asset_graph
+
+        self._toposort_level_by_asset_key = {
+            asset_key: i
+            for i, asset_keys in enumerate(
+                asset_graph_view.asset_graph.toposorted_asset_keys_by_level
+            )
+            for asset_key in asset_keys
+        }
+        self._heap = [self._queue_item(entity_subset) for entity_subset in entity_subsets]
+        heapify(self._heap)
+
+    def enqueue(self, asset_key: AssetKey) -> None:
+        heappush(self._heap, self._queue_item(asset_key))
+
+    def dequeue(self) -> AssetKey:
+        return heappop(self._heap).subset
+
+    def _queue_item(self, asset_key: AssetKey) -> "ToposortedAssetKeyPriorityQueue.QueueItem":
+        level = max(
+            self._toposort_level_by_asset_key[asset_key] for asset_key in execution_set_keys
+        )
+
+        asset_graph_subset = AssetGraphSubset.from_entity_subsets(entity_subsets)
+
+        return ToposortedSubsetPriorityQueue.QueueItem(level, asset_graph_subset)
 
     def __len__(self) -> int:
         return len(self._heap)
