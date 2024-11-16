@@ -75,9 +75,9 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         name = self.base_name
         props = []
         if self.allow_selection is not None:
-            props.append("allow_selection={self.allow_selection}")
+            props.append(f"allow_selection={self.allow_selection}")
         if self.ignore_selection is not None:
-            props.append("ignore_selection={self.ignore_selection}")
+            props.append(f"ignore_selection={self.ignore_selection}")
 
         if props:
             name += f"({','.join(props)})"
