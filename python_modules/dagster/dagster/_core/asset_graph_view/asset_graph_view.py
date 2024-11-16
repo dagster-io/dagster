@@ -17,6 +17,7 @@ from typing import (
 from dagster import _check as check
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.multi_dimensional_partitions import (
@@ -193,6 +194,13 @@ class AssetGraphView(LoadingContext):
         value = partitions_def.empty_subset() if partitions_def else False
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
+    def get_asset_subset_from_asset_graph_subset(
+        self, asset_graph_subset: AssetGraphSubset, asset_key: AssetKey
+    ) -> Optional[EntitySubset[AssetKey]]:
+        return self.get_subset_from_serializable_subset(
+            asset_graph_subset.get_asset_subset(asset_key, self.asset_graph)
+        )
+
     def get_subset_from_serializable_subset(
         self, serializable_subset: SerializableEntitySubset[T_EntityKey]
     ) -> Optional[EntitySubset[T_EntityKey]]:
@@ -267,12 +275,20 @@ class AssetGraphView(LoadingContext):
         return parent_subset, required_but_nonexistent_parent_subset
 
     def compute_parent_subset(
-        self, parent_key: AssetKey, subset: EntitySubset[T_EntityKey]
+        self,
+        parent_key: AssetKey,
+        subset: EntitySubset[T_EntityKey],
+        raise_on_missing_partitions: bool = False,
     ) -> EntitySubset[AssetKey]:
         check.invariant(
             parent_key in self.asset_graph.get(subset.key).parent_entity_keys,
         )
-        return self.compute_mapped_subset(parent_key, subset, direction="up")
+        return self.compute_mapped_subset(
+            parent_key,
+            subset,
+            direction="up",
+            raise_on_missing_partitions=raise_on_missing_partitions,
+        )
 
     def compute_child_subset(
         self, child_key: T_EntityKey, subset: EntitySubset[U_EntityKey]
@@ -302,7 +318,11 @@ class AssetGraphView(LoadingContext):
         )
 
     def compute_mapped_subset(
-        self, to_key: T_EntityKey, from_subset: EntitySubset, direction: Literal["up", "down"]
+        self,
+        to_key: T_EntityKey,
+        from_subset: EntitySubset,
+        direction: Literal["up", "down"],
+        raise_on_missing_partitions: bool = False,
     ) -> EntitySubset[T_EntityKey]:
         from_key = from_subset.key
         from_partitions_def = self.asset_graph.get(from_key).partitions_def
