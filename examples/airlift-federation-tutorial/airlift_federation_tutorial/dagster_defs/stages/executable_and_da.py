@@ -1,5 +1,3 @@
-from typing import AbstractSet
-
 from dagster import (
     AutomationConditionSensorDefinition,
     DefaultSensorStatus,
@@ -7,7 +5,7 @@ from dagster import (
     MaterializeResult,
     multi_asset,
 )
-from dagster._core.definitions.asset_spec import merge_attributes
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -17,6 +15,7 @@ from dagster_airlift.core import (
     build_airflow_polling_sensor,
     load_airflow_dag_asset_specs,
 )
+from dagster_airlift.core.utils import merge_spec_attrs, replace_spec_attrs, split_specs
 
 warehouse_airflow_instance = AirflowInstance(
     auth_backend=AirflowBasicAuthBackend(
@@ -37,30 +36,30 @@ metrics_airflow_instance = AirflowInstance(
 )
 
 
-def dag_id_matches(spec, dag_ids: AbstractSet[str]) -> bool:
-    return spec.metadata.get("Dag ID") in dag_ids
+# This would be part of library code
+def get_dag_id(spec: AssetSpec) -> str:
+    return spec.metadata["Dag ID"]
 
 
 warehouse_specs = load_airflow_dag_asset_specs(airflow_instance=warehouse_airflow_instance)
 
 load_customers_dag_specs = [
-    spec for spec in warehouse_specs if dag_id_matches(spec, {"load_customers"})
+    spec for spec in warehouse_specs if get_dag_id(spec) == "load_customers"
 ]
 
-is_customer_dag = lambda spec: dag_id_matches(spec, {"customer_metrics"})
+is_customer_metrics_dag = lambda spec: get_dag_id(spec) == "customer_metrics"
 
-metrics_specs = [
-    merge_attributes(
-        spec, deps=load_customers_dag_specs, automation_condition=AutomationCondition.eager()
-    )
-    if not is_customer_dag(spec)
-    else spec
-    for spec in load_airflow_dag_asset_specs(airflow_instance=metrics_airflow_instance)
-]
+metrics_specs = merge_spec_attrs(
+    replace_spec_attrs(
+        load_airflow_dag_asset_specs(airflow_instance=metrics_airflow_instance),
+        automation_condition=AutomationCondition.eager(),
+    ),
+    where=is_customer_metrics_dag,
+    deps=load_customers_dag_specs,
+)
 
-customer_metrics, remaining_metrics_specs = (
-    [spec for spec in metrics_specs if is_customer_dag(spec)],
-    [spec for spec in metrics_specs if not is_customer_dag(spec)],
+customer_metrics, remaining_metrics_specs = split_specs(
+    metrics_specs, where=is_customer_metrics_dag
 )
 
 

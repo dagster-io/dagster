@@ -1,4 +1,14 @@
-from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Optional, Sequence, Set, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterable,
+    Iterator,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 from dagster import (
     AssetsDefinition,
@@ -107,30 +117,36 @@ def peered_dag_handles_for_spec(spec: AssetSpec) -> Set["DagHandle"]:
         for dag_handle_dict in spec.metadata[PEERED_DAG_MAPPING_METADATA_KEY]
     }
 
+
 AssetSequence = Sequence[AssetSpec]
 AssetSpecPredicate = Callable[[AssetSpec], bool]
+
+
 def split_specs(
     assets: AssetSequence, where: AssetSpecPredicate
 ) -> Tuple[AssetSequence, AssetSequence]:
-    return [asset_spec for asset_spec in assets if where(asset_spec)], [asset_spec for asset_spec in assets if not where(asset_spec)]
+    return [asset_spec for asset_spec in assets if where(asset_spec)], [
+        asset_spec for asset_spec in assets if not where(asset_spec)
+    ]
 
 
 def replace_spec_attrs(
-    assets: AssetSequence, attrs: dict, where: AssetSpecPredicate
+    assets: AssetSequence, *, where: Optional[AssetSpecPredicate] = None, **attrs
 ) -> AssetSequence:
     return [
-            replace_attributes(asset_spec, **attrs) if where(asset_spec) else asset_spec
-            for asset_spec in assets 
-        ]
+        replace_attributes(asset_spec, **attrs) if where and where(asset_spec) else asset_spec
+        for asset_spec in assets
+    ]
+
 
 def merge_spec_attrs(
-    assets: AssetSequence, attrs: dict, where: AssetSpecPredicate
+    assets: AssetSequence, *, where: Optional[AssetSpecPredicate], **attrs
 ) -> AssetSequence:
     # We only want to perform operations on the full set of asset specs. This removes the footgun where
     # there are multiple sets of assets floating around, and we perform a transformation on a subset, but
     # then provide the wrong subset to Definitions.
     # The idea would be that we always provide the full set of assets to Definitions
     return [
-            merge_attributes(asset_spec, **attrs) if where(asset_spec) else asset_spec
-            for asset_spec in assets 
-        ]
+        merge_attributes(asset_spec, **attrs) if where and where(asset_spec) else asset_spec
+        for asset_spec in assets
+    ]
