@@ -39,7 +39,7 @@ interface Props {
   belowActionBarComponents: React.ReactNode;
   prefixPath: string[];
   displayPathForAsset: (asset: Asset) => string[];
-  searchPath: string;
+  assetSelection: string;
   isFiltered: boolean;
   kindFilter?: StaticSetFilter<string>;
   isLoading: boolean;
@@ -52,7 +52,7 @@ export const AssetTable = ({
   refreshState,
   prefixPath,
   displayPathForAsset,
-  searchPath,
+  assetSelection,
   isFiltered,
   view,
   kindFilter,
@@ -81,7 +81,7 @@ export const AssetTable = ({
 
   const content = () => {
     if (!assets.length) {
-      if (searchPath) {
+      if (assetSelection) {
         return (
           <Box padding={{top: 64}}>
             <NonIdealState
@@ -90,12 +90,12 @@ export const AssetTable = ({
               description={
                 isFiltered ? (
                   <div>
-                    No assets matching <strong>{searchPath}</strong> were found in the selected
+                    No assets matching <strong>{assetSelection}</strong> were found in the selected
                     filters
                   </div>
                 ) : (
                   <div>
-                    No assets matching <strong>{searchPath}</strong> were found
+                    No assets matching <strong>{assetSelection}</strong> were found
                   </div>
                 )
               }
