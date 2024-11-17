@@ -46,5 +46,10 @@ export const useAssetSelectionFiltering = <
     );
   }, [graphAssetKeys, assetsByKey]);
 
-  return {filtered, fetchResult, graphQueryItems};
+  const filteredByKey = useMemo(
+    () => Object.fromEntries(filtered.map((asset) => [tokenForAssetKey(asset.key), asset])),
+    [filtered],
+  );
+
+  return {filtered, filteredByKey, fetchResult, graphAssetKeys, graphQueryItems};
 };

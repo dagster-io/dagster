@@ -208,6 +208,7 @@ const secondaryDataToSearchResults = (
   const assets: SearchResult[] = nodes
     .filter(({definition}) => definition !== null)
     .map((node) => ({
+      key: node.key,
       label: displayNameForAssetKey(node.key),
       description: `Asset in ${buildRepoPathForHuman(
         node.definition!.repository.name,
