@@ -1665,8 +1665,9 @@ def _should_backfill_atomic_asset_partitions_unit_with_subsets(
         parent_subset: EntitySubset[AssetKey] = candidate_entity_subset.compute_parent_subset(
             parent_key, raise_on_missing_partitions=True
         )
-        # each parent that is targeted but hasn't been materialized yet has the ability
-        # to filter out some partitions - let's figure out which ones!
+
+        # Children with parents that are targeted but not materialized are eligible
+        # to be filtered out if the parent
         targeted_but_not_materialized_parent_subset: EntitySubset[AssetKey] = (
             parent_subset.compute_intersection(
                 check.not_none(
@@ -1683,11 +1684,21 @@ def _should_backfill_atomic_asset_partitions_unit_with_subsets(
             )
         )
 
-        if not targeted_but_not_materialized_parent_subset.is_empty:
-            candidate_serializable_entity_subset, parent_failure_subsets_with_reasons = (
+        can_be_removed_due_to_parent_subset = (
+            asset_graph_view.compute_child_subset(
+                asset_key, targeted_but_not_materialized_parent_subset
+            )
+        ).compute_intersection(candidate_entity_subset)
+
+        cannot_be_removed_due_to_parent_subset = candidate_entity_subset.compute_difference(
+            can_be_removed_due_to_parent_subset
+        )
+
+        if not can_be_removed_due_to_parent_subset.is_empty:
+            filtered_out_subset, parent_failure_subsets_with_reasons = (
                 get_can_run_with_parent_subsets(
-                    parent_subset,
-                    candidate_entity_subset,
+                    targeted_but_not_materialized_parent_subset,
+                    can_be_removed_due_to_parent_subset,
                     asset_graph_view,
                     target_subset,
                     asset_partitions_to_request,
@@ -1695,8 +1706,11 @@ def _should_backfill_atomic_asset_partitions_unit_with_subsets(
             )
             if parent_failure_subsets_with_reasons:
                 failure_subsets_with_reasons.extend(parent_failure_subsets_with_reasons)
-                if candidate_serializable_entity_subset.is_empty:
-                    break
+
+            candidate_serializable_entity_subset = (
+                cannot_be_removed_due_to_parent_subset.convert_to_serializable_subset()
+                | filtered_out_subset
+            )
 
     return candidate_serializable_entity_subset, failure_subsets_with_reasons
 
@@ -1832,7 +1846,7 @@ def get_can_run_with_parent_subsets(
     # Split out the partitions to remove any that were not requested
     failure_subsets_with_reasons = []
 
-    # Filter out any parents that weren't requested in this iteration
+    # Filter out any parents that weren't materialized requested in this iteration
     unrequested_parent_subset = parent_subset.compute_difference(
         parent_requested_subset.compute_union(candidate_entity_subset)
     )
@@ -1844,7 +1858,7 @@ def get_can_run_with_parent_subsets(
     if not children_of_unrequested_parents.is_empty:
         failure_subsets_with_reasons.append(
             (
-                children_of_unrequested_parents.convert_to_serializable_subset(),
+                children_of_unrequested_parents.convert_to_serializable_subset().value,
                 f"Parent subset {unrequested_parent_subset} is not requested in this iteration",
             )
         )
