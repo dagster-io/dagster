@@ -426,6 +426,7 @@ class SigmaOrganization(ConfigurableResource):
             datasets=dataset_deps,
             direct_table_deps=direct_table_deps,
             owner_email=None,
+            lineage=lineages,
         )
 
     @cached_method
