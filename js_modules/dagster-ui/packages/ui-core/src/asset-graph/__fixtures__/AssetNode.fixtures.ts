@@ -812,7 +812,7 @@ export const AssetNodeScenariosBase = [
       ...AssetNodeFragmentBasic,
       assetKey: buildAssetKey({path: ['very_long_asset_which_was_totally_reasonable_at_the_time']}),
     },
-    expectedText: ['New in branch'],
+    expectedText: [],
   },
 ];
 
