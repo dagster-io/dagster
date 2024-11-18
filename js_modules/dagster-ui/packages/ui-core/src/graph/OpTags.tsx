@@ -200,6 +200,8 @@ export type KnownTagType =
   | 'wandb'
   | 'databricks'
   | 'airflow'
+  | 'dataset'
+  | 'workbook'
   | 'airliftmapped'
   | 'airtable'
   | 'omni'
@@ -1024,6 +1026,16 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   semanticmodel: {
     icon: table,
     content: 'Semantic Model',
+    blackAndWhite: true,
+  },
+  dataset: {
+    icon: table,
+    content: 'Dataset',
+    blackAndWhite: true,
+  },
+  workbook: {
+    icon: dashboard,
+    content: 'Workbook',
     blackAndWhite: true,
   },
   report: {
