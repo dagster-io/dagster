@@ -1450,8 +1450,12 @@ executable_test_job = define_asset_job(name="executable_test_job", selection=[ex
 static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
 
 
+@asset
+def not_included_asset(): ...
+
+
 @asset(partitions_def=static_partitions_def)
-def upstream_static_partitioned_asset():
+def upstream_static_partitioned_asset(not_included_asset):
     return 1
 
 
@@ -2089,6 +2093,7 @@ def define_assets():
         upstream_daily_partitioned_asset,
         downstream_weekly_partitioned_asset,
         unpartitioned_upstream_of_partitioned,
+        not_included_asset,
         upstream_static_partitioned_asset,
         middle_static_partitioned_asset_1,
         middle_static_partitioned_asset_2,
