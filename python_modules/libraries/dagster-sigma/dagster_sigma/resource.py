@@ -38,6 +38,7 @@ from dagster_sigma.translator import (
     DagsterSigmaTranslator,
     SigmaDataset,
     SigmaOrganizationData,
+    SigmaTable,
     SigmaWorkbook,
     _inode_from_url,
 )
@@ -204,6 +205,12 @@ class SigmaOrganization(ConfigurableResource):
         return await self._fetch_json_async_paginated_entries("datasets")
 
     @cached_method
+    async def _fetch_tables(self) -> List[Dict[str, Any]]:
+        return await self._fetch_json_async_paginated_entries(
+            "files", query_params={"typeFilters": "table"}
+        )
+
+    @cached_method
     async def _fetch_pages_for_workbook(self, workbook_id: str) -> List[Dict[str, Any]]:
         return await self._fetch_json_async_paginated_entries(f"workbooks/{workbook_id}/pages")
 
@@ -356,7 +363,8 @@ class SigmaOrganization(ConfigurableResource):
                 split = column["columnId"].split("/")
                 if len(split) == 2:
                     inode, column_name = split
-                columns_by_dataset_inode[inode].add(column_name)
+                    if inode in columns_by_dataset_inode:
+                        columns_by_dataset_inode[inode].add(column_name)
 
         await asyncio.gather(*[process_workbook(workbook) for workbook in workbooks])
 
@@ -371,7 +379,8 @@ class SigmaOrganization(ConfigurableResource):
         return {member["memberId"]: member["email"] for member in members}
 
     async def load_workbook_data(self, raw_workbook_data: Dict[str, Any]) -> SigmaWorkbook:
-        workbook_deps = set()
+        dataset_deps = set()
+        direct_table_deps = set()
 
         logger.info("Fetching data for workbook %s", raw_workbook_data["workbookId"])
 
@@ -409,11 +418,14 @@ class SigmaOrganization(ConfigurableResource):
         for lineage in lineages:
             for item in lineage["dependencies"].values():
                 if item.get("type") == "dataset":
-                    workbook_deps.add(item["nodeId"])
+                    dataset_deps.add(item["nodeId"])
+                if item.get("type") == "table":
+                    direct_table_deps.add(item["nodeId"])
 
         return SigmaWorkbook(
             properties=raw_workbook_data,
-            datasets=workbook_deps,
+            datasets=dataset_deps,
+            direct_table_deps=direct_table_deps,
             owner_email=None,
         )
 
@@ -453,16 +465,17 @@ class SigmaOrganization(ConfigurableResource):
             await self._fetch_dataset_columns_by_inode() if fetch_column_data else {}
         )
 
-        used_datasets = None
-        if _sigma_filter and not _sigma_filter.include_unused_datasets:
-            used_datasets = set()
-            for workbook in workbooks:
+        used_datasets = set()
+        used_tables = set()
+        for workbook in workbooks:
+            if _sigma_filter and not _sigma_filter.include_unused_datasets:
                 used_datasets.update(workbook.datasets)
+            used_tables.update(workbook.direct_table_deps)
 
         logger.info("Fetching dataset data")
         for dataset in await self._fetch_datasets():
             inode = _inode_from_url(dataset["url"])
-            if used_datasets is None or inode in used_datasets:
+            if _sigma_filter.include_unused_datasets or inode in used_datasets:
                 datasets.append(
                     SigmaDataset(
                         properties=dataset,
@@ -471,7 +484,18 @@ class SigmaOrganization(ConfigurableResource):
                     )
                 )
 
-        return SigmaOrganizationData(workbooks=workbooks, datasets=datasets)
+        tables: List[SigmaTable] = []
+        logger.info("Fetching table data")
+        for table in await self._fetch_tables():
+            inode = _inode_from_url(table["urlId"])
+            if inode in used_tables:
+                tables.append(
+                    SigmaTable(
+                        properties=table,
+                    )
+                )
+
+        return SigmaOrganizationData(workbooks=workbooks, datasets=datasets, tables=tables)
 
     @public
     @deprecated(
