@@ -241,7 +241,9 @@ def test_from_asset_partitions_target_subset(
 
 
 def _get_asset_graph_view(
-    instance: DagsterInstance, asset_graph: BaseAssetGraph, evaluation_time: datetime.datetime
+    instance: DagsterInstance,
+    asset_graph: BaseAssetGraph,
+    evaluation_time: Optional[datetime.datetime] = None,
 ) -> AssetGraphView:
     return AssetGraphView(
         temporal_context=TemporalContext(
@@ -519,11 +521,18 @@ def make_random_subset(
             if i % 2 == 0:
                 root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
 
-    target_asset_partitions, _ = asset_graph.bfs_filter_asset_partitions(
-        instance, lambda _a, _b: (True, ""), root_asset_partitions, evaluation_time=evaluation_time
-    )
+    asset_graph_view = _get_asset_graph_view(instance, asset_graph, evaluation_time=evaluation_time)
 
-    return AssetGraphSubset.from_asset_partition_set(target_asset_partitions, asset_graph)
+    return asset_graph.bfs_filter_asset_partitions(
+        asset_graph_view=asset_graph_view,
+        condition_fn=lambda candidate_asset_keys, candidate_subset_value, _: (
+            candidate_subset_value,
+            [],
+        ),
+        initial_asset_subset=AssetGraphSubset.from_asset_partition_set(
+            root_asset_partitions, asset_graph
+        ),
+    )[0]
 
 
 def make_subset_from_partition_keys(
@@ -542,11 +551,18 @@ def make_subset_from_partition_keys(
         else:
             root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
 
-    target_asset_partitions, _ = asset_graph.bfs_filter_asset_partitions(
-        instance, lambda _a, _b: (True, ""), root_asset_partitions, evaluation_time=evaluation_time
-    )
+    asset_graph_view = _get_asset_graph_view(instance, asset_graph, evaluation_time=evaluation_time)
 
-    return AssetGraphSubset.from_asset_partition_set(target_asset_partitions, asset_graph)
+    return asset_graph.bfs_filter_asset_partitions(
+        asset_graph_view=asset_graph_view,
+        condition_fn=lambda candidate_asset_keys, candidate_subset_value, _: (
+            candidate_subset_value,
+            [],
+        ),
+        initial_asset_subset=AssetGraphSubset.from_asset_partition_set(
+            root_asset_partitions, asset_graph
+        ),
+    )[0]
 
 
 def get_asset_graph(
@@ -612,11 +628,21 @@ def run_backfill_to_completion(
     # assert each asset partition only targeted once
     requested_asset_partitions: Set[AssetKeyPartitionKey] = set()
 
-    fail_and_downstream_asset_partitions, _ = asset_graph.bfs_filter_asset_partitions(
-        instance,
-        lambda _a, _b: (True, ""),
-        fail_asset_partitions,
-        evaluation_time=backfill_data.backfill_start_datetime,
+    asset_graph_view = _get_asset_graph_view(instance, asset_graph)
+
+    fail_and_downstream_asset_graph_subset, _ = asset_graph.bfs_filter_asset_partitions(
+        asset_graph_view=asset_graph_view,
+        condition_fn=lambda candidate_asset_keys, candidate_subset_value, _: (
+            candidate_subset_value,
+            [],
+        ),
+        initial_asset_subset=AssetGraphSubset.from_asset_partition_set(
+            set(fail_asset_partitions), asset_graph
+        ),
+    )
+
+    fail_and_downstream_asset_partitions = set(
+        fail_and_downstream_asset_graph_subset.iterate_asset_partitions()
     )
 
     while not backfill_data.is_complete():
