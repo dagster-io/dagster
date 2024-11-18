@@ -180,7 +180,7 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
     """Maps every partition in the downstream asset to every partition in the upstream asset.
 
     Commonly used in the case when the downstream asset is not partitioned, in which the entire
-    downstream asset depends on all partitions of the usptream asset.
+    downstream asset depends on all partitions of the upstream asset.
     """
 
     def get_upstream_mapped_partitions_result_for_partitions(
