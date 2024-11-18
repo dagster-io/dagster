@@ -58,10 +58,17 @@ class SigmaFilter(IHaveNew):
     """
 
     workbook_folders: Optional[Sequence[Sequence[str]]] = None
+    hide_unused_datasets: bool = False
 
-    def __new__(cls, workbook_folders: Optional[Sequence[Sequence[str]]] = None):
+    def __new__(
+        cls,
+        workbook_folders: Optional[Sequence[Sequence[str]]] = None,
+        hide_unused_datasets: bool = False,
+    ):
         return super().__new__(
-            cls, workbook_folders=tuple([tuple(folder) for folder in workbook_folders or []])
+            cls,
+            workbook_folders=tuple([tuple(folder) for folder in workbook_folders or []]),
+            hide_unused_datasets=hide_unused_datasets,
         )
 
 
@@ -444,16 +451,23 @@ class SigmaOrganization(ConfigurableResource):
             await self._fetch_dataset_columns_by_inode() if fetch_column_data else {}
         )
 
+        used_datasets = None
+        if _sigma_filter and _sigma_filter.hide_unused_datasets:
+            used_datasets = set()
+            for workbook in workbooks:
+                used_datasets.update(workbook.datasets)
+
         logger.info("Fetching dataset data")
         for dataset in await self._fetch_datasets():
             inode = _inode_from_url(dataset["url"])
-            datasets.append(
-                SigmaDataset(
-                    properties=dataset,
-                    columns=columns_by_dataset_inode.get(inode, set()),
-                    inputs=deps_by_dataset_inode[inode],
+            if used_datasets is None or inode in used_datasets:
+                datasets.append(
+                    SigmaDataset(
+                        properties=dataset,
+                        columns=columns_by_dataset_inode.get(inode, set()),
+                        inputs=deps_by_dataset_inode[inode],
+                    )
                 )
-            )
 
         return SigmaOrganizationData(workbooks=workbooks, datasets=datasets)
 
