@@ -1,8 +1,10 @@
 from collections import defaultdict
+from collections.abc import Mapping
 from enum import Enum
 from pprint import pformat
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Union
 
+import packaging.version
 import polars as pl
 from dagster import InputContext, MetadataValue, MultiPartitionKey, OutputContext
 from dagster._annotations import experimental
@@ -273,8 +275,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             str(path),
             version=version,
             delta_table_options=delta_table_options,
-            pyarrow_options=pyarrow_options,
             storage_options=self.storage_options,
+            **_get_pyarrow_options_kwargs(pyarrow_options),
         )
 
     def load_partitions(self, context: InputContext):
@@ -412,3 +414,11 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             ).version()
         else:
             return version
+
+
+# polars>=1.14.0 requires use_pyarrow=True when setting pyarrow_options
+def _get_pyarrow_options_kwargs(pyarrow_options: Mapping[str, object]) -> Mapping[str, Any]:
+    kwargs: Dict[str, object] = {"pyarrow_options": pyarrow_options}
+    if packaging.version.parse(pl.__version__) >= packaging.version.parse("1.14.0"):
+        kwargs["use_pyarrow"] = True
+    return kwargs
