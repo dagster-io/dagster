@@ -55,20 +55,22 @@ class SigmaFilter(IHaveNew):
         workbook_folders (Optional[Sequence[Sequence[str]]]): A list of folder paths to fetch workbooks from.
             Each folder path is a list of folder names, starting from the root folder. All workbooks
             contained in the specified folders will be fetched. If not provided, all workbooks will be fetched.
+        include_unused_datasets (bool): Whether to include datasets that are not used in any workbooks.
+            Defaults to True.
     """
 
     workbook_folders: Optional[Sequence[Sequence[str]]] = None
-    hide_unused_datasets: bool = False
+    include_unused_datasets: bool = True
 
     def __new__(
         cls,
         workbook_folders: Optional[Sequence[Sequence[str]]] = None,
-        hide_unused_datasets: bool = False,
+        include_unused_datasets: bool = True,
     ):
         return super().__new__(
             cls,
             workbook_folders=tuple([tuple(folder) for folder in workbook_folders or []]),
-            hide_unused_datasets=hide_unused_datasets,
+            include_unused_datasets=include_unused_datasets,
         )
 
 
@@ -452,7 +454,7 @@ class SigmaOrganization(ConfigurableResource):
         )
 
         used_datasets = None
-        if _sigma_filter and _sigma_filter.hide_unused_datasets:
+        if _sigma_filter and not _sigma_filter.include_unused_datasets:
             used_datasets = set()
             for workbook in workbooks:
                 used_datasets.update(workbook.datasets)

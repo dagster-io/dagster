@@ -116,7 +116,7 @@ def test_model_organization_data_filter(sigma_auth_token: str, sigma_sample_data
     data = asyncio.run(
         resource.build_organization_data(
             sigma_filter=SigmaFilter(
-                workbook_folders=[("My Documents", "Test Folder")], hide_unused_datasets=True
+                workbook_folders=[("My Documents", "Test Folder")], include_unused_datasets=False
             ),
             fetch_column_data=True,
         )
@@ -127,7 +127,7 @@ def test_model_organization_data_filter(sigma_auth_token: str, sigma_sample_data
     data = asyncio.run(
         resource.build_organization_data(
             sigma_filter=SigmaFilter(
-                workbook_folders=[("My Documents", "My Subfolder")], hide_unused_datasets=True
+                workbook_folders=[("My Documents", "My Subfolder")], include_unused_datasets=False
             ),
             fetch_column_data=True,
         )
