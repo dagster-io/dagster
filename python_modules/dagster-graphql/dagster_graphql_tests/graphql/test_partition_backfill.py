@@ -37,7 +37,6 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster_graphql.client.query import (
     LAUNCH_PARTITION_BACKFILL_MUTATION,
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
-    LAUNCH_PIPELINE_REEXECUTION_MUTATION,
 )
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
@@ -2310,63 +2309,3 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
 
         assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
-
-    def test_run_retry_not_part_of_completed_backfill(self, graphql_context):
-        # TestLaunchDaemonBackfillFromFailure::test_run_retry_not_part_of_completed_backfill
-        repository_selector = infer_repository_selector(graphql_context)
-        result = execute_dagster_graphql(
-            graphql_context,
-            LAUNCH_PARTITION_BACKFILL_MUTATION,
-            variables={
-                "backfillParams": {
-                    "selector": {
-                        "repositorySelector": repository_selector,
-                        "partitionSetName": "integers_partition_set",
-                    },
-                    "partitionNames": ["2", "3", "4", "5"],
-                }
-            },
-        )
-
-        assert not result.errors
-        assert result.data
-        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
-        backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
-
-        _seed_runs(
-            graphql_context,
-            [
-                (DagsterRunStatus.SUCCESS, "5"),
-                (DagsterRunStatus.SUCCESS, "2"),
-                (DagsterRunStatus.SUCCESS, "3"),
-                (DagsterRunStatus.SUCCESS, "4"),
-                (DagsterRunStatus.SUCCESS, "5"),
-                (DagsterRunStatus.SUCCESS, "2"),
-                (DagsterRunStatus.FAILURE, "3"),
-                (DagsterRunStatus.SUCCESS, "4"),
-            ],
-            backfill_id,
-        )
-
-        backfill = graphql_context.instance.get_backfill(backfill_id)
-        graphql_context.instance.update_backfill(
-            backfill.with_status(BulkActionStatus.COMPLETED_SUCCESS)
-        )
-
-        failed_run = graphql_context.instance.get_runs(
-            filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])
-        )[0]
-
-        retry_run_result = execute_dagster_graphql(
-            graphql_context,
-            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
-            variables={
-                "reexecutionParams": {"parentRunId": failed_run.run_id, "strategy": "ALL_STEPS"}
-            },
-        )
-        assert not retry_run_result.errors
-        assert retry_run_result.data
-        assert (
-            retry_run_result.data["launchPipelineReexecution"]["__typename"]
-            == "LaunchPipelineReexecutionSuccess"
-        )

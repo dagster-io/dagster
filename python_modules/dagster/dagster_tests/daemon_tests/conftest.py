@@ -64,16 +64,23 @@ def workspace_fixture(instance_module_scoped) -> Iterator[WorkspaceProcessContex
         yield workspace_context
 
 
-@pytest.fixture(name="remote_repo", scope="module")
-def remote_repo_fixture(
+@pytest.fixture(name="code_location", scope="module")
+def code_location_fixture(
     workspace_context: WorkspaceProcessContext,
-) -> Iterator[RemoteRepository]:
-    yield cast(
+) -> CodeLocation:
+    return cast(
         CodeLocation,
         next(
             iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location,
-    ).get_repository("the_repo")
+    )
+
+
+@pytest.fixture(name="remote_repo", scope="module")
+def remote_repo_fixture(
+    code_location: CodeLocation,
+) -> Iterator[RemoteRepository]:
+    yield code_location.get_repository("the_repo")
 
 
 def loadable_target_origin(attribute: Optional[str] = None) -> LoadableTargetOrigin:
