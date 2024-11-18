@@ -6,12 +6,15 @@ from dagster_sigma.translator import (
     DagsterSigmaTranslator,
     SigmaDataset,
     SigmaOrganizationData,
+    SigmaTable,
     SigmaWorkbook,
 )
 
 from dagster_sigma_tests.conftest import (
     SAMPLE_DATASET_DATA,
     SAMPLE_DATASET_INODE,
+    SAMPLE_TABLE_DATA,
+    SAMPLE_TABLE_INODE,
     SAMPLE_WORKBOOK_DATA,
 )
 
@@ -21,12 +24,17 @@ def test_workbook_translation() -> None:
         properties=SAMPLE_WORKBOOK_DATA,
         datasets={SAMPLE_DATASET_INODE},
         owner_email="ben@dagsterlabs.com",
+        direct_table_deps={SAMPLE_TABLE_INODE},
     )
 
     sample_dataset = SigmaDataset(properties=SAMPLE_DATASET_DATA, columns=set(), inputs=set())
 
     translator = DagsterSigmaTranslator(
-        SigmaOrganizationData(workbooks=[sample_workbook], datasets=[sample_dataset])
+        SigmaOrganizationData(
+            workbooks=[sample_workbook],
+            datasets=[sample_dataset],
+            tables=[SigmaTable(properties=SAMPLE_TABLE_DATA)],
+        )
     )
 
     asset_spec = translator.get_asset_spec(sample_workbook)
@@ -36,8 +44,11 @@ def test_workbook_translation() -> None:
     assert asset_spec.metadata["dagster_sigma/version"] == 5
     assert asset_spec.metadata["dagster_sigma/created_at"].value == 1726176169.072
     assert build_kind_tag_key("sigma") in asset_spec.tags
-    assert {dep.asset_key for dep in asset_spec.deps} == {AssetKey(["Orders_Dataset"])}
     assert asset_spec.owners == ["ben@dagsterlabs.com"]
+    assert {dep.asset_key for dep in asset_spec.deps} == {
+        AssetKey(["Orders_Dataset"]),
+        AssetKey(["my_database", "my_schema", "payments"]),
+    }
 
 
 def test_dataset_translation() -> None:
@@ -48,7 +59,7 @@ def test_dataset_translation() -> None:
     )
 
     translator = DagsterSigmaTranslator(
-        SigmaOrganizationData(workbooks=[], datasets=[sample_dataset])
+        SigmaOrganizationData(workbooks=[], datasets=[sample_dataset], tables=[])
     )
 
     asset_spec = translator.get_asset_spec(sample_dataset)
@@ -89,7 +100,9 @@ def test_dataset_translation_custom_translator() -> None:
         inputs={"TESTDB.JAFFLE_SHOP.STG_ORDERS"},
     )
 
-    translator = MyCustomTranslator(SigmaOrganizationData(workbooks=[], datasets=[sample_dataset]))
+    translator = MyCustomTranslator(
+        SigmaOrganizationData(workbooks=[], datasets=[sample_dataset], tables=[])
+    )
 
     asset_spec = translator.get_asset_spec(sample_dataset)
 

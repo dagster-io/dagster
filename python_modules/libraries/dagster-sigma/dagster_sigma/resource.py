@@ -363,8 +363,7 @@ class SigmaOrganization(ConfigurableResource):
                 split = column["columnId"].split("/")
                 if len(split) == 2:
                     inode, column_name = split
-                    if inode in columns_by_dataset_inode:
-                        columns_by_dataset_inode[inode].add(column_name)
+                    columns_by_dataset_inode[inode].add(column_name)
 
         await asyncio.gather(*[process_workbook(workbook) for workbook in workbooks])
 
