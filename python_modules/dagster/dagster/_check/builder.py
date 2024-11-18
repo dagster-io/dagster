@@ -165,7 +165,7 @@ def _coerce_type(
     # coerce input type in to the type we want to pass to the check call
 
     # Any type translates to passing None for the of_type argument
-    if ttype is Any:
+    if ttype is Any or ttype is None:
         return None
 
     # assume naked strings should be ForwardRefs
@@ -184,6 +184,11 @@ def _coerce_type(
     if _is_annotated(origin, args):
         _process_annotated(ttype, args, eval_ctx)
         return _coerce_type(args[0], eval_ctx)
+
+    # cant do isinstance against TypeDict (and we cant subclass check for it)
+    # so just coerce any dict subclasses in to dict
+    if isinstance(ttype, type) and issubclass(ttype, dict):
+        return dict
 
     # Unions should become a tuple of types to pass to the of_type argument
     # ultimately used as second arg in isinstance(target, tuple_of_types)
