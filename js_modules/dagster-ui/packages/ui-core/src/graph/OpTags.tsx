@@ -1152,7 +1152,7 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   },
   mariadb: {
     icon: mariadb,
-    content: "MariaDB",
+    content: 'MariaDB',
   },
   minio: {
     icon: minio,
@@ -1168,7 +1168,7 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   },
   pulsar: {
     icon: pulsar,
-    content: "Pulsar",
+    content: 'Pulsar',
   },
   rabbitmq: {
     icon: rabbitmq,
