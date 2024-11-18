@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import time
-from collections import defaultdict
 from datetime import datetime
 from enum import Enum
 from typing import (
@@ -1291,28 +1290,57 @@ def get_asset_backfill_iteration_materialized_partitions(
     yield updated_materialized_subset
 
 
+def _get_subset_in_target_subset(
+    asset_graph_view: AssetGraphView,
+    candidate_asset_keys: AbstractSet[AssetKey],
+    candidate_subset_value: EntitySubsetValue,
+    target_subset: AssetGraphSubset,
+) -> "EntitySubsetValue":
+    result_serializable_entity_subset = asset_graph_view.get_empty_subset(
+        key=next(iter(candidate_asset_keys))
+    ).convert_to_serializable_subset()
+    for asset_key in candidate_asset_keys:
+        candidate_serializable_entity_subset = SerializableEntitySubset(
+            asset_key,
+            candidate_subset_value,
+        )
+        result_serializable_entity_subset = result_serializable_entity_subset | (
+            candidate_serializable_entity_subset
+            & target_subset.get_asset_subset(asset_key, asset_graph_view.asset_graph)
+        )
+
+    return result_serializable_entity_subset.value
+
+
 def _get_failed_and_downstream_asset_partitions(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
-    asset_graph: RemoteWorkspaceAssetGraph,
-    instance_queryer: CachingInstanceQueryer,
-    backfill_start_timestamp: float,
+    asset_graph_view: AssetGraphView,
 ) -> AssetGraphSubset:
-    failed_and_downstream_subset = AssetGraphSubset.from_asset_partition_set(
-        asset_graph.bfs_filter_asset_partitions(
-            instance_queryer,
-            lambda asset_partitions, _: (
-                any(
-                    asset_partition in asset_backfill_data.target_subset
-                    for asset_partition in asset_partitions
-                ),
-                "",
-            ),
-            _get_failed_asset_partitions(instance_queryer, backfill_id, asset_graph),
-            evaluation_time=datetime_from_timestamp(backfill_start_timestamp),
-        )[0],
+    asset_graph = cast(RemoteWorkspaceAssetGraph, asset_graph_view.asset_graph)
+
+    failed_asset_graph_subset = AssetGraphSubset.from_asset_partition_set(
+        set(
+            _get_failed_asset_partitions(
+                asset_graph_view.get_inner_queryer_for_back_compat(), backfill_id, asset_graph
+            )
+        ),
         asset_graph,
     )
+
+    failed_and_downstream_subset = asset_graph.bfs_filter_asset_partitions(
+        asset_graph_view,
+        lambda candidate_asset_keys, candidate_subset_value, _: (
+            _get_subset_in_target_subset(
+                asset_graph_view,
+                candidate_asset_keys,
+                candidate_subset_value,
+                asset_backfill_data.target_subset,
+            ),
+            [],
+        ),
+        initial_asset_subset=failed_asset_graph_subset,
+    )[0]
     return failed_and_downstream_subset
 
 
@@ -1445,31 +1473,33 @@ def execute_asset_backfill_iteration_inner(
         failed_and_downstream_subset = _get_failed_and_downstream_asset_partitions(
             backfill_id,
             asset_backfill_data,
-            asset_graph,
-            instance_queryer,
-            backfill_start_timestamp,
+            asset_graph_view,
         )
 
         yield None
 
-    backfill_start_datetime = datetime_from_timestamp(backfill_start_timestamp)
-
-    asset_partitions_to_request, not_requested_and_reasons = (
-        asset_graph.bfs_filter_asset_partitions(
-            instance_queryer,
-            lambda unit, visited: should_backfill_atomic_asset_partitions_unit(
-                asset_graph_view=asset_graph_view,
-                candidates_unit=unit,
-                asset_partitions_to_request=visited,
-                materialized_subset=updated_materialized_subset,
-                requested_subset=asset_backfill_data.requested_subset,
-                target_subset=asset_backfill_data.target_subset,
-                failed_and_downstream_subset=failed_and_downstream_subset,
-            ),
-            initial_asset_partitions=initial_candidates,
-            evaluation_time=backfill_start_datetime,
-        )
+    initial_asset_subset = AssetGraphSubset.from_asset_partition_set(
+        initial_candidates, asset_graph
     )
+
+    asset_subset_to_request, not_requested_and_reasons = asset_graph.bfs_filter_asset_partitions(
+        asset_graph_view,
+        lambda candidate_asset_keys,
+        candidate_subset_value,
+        visited: should_backfill_atomic_asset_partitions_unit_with_subsets(
+            asset_graph_view=asset_graph_view,
+            candidate_asset_keys=candidate_asset_keys,
+            candidate_subset_value=candidate_subset_value,
+            asset_partitions_to_request=visited,
+            materialized_subset=updated_materialized_subset,
+            requested_subset=asset_backfill_data.requested_subset,
+            target_subset=asset_backfill_data.target_subset,
+            failed_and_downstream_subset=failed_and_downstream_subset,
+        ),
+        initial_asset_subset=initial_asset_subset,
+    )
+
+    asset_partitions_to_request = set(asset_subset_to_request.iterate_asset_partitions())
 
     logger.info(
         f"Asset partitions to request:\n {_asset_graph_subset_to_str(AssetGraphSubset.from_asset_partition_set(asset_partitions_to_request, asset_graph), asset_graph)}"
@@ -1478,18 +1508,18 @@ def execute_asset_backfill_iteration_inner(
     )
     if len(not_requested_and_reasons) > 0:
 
-        def _format_keys(keys: Iterable[AssetKeyPartitionKey]):
+        def _format_graph_subset(asset_graph_subset: AssetGraphSubset):
             return ", ".join(
-                f"({key.asset_key.to_user_string()}, {key.partition_key})"
-                if key.partition_key
-                else key.asset_key.to_user_string()
-                for key in keys
+                f"({entity_subset.key.to_user_string()}, {entity_subset.value}"
+                if isinstance(entity_subset.value, PartitionsSubset)
+                else entity_subset.key.to_user_string()
+                for entity_subset in asset_graph_subset.iterate_asset_subsets(asset_graph)
             )
 
         not_requested_str = "\n".join(
             [
-                f"[{_format_keys(keys)}] - Reason: {reason}."
-                for keys, reason in not_requested_and_reasons
+                f"[{_format_graph_subset(asset_graph_subset)}] - Reason: {reason}."
+                for asset_graph_subset, reason in not_requested_and_reasons
             ]
         )
         logger.info(
@@ -1862,79 +1892,6 @@ def should_backfill_atomic_asset_partitions_unit_with_subsets(
             break
 
     return candidate_subset_value, final_failure_subsets_with_reasons
-
-
-def should_backfill_atomic_asset_partitions_unit(
-    asset_graph_view: AssetGraphView,
-    candidates_unit: Iterable[AssetKeyPartitionKey],
-    asset_partitions_to_request: AbstractSet[AssetKeyPartitionKey],
-    target_subset: AssetGraphSubset,
-    requested_subset: AssetGraphSubset,
-    materialized_subset: AssetGraphSubset,
-    failed_and_downstream_subset: AssetGraphSubset,
-) -> Tuple[bool, str]:
-    """Args:
-    candidates_unit: A set of asset partitions that must all be materialized if any is
-        materialized.
-
-    returns if the candidates_unit can be materialized in this tick of the backfill, and the reason
-    it cannot, if applicable
-    """
-    asset_graph = asset_graph_view.asset_graph
-
-    candidate_asset_graph_subset = AssetGraphSubset.from_asset_partition_set(
-        set(candidates_unit), asset_graph
-    )
-
-    candidate_asset_keys = candidate_asset_graph_subset.asset_keys
-
-    partition_keys_by_asset = defaultdict(set)
-    for asset_partition in asset_partitions_to_request:
-        partition_keys_by_asset[asset_partition.asset_key].add(asset_partition.partition_key)
-
-    values = partition_keys_by_asset[next(iter(candidate_asset_keys))]
-
-    assert all(partition_keys_by_asset[asset_key] == values for asset_key in candidate_asset_keys)
-
-    candidate_subset_values = {
-        serializable_entity_subset.key: serializable_entity_subset.value
-        for serializable_entity_subset in candidate_asset_graph_subset.iterate_asset_subsets(
-            asset_graph
-        )
-    }
-
-    candidate_subset_value = next(iter(candidate_subset_values.values()))
-
-    # every partition value is the same if there is more than one asset key
-    assert all(
-        value == candidate_subset_value for asset_key, value in candidate_subset_values.items()
-    )
-
-    asset_partitions_to_request_subset = AssetGraphSubset.from_asset_partition_set(
-        asset_partitions_to_request, asset_graph
-    )
-
-    candidate_subset_value, failure_subsets_with_reasons = (
-        should_backfill_atomic_asset_partitions_unit_with_subsets(
-            asset_graph_view,
-            candidate_asset_keys=candidate_asset_keys,
-            candidate_subset_value=candidate_subset_value,
-            asset_partitions_to_request=asset_partitions_to_request_subset,
-            target_subset=target_subset,
-            requested_subset=requested_subset,
-            materialized_subset=materialized_subset,
-            failed_and_downstream_subset=failed_and_downstream_subset,
-        )
-    )
-
-    return (
-        (
-            not candidate_subset_value.is_empty
-            if isinstance(candidate_subset_value, PartitionsSubset)
-            else candidate_subset_value
-        ),
-        (next(iter(failure_subsets_with_reasons))[1] if failure_subsets_with_reasons else ""),
-    )
 
 
 def _get_failed_asset_partitions(

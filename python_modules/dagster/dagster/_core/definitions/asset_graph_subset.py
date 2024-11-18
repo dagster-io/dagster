@@ -269,12 +269,33 @@ class AssetGraphSubset(NamedTuple):
         )
 
     @classmethod
+    def empty(cls) -> "AssetGraphSubset":
+        return AssetGraphSubset({}, set())
+
+    @classmethod
     def from_entity_subsets(
         cls, entity_subsets: Iterable[EntitySubset[AssetKey]]
     ) -> "AssetGraphSubset":
         return AssetGraphSubset(
             partitions_subsets_by_asset_key={
                 subset.key: subset.get_internal_subset_value()
+                for subset in entity_subsets
+                if subset.is_partitioned and not subset.is_empty
+            },
+            non_partitioned_asset_keys={
+                subset.key
+                for subset in entity_subsets
+                if not subset.is_partitioned and not subset.is_empty
+            },
+        )
+
+    @classmethod
+    def from_serializable_entity_subsets(
+        cls, entity_subsets: Iterable[SerializableEntitySubset[AssetKey]]
+    ) -> "AssetGraphSubset":
+        return AssetGraphSubset(
+            partitions_subsets_by_asset_key={
+                subset.key: cast(PartitionsSubset, subset.value)
                 for subset in entity_subsets
                 if subset.is_partitioned and not subset.is_empty
             },
