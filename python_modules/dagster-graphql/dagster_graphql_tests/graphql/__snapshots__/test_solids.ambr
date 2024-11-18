@@ -1758,6 +1758,22 @@
         dict({
           '__typename': 'UsedSolid',
           'definition': dict({
+            'name': 'not_included_asset',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'not_included_asset',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
             'name': 'one',
           }),
           'invocations': list([
