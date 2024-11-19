@@ -247,6 +247,7 @@ export type KnownTagType =
   | 'rust'
   | 'pytorchlightning'
   | 'deltalake'
+  | 'denodo'
   | 'parquet'
   | 'lightgbm'
   | 'xgboost'
