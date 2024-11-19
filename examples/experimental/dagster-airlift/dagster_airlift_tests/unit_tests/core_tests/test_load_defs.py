@@ -31,7 +31,11 @@ from dagster_airlift.core import (
     dag_defs,
     task_defs,
 )
-from dagster_airlift.core.load_defs import build_full_automapped_dags_from_airflow_instance
+from dagster_airlift.core.load_defs import (
+    build_full_automapped_dags_from_airflow_instance,
+    enrich_airflow_mapped_assets,
+    load_airflow_dag_asset_specs,
+)
 from dagster_airlift.core.multiple_tasks import assets_with_multiple_task_mappings
 from dagster_airlift.core.serialization.compute import (
     build_airlift_metadata_mapping_info,
@@ -562,7 +566,7 @@ def test_mixed_multiple_tasks_single_task_mapping_defs_sep_dags() -> None:
 
     Definitions.validate_loadable(defs)
 
-    mapping_info = build_airlift_metadata_mapping_info(defs)
+    mapping_info = build_airlift_metadata_mapping_info(defs.assets)  # type: ignore
     assert mapping_info.all_mapped_asset_keys_by_dag_id["other_dag"] == {
         AssetKey("single_targeted_asset"),
     }
@@ -620,7 +624,7 @@ def test_mixed_multiple_task_single_task_mapping_same_dags() -> None:
 
     Definitions.validate_loadable(defs)
 
-    mapping_info = build_airlift_metadata_mapping_info(defs)
+    mapping_info = build_airlift_metadata_mapping_info(defs.assets)  # type: ignore
     assert mapping_info.all_mapped_asset_keys_by_dag_id["weekly_dag"] == {
         AssetKey("other_asset"),
         AssetKey("double_targeted_asset"),
@@ -674,7 +678,7 @@ def test_mixed_multiple_task_single_task_mapping_same_task() -> None:
 
     Definitions.validate_loadable(defs)
 
-    mapping_info = build_airlift_metadata_mapping_info(defs)
+    mapping_info = build_airlift_metadata_mapping_info(defs.assets)  # type: ignore
     assert mapping_info.all_mapped_asset_keys_by_dag_id["weekly_dag"] == {
         AssetKey("other_asset"),
         AssetKey("double_targeted_asset"),
@@ -762,3 +766,41 @@ def test_automapped_dag_with_two_tasks_plus_explicit_defs() -> None:
 
     assert all_specs[task_one_key].deps == []
     assert all_specs[task_two_key].deps == [AssetDep(task_one_key)]
+
+
+def test_enrich() -> None:
+    spec = AssetSpec(key="a", metadata=metadata_for_task_mapping(task_id="task", dag_id="dag"))
+    airflow_assets = enrich_airflow_mapped_assets(
+        airflow_instance=make_instance({"dag": ["task"]}),
+        mapped_assets=[spec],
+    )
+    assert len(airflow_assets) == 1
+    assets_def = next(iter(airflow_assets))
+    assert assets_def.key == AssetKey("a")
+    # Asset metadata properties have been glommed onto the asset
+    spec = next(iter(assets_def.specs))
+    assert spec.metadata["Dag ID"] == "dag"
+
+
+def test_load_dags() -> None:
+    dag_assets = load_airflow_dag_asset_specs(
+        airflow_instance=make_instance({"dag": ["task"]}),
+    )
+    assert len(dag_assets) == 1
+    dag_asset = next(iter(dag_assets))
+    assert dag_asset.key == make_default_dag_asset_key("test_instance", "dag")
+
+
+def test_load_dags_upstream() -> None:
+    upstream_task_spec = AssetSpec(
+        key="a", metadata=metadata_for_task_mapping(task_id="task", dag_id="dag")
+    )
+    dag_assets = load_airflow_dag_asset_specs(
+        airflow_instance=make_instance({"dag": ["task"]}),
+        mapped_assets=[upstream_task_spec],
+    )
+    assert len(dag_assets) == 1
+    dag_asset_spec = next(iter(dag_assets))
+    assert dag_asset_spec.key == make_default_dag_asset_key("test_instance", "dag")
+    assert len(list(dag_asset_spec.deps)) == 1
+    assert next(iter(dag_asset_spec.deps)).asset_key == AssetKey("a")

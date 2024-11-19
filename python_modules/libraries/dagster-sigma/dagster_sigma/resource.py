@@ -55,13 +55,22 @@ class SigmaFilter(IHaveNew):
         workbook_folders (Optional[Sequence[Sequence[str]]]): A list of folder paths to fetch workbooks from.
             Each folder path is a list of folder names, starting from the root folder. All workbooks
             contained in the specified folders will be fetched. If not provided, all workbooks will be fetched.
+        include_unused_datasets (bool): Whether to include datasets that are not used in any workbooks.
+            Defaults to True.
     """
 
     workbook_folders: Optional[Sequence[Sequence[str]]] = None
+    include_unused_datasets: bool = True
 
-    def __new__(cls, workbook_folders: Optional[Sequence[Sequence[str]]] = None):
+    def __new__(
+        cls,
+        workbook_folders: Optional[Sequence[Sequence[str]]] = None,
+        include_unused_datasets: bool = True,
+    ):
         return super().__new__(
-            cls, workbook_folders=tuple([tuple(folder) for folder in workbook_folders or []])
+            cls,
+            workbook_folders=tuple([tuple(folder) for folder in workbook_folders or []]),
+            include_unused_datasets=include_unused_datasets,
         )
 
 
@@ -137,7 +146,7 @@ class SigmaOrganization(ConfigurableResource):
         async with aiohttp.ClientSession() as session:
             async with session.request(
                 method=method,
-                url=f"{self.base_url}/v2/{endpoint}",
+                url=url,
                 headers={
                     "Accept": "application/json",
                     "Authorization": f"Bearer {self.api_token}",
@@ -167,7 +176,7 @@ class SigmaOrganization(ConfigurableResource):
             ", fetching additional results" if result.get("hasMore") else "",
         )
 
-        while result.get("hasMore"):
+        while result.get("hasMore") == "true":
             next_page = result["nextPage"]
             query_params_with_limit_and_page = {
                 **query_params_with_limit,
@@ -444,16 +453,23 @@ class SigmaOrganization(ConfigurableResource):
             await self._fetch_dataset_columns_by_inode() if fetch_column_data else {}
         )
 
+        used_datasets = None
+        if _sigma_filter and not _sigma_filter.include_unused_datasets:
+            used_datasets = set()
+            for workbook in workbooks:
+                used_datasets.update(workbook.datasets)
+
         logger.info("Fetching dataset data")
         for dataset in await self._fetch_datasets():
             inode = _inode_from_url(dataset["url"])
-            datasets.append(
-                SigmaDataset(
-                    properties=dataset,
-                    columns=columns_by_dataset_inode.get(inode, set()),
-                    inputs=deps_by_dataset_inode[inode],
+            if used_datasets is None or inode in used_datasets:
+                datasets.append(
+                    SigmaDataset(
+                        properties=dataset,
+                        columns=columns_by_dataset_inode.get(inode, set()),
+                        inputs=deps_by_dataset_inode[inode],
+                    )
                 )
-            )
 
         return SigmaOrganizationData(workbooks=workbooks, datasets=datasets)
 

@@ -111,17 +111,30 @@ def test_model_organization_data_filter(sigma_auth_token: str, sigma_sample_data
             fetch_column_data=True,
         )
     )
-
     assert len(data.workbooks) == 0
+    assert len(data.datasets) == 1
+    data = asyncio.run(
+        resource.build_organization_data(
+            sigma_filter=SigmaFilter(
+                workbook_folders=[("My Documents", "Test Folder")], include_unused_datasets=False
+            ),
+            fetch_column_data=True,
+        )
+    )
+    assert len(data.workbooks) == 0
+    assert len(data.datasets) == 0
 
     data = asyncio.run(
         resource.build_organization_data(
-            sigma_filter=SigmaFilter(workbook_folders=[("My Documents", "My Subfolder")]),
+            sigma_filter=SigmaFilter(
+                workbook_folders=[("My Documents", "My Subfolder")], include_unused_datasets=False
+            ),
             fetch_column_data=True,
         )
     )
 
     assert len(data.workbooks) == 1
+    assert len(data.datasets) == 1
     assert data.workbooks[0].properties["name"] == "Sample Workbook"
 
     data = asyncio.run(

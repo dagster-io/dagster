@@ -2,6 +2,7 @@ import {Box, Button, Colors, Icon, Table, Tag} from '@dagster-io/ui-components';
 
 import {applyCreateSession, useExecutionSessionStorage} from '../app/ExecutionSessionStorage';
 import {RunRequestFragment} from './types/RunRequestFragment.types';
+import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {testId} from '../testing/testId';
 import {useRepository} from '../workspace/WorkspaceContext/util';
@@ -94,6 +95,7 @@ function OpenInLaunchpadButton({
   repoAddress: RepoAddress;
   isJob: boolean;
 }) {
+  const openInNewTab = useOpenInNewTab();
   const pipelineName = request.jobName ?? jobName;
   const [_, onSave] = useExecutionSessionStorage(repoAddress, pipelineName!);
 
@@ -111,12 +113,12 @@ function OpenInLaunchpadButton({
             })),
           }),
         );
-        window.open(
+
+        openInNewTab(
           workspacePathFromAddress(
             repoAddress,
             `/${isJob ? 'jobs' : 'pipelines'}/${pipelineName}/playground`,
           ),
-          '_blank',
         );
       }}
     >

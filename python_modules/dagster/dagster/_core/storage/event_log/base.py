@@ -657,12 +657,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     def get_asset_status_cache_values(
         self,
-        partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]],
+        partitions_defs_by_key: Iterable[Tuple[AssetKey, Optional[PartitionsDefinition]]],
         context: LoadingContext,
     ) -> Sequence[Optional["AssetStatusCacheValue"]]:
         """Get the cached status information for each asset."""
         values = []
-        for asset_key, partitions_def in partitions_defs_by_key.items():
+        for asset_key, partitions_def in partitions_defs_by_key:
             values.append(
                 get_and_update_asset_status_cache_value(
                     self._instance, asset_key, partitions_def, loading_context=context

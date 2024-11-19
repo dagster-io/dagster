@@ -33,6 +33,8 @@ import {
   isCanonicalCodeSourceEntry,
   isCanonicalColumnLineageEntry,
   isCanonicalColumnSchemaEntry,
+  isCanonicalTableNameEntry,
+  isCanonicalUriEntry,
 } from '../metadata/TableSchema';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 import {titleForRun} from '../runs/RunUtils';
@@ -59,7 +61,7 @@ interface Props {
   showTimestamps?: boolean;
   showHeader?: boolean;
   showFilter?: boolean;
-  hideTableSchema?: boolean;
+  hideEntriesShownOnOverview?: boolean;
   displayedByDefault?: number;
   emptyState?: React.ReactNode;
 }
@@ -79,7 +81,7 @@ export const AssetEventMetadataEntriesTable = ({
   showTimestamps,
   showHeader,
   showFilter,
-  hideTableSchema,
+  hideEntriesShownOnOverview,
   displayedByDefault = 100,
   emptyState,
   repoAddress,
@@ -136,8 +138,8 @@ export const AssetEventMetadataEntriesTable = ({
     () =>
       allRows
         .filter((row) => !filter || row.entry.label.toLowerCase().includes(filter.toLowerCase()))
-        .filter((row) => !isEntryHidden(row.entry, {hideTableSchema})),
-    [allRows, filter, hideTableSchema],
+        .filter((row) => !isEntryHidden(row.entry, {hideEntriesShownOnOverview})),
+    [allRows, filter, hideEntriesShownOnOverview],
   );
 
   if (emptyState && allRows.length === 0) {
@@ -328,13 +330,26 @@ export const StyledTableWithHeader = styled.table`
 
 function isEntryHidden(
   entry: MetadataEntryLabelOnly,
-  {hideTableSchema}: {hideTableSchema: boolean | undefined},
+  {hideEntriesShownOnOverview}: {hideEntriesShownOnOverview: boolean | undefined},
 ) {
-  return (
-    HIDDEN_METADATA_ENTRY_LABELS.has(entry.label) ||
-    (isCanonicalColumnSchemaEntry(entry) && hideTableSchema) ||
-    isCanonicalColumnLineageEntry(entry) ||
-    isCanonicalRowCountMetadataEntry(entry) ||
-    isCanonicalCodeSourceEntry(entry)
-  );
+  // Used by our libraries eg: dagster_dbt
+  if (HIDDEN_METADATA_ENTRY_LABELS.has(entry.label)) {
+    return true;
+  }
+  // Used to implement features, never shown in the metadata table
+  if (isCanonicalColumnLineageEntry(entry) || isCanonicalCodeSourceEntry(entry)) {
+    return true;
+  }
+  // Shown in the right panel on asset overview, but still human readable
+  // and displayed on other pages.
+  if (
+    hideEntriesShownOnOverview &&
+    (isCanonicalColumnSchemaEntry(entry) ||
+      isCanonicalRowCountMetadataEntry(entry) ||
+      isCanonicalTableNameEntry(entry) ||
+      isCanonicalUriEntry(entry))
+  ) {
+    return true;
+  }
+  return false;
 }

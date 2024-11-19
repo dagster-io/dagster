@@ -14,6 +14,7 @@
     "ts": "tsc -p .",
     "generate-graphql": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateGraphQLTypes.ts",
     "generate-perms": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generatePermissions.ts",
+    "generate-asset-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateAssetSelection.ts && eslint src/asset-selection/generated/ --fix -c .eslintrc.js",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
@@ -37,6 +38,7 @@
     "@vx/shape": "^0.0.192",
     "amator": "^1.1.0",
     "ansi-to-react": "^5.1.0",
+    "antlr4ts": "0.5.0-alpha.4",
     "babel-plugin-transform-import-meta": "^2.2.1",
     "chart.js": "^3.4.1",
     "chartjs-adapter-date-fns": "^2.0.0",
@@ -127,6 +129,7 @@
     "@types/ws": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.9.0",
     "@typescript-eslint/parser": "^8.9.0",
+    "antlr4ts-cli": "0.5.0-alpha.4",
     "babel-jest": "^29.7.0",
     "babel-loader": "9.1.2",
     "babel-plugin-graphql-tag": "^3.3.0",

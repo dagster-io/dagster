@@ -250,8 +250,6 @@ class AssetGraphView(LoadingContext):
         from_partitions_def = self.asset_graph.get(from_key).partitions_def
         to_partitions_def = self.asset_graph.get(to_key).partitions_def
 
-        partition_mapping = self.asset_graph.get_partition_mapping(from_key, to_key)
-
         if direction == "down":
             if from_partitions_def is None or to_partitions_def is None:
                 return (
@@ -259,6 +257,11 @@ class AssetGraphView(LoadingContext):
                     if from_subset.is_empty
                     else self.get_full_subset(key=to_key)
                 )
+
+            child_key = to_key
+            parent_key = from_key
+            partition_mapping = self.asset_graph.get_partition_mapping(child_key, parent_key)
+
             to_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
                 upstream_partitions_subset=from_subset.get_internal_subset_value(),
                 upstream_partitions_def=from_partitions_def,
@@ -273,6 +276,11 @@ class AssetGraphView(LoadingContext):
                     if from_subset.is_empty
                     else self.get_full_subset(key=to_key)
                 )
+
+            child_key = from_key
+            parent_key = to_key
+            partition_mapping = self.asset_graph.get_partition_mapping(child_key, parent_key)
+
             to_partitions_subset = (
                 partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
                     downstream_partitions_subset=from_subset.get_internal_subset_value()

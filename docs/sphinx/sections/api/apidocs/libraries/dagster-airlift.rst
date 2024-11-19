@@ -12,6 +12,7 @@ AirflowInstance
 ^^^^^^^^^^^^^^^^^
 
 .. autoclass:: AirflowInstance
+    :members:
 
 .. autoclass:: AirflowAuthBackend
 

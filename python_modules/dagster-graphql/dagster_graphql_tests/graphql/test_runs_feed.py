@@ -1,5 +1,6 @@
 import time
 from typing import Mapping, Optional
+from unittest import mock
 
 import pytest
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -39,6 +40,30 @@ query RunsFeedEntryQuery($cursor: String, $limit: Int!, $filter: RunsFilter, $in
                 key
                 value
             }
+          }
+          cursor
+          hasMore
+      }
+      ... on PythonError {
+        stack
+        message
+      }
+    }
+    runsFeedCountOrError(filter: $filter, includeRunsFromBackfills: $includeRunsFromBackfills) {
+        ... on RunsFeedCount {
+            count
+        }
+    }
+}
+"""
+
+MINIMAL_GET_RUNS_FEED_QUERY = """
+query RunsFeedEntryQuery($cursor: String, $limit: Int!, $filter: RunsFilter, $includeRunsFromBackfills: Boolean!) {
+    runsFeedOrError(cursor: $cursor, limit: $limit, filter: $filter, includeRunsFromBackfills: $includeRunsFromBackfills) {
+      ... on RunsFeedConnection {
+          results {
+            __typename
+            id
           }
           cursor
           hasMore
@@ -1304,3 +1329,34 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
         _assert_results_match_count_match_expected(result, 0)
+
+    def test_runs_not_fetched_when_excluding_subruns_and_filtering_backfills(self, graphql_context):
+        # TestRunsFeedUniqueSetups::test_runs_not_fetched_when_excluding_subruns_and_filtering_backfills
+        def _fake_get_run_records(*args, **kwargs):
+            raise Exception("get_run_records should not be called")
+
+        backfill_id = _create_backfill(graphql_context)
+        _create_run_for_backfill(graphql_context, backfill_id)
+        _create_run_for_backfill(graphql_context, backfill_id)
+        _create_run_for_backfill(graphql_context, backfill_id)
+
+        with mock.patch.object(graphql_context.instance, "get_run_records", _fake_get_run_records):
+            result = execute_dagster_graphql(
+                graphql_context,
+                MINIMAL_GET_RUNS_FEED_QUERY,
+                variables={
+                    "limit": 20,
+                    "cursor": None,
+                    "filter": {
+                        "tags": [
+                            {"key": BACKFILL_ID_TAG, "value": backfill_id},
+                        ]
+                    },
+                    "includeRunsFromBackfills": False,
+                },
+            )
+
+            assert not result.errors
+            assert result.data
+            assert len(result.data["runsFeedOrError"]["results"]) == 1
+            assert not result.data["runsFeedOrError"]["hasMore"]

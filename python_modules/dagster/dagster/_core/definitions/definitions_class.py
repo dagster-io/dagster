@@ -42,10 +42,7 @@ from dagster._core.definitions.repository_definition import (
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._core.definitions.utils import (
-    add_default_automation_condition_sensor,
-    dedupe_object_refs,
-)
+from dagster._core.definitions.utils import dedupe_object_refs
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
@@ -273,13 +270,6 @@ def _create_repository_using_definitions_args(
     assets = _canonicalize_specs_to_assets_defs(dedupe_object_refs(assets))
     schedules = dedupe_object_refs(schedules)
     asset_checks = dedupe_object_refs(asset_checks)
-
-    # add in a default automation condition sensor definition if required
-    sensors = add_default_automation_condition_sensor(
-        sensors,
-        [asset for asset in assets if not isinstance(asset, CacheableAssetsDefinition)],
-        asset_checks or [],
-    )
 
     executor_def = (
         executor

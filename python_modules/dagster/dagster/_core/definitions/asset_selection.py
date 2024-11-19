@@ -200,6 +200,31 @@ class AssetSelection(ABC):
             selected_key_prefixes=_asset_key_prefixes, include_sources=include_sources
         )
 
+    @staticmethod
+    def key_substring(
+        key_substring: str, include_sources: bool = False
+    ) -> "KeySubstringAssetSelection":
+        """Returns a selection that includes assets whose string representation contains the provided substring and all the asset checks that target it.
+
+        Args:
+            include_sources (bool): If True, then include source assets matching the substring
+                in the selection.
+
+        Examples:
+            .. code-block:: python
+
+              # match any asset key containing "bc"
+              # e.g. AssetKey(["a", "bcd"]) would match, but not AssetKey(["ab", "cd"]).
+              AssetSelection.key_substring("bc")
+
+              # match any asset key containing "b/c"
+              # e.g. AssetKey(["ab", "cd"]) would match.
+              AssetSelection.key_substring("b/c")
+        """
+        return KeySubstringAssetSelection(
+            selected_key_substring=key_substring, include_sources=include_sources
+        )
+
     @public
     @staticmethod
     def groups(*group_strs, include_sources: bool = False) -> "GroupsAssetSelection":
@@ -469,7 +494,15 @@ class AssetSelection(ABC):
         return {handle for handle in asset_graph.asset_check_keys if handle.asset_key in asset_keys}
 
     @classmethod
-    def from_string(cls, string: str) -> "AssetSelection":
+    def from_string(cls, string: str, include_sources=False) -> "AssetSelection":
+        from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
+            AntlrAssetSelectionParser,
+        )
+
+        try:
+            return AntlrAssetSelectionParser(string, include_sources).asset_selection
+        except:
+            pass
         if string == "*":
             return cls.all()
 
@@ -1016,6 +1049,29 @@ class KeyPrefixesAssetSelection(AssetSelection):
             return f"key_prefix:{key_prefix_strs[0]}"
         else:
             return f"key_prefix:({' or '.join(key_prefix_strs)})"
+
+
+@whitelist_for_serdes
+@record
+class KeySubstringAssetSelection(AssetSelection):
+    selected_key_substring: str
+    include_sources: bool
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        base_set = (
+            asset_graph.get_all_asset_keys()
+            if self.include_sources
+            else asset_graph.materializable_asset_keys
+        )
+        return {key for key in base_set if self.selected_key_substring in key.to_user_string()}
+
+    def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
+        return self
+
+    def __str__(self) -> str:
+        return f"key_substring:{self.selected_key_substring}"
 
 
 def _fetch_all_upstream(

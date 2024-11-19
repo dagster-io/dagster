@@ -44,7 +44,7 @@ def _build_paginated_response(
 
     return {
         "entries": items_to_return,
-        "hasMore": has_more,
+        "hasMore": str(has_more).lower(),
         "total": len(items),
         "nextPage": next_page,
     }
@@ -103,20 +103,20 @@ def sigma_sample_data_fixture(responses: aioresponses) -> None:
     # Single workbook, dataset
     responses.add(
         method=hdrs.METH_GET,
-        url="https://aws-api.sigmacomputing.com/v2/workbooks",
+        url="https://aws-api.sigmacomputing.com/v2/workbooks?limit=1000",
         body=json.dumps(_build_paginated_response([SAMPLE_WORKBOOK_DATA])),
         status=200,
     )
     responses.add(
         method=hdrs.METH_GET,
-        url="https://aws-api.sigmacomputing.com/v2/datasets",
+        url="https://aws-api.sigmacomputing.com/v2/datasets?limit=1000",
         body=json.dumps(_build_paginated_response([SAMPLE_DATASET_DATA])),
         status=200,
     )
 
     responses.add(
         method=hdrs.METH_GET,
-        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages",
+        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages?limit=1000",
         body=json.dumps(_build_paginated_response([{"pageId": "qwMyyHBCuC", "name": "Page 1"}])),
         status=200,
     )
@@ -150,13 +150,13 @@ def sigma_sample_data_fixture(responses: aioresponses) -> None:
     ]
     responses.add(
         method=hdrs.METH_GET,
-        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages/qwMyyHBCuC/elements",
+        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages/qwMyyHBCuC/elements?limit=1000",
         body=json.dumps(_build_paginated_response(elements, 0, 1)),
         status=200,
     )
     responses.add(
         method=hdrs.METH_GET,
-        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages/qwMyyHBCuC/elements",
+        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages/qwMyyHBCuC/elements?limit=1000&page=1",
         body=json.dumps(_build_paginated_response(elements, 1, 2)),
         status=200,
     )

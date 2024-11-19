@@ -512,6 +512,7 @@ class AssetReconciliationScenario(
                             threadpool_executor=None,
                             amp_tick_futures={},
                             debug_crash_flags=(debug_crash_flags or {}),
+                            submit_threadpool_executor=None,
                         )
                     )
 

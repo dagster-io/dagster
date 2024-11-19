@@ -220,8 +220,10 @@ class MultiprocessExecutor(Executor):
                         stopping = True
                         active_execution.mark_interrupted()
                         for key, term_event in term_events.items():
-                            if processes.get(key) and processes[key].is_alive():
-                                term_event.set()
+                            if key in processes:
+                                if processes[key].is_alive():
+                                    term_event.set()
+                                del processes[key]
 
                     while not stopping:
                         steps = active_execution.get_steps_to_execute(
@@ -290,6 +292,8 @@ class MultiprocessExecutor(Executor):
                     for key in empty_iters:
                         del active_iters[key]
                         del term_events[key]
+                        if key in processes:
+                            del processes[key]
                         active_execution.verify_complete(plan_context, key)
 
                     # process skipped and abandoned steps
@@ -310,8 +314,10 @@ class MultiprocessExecutor(Executor):
                         ),
                     )
                     for key, term_event in term_events.items():
-                        if processes.get(key) and processes[key].is_alive():
-                            term_event.set()
+                        if key in processes:
+                            if processes[key].is_alive():
+                                term_event.set()
+                            del processes[key]
 
                 raise
 

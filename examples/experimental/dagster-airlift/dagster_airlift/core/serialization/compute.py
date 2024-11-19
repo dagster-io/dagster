@@ -1,8 +1,8 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import AbstractSet, Callable, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, AbstractSet, Callable, Dict, Iterable, List, Optional, Set
 
-from dagster import AssetKey, AssetSpec, Definitions
+from dagster import AssetKey, AssetSpec
 from dagster._record import record
 
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo
@@ -24,12 +24,15 @@ from dagster_airlift.core.utils import (
     task_handles_for_spec,
 )
 
+if TYPE_CHECKING:
+    from dagster_airlift.core.airflow_defs_data import MappedAsset
+
 DagSelectorFn = Callable[[DagInfo], bool]
 
 
 @record
 class AirliftMetadataMappingInfo:
-    asset_specs: List[AssetSpec]
+    asset_specs: Iterable[AssetSpec]
 
     @cached_property
     def mapped_task_asset_specs(self) -> List[AssetSpec]:
@@ -105,8 +108,10 @@ class AirliftMetadataMappingInfo:
         return downstreams
 
 
-def build_airlift_metadata_mapping_info(defs: Definitions) -> AirliftMetadataMappingInfo:
-    asset_specs = list(spec_iterator(defs.assets))
+def build_airlift_metadata_mapping_info(
+    mapped_assets: Iterable["MappedAsset"],
+) -> AirliftMetadataMappingInfo:
+    asset_specs = list(spec_iterator(mapped_assets))
     return AirliftMetadataMappingInfo(asset_specs=asset_specs)
 
 
@@ -156,9 +161,11 @@ def fetch_all_airflow_data(
 
 
 def compute_serialized_data(
-    airflow_instance: AirflowInstance, defs: Definitions, dag_selector_fn: Optional[DagSelectorFn]
+    airflow_instance: AirflowInstance,
+    mapped_assets: Iterable["MappedAsset"],
+    dag_selector_fn: Optional[DagSelectorFn],
 ) -> "SerializedAirflowDefinitionsData":
-    mapping_info = build_airlift_metadata_mapping_info(defs)
+    mapping_info = build_airlift_metadata_mapping_info(mapped_assets)
     fetched_airflow_data = fetch_all_airflow_data(airflow_instance, mapping_info, dag_selector_fn)
     return SerializedAirflowDefinitionsData(
         instance_name=airflow_instance.name,
