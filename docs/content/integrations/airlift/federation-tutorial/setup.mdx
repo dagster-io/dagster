@@ -1,0 +1,80 @@
+# Airflow Migration Tutorial: Setup
+
+In this step, we'll
+
+- Install the example code
+- Set up a local environment
+- Ensure we can run Airflow locally.
+
+## Installation & Project Structure
+
+First, clone the tutorial example repo locally, and enter the repo directory.
+
+```bash
+git clone git@github.com:dagster-io/airlift-migration-tutorial.git
+cd airlift-federation-tutorial
+```
+
+Next, we'll create a fresh virtual environment using `uv`.
+
+```bash
+pip install uv
+uv venv
+source .venv/bin/activate
+```
+
+## Running Airflow locally
+
+The tutorial example involves running a local Airflow instance. This can be done by running the following commands from the root of the `airlift-migration-tutorial` directory.
+
+First, install the required python packages:
+
+```bash
+make airflow_install
+```
+
+Next, scaffold the two Airflow instances we'll be using for this tutorial:
+
+```bash
+make airflow_setup
+```
+
+Finally, let's run the two Airflow instances with environment variables set:
+
+In one shell run:
+
+```bash
+make warehouse_airflow_run
+```
+
+In a separate shell, run:
+
+```bash
+make metrics_airflow_run
+```
+
+This will run two Airflow Web UIs, one for each Airflow instance. You should now be able to access the warehouse Airflow UI at `http://localhost:8081`, with the default username and password set to `admin`.
+
+You should be able to see the `load_customers` DAG in the Airflow UI.
+
+<Image
+alt="load_customers DAG"
+src="/images/integrations/airlift/load_customers.png"
+width={1484}
+height={300}
+/>
+
+Similarly, you should be able to access the metrics Airflow UI at `http://localhost:8082`, with the default username and password set to `admin`.
+
+You should be able to see the `customer_metrics` DAG in the Airflow UI.
+
+<Image
+alt="customer_metrics DAG"
+src="/images/integrations/airlift/customer_metrics.png"
+width={1484}
+height={300}
+/>
+
+## Next steps
+
+In the next section, we'll add asset representations of our DAGs, and set up lineage across both Airflow instances. Follow along [here](/integrations/airlift/federation-tutorial/observe).

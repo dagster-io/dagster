@@ -9,6 +9,7 @@ from .load_defs import (
     AirflowInstance as AirflowInstance,
     DagSelectorFn as DagSelectorFn,
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
+    load_airflow_dag_asset_specs as load_airflow_dag_asset_specs,
 )
 from .multiple_tasks import (
     TaskHandleDict as TaskHandleDict,
