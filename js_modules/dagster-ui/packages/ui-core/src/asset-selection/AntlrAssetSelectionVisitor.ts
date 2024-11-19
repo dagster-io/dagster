@@ -103,7 +103,7 @@ export class AntlrAssetSelectionVisitor
       for (const item of selection) {
         const downstream = this.traverser
           .fetchDownstream(item, Number.MAX_VALUE)
-          .filter((i) => !selection.has(i));
+          .filter((i) => selection.has(i));
         if (downstream.length === 0 || (downstream.length === 1 && downstream[0] === item)) {
           sinks.add(item);
         }
@@ -115,7 +115,7 @@ export class AntlrAssetSelectionVisitor
       for (const item of selection) {
         const upstream = this.traverser
           .fetchUpstream(item, Number.MAX_VALUE)
-          .filter((i) => !selection.has(i));
+          .filter((i) => selection.has(i));
         if (upstream.length === 0 || (upstream.length === 1 && upstream[0] === item)) {
           roots.add(item);
         }
