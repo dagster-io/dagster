@@ -71,7 +71,7 @@ export const Config = {
     nodesep: -10,
     nodeHeight: 'auto',
     groupPaddingTop: 65,
-    groupPaddingBottom: -15,
+    groupPaddingBottom: -4,
     groupRendering: 'if-varied',
     clusterpaddingtop: 100,
   },
@@ -86,7 +86,7 @@ export const Config = {
     edgesep: 10,
     nodeHeight: 'auto',
     groupPaddingTop: 55,
-    groupPaddingBottom: -5,
+    groupPaddingBottom: -4,
     groupRendering: 'if-varied',
   },
 };
@@ -338,7 +338,10 @@ export const extendBounds = (a: IBounds, b: IBounds) => {
 };
 
 export const ASSET_NODE_WIDTH = 320;
-export const ASSET_NODE_NAME_MAX_LENGTH = 38;
+export const ASSET_NODE_TAGS_HEIGHT = 28;
+export const ASSET_NODE_STATUS_ROW_HEIGHT = 25;
+
+export const ASSET_NODE_NAME_MAX_LENGTH = 31;
 
 export const getAssetNodeDimensions = (def: {
   assetKey: {path: string[]};
@@ -351,24 +354,19 @@ export const getAssetNodeDimensions = (def: {
   computeKind: string | null;
   changedReasons?: ChangeReason[];
 }) => {
-  const width = ASSET_NODE_WIDTH;
+  let height = 0;
 
-  let height = 106; // top tags area + name + description
+  height += ASSET_NODE_TAGS_HEIGHT; // top tags
 
-  if (!def.isMaterializable && def.isObservable) {
-    height += 30; // status row
-  } else {
-    height += 28; // status row
-    height += 28; // checks row
-    if (def.isPartitioned) {
-      height += 52;
-    }
-  }
-  if (def.changedReasons?.length) {
-    height += 30;
+  height += 76; // box padding + border + name + description
+
+  if (def.isPartitioned && def.isMaterializable) {
+    height += ASSET_NODE_STATUS_ROW_HEIGHT;
   }
 
-  height += 36; // tags beneath
+  height += ASSET_NODE_STATUS_ROW_HEIGHT; // status row
+  height += ASSET_NODE_STATUS_ROW_HEIGHT; // checks row
+  height += ASSET_NODE_TAGS_HEIGHT; // bottom tags
 
-  return {width, height};
+  return {width: ASSET_NODE_WIDTH, height};
 };
