@@ -21,33 +21,65 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'Create a pipeline',
-          link: {type: 'doc', id: 'guides/pipelines'},
+          link: {type: 'doc', id: 'guides/build/create-a-pipeline/index'},
           items: [
-            'guides/data-assets',
-            'guides/metadata',
-            'guides/partitioning',
-            'guides/partition-dependencies',
-            'guides/external-assets',
+            'guides/build/create-a-pipeline/data-assets',
+            'guides/build/create-a-pipeline/metadata',
+            'guides/build/create-a-pipeline/partitioning',
+            'guides/build/create-a-pipeline/partition-dependencies',
+            'guides/build/create-a-pipeline/external-assets',
           ],
         },
         {
           type: 'category',
           label: 'Configure',
           items: [
-            'guides/configuring-assets',
-            'guides/asset-factories',
-            //'guides/resources',
-            'guides/databases',
-            'guides/apis',
-            'guides/io-managers',
-            'guides/managing-concurrency',
+            'guides/build/configure/configuring-assets',
+            'guides/build/configure/asset-factories',
+            'guides/build/configure/resources',
+            'guides/build/configure/databases',
+            'guides/build/configure/apis',
+            'guides/build/configure/io-managers',
+            'guides/build/configure/managing-concurrency',
+            'guides/build/configure/configuring',
+            'guides/build/configure/authentication'
           ],
         },
         {
           type: 'category',
           label: 'Integrate',
-          items: ['guides/ingesting-data', 'guides/transform-dbt', 'guides/non-python'],
+          items: [
+            'guides/build/integrate/ingesting-data',
+            'guides/build/integrate/transform-dbt',
+            'guides/build/integrate/non-python',
+            'guides/build/integrate/build-your-own',
+            'guides/build/integrate/pipes',
+            'guides/build/integrate/cloud-services'
+          ],
         },
+        {
+          type: 'category',
+          label: 'Assets concepts',
+          link: {type: 'doc', id: 'guides/build/assets-concepts/index'},
+          items: [
+            'guides/build/assets-concepts/asset-metadata',
+            'guides/build/assets-concepts/asset-dependencies',
+            'guides/build/assets-concepts/asset-factories-with-deps',
+            'guides/build/assets-concepts/asset-materialization',
+            'guides/build/assets-concepts/selection-syntax'
+          ]
+        },
+        {
+          type: 'category',
+          label: 'Ops and jobs',
+          link: {type: 'doc', id: 'guides/build/ops-jobs/index'},
+          items: [
+            'guides/build/ops-jobs/ops-vs-assets',
+            'guides/build/ops-jobs/job-configuration'
+          ]
+        },
+        'guides/build/project-structure',
+        'guides/build/backfill'
       ],
     },
     {
@@ -55,11 +87,43 @@ const sidebars: SidebarsConfig = {
       label: 'Automate',
       collapsed: false,
       items: [
-        'guides/schedules',
-        'guides/sensors',
-        'guides/asset-sensors',
-        'guides/automation',
-        //'guides/declarative-automation',
+        {
+          type: 'category',
+          label: 'Automation concepts',
+          link: {type: 'doc', id: 'guides/automate/automation-concepts/index'},
+          items: [
+            'guides/automate/automation-concepts/schedules',
+            'guides/automate/automation-concepts/sensors',
+            'guides/automate/automation-concepts/declarative-automation'
+          ]
+        },
+        'guides/automate/schedules',
+        'guides/automate/sensors',
+        'guides/automate/asset-sensors',
+        'guides/automate/automation',
+        'guides/automate/declarative-automation',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Monitor',
+      collapsed: false,
+      items: [
+        {
+          type: 'category',
+          label: 'Logging',
+          items: [
+            'guides/monitor/logging/custom-metrics-logs',
+            'guides/monitor/logging/custom-logging'
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Alerting',
+          items: [
+            'guides/monitor/alerting/alerting'
+          ],
+        },
       ],
     },
     {
@@ -67,102 +131,39 @@ const sidebars: SidebarsConfig = {
       label: 'Test',
       collapsed: false,
       items: [
-        'guides/asset-checks',
-        'guides/data-freshness-testing',
-        'guides/unit-tests-assets-and-ops',
+        'guides/test/asset-checks',
+        'guides/test/data-freshness-testing',
+        'guides/test/unit-tests-assets-and-ops',
       ],
     },
     {
       type: 'category',
       label: 'Deploy',
+      link: {type: 'doc', id: 'guides/deploy/index'},
       collapsed: false,
       items: [
         {
           type: 'category',
-          label: 'Self-hosting Dagster',
-          items: ['guides/kubernetes', 'guides/docker', 'guides/dagster-service'],
+          label: 'Deployment options',
+          items: [{
+            type: 'autogenerated',
+            dirName: 'guides/deploy/deployment-options'
+          }],
         },
         {
           type: 'category',
-          label: 'Dagster Plus',
+          label: 'Execution',
           items: [
-            'guides/dagster-plus',
-            //'guides/self-hosted-to-dagster-plus'
-          ],
+            {
+              type: 'autogenerated',
+              dirName: 'guides/deploy/execution'
+            }
+          ]
         },
-        //'guides/secrets',
-        //'guides/code-locations',
+        'guides/deploy/secrets',
+        'guides/deploy/code-locations',
       ],
     },
-    //{
-    //  type: 'category',
-    //  label: 'Understand',
-    //  items: [
-    //    {
-    //      type: 'category',
-    //      label: 'Assets',
-    //      items: [
-    //        {
-    //          type: 'autogenerated',
-    //          dirName: 'concepts/assets',
-    //        },
-    //      ],
-    //    },
-    //    {
-    //      type: 'category',
-    //      label: 'Automation and Scheduling',
-    //      items: [
-    //        {
-    //          type: 'autogenerated',
-    //          dirName: 'concepts/automation',
-    //        },
-    //      ],
-    //    },
-    //    {
-    //      type: 'doc',
-    //      label: 'Partitions',
-    //      id: 'concepts/partitions',
-    //    },
-    //    {
-    //      type: 'doc',
-    //      label: 'Resources',
-    //      id: 'concepts/resources',
-    //    },
-    //    {
-    //      type: 'doc',
-    //      label: 'I/O managers',
-    //      id: 'concepts/io-managers',
-    //    },
-    //    {
-    //      type: 'category',
-    //      label: 'Ops and jobs',
-    //      link: {
-    //        type: 'doc',
-    //        id: 'concepts/ops-jobs',
-    //      },
-    //      items: [
-    //        {
-    //          type: 'autogenerated',
-    //          dirName: 'concepts/ops-jobs',
-    //        },
-    //      ],
-    //    },
-    //    {
-    //      type: 'category',
-    //      label: 'Execution',
-    //      link: {
-    //        type: 'doc',
-    //        id: 'concepts/execution',
-    //      },
-    //      items: [
-    //        {
-    //          type: 'autogenerated',
-    //          dirName: 'concepts/execution',
-    //        },
-    //      ],
-    //    },
-    //  ],
-    //},
     {
       type: 'category',
       label: 'About',
@@ -495,6 +496,13 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: 'category',
+          label: 'Migration',
+          items: [
+              'dagster-plus/deployment/migration/self-hosted-to-dagster-plus'
+          ],
+        },
+        {
+          type: 'category',
           label: 'CI/CD',
           items: [
             {
@@ -535,7 +543,7 @@ const sidebars: SidebarsConfig = {
           type: 'doc',
           label: 'Settings',
           id: 'dagster-plus/settings',
-        },
+        }
       ],
     },
   ],
