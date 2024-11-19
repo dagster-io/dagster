@@ -385,6 +385,14 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         timeout_in_minutes=30,
         queue=BuildkiteQueue.DOCKER,
     ),
+    # Federation tutorial spins up multiple airflow instances, slow to run - use docker queue to ensure
+    # beefier instance
+    PackageSpec(
+        "examples/airlift-federation-tutorial",
+        skip_if=skip_if_not_airlift_or_dlift_commit,
+        timeout_in_minutes=30,
+        queue=BuildkiteQueue.DOCKER,
+    ),
     PackageSpec(
         "examples/experimental/dagster-airlift/perf-harness",
         always_run_if=has_dagster_airlift_changes,
