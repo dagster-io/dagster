@@ -53,6 +53,21 @@ function assertQueryResult(query: string, expectedNames: string[]) {
 }
 
 describe('parseAssetSelectionQuery', () => {
+  describe('invalid queries', () => {
+    it('should throw on invalid queries', () => {
+      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'A')).toThrow();
+      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'key:A key:B')).toThrow();
+      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'not')).toThrow();
+      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'and')).toThrow();
+      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'key:A and')).toThrow();
+      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'sinks')).toThrow();
+      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'notafunction()')).toThrow();
+      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'tag:foo=')).toThrow();
+      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'owner')).toThrow();
+      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'owner:owner@owner.com')).toThrow();
+    });
+  });
+
   describe('valid queries', () => {
     it('should parse star query', () => {
       assertQueryResult('*', ['A', 'B', 'C']);
