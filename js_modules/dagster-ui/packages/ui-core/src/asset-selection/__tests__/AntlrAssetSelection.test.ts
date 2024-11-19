@@ -52,8 +52,8 @@ function assertQueryResult(query: string, expectedNames: string[]) {
   if (result instanceof Error) {
     throw result;
   }
-  expect(result.length).toBe(expectedNames.length);
-  expect(new Set(result.map((asset) => asset.name))).toEqual(new Set(expectedNames));
+  expect(result.all.length).toBe(expectedNames.length);
+  expect(new Set(result.all.map((asset) => asset.name))).toEqual(new Set(expectedNames));
 }
 
 describe('parseAssetSelectionQuery', () => {

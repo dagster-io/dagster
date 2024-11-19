@@ -5,11 +5,14 @@ import {
   RecognitionException,
   Recognizer,
 } from 'antlr4ts';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AntlrAssetSelectionVisitor} from './AntlrAssetSelectionVisitor';
 import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
 import {AssetSelectionLexer} from './generated/AssetSelectionLexer';
 import {AssetSelectionParser} from './generated/AssetSelectionParser';
+import {featureEnabled} from '../app/Flags';
+import {filterByQuery} from '../app/GraphQueryImpl';
 
 class AntlrInputErrorListener implements ANTLRErrorListener<any> {
   syntaxError(
@@ -27,10 +30,15 @@ class AntlrInputErrorListener implements ANTLRErrorListener<any> {
   }
 }
 
+type AssetSelectionQueryResult = {
+  all: AssetGraphQueryItem[];
+  focus: AssetGraphQueryItem[];
+};
+
 export const parseAssetSelectionQuery = (
   all_assets: AssetGraphQueryItem[],
   query: string,
-): AssetGraphQueryItem[] | Error => {
+): AssetSelectionQueryResult | Error => {
   try {
     const lexer = new AssetSelectionLexer(CharStreams.fromString(query));
     lexer.removeErrorListeners();
@@ -45,8 +53,22 @@ export const parseAssetSelectionQuery = (
     const tree = parser.start();
 
     const visitor = new AntlrAssetSelectionVisitor(all_assets);
-    return [...visitor.visit(tree)];
+    const all_selection = visitor.visit(tree);
+    const focus_selection = visitor.focus_assets;
+
+    return {
+      all: Array.from(all_selection),
+      focus: Array.from(focus_selection),
+    };
   } catch (e) {
     return e as Error;
   }
 };
+
+export const filterAssetSelectionByQuery = (
+  all_assets: AssetGraphQueryItem[],
+  query: string,
+): AssetSelectionQueryResult =>
+  featureEnabled(FeatureFlag.flagAssetSelectionSyntax)
+    ? parseAssetSelectionQuery(all_assets, query)
+    : filterByQuery(all_assets, query);
