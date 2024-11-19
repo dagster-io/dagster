@@ -258,7 +258,14 @@ export const AssetsCatalogTable = ({
       isLoading={filteredAssetsLoading}
       isFiltered={isFiltered}
       actionBarComponents={
-        <>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'auto auto minmax(0, 1fr)',
+            gap: 12,
+            alignItems: 'center',
+          }}
+        >
           <ButtonGroup<AssetViewType>
             activeItems={new Set([view])}
             buttons={[
@@ -274,7 +281,7 @@ export const AssetsCatalogTable = ({
           />
           {filterButton}
           {filterInput}
-        </>
+        </div>
       }
       belowActionBarComponents={
         <AssetGraphFilterBar
