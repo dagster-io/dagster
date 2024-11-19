@@ -43,4 +43,4 @@ Go back into the UI, reload definitions, and materialize the `joined_data` asset
 
 ## Next steps
 
-- Continue this tutorial with [Asset Checks](/tutorial/04-ensuring-data-quality-with-asset-checks)
+- Continue this tutorial by adding [asset checks](/tutorial/04-ensuring-data-quality-with-asset-checks)
