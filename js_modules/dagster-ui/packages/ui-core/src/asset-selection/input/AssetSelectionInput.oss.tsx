@@ -1,5 +1,5 @@
 import {Colors, Icon, TextInputStyles} from '@dagster-io/ui-components';
-import CodeMirror, {Editor} from 'codemirror';
+import CodeMirror, {Editor, HintFunction} from 'codemirror';
 import {useLayoutEffect, useMemo, useRef} from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
 
@@ -34,10 +34,8 @@ export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInp
 
   useLayoutEffect(() => {
     if (editorRef.current && !cmInstance.current) {
-      // Define the custom mode
       CodeMirror.defineMode('assetSelection', assetSelectionMode);
 
-      // Initialize CodeMirror
       cmInstance.current = CodeMirror(editorRef.current, {
         value,
         mode: 'assetSelection',
@@ -67,7 +65,6 @@ export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInp
         }
       });
 
-      // Update parent component on changes
       cmInstance.current.on('change', (instance: Editor, change) => {
         const newValue = instance.getValue();
         currentValueRef.current = newValue;
@@ -80,15 +77,12 @@ export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInp
         }
       });
 
-      // Autocomplete on input
       cmInstance.current.on('inputRead', (instance: Editor) => {
-        console.log('show hint');
-        instance.showHint({hint: hintRef.current, completeSingle: false});
+        showHint(instance, hintRef.current);
       });
 
       cmInstance.current.on('cursorActivity', (instance: Editor) => {
-        console.log('show hint');
-        instance.showHint({hint: hintRef.current, completeSingle: false});
+        showHint(instance, hintRef.current);
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -102,9 +96,7 @@ export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInp
       const cursor = instance.getCursor();
       instance.setValue(noNewLineValue);
       instance.setCursor(cursor);
-      requestAnimationFrame(() => {
-        instance.showHint({hint: hintRef.current, completeSingle: false});
-      });
+      showHint(instance, hintRef.current);
     }
   }, [hintRef, value]);
 
@@ -131,7 +123,7 @@ const InputDiv = styled.div`
   width: 100%;
   ${TextInputStyles}
   flex-shrink: 1;
-  overflow: hidden;
+  overflow: auto;
 
   .CodeMirror-placeholder.CodeMirror-placeholder.CodeMirror-placeholder {
     color: ${Colors.textLighter()};
@@ -205,3 +197,9 @@ const GlobalHintStyles = createGlobalStyle`
     }
   }
 `;
+
+function showHint(instance: Editor, hint: HintFunction) {
+  requestAnimationFrame(() => {
+    instance.showHint({hint, completeSingle: false, moveOnOverlap: true});
+  });
+}

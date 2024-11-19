@@ -82,10 +82,8 @@ export const createAssetSelectionHint = (assets: AssetGraphQueryItem[]): HintFun
         ? [allTokens[indexOfToken - 1]?.text, allTokens[indexOfToken]?.text]
         : [allTokens[indexOfToken - 2]?.text, allTokens[indexOfToken - 1]?.text];
 
-    const quotedRange = getQuotedStringRange(cm, cursor);
     let start = token.start;
     const end = token.end;
-    const inQuotedString = !!quotedRange;
     const tokenString = token.string.trim();
     const tokenUpToCursor = cm.getRange(CodeMirror.Pos(cursor.line, start), cursor).trim();
     const unquotedTokenString = removeQuotesFromString(tokenString);
@@ -186,6 +184,8 @@ export const createAssetSelectionHint = (assets: AssetGraphQueryItem[]): HintFun
         displayText: removeQuotesFromString(item),
       };
     });
+
+    console.log({list});
 
     return {
       list,
