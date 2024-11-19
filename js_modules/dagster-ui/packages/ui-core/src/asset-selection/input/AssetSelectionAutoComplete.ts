@@ -187,16 +187,6 @@ export const createAssetSelectionHint = (assets: AssetGraphQueryItem[]): HintFun
       };
     });
 
-    console.log({
-      inQuotedString,
-      list: list[0],
-      tokenString,
-      tokenUpToCursor,
-      previous2Tokens,
-      isAfterAttributeValue,
-      unquotedTokenString,
-    });
-
     return {
       list,
       from: CodeMirror.Pos(cursor.line, start),
