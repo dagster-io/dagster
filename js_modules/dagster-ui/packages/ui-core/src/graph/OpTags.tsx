@@ -49,7 +49,7 @@ import docker from './kindtag-images/tool-docker-color.svg';
 import doris from './kindtag-images/tool-doris-color.svg';
 import druid from './kindtag-images/tool-druid-color.svg';
 import duckdb from './kindtag-images/tool-duckdb-color.svg';
-import elasticsearch from './kindtag-images/tool-elasticsearch.svg';
+import elasticsearch from './kindtag-images/tool-elasticsearch-color.svg';
 import excel from './kindtag-images/tool-excel-color.svg';
 import facebook from './kindtag-images/tool-facebook-color.svg';
 import fivetran from './kindtag-images/tool-fivetran-color.svg';
