@@ -45,147 +45,93 @@ const TEST_GRAPH: AssetGraphQueryItem[] = [
   },
 ];
 
+function assertQueryResult(query: string, expectedNames: string[]) {
+  const result = parseAssetSelectionQuery(TEST_GRAPH, query);
+  expect(result.length).toBe(expectedNames.length);
+  expect(new Set(result.map((r) => r.name))).toEqual(new Set(expectedNames));
+}
+
 describe('parseAssetSelectionQuery', () => {
-  it('should parse star query', () => {
-    const result = parseAssetSelectionQuery(TEST_GRAPH, '*');
-    expect(result.length).toBe(3);
-    expect(new Set(result.map((r) => r.name))).toEqual(new Set(['A', 'B', 'C']));
-  });
+  describe('valid queries', () => {
+    it('should parse star query', () => {
+      assertQueryResult('*', ['A', 'B', 'C']);
+    });
 
-  it('should parse key query', () => {
-    const result = parseAssetSelectionQuery(TEST_GRAPH, 'key:A');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('A');
-  });
+    it('should parse key query', () => {
+      assertQueryResult('key:A', ['A']);
+    });
 
-  it('should parse key_substring query', () => {
-    const result = parseAssetSelectionQuery(TEST_GRAPH, 'key_substring:A');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('A');
-  });
+    it('should parse key_substring query', () => {
+      assertQueryResult('key:A', ['A']);
+    });
 
-  it('should parse and query', () => {
-    const result = parseAssetSelectionQuery(TEST_GRAPH, 'key:A and key:B');
-    expect(result.length).toBe(0);
-  });
+    it('should parse and query', () => {
+      assertQueryResult('key:A and key:B', []);
+      assertQueryResult('key:A and key:B and key:C', []);
+    });
 
-  it('should parse or query', () => {
-    let result = parseAssetSelectionQuery(TEST_GRAPH, 'key:A or key:B');
-    expect(result.length).toBe(2);
-    expect(new Set(result.map((r) => r.name))).toEqual(new Set(['A', 'B']));
+    it('should parse or query', () => {
+      assertQueryResult('key:A or key:B', ['A', 'B']);
+      assertQueryResult('key:A or key:B or key:C', ['A', 'B', 'C']);
+      assertQueryResult('(key:A or key:B) and (key:B or key:C)', ['B']);
+    });
 
-    result = parseAssetSelectionQuery(TEST_GRAPH, '(key:A or key:B) and (key:B or key:C)');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('B');
-  });
+    it('should parse upstream plus query', () => {
+      assertQueryResult('+key:A', ['A']);
+      assertQueryResult('+key:B', ['A', 'B']);
+      assertQueryResult('++key:C', ['A', 'B', 'C']);
+    });
 
-  it('should parse upstream plus query', () => {
-    let result = parseAssetSelectionQuery(TEST_GRAPH, '+key:A');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('A');
+    it('should parse downstream plus query', () => {
+      assertQueryResult('key:C+', ['C']);
+      assertQueryResult('key:B+', ['B', 'C']);
+      assertQueryResult('key:A++', ['A', 'B', 'C']);
+    });
 
-    result = parseAssetSelectionQuery(TEST_GRAPH, '+key:B');
-    expect(result.length).toBe(2);
-    expect(new Set(result.map((r) => r.name))).toEqual(new Set(['A', 'B']));
+    it('should parse upstream star query', () => {
+      assertQueryResult('*key:A', ['A']);
+      assertQueryResult('*key:B', ['A', 'B']);
+      assertQueryResult('**key:C', ['A', 'B', 'C']);
+    });
 
-    result = parseAssetSelectionQuery(TEST_GRAPH, '++key:C');
-    expect(result.length).toBe(3);
-    expect(new Set(result.map((r) => r.name))).toEqual(new Set(['A', 'B', 'C']));
-  });
+    it('should parse downstream star query', () => {
+      assertQueryResult('key:C*', ['C']);
+      assertQueryResult('key:B*', ['B', 'C']);
+      assertQueryResult('key:A**', ['A', 'B', 'C']);
+    });
 
-  it('should parse downstream plus query', () => {
-    let result = parseAssetSelectionQuery(TEST_GRAPH, 'key:C+');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('C');
+    it('should parse sinks query', () => {
+      assertQueryResult('sinks(*)', ['C']);
+      assertQueryResult('sinks(key:A)', ['A']);
+      assertQueryResult('sinks(key:A or key:B)', ['B']);
+    });
 
-    result = parseAssetSelectionQuery(TEST_GRAPH, 'key:B+');
-    expect(result.length).toBe(2);
-    expect(new Set(result.map((r) => r.name))).toEqual(new Set(['B', 'C']));
+    it('should parse roots query', () => {
+      assertQueryResult('roots(*)', ['A']);
+      assertQueryResult('roots(key:C)', ['C']);
+      assertQueryResult('roots(key:A or key:B)', ['A']);
+    });
 
-    result = parseAssetSelectionQuery(TEST_GRAPH, 'key:A++');
-    expect(result.length).toBe(3);
-    expect(new Set(result.map((r) => r.name))).toEqual(new Set(['A', 'B', 'C']));
-  });
+    it('should parse tag query', () => {
+      assertQueryResult('tag:foo', ['A', 'B']);
+      assertQueryResult('tag:foo=bar', ['A']);
+    });
 
-  it('should parse upstream star query', () => {
-    let result = parseAssetSelectionQuery(TEST_GRAPH, '*key:A');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('A');
+    it('should parse owner query', () => {
+      assertQueryResult('owner:"owner@owner.com"', ['A']);
+    });
 
-    result = parseAssetSelectionQuery(TEST_GRAPH, '*key:C');
-    expect(result.length).toBe(3);
-    expect(new Set(result.map((r) => r.name))).toEqual(new Set(['A', 'B', 'C']));
-  });
+    it('should parse group query', () => {
+      assertQueryResult('group:my_group', ['C']);
+    });
 
-  it('should parse downstream star query', () => {
-    let result = parseAssetSelectionQuery(TEST_GRAPH, 'key:C*');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('C');
+    it('should parse kind query', () => {
+      assertQueryResult('kind:python', ['B']);
+      assertQueryResult('kind:snowflake', ['B']);
+    });
 
-    result = parseAssetSelectionQuery(TEST_GRAPH, 'key:A*');
-    expect(result.length).toBe(3);
-    expect(new Set(result.map((r) => r.name))).toEqual(new Set(['A', 'B', 'C']));
-  });
-
-  it('should parse sinks query', () => {
-    let result = parseAssetSelectionQuery(TEST_GRAPH, 'sinks(*)');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('C');
-
-    result = parseAssetSelectionQuery(TEST_GRAPH, 'sinks(key:A)');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('A');
-
-    result = parseAssetSelectionQuery(TEST_GRAPH, 'sinks(key:B or key:B)');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('B');
-  });
-
-  it('should parse roots query', () => {
-    let result = parseAssetSelectionQuery(TEST_GRAPH, 'roots(*)');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('A');
-
-    result = parseAssetSelectionQuery(TEST_GRAPH, 'roots(key:C)');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('C');
-
-    result = parseAssetSelectionQuery(TEST_GRAPH, 'roots(key:B or key:C)');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('B');
-  });
-
-  it('should parse tag query', () => {
-    let result = parseAssetSelectionQuery(TEST_GRAPH, 'tag:foo');
-    expect(result.length).toBe(2);
-    expect(new Set(result.map((r) => r.name))).toEqual(new Set(['A', 'B']));
-
-    result = parseAssetSelectionQuery(TEST_GRAPH, 'tag:foo=bar');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('A');
-  });
-
-  it('should parse owner query', () => {
-    const result = parseAssetSelectionQuery(TEST_GRAPH, 'owner:"owner@owner.com"');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('A');
-  });
-
-  it('should parse group query', () => {
-    const result = parseAssetSelectionQuery(TEST_GRAPH, 'group:my_group');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('C');
-  });
-
-  it('should parse kind query', () => {
-    const result = parseAssetSelectionQuery(TEST_GRAPH, 'kind:python');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('B');
-  });
-
-  it('should parse code location query', () => {
-    const result = parseAssetSelectionQuery(TEST_GRAPH, 'code_location:"repo@my_location"');
-    expect(result.length).toBe(1);
-    expect(result[0]!.name).toBe('C');
+    it('should parse code location query', () => {
+      assertQueryResult('code_location:"repo@my_location"', ['C']);
+    });
   });
 });
