@@ -16,7 +16,7 @@ cd "$temp_dir"
 echo "Initializing git repository..."
 git init
 echo "Adding remote..."
-git remote add origin git@github.com:dagster-io/airlift-migration-tutorial.git
+git remote add origin git@github.com:dagster-io/airlift-tutorial.git
 echo "Fetching and resetting..."
 git fetch origin
 git reset --soft origin/main
@@ -33,7 +33,7 @@ rsync -av \
     --exclude='*.egg-info' \
     --exclude='tutorial_example_tests' \
     --exclude='conftest.py' \
-    examples/tutorial-example/ "$temp_dir/"
+    ../../airlift-migration-tutorial/ "$temp_dir/"
 
 # Make the version extraction script executable
 chmod +x "scripts/extract_pypi_version.sh"

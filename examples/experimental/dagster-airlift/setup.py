@@ -44,7 +44,7 @@ CLI_REQUIREMENTS = ["click", "structlog"]
 
 setup(
     name="dagster-airlift",
-    version="0.0.27",
+    version="0.0.28",
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
