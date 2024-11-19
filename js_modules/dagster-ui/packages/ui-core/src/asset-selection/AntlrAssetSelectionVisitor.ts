@@ -28,6 +28,36 @@ import {GraphTraverser} from '../app/GraphQueryImpl';
 import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
+function getTraversalDepth(ctx: TraversalContext): number {
+  if (ctx.STAR()) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+  if (ctx.PLUS()) {
+    return ctx.PLUS().length;
+  }
+  throw new Error('Invalid traversal');
+}
+
+function getFunctionName(ctx: FunctionNameContext): string {
+  if (ctx.SINKS()) {
+    return 'sinks';
+  }
+  if (ctx.ROOTS()) {
+    return 'roots';
+  }
+  throw new Error('Invalid function name');
+}
+
+function getValue(ctx: ValueContext): string {
+  if (ctx.QUOTED_STRING()) {
+    return ctx.text.slice(1, -1);
+  }
+  if (ctx.UNQUOTED_STRING()) {
+    return ctx.text;
+  }
+  throw new Error('Invalid value');
+}
+
 export class AntlrAssetSelectionVisitor
   extends AbstractParseTreeVisitor<Set<AssetGraphQueryItem>>
   implements AssetSelectionVisitor<Set<AssetGraphQueryItem>>
@@ -51,7 +81,7 @@ export class AntlrAssetSelectionVisitor
 
   visitUpTraversalExpression(ctx: UpTraversalExpressionContext) {
     const selection = this.visit(ctx.expr());
-    const traversal_depth: number = this.visit(ctx.traversal());
+    const traversal_depth: number = getTraversalDepth(ctx.traversal());
     for (const item of selection) {
       this.traverser.fetchUpstream(item, traversal_depth).forEach((i) => selection.add(i));
     }
@@ -60,8 +90,8 @@ export class AntlrAssetSelectionVisitor
 
   visitUpAndDownTraversalExpression(ctx: UpAndDownTraversalExpressionContext) {
     const selection = this.visit(ctx.expr());
-    const up_depth: number = this.visit(ctx.traversal(0));
-    const down_depth: number = this.visit(ctx.traversal(1));
+    const up_depth: number = getTraversalDepth(ctx.traversal(0));
+    const down_depth: number = getTraversalDepth(ctx.traversal(1));
     for (const item of selection) {
       this.traverser.fetchUpstream(item, up_depth).forEach((i) => selection.add(i));
       this.traverser.fetchDownstream(item, down_depth).forEach((i) => selection.add(i));
@@ -71,7 +101,7 @@ export class AntlrAssetSelectionVisitor
 
   visitDownTraversalExpression(ctx: DownTraversalExpressionContext) {
     const selection = this.visit(ctx.expr());
-    const traversal_depth: number = this.visit(ctx.traversal());
+    const traversal_depth: number = getTraversalDepth(ctx.traversal());
     for (const item of selection) {
       this.traverser.fetchDownstream(item, traversal_depth).forEach((i) => selection.add(i));
     }
@@ -96,7 +126,7 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitFunctionCallExpression(ctx: FunctionCallExpressionContext) {
-    const function_name: string = this.visit(ctx.functionName());
+    const function_name: string = getFunctionName(ctx.functionName());
     const selection = this.visit(ctx.expr());
     if (function_name === 'sinks') {
       const sinks = new Set<AssetGraphQueryItem>();
@@ -134,19 +164,19 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitKeyExpr(ctx: KeyExprContext) {
-    const value: string = this.visit(ctx.value());
+    const value: string = getValue(ctx.value());
     return new Set([...this.all_assets].filter((i) => i.name === value));
   }
 
   visitKeySubstringExpr(ctx: KeySubstringExprContext) {
-    const value: string = this.visit(ctx.value());
+    const value: string = getValue(ctx.value());
     return new Set([...this.all_assets].filter((i) => i.name.includes(value)));
   }
 
   visitTagAttributeExpr(ctx: TagAttributeExprContext) {
-    const key: string = this.visit(ctx.value(0));
+    const key: string = getValue(ctx.value(0));
     if (ctx.EQUAL()) {
-      const value: string = this.visit(ctx.value(1));
+      const value: string = getValue(ctx.value(1));
       return new Set(
         [...this.all_assets].filter((i) =>
           i.node.tags.some((t) => t.key === key && t.value === value),
@@ -157,7 +187,7 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitOwnerAttributeExpr(ctx: OwnerAttributeExprContext) {
-    const value: string = this.visit(ctx.value());
+    const value: string = getValue(ctx.value());
     return new Set(
       [...this.all_assets].filter((i) =>
         i.node.owners.some((o) => {
@@ -172,17 +202,17 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitGroupAttributeExpr(ctx: GroupAttributeExprContext) {
-    const value: string = this.visit(ctx.value());
+    const value: string = getValue(ctx.value());
     return new Set([...this.all_assets].filter((i) => i.node.groupName === value));
   }
 
   visitKindAttributeExpr(ctx: KindAttributeExprContext) {
-    const value: string = this.visit(ctx.value());
+    const value: string = getValue(ctx.value());
     return new Set([...this.all_assets].filter((i) => i.node.kinds.some((k) => k === value)));
   }
 
   visitCodeLocationAttributeExpr(ctx: CodeLocationAttributeExprContext) {
-    const value: string = this.visit(ctx.value());
+    const value: string = getValue(ctx.value());
     const selection = new Set<AssetGraphQueryItem>();
     for (const asset of this.all_assets) {
       const location = buildRepoPathForHuman(
@@ -198,35 +228,5 @@ export class AntlrAssetSelectionVisitor
 
   visitStart(ctx: StartContext) {
     return this.visit(ctx.expr());
-  }
-
-  visitTraversal(ctx: TraversalContext) {
-    if (ctx.STAR()) {
-      return Number.MAX_SAFE_INTEGER;
-    }
-    if (ctx.PLUS()) {
-      return ctx.PLUS().length;
-    }
-    throw new Error('Invalid traversal');
-  }
-
-  visitFunctionName(ctx: FunctionNameContext) {
-    if (ctx.SINKS()) {
-      return 'sinks';
-    }
-    if (ctx.ROOTS()) {
-      return 'roots';
-    }
-    throw new Error('Invalid function name');
-  }
-
-  visitValue(ctx: ValueContext) {
-    if (ctx.QUOTED_STRING()) {
-      return ctx.text.slice(1, -1);
-    }
-    if (ctx.UNQUOTED_STRING()) {
-      return ctx.text;
-    }
-    throw new Error('Invalid value');
   }
 }
