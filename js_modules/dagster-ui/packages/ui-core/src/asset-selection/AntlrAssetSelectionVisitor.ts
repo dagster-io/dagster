@@ -63,6 +63,7 @@ export class AntlrAssetSelectionVisitor
   implements AssetSelectionVisitor<Set<AssetGraphQueryItem>>
 {
   all_assets: Set<AssetGraphQueryItem>;
+  focus_assets: Set<AssetGraphQueryItem>;
   traverser: GraphTraverser<AssetGraphQueryItem>;
 
   protected defaultResult() {
@@ -72,6 +73,7 @@ export class AntlrAssetSelectionVisitor
   constructor(all_assets: AssetGraphQueryItem[]) {
     super();
     this.all_assets = new Set(all_assets);
+    this.focus_assets = new Set();
     this.traverser = new GraphTraverser(all_assets);
   }
 
@@ -165,12 +167,16 @@ export class AntlrAssetSelectionVisitor
 
   visitKeyExpr(ctx: KeyExprContext) {
     const value: string = getValue(ctx.value());
-    return new Set([...this.all_assets].filter((i) => i.name === value));
+    const selection = [...this.all_assets].filter((i) => i.name === value);
+    selection.forEach((i) => this.focus_assets.add(i));
+    return new Set(selection);
   }
 
   visitKeySubstringExpr(ctx: KeySubstringExprContext) {
     const value: string = getValue(ctx.value());
-    return new Set([...this.all_assets].filter((i) => i.name.includes(value)));
+    const selection = [...this.all_assets].filter((i) => i.name.includes(value));
+    selection.forEach((i) => this.focus_assets.add(i));
+    return new Set(selection);
   }
 
   visitTagAttributeExpr(ctx: TagAttributeExprContext) {

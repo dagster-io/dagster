@@ -46,7 +46,7 @@ const TEST_GRAPH: AssetGraphQueryItem[] = [
 ];
 
 function assertQueryResult(query: string, expectedNames: string[]) {
-  const result = parseAssetSelectionQuery(TEST_GRAPH, query);
+  const {all: result} = parseAssetSelectionQuery(TEST_GRAPH, query);
   expect(result.length).toBe(expectedNames.length);
   expect(new Set(result.map((r) => r.name))).toEqual(new Set(expectedNames));
 }

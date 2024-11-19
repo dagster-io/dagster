@@ -13,7 +13,8 @@ import {
   AssetNodeForGraphQueryFragment,
 } from './types/useAssetGraphData.types';
 import {usePrefixedCacheKey} from '../app/AppProvider';
-import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
+import {GraphQueryItem} from '../app/GraphQueryImpl';
+import {filterAssetSelectionByQuery} from '../asset-selection/AntlrAssetSelection';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
@@ -117,7 +118,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     // In the future it might be ideal to move this server-side, but we currently
     // get to leverage the useQuery cache almost 100% of the time above, making this
     // super fast after the first load vs a network fetch on every page view.
-    const {all: allFilteredByOpQuery} = filterByQuery(graphQueryItems, opsQuery);
+    const {all: allFilteredByOpQuery} = filterAssetSelectionByQuery(graphQueryItems, opsQuery);
     const kinds = options.kinds?.map((c) => c.toLowerCase());
     const all = kinds?.length
       ? allFilteredByOpQuery.filter(
