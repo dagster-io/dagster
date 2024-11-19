@@ -112,7 +112,11 @@ export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInp
     <>
       <GlobalHintStyles />
       <InputDiv
-        style={{display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center'}}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'auto minmax(0, 1fr) auto',
+          alignItems: 'center',
+        }}
       >
         <Icon name="op_selector" />
         <div ref={editorRef} />
@@ -127,6 +131,7 @@ const InputDiv = styled.div`
   width: 100%;
   ${TextInputStyles}
   flex-shrink: 1;
+  overflow: hidden;
 
   .CodeMirror-placeholder.CodeMirror-placeholder.CodeMirror-placeholder {
     color: ${Colors.textLighter()};
