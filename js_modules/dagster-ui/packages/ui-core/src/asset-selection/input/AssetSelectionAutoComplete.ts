@@ -19,7 +19,7 @@ export const possibleKeywords = [
   '+',
 ];
 
-const logicalOperators = ['and', 'or'];
+const logicalOperators = ['and', 'or', '*', '+'];
 
 export const createAssetSelectionHint = (assets: AssetGraphQueryItem[]): HintFunction => {
   const assetNamesSet: Set<string> = new Set();
@@ -97,18 +97,34 @@ export const createAssetSelectionHint = (assets: AssetGraphQueryItem[]): HintFun
     const isInKeyValue =
       (previous2Tokens[1] === ':' && token.string.trim() !== '') || tokenString === ':';
 
+    const isTraversal = /^[*+]+$/.test(tokenString);
+
+    const tokensBefore = allTokens
+      .slice(0, indexOfToken + 1)
+      .map((token: any) => token.text?.trim());
+    const preTraversal = isTraversal && isPreTraversal(tokensBefore);
+    const isPostTraversal = isTraversal && !preTraversal;
+
     const isEndOfKeyValueExpression =
       isInKeyValue &&
       tokenString.endsWith('"') &&
       tokenString.length > 2 &&
       tokenUpToCursor.endsWith('"');
 
+    const isAfterTraversal = ['+', '*'].includes(previous2Tokens[1]);
+
     function getSuggestions() {
       if (isEndOfKeyValueExpression) {
         start = end;
       }
 
-      if (isAfterAttributeValue || isAfterParenthesizedExpressions || isEndOfKeyValueExpression) {
+      if (
+        isPostTraversal ||
+        isAfterAttributeValue ||
+        isAfterParenthesizedExpressions ||
+        isEndOfKeyValueExpression ||
+        isAfterTraversal
+      ) {
         return logicalOperators;
       }
 
@@ -134,7 +150,7 @@ export const createAssetSelectionHint = (assets: AssetGraphQueryItem[]): HintFun
         }
       }
 
-      if (tokenString === '' || tokenString === '(' || tokenString === ')') {
+      if (tokenString === '' || tokenString === '(' || tokenString === ')' || preTraversal) {
         return possibleKeywords;
       }
       return [
@@ -146,7 +162,7 @@ export const createAssetSelectionHint = (assets: AssetGraphQueryItem[]): HintFun
 
     let suggestions = getSuggestions();
 
-    if (!(isEndOfKeyValueExpression || ['', ':', '(', ')'].includes(tokenString))) {
+    if (!(isTraversal || isEndOfKeyValueExpression || ['', ':', '(', ')'].includes(tokenString))) {
       suggestions = suggestions.filter(
         (item) =>
           item.startsWith(tokenString) ||
@@ -164,9 +180,6 @@ export const createAssetSelectionHint = (assets: AssetGraphQueryItem[]): HintFun
       if (tokenString === ':') {
         text = `:${item}`;
       }
-      if (text.trim() === 'and' || text.trim() === 'or' || text.trim() === 'not') {
-        text = ` ${text.trim()} `; // Insert spaces around the logical operator
-      }
 
       if (tokenString === '(') {
         text = `(${text}`;
@@ -179,13 +192,23 @@ export const createAssetSelectionHint = (assets: AssetGraphQueryItem[]): HintFun
         }
       }
 
+      const trimmedText = text.trim();
+
+      if (isTraversal) {
+        if (text === '+' || text === '*') {
+          text = `${tokenString}${text}`;
+        } else if (trimmedText === 'and' || trimmedText === 'or' || trimmedText === 'not') {
+          text = `${tokenString} ${text}`;
+        }
+      } else if (trimmedText === 'and' || trimmedText === 'or' || trimmedText === 'not') {
+        text = ` ${trimmedText} `; // Insert spaces around the logical operator
+      }
+
       return {
         text: text.replaceAll(/(\s)+/g, ' ').replaceAll(/(")+/g, '"'),
         displayText: removeQuotesFromString(item),
       };
     });
-
-    console.log({list});
 
     return {
       list,
@@ -193,33 +216,6 @@ export const createAssetSelectionHint = (assets: AssetGraphQueryItem[]): HintFun
       to: CodeMirror.Pos(cursor.line, end),
     };
   };
-};
-
-const getQuotedStringRange = (
-  cm: CodeMirror.Editor,
-  cursor: CodeMirror.Position,
-): {start: number; end: number} | null => {
-  const line = cm.getLine(cursor.line);
-  let inQuote = false;
-  let quoteChar = '';
-  let quoteStart = -1;
-  for (let i = 0; i < cursor.ch; i++) {
-    const char = line[i];
-    if (char === '"' || char === "'") {
-      if (inQuote && quoteChar === char) {
-        inQuote = false;
-        quoteChar = '';
-      } else if (!inQuote) {
-        inQuote = true;
-        quoteChar = char;
-        quoteStart = i;
-      }
-    }
-  }
-  if (inQuote && quoteStart >= 0) {
-    return {start: quoteStart + 1, end: cursor.ch};
-  }
-  return null;
 };
 
 const removeQuotesFromString = (value: string) => {
@@ -230,3 +226,21 @@ const removeQuotesFromString = (value: string) => {
 };
 
 const addQuotesToString = (value: string) => `"${value}"`;
+
+const isPreTraversal = (tokensBefore: string[]) => {
+  // If there are no tokens before, it's the start of the line
+  if (tokensBefore.length === 0) {
+    return true;
+  }
+
+  const previousToken = tokensBefore[tokensBefore.length - 1];
+
+  // Check if the previous token is 'and', 'or', or '('
+  return (
+    previousToken === 'and' ||
+    previousToken === 'or' ||
+    previousToken === '(' ||
+    !previousToken ||
+    tokensBefore.every((token) => ['*', '+'].includes(token))
+  );
+};
