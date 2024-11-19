@@ -7,7 +7,7 @@ import {CreatedByTagCell} from './CreatedByTag';
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunActionsMenu} from './RunActionsMenu';
 import {RunRowTags} from './RunRowTags';
-import {RunStatusTagWithStats} from './RunStatusTag';
+import {RunAlertStatus, RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
@@ -117,7 +117,10 @@ export const RunRow = ({
         </td>
       )}
       <td>
-        <RunStatusTagWithStats status={run.status} runId={run.id} />
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+          <RunStatusTagWithStats status={run.status} runId={run.id} />
+          <RunAlertStatus tags={run.tags} />
+        </Box>
       </td>
       <td>
         <RunStateSummary run={run} />

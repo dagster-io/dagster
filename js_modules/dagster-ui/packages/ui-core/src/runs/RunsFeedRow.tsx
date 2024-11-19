@@ -16,7 +16,7 @@ import {CreatedByTagCell, CreatedByTagCellWrapper} from './CreatedByTag';
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunActionsMenu} from './RunActionsMenu';
 import {RunRowTags} from './RunRowTags';
-import {RunStatusTag, RunStatusTagWithStats} from './RunStatusTag';
+import {RunAlertStatus, RunStatusTag, RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
@@ -151,7 +151,10 @@ export const RunsFeedRow = ({
           {entry.__typename === 'PartitionBackfill' ? (
             <RunStatusTag status={entry.runStatus} />
           ) : (
-            <RunStatusTagWithStats status={entry.runStatus} runId={entry.id} />
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+              <RunStatusTagWithStats status={entry.runStatus} runId={entry.id} />
+              <RunAlertStatus tags={entry.tags} />
+            </Box>
           )}
         </div>
       </RowCell>
