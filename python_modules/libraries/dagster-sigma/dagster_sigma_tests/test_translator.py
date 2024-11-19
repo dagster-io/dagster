@@ -25,6 +25,7 @@ def test_workbook_translation() -> None:
         datasets={SAMPLE_DATASET_INODE},
         owner_email="ben@dagsterlabs.com",
         direct_table_deps={SAMPLE_TABLE_INODE},
+        lineage=[],
     )
 
     sample_dataset = SigmaDataset(properties=SAMPLE_DATASET_DATA, columns=set(), inputs=set())
@@ -44,6 +45,7 @@ def test_workbook_translation() -> None:
     assert asset_spec.metadata["dagster_sigma/version"] == 5
     assert asset_spec.metadata["dagster_sigma/created_at"].value == 1726176169.072
     assert build_kind_tag_key("sigma") in asset_spec.tags
+    assert build_kind_tag_key("workbook") in asset_spec.tags
     assert asset_spec.owners == ["ben@dagsterlabs.com"]
     assert {dep.asset_key for dep in asset_spec.deps} == {
         AssetKey(["Orders_Dataset"]),
@@ -78,6 +80,7 @@ def test_dataset_translation() -> None:
     assert asset_spec.description == "Wow, cool orders dataset"
 
     assert build_kind_tag_key("sigma") in asset_spec.tags
+    assert build_kind_tag_key("dataset") in asset_spec.tags
     assert {dep.asset_key for dep in asset_spec.deps} == {
         AssetKey(["testdb", "jaffle_shop", "stg_orders"])
     }

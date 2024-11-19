@@ -35,6 +35,7 @@ class SigmaWorkbook:
     """
 
     properties: Dict[str, Any]
+    lineage: List[Dict[str, Any]]
     datasets: AbstractSet[str]
     direct_table_deps: AbstractSet[str]
     owner_email: Optional[str]
@@ -109,6 +110,8 @@ class DagsterSigmaTranslator:
                 "dagster_sigma/created_at": MetadataValue.timestamp(
                     isoparse(data.properties["createdAt"])
                 ),
+                "dagster_sigma/properties": MetadataValue.json(data.properties),
+                "dagster_sigma/lineage": MetadataValue.json(data.lineage),
             }
             datasets = [self._context.get_datasets_by_inode()[inode] for inode in data.datasets]
             tables = [
@@ -118,7 +121,7 @@ class DagsterSigmaTranslator:
             return AssetSpec(
                 key=self.get_asset_key(data),
                 metadata=metadata,
-                kinds={"sigma"},
+                kinds={"sigma", "workbook"},
                 deps={
                     *[self.get_asset_key(dataset) for dataset in datasets],
                     *[
@@ -134,6 +137,7 @@ class DagsterSigmaTranslator:
                 "dagster_sigma/created_at": MetadataValue.timestamp(
                     isoparse(data.properties["createdAt"])
                 ),
+                "dagster_sigma/properties": MetadataValue.json(data.properties),
                 **TableMetadataSet(
                     column_schema=TableSchema(
                         columns=[
@@ -146,7 +150,7 @@ class DagsterSigmaTranslator:
             return AssetSpec(
                 key=self.get_asset_key(data),
                 metadata=metadata,
-                kinds={"sigma"},
+                kinds={"sigma", "dataset"},
                 deps={
                     asset_key_from_table_name(input_table_name.lower())
                     for input_table_name in data.inputs
