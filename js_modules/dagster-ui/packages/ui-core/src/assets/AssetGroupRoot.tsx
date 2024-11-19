@@ -18,6 +18,7 @@ import {AssetGraphViewType} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {
   ExplorerPath,
@@ -48,6 +49,7 @@ export const AssetGroupRoot = ({
   const history = useHistory();
 
   useDocumentTitle(`Asset Group: ${groupName}`);
+  const openInNewTab = useOpenInNewTab();
 
   const groupPath = workspacePathFromAddress(repoAddress, `/asset-groups/${groupName}`);
   const groupSelector = useMemo(
@@ -83,12 +85,12 @@ export const AssetGroupRoot = ({
         path = assetDetailsPathForKey(node.assetKey, {view: 'definition'});
       }
       if (e.metaKey) {
-        window.open(path, '_blank');
+        openInNewTab(path);
       } else {
         history.push(path);
       }
     },
-    [history],
+    [history, openInNewTab],
   );
 
   const fetchOptions = React.useMemo(() => ({groupSelector}), [groupSelector]);

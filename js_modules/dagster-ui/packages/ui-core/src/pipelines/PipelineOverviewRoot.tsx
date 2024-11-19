@@ -13,6 +13,7 @@ import {useTrackPageView} from '../app/analytics';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -31,6 +32,7 @@ export const PipelineOverviewRoot = (props: Props) => {
   const pathStr = (params as any)['0'];
   const explorerPath = useMemo(() => explorerPathFromString(pathStr), [pathStr]);
 
+  const openInNewTab = useOpenInNewTab();
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, explorerPath.pipelineName);
 
@@ -58,7 +60,7 @@ export const PipelineOverviewRoot = (props: Props) => {
         // but there can be a description.
         const path = assetDetailsPathForKey(node.assetKey, {view: 'definition'});
         if (e.metaKey) {
-          window.open(path, '_blank');
+          openInNewTab(path);
         } else {
           history.push(path);
         }
@@ -80,7 +82,7 @@ export const PipelineOverviewRoot = (props: Props) => {
         ),
       });
     },
-    [explorerPath, history, location.search],
+    [explorerPath, history, location.search, openInNewTab],
   );
 
   return (

@@ -105,6 +105,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                 <MenuItem
                   text="Download debug file"
                   icon="download_for_offline"
+                  // eslint-disable-next-line no-restricted-properties
                   onClick={() => window.open(`${rootServerURI}/download_debug/${run.id}`)}
                 />
               </Tooltip>
