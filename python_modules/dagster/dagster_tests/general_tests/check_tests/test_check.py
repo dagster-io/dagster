@@ -18,6 +18,7 @@ from typing import (
     Sequence,
     Set,
     Type,
+    TypedDict,
     TypeVar,
     Union,
 )
@@ -1650,6 +1651,11 @@ class Gen(Generic[T]): ...
 class SubGen(Gen[str]): ...
 
 
+class MyTypedDict(TypedDict):
+    foo: str
+    bar: str
+
+
 BUILD_CASES = [
     (int, [4], ["4"]),
     (float, [4.2], ["4.1"]),
@@ -1714,6 +1720,15 @@ BUILD_CASES = [
     (SubGen, [SubGen()], [Bar()]),
     (Sequence[SubGen], [[SubGen()]], [[Bar()]]),
     (Sequence[Gen[str]], [[Gen()]], [[Bar()]]),
+    (
+        MyTypedDict,
+        [
+            {"foo": "f", "bar": "b"},
+            {},  # cant actually validate TypeDict structure, just that its a dict
+        ],
+        [None, Foo()],
+    ),
+    (Optional[MyTypedDict], [{"foo": "f", "bar": "b"}, None], [Foo()]),
 ]
 
 
