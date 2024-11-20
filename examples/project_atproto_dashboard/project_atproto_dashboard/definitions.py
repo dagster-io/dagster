@@ -1,4 +1,4 @@
-"""Bluesky atproto data ingstion.
+"""Bluesky atproto data ingestion.
 
 CONFIGURATION:
 
