@@ -63,9 +63,7 @@ def filter_runs_to_should_retry(
         else:
             return 1
 
-    default_retry_on_asset_or_op_failure: bool = instance.get_settings("run_retries").get(
-        "retry_on_asset_or_op_failure", True
-    )
+    default_retry_on_asset_or_op_failure: bool = instance.run_retries_retry_on_asset_or_op_failure
 
     for run in runs:
         retry_number = get_retry_number(run)

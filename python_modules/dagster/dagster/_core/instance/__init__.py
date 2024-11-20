@@ -933,6 +933,10 @@ class DagsterInstance(DynamicPartitionsStore):
         return self.get_settings("run_retries").get("max_retries", 0)
 
     @property
+    def run_retries_retry_on_asset_or_op_failure(self) -> bool:
+        return self.get_settings("run_retries").get("retry_on_asset_or_op_failure", True)
+
+    @property
     def auto_materialize_enabled(self) -> bool:
         return self.get_settings("auto_materialize").get("enabled", True)
 
