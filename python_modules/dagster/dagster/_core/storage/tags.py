@@ -61,6 +61,7 @@ RETRY_ON_ASSET_OR_OP_FAILURE_TAG = f"{SYSTEM_TAG_PREFIX}retry_on_asset_or_op_fai
 # This tag is used to indicate that the automatic retry daemon will launch a retry for this run
 # If this tag is not on a run, it means the run did not fail or automatic retries is disabled.
 WILL_RETRY_TAG = f"{SYSTEM_TAG_PREFIX}will_retry"
+DID_RETRY_TAG = f"{SYSTEM_TAG_PREFIX}did_retry"
 
 MAX_RUNTIME_SECONDS_TAG = f"{SYSTEM_TAG_PREFIX}max_runtime"
 
@@ -106,7 +107,7 @@ RUN_METRICS_POLLING_INTERVAL_TAG = f"{HIDDEN_TAG_PREFIX}run_metrics_polling_inte
 RUN_METRICS_PYTHON_RUNTIME_TAG = f"{HIDDEN_TAG_PREFIX}python_runtime_metrics"
 
 
-TAGS_TO_OMIT_ON_RETRY = {*RUN_METRIC_TAGS, RUN_FAILURE_REASON_TAG, WILL_RETRY_TAG}
+TAGS_TO_OMIT_ON_RETRY = {*RUN_METRIC_TAGS, RUN_FAILURE_REASON_TAG, WILL_RETRY_TAG, DID_RETRY_TAG}
 
 
 class TagType(Enum):
