@@ -104,7 +104,7 @@ defs = dg.Definitions(assets=[*tableau_specs], resources={"tableau": tableau_wor
 
 ### Customize asset definition metadata for Tableau assets
 
-By default, Dagster will generate asset spec for each Tableau asset based on its type and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_tableau" object="DagsterTableauTranslator" /> subclass to the <PyObject module="dagster_tableau" method="load_tableau_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Tableau asset type.
+By default, Dagster will generate asset specs for each Tableau asset based on its type and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_tableau" object="DagsterTableauTranslator" /> subclass to the <PyObject module="dagster_tableau" method="load_tableau_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Tableau asset type.
 
 ```python file=/integrations/tableau/customize-tableau-asset-defs.py
 from dagster_tableau import (
