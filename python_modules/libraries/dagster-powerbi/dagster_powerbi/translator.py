@@ -7,6 +7,7 @@ from dagster import (
     UrlMetadataValue,
     _check as check,
 )
+from dagster._annotations import deprecated
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
@@ -173,6 +174,7 @@ class DagsterPowerBITranslator:
         else:
             check.assert_never(data.content_type)
 
+    @deprecated(breaking_version="1.10")
     def get_dashboard_asset_key(self, data: PowerBIContentData) -> AssetKey:
         return self.get_dashboard_spec(data).key
 
@@ -203,6 +205,7 @@ class DagsterPowerBITranslator:
             kinds={"powerbi", "dashboard"},
         )
 
+    @deprecated(breaking_version="1.10")
     def get_report_asset_key(self, data: PowerBIContentData) -> AssetKey:
         return self.get_report_spec(data).key
 
@@ -229,6 +232,7 @@ class DagsterPowerBITranslator:
             owners=[owner] if owner else None,
         )
 
+    @deprecated(breaking_version="1.10")
     def get_semantic_model_asset_key(self, data: PowerBIContentData) -> AssetKey:
         return self.get_semantic_model_spec(data).key
 
@@ -279,6 +283,7 @@ class DagsterPowerBITranslator:
             owners=[owner] if owner else None,
         )
 
+    @deprecated(breaking_version="1.10")
     def get_data_source_asset_key(self, data: PowerBIContentData) -> AssetKey:
         return self.get_data_source_spec(data).key
 
