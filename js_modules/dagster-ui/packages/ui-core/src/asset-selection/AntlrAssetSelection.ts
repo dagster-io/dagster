@@ -8,11 +8,11 @@ import {
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AntlrAssetSelectionVisitor} from './AntlrAssetSelectionVisitor';
+import {filterByQuery} from '../app/GraphQueryImpl';
 import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
 import {AssetSelectionLexer} from './generated/AssetSelectionLexer';
 import {AssetSelectionParser} from './generated/AssetSelectionParser';
 import {featureEnabled} from '../app/Flags';
-import {filterByQuery} from '../app/GraphQueryImpl';
 
 class AntlrInputErrorListener implements ANTLRErrorListener<any> {
   syntaxError(
@@ -37,8 +37,14 @@ type AssetSelectionQueryResult = {
 
 export const parseAssetSelectionQuery = (
   all_assets: AssetGraphQueryItem[],
-  query: string,
+  query: string = '*',
 ): AssetSelectionQueryResult => {
+  if (!query) {
+    return {
+      all: all_assets,
+      focus: all_assets,
+    };
+  }
   const lexer = new AssetSelectionLexer(CharStreams.fromString(query));
   lexer.removeErrorListeners();
   lexer.addErrorListener(new AntlrInputErrorListener());
@@ -64,7 +70,11 @@ export const parseAssetSelectionQuery = (
 export const filterAssetSelectionByQuery = (
   all_assets: AssetGraphQueryItem[],
   query: string,
-): AssetSelectionQueryResult =>
-  featureEnabled(FeatureFlag.flagAssetSelectionSyntax)
-    ? parseAssetSelectionQuery(all_assets, query)
-    : filterByQuery(all_assets, query);
+): AssetSelectionQueryResult => {
+  if (featureEnabled(FeatureFlag.flagAssetSelectionSyntax)) {
+    try {
+      return parseAssetSelectionQuery(all_assets, query);
+    } catch {}
+  }
+  return filterByQuery(all_assets, query);
+};

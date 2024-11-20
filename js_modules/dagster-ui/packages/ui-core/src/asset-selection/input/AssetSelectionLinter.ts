@@ -6,6 +6,9 @@ import {AssetSelectionLexer} from '../generated/AssetSelectionLexer';
 import {AssetSelectionParser} from '../generated/AssetSelectionParser';
 
 export const lintAssetSelection = (text: string) => {
+  if (!text) {
+    return [];
+  }
   const inputStream = CharStreams.fromString(text);
   const lexer = new AssetSelectionLexer(inputStream);
   const tokens = new CommonTokenStream(lexer);
