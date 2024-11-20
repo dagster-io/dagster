@@ -90,7 +90,7 @@ const config: Config = {
         {
           label: 'Dagster+',
           type: 'doc',
-          docId: 'dagster-plus',
+          docId: 'dagster-plus/index',
           position: 'left',
         },
         {

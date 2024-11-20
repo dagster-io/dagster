@@ -83,7 +83,7 @@ Next, you'll assign users to the Dagster+ application in Okta. This will allow t
 2. Click **Assign > Assign to People**.
 3. For each user you want to have access to Dagster+, click **Assign** then **Save and Go Back**.
 
-import TestSSO from '../../../partials/\_TestSSO.md';
+import TestSSO from '../../../../partials/\_TestSSO.md';
 
 <TestSSO />
 

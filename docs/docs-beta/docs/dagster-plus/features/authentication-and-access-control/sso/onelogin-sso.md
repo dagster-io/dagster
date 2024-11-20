@@ -80,7 +80,7 @@ Next, you'll assign users to the Dagster+ application in OneLogin. This will all
 7. Repeat steps 2-6 for every user you want to access Dagster+.
 
 
-import TestSSO from '../../../partials/\_TestSSO.md';
+import TestSSO from '../../../../partials/\_TestSSO.md';
 
 <TestSSO />
 

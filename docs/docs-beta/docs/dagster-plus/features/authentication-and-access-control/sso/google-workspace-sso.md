@@ -103,7 +103,7 @@ In this step, you'll assign users in your Google Workspace to the Dagster+ appli
 
    ![Assign New Login](/img/placeholder.svg)
 
-import TestSSO from '../../../partials/\_TestSSO.md';
+import TestSSO from '../../../../partials/\_TestSSO.md';
 
 <TestSSO />
 

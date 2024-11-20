@@ -1,10 +1,10 @@
 ---
-title: "What's Dagster+?"
+title: "About Dagster+"
 displayed_sidebar: 'dagsterPlus'
 sidebar_position: 1
 ---
 
-# What's Dagster+?
+# About Dagster+
 
 Dagster+ is a managed orchestration platform built on top of Dagster's open source engine.
 
