@@ -258,6 +258,13 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         default=None,
         description="Optional parameter to specify the authentication mechanism to use.",
     )
+    client_store_temporary_credential: Optional[bool] = Field(
+        default=False,
+        description=(
+            "Boolean parameter to enable temporary credential file for Linux. Mac/Win will overlook this."
+            "Defaults to False, the Snowflake default value."
+        ),
+    )
 
     @validator("paramstyle")
     def validate_paramstyle(cls, v: Optional[str]) -> Optional[str]:
@@ -328,6 +335,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
                 "paramstyle",
                 "timezone",
                 "authenticator",
+                "client_store_temporary_credential",
             )
             if self._resolved_config_dict.get(k) is not None
         }
@@ -757,7 +765,7 @@ def fetch_last_updated_timestamps(
     )
 
     query = f"""
-    SELECT table_name, CONVERT_TIMEZONE('UTC', last_altered) AS last_altered 
+    SELECT table_name, CONVERT_TIMEZONE('UTC', last_altered) AS last_altered
     FROM {fully_qualified_table_name}
     WHERE table_schema = '{schema}' AND table_name IN ({tables_str});
     """
