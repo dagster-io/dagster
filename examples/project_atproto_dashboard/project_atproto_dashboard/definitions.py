@@ -15,7 +15,7 @@ References:
 
 import os
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
 import dagster as dg
 from atproto import Client
@@ -49,14 +49,13 @@ class AuthorFeedFilter(str, Enum):
 
 
 def get_all_feed_items(
-    client: Client, actor_did: str, cursor: Optional[str] = None
+    client: Client, actor_did: str
 ) -> List["models.AppBskyFeedDefs.FeedViewPost"]:
     """Retrieves all author feed items for a given `actor_did`.
 
     Args:
         client (Client): AT Protocol client
         actor_did (str): author identifier (did)
-        cursor (str): starting cursor value as timestramp in iso format 2024-11-20T00:00:00.000Z
 
     Returns:
         List['models.AppBskyFeedDefs.FeedViewPost'] list of feed
