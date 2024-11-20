@@ -111,14 +111,7 @@ class DagsterTableauTranslator:
         return self._context
 
     def get_asset_key(self, data: TableauContentData) -> AssetKey:
-        if data.content_type == TableauContentType.SHEET:
-            return self.get_sheet_asset_key(data)
-        elif data.content_type == TableauContentType.DASHBOARD:
-            return self.get_dashboard_asset_key(data)
-        elif data.content_type == TableauContentType.DATA_SOURCE:
-            return self.get_data_source_asset_key(data)
-        else:
-            check.assert_never(data.content_type)
+        return self.get_asset_spec(data).key
 
     def get_asset_spec(self, data: TableauContentData) -> AssetSpec:
         if data.content_type == TableauContentType.SHEET:
@@ -131,15 +124,7 @@ class DagsterTableauTranslator:
             check.assert_never(data.content_type)
 
     def get_sheet_asset_key(self, data: TableauContentData) -> AssetKey:
-        workbook_id = data.properties["workbook"]["luid"]
-        workbook_data = self.workspace_data.workbooks_by_id[workbook_id]
-        return AssetKey(
-            [
-                _coerce_input_to_valid_name(workbook_data.properties["name"]),
-                "sheet",
-                _coerce_input_to_valid_name(data.properties["name"]),
-            ]
-        )
+        return self.get_sheet_spec(data).key
 
     def get_sheet_spec(self, data: TableauContentData) -> AssetSpec:
         sheet_embedded_data_sources = data.properties.get("parentEmbeddedDatasources", [])
@@ -176,15 +161,7 @@ class DagsterTableauTranslator:
         )
 
     def get_dashboard_asset_key(self, data: TableauContentData) -> AssetKey:
-        workbook_id = data.properties["workbook"]["luid"]
-        workbook_data = self.workspace_data.workbooks_by_id[workbook_id]
-        return AssetKey(
-            [
-                _coerce_input_to_valid_name(workbook_data.properties["name"]),
-                "dashboard",
-                _coerce_input_to_valid_name(data.properties["name"]),
-            ]
-        )
+        return self.get_dashboard_spec(data).key
 
     def get_dashboard_spec(self, data: TableauContentData) -> AssetSpec:
         dashboard_upstream_sheets = data.properties.get("sheets", [])
@@ -217,7 +194,7 @@ class DagsterTableauTranslator:
         )
 
     def get_data_source_asset_key(self, data: TableauContentData) -> AssetKey:
-        return AssetKey([_coerce_input_to_valid_name(data.properties["name"])])
+        return self.get_data_source_spec(data).key
 
     def get_data_source_spec(self, data: TableauContentData) -> AssetSpec:
         return AssetSpec(
