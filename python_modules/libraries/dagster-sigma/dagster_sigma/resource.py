@@ -38,6 +38,7 @@ from dagster_sigma.translator import (
     DagsterSigmaTranslator,
     SigmaDataset,
     SigmaOrganizationData,
+    SigmaTable,
     SigmaWorkbook,
     _inode_from_url,
 )
@@ -55,13 +56,22 @@ class SigmaFilter(IHaveNew):
         workbook_folders (Optional[Sequence[Sequence[str]]]): A list of folder paths to fetch workbooks from.
             Each folder path is a list of folder names, starting from the root folder. All workbooks
             contained in the specified folders will be fetched. If not provided, all workbooks will be fetched.
+        include_unused_datasets (bool): Whether to include datasets that are not used in any workbooks.
+            Defaults to True.
     """
 
     workbook_folders: Optional[Sequence[Sequence[str]]] = None
+    include_unused_datasets: bool = True
 
-    def __new__(cls, workbook_folders: Optional[Sequence[Sequence[str]]] = None):
+    def __new__(
+        cls,
+        workbook_folders: Optional[Sequence[Sequence[str]]] = None,
+        include_unused_datasets: bool = True,
+    ):
         return super().__new__(
-            cls, workbook_folders=tuple([tuple(folder) for folder in workbook_folders or []])
+            cls,
+            workbook_folders=tuple([tuple(folder) for folder in workbook_folders or []]),
+            include_unused_datasets=include_unused_datasets,
         )
 
 
@@ -137,7 +147,7 @@ class SigmaOrganization(ConfigurableResource):
         async with aiohttp.ClientSession() as session:
             async with session.request(
                 method=method,
-                url=f"{self.base_url}/v2/{endpoint}",
+                url=url,
                 headers={
                     "Accept": "application/json",
                     "Authorization": f"Bearer {self.api_token}",
@@ -167,7 +177,7 @@ class SigmaOrganization(ConfigurableResource):
             ", fetching additional results" if result.get("hasMore") else "",
         )
 
-        while result.get("hasMore"):
+        while result.get("hasMore") in (True, "true", "True"):
             next_page = result["nextPage"]
             query_params_with_limit_and_page = {
                 **query_params_with_limit,
@@ -193,6 +203,12 @@ class SigmaOrganization(ConfigurableResource):
     @cached_method
     async def _fetch_datasets(self) -> List[Dict[str, Any]]:
         return await self._fetch_json_async_paginated_entries("datasets")
+
+    @cached_method
+    async def _fetch_tables(self) -> List[Dict[str, Any]]:
+        return await self._fetch_json_async_paginated_entries(
+            "files", query_params={"typeFilters": "table"}
+        )
 
     @cached_method
     async def _fetch_pages_for_workbook(self, workbook_id: str) -> List[Dict[str, Any]]:
@@ -347,7 +363,7 @@ class SigmaOrganization(ConfigurableResource):
                 split = column["columnId"].split("/")
                 if len(split) == 2:
                     inode, column_name = split
-                columns_by_dataset_inode[inode].add(column_name)
+                    columns_by_dataset_inode[inode].add(column_name)
 
         await asyncio.gather(*[process_workbook(workbook) for workbook in workbooks])
 
@@ -362,7 +378,8 @@ class SigmaOrganization(ConfigurableResource):
         return {member["memberId"]: member["email"] for member in members}
 
     async def load_workbook_data(self, raw_workbook_data: Dict[str, Any]) -> SigmaWorkbook:
-        workbook_deps = set()
+        dataset_deps = set()
+        direct_table_deps = set()
 
         logger.info("Fetching data for workbook %s", raw_workbook_data["workbookId"])
 
@@ -400,12 +417,16 @@ class SigmaOrganization(ConfigurableResource):
         for lineage in lineages:
             for item in lineage["dependencies"].values():
                 if item.get("type") == "dataset":
-                    workbook_deps.add(item["nodeId"])
+                    dataset_deps.add(item["nodeId"])
+                if item.get("type") == "table":
+                    direct_table_deps.add(item["nodeId"])
 
         return SigmaWorkbook(
             properties=raw_workbook_data,
-            datasets=workbook_deps,
+            datasets=dataset_deps,
+            direct_table_deps=direct_table_deps,
             owner_email=None,
+            lineage=lineages,
         )
 
     @cached_method
@@ -444,18 +465,37 @@ class SigmaOrganization(ConfigurableResource):
             await self._fetch_dataset_columns_by_inode() if fetch_column_data else {}
         )
 
+        used_datasets = set()
+        used_tables = set()
+        for workbook in workbooks:
+            if _sigma_filter and not _sigma_filter.include_unused_datasets:
+                used_datasets.update(workbook.datasets)
+            used_tables.update(workbook.direct_table_deps)
+
         logger.info("Fetching dataset data")
         for dataset in await self._fetch_datasets():
             inode = _inode_from_url(dataset["url"])
-            datasets.append(
-                SigmaDataset(
-                    properties=dataset,
-                    columns=columns_by_dataset_inode.get(inode, set()),
-                    inputs=deps_by_dataset_inode[inode],
+            if _sigma_filter.include_unused_datasets or inode in used_datasets:
+                datasets.append(
+                    SigmaDataset(
+                        properties=dataset,
+                        columns=columns_by_dataset_inode.get(inode, set()),
+                        inputs=deps_by_dataset_inode[inode],
+                    )
                 )
-            )
 
-        return SigmaOrganizationData(workbooks=workbooks, datasets=datasets)
+        tables: List[SigmaTable] = []
+        logger.info("Fetching table data")
+        for table in await self._fetch_tables():
+            inode = _inode_from_url(table["urlId"])
+            if inode in used_tables:
+                tables.append(
+                    SigmaTable(
+                        properties=table,
+                    )
+                )
+
+        return SigmaOrganizationData(workbooks=workbooks, datasets=datasets, tables=tables)
 
     @public
     @deprecated(

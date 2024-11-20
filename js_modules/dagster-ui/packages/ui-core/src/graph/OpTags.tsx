@@ -25,11 +25,14 @@ import axioma from './kindtag-images/tool-axioma-color.svg';
 import azure from './kindtag-images/tool-azure-color.svg';
 import azureml from './kindtag-images/tool-azureml-color.svg';
 import bigquery from './kindtag-images/tool-bigquery-color.svg';
+import cassandra from './kindtag-images/tool-cassandra-color.svg';
 import catboost from './kindtag-images/tool-catboost-color.svg';
 import celery from './kindtag-images/tool-celery-color.svg';
 import census from './kindtag-images/tool-census-color.svg';
 import chalk from './kindtag-images/tool-chalk-color.svg';
 import claude from './kindtag-images/tool-claude-color.svg';
+import clickhouse from './kindtag-images/tool-clickhouse-color.svg';
+import cockroachdb from './kindtag-images/tool-cockroachdb-color.svg';
 import collibra from './kindtag-images/tool-collibra-color.svg';
 import cplus from './kindtag-images/tool-cplus-color.svg';
 import csharp from './kindtag-images/tool-csharp-color.svg';
@@ -40,13 +43,18 @@ import datadog from './kindtag-images/tool-datadog-color.svg';
 import datahub from './kindtag-images/tool-datahub-color.svg';
 import dbt from './kindtag-images/tool-dbt-color.svg';
 import delta_lake from './kindtag-images/tool-deltalake-color.svg';
+import denodo from './kindtag-images/tool-denodo-color.svg';
 import discord from './kindtag-images/tool-discord-color.svg';
 import dlthub from './kindtag-images/tool-dlthub-color.svg';
 import docker from './kindtag-images/tool-docker-color.svg';
+import doris from './kindtag-images/tool-doris-color.svg';
+import druid from './kindtag-images/tool-druid-color.svg';
 import duckdb from './kindtag-images/tool-duckdb-color.svg';
+import elasticsearch from './kindtag-images/tool-elasticsearch-color.svg';
 import excel from './kindtag-images/tool-excel-color.svg';
 import facebook from './kindtag-images/tool-facebook-color.svg';
 import fivetran from './kindtag-images/tool-fivetran-color.svg';
+import flink from './kindtag-images/tool-flink-color.svg';
 import gcs from './kindtag-images/tool-gcs-color.svg';
 import gemini from './kindtag-images/tool-gemini-color.svg';
 import github from './kindtag-images/tool-github-color.svg';
@@ -58,28 +66,33 @@ import googlesheets from './kindtag-images/tool-googlesheets-color.svg';
 import graphql from './kindtag-images/tool-graphql-color.svg';
 import greatexpectations from './kindtag-images/tool-greatexpectations-color.svg';
 import hackernews from './kindtag-images/tool-hackernews-color.svg';
+import hadoop from './kindtag-images/tool-hadoop-color.svg';
 import hashicorp from './kindtag-images/tool-hashicorp-color.svg';
 import hex from './kindtag-images/tool-hex-color.svg';
 import hightouch from './kindtag-images/tool-hightouch-color.svg';
 import hudi from './kindtag-images/tool-hudi-color.svg';
 import huggingface from './kindtag-images/tool-huggingface-color.svg';
 import iceberg from './kindtag-images/tool-iceberg-color.svg';
+import impala from './kindtag-images/tool-impala-color.svg';
 import instagram from './kindtag-images/tool-instagram-color.svg';
 import java from './kindtag-images/tool-java-color.svg';
 import javascript from './kindtag-images/tool-javascript-color.svg';
 import jupyter from './kindtag-images/tool-jupyter-color.svg';
 import k8s from './kindtag-images/tool-k8s-color.svg';
+import kafka from './kindtag-images/tool-kafka-color.svg';
 import lakefs from './kindtag-images/tool-lakefs-color.svg';
 import lightgbm from './kindtag-images/tool-lightgbm-color.svg';
 import linear from './kindtag-images/tool-linear-color.svg';
 import linkedin from './kindtag-images/tool-linkedin-color.svg';
 import llama from './kindtag-images/tool-llama-color.svg';
 import looker from './kindtag-images/tool-looker-color.svg';
+import mariadb from './kindtag-images/tool-mariadb-color.svg';
 import matplotlib from './kindtag-images/tool-matplotlib-color.svg';
 import meltano from './kindtag-images/tool-meltano-color.svg';
 import meta from './kindtag-images/tool-meta-color.svg';
 import metabase from './kindtag-images/tool-metabase-color.svg';
 import microsoft from './kindtag-images/tool-microsoft-color.svg';
+import minio from './kindtag-images/tool-minio-color.svg';
 import minstral from './kindtag-images/tool-minstral-color.svg';
 import mlflow from './kindtag-images/tool-mlflow-color.svg';
 import modal from './kindtag-images/tool-modal-color.svg';
@@ -100,19 +113,25 @@ import pandera from './kindtag-images/tool-pandera-color.svg';
 import papermill from './kindtag-images/tool-papermill-color.svg';
 import papertrail from './kindtag-images/tool-papertrail-color.svg';
 import parquet from './kindtag-images/tool-parquet-color.svg';
+import pinot from './kindtag-images/tool-pinot-color.svg';
 import plotly from './kindtag-images/tool-plotly-color.svg';
 import plural from './kindtag-images/tool-plural-color.svg';
 import polars from './kindtag-images/tool-polars-color.svg';
 import postgres from './kindtag-images/tool-postgres-color.svg';
 import powerbi from './kindtag-images/tool-powerbi-color.svg';
 import prefect from './kindtag-images/tool-prefect-color.svg';
+import presto from './kindtag-images/tool-presto-color.svg';
+import pulsar from './kindtag-images/tool-pulsar-color.svg';
 import python from './kindtag-images/tool-python-color.svg';
 import pytorch from './kindtag-images/tool-pytorch-color.svg';
 import pytorchlightning from './kindtag-images/tool-pytorchlightning-color.svg';
 import r from './kindtag-images/tool-r-color.svg';
+import rabbitmq from './kindtag-images/tool-rabbitmq-color.svg';
 import ray from './kindtag-images/tool-ray-color.svg';
 import react from './kindtag-images/tool-react-color.svg';
 import reddit from './kindtag-images/tool-reddit-color.svg';
+import redis from './kindtag-images/tool-redis-color.svg';
+import redpanda from './kindtag-images/tool-redpanda-color.svg';
 import redshift from './kindtag-images/tool-redshift-color.svg';
 import rockset from './kindtag-images/tool-rockset-color.svg';
 import rust from './kindtag-images/tool-rust-color.svg';
@@ -122,6 +141,7 @@ import salesforce from './kindtag-images/tool-salesforce-color.svg';
 import scala from './kindtag-images/tool-scala-color.svg';
 import scikitlearn from './kindtag-images/tool-scikitlearn-color.svg';
 import scipy from './kindtag-images/tool-scipy-color.svg';
+import scylladb from './kindtag-images/tool-scylladb-color.svg';
 import sdf from './kindtag-images/tool-sdf-color.svg';
 import secoda from './kindtag-images/tool-secoda-color.svg';
 import segment from './kindtag-images/tool-segment-color.svg';
@@ -137,9 +157,11 @@ import sql from './kindtag-images/tool-sql-color.svg';
 import sqlite from './kindtag-images/tool-sqlite-color.svg';
 import sqlmesh from './kindtag-images/tool-sqlmesh-color.svg';
 import sqlserver from './kindtag-images/tool-sqlserver-color.svg';
+import starrocks from './kindtag-images/tool-starrocks-color.svg';
 import stepfunctions from './kindtag-images/tool-stepfunctions-color.svg';
 import stitch from './kindtag-images/tool-stitch-color.svg';
 import stripe from './kindtag-images/tool-stripe-color.svg';
+import superset from './kindtag-images/tool-superset-color.svg';
 import tableau from './kindtag-images/tool-tableau-color.svg';
 import teams from './kindtag-images/tool-teams-color.svg';
 import tecton from './kindtag-images/tool-tecton-color.svg';
@@ -200,6 +222,8 @@ export type KnownTagType =
   | 'wandb'
   | 'databricks'
   | 'airflow'
+  | 'dataset'
+  | 'workbook'
   | 'airliftmapped'
   | 'airtable'
   | 'omni'
@@ -247,6 +271,7 @@ export type KnownTagType =
   | 'rust'
   | 'pytorchlightning'
   | 'deltalake'
+  | 'denodo'
   | 'parquet'
   | 'lightgbm'
   | 'xgboost'
@@ -349,7 +374,28 @@ export type KnownTagType =
   | 'gold'
   | 'silver'
   | 'bronze'
-  | 'expand';
+  | 'expand'
+  | 'cassandra'
+  | 'clickhouse'
+  | 'cockroachdb'
+  | 'doris'
+  | 'druid'
+  | 'elasticsearch'
+  | 'flink'
+  | 'hadoop'
+  | 'impala'
+  | 'kafka'
+  | 'mariadb'
+  | 'minio'
+  | 'pinot'
+  | 'presto'
+  | 'pulsar'
+  | 'rabbitmq'
+  | 'redis'
+  | 'redpanda'
+  | 'scylladb'
+  | 'starrocks'
+  | 'superset';
 
 export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   jupyter: {
@@ -633,6 +679,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   deltalake: {
     icon: delta_lake,
     content: 'Delta Lake',
+  },
+  denodo: {
+    icon: denodo,
+    content: 'Denodo',
   },
   parquet: {
     icon: parquet,
@@ -1026,6 +1076,16 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     content: 'Semantic Model',
     blackAndWhite: true,
   },
+  dataset: {
+    icon: table,
+    content: 'Dataset',
+    blackAndWhite: true,
+  },
+  workbook: {
+    icon: dashboard,
+    content: 'Workbook',
+    blackAndWhite: true,
+  },
   report: {
     icon: notebook,
     content: 'Report',
@@ -1067,6 +1127,90 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   bronze: {
     icon: medallion_bronze,
     content: 'Bronze',
+  },
+  cassandra: {
+    icon: cassandra,
+    content: 'Cassandra',
+  },
+  clickhouse: {
+    icon: clickhouse,
+    content: 'ClickHouse',
+  },
+  cockroachdb: {
+    icon: cockroachdb,
+    content: 'CockroachDB',
+  },
+  doris: {
+    icon: doris,
+    content: 'Doris',
+  },
+  druid: {
+    icon: druid,
+    content: 'Druid',
+  },
+  elasticsearch: {
+    icon: elasticsearch,
+    content: 'Elasticsearch',
+  },
+  flink: {
+    icon: flink,
+    content: 'Flink',
+  },
+  hadoop: {
+    icon: hadoop,
+    content: 'Hadoop',
+  },
+  impala: {
+    icon: impala,
+    content: 'Impala',
+  },
+  kafka: {
+    icon: kafka,
+    content: 'Kafka',
+  },
+  mariadb: {
+    icon: mariadb,
+    content: 'MariaDB',
+  },
+  minio: {
+    icon: minio,
+    content: 'MinIO',
+  },
+  pinot: {
+    icon: pinot,
+    content: 'Pinot',
+  },
+  presto: {
+    icon: presto,
+    content: 'Presto',
+  },
+  pulsar: {
+    icon: pulsar,
+    content: 'Pulsar',
+  },
+  rabbitmq: {
+    icon: rabbitmq,
+    content: 'RabbitMQ',
+  },
+  redis: {
+    icon: redis,
+    content: 'Redis',
+  },
+  redpanda: {
+    icon: redpanda,
+    content: 'Redpanda',
+  },
+  scylladb: {
+    icon: scylladb,
+    content: 'ScyllaDB',
+  },
+  starrocks: {
+    icon: starrocks,
+    content: 'Starrocks',
+  },
+  superset: {
+    icon: superset,
+    content: 'Superset',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };

@@ -56,6 +56,7 @@ from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from dagster._core.definitions.utils import get_default_automation_condition_sensor
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 if TYPE_CHECKING:
@@ -326,6 +327,13 @@ def build_caching_repository_data_from_list(
             *source_assets_by_key.values(),  # only ever one key per source asset so no need to dedupe
         ]
     )
+    # add a default automation condition sensor if necessary
+    default_automation_condition_sensor = get_default_automation_condition_sensor(
+        list(sensors.values()), asset_graph
+    )
+    if default_automation_condition_sensor:
+        sensors[default_automation_condition_sensor.name] = default_automation_condition_sensor
+
     if assets_defs or asset_checks_defs or source_assets:
         jobs[IMPLICIT_ASSET_JOB_NAME] = get_base_asset_job_lambda(
             asset_graph=asset_graph,

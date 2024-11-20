@@ -943,6 +943,24 @@
             ]
           },
           {
+            "title": "Airflow Federation Tutorial",
+            "path": "/integrations/airlift/federation-tutorial/overview",
+            "children": [
+              {
+                "title": "Part 1: Setup upstream and downstream Airflow instances",
+                "path": "/integrations/airlift/federation-tutorial/setup"
+              },
+              {
+                "title": "Part 2: Observe dag lineage in Dagster",
+                "path": "/integrations/airlift/federation-tutorial/observe"
+              },
+              {
+                "title": "Part 3: Federate across Airflow instances",
+                "path": "/integrations/airlift/federation-tutorial/federated-execution"
+              }
+            ]
+          },
+          {
             "title": "Reference",
             "path": "/integrations/airlift/reference"
           },

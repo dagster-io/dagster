@@ -571,12 +571,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
   }
 
   let launchButtonWarning: string | undefined;
-  if (
-    partitionSets.results.length &&
-    currentSession.base &&
-    'partitionsSetName' in currentSession.base &&
-    !currentSession.base.partitionName
-  ) {
+  if (partitionSets.results.length && isMissingPartition(currentSession.base)) {
     launchButtonWarning =
       'This job is partitioned. Are you sure you want to launch' +
       ' a run without a partition specified?';
@@ -897,3 +892,10 @@ const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
 
   ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
 `;
+
+function isMissingPartition(base: SessionBase | null) {
+  if (base?.type === 'op-job-partition-set' || base?.type === 'asset-job-partition') {
+    return !base.partitionName;
+  }
+  return false;
+}

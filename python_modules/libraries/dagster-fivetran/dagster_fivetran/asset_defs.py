@@ -42,7 +42,11 @@ from dagster._core.utils import imap
 from dagster._utils.log import get_dagster_logger
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
-from dagster_fivetran.translator import DagsterFivetranTranslator, FivetranConnectorTableProps
+from dagster_fivetran.translator import (
+    DagsterFivetranTranslator,
+    FivetranConnectorTableProps,
+    FivetranSchemaConfig,
+)
 from dagster_fivetran.utils import (
     generate_materializations,
     get_fivetran_connector_url,
@@ -127,7 +131,9 @@ def _build_fivetran_assets(
                 connector_id=connection_metadata.connector_id,
                 name=connection_metadata.name,
                 connector_url=connection_metadata.connector_url,
-                schema_config=connection_metadata.schemas,
+                schema_config=FivetranSchemaConfig.from_schema_config_details(
+                    connection_metadata.schemas
+                ),
                 database=connection_metadata.database,
                 service=connection_metadata.service,
             )
@@ -168,7 +174,9 @@ def _build_fivetran_assets(
                     connector_id=connection_metadata.connector_id,
                     name=connection_metadata.name,
                     connector_url=connection_metadata.connector_url,
-                    schema_config=connection_metadata.schemas,
+                    schema_config=FivetranSchemaConfig.from_schema_config_details(
+                        connection_metadata.schemas
+                    ),
                     database=connection_metadata.database,
                     service=connection_metadata.service,
                 )

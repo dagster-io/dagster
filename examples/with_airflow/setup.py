@@ -11,7 +11,7 @@ setup(
         # utilities.
         "flask-session<0.6.0",
         # for the kubernetes operator
-        "apache-airflow-providers-cncf-kubernetes>=4.4.0",
+        "apache-airflow-providers-cncf-kubernetes>=4.4.0,<10",
         "apache-airflow-providers-docker>=3.1.0",
     ],
     extras_require={"dev": ["dagster-webserver", "pytest"]},

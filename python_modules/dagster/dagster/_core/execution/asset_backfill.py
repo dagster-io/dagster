@@ -335,6 +335,7 @@ class AssetBackfillData(NamedTuple):
             item
             for items_by_level in toposort({node.key: node.parent_keys for node in nodes})
             for item in sorted(items_by_level)
+            if item in self.target_subset.asset_keys
         ]
 
     def get_backfill_status_per_asset_key(

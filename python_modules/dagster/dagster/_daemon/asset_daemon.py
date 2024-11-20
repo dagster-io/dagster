@@ -9,7 +9,7 @@ from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
 from types import TracebackType
-from typing import Any, Dict, Mapping, Optional, Sequence, Set, Tuple, Type, cast
+from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence, Set, Tuple, Type, cast
 
 import dagster._check as check
 from dagster._core.definitions.asset_daemon_cursor import (
@@ -26,16 +26,20 @@ from dagster._core.definitions.automation_tick_evaluation_context import (
     AutomationTickEvaluationContext,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionEvaluationWithRunIds,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
 from dagster._core.definitions.run_request import InstigatorType, RunRequest
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.execution.backfill import PartitionBackfill
-from dagster._core.execution.submit_asset_runs import submit_asset_run
+from dagster._core.execution.submit_asset_runs import RunRequestExecutionData, submit_asset_run
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import RemoteSensor
 from dagster._core.remote_representation.external import RemoteRepository
@@ -376,12 +380,21 @@ class AssetDaemon(DagsterDaemon):
 
         amp_tick_futures: Dict[Optional[str], Future] = {}
         threadpool_executor = None
+        submit_threadpool_executor = None
         with ExitStack() as stack:
             if self._settings.get("use_threads"):
                 threadpool_executor = stack.enter_context(
                     InheritContextThreadPoolExecutor(
                         max_workers=self._settings.get("num_workers"),
                         thread_name_prefix="asset_daemon_worker",
+                    )
+                )
+            num_submit_workers = self._settings.get("num_submit_workers")
+            if num_submit_workers:
+                submit_threadpool_executor = stack.enter_context(
+                    InheritContextThreadPoolExecutor(
+                        max_workers=num_submit_workers,
+                        thread_name_prefix="asset_daemon_submit_worker",
                     )
                 )
 
@@ -392,6 +405,7 @@ class AssetDaemon(DagsterDaemon):
                     yield from self._run_iteration_impl(
                         workspace_process_context,
                         threadpool_executor=threadpool_executor,
+                        submit_threadpool_executor=submit_threadpool_executor,
                         amp_tick_futures=amp_tick_futures,
                         debug_crash_flags={},
                     )
@@ -413,6 +427,7 @@ class AssetDaemon(DagsterDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         threadpool_executor: Optional[ThreadPoolExecutor],
+        submit_threadpool_executor: Optional[ThreadPoolExecutor],
         amp_tick_futures: Dict[Optional[str], Future],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
     ):
@@ -549,6 +564,7 @@ class AssetDaemon(DagsterDaemon):
                     repo,
                     sensor,
                     debug_crash_flags,
+                    submit_threadpool_executor,
                 )
                 amp_tick_futures[selector_id] = future
                 yield
@@ -558,6 +574,7 @@ class AssetDaemon(DagsterDaemon):
                     repo,
                     sensor,
                     debug_crash_flags,
+                    submit_threadpool_executor,
                 )
 
     def _create_initial_sensor_cursors_from_raw_cursor(
@@ -644,6 +661,7 @@ class AssetDaemon(DagsterDaemon):
         repository: Optional[RemoteRepository],
         sensor: Optional[RemoteSensor],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
+        submit_threadpool_executor: Optional[ThreadPoolExecutor],
     ):
         return list(
             self._process_auto_materialize_tick_generator(
@@ -651,6 +669,7 @@ class AssetDaemon(DagsterDaemon):
                 repository,
                 sensor,
                 debug_crash_flags,
+                submit_threadpool_executor=submit_threadpool_executor,
             )
         )
 
@@ -660,6 +679,7 @@ class AssetDaemon(DagsterDaemon):
         repository: Optional[RemoteRepository],
         sensor: Optional[RemoteSensor],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,  # TODO No longer single instigator
+        submit_threadpool_executor: Optional[ThreadPoolExecutor],
     ):
         evaluation_time = get_current_datetime()
 
@@ -847,7 +867,7 @@ class AssetDaemon(DagsterDaemon):
                     auto_observe_asset_keys,
                     debug_crash_flags,
                     is_retry=(retry_tick is not None),
-                    instigator_state=auto_materialize_instigator_state,
+                    submit_threadpool_executor=submit_threadpool_executor,
                 )
         except Exception:
             error_info = DaemonErrorCapture.on_exception(
@@ -870,7 +890,7 @@ class AssetDaemon(DagsterDaemon):
         auto_observe_asset_keys: Set[AssetKey],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         is_retry: bool,
-        instigator_state: Optional[InstigatorState],
+        submit_threadpool_executor: Optional[ThreadPoolExecutor],
     ):
         evaluation_id = tick.automation_condition_evaluation_id
 
@@ -993,61 +1013,128 @@ class AssetDaemon(DagsterDaemon):
         )
 
         check.invariant(len(run_requests) == len(reserved_run_ids))
-        updated_evaluation_keys = set()
+        yield from self._submit_run_requests_and_update_evaluations(
+            instance=instance,
+            tick_context=tick_context,
+            workspace_process_context=workspace_process_context,
+            evaluations_by_key=evaluations_by_key,
+            evaluation_id=evaluation_id,
+            run_requests=run_requests,
+            reserved_run_ids=reserved_run_ids,
+            debug_crash_flags=debug_crash_flags,
+            submit_threadpool_executor=submit_threadpool_executor,
+        )
 
-        run_request_execution_data_cache = {}
-        for i, (run_request, reserved_run_id) in enumerate(zip(run_requests, reserved_run_ids)):
-            # check that the run_request requires the backfill daemon rather than if the setting is enabled to
-            # account for the setting changing between tick retries
-            if run_request.requires_backfill_daemon():
-                asset_graph_subset = check.not_none(run_request.asset_graph_subset)
-                if instance.get_backfill(reserved_run_id):
-                    self._logger.warn(
-                        f"Run {reserved_run_id} already submitted on a previously interrupted tick, skipping"
-                    )
-                else:
-                    instance.add_backfill(
-                        PartitionBackfill.from_asset_graph_subset(
-                            backfill_id=reserved_run_id,
-                            dynamic_partitions_store=instance,
-                            backfill_timestamp=get_current_timestamp(),
-                            asset_graph_subset=asset_graph_subset,
-                            tags={
-                                **run_request.tags,
-                                AUTO_MATERIALIZE_TAG: "true",
-                                AUTOMATION_CONDITION_TAG: "true",
-                                ASSET_EVALUATION_ID_TAG: str(evaluation_id),
-                            },
-                            title=f"Run for Declarative Automation evaluation ID {evaluation_id}",
-                            description=None,
-                        )
-                    )
-                submitted_run_id = reserved_run_id
-                entity_keys = check.not_none(asset_graph_subset.asset_keys)
+        if schedule_storage.supports_auto_materialize_asset_evaluations:
+            schedule_storage.purge_asset_evaluations(
+                before=(
+                    get_current_datetime() - datetime.timedelta(days=EVALUATIONS_TTL_DAYS)
+                ).timestamp(),
+            )
+
+        self._logger.info(f"Finished auto-materialization tick{print_group_name}")
+
+    def _submit_run_request(
+        self,
+        i: int,
+        instance: DagsterInstance,
+        workspace_process_context: IWorkspaceProcessContext,
+        evaluation_id: int,
+        run_request: RunRequest,
+        reserved_run_id: str,
+        run_request_execution_data_cache: Dict[JobSubsetSelector, RunRequestExecutionData],
+        debug_crash_flags: SingleInstigatorDebugCrashFlags,
+    ) -> Tuple[str, AbstractSet[EntityKey]]:
+        # check that the run_request requires the backfill daemon rather than if the setting is enabled to
+        # account for the setting changing between tick retries
+        if run_request.requires_backfill_daemon():
+            asset_graph_subset = check.not_none(run_request.asset_graph_subset)
+            if instance.get_backfill(reserved_run_id):
+                self._logger.warn(
+                    f"Run {reserved_run_id} already submitted on a previously interrupted tick, skipping"
+                )
             else:
-                submitted_run = submit_asset_run(
-                    run_id=reserved_run_id,
-                    run_request=run_request._replace(
+                instance.add_backfill(
+                    PartitionBackfill.from_asset_graph_subset(
+                        backfill_id=reserved_run_id,
+                        dynamic_partitions_store=instance,
+                        backfill_timestamp=get_current_timestamp(),
+                        asset_graph_subset=asset_graph_subset,
                         tags={
                             **run_request.tags,
                             AUTO_MATERIALIZE_TAG: "true",
                             AUTOMATION_CONDITION_TAG: "true",
                             ASSET_EVALUATION_ID_TAG: str(evaluation_id),
-                        }
-                    ),
-                    run_request_index=i,
-                    instance=instance,
-                    workspace_process_context=workspace_process_context,
-                    run_request_execution_data_cache=run_request_execution_data_cache,
-                    debug_crash_flags=debug_crash_flags,
-                    logger=self._logger,
+                        },
+                        title=f"Run for Declarative Automation evaluation ID {evaluation_id}",
+                        description=None,
+                    )
                 )
-                submitted_run_id = submitted_run.run_id
-                entity_keys = [
-                    *(run_request.asset_selection or []),
-                    *(run_request.asset_check_keys or []),
-                ]
-            # heartbeat after each submitted runs
+            return reserved_run_id, check.not_none(asset_graph_subset.asset_keys)
+        else:
+            submitted_run = submit_asset_run(
+                run_id=reserved_run_id,
+                run_request=run_request._replace(
+                    tags={
+                        **run_request.tags,
+                        AUTO_MATERIALIZE_TAG: "true",
+                        AUTOMATION_CONDITION_TAG: "true",
+                        ASSET_EVALUATION_ID_TAG: str(evaluation_id),
+                    }
+                ),
+                run_request_index=i,
+                instance=instance,
+                workspace_process_context=workspace_process_context,
+                run_request_execution_data_cache=run_request_execution_data_cache,
+                debug_crash_flags=debug_crash_flags,
+                logger=self._logger,
+            )
+            entity_keys = {
+                *(run_request.asset_selection or []),
+                *(run_request.asset_check_keys or []),
+            }
+            return submitted_run.run_id, entity_keys
+
+    def _submit_run_requests_and_update_evaluations(
+        self,
+        instance: DagsterInstance,
+        tick_context: AutoMaterializeLaunchContext,
+        workspace_process_context: IWorkspaceProcessContext,
+        evaluations_by_key: Dict[EntityKey, AutomationConditionEvaluationWithRunIds],
+        evaluation_id: int,
+        run_requests: Sequence[RunRequest],
+        reserved_run_ids: Sequence[str],
+        debug_crash_flags: SingleInstigatorDebugCrashFlags,
+        submit_threadpool_executor: Optional[ThreadPoolExecutor],
+    ):
+        updated_evaluation_keys = set()
+        run_request_execution_data_cache = {}
+
+        check.invariant(len(run_requests) == len(reserved_run_ids))
+        to_submit = zip(range(len(run_requests)), reserved_run_ids, run_requests)
+
+        def submit_run_request(
+            run_id_with_run_request: Tuple[int, str, RunRequest],
+        ) -> Tuple[str, AbstractSet[EntityKey]]:
+            i, run_id, run_request = run_id_with_run_request
+            return self._submit_run_request(
+                i=i,
+                instance=instance,
+                run_request=run_request,
+                reserved_run_id=run_id,
+                evaluation_id=evaluation_id,
+                run_request_execution_data_cache=run_request_execution_data_cache,
+                workspace_process_context=workspace_process_context,
+                debug_crash_flags=debug_crash_flags,
+            )
+
+        if submit_threadpool_executor:
+            gen_run_request_results = submit_threadpool_executor.map(submit_run_request, to_submit)
+        else:
+            gen_run_request_results = map(submit_run_request, to_submit)
+
+        for submitted_run_id, entity_keys in gen_run_request_results:
+            # heartbeat after each submitted run
             yield
 
             tick_context.add_run_info(run_id=submitted_run_id)
@@ -1066,6 +1153,7 @@ class AssetDaemon(DagsterDaemon):
             evaluations_by_key[asset_key] for asset_key in updated_evaluation_keys
         ]
         if evaluations_to_update:
+            schedule_storage = check.not_none(instance.schedule_storage)
             schedule_storage.add_auto_materialize_asset_evaluations(
                 evaluation_id, evaluations_to_update
             )
@@ -1075,12 +1163,3 @@ class AssetDaemon(DagsterDaemon):
         tick_context.update_state(
             TickStatus.SUCCESS if len(run_requests) > 0 else TickStatus.SKIPPED,
         )
-
-        if schedule_storage.supports_auto_materialize_asset_evaluations:
-            schedule_storage.purge_asset_evaluations(
-                before=(
-                    get_current_datetime() - datetime.timedelta(days=EVALUATIONS_TTL_DAYS)
-                ).timestamp(),
-            )
-
-        self._logger.info(f"Finished auto-materialization tick{print_group_name}")

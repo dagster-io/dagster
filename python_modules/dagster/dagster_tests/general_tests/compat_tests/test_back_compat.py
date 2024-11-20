@@ -1529,6 +1529,35 @@ def test_add_bulk_actions_job_name_column():
             assert "job_name" not in backfill_columns
 
 
+def test_add_run_tags_run_id_idx():
+    src_dir = file_relative_path(__file__, "snapshot_1_9_3_add_run_tags_run_id_idx/sqlite")
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+
+        # Before migration
+        assert get_current_alembic_version(db_path) == "16e3655b4d9b"
+        assert "run_tags" in get_sqlite3_tables(db_path)
+        assert "idx_run_tags" in get_sqlite3_indexes(db_path, "run_tags")
+        assert "idx_run_tags_run_id" not in get_sqlite3_indexes(db_path, "run_tags")
+
+        # After upgrade
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+
+        assert get_current_alembic_version(db_path) == "6b7fb194ff9c"
+        assert "run_tags" in get_sqlite3_tables(db_path)
+        assert "idx_run_tags" not in get_sqlite3_indexes(db_path, "run_tags")
+        assert "idx_run_tags_run_id" in get_sqlite3_indexes(db_path, "run_tags")
+
+        # After downgrade (same as before migration)
+        instance._run_storage._alembic_downgrade(rev="16e3655b4d9b")
+        assert get_current_alembic_version(db_path) == "16e3655b4d9b"
+        assert "run_tags" in get_sqlite3_tables(db_path)
+        assert "idx_run_tags" in get_sqlite3_indexes(db_path, "run_tags")
+        assert "idx_run_tags_run_id" not in get_sqlite3_indexes(db_path, "run_tags")
+
+
 # Prior to 0.10.0, it was possible to have `Materialization` events with no asset key.
 # `AssetMaterialization` is _supposed_ to runtime-check for null `AssetKey`, but it doesn't, so we
 # can deserialize a `Materialization` with a null asset key directly to an `AssetMaterialization`.

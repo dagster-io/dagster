@@ -47,7 +47,7 @@ interface ConfigEditorProps {
 
 const AUTO_COMPLETE_AFTER_KEY = /^[a-zA-Z0-9_@(]$/;
 const performLint = debounce((editor: any) => {
-  editor.performLint();
+  editor.performPatchedLint();
 }, 1000);
 
 const performInitialPass = (
@@ -127,7 +127,7 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
       smartIndent: true,
       showCursorWhenSelecting: true,
       lintOnChange: false,
-      lint: {
+      patchedLint: {
         checkConfig,
         lintOnChange: false,
         onUpdateLinting: false,
