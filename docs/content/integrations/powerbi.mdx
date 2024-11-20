@@ -72,7 +72,7 @@ defs = dg.Definitions(
 
 By default, Dagster will attempt to snapshot your entire workspace using Power BI's [metadata scanner APIs](https://learn.microsoft.com/en-us/fabric/governance/metadata-scanning-overview), which are able to retrieve more detailed information about your Power BI assets, but rely on the workspace being configured to allow this access.
 
-If you encounter issues with the scanner APIs, you may disable them using `load_powerbi_asset_specs(power_bi_workspace, use_metadata_scanner=False)`.
+If you encounter issues with the scanner APIs, you may disable them using `load_powerbi_asset_specs(power_bi_workspace, use_workspace_scan=False)`.
 
 ### Customize asset definition metadata for Power BI assets
 
