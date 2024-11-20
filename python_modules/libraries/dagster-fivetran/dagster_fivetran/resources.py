@@ -632,7 +632,7 @@ class FivetranClient:
         self._start_sync(request_fn=request_fn, connector_id=connector_id)
 
     def start_resync(
-            self, connector_id: str, resync_parameters: Optional[Mapping[str, Sequence[str]]] = None
+        self, connector_id: str, resync_parameters: Optional[Mapping[str, Sequence[str]]] = None
     ) -> None:
         """Initiates a historical sync of all data for multiple schema tables within a Fivetran connector.
 

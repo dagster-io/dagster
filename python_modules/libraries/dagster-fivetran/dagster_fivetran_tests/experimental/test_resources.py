@@ -53,3 +53,9 @@ def test_basic_resource_request(
     client.start_resync(connector_id=connector_id, resync_parameters=None)
     assert len(all_api_mocks.calls) == 3
     assert f"{connector_id}/resync" in all_api_mocks.calls[2].request.url
+
+    # resync calls with parameters
+    all_api_mocks.calls.reset()
+    client.start_resync(connector_id=connector_id, resync_parameters={"property1": ["string"]})
+    assert len(all_api_mocks.calls) == 3
+    assert f"{connector_id}/schemas/tables/resync" in all_api_mocks.calls[2].request.url
