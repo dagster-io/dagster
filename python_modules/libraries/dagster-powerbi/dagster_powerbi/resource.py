@@ -393,14 +393,14 @@ class PowerBIWorkspace(ConfigurableResource):
 def load_powerbi_asset_specs(
     workspace: PowerBIWorkspace,
     dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator,
-    use_workspace_scan: bool = False,
+    use_workspace_scan: bool = True,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Power BI content in the workspace.
 
     Args:
         workspace (PowerBIWorkspace): The Power BI workspace to load assets from.
         use_workspace_scan (bool): Whether to scan the entire workspace using admin APIs
-            at once to get all content. Defaults to False.
+            at once to get all content. Defaults to True.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Power BI content in the workspace.
