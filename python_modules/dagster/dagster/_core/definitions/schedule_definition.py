@@ -543,7 +543,7 @@ class ScheduleDefinition(IHasInternalInit):
         """Returns a copy of this schedule with the job replaced.
 
         Args:
-            job (ExecutableDefinition): The job that should execute when this
+            new_job (ExecutableDefinition): The job that should execute when this
                 schedule runs.
         """
         return ScheduleDefinition.dagster_internal_init(
@@ -557,9 +557,14 @@ class ScheduleDefinition(IHasInternalInit):
             default_status=self.default_status,
             environment_vars=self._environment_vars,
             required_resource_keys=self._raw_required_resource_keys,
-            run_config=None,  # run_config, tags, should_execute encapsulated in execution_fn
+            # run_config, run_config_fn, tags_fn, should_execute are not copied because the schedule constructor
+            # incorporates them into the execution_fn defined in the constructor. Since we are
+            # copying the execution_fn, we don't need to copy these, and it would actually be an
+            # error to do so (since you can't pass an execution_fn and any of these values
+            # simultaneously).
+            run_config=None,
             run_config_fn=None,
-            tags=None,
+            tags=self.tags,
             tags_fn=None,
             metadata=self.metadata,
             should_execute=None,
