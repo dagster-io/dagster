@@ -8,6 +8,7 @@ from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, 
 import dagster._check as check
 import pydantic
 import pytest
+from dagster._check.functions import CheckError
 from dagster._model import DagsterModel
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
@@ -21,6 +22,7 @@ from dagster._serdes.serdes import (
     WhitelistMap,
     _whitelist_for_serdes,
     deserialize_value,
+    get_storage_name,
     pack_value,
     serialize_value,
     unpack_value,
@@ -1190,3 +1192,25 @@ def test_record_remap() -> None:
     assert (
         deserialize_value(serialize_value(r, whitelist_map=test_env), whitelist_map=test_env) == r
     )
+
+
+def test_get_storage_name():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_env)
+    @record
+    class Foo: ...
+
+    assert get_storage_name(Foo, whitelist_map=test_env) == "Foo"
+
+    @_whitelist_for_serdes(whitelist_map=test_env, storage_name="Baz")
+    @record
+    class Bar: ...
+
+    assert get_storage_name(Bar, whitelist_map=test_env) == "Baz"
+
+    @record
+    class Wat: ...
+
+    with pytest.raises(CheckError):
+        get_storage_name(Wat, whitelist_map=test_env)

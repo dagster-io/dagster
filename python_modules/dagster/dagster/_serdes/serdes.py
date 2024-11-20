@@ -1415,3 +1415,10 @@ def _check_serdes_tuple_class_invariants(
 
 def _root(val: Any) -> str:
     return f"<root:{val.__class__.__name__}>"
+
+
+def get_storage_name(klass: Type, *, whitelist_map: WhitelistMap = _WHITELIST_MAP):
+    if klass.__name__ not in whitelist_map.object_serializers:
+        check.failed(f"{klass.__name__} is not a known serializable object type.")
+    ser = whitelist_map.object_serializers[klass.__name__]
+    return ser.get_storage_name()
