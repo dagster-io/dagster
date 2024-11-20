@@ -3,8 +3,6 @@ from typing import Dict
 
 from setuptools import find_packages, setup
 
-NON_EDITABLE_INSTALL_DAGSTER_PIN = ">=1.8.10"
-
 
 def get_version() -> str:
     version: Dict[str, str] = {}
@@ -15,7 +13,7 @@ def get_version() -> str:
 
 
 ver = get_version()
-pin = "" if ver == "1!0+dev" else NON_EDITABLE_INSTALL_DAGSTER_PIN
+pin = "" if ver == "1!0+dev" or "rc" in ver else f"=={ver}"
 
 # The [in-airflow] subpackage does not have a setup dependency on Airflow because
 # Airflow cannot be installed via setup.py reliably. Instead, users need to install
@@ -44,7 +42,7 @@ CLI_REQUIREMENTS = ["click", "structlog"]
 
 setup(
     name="dagster-airlift",
-    version="0.0.28",
+    version=ver,
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
@@ -63,7 +61,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages(exclude=["dagster_airlift_tests*", "examples*"]),
+    packages=find_packages(exclude=["dagster_airlift_tests*", "kitchen-sink", "perf-harness"]),
     requires=CLI_REQUIREMENTS,
     extras_require={
         "core": [
@@ -82,14 +80,14 @@ setup(
         "mwaa": [
             "boto3>=1.18.0"
         ],  # confirms that mwaa is available in the environment (can't find exactly which version adds mwaa support, but I can confirm that 1.18.0 and greater have it.)
-        "dbt": ["dagster-dbt"],
-        "k8s": ["dagster-k8s"],
+        "dbt": [f"dagster-dbt{pin}"],
+        "k8s": [f"dagster-k8s{pin}"],
         "test": [
             "pytest",
-            "dagster-dbt",
+            f"dagster-dbt{pin}",
             "dbt-duckdb",
             "boto3",
-            "dagster-webserver",
+            f"dagster-webserver{pin}",
             *AIRFLOW_REQUIREMENTS,
             *CLI_REQUIREMENTS,
         ],
