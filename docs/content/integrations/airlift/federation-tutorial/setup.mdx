@@ -8,19 +8,39 @@ In this step, we'll
 
 ## Installation & Project Structure
 
-First, clone the tutorial example repo locally, and enter the repo directory.
-
-```bash
-git clone git@github.com:dagster-io/airlift-migration-tutorial.git
-cd airlift-federation-tutorial
-```
-
-Next, we'll create a fresh virtual environment using `uv`.
+First, we'll create a fresh virtual environment using `uv` and activate it.
 
 ```bash
 pip install uv
 uv venv
 source .venv/bin/activate
+```
+
+Next, we'll install Dagster, and verify that the dagster CLI is available.
+
+```bash
+uv pip install dagster
+dagster --version
+```
+
+Finally, we'll install the tutorial example code.
+
+```bash
+dagster project from-example --name airlift-federation-tutorial --example airlift-federation-tutorial
+```
+
+### Project Structure
+
+The following explains the structure of the repo.
+
+```plaintext
+airlift_federation_tutorial
+├── constants.py: Contains constant values used throughout both Airflow and Dagster
+├── dagster_defs: Contains Dagster definitions
+│   ├── definitions.py: Empty starter file for following along with the tutorial
+│   └── stages: Contains reference implementations for each stage of the migration process.
+├── metrics_airflow_dags: Contains the Airflow DAGs for the "downstream" airflow instance
+└── warehouse_airflow_dags: Contains the Airflow DAGs for the "upstream" airflow instance
 ```
 
 ## Running Airflow locally
