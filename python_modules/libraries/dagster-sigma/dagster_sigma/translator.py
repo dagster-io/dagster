@@ -2,6 +2,7 @@ import re
 from typing import AbstractSet, Any, Dict, List, Optional, Union
 
 from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema
+from dagster._annotations import deprecated
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn
 from dagster._record import record
@@ -97,6 +98,10 @@ class DagsterSigmaTranslator:
     def organization_data(self) -> SigmaOrganizationData:
         return self._context
 
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterSigmaTranslator.get_asset_spec().key` instead",
+    )
     def get_asset_key(self, data: Union[SigmaDataset, SigmaWorkbook]) -> AssetKey:
         """Get the AssetKey for a Sigma object, such as a workbook or dataset."""
         return self.get_asset_spec(data).key
