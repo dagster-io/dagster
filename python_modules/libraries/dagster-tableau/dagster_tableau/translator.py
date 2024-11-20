@@ -111,7 +111,6 @@ class DagsterTableauTranslator:
     def workspace_data(self) -> TableauWorkspaceData:
         return self._context
 
-
     @deprecated(
         breaking_version="1.10",
         additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec().key` instead",
