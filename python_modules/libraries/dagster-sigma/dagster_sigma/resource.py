@@ -1,10 +1,12 @@
 import asyncio
 import contextlib
+import os
 import urllib.parse
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 from typing import (
     AbstractSet,
     Any,
@@ -28,12 +30,15 @@ from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
+from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._record import IHaveNew, record_custom
+from dagster._serdes.serdes import deserialize_value
 from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
 
+from dagster_sigma.cli import SIGMA_RECON_DATA_PREFIX, SNAPSHOT_ENV_VAR_NAME
 from dagster_sigma.translator import (
     DagsterSigmaTranslator,
     SigmaDataset,
@@ -532,6 +537,7 @@ def load_sigma_asset_specs(
     ] = DagsterSigmaTranslator,
     sigma_filter: Optional[SigmaFilter] = None,
     fetch_column_data: bool = True,
+    snapshot_path: Optional[Union[str, Path]] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Sigma content in the organization.
 
@@ -541,10 +547,16 @@ def load_sigma_asset_specs(
             to convert Sigma content into AssetSpecs. Defaults to DagsterSigmaTranslator.
         sigma_filter (Optional[SigmaFilter]): Filters the set of Sigma objects to fetch.
         fetch_column_data (bool): Whether to fetch column data for datasets, which can be slow.
+        snapshot_path (Optional[Union[str, Path]]): Path to a snapshot file to load Sigma data from,
+            rather than fetching it from the Sigma API.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Sigma content in the organization.
     """
+    snapshot = None
+    if snapshot_path and not os.getenv(SNAPSHOT_ENV_VAR_NAME):
+        snapshot = deserialize_value(Path(snapshot_path).read_text(), RepositoryLoadData)
+
     with organization.process_config_and_initialize_cm() as initialized_organization:
         return check.is_list(
             SigmaOrganizationDefsLoader(
@@ -552,6 +564,7 @@ def load_sigma_asset_specs(
                 translator_cls=dagster_sigma_translator,
                 sigma_filter=sigma_filter,
                 fetch_column_data=fetch_column_data,
+                snapshot=snapshot,
             )
             .build_defs()
             .assets,
@@ -576,14 +589,18 @@ def _get_translator_spec_assert_keys_match(
 class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganizationData]):
     organization: SigmaOrganization
     translator_cls: Callable[[SigmaOrganizationData], DagsterSigmaTranslator]
+    snapshot: Optional[RepositoryLoadData]
     sigma_filter: Optional[SigmaFilter] = None
     fetch_column_data: bool = True
 
     @property
     def defs_key(self) -> str:
-        return f"sigma_{self.organization.client_id}"
+        return f"{SIGMA_RECON_DATA_PREFIX}{self.organization.client_id}"
 
     def fetch_state(self) -> SigmaOrganizationData:
+        if self.snapshot and self.defs_key in self.snapshot.reconstruction_metadata:
+            return deserialize_value(self.snapshot.reconstruction_metadata[self.defs_key])  # type: ignore
+
         return asyncio.run(
             self.organization.build_organization_data(
                 sigma_filter=self.sigma_filter, fetch_column_data=self.fetch_column_data
