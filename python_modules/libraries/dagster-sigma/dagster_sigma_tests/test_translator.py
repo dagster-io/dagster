@@ -1,5 +1,7 @@
+from typing import Union
+
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.asset_spec import AssetSpec, replace_attributes
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags import build_kind_tag_key
 from dagster_sigma.translator import (
@@ -88,13 +90,12 @@ def test_dataset_translation() -> None:
 
 def test_dataset_translation_custom_translator() -> None:
     class MyCustomTranslator(DagsterSigmaTranslator):
-        def get_asset_key(self, data: SigmaDataset) -> AssetKey:
-            return super().get_asset_key(data).with_prefix("sigma")
-
-        def get_asset_spec(self, data: SigmaDataset) -> AssetSpec:
+        def get_asset_spec(self, data: Union[SigmaDataset, SigmaWorkbook]) -> AssetSpec:
             spec = super().get_asset_spec(data)
             if isinstance(data, SigmaDataset):
-                return spec._replace(description="Custom description")
+                spec = replace_attributes(
+                    spec, key=spec.key.with_prefix("sigma"), description="Custom description"
+                )
             return spec
 
     sample_dataset = SigmaDataset(
