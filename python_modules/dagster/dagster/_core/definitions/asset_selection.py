@@ -478,6 +478,11 @@ class AssetSelection(ABC):
     ) -> AbstractSet[AssetKey]:
         raise NotImplementedError()
 
+    def to_selection_str(self) -> str:
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support conversion to a string."
+        )
+
     def resolve_checks(
         self, asset_graph: BaseAssetGraph, allow_missing: bool = False
     ) -> AbstractSet[AssetCheckKey]:
@@ -592,6 +597,9 @@ class AllSelection(AssetSelection):
 
     def __str__(self) -> str:
         return "all materializable assets" + (" and source assets" if self.include_sources else "")
+
+    def to_selection_str(self) -> str:
+        return "*"
 
 
 @whitelist_for_serdes
@@ -732,6 +740,9 @@ class AndAssetSelection(OperandListAssetSelection):
     def __str__(self) -> str:
         return " and ".join(operand.operand__str__() for operand in self.operands)
 
+    def to_selection_str(self) -> str:
+        return " and ".join(f"({operand.to_selection_str()})" for operand in self.operands)
+
 
 @whitelist_for_serdes
 class OrAssetSelection(OperandListAssetSelection):
@@ -759,6 +770,9 @@ class OrAssetSelection(OperandListAssetSelection):
 
     def __str__(self) -> str:
         return " or ".join(operand.operand__str__() for operand in self.operands)
+
+    def to_selection_str(self) -> str:
+        return " or ".join(f"({operand.to_selection_str()})" for operand in self.operands)
 
 
 @whitelist_for_serdes
@@ -794,6 +808,11 @@ class SubtractAssetSelection(AssetSelection):
     def __str__(self) -> str:
         return f"{self.left.operand__str__()} - {self.right.operand__str__()}"
 
+    def to_selection_str(self) -> str:
+        if isinstance(self.left, AllSelection):
+            return f"not {self.right.to_selection_str()}"
+        return super().to_selection_str()
+
 
 @record
 class ChainedAssetSelection(AssetSelection):
@@ -815,6 +834,9 @@ class SinksAssetSelection(ChainedAssetSelection):
         selection = self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
         return fetch_sinks(asset_graph.asset_dep_graph, selection)
 
+    def to_selection_str(self) -> str:
+        return f"sinks({self.child.to_selection_str()})"
+
 
 @whitelist_for_serdes
 class RequiredNeighborsAssetSelection(ChainedAssetSelection):
@@ -835,6 +857,9 @@ class RootsAssetSelection(ChainedAssetSelection):
     ) -> AbstractSet[AssetKey]:
         selection = self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
         return fetch_sources(asset_graph, selection)
+
+    def to_selection_str(self) -> str:
+        return f"roots({self.child.to_selection_str()})"
 
 
 @whitelist_for_serdes
@@ -876,6 +901,25 @@ class DownstreamAssetSelection(ChainedAssetSelection):
             selection if not self.include_self else set(),
         )
 
+    def _to_selection_str(self, child: str) -> str:
+        if self.depth is None:
+            base = f"({child})*"
+        elif self.depth == 0:
+            base = str(child)
+        else:
+            base = f"({child}){'+' * self.depth}"
+
+        if self.include_self:
+            return base
+        else:
+            return f"{base} - ({child})"
+
+    def to_selection_str(self) -> str:
+        return self._to_selection_str(self.child.to_selection_str())
+
+    def __str__(self) -> str:
+        return self._to_selection_str(str(self.child))
+
 
 @whitelist_for_serdes
 @record
@@ -901,11 +945,14 @@ class GroupsAssetSelection(AssetSelection):
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self
 
-    def __str__(self) -> str:
+    def to_selection_str(self) -> str:
         if len(self.selected_groups) == 1:
-            return f"group:{self.selected_groups[0]}"
+            return f'group:"{self.selected_groups[0]}"'
         else:
-            return f"group:({' or '.join(self.selected_groups)})"
+            return " or ".join(f'group:"{group}"' for group in self.selected_groups)
+
+    def __str__(self) -> str:
+        return self.to_selection_str()
 
 
 @whitelist_for_serdes
@@ -927,7 +974,10 @@ class TagAssetSelection(AssetSelection):
         return {key for key in base_set if asset_graph.get(key).tags.get(self.key) == self.value}
 
     def __str__(self) -> str:
-        return f"tag:{self.key}={self.value}"
+        return self.to_selection_str()
+
+    def to_selection_str(self) -> str:
+        return f'tag:"{self.key}"="{self.value}"'
 
 
 @whitelist_for_serdes
@@ -945,7 +995,10 @@ class OwnerAssetSelection(AssetSelection):
         }
 
     def __str__(self) -> str:
-        return f"owner:{self.selected_owner}"
+        return self.to_selection_str()
+
+    def to_selection_str(self) -> str:
+        return f'owner:"{self.selected_owner}"'
 
 
 @whitelist_for_serdes
@@ -963,8 +1016,11 @@ class CodeLocationAssetSelection(AssetSelection):
         """This should not be invoked in user code."""
         raise NotImplementedError
 
+    def to_selection_str(self) -> str:
+        return f'code_location:"{self.selected_code_location}"'
+
     def __str__(self) -> str:
-        return f"code_location:{self.selected_code_location}"
+        return self.to_selection_str()
 
 
 @whitelist_for_serdes
@@ -1018,6 +1074,9 @@ class KeysAssetSelection(AssetSelection):
             return f"{' or '.join(k.to_user_string() for k in self.selected_keys)}"
         else:
             return f"{len(self.selected_keys)} assets"
+
+    def to_selection_str(self) -> str:
+        return " or ".join(f'key:"{x.to_user_string()}"' for x in self.selected_keys)
 
 
 @whitelist_for_serdes
@@ -1073,6 +1132,9 @@ class KeySubstringAssetSelection(AssetSelection):
     def __str__(self) -> str:
         return f"key_substring:{self.selected_key_substring}"
 
+    def to_selection_str(self) -> str:
+        return f'key_substring:"{self.selected_key_substring}"'
+
 
 def _fetch_all_upstream(
     selection: AbstractSet[AssetKey],
@@ -1114,18 +1176,24 @@ class UpstreamAssetSelection(ChainedAssetSelection):
         all_upstream = _fetch_all_upstream(selection, asset_graph, self.depth, self.include_self)
         return {key for key in all_upstream if key in asset_graph.materializable_asset_keys}
 
-    def __str__(self) -> str:
+    def _to_selection_str(self, child: str) -> str:
         if self.depth is None:
-            base = f"*({self.child})"
+            base = f"*({child})"
         elif self.depth == 0:
-            base = str(self.child)
+            base = str(child)
         else:
-            base = f"{'+' * self.depth}({self.child})"
+            base = f"{'+' * self.depth}({child})"
 
         if self.include_self:
             return base
         else:
-            return f"{base} - ({self.child})"
+            return f"{base} - ({child})"
+
+    def to_selection_str(self) -> str:
+        return self._to_selection_str(self.child.to_selection_str())
+
+    def __str__(self) -> str:
+        return self._to_selection_str(str(self.child))
 
 
 @whitelist_for_serdes
