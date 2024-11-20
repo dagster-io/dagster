@@ -34,7 +34,6 @@ class MyCustomPowerBITranslator(DagsterPowerBITranslator):
                 if data.content_type == PowerBIContentType.DASHBOARD
                 else default_spec.key
             ),
-            metadata={**default_spec.metadata, "custom": "metadata"},
             owners=["team:my_team"],
         )
 
