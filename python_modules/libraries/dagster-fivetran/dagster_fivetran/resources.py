@@ -695,8 +695,9 @@ class FivetranClient:
         """
         poll_start = datetime.now()
         while True:
+            connector_details = self.get_connector_details(connector_id)
             connector = FivetranConnector.from_connector_details(
-                connector_details=self.get_connector_details(connector_id)
+                connector_details=connector_details
             )
             self._log.info(f"Polled '{connector_id}'. Status: [{connector.sync_state}]")
 
@@ -712,16 +713,15 @@ class FivetranClient:
             # Sleep for the configured time interval before polling again.
             time.sleep(poll_interval)
 
-        post_raw_connector_details = self.get_connector_details(connector_id)
         if not connector.is_last_sync_successful:
             raise Failure(
                 f"Sync for connector '{connector_id}' failed!",
                 metadata={
-                    "connector_details": MetadataValue.json(post_raw_connector_details),
+                    "connector_details": MetadataValue.json(connector_details),
                     "log_url": MetadataValue.url(connector.url),
                 },
             )
-        return post_raw_connector_details
+        return connector_details
 
 
 @experimental

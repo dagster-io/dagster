@@ -67,4 +67,4 @@ def test_basic_resource_request(
     client.poll_sync(
         connector_id=connector_id, previous_sync_completed_at=parser.parse(MIN_TIME_STR)
     )
-    assert len(all_api_mocks.calls) == 2
+    assert len(all_api_mocks.calls) == 1
