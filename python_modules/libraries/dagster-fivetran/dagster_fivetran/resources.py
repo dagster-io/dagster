@@ -608,9 +608,10 @@ class FivetranClient:
         Returns:
             Dict[str, Any]: Parsed json data representing the API response.
         """
-        if not FivetranConnectorScheduleType.has_value(schedule_type):
+        schedule_types = {s for s in FivetranConnectorScheduleType}
+        if schedule_type not in schedule_types:
             check.failed(
-                f"The schedule_type for a connector must be in {FivetranConnectorScheduleType.values()}: "
+                f"The schedule_type for a connector must be in {schedule_types}: "
                 f"got '{schedule_type}'"
             )
         return self._make_connector_request(

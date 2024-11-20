@@ -23,19 +23,11 @@ class FivetranConnectorTableProps(NamedTuple):
     service: Optional[str]
 
 
-class FivetranConnectorScheduleType(Enum):
+class FivetranConnectorScheduleType(str, Enum):
     """Enum representing each schedule type for a connector in Fivetran's ontology."""
 
     AUTO = "auto"
     MANUAL = "manual"
-
-    @classmethod
-    def has_value(cls, value) -> bool:
-        return value in cls._value2member_map_
-
-    @classmethod
-    def values(cls) -> Sequence[str]:
-        return list(cls._value2member_map_.keys())
 
 
 class FivetranConnectorSetupStateType(Enum):
