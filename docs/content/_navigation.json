@@ -1076,7 +1076,12 @@
       },
       {
         "title": "Fivetran",
-        "path": "/integrations/fivetran"
+        "path": "/integrations/fivetran/fivetran",
+        "children": [
+          {
+            "title": "Fivetran (Legacy)",
+            "path": "/integrations/fivetran/fivetran-legacy"
+          },
       },
       {
         "title": "Google BigQuery",
