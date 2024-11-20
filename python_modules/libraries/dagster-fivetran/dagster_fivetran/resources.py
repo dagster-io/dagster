@@ -749,6 +749,36 @@ class FivetranClient:
             poll_timeout=poll_timeout,
         )
 
+    def resync_and_poll(
+        self,
+        connector_id: str,
+        poll_interval: float = DEFAULT_POLL_INTERVAL,
+        poll_timeout: Optional[float] = None,
+        resync_parameters: Optional[Mapping[str, Sequence[str]]] = None,
+    ) -> FivetranOutput:
+        """Initializes a historical resync operation for the given connector, and polls until it completes.
+
+        Args:
+            connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
+                "Setup" tab of a given connector in the Fivetran UI.
+            resync_parameters (Dict[str, List[str]]): The payload to send to the Fivetran API.
+                This should be a dictionary with schema names as the keys and a list of tables
+                to resync as the values.
+            poll_interval (float): The time (in seconds) that will be waited between successive polls.
+            poll_timeout (float): The maximum time that will wait before this operation is timed
+                out. By default, this will never time out.
+
+        Returns:
+            :py:class:`~FivetranOutput`:
+                Object containing details about the connector and the tables it updates
+        """
+        return self._sync_and_poll(
+            sync_fn=partial(self.start_resync, resync_parameters=resync_parameters),
+            connector_id=connector_id,
+            poll_interval=poll_interval,
+            poll_timeout=poll_timeout,
+        )
+
     def _sync_and_poll(
         self,
         sync_fn: Callable,
