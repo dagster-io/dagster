@@ -68,7 +68,14 @@ export const parseAssetSelectionQuery = (
 export const filterAssetSelectionByQuery = (
   all_assets: AssetGraphQueryItem[],
   query: string,
-): AssetSelectionQueryResult =>
-  featureEnabled(FeatureFlag.flagAssetSelectionSyntax)
-    ? parseAssetSelectionQuery(all_assets, query)
-    : filterByQuery(all_assets, query);
+): AssetSelectionQueryResult => {
+  if (featureEnabled(FeatureFlag.flagAssetSelectionSyntax)) {
+    const result = parseAssetSelectionQuery(all_assets, query);
+    if (result instanceof Error) {
+      // fall back to old behavior
+      return filterByQuery(all_assets, query);
+    }
+    return result;
+  }
+  return filterByQuery(all_assets, query);
+};
