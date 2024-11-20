@@ -1,7 +1,5 @@
 import responses
-from dagster._vendored.dateutil import parser
 from dagster_fivetran import FivetranWorkspace
-from dagster_fivetran.translator import MIN_TIME_STR
 
 from dagster_fivetran_tests.experimental.conftest import (
     TEST_ACCOUNT_ID,
