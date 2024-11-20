@@ -56,7 +56,6 @@ class FivetranConnector:
     service: str
     group_id: str
     setup_state: str
-
     paused: bool
 
     @property
