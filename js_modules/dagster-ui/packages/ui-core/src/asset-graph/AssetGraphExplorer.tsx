@@ -16,8 +16,10 @@ import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import * as React from 'react';
 import {useCallback, useLayoutEffect, useMemo, useState} from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGraphAssetSelectionInput} from 'shared/asset-graph/AssetGraphAssetSelectionInput.oss';
 import {useAssetGraphExplorerFilters} from 'shared/asset-graph/useAssetGraphExplorerFilters.oss';
+import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionInput.oss';
 import styled from 'styled-components';
 
 import {AssetEdges} from './AssetEdges';
@@ -50,6 +52,7 @@ import {
   useFullAssetGraphData,
 } from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
+import {featureEnabled} from '../app/Flags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
@@ -733,13 +736,21 @@ const AssetGraphExplorerWithData = ({
                   )}
                   <div>{filterButton}</div>
                   <GraphQueryInputFlexWrap>
-                    <AssetGraphAssetSelectionInput
-                      items={graphQueryItems}
-                      value={explorerPath.opsQuery}
-                      placeholder="Type an asset subset…"
-                      onChange={onChangeAssetSelection}
-                      popoverPosition="bottom-left"
-                    />
+                    {featureEnabled(FeatureFlag.flagAssetSelectionSyntax) ? (
+                      <AssetSelectionInput
+                        assets={graphQueryItems}
+                        value={explorerPath.opsQuery}
+                        onChange={onChangeAssetSelection}
+                      />
+                    ) : (
+                      <AssetGraphAssetSelectionInput
+                        items={graphQueryItems}
+                        value={explorerPath.opsQuery}
+                        placeholder="Type an asset subset…"
+                        onChange={onChangeAssetSelection}
+                        popoverPosition="bottom-left"
+                      />
+                    )}
                   </GraphQueryInputFlexWrap>
                   <AssetLiveDataRefreshButton />
                   <LaunchAssetExecutionButton
