@@ -194,7 +194,7 @@ export const NewConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>
       <StyledRawCodeMirror
         value={configCode}
         theme={['config-editor']}
-        options={options as any}
+        options={options}
         handlers={handlers}
       />
     </div>
