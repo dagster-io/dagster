@@ -718,7 +718,6 @@ const AssetGraphExplorerWithData = ({
             <TopbarWrapper>
               <Box flex={{direction: 'column'}} style={{width: '100%'}}>
                 <Box
-                  border={filterBar ? 'bottom' : undefined}
                   flex={{gap: 12, alignItems: 'center'}}
                   padding={{left: showSidebar ? 12 : 24, vertical: 12, right: 12}}
                 >
