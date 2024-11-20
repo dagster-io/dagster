@@ -24,7 +24,7 @@ power_bi_workspace = PowerBIWorkspace(
 class MyCustomPowerBITranslator(DagsterPowerBITranslator):
     def get_asset_spec(self, data: PowerBIContentData) -> dg.AssetSpec:
         # We create the default asset spec using super()
-        default_spec = super().get_report_spec(data)
+        default_spec = super().get_asset_spec(data)
         # We customize the team owner tag for all assets,
         # and we customize the asset key prefix only for dashboards.
         return replace_attributes(
