@@ -58,10 +58,9 @@ class FivetranConnector:
     service: str
     group_id: str
     setup_state: str
-    sync_state: str
+
     paused: bool
-    succeeded_at: Optional[str]
-    failed_at: Optional[str]
+
 
     @property
     def url(self) -> str:
@@ -78,32 +77,6 @@ class FivetranConnector:
     @property
     def is_paused(self) -> bool:
         return self.paused
-
-    @property
-    def last_sync_completed_at(self) -> datetime:
-        """Gets the datetime of the last completed sync of the Fivetran connector.
-
-        Returns:
-            datetime.datetime:
-                The datetime of the last completed sync of the Fivetran connector.
-        """
-        succeeded_at = parser.parse(self.succeeded_at or MIN_TIME_STR)
-        failed_at = parser.parse(self.failed_at or MIN_TIME_STR)
-
-        return max(succeeded_at, failed_at)
-
-    @property
-    def is_last_sync_successful(self) -> bool:
-        """Gets a boolean representing whether the last completed sync of the Fivetran connector was successful or not.
-
-        Returns:
-            bool:
-                Whether the last completed sync of the Fivetran connector was successful or not.
-        """
-        succeeded_at = parser.parse(self.succeeded_at or MIN_TIME_STR)
-        failed_at = parser.parse(self.failed_at or MIN_TIME_STR)
-
-        return succeeded_at > failed_at
 
     def assert_syncable(self) -> bool:
         """Confirms that the connector can be sync. Will raise a Failure in the event that
@@ -126,10 +99,7 @@ class FivetranConnector:
             service=connector_details["service"],
             group_id=connector_details["group_id"],
             setup_state=connector_details["status"]["setup_state"],
-            sync_state=connector_details["status"]["sync_state"],
             paused=connector_details["paused"],
-            succeeded_at=connector_details.get("succeeded_at"),
-            failed_at=connector_details.get("failed_at"),
         )
 
 
