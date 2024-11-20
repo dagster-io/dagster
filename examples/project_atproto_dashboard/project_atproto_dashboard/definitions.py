@@ -84,7 +84,7 @@ def actor_feed_snapshot(context: dg.AssetExecutionContext, atproto_resource: ATP
     client, _ = atproto_resource.get_client()
     actor_did = context.partition_key
     items = get_all_feed_items(client, actor_did)
-    with open("out.json", "w") as f:
+    with open(f"{actor_did}.json", "w") as f:
         for item in items:
             f.write(item.model_dump_json() + os.linesep)
 
