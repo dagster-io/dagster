@@ -1,7 +1,7 @@
 import {css} from 'styled-components';
 
 export const darkThemeColors = css`
-  --browser-color-scheme: 'dark';
+  --browser-color-scheme: dark;
   --color-keyline-default: var(--color-translucent-gray15);
   --color-link-default: var(--color-core-blue200);
   --color-link-hover: var(--color-core-blue400);

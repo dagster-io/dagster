@@ -17,8 +17,13 @@ import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
 import {gql} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {
+  displayNameForAssetKey,
+  isHiddenAssetGroupJob,
+  tokenForAssetKey,
+} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetOwner, DefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {assetOwnerAsString} from '../workspace/assetOwnerAsString';
@@ -195,30 +200,39 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 };
 
 const secondaryDataToSearchResults = (
-  input: {data?: SearchSecondaryQuery},
+  input: {data?: SearchSecondaryQuery; includedAssetsByKey?: {[key: string]: AssetTableFragment}},
   searchContext: 'global' | 'catalog',
 ) => {
-  const {data} = input;
+  const {data, includedAssetsByKey} = input;
   if (!data?.assetsOrError || data.assetsOrError.__typename === 'PythonError') {
     return [];
   }
 
-  const {nodes} = data.assetsOrError;
+  const {nodes: _nodes} = data.assetsOrError;
 
-  const assets: SearchResult[] = nodes
-    .filter(({definition}) => definition !== null)
-    .map((node) => ({
-      label: displayNameForAssetKey(node.key),
-      description: `Asset in ${buildRepoPathForHuman(
-        node.definition!.repository.name,
-        node.definition!.repository.location.name,
-      )}`,
-      node,
-      href: assetDetailsPathForKey(node.key),
-      type: SearchResultType.Asset,
-      tags: node.definition!.tags,
-      kinds: node.definition!.kinds,
-    }));
+  const nodes = _nodes.filter(({definition, key}) => {
+    if (definition === null) {
+      return false;
+    }
+    if (includedAssetsByKey && !includedAssetsByKey[tokenForAssetKey(key)]) {
+      return false;
+    }
+    return true;
+  });
+
+  const assets: SearchResult[] = nodes.map((node) => ({
+    key: node.key,
+    label: displayNameForAssetKey(node.key),
+    description: `Asset in ${buildRepoPathForHuman(
+      node.definition!.repository.name,
+      node.definition!.repository.location.name,
+    )}`,
+    node,
+    href: assetDetailsPathForKey(node.key),
+    type: SearchResultType.Asset,
+    tags: node.definition!.tags,
+    kinds: node.definition!.kinds,
+  }));
 
   if (searchContext === 'global') {
     return [...assets];
@@ -320,7 +334,17 @@ type IndexBuffer = {
  *
  * A `terminate` function is provided, but it's probably not necessary to use it.
  */
-export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'catalog'}) => {
+export const useGlobalSearch = ({
+  searchContext,
+
+  // includedAssetsByKey - is a pre-filtered list of assets keys that search can show.
+  // This is to take into account any asset selection filtering on the page.
+  // This is only used in the dagster plus catalog.
+  includedAssetsByKey,
+}: {
+  searchContext: 'global' | 'catalog';
+  includedAssetsByKey?: {[key: string]: AssetTableFragment};
+}) => {
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
@@ -383,14 +407,24 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
     if (!secondaryData) {
       return;
     }
-    const results = secondaryDataToSearchResults({data: secondaryData}, searchContext);
+
+    const results = secondaryDataToSearchResults(
+      {data: secondaryData, includedAssetsByKey},
+      searchContext,
+    );
     const augmentedResults = augmentSearchResults(results, searchContext);
     if (!secondarySearch.current) {
       secondarySearch.current = createSearchWorker('secondary', fuseOptions);
     }
     secondarySearch.current.update(augmentedResults);
     consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
-  }, [consumeBufferEffect, secondaryData, searchContext, augmentSearchResults]);
+  }, [
+    consumeBufferEffect,
+    secondaryData,
+    searchContext,
+    augmentSearchResults,
+    includedAssetsByKey,
+  ]);
 
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);

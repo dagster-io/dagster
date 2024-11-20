@@ -4,6 +4,7 @@ import {useMemo} from 'react';
 import styled from 'styled-components';
 
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
+import {testId} from '../../testing/testId';
 
 export type FilterObject<T = any> = {
   isActive: boolean;
@@ -53,7 +54,12 @@ export const FilterTag = ({
         icon={iconName ? <Icon name={iconName} color={textColor} /> : undefined}
         rightIcon={
           onRemove ? (
-            <div onClick={onRemove} style={{cursor: 'pointer'}} tabIndex={0}>
+            <div
+              onClick={onRemove}
+              style={{cursor: 'pointer'}}
+              tabIndex={0}
+              data-testid={testId('filter-tag-remove')}
+            >
               <Icon name="close" color={textColor} />
             </div>
           ) : null
