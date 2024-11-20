@@ -35,8 +35,8 @@ class ATProtoResource(dg.ConfigurableResource):
     ) -> Tuple[Client, "models.AppBskyActorDefs.ProfileViewDetailed"]:
         atproto_client = Client()
         profile_view_detailed = atproto_client.login(
-            login=os.environ.get("BSKY_LOGIN"),
-            password=os.environ.get("BSKY_APP_PASSWORD"),
+            login=self.login,
+            password=self.password,
         )
         return atproto_client, profile_view_detailed
 
@@ -82,6 +82,7 @@ def get_all_feed_items(
 def actor_feed_snapshot(context: dg.AssetExecutionContext, atproto_resource: ATProtoResource):
     client, _ = atproto_resource.get_client()
     actor_did = context.partition_key
+    # TODO - yield items and append to file for more efficient memory utilization
     items = get_all_feed_items(client, actor_did)
     with open(f"{actor_did}.json", "w") as f:
         for item in items:
