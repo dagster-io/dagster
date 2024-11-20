@@ -171,13 +171,13 @@ def test_asset_selection_groups(all_assets: _AssetList):
 def test_asset_selection_keys(all_assets: _AssetList):
     sel = AssetSelection.keys(AssetKey("alice"), AssetKey("bob"))
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
-    assert str(sel) == "alice or bob"
+    assert str(sel) == 'key:"alice" or key:"bob"'
 
     sel = AssetSelection.keys("alice", "bob")
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
 
     sel = AssetSelection.keys("alice", "bob", "carol", "dave")
-    assert str(sel) == "4 assets"
+    assert str(sel) == 'key:"alice" or key:"bob" or key:"carol" or key:"dave"'
 
     sel = AssetSelection.keys("animals/zebra")
     assert sel.resolve(all_assets) == _asset_keys_of({zebra})
