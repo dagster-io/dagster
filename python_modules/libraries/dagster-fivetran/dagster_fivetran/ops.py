@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from dagster import AssetKey, Config, In, Nothing, Out, Output, op
+from dagster._annotations import deprecated
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from pydantic import Field
 
@@ -43,6 +44,12 @@ class SyncConfig(Config):
     )
 
 
+@deprecated(
+    breaking_version="2.0",
+    additional_warn_text=(
+        "Fivetran ops will be deprecated. Use `FivetranWorkspace` resource and `@fivetran_asset` decorator instead"
+    ),
+)
 @op(
     ins={"start_after": In(Nothing)},
     out=Out(
@@ -112,6 +119,12 @@ class FivetranResyncConfig(SyncConfig):
     )
 
 
+@deprecated(
+    breaking_version="2.0",
+    additional_warn_text=(
+        "Fivetran ops will be deprecated. Use `FivetranWorkspace` resource and `@fivetran_asset` decorator instead"
+    ),
+)
 @op(
     ins={"start_after": In(Nothing)},
     out=Out(
