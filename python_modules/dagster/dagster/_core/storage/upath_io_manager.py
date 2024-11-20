@@ -434,7 +434,8 @@ class UPathIOManager(IOManager):
                 f"The current IO manager {type(self)} does not support persisting an output"
                 " associated with multiple partitions. This error is likely occurring because a"
                 " backfill was launched using the 'single run' option. Instead, launch the"
-                " backfill with the 'multiple runs' option.",
+                " backfill with a multi-run backfill policy. You can also avoid this error by"
+                " opting out of IO managers entirely by setting the return type of your asset/op to `None`.",
             )
 
             path = next(iter(paths.values()))
