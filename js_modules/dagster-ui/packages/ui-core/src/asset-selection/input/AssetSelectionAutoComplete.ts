@@ -99,9 +99,8 @@ export const createAssetSelectionHint = (assets: AssetGraphQueryItem[]): HintFun
 
     const isTraversal = /^[*+]+$/.test(tokenString);
 
-    const tokensBefore = allTokens
-      .slice(0, indexOfToken + 1)
-      .map((token: any) => token.text?.trim());
+    const tokensBefore = allTokens.slice(0, indexOfToken).map((token: any) => token.text?.trim());
+
     const preTraversal = isTraversal && isPreTraversal(tokensBefore);
     const isPostTraversal = isTraversal && !preTraversal;
 
@@ -174,27 +173,36 @@ export const createAssetSelectionHint = (assets: AssetGraphQueryItem[]): HintFun
 
     const list = suggestions.map((item) => {
       let text = item;
-      if (token.string[0] === ' ') {
-        text = ' ' + item;
-      }
       if (tokenString === ':') {
+        // Preserve ":" when auto-completing
         text = `:${item}`;
       }
 
       if (tokenString === '(') {
+        // Preserve parenthesis when auto-completing
         text = `(${text}`;
       }
       if (tokenString === ')') {
+        // Preserve parenthesis when auto-completing
         if (isAfterParenthesizedExpressions) {
           text = `) ${text}`;
         } else {
           text = `${text})`;
         }
       }
+      if (tokenString === '*') {
+        // Preserve the * token when auto-completing
+        if (preTraversal) {
+          text = `*${text}`;
+        } else {
+          text = `${text}*`;
+        }
+      }
 
       const trimmedText = text.trim();
 
       if (isTraversal) {
+        // Preserve the existing token when auto-completing another * or +
         if (text === '+' || text === '*') {
           text = `${tokenString}${text}`;
         } else if (trimmedText === 'and' || trimmedText === 'or' || trimmedText === 'not') {
@@ -202,6 +210,11 @@ export const createAssetSelectionHint = (assets: AssetGraphQueryItem[]): HintFun
         }
       } else if (trimmedText === 'and' || trimmedText === 'or' || trimmedText === 'not') {
         text = ` ${trimmedText} `; // Insert spaces around the logical operator
+      }
+
+      if (token.string[0] === ' ') {
+        // Preserve spaces before the token that may have been removed by .trim()
+        text = ' ' + text;
       }
 
       return {
