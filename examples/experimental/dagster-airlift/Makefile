@@ -10,6 +10,10 @@ mirror_tutorial:
 	@chmod +x scripts/mirror_tutorial.sh
 	@./scripts/mirror_tutorial.sh
 
+mirror_federation_tutorial:
+	@chmod +x scripts/mirror_federation_tutorial.sh
+	@./scripts/mirror_federation_tutorial.sh
+
 # Runs the full release process for dagster-airlift.
 # - Enforces that we're on master
 # - Bumps the version in setup.py
@@ -26,6 +30,8 @@ adhoc_release:
 	@make adhoc_pypi
 	@echo "Mirroring tutorial..."
 	@make mirror_tutorial 
+	@echo "Mirroring federation tutorial..."
+	@make mirror_federation_tutorial
 	@git add .
 	@git checkout -b airlift-$$(./scripts/extract_pypi_version.sh)
 	@git commit -m "[dagster-airlift] $$(./scripts/extract_pypi_version.sh)"
