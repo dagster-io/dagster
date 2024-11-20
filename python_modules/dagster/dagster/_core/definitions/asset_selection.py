@@ -478,11 +478,6 @@ class AssetSelection(ABC):
     ) -> AbstractSet[AssetKey]:
         raise NotImplementedError()
 
-    def to_selection_str(self) -> str:
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not support conversion to a string."
-        )
-
     def resolve_checks(
         self, asset_graph: BaseAssetGraph, allow_missing: bool = False
     ) -> AbstractSet[AssetCheckKey]:
@@ -574,8 +569,26 @@ class AssetSelection(ABC):
         """
         return False
 
-    def operand__str__(self) -> str:
-        return f"({self})" if self.needs_parentheses_when_operand() else str(self)
+    def operand_to_selection_str(self) -> str:
+        return (
+            f"({self.to_selection_str()})"
+            if self.needs_parentheses_when_operand()
+            else self.to_selection_str()
+        )
+
+    def to_selection_str(self) -> str:
+        """Returns an Antlr string representation of the selection that can be parsed by `from_string`."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support conversion to a string."
+        )
+
+    def __str__(self) -> str:
+        # Attempt to use the to-Antlr-selection-string method if it's implemented,
+        # otherwise fall back to the default Python string representation
+        try:
+            return self.to_selection_str()
+        except NotImplementedError:
+            return super().__str__()
 
 
 @whitelist_for_serdes
@@ -594,9 +607,6 @@ class AllSelection(AssetSelection):
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self
-
-    def __str__(self) -> str:
-        return "all materializable assets" + (" and source assets" if self.include_sources else "")
 
     def to_selection_str(self) -> str:
         return "*"
@@ -617,9 +627,6 @@ class AllAssetCheckSelection(AssetSelection):
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self
-
-    def __str__(self) -> str:
-        return "all asset checks"
 
 
 @whitelist_for_serdes
@@ -643,11 +650,6 @@ class AssetChecksForAssetKeysSelection(AssetSelection):
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self
-
-    def __str__(self) -> str:
-        if len(self.selected_asset_keys) == 1:
-            return f"asset_check:{self.selected_asset_keys[0].to_user_string()}"
-        return f"asset_check:({' or '.join(k.to_user_string() for k in self.selected_asset_keys)})"
 
 
 @whitelist_for_serdes
@@ -677,11 +679,6 @@ class AssetCheckKeysSelection(AssetSelection):
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self
-
-    def __str__(self) -> str:
-        if len(self.selected_asset_check_keys) == 1:
-            return f"asset_check:{self.selected_asset_check_keys[0].to_user_string()}"
-        return f"asset_check:({' or '.join(k.to_user_string() for k in self.selected_asset_check_keys)})"
 
 
 @record
@@ -737,11 +734,8 @@ class AndAssetSelection(OperandListAssetSelection):
             ),
         )
 
-    def __str__(self) -> str:
-        return " and ".join(operand.operand__str__() for operand in self.operands)
-
     def to_selection_str(self) -> str:
-        return " and ".join(f"({operand.to_selection_str()})" for operand in self.operands)
+        return " and ".join(f"{operand.operand_to_selection_str()}" for operand in self.operands)
 
 
 @whitelist_for_serdes
@@ -768,11 +762,8 @@ class OrAssetSelection(OperandListAssetSelection):
             ),
         )
 
-    def __str__(self) -> str:
-        return " or ".join(operand.operand__str__() for operand in self.operands)
-
     def to_selection_str(self) -> str:
-        return " or ".join(f"({operand.to_selection_str()})" for operand in self.operands)
+        return " or ".join(f"{operand.operand_to_selection_str()}" for operand in self.operands)
 
 
 @whitelist_for_serdes
@@ -805,13 +796,10 @@ class SubtractAssetSelection(AssetSelection):
     def needs_parentheses_when_operand(self) -> bool:
         return True
 
-    def __str__(self) -> str:
-        return f"{self.left.operand__str__()} - {self.right.operand__str__()}"
-
     def to_selection_str(self) -> str:
         if isinstance(self.left, AllSelection):
             return f"not {self.right.to_selection_str()}"
-        return super().to_selection_str()
+        return f"{self.left.operand_to_selection_str()} and not {self.right.operand_to_selection_str()}"
 
 
 @record
@@ -901,24 +889,18 @@ class DownstreamAssetSelection(ChainedAssetSelection):
             selection if not self.include_self else set(),
         )
 
-    def _to_selection_str(self, child: str) -> str:
+    def to_selection_str(self) -> str:
         if self.depth is None:
-            base = f"({child})*"
+            base = f"{self.child.operand_to_selection_str()}*"
         elif self.depth == 0:
-            base = str(child)
+            base = self.child.to_selection_str()
         else:
-            base = f"({child}){'+' * self.depth}"
+            base = f"{self.child.operand_to_selection_str()}{'+' * self.depth}"
 
         if self.include_self:
             return base
         else:
-            return f"{base} - ({child})"
-
-    def to_selection_str(self) -> str:
-        return self._to_selection_str(self.child.to_selection_str())
-
-    def __str__(self) -> str:
-        return self._to_selection_str(str(self.child))
+            return f"{base} and not {self.child.operand_to_selection_str()}"
 
 
 @whitelist_for_serdes
@@ -945,14 +927,14 @@ class GroupsAssetSelection(AssetSelection):
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self
 
+    def needs_parentheses_when_operand(self) -> bool:
+        return len(self.selected_groups) > 1
+
     def to_selection_str(self) -> str:
         if len(self.selected_groups) == 1:
             return f'group:"{self.selected_groups[0]}"'
         else:
             return " or ".join(f'group:"{group}"' for group in self.selected_groups)
-
-    def __str__(self) -> str:
-        return self.to_selection_str()
 
 
 @whitelist_for_serdes
@@ -973,9 +955,6 @@ class TagAssetSelection(AssetSelection):
 
         return {key for key in base_set if asset_graph.get(key).tags.get(self.key) == self.value}
 
-    def __str__(self) -> str:
-        return self.to_selection_str()
-
     def to_selection_str(self) -> str:
         return f'tag:"{self.key}"="{self.value}"'
 
@@ -993,9 +972,6 @@ class OwnerAssetSelection(AssetSelection):
             for key in asset_graph.get_all_asset_keys()
             if self.selected_owner in asset_graph.get(key).owners
         }
-
-    def __str__(self) -> str:
-        return self.to_selection_str()
 
     def to_selection_str(self) -> str:
         return f'owner:"{self.selected_owner}"'
@@ -1018,9 +994,6 @@ class CodeLocationAssetSelection(AssetSelection):
 
     def to_selection_str(self) -> str:
         return f'code_location:"{self.selected_code_location}"'
-
-    def __str__(self) -> str:
-        return self.to_selection_str()
 
 
 @whitelist_for_serdes
@@ -1069,12 +1042,6 @@ class KeysAssetSelection(AssetSelection):
     def needs_parentheses_when_operand(self) -> bool:
         return len(self.selected_keys) > 1
 
-    def __str__(self) -> str:
-        if len(self.selected_keys) <= 3:
-            return f"{' or '.join(k.to_user_string() for k in self.selected_keys)}"
-        else:
-            return f"{len(self.selected_keys)} assets"
-
     def to_selection_str(self) -> str:
         return " or ".join(f'key:"{x.to_user_string()}"' for x in self.selected_keys)
 
@@ -1102,13 +1069,6 @@ class KeyPrefixesAssetSelection(AssetSelection):
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self
 
-    def __str__(self) -> str:
-        key_prefix_strs = ["/".join(key_prefix) for key_prefix in self.selected_key_prefixes]
-        if len(self.selected_key_prefixes) == 1:
-            return f"key_prefix:{key_prefix_strs[0]}"
-        else:
-            return f"key_prefix:({' or '.join(key_prefix_strs)})"
-
 
 @whitelist_for_serdes
 @record
@@ -1128,9 +1088,6 @@ class KeySubstringAssetSelection(AssetSelection):
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self
-
-    def __str__(self) -> str:
-        return f"key_substring:{self.selected_key_substring}"
 
     def to_selection_str(self) -> str:
         return f'key_substring:"{self.selected_key_substring}"'
@@ -1191,9 +1148,6 @@ class UpstreamAssetSelection(ChainedAssetSelection):
 
     def to_selection_str(self) -> str:
         return self._to_selection_str(self.child.to_selection_str())
-
-    def __str__(self) -> str:
-        return self._to_selection_str(str(self.child))
 
 
 @whitelist_for_serdes
