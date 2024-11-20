@@ -1,0 +1,10 @@
+from dagster import Component, Definitions
+
+class {{ component_type_class_name }}(Component):
+
+    @classmethod
+    def generate_files(cls) -> None:
+        ...
+
+    def build_defs(self) -> Definitions:
+        ...

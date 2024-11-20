@@ -1,10 +1,12 @@
 import os
 import posixpath
-from typing import List, Optional
+from typing import Any, List, Optional, Type
 
 import click
 import jinja2
 
+from dagster._components import Component
+from dagster._utils import camelcase, pushd
 from dagster.version import __version__ as dagster_version
 
 DEFAULT_EXCLUDES: List[str] = [
@@ -14,9 +16,55 @@ DEFAULT_EXCLUDES: List[str] = [
     ".DS_Store",
     ".ruff_cache",
     "tox.ini",
+    ".gitkeep",  # dummy file that allows empty directories to be checked into git
 ]
 
 PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
+
+
+def generate_deployment(path: str) -> None:
+    click.echo(f"Creating a Dagster deployment at {path}.")
+
+    generate_project(
+        path=path,
+        name_placeholder="DEPLOYMENT_NAME_PLACEHOLDER",
+        templates_path=os.path.join(
+            os.path.dirname(__file__), "templates", "DEPLOYMENT_NAME_PLACEHOLDER"
+        ),
+    )
+
+
+def generate_code_location(path: str) -> None:
+    click.echo(f"Creating a Dagster code location at {path}.")
+
+    generate_project(
+        path=path,
+        name_placeholder="CODE_LOCATION_NAME_PLACEHOLDER",
+        templates_path=os.path.join(
+            os.path.dirname(__file__), "templates", "CODE_LOCATION_NAME_PLACEHOLDER"
+        ),
+    )
+
+
+def generate_component_type(root_path: str, name: str) -> None:
+    click.echo(f"Creating a Dagster component type at {root_path}/{name}.py.")
+
+    generate_project(
+        path=root_path,
+        name_placeholder="COMPONENT_TYPE_NAME_PLACEHOLDER",
+        templates_path=os.path.join(os.path.dirname(__file__), "templates", "COMPONENT_TYPE"),
+        project_name=name,
+        component_type_class_name=camelcase(name),
+    )
+
+
+def generate_component_instance(root_path: str, name: str, component_type: Type[Component]) -> None:
+    click.echo(f"Creating a Dagster component instance at {root_path}/{name}.py.")
+
+    component_instance_root_path = os.path.join(root_path, name)
+    os.mkdir(component_instance_root_path)
+    with pushd(component_instance_root_path):
+        component_type.generate_files()
 
 
 def generate_repository(path: str):
@@ -40,6 +88,8 @@ def generate_project(
     excludes: Optional[List[str]] = None,
     name_placeholder: str = PROJECT_NAME_PLACEHOLDER,
     templates_path: str = PROJECT_NAME_PLACEHOLDER,
+    project_name: Optional[str] = None,
+    **other_template_vars: Any,
 ):
     """Renders templates for Dagster project."""
     excludes = DEFAULT_EXCLUDES if not excludes else DEFAULT_EXCLUDES + excludes
@@ -47,8 +97,9 @@ def generate_project(
     click.echo(f"Creating a Dagster project at {path}.")
 
     normalized_path = os.path.normpath(path)
-    project_name: str = os.path.basename(normalized_path).replace("-", "_")
-    os.mkdir(normalized_path)
+    project_name = project_name or os.path.basename(normalized_path).replace("-", "_")
+    if not os.path.exists(normalized_path):
+        os.mkdir(normalized_path)
 
     project_template_path: str = os.path.join(
         os.path.dirname(__file__), "templates", templates_path
@@ -103,6 +154,7 @@ def generate_project(
                         code_location_name=project_name,
                         dagster_version=dagster_version,
                         project_name=project_name,
+                        **other_template_vars,
                     )
                 )
                 f.write("\n")
