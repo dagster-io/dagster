@@ -630,7 +630,7 @@ class FivetranClient:
         )
         self._start_sync(request_fn=request_fn, connector_id=connector_id)
 
-    def _start_sync(self, request_fn: Callable, connector_id: str) -> None:
+    def _start_sync(self, request_fn: Callable[[], Mapping[str, Any]], connector_id: str) -> None:
         connector = FivetranConnector.from_connector_details(
             connector_details=self.get_connector_details(connector_id)
         )
