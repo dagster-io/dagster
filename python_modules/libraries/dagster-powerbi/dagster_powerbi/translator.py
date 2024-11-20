@@ -208,8 +208,10 @@ class DagsterPowerBITranslator:
 
     def get_report_spec(self, data: PowerBIContentData) -> AssetSpec:
         report_id = data.properties["id"]
-        dataset_id = data.properties["datasetId"]
-        dataset_data = self.workspace_data.semantic_models_by_id.get(dataset_id)
+        dataset_id = data.properties.get("datasetId")
+        dataset_data = (
+            self.workspace_data.semantic_models_by_id.get(dataset_id) if dataset_id else None
+        )
         dataset_key = self.get_semantic_model_asset_key(dataset_data) if dataset_data else None
         url = (
             data.properties.get("webUrl")

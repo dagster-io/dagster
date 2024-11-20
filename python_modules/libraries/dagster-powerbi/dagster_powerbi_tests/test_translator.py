@@ -4,7 +4,7 @@ from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags import build_kind_tag
 from dagster_powerbi import DagsterPowerBITranslator
-from dagster_powerbi.translator import PowerBIContentData, PowerBIWorkspaceData
+from dagster_powerbi.translator import PowerBIContentData, PowerBIContentType, PowerBIWorkspaceData
 
 
 def test_translator_dashboard_spec(workspace_data: PowerBIWorkspaceData) -> None:
@@ -129,3 +129,28 @@ def test_translator_custom_metadata(workspace_data: PowerBIWorkspaceData) -> Non
 
     assert asset_spec.metadata == {"custom": "metadata"}
     assert asset_spec.key.path == ["dashboard", "Sales_Returns_Sample_v201912"]
+
+
+def test_translator_report_spec_no_dataset(workspace_data: PowerBIWorkspaceData) -> None:
+    report_no_dataset = PowerBIContentData(
+        content_type=PowerBIContentType.REPORT,
+        properties={
+            "id": "8b7f815d-4e64-40dd-993c-cfa4fb12edee",
+            "reportType": "PowerBIReport",
+            "name": "Sales & Returns Sample v201912",
+            "webUrl": "https://app.powerbi.com/groups/a2122b8f-d7e1-42e8-be2b-a5e636ca3221/reports/8b7f815d-4e64-40dd-993c-cfa4fb12edee",
+            "embedUrl": "https://app.powerbi.com/reportEmbed?reportId=8b7f815d-4e64-40dd-993c-cfa4fb12edee&groupId=a2122b8f-d7e1-42e8-be2b-a5e636ca3221&w=2&config=eyJjbHVzdGVyVXJsIjoiaHR0cHM6Ly9XQUJJLVdFU1QtVVMtRS1QUklNQVJZLXJlZGlyZWN0LmFuYWx5c2lzLndpbmRvd3MubmV0IiwiZW1iZWRGZWF0dXJlcyI6eyJ1c2FnZU1ldHJpY3NWTmV4dCI6dHJ1ZX19",
+            "isFromPbix": True,
+            "isOwnedByMe": True,
+            "users": [],
+            "subscriptions": [],
+            "createdBy": "ben@dagsterlabs.com",
+        },
+    )
+
+    translator = DagsterPowerBITranslator(workspace_data)
+    asset_spec = translator.get_asset_spec(report_no_dataset)
+
+    assert asset_spec.key.path == ["report", "Sales_Returns_Sample_v201912"]
+    deps = list(asset_spec.deps)
+    assert len(deps) == 0
