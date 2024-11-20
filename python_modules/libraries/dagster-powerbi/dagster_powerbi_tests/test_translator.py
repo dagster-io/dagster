@@ -1,5 +1,5 @@
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.asset_spec import AssetSpec, replace_attributes
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags import build_kind_tag
@@ -117,8 +117,13 @@ def test_translator_semantic_model_many_tables(second_workspace_data: PowerBIWor
 
 
 class MyCustomTranslator(DagsterPowerBITranslator):
-    def get_dashboard_spec(self, dashboard: PowerBIContentData) -> AssetSpec:
-        return super().get_dashboard_spec(dashboard)._replace(metadata={"custom": "metadata"})
+    def get_asset_spec(self, data: PowerBIContentData) -> AssetSpec:
+        default_spec = super().get_asset_spec(data)
+        return replace_attributes(
+            default_spec,
+            key=default_spec.key.with_prefix("prefix"),
+            metadata={**default_spec.metadata, "custom": "metadata"},
+        )
 
 
 def test_translator_custom_metadata(workspace_data: PowerBIWorkspaceData) -> None:
@@ -127,8 +132,9 @@ def test_translator_custom_metadata(workspace_data: PowerBIWorkspaceData) -> Non
     translator = MyCustomTranslator(workspace_data)
     asset_spec = translator.get_asset_spec(dashboard)
 
-    assert asset_spec.metadata == {"custom": "metadata"}
-    assert asset_spec.key.path == ["dashboard", "Sales_Returns_Sample_v201912"]
+    assert "custom" in asset_spec.metadata
+    assert asset_spec.metadata["custom"] == "metadata"
+    assert asset_spec.key.path == ["prefix", "dashboard", "Sales_Returns_Sample_v201912"]
 
 
 def test_translator_report_spec_no_dataset(workspace_data: PowerBIWorkspaceData) -> None:

@@ -174,12 +174,7 @@ class DagsterPowerBITranslator:
             check.assert_never(data.content_type)
 
     def get_dashboard_asset_key(self, data: PowerBIContentData) -> AssetKey:
-        return AssetKey(
-            [
-                "dashboard",
-                _clean_asset_name(_remove_file_ext(data.properties["displayName"])),
-            ]
-        )
+        return self.get_dashboard_spec(data).key
 
     def get_dashboard_spec(self, data: PowerBIContentData) -> AssetSpec:
         dashboard_id = data.properties["id"]
@@ -187,7 +182,7 @@ class DagsterPowerBITranslator:
             tile["reportId"] for tile in data.properties["tiles"] if "reportId" in tile
         ]
         report_keys = [
-            self.get_report_asset_key(self.workspace_data.reports_by_id[report_id])
+            self.get_report_spec(self.workspace_data.reports_by_id[report_id]).key
             for report_id in tile_report_ids
         ]
         url = (
@@ -196,7 +191,12 @@ class DagsterPowerBITranslator:
         )
 
         return AssetSpec(
-            key=self.get_dashboard_asset_key(data),
+            key=AssetKey(
+                [
+                    "dashboard",
+                    _clean_asset_name(_remove_file_ext(data.properties["displayName"])),
+                ]
+            ),
             deps=report_keys,
             metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
             tags={**PowerBITagSet(asset_type="dashboard")},
@@ -204,7 +204,7 @@ class DagsterPowerBITranslator:
         )
 
     def get_report_asset_key(self, data: PowerBIContentData) -> AssetKey:
-        return AssetKey(["report", _clean_asset_name(data.properties["name"])])
+        return self.get_report_spec(data).key
 
     def get_report_spec(self, data: PowerBIContentData) -> AssetSpec:
         report_id = data.properties["id"]
@@ -212,7 +212,7 @@ class DagsterPowerBITranslator:
         dataset_data = (
             self.workspace_data.semantic_models_by_id.get(dataset_id) if dataset_id else None
         )
-        dataset_key = self.get_semantic_model_asset_key(dataset_data) if dataset_data else None
+        dataset_key = self.get_semantic_model_spec(dataset_data).key if dataset_data else None
         url = (
             data.properties.get("webUrl")
             or f"https://app.powerbi.com/groups/{self.workspace_data.workspace_id}/reports/{report_id}"
@@ -221,7 +221,7 @@ class DagsterPowerBITranslator:
         owner = data.properties.get("createdBy")
 
         return AssetSpec(
-            key=self.get_report_asset_key(data),
+            key=AssetKey(["report", _clean_asset_name(data.properties["name"])]),
             deps=[dataset_key] if dataset_key else None,
             metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
             tags={**PowerBITagSet(asset_type="report")},
@@ -230,13 +230,13 @@ class DagsterPowerBITranslator:
         )
 
     def get_semantic_model_asset_key(self, data: PowerBIContentData) -> AssetKey:
-        return AssetKey(["semantic_model", _clean_asset_name(data.properties["name"])])
+        return self.get_semantic_model_spec(data).key
 
     def get_semantic_model_spec(self, data: PowerBIContentData) -> AssetSpec:
         dataset_id = data.properties["id"]
         source_ids = data.properties.get("sources", [])
         source_keys = [
-            self.get_data_source_asset_key(self.workspace_data.data_sources_by_id[source_id])
+            self.get_data_source_spec(self.workspace_data.data_sources_by_id[source_id]).key
             for source_id in source_ids
         ]
         url = (
@@ -266,7 +266,7 @@ class DagsterPowerBITranslator:
                 }
 
         return AssetSpec(
-            key=self.get_semantic_model_asset_key(data),
+            key=AssetKey(["semantic_model", _clean_asset_name(data.properties["name"])]),
             deps=source_keys,
             metadata={
                 **PowerBIMetadataSet(
@@ -280,20 +280,22 @@ class DagsterPowerBITranslator:
         )
 
     def get_data_source_asset_key(self, data: PowerBIContentData) -> AssetKey:
+        return self.get_data_source_spec(data).key
+
+    def get_data_source_spec(self, data: PowerBIContentData) -> AssetSpec:
         connection_name = (
             data.properties["connectionDetails"].get("path")
             or data.properties["connectionDetails"].get("url")
             or data.properties["connectionDetails"].get("database")
         )
         if not connection_name:
-            return AssetKey([_clean_asset_name(data.properties["datasourceId"])])
+            asset_key = AssetKey([_clean_asset_name(data.properties["datasourceId"])])
+        else:
+            obj_name = _get_last_filepath_component(urllib.parse.unquote(connection_name))
+            asset_key = AssetKey(path=[_clean_asset_name(obj_name)])
 
-        obj_name = _get_last_filepath_component(urllib.parse.unquote(connection_name))
-        return AssetKey(path=[_clean_asset_name(obj_name)])
-
-    def get_data_source_spec(self, data: PowerBIContentData) -> AssetSpec:
         return AssetSpec(
-            key=self.get_data_source_asset_key(data),
+            key=asset_key,
             tags={**PowerBITagSet(asset_type="data_source")},
             kinds={"powerbi"},
         )
