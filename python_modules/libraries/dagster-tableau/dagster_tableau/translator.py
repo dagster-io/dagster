@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Any, Literal, Mapping, Optional, Sequence
 
 from dagster import _check as check
+from dagster._annotations import deprecated
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
@@ -110,6 +111,11 @@ class DagsterTableauTranslator:
     def workspace_data(self) -> TableauWorkspaceData:
         return self._context
 
+
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec().key` instead",
+    )
     def get_asset_key(self, data: TableauContentData) -> AssetKey:
         return self.get_asset_spec(data).key
 
@@ -123,6 +129,7 @@ class DagsterTableauTranslator:
         else:
             check.assert_never(data.content_type)
 
+    @deprecated(breaking_version="1.10")
     def get_sheet_asset_key(self, data: TableauContentData) -> AssetKey:
         return self.get_sheet_spec(data).key
 
@@ -160,6 +167,7 @@ class DagsterTableauTranslator:
             },
         )
 
+    @deprecated(breaking_version="1.10")
     def get_dashboard_asset_key(self, data: TableauContentData) -> AssetKey:
         return self.get_dashboard_spec(data).key
 
@@ -193,6 +201,7 @@ class DagsterTableauTranslator:
             },
         )
 
+    @deprecated(breaking_version="1.10")
     def get_data_source_asset_key(self, data: TableauContentData) -> AssetKey:
         return self.get_data_source_spec(data).key
 
