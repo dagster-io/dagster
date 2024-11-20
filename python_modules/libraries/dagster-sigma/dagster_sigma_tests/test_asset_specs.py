@@ -23,7 +23,7 @@ def test_snapshot_cli_rehydrate(sigma_auth_token: str, sigma_sample_data: None) 
             args=[
                 "-f",
                 str(Path(__file__).parent / "pending_repo_snapshot.py"),
-                "--save-to",
+                "--output-path",
                 str(temp_file),
             ],
         )
