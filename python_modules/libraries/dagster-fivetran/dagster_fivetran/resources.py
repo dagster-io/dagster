@@ -668,6 +668,61 @@ class FivetranClient:
             " UI: " + connector.url
         )
 
+    def poll_sync(
+        self,
+        connector_id: str,
+        previous_sync_completed_at: datetime,
+        poll_interval: float = DEFAULT_POLL_INTERVAL,
+        poll_timeout: Optional[float] = None,
+    ) -> Mapping[str, Any]:
+        """Given a Fivetran connector and the timestamp at which the previous sync completed, poll
+        until the next sync completes.
+
+        The previous sync completion time is necessary because the only way to tell when a sync
+        completes is when this value changes.
+
+        Args:
+            connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
+                "Setup" tab of a given connector in the Fivetran UI.
+            previous_sync_completed_at (datetime.datetime): The datetime of the previous completed sync
+                (successful or otherwise) for this connector, prior to running this method.
+            poll_interval (float): The time (in seconds) that will be waited between successive polls.
+            poll_timeout (float): The maximum time that will wait before this operation is timed
+                out. By default, this will never time out.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        poll_start = datetime.now()
+        while True:
+            connector = FivetranConnector.from_connector_details(
+                connector_details=self.get_connector_details(connector_id)
+            )
+            self._log.info(f"Polled '{connector_id}'. Status: [{connector.sync_state}]")
+
+            if connector.last_sync_completed_at > previous_sync_completed_at:
+                break
+
+            if poll_timeout and datetime.now() > poll_start + timedelta(seconds=poll_timeout):
+                raise Failure(
+                    f"Sync for connector '{connector_id}' timed out after "
+                    f"{datetime.now() - poll_start}."
+                )
+
+            # Sleep for the configured time interval before polling again.
+            time.sleep(poll_interval)
+
+        post_raw_connector_details = self.get_connector_details(connector_id)
+        if not connector.is_last_sync_successful:
+            raise Failure(
+                f"Sync for connector '{connector_id}' failed!",
+                metadata={
+                    "connector_details": MetadataValue.json(post_raw_connector_details),
+                    "log_url": MetadataValue.url(connector.url),
+                },
+            )
+        return post_raw_connector_details
+
 
 @experimental
 class FivetranWorkspace(ConfigurableResource):
