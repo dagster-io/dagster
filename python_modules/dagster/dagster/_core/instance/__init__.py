@@ -1290,13 +1290,13 @@ class DagsterInstance(DynamicPartitionsStore):
         job_snapshot: "JobSnap",
         parent_job_snapshot: "Optional[JobSnap]",
     ) -> str:
-        from dagster._core.snap import JobSnap, create_job_snapshot_id
+        from dagster._core.snap import JobSnap
 
         check.inst_param(job_snapshot, "job_snapshot", JobSnap)
         check.opt_inst_param(parent_job_snapshot, "parent_job_snapshot", JobSnap)
 
         if job_snapshot.lineage_snapshot:
-            parent_snapshot_id = create_job_snapshot_id(check.not_none(parent_job_snapshot))
+            parent_snapshot_id = check.not_none(parent_job_snapshot).snapshot_id
 
             if job_snapshot.lineage_snapshot.parent_snapshot_id != parent_snapshot_id:
                 warnings.warn(
@@ -1308,7 +1308,7 @@ class DagsterInstance(DynamicPartitionsStore):
                     check.not_none(parent_job_snapshot), parent_snapshot_id
                 )
 
-        job_snapshot_id = create_job_snapshot_id(job_snapshot)
+        job_snapshot_id = job_snapshot.snapshot_id
         if not self._run_storage.has_job_snapshot(job_snapshot_id):
             returned_job_snapshot_id = self._run_storage.add_job_snapshot(job_snapshot)
             check.invariant(job_snapshot_id == returned_job_snapshot_id)
