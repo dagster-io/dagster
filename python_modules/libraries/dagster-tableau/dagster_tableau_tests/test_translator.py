@@ -1,5 +1,5 @@
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.asset_spec import AssetSpec, replace_attributes
 from dagster_tableau import DagsterTableauTranslator
 from dagster_tableau.translator import TableauContentData, TableauWorkspaceData
 
@@ -67,8 +67,13 @@ def test_translator_data_source_spec(
 
 
 class MyCustomTranslator(DagsterTableauTranslator):
-    def get_sheet_spec(self, sheet: TableauContentData) -> AssetSpec:
-        return super().get_sheet_spec(sheet)._replace(metadata={"custom": "metadata"})
+    def get_asset_spec(self, data: TableauContentData) -> AssetSpec:
+        default_spec = super().get_asset_spec(data)
+        return replace_attributes(
+            default_spec,
+            key=default_spec.key.with_prefix("prefix"),
+            metadata={**default_spec.metadata, "custom": "metadata"},
+        )
 
 
 def test_translator_custom_metadata(workspace_data: TableauWorkspaceData) -> None:
@@ -77,8 +82,9 @@ def test_translator_custom_metadata(workspace_data: TableauWorkspaceData) -> Non
     translator = MyCustomTranslator(workspace_data)
     asset_spec = translator.get_asset_spec(sheet)
 
-    assert asset_spec.metadata == {"custom": "metadata"}
-    assert asset_spec.key.path == ["test_workbook", "sheet", "sales"]
+    assert "custom" in asset_spec.metadata
+    assert asset_spec.metadata["custom"] == "metadata"
+    assert asset_spec.key.path == ["prefix", "test_workbook", "sheet", "sales"]
     assert asset_spec.tags == {
         "dagster/storage_kind": "tableau",
         "dagster-tableau/asset_type": "sheet",

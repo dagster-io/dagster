@@ -150,12 +150,22 @@ class DagsterTableauTranslator:
         }
 
         data_source_keys = [
-            self.get_asset_key(self.workspace_data.data_sources_by_id[data_source_id])
+            self.get_asset_spec(self.workspace_data.data_sources_by_id[data_source_id]).key
             for data_source_id in data_source_ids
         ]
 
+        workbook_id = data.properties["workbook"]["luid"]
+        workbook_data = self.workspace_data.workbooks_by_id[workbook_id]
+        asset_key = AssetKey(
+            [
+                _coerce_input_to_valid_name(workbook_data.properties["name"]),
+                "sheet",
+                _coerce_input_to_valid_name(data.properties["name"]),
+            ]
+        )
+
         return AssetSpec(
-            key=self.get_asset_key(data),
+            key=asset_key,
             deps=data_source_keys if data_source_keys else None,
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="sheet")},
             metadata={
@@ -181,11 +191,22 @@ class DagsterTableauTranslator:
         sheet_ids = {sheet["luid"] for sheet in dashboard_upstream_sheets if sheet["luid"]}
 
         sheet_keys = [
-            self.get_asset_key(self.workspace_data.sheets_by_id[sheet_id]) for sheet_id in sheet_ids
+            self.get_asset_spec(self.workspace_data.sheets_by_id[sheet_id]).key
+            for sheet_id in sheet_ids
         ]
 
+        workbook_id = data.properties["workbook"]["luid"]
+        workbook_data = self.workspace_data.workbooks_by_id[workbook_id]
+        asset_key = AssetKey(
+            [
+                _coerce_input_to_valid_name(workbook_data.properties["name"]),
+                "dashboard",
+                _coerce_input_to_valid_name(data.properties["name"]),
+            ]
+        )
+
         return AssetSpec(
-            key=self.get_asset_key(data),
+            key=asset_key,
             deps=sheet_keys if sheet_keys else None,
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="dashboard")},
             metadata={
@@ -200,7 +221,7 @@ class DagsterTableauTranslator:
 
     def get_data_source_spec(self, data: TableauContentData) -> AssetSpec:
         return AssetSpec(
-            key=self.get_asset_key(data),
+            key=AssetKey([_coerce_input_to_valid_name(data.properties["name"])]),
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
             metadata={**TableauMetadataSet(id=data.properties["luid"], workbook_id=None)},
         )
