@@ -467,4 +467,10 @@ def all_api_mocks_fixture(
         json=SAMPLE_SUCCESS_MESSAGE,
         status=200,
     )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.POST,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}/resync",
+        json=SAMPLE_SUCCESS_MESSAGE,
+        status=200,
+    )
     yield fetch_workspace_data_api_mocks

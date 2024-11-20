@@ -631,6 +631,29 @@ class FivetranClient:
         )
         self._start_sync(request_fn=request_fn, connector_id=connector_id)
 
+    def start_resync(
+            self, connector_id: str, resync_parameters: Optional[Mapping[str, Sequence[str]]] = None
+    ) -> None:
+        """Initiates a historical sync of all data for multiple schema tables within a Fivetran connector.
+
+        Args:
+            connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
+                "Setup" tab of a given connector in the Fivetran UI.
+            resync_parameters (Optional[Dict[str, List[str]]]): Optional resync parameters to send to the Fivetran API.
+                An example payload can be found here: https://fivetran.com/docs/rest-api/connectors#request_7
+        """
+        request_fn = partial(
+            self._make_connector_request,
+            method="POST",
+            endpoint=(
+                f"{connector_id}/schemas/tables/resync"
+                if resync_parameters is not None
+                else f"{connector_id}/resync"
+            ),
+            data=json.dumps(resync_parameters) if resync_parameters is not None else None,
+        )
+        self._start_sync(request_fn=request_fn, connector_id=connector_id)
+
     def _start_sync(self, request_fn: Callable[[], Mapping[str, Any]], connector_id: str) -> None:
         connector = FivetranConnector.from_connector_details(
             connector_details=self.get_connector_details(connector_id)
