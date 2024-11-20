@@ -116,10 +116,11 @@ class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
         # and we customize the asset key prefix only for dashboards.
         return replace_attributes(
             default_spec,
-            key=default_spec.key.with_prefix("looker")
-            if looker_structure.structure_type == LookerStructureType.DASHBOARD
-            else default_spec.key,
-            metadata={**default_spec.metadata, "custom": "metadata"},
+            key=(
+                default_spec.key.with_prefix("looker")
+                if looker_structure.structure_type == LookerStructureType.DASHBOARD
+                else default_spec.key
+            ),
             owners=["team:my_team"],
         )
 
