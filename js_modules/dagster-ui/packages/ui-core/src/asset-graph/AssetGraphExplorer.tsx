@@ -58,6 +58,7 @@ import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {AssetGroupSelector} from '../graphql/types';
 import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
+import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {
   GraphExplorerOptions,
   OptionsOverlay,
@@ -107,6 +108,8 @@ export const AssetGraphExplorer = (props: Props) => {
 
   const {explorerPath, onChangeExplorerPath} = props;
 
+  const explorerPathRef = useUpdatingRef(explorerPath);
+
   const {button, filterBar, groupsFilter, kindFilter, filterFn, filteredAssetsLoading} =
     useAssetGraphExplorerFilters({
       nodes: React.useMemo(
@@ -115,16 +118,19 @@ export const AssetGraphExplorer = (props: Props) => {
       ),
       loading: fetchResult.loading,
       viewType: props.viewType,
-      explorerPath: explorerPath.opsQuery,
-      clearExplorerPath: React.useCallback(() => {
-        onChangeExplorerPath(
-          {
-            ...explorerPath,
-            opsQuery: '',
-          },
-          'push',
-        );
-      }, [explorerPath, onChangeExplorerPath]),
+      assetSelection: explorerPath.opsQuery,
+      setAssetSelection: React.useCallback(
+        (assetSelection: string) => {
+          onChangeExplorerPath(
+            {
+              ...explorerPathRef.current,
+              opsQuery: assetSelection,
+            },
+            'push',
+          );
+        },
+        [explorerPathRef, onChangeExplorerPath],
+      ),
     });
 
   useLayoutEffect(() => {
