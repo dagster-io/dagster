@@ -30,19 +30,23 @@ class AntlrInputErrorListener implements ANTLRErrorListener<any> {
 export const parseAssetSelectionQuery = (
   all_assets: AssetGraphQueryItem[],
   query: string,
-): AssetGraphQueryItem[] => {
-  const lexer = new AssetSelectionLexer(CharStreams.fromString(query));
-  lexer.removeErrorListeners();
-  lexer.addErrorListener(new AntlrInputErrorListener());
+): AssetGraphQueryItem[] | Error => {
+  try {
+    const lexer = new AssetSelectionLexer(CharStreams.fromString(query));
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(new AntlrInputErrorListener());
 
-  const tokenStream = new CommonTokenStream(lexer);
+    const tokenStream = new CommonTokenStream(lexer);
 
-  const parser = new AssetSelectionParser(tokenStream);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new AntlrInputErrorListener());
+    const parser = new AssetSelectionParser(tokenStream);
+    parser.removeErrorListeners();
+    parser.addErrorListener(new AntlrInputErrorListener());
 
-  const tree = parser.start();
+    const tree = parser.start();
 
-  const visitor = new AntlrAssetSelectionVisitor(all_assets);
-  return [...visitor.visit(tree)];
+    const visitor = new AntlrAssetSelectionVisitor(all_assets);
+    return [...visitor.visit(tree)];
+  } catch (e) {
+    return e as Error;
+  }
 };

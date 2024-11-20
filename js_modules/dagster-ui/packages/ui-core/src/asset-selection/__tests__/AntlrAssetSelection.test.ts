@@ -48,23 +48,27 @@ const TEST_GRAPH: AssetGraphQueryItem[] = [
 
 function assertQueryResult(query: string, expectedNames: string[]) {
   const result = parseAssetSelectionQuery(TEST_GRAPH, query);
+  expect(result).not.toBeInstanceOf(Error);
+  if (result instanceof Error) {
+    throw result;
+  }
   expect(result.length).toBe(expectedNames.length);
-  expect(new Set(result.map((r) => r.name))).toEqual(new Set(expectedNames));
+  expect(new Set(result.map((asset) => asset.name))).toEqual(new Set(expectedNames));
 }
 
 describe('parseAssetSelectionQuery', () => {
   describe('invalid queries', () => {
     it('should throw on invalid queries', () => {
-      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'A')).toThrow();
-      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'key:A key:B')).toThrow();
-      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'not')).toThrow();
-      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'and')).toThrow();
-      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'key:A and')).toThrow();
-      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'sinks')).toThrow();
-      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'notafunction()')).toThrow();
-      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'tag:foo=')).toThrow();
-      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'owner')).toThrow();
-      expect(() => parseAssetSelectionQuery(TEST_GRAPH, 'owner:owner@owner.com')).toThrow();
+      expect(parseAssetSelectionQuery(TEST_GRAPH, 'A')).toBeInstanceOf(Error);
+      expect(parseAssetSelectionQuery(TEST_GRAPH, 'key:A key:B')).toBeInstanceOf(Error);
+      expect(parseAssetSelectionQuery(TEST_GRAPH, 'not')).toBeInstanceOf(Error);
+      expect(parseAssetSelectionQuery(TEST_GRAPH, 'and')).toBeInstanceOf(Error);
+      expect(parseAssetSelectionQuery(TEST_GRAPH, 'key:A and')).toBeInstanceOf(Error);
+      expect(parseAssetSelectionQuery(TEST_GRAPH, 'sinks')).toBeInstanceOf(Error);
+      expect(parseAssetSelectionQuery(TEST_GRAPH, 'notafunction()')).toBeInstanceOf(Error);
+      expect(parseAssetSelectionQuery(TEST_GRAPH, 'tag:foo=')).toBeInstanceOf(Error);
+      expect(parseAssetSelectionQuery(TEST_GRAPH, 'owner')).toBeInstanceOf(Error);
+      expect(parseAssetSelectionQuery(TEST_GRAPH, 'owner:owner@owner.com')).toBeInstanceOf(Error);
     });
   });
 
