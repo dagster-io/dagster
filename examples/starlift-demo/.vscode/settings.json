@@ -3,7 +3,7 @@
     "python.analysis.indexing": true, 
     "python.analysis.extraPaths": [
         "../../../../../python_modules/dagster",
-        "../../../../../examples/experimental/dagster-airlift",
+        "../../../../../python_modules/libraries/dagster-airlift",
         "../../../../../examples/experimental/dagster-blueprints",
         "../../../../../python_modules/libraries/dagster-dbt"
     ],
