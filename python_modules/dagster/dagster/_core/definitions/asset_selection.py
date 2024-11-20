@@ -570,6 +570,11 @@ class AssetSelection(ABC):
         return False
 
     def operand_to_selection_str(self) -> str:
+        """Returns a string representation of the selection when it is a child of a boolean expression,
+        for example, in an `AndAssetSelection` or `OrAssetSelection`. The main difference from `to_selection_str`
+        is that this method may include additional parentheses around the selection to ensure that the
+        expression is parsed correctly.
+        """
         return (
             f"({self.to_selection_str()})"
             if self.needs_parentheses_when_operand()
