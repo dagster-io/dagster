@@ -10,6 +10,7 @@ from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.snap import snapshot_from_execution_plan
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
+    DID_RETRY_TAG,
     MAX_RETRIES_TAG,
     RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
     RETRY_STRATEGY_TAG,
@@ -346,6 +347,8 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
+    run = instance.get_run_by_id(run.run_id)
+    assert run.tags.get(DID_RETRY_TAG) == "true"
 
     # doesn't retry again
     list(
@@ -384,6 +387,8 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         )
     )
     assert len(instance.run_coordinator.queue()) == 2
+    first_retry = instance.get_run_by_id(first_retry.run_id)
+    assert first_retry.tags.get(DID_RETRY_TAG) == "true"
 
     # doesn't retry a third time
     second_retry = instance.run_coordinator.queue()[1]
@@ -413,6 +418,8 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         )
     )
     assert len(instance.run_coordinator.queue()) == 2
+    second_retry = instance.get_run_by_id(second_retry.run_id)
+    assert second_retry.tags.get(DID_RETRY_TAG) is None
 
 
 def test_daemon_enabled(instance):
