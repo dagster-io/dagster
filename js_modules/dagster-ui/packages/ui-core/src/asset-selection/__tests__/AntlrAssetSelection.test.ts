@@ -130,7 +130,8 @@ describe('parseAssetSelectionQuery', () => {
     it('should parse up and down traversal queries', () => {
       assertQueryResult('key:A* and *key:C', ['A', 'B', 'B2', 'C']);
       assertQueryResult('*key:B*', ['A', 'B', 'C']);
-      assertQueryResult('(key:A* and *key:C) and *key:B*', ['A', 'B', 'C']);
+      assertQueryResult('key:A* and *key:C and *key:B*', ['A', 'B', 'C']);
+      assertQueryResult('key:A* and *key:B* and *key:C', ['A', 'B', 'C']);
     });
 
     it('should parse sinks query', () => {

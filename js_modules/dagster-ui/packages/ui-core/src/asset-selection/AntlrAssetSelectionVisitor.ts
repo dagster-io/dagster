@@ -18,6 +18,7 @@ import {
   ParenthesizedExpressionContext,
   StartContext,
   TagAttributeExprContext,
+  TraversalAllowedExpressionContext,
   TraversalContext,
   UpAndDownTraversalExpressionContext,
   UpTraversalExpressionContext,
@@ -77,12 +78,16 @@ export class AntlrAssetSelectionVisitor
     this.traverser = new GraphTraverser(all_assets);
   }
 
-  visitAttributeExpression(ctx: AttributeExpressionContext) {
-    return this.visit(ctx.attributeExpr());
+  visitStart(ctx: StartContext) {
+    return this.visit(ctx.expr());
+  }
+
+  visitTraversalAllowedExpression(ctx: TraversalAllowedExpressionContext) {
+    return this.visit(ctx.traversalAllowedExpr());
   }
 
   visitUpAndDownTraversalExpression(ctx: UpAndDownTraversalExpressionContext) {
-    const selection = this.visit(ctx.expr());
+    const selection = this.visit(ctx.traversalAllowedExpr());
     const up_depth: number = getTraversalDepth(ctx.traversal(0));
     const down_depth: number = getTraversalDepth(ctx.traversal(1));
     const selection_copy = new Set(selection);
@@ -94,7 +99,7 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitUpTraversalExpression(ctx: UpTraversalExpressionContext) {
-    const selection = this.visit(ctx.expr());
+    const selection = this.visit(ctx.traversalAllowedExpr());
     const traversal_depth: number = getTraversalDepth(ctx.traversal());
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
@@ -104,7 +109,7 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitDownTraversalExpression(ctx: DownTraversalExpressionContext) {
-    const selection = this.visit(ctx.expr());
+    const selection = this.visit(ctx.traversalAllowedExpr());
     const traversal_depth: number = getTraversalDepth(ctx.traversal());
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
@@ -128,6 +133,14 @@ export class AntlrAssetSelectionVisitor
     const left = this.visit(ctx.expr(0));
     const right = this.visit(ctx.expr(1));
     return new Set([...left, ...right]);
+  }
+
+  visitAllExpression(_ctx: AllExpressionContext) {
+    return this.all_assets;
+  }
+
+  visitAttributeExpression(ctx: AttributeExpressionContext) {
+    return this.visit(ctx.attributeExpr());
   }
 
   visitFunctionCallExpression(ctx: FunctionCallExpressionContext) {
@@ -162,10 +175,6 @@ export class AntlrAssetSelectionVisitor
 
   visitParenthesizedExpression(ctx: ParenthesizedExpressionContext) {
     return this.visit(ctx.expr());
-  }
-
-  visitAllExpression(_ctx: AllExpressionContext) {
-    return this.all_assets;
   }
 
   visitKeyExpr(ctx: KeyExprContext) {
@@ -233,9 +242,5 @@ export class AntlrAssetSelectionVisitor
       }
     }
     return selection;
-  }
-
-  visitStart(ctx: StartContext) {
-    return this.visit(ctx.expr());
   }
 }
