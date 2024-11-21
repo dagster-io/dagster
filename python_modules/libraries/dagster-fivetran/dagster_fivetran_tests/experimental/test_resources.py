@@ -1,12 +1,20 @@
+import pytest
 import responses
+from dagster import Failure
 from dagster._vendored.dateutil import parser
 from dagster_fivetran import FivetranWorkspace
 from dagster_fivetran.translator import MIN_TIME_STR
 
 from dagster_fivetran_tests.experimental.conftest import (
+    FIVETRAN_API_BASE,
+    FIVETRAN_API_VERSION,
+    FIVETRAN_CONNECTOR_ENDPOINT,
     TEST_ACCOUNT_ID,
     TEST_API_KEY,
     TEST_API_SECRET,
+    TEST_MAX_TIME_STR,
+    TEST_PREVIOUS_MAX_TIME_STR,
+    get_sample_connection_details,
 )
 
 
@@ -63,8 +71,42 @@ def test_basic_resource_request(
     assert f"{connector_id}/schemas/tables/resync" in all_api_mocks.calls[2].request.url
 
     # poll calls
+    # Succeeded poll
     all_api_mocks.calls.reset()
     client.poll_sync(
         connector_id=connector_id, previous_sync_completed_at=parser.parse(MIN_TIME_STR)
     )
     assert len(all_api_mocks.calls) == 1
+
+    # Timed out poll
+    all_api_mocks.calls.reset()
+    with pytest.raises(Failure) as e:
+        client.poll_sync(
+            connector_id=connector_id,
+            # The poll process will time out because the value of
+            # `FivetranConnector.last_sync_completed_at` does not change in the test
+            previous_sync_completed_at=parser.parse(TEST_MAX_TIME_STR),
+            poll_timeout=2,
+            poll_interval=1,
+        )
+    assert f"Sync for connector '{connector_id}' timed out" in str(e.value)
+
+    # Failed poll
+    all_api_mocks.calls.reset()
+    # Replace the mock API call and set `failed_at` as more recent that `succeeded_at`
+    all_api_mocks.replace(
+        method_or_response=responses.GET,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}",
+        json=get_sample_connection_details(
+            succeeded_at=TEST_PREVIOUS_MAX_TIME_STR, failed_at=TEST_MAX_TIME_STR
+        ),
+        status=200,
+    )
+    with pytest.raises(Failure) as e:
+        client.poll_sync(
+            connector_id=connector_id,
+            previous_sync_completed_at=parser.parse(MIN_TIME_STR),
+            poll_timeout=2,
+            poll_interval=1,
+        )
+    assert f"Sync for connector '{connector_id}' failed!" in str(e.value)
