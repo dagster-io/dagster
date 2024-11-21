@@ -1,6 +1,7 @@
 import logging
 import time
 from typing import cast
+from unittest.mock import PropertyMock, patch
 
 from dagster import DagsterEvent, DagsterEventType, DagsterInstance, EventLogEntry
 from dagster._core.events import JobFailureData, RunFailureReason
@@ -12,6 +13,7 @@ from dagster._core.storage.tags import (
     MAX_RETRIES_TAG,
     RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
     RETRY_STRATEGY_TAG,
+    WILL_RETRY_TAG,
 )
 from dagster._core.test_utils import MockedRunCoordinator, create_run_for_test, instance_for_test
 from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
@@ -43,212 +45,278 @@ def create_run(instance, **kwargs):
 
 
 def test_filter_runs_to_should_retry(instance):
+    max_retries_setting = 2
     instance.wipe()
+    with patch(
+        instance.__class__.__module__
+        + "."
+        + instance.__class__.__name__
+        + ".run_retries_max_retries",
+        new_callable=PropertyMock,
+    ) as mock_max_run_retries:
+        mock_max_run_retries.return_value = max_retries_setting
 
-    run = create_run(instance, status=DagsterRunStatus.STARTED)
+        run = create_run(instance, status=DagsterRunStatus.STARTED)
 
-    assert list(filter_runs_to_should_retry([run], instance, 2)) == []
+        assert list(filter_runs_to_should_retry([run], instance, max_retries_setting)) == []
 
-    dagster_event = DagsterEvent(
-        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        job_name="foo",
-        message="",
-    )
-    event_record = EventLogEntry(
-        user_message="",
-        level=logging.ERROR,
-        job_name="foo",
-        run_id=run.run_id,
-        error_info=None,
-        timestamp=time.time(),
-        dagster_event=dagster_event,
-    )
-    instance.handle_new_event(event_record)
+        dagster_event = DagsterEvent(
+            event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+            job_name="foo",
+            message="",
+        )
+        event_record = EventLogEntry(
+            user_message="",
+            level=logging.ERROR,
+            job_name="foo",
+            run_id=run.run_id,
+            error_info=None,
+            timestamp=time.time(),
+            dagster_event=dagster_event,
+        )
+        instance.handle_new_event(event_record)
 
-    assert (
-        len(
-            list(
-                filter_runs_to_should_retry(
-                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
-                    instance,
-                    2,
+        failed_runs = instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
+
+        assert (
+            len(
+                list(
+                    filter_runs_to_should_retry(
+                        failed_runs,
+                        instance,
+                        max_retries_setting,
+                    )
                 )
             )
+            == 1
         )
-        == 1
-    )
+
+        for run in failed_runs:
+            assert run.tags.get(WILL_RETRY_TAG) == "true"
 
 
 def test_filter_runs_no_retry_on_asset_or_op_failure(instance_no_retry_on_asset_or_op_failure):
+    max_retries_setting = 2
     instance = instance_no_retry_on_asset_or_op_failure
+    with patch(
+        instance.__class__.__module__
+        + "."
+        + instance.__class__.__name__
+        + ".run_retries_max_retries",
+        new_callable=PropertyMock,
+    ) as mock_max_run_retries:
+        mock_max_run_retries.return_value = max_retries_setting
 
-    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+        run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
 
-    assert list(filter_runs_to_should_retry([run], instance, 2)) == []
+        assert list(filter_runs_to_should_retry([run], instance, max_retries_setting)) == []
 
-    dagster_event = DagsterEvent(
-        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        job_name=run.job_name,
-        message="oops step failure",
-        event_specific_data=JobFailureData(
-            error=None, failure_reason=RunFailureReason.STEP_FAILURE
-        ),
-    )
-    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+        dagster_event = DagsterEvent(
+            event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+            job_name=run.job_name,
+            message="oops step failure",
+            event_specific_data=JobFailureData(
+                error=None, failure_reason=RunFailureReason.STEP_FAILURE
+            ),
+        )
+        instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
 
-    # doesn't retry because its a step failure
-
-    assert (
-        len(
-            list(
-                filter_runs_to_should_retry(
-                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
-                    instance,
-                    2,
+        # doesn't retry because its a step failure
+        failed_runs = instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
+        assert (
+            len(
+                list(
+                    filter_runs_to_should_retry(
+                        failed_runs,
+                        instance,
+                        max_retries_setting,
+                    )
                 )
             )
+            == 0
         )
-        == 0
-    )
 
-    assert any(
-        "Not retrying run since it failed due to an asset or op failure and run retries are configured with retry_on_asset_or_op_failure set to false."
-        in str(event)
-        for event in instance.all_logs(run.run_id)
-    )
+        for run in failed_runs:
+            assert run.tags.get(WILL_RETRY_TAG) == "false"
 
-    run = create_run(
-        instance,
-        status=DagsterRunStatus.STARTED,
-        tags={MAX_RETRIES_TAG: "2", RETRY_ON_ASSET_OR_OP_FAILURE_TAG: False},
-    )
+        assert any(
+            "Not retrying run since it failed due to an asset or op failure and run retries are configured with retry_on_asset_or_op_failure set to false."
+            in str(event)
+            for event in instance.all_logs(run.run_id)
+        )
 
-    dagster_event = DagsterEvent(
-        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        job_name=run.job_name,
-        message="oops step failure",
-        event_specific_data=JobFailureData(
-            error=None, failure_reason=RunFailureReason.STEP_FAILURE
-        ),
-    )
-    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+        run = create_run(
+            instance,
+            status=DagsterRunStatus.STARTED,
+            tags={MAX_RETRIES_TAG: "2", RETRY_ON_ASSET_OR_OP_FAILURE_TAG: False},
+        )
 
-    # does not retry due to the RETRY_ON_ASSET_OR_OP_FAILURE_TAG tag being false
+        dagster_event = DagsterEvent(
+            event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+            job_name=run.job_name,
+            message="oops step failure",
+            event_specific_data=JobFailureData(
+                error=None, failure_reason=RunFailureReason.STEP_FAILURE
+            ),
+        )
+        instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
 
-    assert (
-        len(
-            list(
-                filter_runs_to_should_retry(
-                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
-                    instance,
-                    2,
+        # does not retry due to the RETRY_ON_ASSET_OR_OP_FAILURE_TAG tag being false
+        failed_runs = instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
+        assert (
+            len(
+                list(
+                    filter_runs_to_should_retry(
+                        failed_runs,
+                        instance,
+                        max_retries_setting,
+                    )
                 )
             )
+            == 0
         )
-        == 0
-    )
+        for run in failed_runs:
+            assert run.tags.get(WILL_RETRY_TAG) == "false"
 
-    run = create_run(
-        instance,
-        status=DagsterRunStatus.STARTED,
-        tags={MAX_RETRIES_TAG: "2", RETRY_ON_ASSET_OR_OP_FAILURE_TAG: True},
-    )
+        run = create_run(
+            instance,
+            status=DagsterRunStatus.STARTED,
+            tags={MAX_RETRIES_TAG: "2", RETRY_ON_ASSET_OR_OP_FAILURE_TAG: True},
+        )
 
-    dagster_event = DagsterEvent(
-        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        job_name=run.job_name,
-        message="oops step failure",
-        event_specific_data=JobFailureData(
-            error=None, failure_reason=RunFailureReason.STEP_FAILURE
-        ),
-    )
-    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+        dagster_event = DagsterEvent(
+            event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+            job_name=run.job_name,
+            message="oops step failure",
+            event_specific_data=JobFailureData(
+                error=None, failure_reason=RunFailureReason.STEP_FAILURE
+            ),
+        )
+        instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
 
-    # does retry due to the RETRY_ON_ASSET_OR_OP_FAILURE_TAG tag being true
-
-    assert (
-        len(
-            list(
-                filter_runs_to_should_retry(
-                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
-                    instance,
-                    2,
-                )
+        # does retry due to the RETRY_ON_ASSET_OR_OP_FAILURE_TAG tag being true
+        failed_runs = instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
+        runs_to_retry = list(
+            filter_runs_to_should_retry(
+                failed_runs,
+                instance,
+                max_retries_setting,
             )
         )
-        == 1
-    )
+        assert len(runs_to_retry) == 1
+
+        for run in failed_runs:
+            if run.run_id == runs_to_retry[0][0].run_id:
+                assert run.tags.get(WILL_RETRY_TAG) == "true"
+            else:
+                assert run.tags.get(WILL_RETRY_TAG) == "false"
 
 
 def test_filter_runs_to_should_retry_tags(instance):
     instance.wipe()
+    max_retries_setting = 2
+    with patch(
+        instance.__class__.__module__
+        + "."
+        + instance.__class__.__name__
+        + ".run_retries_max_retries",
+        new_callable=PropertyMock,
+    ) as mock_max_run_retries:
+        mock_max_run_retries.return_value = max_retries_setting
 
-    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "0"})
+        run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "0"})
 
-    assert list(filter_runs_to_should_retry([run], instance, 2)) == []
+        assert list(filter_runs_to_should_retry([run], instance, max_retries_setting)) == []
 
-    instance.report_run_failed(run)
+        instance.report_run_failed(run)
 
-    assert (
-        len(
-            list(
-                filter_runs_to_should_retry(
-                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
-                    instance,
-                    2,
+        failed_runs = instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
+        assert (
+            len(
+                list(
+                    filter_runs_to_should_retry(
+                        failed_runs,
+                        instance,
+                        max_retries_setting,
+                    )
                 )
             )
+            == 0
         )
-        == 0
-    )
+        for run in failed_runs:
+            assert run.tags.get(WILL_RETRY_TAG) == "false"
 
     instance.wipe()
+    max_retries_setting = 0
+    with patch(
+        instance.__class__.__module__
+        + "."
+        + instance.__class__.__name__
+        + ".run_retries_max_retries",
+        new_callable=PropertyMock,
+    ) as mock_max_run_retries:
+        mock_max_run_retries.return_value = max_retries_setting
 
-    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "10"})
+        run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "10"})
 
-    assert list(filter_runs_to_should_retry([run], instance, 0)) == []
+        assert list(filter_runs_to_should_retry([run], instance, max_retries_setting)) == []
 
-    instance.report_run_failed(run)
+        instance.report_run_failed(run)
 
-    assert (
-        len(
-            list(
-                filter_runs_to_should_retry(
-                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
-                    instance,
-                    2,
+        failed_runs = instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
+        assert (
+            len(
+                list(
+                    filter_runs_to_should_retry(
+                        failed_runs,
+                        instance,
+                        max_retries_setting,
+                    )
                 )
             )
+            == 1
         )
-        == 1
-    )
+
+        for run in failed_runs:
+            assert run.tags.get(WILL_RETRY_TAG) == "true"
 
     instance.wipe()
+    max_retries_setting = 2
+    with patch(
+        instance.__class__.__module__
+        + "."
+        + instance.__class__.__name__
+        + ".run_retries_max_retries",
+        new_callable=PropertyMock,
+    ) as mock_max_run_retries:
+        mock_max_run_retries.return_value = max_retries_setting
 
-    run = create_run(
-        instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "not-an-int"}
-    )
-
-    assert list(filter_runs_to_should_retry([run], instance, 0)) == []
-
-    instance.report_run_failed(run)
-
-    assert (
-        list(
-            filter_runs_to_should_retry(
-                instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
-                instance,
-                2,
-            )
+        run = create_run(
+            instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "not-an-int"}
         )
-        == []
-    )
+
+        assert list(filter_runs_to_should_retry([run], instance, max_retries_setting)) == []
+
+        instance.report_run_failed(run)
+        failed_runs = instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
+        assert (
+            list(
+                filter_runs_to_should_retry(
+                    failed_runs,
+                    instance,
+                    max_retries_setting,
+                )
+            )
+            == []
+        )
+
+        for run in failed_runs:
+            assert run.tags.get(WILL_RETRY_TAG) == "false"
 
 
 def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context):
     instance.wipe()
     instance.run_coordinator.queue().clear()
-
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
@@ -275,25 +343,31 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         dagster_event=dagster_event,
     )
     instance.handle_new_event(event_record)
+    run = instance.get_run_by_id(run.run_id)
 
+    failed_runs = instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
-            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            failed_runs,
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
+    for record in failed_runs:
+        assert record.dagster_run.tags.get(WILL_RETRY_TAG) == "true"
 
     # doesn't retry again
+    failed_runs = instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
-            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            failed_runs,
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
 
     # retries once the new run failed
+    first_retry = instance.run_coordinator.queue()[0]
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
         job_name="foo",
@@ -303,21 +377,26 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         user_message="",
         level=logging.ERROR,
         job_name="foo",
-        run_id=instance.run_coordinator.queue()[0].run_id,
+        run_id=first_retry.run_id,
         error_info=None,
         timestamp=time.time(),
         dagster_event=dagster_event,
     )
     instance.handle_new_event(event_record)
+    first_retry = instance.get_run_by_id(first_retry.run_id)
+    failed_runs = instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
-            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            failed_runs,
         )
     )
     assert len(instance.run_coordinator.queue()) == 2
+    assert run.tags.get(WILL_RETRY_TAG) == "true"
+    assert first_retry.tags.get(WILL_RETRY_TAG) == "true"
 
     # doesn't retry a third time
+    second_retry = instance.run_coordinator.queue()[1]
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
         job_name="foo",
@@ -327,19 +406,24 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         user_message="",
         level=logging.ERROR,
         job_name="foo",
-        run_id=instance.run_coordinator.queue()[1].run_id,
+        run_id=second_retry.run_id,
         error_info=None,
         timestamp=time.time(),
         dagster_event=dagster_event,
     )
     instance.handle_new_event(event_record)
+    second_retry = instance.get_run_by_id(second_retry.run_id)
+    failed_runs = instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
-            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            failed_runs,
         )
     )
     assert len(instance.run_coordinator.queue()) == 2
+    assert run.tags.get(WILL_RETRY_TAG) == "true"
+    assert first_retry.tags.get(WILL_RETRY_TAG) == "true"
+    assert second_retry.tags.get(WILL_RETRY_TAG) == "false"
 
 
 def test_daemon_enabled(instance):
@@ -410,11 +494,11 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
         dagster_event=dagster_event,
     )
     instance.handle_new_event(event_record)
-
+    failed_runs = instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
-            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            failed_runs,
         )
     )
     assert len(run_coordinator.queue()) == 1
@@ -424,3 +508,5 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
         auto_run.execution_plan_snapshot_id
     ).step_keys_to_execute == ["do_something"]
     assert instance.get_job_snapshot(auto_run.job_snapshot_id).node_names == ["do_something"]
+    for run in failed_runs:
+        assert run.dagster_run.tags.get(WILL_RETRY_TAG) == "true"

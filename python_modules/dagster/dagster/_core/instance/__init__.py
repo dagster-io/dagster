@@ -2430,7 +2430,9 @@ class DagsterInstance(DynamicPartitionsStore):
                 run_group = self.get_run_group(run.run_id)
                 if run_group is not None:
                     _, run_group_iter = run_group
-                    if len(list(run_group_iter)) < max_retries:
+                    # since the original run is in the run group, we retry one more time
+                    # if the length of the run group is max_retries
+                    if len(list(run_group_iter)) <= max_retries:
                         retry_on_asset_or_op_failure = get_boolean_tag_value(
                             run.tags.get(RETRY_ON_ASSET_OR_OP_FAILURE_TAG),
                             default_value=self.run_retries_retry_on_asset_or_op_failure,
