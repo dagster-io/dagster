@@ -15,16 +15,6 @@ class AssetSelectionListener(ParseTreeListener):
     def exitStart(self, ctx: AssetSelectionParser.StartContext):
         pass
 
-    # Enter a parse tree produced by AssetSelectionParser#ParenthesizedExpression.
-    def enterParenthesizedExpression(
-        self, ctx: AssetSelectionParser.ParenthesizedExpressionContext
-    ):
-        pass
-
-    # Exit a parse tree produced by AssetSelectionParser#ParenthesizedExpression.
-    def exitParenthesizedExpression(self, ctx: AssetSelectionParser.ParenthesizedExpressionContext):
-        pass
-
     # Enter a parse tree produced by AssetSelectionParser#UpTraversalExpression.
     def enterUpTraversalExpression(self, ctx: AssetSelectionParser.UpTraversalExpressionContext):
         pass
@@ -49,12 +39,16 @@ class AssetSelectionListener(ParseTreeListener):
     def exitAllExpression(self, ctx: AssetSelectionParser.AllExpressionContext):
         pass
 
-    # Enter a parse tree produced by AssetSelectionParser#NotExpression.
-    def enterNotExpression(self, ctx: AssetSelectionParser.NotExpressionContext):
+    # Enter a parse tree produced by AssetSelectionParser#TraversalAllowedExpression.
+    def enterTraversalAllowedExpression(
+        self, ctx: AssetSelectionParser.TraversalAllowedExpressionContext
+    ):
         pass
 
-    # Exit a parse tree produced by AssetSelectionParser#NotExpression.
-    def exitNotExpression(self, ctx: AssetSelectionParser.NotExpressionContext):
+    # Exit a parse tree produced by AssetSelectionParser#TraversalAllowedExpression.
+    def exitTraversalAllowedExpression(
+        self, ctx: AssetSelectionParser.TraversalAllowedExpressionContext
+    ):
         pass
 
     # Enter a parse tree produced by AssetSelectionParser#DownTraversalExpression.
@@ -67,12 +61,32 @@ class AssetSelectionListener(ParseTreeListener):
     def exitDownTraversalExpression(self, ctx: AssetSelectionParser.DownTraversalExpressionContext):
         pass
 
+    # Enter a parse tree produced by AssetSelectionParser#NotExpression.
+    def enterNotExpression(self, ctx: AssetSelectionParser.NotExpressionContext):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#NotExpression.
+    def exitNotExpression(self, ctx: AssetSelectionParser.NotExpressionContext):
+        pass
+
     # Enter a parse tree produced by AssetSelectionParser#OrExpression.
     def enterOrExpression(self, ctx: AssetSelectionParser.OrExpressionContext):
         pass
 
     # Exit a parse tree produced by AssetSelectionParser#OrExpression.
     def exitOrExpression(self, ctx: AssetSelectionParser.OrExpressionContext):
+        pass
+
+    # Enter a parse tree produced by AssetSelectionParser#UpAndDownTraversalExpression.
+    def enterUpAndDownTraversalExpression(
+        self, ctx: AssetSelectionParser.UpAndDownTraversalExpressionContext
+    ):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#UpAndDownTraversalExpression.
+    def exitUpAndDownTraversalExpression(
+        self, ctx: AssetSelectionParser.UpAndDownTraversalExpressionContext
+    ):
         pass
 
     # Enter a parse tree produced by AssetSelectionParser#AttributeExpression.
@@ -91,16 +105,14 @@ class AssetSelectionListener(ParseTreeListener):
     def exitFunctionCallExpression(self, ctx: AssetSelectionParser.FunctionCallExpressionContext):
         pass
 
-    # Enter a parse tree produced by AssetSelectionParser#UpAndDownTraversalExpression.
-    def enterUpAndDownTraversalExpression(
-        self, ctx: AssetSelectionParser.UpAndDownTraversalExpressionContext
+    # Enter a parse tree produced by AssetSelectionParser#ParenthesizedExpression.
+    def enterParenthesizedExpression(
+        self, ctx: AssetSelectionParser.ParenthesizedExpressionContext
     ):
         pass
 
-    # Exit a parse tree produced by AssetSelectionParser#UpAndDownTraversalExpression.
-    def exitUpAndDownTraversalExpression(
-        self, ctx: AssetSelectionParser.UpAndDownTraversalExpressionContext
-    ):
+    # Exit a parse tree produced by AssetSelectionParser#ParenthesizedExpression.
+    def exitParenthesizedExpression(self, ctx: AssetSelectionParser.ParenthesizedExpressionContext):
         pass
 
     # Enter a parse tree produced by AssetSelectionParser#traversal.
