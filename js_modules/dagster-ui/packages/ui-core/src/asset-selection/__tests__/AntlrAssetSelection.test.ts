@@ -18,7 +18,7 @@ const TEST_GRAPH: AssetGraphQueryItem[] = [
       owners: [buildUserAssetOwner({email: 'owner@owner.com'})],
     }),
     inputs: [{dependsOn: []}],
-    outputs: [{dependedBy: [{solid: {name: 'B'}}]}],
+    outputs: [{dependedBy: [{solid: {name: 'B'}}, {solid: {name: 'B2'}}]}],
   },
   // Second Layer
   {
@@ -30,7 +30,12 @@ const TEST_GRAPH: AssetGraphQueryItem[] = [
     inputs: [{dependsOn: [{solid: {name: 'A'}}]}],
     outputs: [{dependedBy: [{solid: {name: 'C'}}]}],
   },
-
+  {
+    name: 'B2',
+    node: buildAssetNode(),
+    inputs: [{dependsOn: [{solid: {name: 'A'}}]}],
+    outputs: [{dependedBy: [{solid: {name: 'C'}}]}],
+  },
   // Third Layer
   {
     name: 'C',
@@ -41,7 +46,7 @@ const TEST_GRAPH: AssetGraphQueryItem[] = [
         location: buildRepositoryLocation({name: 'my_location'}),
       }),
     }),
-    inputs: [{dependsOn: [{solid: {name: 'B'}}]}],
+    inputs: [{dependsOn: [{solid: {name: 'B'}}, {solid: {name: 'B2'}}]}],
     outputs: [{dependedBy: []}],
   },
 ];
@@ -74,7 +79,7 @@ describe('parseAssetSelectionQuery', () => {
 
   describe('valid queries', () => {
     it('should parse star query', () => {
-      assertQueryResult('*', ['A', 'B', 'C']);
+      assertQueryResult('*', ['A', 'B', 'B2', 'C']);
     });
 
     it('should parse key query', () => {
@@ -99,25 +104,33 @@ describe('parseAssetSelectionQuery', () => {
     it('should parse upstream plus query', () => {
       assertQueryResult('+key:A', ['A']);
       assertQueryResult('+key:B', ['A', 'B']);
-      assertQueryResult('++key:C', ['A', 'B', 'C']);
+      assertQueryResult('+key:C', ['B', 'B2', 'C']);
+      assertQueryResult('++key:C', ['A', 'B', 'B2', 'C']);
     });
 
     it('should parse downstream plus query', () => {
+      assertQueryResult('key:A+', ['A', 'B', 'B2']);
+      assertQueryResult('key:A++', ['A', 'B', 'B2', 'C']);
       assertQueryResult('key:C+', ['C']);
       assertQueryResult('key:B+', ['B', 'C']);
-      assertQueryResult('key:A++', ['A', 'B', 'C']);
     });
 
     it('should parse upstream star query', () => {
       assertQueryResult('*key:A', ['A']);
       assertQueryResult('*key:B', ['A', 'B']);
-      assertQueryResult('**key:C', ['A', 'B', 'C']);
+      assertQueryResult('*key:C', ['A', 'B', 'B2', 'C']);
     });
 
     it('should parse downstream star query', () => {
-      assertQueryResult('key:C*', ['C']);
+      assertQueryResult('key:A*', ['A', 'B', 'B2', 'C']);
       assertQueryResult('key:B*', ['B', 'C']);
-      assertQueryResult('key:A**', ['A', 'B', 'C']);
+      assertQueryResult('key:C*', ['C']);
+    });
+
+    it('should parse up and down traversal queries', () => {
+      assertQueryResult('key:A* and *key:C', ['A', 'B', 'B2', 'C']);
+      assertQueryResult('*key:B*', ['A', 'B', 'C']);
+      assertQueryResult('(key:A* and *key:C) and *key:B*', ['A', 'B', 'C']);
     });
 
     it('should parse sinks query', () => {

@@ -81,22 +81,24 @@ export class AntlrAssetSelectionVisitor
     return this.visit(ctx.attributeExpr());
   }
 
-  visitUpTraversalExpression(ctx: UpTraversalExpressionContext) {
-    const selection = this.visit(ctx.expr());
-    const traversal_depth: number = getTraversalDepth(ctx.traversal());
-    for (const item of selection) {
-      this.traverser.fetchUpstream(item, traversal_depth).forEach((i) => selection.add(i));
-    }
-    return selection;
-  }
-
   visitUpAndDownTraversalExpression(ctx: UpAndDownTraversalExpressionContext) {
     const selection = this.visit(ctx.expr());
     const up_depth: number = getTraversalDepth(ctx.traversal(0));
     const down_depth: number = getTraversalDepth(ctx.traversal(1));
-    for (const item of selection) {
+    const selection_copy = new Set(selection);
+    for (const item of selection_copy) {
       this.traverser.fetchUpstream(item, up_depth).forEach((i) => selection.add(i));
       this.traverser.fetchDownstream(item, down_depth).forEach((i) => selection.add(i));
+    }
+    return selection;
+  }
+
+  visitUpTraversalExpression(ctx: UpTraversalExpressionContext) {
+    const selection = this.visit(ctx.expr());
+    const traversal_depth: number = getTraversalDepth(ctx.traversal());
+    const selection_copy = new Set(selection);
+    for (const item of selection_copy) {
+      this.traverser.fetchUpstream(item, traversal_depth).forEach((i) => selection.add(i));
     }
     return selection;
   }
@@ -104,7 +106,8 @@ export class AntlrAssetSelectionVisitor
   visitDownTraversalExpression(ctx: DownTraversalExpressionContext) {
     const selection = this.visit(ctx.expr());
     const traversal_depth: number = getTraversalDepth(ctx.traversal());
-    for (const item of selection) {
+    const selection_copy = new Set(selection);
+    for (const item of selection_copy) {
       this.traverser.fetchDownstream(item, traversal_depth).forEach((i) => selection.add(i));
     }
     return selection;

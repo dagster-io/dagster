@@ -21,7 +21,7 @@ class AntlrInputErrorListener implements ANTLRErrorListener<any> {
     line: number,
     charPositionInLine: number,
     msg: string,
-    e: RecognitionException | undefined,
+    _e: RecognitionException | undefined,
   ): void {
     if (offendingSymbol) {
       throw new Error(`Syntax error caused by "${offendingSymbol.text}": ${msg}`);
