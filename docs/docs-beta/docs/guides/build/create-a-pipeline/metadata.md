@@ -1,7 +1,7 @@
 ---
 title: 'Adding tags and metadata to assets'
 description: 'Learn how to add tags and metadata to assets to improve observability in Dagster'
-sidebar_position: 40
+sidebar_position: 2
 sidebar_label: 'Add metadata'
 ---
 

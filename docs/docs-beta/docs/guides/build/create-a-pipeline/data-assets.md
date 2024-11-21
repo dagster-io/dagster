@@ -1,7 +1,7 @@
 ---
 title: 'Defining data assets with decorators'
 sidebar_label: 'Create Assets'
-sidebar_position: 10
+sidebar_position: 1
 ---
 
 The most common way to create a data asset in Dagster is by annotating a function with an asset decorator. The function computes the contents of the asset, such as a database table or file.

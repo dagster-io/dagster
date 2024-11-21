@@ -1,7 +1,7 @@
 ---
 title: Pass data between assets
 description: Learn how to pass data between assets in Dagster
-sidebar_position: 30
+sidebar_position: 2
 last_update:
   date: 2024-08-11
   author: Pedram Navid

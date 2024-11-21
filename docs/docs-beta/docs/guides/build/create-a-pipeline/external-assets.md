@@ -1,6 +1,6 @@
 ---
 title: Representing external data sources with external assets
-sidebar_position: 80
+sidebar_position: 5
 sidebar_label: 'External data sources'
 ---
 

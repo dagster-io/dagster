@@ -1,6 +1,6 @@
 ---
 title: "Ops vs. assets"
-sidebar_position: 10
+sidebar_position: 1
 unlisted: true
 ---
 

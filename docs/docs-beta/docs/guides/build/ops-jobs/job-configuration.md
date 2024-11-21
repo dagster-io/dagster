@@ -1,6 +1,6 @@
 ---
 title: "Job configuration"
-sidebar_position: 10
+sidebar_position: 2
 unlisted: true
 ---
 

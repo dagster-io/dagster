@@ -1,7 +1,7 @@
 ---
 title: Ingesting data with Dagster
 description: Learn how to orchestrate data ingestion with Dagster
-sidebar_position: 10
+sidebar_position: 1
 sidebar_label: Ingest data
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: 'Asset selection syntax'
-sidebar_position: 70
+sidebar_position: 5
 sidebar_label: 'Asset selection syntax'
 ---
 

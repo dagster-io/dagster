@@ -1,5 +1,5 @@
 ---
 title: Connecting to cloud services
-sidebar_position: 25
+sidebar_position: 6
 unlisted: true
 ---
