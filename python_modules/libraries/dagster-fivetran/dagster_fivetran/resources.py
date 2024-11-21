@@ -669,8 +669,8 @@ class FivetranWorkspace(ConfigurableResource):
     disable_schedule_on_trigger: bool = Field(
         default=True,
         description=(
-            "Specifies if you would like any connector that is sync'd using this "  # TODO: update description
-            "resource to be automatically taken off its Fivetran schedule."
+            "Whether to disable the schedule of a connector when it is synchronized using this resource."
+            "Defaults to True."
         ),
     )
 
