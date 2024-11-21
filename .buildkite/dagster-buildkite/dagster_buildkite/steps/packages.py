@@ -367,9 +367,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/experimental/dagster-blueprints",
     ),
-    PackageSpec(
-        "examples/experimental/dagster-airlift",
-    ),
     # Runs against live dbt cloud instance, we only want to run on commits and on the
     # nightly build
     PackageSpec(
@@ -394,15 +391,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         queue=BuildkiteQueue.DOCKER,
     ),
     PackageSpec(
-        "examples/experimental/dagster-airlift/perf-harness",
-        always_run_if=has_dagster_airlift_changes,
-    ),
-    PackageSpec(
         "examples/airlift-migration-tutorial",
-        always_run_if=has_dagster_airlift_changes,
-    ),
-    PackageSpec(
-        "examples/experimental/dagster-airlift/kitchen-sink",
         always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
@@ -747,6 +736,14 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             # duckdb
             AvailablePythonVersion.V3_12,
         ],
+    ),
+    PackageSpec(
+        "python_modules/libraries/dagster-airlift/perf-harness",
+        always_run_if=has_dagster_airlift_changes,
+    ),
+    PackageSpec(
+        "python_modules/libraries/dagster-airlift/kitchen-sink",
+        always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
         ".buildkite/dagster-buildkite",

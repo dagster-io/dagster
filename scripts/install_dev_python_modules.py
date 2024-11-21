@@ -51,7 +51,7 @@ def main(
     editable_target_paths = [
         ".buildkite/dagster-buildkite",
         "examples/experimental/dagster-blueprints",
-        "examples/experimental/dagster-airlift[core,in-airflow,mwaa,dbt,test]",
+        "python_modules/libraries/dagster-airlift[core,in-airflow,mwaa,dbt,test]",
         "integration_tests/python_modules/dagster-k8s-test-infra",
         "helm/dagster/schema[test]",
         "python_modules/automation",
