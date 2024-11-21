@@ -18,6 +18,7 @@ import {
   ParenthesizedExpressionContext,
   StartContext,
   TagAttributeExprContext,
+  TraversalAllowedExpressionContext,
   TraversalContext,
   UpAndDownTraversalExpressionContext,
   UpTraversalExpressionContext,
@@ -77,34 +78,41 @@ export class AntlrAssetSelectionVisitor
     this.traverser = new GraphTraverser(all_assets);
   }
 
-  visitAttributeExpression(ctx: AttributeExpressionContext) {
-    return this.visit(ctx.attributeExpr());
+  visitStart(ctx: StartContext) {
+    return this.visit(ctx.expr());
   }
 
-  visitUpTraversalExpression(ctx: UpTraversalExpressionContext) {
-    const selection = this.visit(ctx.expr());
-    const traversal_depth: number = getTraversalDepth(ctx.traversal());
-    for (const item of selection) {
-      this.traverser.fetchUpstream(item, traversal_depth).forEach((i) => selection.add(i));
-    }
-    return selection;
+  visitTraversalAllowedExpression(ctx: TraversalAllowedExpressionContext) {
+    return this.visit(ctx.traversalAllowedExpr());
   }
 
   visitUpAndDownTraversalExpression(ctx: UpAndDownTraversalExpressionContext) {
-    const selection = this.visit(ctx.expr());
+    const selection = this.visit(ctx.traversalAllowedExpr());
     const up_depth: number = getTraversalDepth(ctx.traversal(0));
     const down_depth: number = getTraversalDepth(ctx.traversal(1));
-    for (const item of selection) {
+    const selection_copy = new Set(selection);
+    for (const item of selection_copy) {
       this.traverser.fetchUpstream(item, up_depth).forEach((i) => selection.add(i));
       this.traverser.fetchDownstream(item, down_depth).forEach((i) => selection.add(i));
     }
     return selection;
   }
 
-  visitDownTraversalExpression(ctx: DownTraversalExpressionContext) {
-    const selection = this.visit(ctx.expr());
+  visitUpTraversalExpression(ctx: UpTraversalExpressionContext) {
+    const selection = this.visit(ctx.traversalAllowedExpr());
     const traversal_depth: number = getTraversalDepth(ctx.traversal());
-    for (const item of selection) {
+    const selection_copy = new Set(selection);
+    for (const item of selection_copy) {
+      this.traverser.fetchUpstream(item, traversal_depth).forEach((i) => selection.add(i));
+    }
+    return selection;
+  }
+
+  visitDownTraversalExpression(ctx: DownTraversalExpressionContext) {
+    const selection = this.visit(ctx.traversalAllowedExpr());
+    const traversal_depth: number = getTraversalDepth(ctx.traversal());
+    const selection_copy = new Set(selection);
+    for (const item of selection_copy) {
       this.traverser.fetchDownstream(item, traversal_depth).forEach((i) => selection.add(i));
     }
     return selection;
@@ -125,6 +133,14 @@ export class AntlrAssetSelectionVisitor
     const left = this.visit(ctx.expr(0));
     const right = this.visit(ctx.expr(1));
     return new Set([...left, ...right]);
+  }
+
+  visitAllExpression(_ctx: AllExpressionContext) {
+    return this.all_assets;
+  }
+
+  visitAttributeExpression(ctx: AttributeExpressionContext) {
+    return this.visit(ctx.attributeExpr());
   }
 
   visitFunctionCallExpression(ctx: FunctionCallExpressionContext) {
@@ -159,10 +175,6 @@ export class AntlrAssetSelectionVisitor
 
   visitParenthesizedExpression(ctx: ParenthesizedExpressionContext) {
     return this.visit(ctx.expr());
-  }
-
-  visitAllExpression(_ctx: AllExpressionContext) {
-    return this.all_assets;
   }
 
   visitKeyExpr(ctx: KeyExprContext) {
@@ -230,9 +242,5 @@ export class AntlrAssetSelectionVisitor
       }
     }
     return selection;
-  }
-
-  visitStart(ctx: StartContext) {
-    return this.visit(ctx.expr());
   }
 }
