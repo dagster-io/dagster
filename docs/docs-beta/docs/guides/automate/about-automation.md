@@ -1,5 +1,6 @@
 ---
 title: About Automation
+unlisted: true
 ---
 
 There are several ways to automate the execution of your data pipelines with Dagster.

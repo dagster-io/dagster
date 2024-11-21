@@ -1,6 +1,6 @@
 ---
 title: Triggering cross-job dependencies with Asset Sensors
-sidebar_position: 30
+sidebar_position: 3
 sidebar_label: Cross-job dependencies
 ---
 

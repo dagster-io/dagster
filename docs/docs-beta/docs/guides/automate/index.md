@@ -4,6 +4,7 @@ description: Learn how to automate your data pipelines.
 last_update:
   date: 2024-08-12
   author: Pedram Navid
+sidebar_class_name: hidden
 ---
 
 Automation is key to building reliable, efficient data pipelines. This guide provides a simplified overview of the main ways to automate processes in Dagster, helping you choose the right method for your needs. You will find links to more detailed guides for each method below.
