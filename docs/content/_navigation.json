@@ -967,6 +967,10 @@
           {
             "title": "DAG-level migration",
             "path": "/integrations/airlift/full_dag"
+          },
+          {
+            "title": "Migration with Airflow 1",
+            "path": "/integrations/airlift/airflow-1-migration"
           }
         ]
       },
