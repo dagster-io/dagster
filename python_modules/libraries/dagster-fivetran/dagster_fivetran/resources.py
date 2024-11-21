@@ -611,7 +611,7 @@ class FivetranClient:
         schedule_types = {s for s in FivetranConnectorScheduleType}
         if schedule_type not in schedule_types:
             check.failed(
-                f"The schedule_type for a connector must be in {schedule_types}: "
+                f"The schedule_type for connector {connector_id} must be in {schedule_types}: "
                 f"got '{schedule_type}'"
             )
         return self._make_connector_request(
@@ -637,11 +637,11 @@ class FivetranClient:
         )
         connector.is_syncable()
         if self.disable_schedule_on_trigger:
-            self._log.info("Disabling Fivetran sync schedule.")
+            self._log.info(f"Disabling Fivetran sync schedule for connector {connector_id}.")
             self.update_schedule_type_for_connector(connector_id, "manual")
         request_fn()
         self._log.info(
-            f"Sync initialized for connector_id={connector_id}. View this sync in the Fivetran"
+            f"Sync initialized for connector {connector_id}. View this sync in the Fivetran"
             " UI: " + connector.url
         )
 
