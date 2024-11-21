@@ -54,7 +54,7 @@ export const TickDetailsDialog = ({
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
-      style={{width: '80vw', maxWidth: '1200px', minWidth: '600px', transform: 'scale(1)'}}
+      style={{width: '80vw', maxWidth: '1200px', minWidth: '600px'}}
     >
       <TickDetailsDialogImpl
         tickId={tickId}

@@ -45,6 +45,36 @@ export const Simple = () => {
   );
 };
 
+export const TransformedContainerUsage = () => {
+  return (
+    <Box>
+      <em style={{display: 'block', marginBottom: 10}}>
+        Note: Only the first item should appear truncated. This use case is based on our usage of
+        MiddleTruncate in modals that animate in.
+      </em>
+      {[
+        'asset_that_supports_partition_ranges',
+        'asset_downstream',
+        'asset_weekly_root',
+        'asset_weekly',
+      ].map((text) => (
+        <Box
+          key={text}
+          style={{maxWidth: 200, transform: 'scale(0.8)'}}
+          flex={{direction: 'row', gap: 8}}
+        >
+          <Box>
+            <Icon name="asset_non_sda" />
+          </Box>
+          <a style={{overflow: 'hidden'}} href="#/">
+            <MiddleTruncate text={text} />
+          </a>
+        </Box>
+      ))}
+    </Box>
+  );
+};
+
 export const FlexboxContainerUsage = () => {
   return (
     <Box>
@@ -85,6 +115,7 @@ export const FlexboxContainerUsage = () => {
     </Box>
   );
 };
+
 export const TagUsage = () => {
   return (
     <Tag icon="job">
