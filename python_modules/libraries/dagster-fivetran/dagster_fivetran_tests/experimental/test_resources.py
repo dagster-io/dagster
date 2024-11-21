@@ -111,17 +111,33 @@ def test_basic_resource_request(
 
 
 @pytest.mark.parametrize(
-    "n_polls, succeed_at_end",
-    [(0, True), (0, False), (4, True), (4, False), (30, True)],
+    "method, n_polls, succeed_at_end",
+    [
+        ("sync_and_poll", 0, True),
+        ("sync_and_poll", 0, False),
+        ("sync_and_poll", 4, True),
+        ("sync_and_poll", 4, False),
+        ("sync_and_poll", 30, True),
+        ("resync_and_poll", 0, True),
+        ("resync_and_poll", 0, False),
+        ("resync_and_poll", 4, True),
+        ("resync_and_poll", 4, False),
+        ("resync_and_poll", 30, True),
+    ],
     ids=["short_success", "short_failure", "medium_success", "medium_failure", "long_success"],
 )
-def test_sync_and_poll(n_polls, succeed_at_end, connector_id):
+def test_sync_and_poll_methods(method, n_polls, succeed_at_end, connector_id):
     resource = FivetranWorkspace(
         account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
     )
     client = resource.get_client()
 
     test_connector_api_url = get_fivetran_connector_api_url(connector_id)
+    test_sync_api_url = (
+        f"{test_connector_api_url}/force"
+        if method == "sync_and_poll"
+        else f"{test_connector_api_url}/resync"
+    )
 
     test_succeeded_at = TEST_MAX_TIME_STR
     test_failed_at = TEST_PREVIOUS_MAX_TIME_STR
@@ -139,9 +155,7 @@ def test_sync_and_poll(n_polls, succeed_at_end, connector_id):
                 json=SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
             )
             response.add(responses.PATCH, test_connector_api_url, json=SAMPLE_SUCCESS_MESSAGE)
-            response.add(
-                responses.POST, f"{test_connector_api_url}/force", json=SAMPLE_SUCCESS_MESSAGE
-            )
+            response.add(responses.POST, test_sync_api_url, json=SAMPLE_SUCCESS_MESSAGE)
             # initial state
             response.add(
                 responses.GET,
@@ -167,7 +181,8 @@ def test_sync_and_poll(n_polls, succeed_at_end, connector_id):
                     succeeded_at=test_succeeded_at, failed_at=test_failed_at
                 ),
             )
-            return client.sync_and_poll(connector_id, poll_interval=0.1)
+            test_method = getattr(client, method)
+            return test_method(connector_id, poll_interval=0.1)
 
     if succeed_at_end:
         assert _mock_interaction() == FivetranOutput(
