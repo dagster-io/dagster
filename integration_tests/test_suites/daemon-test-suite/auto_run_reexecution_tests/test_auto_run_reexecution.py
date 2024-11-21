@@ -344,24 +344,21 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     )
     instance.handle_new_event(event_record)
     run = instance.get_run_by_id(run.run_id)
+    assert run.tags.get(WILL_RETRY_TAG) == "true"
 
-    failed_runs = instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
-            failed_runs,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
-    for record in failed_runs:
-        assert record.dagster_run.tags.get(WILL_RETRY_TAG) == "true"
 
     # doesn't retry again
-    failed_runs = instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
-            failed_runs,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
@@ -384,16 +381,15 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     )
     instance.handle_new_event(event_record)
     first_retry = instance.get_run_by_id(first_retry.run_id)
-    failed_runs = instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
+    assert first_retry.tags.get(WILL_RETRY_TAG) == "true"
+
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
-            failed_runs,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
         )
     )
     assert len(instance.run_coordinator.queue()) == 2
-    assert run.tags.get(WILL_RETRY_TAG) == "true"
-    assert first_retry.tags.get(WILL_RETRY_TAG) == "true"
 
     # doesn't retry a third time
     second_retry = instance.run_coordinator.queue()[1]
@@ -413,17 +409,15 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     )
     instance.handle_new_event(event_record)
     second_retry = instance.get_run_by_id(second_retry.run_id)
-    failed_runs = instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE]))
+    assert second_retry.tags.get(WILL_RETRY_TAG) == "false"
+
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
-            failed_runs,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
         )
     )
     assert len(instance.run_coordinator.queue()) == 2
-    assert run.tags.get(WILL_RETRY_TAG) == "true"
-    assert first_retry.tags.get(WILL_RETRY_TAG) == "true"
-    assert second_retry.tags.get(WILL_RETRY_TAG) == "false"
 
 
 def test_daemon_enabled(instance):
