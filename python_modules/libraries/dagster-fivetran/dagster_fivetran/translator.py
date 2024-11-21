@@ -64,6 +64,7 @@ class FivetranConnector:
     def is_paused(self) -> bool:
         return self.paused
 
+    @property
     def is_syncable(self) -> bool:
         """Confirms that the connector can be sync. Will raise a Failure in the event that
         the connector is either paused or not fully set up.
