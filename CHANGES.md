@@ -22,6 +22,14 @@
 - [dagster-sigma] Added `skip_fetch_column_data` option to skip loading Sigma column lineage. This can speed up loading large instances.
 - [dagster-sigma] Introduced an experimental `dagster-sigma snapshot` command, allowing Sigma workspaces to be captured to a file for faster subsequent loading.
 
+  ### Introducing: `dagster-airlift` (experimental)
+
+  `dagster-airlift` is coming out of stealth. See the initial Airlift RFC [here](https://github.com/dagster-io/dagster/discussions/25279), and the following documentation to learn more:
+  - A full [Airflow migration tutorial](https://master.dagster.dagster-docs.io/integrations/airlift/tutorial/overview
+  - A tutorial on [federating between Airflow instances](https://master.dagster.dagster-docs.io/integrations/airlift/federation-tutorial/overview)
+
+  More Airflow-related content is coming soon! We'd love for you to check it out, and post any comments / questions in the #airflow-migration channel in the Dagster slack.
+
 ### Bugfixes
 
 - Fixed a bug in run status sensors where setting incompatible arguments `monitor_all_code_locations` and `monitored_jobs` did not raise the expected error. (Thanks, [@apetryla](https://github.com/apetryla)!)
