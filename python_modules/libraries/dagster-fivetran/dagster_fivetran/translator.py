@@ -12,6 +12,8 @@ from dagster._vendored.dateutil import parser
 
 from dagster_fivetran.utils import get_fivetran_connector_table_name, metadata_for_table
 
+MIN_TIME_STR = "0001-01-01 00:00:00+00"
+
 
 class FivetranConnectorTableProps(NamedTuple):
     table: str
