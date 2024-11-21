@@ -1,4 +1,14 @@
-import {Box, Button, Colors, Dialog, Icon, Table, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  ButtonLink,
+  Colors,
+  Dialog,
+  DialogFooter,
+  Icon,
+  Table,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
 import styled, {css} from 'styled-components';
 
@@ -318,15 +328,20 @@ const ViewDetailsButton = ({
           setShowDetails(false);
         }}
       >
-        <AssetEventMetadataEntriesTable showDescriptions event={evaluation} repoAddress={null} />
+        <Box padding={8}>
+          <AssetEventMetadataEntriesTable showDescriptions event={evaluation} repoAddress={null} />
+        </Box>
+        <DialogFooter>
+          <Button onClick={() => setShowDetails(false)}>Done</Button>
+        </DialogFooter>
       </Dialog>
-      <Button
+      <ButtonLink
         onClick={() => {
           setShowDetails(true);
         }}
       >
         View details
-      </Button>
+      </ButtonLink>
     </>
   );
 };
