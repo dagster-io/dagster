@@ -1,6 +1,6 @@
 ---
 title: "Checking for data freshness"
-sidebar_position: 20
+sidebar_position: 2
 sidebar_label: "Data freshness"
 ---
 

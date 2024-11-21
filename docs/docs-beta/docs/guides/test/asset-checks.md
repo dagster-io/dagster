@@ -1,6 +1,6 @@
 ---
 title: "Testing assets with Asset checks"
-sidebar_position: 10
+sidebar_position: 1
 sidebar_label: "Asset checks"
 ---
 
