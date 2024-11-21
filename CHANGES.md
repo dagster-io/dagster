@@ -25,10 +25,11 @@
   ### Introducing: `dagster-airlift` (experimental)
 
   `dagster-airlift` is coming out of stealth. See the initial Airlift RFC [here](https://github.com/dagster-io/dagster/discussions/25279), and the following documentation to learn more:
-  - A full [Airflow migration tutorial](https://master.dagster.dagster-docs.io/integrations/airlift/tutorial/overview
-  - A tutorial on [federating between Airflow instances](https://master.dagster.dagster-docs.io/integrations/airlift/federation-tutorial/overview)
 
-  More Airflow-related content is coming soon! We'd love for you to check it out, and post any comments / questions in the #airflow-migration channel in the Dagster slack.
+  - A full [Airflow migration tutorial](https://docs.dagster.io/integrations/airlift/tutorial/overview).
+  - A tutorial on [federating between Airflow instances](https://docs.dagster.io/integrations/airlift/federation-tutorial/overview).
+
+  More Airflow-related content is coming soon! We'd love for you to check it out, and post any comments / questions in the `#airflow-migration` channel in the Dagster slack.
 
 ### Bugfixes
 
