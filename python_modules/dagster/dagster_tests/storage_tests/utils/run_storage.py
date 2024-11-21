@@ -24,7 +24,6 @@ from dagster._core.remote_representation import (
     RemoteRepositoryOrigin,
 )
 from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.snap import create_job_snapshot_id
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log import InMemoryEventLogStorage
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
@@ -237,8 +236,8 @@ class TestRunStorage:
         job_def_b = GraphDefinition(name="some_other_pipeline", node_defs=[]).to_job()
         job_snapshot_a = job_def_a.get_job_snapshot()
         job_snapshot_b = job_def_b.get_job_snapshot()
-        job_snapshot_a_id = create_job_snapshot_id(job_snapshot_a)
-        job_snapshot_b_id = create_job_snapshot_id(job_snapshot_b)
+        job_snapshot_a_id = job_snapshot_a.snapshot_id
+        job_snapshot_b_id = job_snapshot_b.snapshot_id
 
         assert storage.add_job_snapshot(job_snapshot_a) == job_snapshot_a_id
         assert storage.add_job_snapshot(job_snapshot_b) == job_snapshot_b_id
@@ -1080,7 +1079,7 @@ class TestRunStorage:
     def test_add_get_snapshot(self, storage):
         job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
         job_snapshot = job_def.get_job_snapshot()
-        job_snapshot_id = create_job_snapshot_id(job_snapshot)
+        job_snapshot_id = job_snapshot.snapshot_id
 
         assert storage.add_job_snapshot(job_snapshot) == job_snapshot_id
         fetch_job_snapshot = storage.get_job_snapshot(job_snapshot_id)
@@ -1100,7 +1099,7 @@ class TestRunStorage:
 
         job_snapshot = job_def.get_job_snapshot()
 
-        job_snapshot_id = create_job_snapshot_id(job_snapshot)
+        job_snapshot_id = job_snapshot.snapshot_id
 
         run_with_snapshot = DagsterRun(
             run_id=run_with_snapshot_id,
@@ -1811,7 +1810,7 @@ class TestRunStorage:
         job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
         job_snapshot = job_def.get_job_snapshot()
-        job_snapshot_id = create_job_snapshot_id(job_snapshot)
+        job_snapshot_id = job_snapshot.snapshot_id
         new_job_snapshot_id = f"{job_snapshot_id}-new-snapshot"
 
         storage.add_snapshot(job_snapshot, snapshot_id=new_job_snapshot_id)
