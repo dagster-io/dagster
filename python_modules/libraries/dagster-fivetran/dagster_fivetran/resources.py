@@ -635,7 +635,7 @@ class FivetranClient:
         connector = FivetranConnector.from_connector_details(
             connector_details=self.get_connector_details(connector_id)
         )
-        connector.assert_syncable()
+        connector.is_syncable()
         if self.disable_schedule_on_trigger:
             self._log.info("Disabling Fivetran sync schedule.")
             self.update_schedule_type_for_connector(connector_id, "manual")
