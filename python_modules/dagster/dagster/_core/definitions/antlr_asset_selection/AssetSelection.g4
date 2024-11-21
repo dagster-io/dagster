@@ -5,8 +5,8 @@ start: expr EOF;
 // Root rule for parsing expressions
 expr
     : attributeExpr                                # AttributeExpression
-    | traversal expr                               # UpTraversalExpression
     | traversal expr traversal                     # UpAndDownTraversalExpression
+    | traversal expr                               # UpTraversalExpression
     | expr traversal                               # DownTraversalExpression
     | NOT expr                                     # NotExpression
     | expr AND expr                                # AndExpression

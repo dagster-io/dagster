@@ -1,4 +1,4 @@
-// Generated from /Users/marcosalazar/code/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /Users/briantu/repos/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
 
 import {FailedPredicateException} from 'antlr4ts/FailedPredicateException';
 import {NoViableAltException} from 'antlr4ts/NoViableAltException';
@@ -205,27 +205,27 @@ export class AssetSelectionParser extends Parser {
 
           case 2:
             {
-              _localctx = new UpTraversalExpressionContext(_localctx);
+              _localctx = new UpAndDownTraversalExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
               this.state = 17;
               this.traversal();
               this.state = 18;
-              this.expr(9);
+              this.expr(0);
+              this.state = 19;
+              this.traversal();
             }
             break;
 
           case 3:
             {
-              _localctx = new UpAndDownTraversalExpressionContext(_localctx);
+              _localctx = new UpTraversalExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 20;
-              this.traversal();
               this.state = 21;
-              this.expr(0);
-              this.state = 22;
               this.traversal();
+              this.state = 22;
+              this.expr(8);
             }
             break;
 
@@ -661,12 +661,12 @@ export class AssetSelectionParser extends Parser {
     ';\x03\x02\x02\x02\b=\x03\x02\x02\x02\nX\x03\x02\x02\x02\fZ\x03\x02\x02' +
     '\x02\x0E\x0F\x05\x04\x03\x02\x0F\x10\x07\x02\x02\x03\x10\x03\x03\x02\x02' +
     "\x02\x11\x12\b\x03\x01\x02\x12'\x05\n\x06\x02\x13\x14\x05\x06\x04\x02" +
-    "\x14\x15\x05\x04\x03\v\x15'\x03\x02\x02\x02\x16\x17\x05\x06\x04\x02\x17" +
-    "\x18\x05\x04\x03\x02\x18\x19\x05\x06\x04\x02\x19'\x03\x02\x02\x02\x1A" +
+    "\x14\x15\x05\x04\x03\x02\x15\x16\x05\x06\x04\x02\x16'\x03\x02\x02\x02" +
+    "\x17\x18\x05\x06\x04\x02\x18\x19\x05\x04\x03\n\x19'\x03\x02\x02\x02\x1A" +
     "\x1B\x07\x06\x02\x02\x1B'\x05\x04\x03\b\x1C\x1D\x05\b\x05\x02\x1D\x1E" +
     "\x07\n\x02\x02\x1E\x1F\x05\x04\x03\x02\x1F \x07\v\x02\x02 '\x03\x02\x02" +
     '\x02!"\x07\n\x02\x02"#\x05\x04\x03\x02#$\x07\v\x02\x02$\'\x03\x02\x02' +
-    "\x02%'\x07\x07\x02\x02&\x11\x03\x02\x02\x02&\x13\x03\x02\x02\x02&\x16" +
+    "\x02%'\x07\x07\x02\x02&\x11\x03\x02\x02\x02&\x13\x03\x02\x02\x02&\x17" +
     '\x03\x02\x02\x02&\x1A\x03\x02\x02\x02&\x1C\x03\x02\x02\x02&!\x03\x02\x02' +
     "\x02&%\x03\x02\x02\x02'2\x03\x02\x02\x02()\f\x07\x02\x02)*\x07\x04\x02" +
     '\x02*1\x05\x04\x03\b+,\f\x06\x02\x02,-\x07\x05\x02\x02-1\x05\x04\x03\x07' +
@@ -774,38 +774,6 @@ export class AttributeExpressionContext extends ExprContext {
     }
   }
 }
-export class UpTraversalExpressionContext extends ExprContext {
-  public traversal(): TraversalContext {
-    return this.getRuleContext(0, TraversalContext);
-  }
-  public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AssetSelectionListener): void {
-    if (listener.enterUpTraversalExpression) {
-      listener.enterUpTraversalExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: AssetSelectionListener): void {
-    if (listener.exitUpTraversalExpression) {
-      listener.exitUpTraversalExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
-    if (visitor.visitUpTraversalExpression) {
-      return visitor.visitUpTraversalExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
 export class UpAndDownTraversalExpressionContext extends ExprContext {
   public traversal(): TraversalContext[];
   public traversal(i: number): TraversalContext;
@@ -839,6 +807,38 @@ export class UpAndDownTraversalExpressionContext extends ExprContext {
   public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
     if (visitor.visitUpAndDownTraversalExpression) {
       return visitor.visitUpAndDownTraversalExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class UpTraversalExpressionContext extends ExprContext {
+  public traversal(): TraversalContext {
+    return this.getRuleContext(0, TraversalContext);
+  }
+  public expr(): ExprContext {
+    return this.getRuleContext(0, ExprContext);
+  }
+  constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    this.copyFrom(ctx);
+  }
+  // @Override
+  public enterRule(listener: AssetSelectionListener): void {
+    if (listener.enterUpTraversalExpression) {
+      listener.enterUpTraversalExpression(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: AssetSelectionListener): void {
+    if (listener.exitUpTraversalExpression) {
+      listener.exitUpTraversalExpression(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
+    if (visitor.visitUpTraversalExpression) {
+      return visitor.visitUpTraversalExpression(this);
     } else {
       return visitor.visitChildren(this);
     }

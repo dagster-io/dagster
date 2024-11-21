@@ -302,31 +302,31 @@ def serializedATN():
         3,
         2,
         1,
-        9,
+        0,
         19,
+        20,
+        3,
+        4,
+        2,
+        0,
+        20,
         37,
         1,
         0,
         0,
         0,
-        20,
-        21,
-        3,
-        4,
-        2,
-        0,
         21,
         22,
         3,
+        4,
         2,
-        1,
         0,
         22,
         23,
         3,
-        4,
         2,
-        0,
+        1,
+        8,
         23,
         37,
         1,
@@ -418,7 +418,7 @@ def serializedATN():
         0,
         0,
         36,
-        20,
+        21,
         1,
         0,
         0,
@@ -1311,25 +1311,25 @@ class AssetSelectionParser(Parser):
                 pass
 
             elif la_ == 2:
-                localctx = AssetSelectionParser.UpTraversalExpressionContext(self, localctx)
+                localctx = AssetSelectionParser.UpAndDownTraversalExpressionContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
                 self.state = 17
                 self.traversal()
                 self.state = 18
-                self.expr(9)
+                self.expr(0)
+                self.state = 19
+                self.traversal()
                 pass
 
             elif la_ == 3:
-                localctx = AssetSelectionParser.UpAndDownTraversalExpressionContext(self, localctx)
+                localctx = AssetSelectionParser.UpTraversalExpressionContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 20
-                self.traversal()
                 self.state = 21
-                self.expr(0)
-                self.state = 22
                 self.traversal()
+                self.state = 22
+                self.expr(8)
                 pass
 
             elif la_ == 4:

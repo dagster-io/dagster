@@ -1,4 +1,4 @@
-// Generated from /Users/marcosalazar/code/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /Users/briantu/repos/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
 
 import {ParseTreeListener} from 'antlr4ts/tree/ParseTreeListener';
 
@@ -47,19 +47,6 @@ export interface AssetSelectionListener extends ParseTreeListener {
   exitAttributeExpression?: (ctx: AttributeExpressionContext) => void;
 
   /**
-   * Enter a parse tree produced by the `UpTraversalExpression`
-   * labeled alternative in `AssetSelectionParser.expr`.
-   * @param ctx the parse tree
-   */
-  enterUpTraversalExpression?: (ctx: UpTraversalExpressionContext) => void;
-  /**
-   * Exit a parse tree produced by the `UpTraversalExpression`
-   * labeled alternative in `AssetSelectionParser.expr`.
-   * @param ctx the parse tree
-   */
-  exitUpTraversalExpression?: (ctx: UpTraversalExpressionContext) => void;
-
-  /**
    * Enter a parse tree produced by the `UpAndDownTraversalExpression`
    * labeled alternative in `AssetSelectionParser.expr`.
    * @param ctx the parse tree
@@ -71,6 +58,19 @@ export interface AssetSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitUpAndDownTraversalExpression?: (ctx: UpAndDownTraversalExpressionContext) => void;
+
+  /**
+   * Enter a parse tree produced by the `UpTraversalExpression`
+   * labeled alternative in `AssetSelectionParser.expr`.
+   * @param ctx the parse tree
+   */
+  enterUpTraversalExpression?: (ctx: UpTraversalExpressionContext) => void;
+  /**
+   * Exit a parse tree produced by the `UpTraversalExpression`
+   * labeled alternative in `AssetSelectionParser.expr`.
+   * @param ctx the parse tree
+   */
+  exitUpTraversalExpression?: (ctx: UpTraversalExpressionContext) => void;
 
   /**
    * Enter a parse tree produced by the `DownTraversalExpression`
