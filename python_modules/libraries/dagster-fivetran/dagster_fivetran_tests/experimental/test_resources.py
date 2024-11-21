@@ -132,7 +132,7 @@ def test_sync_and_poll(n_polls, succeed_at_end, connector_id):
     if not succeed_at_end:
         test_succeeded_at, test_failed_at = test_failed_at, test_succeeded_at
 
-    # Create mock responses to mock poll behavior, used only in this test
+    # Create mock responses to mock full sync and poll behavior, used only in this test
     def _mock_interaction():
         with responses.RequestsMock() as response:
             response.add(
