@@ -1,3 +1,4 @@
+/* eslint-disable jest/expect-expect */
 import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
 import {
   buildAssetNode,
