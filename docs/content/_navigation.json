@@ -971,6 +971,16 @@
           {
             "title": "Migration with Airflow 1",
             "path": "/integrations/airlift/airflow-1-migration"
+          },
+          {
+            "title": "Operator Migration Reference",
+            "path": "/integrations/airlift/operator-migration/overview",
+            "children": [
+              {
+                "title": "Migrating a BashOperator for dbt",
+                "path": "/integrations/airlift/operator-migration/bash-operator-dbt"
+              }
+            ]
           }
         ]
       },
