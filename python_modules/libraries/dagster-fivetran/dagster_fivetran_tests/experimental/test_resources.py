@@ -80,7 +80,7 @@ def test_basic_resource_request(
 
     # Timed out poll
     all_api_mocks.calls.reset()
-    with pytest.raises(Failure) as e:
+    with pytest.raises(Failure, match=f"Sync for connector '{connector_id}' timed out"):
         client.poll_sync(
             connector_id=connector_id,
             # The poll process will time out because the value of
@@ -89,7 +89,6 @@ def test_basic_resource_request(
             poll_timeout=2,
             poll_interval=1,
         )
-    assert f"Sync for connector '{connector_id}' timed out" in str(e.value)
 
     # Failed poll
     all_api_mocks.calls.reset()
@@ -102,11 +101,10 @@ def test_basic_resource_request(
         ),
         status=200,
     )
-    with pytest.raises(Failure) as e:
+    with pytest.raises(Failure, match=f"Sync for connector '{connector_id}' failed!"):
         client.poll_sync(
             connector_id=connector_id,
             previous_sync_completed_at=parser.parse(MIN_TIME_STR),
             poll_timeout=2,
             poll_interval=1,
         )
-    assert f"Sync for connector '{connector_id}' failed!" in str(e.value)

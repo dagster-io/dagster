@@ -155,6 +155,7 @@ SAMPLE_DESTINATION_DETAILS = {
     },
 }
 
+
 # Taken from Fivetran API documentation
 # https://fivetran.com/docs/rest-api/api-reference/connectors/connector-details
 # The sample is parameterized to test the poll method
