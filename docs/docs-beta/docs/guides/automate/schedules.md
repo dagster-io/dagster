@@ -1,7 +1,7 @@
 ---
 title: "Schedule cron-based pipelines"
 sidebar_label: "Schedules"
-sidebar_position: 1
+sidebar_position: 10
 ---
 
 Schedules enable automated execution of jobs at specified intervals. These intervals can range from common frequencies like hourly, daily, or weekly, to more intricate patterns defined using cron expressions.

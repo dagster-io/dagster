@@ -1,6 +1,6 @@
 ---
 title: 'Programmatically defining dependencies using asset factories'
-sidebar_position: 4
+sidebar_position: 40
 sidebar_label: 'Asset Factories (2)'
 ---
 

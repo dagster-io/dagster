@@ -1,6 +1,6 @@
 ---
 title: "Asset materialization"
-sidebar_position: 3
+sidebar_position: 30
 unlisted: true
 ---
 

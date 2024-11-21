@@ -1,6 +1,6 @@
 ---
 title: "Deploy to Kubernetes"
-sidebar_position: 3
+sidebar_position: 30
 ---
 
 This guide will walk you through how to run the Dagster-specific components of a Dagster production deployment on a Kubernetes cluster. This includes the Dagster daemon, a webserver to serve the Dagster UI, a PostgrSQL container, and your Dagster project user code.

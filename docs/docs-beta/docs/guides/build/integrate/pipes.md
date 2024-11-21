@@ -1,6 +1,6 @@
 ---
 title: "Executing code outside of Dagster with Pipes"
-sidebar_position: 5
+sidebar_position: 50
 sidebar_label: "External execution with Pipes"
 ---
 
