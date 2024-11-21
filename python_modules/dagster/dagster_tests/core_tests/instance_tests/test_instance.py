@@ -36,11 +36,7 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
-from dagster._core.snap import (
-    create_execution_plan_snapshot_id,
-    create_job_snapshot_id,
-    snapshot_from_execution_plan,
-)
+from dagster._core.snap import create_execution_plan_snapshot_id, snapshot_from_execution_plan
 from dagster._core.storage.partition_status_cache import AssetPartitionStatus, AssetStatusCacheValue
 from dagster._core.storage.sqlite_storage import (
     _event_logs_directory,
@@ -266,7 +262,7 @@ def test_create_job_snapshot():
 
         run = instance.get_run_by_id(result.run_id)
 
-        assert run.job_snapshot_id == create_job_snapshot_id(noop_job.get_job_snapshot())
+        assert run.job_snapshot_id == noop_job.get_job_snapshot().snapshot_id
 
 
 def test_create_execution_plan_snapshot():

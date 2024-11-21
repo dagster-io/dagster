@@ -1,9 +1,8 @@
-from threading import Lock
 from typing import Any, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._config import ConfigSchemaSnapshot
-from dagster._core.snap import DependencyStructureIndex, JobSnap, create_job_snapshot_id
+from dagster._core.snap import DependencyStructureIndex, JobSnap
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.mode import ModeDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
@@ -47,9 +46,6 @@ class JobIndex:
             for comp_snap in job_snapshot.node_defs_snapshot.graph_def_snaps
         }
 
-        self._memo_lock = Lock()
-        self._job_snapshot_id = None
-
     @property
     def name(self) -> str:
         return self.job_snapshot.name
@@ -68,10 +64,7 @@ class JobIndex:
 
     @property
     def job_snapshot_id(self) -> str:
-        with self._memo_lock:
-            if not self._job_snapshot_id:
-                self._job_snapshot_id = create_job_snapshot_id(self.job_snapshot)
-            return self._job_snapshot_id
+        return self.job_snapshot.snapshot_id
 
     def has_dagster_type_name(self, type_name: str) -> bool:
         return type_name in self._dagster_type_snaps_by_name_index
