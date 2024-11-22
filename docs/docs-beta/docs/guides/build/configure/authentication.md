@@ -1,5 +1,5 @@
 ---
 title: Authenticating to a resource
-sidebar_position: 60
+sidebar_position: 70
 unlisted: true
 ---

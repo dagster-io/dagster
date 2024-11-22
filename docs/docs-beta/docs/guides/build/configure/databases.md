@@ -1,7 +1,7 @@
 ---
 title: Connecting to databases
 description: How to configure resources to connect to databases
-sidebar_position: 10
+sidebar_position: 50
 sidebar_label: Database connections
 ---
 

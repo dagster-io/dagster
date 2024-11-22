@@ -1,7 +1,7 @@
 ---
 title: Configuring assets
 sidebar_label: Asset runs
-sidebar_position: 50
+sidebar_position: 10
 ---
 
 The Dagster UI is commonly used to manually materialize assets, backfill historical data, debug a production issue, or some other one-off task.

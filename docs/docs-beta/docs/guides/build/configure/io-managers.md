@@ -1,6 +1,6 @@
 ---
 title: "Managing stored data with I/O managers"
-sidebar_position: 50
+sidebar_position: 80
 sidebar_label: "I/O managers"
 ---
 

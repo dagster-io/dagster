@@ -1,6 +1,6 @@
 ---
 title: "Asset metadata"
-sidebar_position: 40
+sidebar_position: 10
 unlisted: true
 ---
 

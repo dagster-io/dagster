@@ -1,6 +1,7 @@
 ---
 title: Running Dagster locally
 description: How to run Dagster on your local machine.
+sidebar_position: 10
 ---
 
 # Running Dagster locally
