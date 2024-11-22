@@ -106,14 +106,14 @@ def starter_pack_snapshot(
     atproto_resource: ATProtoResource,
     s3_resource: S3Resource,
 ) -> dg.MaterializeResult:
-    starter_pack_uri = context.partition_key
-
     atproto_client, _ = atproto_resource.get_client()
-    members = get_all_starter_pack_members(atproto_client, starter_pack_uri)
-    _bytes = os.linesep.join([member.model_dump_json() for member in members]).encode("utf-8")
+
+    starter_pack_uri = context.partition_key
+    list_items = get_all_starter_pack_members(atproto_client, starter_pack_uri)
+
+    _bytes = os.linesep.join([member.model_dump_json() for member in list_items]).encode("utf-8")
 
     datetime_now = datetime.now()
-
     object_key = "/".join(
         (
             "atproto_starter_pack_snapshot",
@@ -126,21 +126,26 @@ def starter_pack_snapshot(
 
     s3_resource.get_client().put_object(Body=_bytes, Bucket=AWS_BUCKET_NAME, Key=object_key)
 
+    # TODO - delete dynamic partitions that no longer exist in the list
+    context.instance.add_dynamic_partitions(
+        partitions_def_name="atproto_did_dynamic_partition",
+        partition_keys=[list_item_view.subject.did for list_item_view in list_items],
+    )
+
     return dg.MaterializeResult(
         metadata={
-            "len_members": len(members),
+            "len_members": len(list_items),
             "s3_object_key": object_key,
         }
     )
 
 
-# TODO - dynamic partition by members of the "Data" starter pack
+atproto_did_dynamic_partition = dg.DynamicPartitionsDefinition(name="atproto_did_dynamic_partition")
+
+
 @dg.asset(
-    partitions_def=dg.StaticPartitionsDefinition(
-        partition_keys=[
-            "did:plc:3otm7ydoda3uopfnqz6y3obb",  # colton.boo
-        ]
-    )
+    partitions_def=atproto_did_dynamic_partition,
+    deps=[starter_pack_snapshot],
 )
 def actor_feed_snapshot(
     context: dg.AssetExecutionContext,
