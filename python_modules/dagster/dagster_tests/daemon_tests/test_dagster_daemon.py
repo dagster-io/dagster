@@ -69,10 +69,13 @@ def test_daemon_json_logs(
     # the one used by Dagster when enabling JSON log format.
     monkeypatch.setattr(caplog.handler, "formatter", get_structlog_json_formatter())
 
-    with instance_for_test() as instance, daemon_controller_from_instance(
-        instance,
-        workspace_load_target=EmptyWorkspaceTarget(),
-        log_format="json",
+    with (
+        instance_for_test() as instance,
+        daemon_controller_from_instance(
+            instance,
+            workspace_load_target=EmptyWorkspaceTarget(),
+            log_format="json",
+        ),
     ):
         lines = [line for line in caplog.text.split("\n") if line]
 

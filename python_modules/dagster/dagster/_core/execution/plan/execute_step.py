@@ -447,9 +447,10 @@ def core_dagster_event_sequence_for_step(
     else:
         yield DagsterEvent.step_start_event(step_context)
 
-    with time_execution_scope() as timer_result, enter_execution_context(
-        step_context
-    ) as compute_context:
+    with (
+        time_execution_scope() as timer_result,
+        enter_execution_context(step_context) as compute_context,
+    ):
         inputs = {}
 
         if step_context.is_sda_step:

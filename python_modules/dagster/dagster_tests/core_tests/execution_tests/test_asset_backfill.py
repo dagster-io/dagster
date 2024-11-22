@@ -308,10 +308,13 @@ def _single_backfill_iteration_create_but_do_not_submit_runs(
 @pytest.mark.parametrize("failures", ["no_failures", "root_failures", "random_half_failures"])
 @pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
 def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, some_or_all: str):
-    with instance_for_test() as instance, environ(
-        {"ASSET_BACKFILL_CURSOR_OFFSET": str(scenario.last_storage_id_cursor_offset)}
-        if scenario.last_storage_id_cursor_offset
-        else {}
+    with (
+        instance_for_test() as instance,
+        environ(
+            {"ASSET_BACKFILL_CURSOR_OFFSET": str(scenario.last_storage_id_cursor_offset)}
+            if scenario.last_storage_id_cursor_offset
+            else {}
+        ),
     ):
         instance.add_dynamic_partitions("foo", ["a", "b"])
 
