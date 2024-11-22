@@ -75,6 +75,65 @@ def get_all_feed_items(
     return feed
 
 
+def get_all_list_members(client: Client, list_uri: str):
+    cursor = None
+    members = []
+    while True:
+        response = client.app.bsky.graph.get_list(
+            {"list": list_uri, "cursor": cursor, "limit": 100}
+        )
+        members.extend(response.items)
+        if not response.cursor:
+            break
+        cursor = response.cursor
+    return members
+
+
+def get_all_starter_pack_members(client: Client, starter_pack_uri: str):
+    response = client.app.bsky.graph.get_starter_pack({"starter_pack": starter_pack_uri})
+    return get_all_list_members(client, response.starter_pack.list.uri)
+
+
+@dg.asset(
+    partitions_def=dg.StaticPartitionsDefinition(
+        partition_keys=[
+            "at://did:plc:lc5jzrr425fyah724df3z5ik/app.bsky.graph.starterpack/3l7cddlz5ja24",  # https://bsky.app/starter-pack/christiannolan.bsky.social/3l7cddlz5ja24
+        ]
+    )
+)
+def starter_pack_snapshot(
+    context: dg.AssetExecutionContext,
+    atproto_resource: ATProtoResource,
+    s3_resource: S3Resource,
+) -> dg.MaterializeResult:
+    starter_pack_uri = context.partition_key
+
+    atproto_client, _ = atproto_resource.get_client()
+    members = get_all_starter_pack_members(atproto_client, starter_pack_uri)
+    _bytes = os.linesep.join([member.model_dump_json() for member in members]).encode("utf-8")
+
+    datetime_now = datetime.now()
+
+    object_key = "/".join(
+        (
+            "atproto_starter_pack_snapshot",
+            datetime_now.strftime("%Y-%m-%d"),
+            datetime_now.strftime("%H"),
+            datetime_now.strftime("%M"),
+            f"{starter_pack_uri}.json",
+        )
+    )
+
+    s3_resource.get_client().put_object(Body=_bytes, Bucket=AWS_BUCKET_NAME, Key=object_key)
+
+    return dg.MaterializeResult(
+        metadata={
+            "len_members": len(members),
+            "s3_object_key": object_key,
+        }
+    )
+
+
 # TODO - dynamic partition by members of the "Data" starter pack
 @dg.asset(
     partitions_def=dg.StaticPartitionsDefinition(
@@ -87,7 +146,7 @@ def actor_feed_snapshot(
     context: dg.AssetExecutionContext,
     atproto_resource: ATProtoResource,
     s3_resource: S3Resource,
-):
+) -> dg.MaterializeResult:
     client, _ = atproto_resource.get_client()
     actor_did = context.partition_key
 
@@ -109,6 +168,13 @@ def actor_feed_snapshot(
     _bytes = os.linesep.join([item.model_dump_json() for item in items]).encode("utf-8")
     s3_resource.get_client().put_object(Body=_bytes, Bucket=AWS_BUCKET_NAME, Key=object_key)
 
+    return dg.MaterializeResult(
+        metadata={
+            "len_feed_items": len(items),
+            "s3_object_key": object_key,
+        }
+    )
+
 
 atproto_resource = ATProtoResource(
     login=dg.EnvVar("BSKY_LOGIN"), password=dg.EnvVar("BSKY_APP_PASSWORD")
@@ -123,6 +189,6 @@ s3_resource = S3Resource(
 
 
 defs = dg.Definitions(
-    assets=[actor_feed_snapshot],
+    assets=[starter_pack_snapshot, actor_feed_snapshot],
     resources={"atproto_resource": atproto_resource, "s3_resource": s3_resource},
 )
