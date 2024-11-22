@@ -254,3 +254,12 @@ def test_consolidate_automation_conditions(op, cond) -> None:
             ]
         )
     )
+
+    assert op(first_labeled_automation_condition, second_labeled_automation_condition) == (
+        cond(
+            operands=[
+                first_labeled_automation_condition,
+                second_labeled_automation_condition,
+            ]
+        )
+    )
