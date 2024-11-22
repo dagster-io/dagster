@@ -52,9 +52,6 @@ def test_translator_spec(
         first_asset_metadata = next(asset.metadata for asset in all_assets)
         assert FivetranMetadataSet.extract(first_asset_metadata).connector_id == "connector_id"
 
-        # clear the asset specs cache post test
-        # load_fivetran_asset_specs.cache_clear()
-
 
 def test_cached_load_spec_single_resource(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
@@ -73,9 +70,6 @@ def test_cached_load_spec_single_resource(
         # load asset specs a first time, no additional calls are made
         workspace.load_asset_specs()
         assert len(fetch_workspace_data_api_mocks.calls) == 4
-
-        # clear the asset specs cache post test
-        # load_fivetran_asset_specs.cache_clear()
 
 
 def test_cached_load_spec_multiple_resources(
@@ -103,9 +97,6 @@ def test_cached_load_spec_multiple_resources(
         another_workspace.load_asset_specs()
         assert len(fetch_workspace_data_api_mocks.calls) == 4 + 4
 
-        # clear the asset specs cache post test
-        # load_fivetran_asset_specs.cache_clear()
-
 
 def test_cached_load_spec_with_asset_factory(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
@@ -121,6 +112,3 @@ def test_cached_load_spec_with_asset_factory(
         # then load_fivetran_asset_specs is called once per connector ID in fivetran_assets
         build_fivetran_assets_definitions(workspace=resource)
         assert len(fetch_workspace_data_api_mocks.calls) == 4
-
-        # clear the asset specs cache post test
-        # load_fivetran_asset_specs.cache_clear()
