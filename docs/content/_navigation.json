@@ -997,6 +997,10 @@
               {
                 "title": "Migrating a BashOperator for dbt",
                 "path": "/integrations/airlift/operator-migration/bash-operator-dbt"
+              },
+              {
+                "title": "Migrating a KubernetesPodOperator",
+                "path": "/integrations/airlift/operator-migration/kubernetes-pod-operator"
               }
             ]
           }
