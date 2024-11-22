@@ -1,10 +1,15 @@
 import datetime
+import operator
 
 import pytest
 from dagster import AutoMaterializePolicy, AutomationCondition, Definitions, asset
 from dagster._check.functions import CheckError
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._core.definitions.declarative_automation.operators import (
+    AndAutomationCondition,
+    OrAutomationCondition,
+)
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
@@ -176,3 +181,85 @@ def test_without_automation_condition() -> None:
 
     with pytest.raises(CheckError, match="fewer than 2 operands"):
         orig.without(a).without(b)
+
+
+@pytest.mark.parametrize(
+    ("op", "cond"), [(operator.and_, AndAutomationCondition), (operator.or_, OrAutomationCondition)]
+)
+def test_consolidate_automation_conditions(op, cond) -> None:
+    not_missing = ~AutomationCondition.missing()
+    not_in_progress = ~AutomationCondition.in_progress()
+    not_missing_not_in_progress = op(not_missing, not_in_progress)
+    in_latest_time_window = AutomationCondition.in_latest_time_window()
+    not_any_deps_in_progress = ~AutomationCondition.any_deps_in_progress()
+    in_latest_time_window_not_any_deps_in_progress = op(
+        in_latest_time_window, not_any_deps_in_progress
+    )
+
+    assert op(not_missing_not_in_progress, in_latest_time_window_not_any_deps_in_progress) == (
+        cond(
+            operands=[
+                not_missing,
+                not_in_progress,
+                in_latest_time_window,
+                not_any_deps_in_progress,
+            ]
+        )
+    )
+
+    assert op(not_missing_not_in_progress, in_latest_time_window) == (
+        cond(
+            operands=[
+                not_missing,
+                not_in_progress,
+                in_latest_time_window,
+            ]
+        )
+    )
+
+    second_labeled_automation_condition = in_latest_time_window_not_any_deps_in_progress.with_label(
+        "in_latest_time_window_not_any_deps_in_progress"
+    )
+    assert op(not_missing_not_in_progress, second_labeled_automation_condition) == (
+        cond(
+            operands=[
+                not_missing,
+                not_in_progress,
+                second_labeled_automation_condition,
+            ]
+        )
+    )
+
+    assert op(not_missing, in_latest_time_window_not_any_deps_in_progress) == (
+        cond(
+            operands=[
+                not_missing,
+                in_latest_time_window,
+                not_any_deps_in_progress,
+            ]
+        )
+    )
+
+    first_labeled_automation_condition = not_missing_not_in_progress.with_label(
+        "not_missing_not_in_progress"
+    )
+    assert op(
+        first_labeled_automation_condition, in_latest_time_window_not_any_deps_in_progress
+    ) == (
+        cond(
+            operands=[
+                first_labeled_automation_condition,
+                in_latest_time_window,
+                not_any_deps_in_progress,
+            ]
+        )
+    )
+
+    assert op(first_labeled_automation_condition, second_labeled_automation_condition) == (
+        cond(
+            operands=[
+                first_labeled_automation_condition,
+                second_labeled_automation_condition,
+            ]
+        )
+    )
