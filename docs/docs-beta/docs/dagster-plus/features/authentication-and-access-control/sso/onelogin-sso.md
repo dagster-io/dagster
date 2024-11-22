@@ -1,6 +1,7 @@
 ---
 title: 'OneLogin SSO'
 displayed_sidebar: 'dagsterPlus'
+sidebar_position: 40
 ---
 
 # OneLogin SSO

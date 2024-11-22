@@ -1,6 +1,7 @@
 ---
 title: 'Azure Active Directory SSO'
 displayed_sidebar: 'dagsterPlus'
+sidebar_position: 10
 ---
 
 # Setting up Azure Active Directory SSO for Dagster+

@@ -1,7 +1,7 @@
 ---
 title: "Audit logs"
 displayed_sidebar: "dagsterPlus"
-sidebar_position: 4
+sidebar_position: 30
 ---
 
 # Audit logs
