@@ -46,9 +46,7 @@ setup(
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
-    description="Tooling to assist with migrating from Airflow to Dagster.",
-    long_description=Path("README.md").read_text(),
-    long_description_content_type="text/markdown",
+    description="A toolkit for observing integration and migration between Apache Airflow and Dagster.",
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
         "dagster-airlift"
