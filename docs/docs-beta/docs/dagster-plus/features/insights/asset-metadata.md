@@ -1,7 +1,7 @@
 ---
 title: "Integrate asset metadata into Dagster+ Insights"
 sidebar_label: "Integrate asset metadata"
-sidebar_position: 1
+sidebar_position: 10
 ---
 
 Out of the box, Dagster+ Insights gives you visibility into a variety of common metrics across your data platform.
