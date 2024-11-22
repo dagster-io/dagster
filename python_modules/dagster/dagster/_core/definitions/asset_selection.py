@@ -898,7 +898,7 @@ class DownstreamAssetSelection(ChainedAssetSelection):
         if self.depth is None:
             base = f"{self.child.operand_to_selection_str()}*"
         elif self.depth == 0:
-            base = self.child.to_selection_str()
+            base = self.child.operand_to_selection_str()
         else:
             base = f"{self.child.operand_to_selection_str()}{'+' * self.depth}"
 
@@ -1138,21 +1138,18 @@ class UpstreamAssetSelection(ChainedAssetSelection):
         all_upstream = _fetch_all_upstream(selection, asset_graph, self.depth, self.include_self)
         return {key for key in all_upstream if key in asset_graph.materializable_asset_keys}
 
-    def _to_selection_str(self, child: str) -> str:
+    def to_selection_str(self) -> str:
         if self.depth is None:
-            base = f"*({child})"
+            base = f"*{self.child.operand_to_selection_str()}"
         elif self.depth == 0:
-            base = str(child)
+            base = self.child.operand_to_selection_str()
         else:
-            base = f"{'+' * self.depth}({child})"
+            base = f"{'+' * self.depth}{self.child.operand_to_selection_str()}"
 
         if self.include_self:
             return base
         else:
-            return f"{base} - ({child})"
-
-    def to_selection_str(self) -> str:
-        return self._to_selection_str(self.child.to_selection_str())
+            return f"{base} and not {self.child.operand_to_selection_str()}"
 
 
 @whitelist_for_serdes
