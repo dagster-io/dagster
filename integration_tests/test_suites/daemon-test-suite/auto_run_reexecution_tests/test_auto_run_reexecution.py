@@ -76,6 +76,7 @@ def test_filter_runs_to_should_retry(instance):
         )
         instance.handle_new_event(event_record)
         run = instance.get_run_by_id(run.run_id)
+        assert run
         assert run.tags.get(WILL_RETRY_TAG) == "true"
 
         assert (
@@ -118,6 +119,7 @@ def test_filter_runs_no_retry_on_asset_or_op_failure(instance_no_retry_on_asset_
         )
         instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
         run = instance.get_run_by_id(run.run_id)
+        assert run
         assert run.tags.get(WILL_RETRY_TAG) == "false"
 
         # doesn't retry because its a step failure
@@ -156,6 +158,7 @@ def test_filter_runs_no_retry_on_asset_or_op_failure(instance_no_retry_on_asset_
         )
         instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
         run = instance.get_run_by_id(run.run_id)
+        assert run
         assert run.tags.get(WILL_RETRY_TAG) == "false"
 
         # does not retry due to the RETRY_ON_ASSET_OR_OP_FAILURE_TAG tag being false
@@ -188,6 +191,7 @@ def test_filter_runs_no_retry_on_asset_or_op_failure(instance_no_retry_on_asset_
         )
         instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
         run = instance.get_run_by_id(run.run_id)
+        assert run
         assert run.tags.get(WILL_RETRY_TAG) == "true"
 
         # does retry due to the RETRY_ON_ASSET_OR_OP_FAILURE_TAG tag being true
@@ -219,6 +223,7 @@ def test_filter_runs_to_should_retry_tags(instance):
 
         instance.report_run_failed(run)
         run = instance.get_run_by_id(run.run_id)
+        assert run
         assert run.tags.get(WILL_RETRY_TAG) == "false"
 
         assert (
@@ -251,6 +256,7 @@ def test_filter_runs_to_should_retry_tags(instance):
 
         instance.report_run_failed(run)
         run = instance.get_run_by_id(run.run_id)
+        assert run
         assert run.tags.get(WILL_RETRY_TAG) == "true"
 
         assert (
@@ -285,6 +291,7 @@ def test_filter_runs_to_should_retry_tags(instance):
 
         instance.report_run_failed(run)
         run = instance.get_run_by_id(run.run_id)
+        assert run
         assert run.tags.get(WILL_RETRY_TAG) == "false"
 
         assert (
@@ -329,6 +336,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     )
     instance.handle_new_event(event_record)
     run = instance.get_run_by_id(run.run_id)
+    assert run
     assert run.tags.get(WILL_RETRY_TAG) == "true"
 
     list(
@@ -366,6 +374,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     )
     instance.handle_new_event(event_record)
     first_retry = instance.get_run_by_id(first_retry.run_id)
+    assert first_retry
     assert first_retry.tags.get(WILL_RETRY_TAG) == "true"
 
     list(
@@ -394,6 +403,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     )
     instance.handle_new_event(event_record)
     second_retry = instance.get_run_by_id(second_retry.run_id)
+    assert second_retry
     assert second_retry.tags.get(WILL_RETRY_TAG) == "false"
 
     list(
@@ -474,6 +484,7 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
     )
     instance.handle_new_event(event_record)
     run = instance.get_run_by_id(run.run_id)
+    assert run
     assert run.tags.get(WILL_RETRY_TAG) == "true"
 
     list(
