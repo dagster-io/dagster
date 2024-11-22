@@ -25,7 +25,8 @@ def fivetran_assets(
         name (Optional[str], optional): The name of the op.
         group_name (Optional[str], optional): The name of the asset group.
         dagster_fivetran_translator (Type[DagsterFivetranTranslator]): The translator to use
-            to convert Fivetran content into AssetSpecs. Defaults to DagsterFivetranTranslator.
+            to convert Fivetran content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterFivetranTranslator`.
 
     Examples:
         Sync the tables of a Fivetran connector:
