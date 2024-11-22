@@ -1,7 +1,8 @@
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from random import Random
-from typing import Sequence, Union
+from typing import Union
 
 from dagster import ConfigurableResource
 from faker import Faker

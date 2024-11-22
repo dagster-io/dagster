@@ -1,4 +1,5 @@
-from typing import Any, Iterator, List, Mapping
+from collections.abc import Iterator, Mapping
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -116,7 +117,7 @@ def get_stream_details(name: str) -> Mapping[str, Any]:
 # Taken from Airbyte Configuration API documentation
 # https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#post-/v1/connections/get
 # https://github.com/airbytehq/airbyte-platform/blob/v1.0.0/airbyte-api/server-api/src/main/openapi/config.yaml
-def get_connection_details_sample(streams: List[Mapping[str, Any]]) -> Mapping[str, Any]:
+def get_connection_details_sample(streams: list[Mapping[str, Any]]) -> Mapping[str, Any]:
     return {
         "connectionId": TEST_CONNECTION_ID,
         "name": TEST_CONNECTION_NAME,

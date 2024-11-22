@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Sequence
+from collections.abc import Sequence
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import T_EntityKey
@@ -39,7 +39,7 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     async def evaluate(
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
-        child_results: List[AutomationResult] = []
+        child_results: list[AutomationResult] = []
         true_subset = context.candidate_subset
         for i, child in enumerate(self.children):
             child_result = await context.for_child_condition(

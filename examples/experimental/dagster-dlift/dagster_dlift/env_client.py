@@ -1,4 +1,5 @@
-from typing import Any, Iterator, Mapping, Sequence, Union
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Any, Union
 
 from dagster import AssetCheckResult, AssetMaterialization
 from dagster._record import record

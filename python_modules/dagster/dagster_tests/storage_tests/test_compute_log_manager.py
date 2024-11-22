@@ -1,6 +1,7 @@
 import tempfile
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
-from typing import IO, Generator, Optional, Sequence, Tuple
+from typing import IO, Optional
 
 import dagster._check as check
 from dagster import job, op
@@ -50,7 +51,7 @@ class BrokenComputeLogManager(ComputeLogManager):
         io_type: ComputeIOType,
         offset: int,
         max_bytes: Optional[int],
-    ) -> Tuple[Optional[bytes], int]:
+    ) -> tuple[Optional[bytes], int]:
         return None, 0
 
     def get_log_metadata(self, log_key: Sequence[str]) -> CapturedLogMetadata:
@@ -164,8 +165,9 @@ def test_broken_compute_log_manager():
 
 import os
 import sys
+from collections.abc import Generator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Generator, Mapping, Sequence
+from typing import Any
 
 import pytest
 from dagster import job, op

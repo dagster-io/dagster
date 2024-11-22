@@ -1,5 +1,6 @@
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Callable, Iterator, List, Optional, Union
+from typing import Callable, Optional, Union
 
 from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataMapping
@@ -38,7 +39,7 @@ class InProcessPipesContextLoader(PipesContextLoader):
 
 class InProcessPipesMessageWriteChannel(PipesMessageWriterChannel):
     def __init__(self) -> None:
-        self.messages: List[PipesMessage] = []
+        self.messages: list[PipesMessage] = []
 
     def write_message(self, message: PipesMessage) -> None:
         self.messages.append(message)

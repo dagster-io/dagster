@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import AbstractSet, Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import AbstractSet, Any, Optional  # noqa: UP035
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec

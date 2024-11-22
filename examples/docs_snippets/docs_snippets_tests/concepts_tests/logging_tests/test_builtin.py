@@ -15,7 +15,6 @@ def test_demo_job_config():
         file_relative_path(
             __file__, "../../../docs_snippets/concepts/logging/config.yaml"
         ),
-        "r",
         encoding="utf-8",
     ) as fd:
         run_config = yaml.safe_load(fd.read())

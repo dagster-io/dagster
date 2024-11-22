@@ -318,7 +318,7 @@ defs = dg.Definitions(
 Instead of using the out-of-the-box <PyObject module="dagster_tableau" method="build_tableau_materializable_assets_definition" /> utility, you can build your own assets definition that trigger the refresh of your Tableau workbooks. This allows you to customize how the refresh is triggered or to run custom code before or after the refresh.
 
 ```python file=/integrations/tableau/materialize-tableau-assets-advanced.py
-from typing import Sequence
+from collections.abc import Sequence
 
 from dagster_tableau import (
     TableauCloudWorkspace,

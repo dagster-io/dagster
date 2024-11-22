@@ -1,8 +1,9 @@
 import textwrap
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import AbstractSet, Iterator, Optional
+from typing import AbstractSet, Optional  # noqa: UP035
 
 from dagster import AssetKey, DagsterInstance
 from dagster._utils import pushd

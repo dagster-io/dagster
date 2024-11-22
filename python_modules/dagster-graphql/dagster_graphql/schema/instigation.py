@@ -275,7 +275,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
         )
 
     def resolve_id(self, _):
-        return "%s:%s" % (self._tick.instigator_origin_id, self._tick.timestamp)
+        return f"{self._tick.instigator_origin_id}:{self._tick.timestamp}"
 
     def resolve_tickId(self, _: ResolveInfo) -> str:
         return str(self._tick.tick_id)

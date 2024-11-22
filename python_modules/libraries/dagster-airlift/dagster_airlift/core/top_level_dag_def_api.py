@@ -1,4 +1,5 @@
-from typing import Any, Dict, Iterable, Mapping, Sequence, Union
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Union
 
 from dagster import (
     AssetsDefinition,
@@ -17,12 +18,12 @@ class TaskDefs:
 
 
 def apply_metadata_to_assets(
-    assets: Iterable[Union[AssetsDefinition, AssetSpec]], metadata: Dict[str, Any]
+    assets: Iterable[Union[AssetsDefinition, AssetSpec]], metadata: dict[str, Any]
 ) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
     return [assets_def_with_af_metadata(asset, metadata) for asset in assets]
 
 
-def apply_metadata_to_all_specs(defs: Definitions, metadata: Dict[str, Any]) -> Definitions:
+def apply_metadata_to_all_specs(defs: Definitions, metadata: dict[str, Any]) -> Definitions:
     return Definitions(
         assets=[
             # Right now we make assumptions that we only support AssetSpec and AssetsDefinition

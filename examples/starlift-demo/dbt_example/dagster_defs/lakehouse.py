@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import List, Mapping, Optional, Sequence
+from typing import Optional
 
 from dagster import AssetKey, AssetSpec, multi_asset
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
@@ -36,7 +37,7 @@ def lakehouse_assets_def(
     *,
     csv_path: Path,
     duckdb_path: Path,
-    columns: List[str],
+    columns: list[str],
     automation_condition: Optional[AutomationCondition] = None,
     upstreams_map: Optional[Mapping[AssetKey, Sequence[AssetKey]]] = None,
 ) -> AssetsDefinition:

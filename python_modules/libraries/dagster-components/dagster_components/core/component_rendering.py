@@ -1,18 +1,8 @@
 import functools
 import os
 import typing
-from typing import (
-    Annotated,
-    Any,
-    Callable,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    TypeVar,
-    Union,
-    get_origin,
-)
+from collections.abc import Mapping, Sequence
+from typing import Annotated, Any, Callable, Optional, TypeVar, Union, get_origin
 
 import dagster._check as check
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -61,11 +51,11 @@ class RenderingMetadata:
     ```
     """
 
-    output_type: Type
+    output_type: type
     post_process: Optional[Callable[[Any], Any]] = None
 
 
-def _get_rendering_metadata(annotation: Type) -> RenderingMetadata:
+def _get_rendering_metadata(annotation: type) -> RenderingMetadata:
     origin = get_origin(annotation)
     if origin is Annotated:
         _, f_metadata, *_ = typing.get_args(annotation)
@@ -150,7 +140,7 @@ class TemplatedValueRenderer:
         """Recursively renders templated values in a nested object."""
         return self._render_obj(val, None, lambda _: True)
 
-    def render_params(self, val: T, target_type: Type) -> T:
+    def render_params(self, val: T, target_type: type) -> T:
         """Given a raw params value, preprocesses it by rendering any templated values that are not marked as deferred in the target_type's json schema."""
         json_schema = (
             target_type.model_json_schema() if issubclass(target_type, BaseModel) else None

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from dagster import Config, RunConfig, config_mapping, graph, graph_asset, job, materialize, op
@@ -70,7 +70,7 @@ def test_config_mapping_return_config_dict() -> None:
 
     # New, fancy config mapping takes in a Pythonic config object but returns normal config dict
     @config_mapping
-    def simplified_config(config_in: ConfigMappingConfig) -> Dict[str, Any]:
+    def simplified_config(config_in: ConfigMappingConfig) -> dict[str, Any]:
         return {"ops": {"do_something": {"config": {"config_param": config_in.simplified_param}}}}
 
     @job(config=simplified_config)
@@ -150,7 +150,7 @@ def test_config_mapping_enum() -> None:
         simplified_param: MyEnum
 
     @config_mapping
-    def simplified_config(config_in: ConfigMappingConfig) -> Dict[str, Any]:
+    def simplified_config(config_in: ConfigMappingConfig) -> dict[str, Any]:
         return {
             "ops": {"do_something": {"config": {"config_param": config_in.simplified_param.name}}}
         }
@@ -179,7 +179,7 @@ def test_config_mapping_return_run_config_nested() -> None:
 
     # The graph case can't return a RunConfig since graph config looks different (e.g. no ops at top level)
     @config_mapping
-    def simplified_config(config_in: ConfigMappingConfig) -> Dict[str, Any]:
+    def simplified_config(config_in: ConfigMappingConfig) -> dict[str, Any]:
         return {
             "do_something": {"config": {"config_param": config_in.simplified_param}},
         }

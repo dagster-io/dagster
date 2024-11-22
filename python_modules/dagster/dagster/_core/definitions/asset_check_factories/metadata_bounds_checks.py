@@ -1,5 +1,6 @@
 import re
-from typing import Optional, Sequence, Tuple, Union, cast
+from collections.abc import Sequence
+from typing import Optional, Union, cast
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -78,7 +79,7 @@ def build_metadata_bounds_checks(
 
     def _result_for_check_key(
         instance: DagsterInstance, asset_check_key: AssetCheckKey
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         event = instance.get_latest_materialization_event(asset_check_key.asset_key)
         if not event:
             return False, "Asset has not been materialized"

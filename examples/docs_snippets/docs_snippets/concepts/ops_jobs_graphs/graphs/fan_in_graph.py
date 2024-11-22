@@ -1,6 +1,6 @@
 # start_marker
 
-from typing import List
+from typing import List  # noqa: UP035
 
 from dagster import graph, op
 
@@ -11,7 +11,7 @@ def return_one() -> int:
 
 
 @op
-def sum_fan_in(nums: List[int]) -> int:
+def sum_fan_in(nums: list[int]) -> int:
     return sum(nums)
 
 

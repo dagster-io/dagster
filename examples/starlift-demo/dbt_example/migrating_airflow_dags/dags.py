@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import List
 
 from airflow import DAG
 from airflow.models.operator import BaseOperator
@@ -20,7 +19,7 @@ default_args = {
 
 
 class LoadToLakehouseOperator(BaseOperator):
-    def __init__(self, csv_path: Path, db_path: Path, columns: List[str], *args, **kwargs):
+    def __init__(self, csv_path: Path, db_path: Path, columns: list[str], *args, **kwargs):
         self._csv_path = csv_path
         self._db_path = db_path
         self._column_names = columns

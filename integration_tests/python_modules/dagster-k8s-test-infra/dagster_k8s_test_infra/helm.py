@@ -57,13 +57,13 @@ def _create_namespace(should_cleanup, existing_helm_namespace=None, prefix="dags
     # Will be something like dagster-test-3fcd70 to avoid ns collisions in shared test environment
     namespace = get_test_namespace(prefix)
 
-    print("--- \033[32m:k8s: Creating test namespace %s\033[0m" % namespace)
+    print(f"--- \033[32m:k8s: Creating test namespace {namespace}\033[0m")
     kube_api = kubernetes.client.CoreV1Api()
 
     if existing_helm_namespace:
         namespace = existing_helm_namespace
     else:
-        print("Creating namespace %s" % namespace)
+        print(f"Creating namespace {namespace}")
         kube_namespace = kubernetes.client.V1Namespace(
             metadata=kubernetes.client.V1ObjectMeta(name=namespace)
         )
@@ -72,7 +72,7 @@ def _create_namespace(should_cleanup, existing_helm_namespace=None, prefix="dags
     yield namespace
 
     if should_cleanup:
-        print("Deleting namespace %s" % namespace)
+        print(f"Deleting namespace {namespace}")
         kube_api.delete_namespace(name=namespace)
 
 
@@ -108,10 +108,10 @@ def run_monitoring_namespace(cluster_provider, pytestconfig, should_cleanup):
         # Will be something like dagster-test-3fcd70 to avoid ns collisions in shared test environment
         namespace = get_test_namespace()
 
-        print("--- \033[32m:k8s: Creating test namespace %s\033[0m" % namespace)
+        print(f"--- \033[32m:k8s: Creating test namespace {namespace}\033[0m")
         kube_api = kubernetes.client.CoreV1Api()
 
-        print("Creating namespace %s" % namespace)
+        print(f"Creating namespace {namespace}")
         kube_namespace = kubernetes.client.V1Namespace(
             metadata=kubernetes.client.V1ObjectMeta(name=namespace)
         )
@@ -122,7 +122,7 @@ def run_monitoring_namespace(cluster_provider, pytestconfig, should_cleanup):
     # Can skip this step as a time saver when we're going to destroy the cluster anyway, e.g.
     # w/ a kind cluster
     if should_cleanup:
-        print("Deleting namespace %s" % namespace)
+        print(f"Deleting namespace {namespace}")
         kube_api.delete_namespace(name=namespace)
 
 
@@ -180,7 +180,7 @@ def aws_configmap(namespace, should_cleanup):
             "AWS_SECRET_ACCESS_KEY": creds.get("aws_secret_access_key"),
         }
 
-        print("Creating ConfigMap %s with AWS credentials" % (TEST_AWS_CONFIGMAP_NAME))
+        print(f"Creating ConfigMap {TEST_AWS_CONFIGMAP_NAME} with AWS credentials")
         aws_configmap = kubernetes.client.V1ConfigMap(
             api_version="v1",
             kind="ConfigMap",
@@ -529,7 +529,7 @@ def _helm_chart_helper(
 
                 print("Waiting for celery workers")
                 for pod_name in pod_names:
-                    print("Waiting for Celery worker pod %s" % pod_name)
+                    print(f"Waiting for Celery worker pod {pod_name}")
                     api_client.wait_for_pod(pod_name, namespace=namespace)
 
                 rabbitmq_enabled = "rabbitmq" in helm_config and helm_config["rabbitmq"].get(
@@ -591,10 +591,10 @@ def _helm_chart_helper(
                 p.metadata.name for p in pods.items if "user-code-deployment" in p.metadata.name
             ]
             for pod_name in pod_names:
-                print("Waiting for user code deployment pod %s" % pod_name)
+                print(f"Waiting for user code deployment pod {pod_name}")
                 api_client.wait_for_pod(pod_name, namespace=namespace)
 
-        print("Helm chart successfully installed in namespace %s" % namespace)
+        print(f"Helm chart successfully installed in namespace {namespace}")
         yield
 
     finally:
@@ -969,7 +969,7 @@ def _port_forward_dagster_webserver(namespace):
                 raise Exception("Timed out while waiting for dagster-webserver port forwarding")
 
             print(
-                "Waiting for port forwarding from k8s pod %s:80 to localhost:%d to be available..."
+                "Waiting for port forwarding from k8s pod %s:80 to localhost:%d to be available..."  # noqa: UP031
                 % (webserver_pod_name, forward_port)
             )
             try:

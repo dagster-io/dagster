@@ -1,4 +1,5 @@
-from typing import Any, Mapping, NamedTuple, Optional
+from collections.abc import Mapping
+from typing import Any, NamedTuple, Optional
 
 # These constants exist within the Dagster main package, but are duplicated here to avoid taking a dependency on Dagster within
 # the dagster-airlift[in-airflow] submodule.

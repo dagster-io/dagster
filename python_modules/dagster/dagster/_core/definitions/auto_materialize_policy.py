@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence
+from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
@@ -22,8 +23,8 @@ if TYPE_CHECKING:
 
 class AutoMaterializePolicySerializer(NamedTupleSerializer):
     def before_unpack(
-        self, context: UnpackContext, unpacked_dict: Dict[str, UnpackedValue]
-    ) -> Dict[str, UnpackedValue]:
+        self, context: UnpackContext, unpacked_dict: dict[str, UnpackedValue]
+    ) -> dict[str, UnpackedValue]:
         from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 
         backcompat_map = {
@@ -63,7 +64,7 @@ class AutoMaterializePolicy(
     NamedTuple(
         "_AutoMaterializePolicy",
         [
-            ("rules", FrozenSet["AutoMaterializeRule"]),
+            ("rules", frozenset["AutoMaterializeRule"]),
             ("max_materializations_per_minute", Optional[int]),
             ("asset_condition", Optional["AutomationCondition"]),
         ],
@@ -149,7 +150,7 @@ class AutoMaterializePolicy(
                 "`max_materializations_per_minute` is not supported when using `asset_condition`.",
             )
 
-        return super(AutoMaterializePolicy, cls).__new__(
+        return super().__new__(
             cls,
             rules=frozenset(check.set_param(rules, "rules", of_type=AutoMaterializeRule)),
             max_materializations_per_minute=max_materializations_per_minute,

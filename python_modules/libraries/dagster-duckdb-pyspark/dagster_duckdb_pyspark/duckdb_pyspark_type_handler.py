@@ -1,4 +1,5 @@
-from typing import Optional, Sequence, Type
+from collections.abc import Sequence
+from typing import Optional
 
 import pyarrow as pa
 import pyspark
@@ -263,5 +264,5 @@ class DuckDBPySparkIOManager(DuckDBIOManager):
         return [DuckDBPySparkTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return pyspark.sql.DataFrame

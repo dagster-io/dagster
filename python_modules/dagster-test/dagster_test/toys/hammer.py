@@ -29,7 +29,7 @@ def hammer_op(context, chase_duration):
     while (time.time() - start_time) < chase_duration:
         curr = data[curr]
 
-    context.log.info("Hammered - start %d end %d" % (start_time, time.time()))
+    context.log.info("Hammered - start %d end %d" % (start_time, time.time()))  # noqa: UP031
     return chase_duration
 
 

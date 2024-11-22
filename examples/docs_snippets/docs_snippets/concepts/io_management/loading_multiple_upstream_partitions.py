@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict
+from typing import Dict  # noqa: UP035
 
 import pandas as pd
 
@@ -25,7 +25,7 @@ def upstream_asset(context: AssetExecutionContext) -> pd.DataFrame:
 @asset(
     partitions_def=daily_partitions,
 )
-def downstream_asset(upstream_asset: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+def downstream_asset(upstream_asset: dict[str, pd.DataFrame]) -> pd.DataFrame:
     return pd.concat(list(upstream_asset.values()))
 
 

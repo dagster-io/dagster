@@ -3,9 +3,9 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator, List, Sequence
 
 
 @contextmanager
@@ -79,7 +79,7 @@ def _get_editable_package_root(pkg_name: str) -> str:
 
 
 def test_components_from_dagster():
-    common_deps: List[str] = []
+    common_deps: list[str] = []
     for pkg_name in ["dagster", "dagster-pipes"]:
         common_deps.extend(["-e", _get_editable_package_root(pkg_name)])
 

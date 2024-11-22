@@ -1,5 +1,6 @@
 import zlib
-from typing import ContextManager, Mapping, Optional
+from collections.abc import Mapping
+from typing import ContextManager, Optional  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
@@ -164,13 +165,11 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     def has_built_index(self, migration_name: str) -> bool:
         if migration_name not in self._index_migration_cache:
-            self._index_migration_cache[migration_name] = super(
-                PostgresRunStorage, self
-            ).has_built_index(migration_name)
+            self._index_migration_cache[migration_name] = super().has_built_index(migration_name)
         return self._index_migration_cache[migration_name]
 
     def mark_index_built(self, migration_name: str) -> None:
-        super(PostgresRunStorage, self).mark_index_built(migration_name)
+        super().mark_index_built(migration_name)
         if migration_name in self._index_migration_cache:
             del self._index_migration_cache[migration_name]
 

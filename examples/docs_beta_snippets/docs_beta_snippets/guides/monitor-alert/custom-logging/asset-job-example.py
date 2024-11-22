@@ -9,7 +9,7 @@ LOGGER_CONFIG = {"loggers": {"console": {"config": {"log_level": "INFO"}}}}
 
 
 @dg.asset()
-def hackernews_topstory_ids(context: dg.AssetExecutionContext) -> typing.List[int]:
+def hackernews_topstory_ids(context: dg.AssetExecutionContext) -> list[int]:
     """Get up to 500 top stories from the HackerNews topstories endpoint.
 
     API Docs: https://github.com/HackerNews/API#new-top-and-best-stories

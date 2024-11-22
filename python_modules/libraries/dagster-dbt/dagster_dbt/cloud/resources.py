@@ -2,8 +2,9 @@ import datetime
 import json
 import logging
 import time
+from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Any, Mapping, Optional, Sequence, cast
+from typing import Any, Optional, cast
 from urllib.parse import urlencode, urljoin
 
 import requests

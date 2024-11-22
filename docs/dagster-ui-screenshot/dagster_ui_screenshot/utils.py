@@ -1,7 +1,8 @@
 import os
 import re
+from collections.abc import Sequence
 from glob import glob
-from typing import List, Sequence, cast
+from typing import cast
 
 import yaml
 from typing_extensions import NotRequired, TypeAlias, TypedDict
@@ -12,7 +13,7 @@ class RawScreenshotSpec(TypedDict):
     base_url: NotRequired[str]
     route: NotRequired[str]
     workspace: NotRequired[str]
-    steps: NotRequired[List[str]]
+    steps: NotRequired[list[str]]
     vetted: NotRequired[bool]
     width: NotRequired[int]
     height: NotRequired[int]
@@ -23,7 +24,7 @@ class ScreenshotSpec(TypedDict):
     base_url: str
     route: str
     workspace: NotRequired[str]
-    steps: NotRequired[List[str]]
+    steps: NotRequired[list[str]]
     vetted: NotRequired[bool]
     width: NotRequired[int]
     height: NotRequired[int]
@@ -65,7 +66,7 @@ def load_spec(spec_id: str, spec_db_path: str) -> ScreenshotSpec:
 
 
 def load_spec_db(spec_db_path: str) -> SpecDB:
-    db: List[ScreenshotSpec] = []
+    db: list[ScreenshotSpec] = []
     if _is_single_file_spec_db(spec_db_path):
         db += _load_yaml(spec_db_path)
     else:
@@ -101,7 +102,7 @@ def _is_single_file_spec_db(spec_db_path: str) -> bool:
 
 
 def _load_yaml(path: str):
-    with open(path, "r", encoding="utf8") as f:
+    with open(path, encoding="utf8") as f:
         return yaml.safe_load(f)
 
 

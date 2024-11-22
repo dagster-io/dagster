@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 import dagster as dg
 import gql
@@ -30,19 +30,19 @@ class GithubResource(dg.ConfigurableResource):
             fetch_schema_from_transport=True,
         )
 
-    def get_issues(self, start_date="2023-01-01", end_date="2023-12-31") -> List[dict]:
+    def get_issues(self, start_date="2023-01-01", end_date="2023-12-31") -> list[dict]:
         issues_query_str = GITHUB_ISSUES_QUERY.replace("START_DATE", start_date).replace(
             "END_DATE", end_date
         )
         return self._fetch_results(issues_query_str, "issues")
 
-    def get_discussions(self, start_date="2023-01-01", end_date="2023-12-31") -> List[dict]:
+    def get_discussions(self, start_date="2023-01-01", end_date="2023-12-31") -> list[dict]:
         discussion_query_str = GITHUB_DISCUSSIONS_QUERY.replace("START_DATE", start_date).replace(
             "END_DATE", end_date
         )
         return self._fetch_results(discussion_query_str, "discussions")
 
-    def _fetch_results(self, query_str: str, object_type: str) -> List[dict]:
+    def _fetch_results(self, query_str: str, object_type: str) -> list[dict]:
         log = dg.get_dagster_logger()
         client = self.client()
         cursor = None
@@ -63,7 +63,7 @@ class GithubResource(dg.ConfigurableResource):
             cursor = search["pageInfo"]["endCursor"]
         return results
 
-    def convert_discussions_to_documents(self, items: List[Dict[str, Any]]) -> List[Document]:
+    def convert_discussions_to_documents(self, items: list[dict[str, Any]]) -> list[Document]:
         """Convert GitHub discussions to LangChain documents.
 
         This function transforms GitHub discussion data into LangChain Document objects,
@@ -140,7 +140,7 @@ class GithubResource(dg.ConfigurableResource):
         log.info(f"Successfully converted {len(documents)} discussions")
         return documents
 
-    def convert_issues_to_documents(self, items: List[Dict[str, Any]]) -> List[Document]:
+    def convert_issues_to_documents(self, items: list[dict[str, Any]]) -> list[Document]:
         """Convert GitHub issues to LangChain documents.
 
         This function transforms GitHub issue data into LangChain Document objects,

@@ -1,7 +1,7 @@
 import gc
 import sys
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 from unittest import mock
 
 import objgraph

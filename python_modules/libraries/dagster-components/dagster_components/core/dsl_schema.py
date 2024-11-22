@@ -1,5 +1,6 @@
 from abc import ABC
-from typing import AbstractSet, Annotated, Any, Dict, Literal, Mapping, Optional, Sequence, Union
+from collections.abc import Mapping, Sequence
+from typing import AbstractSet, Annotated, Any, Literal, Optional, Union  # noqa: UP035
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -21,7 +22,7 @@ from dagster_components.core.component_rendering import (
 
 class OpSpecBaseModel(BaseModel):
     name: Optional[str] = None
-    tags: Optional[Dict[str, str]] = None
+    tags: Optional[dict[str, str]] = None
 
 
 def _post_process_key(rendered: Optional[str]) -> Optional[AssetKey]:

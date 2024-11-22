@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import Any, NamedTuple, Optional, Union, cast
 
 from dagster import _check as check
 

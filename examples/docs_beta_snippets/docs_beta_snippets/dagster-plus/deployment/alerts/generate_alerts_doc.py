@@ -1,8 +1,9 @@
 # This script is used to generate content in `alerts.md`. It creates and formats the cross-product
 # of all alert types and notification services. After adding a new alert type or service, just run
 # `python generate_alerts_doc.py` and the corresponding markdown file will be updated.
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, NamedTuple, Optional
 
 import yaml
 

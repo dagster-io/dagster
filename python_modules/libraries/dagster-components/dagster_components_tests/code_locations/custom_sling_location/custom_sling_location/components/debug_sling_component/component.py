@@ -1,4 +1,4 @@
-from typing import Iterator
+from collections.abc import Iterator
 
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_components import component_type

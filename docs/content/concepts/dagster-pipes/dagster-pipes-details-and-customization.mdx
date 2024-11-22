@@ -186,7 +186,7 @@ Pipes sessions are represented in the orchestration process by the <PyObject obj
 ```python file=/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/session_lifecycle_orchestration.py
 ### ORCHESTRATION PROCESS
 
-from typing import Iterator
+from collections.abc import Iterator
 
 # `third_party_api` is a fictional package representing a third-party library (or user code)
 # providing APIs for launching and polling a process in some external environment.
@@ -345,8 +345,8 @@ In general if you are implementing a custom variant of one, you will want to imp
 import json
 import random
 import string
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 
 import cloud_service
 from dagster_pipes import PipesContextData, PipesParams
@@ -377,8 +377,8 @@ And the context loader:
 ### EXTERNAL PROCESS
 
 import json
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 
 import cloud_service
 from dagster_pipes import PipesContextData, PipesContextLoader, PipesParams
@@ -416,8 +416,9 @@ First, the message reader:
 
 import os
 import string
+from collections.abc import Iterator
 from random import random
-from typing import Iterator, Optional
+from typing import Optional
 
 import cloud_service
 from dagster_pipes import PipesParams

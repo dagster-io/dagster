@@ -1,7 +1,8 @@
 import warnings
 from collections import defaultdict
+from collections.abc import Mapping
 from enum import Enum
-from typing import TYPE_CHECKING, Mapping, Optional
+from typing import TYPE_CHECKING, Optional
 
 from dagster import (
     Field,

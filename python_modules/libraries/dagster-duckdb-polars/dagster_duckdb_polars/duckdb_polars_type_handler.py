@@ -1,4 +1,5 @@
-from typing import Optional, Sequence, Type
+from collections.abc import Sequence
+from typing import Optional
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
@@ -253,5 +254,5 @@ class DuckDBPolarsIOManager(DuckDBIOManager):
         return [DuckDBPolarsTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return pl.DataFrame

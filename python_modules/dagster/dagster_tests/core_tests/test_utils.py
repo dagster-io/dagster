@@ -2,7 +2,7 @@ import time
 import warnings
 from concurrent.futures import as_completed
 from contextvars import ContextVar
-from typing import Dict, List, NamedTuple
+from typing import NamedTuple
 
 import dagster.version
 import pytest
@@ -109,8 +109,8 @@ def test_hash_collection():
         hash_collection(object())  # pyright: ignore[reportArgumentType]
 
     class Foo(NamedTuple):
-        a: List[int]
-        b: Dict[str, int]
+        a: list[int]
+        b: dict[str, int]
         c: str
 
     with pytest.raises(Exception):

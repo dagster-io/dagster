@@ -5,9 +5,10 @@ import re
 import string
 import sys
 import time
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
-from typing import List, Optional, Sequence, Tuple, cast
+from typing import Optional, cast
 from unittest import mock
 
 import pytest
@@ -278,7 +279,7 @@ def _synthesize_events(
     run_config=None,
     tags=None,
     job_name=None,
-) -> Tuple[List[EventLogEntry], JobExecutionResult]:
+) -> tuple[list[EventLogEntry], JobExecutionResult]:
     events = []
 
     def _append_event(event):
@@ -344,7 +345,7 @@ def _store_materialization_events(storage, ops_fn, instance, run_id):
     return last_materialization.storage_id + 1
 
 
-def _fetch_all_events(configured_storage, run_id=None) -> Sequence[Tuple[str]]:
+def _fetch_all_events(configured_storage, run_id=None) -> Sequence[tuple[str]]:
     with configured_storage.run_connection(run_id=run_id) as conn:
         res = conn.execute(db.text("SELECT event from event_logs"))
         return res.fetchall()

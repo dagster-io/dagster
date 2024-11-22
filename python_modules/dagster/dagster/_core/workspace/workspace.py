@@ -1,8 +1,7 @@
+from collections.abc import Mapping
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Mapping, Optional
-
-from typing_extensions import Annotated
+from typing import TYPE_CHECKING, Annotated, Optional
 
 from dagster._record import ImportFrom, record
 from dagster._utils.error import SerializableErrorInfo

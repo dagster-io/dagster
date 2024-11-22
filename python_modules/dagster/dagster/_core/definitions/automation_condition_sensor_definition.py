@@ -1,5 +1,6 @@
+from collections.abc import Mapping
 from functools import partial
-from typing import Any, Mapping, Optional, cast
+from typing import Any, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import experimental

@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
@@ -18,7 +17,7 @@ def get_description() -> str:
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 

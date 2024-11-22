@@ -41,7 +41,7 @@ def test_pipes_stdio_file_log_writer(capsys):
         assert set(os.listdir(tempdir)) == {"stderr", "stdout"}
 
         for stream in ["stdout", "stderr"]:
-            with open(os.path.join(tempdir, stream), "r") as stdout_file:
+            with open(os.path.join(tempdir, stream)) as stdout_file:
                 contents = stdout_file.read()
                 for i in range(1, 4):
                     assert f"Writing this to {stream} {i}" in contents
@@ -58,7 +58,7 @@ def test_pipes_default_log_writer(capsys):
         ):
             print("Writing this to stdout")  # noqa
             print("And this to stderr", file=sys.stderr)  # noqa
-        with open(file.name, "r") as log_file:
+        with open(file.name) as log_file:
             messages = log_file.read().splitlines()
 
             # it's hard to make exact assertions here

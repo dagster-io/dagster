@@ -1,5 +1,6 @@
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator, List, cast
+from typing import cast
 from unittest import mock
 
 import pytest
@@ -404,7 +405,7 @@ def test_multi_asset_sensor_with_source_assets() -> None:
             instance=instance,
             repository_def=my_repo,
         )
-        run_requests = cast(List[RunRequest], my_sensor(ctx))
+        run_requests = cast(list[RunRequest], my_sensor(ctx))
         assert len(run_requests) == 1
         assert run_requests[0].partition_key == "2023-03-01"
 

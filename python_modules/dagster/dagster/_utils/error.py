@@ -2,8 +2,9 @@ import os
 import sys
 import traceback
 import uuid
+from collections.abc import Sequence
 from types import TracebackType
-from typing import Any, NamedTuple, Optional, Sequence, Tuple, Type, Union
+from typing import Any, NamedTuple, Optional, Union
 
 from typing_extensions import TypeAlias
 
@@ -79,8 +80,8 @@ def _serializable_error_info_from_tb(tb: traceback.TracebackException) -> Serial
 
 
 ExceptionInfo: TypeAlias = Union[
-    Tuple[Type[BaseException], BaseException, TracebackType],
-    Tuple[None, None, None],
+    tuple[type[BaseException], BaseException, TracebackType],
+    tuple[None, None, None],
 ]
 
 

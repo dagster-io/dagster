@@ -79,7 +79,7 @@ class MyConnectionResource(ConfigurableResource):
         )
 
 @asset
-def data_from_service(my_conn: MyConnectionResource) -> Dict[str, Any]:
+def data_from_service(my_conn: MyConnectionResource) -> dict[str, Any]:
     return my_conn.request("/fetch_data").json()
 
 defs = Definitions(

@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Optional, Sequence, Type
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue
@@ -296,5 +297,5 @@ class BigQueryPySparkIOManager(BigQueryIOManager):
         return [BigQueryPySparkTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return DataFrame

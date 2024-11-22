@@ -1,7 +1,8 @@
 import json
 import logging
 import time
-from typing import Any, Mapping, Optional, cast
+from collections.abc import Mapping
+from typing import Any, Optional, cast
 
 # Type errors ignored because some of these imports target deprecated modules for compatibility with
 # airflow 1.x and 2.x.

@@ -2,9 +2,10 @@ import inspect
 import re
 import shutil
 import textwrap
+from collections.abc import Iterator
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Iterator, cast
+from typing import Any, Callable, cast
 
 from dagster import AssetKey, AssetsDefinition, Definitions, MarkdownMetadataValue, materialize
 from dagster._core.definitions.data_version import (

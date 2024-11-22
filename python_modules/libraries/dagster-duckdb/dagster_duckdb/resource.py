@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, Dict
+from typing import Any
 
 import duckdb
 from dagster import ConfigurableResource
@@ -35,7 +35,7 @@ class DuckDBResource(ConfigurableResource):
             " database "
         )
     )
-    connection_config: Dict[str, Any] = Field(
+    connection_config: dict[str, Any] = Field(
         description=(
             "DuckDB connection configuration options. See"
             " https://duckdb.org/docs/sql/configuration.html"

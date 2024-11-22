@@ -1,0 +1,6 @@
+[lint]
+ignore = [
+    # code in this submodule explicitly operates with the legacy typing.* API
+    # and we do not want ruff to upgrade it to Python builtins
+    "UP006"
+]

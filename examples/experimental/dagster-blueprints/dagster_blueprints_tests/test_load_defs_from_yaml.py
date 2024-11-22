@@ -1,7 +1,8 @@
 import os
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import List, Literal, Sequence, Union
+from typing import Literal, Union
 
 import pytest
 from dagster import AssetKey, Definitions, asset, job
@@ -321,7 +322,7 @@ def test_loader_schema_union(snapshot) -> None:
 def test_single_file_many_blueprints() -> None:
     defs = load_defs_from_yaml(
         path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
-        per_file_blueprint_type=List[SimpleAssetBlueprint],
+        per_file_blueprint_type=list[SimpleAssetBlueprint],
     )
     assert set(defs.get_asset_graph().get_all_asset_keys()) == {
         AssetKey("asset1"),
@@ -361,7 +362,7 @@ def test_single_file_no_bp_type() -> None:
     ):
         load_defs_from_yaml(
             path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
-            per_file_blueprint_type=List,
+            per_file_blueprint_type=list,
         )
     with pytest.raises(
         CheckError, match="Sequence type annotation must have a single Blueprint type argument"
@@ -378,14 +379,14 @@ def test_expect_list_no_list() -> None:
     ):
         load_defs_from_yaml(
             path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
-            per_file_blueprint_type=List[SimpleAssetBlueprint],
+            per_file_blueprint_type=list[SimpleAssetBlueprint],
         )
 
 
 def test_dir_of_many_blueprints() -> None:
     defs = load_defs_from_yaml(
         path=Path(__file__).parent / "yaml_files" / "dir_of_lists_of_blueprints",
-        per_file_blueprint_type=List[SimpleAssetBlueprint],
+        per_file_blueprint_type=list[SimpleAssetBlueprint],
     )
     assert set(defs.get_asset_graph().get_all_asset_keys()) == {
         AssetKey("asset1"),

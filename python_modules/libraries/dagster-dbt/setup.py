@@ -1,12 +1,11 @@
 from pathlib import Path
-from typing import Dict, Tuple
 
 from setuptools import find_packages, setup
 
 
-def get_version() -> Tuple[str, str]:
-    version: Dict[str, str] = {}
-    dbt_core_version: Dict[str, str] = {}
+def get_version() -> tuple[str, str]:
+    version: dict[str, str] = {}
+    dbt_core_version: dict[str, str] = {}
 
     with open(Path(__file__).parent / "dagster_dbt/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)

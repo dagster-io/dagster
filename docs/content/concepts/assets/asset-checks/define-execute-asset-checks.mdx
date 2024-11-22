@@ -66,7 +66,7 @@ The `orders_id_has_no_nulls` check runs in its own [op](/concepts/ops-jobs-graph
 Using <PyObject object="multi_asset_check" decorator />, you can define multiple checks that execute in a single operation without an asset. This approach avoids the overhead of running a separate operation for every check and may enable reusing computations across checks.
 
 ```python file=/concepts/assets/asset_checks/multi_asset_check.py
-from typing import Iterable
+from collections.abc import Iterable
 
 from dagster import (
     AssetCheckExecutionContext,
@@ -142,7 +142,8 @@ defs = Definitions(assets=[orders])
 To define multiple, similar asset checks, use a factory pattern. In the following example, the factory accepts a list of SQL statements and turns them into asset checks:
 
 ```python file=/concepts/assets/asset_checks/factory.py
-from typing import Any, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 from unittest.mock import MagicMock
 
 from dagster import (

@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List  # noqa: UP035
 
 import dagster_aws.s3 as s3
 import jinja2
@@ -50,7 +50,7 @@ class JobConfig(pydantic.BaseModel):
 
 class EtlJobsConfig(pydantic.BaseModel):
     aws: AwsConfig
-    etl_jobs: List[JobConfig]
+    etl_jobs: list[JobConfig]
 
     def to_definitions(self) -> dg.Definitions:
         s3_resource = self.aws.to_resource()

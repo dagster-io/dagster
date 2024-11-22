@@ -1,5 +1,6 @@
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from typing import Optional
 
 import dagster._check as check
 import dagster._seven as seven

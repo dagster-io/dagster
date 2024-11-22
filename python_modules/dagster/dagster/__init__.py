@@ -634,16 +634,14 @@ from dagster.version import __version__ as __version__
 # ########################
 
 import importlib
-from typing import (
+from collections.abc import Mapping, Sequence
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     Any as TypingAny,
     Callable,
-    Mapping,
-    Sequence,
-    Tuple as TypingTuple,
+    Final,
+    Tuple as TypingTuple,  # noqa: F401
 )
-
-from typing_extensions import Final
 
 from dagster._utils.warnings import deprecation_warning
 
@@ -659,7 +657,7 @@ if TYPE_CHECKING:
     pass  # noqa: TC005
 
 
-_DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
+_DEPRECATED: Final[Mapping[str, tuple[str, str, str]]] = {
     ##### EXAMPLE
     # "Foo": (
     #     "dagster.some.module",
@@ -668,7 +666,7 @@ _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
     # ),
 }
 
-_DEPRECATED_RENAMED: Final[Mapping[str, TypingTuple[Callable, str]]] = {
+_DEPRECATED_RENAMED: Final[Mapping[str, tuple[Callable, str]]] = {
     ##### EXAMPLE
     # "Foo": (Bar, "1.1.0"),
 }

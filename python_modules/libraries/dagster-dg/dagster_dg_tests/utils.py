@@ -1,11 +1,12 @@
 import sys
 import traceback
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
-from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Optional, Union
 
 import tomli
 import tomli_w
@@ -128,7 +129,7 @@ def assert_runner_result(result: Result, exit_0: bool = True) -> None:
 
 
 def print_exception_info(
-    exc_info: Tuple[Type[BaseException], BaseException, TracebackType],
+    exc_info: tuple[type[BaseException], BaseException, TracebackType],
 ) -> None:
     """Prints a nicely formatted traceback for the current exception."""
     exc_type, exc_value, exc_traceback = exc_info
@@ -139,7 +140,7 @@ def print_exception_info(
 
 
 @contextmanager
-def modify_pyproject_toml() -> Iterator[Dict[str, Any]]:
+def modify_pyproject_toml() -> Iterator[dict[str, Any]]:
     with open("pyproject.toml") as f:
         toml = tomli.loads(f.read())
     yield toml

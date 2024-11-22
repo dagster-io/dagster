@@ -2,10 +2,11 @@ import multiprocessing
 import os
 import sys
 import threading
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from multiprocessing.process import BaseProcess
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Optional
 
 from dagster import _check as check
 from dagster._core.definitions.metadata import MetadataValue
@@ -112,7 +113,7 @@ class MultiprocessExecutor(Executor):
         self,
         retries: RetryMode,
         max_concurrent: Optional[int],
-        tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
+        tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
         start_method: Optional[str] = None,
         explicit_forkserver_preload: Optional[Sequence[str]] = None,
     ):
@@ -202,10 +203,10 @@ class MultiprocessExecutor(Executor):
                     instance_concurrency_context=instance_concurrency_context,
                 )
             )
-            active_iters: Dict[str, Iterator[Optional[DagsterEvent]]] = {}
-            errors: Dict[int, SerializableErrorInfo] = {}
-            processes: Dict[str, BaseProcess] = {}
-            term_events: Dict[str, Any] = {}
+            active_iters: dict[str, Iterator[Optional[DagsterEvent]]] = {}
+            errors: dict[int, SerializableErrorInfo] = {}
+            processes: dict[str, BaseProcess] = {}
+            term_events: dict[str, Any] = {}
             stopping: bool = False
 
             try:
@@ -366,9 +367,9 @@ def execute_step_out_of_process(
     recon_job: ReconstructableJob,
     step_context: IStepContext,
     step: ExecutionStep,
-    errors: Dict[int, SerializableErrorInfo],
-    processes: Dict[str, BaseProcess],
-    term_events: Dict[str, Any],
+    errors: dict[int, SerializableErrorInfo],
+    processes: dict[str, BaseProcess],
+    term_events: dict[str, Any],
     retries: RetryMode,
     known_state: KnownExecutionState,
     repository_load_data: Optional[RepositoryLoadData],

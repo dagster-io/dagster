@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import ConfigDict, Field
 
@@ -19,7 +19,7 @@ class CeleryWorkerQueue(BaseModel):
     labels: Optional[kubernetes.Labels] = None
     nodeSelector: Optional[kubernetes.NodeSelector] = None
     configSource: Optional[dict] = None
-    additionalCeleryArgs: Optional[List[str]] = None
+    additionalCeleryArgs: Optional[list[str]] = None
 
     model_config = ConfigDict(extra="forbid")
 
@@ -29,10 +29,10 @@ class CeleryK8sRunLauncherConfig(BaseModel):
     imagePullPolicy: Optional[kubernetes.PullPolicy] = None
     nameOverride: str
     configSource: dict
-    workerQueues: List[CeleryWorkerQueue] = Field(min_items=1)
-    env: Dict[str, str]
-    envConfigMaps: List[kubernetes.ConfigMapEnvSource]
-    envSecrets: List[kubernetes.SecretEnvSource]
+    workerQueues: list[CeleryWorkerQueue] = Field(min_items=1)
+    env: dict[str, str]
+    envConfigMaps: list[kubernetes.ConfigMapEnvSource]
+    envSecrets: list[kubernetes.SecretEnvSource]
     annotations: kubernetes.Annotations
     nodeSelector: kubernetes.NodeSelector
     affinity: kubernetes.Affinity
@@ -42,9 +42,9 @@ class CeleryK8sRunLauncherConfig(BaseModel):
     resources: kubernetes.Resources
     checkDbReadyInitContainer: Optional[bool] = None
     livenessProbe: kubernetes.LivenessProbe
-    volumeMounts: List[kubernetes.VolumeMount]
-    volumes: List[kubernetes.Volume]
-    labels: Optional[Dict[str, str]] = None
+    volumeMounts: list[kubernetes.VolumeMount]
+    volumes: list[kubernetes.Volume]
+    labels: Optional[dict[str, str]] = None
     failPodOnRunFailure: Optional[bool] = None
     schedulerName: Optional[str] = None
     jobNamespace: Optional[str] = None
@@ -53,11 +53,11 @@ class CeleryK8sRunLauncherConfig(BaseModel):
 
 
 class RunK8sConfig(BaseModel):
-    containerConfig: Optional[Dict[str, Any]] = None
-    podSpecConfig: Optional[Dict[str, Any]] = None
-    podTemplateSpecMetadata: Optional[Dict[str, Any]] = None
-    jobSpecConfig: Optional[Dict[str, Any]] = None
-    jobMetadata: Optional[Dict[str, Any]] = None
+    containerConfig: Optional[dict[str, Any]] = None
+    podSpecConfig: Optional[dict[str, Any]] = None
+    podTemplateSpecMetadata: Optional[dict[str, Any]] = None
+    jobSpecConfig: Optional[dict[str, Any]] = None
+    jobMetadata: Optional[dict[str, Any]] = None
 
     model_config = ConfigDict(extra="forbid")
 
@@ -68,12 +68,12 @@ class K8sRunLauncherConfig(BaseModel):
     jobNamespace: Optional[str] = None
     loadInclusterConfig: bool
     kubeconfigFile: Optional[str] = None
-    envConfigMaps: List[kubernetes.ConfigMapEnvSource]
-    envSecrets: List[kubernetes.SecretEnvSource]
-    envVars: List[str]
-    volumeMounts: List[kubernetes.VolumeMount]
-    volumes: List[kubernetes.Volume]
-    labels: Optional[Dict[str, str]] = None
+    envConfigMaps: list[kubernetes.ConfigMapEnvSource]
+    envSecrets: list[kubernetes.SecretEnvSource]
+    envVars: list[str]
+    volumeMounts: list[kubernetes.VolumeMount]
+    volumes: list[kubernetes.Volume]
+    labels: Optional[dict[str, str]] = None
     failPodOnRunFailure: Optional[bool] = None
     resources: Optional[kubernetes.ResourceRequirements] = None
     schedulerName: Optional[str] = None

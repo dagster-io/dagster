@@ -1,5 +1,6 @@
+from collections.abc import Mapping
 from types import ModuleType
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Optional, Union
 
 from dagster._annotations import experimental
 from dagster._core.definitions.definitions_class import Definitions

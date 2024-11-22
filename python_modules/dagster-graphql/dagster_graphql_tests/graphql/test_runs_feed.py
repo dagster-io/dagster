@@ -1,5 +1,6 @@
 import time
-from typing import Mapping, Optional
+from collections.abc import Mapping
+from typing import Optional
 from unittest import mock
 
 import pytest

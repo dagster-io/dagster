@@ -1,5 +1,5 @@
 # def_start_marker
-from typing import Dict, Union
+from typing import Dict, Union  # noqa: UP035
 
 from dagster import (
     DagsterTypeLoaderContext,
@@ -15,7 +15,7 @@ from dagster import (
     config_schema={"diameter": float, "juiciness": float, "cultivar": str}
 )
 def apple_loader(
-    _context: DagsterTypeLoaderContext, config: Dict[str, Union[float, str]]
+    _context: DagsterTypeLoaderContext, config: dict[str, Union[float, str]]
 ):
     return Apple(
         diameter=config["diameter"],

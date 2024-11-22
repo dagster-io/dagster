@@ -1,5 +1,6 @@
 import re
-from typing import Sequence, Union, cast
+from collections.abc import Sequence
+from typing import Union, cast
 
 import pytest
 from dagster import (

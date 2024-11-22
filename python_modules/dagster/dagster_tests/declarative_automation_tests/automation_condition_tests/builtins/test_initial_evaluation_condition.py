@@ -1,4 +1,5 @@
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 import dagster as dg
 from dagster._core.definitions.declarative_automation.automation_condition_tester import (

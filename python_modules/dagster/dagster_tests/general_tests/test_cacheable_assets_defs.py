@@ -1,4 +1,5 @@
-from typing import List, Sequence, Union, cast
+from collections.abc import Sequence
+from typing import Union, cast
 
 import dagster._check as check
 import pytest
@@ -345,7 +346,7 @@ def test_multiple_wrapped_cached_assets() -> None:
             len(
                 my_cool_group_sel.resolve(
                     resolved_defs
-                    + cast(List[AssetsDefinition], my_cacheable_assets_with_group_and_asset[1:])
+                    + cast(list[AssetsDefinition], my_cacheable_assets_with_group_and_asset[1:])
                 )
             )
             == 1

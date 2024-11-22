@@ -1,8 +1,8 @@
 import importlib.util
 import sys
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
 
 from dagster._core.errors import DagsterError
 

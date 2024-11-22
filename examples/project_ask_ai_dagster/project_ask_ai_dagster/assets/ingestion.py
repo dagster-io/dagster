@@ -1,6 +1,5 @@
 import hashlib
 import time
-from typing import List
 
 import dagster as dg
 from dagster_openai import OpenAIResource
@@ -43,7 +42,7 @@ weekly_partition = dg.WeeklyPartitionsDefinition(start_date=START_TIME)
 def github_issues_raw(
     context: dg.AssetExecutionContext,
     github: GithubResource,
-) -> List[Document]:
+) -> list[Document]:
     start, end = context.partition_time_window
     context.log.info(f"Finding issues from {start} to {end}")
 
@@ -91,7 +90,7 @@ def github_issues_embeddings(
     context: dg.AssetExecutionContext,
     openai: OpenAIResource,
     pinecone: PineconeResource,
-    github_issues_raw: List[Document],
+    github_issues_raw: list[Document],
 ) -> dg.MaterializeResult:
     # Create index if doesn't exist
     pinecone.create_index("dagster-knowledge", dimension=1536)
@@ -152,7 +151,7 @@ def github_issues_embeddings(
 def github_discussions_raw(
     context: dg.AssetExecutionContext,
     github: GithubResource,
-) -> List[Document]:
+) -> list[Document]:
     start, end = context.partition_time_window
     context.log.info(f"Finding discussions from {start} to {end}")
 
@@ -197,7 +196,7 @@ def github_discussions_embeddings(
     context: dg.AssetExecutionContext,
     openai: OpenAIResource,
     pinecone: PineconeResource,
-    github_discussions_raw: List[Document],
+    github_discussions_raw: list[Document],
 ) -> dg.MaterializeResult:
     BATCH_SIZE = 20
 
@@ -285,7 +284,7 @@ def github_discussions_embeddings(
 def docs_scrape_raw(
     context: dg.AssetExecutionContext,
     scraper: SitemapScraper,
-) -> List[Document]:
+) -> list[Document]:
     urls = scraper.parse_sitemap()[0:4]
     documents = []
     # Scrape each URL
@@ -343,7 +342,7 @@ def docs_embedding(
     context: dg.AssetExecutionContext,
     pinecone: PineconeResource,
     openai: OpenAIResource,
-    docs_scrape_raw: List[Document],
+    docs_scrape_raw: list[Document],
 ) -> dg.MaterializeResult:
     pinecone.create_index("dagster-knowledge", dimension=1536)
     index, namespace_kwargs = pinecone.get_index("dagster-knowledge", namespace="dagster-docs")

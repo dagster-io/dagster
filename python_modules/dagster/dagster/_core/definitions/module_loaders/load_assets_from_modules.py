@@ -1,7 +1,8 @@
 import inspect
+from collections.abc import Iterable, Iterator, Sequence
 from importlib import import_module
 from types import ModuleType
-from typing import Iterable, Iterator, Optional, Sequence, Tuple, Type, Union, cast
+from typing import Optional, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks import has_only_asset_checks
@@ -26,7 +27,7 @@ from dagster._core.definitions.utils import resolve_automation_condition
 
 def find_objects_in_module_of_types(
     module: ModuleType,
-    types: Union[Type, Tuple[Type, ...]],
+    types: Union[type, tuple[type, ...]],
 ) -> Iterator:
     """Yields instances or subclasses of the given type(s)."""
     for attr in dir(module):
@@ -39,7 +40,7 @@ def find_objects_in_module_of_types(
 
 def find_subclasses_in_module(
     module: ModuleType,
-    types: Union[Type, Tuple[Type, ...]],
+    types: Union[type, tuple[type, ...]],
 ) -> Iterator:
     """Yields instances or subclasses of the given type(s)."""
     for attr in dir(module):

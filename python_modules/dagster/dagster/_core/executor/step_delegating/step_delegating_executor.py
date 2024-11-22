@@ -3,7 +3,8 @@ import math
 import os
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
@@ -44,7 +45,7 @@ class StepDelegatingExecutor(Executor):
         sleep_seconds: Optional[float] = None,
         check_step_health_interval_seconds: Optional[int] = None,
         max_concurrent: Optional[int] = None,
-        tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
+        tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
         should_verify_step: bool = False,
     ):
         self._step_handler = step_handler
@@ -84,7 +85,7 @@ class StepDelegatingExecutor(Executor):
         return instance.event_log_storage.default_run_scoped_event_tailer_offset()
 
     def _pop_events(
-        self, instance: DagsterInstance, run_id: str, seen_storage_ids: Set[int]
+        self, instance: DagsterInstance, run_id: str, seen_storage_ids: set[int]
     ) -> Sequence[DagsterEvent]:
         conn = instance.get_records_for_run(
             run_id,
@@ -177,7 +178,7 @@ class StepDelegatingExecutor(Executor):
                 tag_concurrency_limits=self._tag_concurrency_limits,
                 instance_concurrency_context=instance_concurrency_context,
             ) as active_execution:
-                running_steps: Dict[str, ExecutionStep] = {}
+                running_steps: dict[str, ExecutionStep] = {}
 
                 if plan_context.resume_from_failure:
                     DagsterEvent.engine_event(
