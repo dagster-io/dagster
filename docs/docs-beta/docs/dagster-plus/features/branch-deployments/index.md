@@ -1,8 +1,8 @@
 ---
 title: "Branch Deployments (CI)"
 displayed_sidebar: "dagsterPlus"
-sidebar_position: 3
 unlisted: true
+sidebar_class_name: hidden
 ---
 
 # Branch Deployments (CI)

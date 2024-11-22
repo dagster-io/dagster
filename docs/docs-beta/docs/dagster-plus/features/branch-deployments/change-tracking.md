@@ -1,9 +1,9 @@
 ---
-title: "Change Tracking in Branch Deployments"
+title: "Change tracking in branch deployments"
 displayed_sidebar: "dagsterPlus"
-sidebar_position: 4
+sidebar_position: 20
 sidebar_label: "Change Tracking"
 unlisted: true
 ---
 
-# Change Tracking in Branch Deployments
+# Change tracking in branch deployments

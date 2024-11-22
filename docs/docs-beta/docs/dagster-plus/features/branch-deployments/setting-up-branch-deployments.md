@@ -1,7 +1,7 @@
 ---
 title: "Setting up Branch Deployments"
 displayed_sidebar: "dagsterPlus"
-sidebar_position: 1
+sidebar_position: 10
 sidebar_label: "Setting up branch deployments"
 toc_max_heading_level: 2
 ---
