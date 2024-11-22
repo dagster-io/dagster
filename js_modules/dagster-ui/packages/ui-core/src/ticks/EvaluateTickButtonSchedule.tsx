@@ -24,7 +24,7 @@ export const EvaluateTickButtonSchedule = ({
           setShowTestTickDialog(true);
         }}
       >
-        Evaluate tick
+        Preview tick result
       </Button>
       <EvaluateScheduleDialog
         isOpen={showTestTickDialog}

@@ -33,7 +33,7 @@ export const EvaluateTickButtonSensor = ({
           disabled={sensorType !== SensorType.STANDARD}
           onClick={() => setShowTestTickDialog(true)}
         >
-          Evaluate tick
+          Preview tick result
         </Button>
       </Tooltip>
       <SensorDryRunDialog
