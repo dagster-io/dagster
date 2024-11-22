@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional, Type
 from dagster import AssetsDefinition, multi_asset
 from dagster._annotations import experimental
 
-from dagster_fivetran.resources import FivetranWorkspace, load_fivetran_asset_specs
+from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import DagsterFivetranTranslator, FivetranMetadataSet
 
 
@@ -105,8 +105,8 @@ def fivetran_assets(
         can_subset=True,
         specs=[
             spec
-            for spec in load_fivetran_asset_specs(
-                workspace=workspace, dagster_fivetran_translator=dagster_fivetran_translator
+            for spec in workspace.load_asset_specs(
+                dagster_fivetran_translator=dagster_fivetran_translator
             )
             if FivetranMetadataSet.extract(spec.metadata).connector_id == connector_id
         ],

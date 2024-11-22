@@ -53,58 +53,58 @@ def test_translator_spec(
         assert FivetranMetadataSet.extract(first_asset_metadata).connector_id == "connector_id"
 
         # clear the asset specs cache post test
-        load_fivetran_asset_specs.cache_clear()
+        # load_fivetran_asset_specs.cache_clear()
 
 
 def test_cached_load_spec_single_resource(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
     with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
-        resource = FivetranWorkspace(
+        workspace = FivetranWorkspace(
             account_id=TEST_ACCOUNT_ID,
             api_key=EnvVar("FIVETRAN_API_KEY"),
             api_secret=EnvVar("FIVETRAN_API_SECRET"),
         )
 
         # load asset specs a first time
-        load_fivetran_asset_specs(resource)
+        workspace.load_asset_specs()
         assert len(fetch_workspace_data_api_mocks.calls) == 4
 
         # load asset specs a first time, no additional calls are made
-        load_fivetran_asset_specs(resource)
+        workspace.load_asset_specs()
         assert len(fetch_workspace_data_api_mocks.calls) == 4
 
         # clear the asset specs cache post test
-        load_fivetran_asset_specs.cache_clear()
+        # load_fivetran_asset_specs.cache_clear()
 
 
 def test_cached_load_spec_multiple_resources(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
     with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
-        resource = FivetranWorkspace(
+        workspace = FivetranWorkspace(
             account_id=TEST_ACCOUNT_ID,
             api_key=EnvVar("FIVETRAN_API_KEY"),
             api_secret=EnvVar("FIVETRAN_API_SECRET"),
         )
 
-        another_resource = FivetranWorkspace(
+        another_workspace = FivetranWorkspace(
             account_id=TEST_ANOTHER_ACCOUNT_ID,
             api_key=EnvVar("FIVETRAN_API_KEY"),
             api_secret=EnvVar("FIVETRAN_API_SECRET"),
         )
 
         # load asset specs with a resource
-        load_fivetran_asset_specs(resource)
+        workspace.load_asset_specs()
         assert len(fetch_workspace_data_api_mocks.calls) == 4
 
         # load asset specs with another resource,
         # additional calls are made to load its specs
-        load_fivetran_asset_specs(another_resource)
+        another_workspace.load_asset_specs()
         assert len(fetch_workspace_data_api_mocks.calls) == 4 + 4
 
         # clear the asset specs cache post test
-        load_fivetran_asset_specs.cache_clear()
+        # load_fivetran_asset_specs.cache_clear()
 
 
 def test_cached_load_spec_with_asset_factory(
@@ -123,4 +123,4 @@ def test_cached_load_spec_with_asset_factory(
         assert len(fetch_workspace_data_api_mocks.calls) == 4
 
         # clear the asset specs cache post test
-        load_fivetran_asset_specs.cache_clear()
+        # load_fivetran_asset_specs.cache_clear()

@@ -44,12 +44,7 @@ from dagster._core.utils import imap
 from dagster._utils.log import get_dagster_logger
 
 from dagster_fivetran.asset_decorator import fivetran_assets
-from dagster_fivetran.resources import (
-    DEFAULT_POLL_INTERVAL,
-    FivetranResource,
-    FivetranWorkspace,
-    load_fivetran_asset_specs,
-)
+from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource, FivetranWorkspace
 from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnectorTableProps,
@@ -817,8 +812,8 @@ def build_fivetran_assets_definitions(
             )
 
     """
-    all_asset_specs = load_fivetran_asset_specs(
-        workspace=workspace, dagster_fivetran_translator=dagster_fivetran_translator
+    all_asset_specs = workspace.load_asset_specs(
+        dagster_fivetran_translator=dagster_fivetran_translator
     )
 
     connector_ids = {

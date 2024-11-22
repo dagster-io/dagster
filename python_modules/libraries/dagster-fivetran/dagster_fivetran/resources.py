@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from datetime import datetime, timedelta
-from functools import lru_cache, partial
+from functools import partial
 from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Type, Union
 from urllib.parse import urljoin
 
@@ -892,24 +892,47 @@ class FivetranWorkspace(ConfigurableResource):
             schema_configs_by_connector_id=schema_configs_by_connector_id,
         )
 
+    @cached_method
+    def load_asset_specs(
+        self,
+        dagster_fivetran_translator: Type[DagsterFivetranTranslator] = DagsterFivetranTranslator,
+    ) -> Sequence[AssetSpec]:
+        """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
+
+        Args:
+            dagster_fivetran_translator (Type[DagsterFivetranTranslator]): The translator to use
+                to convert Fivetran content into AssetSpecs. Defaults to DagsterFivetranTranslator.
+
+        Returns:
+            List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
+
+        Examples:
+            Loading the asset specs for a given Fivetran workspace:
+
+            .. code-block:: python
+                from dagster_fivetran import FivetranWorkspace, load_fivetran_asset_specs
+
+                import dagster as dg
+
+                fivetran_workspace = FivetranWorkspace(
+                    account_id=dg.EnvVar("FIVETRAN_ACCOUNT_ID"),
+                    api_key=dg.EnvVar("FIVETRAN_API_KEY"),
+                    api_secret=dg.EnvVar("FIVETRAN_API_SECRET"),
+                )
+
+                fivetran_specs = fivetran_workspace.load_asset_specs()
+                defs = dg.Definitions(assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
+        """
+        return load_fivetran_asset_specs(
+            workspace=self, dagster_fivetran_translator=dagster_fivetran_translator
+        )
+
     def sync_and_poll(
         self, context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None
     ):
         raise NotImplementedError()
 
-    def __eq__(self, other):
-        return (
-            isinstance(other, FivetranWorkspace)
-            and self.account_id == other.account_id
-            and self.api_key == other.api_key
-            and self.api_secret == other.api_secret
-        )
 
-    def __hash__(self):
-        return hash((self.account_id + self.api_key + self.api_secret))
-
-
-@lru_cache(maxsize=None)
 @experimental
 def load_fivetran_asset_specs(
     workspace: FivetranWorkspace,
