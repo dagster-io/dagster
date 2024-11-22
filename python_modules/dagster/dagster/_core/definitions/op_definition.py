@@ -91,6 +91,8 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         code_version (Optional[str]): (Experimental) Version of the code encapsulated by the op. If set,
             this is used as a default code version for all outputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
+        concurrency_key (Optional[str]): A string that identifies the concurrency limit group that governs
+            this op's execution.
 
 
     Examples:
@@ -112,6 +114,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     _required_resource_keys: AbstractSet[str]
     _version: Optional[str]
     _retry_policy: Optional[RetryPolicy]
+    _concurrency_key: Optional[str]
 
     def __init__(
         self,
@@ -126,6 +129,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         version: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
+        concurrency_key: Optional[str] = None,
     ):
         from dagster._core.definitions.decorators.op_decorator import (
             DecoratedOpFunction,
@@ -170,6 +174,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
         )
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
+        self._concurrency_key = _validate_concurrency_key(concurrency_key, tags)
 
         positional_inputs = (
             self._compute_fn.positional_inputs()
@@ -199,6 +204,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         version: Optional[str],
         retry_policy: Optional[RetryPolicy],
         code_version: Optional[str],
+        concurrency_key: Optional[str],
     ) -> "OpDefinition":
         return OpDefinition(
             compute_fn=compute_fn,
@@ -212,6 +218,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             version=version,
             retry_policy=retry_policy,
             code_version=code_version,
+            concurrency_key=concurrency_key,
         )
 
     @property
@@ -296,6 +303,11 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
         """Creates a copy of this op with the given retry policy."""
         return super(OpDefinition, self).with_retry_policy(retry_policy)
+
+    @property
+    def concurrency_key(self) -> Optional[str]:
+        """Optional[str]: The concurrency key for this op."""
+        return self._concurrency_key
 
     def is_from_decorator(self) -> bool:
         from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
@@ -383,6 +395,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             code_version=self._version,
             retry_policy=self.retry_policy,
             version=None,  # code_version replaces version
+            concurrency_key=self.concurrency_key,
         )
 
     def copy_for_configured(
@@ -589,3 +602,23 @@ def _validate_context_type_hint(fn):
 def _is_result_object_type(ttype):
     # Is this type special result object type
     return ttype in (MaterializeResult, ObserveResult, AssetCheckResult)
+
+
+def _validate_concurrency_key(concurrency_key, tags):
+    from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
+
+    check.opt_str_param(concurrency_key, "concurrency_key")
+    tags = check.opt_mapping_param(tags, "tags")
+    tag_concurrency_key = tags.get(GLOBAL_CONCURRENCY_TAG)
+    if concurrency_key and tag_concurrency_key and concurrency_key != tag_concurrency_key:
+        raise DagsterInvalidDefinitionError(
+            f"Op '{concurrency_key}' has a concurrency key '{concurrency_key}' that conflicts with the concurrency key tag '{tag_concurrency_key}'."
+        )
+
+    if concurrency_key:
+        return concurrency_key
+
+    if tag_concurrency_key:
+        return tag_concurrency_key
+
+    return None
