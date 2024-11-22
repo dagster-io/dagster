@@ -2505,11 +2505,7 @@ class DagsterInstance(DynamicPartitionsStore):
             ):
                 self._run_storage.handle_run_event(run_id, event.get_dagster_event())
                 run = self.get_run_by_id(run_id)
-                if (
-                    run
-                    and event.get_dagster_event().is_run_failure
-                    and self.run_retries_settings["enabled"]
-                ):
+                if run and event.get_dagster_event().is_run_failure and self.run_retries_enabled:
                     self.add_run_tags(
                         run_id, {WILL_RETRY_TAG: str(self.should_retry_run(run)).lower()}
                     )
