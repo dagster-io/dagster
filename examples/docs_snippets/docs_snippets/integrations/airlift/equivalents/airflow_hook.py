@@ -1,3 +1,5 @@
+# type: ignore
+# start_ex
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -18,3 +20,4 @@ s3_task = PythonOperator(
     task_id="s3_operations",
     python_callable=upload_customers_data,
 )
+# end_ex
