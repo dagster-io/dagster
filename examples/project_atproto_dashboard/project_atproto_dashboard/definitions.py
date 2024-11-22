@@ -1,8 +1,8 @@
 """Bluesky atproto data ingestion.
 
-CONFIGURATION:
+CONFIGURATION
 
-    Environment variables:
+    ENVIRONMENT VARIABLES
 
         BSKY_LOGIN
         BSKY_APP_PASSWORD
@@ -14,16 +14,19 @@ References:
 """
 
 import os
+from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, List, Tuple
 
 import dagster as dg
 from atproto import Client
+from dagster_aws.s3 import S3Resource
 
 if TYPE_CHECKING:
     from atproto_client import models
 
 PREFERRED_LANGUAGE = os.environ.get("BSKY_PREFERRED_LANGUAGE", "en")
+AWS_BUCKET_NAME = os.environ.get("AWS_BUCKET_NAME", "dagster-demo")
 
 
 class ATProtoResource(dg.ConfigurableResource):
@@ -72,6 +75,7 @@ def get_all_feed_items(
     return feed
 
 
+# TODO - dynamic partition by members of the "Data" starter pack
 @dg.asset(
     partitions_def=dg.StaticPartitionsDefinition(
         partition_keys=[
@@ -79,21 +83,46 @@ def get_all_feed_items(
         ]
     )
 )
-def actor_feed_snapshot(context: dg.AssetExecutionContext, atproto_resource: ATProtoResource):
+def actor_feed_snapshot(
+    context: dg.AssetExecutionContext,
+    atproto_resource: ATProtoResource,
+    s3_resource: S3Resource,
+):
     client, _ = atproto_resource.get_client()
     actor_did = context.partition_key
-    # TODO - yield items and append to file for more efficient memory utilization
+
+    # TODO - determine if we need to `yield` chunks to be more memory efficient
     items = get_all_feed_items(client, actor_did)
-    with open(f"{actor_did}.json", "w") as f:
-        for item in items:
-            f.write(item.model_dump_json() + os.linesep)
+
+    datetime_now = datetime.now()
+
+    object_key = "/".join(
+        (
+            "atproto_actor_feed_snapshot",
+            datetime_now.strftime("%Y-%m-%d"),
+            datetime_now.strftime("%H"),
+            datetime_now.strftime("%M"),
+            f"{actor_did}.json",
+        )
+    )
+
+    _bytes = os.linesep.join([item.model_dump_json() for item in items]).encode("utf-8")
+    s3_resource.get_client().put_object(Body=_bytes, Bucket=AWS_BUCKET_NAME, Key=object_key)
+
+
+atproto_resource = ATProtoResource(
+    login=dg.EnvVar("BSKY_LOGIN"), password=dg.EnvVar("BSKY_APP_PASSWORD")
+)
+
+s3_resource = S3Resource(
+    endpoint_url=dg.EnvVar("AWS_ENDPOINT_URL"),
+    aws_access_key_id=dg.EnvVar("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=dg.EnvVar("AWS_SECRET_ACCESS_KEY"),
+    region_name="auto",
+)
 
 
 defs = dg.Definitions(
     assets=[actor_feed_snapshot],
-    resources={
-        "atproto_resource": ATProtoResource(
-            login=dg.EnvVar("BSKY_LOGIN"), password=dg.EnvVar("BSKY_APP_PASSWORD")
-        )
-    },
+    resources={"atproto_resource": atproto_resource, "s3_resource": s3_resource},
 )
