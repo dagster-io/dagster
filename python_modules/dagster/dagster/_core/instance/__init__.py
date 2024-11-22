@@ -2020,7 +2020,7 @@ class DagsterInstance(DynamicPartitionsStore):
             )
         elif event_records_filter.event_type == DagsterEventType.ASSET_MATERIALIZATION:
             warnings.warn(
-                "Use fetch_materializations instead of get_event_records to fetch masterialization events."
+                "Use fetch_materializations instead of get_event_records to fetch materialization events."
             )
         elif event_records_filter.event_type == DagsterEventType.ASSET_OBSERVATION:
             warnings.warn(
