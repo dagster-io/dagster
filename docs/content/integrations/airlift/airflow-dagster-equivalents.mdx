@@ -257,7 +257,7 @@ export AIRFLOW_CONN_AWS_DEFAULT='aws://YOUR_AWS_ACCESS_KEY_ID:YOUR_AWS_SECRET_AC
 
 Here's an example of using an Airflow Hook with a set-up Airflow connection to interact with S3:
 
-```python file=/integrations/airlift/equivalents/airflow_hook.py
+```python file=/integrations/airlift/equivalents/airflow_hook.py startafter=start_ex endbefore=end_ex
 from datetime import datetime, timedelta
 
 from airflow import DAG
