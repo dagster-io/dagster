@@ -10,3 +10,4 @@ packages/ui-core/client.json linguist-generated=true
 packages/ui-core/src/asset-selection/generated/* linguist-generated=true
 packages/ui-core/src/selection/generated/* linguist-generated=true
 packages/ui-core/src/run-selection/generated/* linguist-generated=true
+packages/ui-core/src/op-selection/generated/* linguist-generated=true
