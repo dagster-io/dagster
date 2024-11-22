@@ -2,6 +2,9 @@ import pytest
 from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
     AntlrAssetSelectionParser,
 )
+from dagster._core.definitions.antlr_asset_selection.generated.AssetSelectionParser import (
+    AssetSelectionParser,
+)
 from dagster._core.definitions.asset_selection import AssetSelection, CodeLocationAssetSelection
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.storage.tags import KIND_PREFIX
@@ -70,9 +73,18 @@ from dagster._core.storage.tags import KIND_PREFIX
         ),
     ],
 )
-def test_antlr_tree(selection_str, expected_tree_str):
+def test_antlr_tree(selection_str, expected_tree_str) -> None:
     asset_selection = AntlrAssetSelectionParser(selection_str, include_sources=True)
     assert asset_selection.tree_str == expected_tree_str
+
+    generated_selection = asset_selection.asset_selection
+
+    # Ensure the generated selection can be converted back to a selection string, and then back to the same selection
+    regenerated_selection = AntlrAssetSelectionParser(
+        generated_selection.to_selection_str(),
+        include_sources=True,
+    ).asset_selection
+    assert regenerated_selection == generated_selection
 
 
 @pytest.mark.parametrize(
@@ -143,7 +155,7 @@ def test_antlr_tree_invalid(selection_str):
         ),
     ],
 )
-def test_antlr_visit_basic(selection_str, expected_assets):
+def test_antlr_visit_basic(selection_str, expected_assets) -> None:
     # a -> b -> c
     @asset(tags={"foo": "bar"}, owners=["team:billing"])
     def a(): ...
@@ -157,7 +169,34 @@ def test_antlr_visit_basic(selection_str, expected_assets):
     )
     def c(): ...
 
-    assert (
-        AntlrAssetSelectionParser(selection_str, include_sources=True).asset_selection
-        == expected_assets
-    )
+    generated_selection = AntlrAssetSelectionParser(
+        selection_str, include_sources=True
+    ).asset_selection
+    assert generated_selection == expected_assets
+
+    # Ensure the generated selection can be converted back to a selection string, and then back to the same selection
+    regenerated_selection = AntlrAssetSelectionParser(
+        generated_selection.to_selection_str(),
+        include_sources=True,
+    ).asset_selection
+    assert regenerated_selection == expected_assets
+
+
+def test_full_test_coverage() -> None:
+    # Ensures that every Antlr literal is tested in test_antlr_visit_basic
+    # by extension, also ensures that the to_selection_str method is tested
+    # for all Antlr literals
+    names = AssetSelectionParser.literalNames
+
+    all_selection_strings_we_are_testing = [
+        selection_str for selection_str, _ in test_antlr_visit_basic.pytestmark[0].args[1]
+    ]
+
+    for name in names:
+        if name in ("<INVALID>", "','"):
+            continue
+
+        name_substr = name.strip("'")
+        assert any(
+            name_substr in selection_str for selection_str in all_selection_strings_we_are_testing
+        ), f"Antlr literal {name_substr} is not under test in test_antlr_asset_selection.py:test_antlr_visit_basic"

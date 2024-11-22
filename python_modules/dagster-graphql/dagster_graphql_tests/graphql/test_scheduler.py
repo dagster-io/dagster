@@ -417,7 +417,10 @@ def test_jobless_asset_selection(graphql_context):
 
     assert result.data
     assert result.data["scheduleOrError"]["__typename"] == "Schedule"
-    assert result.data["scheduleOrError"]["assetSelection"]["assetSelectionString"] == "asset_one"
+    assert (
+        result.data["scheduleOrError"]["assetSelection"]["assetSelectionString"]
+        == 'key:"asset_one"'
+    )
     assert result.data["scheduleOrError"]["assetSelection"]["assetKeys"] == [
         {"path": ["asset_one"]}
     ]
