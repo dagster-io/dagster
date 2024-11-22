@@ -22,7 +22,7 @@ def _is_dag_is_schedule(dag: DAG) -> bool:
 def make_dagster_schedule_from_airflow_dag(
     dag: DAG,
     tags: Optional[Mapping[str, str]] = None,
-    connections: Optional[List[Connection]] = None,
+    connections: Optional[list[Connection]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
 ) -> ScheduleDefinition:
     """Construct a Dagster schedule corresponding to an Airflow DAG.

@@ -308,10 +308,13 @@ def _single_backfill_iteration_create_but_do_not_submit_runs(
 @pytest.mark.parametrize("failures", ["no_failures", "root_failures", "random_half_failures"])
 @pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
 def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, some_or_all: str):
-    with instance_for_test() as instance, environ(
-        {"ASSET_BACKFILL_CURSOR_OFFSET": str(scenario.last_storage_id_cursor_offset)}
-        if scenario.last_storage_id_cursor_offset
-        else {}
+    with (
+        instance_for_test() as instance,
+        environ(
+            {"ASSET_BACKFILL_CURSOR_OFFSET": str(scenario.last_storage_id_cursor_offset)}
+            if scenario.last_storage_id_cursor_offset
+            else {}
+        ),
     ):
         instance.add_dynamic_partitions("foo", ["a", "b"])
 
@@ -346,7 +349,7 @@ def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, 
                 dynamic_partitions_store=instance,
             )
             if failures == "no_failures":
-                fail_asset_partitions: Set[AssetKeyPartitionKey] = set()
+                fail_asset_partitions: set[AssetKeyPartitionKey] = set()
             elif failures == "root_failures":
                 fail_asset_partitions = set(
                     (
@@ -491,7 +494,7 @@ def make_random_subset(
     evaluation_time: datetime.datetime,
 ) -> AssetGraphSubset:
     # all partitions downstream of half of the partitions in each partitioned root asset
-    root_asset_partitions: Set[AssetKeyPartitionKey] = set()
+    root_asset_partitions: set[AssetKeyPartitionKey] = set()
     for i, root_asset_key in enumerate(sorted(asset_graph.root_materializable_asset_keys)):
         partitions_def = asset_graph.get(root_asset_key).partitions_def
 
@@ -524,7 +527,7 @@ def make_subset_from_partition_keys(
     instance: DagsterInstance,
     evaluation_time: datetime.datetime,
 ) -> AssetGraphSubset:
-    root_asset_partitions: Set[AssetKeyPartitionKey] = set()
+    root_asset_partitions: set[AssetKeyPartitionKey] = set()
     for i, root_asset_key in enumerate(sorted(asset_graph.root_materializable_asset_keys)):
         if asset_graph.get(root_asset_key).is_partitioned:
             root_asset_partitions.update(
@@ -597,13 +600,13 @@ def run_backfill_to_completion(
     backfill_data: AssetBackfillData,
     fail_asset_partitions: Iterable[AssetKeyPartitionKey],
     instance: DagsterInstance,
-) -> Tuple[AssetBackfillData, AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
+) -> tuple[AssetBackfillData, AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
     iteration_count = 0
     instance = instance or DagsterInstance.ephemeral()
     backfill_id = "backfillid_x"
 
     # assert each asset partition only targeted once
-    requested_asset_partitions: Set[AssetKeyPartitionKey] = set()
+    requested_asset_partitions: set[AssetKeyPartitionKey] = set()
 
     fail_and_downstream_asset_partitions, _ = asset_graph.bfs_filter_asset_partitions(
         instance,
@@ -702,7 +705,7 @@ def run_backfill_to_completion(
 
 def _requested_asset_partitions_in_run_request(
     run_request: RunRequest, asset_graph: BaseAssetGraph
-) -> Set[AssetKeyPartitionKey]:
+) -> set[AssetKeyPartitionKey]:
     asset_keys = run_request.asset_selection
     assert asset_keys is not None
     requested_asset_partitions = set()

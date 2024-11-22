@@ -8,8 +8,8 @@ from dagster_census.version import __version__
 DagsterLibraryRegistry.register("dagster-census", __version__)
 
 __all__ = [
-    "CensusResource",
     "CensusOutput",
+    "CensusResource",
     "census_resource",
     "census_trigger_sync_op",
 ]

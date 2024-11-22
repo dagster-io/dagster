@@ -29,7 +29,7 @@ from dagster_dbt_tests.dbt_projects import (
 
 
 @pytest.hookimpl(hookwrapper=True)
-def pytest_collection_modifyitems(items: List[pytest.Item]) -> Iterator[None]:
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> Iterator[None]:
     """Mark tests in the `cloud` directories. Mark other tests as `core`."""
     for item in items:
         if "cloud" in item.path.parts:
@@ -90,12 +90,12 @@ def test_jaffle_shop_manifest_path_fixture(test_jaffle_shop_invocation: DbtCliIn
 @pytest.fixture(name="test_jaffle_shop_manifest", scope="session")
 def test_jaffle_shop_manifest_fixture(
     test_jaffle_shop_invocation: DbtCliInvocation,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     return test_jaffle_shop_invocation.get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_asset_checks_manifest", scope="session")
-def test_asset_checks_manifest_fixture() -> Dict[str, Any]:
+def test_asset_checks_manifest_fixture() -> dict[str, Any]:
     # Prepopulate duckdb with jaffle shop data to support testing individual asset checks.
     return _create_dbt_invocation(
         test_asset_checks_path,
@@ -104,85 +104,85 @@ def test_asset_checks_manifest_fixture() -> Dict[str, Any]:
 
 
 @pytest.fixture(name="test_asset_key_exceptions_manifest", scope="session")
-def test_asset_key_exceptions_manifest_fixture() -> Dict[str, Any]:
+def test_asset_key_exceptions_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_asset_key_exceptions_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_dbt_alias_manifest", scope="session")
-def test_dbt_alias_manifest_fixture() -> Dict[str, Any]:
+def test_dbt_alias_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_dbt_alias_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_dbt_model_versions_manifest", scope="session")
-def test_dbt_model_versions_manifest_fixture() -> Dict[str, Any]:
+def test_dbt_model_versions_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_dbt_model_versions_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_dbt_python_interleaving_manifest", scope="session")
-def test_dbt_python_interleaving_manifest_fixture() -> Dict[str, Any]:
+def test_dbt_python_interleaving_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_dbt_python_interleaving_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_dbt_semantic_models_manifest", scope="session")
-def test_dbt_semantic_models_manifest_fixture() -> Dict[str, Any]:
+def test_dbt_semantic_models_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_dbt_semantic_models_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_dbt_source_freshness_manifest", scope="session")
-def test_dbt_source_freshness_manifest_fixture() -> Dict[str, Any]:
+def test_dbt_source_freshness_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_dbt_source_freshness_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_dbt_unit_tests_manifest", scope="session")
-def test_dbt_unit_tests_manifest_fixture() -> Dict[str, Any]:
+def test_dbt_unit_tests_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_dbt_unit_tests_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_duplicate_source_asset_key_manifest", scope="session")
-def test_duplicate_source_asset_key_manifest_fixture() -> Dict[str, Any]:
+def test_duplicate_source_asset_key_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_duplicate_source_asset_key_path).get_artifact(
         "manifest.json"
     )
 
 
 @pytest.fixture(name="test_meta_config_manifest", scope="session")
-def test_meta_config_manifest_fixture() -> Dict[str, Any]:
+def test_meta_config_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_meta_config_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_last_update_freshness_manifest", scope="session")
-def test_last_update_freshness_manifest_fixture() -> Dict[str, Any]:
+def test_last_update_freshness_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_last_update_freshness_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_time_partition_freshness_manifest_multiple_assets_defs", scope="session")
-def test_time_partition_freshness_manifest_fixture_multiple_assets_defs() -> Dict[str, Any]:
+def test_time_partition_freshness_manifest_fixture_multiple_assets_defs() -> dict[str, Any]:
     return _create_dbt_invocation(
         test_time_partition_freshness_multiple_assets_defs_path
     ).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_last_update_freshness_manifest_multiple_assets_defs", scope="session")
-def test_last_update_freshness_manifest_fixture_multiple_assets_defs() -> Dict[str, Any]:
+def test_last_update_freshness_manifest_fixture_multiple_assets_defs() -> dict[str, Any]:
     return _create_dbt_invocation(
         test_last_update_freshness_multiple_assets_defs_path
     ).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_time_partition_freshness_manifest", scope="session")
-def test_time_partition_freshness_manifest_fixture() -> Dict[str, Any]:
+def test_time_partition_freshness_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_time_partition_freshness_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_dagster_dbt_mixed_freshness_manifest", scope="session")
-def test_dagster_dbt_mixed_freshness_manifest_fixture() -> Dict[str, Any]:
+def test_dagster_dbt_mixed_freshness_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_dagster_dbt_mixed_freshness_path).get_artifact(
         "manifest.json"
     )
 
 
 @pytest.fixture(name="test_metadata_manifest", scope="session")
-def test_metadata_manifest_fixture() -> Dict[str, Any]:
+def test_metadata_manifest_fixture() -> dict[str, Any]:
     # Prepopulate duckdb with jaffle shop data to support testing individual column metadata.
     return _create_dbt_invocation(
         test_metadata_path,
@@ -191,7 +191,7 @@ def test_metadata_manifest_fixture() -> Dict[str, Any]:
 
 
 @pytest.fixture(name="test_dependencies_manifest", scope="session")
-def test_dependencies_manifest_fixture() -> Dict[str, Any]:
+def test_dependencies_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(
         test_dependencies_path,
         build_project=True,
@@ -200,8 +200,8 @@ def test_dependencies_manifest_fixture() -> Dict[str, Any]:
 
 @pytest.fixture(name="test_dependencies_manifest_windows", scope="session")
 def test_dependencies_manifest_windows_fixture(
-    test_dependencies_manifest: Dict[str, Any],
-) -> Dict[str, Any]:
+    test_dependencies_manifest: dict[str, Any],
+) -> dict[str, Any]:
     return {
         **test_dependencies_manifest,
         "nodes": {

@@ -21,8 +21,7 @@ def test_generator_yield_op():
 
     @op
     def gen_yield_op(_):
-        for event in _gen():
-            yield event
+        yield from _gen()
 
     result = wrap_op_in_graph_and_execute(gen_yield_op)
     assert result.output_value() == "done"

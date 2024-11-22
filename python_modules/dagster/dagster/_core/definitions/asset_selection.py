@@ -1024,7 +1024,7 @@ class KeysAssetSelection(AssetSelection):
                     # Arbitrarily limit to 10 similar names to avoid a huge error message
                     subset_similar_names = similar_names[:10]
                     similar_to_string = ", ".join(
-                        (similar.to_string() for similar in subset_similar_names)
+                        similar.to_string() for similar in subset_similar_names
                     )
                     suggestions += (
                         f"\n\nFor selected asset {invalid_key.to_string()}, did you mean one of "

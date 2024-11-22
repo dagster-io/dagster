@@ -29,7 +29,7 @@ def _ignore_secrets_compare_fn(k: str, _cv: Any, dv: Any) -> Optional[bool]:
 
 
 def _diff_configs(
-    config_dict: Dict[str, Any], dst_dict: Dict[str, Any], ignore_secrets: bool = True
+    config_dict: dict[str, Any], dst_dict: dict[str, Any], ignore_secrets: bool = True
 ) -> ManagedElementDiff:
     return diff_dicts(
         config_dict=config_dict,
@@ -163,13 +163,13 @@ def reconcile_destinations(
     dry_run: bool,
     should_delete: bool,
     ignore_secrets: bool,
-) -> Tuple[Mapping[str, InitializedFivetranDestination], ManagedElementCheckResult]:
+) -> tuple[Mapping[str, InitializedFivetranDestination], ManagedElementCheckResult]:
     """Generates a diff of the configured and existing destinations and reconciles them to match the
     configured state if dry_run is False.
     """
     diff = ManagedElementDiff()
 
-    initialized_destinations: Dict[str, InitializedFivetranDestination] = {}
+    initialized_destinations: dict[str, InitializedFivetranDestination] = {}
     for destination_name in set(config_destinations.keys()).union(existing_destinations.keys()):
         configured_destination = config_destinations.get(destination_name)
         existing_destination = existing_destinations.get(destination_name)
@@ -262,7 +262,7 @@ def reconcile_destinations(
     return initialized_destinations, diff
 
 
-def get_connectors_for_group(res: FivetranResource, group_id: str) -> List[Dict[str, Any]]:
+def get_connectors_for_group(res: FivetranResource, group_id: str) -> list[dict[str, Any]]:
     connector_ids = {
         conn["id"] for conn in res.make_request("GET", f"groups/{group_id}/connectors")["items"]
     }
@@ -275,7 +275,7 @@ def get_connectors_for_group(res: FivetranResource, group_id: str) -> List[Dict[
 
 def reconcile_config(
     res: FivetranResource,
-    objects: List[FivetranConnector],
+    objects: list[FivetranConnector],
     dry_run: bool = False,
     should_delete: bool = False,
     ignore_secrets: bool = True,
@@ -296,7 +296,7 @@ def reconcile_config(
         group["name"]: dict(res.make_request("GET", f"destinations/{group['id']}"))
         for group in existing_groups
     }
-    existing_dests: Dict[str, InitializedFivetranDestination] = {
+    existing_dests: dict[str, InitializedFivetranDestination] = {
         dest_name: InitializedFivetranDestination.from_api_json(dest_name, dest_json)
         for dest_name, dest_json in existing_dests_raw.items()
     }

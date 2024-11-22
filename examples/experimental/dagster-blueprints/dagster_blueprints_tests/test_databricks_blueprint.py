@@ -25,7 +25,7 @@ TASK_KEY = "DAGSTER_PIPES_TASK"
 
 def make_submit_task_dict(
     script_path: str, dagster_pipes_whl_path: str, forward_logs: bool
-) -> Dict[str, object]:
+) -> dict[str, object]:
     cluster_settings = CLUSTER_DEFAULTS.copy()
     if forward_logs:
         cluster_settings["cluster_log_conf"] = {

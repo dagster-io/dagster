@@ -219,7 +219,7 @@ class SqlRunStorage(RunStorage):
             if failure_reason and failure_reason != RunFailureReason.UNKNOWN:
                 self.add_run_tags(run_id, {RUN_FAILURE_REASON_TAG: failure_reason.value})
 
-    def _row_to_run(self, row: Dict) -> DagsterRun:
+    def _row_to_run(self, row: dict) -> DagsterRun:
         run = deserialize_value(row["run_body"], DagsterRun)
         status = DagsterRunStatus(row["status"])
         # NOTE: the status column is more trustworthy than the status in the run body, since concurrent
@@ -227,7 +227,7 @@ class SqlRunStorage(RunStorage):
         # overriden with an old value.
         return run.with_status(status)
 
-    def _rows_to_runs(self, rows: Iterable[Dict]) -> Sequence[DagsterRun]:
+    def _rows_to_runs(self, rows: Iterable[dict]) -> Sequence[DagsterRun]:
         return list(map(self._row_to_run, rows))
 
     def _add_cursor_limit_to_query(
@@ -445,7 +445,7 @@ class SqlRunStorage(RunStorage):
         tag_keys: Sequence[str],
         value_prefix: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Sequence[Tuple[str, Set[str]]]:
+    ) -> Sequence[tuple[str, set[str]]]:
         result = defaultdict(set)
         query = (
             db_select([RunTagsTable.c.key, RunTagsTable.c.value])
@@ -513,7 +513,7 @@ class SqlRunStorage(RunStorage):
                     [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
                 )
 
-    def get_run_group(self, run_id: str) -> Tuple[str, Sequence[DagsterRun]]:
+    def get_run_group(self, run_id: str) -> tuple[str, Sequence[DagsterRun]]:
         check.str_param(run_id, "run_id")
         dagster_run = self._get_run_by_id(run_id)
         if not dagster_run:
@@ -1035,7 +1035,7 @@ class SqlRunStorage(RunStorage):
 
     def add_backfill(self, partition_backfill: PartitionBackfill) -> None:
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
-        values: Dict[str, Any] = dict(
+        values: dict[str, Any] = dict(
             key=partition_backfill.backfill_id,
             status=partition_backfill.status.value,
             timestamp=datetime_from_timestamp(partition_backfill.backfill_timestamp),
@@ -1083,7 +1083,7 @@ class SqlRunStorage(RunStorage):
                 )
             )
 
-    def get_cursor_values(self, keys: Set[str]) -> Mapping[str, str]:
+    def get_cursor_values(self, keys: set[str]) -> Mapping[str, str]:
         check.set_param(keys, "keys", of_type=str)
 
         rows = self.fetchall(

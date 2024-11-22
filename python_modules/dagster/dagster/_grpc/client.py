@@ -80,7 +80,7 @@ class DagsterGrpcClient:
         socket: Optional[str] = None,
         host: str = "localhost",
         use_ssl: bool = False,
-        metadata: Optional[Sequence[Tuple[str, str]]] = None,
+        metadata: Optional[Sequence[tuple[str, str]]] = None,
     ):
         self.port = check.opt_int_param(port, "port")
 
@@ -112,7 +112,7 @@ class DagsterGrpcClient:
             self._server_address = "unix:" + os.path.abspath(socket)
 
     @property
-    def metadata(self) -> Sequence[Tuple[str, str]]:
+    def metadata(self) -> Sequence[tuple[str, str]]:
         return self._metadata
 
     @property
@@ -205,7 +205,7 @@ class DagsterGrpcClient:
     def _query(
         self,
         method: str,
-        request_type: Type[google.protobuf.message.Message],
+        request_type: type[google.protobuf.message.Message],
         timeout: int = DEFAULT_GRPC_TIMEOUT,
         custom_timeout_message: Optional[str] = None,
         **kwargs,
@@ -220,7 +220,7 @@ class DagsterGrpcClient:
     async def _gen_query(
         self,
         method: str,
-        request_type: Type[google.protobuf.message.Message],
+        request_type: type[google.protobuf.message.Message],
         timeout: int = DEFAULT_GRPC_TIMEOUT,
         custom_timeout_message: Optional[str] = None,
         **kwargs,
@@ -258,7 +258,7 @@ class DagsterGrpcClient:
     def _streaming_query(
         self,
         method: str,
-        request_type: Type[google.protobuf.message.Message],
+        request_type: type[google.protobuf.message.Message],
         timeout=DEFAULT_GRPC_TIMEOUT,
         custom_timeout_message=None,
         **kwargs,
@@ -275,7 +275,7 @@ class DagsterGrpcClient:
     async def _gen_streaming_query(
         self,
         method: str,
-        request_type: Type[google.protobuf.message.Message],
+        request_type: type[google.protobuf.message.Message],
         timeout=DEFAULT_GRPC_TIMEOUT,
         custom_timeout_message=None,
         **kwargs,
@@ -290,7 +290,7 @@ class DagsterGrpcClient:
                 e, timeout=timeout, custom_timeout_message=custom_timeout_message
             )
 
-    def ping(self, echo: str) -> Dict[str, Any]:
+    def ping(self, echo: str) -> dict[str, Any]:
         check.str_param(echo, "echo")
         res = self._query("Ping", api_pb2.PingRequest, echo=echo)
         return {

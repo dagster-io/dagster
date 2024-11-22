@@ -20,7 +20,7 @@ class StubHNClient:
             2: {"id": 2, "type": "story", "title": "an awesome story", "by": "user2"},
         }
 
-    def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
+    def fetch_item_by_id(self, item_id: int) -> Optional[dict[str, Any]]:
         return self.data.get(item_id)
 
     def fetch_max_item_id(self) -> int:

@@ -129,8 +129,8 @@ class GithubClient:
         self.app_private_rsa_key = app_private_rsa_key
         self.app_id = app_id
         self.default_installation_id = default_installation_id
-        self.installation_tokens: Dict[Any, Any] = {}
-        self.app_token: Dict[str, Any] = {}
+        self.installation_tokens: dict[Any, Any] = {}
+        self.app_token: dict[str, Any] = {}
         self.hostname = hostname
 
     def __set_app_token(self) -> None:
@@ -163,7 +163,7 @@ class GithubClient:
             self.__set_app_token()
 
     @public
-    def get_installations(self, headers: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def get_installations(self, headers: Optional[dict[str, Any]] = None) -> dict[str, Any]:
         """Retrieve the list of installations for the authenticated GitHub App.
 
         This method makes a GET request to the GitHub API to fetch the installations
@@ -196,7 +196,7 @@ class GithubClient:
         return request.json()
 
     def __set_installation_token(
-        self, installation_id: int, headers: Optional[Dict[str, Any]] = None
+        self, installation_id: int, headers: Optional[dict[str, Any]] = None
     ) -> None:
         if headers is None:
             headers = {}
@@ -228,10 +228,10 @@ class GithubClient:
     def execute(
         self,
         query: str,
-        variables: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, Any]] = None,
+        variables: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, Any]] = None,
         installation_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute a GraphQL query against the GitHub API.
 
         This method sends a POST request to the GitHub API with the provided GraphQL query
@@ -262,7 +262,7 @@ class GithubClient:
         self.__check_installation_tokens(installation_id)
         headers["Authorization"] = f"token {self.installation_tokens[installation_id]['value']}"
 
-        json: Dict[str, Any] = {"query": query}
+        json: dict[str, Any] = {"query": query}
         if variables:
             json["variables"] = variables
 
@@ -288,7 +288,7 @@ class GithubClient:
         title: str,
         body: str,
         installation_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a new issue in the specified GitHub repository.
 
         This method first retrieves the repository ID using the provided repository name
@@ -331,7 +331,7 @@ class GithubClient:
         source: str,
         target: str,
         installation_id=None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a new reference (branch) in the specified GitHub repository.
 
         This method first retrieves the repository ID and the source reference (branch or tag)
@@ -386,7 +386,7 @@ class GithubClient:
         maintainer_can_modify: Optional[bool] = None,
         draft: Optional[bool] = None,
         installation_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a new pull request in the specified GitHub repository.
 
         This method creates a pull request from the head reference (branch) to the base reference (branch)

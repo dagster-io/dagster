@@ -145,7 +145,7 @@ class PagerDutyService(ConfigurableResource):
         if dedup_key is not None:
             data["dedup_key"] = dedup_key
 
-        payload: Dict[str, object] = cast(Dict[str, object], data["payload"])
+        payload: dict[str, object] = cast(dict[str, object], data["payload"])
 
         if timestamp is not None:
             payload["timestamp"] = timestamp

@@ -18,7 +18,7 @@ def get_objects(
     since_key: Optional[str] = None,
     since_last_modified: Optional[datetime] = None,
     client=None,
-) -> List[ObjectTypeDef]:
+) -> list[ObjectTypeDef]:
     """Retrieves a list of object keys in S3 for a given `bucket`, `prefix`, and filter option.
 
     Args:
@@ -46,7 +46,7 @@ def get_objects(
     paginator = client.get_paginator("list_objects_v2")
     page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix, Delimiter="")
 
-    objects: List[ObjectTypeDef] = []
+    objects: list[ObjectTypeDef] = []
     for page in page_iterator:
         contents = page.get("Contents", [])
         objects.extend([cast(ObjectTypeDef, obj) for obj in contents])
@@ -75,7 +75,7 @@ def get_s3_keys(
     prefix: str = "",
     since_key: Optional[str] = None,
     s3_session: Optional[Any] = None,
-) -> List[str]:
+) -> list[str]:
     """Retrieves a list of object keys in S3 for a given `bucket`, `prefix`, and filter option.
 
     Note: when using the `since_key` it is possible to miss records if that key has been modified,

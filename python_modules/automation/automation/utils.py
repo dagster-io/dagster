@@ -5,10 +5,10 @@ from typing import Iterable, List, Optional
 import click
 
 
-def check_output(cmd: List[str], dry_run: bool = True, cwd: Optional[str] = None) -> Optional[str]:
+def check_output(cmd: list[str], dry_run: bool = True, cwd: Optional[str] = None) -> Optional[str]:
     if dry_run:
         click.echo(
-            click.style("Dry run; not running.", fg="red") + " Would run: %s" % " ".join(cmd)
+            click.style("Dry run; not running.", fg="red") + " Would run: {}".format(" ".join(cmd))
         )
         return None
     else:

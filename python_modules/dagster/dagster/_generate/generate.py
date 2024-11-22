@@ -7,7 +7,7 @@ import jinja2
 
 from dagster.version import __version__ as dagster_version
 
-DEFAULT_EXCLUDES: List[str] = [
+DEFAULT_EXCLUDES: list[str] = [
     "__pycache__",
     ".pytest_cache",
     "*.egg-info",
@@ -37,7 +37,7 @@ def generate_repository(path: str):
 
 def generate_project(
     path: str,
-    excludes: Optional[List[str]] = None,
+    excludes: Optional[list[str]] = None,
     name_placeholder: str = PROJECT_NAME_PLACEHOLDER,
     templates_path: str = PROJECT_NAME_PLACEHOLDER,
 ):
@@ -110,7 +110,7 @@ def generate_project(
     click.echo(f"Generated files for Dagster project in {path}.")
 
 
-def _should_skip_file(path: str, excludes: List[str] = DEFAULT_EXCLUDES):
+def _should_skip_file(path: str, excludes: list[str] = DEFAULT_EXCLUDES):
     """Given a file path `path` in a source template, returns whether or not the file should be skipped
     when generating destination files.
 

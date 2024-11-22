@@ -131,10 +131,8 @@ class DataLoader(_BaseDataLoader[KeyT, ReturnT]):
 
         if not callable(self.batch_load_fn):
             raise TypeError(
-                (
-                    "DataLoader must have a batch_load_fn which accepts "
-                    f"Iterable<key> and returns Future<Iterable<value>>, but got: {batch_load_fn}."
-                )
+                "DataLoader must have a batch_load_fn which accepts "
+                f"Iterable<key> and returns Future<Iterable<value>>, but got: {batch_load_fn}."
             )
 
         if batch is not None:
@@ -152,7 +150,7 @@ class DataLoader(_BaseDataLoader[KeyT, ReturnT]):
             self.get_cache_key = lambda x: x
 
         self._cache = cache_map if cache_map is not None else {}
-        self._queue: List[Loader] = []
+        self._queue: list[Loader] = []
 
         super().__init__(batch_load_fn, max_batch_size)
 
@@ -180,7 +178,7 @@ class DataLoader(_BaseDataLoader[KeyT, ReturnT]):
         """Loads a key, returning a `Future` for the value represented by that key."""
         if key is None:
             raise TypeError(
-                ("The loader.load() function must be called with a value, " f"but got: {key}.")
+                "The loader.load() function must be called with a value, " f"but got: {key}."
             )
 
         cache_key = self.get_cache_key(key)
@@ -214,7 +212,7 @@ class DataLoader(_BaseDataLoader[KeyT, ReturnT]):
                 # Otherwise dispatch the (queue of one) immediately.
                 dispatch_queue(self)
 
-    def load_many(self, keys: Iterable[KeyT]) -> "Future[List[ReturnT]]":
+    def load_many(self, keys: Iterable[KeyT]) -> "Future[list[ReturnT]]":
         """Loads multiple keys, returning a list of values.
 
         >>> a, b = await my_loader.load_many([ 'a', 'b' ])
@@ -228,10 +226,8 @@ class DataLoader(_BaseDataLoader[KeyT, ReturnT]):
         """
         if not isinstance(keys, Iterable):
             raise TypeError(
-                (
-                    "The loader.load_many() function must be called with Iterable<key> "
-                    f"but got: {keys}."
-                )
+                "The loader.load_many() function must be called with Iterable<key> "
+                f"but got: {keys}."
             )
 
         return gather(*[self.load(key) for key in keys])
@@ -280,7 +276,7 @@ def enqueue_post_future_job(loop: AbstractEventLoop, loader: DataLoader[Any, Any
     loop.call_soon(ensure_future, dispatch())
 
 
-def get_chunks(iterable_obj: List[T], chunk_size: int = 1) -> Iterator[List[T]]:
+def get_chunks(iterable_obj: list[T], chunk_size: int = 1) -> Iterator[list[T]]:
     chunk_size = max(1, chunk_size)
     return (iterable_obj[i : i + chunk_size] for i in range(0, len(iterable_obj), chunk_size))
 
@@ -306,7 +302,7 @@ def dispatch_queue(loader: DataLoader[Any, Any]) -> None:
         ensure_future(dispatch_queue_batch(loader, queue))  # noqa: RUF006
 
 
-async def dispatch_queue_batch(loader: DataLoader[Any, Any], queue: List[Loader]) -> None:
+async def dispatch_queue_batch(loader: DataLoader[Any, Any], queue: list[Loader]) -> None:
     # Collect all keys to be loaded in this dispatch
     keys = [ql.key for ql in queue]
 
@@ -322,11 +318,9 @@ async def dispatch_queue_batch(loader: DataLoader[Any, Any], queue: List[Loader]
             loader,
             queue,
             TypeError(
-                (
-                    "DataLoader must be constructed with a function which accepts "
-                    "Iterable<key> and returns Future<Iterable<value>>, but the "
-                    f"function did not return a Coroutine: {batch_future}."
-                )
+                "DataLoader must be constructed with a function which accepts "
+                "Iterable<key> and returns Future<Iterable<value>>, but the "
+                f"function did not return a Coroutine: {batch_future}."
             ),
         )
 
@@ -334,24 +328,20 @@ async def dispatch_queue_batch(loader: DataLoader[Any, Any], queue: List[Loader]
         values = await batch_future
         if not isinstance(values, Iterable):
             raise TypeError(
-                (
-                    "DataLoader must be constructed with a function which accepts "
-                    "Iterable<key> and returns Future<Iterable<value>>, but the "
-                    f"function did not return a Future of a Iterable: {values}."
-                )
+                "DataLoader must be constructed with a function which accepts "
+                "Iterable<key> and returns Future<Iterable<value>>, but the "
+                f"function did not return a Future of a Iterable: {values}."
             )
 
         values = list(values)
         if len(values) != len(keys):
             raise TypeError(
-                (
-                    "DataLoader must be constructed with a function which accepts "
-                    "Iterable<key> and returns Future<Iterable<value>>, but the "
-                    "function did not return a Future of a Iterable with the same "
-                    "length as the Iterable of keys."
-                    f"\n\nKeys:\n{keys}"
-                    f"\n\nValues:\n{values}"
-                )
+                "DataLoader must be constructed with a function which accepts "
+                "Iterable<key> and returns Future<Iterable<value>>, but the "
+                "function did not return a Future of a Iterable with the same "
+                "length as the Iterable of keys."
+                f"\n\nKeys:\n{keys}"
+                f"\n\nValues:\n{values}"
             )
 
         # Step through the values, resolving or rejecting each Future in the
@@ -366,7 +356,7 @@ async def dispatch_queue_batch(loader: DataLoader[Any, Any], queue: List[Loader]
         return failed_dispatch(loader, queue, e)
 
 
-def failed_dispatch(loader: DataLoader[Any, Any], queue: List[Loader], error: Exception) -> None:
+def failed_dispatch(loader: DataLoader[Any, Any], queue: list[Loader], error: Exception) -> None:
     """Do not cache individual loads if the entire batch dispatch fails,
     but still reject each request so they do not hang.
     """

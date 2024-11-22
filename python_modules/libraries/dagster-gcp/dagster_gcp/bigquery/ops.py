@@ -70,8 +70,9 @@ def bq_op_for_queries(sql_queries):
             # See: https://bit.ly/2VjD6sl
             cfg = QueryJobConfig(**query_job_config) if query_job_config else None
             context.log.info(
-                "executing query %s with config: %s"
-                % (sql_query, cfg.to_api_repr() if cfg else "(no config provided)")
+                "executing query {} with config: {}".format(
+                    sql_query, cfg.to_api_repr() if cfg else "(no config provided)"
+                )
             )
             results.append(
                 context.resources.bigquery.query(sql_query, job_config=cfg).to_dataframe()
@@ -121,8 +122,9 @@ def _execute_load_in_source(context, source, source_name):
     cfg = LoadJobConfig(**load_job_config) if load_job_config else None
 
     context.log.info(
-        "executing BQ load with config: %s for source %s"
-        % (cfg.to_api_repr() if cfg else "(no config provided)", source)
+        "executing BQ load with config: {} for source {}".format(
+            cfg.to_api_repr() if cfg else "(no config provided)", source
+        )
     )
 
     if source_name == BigQueryLoadSource.DataFrame:
@@ -154,8 +156,8 @@ def bq_create_dataset(context):
 
     Expects a BQ client to be provisioned in resources as context.resources.bigquery.
     """
-    (dataset, exists_ok) = [context.op_config.get(k) for k in ("dataset", "exists_ok")]
-    context.log.info("executing BQ create_dataset for dataset %s" % (dataset))
+    (dataset, exists_ok) = (context.op_config.get(k) for k in ("dataset", "exists_ok"))
+    context.log.info(f"executing BQ create_dataset for dataset {dataset}")
     context.resources.bigquery.create_dataset(dataset, exists_ok)
 
 
@@ -171,11 +173,11 @@ def bq_delete_dataset(context):
 
     Expects a BQ client to be provisioned in resources as context.resources.bigquery.
     """
-    (dataset, delete_contents, not_found_ok) = [
+    (dataset, delete_contents, not_found_ok) = (
         context.op_config.get(k) for k in ("dataset", "delete_contents", "not_found_ok")
-    ]
+    )
 
-    context.log.info("executing BQ delete_dataset for dataset %s" % dataset)
+    context.log.info(f"executing BQ delete_dataset for dataset {dataset}")
 
     context.resources.bigquery.delete_dataset(
         dataset, delete_contents=delete_contents, not_found_ok=not_found_ok

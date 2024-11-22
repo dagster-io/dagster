@@ -8,12 +8,12 @@ def download_files() -> str:
     ...
 
 
-def unzip_files(zipfile: str) -> List[str]:
+def unzip_files(zipfile: str) -> list[str]:
     # Unzip files to local disk or persistent storage
     ...
 
 
-def load_data(files: List[str]):
+def load_data(files: list[str]):
     # Read data previously written and store in a data warehouse
     ...
 

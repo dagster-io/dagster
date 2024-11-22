@@ -66,7 +66,7 @@ def _build_airbyte_asset_defn_metadata(
     destination_schema: Optional[str],
     table_to_asset_key_fn: Callable[[str], AssetKey],
     asset_key_prefix: Optional[Sequence[str]] = None,
-    normalization_tables: Optional[Mapping[str, Set[str]]] = None,
+    normalization_tables: Optional[Mapping[str, set[str]]] = None,
     normalization_raw_table_names_by_table: Optional[Mapping[str, str]] = None,
     upstream_assets: Optional[Iterable[AssetKey]] = None,
     group_name: Optional[str] = None,
@@ -96,7 +96,7 @@ def _build_airbyte_asset_defn_metadata(
         for table in tables
     }
 
-    internal_deps: Dict[str, Set[AssetKey]] = {}
+    internal_deps: dict[str, set[AssetKey]] = {}
 
     metadata_encodable_normalization_tables = (
         {k: list(v) for k, v in normalization_tables.items()} if normalization_tables else {}
@@ -115,7 +115,7 @@ def _build_airbyte_asset_defn_metadata(
     for table in destination_tables:
         internal_deps[table] = set(upstream_assets or [])
 
-    table_names: Dict[str, str] = {}
+    table_names: dict[str, str] = {}
     for table in destination_tables:
         if destination_database and destination_schema and table:
             # Use the destination raw table name to create the table name
@@ -186,8 +186,8 @@ def _build_airbyte_assets_from_metadata(
     metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
     connection_id = cast(str, metadata["connection_id"])
     group_name = cast(Optional[str], metadata["group_name"])
-    destination_tables = cast(List[str], metadata["destination_tables"])
-    normalization_tables = cast(Mapping[str, List[str]], metadata["normalization_tables"])
+    destination_tables = cast(list[str], metadata["destination_tables"])
+    normalization_tables = cast(Mapping[str, list[str]], metadata["normalization_tables"])
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
 
     @multi_asset(
@@ -256,9 +256,9 @@ def build_airbyte_assets(
     destination_schema: Optional[str] = None,
     asset_key_prefix: Optional[Sequence[str]] = None,
     group_name: Optional[str] = None,
-    normalization_tables: Optional[Mapping[str, Set[str]]] = None,
+    normalization_tables: Optional[Mapping[str, set[str]]] = None,
     deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
-    upstream_assets: Optional[Set[AssetKey]] = None,
+    upstream_assets: Optional[set[AssetKey]] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
     stream_to_asset_map: Optional[Mapping[str, str]] = None,
@@ -301,7 +301,7 @@ def build_airbyte_assets(
         chain([destination_tables], normalization_tables.values() if normalization_tables else [])
     )
 
-    table_names: Dict[str, str] = {}
+    table_names: dict[str, str] = {}
     for table in destination_tables:
         if destination_database and destination_schema and table:
             table_names[table] = ".".join([destination_database, destination_schema, table])
@@ -429,7 +429,7 @@ def _get_normalization_tables_for_schema(
     For more information on Airbyte's normalization process, see:
     https://docs.airbyte.com/understanding-airbyte/basic-normalization/#nesting
     """
-    out: Dict[str, AirbyteTableMetadata] = {}
+    out: dict[str, AirbyteTableMetadata] = {}
     # Object types are broken into a new table, as long as they have children
 
     sub_schemas = _get_sub_schemas(schema)
@@ -474,7 +474,7 @@ class AirbyteConnectionMetadata(
             ("name", str),
             ("stream_prefix", str),
             ("has_basic_normalization", bool),
-            ("stream_data", List[Mapping[str, Any]]),
+            ("stream_data", list[Mapping[str, Any]]),
             ("destination", Mapping[str, Any]),
         ],
     )
@@ -533,7 +533,7 @@ class AirbyteConnectionMetadata(
         tables associated with each enabled stream and values representing any affiliated
         tables created by Airbyte's normalization process, if enabled.
         """
-        tables: Dict[str, AirbyteTableMetadata] = {}
+        tables: dict[str, AirbyteTableMetadata] = {}
 
         enabled_streams = [
             stream for stream in self.stream_data if stream.get("config", {}).get("selected", False)
@@ -548,7 +548,7 @@ class AirbyteConnectionMetadata(
                 if "json_schema" in stream["stream"]
                 else stream["stream"]["jsonSchema"]
             )
-            normalization_tables: Dict[str, AirbyteTableMetadata] = {}
+            normalization_tables: dict[str, AirbyteTableMetadata] = {}
             schema_props = schema.get("properties", schema.get("items", {}).get("properties", {}))
             if self.has_basic_normalization and return_normalization_tables:
                 for k, v in schema_props.items():
@@ -576,7 +576,7 @@ def _get_schema_by_table_name(
                 [
                     (k, v.schema)
                     for k, v in cast(
-                        Dict[str, AirbyteTableMetadata], meta.normalization_tables
+                        dict[str, AirbyteTableMetadata], meta.normalization_tables
                     ).items()
                 ]
                 for meta in stream_table_metadata.values()
@@ -627,11 +627,11 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         super().__init__(unique_id=f"airbyte-{contents.hexdigest()}")
 
     @abstractmethod
-    def _get_connections(self) -> Sequence[Tuple[str, AirbyteConnectionMetadata]]:
+    def _get_connections(self) -> Sequence[tuple[str, AirbyteConnectionMetadata]]:
         pass
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
-        asset_defn_data: List[AssetsDefinitionCacheableData] = []
+        asset_defn_data: list[AssetsDefinitionCacheableData] = []
         for connection_id, connection in self._get_connections():
             stream_table_metadata = connection.parse_stream_tables(
                 self._create_assets_for_normalization_tables
@@ -745,11 +745,11 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
             )
             self._airbyte_instance: AirbyteResource = self._partially_initialized_airbyte_instance
 
-    def _get_connections(self) -> Sequence[Tuple[str, AirbyteConnectionMetadata]]:
+    def _get_connections(self) -> Sequence[tuple[str, AirbyteConnectionMetadata]]:
         workspace_id = self._workspace_id
         if not workspace_id:
             workspaces = cast(
-                List[Dict[str, Any]],
+                list[dict[str, Any]],
                 check.not_none(
                     self._airbyte_instance.make_request(endpoint="/workspaces/list", data={})
                 ).get("workspaces", []),
@@ -761,7 +761,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
             workspace_id = workspaces[0].get("workspaceId")
 
         connections = cast(
-            List[Dict[str, Any]],
+            list[dict[str, Any]],
             check.not_none(
                 self._airbyte_instance.make_request(
                     endpoint="/connections/list", data={"workspaceId": workspace_id}
@@ -769,12 +769,12 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
             ).get("connections", []),
         )
 
-        output_connections: List[Tuple[str, AirbyteConnectionMetadata]] = []
+        output_connections: list[tuple[str, AirbyteConnectionMetadata]] = []
         for connection_json in connections:
             connection_id = cast(str, connection_json.get("connectionId"))
 
             operations_json = cast(
-                Dict[str, Any],
+                dict[str, Any],
                 check.not_none(
                     self._airbyte_instance.make_request(
                         endpoint="/operations/list",
@@ -785,7 +785,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
 
             destination_id = cast(str, connection_json.get("destinationId"))
             destination_json = cast(
-                Dict[str, Any],
+                dict[str, Any],
                 check.not_none(
                     self._airbyte_instance.make_request(
                         endpoint="/destinations/get",
@@ -847,10 +847,10 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         self._project_dir = project_dir
         self._connection_directories = connection_directories
 
-    def _get_connections(self) -> Sequence[Tuple[str, AirbyteConnectionMetadata]]:
+    def _get_connections(self) -> Sequence[tuple[str, AirbyteConnectionMetadata]]:
         connections_dir = os.path.join(self._project_dir, "connections")
 
-        output_connections: List[Tuple[str, AirbyteConnectionMetadata]] = []
+        output_connections: list[tuple[str, AirbyteConnectionMetadata]] = []
 
         connection_directories = self._connection_directories or os.listdir(connections_dir)
         for connection_name in connection_directories:

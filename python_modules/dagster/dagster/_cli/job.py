@@ -275,7 +275,7 @@ def execute_execute_command(instance: DagsterInstance, kwargs: ClickArgMapping) 
     check.inst_param(instance, "instance", DagsterInstance)
 
     config = list(
-        check.opt_tuple_param(cast(Tuple[str, ...], kwargs.get("config")), "config", of_type=str)
+        check.opt_tuple_param(cast(tuple[str, ...], kwargs.get("config")), "config", of_type=str)
     )
 
     tags = get_tags_from_args(kwargs)
@@ -307,7 +307,7 @@ def get_tags_from_args(kwargs: ClickArgMapping) -> Mapping[str, str]:
 
 
 def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
-    config = cast(Tuple[str, ...], kwargs.get("config"))  # files
+    config = cast(tuple[str, ...], kwargs.get("config"))  # files
     config_json = kwargs.get("config_json")
 
     if not config and not config_json:
@@ -505,7 +505,7 @@ def _check_execute_remote_job_args(
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]],
-) -> Tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
+) -> tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
     check.inst_param(remote_job, "remote_job", RemoteJob)
     run_config = check.opt_mapping_param(run_config, "run_config")
 

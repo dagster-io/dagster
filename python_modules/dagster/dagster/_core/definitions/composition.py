@@ -63,7 +63,7 @@ if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
 
 
-_composition_stack: List["InProgressCompositionContext"] = []
+_composition_stack: list["InProgressCompositionContext"] = []
 
 
 class MappedInputPlaceholder:
@@ -132,7 +132,7 @@ InputSource: TypeAlias = Union[
     InputMappingNode,
     DynamicFanIn,
     "AssetsDefinition",
-    List[Union[InvokedNodeOutputHandle, InputMappingNode]],
+    list[Union[InvokedNodeOutputHandle, InputMappingNode]],
 ]
 
 
@@ -201,9 +201,9 @@ class InProgressCompositionContext:
 
     name: str
     source: str
-    _invocations: Dict[str, "InvokedNode"]
-    _collisions: Dict[str, int]
-    _pending_invocations: Dict[str, "PendingNodeInvocation"]
+    _invocations: dict[str, "InvokedNode"]
+    _collisions: dict[str, int]
+    _pending_invocations: dict[str, "PendingNodeInvocation"]
 
     def __init__(self, name: str, source: str):
         self.name = check.str_param(name, "name")
@@ -279,10 +279,10 @@ class CompleteCompositionContext(NamedTuple):
     ) -> "CompleteCompositionContext":
         from dagster._core.definitions.assets import AssetsDefinition
 
-        dep_dict: Dict[NodeInvocation, Dict[str, IDependencyDefinition]] = {}
-        node_def_dict: Dict[str, NodeDefinition] = {}
+        dep_dict: dict[NodeInvocation, dict[str, IDependencyDefinition]] = {}
+        node_def_dict: dict[str, NodeDefinition] = {}
         input_mappings = []
-        node_input_assets: Dict[str, Dict[str, "AssetsDefinition"]] = defaultdict(dict)
+        node_input_assets: dict[str, dict[str, AssetsDefinition]] = defaultdict(dict)
 
         for node in pending_invocations.values():
             _not_invoked_warning(node, source, name)
@@ -295,7 +295,7 @@ class CompleteCompositionContext(NamedTuple):
                 )
             node_def_dict[def_name] = invocation.node_def
 
-            deps: Dict[str, IDependencyDefinition] = {}
+            deps: dict[str, IDependencyDefinition] = {}
             for input_name, node in invocation.input_bindings.items():
                 if isinstance(node, InvokedNodeOutputHandle):
                     deps[input_name] = DependencyDefinition(node.node_name, node.output_name)
@@ -306,7 +306,7 @@ class CompleteCompositionContext(NamedTuple):
                 elif isinstance(node, AssetsDefinition):
                     node_input_assets[invocation.node_name][input_name] = node
                 elif isinstance(node, list):
-                    entries: List[Union[DependencyDefinition, Type[MappedInputPlaceholder]]] = []
+                    entries: list[Union[DependencyDefinition, type[MappedInputPlaceholder]]] = []
                     for idx, fanned_in_node in enumerate(node):
                         if isinstance(fanned_in_node, InvokedNodeOutputHandle):
                             entries.append(
@@ -417,7 +417,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
             )
 
         assert_in_composition(node_name, self.node_def)
-        input_bindings: Dict[str, InputSource] = {}
+        input_bindings: dict[str, InputSource] = {}
 
         # handle *args
         for idx, output_node in enumerate(args):
@@ -479,7 +479,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
                 )
 
         outputs = [output_def for output_def in self.node_def.output_defs]
-        invoked_output_handles: Dict[
+        invoked_output_handles: dict[
             str, Union[InvokedNodeDynamicOutputWrapper, InvokedNodeOutputHandle]
         ] = {}
         for output_def in outputs:
@@ -641,7 +641,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
         hooks = check.opt_set_param(hooks, "hooks", HookDefinition)
         input_values = check.opt_mapping_param(input_values, "input_values")
         op_retry_policy = check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy)
-        job_hooks: Set[HookDefinition] = set()
+        job_hooks: set[HookDefinition] = set()
         job_hooks.update(check.opt_set_param(hooks, "hooks", HookDefinition))
         job_hooks.update(self.hook_defs)
         return self.node_def.to_job(
@@ -726,7 +726,7 @@ class InvokedNodeDynamicOutputWrapper:
     def map(
         self, fn: Callable
     ) -> Union[
-        "InvokedNodeDynamicOutputWrapper", Tuple["InvokedNodeDynamicOutputWrapper", ...], None
+        "InvokedNodeDynamicOutputWrapper", tuple["InvokedNodeDynamicOutputWrapper", ...], None
     ]:
         check.is_callable(fn)
         result = fn(InvokedNodeOutputHandle(self.node_name, self.output_name, self.node_type))
@@ -887,7 +887,7 @@ def do_composition(
     provided_output_defs: Optional[Sequence[OutputDefinition]],
     config_mapping: Optional[ConfigMapping],
     ignore_output_from_composition_fn: bool,
-) -> Tuple[
+) -> tuple[
     Sequence[InputMapping],
     Sequence[OutputMapping],
     DependencyMapping[NodeInvocation],

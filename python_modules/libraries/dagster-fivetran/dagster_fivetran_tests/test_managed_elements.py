@@ -19,7 +19,7 @@ from dagster_managed_elements.utils import diff_dicts
 from requests import PreparedRequest
 
 
-def ok(contents: Dict[str, Any]) -> Any:
+def ok(contents: dict[str, Any]) -> Any:
     return (200, {}, json.dumps(contents))
 
 
@@ -36,12 +36,12 @@ def format_callback(callback):
 
 class MockFivetran(AbstractContextManager):
     def __init__(
-        self, connectors: Dict[str, FivetranConnector], destinations: Dict[str, FivetranDestination]
+        self, connectors: dict[str, FivetranConnector], destinations: dict[str, FivetranDestination]
     ):
         self.rsps = responses.RequestsMock(assert_all_requests_are_fired=False)
         self.connectors = connectors
         self.destinations = destinations
-        self.created_groups: Dict[str, str] = {}
+        self.created_groups: dict[str, str] = {}
         self.group_id = 1
         self.connectors_by_destination = {
             dest_id: [
@@ -51,7 +51,7 @@ class MockFivetran(AbstractContextManager):
             ]
             for dest_id, dest in destinations.items()
         }
-        self.operations_log: List[Tuple[str, str]] = []
+        self.operations_log: list[tuple[str, str]] = []
 
     def __enter__(self):
         self.rsps.__enter__()
@@ -250,7 +250,7 @@ class MockFivetran(AbstractContextManager):
         self.rsps.__exit__(exc_type, exc_val, exc_tb)
 
 
-def add_groups_response(res: responses.RequestsMock, groups: List[Tuple[str, str]]):
+def add_groups_response(res: responses.RequestsMock, groups: list[tuple[str, str]]):
     res.add(
         responses.GET,
         "https://api.fivetran.com/v1/groups",
@@ -288,7 +288,7 @@ def add_groups_destinations(
 
 
 def add_groups_connectors(
-    res: responses.RequestsMock, group_id: str, connectors: Dict[str, FivetranConnector]
+    res: responses.RequestsMock, group_id: str, connectors: dict[str, FivetranConnector]
 ):
     res.add(
         responses.GET,

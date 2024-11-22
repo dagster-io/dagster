@@ -41,7 +41,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         pass
 
     @abstractmethod
-    def to_arrow(self, obj: T) -> Tuple[pa.RecordBatchReader, Dict[str, Any]]:
+    def to_arrow(self, obj: T) -> tuple[pa.RecordBatchReader, dict[str, Any]]:
         pass
 
     def handle_output(
@@ -147,12 +147,12 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
 
 
 class DeltaLakePyArrowTypeHandler(DeltalakeBaseArrowTypeHandler[ArrowTypes]):
-    def from_arrow(self, obj: pa.RecordBatchReader, target_type: Type[ArrowTypes]) -> ArrowTypes:
+    def from_arrow(self, obj: pa.RecordBatchReader, target_type: type[ArrowTypes]) -> ArrowTypes:
         if target_type == pa.Table:
             return obj.read_all()
         return obj
 
-    def to_arrow(self, obj: ArrowTypes) -> Tuple[pa.RecordBatchReader, Dict[str, Any]]:
+    def to_arrow(self, obj: ArrowTypes) -> tuple[pa.RecordBatchReader, dict[str, Any]]:
         if isinstance(obj, pa.Table):
             return obj.to_reader(), {}
         if isinstance(obj, ds.Dataset):
@@ -160,7 +160,7 @@ class DeltaLakePyArrowTypeHandler(DeltalakeBaseArrowTypeHandler[ArrowTypes]):
         return obj, {}
 
     @property
-    def supported_types(self) -> Sequence[Type[object]]:
+    def supported_types(self) -> Sequence[type[object]]:
         return [pa.Table, pa.RecordBatchReader, ds.Dataset]
 
 
@@ -168,7 +168,7 @@ def partition_dimensions_to_dnf(
     partition_dimensions: Iterable[TablePartitionDimension],
     table_schema: Schema,
     str_values: bool = False,
-) -> Optional[List[FilterLiteralType]]:
+) -> Optional[list[FilterLiteralType]]:
     parts = []
     for partition_dimension in partition_dimensions:
         field = _field_from_schema(partition_dimension.partition_expr, table_schema)

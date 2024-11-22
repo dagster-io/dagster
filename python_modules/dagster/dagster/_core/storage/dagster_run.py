@@ -147,7 +147,7 @@ class DagsterRunStatsSnapshot(
         start_time: Optional[float],
         end_time: Optional[float],
     ):
-        return super(DagsterRunStatsSnapshot, cls).__new__(
+        return super().__new__(
             cls,
             run_id=check.str_param(run_id, "run_id"),
             steps_succeeded=check.int_param(steps_succeeded, "steps_succeeded"),
@@ -180,7 +180,7 @@ class RunOpConcurrency(
         root_key_counts: Mapping[str, int],
         has_unconstrained_root_nodes: bool,
     ):
-        return super(RunOpConcurrency, cls).__new__(
+        return super().__new__(
             cls,
             root_key_counts=check.dict_param(
                 root_key_counts, "root_key_counts", key_type=str, value_type=int
@@ -203,7 +203,7 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
     # * renamed environment_dict -> run_config
     # * added asset_selection
     # * added has_repository_load_data
-    def before_unpack(self, context, unpacked_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def before_unpack(self, context, unpacked_dict: dict[str, Any]) -> dict[str, Any]:
         # back compat for environment dict => run_config
         if "environment_dict" in unpacked_dict:
             check.invariant(
@@ -367,7 +367,7 @@ class DagsterRun(
         if run_id is None:
             run_id = make_new_run_id()
 
-        return super(DagsterRun, cls).__new__(
+        return super().__new__(
             cls,
             job_name=check.str_param(job_name, "job_name"),
             run_id=check.str_param(run_id, "run_id"),
@@ -590,13 +590,13 @@ class RunsFilter(IHaveNew):
 
 
 class JobBucket(NamedTuple):
-    job_names: List[str]
+    job_names: list[str]
     bucket_limit: Optional[int]
 
 
 class TagBucket(NamedTuple):
     tag_key: str
-    tag_values: List[str]
+    tag_values: list[str]
     bucket_limit: Optional[int]
 
 
@@ -629,7 +629,7 @@ class RunRecord(
         start_time: Optional[float] = None,
         end_time: Optional[float] = None,
     ):
-        return super(RunRecord, cls).__new__(
+        return super().__new__(
             cls,
             storage_id=check.int_param(storage_id, "storage_id"),
             dagster_run=check.inst_param(dagster_run, "dagster_run", DagsterRun),
@@ -644,7 +644,7 @@ class RunRecord(
     def _blocking_batch_load(
         cls, keys: Iterable[str], context: LoadingContext
     ) -> Iterable[Optional["RunRecord"]]:
-        result_map: Dict[str, Optional[RunRecord]] = {run_id: None for run_id in keys}
+        result_map: dict[str, Optional[RunRecord]] = {run_id: None for run_id in keys}
 
         # this should be replaced with an async DB call
         records = context.instance.get_run_records(RunsFilter(run_ids=list(result_map.keys())))
@@ -676,7 +676,7 @@ class RunPartitionData(
         start_time: Optional[float],
         end_time: Optional[float],
     ):
-        return super(RunPartitionData, cls).__new__(
+        return super().__new__(
             cls,
             run_id=check.str_param(run_id, "run_id"),
             partition=check.str_param(partition, "partition"),
@@ -709,7 +709,7 @@ class ExecutionSelector(
     """Kept here to maintain loading of PipelineRuns from when it was still alive."""
 
     def __new__(cls, name: str, solid_subset: Optional[Sequence[str]] = None):
-        return super(ExecutionSelector, cls).__new__(
+        return super().__new__(
             cls,
             name=check.str_param(name, "name"),
             solid_subset=(

@@ -124,7 +124,7 @@ def test_struct_config_persmissive_cached_method() -> None:
 
 def test_struct_config_array() -> None:
     class AnOpConfig(Config):
-        a_string_list: List[str]
+        a_string_list: list[str]
 
     executed = {}
 
@@ -150,7 +150,7 @@ def test_struct_config_array() -> None:
 
 def test_struct_config_map() -> None:
     class AnOpConfig(Config):
-        a_string_to_int_dict: Dict[str, int]
+        a_string_to_int_dict: dict[str, int]
 
     executed = {}
 
@@ -212,7 +212,7 @@ def test_struct_config_mapping() -> None:
 
 def test_struct_config_mapping_list() -> None:
     class AnOpConfig(Config):
-        a_list_of_string_to_int_mapping: List[Mapping[str, int]]
+        a_list_of_string_to_int_mapping: list[Mapping[str, int]]
 
     executed = {}
 
@@ -239,7 +239,7 @@ def test_struct_config_mapping_list() -> None:
 
 def test_complex_config_schema() -> None:
     class AnOpConfig(Config):
-        a_complex_thing: Mapping[int, List[Mapping[str, Optional[int]]]]
+        a_complex_thing: Mapping[int, list[Mapping[str, Optional[int]]]]
 
     executed = {}
 
@@ -300,7 +300,7 @@ def test_struct_config_nested_in_list() -> None:
         a_str: str
 
     class AnOpConfig(Config):
-        an_optional_nested: List[ANestedConfig]
+        an_optional_nested: list[ANestedConfig]
 
     executed = {}
 
@@ -331,7 +331,7 @@ def test_struct_config_optional_nested_in_list() -> None:
         a_str: str
 
     class AnOpConfig(Config):
-        an_optional_nested: Optional[List[ANestedConfig]]
+        an_optional_nested: Optional[list[ANestedConfig]]
 
     executed = {}
 
@@ -373,7 +373,7 @@ def test_struct_config_nested_in_dict() -> None:
         a_str: str
 
     class AnOpConfig(Config):
-        an_optional_nested: Dict[str, ANestedConfig]
+        an_optional_nested: dict[str, ANestedConfig]
 
     executed = {}
 
@@ -405,9 +405,9 @@ def test_struct_config_nested_in_dict() -> None:
     "key_type, keys",
     [(str, ["foo", "bar"]), (int, [1, 2]), (float, [1.0, 2.0]), (bool, [True, False])],
 )
-def test_struct_config_map_different_key_type(key_type: Type, keys: List[Any]):
+def test_struct_config_map_different_key_type(key_type: type, keys: list[Any]):
     class AnOpConfig(Config):
-        my_dict: Dict[key_type, int]  # type: ignore # ignored for update, fix me!
+        my_dict: dict[key_type, int]  # type: ignore # ignored for update, fix me!
 
     executed = {}
 
@@ -668,7 +668,7 @@ def test_nested_discriminated_resource_instantiation() -> None:
 
 def test_struct_config_optional_map() -> None:
     class AnOpConfig(Config):
-        an_optional_dict: Optional[Dict[str, int]]
+        an_optional_dict: Optional[dict[str, int]]
 
     executed = {}
 
@@ -715,7 +715,7 @@ def test_struct_config_optional_map() -> None:
 
 def test_struct_config_optional_array() -> None:
     class AnOpConfig(Config):
-        a_string_list: Optional[List[str]]
+        a_string_list: Optional[list[str]]
 
     executed = {}
 
@@ -827,7 +827,7 @@ def test_enum_complex() -> None:
 
     class AnOpConfig(Config):
         an_optional_enum: Optional[MyEnum]
-        an_enum_list: List[MyEnum]
+        an_enum_list: list[MyEnum]
 
     executed = {}
 
@@ -856,14 +856,14 @@ def test_struct_config_non_optional_none_input_errors() -> None:
     executed = {}
 
     class AnOpListConfig(Config):
-        a_string_list: List[str]
+        a_string_list: list[str]
 
     @op
     def a_list_op(config: AnOpListConfig):
         executed["yes"] = True
 
     class AnOpMapConfig(Config):
-        a_string_list: Dict[str, str]
+        a_string_list: dict[str, str]
 
     @op
     def a_map_op(config: AnOpMapConfig):

@@ -129,7 +129,7 @@ class RegisteredCodeLocationOrigin(
     """
 
     def __new__(cls, location_name: str):
-        return super(RegisteredCodeLocationOrigin, cls).__new__(cls, location_name)
+        return super().__new__(cls, location_name)
 
     def get_display_metadata(self) -> Mapping[str, Any]:
         return {}
@@ -182,7 +182,7 @@ class InProcessCodeLocationOrigin(
         container_context=None,
         location_name: Optional[str] = None,
     ):
-        return super(InProcessCodeLocationOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(
                 loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
@@ -231,7 +231,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
     def __new__(
         cls, loadable_target_origin: LoadableTargetOrigin, location_name: Optional[str] = None
     ):
-        return super(ManagedGrpcPythonEnvCodeLocationOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(
                 loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
@@ -329,7 +329,7 @@ class GrpcServerCodeLocationOrigin(
         location_name: Optional[str] = None,
         use_ssl: Optional[bool] = None,
     ):
-        return super(GrpcServerCodeLocationOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(host, "host"),
             check.opt_int_param(port, "port"),
@@ -416,7 +416,7 @@ class RemoteRepositoryOrigin(
     """
 
     def __new__(cls, code_location_origin: CodeLocationOrigin, repository_name: str):
-        return super(RemoteRepositoryOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(code_location_origin, "code_location_origin", CodeLocationOrigin),
             check.str_param(repository_name, "repository_name"),
@@ -464,7 +464,7 @@ class RemoteJobOrigin(
     """
 
     def __new__(cls, repository_origin: RemoteRepositoryOrigin, job_name: str):
-        return super(RemoteJobOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(
                 repository_origin,
@@ -505,7 +505,7 @@ class RemoteInstigatorOrigin(
     """
 
     def __new__(cls, repository_origin: RemoteRepositoryOrigin, instigator_name: str):
-        return super(RemoteInstigatorOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(
                 repository_origin,
@@ -545,7 +545,7 @@ class RemotePartitionSetOrigin(
     """
 
     def __new__(cls, repository_origin: RemoteRepositoryOrigin, partition_set_name: str):
-        return super(RemotePartitionSetOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(
                 repository_origin,

@@ -11,7 +11,7 @@ from dagster_dbt.metadata_set import DbtMetadataSet
 pytestmark: pytest.MarkDecorator = pytest.mark.derived_metadata
 
 
-def test_materialization_type(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+def test_materialization_type(test_jaffle_shop_manifest: dict[str, Any]) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets(): ...
 
@@ -32,7 +32,7 @@ def test_materialization_type(test_jaffle_shop_manifest: Dict[str, Any]) -> None
 
 
 def test_storage_address(
-    test_jaffle_shop_manifest: Dict[str, Any],
+    test_jaffle_shop_manifest: dict[str, Any],
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -63,7 +63,7 @@ def test_storage_address(
 
 
 def test_storage_address_alias(
-    test_dbt_alias_manifest: Dict[str, Any],
+    test_dbt_alias_manifest: dict[str, Any],
 ) -> None:
     @dbt_assets(manifest=test_dbt_alias_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):

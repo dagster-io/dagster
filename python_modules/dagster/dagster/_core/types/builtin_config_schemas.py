@@ -34,7 +34,7 @@ def load_type_input_schema_dict(value):
     if file_type == "value":
         return file_options
     elif file_type == "json":
-        with open(file_options["path"], "r", encoding="utf8") as ff:
+        with open(file_options["path"], encoding="utf8") as ff:
             value_dict = seven.json.load(ff)
             return value_dict["value"]
     elif file_type == "pickle":

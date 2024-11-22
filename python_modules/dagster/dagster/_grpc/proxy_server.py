@@ -49,7 +49,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         instance_ref: Optional[InstanceRef],
         logger: logging.Logger,
     ):
-        super(DagsterProxyApiServicer, self).__init__()
+        super().__init__()
 
         self._loadable_target_origin = loadable_target_origin
         self._fixed_server_id = fixed_server_id
@@ -104,7 +104,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
         # Map runs to the client that launched them, so that we can route
         # termination requests
-        self._run_clients: Dict[str, DagsterGrpcClient] = {}
+        self._run_clients: dict[str, DagsterGrpcClient] = {}
 
         self._reload_location()
 

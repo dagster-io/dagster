@@ -23,11 +23,9 @@ def test_from_intermediates_from_multiple_outputs() -> None:
     assert result
     assert result.success
     step_input_data = next(
-        (
-            evt.step_input_data
-            for evt in result.events_for_node("gather")
-            if evt.event_type_value == "STEP_INPUT"
-        )
+        evt.step_input_data
+        for evt in result.events_for_node("gather")
+        if evt.event_type_value == "STEP_INPUT"
     )
     assert step_input_data.input_name == "stuff"
     assert step_input_data.type_check_data.label == "stuff"
@@ -50,11 +48,9 @@ def test_from_intermediates_from_config() -> None:
     assert result
     assert result.success
     step_input_data = next(
-        (
-            evt.step_input_data
-            for evt in result.events_for_node("x")
-            if evt.event_type_value == "STEP_INPUT"
-        )
+        evt.step_input_data
+        for evt in result.events_for_node("x")
+        if evt.event_type_value == "STEP_INPUT"
     )
     assert step_input_data.input_name == "string_input"
     assert step_input_data.type_check_data.label == "string_input"

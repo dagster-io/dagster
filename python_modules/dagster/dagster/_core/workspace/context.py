@@ -161,10 +161,10 @@ class BaseWorkspaceRequestContext(LoadingContext):
     def show_instance_config(self) -> bool:
         return True
 
-    def get_viewer_tags(self) -> Dict[str, str]:
+    def get_viewer_tags(self) -> dict[str, str]:
         return {}
 
-    def get_reporting_user_tags(self) -> Dict[str, str]:
+    def get_reporting_user_tags(self) -> dict[str, str]:
         return {}
 
     def get_code_location(self, location_name: str) -> CodeLocation:
@@ -487,7 +487,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         self._read_only_locations = check.opt_mapping_param(
             read_only_locations, "read_only_locations"
         )
-        self._checked_permissions: Set[str] = set()
+        self._checked_permissions: set[str] = set()
         self._loaders = {}
 
     @property
@@ -551,7 +551,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         return self._source
 
     @property
-    def loaders(self) -> Dict[Type, DataLoader]:
+    def loaders(self) -> dict[type, DataLoader]:
         return self._loaders
 
 
@@ -641,12 +641,12 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
         # Guards changes to _workspace_snapshot, _watch_thread_shutdown_events and _watch_threads
         self._lock = threading.Lock()
-        self._watch_thread_shutdown_events: Dict[str, threading.Event] = {}
-        self._watch_threads: Dict[str, threading.Thread] = {}
+        self._watch_thread_shutdown_events: dict[str, threading.Event] = {}
+        self._watch_threads: dict[str, threading.Thread] = {}
 
         self._state_subscribers_lock = threading.Lock()
         self._state_subscriber_id_iter = count()
-        self._state_subscribers: Dict[int, LocationStateSubscriber] = {}
+        self._state_subscribers: dict[int, LocationStateSubscriber] = {}
         self.add_state_subscriber(LocationStateSubscriber(self._location_state_events_handler))
 
         if grpc_server_registry:
@@ -860,7 +860,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         }
         self._update_workspace(updated_locations)
 
-    def _update_workspace(self, new_locations: Dict[str, CodeLocationEntry]):
+    def _update_workspace(self, new_locations: dict[str, CodeLocationEntry]):
         # minimize lock time by only holding while swapping data old to new
         with self._lock:
             previous_events = self._watch_thread_shutdown_events

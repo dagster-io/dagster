@@ -159,7 +159,7 @@ class UserDefinedDagsterK8sConfig(
         if service_metadata:
             service_metadata = k8s_snake_case_dict(kubernetes.client.V1ObjectMeta, service_metadata)
 
-        return super(UserDefinedDagsterK8sConfig, cls).__new__(
+        return super().__new__(
             cls,
             container_config=container_config,
             pod_template_spec_metadata=pod_template_spec_metadata,
@@ -808,7 +808,7 @@ def construct_dagster_k8s_job(
     additional_labels = {k: sanitize_k8s_label(v) for k, v in (labels or {}).items()}
     dagster_labels = merge_dicts(k8s_common_labels, additional_labels)
 
-    env: List[Mapping[str, Any]] = []
+    env: list[Mapping[str, Any]] = []
     if env_vars:
         env.extend(env_vars)
 

@@ -290,7 +290,7 @@ async def gen_events_for_run(
         after_cursor = connection.cursor
 
     loop = asyncio.get_event_loop()
-    queue: asyncio.Queue[Tuple[Any, Any]] = asyncio.Queue()
+    queue: asyncio.Queue[tuple[Any, Any]] = asyncio.Queue()
 
     def _enqueue(event, cursor):
         loop.call_soon_threadsafe(queue.put_nowait, (event, cursor))
@@ -321,7 +321,7 @@ async def gen_captured_log_data(
     subscription = compute_log_manager.subscribe(log_key, cursor)
 
     loop = asyncio.get_event_loop()
-    queue: asyncio.Queue["CapturedLogData"] = asyncio.Queue()
+    queue: asyncio.Queue[CapturedLogData] = asyncio.Queue()
 
     def _enqueue(new_event):
         loop.call_soon_threadsafe(queue.put_nowait, new_event)
@@ -350,7 +350,7 @@ def wipe_assets(
     from dagster_graphql.schema.roots.mutation import GrapheneAssetWipeSuccess
 
     instance = graphene_info.context.instance
-    whole_assets_to_wipe: List[AssetKey] = []
+    whole_assets_to_wipe: list[AssetKey] = []
     for apr in asset_partition_ranges:
         if apr.partition_range is None:
             whole_assets_to_wipe.append(apr.asset_key)

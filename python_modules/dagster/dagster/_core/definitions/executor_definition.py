@@ -326,7 +326,7 @@ def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Multiproces
 
     # unpack optional selector
     start_method = None
-    start_cfg: Dict[str, object] = {}
+    start_cfg: dict[str, object] = {}
     start_selector = check.opt_dict_elem(config, "start_method")
     if start_selector:
         start_method, start_cfg = next(iter(start_selector.items()))

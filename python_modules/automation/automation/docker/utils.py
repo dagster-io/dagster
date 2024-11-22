@@ -9,7 +9,7 @@ import dagster._check as check
 
 def execute_docker_build(
     image: str,
-    docker_args: Optional[Dict[str, str]] = None,
+    docker_args: Optional[dict[str, str]] = None,
     cwd: Optional[str] = None,
     platform: Optional[str] = None,
 ):

@@ -9,10 +9,10 @@ if TYPE_CHECKING:
     from airflow.models.operator import BaseOperator
 
 
-def build_dags_dict_given_structure(structure: Dict[str, Dict[str, List[str]]]) -> Dict[str, DAG]:
+def build_dags_dict_given_structure(structure: dict[str, dict[str, list[str]]]) -> dict[str, DAG]:
     """Given a structure of dags and their tasks, build a dictionary of dags."""
     return_dict = {}
-    tasks_per_dag: Dict[str, Dict[str, "BaseOperator"]] = defaultdict(dict)
+    tasks_per_dag: dict[str, dict[str, BaseOperator]] = defaultdict(dict)
     for dag_id, task_structure in structure.items():
         dag = DAG(
             dag_id,

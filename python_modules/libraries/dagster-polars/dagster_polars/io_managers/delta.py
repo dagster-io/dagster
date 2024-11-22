@@ -320,7 +320,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     @staticmethod
     def get_partition_filters(
         context: Union[InputContext, OutputContext],
-    ) -> Sequence[Tuple[str, str, Any]]:
+    ) -> Sequence[tuple[str, str, Any]]:
         if isinstance(context, OutputContext):
             partition_by = context.definition_metadata.get("partition_by")
         elif isinstance(context, InputContext) and context.upstream_output is not None:
@@ -354,7 +354,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
     def get_metadata(
         self, context: OutputContext, obj: Union[pl.DataFrame, pl.LazyFrame, None]
-    ) -> Dict[str, MetadataValue]:
+    ) -> dict[str, MetadataValue]:
         context_metadata = context.definition_metadata or {}
 
         metadata = super().get_metadata(context, obj)
@@ -418,7 +418,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
 # polars>=1.14.0 requires use_pyarrow=True when setting pyarrow_options
 def _get_pyarrow_options_kwargs(pyarrow_options: Mapping[str, object]) -> Mapping[str, Any]:
-    kwargs: Dict[str, object] = {"pyarrow_options": pyarrow_options}
+    kwargs: dict[str, object] = {"pyarrow_options": pyarrow_options}
     if packaging.version.parse(pl.__version__) >= packaging.version.parse("1.14.0"):
         kwargs["use_pyarrow"] = True
     return kwargs

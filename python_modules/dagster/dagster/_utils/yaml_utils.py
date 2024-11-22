@@ -62,17 +62,17 @@ DagsterRunConfigYamlDumper.add_representer(str, _octal_string_representer)
 
 
 def load_yaml_from_globs(
-    *globs: str, loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+    *globs: str, loader: type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
 ) -> Mapping[object, object]:
     return load_yaml_from_glob_list(list(globs), loader=loader)
 
 
 def load_yaml_from_glob_list(
-    glob_list: Sequence[str], loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+    glob_list: Sequence[str], loader: type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
 ) -> Mapping[object, object]:
     check.sequence_param(glob_list, "glob_list", of_type=str)
 
-    all_files_list: List[str] = []
+    all_files_list: list[str] = []
 
     for env_file_pattern in glob_list:
         all_files_list.extend(glob.glob(env_file_pattern))
@@ -81,8 +81,8 @@ def load_yaml_from_glob_list(
 
 
 def merge_yamls(
-    file_list: Sequence[str], loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
-) -> Dict[object, object]:
+    file_list: Sequence[str], loader: type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+) -> dict[object, object]:
     """Combine a list of YAML files into a dictionary.
 
     Args:
@@ -96,7 +96,7 @@ def merge_yamls(
     """
     check.sequence_param(file_list, "file_list", of_type=str)
 
-    merged: Dict[object, object] = {}
+    merged: dict[object, object] = {}
 
     for yaml_file in file_list:
         yaml_dict = load_yaml_from_path(yaml_file, loader=loader) or {}
@@ -112,8 +112,8 @@ def merge_yamls(
 
 
 def merge_yaml_strings(
-    yaml_strs: Sequence[str], loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
-) -> Dict[object, object]:
+    yaml_strs: Sequence[str], loader: type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+) -> dict[object, object]:
     """Combine a list of YAML strings into a dictionary.  Right-most overrides left-most.
 
     Args:
@@ -133,17 +133,17 @@ def merge_yaml_strings(
     for yaml_dict in yaml_dicts:
         check.invariant(
             isinstance(yaml_dict, dict),
-            'Expected YAML dictionary, instead got: "%s"' % str(yaml_dict),
+            f'Expected YAML dictionary, instead got: "{yaml_dict!s}"',
         )
 
     return functools.reduce(deep_merge_dicts, yaml_dicts, {})
 
 
 def load_yaml_from_path(
-    path: str, loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+    path: str, loader: type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
 ) -> object:
     check.str_param(path, "path")
-    with open(path, "r", encoding="utf8") as ff:
+    with open(path, encoding="utf8") as ff:
         return yaml.load(ff, Loader=loader)
 
 

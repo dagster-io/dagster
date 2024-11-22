@@ -31,7 +31,7 @@ from dagster_dbt_tests.dbt_projects import (
 pytestmark: pytest.MarkDecorator = pytest.mark.derived_metadata
 
 
-def test_no_column_schema(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+def test_no_column_schema(test_jaffle_shop_manifest: dict[str, Any]) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
@@ -53,7 +53,7 @@ def test_no_column_schema(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     [True, False],
 )
 def test_column_schema(
-    test_metadata_manifest: Dict[str, Any],
+    test_metadata_manifest: dict[str, Any],
     use_experimental_fetch_column_schema: bool,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -155,7 +155,7 @@ def test_column_schema(
 
 
 def test_exception_fetch_column_schema_with_adapter(
-    monkeypatch: pytest.MonkeyPatch, mocker: MockFixture, test_metadata_manifest: Dict[str, Any]
+    monkeypatch: pytest.MonkeyPatch, mocker: MockFixture, test_metadata_manifest: dict[str, Any]
 ):
     monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", "false")
 
@@ -192,7 +192,7 @@ def test_exception_fetch_column_schema_with_adapter(
 )
 def test_exception_column_schema(
     mocker: MockFixture,
-    test_metadata_manifest: Dict[str, Any],
+    test_metadata_manifest: dict[str, Any],
     use_experimental_fetch_column_schema: bool,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -227,7 +227,7 @@ def test_exception_column_schema(
     )
 
 
-def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
+def test_no_column_lineage(test_metadata_manifest: dict[str, Any]) -> None:
     @dbt_assets(manifest=test_metadata_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(
@@ -257,7 +257,7 @@ def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
 )
 def test_exception_column_lineage(
     mocker: MockFixture,
-    test_metadata_manifest: Dict[str, Any],
+    test_metadata_manifest: dict[str, Any],
     use_experimental_fetch_column_schema: bool,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -289,14 +289,14 @@ def test_exception_column_lineage(
 
 
 @pytest.fixture(name="test_metadata_manifest_snowflake")
-def test_metadata_manifest_snowflake_fixture() -> Dict[str, Any]:
+def test_metadata_manifest_snowflake_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_metadata_path, target="snowflake").get_artifact(
         "manifest.json"
     )
 
 
 @pytest.fixture(name="test_metadata_manifest_bigquery")
-def test_metadata_manifest_bigquery_fixture() -> Dict[str, Any]:
+def test_metadata_manifest_bigquery_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_metadata_path, target="bigquery").get_artifact(
         "manifest.json"
     )
@@ -483,13 +483,13 @@ EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT = {
 def test_column_lineage_real_warehouse(
     request: pytest.FixtureRequest,
     target: str,
-    excluded_models: Optional[List[str]],
+    excluded_models: Optional[list[str]],
     fetch_row_counts: bool,
     manifest_fixture_name: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    test_metadata_manifest: Dict[str, Any] = cast(
-        Dict[str, Any], request.getfixturevalue(manifest_fixture_name)
+    test_metadata_manifest: dict[str, Any] = cast(
+        dict[str, Any], request.getfixturevalue(manifest_fixture_name)
     )
     sql_dialect = target
 
@@ -590,7 +590,7 @@ def test_column_lineage_real_warehouse(
 )
 def test_column_lineage(
     sql_dialect: str,
-    test_metadata_manifest: Dict[str, Any],
+    test_metadata_manifest: dict[str, Any],
     asset_key_selection: Optional[AssetKey],
     use_async_fetch_column_schema: bool,
     monkeypatch: pytest.MonkeyPatch,
@@ -673,7 +673,7 @@ def test_column_lineage(
     ],
 )
 def test_dbt_raw_cli_no_jinja_log_info(
-    test_metadata_manifest: Dict[str, Any], command: str
+    test_metadata_manifest: dict[str, Any], command: str
 ) -> None:
     result = subprocess.check_output(
         ["dbt", "--log-format", "json", "--no-partial-parse", command],
@@ -750,8 +750,8 @@ EXPECTED_COLUMN_LINEAGE_FOR_DEPENDENCIES_PROJECT = {
     [False, True],
 )
 def test_column_lineage_dependencies(
-    test_dependencies_manifest: Dict[str, Any],
-    test_dependencies_manifest_windows: Dict[str, Any],
+    test_dependencies_manifest: dict[str, Any],
+    test_dependencies_manifest_windows: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
     mocker: MockFixture,
     capsys,

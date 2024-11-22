@@ -77,7 +77,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
             storage.get_logs_for_run("foo")
 
     def test_filesystem_event_log_storage_run_corrupted_bad_data(self, storage):
-        run_id_1, run_id_2 = [make_new_run_id() for _ in range(2)]
+        run_id_1, run_id_2 = (make_new_run_id() for _ in range(2))
         SqlEventLogStorageMetadata.create_all(
             create_engine(storage.conn_string_for_shard(run_id_1))
         )

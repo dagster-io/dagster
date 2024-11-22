@@ -10,7 +10,12 @@ from dagster_buildkite.steps.dagster_ui import (
 )
 from dagster_buildkite.steps.docs import build_docs_steps
 from dagster_buildkite.steps.trigger import build_trigger_step
-from dagster_buildkite.utils import BuildkiteStep, is_release_branch, message_contains, safe_getenv
+from dagster_buildkite.utils import (
+    BuildkiteStep,
+    is_release_branch,
+    message_contains,
+    safe_getenv,
+)
 
 
 def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
@@ -50,7 +55,8 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
                     "DAGSTER_UI_ONLY_OSS_CHANGE": (
                         "1" if not skip_if_no_dagster_ui_changes() else ""
                     ),
-                    "DAGSTER_CHECKOUT_DEPTH": _get_setting("DAGSTER_CHECKOUT_DEPTH") or "100",
+                    "DAGSTER_CHECKOUT_DEPTH": _get_setting("DAGSTER_CHECKOUT_DEPTH")
+                    or "100",
                     "OSS_COMPAT_SLIM": "1" if oss_compat_slim else "",
                     "DAGSTER_FROM_OSS": "1" if pipeline_name == "internal" else "0",
                 },

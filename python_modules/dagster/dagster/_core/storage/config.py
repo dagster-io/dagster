@@ -45,7 +45,7 @@ class PostgresStorageConfigDb(TypedDict):
     hostname: str
     db_name: str
     port: int
-    params: Dict[str, object]
+    params: dict[str, object]
     scheme: str
 
 

@@ -134,14 +134,14 @@ def is_typing_type(ttype):
         or is_closed_python_set_type(ttype)
         or is_closed_python_tuple_type(ttype)
         or is_closed_python_list_type(ttype)
-        or ttype is typing.Tuple
-        or ttype is typing.Set
-        or ttype is typing.Dict
-        or ttype is typing.List
+        or ttype is typing.Tuple  # noqa: UP006  # backcompat check for users whoa are not using builtins
+        or ttype is typing.Set  # noqa: UP006  # backcompat check for users still using typing
+        or ttype is typing.Dict  # noqa: UP006  # backcompat check for users still using typing
+        or ttype is typing.List  # noqa: UP006  # backcompat check for users still using typing
     )
 
 
-def flatten_unions(ttype: typing.Type) -> typing.AbstractSet[typing.Type]:
+def flatten_unions(ttype: type) -> typing.AbstractSet[type]:
     """Accepts a type that may be a Union of other types, and returns those other types.
     In addition to explicit Union annotations, works for Optional, which is represented as
     Union[T, None] under the covers.
@@ -151,7 +151,7 @@ def flatten_unions(ttype: typing.Type) -> typing.AbstractSet[typing.Type]:
     return set(_flatten_unions_inner(ttype))
 
 
-def _flatten_unions_inner(ttype: typing.Type) -> typing.Iterable[typing.Type]:
+def _flatten_unions_inner(ttype: type) -> typing.Iterable[type]:
     if get_origin(ttype) is typing.Union:
         for arg in get_args(ttype):
             yield from flatten_unions(arg)

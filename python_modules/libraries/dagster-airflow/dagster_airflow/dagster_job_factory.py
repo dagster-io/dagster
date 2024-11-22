@@ -21,7 +21,7 @@ from dagster_airflow.utils import normalized_name
 def make_dagster_job_from_airflow_dag(
     dag: DAG,
     tags: Optional[Mapping[str, str]] = None,
-    connections: Optional[List[Connection]] = None,
+    connections: Optional[list[Connection]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
 ) -> JobDefinition:
     """Construct a Dagster job corresponding to a given Airflow DAG.

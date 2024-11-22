@@ -21,7 +21,7 @@ my_job = define_asset_job("my_job", selection=[my_asset])
 
 
 # highlight-start
-def check_for_new_files() -> List[str]:
+def check_for_new_files() -> list[str]:
     if random.random() > 0.5:
         return ["file1", "file2"]
     return []

@@ -389,7 +389,7 @@ class InProcessCodeLocation(CodeLocation):
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name
 
-        self._repositories: Dict[str, RemoteRepository] = {}
+        self._repositories: dict[str, RemoteRepository] = {}
         for (
             repo_name,
             repo_def,
@@ -645,7 +645,7 @@ class GrpcServerCodeLocation(CodeLocation):
         heartbeat: Optional[bool] = False,
         watch_server: Optional[bool] = True,
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
-        grpc_metadata: Optional[Sequence[Tuple[str, str]]] = None,
+        grpc_metadata: Optional[Sequence[tuple[str, str]]] = None,
     ):
         from dagster._grpc.client import DagsterGrpcClient, client_heartbeat_thread
 

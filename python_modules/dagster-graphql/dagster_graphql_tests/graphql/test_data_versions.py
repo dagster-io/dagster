@@ -431,7 +431,5 @@ def _get_asset_node(result: Any, key: Optional[str] = None) -> Mapping[str, Any]
         return (
             to_check["assetNodeOrError"]
             if "assetNodeOrError" in to_check
-            else next(
-                (node for node in to_check["assetNodes"] if node["assetKey"]["path"] == [key])
-            )
+            else next(node for node in to_check["assetNodes"] if node["assetKey"]["path"] == [key])
         )

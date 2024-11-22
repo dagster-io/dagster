@@ -72,10 +72,10 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
     def build_graphql_middleware(self) -> list: ...
 
     @abstractmethod
-    def build_middleware(self) -> List[Middleware]: ...
+    def build_middleware(self) -> list[Middleware]: ...
 
     @abstractmethod
-    def build_routes(self) -> List[BaseRoute]: ...
+    def build_routes(self) -> list[BaseRoute]: ...
 
     @abstractmethod
     def make_request_context(self, conn: HTTPConnection) -> TRequestContext: ...
@@ -114,7 +114,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
                 text = TEMPLATE.replace("{{ app_path_prefix }}", self._app_path_prefix)
                 return HTMLResponse(text)
 
-            data: Union[Dict[str, str], QueryParams] = request.query_params
+            data: Union[dict[str, str], QueryParams] = request.query_params
         elif request.method == "POST":
             content_type = request.headers.get("Content-Type", "")
 
@@ -139,7 +139,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
             )
 
         query = data.get("query")
-        variables: Union[Optional[str], Dict[str, Any]] = data.get("variables")
+        variables: Union[Optional[str], dict[str, Any]] = data.get("variables")
         operation_name = data.get("operationName")
 
         if query is None:
@@ -150,7 +150,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
 
         if isinstance(variables, str):
             try:
-                variables = cast(Dict[str, Any], json.loads(variables))
+                variables = cast(dict[str, Any], json.loads(variables))
             except json.JSONDecodeError:
                 return PlainTextResponse(
                     "Malformed GraphQL variables. Passed as string but not valid"
@@ -158,7 +158,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
 
-        captured_errors: List[Exception] = []
+        captured_errors: list[Exception] = []
         with ErrorCapture.watch(captured_errors.append):
             result = await self.execute_graphql_request(
                 request=request,
@@ -167,7 +167,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
                 operation_name=operation_name,
             )
 
-        response_data: Dict[str, Any] = {"data": result.data}
+        response_data: dict[str, Any] = {"data": result.data}
 
         if result.errors:
             response_data["errors"] = self.handle_graphql_errors(result.errors)
@@ -185,7 +185,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         Once we are free of conflicting deps, we should be able to use an impl from
         strawberry-graphql or the like.
         """
-        tasks: Dict[str, Task] = {}
+        tasks: dict[str, Task] = {}
 
         await websocket.accept(subprotocol=GraphQLWS.PROTOCOL.value)
 
@@ -242,7 +242,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         self,
         request: Request,
         query: str,
-        variables: Optional[Dict[str, Any]],
+        variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
     ) -> ExecutionResult:
         # run each query in a separate thread, as much of the schema is sync/blocking
@@ -259,7 +259,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         self,
         request: Request,
         query: str,
-        variables: Optional[Dict[str, Any]],
+        variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
     ) -> ExecutionResult:
         request_context = self.make_request_context(request)
@@ -276,7 +276,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         self,
         request_context: TRequestContext,
         query: str,
-        variables: Optional[Dict[str, Any]],
+        variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
     ) -> ExecutionResult:
         return await self._graphql_schema.execute_async(
@@ -292,9 +292,9 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         websocket: WebSocket,
         operation_id: str,
         query: str,
-        variables: Optional[Dict[str, Any]],
+        variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
-    ) -> Tuple[Optional[Task], Optional[GraphQLFormattedError]]:
+    ) -> tuple[Optional[Task], Optional[GraphQLFormattedError]]:
         request_context = self.make_request_context(websocket)
         try:
             async_result = await self._graphql_schema.subscribe(
@@ -333,8 +333,8 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
 
     def _determine_status_code(
         self,
-        resolver_errors: Optional[List[GraphQLError]],
-        captured_errors: List[Exception],
+        resolver_errors: Optional[list[GraphQLError]],
+        captured_errors: list[Exception],
     ) -> int:
         server_error = False
         user_error = False

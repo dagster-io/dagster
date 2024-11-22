@@ -53,7 +53,7 @@ class PartitionDimensionKey(
     """Representation of a single dimension of a multi-dimensional partition key."""
 
     def __new__(cls, dimension_name: str, partition_key: str):
-        return super(PartitionDimensionKey, cls).__new__(
+        return super().__new__(
             cls,
             dimension_name=check.str_param(dimension_name, "dimension_name"),
             partition_key=check.str_param(partition_key, "partition_key"),
@@ -69,19 +69,19 @@ class MultiPartitionKey(str):
     Orders the dimensions by name, to ensure consistent string representation.
     """
 
-    dimension_keys: List[PartitionDimensionKey] = []
+    dimension_keys: list[PartitionDimensionKey] = []
 
     def __new__(cls, keys_by_dimension: Mapping[str, str]):
         check.mapping_param(
             keys_by_dimension, "partitions_by_dimension", key_type=str, value_type=str
         )
 
-        dimension_keys: List[PartitionDimensionKey] = [
+        dimension_keys: list[PartitionDimensionKey] = [
             PartitionDimensionKey(dimension, keys_by_dimension[dimension])
             for dimension in sorted(list(keys_by_dimension.keys()))
         ]
 
-        str_key = super(MultiPartitionKey, cls).__new__(
+        str_key = super().__new__(
             cls,
             MULTIPARTITION_KEY_DELIMITER.join(
                 [dim_key.partition_key for dim_key in dimension_keys]
@@ -209,7 +209,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
 
         _check_valid_partitions_dimensions(partitions_defs)
 
-        self._partitions_defs: List[PartitionDimensionDefinition] = sorted(
+        self._partitions_defs: list[PartitionDimensionDefinition] = sorted(
             [
                 PartitionDimensionDefinition(name, partitions_def)
                 for name, partitions_def in partitions_defs.items()
@@ -218,7 +218,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         )
 
     @property
-    def partitions_subset_class(self) -> Type["PartitionsSubset"]:
+    def partitions_subset_class(self) -> type["PartitionsSubset"]:
         return DefaultPartitionsSubset
 
     def get_partition_keys_in_range(
@@ -262,7 +262,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         ).hexdigest()
 
     @property
-    def partition_dimension_names(self) -> List[str]:
+    def partition_dimension_names(self) -> list[str]:
         return [dim_def.name for dim_def in self._partitions_defs]
 
     @property
@@ -346,8 +346,8 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         )
 
     def filter_valid_partition_keys(
-        self, partition_keys: Set[str], dynamic_partitions_store: DynamicPartitionsStore
-    ) -> Set[MultiPartitionKey]:
+        self, partition_keys: set[str], dynamic_partitions_store: DynamicPartitionsStore
+    ) -> set[MultiPartitionKey]:
         partition_keys_by_dimension = {
             dim.name: dim.partitions_def.get_partition_keys(
                 dynamic_partitions_store=dynamic_partitions_store
@@ -418,7 +418,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
 
     def _get_primary_and_secondary_dimension(
         self,
-    ) -> Tuple[PartitionDimensionDefinition, PartitionDimensionDefinition]:
+    ) -> tuple[PartitionDimensionDefinition, PartitionDimensionDefinition]:
         # Multipartitions subsets are serialized by primary dimension. If changing
         # the selection of primary/secondary dimension, will need to also update the
         # serialization of MultiPartitionsSubsets
@@ -459,7 +459,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         )
         return next(iter(time_window_dims))
 
-    def _get_time_window_dims(self) -> List[PartitionDimensionDefinition]:
+    def _get_time_window_dims(self) -> list[PartitionDimensionDefinition]:
         return [
             dim
             for dim in self.partitions_defs
@@ -559,7 +559,7 @@ def get_tags_from_multi_partition_key(multi_partition_key: MultiPartitionKey) ->
 
 
 def get_multipartition_key_from_tags(tags: Mapping[str, str]) -> str:
-    partitions_by_dimension: Dict[str, str] = {}
+    partitions_by_dimension: dict[str, str] = {}
     for tag in tags:
         if tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX):
             dimension = tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]

@@ -34,7 +34,7 @@ class GrpcServerEndpoint(
     )
 ):
     def __new__(cls, server_id: str, host: str, port: Optional[int], socket: Optional[str]):
-        return super(GrpcServerEndpoint, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(server_id, "server_id"),
             check.str_param(host, "host"),
@@ -78,13 +78,13 @@ class GrpcServerRegistry(AbstractContextManager):
         log_level: str = "INFO",
         inject_env_vars_from_instance: bool = True,
         container_image: Optional[str] = None,
-        container_context: Optional[Dict[str, Any]] = None,
+        container_context: Optional[dict[str, Any]] = None,
         additional_timeout_msg: Optional[str] = None,
     ):
         self.instance_ref = instance_ref
 
         # map of servers being currently returned, keyed by origin ID
-        self._active_entries: Dict[str, Union[ServerRegistryEntry, ErrorRegistryEntry]] = {}
+        self._active_entries: dict[str, Union[ServerRegistryEntry, ErrorRegistryEntry]] = {}
 
         self._waited_for_processes = False
 
@@ -96,7 +96,7 @@ class GrpcServerRegistry(AbstractContextManager):
 
         self._lock = threading.Lock()
 
-        self._all_processes: List[GrpcServerProcess] = []
+        self._all_processes: list[GrpcServerProcess] = []
 
         self._cleanup_thread_shutdown_event: Optional[threading.Event] = None
         self._cleanup_thread: Optional[threading.Thread] = None
@@ -239,7 +239,7 @@ class GrpcServerRegistry(AbstractContextManager):
 
             with self._lock:
                 # Remove any dead processes from the all_processes map
-                dead_process_indexes: List[int] = []
+                dead_process_indexes: list[int] = []
                 for index in range(len(self._all_processes)):
                     process = self._all_processes[index]
                     if process.server_process.poll() is not None:

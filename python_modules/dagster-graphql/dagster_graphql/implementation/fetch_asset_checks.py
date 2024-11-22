@@ -32,7 +32,7 @@ def fetch_asset_check_executions(
     asset_check_key: AssetCheckKey,
     limit: int,
     cursor: Optional[str],
-) -> List[GrapheneAssetCheckExecution]:
+) -> list[GrapheneAssetCheckExecution]:
     check_records = loading_context.instance.event_log_storage.get_asset_check_execution_history(
         check_key=asset_check_key,
         limit=limit,

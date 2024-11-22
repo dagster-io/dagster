@@ -252,8 +252,8 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         # and child nodes.
         dep_graph = generate_asset_dep_graph(assets_defs)
 
-        assets_defs_by_check_key: Dict[AssetCheckKey, AssetsDefinition] = {}
-        check_keys_by_asset_key: DefaultDict[AssetKey, Set[AssetCheckKey]] = defaultdict(set)
+        assets_defs_by_check_key: dict[AssetCheckKey, AssetsDefinition] = {}
+        check_keys_by_asset_key: defaultdict[AssetKey, set[AssetCheckKey]] = defaultdict(set)
         for ad in assets_defs:
             for ck in ad.check_keys:
                 check_keys_by_asset_key[ck.asset_key].add(ck)

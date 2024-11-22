@@ -9,15 +9,15 @@ from dagster_deltalake.io_manager import DeltaLakeIOManager
 
 class DeltaLakePandasTypeHandler(DeltalakeBaseArrowTypeHandler[pd.DataFrame]):
     def from_arrow(
-        self, obj: pa.RecordBatchReader, target_type: Type[pd.DataFrame]
+        self, obj: pa.RecordBatchReader, target_type: type[pd.DataFrame]
     ) -> pd.DataFrame:
         return obj.read_pandas()
 
-    def to_arrow(self, obj: pd.DataFrame) -> Tuple[pa.RecordBatchReader, Dict[str, Any]]:
+    def to_arrow(self, obj: pd.DataFrame) -> tuple[pa.RecordBatchReader, dict[str, Any]]:
         return pa.Table.from_pandas(obj).to_reader(), {}
 
     @property
-    def supported_types(self) -> Sequence[Type[object]]:
+    def supported_types(self) -> Sequence[type[object]]:
         return [pd.DataFrame]
 
 
@@ -27,5 +27,5 @@ class DeltaLakePandasIOManager(DeltaLakeIOManager):
         return [DeltaLakePandasTypeHandler(), DeltaLakePyArrowTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return pd.DataFrame

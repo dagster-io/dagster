@@ -563,7 +563,7 @@ def _gather_all_config_types(
 def construct_config_type_dictionary(
     node_defs: Sequence[NodeDefinition],
     run_config_schema_type: ConfigType,
-) -> Tuple[Mapping[str, ConfigType], Mapping[str, ConfigType]]:
+) -> tuple[Mapping[str, ConfigType], Mapping[str, ConfigType]]:
     type_dict_by_name = {t.given_name: t for t in ALL_CONFIG_BUILTINS if t.given_name}
     type_dict_by_key = {t.key: t for t in ALL_CONFIG_BUILTINS}
     all_types = list(_gather_all_config_types(node_defs, run_config_schema_type)) + list(
@@ -602,7 +602,7 @@ def _convert_config_classes_inner(configs: Any) -> Any:
     }
 
 
-def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
+def _convert_config_classes(configs: dict[str, Any]) -> dict[str, Any]:
     return _convert_config_classes_inner(configs)
 
 
@@ -632,10 +632,10 @@ class RunConfig:
 
     def __init__(
         self,
-        ops: Optional[Dict[str, Any]] = None,
-        resources: Optional[Dict[str, Any]] = None,
-        loggers: Optional[Dict[str, Any]] = None,
-        execution: Optional[Dict[str, Any]] = None,
+        ops: Optional[dict[str, Any]] = None,
+        resources: Optional[dict[str, Any]] = None,
+        loggers: Optional[dict[str, Any]] = None,
+        execution: Optional[dict[str, Any]] = None,
     ):
         self.ops = check.opt_dict_param(ops, "ops")
         self.resources = check.opt_dict_param(resources, "resources")
@@ -663,7 +663,7 @@ class RunConfig:
         return self.to_config_dict() == other.to_config_dict()
 
 
-CoercibleToRunConfig: TypeAlias = Union[Dict[str, Any], RunConfig]
+CoercibleToRunConfig: TypeAlias = Union[dict[str, Any], RunConfig]
 
 T = TypeVar("T")
 

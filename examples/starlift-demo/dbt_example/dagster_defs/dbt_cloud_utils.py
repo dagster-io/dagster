@@ -45,7 +45,7 @@ def get_project() -> DBTCloudProjectEnvironment:
     )
 
 
-def filter_specs_by_tag(specs: Sequence[AssetSpec], tag: str) -> Dict[AssetKey, AssetSpec]:
+def filter_specs_by_tag(specs: Sequence[AssetSpec], tag: str) -> dict[AssetKey, AssetSpec]:
     return {
         spec.key: spec for spec in specs if tag in check.not_none(spec.metadata)["raw_data"]["tags"]
     }
@@ -67,7 +67,7 @@ def relevant_check_specs(
 
 
 def add_deps(
-    uid_to_dep_mapping: Dict[str, AssetKey], specs: Dict[AssetKey, AssetSpec]
+    uid_to_dep_mapping: dict[str, AssetKey], specs: dict[AssetKey, AssetSpec]
 ) -> Sequence[AssetSpec]:
     specs = dict(specs)
     for uid, dep in uid_to_dep_mapping.items():

@@ -18,7 +18,7 @@ class TaskHandleDict(TypedDict):
 
 
 def assets_with_multiple_task_mappings(
-    assets: Sequence[Union[AssetSpec, AssetsDefinition]], task_handles: List[TaskHandleDict]
+    assets: Sequence[Union[AssetSpec, AssetsDefinition]], task_handles: list[TaskHandleDict]
 ) -> Sequence[Union[AssetSpec, AssetsDefinition]]:
     """Given an asset or assets definition, return a new asset or assets definition with metadata
     that indicates that it is targeted by multiple airflow tasks. An example of this would
@@ -74,7 +74,7 @@ def assets_with_multiple_task_mappings(
 
 
 def targeted_by_multiple_tasks(
-    defs: Definitions, task_handles: List[TaskHandleDict]
+    defs: Definitions, task_handles: list[TaskHandleDict]
 ) -> Definitions:
     return replace_assets_in_defs(
         defs,

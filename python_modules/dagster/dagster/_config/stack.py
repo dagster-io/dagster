@@ -7,7 +7,7 @@ class EvaluationStack(
     NamedTuple("_EvaluationStack", [("entries", Sequence["EvaluationStackEntry"])])
 ):
     def __new__(cls, entries):
-        return super(EvaluationStack, cls).__new__(
+        return super().__new__(
             cls,
             check.list_param(entries, "entries", of_type=EvaluationStackEntry),
         )
@@ -41,7 +41,7 @@ class EvaluationStackPathEntry(
     NamedTuple("_EvaluationStackEntry", [("field_name", str)]), EvaluationStackEntry
 ):
     def __new__(cls, field_name: str):
-        return super(EvaluationStackPathEntry, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(field_name, "field_name"),
         )
@@ -53,7 +53,7 @@ class EvaluationStackListItemEntry(
     def __new__(cls, list_index: int):
         check.int_param(list_index, "list_index")
         check.param_invariant(list_index >= 0, "list_index")
-        return super(EvaluationStackListItemEntry, cls).__new__(cls, list_index)
+        return super().__new__(cls, list_index)
 
 
 class EvaluationStackMapKeyEntry(
@@ -61,7 +61,7 @@ class EvaluationStackMapKeyEntry(
     EvaluationStackEntry,
 ):
     def __new__(cls, map_key: object):
-        return super(EvaluationStackMapKeyEntry, cls).__new__(cls, map_key)
+        return super().__new__(cls, map_key)
 
 
 class EvaluationStackMapValueEntry(
@@ -69,14 +69,14 @@ class EvaluationStackMapValueEntry(
     EvaluationStackEntry,
 ):
     def __new__(cls, map_key: object):
-        return super(EvaluationStackMapValueEntry, cls).__new__(cls, map_key)
+        return super().__new__(cls, map_key)
 
 
 def get_friendly_path_msg(stack: EvaluationStack) -> str:
     return get_friendly_path_info(stack)[0]
 
 
-def get_friendly_path_info(stack: EvaluationStack) -> Tuple[str, str]:
+def get_friendly_path_info(stack: EvaluationStack) -> tuple[str, str]:
     if not stack.entries:
         path = ""
         path_msg = "at the root"

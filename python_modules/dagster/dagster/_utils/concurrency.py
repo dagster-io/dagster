@@ -72,8 +72,8 @@ class ClaimedSlotInfo:
 class ConcurrencyKeyInfo:
     concurrency_key: str
     slot_count: int
-    claimed_slots: List[ClaimedSlotInfo]
-    pending_steps: List[PendingStepInfo]
+    claimed_slots: list[ClaimedSlotInfo]
+    pending_steps: list[PendingStepInfo]
 
     ###################################################
     # Fields that we need to keep around for backcompat
@@ -83,7 +83,7 @@ class ConcurrencyKeyInfo:
         return len(self.claimed_slots)
 
     @property
-    def active_run_ids(self) -> Set[str]:
+    def active_run_ids(self) -> set[str]:
         return set([slot.run_id for slot in self.claimed_slots])
 
     @property
@@ -92,7 +92,7 @@ class ConcurrencyKeyInfo:
         return len([step for step in self.pending_steps if step.assigned_timestamp is None])
 
     @property
-    def pending_run_ids(self) -> Set[str]:
+    def pending_run_ids(self) -> set[str]:
         # here pending steps are steps that are not assigned
         return set([step.run_id for step in self.pending_steps if step.assigned_timestamp is None])
 
@@ -101,7 +101,7 @@ class ConcurrencyKeyInfo:
         return len([step for step in self.pending_steps if step.assigned_timestamp is not None])
 
     @property
-    def assigned_run_ids(self) -> Set[str]:
+    def assigned_run_ids(self) -> set[str]:
         return set(
             [step.run_id for step in self.pending_steps if step.assigned_timestamp is not None]
         )

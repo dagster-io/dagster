@@ -125,7 +125,7 @@ def json_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
 
 def default_system_loggers(
     instance: Optional["DagsterInstance"],
-) -> Sequence[Tuple["LoggerDefinition", Mapping[str, object]]]:
+) -> Sequence[tuple["LoggerDefinition", Mapping[str, object]]]:
     """If users don't provide configuration for any loggers, we instantiate these loggers with the
     default config.
 

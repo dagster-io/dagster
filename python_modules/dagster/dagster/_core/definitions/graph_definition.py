@@ -105,10 +105,10 @@ def _check_node_defs_arg(
 def create_adjacency_lists(
     nodes: Sequence[Node],
     dep_structure: DependencyStructure,
-) -> Tuple[Mapping[str, Set[str]], Mapping[str, Set[str]]]:
+) -> tuple[Mapping[str, set[str]], Mapping[str, set[str]]]:
     visit_dict = {s.name: False for s in nodes}
-    forward_edges: Dict[str, Set[str]] = {s.name: set() for s in nodes}
-    backward_edges: Dict[str, Set[str]] = {s.name: set() for s in nodes}
+    forward_edges: dict[str, set[str]] = {s.name: set() for s in nodes}
+    backward_edges: dict[str, set[str]] = {s.name: set() for s in nodes}
 
     def visit(node_name: str) -> None:
         if visit_dict[node_name]:
@@ -260,7 +260,7 @@ class GraphDefinition(NodeDefinition):
 
         self._composition_fn = check.opt_callable_param(composition_fn, "composition_fn")
 
-        super(GraphDefinition, self).__init__(
+        super().__init__(
             name=name,
             description=description,
             input_defs=input_defs,
@@ -314,7 +314,7 @@ class GraphDefinition(NodeDefinition):
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
     ) -> Sequence[InputDefinition]:
-        unresolveable_input_defs: List[InputDefinition] = []
+        unresolveable_input_defs: list[InputDefinition] = []
         for node in self.node_dict.values():
             cur_handle = NodeHandle(node.name, handle)
             for input_def in node.definition.get_inputs_must_be_resolved_top_level(
@@ -382,7 +382,7 @@ class GraphDefinition(NodeDefinition):
     def get_node(self, handle: NodeHandle) -> Node:
         check.inst_param(handle, "handle", NodeHandle)
         current = handle
-        lineage: List[str] = []
+        lineage: list[str] = []
         while current:
             lineage.append(current.name)
             current = current.parent
@@ -483,7 +483,7 @@ class GraphDefinition(NodeDefinition):
 
     def resolve_output_to_origin(
         self, output_name: str, handle: Optional[NodeHandle]
-    ) -> Tuple[OutputDefinition, Optional[NodeHandle]]:
+    ) -> tuple[OutputDefinition, Optional[NodeHandle]]:
         check.str_param(output_name, "output_name")
         check.opt_inst_param(handle, "handle", NodeHandle)
 
@@ -807,13 +807,13 @@ class GraphDefinition(NodeDefinition):
     @property
     def name(self) -> str:
         """The name of the graph."""
-        return super(GraphDefinition, self).name
+        return super().name
 
     @public
     @property
     def tags(self) -> Mapping[str, str]:
         """The tags associated with the graph."""
-        return super(GraphDefinition, self).tags
+        return super().tags
 
     @public
     def alias(self, name: str) -> "PendingNodeInvocation":
@@ -828,7 +828,7 @@ class GraphDefinition(NodeDefinition):
                 def do_it_all():
                     my_graph.alias("my_graph_alias")
         """
-        return super(GraphDefinition, self).alias(name)
+        return super().alias(name)
 
     @public
     def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
@@ -843,7 +843,7 @@ class GraphDefinition(NodeDefinition):
                 def do_it_all():
                     my_graph.tag({"my_tag": "my_value"})
         """
-        return super(GraphDefinition, self).tag(tags)
+        return super().tag(tags)
 
     @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
@@ -858,7 +858,7 @@ class GraphDefinition(NodeDefinition):
                 def do_it_all():
                     my_graph.with_hooks({my_hook})
         """
-        return super(GraphDefinition, self).with_hooks(hook_defs)
+        return super().with_hooks(hook_defs)
 
     @public
     def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
@@ -873,12 +873,12 @@ class GraphDefinition(NodeDefinition):
                 def do_it_all():
                     my_graph.with_retry_policy(RetryPolicy(max_retries=5))
         """
-        return super(GraphDefinition, self).with_retry_policy(retry_policy)
+        return super().with_retry_policy(retry_policy)
 
     def resolve_input_to_destinations(
         self, input_handle: NodeInputHandle
     ) -> Sequence[NodeInputHandle]:
-        all_destinations: List[NodeInputHandle] = []
+        all_destinations: list[NodeInputHandle] = []
         for mapping in self.input_mappings:
             if mapping.graph_input_name != input_handle.input_name:
                 continue
@@ -899,7 +899,7 @@ class GraphDefinition(NodeDefinition):
     def resolve_output_to_destinations(
         self, output_name: str, handle: Optional[NodeHandle]
     ) -> Sequence[NodeInputHandle]:
-        all_destinations: List[NodeInputHandle] = []
+        all_destinations: list[NodeInputHandle] = []
         for mapping in self.output_mappings:
             if mapping.graph_output_name != output_name:
                 continue
@@ -947,9 +947,9 @@ class GraphDefinition(NodeDefinition):
 
     def get_op_input_output_handle_pairs(
         self, outer_handle: Optional[NodeHandle]
-    ) -> AbstractSet[Tuple[NodeOutputHandle, NodeInputHandle]]:
+    ) -> AbstractSet[tuple[NodeOutputHandle, NodeInputHandle]]:
         """Get all pairs of op output handles and their downstream op input handles within the graph."""
-        result: Set[Tuple[NodeOutputHandle, NodeInputHandle]] = set()
+        result: set[tuple[NodeOutputHandle, NodeInputHandle]] = set()
 
         for node in self.nodes:
             node_handle = NodeHandle(node.name, parent=outer_handle)
@@ -1018,7 +1018,7 @@ class SubselectedGraphDefinition(GraphDefinition):
         self._parent_graph_def = check.inst_param(
             parent_graph_def, "parent_graph_def", GraphDefinition
         )
-        super(SubselectedGraphDefinition, self).__init__(
+        super().__init__(
             name=parent_graph_def.name,  # should we create special name for subselected graphs
             node_defs=node_defs,
             dependencies=dependencies,
@@ -1049,10 +1049,10 @@ def _validate_in_mappings(
 ) -> Sequence[InputDefinition]:
     from dagster._core.definitions.composition import MappedInputPlaceholder
 
-    input_defs_by_name: Dict[str, InputDefinition] = OrderedDict()
-    mapping_keys: Set[str] = set()
+    input_defs_by_name: dict[str, InputDefinition] = OrderedDict()
+    mapping_keys: set[str] = set()
 
-    target_input_types_by_graph_input_name: Dict[str, Set[DagsterType]] = defaultdict(set)
+    target_input_types_by_graph_input_name: dict[str, set[DagsterType]] = defaultdict(set)
 
     for mapping in input_mappings:
         # handle incorrect objects passed in as mappings
@@ -1150,8 +1150,8 @@ def _validate_out_mappings(
     node_dict: Mapping[str, Node],
     name: str,
     class_name: str,
-) -> Tuple[Sequence[OutputMapping], Sequence[OutputDefinition]]:
-    output_defs: List[OutputDefinition] = []
+) -> tuple[Sequence[OutputMapping], Sequence[OutputDefinition]]:
+    output_defs: list[OutputDefinition] = []
     for mapping in output_mappings:
         if isinstance(mapping, OutputMapping):
             target_node = node_dict.get(mapping.maps_from.node_name)

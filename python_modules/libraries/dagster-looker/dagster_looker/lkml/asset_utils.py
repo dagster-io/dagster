@@ -64,8 +64,8 @@ class LookMLStructure(NamedTuple):
 
 
 def postprocess_loaded_structures(
-    structs: List[LookMLStructure],
-) -> List[LookMLStructure]:
+    structs: list[LookMLStructure],
+) -> list[LookMLStructure]:
     """Postprocesses LookML structs to resolve refinements and extends.
 
     https://cloud.google.com/looker/docs/lookml-refinements
@@ -120,7 +120,7 @@ def build_looker_dashboard_specs(
     project_dir: Path,
     dagster_looker_translator: DagsterLookerLkmlTranslator,
 ) -> Sequence[AssetSpec]:
-    looker_dashboard_specs: List[AssetSpec] = []
+    looker_dashboard_specs: list[AssetSpec] = []
 
     # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard
     for lookml_dashboard_path in project_dir.rglob("*.dashboard.lookml"):
@@ -148,7 +148,7 @@ def build_looker_explore_specs(
     project_dir: Path,
     dagster_looker_translator: DagsterLookerLkmlTranslator,
 ) -> Sequence[AssetSpec]:
-    looker_explore_specs: List[AssetSpec] = []
+    looker_explore_specs: list[AssetSpec] = []
 
     explores = []
     # https://cloud.google.com/looker/docs/reference/param-explore
@@ -180,7 +180,7 @@ def build_looker_view_specs(
     project_dir: Path,
     dagster_looker_translator: DagsterLookerLkmlTranslator,
 ) -> Sequence[AssetSpec]:
-    looker_view_specs: List[AssetSpec] = []
+    looker_view_specs: list[AssetSpec] = []
 
     # https://cloud.google.com/looker/docs/reference/param-view
     views = []

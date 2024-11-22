@@ -37,7 +37,7 @@ class AssetValueLoader:
         instance: Optional[DagsterInstance] = None,
     ):
         self._assets_defs_by_key = assets_defs_by_key
-        self._resource_instance_cache: Dict[str, object] = {}
+        self._resource_instance_cache: dict[str, object] = {}
         self._exit_stack: ExitStack = ExitStack().__enter__()
         if not instance and is_dagster_home_set():
             self._instance = self._exit_stack.enter_context(DagsterInstance.get())
@@ -75,12 +75,12 @@ class AssetValueLoader:
         self,
         asset_key: CoercibleToAssetKey,
         *,
-        python_type: Optional[Type[object]] = None,
+        python_type: Optional[type[object]] = None,
         partition_key: Optional[str] = None,
-        input_definition_metadata: Optional[Dict[str, Any]] = None,
+        input_definition_metadata: Optional[dict[str, Any]] = None,
         resource_config: Optional[Mapping[str, Any]] = None,
         # deprecated
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> object:
         """Loads the contents of an asset as a Python object.
 

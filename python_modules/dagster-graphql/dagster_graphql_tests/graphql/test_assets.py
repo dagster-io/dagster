@@ -859,8 +859,8 @@ def _create_partitioned_run(
     graphql_context: WorkspaceRequestContext,
     job_name: str,
     partition_key: str,
-    asset_selection: Optional[List[AssetKey]] = None,
-    tags: Optional[Dict[str, str]] = None,
+    asset_selection: Optional[list[AssetKey]] = None,
+    tags: Optional[dict[str, str]] = None,
 ) -> str:
     base_partition_tags: Sequence[GqlTag] = [
         {"key": "dagster/partition", "value": partition_key},

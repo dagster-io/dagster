@@ -80,10 +80,10 @@ class StepEventStatus(Enum):
 def build_run_step_stats_from_events(
     run_id: str, records: Iterable[EventLogEntry]
 ) -> Sequence["RunStepKeyStatsSnapshot"]:
-    by_step_key: Dict[str, Dict[str, Any]] = defaultdict(dict)
+    by_step_key: dict[str, dict[str, Any]] = defaultdict(dict)
     attempts = defaultdict(list)
     attempt_events = defaultdict(list)
-    markers: Dict[str, Dict[str, Any]] = defaultdict(dict)
+    markers: dict[str, dict[str, Any]] = defaultdict(dict)
     for event in records:
         if not event.is_dagster_event:
             continue
@@ -186,7 +186,7 @@ class RunStepMarker(
         start_time: Optional[float] = None,
         end_time: Optional[float] = None,
     ):
-        return super(RunStepMarker, cls).__new__(
+        return super().__new__(
             cls,
             start_time=check.opt_float_param(start_time, "start_time"),
             end_time=check.opt_float_param(end_time, "end_time"),
@@ -224,7 +224,7 @@ class RunStepKeyStatsSnapshot(
         attempts_list: Optional[Sequence[RunStepMarker]] = None,
         markers: Optional[Sequence[RunStepMarker]] = None,
     ):
-        return super(RunStepKeyStatsSnapshot, cls).__new__(
+        return super().__new__(
             cls,
             run_id=check.str_param(run_id, "run_id"),
             step_key=check.str_param(step_key, "step_key"),

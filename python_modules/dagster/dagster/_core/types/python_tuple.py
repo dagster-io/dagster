@@ -32,15 +32,15 @@ class TypedTupleDagsterTypeLoader(DagsterTypeLoader):
 
 class _TypedPythonTuple(DagsterType):
     def __init__(self, dagster_types):
-        all_have_input_configs = all((dagster_type.loader for dagster_type in dagster_types))
+        all_have_input_configs = all(dagster_type.loader for dagster_type in dagster_types)
         self.dagster_types = dagster_types
         typing_types = tuple(t.typing_type for t in dagster_types)
-        super(_TypedPythonTuple, self).__init__(
+        super().__init__(
             key="TypedPythonTuple" + ".".join(map(lambda t: t.key, dagster_types)),
             name=None,
             loader=(TypedTupleDagsterTypeLoader(dagster_types) if all_have_input_configs else None),
             type_check_fn=self.type_check_method,
-            typing_type=typing.Tuple[typing_types],
+            typing_type=tuple[typing_types],
         )
 
     def type_check_method(self, context, value):
@@ -89,7 +89,7 @@ def create_typed_tuple(*dagster_type_args):
     dagster_types = list(map(resolve_dagster_type, dagster_type_args))
 
     check.invariant(
-        not any((dagster_type.kind == DagsterTypeKind.NOTHING for dagster_type in dagster_types)),
+        not any(dagster_type.kind == DagsterTypeKind.NOTHING for dagster_type in dagster_types),
         "Cannot create a runtime tuple containing inner type Nothing. Use List for fan-in",
     )
 

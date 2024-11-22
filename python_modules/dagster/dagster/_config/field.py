@@ -299,12 +299,10 @@ class Field:
         if self.default_provided:
             if self.config_type.kind == ConfigTypeKind.ENUM and is_enum_value(default_value):
                 raise DagsterInvalidDefinitionError(
-                    (
-                        "You have passed into a python enum value as the default value "
-                        f"into of a config enum type {self.config_type.given_name}. You must pass in the underlying "
-                        "string represention as the default value. "
-                        f"One of {[ev.config_value for ev in self.config_type.enum_values]}."  # type: ignore
-                    )
+                    "You have passed into a python enum value as the default value "
+                    f"into of a config enum type {self.config_type.given_name}. You must pass in the underlying "
+                    "string represention as the default value. "
+                    f"One of {[ev.config_value for ev in self.config_type.enum_values]}."  # type: ignore
                 )
 
             evr = validate_config(self.config_type, default_value)

@@ -121,7 +121,7 @@ class K8sContainerContext(
             server_k8s_config or UserDefinedDagsterK8sConfig.from_dict({}),
         )
 
-        return super(K8sContainerContext, cls).__new__(
+        return super().__new__(
             cls,
             run_k8s_config=run_k8s_config,
             server_k8s_config=server_k8s_config,
@@ -236,7 +236,7 @@ class K8sContainerContext(
         return UserDefinedDagsterK8sConfig.from_dict(merged_dict)
 
     @staticmethod
-    def _deep_merge_k8s_config(onto_dict: Dict[str, Any], from_dict: Mapping[str, Any]):
+    def _deep_merge_k8s_config(onto_dict: dict[str, Any], from_dict: Mapping[str, Any]):
         for from_key, from_value in from_dict.items():
             if from_key not in onto_dict:
                 onto_dict[from_key] = from_value
@@ -369,8 +369,8 @@ class K8sContainerContext(
     def _filter_user_defined_k8s_config_env_vars(
         self,
         user_defined_k8s_config: UserDefinedDagsterK8sConfig,
-        only_allow_user_defined_env_vars: Set[str],
-        discarded_env_var_names: Set[str],
+        only_allow_user_defined_env_vars: set[str],
+        discarded_env_var_names: set[str],
     ) -> UserDefinedDagsterK8sConfig:
         """Filters out any env vars from the supplied UserDefinedDagsterK8sConfig
         that are not in the supplied set of env var names and adds the names of
@@ -399,7 +399,7 @@ class K8sContainerContext(
 
     def _filter_user_defined_env_vars(
         self,
-        only_allow_user_defined_env_vars: Set[str],
+        only_allow_user_defined_env_vars: set[str],
     ) -> "K8sContainerContext":
         discarded_env_var_names = set()
 
@@ -427,7 +427,7 @@ class K8sContainerContext(
 
     def _get_used_k8s_config_fields(
         self, user_defined_k8s_config: UserDefinedDagsterK8sConfig
-    ) -> Mapping[str, Mapping[str, Set[str]]]:
+    ) -> Mapping[str, Mapping[str, set[str]]]:
         used_fields = {}
         for key, fields in user_defined_k8s_config.to_dict().items():
             if key == "merge_behavior":
@@ -527,7 +527,7 @@ class K8sContainerContext(
                 run_k8s_container_context,
             )
 
-        processed_context_value = cast(Dict, processed_container_context.value)
+        processed_context_value = cast(dict, processed_container_context.value)
 
         return shared_container_context.merge(
             K8sContainerContext(

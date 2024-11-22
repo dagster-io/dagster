@@ -107,7 +107,7 @@ class FakeADLS2FilesystemClient:
     """Stateful mock of an ADLS2 filesystem client for testing."""
 
     def __init__(self, account_name, file_system_name):
-        self._file_system: Dict[str, FakeADLS2FileClient] = {}
+        self._file_system: dict[str, FakeADLS2FileClient] = {}
         self._account_name = account_name
         self._file_system_name = file_system_name
 

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from upath import UPath
 
 
-def _process_env_vars(config: Mapping[str, Any]) -> Dict[str, Any]:
+def _process_env_vars(config: Mapping[str, Any]) -> dict[str, Any]:
     out = {}
     for key, value in config.items():
         if isinstance(value, dict) and len(value) == 1 and next(iter(value.keys())) == "env":
@@ -120,10 +120,10 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         obj: Union[
             pl.DataFrame,
             Optional[pl.DataFrame],
-            Tuple[pl.DataFrame, Dict[str, Any]],
+            tuple[pl.DataFrame, dict[str, Any]],
             pl.LazyFrame,
             Optional[pl.LazyFrame],
-            Tuple[pl.LazyFrame, Dict[str, Any]],
+            tuple[pl.LazyFrame, dict[str, Any]],
         ],
         path: "UPath",
     ):
@@ -141,8 +141,8 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     ) -> Union[
         pl.DataFrame,
         pl.LazyFrame,
-        Tuple[pl.DataFrame, Dict[str, Any]],
-        Tuple[pl.LazyFrame, Dict[str, Any]],
+        tuple[pl.DataFrame, dict[str, Any]],
+        tuple[pl.LazyFrame, dict[str, Any]],
         None,
     ]:
         type_router = resolve_type_router(context, context.dagster_type.typing_type)
@@ -175,7 +175,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
     def get_metadata(
         self, context: OutputContext, obj: Union[pl.DataFrame, pl.LazyFrame, None]
-    ) -> Dict[str, MetadataValue]:
+    ) -> dict[str, MetadataValue]:
         if obj is None:
             return {"missing": MetadataValue.bool(True)}
         else:

@@ -42,7 +42,7 @@ RepositoryElementDefinition: TypeAlias = Union[
     "UnresolvedPartitionedAssetScheduleDefinition",
 ]
 
-RepositoryDictSpec: TypeAlias = Dict[str, Dict[str, RepositoryElementDefinition]]
+RepositoryDictSpec: TypeAlias = dict[str, dict[str, RepositoryElementDefinition]]
 
 RepositoryListSpec: TypeAlias = Sequence[
     Union[RepositoryElementDefinition, "CacheableAssetsDefinition"]

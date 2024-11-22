@@ -38,7 +38,7 @@ def execute_script_file(
     cwd: Optional[str] = None,
     env: Optional[Mapping[str, str]] = None,
     log_shell_command: bool = True,
-) -> Tuple[str, int]:
+) -> tuple[str, int]:
     """Execute a shell script file specified by the argument ``shell_script_path``. The script will be
     invoked via ``subprocess.Popen(['bash', shell_script_path], ...)``.
 
@@ -74,7 +74,7 @@ def execute_script_file(
     env = check.opt_nullable_dict_param(env, "env", key_type=str, value_type=str)
 
     if output_logging not in OUTPUT_LOGGING_OPTIONS:
-        raise Exception("Unrecognized output_logging %s" % output_logging)
+        raise Exception(f"Unrecognized output_logging {output_logging}")
 
     def pre_exec():
         # Restore default signal disposition and invoke setsid
@@ -139,7 +139,7 @@ def execute(
     cwd: Optional[str] = None,
     env: Optional[Mapping[str, str]] = None,
     log_shell_command: bool = True,
-) -> Tuple[str, int]:
+) -> tuple[str, int]:
     """This function is a utility for executing shell commands from within a Dagster op (or from Python in general).
     It can be used to execute shell commands on either op input data, or any data generated within a generic python op.
 
@@ -172,7 +172,7 @@ def execute(
 
     with safe_tempfile_path() as tmp_file_path:
         tmp_path = os.path.dirname(tmp_file_path)
-        log.info("Using temporary directory: %s" % tmp_path)
+        log.info(f"Using temporary directory: {tmp_path}")
 
         with open(tmp_file_path, "wb") as tmp_file:
             tmp_file.write(shell_command.encode("utf-8"))

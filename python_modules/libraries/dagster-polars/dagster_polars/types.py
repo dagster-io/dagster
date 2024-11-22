@@ -8,8 +8,8 @@ else:
 
 import polars as pl
 
-DataFramePartitions: TypeAlias = Dict[str, pl.DataFrame]
-LazyFramePartitions: TypeAlias = Dict[str, pl.LazyFrame]
+DataFramePartitions: TypeAlias = dict[str, pl.DataFrame]
+LazyFramePartitions: TypeAlias = dict[str, pl.LazyFrame]
 
 __all__ = [
     "DataFramePartitions",

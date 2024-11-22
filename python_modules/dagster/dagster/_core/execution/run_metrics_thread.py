@@ -40,7 +40,7 @@ def _process_is_containerized() -> bool:
     return False
 
 
-def _metric_tags(dagster_run: DagsterRun) -> Dict[str, str]:
+def _metric_tags(dagster_run: DagsterRun) -> dict[str, str]:
     location_name = os.getenv("DAGSTER_CLOUD_LOCATION_NAME", None)
 
     # organization and deployment name are added by the graphql mutation
@@ -57,7 +57,7 @@ def _get_container_metrics(
     previous_cpu_usage_ms: Optional[float] = None,
     previous_measurement_timestamp: Optional[float] = None,
     logger: Optional[logging.Logger] = None,
-) -> Dict[str, Union[float, None]]:
+) -> dict[str, Union[float, None]]:
     metrics = retrieve_containerized_utilization_metrics(logger=logger)
 
     # calculate cpu_limit
@@ -117,7 +117,7 @@ def _get_container_metrics(
     }
 
 
-def _get_python_runtime_metrics() -> Dict[str, float]:
+def _get_python_runtime_metrics() -> dict[str, float]:
     gc_stats = gc.get_stats()
 
     stats_dict = {}
@@ -133,10 +133,10 @@ def _get_python_runtime_metrics() -> Dict[str, float]:
 def _report_run_metrics(
     instance: DagsterInstance,
     dagster_run: DagsterRun,
-    metrics: Dict[str, float],
-    run_tags: Dict[str, str],
+    metrics: dict[str, float],
+    run_tags: dict[str, str],
 ):
-    datapoints: Dict[str, float] = {}
+    datapoints: dict[str, float] = {}
     for metric, value in metrics.items():
         if value is None:
             continue
@@ -226,7 +226,7 @@ def start_run_metrics_thread(
     python_metrics_enabled: Optional[bool] = False,
     logger: Optional[logging.Logger] = None,
     polling_interval: float = DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
-) -> Tuple[Optional[threading.Thread], Optional[threading.Event]]:
+) -> tuple[Optional[threading.Thread], Optional[threading.Event]]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.opt_inst_param(logger, "logger", logging.Logger)

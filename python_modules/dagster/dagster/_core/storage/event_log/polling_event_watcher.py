@@ -107,13 +107,13 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
     """
 
     def __init__(self, event_log_storage: EventLogStorage, run_id: str):
-        super(SqlPollingRunIdEventWatcherThread, self).__init__()
+        super().__init__()
         self._event_log_storage = check.inst_param(
             event_log_storage, "event_log_storage", EventLogStorage
         )
         self._run_id = check.str_param(run_id, "run_id")
         self._callback_fn_list_lock: threading.Lock = threading.Lock()
-        self._callback_fn_list: List[CallbackAfterCursor] = []
+        self._callback_fn_list: list[CallbackAfterCursor] = []
         self._should_thread_exit = threading.Event()
         self.name = f"sql-event-watch-run-id-{self._run_id}"
 

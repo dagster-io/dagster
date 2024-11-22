@@ -49,7 +49,7 @@ class InstanceConcurrencyContext:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
@@ -69,7 +69,7 @@ class InstanceConcurrencyContext:
         self._context_guard = False
 
     @property
-    def global_concurrency_keys(self) -> Set[str]:
+    def global_concurrency_keys(self) -> set[str]:
         # lazily load the global concurrency keys, to avoid the DB fetch for plans that do not
         # have global concurrency limited keys
         if self._global_concurrency_keys is None:
@@ -141,7 +141,7 @@ class InstanceConcurrencyContext:
         now = time.time()
         return min([0, *[ready_at - now for ready_at in self._pending_timeouts.values()]])
 
-    def pending_claim_steps(self) -> List[str]:
+    def pending_claim_steps(self) -> list[str]:
         return list(self._pending_claims)
 
     def has_pending_claims(self) -> bool:

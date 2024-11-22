@@ -40,7 +40,7 @@ def dagster_instance_config(
     base_dir: str,
     config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
     overrides: Optional[Mapping[str, object]] = None,
-) -> Tuple[Mapping[str, Any], Optional[Type["DagsterInstance"]]]:
+) -> tuple[Mapping[str, Any], Optional[type["DagsterInstance"]]]:
     check.str_param(base_dir, "base_dir")
     check.invariant(os.path.isdir(base_dir), "base_dir should be a directory")
     overrides = check.opt_mapping_param(overrides, "overrides")
@@ -71,7 +71,7 @@ def dagster_instance_config(
             )
 
         custom_instance_class = cast(
-            Type["DagsterInstance"],
+            type["DagsterInstance"],
             class_from_code_pointer(
                 custom_instance_class_data["module"], custom_instance_class_data["class"]
             ),

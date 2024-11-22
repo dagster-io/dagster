@@ -5,9 +5,9 @@ from dagster_aws.pipes.clients.glue import PipesGlueClient
 from dagster_aws.pipes.clients.lambda_ import PipesLambdaClient
 
 __all__ = [
+    "PipesECSClient",
+    "PipesEMRClient",
+    "PipesEMRServerlessClient",
     "PipesGlueClient",
     "PipesLambdaClient",
-    "PipesECSClient",
-    "PipesEMRServerlessClient",
-    "PipesEMRClient",
 ]

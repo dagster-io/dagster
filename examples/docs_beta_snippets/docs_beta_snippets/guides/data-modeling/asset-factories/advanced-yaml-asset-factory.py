@@ -50,7 +50,7 @@ class JobConfig(pydantic.BaseModel):
 
 class EtlJobsConfig(pydantic.BaseModel):
     aws: AwsConfig
-    etl_jobs: List[JobConfig]
+    etl_jobs: list[JobConfig]
 
     def to_definitions(self) -> dg.Definitions:
         s3_resource = self.aws.to_resource()

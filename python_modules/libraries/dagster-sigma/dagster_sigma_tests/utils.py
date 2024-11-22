@@ -4,11 +4,11 @@ from aioresponses import aioresponses
 
 
 class RequestToMock:
-    def __init__(self, value: Dict[str, Any]) -> None:
+    def __init__(self, value: dict[str, Any]) -> None:
         self.value = value
 
     @property
-    def headers(self) -> Dict[str, Any]:
+    def headers(self) -> dict[str, Any]:
         return self.value["headers"]
 
     @property
@@ -19,5 +19,5 @@ class RequestToMock:
         return self.value["data"]().decode()
 
 
-def get_requests(responses: aioresponses) -> List[RequestToMock]:
+def get_requests(responses: aioresponses) -> list[RequestToMock]:
     return [RequestToMock(value[0].kwargs) for value in responses.requests.values()]

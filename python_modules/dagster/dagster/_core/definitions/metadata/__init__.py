@@ -70,10 +70,10 @@ RawMetadataValue = Union[
     TableSchema,
     AssetKey,
     os.PathLike,
-    Dict[Any, Any],
+    dict[Any, Any],
     float,
     int,
-    List[Any],
+    list[Any],
     str,
     datetime,
     None,
@@ -97,7 +97,7 @@ def normalize_metadata(
     # to convert arbitrary metadata (on e.g. OutputDefinition) to a MetadataValue, which is required
     # for serialization. This will cause unsupported values to be silently replaced with a
     # string placeholder.
-    normalized_metadata: Dict[str, MetadataValue] = {}
+    normalized_metadata: dict[str, MetadataValue] = {}
     for k, v in metadata.items():
         try:
             normalized_value = normalize_metadata_value(v)
@@ -191,7 +191,7 @@ class MetadataFieldSerializer(FieldSerializer):
 
     def unpack(
         self,
-        metadata_entries: List["MetadataEntry"],
+        metadata_entries: list["MetadataEntry"],
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> Mapping[str, MetadataValue]:
@@ -259,7 +259,7 @@ class MetadataEntry(
         )
         value = normalize_metadata_value(value)
 
-        return super(MetadataEntry, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(label, "label"),
             check.opt_str_param(description, "description"),

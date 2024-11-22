@@ -55,11 +55,6 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._utils.internal_init import IHasInternalInit as IHasInternalInit
 
-if sys.version_info > (3,):
-    from pathlib import Path
-else:
-    from pathlib2 import Path
-
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition.repository_definition import (
@@ -201,7 +196,7 @@ def camelcase(string: str) -> str:
     )
 
 
-def ensure_single_item(ddict: Mapping[T, U]) -> Tuple[T, U]:
+def ensure_single_item(ddict: Mapping[T, U]) -> tuple[T, U]:
     check.mapping_param(ddict, "ddict")
     check.param_invariant(len(ddict) == 1, "ddict", "Expected dict with single item")
     return next(iter(ddict.items()))
@@ -245,7 +240,7 @@ def mkdir_p(path: str) -> str:
 
 def hash_collection(
     collection: Union[
-        Mapping[Hashable, Any], Sequence[Any], AbstractSet[Any], Tuple[Any, ...], NamedTuple
+        Mapping[Hashable, Any], Sequence[Any], AbstractSet[Any], tuple[Any, ...], NamedTuple
     ],
 ) -> int:
     """Hash a mutable collection or immutable collection containing mutable elements.
@@ -273,11 +268,11 @@ def hash_collection(
 
 
 @overload
-def make_hashable(value: Union[List[Any], Set[Any]]) -> Tuple[Any, ...]: ...
+def make_hashable(value: Union[list[Any], set[Any]]) -> tuple[Any, ...]: ...
 
 
 @overload
-def make_hashable(value: Dict[Any, Any]) -> Tuple[Tuple[Any, Any]]: ...
+def make_hashable(value: dict[Any, Any]) -> tuple[tuple[Any, Any]]: ...
 
 
 @overload
@@ -506,11 +501,11 @@ class EventGenerationManager(Generic[T_GeneratedContext]):
     def __init__(
         self,
         generator: Iterator[Union["DagsterEvent", T_GeneratedContext]],
-        object_cls: Type[T_GeneratedContext],
+        object_cls: type[T_GeneratedContext],
         require_object: Optional[bool] = True,
     ):
         self.generator = check.generator(generator)
-        self.object_cls: Type[T_GeneratedContext] = check.class_param(object_cls, "object_cls")
+        self.object_cls: type[T_GeneratedContext] = check.class_param(object_cls, "object_cls")
         self.require_object = check.bool_param(require_object, "require_object")
         self.object: Optional[T_GeneratedContext] = None
         self.did_setup = False
@@ -578,7 +573,7 @@ def is_port_in_use(host, port) -> bool:
     try:
         sock.bind((host, port))
         return False
-    except socket.error as e:
+    except OSError as e:
         return e.errno == errno.EADDRINUSE
     finally:
         sock.close()
@@ -653,7 +648,7 @@ def compose(*args: Callable[[object], object]) -> Callable[[object], object]:
     return functools.reduce(lambda f, g: lambda x: f(g(x)), args, lambda x: x)
 
 
-def dict_without_keys(ddict: Mapping[K, V], *keys: K) -> Dict[K, V]:
+def dict_without_keys(ddict: Mapping[K, V], *keys: K) -> dict[K, V]:
     return {key: value for key, value in ddict.items() if key not in set(keys)}
 
 
@@ -661,7 +656,7 @@ class Counter:
     def __init__(self):
         self._lock = threading.Lock()
         self._counts = {}
-        super(Counter, self).__init__()
+        super().__init__()
 
     def increment(self, key: str) -> None:
         with self._lock:
@@ -731,7 +726,7 @@ def is_named_tuple_instance(obj: object) -> TypeGuard[NamedTuple]:
     return isinstance(obj, tuple) and hasattr(obj, "_fields")
 
 
-def is_named_tuple_subclass(klass: Type[object]) -> TypeGuard[Type[NamedTuple]]:
+def is_named_tuple_subclass(klass: type[object]) -> TypeGuard[type[NamedTuple]]:
     return isinstance(klass, type) and issubclass(klass, tuple) and hasattr(klass, "_fields")
 
 
@@ -784,7 +779,7 @@ def xor(a: object, b: object) -> bool:
 
 
 def tail_file(path_or_fd: Union[str, int], should_stop: Callable[[], bool]) -> Iterator[str]:
-    with open(path_or_fd, "r") as output_stream:
+    with open(path_or_fd) as output_stream:
         while True:
             line = output_stream.readline()
             if line:

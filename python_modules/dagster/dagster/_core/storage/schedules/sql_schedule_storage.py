@@ -73,7 +73,7 @@ class SqlScheduleStorage(ScheduleStorage):
         return res
 
     def _deserialize_rows(
-        self, rows: Sequence[SqlAlchemyRow], as_type: Type[T_NamedTuple]
+        self, rows: Sequence[SqlAlchemyRow], as_type: type[T_NamedTuple]
     ) -> Sequence[T_NamedTuple]:
         return list(map(lambda r: deserialize_value(r[0], as_type), rows))
 
@@ -82,7 +82,7 @@ class SqlScheduleStorage(ScheduleStorage):
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
-        instigator_statuses: Optional[Set[InstigatorStatus]] = None,
+        instigator_statuses: Optional[set[InstigatorStatus]] = None,
     ) -> Sequence[InstigatorState]:
         check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
 

@@ -275,7 +275,7 @@ def test_observe_result_output_typing():
     ).success
 
     @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
-    def multi_asset_with_outs_and_type_annotation() -> Tuple[ObserveResult, ObserveResult]:
+    def multi_asset_with_outs_and_type_annotation() -> tuple[ObserveResult, ObserveResult]:
         return ObserveResult(asset_key="one"), ObserveResult(asset_key="two")
 
     assert observe(
@@ -283,7 +283,7 @@ def test_observe_result_output_typing():
     ).success
 
     @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
-    def multi_asset_with_specs_and_type_annotation() -> Tuple[ObserveResult, ObserveResult]:
+    def multi_asset_with_specs_and_type_annotation() -> tuple[ObserveResult, ObserveResult]:
         return ObserveResult(asset_key="one"), ObserveResult(asset_key="two")
 
     assert observe(
@@ -335,7 +335,7 @@ def test_observe_result_output_typing():
             AssetCheckSpec(name="check_two", asset="asset_two"),
         ],
     )
-    def multi_checks(context: AssetExecutionContext) -> Tuple[ObserveResult, ObserveResult]:
+    def multi_checks(context: AssetExecutionContext) -> tuple[ObserveResult, ObserveResult]:
         return ObserveResult(
             asset_key="asset_one",
             check_results=[

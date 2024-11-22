@@ -266,7 +266,7 @@ def freshness_multi_asset_check(params_metadata: JsonMetadataValue, asset_keys: 
 
 def build_multi_asset_check(
     check_specs: Sequence[AssetCheckSpec],
-    check_fn: Callable[[DagsterInstance, AssetCheckKey], Tuple[bool, str]],
+    check_fn: Callable[[DagsterInstance, AssetCheckKey], tuple[bool, str]],
     severity: AssetCheckSeverity,
 ) -> Sequence[AssetChecksDefinition]:
     @multi_asset_check(

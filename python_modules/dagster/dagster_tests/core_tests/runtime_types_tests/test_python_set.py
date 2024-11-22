@@ -45,7 +45,7 @@ def test_vanilla_set_input_fail():
 
 
 def test_open_typing_set_output():
-    @op(out=Out(typing.Set))
+    @op(out=Out(set))
     def emit_set():
         return {1, 2}
 
@@ -53,7 +53,7 @@ def test_open_typing_set_output():
 
 
 def test_open_typing_set_output_fail():
-    @op(out=Out(typing.Set))
+    @op(out=Out(set))
     def emit_set():
         return "foo"
 
@@ -62,7 +62,7 @@ def test_open_typing_set_output_fail():
 
 
 def test_open_typing_set_input():
-    @op(ins={"tt": In(dagster_type=typing.Set)})
+    @op(ins={"tt": In(dagster_type=set)})
     def take_set(tt):
         return tt
 
@@ -73,7 +73,7 @@ def test_open_typing_set_input():
 
 
 def test_open_typing_set_input_fail():
-    @op(ins={"tt": In(dagster_type=typing.Set)})
+    @op(ins={"tt": In(dagster_type=set)})
     def take_set(tt):
         return tt
 
@@ -112,7 +112,7 @@ def test_runtime_optional_set():
 
 
 def test_closed_typing_set_input():
-    @op(ins={"tt": In(dagster_type=typing.Set[int])})
+    @op(ins={"tt": In(dagster_type=set[int])})
     def take_set(tt):
         return tt
 
@@ -123,7 +123,7 @@ def test_closed_typing_set_input():
 
 
 def test_closed_typing_set_input_fail():
-    @op(ins={"tt": In(dagster_type=typing.Set[int])})
+    @op(ins={"tt": In(dagster_type=set[int])})
     def take_set(tt):
         return tt
 
@@ -135,7 +135,7 @@ def test_closed_typing_set_input_fail():
 
 
 def test_typed_set_type_loader():
-    @op(ins={"tt": In(dagster_type=typing.Set[int])})
+    @op(ins={"tt": In(dagster_type=set[int])})
     def take_set(tt):
         return tt
 

@@ -27,7 +27,7 @@ airflow_instance = AirflowInstance(
 )
 
 
-def build_asset(specs: List[AssetSpec]) -> AssetsDefinition:
+def build_asset(specs: list[AssetSpec]) -> AssetsDefinition:
     @multi_asset(specs=specs)
     def asset_fn(_):
         pass
@@ -35,7 +35,7 @@ def build_asset(specs: List[AssetSpec]) -> AssetsDefinition:
     return asset_fn
 
 
-def build_asset_for_task(task_name: str, prev_asset_specs: List[AssetSpec]) -> AssetsDefinition:
+def build_asset_for_task(task_name: str, prev_asset_specs: list[AssetSpec]) -> AssetsDefinition:
     specs = [
         # Create a bunch of dependencies for each asset.
         AssetSpec(f"{task_name}_asset_{i}", deps=[spec.key for spec in prev_asset_specs])
@@ -46,7 +46,7 @@ def build_asset_for_task(task_name: str, prev_asset_specs: List[AssetSpec]) -> A
 
 def get_dag_defs() -> Definitions:
     all_dag_defs = []
-    prev_asset_specs: List[AssetSpec] = []
+    prev_asset_specs: list[AssetSpec] = []
     for i in range(get_num_dags()):
         task_defs_list = []
         for j in range(get_num_tasks()):

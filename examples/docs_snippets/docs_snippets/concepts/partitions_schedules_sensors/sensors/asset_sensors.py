@@ -22,7 +22,7 @@ from dagster import Config
 
 
 class ReadMaterializationConfig(Config):
-    asset_key: List[str]
+    asset_key: list[str]
 
 
 # start_asset_sensor_marker

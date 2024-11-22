@@ -30,10 +30,13 @@ spawn_ctx = multiprocessing.get_context("spawn")
 def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with freeze_time(execution_datetime), create_test_daemon_workspace_context(
-                workspace_load_target=create_workspace_load_target(),
-                instance=instance,
-            ) as workspace_context:
+            with (
+                freeze_time(execution_datetime),
+                create_test_daemon_workspace_context(
+                    workspace_load_target=create_workspace_load_target(),
+                    instance=instance,
+                ) as workspace_context,
+            ):
                 logger = get_default_daemon_logger("SensorDaemon")
                 futures = {}
                 with SingleThreadPoolExecutor() as executor:
@@ -288,9 +291,10 @@ def test_failure_after_run_ids_reserved(
         minute=0,
         second=0,
     ).astimezone(get_timezone("US/Central"))
-    with freeze_time(frozen_datetime), patch.object(
-        DagsterInstance, "get_ticks", wraps=instance.get_ticks
-    ) as mock_get_ticks:
+    with (
+        freeze_time(frozen_datetime),
+        patch.object(DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
+    ):
         sensor = remote_repo.get_sensor("only_once_cursor_sensor")
         instance.add_instigator_state(
             InstigatorState(

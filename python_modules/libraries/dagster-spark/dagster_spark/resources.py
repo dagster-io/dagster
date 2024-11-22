@@ -26,7 +26,7 @@ class SparkResource:
             spark_conf,
             application_arguments,
             spark_home,
-        ) = [
+        ) = (
             config.get(k)
             for k in (
                 "master_url",
@@ -36,7 +36,7 @@ class SparkResource:
                 "application_arguments",
                 "spark_home",
             )
-        ]
+        )
 
         if not os.path.exists(application_jar):
             raise SparkOpError(

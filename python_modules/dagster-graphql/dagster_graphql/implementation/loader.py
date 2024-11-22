@@ -39,8 +39,8 @@ class RepositoryScopedBatchLoader:
     def __init__(self, instance: DagsterInstance, remote_repository: RemoteRepository):
         self._instance = instance
         self._repository = remote_repository
-        self._data: Dict[RepositoryDataType, Dict[str, List[Any]]] = {}
-        self._limits: Dict[RepositoryDataType, int] = {}
+        self._data: dict[RepositoryDataType, dict[str, list[Any]]] = {}
+        self._limits: dict[RepositoryDataType, int] = {}
 
     def _get(self, data_type: RepositoryDataType, key: str, limit: int) -> Sequence[Any]:
         check.inst_param(data_type, "data_type", RepositoryDataType)
@@ -54,7 +54,7 @@ class RepositoryScopedBatchLoader:
         check.inst_param(data_type, "data_type", RepositoryDataType)
         check.int_param(limit, "limit")
 
-        fetched: Dict[str, List[Any]] = defaultdict(list)
+        fetched: dict[str, list[Any]] = defaultdict(list)
 
         if data_type == RepositoryDataType.SCHEDULE_STATES:
             schedule_states = self._instance.all_instigator_state(

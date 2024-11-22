@@ -84,15 +84,15 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         inst_data: Optional[ConfigurableClassData] = None,
         task_definition=None,
         container_name: str = "run",
-        secrets: Optional[List[str]] = None,
+        secrets: Optional[list[str]] = None,
         secrets_tag: str = "dagster",
         env_vars: Optional[Sequence[str]] = None,
         include_sidecars: bool = False,
         use_current_ecs_task_config: bool = True,
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
-        run_resources: Optional[Dict[str, Any]] = None,
-        run_ecs_tags: Optional[List[Dict[str, Optional[str]]]] = None,
-        propagate_tags: Optional[Dict[str, Any]] = None,
+        run_resources: Optional[dict[str, Any]] = None,
+        run_ecs_tags: Optional[list[dict[str, Optional[str]]]] = None,
+        propagate_tags: Optional[dict[str, Any]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -187,7 +187,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             propagate_tags,
             "propagate_tags",
             key_type=str,
-            value_type=List,
+            value_type=list,
         )
         if self.propagate_tags:
             check.invariant(
@@ -401,7 +401,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             *tags_to_propagate,
         ]
 
-    def _get_tags_to_propagate_to_ecs_task(self, run: DagsterRun) -> List[Dict[str, str]]:
+    def _get_tags_to_propagate_to_ecs_task(self, run: DagsterRun) -> list[dict[str, str]]:
         # These tags often contain * or + characters which are not allowed in ECS tags.
         # They don't seem super useful from an observability perspective, so are excluded from the ECS tags
 
@@ -498,7 +498,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         task_overrides = self._get_task_overrides(container_context, run)
 
-        container_overrides: List[Dict[str, Any]] = [
+        container_overrides: list[dict[str, Any]] = [
             {
                 "name": self._get_container_name(container_context),
                 "command": command,
@@ -650,7 +650,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
     def _run_task_kwargs(
         self, run: DagsterRun, image: str, container_context: EcsContainerContext
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Return a dictionary of args to launch the ECS task, registering a new task
         definition if needed.
         """
@@ -836,7 +836,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         return False
 
-    def _is_transient_startup_failure(self, run: DagsterRun, task: Dict[str, Any]):
+    def _is_transient_startup_failure(self, run: DagsterRun, task: dict[str, Any]):
         if task.get("stoppedReason") is None:
             return False
         return run.status == DagsterRunStatus.STARTING and self._is_transient_stop_reason(

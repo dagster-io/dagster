@@ -41,7 +41,7 @@ class DaemonHeartbeat(
     ):
         errors = check.opt_sequence_param(errors, "errors", of_type=SerializableErrorInfo)
 
-        return super(DaemonHeartbeat, cls).__new__(
+        return super().__new__(
             cls,
             timestamp=check.float_param(timestamp, "timestamp"),
             daemon_type=check.str_param(daemon_type, "daemon_type"),
@@ -72,7 +72,7 @@ class DaemonStatus(
         healthy: Optional[bool],
         last_heartbeat: Optional[DaemonHeartbeat],
     ):
-        return super(DaemonStatus, cls).__new__(
+        return super().__new__(
             cls,
             daemon_type=check.str_param(daemon_type, "daemon_type"),
             required=check.bool_param(required, "required"),

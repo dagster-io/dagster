@@ -29,7 +29,7 @@ def _random_times(n: int):
     return pd.to_datetime((clipped_flipped_dist * (end_u - start_u)) + start_u, unit="s")
 
 
-def random_data(extra_columns: Dict[str, Any], n: int) -> pd.DataFrame:
+def random_data(extra_columns: dict[str, Any], n: int) -> pd.DataFrame:
     # always have user_id and day
     data = {"user_id": np.random.randint(0, 1000, size=n), "dt": _random_times(n)}
     for name, dtype in extra_columns.items():

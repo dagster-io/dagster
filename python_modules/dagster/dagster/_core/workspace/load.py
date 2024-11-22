@@ -33,7 +33,7 @@ def location_origins_from_yaml_paths(
     check.sequence_param(yaml_paths, "yaml_paths", str)
 
     workspace_configs = [load_yaml_from_path(yaml_path) for yaml_path in yaml_paths]
-    origins_by_name: Dict[str, CodeLocationOrigin] = OrderedDict()
+    origins_by_name: dict[str, CodeLocationOrigin] = OrderedDict()
     for workspace_config, yaml_path in zip(workspace_configs, yaml_paths):
         check.invariant(
             workspace_config is not None,
@@ -44,7 +44,7 @@ def location_origins_from_yaml_paths(
         )
 
         origins_by_name.update(
-            location_origins_from_config(cast(Dict, workspace_config), yaml_path)
+            location_origins_from_config(cast(dict, workspace_config), yaml_path)
         )
 
     return list(origins_by_name.values())
@@ -55,7 +55,7 @@ def location_origins_from_config(
 ) -> Mapping[str, CodeLocationOrigin]:
     workspace_config = ensure_workspace_config(workspace_config, yaml_path)
     location_configs = check.list_elem(workspace_config, "load_from", of_type=dict)
-    location_origins: Dict[str, CodeLocationOrigin] = OrderedDict()
+    location_origins: dict[str, CodeLocationOrigin] = OrderedDict()
     for location_config in location_configs:
         origin = _location_origin_from_location_config(location_config, yaml_path)
         check.invariant(
@@ -85,7 +85,7 @@ def _location_origin_from_module_config(
 
 def _get_module_config_data(
     python_module_config: Union[str, Mapping[str, str]],
-) -> Tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
+) -> tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
     return (
         (python_module_config, None, None, None, None)
         if isinstance(python_module_config, str)
@@ -146,7 +146,7 @@ def _location_origin_from_package_config(
 
 def _get_package_config_data(
     python_package_config: Union[str, Mapping[str, str]],
-) -> Tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
+) -> tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
     return (
         (python_package_config, None, None, None, None)
         if isinstance(python_package_config, str)
@@ -211,7 +211,7 @@ def _location_origin_from_python_file_config(
 
 def _get_python_file_config_data(
     python_file_config: Union[str, Mapping], yaml_path: str
-) -> Tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
+) -> tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
     return (
         (rebase_file(python_file_config, yaml_path), None, None, None, None)
         if isinstance(python_file_config, str)
@@ -330,7 +330,7 @@ def _location_origin_from_target_config(
         return _location_origin_from_module_config(python_module_config)
 
     elif "python_package" in target_config:
-        python_package_config = cast(Union[str, Dict], target_config["python_package"])
+        python_package_config = cast(Union[str, dict], target_config["python_package"])
         return _location_origin_from_package_config(python_package_config)
 
     else:

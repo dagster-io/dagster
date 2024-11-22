@@ -75,7 +75,7 @@ def is_peered_dag_asset_spec(spec: AssetSpec) -> bool:
     return PEERED_DAG_MAPPING_METADATA_KEY in spec.metadata
 
 
-def task_handles_for_spec(spec: AssetSpec) -> Set["TaskHandle"]:
+def task_handles_for_spec(spec: AssetSpec) -> set["TaskHandle"]:
     from dagster_airlift.core.serialization.serialized_data import TaskHandle
 
     check.param_invariant(is_task_mapped_asset_spec(spec), "spec", "Must be mapped spec")
@@ -87,7 +87,7 @@ def task_handles_for_spec(spec: AssetSpec) -> Set["TaskHandle"]:
     return set(task_handles)
 
 
-def dag_handles_for_spec(spec: AssetSpec) -> Set["DagHandle"]:
+def dag_handles_for_spec(spec: AssetSpec) -> set["DagHandle"]:
     from dagster_airlift.core.serialization.serialized_data import DagHandle
 
     check.param_invariant(is_dag_mapped_asset_spec(spec), "spec", "Must be mapped spec")
@@ -97,7 +97,7 @@ def dag_handles_for_spec(spec: AssetSpec) -> Set["DagHandle"]:
     }
 
 
-def peered_dag_handles_for_spec(spec: AssetSpec) -> Set["DagHandle"]:
+def peered_dag_handles_for_spec(spec: AssetSpec) -> set["DagHandle"]:
     from dagster_airlift.core.serialization.serialized_data import DagHandle
 
     check.param_invariant(is_peered_dag_asset_spec(spec), "spec", "Must be mapped spec")

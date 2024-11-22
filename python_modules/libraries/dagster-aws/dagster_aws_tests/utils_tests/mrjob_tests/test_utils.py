@@ -52,8 +52,8 @@ def test_is_retriable_client_error():
     assert _is_retriable_client_error(ssl.SSLError("The read operation timed out"))
     assert not _is_retriable_client_error(ssl.SSLError("Unknown error"))
 
-    assert _is_retriable_client_error(socket.error(110, "Connection timed out"))
-    assert not _is_retriable_client_error(socket.error(12345, "Unknown error"))
+    assert _is_retriable_client_error(OSError(110, "Connection timed out"))
+    assert not _is_retriable_client_error(OSError(12345, "Unknown error"))
 
 
 def test_wrap_aws_client(mock_s3_resource):

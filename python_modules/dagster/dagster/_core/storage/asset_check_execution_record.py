@@ -87,7 +87,7 @@ class AssetCheckExecutionRecord(
                 f" {event_type} instead of ASSET_CHECK_EVALUATION",
             )
 
-        return super(AssetCheckExecutionRecord, cls).__new__(
+        return super().__new__(
             cls,
             key=key,
             id=id,

@@ -20,7 +20,7 @@ N_ORDERS = 10000
 
 
 def _safe_request(
-    client: AirbyteResource, endpoint: str, data: Dict[str, object]
+    client: AirbyteResource, endpoint: str, data: dict[str, object]
 ) -> Mapping[str, Any]:
     response = client.make_request(endpoint, data)
     assert response, "Request returned null response"

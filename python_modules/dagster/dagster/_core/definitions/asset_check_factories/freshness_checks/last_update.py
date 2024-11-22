@@ -197,7 +197,7 @@ def _build_freshness_multi_check(
                 and update_timestamp >= last_update_time_lower_bound.timestamp()
             )
 
-            metadata: Dict[str, MetadataValue] = {
+            metadata: dict[str, MetadataValue] = {
                 FRESHNESS_PARAMS_METADATA_KEY: JsonMetadataValue(params_metadata),
                 LOWER_BOUND_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(
                     last_update_time_lower_bound.timestamp()

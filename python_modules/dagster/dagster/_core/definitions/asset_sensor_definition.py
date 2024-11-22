@@ -87,7 +87,7 @@ class AssetSensorDefinition(SensorDefinition):
         job: Optional[ExecutableDefinition] = None,
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[set[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, object]] = None,
     ):
@@ -95,7 +95,7 @@ class AssetSensorDefinition(SensorDefinition):
 
         from dagster._core.event_api import AssetRecordsFilter
 
-        resource_arg_names: Set[str] = {
+        resource_arg_names: set[str] = {
             arg.name for arg in get_resource_args(asset_materialization_fn)
         }
 
@@ -149,15 +149,14 @@ class AssetSensorDefinition(SensorDefinition):
 
                 result = materialization_fn(**args)
                 if inspect.isgenerator(result) or isinstance(result, list):
-                    for item in result:
-                        yield item
+                    yield from result
                 elif isinstance(result, (SkipReason, RunRequest)):
                     yield result
                 context.update_cursor(str(event_record.storage_id))
 
             return _fn
 
-        super(AssetSensorDefinition, self).__init__(
+        super().__init__(
             name=check_valid_name(name),
             job_name=job_name,
             evaluation_fn=_wrap_asset_fn(

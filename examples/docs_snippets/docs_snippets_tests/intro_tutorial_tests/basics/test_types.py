@@ -30,7 +30,6 @@ def test_type_check():
 def test_sort():
     with open(
         script_relative_path("../../../docs_snippets/intro_tutorial/cereal.csv"),
-        "r",
         encoding="utf8",
     ) as fd:
         cereals = [row for row in csv.DictReader(fd)]

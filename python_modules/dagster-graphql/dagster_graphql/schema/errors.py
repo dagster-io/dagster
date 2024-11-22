@@ -109,7 +109,7 @@ class GraphenePythonError(graphene.ObjectType):
         return self._className
 
     def resolve_causes(self, _graphene_info: ResolveInfo):
-        causes: List[GraphenePythonError] = []
+        causes: list[GraphenePythonError] = []
         current_error = self._cause
         while current_error and len(causes) < 10:  # Sanity check the depth of the causes
             causes.append(GraphenePythonError(current_error))
@@ -458,7 +458,7 @@ class GraphenePartitionKeysNotFoundError(graphene.ObjectType):
 
     partition_keys = non_null_list(graphene.String)
 
-    def __init__(self, partition_keys: Set[str]):
+    def __init__(self, partition_keys: set[str]):
         super().__init__()
         self.partition_keys = check.list_param(
             sorted(partition_keys), "partition_keys", of_type=str

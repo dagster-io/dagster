@@ -61,7 +61,7 @@ DagsterLibraryRegistry.register("dagster-dbt", __version__)
 DagsterLibraryRegistry.register("dbt-core", __dbt_version__, is_dagster_package=False)
 
 
-_DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
+_DEPRECATED: Final[Mapping[str, tuple[str, str, str]]] = {
     ##### EXAMPLE
     # "Foo": (
     #     "dagster.some.module",
@@ -70,7 +70,7 @@ _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
     # ),
 }
 
-_DEPRECATED_WARNING: Final[Mapping[str, Tuple[str, str, str]]] = {
+_DEPRECATED_WARNING: Final[Mapping[str, tuple[str, str, str]]] = {
     ##### EXAMPLE
     # "Foo": (
     #     "dagster.some.module",

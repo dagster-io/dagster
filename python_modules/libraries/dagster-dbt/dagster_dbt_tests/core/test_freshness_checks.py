@@ -17,7 +17,7 @@ from dagster_dbt.freshness_builder import build_freshness_checks_from_dbt_assets
 
 
 def test_dbt_last_update_freshness_checks(
-    test_last_update_freshness_manifest: Dict[str, Any],
+    test_last_update_freshness_manifest: dict[str, Any],
 ) -> None:
     @dbt_assets(manifest=test_last_update_freshness_manifest)
     def my_dbt_assets(): ...
@@ -43,7 +43,7 @@ def test_dbt_last_update_freshness_checks(
 
 
 def test_dbt_time_partition_freshness_checks(
-    test_time_partition_freshness_manifest: Dict[str, Any],
+    test_time_partition_freshness_manifest: dict[str, Any],
 ) -> None:
     @dbt_assets(
         manifest=test_time_partition_freshness_manifest,
@@ -67,7 +67,7 @@ def test_dbt_time_partition_freshness_checks(
     )
 
 
-def test_dbt_duplicate_assets_defs(test_last_update_freshness_manifest: Dict[str, Any]) -> None:
+def test_dbt_duplicate_assets_defs(test_last_update_freshness_manifest: dict[str, Any]) -> None:
     @dbt_assets(manifest=test_last_update_freshness_manifest)
     def my_dbt_assets(): ...
 
@@ -76,7 +76,7 @@ def test_dbt_duplicate_assets_defs(test_last_update_freshness_manifest: Dict[str
 
 
 def test_last_update_multiple_assets_defs(
-    test_last_update_freshness_manifest_multiple_assets_defs: Dict[str, Any],
+    test_last_update_freshness_manifest_multiple_assets_defs: dict[str, Any],
 ) -> None:
     @dbt_assets(
         manifest=test_last_update_freshness_manifest_multiple_assets_defs, select="customers"
@@ -127,7 +127,7 @@ def test_last_update_multiple_assets_defs(
 
 
 def test_time_partition_multiple_assets_defs(
-    test_time_partition_freshness_manifest_multiple_assets_defs: Dict[str, Any],
+    test_time_partition_freshness_manifest_multiple_assets_defs: dict[str, Any],
 ) -> None:
     @dbt_assets(
         manifest=test_time_partition_freshness_manifest_multiple_assets_defs,
@@ -181,7 +181,7 @@ def test_time_partition_multiple_assets_defs(
     )
 
 
-def test_mixed_freshness(test_dagster_dbt_mixed_freshness_manifest: Dict[str, Any]) -> None:
+def test_mixed_freshness(test_dagster_dbt_mixed_freshness_manifest: dict[str, Any]) -> None:
     """Test passing one time-partitioned asset and one last-update asset to the builder."""
 
     @dbt_assets(manifest=test_dagster_dbt_mixed_freshness_manifest, select="customers")

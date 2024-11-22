@@ -344,7 +344,7 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
     """A structured object to identify nodes in the potentially recursive graph structure."""
 
     def __new__(cls, name: str, parent: Optional["NodeHandle"]):
-        return super(NodeHandle, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(name, "name"),
             check.opt_inst_param(parent, "parent", NodeHandle),
@@ -373,7 +373,7 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         Returns:
             List[str]:
         """
-        path: List[str] = []
+        path: list[str] = []
         cur = self
         while cur:
             path.append(cur.name)
@@ -459,7 +459,7 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
     def from_path(path: Sequence[str]) -> "NodeHandle":
         check.sequence_param(path, "path", of_type=str)
 
-        cur: Optional["NodeHandle"] = None
+        cur: Optional[NodeHandle] = None
         _path = list(path)
         while len(_path) > 0:
             cur = NodeHandle(name=_path.pop(0), parent=cur)
@@ -535,7 +535,7 @@ class NodeOutputHandle(Generic[T_OptionalNodeHandle]):
 
 class NodeInput(NamedTuple("_NodeInput", [("node", Node), ("input_def", InputDefinition)])):
     def __new__(cls, node: Node, input_def: InputDefinition):
-        return super(NodeInput, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(node, "node", Node),
             check.inst_param(input_def, "input_def", InputDefinition),
@@ -575,7 +575,7 @@ class NodeInput(NamedTuple("_NodeInput", [("node", Node), ("input_def", InputDef
 
 class NodeOutput(NamedTuple("_NodeOutput", [("node", Node), ("output_def", OutputDefinition)])):
     def __new__(cls, node: Node, output_def: OutputDefinition):
-        return super(NodeOutput, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(node, "node", Node),
             check.inst_param(output_def, "output_def", OutputDefinition),
@@ -682,7 +682,7 @@ class DependencyDefinition(
         output: str = DEFAULT_OUTPUT,
         description: Optional[str] = None,
     ):
-        return super(DependencyDefinition, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(node, "node"),
             check.str_param(output, "output"),
@@ -707,7 +707,7 @@ class MultiDependencyDefinition(
         [
             (
                 "dependencies",
-                PublicAttr[Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]],
+                PublicAttr[Sequence[Union[DependencyDefinition, type["MappedInputPlaceholder"]]]],
             )
         ],
     ),
@@ -755,7 +755,7 @@ class MultiDependencyDefinition(
 
     def __new__(
         cls,
-        dependencies: Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]],
+        dependencies: Sequence[Union[DependencyDefinition, type["MappedInputPlaceholder"]]],
     ):
         from dagster._core.definitions.composition import MappedInputPlaceholder
 
@@ -775,7 +775,7 @@ class MultiDependencyDefinition(
             else:
                 check.failed(f"Unexpected dependencies entry {dep}")
 
-        return super(MultiDependencyDefinition, cls).__new__(cls, deps)
+        return super().__new__(cls, deps)
 
     @public
     def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
@@ -790,7 +790,7 @@ class MultiDependencyDefinition(
     @public
     def get_dependencies_and_mappings(
         self,
-    ) -> Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]:
+    ) -> Sequence[Union[DependencyDefinition, type["MappedInputPlaceholder"]]]:
         """Return the combined list of dependencies contained by this object, inculding of :py:class:`DependencyDefinition` and :py:class:`MappedInputPlaceholder` objects."""
         return self.dependencies
 
@@ -831,7 +831,7 @@ class BlockingAssetChecksDependencyDefinition(
     @public
     def get_dependencies_and_mappings(
         self,
-    ) -> Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]:
+    ) -> Sequence[Union[DependencyDefinition, type["MappedInputPlaceholder"]]]:
         return self.get_node_dependencies()
 
 
@@ -846,12 +846,12 @@ class DynamicCollectDependencyDefinition(
         return True
 
 
-DepTypeAndOutputs: TypeAlias = Tuple[
+DepTypeAndOutputs: TypeAlias = tuple[
     DependencyType,
-    Union[NodeOutput, List[Union[NodeOutput, Type["MappedInputPlaceholder"]]]],
+    Union[NodeOutput, list[Union[NodeOutput, type["MappedInputPlaceholder"]]]],
 ]
 
-InputToOutputMap: TypeAlias = Dict[NodeInput, DepTypeAndOutputs]
+InputToOutputMap: TypeAlias = dict[NodeInput, DepTypeAndOutputs]
 
 
 def _create_handle_dict(
@@ -871,7 +871,7 @@ def _create_handle_dict(
             if isinstance(
                 dep_def, (MultiDependencyDefinition, BlockingAssetChecksDependencyDefinition)
             ):
-                handles: List[Union[NodeOutput, Type[MappedInputPlaceholder]]] = []
+                handles: list[Union[NodeOutput, type[MappedInputPlaceholder]]] = []
                 for inner_dep in dep_def.get_dependencies_and_mappings():
                     if isinstance(inner_dep, DependencyDefinition):
                         handles.append(node_dict[inner_dep.node].get_output(inner_dep.output))
@@ -912,10 +912,10 @@ class DependencyStructure:
             dep_dict,
         )
 
-    _node_input_index: DefaultDict[str, Dict[NodeInput, List[NodeOutput]]]
-    _node_output_index: Dict[str, DefaultDict[NodeOutput, List[NodeInput]]]
-    _dynamic_fan_out_index: Dict[str, NodeOutput]
-    _collect_index: Dict[str, Set[NodeOutput]]
+    _node_input_index: defaultdict[str, dict[NodeInput, list[NodeOutput]]]
+    _node_output_index: dict[str, defaultdict[NodeOutput, list[NodeInput]]]
+    _dynamic_fan_out_index: dict[str, NodeOutput]
+    _collect_index: dict[str, set[NodeOutput]]
     _deps_by_node_name: DependencyMapping[str]
 
     def __init__(
@@ -946,7 +946,7 @@ class DependencyStructure:
 
         for node_input, (dep_type, node_output_or_list) in self._input_to_output_map.items():
             if dep_type == DependencyType.FAN_IN:
-                node_output_list: List[NodeOutput] = []
+                node_output_list: list[NodeOutput] = []
                 for node_output in node_output_or_list:
                     if not isinstance(node_output, NodeOutput):
                         continue
@@ -1111,14 +1111,14 @@ class DependencyStructure:
 
     def get_fan_in_deps(
         self, node_input: NodeInput
-    ) -> Sequence[Union[NodeOutput, Type["MappedInputPlaceholder"]]]:
+    ) -> Sequence[Union[NodeOutput, type["MappedInputPlaceholder"]]]:
         check.inst_param(node_input, "node_input", NodeInput)
         dep_type, deps = self._input_to_output_map[node_input]
         check.invariant(
             dep_type == DependencyType.FAN_IN,
             f"Cannot call get_multi_dep when dep is not fan in, got {dep_type}",
         )
-        return cast(List[Union[NodeOutput, Type["MappedInputPlaceholder"]]], deps)
+        return cast(list[Union[NodeOutput, type["MappedInputPlaceholder"]]], deps)
 
     def has_dynamic_fan_in_dep(self, node_input: NodeInput) -> bool:
         check.inst_param(node_input, "node_input", NodeInput)

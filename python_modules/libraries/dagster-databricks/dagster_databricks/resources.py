@@ -61,7 +61,7 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
     )
 
     @model_validator(mode="before")
-    def has_token_or_oauth_credentials(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def has_token_or_oauth_credentials(cls, values: dict[str, Any]) -> dict[str, Any]:
         token = values.get("token")
         oauth_credentials = values.get("oauth_credentials")
         azure_credentials = values.get("azure_credentials")

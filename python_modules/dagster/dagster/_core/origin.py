@@ -47,7 +47,7 @@ class RepositoryPythonOrigin(
         entry_point: Optional[Sequence[str]] = None,
         container_context: Optional[Mapping[str, Any]] = None,
     ):
-        return super(RepositoryPythonOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(executable_path, "executable_path"),
             check.inst_param(code_pointer, "code_pointer", CodePointer),
@@ -86,7 +86,7 @@ class JobPythonOrigin(
     )
 ):
     def __new__(cls, job_name: str, repository_origin: RepositoryPythonOrigin):
-        return super(JobPythonOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(job_name, "job_name"),
             check.inst_param(repository_origin, "repository_origin", RepositoryPythonOrigin),

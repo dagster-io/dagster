@@ -42,7 +42,7 @@ def sensor(
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     asset_selection: Optional[CoercibleToAssetSelection] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
     metadata: Optional[Mapping[str, object]] = None,
     target: Optional[
@@ -129,7 +129,7 @@ def asset_sensor(
     job: Optional[ExecutableDefinition] = None,
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
     metadata: Optional[Mapping[str, object]] = None,
 ) -> Callable[
@@ -205,8 +205,7 @@ def asset_sensor(
             result = fn(*args, **kwargs)
 
             if inspect.isgenerator(result) or isinstance(result, list):
-                for item in result:
-                    yield item
+                yield from result
             elif isinstance(result, (RunRequest, SkipReason)):
                 yield result
 
@@ -260,7 +259,7 @@ def multi_asset_sensor(
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_assets: Optional[AssetSelection] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
     metadata: Optional[Mapping[str, object]] = None,
 ) -> Callable[

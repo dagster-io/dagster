@@ -37,7 +37,7 @@ class DbtCloudRunOpConfig(Config):
         ),
     )
 
-    asset_key_prefix: List[str] = Field(
+    asset_key_prefix: list[str] = Field(
         default=["dbt"],
         description=(
             "If provided and yield_materializations is True, these components will be used to "

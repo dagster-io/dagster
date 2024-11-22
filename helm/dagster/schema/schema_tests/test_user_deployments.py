@@ -1,6 +1,6 @@
 import json
 import subprocess
-from typing import List, Union
+from typing import Union
 
 import pytest
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
@@ -60,7 +60,7 @@ def user_deployment_configmap_template() -> HelmTemplate:
 
 
 def assert_user_deployment_template(
-    t: HelmTemplate, templates: List[models.V1Deployment], values: DagsterHelmValues
+    t: HelmTemplate, templates: list[models.V1Deployment], values: DagsterHelmValues
 ):
     assert len(templates) == len(values.dagsterUserDeployments.deployments)
 

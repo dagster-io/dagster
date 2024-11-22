@@ -71,7 +71,7 @@ class DagsterGraphQLClient:
         transport: Optional[Transport] = None,
         use_https: bool = False,
         timeout: int = 300,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ):
         self._hostname = check.str_param(hostname, "hostname")
         self._port_number = check.opt_int_param(port_number, "port_number")
@@ -101,7 +101,7 @@ class DagsterGraphQLClient:
                 + "correctly?"
             ) from exc
 
-    def _execute(self, query: str, variables: Optional[Dict[str, Any]] = None):
+    def _execute(self, query: str, variables: Optional[dict[str, Any]] = None):
         try:
             return self._client.execute(gql(query), variable_values=variables)
         except TransportServerError as exc:
@@ -116,7 +116,7 @@ class DagsterGraphQLClient:
                 f" \n{variables}\n"
             ) from exc
 
-    def _get_repo_locations_and_names_with_pipeline(self, job_name: str) -> List[JobInfo]:
+    def _get_repo_locations_and_names_with_pipeline(self, job_name: str) -> list[JobInfo]:
         res_data = self._execute(CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY)
         query_res = res_data["repositoriesOrError"]
         repo_connection_status = query_res["__typename"]
@@ -174,7 +174,7 @@ class DagsterGraphQLClient:
                     f" name {pipeline_name}.\n\tchoose one of: {job_info_lst}"
                 )
 
-        variables: Dict[str, Any] = {
+        variables: dict[str, Any] = {
             "executionParams": {
                 "selector": {
                     "repositoryLocationName": repository_location_name,
@@ -196,7 +196,7 @@ class DagsterGraphQLClient:
                 ),
             }
 
-        res_data: Dict[str, Any] = self._execute(CLIENT_SUBMIT_PIPELINE_RUN_MUTATION, variables)
+        res_data: dict[str, Any] = self._execute(CLIENT_SUBMIT_PIPELINE_RUN_MUTATION, variables)
         query_result = res_data["launchPipelineExecution"]
         query_result_type = query_result["__typename"]
         if (
@@ -229,7 +229,7 @@ class DagsterGraphQLClient:
         repository_location_name: Optional[str] = None,
         repository_name: Optional[str] = None,
         run_config: Optional[Union[RunConfig, Mapping[str, Any]]] = None,
-        tags: Optional[Dict[str, Any]] = None,
+        tags: Optional[dict[str, Any]] = None,
         op_selection: Optional[Sequence[str]] = None,
     ) -> str:
         """Submits a job with attached configuration for execution.
@@ -291,10 +291,10 @@ class DagsterGraphQLClient:
         """
         check.str_param(run_id, "run_id")
 
-        res_data: Dict[str, Dict[str, Any]] = self._execute(
+        res_data: dict[str, dict[str, Any]] = self._execute(
             GET_PIPELINE_RUN_STATUS_QUERY, {"runId": run_id}
         )
-        query_result: Dict[str, Any] = res_data["pipelineRunOrError"]
+        query_result: dict[str, Any] = res_data["pipelineRunOrError"]
         query_result_type: str = query_result["__typename"]
         if query_result_type == "PipelineRun" or query_result_type == "Run":
             return DagsterRunStatus(query_result["status"])
@@ -318,12 +318,12 @@ class DagsterGraphQLClient:
         """
         check.str_param(repository_location_name, "repository_location_name")
 
-        res_data: Dict[str, Dict[str, Any]] = self._execute(
+        res_data: dict[str, dict[str, Any]] = self._execute(
             RELOAD_REPOSITORY_LOCATION_MUTATION,
             {"repositoryLocationName": repository_location_name},
         )
 
-        query_result: Dict[str, Any] = res_data["reloadRepositoryLocation"]
+        query_result: dict[str, Any] = res_data["reloadRepositoryLocation"]
         query_result_type: str = query_result["__typename"]
         if query_result_type == "WorkspaceLocationEntry":
             location_or_error_type = query_result["locationOrLoadError"]["__typename"]
@@ -363,12 +363,12 @@ class DagsterGraphQLClient:
         """
         check.str_param(repository_location_name, "repository_location_name")
 
-        res_data: Dict[str, Dict[str, Any]] = self._execute(
+        res_data: dict[str, dict[str, Any]] = self._execute(
             SHUTDOWN_REPOSITORY_LOCATION_MUTATION,
             {"repositoryLocationName": repository_location_name},
         )
 
-        query_result: Dict[str, Any] = res_data["shutdownRepositoryLocation"]
+        query_result: dict[str, Any] = res_data["shutdownRepositoryLocation"]
         query_result_type: str = query_result["__typename"]
         if query_result_type == "ShutdownRepositoryLocationSuccess":
             return ShutdownRepositoryLocationInfo(status=ShutdownRepositoryLocationStatus.SUCCESS)
@@ -391,11 +391,11 @@ class DagsterGraphQLClient:
         """
         check.str_param(run_id, "run_id")
 
-        res_data: Dict[str, Dict[str, Any]] = self._execute(
+        res_data: dict[str, dict[str, Any]] = self._execute(
             TERMINATE_RUN_JOB_MUTATION, {"runId": run_id}
         )
 
-        query_result: Dict[str, Any] = res_data["terminateRun"]
+        query_result: dict[str, Any] = res_data["terminateRun"]
         query_result_type: str = query_result["__typename"]
         if query_result_type == "TerminateRunSuccess":
             return
@@ -405,7 +405,7 @@ class DagsterGraphQLClient:
         else:
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
-    def terminate_runs(self, run_ids: List[str]):
+    def terminate_runs(self, run_ids: list[str]):
         """Terminates a list of pipeline runs. This method it is useful when you would like to stop a list of pipeline runs
         based on a external event.
 
@@ -414,13 +414,13 @@ class DagsterGraphQLClient:
         """
         check.list_param(run_ids, "run_ids", of_type=str)
 
-        res_data: Dict[str, Dict[str, Any]] = self._execute(
+        res_data: dict[str, dict[str, Any]] = self._execute(
             TERMINATE_RUNS_JOB_MUTATION,
             {"runIds": run_ids},
         )
 
-        query_result: Dict[str, Any] = res_data["terminateRuns"]
-        run_query_result: List[Dict[str, Any]] = query_result["terminateRunResults"]
+        query_result: dict[str, Any] = res_data["terminateRuns"]
+        run_query_result: list[dict[str, Any]] = query_result["terminateRunResults"]
 
         errors = []
         for run_result in run_query_result:

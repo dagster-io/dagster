@@ -10,7 +10,7 @@ def test_config_mapping_return_resource_config_dict_noargs() -> None:
         resource_param: str
 
     @configured(MyResource)
-    def my_resource_noargs(_) -> Dict[str, Any]:
+    def my_resource_noargs(_) -> dict[str, Any]:
         return {"resource_param": "foo"}
 
     @op
@@ -35,7 +35,7 @@ def test_config_mapping_return_resource_config_dict() -> None:
         return MyResource(resource_param=context.resource_config["resource_param"])
 
     @configured(my_resource_legacy, config_schema={"simplified_param": str})
-    def my_resource_legacy_simplified(config_in) -> Dict[str, Any]:
+    def my_resource_legacy_simplified(config_in) -> dict[str, Any]:
         return {"resource_param": config_in["simplified_param"]}
 
     @op
@@ -59,7 +59,7 @@ def test_config_mapping_return_resource_config_dict() -> None:
 
     # New, fancy config mapping takes in a Pythonic config object but returns normal config dict
     @configured(MyResource)
-    def my_resource_simplified(config_in: MyResourceSimplifiedConfig) -> Dict[str, Any]:
+    def my_resource_simplified(config_in: MyResourceSimplifiedConfig) -> dict[str, Any]:
         return {"resource_param": config_in.simplified_param}
 
     result = do_it_all.execute_in_process(

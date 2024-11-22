@@ -148,7 +148,7 @@ class ExecutionStep(
         logging_tags: Optional[Mapping[str, str]] = None,
         key: Optional[str] = None,
     ):
-        return super(ExecutionStep, cls).__new__(
+        return super().__new__(
             cls,
             handle=check.inst_param(handle, "handle", (StepHandle, ResolvedFromDynamicStepHandle)),
             job_name=check.str_param(job_name, "job_name"),
@@ -209,7 +209,7 @@ class ExecutionStep(
         check.str_param(name, "name")
         return self.step_input_dict[name]
 
-    def get_execution_dependency_keys(self) -> Set[str]:
+    def get_execution_dependency_keys(self) -> set[str]:
         deps = set()
         for inp in self.step_inputs:
             deps.update(inp.dependency_keys)
@@ -245,7 +245,7 @@ class UnresolvedMappedExecutionStep(
         step_outputs: Sequence[StepOutput],
         tags: Optional[Mapping[str, str]],
     ):
-        return super(UnresolvedMappedExecutionStep, cls).__new__(
+        return super().__new__(
             cls,
             handle=check.inst_param(handle, "handle", UnresolvedStepHandle),
             job_name=check.str_param(job_name, "job_name"),
@@ -290,7 +290,7 @@ class UnresolvedMappedExecutionStep(
         check.str_param(name, "name")
         return self.step_output_dict[name]
 
-    def get_all_dependency_keys(self) -> Set[str]:
+    def get_all_dependency_keys(self) -> set[str]:
         deps = set()
         for inp in self.step_inputs:
             if isinstance(inp, StepInput):
@@ -331,7 +331,7 @@ class UnresolvedMappedExecutionStep(
         return next(iter(keys))
 
     @property
-    def resolved_by_step_keys(self) -> FrozenSet[str]:
+    def resolved_by_step_keys(self) -> frozenset[str]:
         keys = set()
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedMappedStepInput):
@@ -346,7 +346,7 @@ class UnresolvedMappedExecutionStep(
             all(key in mappings for key in self.resolved_by_step_keys),
             "resolving with mappings that do not contain all required step keys",
         )
-        execution_steps: List[ExecutionStep] = []
+        execution_steps: list[ExecutionStep] = []
 
         mapping_keys = mappings[self.resolved_by_step_key][self.resolved_by_output_name]
 
@@ -403,7 +403,7 @@ class UnresolvedCollectExecutionStep(
         step_outputs: Sequence[StepOutput],
         tags: Optional[Mapping[str, str]],
     ):
-        return super(UnresolvedCollectExecutionStep, cls).__new__(
+        return super().__new__(
             cls,
             handle=check.inst_param(handle, "handle", StepHandle),
             job_name=check.str_param(job_name, "job_name"),
@@ -448,7 +448,7 @@ class UnresolvedCollectExecutionStep(
         check.str_param(name, "name")
         return self.step_output_dict[name]
 
-    def get_all_dependency_keys(self) -> Set[str]:
+    def get_all_dependency_keys(self) -> set[str]:
         deps = set()
         for inp in self.step_inputs:
             if isinstance(inp, StepInput):
@@ -468,7 +468,7 @@ class UnresolvedCollectExecutionStep(
         return deps
 
     @property
-    def resolved_by_step_keys(self) -> FrozenSet[str]:
+    def resolved_by_step_keys(self) -> frozenset[str]:
         keys = set()
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedCollectStepInput):

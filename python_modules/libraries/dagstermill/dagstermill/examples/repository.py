@@ -41,14 +41,14 @@ except ImportError:
     DAGSTER_PANDAS_PRESENT = False
 
 try:
-    import sklearn  # noqa: F401
+    import sklearn
 
     SKLEARN_PRESENT = True
 except ImportError:
     SKLEARN_PRESENT = False
 
 try:
-    import matplotlib  # noqa: F401
+    import matplotlib
 
     MATPLOTLIB_PRESENT = True
 except ImportError:

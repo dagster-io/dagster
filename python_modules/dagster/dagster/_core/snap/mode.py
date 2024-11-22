@@ -50,7 +50,7 @@ class ModeDefSnap(
         logger_def_snaps: Sequence["LoggerDefSnap"],
         root_config_key: Optional[str] = None,
     ):
-        return super(ModeDefSnap, cls).__new__(
+        return super().__new__(
             cls,
             name=check.str_param(name, "name"),
             description=check.opt_str_param(description, "description"),
@@ -92,7 +92,7 @@ class ResourceDefSnap(
     def __new__(
         cls, name: str, description: Optional[str], config_field_snap: Optional[ConfigFieldSnap]
     ):
-        return super(ResourceDefSnap, cls).__new__(
+        return super().__new__(
             cls,
             name=check.str_param(name, "name"),
             description=check.opt_str_param(description, "description"),
@@ -130,7 +130,7 @@ class LoggerDefSnap(
     def __new__(
         cls, name: str, description: Optional[str], config_field_snap: Optional[ConfigFieldSnap]
     ):
-        return super(LoggerDefSnap, cls).__new__(
+        return super().__new__(
             cls,
             name=check.str_param(name, "name"),
             description=check.opt_str_param(description, "description"),

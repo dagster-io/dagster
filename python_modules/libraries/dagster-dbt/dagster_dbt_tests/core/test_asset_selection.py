@@ -141,10 +141,10 @@ from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
     ],
 )
 def test_dbt_asset_selection(
-    test_jaffle_shop_manifest: Dict[str, Any],
+    test_jaffle_shop_manifest: dict[str, Any],
     select: Optional[str],
     exclude: Optional[str],
-    expected_dbt_resource_names: Set[str],
+    expected_dbt_resource_names: set[str],
 ) -> None:
     expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
 
@@ -193,10 +193,10 @@ def test_dbt_asset_selection(
     ],
 )
 def test_dbt_asset_selection_on_asset_definition_with_existing_selection(
-    test_jaffle_shop_manifest: Dict[str, Any],
+    test_jaffle_shop_manifest: dict[str, Any],
     select: Optional[str],
     exclude: Optional[str],
-    expected_dbt_resource_names: Set[str],
+    expected_dbt_resource_names: set[str],
 ):
     expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
 
@@ -215,7 +215,7 @@ def test_dbt_asset_selection_on_asset_definition_with_existing_selection(
 
 
 def test_dbt_asset_selection_manifest_argument(
-    test_jaffle_shop_manifest_path: Path, test_jaffle_shop_manifest: Dict[str, Any]
+    test_jaffle_shop_manifest_path: Path, test_jaffle_shop_manifest: dict[str, Any]
 ) -> None:
     expected_asset_keys = {
         AssetKey(key)
@@ -248,7 +248,7 @@ def test_dbt_asset_selection_manifest_argument(
 
 
 def test_dbt_asset_selection_equality(
-    test_jaffle_shop_manifest_path: Path, test_jaffle_shop_manifest: Dict[str, Any]
+    test_jaffle_shop_manifest_path: Path, test_jaffle_shop_manifest: dict[str, Any]
 ) -> None:
     for manifest_param in [
         test_jaffle_shop_manifest,

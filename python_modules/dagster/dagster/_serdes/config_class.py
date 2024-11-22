@@ -60,7 +60,7 @@ class ConfigurableClassData(
     """
 
     def __new__(cls, module_name: str, class_name: str, config_yaml: str):
-        return super(ConfigurableClassData, cls).__new__(
+        return super().__new__(
             cls,
             convert_dagster_submodule_name(check.str_param(module_name, "module_name"), "private"),
             check.str_param(class_name, "class_name"),
@@ -82,10 +82,10 @@ class ConfigurableClassData(
     def rehydrate(self, as_type: None = ...) -> "ConfigurableClass": ...
 
     @overload
-    def rehydrate(self, as_type: Type[T_ConfigurableClass]) -> T_ConfigurableClass: ...
+    def rehydrate(self, as_type: type[T_ConfigurableClass]) -> T_ConfigurableClass: ...
 
     def rehydrate(
-        self, as_type: Optional[Type[T_ConfigurableClass]] = None
+        self, as_type: Optional[type[T_ConfigurableClass]] = None
     ) -> Union["ConfigurableClass", T_ConfigurableClass]:
         from dagster._config import process_config, resolve_to_config_type
         from dagster._core.errors import DagsterInvalidConfigError
@@ -103,7 +103,7 @@ class ConfigurableClassData(
             # they do not. However, not all rehydrated classes actually have `ConfigurableClass` as
             # an ancestor due to some subtleties around multiple abstract classes that cause an
             # error when `ConfigurableClass` is added as an ancestor to storage classes.
-            klass = cast(Type[ConfigurableClass], getattr(module, self.class_name))
+            klass = cast(type[ConfigurableClass], getattr(module, self.class_name))
         except AttributeError:
             check.failed(
                 f"Couldn't find class {self.class_name} in module when attempting to load the "
@@ -212,7 +212,7 @@ class ConfigurableClass(ABC):
         """
 
 
-def class_from_code_pointer(module_name: str, class_name: str) -> Type[object]:
+def class_from_code_pointer(module_name: str, class_name: str) -> type[object]:
     try:
         module = importlib.import_module(module_name)
     except ModuleNotFoundError:

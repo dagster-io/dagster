@@ -18,7 +18,7 @@ def get_description() -> str:
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -160,7 +160,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.5.5",
+            "ruff==0.8.0",
         ],
     },
     entry_points={

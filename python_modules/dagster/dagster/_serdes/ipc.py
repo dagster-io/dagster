@@ -25,9 +25,9 @@ def write_unary_input(input_file: str, obj: NamedTuple) -> None:
         fp.write(serialize_value(obj))
 
 
-def read_unary_input(input_file: str) -> Tuple[object, ...]:
+def read_unary_input(input_file: str) -> tuple[object, ...]:
     check.str_param(input_file, "input_file")
-    with open(os.path.abspath(input_file), "r", encoding="utf8") as fp:
+    with open(os.path.abspath(input_file), encoding="utf8") as fp:
         return deserialize_value(fp.read(), NamedTuple)
 
 
@@ -48,7 +48,7 @@ def read_unary_response(
 @whitelist_for_serdes
 class IPCStartMessage(NamedTuple("_IPCStartMessage", [])):
     def __new__(cls):
-        return super(IPCStartMessage, cls).__new__(cls)
+        return super().__new__(cls)
 
 
 @whitelist_for_serdes
@@ -64,7 +64,7 @@ class IPCErrorMessage(
     """
 
     def __new__(cls, serializable_error_info: SerializableErrorInfo, message: Optional[str]):
-        return super(IPCErrorMessage, cls).__new__(
+        return super().__new__(
             cls,
             serializable_error_info=check.inst_param(
                 serializable_error_info, "serializable_error_info", SerializableErrorInfo
@@ -76,7 +76,7 @@ class IPCErrorMessage(
 @whitelist_for_serdes
 class IPCEndMessage(NamedTuple("_IPCEndMessage", [])):
     def __new__(cls):
-        return super(IPCEndMessage, cls).__new__(cls)
+        return super().__new__(cls)
 
 
 class DagsterIPCProtocolError(DagsterError):
@@ -86,7 +86,7 @@ class DagsterIPCProtocolError(DagsterError):
 
     def __init__(self, message: str):
         self.message = message
-        super(DagsterIPCProtocolError, self).__init__(message)
+        super().__init__(message)
 
 
 class FileBasedWriteStream:
@@ -160,7 +160,7 @@ def ipc_read_event_stream(
             f"Timeout: read stream has not received any data in {timeout} seconds"
         )
 
-    with open(os.path.abspath(file_path), "r", encoding="utf8") as file_pointer:
+    with open(os.path.abspath(file_path), encoding="utf8") as file_pointer:
         message = _process_line(file_pointer)
         while elapsed_time < timeout and message is None:
             _poll_process(ipc_process)

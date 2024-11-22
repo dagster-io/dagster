@@ -368,7 +368,7 @@ def log_resource_event(log_manager: DagsterLogManager, event: "DagsterEvent") ->
 
 
 class DagsterEventSerializer(NamedTupleSerializer["DagsterEvent"]):
-    def before_unpack(self, context, unpacked_dict: Any) -> Dict[str, Any]:
+    def before_unpack(self, context, unpacked_dict: Any) -> dict[str, Any]:
         event_type_value, event_specific_data = _handle_back_compat(
             unpacked_dict["event_type_value"], unpacked_dict.get("event_specific_data")
         )
@@ -381,7 +381,7 @@ class DagsterEventSerializer(NamedTupleSerializer["DagsterEvent"]):
         self,
         exc: Exception,
         context: UnpackContext,
-        storage_dict: Dict[str, Any],
+        storage_dict: dict[str, Any],
     ) -> "DagsterEvent":
         event_type_value, _ = _handle_back_compat(
             storage_dict["event_type_value"], storage_dict.get("event_specific_data")
@@ -543,7 +543,7 @@ class DagsterEvent(
         if step_handle is not None and step_key is None:
             step_key = step_handle.to_key()
 
-        return super(DagsterEvent, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(event_type_value, "event_type_value"),
             check.str_param(job_name, "job_name"),
@@ -1539,7 +1539,7 @@ class AssetObservationData(
     NamedTuple("_AssetObservation", [("asset_observation", AssetObservation)])
 ):
     def __new__(cls, asset_observation: AssetObservation):
-        return super(AssetObservationData, cls).__new__(
+        return super().__new__(
             cls,
             asset_observation=check.inst_param(
                 asset_observation, "asset_observation", AssetObservation
@@ -1562,7 +1562,7 @@ class StepMaterializationData(
         materialization: AssetMaterialization,
         asset_lineage: Optional[Sequence[AssetLineageInfo]] = None,
     ):
-        return super(StepMaterializationData, cls).__new__(
+        return super().__new__(
             cls,
             materialization=check.inst_param(
                 materialization, "materialization", AssetMaterialization
@@ -1602,7 +1602,7 @@ class AssetMaterializationPlannedData(
                 "partitions_subset must be serializable",
             )
 
-        return super(AssetMaterializationPlannedData, cls).__new__(
+        return super().__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             partition=check.opt_str_param(partition, "partition"),
@@ -1620,7 +1620,7 @@ class StepExpectationResultData(
     )
 ):
     def __new__(cls, expectation_result: ExpectationResult):
-        return super(StepExpectationResultData, cls).__new__(
+        return super().__new__(
             cls,
             expectation_result=check.inst_param(
                 expectation_result, "expectation_result", ExpectationResult
@@ -1654,7 +1654,7 @@ class ObjectStoreOperationResultData(
         version: Optional[str] = None,
         mapping_key: Optional[str] = None,
     ):
-        return super(ObjectStoreOperationResultData, cls).__new__(
+        return super().__new__(
             cls,
             op=cast(ObjectStoreOperationType, check.str_param(op, "op")),
             value_name=check.opt_str_param(value_name, "value_name"),
@@ -1693,7 +1693,7 @@ class EngineEventData(
         marker_start: Optional[str] = None,
         marker_end: Optional[str] = None,
     ):
-        return super(EngineEventData, cls).__new__(
+        return super().__new__(
             cls,
             metadata=normalize_metadata(
                 check.opt_mapping_param(metadata, "metadata", key_type=str)
@@ -1761,7 +1761,7 @@ class JobFailureData(
         failure_reason: Optional[RunFailureReason] = None,
         first_step_failure_event: Optional["DagsterEvent"] = None,
     ):
-        return super(JobFailureData, cls).__new__(
+        return super().__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
             failure_reason=check.opt_inst_param(failure_reason, "failure_reason", RunFailureReason),
@@ -1781,7 +1781,7 @@ class JobCanceledData(
     )
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(JobCanceledData, cls).__new__(
+        return super().__new__(
             cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo)
         )
 
@@ -1796,9 +1796,7 @@ class HookErroredData(
     )
 ):
     def __new__(cls, error: SerializableErrorInfo):
-        return super(HookErroredData, cls).__new__(
-            cls, error=check.inst_param(error, "error", SerializableErrorInfo)
-        )
+        return super().__new__(cls, error=check.inst_param(error, "error", SerializableErrorInfo))
 
 
 @whitelist_for_serdes(
@@ -1821,7 +1819,7 @@ class HandledOutputData(
         manager_key: str,
         metadata: Optional[Mapping[str, MetadataValue]] = None,
     ):
-        return super(HandledOutputData, cls).__new__(
+        return super().__new__(
             cls,
             output_name=check.str_param(output_name, "output_name"),
             manager_key=check.str_param(manager_key, "manager_key"),
@@ -1855,7 +1853,7 @@ class LoadedInputData(
         upstream_step_key: Optional[str] = None,
         metadata: Optional[Mapping[str, MetadataValue]] = None,
     ):
-        return super(LoadedInputData, cls).__new__(
+        return super().__new__(
             cls,
             input_name=check.str_param(input_name, "input_name"),
             manager_key=check.str_param(manager_key, "manager_key"),
@@ -1888,7 +1886,7 @@ class ComputeLogsCaptureData(
         external_stdout_url: Optional[str] = None,
         external_stderr_url: Optional[str] = None,
     ):
-        return super(ComputeLogsCaptureData, cls).__new__(
+        return super().__new__(
             cls,
             file_key=check.str_param(file_key, "file_key"),
             step_keys=check.opt_list_param(step_keys, "step_keys", of_type=str),
@@ -1933,8 +1931,8 @@ class ComputeLogsCaptureData(
 
 def _handle_back_compat(
     event_type_value: str,
-    event_specific_data: Optional[Dict[str, Any]],
-) -> Tuple[str, Optional[Dict[str, Any]]]:
+    event_specific_data: Optional[dict[str, Any]],
+) -> tuple[str, Optional[dict[str, Any]]]:
     # transform old specific process events in to engine events
     if event_type_value in [
         "PIPELINE_PROCESS_START",

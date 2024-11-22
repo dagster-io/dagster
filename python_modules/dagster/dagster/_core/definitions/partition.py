@@ -126,7 +126,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
     """
 
     @property
-    def partitions_subset_class(self) -> Type["PartitionsSubset"]:
+    def partitions_subset_class(self) -> type["PartitionsSubset"]:
         return DefaultPartitionsSubset
 
     @abstractmethod
@@ -294,7 +294,7 @@ def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]
 
 
 def raise_error_on_duplicate_partition_keys(partition_keys: Sequence[str]) -> None:
-    counts: Dict[str, int] = defaultdict(lambda: 0)
+    counts: dict[str, int] = defaultdict(lambda: 0)
     for partition_key in partition_keys:
         counts[partition_key] += 1
     found_duplicates = [key for key in counts.keys() if counts[key] > 1]
@@ -469,7 +469,7 @@ class DynamicPartitionsDefinition(
                 "Cannot provide both partition_fn and name to DynamicPartitionsDefinition."
             )
 
-        return super(DynamicPartitionsDefinition, cls).__new__(
+        return super().__new__(
             cls,
             partition_fn=check.opt_callable_param(partition_fn, "partition_fn"),
             name=check.opt_str_param(name, "name"),
@@ -1105,7 +1105,7 @@ class DefaultPartitionsSubset(
         subset: Optional[AbstractSet[str]] = None,
     ):
         check.opt_set_param(subset, "subset")
-        return super(DefaultPartitionsSubset, cls).__new__(cls, subset or set())
+        return super().__new__(cls, subset or set())
 
     def get_partition_keys_not_in_subset(
         self,

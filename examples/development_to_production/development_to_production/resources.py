@@ -8,7 +8,7 @@ class HNClient(ABC):
     """Base class for a Hacker News Client."""
 
     @abstractmethod
-    def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]: ...
+    def fetch_item_by_id(self, item_id: int) -> Optional[dict[str, Any]]: ...
 
     @abstractmethod
     def fetch_max_item_id(self) -> int: ...
@@ -21,7 +21,7 @@ class HNClient(ABC):
 class HNAPIClient(HNClient):
     """Hacker News client that fetches live data."""
 
-    def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
+    def fetch_item_by_id(self, item_id: int) -> Optional[dict[str, Any]]:
         """Fetches a single item from the Hacker News API by item id."""
         item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         item = requests.get(item_url, timeout=5).json()
@@ -66,7 +66,7 @@ class StubHNClient(HNClient):
             },
         }
 
-    def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
+    def fetch_item_by_id(self, item_id: int) -> Optional[dict[str, Any]]:
         return self.data.get(item_id)
 
     def fetch_max_item_id(self) -> int:

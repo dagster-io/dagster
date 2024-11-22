@@ -49,7 +49,7 @@ def schedule(
     description: Optional[str] = None,
     job: Optional[ExecutableDefinition] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     target: Optional[
         Union[
             "CoercibleToAssetSelection",
@@ -130,7 +130,7 @@ def schedule(
             )
 
         context_param_name = get_context_param_name(fn)
-        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
+        resource_arg_names: set[str] = {arg.name for arg in get_resource_args(fn)}
 
         def _wrapped_fn(context: ScheduleEvaluationContext) -> RunRequestIterator:
             if should_execute:
@@ -175,7 +175,7 @@ def schedule(
                         tags=evaluated_tags,
                     )
                 elif isinstance(result, list):
-                    yield from cast(List[RunRequest], result)
+                    yield from cast(list[RunRequest], result)
                 else:
                     # this is a run-request based decorated function
                     yield from cast(RunRequestIterator, ensure_gen(result))

@@ -360,7 +360,7 @@ def test_extension_views(caplog: pytest.LogCaptureFixture):
 def test_with_asset_key_replacements() -> None:
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
         def get_asset_key(
-            self, lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]]
+            self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
         ) -> AssetKey:
             return super().get_asset_key(lookml_structure).with_prefix("prefix")
 

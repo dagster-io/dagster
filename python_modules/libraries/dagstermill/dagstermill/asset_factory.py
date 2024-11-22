@@ -76,7 +76,7 @@ def define_dagstermill_asset(
     deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
@@ -85,7 +85,7 @@ def define_dagstermill_asset(
     io_manager_key: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
     save_notebook_on_failure: bool = False,
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
+    non_argument_deps: Optional[Union[set[AssetKey], set[str]]] = None,
     asset_tags: Optional[Mapping[str, Any]] = None,
 ) -> AssetsDefinition:
     """Creates a Dagster asset for a Jupyter notebook.
@@ -194,7 +194,7 @@ def define_dagstermill_asset(
     }
 
     if safe_is_subclass(config_schema, Config):
-        config_schema = infer_schema_from_config_class(cast(Type[Config], config_schema))
+        config_schema = infer_schema_from_config_class(cast(type[Config], config_schema))
 
     return asset(
         name=name,

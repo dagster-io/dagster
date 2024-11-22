@@ -90,8 +90,8 @@ class OutputContext:
     _resources_cm: Optional[ContextManager["Resources"]]
     _resources_contain_cm: Optional[bool]
     _cm_scope_entered: Optional[bool]
-    _events: List["DagsterEvent"]
-    _user_events: List[Union[AssetMaterialization, AssetObservation]]
+    _events: list["DagsterEvent"]
+    _user_events: list[Union[AssetMaterialization, AssetObservation]]
 
     def __init__(
         self,

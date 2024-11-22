@@ -65,7 +65,7 @@ class RepositoryLoadData(
             Mapping[str, CodeLocationReconstructionMetadataValue]
         ] = None,
     ):
-        return super(RepositoryLoadData, cls).__new__(
+        return super().__new__(
             cls,
             cacheable_asset_data=(
                 check.opt_mapping_param(
@@ -347,10 +347,10 @@ class RepositoryDefinition:
         self,
         asset_key: CoercibleToAssetKey,
         *,
-        python_type: Optional[Type] = None,
+        python_type: Optional[type] = None,
         instance: Optional[DagsterInstance] = None,
         partition_key: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         resource_config: Optional[Any] = None,
     ) -> object:
         """Load the contents of an asset as a Python object.

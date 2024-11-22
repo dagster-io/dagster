@@ -37,7 +37,7 @@ def _clean_asset_name(name: str) -> str:
 PARSE_M_QUERY_OBJECT = re.compile(r'\[Name="(?P<name>[^"]+)",Kind="(?P<kind>[^"]+)"\]')
 
 
-def _attempt_parse_m_query_source(sources: List[Dict[str, Any]]) -> Optional[AssetKey]:
+def _attempt_parse_m_query_source(sources: list[dict[str, Any]]) -> Optional[AssetKey]:
     for source in sources:
         if "expression" in source:
             objects = PARSE_M_QUERY_OBJECT.findall(source["expression"])
@@ -74,7 +74,7 @@ class PowerBIContentData:
     """
 
     content_type: PowerBIContentType
-    properties: Dict[str, Any]
+    properties: dict[str, Any]
 
 
 @whitelist_for_serdes
@@ -86,10 +86,10 @@ class PowerBIWorkspaceData:
     """
 
     workspace_id: str
-    dashboards_by_id: Dict[str, PowerBIContentData]
-    reports_by_id: Dict[str, PowerBIContentData]
-    semantic_models_by_id: Dict[str, PowerBIContentData]
-    data_sources_by_id: Dict[str, PowerBIContentData]
+    dashboards_by_id: dict[str, PowerBIContentData]
+    reports_by_id: dict[str, PowerBIContentData]
+    semantic_models_by_id: dict[str, PowerBIContentData]
+    data_sources_by_id: dict[str, PowerBIContentData]
 
     @classmethod
     def from_content_data(
@@ -137,7 +137,7 @@ class PowerBIMetadataSet(NamespacedMetadataSet):
         return "dagster-powerbi"
 
 
-def _build_table_metadata(table: Dict[str, Any]) -> TableMetadataSet:
+def _build_table_metadata(table: dict[str, Any]) -> TableMetadataSet:
     return TableMetadataSet(
         table_name=table["name"],
         column_schema=TableSchema(

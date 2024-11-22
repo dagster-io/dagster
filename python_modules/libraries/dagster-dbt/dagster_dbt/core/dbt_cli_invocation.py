@@ -55,7 +55,7 @@ class RelationData(NamedTuple):
     """Relation metadata queried from a database."""
 
     name: str
-    columns: List[BaseColumn]
+    columns: list[BaseColumn]
 
 
 def _get_relation_from_adapter(adapter: BaseAdapter, relation_key: RelationKey) -> BaseRelation:
@@ -94,16 +94,16 @@ class DbtCliInvocation:
     postprocessing_threadpool_num_threads: int = field(
         init=False, default=DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE
     )
-    _stdout: List[Union[str, Dict[str, Any]]] = field(init=False, default_factory=list)
-    _error_messages: List[str] = field(init=False, default_factory=list)
+    _stdout: list[Union[str, dict[str, Any]]] = field(init=False, default_factory=list)
+    _error_messages: list[str] = field(init=False, default_factory=list)
 
     # Caches fetching relation column metadata to avoid redundant queries to the database.
-    _relation_column_metadata_cache: Dict[RelationKey, RelationData] = field(
+    _relation_column_metadata_cache: dict[RelationKey, RelationData] = field(
         init=False, default_factory=dict
     )
 
     def _get_columns_from_dbt_resource_props(
-        self, adapter: BaseAdapter, dbt_resource_props: Dict[str, Any]
+        self, adapter: BaseAdapter, dbt_resource_props: dict[str, Any]
     ) -> RelationData:
         """Given a dbt resource properties dictionary, fetches the resource's column metadata from
         the database, or returns the cached metadata if it has already been fetched.
@@ -121,7 +121,7 @@ class DbtCliInvocation:
             return self._relation_column_metadata_cache[relation_key]
 
         relation = _get_relation_from_adapter(adapter=adapter, relation_key=relation_key)
-        cols: List = adapter.get_columns_in_relation(relation=relation)
+        cols: list = adapter.get_columns_in_relation(relation=relation)
         return self._relation_column_metadata_cache.setdefault(
             relation_key, RelationData(name=str(relation), columns=cols)
         )
@@ -130,7 +130,7 @@ class DbtCliInvocation:
     def run(
         cls,
         args: Sequence[str],
-        env: Dict[str, str],
+        env: dict[str, str],
         manifest: Mapping[str, Any],
         dagster_dbt_translator: DagsterDbtTranslator,
         project_dir: Path,
@@ -322,7 +322,7 @@ class DbtCliInvocation:
         Returns:
             Iterator[DbtCliEventMessage]: An iterator of events from the dbt CLI process.
         """
-        event_history_metadata_by_unique_id: Dict[str, Dict[str, Any]] = {}
+        event_history_metadata_by_unique_id: dict[str, dict[str, Any]] = {}
 
         for raw_event in self._stdout or self._stream_stdout():
             if isinstance(raw_event, str):
@@ -334,7 +334,7 @@ class DbtCliInvocation:
 
             unique_id: Optional[str] = raw_event["data"].get("node_info", {}).get("unique_id")
             is_result_event = DbtCliEventMessage.is_result_event(raw_event)
-            event_history_metadata: Dict[str, Any] = {}
+            event_history_metadata: dict[str, Any] = {}
             if unique_id and is_result_event:
                 event_history_metadata = copy.deepcopy(
                     event_history_metadata_by_unique_id.get(unique_id, {})
@@ -375,7 +375,7 @@ class DbtCliInvocation:
             Literal["run_results.json"],
             Literal["sources.json"],
         ],
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Retrieve a dbt artifact from the target path.
 
         See https://docs.getdbt.com/reference/artifacts/dbt-artifacts for more information.
@@ -407,7 +407,7 @@ class DbtCliInvocation:
         """The dbt CLI command that was invoked."""
         return " ".join(cast(Sequence[str], self.process.args))
 
-    def _stream_stdout(self) -> Iterator[Union[str, Dict[str, Any]]]:
+    def _stream_stdout(self) -> Iterator[Union[str, dict[str, Any]]]:
         """Stream the stdout from the dbt CLI process."""
         try:
             if not self.process.stdout or self.process.stdout.closed:

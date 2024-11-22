@@ -79,7 +79,7 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
 class CodeLocationInfoForSensorTest(NamedTuple):
     instance: DagsterInstance
     context: WorkspaceProcessContext
-    repositories: Dict[str, RemoteRepository]
+    repositories: dict[str, RemoteRepository]
     code_location: CodeLocation
 
     def get_single_repository(self) -> RemoteRepository:
@@ -91,7 +91,7 @@ class CodeLocationInfoForSensorTest(NamedTuple):
 def instance_with_single_code_location_multiple_repos_with_sensors(
     overrides: Optional[Mapping[str, Any]] = None,
     workspace_load_target: Optional[WorkspaceLoadTarget] = None,
-) -> Iterator[Tuple[DagsterInstance, WorkspaceProcessContext, Dict[str, RemoteRepository]]]:
+) -> Iterator[tuple[DagsterInstance, WorkspaceProcessContext, dict[str, RemoteRepository]]]:
     with instance_with_multiple_code_locations(overrides, workspace_load_target) as many_tuples:
         assert len(many_tuples) == 1
         location_info = next(iter(many_tuples.values()))
@@ -105,12 +105,12 @@ def instance_with_single_code_location_multiple_repos_with_sensors(
 @contextmanager
 def instance_with_multiple_code_locations(
     overrides: Optional[Mapping[str, Any]] = None, workspace_load_target=None
-) -> Iterator[Dict[str, CodeLocationInfoForSensorTest]]:
+) -> Iterator[dict[str, CodeLocationInfoForSensorTest]]:
     with instance_for_test(overrides) as instance:
         with create_test_daemon_workspace_context(
             workspace_load_target or create_workspace_load_target(None), instance=instance
         ) as workspace_context:
-            location_infos: Dict[str, CodeLocationInfoForSensorTest] = {}
+            location_infos: dict[str, CodeLocationInfoForSensorTest] = {}
 
             for code_location_entry in (
                 workspace_context.create_request_context().get_code_location_entries().values()
@@ -607,7 +607,7 @@ def test_run_failure_sensor_overfetch(
                 )
 
 
-def sqlite_storage_config_fn(temp_dir: str) -> Dict[str, Any]:
+def sqlite_storage_config_fn(temp_dir: str) -> dict[str, Any]:
     # non-run sharded storage
     return {
         "run_storage": {

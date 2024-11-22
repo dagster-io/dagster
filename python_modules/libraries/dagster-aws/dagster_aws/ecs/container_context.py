@@ -273,7 +273,7 @@ class EcsContainerContext(
         repository_credentials: Optional[str] = None,
         server_health_check: Optional[Mapping[str, Any]] = None,
     ):
-        return super(EcsContainerContext, cls).__new__(
+        return super().__new__(
             cls,
             secrets=check.opt_sequence_param(secrets, "secrets"),
             secrets_tags=check.opt_sequence_param(secrets_tags, "secrets_tags"),

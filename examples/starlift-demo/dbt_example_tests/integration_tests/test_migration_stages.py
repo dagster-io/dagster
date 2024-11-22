@@ -21,12 +21,12 @@ def dagster_home_fixture(local_env: None) -> str:
 
 
 @pytest.fixture(name="stage_and_fn")
-def stage_and_fn_fixture(request) -> Tuple[str, Callable[[], AirflowInstance]]:
+def stage_and_fn_fixture(request) -> tuple[str, Callable[[], AirflowInstance]]:
     return request.param
 
 
 @pytest.fixture(name="dagster_dev_cmd")
-def dagster_dev_cmd_fixture(stage_and_fn: Tuple[str, Callable[[], AirflowInstance]]) -> List[str]:
+def dagster_dev_cmd_fixture(stage_and_fn: tuple[str, Callable[[], AirflowInstance]]) -> list[str]:
     dagster_dev_module = stage_and_fn[0]
     if dagster_dev_module.endswith("peer"):
         cmd = ["make", "run_peer"]
@@ -78,7 +78,7 @@ def test_dagster_materializes(
     airflow_instance: None,
     dagster_dev: None,
     dagster_home: str,
-    stage_and_fn: Tuple[str, Callable[[], AirflowInstance]],
+    stage_and_fn: tuple[str, Callable[[], AirflowInstance]],
 ) -> None:
     """Test that assets can load properly, and that materializations register."""
     dagster_dev_module, af_instance_fn = stage_and_fn

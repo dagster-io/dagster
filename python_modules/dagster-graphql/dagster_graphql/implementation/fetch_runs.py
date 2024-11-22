@@ -73,7 +73,7 @@ def get_run_tag_keys(graphene_info: "ResolveInfo") -> "GrapheneRunTagKeys":
 
 def get_run_tags(
     graphene_info: "ResolveInfo",
-    tag_keys: List[str],
+    tag_keys: list[str],
     value_prefix: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> "GrapheneRunTags":
@@ -208,7 +208,7 @@ def get_assets_latest_info(
     # Build a lookup table of asset keys to last materialization run IDs. We will filter these
     # run IDs out of the "in progress" run lists that are generated below since they have already
     # emitted an output for the run.
-    latest_materialization_run_id_by_asset: Dict[AssetKey, Optional[str]] = {
+    latest_materialization_run_id_by_asset: dict[AssetKey, Optional[str]] = {
         asset_record.asset_entry.asset_key: (
             asset_record.asset_entry.last_materialization.run_id
             if asset_record.asset_entry.last_materialization
@@ -286,9 +286,9 @@ def get_assets_latest_info(
 
 def _get_in_progress_runs_for_assets(
     run_records_by_run_id: Mapping[str, RunRecord],
-    latest_materialization_run_id_by_asset: Dict[AssetKey, Optional[str]],
-    latest_run_ids_by_asset: Dict[AssetKey, str],
-) -> Tuple[Mapping[AssetKey, AbstractSet[str]], Mapping[AssetKey, AbstractSet[str]]]:
+    latest_materialization_run_id_by_asset: dict[AssetKey, Optional[str]],
+    latest_run_ids_by_asset: dict[AssetKey, str],
+) -> tuple[Mapping[AssetKey, AbstractSet[str]], Mapping[AssetKey, AbstractSet[str]]]:
     in_progress_run_ids_by_asset = defaultdict(set)
     unstarted_run_ids_by_asset = defaultdict(set)
 

@@ -165,7 +165,7 @@ def _build_freshness_multi_check(
             )
             passed = latest_record is not None
 
-            metadata: Dict[str, MetadataValue] = {
+            metadata: dict[str, MetadataValue] = {
                 FRESHNESS_PARAMS_METADATA_KEY: JsonMetadataValue(params_metadata),
                 LATEST_CRON_TICK_METADATA_KEY: TimestampMetadataValue(deadline.timestamp()),
             }

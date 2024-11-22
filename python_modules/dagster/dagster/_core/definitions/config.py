@@ -60,7 +60,7 @@ class ConfigMapping(
         config_schema: Optional[Any] = None,
         receive_processed_config_values: Optional[bool] = None,
     ):
-        return super(ConfigMapping, cls).__new__(
+        return super().__new__(
             cls,
             config_fn=check.callable_param(config_fn, "config_fn"),
             config_schema=convert_user_facing_definition_config_schema(config_schema),

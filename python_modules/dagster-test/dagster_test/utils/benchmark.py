@@ -23,7 +23,7 @@ class ProfilingSession:
         name: Optional[str] = None,
         experiment_settings: Optional[Mapping[str, Any]] = None,
     ):
-        self.entries: List[ProfilingEntry] = []
+        self.entries: list[ProfilingEntry] = []
         self.output = Console()
         self.name = name or "anonymous"
         self.experiment_settings = experiment_settings

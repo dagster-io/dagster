@@ -12,5 +12,5 @@ def build_kind_tag_key(kind: str) -> str:
     return f"{KIND_PREFIX}{kind}"
 
 
-def build_kind_tag(kind: str) -> Dict[str, Any]:
+def build_kind_tag(kind: str) -> dict[str, Any]:
     return {build_kind_tag_key(kind): ""}

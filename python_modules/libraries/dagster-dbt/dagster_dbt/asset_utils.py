@@ -361,13 +361,13 @@ def build_schedule_from_dbt_selection(
 
 def get_manifest_and_translator_from_dbt_assets(
     dbt_assets: Sequence[AssetsDefinition],
-) -> Tuple[Mapping[str, Any], "DagsterDbtTranslator"]:
+) -> tuple[Mapping[str, Any], "DagsterDbtTranslator"]:
     check.invariant(len(dbt_assets) == 1, "Exactly one dbt AssetsDefinition is required")
     dbt_assets_def = dbt_assets[0]
     metadata_by_key = dbt_assets_def.metadata_by_key or {}
     first_asset_key = next(iter(dbt_assets_def.metadata_by_key.keys()))
     first_metadata = metadata_by_key.get(first_asset_key, {})
-    manifest_wrapper: Optional["DbtManifestWrapper"] = first_metadata.get(
+    manifest_wrapper: Optional[DbtManifestWrapper] = first_metadata.get(
         DAGSTER_DBT_MANIFEST_METADATA_KEY
     )
     if manifest_wrapper is None:
@@ -588,7 +588,7 @@ def default_asset_check_fn(
         return None
 
     test_resource_props = dbt_nodes[test_unique_id]
-    parent_unique_ids: Set[str] = set(manifest["parent_map"].get(test_unique_id, []))
+    parent_unique_ids: set[str] = set(manifest["parent_map"].get(test_unique_id, []))
 
     asset_check_key = get_asset_check_key_for_test(
         manifest=manifest,
@@ -682,13 +682,13 @@ def is_non_asset_node(dbt_resource_props: Mapping[str, Any]):
 def get_deps(
     dbt_nodes: Mapping[str, Any],
     selected_unique_ids: AbstractSet[str],
-    asset_resource_types: List[str],
-) -> Mapping[str, FrozenSet[str]]:
+    asset_resource_types: list[str],
+) -> Mapping[str, frozenset[str]]:
     def _valid_parent_node(dbt_resource_props):
         # sources are valid parents, but not assets
         return dbt_resource_props["resource_type"] in asset_resource_types + ["source"]
 
-    asset_deps: Dict[str, Set[str]] = {}
+    asset_deps: dict[str, set[str]] = {}
     for unique_id in selected_unique_ids:
         dbt_resource_props = dbt_nodes[unique_id]
         node_resource_type = dbt_resource_props["resource_type"]
@@ -739,10 +739,10 @@ def build_dbt_multi_asset_args(
     exclude: str,
     io_manager_key: Optional[str],
     project: Optional["DbtProject"],
-) -> Tuple[
+) -> tuple[
     Sequence[AssetDep],
-    Dict[str, AssetOut],
-    Dict[str, Set[AssetKey]],
+    dict[str, AssetOut],
+    dict[str, set[AssetKey]],
     Sequence[AssetCheckSpec],
 ]:
     from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
@@ -759,13 +759,13 @@ def build_dbt_multi_asset_args(
         asset_resource_types=ASSET_RESOURCE_TYPES,
     )
 
-    deps: Dict[AssetKey, AssetDep] = {}
-    outs: Dict[str, AssetOut] = {}
-    internal_asset_deps: Dict[str, Set[AssetKey]] = {}
-    check_specs_by_key: Dict[AssetCheckKey, AssetCheckSpec] = {}
+    deps: dict[AssetKey, AssetDep] = {}
+    outs: dict[str, AssetOut] = {}
+    internal_asset_deps: dict[str, set[AssetKey]] = {}
+    check_specs_by_key: dict[AssetCheckKey, AssetCheckSpec] = {}
 
-    dbt_unique_id_and_resource_types_by_asset_key: Dict[AssetKey, Tuple[Set[str], Set[str]]] = {}
-    dbt_group_resource_props_by_group_name: Dict[str, Dict[str, Any]] = {
+    dbt_unique_id_and_resource_types_by_asset_key: dict[AssetKey, tuple[set[str], set[str]]] = {}
+    dbt_group_resource_props_by_group_name: dict[str, dict[str, Any]] = {
         dbt_group_resource_props["name"]: dbt_group_resource_props
         for dbt_group_resource_props in manifest["groups"].values()
     }
@@ -930,33 +930,33 @@ def get_asset_deps(
     io_manager_key,
     manifest: Optional[Mapping[str, Any]],
     dagster_dbt_translator: "DagsterDbtTranslator",
-) -> Tuple[
-    Dict[AssetKey, Set[AssetKey]],
-    Dict[AssetKey, Tuple[str, In]],
-    Dict[AssetKey, Tuple[str, Out]],
-    Dict[AssetKey, str],
-    Dict[AssetKey, FreshnessPolicy],
-    Dict[AssetKey, AutomationCondition],
-    Dict[str, AssetCheckSpec],
-    Dict[str, List[str]],
-    Dict[str, Dict[str, Any]],
+) -> tuple[
+    dict[AssetKey, set[AssetKey]],
+    dict[AssetKey, tuple[str, In]],
+    dict[AssetKey, tuple[str, Out]],
+    dict[AssetKey, str],
+    dict[AssetKey, FreshnessPolicy],
+    dict[AssetKey, AutomationCondition],
+    dict[str, AssetCheckSpec],
+    dict[str, list[str]],
+    dict[str, dict[str, Any]],
 ]:
     from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper, validate_translator
 
     dagster_dbt_translator = validate_translator(dagster_dbt_translator)
 
-    asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
-    asset_ins: Dict[AssetKey, Tuple[str, In]] = {}
-    asset_outs: Dict[AssetKey, Tuple[str, Out]] = {}
+    asset_deps: dict[AssetKey, set[AssetKey]] = {}
+    asset_ins: dict[AssetKey, tuple[str, In]] = {}
+    asset_outs: dict[AssetKey, tuple[str, Out]] = {}
 
     # These dicts could be refactored as a single dict, mapping from output name to arbitrary
     # metadata that we need to store for reference.
-    group_names_by_key: Dict[AssetKey, str] = {}
-    freshness_policies_by_key: Dict[AssetKey, FreshnessPolicy] = {}
-    automation_conditions_by_key: Dict[AssetKey, AutomationCondition] = {}
-    check_specs_by_key: Dict[AssetCheckKey, AssetCheckSpec] = {}
-    fqns_by_output_name: Dict[str, List[str]] = {}
-    metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
+    group_names_by_key: dict[AssetKey, str] = {}
+    freshness_policies_by_key: dict[AssetKey, FreshnessPolicy] = {}
+    automation_conditions_by_key: dict[AssetKey, AutomationCondition] = {}
+    check_specs_by_key: dict[AssetCheckKey, AssetCheckSpec] = {}
+    fqns_by_output_name: dict[str, list[str]] = {}
+    metadata_by_output_name: dict[str, dict[str, Any]] = {}
 
     for unique_id, parent_unique_ids in deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
@@ -1036,7 +1036,7 @@ def get_asset_deps(
                 asset_ins[parent_asset_key] = (input_name, In(Nothing))
 
     check_specs_by_output_name = cast(
-        Dict[str, AssetCheckSpec],
+        dict[str, AssetCheckSpec],
         validate_and_assign_output_names_to_check_specs(
             list(check_specs_by_key.values()), list(asset_outs.keys())
         ),
@@ -1103,7 +1103,7 @@ def get_asset_check_key_for_test(
         if not ref_package:
             ref_package = project_name
 
-        unique_id_by_ref: Mapping[Tuple[str, str, Optional[str]], str] = {
+        unique_id_by_ref: Mapping[tuple[str, str, Optional[str]], str] = {
             (
                 dbt_resource_props["name"],
                 dbt_resource_props["package_name"],

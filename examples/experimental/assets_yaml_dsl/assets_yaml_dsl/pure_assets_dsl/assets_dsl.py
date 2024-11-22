@@ -16,13 +16,13 @@ from dagster import AssetKey, asset
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 
-def load_yaml(relative_path) -> Dict[str, Any]:
+def load_yaml(relative_path) -> dict[str, Any]:
     path = os.path.join(os.path.dirname(__file__), relative_path)
-    with open(path, "r", encoding="utf8") as ff:
+    with open(path, encoding="utf8") as ff:
         return yaml.load(ff, Loader=Loader)
 
 
-def from_asset_entries(asset_entries: Dict[str, Any]) -> List[AssetsDefinition]:
+def from_asset_entries(asset_entries: dict[str, Any]) -> list[AssetsDefinition]:
     assets_defs = []
 
     group_name = asset_entries.get("group_name")
@@ -55,6 +55,6 @@ def from_asset_entries(asset_entries: Dict[str, Any]) -> List[AssetsDefinition]:
     return assets_defs
 
 
-def get_asset_dsl_example_defs() -> List[AssetsDefinition]:
+def get_asset_dsl_example_defs() -> list[AssetsDefinition]:
     asset_entries = load_yaml("assets.yaml")
     return from_asset_entries(asset_entries)

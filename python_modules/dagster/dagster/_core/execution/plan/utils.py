@@ -31,7 +31,7 @@ class RetryRequestedFromPolicy(RetryRequested):
 
 @contextmanager
 def op_execution_error_boundary(
-    error_cls: Type[DagsterUserCodeExecutionError],
+    error_cls: type[DagsterUserCodeExecutionError],
     msg_fn: Callable[[], str],
     step_context: "StepExecutionContext",
     **kwargs: Any,

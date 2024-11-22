@@ -43,7 +43,7 @@ def s3_test_resource(_):
 @pytest.fixture(name="s3_and_io_manager", params=[True, False])
 def s3_and_io_manager_fixture(
     request,
-) -> Tuple[Any, Callable[[Any], Any]]:
+) -> tuple[Any, Callable[[Any], Any]]:
     if request.param:
         return s3_test_resource, lambda _: s3_pickle_io_manager
     else:

@@ -9,7 +9,7 @@ from dagster._core.types.dagster_type import (
 if TYPE_CHECKING:
     from dagster._core.types.config_schema import DagsterTypeLoader
 
-T_Type = TypeVar("T_Type", bound=Type[object])
+T_Type = TypeVar("T_Type", bound=type[object])
 
 
 @overload

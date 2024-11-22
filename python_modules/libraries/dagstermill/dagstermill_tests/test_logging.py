@@ -26,7 +26,7 @@ class LogTestFileHandler(logging.Handler):
         if not os.path.isfile(self.file_path):
             with open(self.file_path, "a", encoding="utf8"):  # Create file if does not exist
                 pass
-        super(LogTestFileHandler, self).__init__()
+        super().__init__()
 
     def emit(self, record):
         with open(self.file_path, "a", encoding="utf8") as fd:
@@ -112,14 +112,14 @@ def test_logging(hello_logging_job_type) -> None:
                     instance=instance,
                 )
 
-                with open(test_file_path, "r", encoding="utf8") as test_file:
+                with open(test_file_path, encoding="utf8") as test_file:
                     records = [
                         json.loads(line)
                         for line in test_file.read().strip("\n").split("\n")
                         if line
                     ]
 
-                with open(critical_file_path, "r", encoding="utf8") as critical_file:
+                with open(critical_file_path, encoding="utf8") as critical_file:
                     critical_records = [
                         json.loads(line)
                         for line in critical_file.read().strip("\n").split("\n")

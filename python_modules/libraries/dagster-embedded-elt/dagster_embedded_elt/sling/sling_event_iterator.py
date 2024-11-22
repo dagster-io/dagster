@@ -76,9 +76,9 @@ SLING_COLUMN_PREFIX = "_sling_"
 def fetch_row_count_metadata(
     materialization: SlingEventType,
     sling_cli: "SlingResource",
-    replication_config: Dict[str, Any],
+    replication_config: dict[str, Any],
     context: Union[OpExecutionContext, AssetExecutionContext],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     target_name = replication_config["target"]
     if not materialization.metadata:
         raise Exception("Missing required metadata to retrieve stream_name")
@@ -103,9 +103,9 @@ def fetch_row_count_metadata(
 def fetch_column_metadata(
     materialization: SlingEventType,
     sling_cli: "SlingResource",
-    replication_config: Dict[str, Any],
+    replication_config: dict[str, Any],
     context: Union[OpExecutionContext, AssetExecutionContext],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     target_name = replication_config["target"]
 
     if not materialization.metadata:
@@ -177,7 +177,7 @@ class SlingEventIterator(Generic[T], abc.Iterator):
         self,
         events: Iterator[T],
         sling_cli: "SlingResource",
-        replication_config: Dict[str, Any],
+        replication_config: dict[str, Any],
         context: Union[OpExecutionContext, AssetExecutionContext],
     ) -> None:
         self._inner_iterator = events

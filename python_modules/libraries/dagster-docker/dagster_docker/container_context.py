@@ -79,7 +79,7 @@ class DockerContainerContext(
         networks: Optional[Sequence[str]] = None,
         container_kwargs: Optional[Mapping[str, Any]] = None,
     ):
-        return super(DockerContainerContext, cls).__new__(
+        return super().__new__(
             cls,
             registry=check.opt_nullable_mapping_param(registry, "registry"),
             env_vars=check.opt_sequence_param(env_vars, "env_vars", of_type=str),

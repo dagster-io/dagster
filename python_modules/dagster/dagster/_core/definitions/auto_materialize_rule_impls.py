@@ -249,8 +249,8 @@ class AutoMaterializeAssetPartitionsFilter(
         if self.latest_run_required_tags is None:
             return asset_partitions
 
-        will_update_asset_partitions: Set[AssetKeyPartitionKey] = set()
-        storage_ids_to_fetch_by_key: Dict[AssetKey, List[int]] = defaultdict(list)
+        will_update_asset_partitions: set[AssetKeyPartitionKey] = set()
+        storage_ids_to_fetch_by_key: dict[AssetKey, list[int]] = defaultdict(list)
 
         for asset_partition in asset_partitions:
             if context.legacy_context.will_update_asset_partition(asset_partition):
@@ -262,7 +262,7 @@ class AutoMaterializeAssetPartitionsFilter(
                 if latest_storage_id is not None:
                     storage_ids_to_fetch_by_key[asset_partition.asset_key].append(latest_storage_id)
 
-        asset_partitions_by_latest_run_id: Dict[str, Set[AssetKeyPartitionKey]] = defaultdict(set)
+        asset_partitions_by_latest_run_id: dict[str, set[AssetKeyPartitionKey]] = defaultdict(set)
 
         step = int(os.getenv("DAGSTER_ASSET_DAEMON_RUN_TAGS_EVENT_FETCH_LIMIT", "1000"))
 
@@ -356,10 +356,10 @@ class MaterializeOnParentUpdatedRule(
         )
 
         asset_partitions_by_updated_parents: Mapping[
-            AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
+            AssetKeyPartitionKey, set[AssetKeyPartitionKey]
         ] = defaultdict(set)
         asset_partitions_by_will_update_parents: Mapping[
-            AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
+            AssetKeyPartitionKey, set[AssetKeyPartitionKey]
         ] = defaultdict(set)
 
         subset_to_evaluate = context.legacy_context.parent_has_or_will_update_subset
@@ -399,10 +399,10 @@ class MaterializeOnParentUpdatedRule(
             else updated_and_will_update_parents
         )
 
-        updated_parent_assets_by_asset_partition: Dict[AssetKeyPartitionKey, Set[AssetKey]] = (
+        updated_parent_assets_by_asset_partition: dict[AssetKeyPartitionKey, set[AssetKey]] = (
             defaultdict(set)
         )
-        will_update_parent_assets_by_asset_partition: Dict[AssetKeyPartitionKey, Set[AssetKey]] = (
+        will_update_parent_assets_by_asset_partition: dict[AssetKeyPartitionKey, set[AssetKey]] = (
             defaultdict(set)
         )
 

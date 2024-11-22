@@ -1,3 +1,5 @@
+# ruff: noqa: UP006
+
 import typing
 
 from dagster._utils.typing_api import (

@@ -10,12 +10,12 @@ from dagster._utils.test import get_all_direct_subclasses_of_marker
 INTERNAL_INIT_SUBCLASSES = get_all_direct_subclasses_of_marker(IHasInternalInit)
 
 
-def _is_namedtuple(cls: Type) -> bool:
-    return safe_is_subclass(cls, Tuple) and hasattr(cls, "_fields")
+def _is_namedtuple(cls: type) -> bool:
+    return safe_is_subclass(cls, tuple) and hasattr(cls, "_fields")
 
 
 @pytest.mark.parametrize("cls", INTERNAL_INIT_SUBCLASSES)
-def test_dagster_internal_init_class_follow_rules(cls: Type):
+def test_dagster_internal_init_class_follow_rules(cls: type):
     assert hasattr(
         cls, "dagster_internal_init"
     ), f"{cls.__name__} does not have dagster_internal_init method"

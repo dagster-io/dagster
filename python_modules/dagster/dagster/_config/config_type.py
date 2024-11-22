@@ -77,7 +77,7 @@ class ConfigType:
         )
 
         # memoized snap representation
-        self._snap: Optional["ConfigTypeSnap"] = None
+        self._snap: Optional[ConfigTypeSnap] = None
 
     @property
     def description(self) -> Optional[str]:
@@ -136,14 +136,12 @@ class ConfigScalar(ConfigType):
         **kwargs: typing.Any,
     ):
         self.scalar_kind = check.inst_param(scalar_kind, "scalar_kind", ConfigScalarKind)
-        super(ConfigScalar, self).__init__(
-            key, kind=ConfigTypeKind.SCALAR, given_name=given_name, **kwargs
-        )
+        super().__init__(key, kind=ConfigTypeKind.SCALAR, given_name=given_name, **kwargs)
 
 
 class BuiltinConfigScalar(ConfigScalar):
     def __init__(self, scalar_kind, description=None):
-        super(BuiltinConfigScalar, self).__init__(
+        super().__init__(
             key=type(self).__name__,
             given_name=type(self).__name__,
             scalar_kind=scalar_kind,
@@ -153,22 +151,22 @@ class BuiltinConfigScalar(ConfigScalar):
 
 class Int(BuiltinConfigScalar):
     def __init__(self):
-        super(Int, self).__init__(scalar_kind=ConfigScalarKind.INT, description="")
+        super().__init__(scalar_kind=ConfigScalarKind.INT, description="")
 
 
 class String(BuiltinConfigScalar):
     def __init__(self):
-        super(String, self).__init__(scalar_kind=ConfigScalarKind.STRING, description="")
+        super().__init__(scalar_kind=ConfigScalarKind.STRING, description="")
 
 
 class Bool(BuiltinConfigScalar):
     def __init__(self):
-        super(Bool, self).__init__(scalar_kind=ConfigScalarKind.BOOL, description="")
+        super().__init__(scalar_kind=ConfigScalarKind.BOOL, description="")
 
 
 class Float(BuiltinConfigScalar):
     def __init__(self):
-        super(Float, self).__init__(scalar_kind=ConfigScalarKind.FLOAT, description="")
+        super().__init__(scalar_kind=ConfigScalarKind.FLOAT, description="")
 
     def post_process(self, value):
         return float(value)
@@ -176,7 +174,7 @@ class Float(BuiltinConfigScalar):
 
 class Any(ConfigType):
     def __init__(self):
-        super(Any, self).__init__(
+        super().__init__(
             key="Any",
             given_name="Any",
             kind=ConfigTypeKind.ANY,
@@ -205,7 +203,7 @@ class Noneable(ConfigType):
         from dagster._config.field import resolve_to_config_type
 
         self.inner_type = cast(ConfigType, resolve_to_config_type(inner_type))
-        super(Noneable, self).__init__(
+        super().__init__(
             key=f"Noneable.{self.inner_type.key}",
             kind=ConfigTypeKind.NONEABLE,
             type_params=[self.inner_type],
@@ -228,7 +226,7 @@ class Array(ConfigType):
         from dagster._config.field import resolve_to_config_type
 
         self.inner_type = cast(ConfigType, resolve_to_config_type(inner_type))
-        super(Array, self).__init__(
+        super().__init__(
             key=f"Array.{self.inner_type.key}",
             type_params=[self.inner_type],
             kind=ConfigTypeKind.ARRAY,
@@ -300,7 +298,7 @@ class Enum(ConfigType):
 
     def __init__(self, name: str, enum_values: Sequence[EnumValue]):
         check.str_param(name, "name")
-        super(Enum, self).__init__(key=name, given_name=name, kind=ConfigTypeKind.ENUM)
+        super().__init__(key=name, given_name=name, kind=ConfigTypeKind.ENUM)
         self.enum_values = check.sequence_param(enum_values, "enum_values", of_type=EnumValue)
         self._valid_python_values = {ev.python_value for ev in enum_values}
         check.invariant(len(self._valid_python_values) == len(enum_values))
@@ -448,7 +446,7 @@ class ScalarUnion(ConfigType):
             _key, "_key", f"ScalarUnion.{self.scalar_type.key}-{self.non_scalar_type.key}"
         )
 
-        super(ScalarUnion, self).__init__(
+        super().__init__(
             key=key,
             kind=ConfigTypeKind.SCALAR_UNION,
             type_params=[self.scalar_type, self.non_scalar_type],
@@ -466,7 +464,7 @@ ConfigFloatInstance: Float = Float()
 ConfigIntInstance: Int = Int()
 ConfigStringInstance: String = String()
 
-_CONFIG_MAP: Dict[typing.Any, ConfigType] = {
+_CONFIG_MAP: dict[typing.Any, ConfigType] = {
     BuiltinEnum.ANY: ConfigAnyInstance,
     BuiltinEnum.BOOL: ConfigBoolInstance,
     BuiltinEnum.FLOAT: ConfigFloatInstance,
@@ -475,7 +473,7 @@ _CONFIG_MAP: Dict[typing.Any, ConfigType] = {
 }
 
 
-_CONFIG_MAP_BY_NAME: Dict[str, ConfigType] = {
+_CONFIG_MAP_BY_NAME: dict[str, ConfigType] = {
     "Any": ConfigAnyInstance,
     "Bool": ConfigBoolInstance,
     "Float": ConfigFloatInstance,

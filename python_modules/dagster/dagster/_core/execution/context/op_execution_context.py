@@ -115,8 +115,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             StepExecutionContext,
         )
         self._pdb: Optional[ForkedPdb] = None
-        self._events: List[DagsterEvent] = []
-        self._output_metadata: Dict[str, Any] = {}
+        self._events: list[DagsterEvent] = []
+        self._output_metadata: dict[str, Any] = {}
 
     @property
     def op_execution_context(self) -> "OpExecutionContext":

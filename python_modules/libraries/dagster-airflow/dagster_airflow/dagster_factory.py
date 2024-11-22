@@ -27,7 +27,7 @@ from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 
 def make_dagster_definitions_from_airflow_dag_bag(
     dag_bag: DagBag,
-    connections: Optional[List[Connection]] = None,
+    connections: Optional[list[Connection]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
 ) -> Definitions:
     """Construct a Dagster definition corresponding to Airflow DAGs in DagBag.
@@ -73,7 +73,7 @@ def make_dagster_definitions_from_airflow_dag_bag(
 def make_dagster_definitions_from_airflow_dags_path(
     dag_path: str,
     safe_mode: bool = True,
-    connections: Optional[List[Connection]] = None,
+    connections: Optional[list[Connection]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
 ) -> Definitions:
     """Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
@@ -181,9 +181,9 @@ def make_dagster_definitions_from_airflow_example_dags(
 
 def make_schedules_and_jobs_from_airflow_dag_bag(
     dag_bag: DagBag,
-    connections: Optional[List[Connection]] = None,
+    connections: Optional[list[Connection]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
-) -> Tuple[List[ScheduleDefinition], List[JobDefinition]]:
+) -> tuple[list[ScheduleDefinition], list[JobDefinition]]:
     """Construct Dagster Schedules and Jobs corresponding to Airflow DagBag.
 
     Args:

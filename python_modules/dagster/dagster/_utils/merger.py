@@ -10,12 +10,12 @@ V2 = TypeVar("V2")
 
 
 def _deep_merge_dicts(
-    onto_dict: Dict[K, V], from_dict: Mapping[K2, V2]
-) -> Dict[Union[K, K2], Union[V, V2, Dict[object, object]]]:
+    onto_dict: dict[K, V], from_dict: Mapping[K2, V2]
+) -> dict[Union[K, K2], Union[V, V2, dict[object, object]]]:
     check.mapping_param(from_dict, "from_dict")
     check.dict_param(onto_dict, "onto_dict")
 
-    _onto_dict = cast(Dict[Union[K, K2], Union[V, V2, Dict[object, object]]], onto_dict)
+    _onto_dict = cast(dict[Union[K, K2], Union[V, V2, dict[object, object]]], onto_dict)
     for from_key, from_value in from_dict.items():
         if from_key not in onto_dict:
             _onto_dict[from_key] = from_value
@@ -32,7 +32,7 @@ def _deep_merge_dicts(
 
 def deep_merge_dicts(
     onto_dict: Mapping[K, V], from_dict: Mapping[K2, V2]
-) -> Dict[Union[K, K2], Union[V, V2, Dict[object, object]]]:
+) -> dict[Union[K, K2], Union[V, V2, dict[object, object]]]:
     """Returns a recursive union of two input dictionaries:
     * The returned dictionary has an entry for any key that's in either of the inputs.
     * For any key whose value is a dictionary in both of the inputs, the returned value will
@@ -45,7 +45,7 @@ def deep_merge_dicts(
     return _deep_merge_dicts(onto_dict, from_dict)
 
 
-def merge_dicts(*args: Mapping[Any, Any]) -> Dict[Any, Any]:
+def merge_dicts(*args: Mapping[Any, Any]) -> dict[Any, Any]:
     """Returns a dictionary with with all the keys in all of the input dictionaries.
 
     If multiple input dictionaries have different values for the same key, the returned dictionary
@@ -55,7 +55,7 @@ def merge_dicts(*args: Mapping[Any, Any]) -> Dict[Any, Any]:
     if len(args) < 2:
         check.failed(f"Expected 2 or more args to merge_dicts, found {len(args)}")
 
-    result: Dict[object, object] = {}
+    result: dict[object, object] = {}
     for arg in args:
         result.update(arg)
     return result

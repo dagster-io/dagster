@@ -144,7 +144,7 @@ def construct_automapped_dag_assets_defs(
     task_specs = []
     for dag_data in serialized_data.dag_datas.values():
         leaf_tasks = set()
-        upstream_deps: Dict[str, Set[str]] = {task_id: set() for task_id in dag_data.task_infos}
+        upstream_deps: dict[str, set[str]] = {task_id: set() for task_id in dag_data.task_infos}
         for task_id, task_info in dag_data.task_infos.items():
             if not task_info.downstream_task_ids:
                 leaf_tasks.add(task_id)

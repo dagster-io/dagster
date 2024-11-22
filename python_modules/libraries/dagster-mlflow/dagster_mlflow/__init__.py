@@ -6,4 +6,4 @@ from dagster_mlflow.version import __version__
 
 DagsterLibraryRegistry.register("dagster-mlflow", __version__)
 
-__all__ = ["mlflow_tracking", "end_mlflow_on_run_finished"]
+__all__ = ["end_mlflow_on_run_finished", "mlflow_tracking"]

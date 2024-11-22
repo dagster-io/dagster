@@ -279,7 +279,7 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
 
     result = job.execute_in_process()
 
-    expected_asset_keys = set((AssetKey(a) for a in expected_assets.split(",")))
+    expected_asset_keys = set(AssetKey(a) for a in expected_assets.split(","))
 
     # make sure we've generated the correct set of keys
     assert _all_asset_keys(result) == expected_asset_keys
@@ -376,9 +376,7 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
             ).records
         }
 
-    expected_asset_keys = set(
-        (AssetKey([*(prefixes or []), a]) for a in expected_assets.split(","))
-    )
+    expected_asset_keys = set(AssetKey([*(prefixes or []), a]) for a in expected_assets.split(","))
     # make sure we've planned on the correct set of keys
     assert planned_asset_keys == expected_asset_keys
 

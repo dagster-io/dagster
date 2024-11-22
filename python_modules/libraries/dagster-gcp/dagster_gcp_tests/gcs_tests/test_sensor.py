@@ -30,7 +30,7 @@ def test_get_gcs_keys(
     since_key: Optional[str],
     blob_prefix: Optional[str],
     nb_bucket_keys: int,
-    expected_keys: List[str],
+    expected_keys: list[str],
 ):
     bucket_name = "test-bucket"
 

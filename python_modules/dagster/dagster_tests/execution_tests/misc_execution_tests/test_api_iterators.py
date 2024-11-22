@@ -58,7 +58,7 @@ def simple_job():
 
 
 def test_execute_run_iterator():
-    records: List[EventLogEntry] = []
+    records: list[EventLogEntry] = []
 
     def event_callback(record: EventLogEntry) -> None:
         assert isinstance(record, EventLogEntry)

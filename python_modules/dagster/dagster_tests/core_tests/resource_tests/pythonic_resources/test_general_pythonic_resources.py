@@ -553,7 +553,7 @@ def test_nested_config_class() -> None:
         age: int
 
     class UsersResource(ConfigurableResource):
-        users: List[User]
+        users: list[User]
 
     executed = {}
 
@@ -636,7 +636,7 @@ def test_using_enum_complex() -> None:
         BAR = "bar"
 
     class MyResource(ConfigurableResource):
-        list_of_enums: List[MyEnum]
+        list_of_enums: list[MyEnum]
         optional_enum: Optional[MyEnum] = None
 
     @asset
@@ -852,8 +852,8 @@ def test_from_resource_context_and_to_config_field() -> None:
 def test_from_resource_context_and_to_config_field_complex() -> None:
     class MyComplexConfigResource(ConfigurableResource):
         a_string: str
-        a_list_of_ints: List[int]
-        a_map_of_lists_of_maps_of_floats: Mapping[str, List[Mapping[str, float]]]
+        a_list_of_ints: list[int]
+        a_map_of_lists_of_maps_of_floats: Mapping[str, list[Mapping[str, float]]]
 
     @resource(config_schema=MyComplexConfigResource.to_config_schema())
     def complex_config_resource_function_style(

@@ -41,7 +41,7 @@ def source_docs(context: AssetExecutionContext):
 
 
 @asset(compute_kind="OpenAI", partitions_def=docs_partitions_def)
-def search_index(context: AssetExecutionContext, openai: OpenAIResource, source_docs: List[Any]):
+def search_index(context: AssetExecutionContext, openai: OpenAIResource, source_docs: list[Any]):
     source_chunks = []
     splitter = CharacterTextSplitter(separator=" ", chunk_size=1024, chunk_overlap=0)
     for source in source_docs:
@@ -72,7 +72,7 @@ def completion(
     context: AssetExecutionContext,
     openai: OpenAIResource,
     config: OpenAIConfig,
-    search_index: Dict[str, Any],
+    search_index: dict[str, Any],
 ):
     merged_index: Any = None
     # allow_dangerous_deserialization set to True since since we created the search index ourselves

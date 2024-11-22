@@ -109,7 +109,7 @@ def dev_command(
 ) -> None:
     # check if dagster-webserver installed, crash if not
     try:
-        import dagster_webserver  #  # noqa: F401
+        import dagster_webserver  #
     except ImportError:
         raise click.UsageError(
             "The dagster-webserver Python package must be installed in order to use the dagster dev"

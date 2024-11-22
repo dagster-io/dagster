@@ -72,7 +72,7 @@ def reserialize_fixture(airflow_instance: None) -> Callable[[], None]:
 @contextmanager
 def stand_up_airflow(
     env: Any = {},
-    airflow_cmd: List[str] = ["airflow", "standalone"],
+    airflow_cmd: list[str] = ["airflow", "standalone"],
     cwd: Optional[Path] = None,
     stdout_channel: Optional[int] = None,
     port: int = 8080,
@@ -132,14 +132,14 @@ def setup_dagster_home() -> Generator[str, None, None]:
 
 
 @pytest.fixture(name="dagster_dev_cmd")
-def dagster_dev_cmd(dagster_defs_path: str) -> List[str]:
+def dagster_dev_cmd(dagster_defs_path: str) -> list[str]:
     """Return the command used to stand up dagster dev."""
     return ["dagster", "dev", "-f", dagster_defs_path, "-p", "3333"]
 
 
 @pytest.fixture(name="dagster_dev")
 def setup_dagster(
-    airflow_instance: None, dagster_home: str, dagster_dev_cmd: List[str]
+    airflow_instance: None, dagster_home: str, dagster_dev_cmd: list[str]
 ) -> Generator[Any, None, None]:
     # The version of airflow we use on 3.12 or greater (2.10.2) takes longer to reconcile the dags, and sometimes does it partially.
     # We need to wait for all the dags to be loaded before we can start dagster.
@@ -152,7 +152,7 @@ def setup_dagster(
 
 @contextmanager
 def stand_up_dagster(
-    dagster_dev_cmd: List[str], port: int = 3333
+    dagster_dev_cmd: list[str], port: int = 3333
 ) -> Generator[subprocess.Popen, None, None]:
     """Stands up a dagster instance using the dagster dev CLI. dagster_defs_path must be provided
     by a fixture included in the callsite.

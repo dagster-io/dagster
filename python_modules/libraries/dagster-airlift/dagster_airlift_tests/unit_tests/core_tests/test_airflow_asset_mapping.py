@@ -28,7 +28,7 @@ def airlift_asset_spec(key: CoercibleToAssetKey, dag_id: str, task_id: str) -> A
 
 
 def airlift_multiple_task_asset_spec(
-    key: CoercibleToAssetKey, handles: List[TaskHandle]
+    key: CoercibleToAssetKey, handles: list[TaskHandle]
 ) -> AssetSpec:
     return AssetSpec(
         key=key, metadata={TASK_MAPPING_METADATA_KEY: [handle._asdict() for handle in handles]}

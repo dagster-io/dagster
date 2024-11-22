@@ -79,7 +79,7 @@ class PipesS3LogReader(PipesChunkedLogReader):
     ):
         self.bucket = bucket
         self.key = key
-        self.client: "S3Client" = client or boto3.client("s3")
+        self.client: S3Client = client or boto3.client("s3")
         self.decode_fn = decode_fn or default_log_decode_fn
 
         self.log_position = 0
@@ -212,9 +212,9 @@ def tail_cloudwatch_events(
     log_group: str,
     log_stream: str,
     start_time: Optional[int] = None,
-) -> Generator[List["OutputLogEventTypeDef"], None, None]:
+) -> Generator[list["OutputLogEventTypeDef"], None, None]:
     """Yields events from a CloudWatch log stream."""
-    params: Dict[str, Any] = {
+    params: dict[str, Any] = {
         "logGroupName": log_group,
         "logStreamName": log_stream,
     }
@@ -323,7 +323,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         """Args:
         client (boto3.client): boto3 CloudWatch client.
         """
-        self.client: "CloudWatchLogsClient" = client or boto3.client("logs")
+        self.client: CloudWatchLogsClient = client or boto3.client("logs")
         self.log_group = log_group
         self.log_stream = log_stream
 
@@ -360,7 +360,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
 
     def download_messages(
         self, cursor: Optional[str], params: PipesParams
-    ) -> Optional[Tuple[str, str]]:
+    ) -> Optional[tuple[str, str]]:
         params = {
             "logGroupName": self.log_group,
             "logStreamName": self.log_stream,

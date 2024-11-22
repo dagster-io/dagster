@@ -30,7 +30,7 @@ class PipesFileLogReader(PipesChunkedLogReader):
         return os.path.exists(self.path)
 
     def download_log_chunk(self, params: PipesParams) -> str:
-        with open(self.path, "r") as file:
+        with open(self.path) as file:
             file.seek(self.file_position)
             chunk = file.read()
             self.file_position = file.tell()
@@ -62,13 +62,13 @@ class PipesFileMessageReader(PipesThreadedMessageReader):
 
     def download_messages(
         self, cursor: Optional[int], params: PipesParams
-    ) -> Optional[Tuple[int, str]]:
+    ) -> Optional[tuple[int, str]]:
         if cursor is None:
             cursor = 0
 
         assert self.path is not None
 
-        with open(self.path, "r") as file:
+        with open(self.path) as file:
             file.seek(cursor)
             chunk = file.read()
             if chunk:

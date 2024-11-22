@@ -40,7 +40,7 @@ class AirbyteSyncConfig(Config):
             "be yielded when the op executes."
         ),
     )
-    asset_key_prefix: List[str] = Field(
+    asset_key_prefix: list[str] = Field(
         ["airbyte"],
         description=(
             "If provided and yield_materializations is True, these components will be used to "

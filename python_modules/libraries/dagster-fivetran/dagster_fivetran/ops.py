@@ -34,7 +34,7 @@ class SyncConfig(Config):
             "be yielded when the op executes."
         ),
     )
-    asset_key_prefix: List[str] = Field(
+    asset_key_prefix: list[str] = Field(
         default=["fivetran"],
         description=(
             "If provided and yield_materializations is True, these components will be used to "
@@ -102,7 +102,7 @@ def fivetran_sync_op(config: SyncConfig, fivetran: FivetranResource) -> Any:
 
 
 class FivetranResyncConfig(SyncConfig):
-    resync_parameters: Optional[Dict[str, Any]] = Field(
+    resync_parameters: Optional[dict[str, Any]] = Field(
         None,
         description=(
             "Optional resync parameters to send in the payload to the Fivetran API. You can"

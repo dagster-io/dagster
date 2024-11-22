@@ -140,7 +140,7 @@ class GrpcApiMetrics(TypedDict):
 class DagsterCodeServerUtilizationMetrics(TypedDict):
     container_utilization: ContainerUtilizationMetrics
     request_utilization: RequestUtilizationMetrics
-    per_api_metrics: Dict[str, GrpcApiMetrics]
+    per_api_metrics: dict[str, GrpcApiMetrics]
 
 
 _UTILIZATION_METRICS = init_optional_typeddict(DagsterCodeServerUtilizationMetrics)
@@ -232,10 +232,10 @@ class LoadedRepositories:
     ):
         self._loadable_target_origin = loadable_target_origin
 
-        self._code_pointers_by_repo_name: Dict[str, CodePointer] = {}
-        self._recon_repos_by_name: Dict[str, ReconstructableRepository] = {}
-        self._repo_defs_by_name: Dict[str, RepositoryDefinition] = {}
-        self._loadable_repository_symbols: List[LoadableRepositorySymbol] = []
+        self._code_pointers_by_repo_name: dict[str, CodePointer] = {}
+        self._recon_repos_by_name: dict[str, ReconstructableRepository] = {}
+        self._repo_defs_by_name: dict[str, RepositoryDefinition] = {}
+        self._loadable_repository_symbols: list[LoadableRepositorySymbol] = []
 
         if not loadable_target_origin:
             # empty workspace
@@ -353,7 +353,7 @@ class DagsterApiServer(DagsterApiServicer):
         location_name: Optional[str] = None,
         enable_metrics: bool = False,
     ):
-        super(DagsterApiServer, self).__init__()
+        super().__init__()
 
         check.bool_param(heartbeat, "heartbeat")
         check.int_param(heartbeat_timeout, "heartbeat_timeout")
@@ -378,9 +378,9 @@ class DagsterApiServer(DagsterApiServicer):
         # termination event once all current executions have finished, which will stop the server)
         self._shutdown_once_executions_finish_event = threading.Event()
 
-        self._executions: Dict[str, Tuple[multiprocessing.Process, InstanceRef]] = {}
-        self._termination_events: Dict[str, MPEvent] = {}
-        self._termination_times: Dict[str, float] = {}
+        self._executions: dict[str, tuple[multiprocessing.Process, InstanceRef]] = {}
+        self._termination_events: dict[str, MPEvent] = {}
+        self._termination_times: dict[str, float] = {}
         self._execution_lock = threading.Lock()
 
         self._serializable_load_error = None
@@ -1290,7 +1290,7 @@ class DagsterGrpcServer:
 
 class CouldNotStartServerProcess(Exception):
     def __init__(self, port=None, socket=None):
-        super(CouldNotStartServerProcess, self).__init__(
+        super().__init__(
             "Could not start server with "
             + (f"port {port}" if port is not None else f"socket {socket}")
         )
@@ -1350,10 +1350,10 @@ def open_server_process(
     startup_timeout: int = 20,
     cwd: Optional[str] = None,
     log_level: str = "INFO",
-    env: Optional[Dict[str, str]] = None,
+    env: Optional[dict[str, str]] = None,
     inject_env_vars_from_instance: bool = True,
     container_image: Optional[str] = None,
-    container_context: Optional[Dict[str, Any]] = None,
+    container_context: Optional[dict[str, Any]] = None,
     enable_metrics: bool = False,
     additional_timeout_msg: Optional[str] = None,
 ):
@@ -1428,7 +1428,7 @@ def open_server_process(
 def _open_server_process_on_dynamic_port(
     max_retries: int = 10,
     **kwargs,
-) -> Tuple[Optional["Popen[str]"], Optional[int]]:
+) -> tuple[Optional["Popen[str]"], Optional[int]]:
     server_process = None
     retries = 0
     port = None
@@ -1459,11 +1459,11 @@ class GrpcServerProcess:
         startup_timeout: int = 20,
         cwd: Optional[str] = None,
         log_level: str = "INFO",
-        env: Optional[Dict[str, str]] = None,
+        env: Optional[dict[str, str]] = None,
         wait_on_exit=False,
         inject_env_vars_from_instance: bool = True,
         container_image: Optional[str] = None,
-        container_context: Optional[Dict[str, Any]] = None,
+        container_context: Optional[dict[str, Any]] = None,
         additional_timeout_msg: Optional[str] = None,
     ):
         self.port = None

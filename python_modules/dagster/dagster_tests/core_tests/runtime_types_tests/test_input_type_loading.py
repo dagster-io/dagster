@@ -6,7 +6,7 @@ from dagster import DagsterInvalidConfigError, job, op
 
 def test_dict_input():
     @op
-    def the_op(x: Dict[str, str]):
+    def the_op(x: dict[str, str]):
         assert x == {"foo": "bar"}
 
     @job
@@ -38,7 +38,7 @@ def test_dict_input():
 
 def test_any_dict_input():
     @op
-    def the_op(x: Dict[str, Any]):
+    def the_op(x: dict[str, Any]):
         assert x == {"foo": "bar"}
 
     @job
@@ -70,7 +70,7 @@ def test_any_dict_input():
 
 def test_malformed_input_schema_dict():
     @op
-    def the_op(_x: Dict[str, Any]):
+    def the_op(_x: dict[str, Any]):
         pass
 
     @job

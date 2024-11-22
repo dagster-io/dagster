@@ -63,7 +63,7 @@ def join_and_hash(*args: Optional[str]) -> Optional[str]:
     if None in lst:
         return None
 
-    str_lst = cast(List[str], lst)
+    str_lst = cast(list[str], lst)
     unhashed = "".join(sorted(str_lst))
     return hashlib.sha1(unhashed.encode("utf-8")).hexdigest()
 
@@ -72,7 +72,7 @@ class StepInputSource(ABC):
     """How to load the data for a step input."""
 
     @property
-    def step_key_dependencies(self) -> Set[str]:
+    def step_key_dependencies(self) -> set[str]:
         return set()
 
     @property
@@ -163,7 +163,7 @@ class FromLoadableAsset(StepInputSource):
 
     def required_resource_keys(
         self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
-    ) -> Set[str]:
+    ) -> set[str]:
         input_asset_key = job_def.asset_layer.asset_key_for_input(op_handle, op_input_name)
         if input_asset_key is None:
             check.failed(
@@ -247,7 +247,7 @@ class FromInputManager(StepInputSource):
 
     def required_resource_keys(
         self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
-    ) -> Set[str]:
+    ) -> set[str]:
         input_def = job_def.get_node(op_handle).input_def_named(op_input_name)
 
         input_manager_key: str = check.not_none(input_def.input_manager_key)
@@ -287,7 +287,7 @@ class FromStepOutput(StepInputSource, IHaveNew):
         )
 
     @property
-    def step_key_dependencies(self) -> Set[str]:
+    def step_key_dependencies(self) -> set[str]:
         return {self.step_output_handle.step_key}
 
     @property
@@ -378,7 +378,7 @@ class FromStepOutput(StepInputSource, IHaveNew):
 
     def required_resource_keys(
         self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
-    ) -> Set[str]:
+    ) -> set[str]:
         return set()
 
 
@@ -454,7 +454,7 @@ class FromDirectInputValue(
 
     def required_resource_keys(
         self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
-    ) -> Set[str]:
+    ) -> set[str]:
         return set()
 
 
@@ -492,7 +492,7 @@ class MultiStepInputSource(StepInputSource, ABC):
 
     @property
     def step_output_handle_dependencies(self) -> Sequence[StepOutputHandle]:
-        handles: List[StepOutputHandle] = []
+        handles: list[StepOutputHandle] = []
         for source in self.sources:
             handles.extend(source.step_output_handle_dependencies)
 
@@ -500,8 +500,8 @@ class MultiStepInputSource(StepInputSource, ABC):
 
     def required_resource_keys(
         self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
-    ) -> Set[str]:
-        resource_keys: Set[str] = set()
+    ) -> set[str]:
+        resource_keys: set[str] = set()
         for source in self.sources:
             resource_keys = resource_keys.union(
                 source.required_resource_keys(job_def, op_handle, op_input_name)
@@ -619,8 +619,7 @@ def _load_input_with_input_manager(
     ):
         value = input_manager.load_input(context)
     # close user code boundary before returning value
-    for event in context.consume_events():
-        yield event
+    yield from context.consume_events()
 
     yield value
 
@@ -682,7 +681,7 @@ class FromPendingDynamicStepOutput(IHaveNew):
 
     def required_resource_keys(
         self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
-    ) -> Set[str]:
+    ) -> set[str]:
         return set()
 
 
@@ -733,7 +732,7 @@ class FromUnresolvedStepOutput(IHaveNew):
 
     def required_resource_keys(
         self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
-    ) -> Set[str]:
+    ) -> set[str]:
         return set()
 
 
@@ -773,7 +772,7 @@ class FromDynamicCollect(IHaveNew):
 
     def required_resource_keys(
         self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
-    ) -> Set[str]:
+    ) -> set[str]:
         return set()
 
     def resolve(self, mapping_keys: Optional[Sequence[str]]):

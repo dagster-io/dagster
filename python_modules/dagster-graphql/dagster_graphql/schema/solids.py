@@ -333,7 +333,7 @@ def _build_solid_handles(
 ) -> Sequence["GrapheneSolidHandle"]:
     check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
     check.opt_inst_param(parent, "parent", GrapheneSolidHandle)
-    all_handle: List[GrapheneSolidHandle] = []
+    all_handle: list[GrapheneSolidHandle] = []
     for solid_invocation in current_dep_index.node_invocations:
         solid_name, solid_def_name = solid_invocation.node_name, solid_invocation.node_def_name
         handle = GrapheneSolidHandle(

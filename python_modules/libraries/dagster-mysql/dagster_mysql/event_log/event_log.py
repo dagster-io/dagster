@@ -185,13 +185,11 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def has_secondary_index(self, name: str) -> bool:
         if name not in self._secondary_index_cache:
-            self._secondary_index_cache[name] = super(
-                MySQLEventLogStorage, self
-            ).has_secondary_index(name)
+            self._secondary_index_cache[name] = super().has_secondary_index(name)
         return self._secondary_index_cache[name]
 
     def enable_secondary_index(self, name: str) -> None:
-        super(MySQLEventLogStorage, self).enable_secondary_index(name)
+        super().enable_secondary_index(name)
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 

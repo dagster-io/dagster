@@ -77,7 +77,7 @@ class AssetLineageInfo(
     def __new__(cls, asset_key: AssetKey, partitions: Optional[AbstractSet[str]] = None):
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
         partitions = check.opt_set_param(partitions, "partitions", str)
-        return super(AssetLineageInfo, cls).__new__(cls, asset_key=asset_key, partitions=partitions)
+        return super().__new__(cls, asset_key=asset_key, partitions=partitions)
 
 
 class EventWithMetadata(ABC):
@@ -303,7 +303,7 @@ class AssetObservation(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
-        return super(AssetObservation, cls).__new__(
+        return super().__new__(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
@@ -426,7 +426,7 @@ class AssetMaterialization(
             if multi_dimensional_partitions:
                 partition = MultiPartitionKey(multi_dimensional_partitions)
 
-        return super(AssetMaterialization, cls).__new__(
+        return super().__new__(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
@@ -456,7 +456,7 @@ class AssetMaterialization(
             asset_key = path
 
         return AssetMaterialization(
-            asset_key=cast(Union[str, AssetKey, List[str]], asset_key),
+            asset_key=cast(Union[str, AssetKey, list[str]], asset_key),
             description=description,
             metadata={"path": MetadataValue.path(path)},
         )
@@ -519,7 +519,7 @@ class ExpectationResult(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
-        return super(ExpectationResult, cls).__new__(
+        return super().__new__(
             cls,
             success=check.bool_param(success, "success"),
             label=check.opt_str_param(label, "label", "result"),
@@ -570,7 +570,7 @@ class TypeCheck(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
-        return super(TypeCheck, cls).__new__(
+        return super().__new__(
             cls,
             success=check.bool_param(success, "success"),
             description=check.opt_str_param(description, "description"),
@@ -602,7 +602,7 @@ class Failure(Exception):
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         allow_retries: Optional[bool] = None,
     ):
-        super(Failure, self).__init__(description)
+        super().__init__(description)
         self.description = check.opt_str_param(description, "description")
         self.metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
@@ -634,7 +634,7 @@ class RetryRequested(Exception):
     def __init__(
         self, max_retries: Optional[int] = 1, seconds_to_wait: Optional[Union[float, int]] = None
     ):
-        super(RetryRequested, self).__init__()
+        super().__init__()
         self.max_retries = check.int_param(max_retries, "max_retries")
         self.seconds_to_wait = check.opt_numeric_param(seconds_to_wait, "seconds_to_wait")
 
@@ -693,7 +693,7 @@ class ObjectStoreOperation(
         version: Optional[str] = None,
         mapping_key: Optional[str] = None,
     ):
-        return super(ObjectStoreOperation, cls).__new__(
+        return super().__new__(
             cls,
             op=op,
             key=check.str_param(key, "key"),
@@ -739,7 +739,7 @@ class HookExecutionResult(
     """
 
     def __new__(cls, hook_name: str, is_skipped: Optional[bool] = None):
-        return super(HookExecutionResult, cls).__new__(
+        return super().__new__(
             cls,
             hook_name=check.str_param(hook_name, "hook_name"),
             is_skipped=cast(bool, check.opt_bool_param(is_skipped, "is_skipped", default=False)),

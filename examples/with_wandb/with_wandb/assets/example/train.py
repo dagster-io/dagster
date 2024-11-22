@@ -31,7 +31,7 @@ config = wandb.config
 
 class CNNModel(nn.Module):
     def __init__(self):
-        super(CNNModel, self).__init__()
+        super().__init__()
 
         # Convolution 1
         self.cnn1 = nn.Conv2d(

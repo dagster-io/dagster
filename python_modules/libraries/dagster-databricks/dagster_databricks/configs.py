@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Fields here are taken from the Databricks API docs.
 
 Most are left the same, but some have been modified to better express
@@ -651,7 +650,7 @@ def _define_libraries() -> Field:
     )
 
 
-def _define_email_notifications() -> Dict[str, Field]:
+def _define_email_notifications() -> dict[str, Field]:
     no_alert_for_skipped_runs = Field(bool, is_required=False)
     on_duration_warning_threshold_exceeded = Field([str], is_required=False)
     on_failure = Field([str], is_required=False)
@@ -666,7 +665,7 @@ def _define_email_notifications() -> Dict[str, Field]:
     }
 
 
-def _define_notification_settings() -> Dict[str, Field]:
+def _define_notification_settings() -> dict[str, Field]:
     no_alert_for_canceled_runs = Field(bool, is_required=False)
     no_alert_for_skipped_runs = Field(bool, is_required=False)
     return {
@@ -754,7 +753,7 @@ def _define_job_health_settings():
     )
 
 
-def _define_submit_run_fields() -> Dict[str, Any]:
+def _define_submit_run_fields() -> dict[str, Any]:
     run_name = Field(
         String,
         description="An optional name for the run. The default value is Untitled",

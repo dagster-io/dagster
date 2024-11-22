@@ -77,7 +77,7 @@ class MyConfig(Config):
 
 
 class MyAPIResource(ConfigurableResource):
-    def query(self, url) -> Dict[str, Any]:
+    def query(self, url) -> dict[str, Any]:
         return requests.get(url).json()
 
 

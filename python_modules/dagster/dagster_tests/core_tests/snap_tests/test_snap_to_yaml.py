@@ -140,7 +140,7 @@ def job_def_with_complex_config():
 
     class MyOpConfig(Config):
         nested: MyNestedConfig
-        my_list: List[Dict[str, int]] = [{"foo": 1, "bar": 2}]
+        my_list: list[dict[str, int]] = [{"foo": 1, "bar": 2}]
 
     @op
     def an_op(config: MyOpConfig):

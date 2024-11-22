@@ -15,9 +15,9 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 
-def load_yaml(relative_path: str) -> Dict[str, Any]:
+def load_yaml(relative_path: str) -> dict[str, Any]:
     path = os.path.join(os.path.dirname(__file__), relative_path)
-    with open(path, "r", encoding="utf8") as ff:
+    with open(path, encoding="utf8") as ff:
         return yaml.load(ff, Loader=Loader)
 
 
@@ -49,12 +49,12 @@ class Forecast(NamedTuple):
 
 
 class StockAssets(NamedTuple):
-    stock_infos: List[StockInfo]
+    stock_infos: list[StockInfo]
     index_strategy: IndexStrategy
     forecast: Forecast
 
 
-def build_stock_assets_object(stocks_dsl_document: Dict[str, Dict]) -> StockAssets:
+def build_stock_assets_object(stocks_dsl_document: dict[str, dict]) -> StockAssets:
     return StockAssets(
         stock_infos=[
             StockInfo(ticker=stock_block["ticker"])
@@ -65,13 +65,13 @@ def build_stock_assets_object(stocks_dsl_document: Dict[str, Dict]) -> StockAsse
     )
 
 
-def get_stocks_dsl_example_defs() -> List[AssetsDefinition]:
+def get_stocks_dsl_example_defs() -> list[AssetsDefinition]:
     stocks_dsl_document = load_yaml("stocks.yaml")
     stock_assets = build_stock_assets_object(stocks_dsl_document)
     return assets_defs_from_stock_assets(stock_assets)
 
 
-def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefinition]:
+def assets_defs_from_stock_assets(stock_assets: StockAssets) -> list[AssetsDefinition]:
     group_name = "stocks"
 
     def spec_for_stock_info(stock_info: StockInfo) -> AssetSpec:

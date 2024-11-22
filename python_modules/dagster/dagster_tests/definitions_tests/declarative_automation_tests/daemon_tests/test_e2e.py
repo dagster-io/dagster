@@ -93,7 +93,7 @@ def _setup_instance(context: WorkspaceProcessContext) -> None:
 
 @contextmanager
 def get_workspace_request_context(
-    filenames: Sequence[str], overrides: Optional[Dict[str, Any]] = None
+    filenames: Sequence[str], overrides: Optional[dict[str, Any]] = None
 ):
     with instance_for_test(
         overrides={
@@ -260,9 +260,10 @@ def _get_backfills_for_latest_ticks(
 
 def test_checks_and_assets_in_same_run() -> None:
     time = get_current_datetime()
-    with get_workspace_request_context(
-        ["check_after_parent_updated"]
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_workspace_request_context(["check_after_parent_updated"]) as context,
+        get_threadpool_executor() as executor,
+    ):
         assert _get_latest_evaluation_ids(context) == {0}
         assert _get_runs_for_latest_ticks(context) == []
 
@@ -315,9 +316,12 @@ def test_checks_and_assets_in_same_run() -> None:
 
 def test_cross_location_checks() -> None:
     time = get_current_datetime()
-    with get_workspace_request_context(
-        ["check_on_other_location", "check_after_parent_updated"]
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_workspace_request_context(
+            ["check_on_other_location", "check_after_parent_updated"]
+        ) as context,
+        get_threadpool_executor() as executor,
+    ):
         assert _get_latest_evaluation_ids(context) == {0}
         assert _get_runs_for_latest_ticks(context) == []
 
@@ -398,9 +402,10 @@ def test_cross_location_checks() -> None:
 
 def test_default_condition() -> None:
     time = datetime.datetime(2024, 8, 16, 4)
-    with get_workspace_request_context(
-        ["default_condition"]
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_workspace_request_context(["default_condition"]) as context,
+        get_threadpool_executor() as executor,
+    ):
         with freeze_time(time):
             _execute_ticks(context, executor)
 
@@ -420,11 +425,11 @@ def test_default_condition() -> None:
 
 
 def test_non_subsettable_check() -> None:
-    with get_grpc_workspace_request_context(
-        "check_not_subsettable"
-    ) as context, get_threadpool_executor() as executor, InheritContextThreadPoolExecutor(
-        max_workers=5
-    ) as submit_executor:
+    with (
+        get_grpc_workspace_request_context("check_not_subsettable") as context,
+        get_threadpool_executor() as executor,
+        InheritContextThreadPoolExecutor(max_workers=5) as submit_executor,
+    ):
         time = datetime.datetime(2024, 8, 17, 1, 35)
         with freeze_time(time):
             _execute_ticks(context, executor, submit_executor)
@@ -476,9 +481,10 @@ def _get_subsets_by_key(
 
 @pytest.mark.parametrize("location", ["backfill_simple_user_code", "backfill_simple_non_user_code"])
 def test_backfill_creation_simple(location: str) -> None:
-    with get_workspace_request_context(
-        [location]
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_workspace_request_context([location]) as context,
+        get_threadpool_executor() as executor,
+    ):
         asset_graph = context.create_request_context().asset_graph
 
         # all start off missing, should be requested
@@ -518,9 +524,10 @@ def test_backfill_creation_simple(location: str) -> None:
 
 
 def test_backfill_with_runs_and_checks() -> None:
-    with get_grpc_workspace_request_context(
-        "backfill_with_runs_and_checks"
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_grpc_workspace_request_context("backfill_with_runs_and_checks") as context,
+        get_threadpool_executor() as executor,
+    ):
         asset_graph = context.create_request_context().asset_graph
 
         # report materializations for 2/3 of the partitions, resulting in only one
@@ -579,14 +586,17 @@ def test_backfill_with_runs_and_checks() -> None:
 
 
 def test_toggle_user_code() -> None:
-    with instance_for_test(
-        overrides={
-            "run_launcher": {
-                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                "class": "SyncInMemoryRunLauncher",
-            },
-        }
-    ) as instance, get_threadpool_executor() as executor:
+    with (
+        instance_for_test(
+            overrides={
+                "run_launcher": {
+                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
+                    "class": "SyncInMemoryRunLauncher",
+                },
+            }
+        ) as instance,
+        get_threadpool_executor() as executor,
+    ):
         user_code_target = InProcessTestWorkspaceLoadTarget(
             [get_code_location_origin("simple_user_code", location_name="simple")]
         )
@@ -630,9 +640,10 @@ def test_toggle_user_code() -> None:
 
 
 def test_custom_condition() -> None:
-    with get_grpc_workspace_request_context(
-        "custom_condition"
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_grpc_workspace_request_context("custom_condition") as context,
+        get_threadpool_executor() as executor,
+    ):
         time = datetime.datetime(2024, 8, 16, 1, 35)
 
         # custom condition only materializes on the 5th tick
@@ -656,9 +667,10 @@ def test_custom_condition() -> None:
 
 
 def test_500_eager_assets_user_code(capsys) -> None:
-    with get_grpc_workspace_request_context(
-        "500_eager_assets"
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_grpc_workspace_request_context("500_eager_assets") as context,
+        get_threadpool_executor() as executor,
+    ):
         freeze_dt = datetime.datetime(2024, 8, 16, 1, 35)
 
         for _ in range(2):
@@ -682,9 +694,12 @@ def test_500_eager_assets_user_code(capsys) -> None:
 
 
 def test_fail_if_not_use_sensors(capsys) -> None:
-    with get_workspace_request_context(
-        ["simple_user_code"], overrides={"auto_materialize": {"use_sensors": False}}
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_workspace_request_context(
+            ["simple_user_code"], overrides={"auto_materialize": {"use_sensors": False}}
+        ) as context,
+        get_threadpool_executor() as executor,
+    ):
         _execute_ticks(context, executor)
         latest_ticks = _get_latest_ticks(context.create_request_context())
         assert len(latest_ticks) == 1
@@ -697,9 +712,10 @@ def test_fail_if_not_use_sensors(capsys) -> None:
 
 
 def test_simple_old_code_server() -> None:
-    with get_grpc_workspace_request_context(
-        "old_code_server_simulation"
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_grpc_workspace_request_context("old_code_server_simulation") as context,
+        get_threadpool_executor() as executor,
+    ):
         time = datetime.datetime(2024, 8, 16, 1, 35)
         with freeze_time(time):
             # initial evaluation
@@ -709,9 +725,10 @@ def test_simple_old_code_server() -> None:
 
 
 def test_observable_source_asset() -> None:
-    with get_grpc_workspace_request_context(
-        "hourly_observable"
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_grpc_workspace_request_context("hourly_observable") as context,
+        get_threadpool_executor() as executor,
+    ):
         time = datetime.datetime(2024, 8, 16, 1, 35)
         with freeze_time(time):
             _execute_ticks(context, executor)

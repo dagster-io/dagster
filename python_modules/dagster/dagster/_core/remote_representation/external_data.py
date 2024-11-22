@@ -204,26 +204,26 @@ class RepositorySnap(IHaveNew):
         nested_resource_map = _get_nested_resources_map(
             resource_datas, repository_def.get_top_level_resources()
         )
-        inverted_nested_resources_map: Dict[str, Dict[str, str]] = defaultdict(dict)
+        inverted_nested_resources_map: dict[str, dict[str, str]] = defaultdict(dict)
         for resource_key, nested_resources in nested_resource_map.items():
             for attribute, nested_resource in nested_resources.items():
                 if nested_resource.type == NestedResourceType.TOP_LEVEL:
                     inverted_nested_resources_map[nested_resource.name][resource_key] = attribute
 
-        resource_asset_usage_map: Dict[str, List[AssetKey]] = defaultdict(list)
+        resource_asset_usage_map: dict[str, list[AssetKey]] = defaultdict(list)
         # collect resource usage from normal non-source assets
         for asset in asset_node_snaps:
             if asset.required_top_level_resources:
                 for resource_key in asset.required_top_level_resources:
                     resource_asset_usage_map[resource_key].append(asset.asset_key)
 
-        resource_schedule_usage_map: Dict[str, List[str]] = defaultdict(list)
+        resource_schedule_usage_map: dict[str, list[str]] = defaultdict(list)
         for schedule in repository_def.schedule_defs:
             if schedule.required_resource_keys:
                 for resource_key in schedule.required_resource_keys:
                     resource_schedule_usage_map[resource_key].append(schedule.name)
 
-        resource_sensor_usage_map: Dict[str, List[str]] = defaultdict(list)
+        resource_sensor_usage_map: dict[str, list[str]] = defaultdict(list)
         for sensor in repository_def.sensor_defs:
             if sensor.required_resource_keys:
                 for resource_key in sensor.required_resource_keys:
@@ -859,8 +859,8 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
 def _dedup_partition_keys(keys: Sequence[str]) -> Sequence[str]:
     # Use both a set and a list here to preserve lookup performance in case of large inputs. (We
     # can't just use a set because we need to preserve ordering.)
-    seen_keys: Set[str] = set()
-    new_keys: List[str] = []
+    seen_keys: set[str] = set()
+    new_keys: list[str] = []
     for key in keys:
         if key not in seen_keys:
             new_keys.append(key)
@@ -1121,7 +1121,7 @@ class ResourceJobUsageEntry:
     """Stores information about where a resource is used in a job."""
 
     job_name: str
-    node_handles: List[NodeHandle]
+    node_handles: list[NodeHandle]
 
 
 @whitelist_for_serdes(storage_name="ExternalResourceData")
@@ -1134,18 +1134,18 @@ class ResourceSnap(IHaveNew):
 
     name: str
     resource_snapshot: ResourceDefSnap
-    configured_values: Dict[str, ResourceValueSnap]
-    config_field_snaps: List[ConfigFieldSnap]
+    configured_values: dict[str, ResourceValueSnap]
+    config_field_snaps: list[ConfigFieldSnap]
     config_schema_snap: ConfigSchemaSnapshot
-    nested_resources: Dict[str, NestedResource]
-    parent_resources: Dict[str, str]
+    nested_resources: dict[str, NestedResource]
+    parent_resources: dict[str, str]
     resource_type: str
     is_top_level: bool
-    asset_keys_using: List[AssetKey]
-    job_ops_using: List[ResourceJobUsageEntry]
+    asset_keys_using: list[AssetKey]
+    job_ops_using: list[ResourceJobUsageEntry]
     dagster_maintained: bool
-    schedules_using: List[str]
-    sensors_using: List[str]
+    schedules_using: list[str]
+    sensors_using: list[str]
 
     def __new__(
         cls,
@@ -1214,10 +1214,10 @@ class ResourceSnap(IHaveNew):
         name: str,
         nested_resources: Mapping[str, NestedResource],
         parent_resources: Mapping[str, str],
-        resource_asset_usage_map: Mapping[str, List[AssetKey]],
+        resource_asset_usage_map: Mapping[str, list[AssetKey]],
         resource_job_usage_map: "ResourceJobUsageMap",
-        resource_schedule_usage_map: Mapping[str, List[str]],
-        resource_sensor_usage_map: Mapping[str, List[str]],
+        resource_schedule_usage_map: Mapping[str, list[str]],
+        resource_sensor_usage_map: Mapping[str, list[str]],
     ) -> Self:
         check.inst_param(resource_def, "resource_def", ResourceDefinition)
 
@@ -1553,7 +1553,7 @@ class AssetNodeSnap(IHaveNew):
             return None
 
 
-ResourceJobUsageMap: TypeAlias = Dict[str, List[ResourceJobUsageEntry]]
+ResourceJobUsageMap: TypeAlias = dict[str, list[ResourceJobUsageEntry]]
 
 
 class NodeHandleResourceUse(NamedTuple):
@@ -1577,17 +1577,17 @@ def _get_resource_usage_from_node(
 
 
 def _get_resource_job_usage(job_defs: Sequence[JobDefinition]) -> ResourceJobUsageMap:
-    resource_job_usage_map: Dict[str, List[ResourceJobUsageEntry]] = defaultdict(list)
+    resource_job_usage_map: dict[str, list[ResourceJobUsageEntry]] = defaultdict(list)
 
     for job_def in job_defs:
         job_name = job_def.name
         if is_reserved_asset_job_name(job_name):
             continue
 
-        resource_usage: List[NodeHandleResourceUse] = []
+        resource_usage: list[NodeHandleResourceUse] = []
         for solid in job_def.nodes_in_topological_order:
             resource_usage += [use for use in _get_resource_usage_from_node(job_def, solid)]
-        node_use_by_key: Dict[str, List[NodeHandle]] = defaultdict(list)
+        node_use_by_key: dict[str, list[NodeHandle]] = defaultdict(list)
         for use in resource_usage:
             node_use_by_key[use.resource_key].append(use.node_handle)
         for resource_key in node_use_by_key:
@@ -1601,14 +1601,14 @@ def _get_resource_job_usage(job_defs: Sequence[JobDefinition]) -> ResourceJobUsa
 
 
 def asset_check_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetCheckNodeSnap]:
-    job_names_by_check_key: Dict[AssetCheckKey, List[str]] = defaultdict(list)
+    job_names_by_check_key: dict[AssetCheckKey, list[str]] = defaultdict(list)
 
     for job_def in repo.get_all_jobs():
         asset_layer = job_def.asset_layer
         for check_key in asset_layer.asset_graph.asset_check_keys:
             job_names_by_check_key[check_key].append(job_def.name)
 
-    asset_check_node_snaps: List[AssetCheckNodeSnap] = []
+    asset_check_node_snaps: list[AssetCheckNodeSnap] = []
     for check_key, job_names in job_names_by_check_key.items():
         spec = repo.asset_graph.get_check_spec(check_key)
         automation_condition, automation_condition_snapshot = resolve_automation_condition_args(
@@ -1635,8 +1635,8 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
     # First iterate over all job defs to identify a "primary node" for each materializable asset
     # key. This is the node that will be used to populate the AssetNodeSnap. We need to identify
     # a primary node because the same asset can be materialized as part of multiple jobs.
-    primary_node_pairs_by_asset_key: Dict[AssetKey, Tuple[NodeOutputHandle, JobDefinition]] = {}
-    job_defs_by_asset_key: Dict[AssetKey, List[JobDefinition]] = {}
+    primary_node_pairs_by_asset_key: dict[AssetKey, tuple[NodeOutputHandle, JobDefinition]] = {}
+    job_defs_by_asset_key: dict[AssetKey, list[JobDefinition]] = {}
     for job_def in repo.get_all_jobs():
         asset_layer = job_def.asset_layer
         asset_keys_by_node_output = asset_layer.asset_keys_by_node_output_handle
@@ -1647,7 +1647,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 primary_node_pairs_by_asset_key[asset_key] = (node_output_handle, job_def)
             job_defs_by_asset_key.setdefault(asset_key, []).append(job_def)
 
-    asset_node_snaps: List[AssetNodeSnap] = []
+    asset_node_snaps: list[AssetNodeSnap] = []
     asset_graph = repo.asset_graph
     for key in sorted(asset_graph.get_all_asset_keys()):
         asset_node = asset_graph.get(key)
@@ -1693,7 +1693,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
 
         # Partition mappings are only exposed on the AssetNodeSnap if at least one asset is
         # partitioned and the partition mapping is one of the builtin types.
-        partition_mappings: Dict[AssetKey, Optional[PartitionMapping]] = {}
+        partition_mappings: dict[AssetKey, Optional[PartitionMapping]] = {}
         builtin_partition_mapping_types = get_builtin_partition_mapping_types()
         for pk in asset_node.parent_keys:
             # directly access the partition mapping to avoid the inference step of
@@ -1814,7 +1814,7 @@ def _get_nested_resources(
         }
 
 
-def _get_class_name(cls: Type) -> str:
+def _get_class_name(cls: type) -> str:
     """Returns the fully qualified class name of the given class."""
     return str(cls)[8:-2]
 
@@ -1849,7 +1849,7 @@ def active_presets_from_job_def(job_def: JobDefinition) -> Sequence[PresetSnap]:
 
 def resolve_automation_condition_args(
     automation_condition: Optional[AutomationCondition],
-) -> Tuple[Optional[AutomationCondition], Optional[AutomationConditionSnapshot]]:
+) -> tuple[Optional[AutomationCondition], Optional[AutomationConditionSnapshot]]:
     if automation_condition is None:
         return None, None
     elif automation_condition.is_serializable:

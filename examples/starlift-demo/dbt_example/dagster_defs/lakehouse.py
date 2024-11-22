@@ -36,7 +36,7 @@ def lakehouse_assets_def(
     *,
     csv_path: Path,
     duckdb_path: Path,
-    columns: List[str],
+    columns: list[str],
     automation_condition: Optional[AutomationCondition] = None,
     upstreams_map: Optional[Mapping[AssetKey, Sequence[AssetKey]]] = None,
 ) -> AssetsDefinition:

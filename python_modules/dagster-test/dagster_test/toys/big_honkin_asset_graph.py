@@ -6,7 +6,7 @@ from dagster import AssetKey, AssetsDefinition, asset
 N_ASSETS = 1000
 
 
-def generate_big_honkin_assets() -> List[AssetsDefinition]:
+def generate_big_honkin_assets() -> list[AssetsDefinition]:
     random.seed(5438790)
     assets = []
 

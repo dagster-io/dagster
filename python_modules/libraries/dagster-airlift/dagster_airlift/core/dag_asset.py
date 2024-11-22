@@ -13,7 +13,7 @@ def dag_description(dag_info: DagInfo) -> str:
     """
 
 
-def dag_asset_metadata(dag_info: DagInfo) -> Dict[str, Any]:
+def dag_asset_metadata(dag_info: DagInfo) -> dict[str, Any]:
     return {
         "Dag Info (raw)": JsonMetadataValue(dag_info.metadata),
         "Dag ID": dag_info.dag_id,
@@ -36,9 +36,9 @@ def peered_dag_asset_metadata(dag_info: DagInfo, source_code: str) -> Mapping[st
 
 
 def get_leaf_assets_for_dag(
-    asset_keys_in_dag: Set[AssetKey],
-    downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]],
-) -> Set[AssetKey]:
+    asset_keys_in_dag: set[AssetKey],
+    downstreams_asset_dependency_graph: dict[AssetKey, set[AssetKey]],
+) -> set[AssetKey]:
     # An asset is a "leaf" for the dag if it has no transitive dependencies _within_ the dag. It may have
     # dependencies _outside_ the dag.
     leaf_assets = []
@@ -56,9 +56,9 @@ def get_leaf_assets_for_dag(
 
 def get_transitive_dependencies_for_asset(
     asset_key: AssetKey,
-    downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]],
-    cache: Dict[AssetKey, Set[AssetKey]],
-) -> Set[AssetKey]:
+    downstreams_asset_dependency_graph: dict[AssetKey, set[AssetKey]],
+    cache: dict[AssetKey, set[AssetKey]],
+) -> set[AssetKey]:
     if asset_key in cache:
         return cache[asset_key]
     transitive_deps = set()

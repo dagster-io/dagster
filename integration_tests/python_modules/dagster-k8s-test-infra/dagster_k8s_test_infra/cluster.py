@@ -33,7 +33,7 @@ class ClusterConfig(namedtuple("_ClusterConfig", "name kubeconfig_file")):
     """Used to represent a cluster, returned by the cluster_provider fixture below."""
 
     def __new__(cls, name, kubeconfig_file):
-        return super(ClusterConfig, cls).__new__(
+        return super().__new__(
             cls,
             name=check.str_param(name, "name"),
             kubeconfig_file=check.str_param(kubeconfig_file, "kubeconfig_file"),
@@ -87,7 +87,7 @@ def define_cluster_provider_fixture(additional_kind_images=None):
             yield ClusterConfig(name="from_system_kubeconfig", kubeconfig_file=kubeconfig_file)
 
         else:
-            raise Exception("unknown cluster provider %s" % provider)
+            raise Exception(f"unknown cluster provider {provider}")
 
     return _cluster_provider
 

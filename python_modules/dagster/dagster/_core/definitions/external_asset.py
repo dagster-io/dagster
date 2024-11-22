@@ -24,7 +24,7 @@ def external_asset_from_spec(spec: AssetSpec) -> AssetsDefinition:
 
 @deprecated(breaking_version="1.9.0", additional_warn_text="Directly use the AssetSpecs instead.")
 @experimental
-def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinition]:
+def external_assets_from_specs(specs: Sequence[AssetSpec]) -> list[AssetsDefinition]:
     """Create an external assets definition from a sequence of asset specs.
 
     An external asset is an asset that is not materialized by Dagster, but is tracked in the
@@ -176,7 +176,7 @@ def create_unexecutable_external_asset_from_assets_def(
         return assets_def
     else:
         with disable_dagster_warnings():
-            specs: List[AssetSpec] = []
+            specs: list[AssetSpec] = []
             # Important to iterate over assets_def.keys here instead of assets_def.specs. This is
             # because assets_def.specs on an AssetsDefinition that is a subset will contain all the
             # specs of its parent.

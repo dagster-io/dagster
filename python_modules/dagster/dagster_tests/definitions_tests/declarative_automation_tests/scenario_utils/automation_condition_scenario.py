@@ -66,7 +66,7 @@ class AutomationConditionScenarioState(ScenarioState):
 
     async def evaluate(
         self, asset: CoercibleToAssetKey
-    ) -> Tuple["AutomationConditionScenarioState", AutomationResult]:
+    ) -> tuple["AutomationConditionScenarioState", AutomationResult]:
         asset_key = AssetKey.from_coercible(asset)
         # ensure that the top level condition never returns any asset partitions, as otherwise the
         # next evaluation will assume that those asset partitions were requested by the machinery

@@ -21,7 +21,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 
 
-def get_resource_init_job(resources_initted: Dict[str, bool]) -> JobDefinition:
+def get_resource_init_job(resources_initted: dict[str, bool]) -> JobDefinition:
     @resource
     def resource_a(_):
         resources_initted["a"] = True
@@ -177,7 +177,7 @@ def test_op_selection_with_aliases_strict_resources():
     assert set(resources_initted.keys()) == {"a"}
 
 
-def create_nested_graph_job(resources_initted: Dict[str, bool]) -> JobDefinition:
+def create_nested_graph_job(resources_initted: dict[str, bool]) -> JobDefinition:
     @resource
     def resource_a(_):
         resources_initted["a"] = True

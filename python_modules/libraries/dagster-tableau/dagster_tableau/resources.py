@@ -70,7 +70,7 @@ class BaseTableauClient:
         return get_dagster_logger()
 
     @cached_method
-    def get_workbooks(self) -> List[TSC.WorkbookItem]:
+    def get_workbooks(self) -> list[TSC.WorkbookItem]:
         """Fetches a list of all Tableau workbooks in the workspace."""
         workbooks, _ = self._server.workbooks.get()
         return workbooks
@@ -399,11 +399,11 @@ class BaseTableauWorkspace(ConfigurableResource):
         with self.get_client() as client:
             workbook_ids = [workbook.id for workbook in client.get_workbooks()]
 
-            workbooks: List[TableauContentData] = []
-            sheets: List[TableauContentData] = []
-            dashboards: List[TableauContentData] = []
-            data_sources: List[TableauContentData] = []
-            data_source_ids: Set[str] = set()
+            workbooks: list[TableauContentData] = []
+            sheets: list[TableauContentData] = []
+            dashboards: list[TableauContentData] = []
+            data_sources: list[TableauContentData] = []
+            data_source_ids: set[str] = set()
             for workbook_id in workbook_ids:
                 workbook = client.get_workbook(workbook_id=workbook_id)
                 workbook_data_list = check.is_list(
@@ -474,7 +474,7 @@ class BaseTableauWorkspace(ConfigurableResource):
     def build_defs(
         self,
         refreshable_workbook_ids: Optional[Sequence[str]] = None,
-        dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
+        dagster_tableau_translator: type[DagsterTableauTranslator] = DagsterTableauTranslator,
     ) -> Definitions:
         """Returns a Definitions object which will load Tableau content from
         the workspace and translate it into assets, using the provided translator.
@@ -530,7 +530,7 @@ class BaseTableauWorkspace(ConfigurableResource):
 @experimental
 def load_tableau_asset_specs(
     workspace: BaseTableauWorkspace,
-    dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
+    dagster_tableau_translator: type[DagsterTableauTranslator] = DagsterTableauTranslator,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Tableau content in the workspace.
 
@@ -595,7 +595,7 @@ class TableauServerWorkspace(BaseTableauWorkspace):
 @record
 class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     workspace: BaseTableauWorkspace
-    translator_cls: Type[DagsterTableauTranslator]
+    translator_cls: type[DagsterTableauTranslator]
 
     @property
     def defs_key(self) -> str:

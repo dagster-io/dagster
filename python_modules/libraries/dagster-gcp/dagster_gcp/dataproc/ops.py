@@ -52,7 +52,7 @@ class DataprocOpConfig(Config):
         )
     )
     region: str = Field(description="The GCP region.")
-    job_config: Dict[str, Any] = Field(
+    job_config: dict[str, Any] = Field(
         description="Python dictionary containing configuration for the Dataproc Job."
     )
 

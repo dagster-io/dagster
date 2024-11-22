@@ -23,13 +23,13 @@ from typing import (
 
 from dagster._check.record import is_record
 
-TypeOrTupleOfTypes = Union[type, Tuple[type, ...]]
+TypeOrTupleOfTypes = Union[type, tuple[type, ...]]
 Numeric = Union[int, float]
 T = TypeVar("T")
 U = TypeVar("U")
 V = TypeVar("V")
 
-TTypeOrTupleOfTTypes = Union[Type[T], Tuple[Type[T], ...]]
+TTypeOrTupleOfTTypes = Union[type[T], tuple[type[T], ...]]
 
 
 # This module contains runtime type-checking code used throughout Dagster. It is divided into three
@@ -157,7 +157,7 @@ def is_callable(obj: T_Callable, additional_message: Optional[str] = None) -> T_
     if not callable(obj):
         raise CheckError(
             "Must be callable. Got"
-            f" {obj}.{additional_message and f' Description: {additional_message}.' or ''}"
+            f" {obj}.{(additional_message and f' Description: {additional_message}.') or ''}"
         )
     return obj
 
@@ -238,7 +238,7 @@ def dict_param(
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Dict[Any, Any]:
+) -> dict[Any, Any]:
     """Ensures argument obj is a native Python dictionary, raises an exception if not, and otherwise
     returns obj.
     """
@@ -254,12 +254,12 @@ def dict_param(
 
 
 def opt_dict_param(
-    obj: Optional[Dict[T, U]],
+    obj: Optional[dict[T, U]],
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Dict[T, U]:
+) -> dict[T, U]:
     """Ensures argument obj is either a dictionary or None; if the latter, instantiates an empty
     dictionary.
     """
@@ -289,7 +289,7 @@ def opt_nullable_dict_param(
     key_type: Optional[TypeOrTupleOfTypes] = ...,
     value_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = None,
-) -> Dict: ...
+) -> dict: ...
 
 
 def opt_nullable_dict_param(
@@ -298,7 +298,7 @@ def opt_nullable_dict_param(
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Optional[Dict]:
+) -> Optional[dict]:
     """Ensures argument obj is either a dictionary or None."""
     if obj is not None and not isinstance(obj, dict):
         raise _param_type_mismatch_exception(obj, dict, param_name, additional_message)
@@ -315,7 +315,7 @@ def two_dim_dict_param(
     key_type: TypeOrTupleOfTypes = str,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Dict:
+) -> dict:
     if not isinstance(obj, dict):
         raise _param_type_mismatch_exception(obj, dict, param_name, additional_message)
 
@@ -328,7 +328,7 @@ def opt_two_dim_dict_param(
     key_type: TypeOrTupleOfTypes = str,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Dict:
+) -> dict:
     if obj is not None and not isinstance(obj, dict):
         raise _param_type_mismatch_exception(obj, dict, param_name, additional_message)
 
@@ -344,7 +344,7 @@ def dict_elem(
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Dict:
+) -> dict:
     dict_param(obj, "obj")
     str_param(key, "key")
 
@@ -364,7 +364,7 @@ def opt_dict_elem(
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Dict:
+) -> dict:
     dict_param(obj, "obj")
     str_param(key, "key")
 
@@ -384,7 +384,7 @@ def opt_nullable_dict_elem(
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Optional[Dict]:
+) -> Optional[dict]:
     dict_param(obj, "obj")
     str_param(key, "key")
 
@@ -400,11 +400,11 @@ def opt_nullable_dict_elem(
 
 @overload
 def is_dict(
-    obj: Dict[U, V],
+    obj: dict[U, V],
     key_type: Optional[TypeOrTupleOfTypes] = ...,
     value_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = ...,
-) -> Dict[U, V]: ...
+) -> dict[U, V]: ...
 
 
 @overload
@@ -413,7 +413,7 @@ def is_dict(
     key_type: Optional[TypeOrTupleOfTypes] = ...,
     value_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = ...,
-) -> Dict[Any, Any]: ...
+) -> dict[Any, Any]: ...
 
 
 def is_dict(
@@ -421,7 +421,7 @@ def is_dict(
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Dict:
+) -> dict:
     if not isinstance(obj, dict):
         raise _type_mismatch_error(obj, dict, additional_message)
 
@@ -689,7 +689,7 @@ def opt_inst_param(
 
 def inst(
     obj: object,
-    ttype: Union[Type[T], Tuple[Type[T], ...]],
+    ttype: Union[type[T], tuple[type[T], ...]],
     additional_message: Optional[str] = None,
 ) -> T:
     if not isinstance(obj, ttype):
@@ -699,7 +699,7 @@ def inst(
 
 def opt_inst(
     obj: object,
-    ttype: Union[Type[T], Tuple[Type[T], ...]],
+    ttype: Union[type[T], tuple[type[T], ...]],
     additional_message: Optional[str] = None,
 ) -> Optional[T]:
     if obj is not None and not isinstance(obj, ttype):
@@ -732,7 +732,7 @@ def list_param(
     param_name: str,
     of_type: Optional[TTypeOrTupleOfTTypes[T]] = None,
     additional_message: Optional[str] = None,
-) -> List[T]:
+) -> list[T]:
     if not isinstance(obj, list):
         raise _param_type_mismatch_exception(obj, list, param_name, additional_message)
 
@@ -747,7 +747,7 @@ def opt_list_param(
     param_name: str,
     of_type: Optional[TTypeOrTupleOfTTypes[T]] = None,
     additional_message: Optional[str] = None,
-) -> List[T]:
+) -> list[T]:
     """Ensures argument obj is a list or None; in the latter case, instantiates an empty list
     and returns it.
 
@@ -776,11 +776,11 @@ def opt_nullable_list_param(
 
 @overload
 def opt_nullable_list_param(
-    obj: List[T],
+    obj: list[T],
     param_name: str,
     of_type: Optional[TTypeOrTupleOfTTypes[T]] = ...,
     additional_message: Optional[str] = None,
-) -> List[T]: ...
+) -> list[T]: ...
 
 
 def opt_nullable_list_param(
@@ -788,7 +788,7 @@ def opt_nullable_list_param(
     param_name: str,
     of_type: Optional[TTypeOrTupleOfTTypes[T]] = None,
     additional_message: Optional[str] = None,
-) -> Optional[List[T]]:
+) -> Optional[list[T]]:
     """Ensures argument obj is a list or None. Returns None if input is None.
 
     If the of_type argument is provided, also ensures that list items conform to the type specified
@@ -810,7 +810,7 @@ def two_dim_list_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> List[List]:
+) -> list[list]:
     obj = list_param(obj, param_name, of_type=list, additional_message=additional_message)
     if not obj:
         raise CheckError("You must pass a list of lists. Received an empty list.")
@@ -828,7 +828,7 @@ def list_elem(
     key: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> List:
+) -> list:
     dict_param(ddict, "ddict")
     str_param(key, "key")
     opt_class_param(of_type, "of_type")
@@ -849,7 +849,7 @@ def opt_list_elem(
     key: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> List:
+) -> list:
     dict_param(ddict, "ddict")
     str_param(key, "key")
     opt_class_param(of_type, "of_type")
@@ -872,7 +872,7 @@ def is_list(
     obj: object,
     of_type: Optional[TTypeOrTupleOfTTypes[T]] = None,
     additional_message: Optional[str] = None,
-) -> List[T]:
+) -> list[T]:
     if not isinstance(obj, list):
         raise _type_mismatch_error(obj, list, additional_message)
 
@@ -1456,12 +1456,12 @@ def opt_str_elem(
 
 
 def tuple_param(
-    obj: Tuple[T, ...],
+    obj: tuple[T, ...],
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
-    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
+    of_shape: Optional[tuple[TypeOrTupleOfTypes, ...]] = None,
     additional_message: Optional[str] = None,
-) -> Tuple[T, ...]:
+) -> tuple[T, ...]:
     """Ensure param is a tuple and is of a specified type. `of_type` defines a variadic tuple type--
     `obj` may be of any length, but each element must match the `of_type` argmument. `of_shape`
     defines a fixed-length tuple type-- each element must match the corresponding element in
@@ -1481,12 +1481,12 @@ def tuple_param(
 
 @overload
 def opt_tuple_param(
-    obj: Optional[Tuple[T, ...]],
+    obj: Optional[tuple[T, ...]],
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = ...,
-    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
+    of_shape: Optional[tuple[TypeOrTupleOfTypes, ...]] = ...,
     additional_message: Optional[str] = ...,
-) -> Tuple[T, ...]: ...
+) -> tuple[T, ...]: ...
 
 
 @overload
@@ -1494,18 +1494,18 @@ def opt_tuple_param(
     obj: object,
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = ...,
-    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
+    of_shape: Optional[tuple[TypeOrTupleOfTypes, ...]] = ...,
     additional_message: Optional[str] = ...,
-) -> Tuple[object, ...]: ...
+) -> tuple[object, ...]: ...
 
 
 def opt_tuple_param(
     obj: object,
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
-    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
+    of_shape: Optional[tuple[TypeOrTupleOfTypes, ...]] = None,
     additional_message: Optional[str] = None,
-) -> Tuple[Any, ...]:
+) -> tuple[Any, ...]:
     """Ensures argument obj is a tuple or None; in the latter case, instantiates an empty tuple
     and returns it.
     """
@@ -1529,28 +1529,28 @@ def opt_nullable_tuple_param(
     obj: None,
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = ...,
-    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
+    of_shape: Optional[tuple[TypeOrTupleOfTypes, ...]] = ...,
     additional_message: Optional[str] = ...,
 ) -> None: ...
 
 
 @overload
 def opt_nullable_tuple_param(
-    obj: Tuple[T, ...],
+    obj: tuple[T, ...],
     param_name: str,
     of_type: TypeOrTupleOfTypes = ...,
-    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
+    of_shape: Optional[tuple[TypeOrTupleOfTypes, ...]] = ...,
     additional_message: Optional[str] = None,
-) -> Tuple[T, ...]: ...
+) -> tuple[T, ...]: ...
 
 
 def opt_nullable_tuple_param(
-    obj: Optional[Tuple[T, ...]],
+    obj: Optional[tuple[T, ...]],
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
-    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
+    of_shape: Optional[tuple[TypeOrTupleOfTypes, ...]] = None,
     additional_message: Optional[str] = None,
-) -> Optional[Tuple[T, ...]]:
+) -> Optional[tuple[T, ...]]:
     """Ensure optional param is a tuple and is of a specified type. `default` is returned if `obj`
     is None. `of_type` defines a variadic tuple type-- `obj` may be of any length, but each element
     must match the `of_type` argmument. `of_shape` defines a fixed-length tuple type-- each element
@@ -1575,9 +1575,9 @@ def opt_nullable_tuple_param(
 def is_tuple(
     obj: object,
     of_type: Optional[TypeOrTupleOfTypes] = None,
-    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
+    of_shape: Optional[tuple[TypeOrTupleOfTypes, ...]] = None,
     additional_message: Optional[str] = None,
-) -> Tuple:
+) -> tuple:
     """Ensure target is a tuple and is of a specified type. `of_type` defines a variadic tuple
     type-- `obj` may be of any length, but each element must match the `of_type` argmument.
     `of_shape` defines a fixed-length tuple type-- each element must match the corresponding element
@@ -1596,10 +1596,10 @@ def is_tuple(
 
 
 def _check_tuple_items(
-    obj_tuple: Tuple[T, ...],
+    obj_tuple: tuple[T, ...],
     of_type: Optional[TypeOrTupleOfTypes] = None,
-    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
-) -> Tuple[T, ...]:
+    of_shape: Optional[tuple[TypeOrTupleOfTypes, ...]] = None,
+) -> tuple[T, ...]:
     if of_shape is not None:
         len_tuple = len(obj_tuple)
         len_type = len(of_shape)
@@ -1633,7 +1633,7 @@ def tuple_elem(
     key: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Tuple:
+) -> tuple:
     dict_param(ddict, "ddict")
     str_param(key, "key")
     opt_class_param(of_type, "of_type")
@@ -1654,7 +1654,7 @@ def opt_tuple_elem(
     key: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Tuple:
+) -> tuple:
     dict_param(ddict, "ddict")
     str_param(key, "key")
     opt_class_param(of_type, "of_type")
@@ -1788,8 +1788,8 @@ def _param_class_mismatch_exception(
     additional_message: Optional[str] = None,
 ) -> ParameterCheckError:
     additional_message = " " + additional_message if additional_message else ""
-    opt_clause = optional and "be None or" or ""
-    subclass_clause = superclass and f"that inherits from {superclass.__name__}" or ""
+    opt_clause = (optional and "be None or") or ""
+    subclass_clause = (superclass and f"that inherits from {superclass.__name__}") or ""
     return ParameterCheckError(
         f'Param "{param_name}" must {opt_clause}be a class{subclass_clause}. Got {obj!r} of'
         f" type {type(obj)}.{additional_message}"
@@ -1860,7 +1860,7 @@ def _check_mapping_entries(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     key_check: Callable[..., Any] = isinstance,
     value_check: Callable[..., Any] = isinstance,
-    mapping_type: Type = collections.abc.Mapping,
+    mapping_type: type = collections.abc.Mapping,
 ) -> W:
     """Enforces that the keys/values conform to the types specified by key_type, value_type."""
     for key, value in obj.items():
@@ -1883,7 +1883,7 @@ def _check_two_dim_mapping_entries(
     obj: W,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
-    mapping_type: Type = collections.abc.Mapping,
+    mapping_type: type = collections.abc.Mapping,
 ) -> W:
     _check_mapping_entries(
         obj, key_type, mapping_type, mapping_type=mapping_type

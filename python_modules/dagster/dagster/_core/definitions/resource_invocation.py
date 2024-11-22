@@ -122,7 +122,7 @@ def resolve_bound_config(config: Any, configurable_def: ConfigurableDefinition) 
             config_evr.errors,
             config,
         )
-    validated_config = cast(Dict[str, Any], config_evr.value).get("config")
+    validated_config = cast(dict[str, Any], config_evr.value).get("config")
     mapped_config_evr = configurable_def.apply_config_mapping({"config": validated_config})
     if not mapped_config_evr.success:
         raise DagsterInvalidConfigError(
@@ -130,5 +130,5 @@ def resolve_bound_config(config: Any, configurable_def: ConfigurableDefinition) 
             mapped_config_evr.errors,
             validated_config,
         )
-    validated_config = cast(Dict[str, Any], mapped_config_evr.value).get("config")
+    validated_config = cast(dict[str, Any], mapped_config_evr.value).get("config")
     return validated_config

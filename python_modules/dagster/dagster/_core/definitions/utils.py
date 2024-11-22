@@ -80,7 +80,7 @@ def has_valid_name_chars(name: str) -> bool:
     return bool(VALID_NAME_REGEX.match(name))
 
 
-def check_valid_name(name: str, allow_list: Optional[List[str]] = None) -> str:
+def check_valid_name(name: str, allow_list: Optional[list[str]] = None) -> str:
     check.str_param(name, "name")
 
     if allow_list and name in allow_list:
@@ -112,7 +112,7 @@ def is_valid_name(name: str) -> bool:
     return name not in DISALLOWED_NAMES and has_valid_name_chars(name)
 
 
-def is_valid_title_and_reason(title: Optional[str]) -> Tuple[bool, Optional[str]]:
+def is_valid_title_and_reason(title: Optional[str]) -> tuple[bool, Optional[str]]:
     check.opt_str_param(title, "title")
 
     if title is None:
@@ -222,7 +222,7 @@ def config_from_files(config_files: Sequence[str]) -> Mapping[str, Any]:
             f"loaded by file/patterns {config_files}."
         ) from err
 
-    return check.is_dict(cast(Dict[str, object], run_config), key_type=str)
+    return check.is_dict(cast(dict[str, object], run_config), key_type=str)
 
 
 def config_from_yaml_strings(yaml_strings: Sequence[str]) -> Mapping[str, Any]:
@@ -247,10 +247,10 @@ def config_from_yaml_strings(yaml_strings: Sequence[str]) -> Mapping[str, Any]:
             f"Encountered error attempting to parse yaml. Parsing YAMLs {yaml_strings} "
         ) from err
 
-    return check.is_dict(cast(Dict[str, object], run_config), key_type=str)
+    return check.is_dict(cast(dict[str, object], run_config), key_type=str)
 
 
-def config_from_pkg_resources(pkg_resource_defs: Sequence[Tuple[str, str]]) -> Mapping[str, Any]:
+def config_from_pkg_resources(pkg_resource_defs: Sequence[tuple[str, str]]) -> Mapping[str, Any]:
     """Load a run config from a package resource, using :py:func:`pkg_resources.resource_string`.
 
     Example:
@@ -375,7 +375,7 @@ def get_default_automation_condition_sensor_selection(
             automation_condition_keys.add(k)
 
     # get the set of keys that are handled by an existing sensor
-    covered_keys: Set[EntityKey] = set()
+    covered_keys: set[EntityKey] = set()
     for sensor in automation_condition_sensors:
         selection = check.not_none(sensor.asset_selection)
         covered_keys = covered_keys.union(

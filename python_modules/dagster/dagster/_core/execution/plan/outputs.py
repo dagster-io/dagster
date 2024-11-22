@@ -39,7 +39,7 @@ class StepOutputProperties(
         is_asset_partitioned: bool = False,
         asset_check_key: Optional[AssetCheckKey] = None,
     ):
-        return super(StepOutputProperties, cls).__new__(
+        return super().__new__(
             cls,
             check.bool_param(is_required, "is_required"),
             check.bool_param(is_dynamic, "is_dynamic"),
@@ -72,7 +72,7 @@ class StepOutput(
         dagster_type_key: str,
         properties: StepOutputProperties,
     ):
-        return super(StepOutput, cls).__new__(
+        return super().__new__(
             cls,
             node_handle=check.inst_param(node_handle, "node_handle", NodeHandle),
             name=check.str_param(name, "name"),
@@ -129,7 +129,7 @@ class StepOutputData(
         # graveyard
         intermediate_materialization: Optional[AssetMaterialization] = None,
     ):
-        return super(StepOutputData, cls).__new__(
+        return super().__new__(
             cls,
             step_output_handle=check.inst_param(
                 step_output_handle, "step_output_handle", StepOutputHandle
@@ -160,7 +160,7 @@ class StepOutputHandle(
     """A reference to a specific output that has or will occur within the scope of an execution."""
 
     def __new__(cls, step_key: str, output_name: str = "result", mapping_key: Optional[str] = None):
-        return super(StepOutputHandle, cls).__new__(
+        return super().__new__(
             cls,
             step_key=check.str_param(step_key, "step_key"),
             output_name=check.str_param(output_name, "output_name"),
@@ -191,7 +191,7 @@ class UnresolvedStepOutputHandle(
         resolved_by_step_key: str,
         resolved_by_output_name: str,
     ):
-        return super(UnresolvedStepOutputHandle, cls).__new__(
+        return super().__new__(
             cls,
             unresolved_step_handle=check.inst_param(
                 unresolved_step_handle, "unresolved_step_handle", UnresolvedStepHandle

@@ -34,7 +34,7 @@ class DebugRunPayload(
         job_snapshot: JobSnap,
         execution_plan_snapshot: ExecutionPlanSnapshot,
     ):
-        return super(DebugRunPayload, cls).__new__(
+        return super().__new__(
             cls,
             version=check.str_param(version, "version"),
             dagster_run=check.inst_param(dagster_run, "dagster_run", DagsterRun),

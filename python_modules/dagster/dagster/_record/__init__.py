@@ -24,7 +24,7 @@ from dagster._check import EvalContext, build_check_call_str
 from dagster._check.record import RECORD_MARKER_FIELD, RECORD_MARKER_VALUE, is_record
 
 ImportFrom = check.ImportFrom  # re-expose for convenience
-TType = TypeVar("TType", bound=Type)
+TType = TypeVar("TType", bound=type)
 TVal = TypeVar("TVal")
 
 
@@ -43,8 +43,8 @@ _tuple_getter_type = type(getattr(_sample_nt, "x"))
 
 
 def _get_field_set_and_defaults(
-    cls: Type,
-) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
+    cls: type,
+) -> tuple[Mapping[str, Any], Mapping[str, Any]]:
     field_set = getattr(cls, "__annotations__", {})
     defaults = {}
 
@@ -328,7 +328,7 @@ def has_generated_new(obj) -> bool:
     return obj.__new__.__name__ in (_DEFAULTS_NEW, _CHECKED_NEW)
 
 
-def get_record_annotations(obj) -> Mapping[str, Type]:
+def get_record_annotations(obj) -> Mapping[str, type]:
     check.invariant(is_record(obj), "Only works for @record decorated classes")
     return getattr(obj, _RECORD_ANNOTATIONS_FIELD)
 
@@ -422,7 +422,7 @@ class JitCheckedNew:
 
     def __init__(
         self,
-        field_set: Mapping[str, Type],
+        field_set: Mapping[str, type],
         defaults: Mapping[str, Any],
         eval_ctx: EvalContext,
         new_frames: int,
@@ -496,7 +496,7 @@ def __checked_new__(cls{kw_args_str}):
 
 
 def _build_defaults_new(
-    field_set: Mapping[str, Type],
+    field_set: Mapping[str, type],
     defaults: Mapping[str, Any],
 ) -> str:
     """Build a __new__ implementation that handles default values."""
@@ -513,9 +513,9 @@ def __defaults_new__(cls{kw_args_str}):
 
 
 def build_args_and_assignment_strs(
-    field_set: Mapping[str, Type],
+    field_set: Mapping[str, type],
     defaults: Mapping[str, Any],
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """Utility funciton shared between _defaults_new and _checked_new to create the arguments to
     the function as well as any assignment calls that need to happen.
     """

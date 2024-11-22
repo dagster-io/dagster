@@ -1343,7 +1343,7 @@ def test_infer_graph_input_type_from_inner_inner_input():
 
 def test_infer_graph_input_type_from_inner_input_fan_in():
     @op
-    def op1(in1: List[int]):
+    def op1(in1: list[int]):
         assert in1 == [5]
 
     @graph
@@ -1357,7 +1357,7 @@ def test_infer_graph_input_type_from_inner_input_fan_in():
 
 def test_infer_graph_input_type_from_inner_input_mixed_fan_in():
     @op
-    def op1(in1: List[int], in2: int):
+    def op1(in1: list[int], in2: int):
         assert in1 == [5]
         assert in2 == 5
 

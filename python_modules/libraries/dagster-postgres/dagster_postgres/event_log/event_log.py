@@ -223,7 +223,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # We only update the asset table with the last event
         self.store_asset_event(events[-1], event_ids[-1])
 
-        if any((event_id is None for event_id in event_ids)):
+        if any(event_id is None for event_id in event_ids):
             raise DagsterInvariantViolationError("Cannot store asset event tags for null event id.")
 
         self.store_asset_event_tags(events, event_ids)
@@ -325,13 +325,11 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def has_secondary_index(self, name: str) -> bool:
         if name not in self._secondary_index_cache:
-            self._secondary_index_cache[name] = super(
-                PostgresEventLogStorage, self
-            ).has_secondary_index(name)
+            self._secondary_index_cache[name] = super().has_secondary_index(name)
         return self._secondary_index_cache[name]
 
     def enable_secondary_index(self, name: str) -> None:
-        super(PostgresEventLogStorage, self).enable_secondary_index(name)
+        super().enable_secondary_index(name)
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 

@@ -20,7 +20,7 @@ class CustomECSRunLauncher(EcsRunLauncher):
         env_vars=None,
         include_sidecars=False,
     ):
-        super(CustomECSRunLauncher, self).__init__(
+        super().__init__(
             inst_data=inst_data,
             task_definition=task_definition,
             container_name=container_name,

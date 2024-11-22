@@ -401,15 +401,18 @@ def test_check_run_health():
         "FinishedAt": "2024-09-16T13:00:00.000000000Z",
     }
 
-    with instance_for_test(
-        {
-            "run_launcher": {
-                "class": "DockerRunLauncher",
-                "module": "dagster_docker",
-                "config": {},
-            },
-        }
-    ) as instance, mock.patch("docker.client.from_env") as mock_docker_client_from_env:
+    with (
+        instance_for_test(
+            {
+                "run_launcher": {
+                    "class": "DockerRunLauncher",
+                    "module": "dagster_docker",
+                    "config": {},
+                },
+            }
+        ) as instance,
+        mock.patch("docker.client.from_env") as mock_docker_client_from_env,
+    ):
         mock_docker_client = mock.MagicMock()
         mock_docker_client_from_env.return_value = mock_docker_client
 

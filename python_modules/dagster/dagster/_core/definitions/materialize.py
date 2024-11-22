@@ -207,7 +207,7 @@ def materialize_to_memory(
 
 def _get_required_io_manager_keys(
     assets: Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]],
-) -> Set[str]:
+) -> set[str]:
     io_manager_keys = set()
     for asset in assets:
         if isinstance(asset, (AssetsDefinition, SourceAsset)):

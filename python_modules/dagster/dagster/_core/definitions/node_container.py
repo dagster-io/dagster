@@ -49,7 +49,7 @@ def normalize_dependency_dict(
             prelude + "Received value {dependencies} of type {type(dependencies)} at the top level."
         )
 
-    normalized_dependencies: Dict[NodeInvocation, Mapping[str, IDependencyDefinition]] = {}
+    normalized_dependencies: dict[NodeInvocation, Mapping[str, IDependencyDefinition]] = {}
     for key, dep_dict in dependencies.items():
         if not isinstance(dep_dict, dict):
             if isinstance(dep_dict, IDependencyDefinition):
@@ -96,7 +96,7 @@ def create_execution_structure(
     node_defs: Sequence["NodeDefinition"],
     dependencies_dict: DependencyMapping[NodeInvocation],
     graph_definition: "GraphDefinition",
-) -> Tuple[DependencyStructure, Mapping[str, Node]]:
+) -> tuple[DependencyStructure, Mapping[str, Node]]:
     """This builder takes the dependencies dictionary specified during creation of the
     JobDefinition object and builds (1) the execution structure and (2) a node dependency
     dictionary.
@@ -151,12 +151,12 @@ def create_execution_structure(
     check.inst_param(graph_definition, "graph_definition", GraphDefinition)
 
     # Same as dep_dict but with NodeInvocation replaced by alias string
-    aliased_dependencies_dict: Dict[str, Mapping[str, IDependencyDefinition]] = {}
+    aliased_dependencies_dict: dict[str, Mapping[str, IDependencyDefinition]] = {}
 
     # Keep track of node name -> all aliases used and alias -> name
-    name_to_aliases: DefaultDict[str, Set[str]] = defaultdict(set)
-    alias_to_node_invocation: Dict[str, NodeInvocation] = {}
-    alias_to_name: Dict[str, str] = {}
+    name_to_aliases: defaultdict[str, set[str]] = defaultdict(set)
+    alias_to_node_invocation: dict[str, NodeInvocation] = {}
+    alias_to_name: dict[str, str] = {}
 
     for node_invocation, input_dep_dict in dependencies_dict.items():
         # We allow deps of the form dependencies={'foo': DependencyDefinition('bar')}
@@ -184,13 +184,13 @@ def create_execution_structure(
 
 def _build_graph_node_dict(
     node_defs: Sequence["NodeDefinition"],
-    name_to_aliases: Mapping[str, Set[str]],
+    name_to_aliases: Mapping[str, set[str]],
     alias_to_node_invocation: Mapping[str, NodeInvocation],
     graph_definition,
 ) -> Mapping[str, Node]:
     from dagster._core.definitions.graph_definition import GraphDefinition
 
-    nodes: List[Node] = []
+    nodes: list[Node] = []
     for node_def in node_defs:
         uses_of_node = name_to_aliases.get(node_def.name, {node_def.name})
 

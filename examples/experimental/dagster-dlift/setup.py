@@ -7,7 +7,7 @@ NON_EDITABLE_INSTALL_DAGSTER_PIN = ">=1.8.10"
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_dlift/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
     return version["__version__"]

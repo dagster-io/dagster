@@ -45,7 +45,7 @@ class PySparkResource(ConfigurableResource):
                 my_op()
     """
 
-    spark_config: Dict[str, Any]
+    spark_config: dict[str, Any]
     _spark_session = PrivateAttr(default=None)
 
     @classmethod
@@ -118,7 +118,7 @@ class LazyPySparkResource(ConfigurableResource):
                 my_op()
     """
 
-    spark_config: Dict[str, Any]
+    spark_config: dict[str, Any]
     _spark_session = PrivateAttr(default=None)
 
     @classmethod

@@ -303,12 +303,12 @@ def test_repository_snap_definitions_env_vars() -> None:
         my_string: str
 
     class MyDataStructureResource(ConfigurableResource):
-        str_list: List[str]
-        str_dict: Dict[str, str]
+        str_list: list[str]
+        str_dict: dict[str, str]
 
     class MyResourceWithConfig(ConfigurableResource):
         config: MyInnerConfig
-        config_list: List[MyInnerConfig]
+        config_list: list[MyInnerConfig]
 
     @asset
     def my_asset(foo: MyStringResource):
@@ -455,7 +455,7 @@ def test_repository_snap_definitions_function_style_resources_assets_usage() -> 
     ]
 
 
-def _to_dict(entries: List[ResourceJobUsageEntry]) -> Dict[str, List[str]]:
+def _to_dict(entries: list[ResourceJobUsageEntry]) -> dict[str, list[str]]:
     return {
         entry.job_name: sorted([str(handle) for handle in entry.node_handles]) for entry in entries
     }

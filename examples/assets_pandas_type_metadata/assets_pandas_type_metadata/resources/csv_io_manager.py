@@ -70,7 +70,7 @@ class LocalCsvIOManager(ConfigurableIOManager):
         version_fpath = fpath + ".version"
         if not os.path.exists(version_fpath):
             return False
-        with open(version_fpath, "r", encoding="utf8") as f:
+        with open(version_fpath, encoding="utf8") as f:
             version = f.read()
 
         return version == context.version

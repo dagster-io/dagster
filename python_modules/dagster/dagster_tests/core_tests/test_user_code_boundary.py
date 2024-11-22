@@ -3,7 +3,7 @@ from dagster import In, String, dagster_type_loader, job, op, resource, usable_a
 
 class UserError(Exception):
     def __init__(self):
-        super(UserError, self).__init__("The user has errored")
+        super().__init__("The user has errored")
 
 
 def test_user_error_boundary_op_compute():

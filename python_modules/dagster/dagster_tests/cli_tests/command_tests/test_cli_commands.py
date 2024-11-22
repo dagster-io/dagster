@@ -422,7 +422,7 @@ def sensor_command_contexts():
     ]
 
 
-BackfillCommandTestContext: TypeAlias = ContextManager[Tuple[ClickArgMapping, DagsterInstance]]
+BackfillCommandTestContext: TypeAlias = ContextManager[tuple[ClickArgMapping, DagsterInstance]]
 
 
 # This iterates over a list of contextmanagers that can be used to contruct

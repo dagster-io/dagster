@@ -217,7 +217,7 @@ class K8sStepHandler(StepHandler):
 
     def _get_step_key(self, step_handler_context: StepHandlerContext) -> str:
         step_keys_to_execute = cast(
-            List[str], step_handler_context.execute_step_args.step_keys_to_execute
+            list[str], step_handler_context.execute_step_args.step_keys_to_execute
         )
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         return step_keys_to_execute[0]
@@ -259,7 +259,7 @@ class K8sStepHandler(StepHandler):
             if retry_state.get_attempt_count(step_key):
                 return "dagster-step-%s-%d" % (name_key, retry_state.get_attempt_count(step_key))
 
-        return "dagster-step-%s" % (name_key)
+        return f"dagster-step-{name_key}"
 
     def launch_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
         step_key = self._get_step_key(step_handler_context)

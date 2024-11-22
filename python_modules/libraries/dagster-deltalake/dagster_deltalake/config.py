@@ -1,15 +1,10 @@
 import sys
-from typing import Dict, Optional
+from typing import Dict, Literal, Optional
 
 from dagster import Config
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 
-
-def _to_str_dict(dictionary: Dict) -> Dict[str, str]:
+def _to_str_dict(dictionary: dict) -> dict[str, str]:
     """Filters dict of None values and casts other values to str."""
     return {key: str(value) for key, value in dictionary.items() if value is not None}
 
@@ -19,7 +14,7 @@ class LocalConfig(Config):
 
     provider: Literal["local"] = "local"
 
-    def str_dict(self) -> Dict[str, str]:
+    def str_dict(self) -> dict[str, str]:
         """Storage options as str dict."""
         return _to_str_dict(self.dict())
 
@@ -68,7 +63,7 @@ class AzureConfig(Config):
     container_name: Optional[str] = None
     """Storage container name"""
 
-    def str_dict(self) -> Dict[str, str]:
+    def str_dict(self) -> dict[str, str]:
         """Storage options as str dict."""
         return _to_str_dict(self.dict())
 
@@ -127,7 +122,7 @@ class S3Config(Config):
     allow_unsafe_rename: Optional[bool] = None
     """Allows tables writes that may conflict with concurrent writers."""
 
-    def str_dict(self) -> Dict[str, str]:
+    def str_dict(self) -> dict[str, str]:
         """Storage options as str dict."""
         return _to_str_dict(self.dict())
 
@@ -149,7 +144,7 @@ class GcsConfig(Config):
     application_credentials: Optional[str] = None
     """Application credentials path"""
 
-    def str_dict(self) -> Dict[str, str]:
+    def str_dict(self) -> dict[str, str]:
         """Storage options as str dict."""
         return _to_str_dict(self.dict())
 
@@ -213,6 +208,6 @@ class ClientConfig(Config):
     user_agent: Optional[str] = None
     """User-Agent header to be used by this client"""
 
-    def str_dict(self) -> Dict[str, str]:
+    def str_dict(self) -> dict[str, str]:
         """Storage options as str dict."""
         return _to_str_dict(self.dict())

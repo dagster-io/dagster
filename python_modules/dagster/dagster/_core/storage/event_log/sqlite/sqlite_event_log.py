@@ -305,7 +305,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if is_asset_query:
             # asset materializations, observations and materialization planned events
             # get mirrored into the index shard, so no custom run shard-aware cursor logic needed
-            return super(SqliteEventLogStorage, self).get_event_records(
+            return super().get_event_records(
                 event_records_filter=event_records_filter, limit=limit, ascending=ascending
             )
 
@@ -421,7 +421,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # bypass the run-sharded cursor logic... any caller of this run status change specific
         # method should be reading from the index shard, which as of 1.5.0 contains mirrored run
         # status change events
-        records = super(SqliteEventLogStorage, self).get_event_records(
+        records = super().get_event_records(
             event_records_filter=event_records_filter, limit=limit, ascending=ascending
         )
         if records:
@@ -474,7 +474,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # default implementation will update the event_logs in the sharded dbs, and the asset_key
         # table in the asset shard, but will not remove the mirrored event_log events in the asset
         # shard
-        super(SqliteEventLogStorage, self).wipe_asset(asset_key)
+        super().wipe_asset(asset_key)
         self._delete_mirrored_events_for_asset_key(asset_key)
 
     def watch(self, run_id: str, cursor: Optional[str], callback: EventHandlerFn) -> None:
@@ -529,7 +529,7 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
         self._cb = check.callable_param(callback, "callback")
         self._log_path = event_log_storage.path_for_shard(run_id)
         self._cursor = cursor
-        super(SqliteEventLogStorageWatchdog, self).__init__(patterns=[self._log_path], **kwargs)
+        super().__init__(patterns=[self._log_path], **kwargs)
 
     def _process_log(self) -> None:
         connection = self._event_log_storage.get_records_for_run(self._run_id, self._cursor)

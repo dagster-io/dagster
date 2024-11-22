@@ -74,7 +74,7 @@ class DataprocClient:
         if not done:
             cluster = self.get_cluster()
             raise DataprocError(
-                "Could not provision cluster -- status: %s" % str(cluster["status"])
+                "Could not provision cluster -- status: {}".format(str(cluster["status"]))
             )
 
     def get_cluster(self):
@@ -107,7 +107,7 @@ class DataprocClient:
 
             # Handle exceptions
             if result["status"]["state"] in {"CANCELLED", "ERROR"}:
-                raise DataprocError("Job error: %s" % str(result["status"]))
+                raise DataprocError("Job error: {}".format(str(result["status"])))
 
             if result["status"]["state"] == "DONE":
                 return True
@@ -117,7 +117,7 @@ class DataprocClient:
         done = DataprocClient._iter_and_sleep_until_ready(iter_fn, max_wait_time_sec=wait_timeout)
         if not done:
             job = self.get_job(job_id)
-            raise DataprocError("Job run timed out: %s" % str(job["status"]))
+            raise DataprocError("Job run timed out: {}".format(str(job["status"])))
 
     @staticmethod
     def _iter_and_sleep_until_ready(
@@ -195,7 +195,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             " cluster_config_json_path, or cluster_config_dict may be provided."
         ),
     )
-    cluster_config_dict: Optional[Dict[str, Any]] = Field(
+    cluster_config_dict: Optional[dict[str, Any]] = Field(
         default=None,
         description=(
             "Python dictionary containing cluster configuration. See"
@@ -210,11 +210,11 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         return True
 
     def _read_yaml_config(self, path: str) -> Mapping[str, Any]:
-        with open(path, "r", encoding="utf8") as f:
+        with open(path, encoding="utf8") as f:
             return yaml.safe_load(f)
 
     def _read_json_config(self, path: str) -> Mapping[str, Any]:
-        with open(path, "r", encoding="utf8") as f:
+        with open(path, encoding="utf8") as f:
             return json.load(f)
 
     def _get_cluster_config(self) -> Optional[Mapping[str, Any]]:

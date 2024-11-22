@@ -31,7 +31,7 @@ class OutputType(Enum):
 
 
 class ShellOpConfig(Config):
-    env: Optional[Dict[str, str]] = Field(
+    env: Optional[dict[str, str]] = Field(
         default=None,
         description="An optional dict of environment variables to pass to the subprocess.",
     )
@@ -42,7 +42,7 @@ class ShellOpConfig(Config):
         default=None, description="Working directory in which to execute shell script"
     )
 
-    def to_execute_params(self) -> Dict[str, Any]:
+    def to_execute_params(self) -> dict[str, Any]:
         return {
             "env": {**os.environ, **(self.env or {})},
             "output_logging": self.output_logging.value,

@@ -57,17 +57,17 @@ logger = get_dagster_logger()
 
 
 class EventHistoryMetadata(NamedTuple):
-    columns: Dict[str, Dict[str, Any]]
-    parents: Dict[str, Dict[str, Any]]
+    columns: dict[str, dict[str, Any]]
+    parents: dict[str, dict[str, Any]]
 
 
 def _build_column_lineage_metadata(
     event_history_metadata: EventHistoryMetadata,
-    dbt_resource_props: Dict[str, Any],
+    dbt_resource_props: dict[str, Any],
     manifest: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
     target_path: Optional[Path],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Process the lineage metadata for a dbt CLI event.
 
     Args:
@@ -87,7 +87,7 @@ def _build_column_lineage_metadata(
     ):
         return {}
 
-    event_node_info: Dict[str, Any] = dbt_resource_props
+    event_node_info: dict[str, Any] = dbt_resource_props
     unique_id: str = event_node_info["unique_id"]
 
     node_resource_type: str = event_node_info["resource_type"]
@@ -141,7 +141,7 @@ def _build_column_lineage_metadata(
     sqlglot_column_names = set(optimized_node_ast.named_selects)
 
     # 3. For each column, retrieve its dependencies on upstream columns from direct parents.
-    dbt_parent_resource_props_by_relation_name: Dict[str, Dict[str, Any]] = {}
+    dbt_parent_resource_props_by_relation_name: dict[str, dict[str, Any]] = {}
     for parent_unique_id in dbt_resource_props["depends_on"]["nodes"]:
         is_resource_type_source = parent_unique_id.startswith("source")
         parent_dbt_resource_props = (
@@ -161,7 +161,7 @@ def _build_column_lineage_metadata(
         column for column in schema_column_names if column not in normalized_sqlglot_column_names
     }
 
-    deps_by_column: Dict[str, Sequence[TableColumnDep]] = {}
+    deps_by_column: dict[str, Sequence[TableColumnDep]] = {}
     if implicit_alias_column_names:
         logger.warning(
             "The following columns are implicitly aliased and will be marked with an "
@@ -174,7 +174,7 @@ def _build_column_lineage_metadata(
         if column_name.lower() not in schema_column_names:
             continue
 
-        column_deps: Set[TableColumnDep] = set()
+        column_deps: set[TableColumnDep] = set()
         for sqlglot_lineage_node in lineage(
             column=column_name,
             sql=optimized_node_ast,
@@ -228,10 +228,10 @@ class DbtCliEventMessage:
             current event, gathered from previous historical events.
     """
 
-    raw_event: Dict[str, Any]
-    event_history_metadata: InitVar[Dict[str, Any]]
+    raw_event: dict[str, Any]
+    event_history_metadata: InitVar[dict[str, Any]]
 
-    def __post_init__(self, event_history_metadata: Dict[str, Any]):
+    def __post_init__(self, event_history_metadata: dict[str, Any]):
         self._event_history_metadata = event_history_metadata
 
     def __str__(self) -> str:
@@ -248,7 +248,7 @@ class DbtCliEventMessage:
         return bool(self._event_history_metadata) and "parents" in self._event_history_metadata
 
     @staticmethod
-    def is_result_event(raw_event: Dict[str, Any]) -> bool:
+    def is_result_event(raw_event: dict[str, Any]) -> bool:
         return raw_event["info"]["name"] in set(
             ["LogSeedResult", "LogModelResult", "LogSnapshotResult", "LogTestResult"]
         ) and not raw_event["data"]["node_info"]["unique_id"].startswith("unit_test")
@@ -262,7 +262,7 @@ class DbtCliEventMessage:
         description: Optional[str] = None,
     ) -> Iterator[AssetObservation]:
         for upstream_unique_id in upstream_unique_ids:
-            upstream_resource_props: Dict[str, Any] = validated_manifest["nodes"].get(
+            upstream_resource_props: dict[str, Any] = validated_manifest["nodes"].get(
                 upstream_unique_id
             ) or validated_manifest["sources"].get(upstream_unique_id)
             upstream_asset_key = dagster_dbt_translator.get_asset_key(upstream_resource_props)
@@ -307,7 +307,7 @@ class DbtCliEventMessage:
         if not self.is_result_event(self.raw_event):
             return
 
-        event_node_info: Dict[str, Any] = self.raw_event["data"].get("node_info")
+        event_node_info: dict[str, Any] = self.raw_event["data"].get("node_info")
         if not event_node_info:
             return
 

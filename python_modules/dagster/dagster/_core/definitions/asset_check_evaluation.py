@@ -20,7 +20,7 @@ class AssetCheckEvaluationPlanned(
     """Metadata for the event when an asset check is launched."""
 
     def __new__(cls, asset_key: AssetKey, check_name: str):
-        return super(AssetCheckEvaluationPlanned, cls).__new__(
+        return super().__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             check_name=check.str_param(check_name, "check_name"),
@@ -45,7 +45,7 @@ class AssetCheckEvaluationTargetMaterializationData(
     """A pointer to the latest materialization at execution time of an asset check."""
 
     def __new__(cls, storage_id: int, run_id: str, timestamp: float):
-        return super(AssetCheckEvaluationTargetMaterializationData, cls).__new__(
+        return super().__new__(
             cls,
             storage_id=check.int_param(storage_id, "storage_id"),
             run_id=check.str_param(run_id, "run_id"),
@@ -106,7 +106,7 @@ class AssetCheckEvaluation(
             check.dict_param(metadata, "metadata", key_type=str),
         )
 
-        return super(AssetCheckEvaluation, cls).__new__(
+        return super().__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             check_name=check.str_param(check_name, "check_name"),

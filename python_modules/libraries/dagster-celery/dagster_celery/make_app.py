@@ -35,7 +35,7 @@ def make_app(app_args=None):
 
 def make_app_with_task_routes(
     task_routes: dict,
-    app_args: Optional[Dict[str, Any]] = None,
+    app_args: Optional[dict[str, Any]] = None,
 ):
     app_ = Celery("dagster", **(app_args if app_args else {}))
 

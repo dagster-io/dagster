@@ -51,7 +51,7 @@ class TestMySQLInstance:
     @staticmethod
     def dagster_mysql_installed():
         try:
-            import dagster_mysql  # noqa: F401
+            import dagster_mysql
         except ImportError:
             return False
         return True
@@ -227,7 +227,7 @@ def is_mysql_running(service_name):
 
 class MySQLDockerError(Exception):
     def __init__(self, message, subprocess_error):
-        super(MySQLDockerError, self).__init__(check.opt_str_param(message, "message"))
+        super().__init__(check.opt_str_param(message, "message"))
         self.subprocess_error = check.inst_param(
             subprocess_error, "subprocess_error", subprocess.CalledProcessError
         )

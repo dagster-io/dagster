@@ -164,7 +164,7 @@ class ExecutionContextManager(Generic[TContextType], ABC):
 
     @property
     @abstractmethod
-    def context_type(self) -> Type[TContextType]:
+    def context_type(self) -> type[TContextType]:
         pass
 
     def prepare_context(self) -> Iterable[DagsterEvent]:  # ode to Preparable
@@ -191,7 +191,7 @@ def execution_context_event_generator(
         Callable[..., EventGenerationManager[ScopedResourcesBuilder]]
     ] = None,
     raise_on_error: Optional[bool] = False,
-    output_capture: Optional[Dict["StepOutputHandle", Any]] = None,
+    output_capture: Optional[dict["StepOutputHandle", Any]] = None,
 ) -> Generator[Union[DagsterEvent, PlanExecutionContext], None, None]:
     scoped_resources_builder_cm = cast(
         Callable[..., EventGenerationManager[ScopedResourcesBuilder]],
@@ -261,7 +261,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
         dagster_run: DagsterRun,
         instance: DagsterInstance,
         raise_on_error: Optional[bool] = False,
-        output_capture: Optional[Dict["StepOutputHandle", Any]] = None,
+        output_capture: Optional[dict["StepOutputHandle", Any]] = None,
         executor_defs: Optional[Sequence[ExecutorDefinition]] = None,
         resume_from_failure=False,
     ):
@@ -276,10 +276,10 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
             output_capture,
             resume_from_failure=resume_from_failure,
         )
-        super(PlanOrchestrationContextManager, self).__init__(event_generator)
+        super().__init__(event_generator)
 
     @property
-    def context_type(self) -> Type[PlanOrchestrationContext]:
+    def context_type(self) -> type[PlanOrchestrationContext]:
         return PlanOrchestrationContext
 
 
@@ -291,7 +291,7 @@ def orchestration_context_event_generator(
     instance: DagsterInstance,
     raise_on_error: bool,
     executor_defs: Optional[Sequence[ExecutorDefinition]],
-    output_capture: Optional[Dict["StepOutputHandle", Any]],
+    output_capture: Optional[dict["StepOutputHandle", Any]],
     resume_from_failure: bool = False,
 ) -> Iterator[Union[DagsterEvent, PlanOrchestrationContext]]:
     check.invariant(executor_defs is None)
@@ -359,9 +359,9 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
             Callable[..., EventGenerationManager[ScopedResourcesBuilder]]
         ] = None,
         raise_on_error: Optional[bool] = False,
-        output_capture: Optional[Dict["StepOutputHandle", Any]] = None,
+        output_capture: Optional[dict["StepOutputHandle", Any]] = None,
     ):
-        super(PlanExecutionContextManager, self).__init__(
+        super().__init__(
             execution_context_event_generator(
                 job,
                 execution_plan,
@@ -376,7 +376,7 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
         )
 
     @property
-    def context_type(self) -> Type[PlanExecutionContext]:
+    def context_type(self) -> type[PlanExecutionContext]:
         return PlanExecutionContext
 
 

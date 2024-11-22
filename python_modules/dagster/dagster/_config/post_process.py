@@ -143,7 +143,7 @@ def _recurse_in_to_shape(
 
     fields = context.config_type.fields  # type: ignore
 
-    field_aliases: Dict[str, str] = check.opt_dict_param(
+    field_aliases: dict[str, str] = check.opt_dict_param(
         getattr(context.config_type, "field_aliases", None),
         "field_aliases",
         key_type=str,
@@ -182,7 +182,7 @@ def _recurse_in_to_shape(
         for extra_field in extra_fields:
             processed_fields[extra_field] = EvaluateValueResult.for_value(config_value[extra_field])
 
-    errors: List[EvaluationError] = []
+    errors: list[EvaluationError] = []
     for result in processed_fields.values():
         if not result.success:
             errors.extend(check.not_none(result.errors))
@@ -202,7 +202,7 @@ def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> Evalua
         return EvaluateValueResult.for_value([])
 
     if context.config_type.inner_type.kind != ConfigTypeKind.NONEABLE:  # type: ignore
-        if any((cv is None for cv in config_value)):
+        if any(cv is None for cv in config_value):
             check.failed("Null array member not caught in validation")
 
     results = [
@@ -210,7 +210,7 @@ def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> Evalua
         for idx, item in enumerate(config_value)
     ]
 
-    errors: List[EvaluationError] = []
+    errors: list[EvaluationError] = []
     for result in results:
         if not result.success:
             errors.extend(check.not_none(result.errors))
@@ -230,12 +230,12 @@ def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> Evaluate
     if not config_value:
         return EvaluateValueResult.for_value({})
 
-    config_value = cast(Dict[object, object], config_value)
+    config_value = cast(dict[object, object], config_value)
 
-    if any((ck is None for ck in config_value.keys())):
+    if any(ck is None for ck in config_value.keys()):
         check.failed("Null map key not caught in validation")
     if context.config_type.inner_type.kind != ConfigTypeKind.NONEABLE:  # type: ignore
-        if any((cv is None for cv in config_value.values())):
+        if any(cv is None for cv in config_value.values()):
             check.failed("Null map member not caught in validation")
 
     results = {
@@ -243,7 +243,7 @@ def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> Evaluate
         for key, item in config_value.items()
     }
 
-    errors: List[EvaluationError] = []
+    errors: list[EvaluationError] = []
     for result in results.values():
         if not result.success:
             errors.extend(check.not_none(result.errors))

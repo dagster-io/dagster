@@ -8,7 +8,7 @@ from dagster import ConfigurableResource
 from dagster._utils import file_relative_path
 from dagster._utils.cached_method import cached_method
 
-HNItemRecord = Dict[str, Any]
+HNItemRecord = dict[str, Any]
 
 HN_BASE_URL = "https://hacker-news.firebaseio.com/v0"
 
@@ -42,7 +42,7 @@ class HNAPIClient(HNClient):
 
 class HNSnapshotClient(HNClient):
     @cached_method
-    def load_items(self) -> Dict[str, HNItemRecord]:
+    def load_items(self) -> dict[str, HNItemRecord]:
         file_path = file_relative_path(__file__, "../utils/snapshot.gzip")
         with gzip.open(file_path, "r") as f:
             return json.loads(f.read().decode())
@@ -63,7 +63,7 @@ class HNAPISubsampleClient(HNClient):
     """
 
     subsample_rate: int
-    _items: Dict[int, HNItemRecord] = {}
+    _items: dict[int, HNItemRecord] = {}
 
     def fetch_item_by_id(self, item_id: int) -> Optional[HNItemRecord]:
         # map self.subsample_rate items to the same item_id, caching it for faster performance

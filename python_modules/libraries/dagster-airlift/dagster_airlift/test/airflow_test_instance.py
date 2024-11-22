@@ -22,25 +22,25 @@ class AirflowInstanceFake(AirflowInstance):
 
     def __init__(
         self,
-        dag_infos: List[DagInfo],
-        task_infos: List[TaskInfo],
-        task_instances: List[TaskInstance],
-        dag_runs: List[DagRun],
-        variables: List[Dict[str, Any]] = [],
+        dag_infos: list[DagInfo],
+        task_infos: list[TaskInfo],
+        task_instances: list[TaskInstance],
+        dag_runs: list[DagRun],
+        variables: list[dict[str, Any]] = [],
         instance_name: Optional[str] = None,
     ) -> None:
         self._dag_infos_by_dag_id = {dag_info.dag_id: dag_info for dag_info in dag_infos}
         self._task_infos_by_dag_and_task_id = {
             (task_info.dag_id, task_info.task_id): task_info for task_info in task_infos
         }
-        self._task_instances_by_dag_and_task_id: Dict[Tuple[str, str], List[TaskInstance]] = (
+        self._task_instances_by_dag_and_task_id: dict[tuple[str, str], list[TaskInstance]] = (
             defaultdict(list)
         )
         for task_instance in task_instances:
             self._task_instances_by_dag_and_task_id[
                 (task_instance.dag_id, task_instance.task_id)
             ].append(task_instance)
-        self._dag_runs_by_dag_id: Dict[str, List[DagRun]] = defaultdict(list)
+        self._dag_runs_by_dag_id: dict[str, list[DagRun]] = defaultdict(list)
         for dag_run in dag_runs:
             self._dag_runs_by_dag_id[dag_run.dag_id].append(dag_run)
         self._dag_infos_by_file_token = {dag_info.file_token: dag_info for dag_info in dag_infos}
@@ -50,13 +50,13 @@ class AirflowInstanceFake(AirflowInstance):
             name="test_instance" if instance_name is None else instance_name,
         )
 
-    def list_dags(self) -> List[DagInfo]:
+    def list_dags(self) -> list[DagInfo]:
         return list(self._dag_infos_by_dag_id.values())
 
-    def list_variables(self) -> List[Dict[str, Any]]:
+    def list_variables(self) -> list[dict[str, Any]]:
         return self._variables
 
-    def get_dag_runs(self, dag_id: str, start_date: datetime, end_date: datetime) -> List[DagRun]:
+    def get_dag_runs(self, dag_id: str, start_date: datetime, end_date: datetime) -> list[DagRun]:
         if dag_id not in self._dag_runs_by_dag_id:
             raise ValueError(f"Dag run not found for dag_id {dag_id}")
         return [
@@ -72,7 +72,7 @@ class AirflowInstanceFake(AirflowInstance):
         end_date_gte: datetime,
         end_date_lte: datetime,
         offset: int = 0,
-    ) -> List[DagRun]:
+    ) -> list[DagRun]:
         runs = [
             (run.end_date, run)
             for runs in self._dag_runs_by_dag_id.values()
@@ -85,7 +85,7 @@ class AirflowInstanceFake(AirflowInstance):
 
     def get_task_instance_batch(
         self, dag_id: str, task_ids: Sequence[str], run_id: str, states: Sequence[str]
-    ) -> List[TaskInstance]:
+    ) -> list[TaskInstance]:
         task_instances = []
         for task_id in set(task_ids):
             if (dag_id, task_id) not in self._task_instances_by_dag_and_task_id:
@@ -122,7 +122,7 @@ class AirflowInstanceFake(AirflowInstance):
             raise ValueError(f"Task info not found for dag_id {dag_id} and task_id {task_id}")
         return self._task_infos_by_dag_and_task_id[(dag_id, task_id)]
 
-    def get_task_infos(self, *, dag_id: str) -> List[TaskInfo]:
+    def get_task_infos(self, *, dag_id: str) -> list[TaskInfo]:
         if dag_id not in self._dag_infos_by_dag_id:
             raise ValueError(f"Dag info not found for dag_id {dag_id}")
         task_infos = []
@@ -151,7 +151,7 @@ def make_dag_info(dag_id: str, file_token: Optional[str]) -> DagInfo:
 
 
 def make_task_info(
-    dag_id: str, task_id: str, downstream_task_ids: Optional[List[str]] = None
+    dag_id: str, task_id: str, downstream_task_ids: Optional[list[str]] = None
 ) -> TaskInfo:
     return TaskInfo(
         webserver_url="http://dummy.domain",
@@ -207,9 +207,9 @@ def make_dag_run(
 
 
 def make_instance(
-    dag_and_task_structure: Dict[str, List[str]],
-    dag_runs: List[DagRun] = [],
-    task_deps: Dict[str, List[str]] = {},
+    dag_and_task_structure: dict[str, list[str]],
+    dag_runs: list[DagRun] = [],
+    task_deps: dict[str, list[str]] = {},
     instance_name: Optional[str] = None,
 ) -> AirflowInstanceFake:
     """Constructs DagInfo, TaskInfo, and TaskInstance objects from provided data.

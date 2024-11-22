@@ -44,10 +44,10 @@ def start_run_and_wait_for_completion(dag_id: str) -> None:
 
 def poll_for_materialization(
     instance: DagsterInstance,
-    target: Union[AssetKey, List[AssetKey]],
+    target: Union[AssetKey, list[AssetKey]],
     timeout: int = 60,
     poll_interval: int = 3,
-) -> Dict[AssetKey, EventLogEntry]:
+) -> dict[AssetKey, EventLogEntry]:
     """Polls the instance for materialization events for the given target(s) until all targets have been materialized or the timeout is reached."""
     target_list = [target] if isinstance(target, AssetKey) else target
 
@@ -62,7 +62,7 @@ def poll_for_materialization(
 
         mat_events = instance.get_latest_materialization_events(asset_keys=target_list)
 
-    return cast(Dict[AssetKey, EventLogEntry], mat_events)
+    return cast(dict[AssetKey, EventLogEntry], mat_events)
 
 
 def poll_for_asset_check(

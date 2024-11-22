@@ -96,7 +96,9 @@ BlockStep = TypedDict(
     },
 )
 
-BuildkiteStep: TypeAlias = Union[CommandStep, GroupStep, TriggerStep, WaitStep, BlockStep]
+BuildkiteStep: TypeAlias = Union[
+    CommandStep, GroupStep, TriggerStep, WaitStep, BlockStep
+]
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
 BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
 
@@ -158,7 +160,8 @@ def check_for_release() -> bool:
     try:
         git_tag = str(
             subprocess.check_output(
-                ["git", "describe", "--exact-match", "--abbrev=0"], stderr=subprocess.STDOUT
+                ["git", "describe", "--exact-match", "--abbrev=0"],
+                stderr=subprocess.STDOUT,
             )
         ).strip("'b\\n")
     except subprocess.CalledProcessError:
@@ -237,7 +240,11 @@ def parse_package_version(version_str: str) -> packaging.version.Version:
 
 
 def get_commit(rev):
-    return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
+    return (
+        subprocess.check_output(["git", "rev-parse", "--short", rev])
+        .decode("utf-8")
+        .strip()
+    )
 
 
 def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
@@ -251,7 +258,9 @@ def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
         return None
 
     if overrides and any(
-        Path(override) in path.parents for override in overrides for path in ChangedFiles.all
+        Path(override) in path.parents
+        for override in overrides
+        for path in ChangedFiles.all
     ):
         return None
 
@@ -291,7 +300,10 @@ def skip_if_no_non_docs_markdown_changes():
     if not is_feature_branch():
         return None
 
-    if any(path.suffix == ".md" and Path("docs") not in path.parents for path in ChangedFiles.all):
+    if any(
+        path.suffix == ".md" and Path("docs") not in path.parents
+        for path in ChangedFiles.all
+    ):
         return None
 
     return "No markdown changes outside of docs"

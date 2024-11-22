@@ -772,11 +772,14 @@ def test_pipes_cli_args_params_loader():
     def asset_with_pipes_cli_args_params_loader(
         context: OpExecutionContext, pipes_client: PipesSubprocessClient
     ):
-        with temp_script(script_fn) as script_path, open_pipes_session(
-            context=context,
-            context_injector=PipesTempFileContextInjector(),  # this doesn't really matter
-            message_reader=PipesTempFileMessageReader(),  # this doesn't really matter
-        ) as session:
+        with (
+            temp_script(script_fn) as script_path,
+            open_pipes_session(
+                context=context,
+                context_injector=PipesTempFileContextInjector(),  # this doesn't really matter
+                message_reader=PipesTempFileMessageReader(),  # this doesn't really matter
+            ) as session,
+        ):
             pipes_args = session.get_bootstrap_cli_arguments()
 
             cmd = [_PYTHON_EXECUTABLE, script_path] + sum(  # noqa: RUF017

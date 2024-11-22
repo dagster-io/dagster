@@ -102,7 +102,7 @@ def airbyte_source_files_fixture():
     FILES = ["sample_file.json", "different_sample_file.json"]
 
     for file in FILES:
-        with open(file_relative_path(__file__, file), "r", encoding="utf8") as f:
+        with open(file_relative_path(__file__, file), encoding="utf8") as f:
             contents = f.read()
         with open(os.path.join("/tmp/airbyte_local", file), "w", encoding="utf8") as f:
             f.write(contents)

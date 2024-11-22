@@ -40,7 +40,7 @@ def order_forecast_model(daily_order_summary: pd.DataFrame) -> Any:
     key_prefix=["duckdb", "forecasting"],
 )
 def predicted_orders(
-    daily_order_summary: pd.DataFrame, order_forecast_model: Tuple[float, float]
+    daily_order_summary: pd.DataFrame, order_forecast_model: tuple[float, float]
 ) -> pd.DataFrame:
     """Predicted orders for the next 30 days based on the fit parameters."""
     a, b = order_forecast_model

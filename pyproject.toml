@@ -98,7 +98,7 @@ filterwarnings = [
 
 [tool.ruff]
 
-target-version = "py38"
+target-version = "py39"
 
 # *.py, *.ipy are included by default
 extend-include = ["*.ipynb"]
@@ -116,7 +116,7 @@ extend-exclude = [
 line-length = 100
 
 # Fail if Ruff is not running this version.
-required-version = "0.5.5"
+required-version = "0.8.0"
 
 [tool.ruff.lint]
 
@@ -181,6 +181,14 @@ ignore = [
   # (assorted perf rules) We have a lot of violations, enable when autofix is available
   "PERF401", # (manual-list-comprehension)
   "PERF402", # (manual-list-copy)
+
+  # (assorted pyupgrade rules) We have a lot of violations, enable when autofix is available
+  "UP035", # (deprecated-import)
+  "UP031", # (Use format specifiers instead of percent format)
+
+  # (assorted import rules) We have a lot of violations, enable when autofix is available
+  "F401", # (unused-import)
+
 ]
 
 # By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.
@@ -248,6 +256,9 @@ select = [
 
   # (invalid escape sequence) flag errant backslashes
   "W605",
+
+  # (pyupgrade) automatically upgrade Python syntax to newer versions
+  "UP",
 ]
 
 [tool.ruff.lint.flake8-builtins]

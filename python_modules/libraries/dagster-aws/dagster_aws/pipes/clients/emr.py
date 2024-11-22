@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 
 
 def add_configuration(
-    configurations: List["ConfigurationUnionTypeDef"],
+    configurations: list["ConfigurationUnionTypeDef"],
     configuration: "ConfigurationUnionTypeDef",
 ):
     """Add a configuration to a list of EMR configurations, merging configurations with the same classification.
@@ -53,11 +53,11 @@ def add_configuration(
             properties.update(properties)
 
             inner_configurations = cast(
-                List["ConfigurationUnionTypeDef"], existing_configuration.get("Configurations", [])
+                list["ConfigurationUnionTypeDef"], existing_configuration.get("Configurations", [])
             )
 
             for inner_configuration in cast(
-                List["ConfigurationUnionTypeDef"], configuration.get("Configurations", [])
+                list["ConfigurationUnionTypeDef"], configuration.get("Configurations", [])
             ):
                 add_configuration(inner_configurations, inner_configuration)
 
@@ -120,7 +120,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
         run_job_flow_params: "RunJobFlowInputRequestTypeDef",
-        extras: Optional[Dict[str, Any]] = None,
+        extras: Optional[dict[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
         """Run a job on AWS EMR, enriched with the pipes protocol.
 
@@ -165,7 +165,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
         # add Pipes env variables
         pipes_env_vars = session.get_bootstrap_env_vars()
 
-        configurations = cast(List["ConfigurationUnionTypeDef"], params.get("Configurations", []))
+        configurations = cast(list["ConfigurationUnionTypeDef"], params.get("Configurations", []))
 
         # add all possible env vars to spark-defaults, spark-env, yarn-env, hadoop-env
         # since we can't be sure which one will be used by the job

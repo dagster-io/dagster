@@ -18,7 +18,7 @@ class Context:
 
 class Thing(DagsterModel):
     key: str
-    batch_keys: List[str]
+    batch_keys: list[str]
 
     @staticmethod
     async def gen(context: Context, key: str) -> "Thing":
@@ -33,7 +33,7 @@ class Thing(DagsterModel):
         return await other_other.gen_other_thing(context)
 
 
-async def batch_load_fn(keys: List[str]):
+async def batch_load_fn(keys: list[str]):
     return [Thing(key=key, batch_keys=keys) for key in keys]
 
 
@@ -88,7 +88,7 @@ def test_event_loop_change() -> None:
 def test_exception() -> None:
     class TestException(Exception): ...
 
-    async def batch_load_fn(keys: List[str]):
+    async def batch_load_fn(keys: list[str]):
         raise TestException()
 
     class Thrower(DataLoader[str, str]):
@@ -143,7 +143,7 @@ class LoadableThing(NamedTuple("_LoadableThing", [("key", str), ("val", int)]), 
     @classmethod
     def _blocking_batch_load(
         cls, keys: Iterable[str], context: mock.MagicMock
-    ) -> List["LoadableThing"]:
+    ) -> list["LoadableThing"]:
         context.query(keys)
         return [LoadableThing(key, random.randint(0, 100000)) for key in keys]
 

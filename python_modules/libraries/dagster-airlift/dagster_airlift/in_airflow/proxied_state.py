@@ -16,7 +16,7 @@ class TaskProxiedState(NamedTuple):
     proxied: bool
 
     @staticmethod
-    def from_dict(task_dict: Dict[str, Any]) -> "TaskProxiedState":
+    def from_dict(task_dict: dict[str, Any]) -> "TaskProxiedState":
         if set(task_dict.keys()) != {"id", "proxied"}:
             raise Exception(
                 f"Expected 'proxied' and 'id' keys in the task dictionary. Found keys: {task_dict.keys()}"
@@ -25,7 +25,7 @@ class TaskProxiedState(NamedTuple):
             raise Exception("Expected 'proxied' key to be a boolean")
         return TaskProxiedState(task_id=task_dict["id"], proxied=task_dict["proxied"])
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"id": self.task_id, "proxied": self.proxied}
 
 
@@ -40,10 +40,10 @@ class DagProxiedState(NamedTuple):
     """
 
     proxied: Optional[bool]
-    tasks: Dict[str, TaskProxiedState]
+    tasks: dict[str, TaskProxiedState]
 
     @staticmethod
-    def from_dict(dag_dict: Dict[str, Any]) -> "DagProxiedState":
+    def from_dict(dag_dict: dict[str, Any]) -> "DagProxiedState":
         if "tasks" not in dag_dict and "proxied" not in dag_dict:
             raise Exception(
                 f"Expected a 'tasks' or 'proxied' top-level key in the dag dictionary. Instead; got: {dag_dict}"
@@ -54,7 +54,7 @@ class DagProxiedState(NamedTuple):
             )
         task_proxied_states = {}
         if "tasks" in dag_dict:
-            task_list: Sequence[Dict[str, Any]] = dag_dict["tasks"]
+            task_list: Sequence[dict[str, Any]] = dag_dict["tasks"]
             for task_dict in task_list:
                 task_state = TaskProxiedState.from_dict(task_dict)
                 task_proxied_states[task_state.task_id] = task_state
@@ -63,7 +63,7 @@ class DagProxiedState(NamedTuple):
             raise Exception("Expected 'proxied' key to be a boolean or None")
         return DagProxiedState(tasks=task_proxied_states, proxied=dag_proxied_state)
 
-    def to_dict(self) -> Dict[str, Sequence[Dict[str, Any]]]:
+    def to_dict(self) -> dict[str, Sequence[dict[str, Any]]]:
         return {"tasks": [task_state.to_dict() for task_state in self.tasks.values()]}
 
     def is_task_proxied(self, task_id: str) -> bool:
@@ -98,7 +98,7 @@ class AirflowProxiedState(NamedTuple):
         dags (Dict[str, DagProxiedState]): A dictionary of dag_id to DagProxiedState.
     """
 
-    dags: Dict[str, DagProxiedState]
+    dags: dict[str, DagProxiedState]
 
     def get_task_proxied_state(self, *, dag_id: str, task_id: str) -> Optional[bool]:
         if dag_id not in self.dags:
@@ -128,7 +128,7 @@ class AirflowProxiedState(NamedTuple):
 
     def get_proxied_dict_for_dag(
         self, dag_id: str
-    ) -> Optional[Dict[str, Sequence[Dict[str, Any]]]]:
+    ) -> Optional[dict[str, Sequence[dict[str, Any]]]]:
         if dag_id not in self.dags:
             return None
         return {
@@ -139,7 +139,7 @@ class AirflowProxiedState(NamedTuple):
         }
 
     @staticmethod
-    def from_dict(proxied_dict: Dict[str, Any]) -> "AirflowProxiedState":
+    def from_dict(proxied_dict: dict[str, Any]) -> "AirflowProxiedState":
         dags = {}
         for dag_id, dag_dict in proxied_dict.items():
             dags[dag_id] = DagProxiedState.from_dict(dag_dict)

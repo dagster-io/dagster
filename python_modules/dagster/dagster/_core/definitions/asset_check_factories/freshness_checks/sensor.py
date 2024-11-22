@@ -145,7 +145,7 @@ def freshness_checks_get_evaluations_iter(
     start_time: datetime.datetime,
     left_off_asset_check_key: Optional[AssetCheckKey],
     freshness_checks: Sequence[AssetChecksDefinition],
-) -> Iterator[Tuple[AssetCheckKey, bool]]:
+) -> Iterator[tuple[AssetCheckKey, bool]]:
     """Yields the set of freshness check keys to evaluate."""
     for check_key in ordered_iterator_freshness_checks_starting_with_key(
         left_off_asset_check_key, freshness_checks

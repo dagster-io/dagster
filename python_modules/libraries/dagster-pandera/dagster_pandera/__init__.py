@@ -59,10 +59,10 @@ if TYPE_CHECKING:
     # NOTE: It is important NOT to import `pandera.polars` under the same pa_polars alias we use for
     # the runtime import above-- that will confuse type checkers because that alias is a variable
     # due to the runtime ImportError handling.
-    import pandera.polars  # noqa: TCH004
+    import pandera.polars  # noqa: TC004
 
 DagsterPanderaSchema: TypeAlias = Union[pa.DataFrameSchema, "pandera.polars.DataFrameSchema"]
-DagsterPanderaSchemaModel: TypeAlias = Type[
+DagsterPanderaSchemaModel: TypeAlias = type[
     Union[pa.DataFrameModel, "pandera.polars.DataFrameModel"]
 ]
 DagsterPanderaColumn: TypeAlias = Union[pa.Column, "pandera.polars.Column"]

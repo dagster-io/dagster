@@ -74,7 +74,7 @@ class ExecutionPlanSnapshot(
         executor_name: Optional[str] = None,
         repository_load_data: Optional[RepositoryLoadData] = None,
     ):
-        return super(ExecutionPlanSnapshot, cls).__new__(
+        return super().__new__(
             cls,
             steps=check.sequence_param(steps, "steps", of_type=ExecutionStepSnap),
             artifacts_persisted=check.bool_param(artifacts_persisted, "artifacts_persisted"),
@@ -129,7 +129,7 @@ class ExecutionPlanSnapshotErrorData(
     NamedTuple("_ExecutionPlanSnapshotErrorData", [("error", Optional[SerializableErrorInfo])])
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(ExecutionPlanSnapshotErrorData, cls).__new__(
+        return super().__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
@@ -162,7 +162,7 @@ class ExecutionStepSnap(
         tags: Optional[Mapping[str, str]] = None,
         step_handle: Optional[StepHandleUnion] = None,
     ):
-        return super(ExecutionStepSnap, cls).__new__(
+        return super().__new__(
             cls,
             key=check.str_param(key, "key"),
             inputs=check.sequence_param(inputs, "inputs", ExecutionStepInputSnap),
@@ -196,7 +196,7 @@ class ExecutionStepInputSnap(
         upstream_output_handles: Sequence[StepOutputHandle],
         source: Optional[StepInputSourceUnion] = None,
     ):
-        return super(ExecutionStepInputSnap, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(name, "name"),
             check.str_param(dagster_type_key, "dagster_type_key"),
@@ -230,7 +230,7 @@ class ExecutionStepOutputSnap(
         node_handle: Optional[NodeHandle] = None,
         properties: Optional[StepOutputProperties] = None,
     ):
-        return super(ExecutionStepOutputSnap, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(name, "name"),
             check.str_param(dagster_type_key, "dagster_type_key"),
@@ -244,7 +244,7 @@ class ExecutionPlanMetadataItemSnap(
     NamedTuple("_ExecutionPlanMetadataItemSnap", [("key", str), ("value", str)])
 ):
     def __new__(cls, key: str, value: str):
-        return super(ExecutionPlanMetadataItemSnap, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(key, "key"),
             check.str_param(value, "value"),

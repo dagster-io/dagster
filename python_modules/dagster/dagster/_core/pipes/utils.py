@@ -252,7 +252,7 @@ class PipesThreadedMessageReader(PipesMessageReader):
     """
 
     interval: float
-    log_readers: Dict[str, "PipesLogReader"]
+    log_readers: dict[str, "PipesLogReader"]
     opened_payload: Optional[PipesOpenedData]
     launched_payload: Optional[PipesLaunchedData]
 
@@ -343,7 +343,7 @@ class PipesThreadedMessageReader(PipesMessageReader):
     @abstractmethod
     def download_messages(
         self, cursor: Optional[TCursor], params: PipesParams
-    ) -> Optional[Tuple[TCursor, str]]:
+    ) -> Optional[tuple[TCursor, str]]:
         """Download a chunk of messages from the target location.
 
         Args:
@@ -542,7 +542,7 @@ class PipesBlobStoreMessageReader(PipesThreadedMessageReader):
 
     def download_messages(
         self, cursor: Optional[int], params: PipesParams
-    ) -> Optional[Tuple[int, str]]:
+    ) -> Optional[tuple[int, str]]:
         # mapping new interface to the old one
         # the old interface isn't using the cursor parameter, instead, it keeps track of counter in the "counter" attribute
         chunk = self.download_messages_chunk(self.counter, params)
@@ -756,9 +756,10 @@ def open_pipes_session(
     context_data = build_external_execution_context_data(context, extras)
     message_handler = PipesMessageHandler(context, message_reader)
     try:
-        with context_injector.inject_context(
-            context_data
-        ) as ci_params, message_handler.handle_messages() as mr_params:
+        with (
+            context_injector.inject_context(context_data) as ci_params,
+            message_handler.handle_messages() as mr_params,
+        ):
             yield PipesSession(
                 context_data=context_data,
                 message_handler=message_handler,

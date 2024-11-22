@@ -21,7 +21,7 @@ def resolve_stale_or_missing_assets(
         else asset_graph.get_materialization_asset_keys_for_job(check.not_none(instigator.job_name))
     )
     resolver = CachingStaleStatusResolver(context.instance, asset_graph, request_context)
-    stale_or_unknown_keys: List[AssetKey] = []
+    stale_or_unknown_keys: list[AssetKey] = []
     for asset_key in asset_selection:
         if resolver.get_status(asset_key) in [StaleStatus.STALE, StaleStatus.MISSING]:
             stale_or_unknown_keys.append(asset_key)

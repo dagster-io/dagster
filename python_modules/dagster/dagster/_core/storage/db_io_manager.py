@@ -62,7 +62,7 @@ class DbTypeHandler(ABC, Generic[T]):
 
     @property
     @abstractmethod
-    def supported_types(self) -> Sequence[Type[object]]:
+    def supported_types(self) -> Sequence[type[object]]:
         pass
 
 
@@ -111,9 +111,9 @@ class DbIOManager(IOManager):
         database: str,
         schema: Optional[str] = None,
         io_manager_name: Optional[str] = None,
-        default_load_type: Optional[Type] = None,
+        default_load_type: Optional[type] = None,
     ):
-        self._handlers_by_type: Dict[Optional[Type[Any]], DbTypeHandler] = {}
+        self._handlers_by_type: dict[Optional[type[Any]], DbTypeHandler] = {}
         self._io_manager_name = io_manager_name or self.__class__.__name__
         for type_handler in type_handlers:
             for handled_type in type_handler.supported_types:
@@ -197,7 +197,7 @@ class DbIOManager(IOManager):
 
         schema: str
         table: str
-        partition_dimensions: List[TablePartitionDimension] = []
+        partition_dimensions: list[TablePartitionDimension] = []
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]

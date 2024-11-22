@@ -88,7 +88,7 @@ def build_freshness_checks_from_dbt_assets(
     freshness_checks = []
     dbt_assets = check.sequence_param(dbt_assets, "dbt_assets", AssetsDefinition)
     ensure_no_duplicate_assets(dbt_assets)
-    asset_key_to_assets_def: Dict[AssetKey, AssetsDefinition] = {}
+    asset_key_to_assets_def: dict[AssetKey, AssetsDefinition] = {}
     asset_key_to_resource_props: Mapping[AssetKey, Mapping[str, Any]] = {}
     for assets_def in dbt_assets:
         manifest, translator = get_manifest_and_translator_from_dbt_assets([assets_def])

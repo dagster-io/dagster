@@ -139,7 +139,7 @@ def ensure_env_vars_set_post_init(set_value: T, input_value: Any) -> T:
                 set_value[key] = ensure_env_vars_set_post_init(set_value.get(key) or {}, value)
             elif isinstance(value, list):
                 set_value[key] = ensure_env_vars_set_post_init(set_value.get(key) or [], value)
-    if isinstance(set_value, List) and isinstance(input_value, List):
+    if isinstance(set_value, list) and isinstance(input_value, list):
         for i in range(len(set_value)):
             value = input_value[i]
             if isinstance(value, (EnvVar, IntEnvVar)):
@@ -271,7 +271,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         }
 
     @classmethod
-    def _get_non_default_public_field_values_cls(cls, items: Dict[str, Any]) -> Mapping[str, Any]:
+    def _get_non_default_public_field_values_cls(cls, items: dict[str, Any]) -> Mapping[str, Any]:
         """Returns a dictionary representation of this config object,
         ignoring any private fields, and any defaulted fields which are equal to the default value.
 
@@ -307,7 +307,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         return DefinitionConfigSchema(infer_schema_from_config_class(cls))
 
     @classmethod
-    def to_fields_dict(cls) -> Dict[str, DagsterField]:
+    def to_fields_dict(cls) -> dict[str, DagsterField]:
         """Converts the config structure represented by this class into a dictionary of dagster.Fields.
         This is useful when interacting with legacy code that expects a dictionary of fields but you
         want the source of truth to be a config class.
@@ -399,9 +399,9 @@ class PermissiveConfig(Config):
 
 
 def infer_schema_from_config_class(
-    model_cls: Type["Config"],
+    model_cls: type["Config"],
     description: Optional[str] = None,
-    fields_to_omit: Optional[Set[str]] = None,
+    fields_to_omit: Optional[set[str]] = None,
 ) -> DagsterField:
     from dagster._config.pythonic_config.config import Config
     from dagster._config.pythonic_config.resource import (
@@ -417,7 +417,7 @@ def infer_schema_from_config_class(
         "Config type annotation must inherit from dagster.Config",
     )
 
-    fields: Dict[str, DagsterField] = {}
+    fields: dict[str, DagsterField] = {}
     for key, pydantic_field_info in model_fields(model_cls).items():
         if _is_annotated_as_resource_type(
             pydantic_field_info.annotation, pydantic_field_info.metadata

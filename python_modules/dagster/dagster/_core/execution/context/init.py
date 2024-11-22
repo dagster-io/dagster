@@ -160,7 +160,7 @@ class UnboundInitResourceContext(InitResourceContext):
         self._resources_contain_cm = isinstance(resources, IContainsGenerator)
 
         self._cm_scope_entered = False
-        super(UnboundInitResourceContext, self).__init__(
+        super().__init__(
             resource_config=resource_config,
             resources=resources,
             resource_def=None,

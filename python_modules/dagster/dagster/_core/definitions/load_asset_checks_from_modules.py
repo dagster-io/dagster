@@ -19,7 +19,7 @@ from dagster._core.definitions.load_assets_from_modules import (
 
 def _checks_from_modules(modules: Iterable[ModuleType]) -> Sequence[AssetChecksDefinition]:
     checks = []
-    ids: Set[int] = set()
+    ids: set[int] = set()
     for module in modules:
         for c in find_objects_in_module_of_types(module, AssetsDefinition):
             if has_only_asset_checks(c) and id(c) not in ids:

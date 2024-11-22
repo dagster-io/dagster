@@ -211,7 +211,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     description: PublicAttr[Optional[str]]
     partitions_def: PublicAttr[Optional[PartitionsDefinition]]
     group_name: PublicAttr[str]
-    resource_defs: PublicAttr[Dict[str, ResourceDefinition]]
+    resource_defs: PublicAttr[dict[str, ResourceDefinition]]
     observe_fn: PublicAttr[Optional[SourceAssetObserveFunction]]
     op_tags: Optional[Mapping[str, Any]]
     _node_def: Optional[OpDefinition]  # computed lazily

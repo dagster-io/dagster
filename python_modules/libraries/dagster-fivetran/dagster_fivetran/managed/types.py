@@ -18,7 +18,7 @@ class FivetranDestination:
         name: str,
         destination_type: str,
         region: str,
-        destination_configuration: Dict[str, Any],
+        destination_configuration: dict[str, Any],
         time_zone_offset: Optional[int] = None,
     ):
         self.name = check.str_param(name, "name")
@@ -39,7 +39,7 @@ class InitializedFivetranDestination:
         self.destination_id = destination_id
 
     @classmethod
-    def from_api_json(cls, name: str, api_json: Dict[str, Any]):
+    def from_api_json(cls, name: str, api_json: dict[str, Any]):
         return cls(
             destination=FivetranDestination(
                 name=name,
@@ -58,9 +58,9 @@ class FivetranConnector:
         self,
         schema_name: str,
         source_type: str,
-        source_configuration: Dict[str, Any],
+        source_configuration: dict[str, Any],
         destination: Optional[FivetranDestination],
-        auth_configuration: Optional[Dict[str, Any]] = None,
+        auth_configuration: Optional[dict[str, Any]] = None,
     ):
         self.schema_name = check.str_param(schema_name, "schema_name")
         self.source_type = check.str_param(source_type, "source_type")
@@ -83,7 +83,7 @@ class InitializedFivetranConnector:
         self.connector_id = connector_id
 
     @classmethod
-    def from_api_json(cls, api_json: Dict[str, Any]):
+    def from_api_json(cls, api_json: dict[str, Any]):
         return cls(
             connector=FivetranConnector(
                 schema_name=api_json["schema"],

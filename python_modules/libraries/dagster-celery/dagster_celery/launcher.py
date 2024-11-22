@@ -50,7 +50,7 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
         default_queue: str,
         broker: Optional[str] = None,
         backend: Optional[str] = None,
-        include: Optional[List[str]] = None,
+        include: Optional[list[str]] = None,
         config_source: Optional[dict] = None,
         inst_data: Optional[ConfigurableClassData] = None,
     ) -> None:

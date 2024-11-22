@@ -24,7 +24,7 @@ class DagsterModel(BaseModel):
         ignored_types=(cached_property,),
     )
 
-    def model_copy(self, *, update: Optional[Dict[str, Any]] = None) -> Self:
+    def model_copy(self, *, update: Optional[dict[str, Any]] = None) -> Self:
         return super().model_copy(update=update)
 
     @classmethod

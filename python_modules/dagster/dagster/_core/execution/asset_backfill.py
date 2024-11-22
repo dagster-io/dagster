@@ -104,7 +104,7 @@ class PartitionedAssetBackfillStatus(
         num_targeted_partitions: int,
         partitions_counts_by_status: Mapping[AssetBackfillStatus, int],
     ):
-        return super(PartitionedAssetBackfillStatus, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(asset_key, "asset_key", AssetKey),
             check.int_param(num_targeted_partitions, "num_targeted_partitions"),
@@ -124,7 +124,7 @@ class UnpartitionedAssetBackfillStatus(
     )
 ):
     def __new__(cls, asset_key: AssetKey, asset_backfill_status: Optional[AssetBackfillStatus]):
-        return super(UnpartitionedAssetBackfillStatus, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(asset_key, "asset_key", AssetKey),
             check.opt_inst_param(
@@ -330,7 +330,7 @@ class AssetBackfillData(NamedTuple):
 
         Orders keys in the same topological level alphabetically.
         """
-        nodes: List[BaseAssetNode] = [asset_graph.get(key) for key in self.target_subset.asset_keys]
+        nodes: list[BaseAssetNode] = [asset_graph.get(key) for key in self.target_subset.asset_keys]
         return [
             item
             for items_by_level in toposort({node.key: node.parent_keys for node in nodes})
@@ -1370,7 +1370,7 @@ def execute_asset_backfill_iteration_inner(
     This is a generator so that we can return control to the daemon and let it heartbeat during
     expensive operations.
     """
-    initial_candidates: Set[AssetKeyPartitionKey] = set()
+    initial_candidates: set[AssetKeyPartitionKey] = set()
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
     if request_roots:
         logger.info(
@@ -1548,7 +1548,7 @@ def can_run_with_parent(
     asset_graph: RemoteWorkspaceAssetGraph,
     target_subset: AssetGraphSubset,
     asset_partitions_to_request_map: Mapping[AssetKey, AbstractSet[Optional[str]]],
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """Returns if a given candidate can be materialized in the same run as a given parent on
     this tick, and the reason it cannot be materialized, if applicable.
     """
@@ -1563,8 +1563,7 @@ def can_run_with_parent(
     # checks if there is a simple partition mapping between the parent and the child
     has_identity_partition_mapping = (
         # both unpartitioned
-        not candidate_node.is_partitioned
-        and not parent_node.is_partitioned
+        (not candidate_node.is_partitioned and not parent_node.is_partitioned)
         # normal identity partition mapping
         or isinstance(partition_mapping, IdentityPartitionMapping)
         # for assets with the same time partitions definition, a non-offset partition
@@ -1645,7 +1644,7 @@ def should_backfill_atomic_asset_partitions_unit(
     failed_and_downstream_subset: AssetGraphSubset,
     dynamic_partitions_store: DynamicPartitionsStore,
     current_time: datetime,
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """Args:
     candidates_unit: A set of asset partitions that must all be materialized if any is
         materialized.
@@ -1686,7 +1685,7 @@ def should_backfill_atomic_asset_partitions_unit(
                 f" {parent_partitions_result.required_but_nonexistent_parents_partitions}"
             )
 
-        asset_partitions_to_request_map: Dict[AssetKey, Set[Optional[str]]] = defaultdict(set)
+        asset_partitions_to_request_map: dict[AssetKey, set[Optional[str]]] = defaultdict(set)
         for asset_partition in asset_partitions_to_request:
             asset_partitions_to_request_map[asset_partition.asset_key].add(
                 asset_partition.partition_key
@@ -1726,7 +1725,7 @@ def _get_failed_asset_partitions(
         )
     )
 
-    result: List[AssetKeyPartitionKey] = []
+    result: list[AssetKeyPartitionKey] = []
 
     for run in runs:
         planned_asset_keys = instance_queryer.get_planned_materializations_for_run(

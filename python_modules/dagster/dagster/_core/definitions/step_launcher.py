@@ -45,7 +45,7 @@ class StepRunRef(
     ):
         from dagster._core.execution.plan.state import KnownExecutionState
 
-        return super(StepRunRef, cls).__new__(
+        return super().__new__(
             cls,
             check.mapping_param(run_config, "run_config", key_type=str),
             check.inst_param(dagster_run, "dagster_run", DagsterRun),

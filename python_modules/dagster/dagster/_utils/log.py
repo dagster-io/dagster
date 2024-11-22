@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 class JsonFileHandler(logging.Handler):
     def __init__(self, json_path: str):
-        super(JsonFileHandler, self).__init__()
+        super().__init__()
         self.json_path = check.str_param(json_path, "json_path")
 
     def emit(self, record: logging.LogRecord) -> None:
@@ -85,7 +85,7 @@ class StructuredLoggerMessage(
         meta: Mapping[str, object],
         record: logging.LogRecord,
     ):
-        return super(StructuredLoggerMessage, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(name, "name"),
             check.str_param(message, "message"),
@@ -100,7 +100,7 @@ StructuredLoggerCallback: TypeAlias = Callable[[StructuredLoggerMessage], None]
 
 class StructuredLoggerHandler(logging.Handler):
     def __init__(self, callback: StructuredLoggerCallback):
-        super(StructuredLoggerHandler, self).__init__()
+        super().__init__()
         self.callback = check.is_callable(callback, "callback")
 
     def emit(self, record: logging.LogRecord) -> None:
@@ -265,7 +265,7 @@ def configure_loggers(
         )
     json_formatter = get_structlog_json_formatter()
 
-    LOGGING_CONFIG: Dict[str, Any] = {
+    LOGGING_CONFIG: dict[str, Any] = {
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {

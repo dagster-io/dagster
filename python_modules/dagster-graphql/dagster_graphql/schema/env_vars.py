@@ -43,7 +43,7 @@ class GrapheneEnvVarWithConsumers(graphene.ObjectType):
         self.envVarName = name
         self.consumers = consumers
 
-    def resolve_envVarConsumers(self, _graphene_info) -> List[GrapheneEnvVarConsumer]:
+    def resolve_envVarConsumers(self, _graphene_info) -> list[GrapheneEnvVarConsumer]:
         return [GrapheneEnvVarConsumer(consumer) for consumer in self.consumers]
 
 

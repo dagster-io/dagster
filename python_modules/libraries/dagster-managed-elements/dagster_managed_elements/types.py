@@ -41,7 +41,7 @@ def _sanitize(key: str, value: str):
 
 class DiffData(NamedTuple("_DiffData", [("key", str), ("value", Any)])):
     def __new__(cls, key: str, value: str):
-        return super(DiffData, cls).__new__(
+        return super().__new__(
             cls,
             key=check.str_param(key, "key"),
             value=value,
@@ -55,7 +55,7 @@ class ModifiedDiffData(
     NamedTuple("_ModifiedDiffData", [("key", str), ("old_value", Any), ("new_value", Any)])
 ):
     def __new__(cls, key: str, old_value: Any, new_value: Any):
-        return super(ModifiedDiffData, cls).__new__(
+        return super().__new__(
             cls, key=check.str_param(key, "key"), old_value=old_value, new_value=new_value
         )
 
@@ -169,7 +169,7 @@ class ManagedElementDiff(
 
     def get_diff_display_entries(
         self, indent: int = 0
-    ) -> Tuple[Sequence[str], Sequence[str], Sequence[str]]:
+    ) -> tuple[Sequence[str], Sequence[str], Sequence[str]]:
         """Returns a tuple of additions, deletions, and modification entries associated with this diff object."""
         # Get top-level additions/deletions/modifications
         my_additions = [

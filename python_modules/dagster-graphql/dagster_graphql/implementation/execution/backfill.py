@@ -61,7 +61,7 @@ def get_asset_backfill_preview(
         cast(AssetKey, AssetKey.from_graphql_input(asset_key))
         for asset_key in backfill_preview_params["assetSelection"]
     ]
-    partition_names: List[str] = backfill_preview_params["partitionNames"]
+    partition_names: list[str] = backfill_preview_params["partitionNames"]
 
     asset_backfill_data = create_asset_backfill_data_from_asset_partitions(
         asset_graph, asset_selection, partition_names, graphene_info.context.instance
@@ -197,7 +197,7 @@ def create_and_launch_partition_backfill(
         if backfill_params.get("forceSynchronousSubmission"):
             # should only be used in a test situation
             to_submit = [name for name in partition_names]
-            submitted_run_ids: List[str] = []
+            submitted_run_ids: list[str] = []
 
             while to_submit:
                 chunk = to_submit[:BACKFILL_CHUNK_SIZE]

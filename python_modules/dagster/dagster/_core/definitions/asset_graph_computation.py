@@ -66,7 +66,7 @@ class AssetGraphComputation(IHaveNew):
 
     @cached_property
     def output_names_by_key(self) -> Mapping[AssetKey, str]:
-        output_names_by_key: Dict[AssetKey, str] = {}
+        output_names_by_key: dict[AssetKey, str] = {}
         for output_name, key in self.keys_by_output_name.items():
             if key in output_names_by_key:
                 check.failed(
@@ -161,7 +161,7 @@ class AssetGraphComputation(IHaveNew):
             Mapping[EntityKey, AbstractSet[NodeHandle]],
             self.dep_op_handles_by_entity_key,
         )
-        op_selection: List[str] = []
+        op_selection: list[str] = []
         for asset_key in selected_asset_keys:
             dep_node_handles = dep_op_handles_by_entity_key[asset_key]
             for dep_op_handle in dep_node_handles:
@@ -171,7 +171,7 @@ class AssetGraphComputation(IHaveNew):
             for dep_op_handle in dep_op_handles:
                 op_selection.append(".".join(dep_op_handle.path))
 
-        selected_outputs_by_op_handle: Dict[NodeHandle, Set[str]] = defaultdict(set)
+        selected_outputs_by_op_handle: dict[NodeHandle, set[str]] = defaultdict(set)
         for (
             op_output_handle,
             entity_keys,
@@ -226,7 +226,7 @@ class AssetGraphComputation(IHaveNew):
             *(op_output_graph.op_output_handles - op_output_graph.upstream.keys()),
         ]
 
-        result: Dict[NodeOutputHandle, Set[EntityKey]] = defaultdict(set)
+        result: dict[NodeOutputHandle, set[EntityKey]] = defaultdict(set)
 
         for op_output_handle in reverse_toposorted_op_outputs_handles:
             asset_key_or_check_key = entity_keys_by_op_output_handle.get(op_output_handle)
@@ -257,15 +257,15 @@ class OpOutputHandleGraph:
         op_output_handles = graph_def.get_op_output_handles(None)
         input_output_pairs = graph_def.get_op_input_output_handle_pairs(None)
 
-        op_output_handles_by_op_handle: Dict[NodeHandle, Set[NodeOutputHandle]] = defaultdict(set)
+        op_output_handles_by_op_handle: dict[NodeHandle, set[NodeOutputHandle]] = defaultdict(set)
         for op_output_handle in op_output_handles:
             op_output_handles_by_op_handle[op_output_handle.node_handle].add(op_output_handle)
 
-        downstream_op_output_handles_by_op_output_handle: Dict[
-            NodeOutputHandle, Set[NodeOutputHandle]
+        downstream_op_output_handles_by_op_output_handle: dict[
+            NodeOutputHandle, set[NodeOutputHandle]
         ] = defaultdict(set)
-        upstream_op_output_handles_by_op_output_handle: Dict[
-            NodeOutputHandle, Set[NodeOutputHandle]
+        upstream_op_output_handles_by_op_output_handle: dict[
+            NodeOutputHandle, set[NodeOutputHandle]
         ] = defaultdict(set)
 
         for op_output_handle, op_input_handle in input_output_pairs:

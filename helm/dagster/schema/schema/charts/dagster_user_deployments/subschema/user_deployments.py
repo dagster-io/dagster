@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 from pydantic import BaseModel, create_model
 
@@ -17,14 +17,14 @@ ReadinessProbeWithEnabled = create_model(
 class UserDeployment(BaseModel):
     name: str
     image: kubernetes.Image
-    dagsterApiGrpcArgs: Optional[List[str]] = None
-    codeServerArgs: Optional[List[str]] = None
+    dagsterApiGrpcArgs: Optional[list[str]] = None
+    codeServerArgs: Optional[list[str]] = None
     includeConfigInLaunchedRuns: Optional[UserDeploymentIncludeConfigInLaunchedRuns] = None
     deploymentNamespace: Optional[str] = None
     port: int
-    env: Optional[Union[Dict[str, str], List[kubernetes.EnvVar]]] = None
-    envConfigMaps: Optional[List[kubernetes.ConfigMapEnvSource]] = None
-    envSecrets: Optional[List[kubernetes.SecretEnvSource]] = None
+    env: Optional[Union[dict[str, str], list[kubernetes.EnvVar]]] = None
+    envConfigMaps: Optional[list[kubernetes.ConfigMapEnvSource]] = None
+    envSecrets: Optional[list[kubernetes.SecretEnvSource]] = None
     annotations: Optional[kubernetes.Annotations] = None
     nodeSelector: Optional[kubernetes.NodeSelector] = None
     affinity: Optional[kubernetes.Affinity] = None
@@ -35,16 +35,16 @@ class UserDeployment(BaseModel):
     livenessProbe: Optional[kubernetes.LivenessProbe] = None
     readinessProbe: Optional[ReadinessProbeWithEnabled] = None
     startupProbe: Optional[kubernetes.StartupProbe] = None
-    labels: Optional[Dict[str, str]] = None
-    volumeMounts: Optional[List[kubernetes.VolumeMount]] = None
-    volumes: Optional[List[kubernetes.Volume]] = None
+    labels: Optional[dict[str, str]] = None
+    volumeMounts: Optional[list[kubernetes.VolumeMount]] = None
+    volumes: Optional[list[kubernetes.Volume]] = None
     schedulerName: Optional[str] = None
-    initContainers: Optional[List[kubernetes.Container]] = None
-    sidecarContainers: Optional[List[kubernetes.Container]] = None
+    initContainers: Optional[list[kubernetes.Container]] = None
+    sidecarContainers: Optional[list[kubernetes.Container]] = None
 
 
 class UserDeployments(BaseModel):
     enabled: bool
     enableSubchart: bool
-    imagePullSecrets: List[kubernetes.SecretRef]
-    deployments: List[UserDeployment]
+    imagePullSecrets: list[kubernetes.SecretRef]
+    deployments: list[UserDeployment]

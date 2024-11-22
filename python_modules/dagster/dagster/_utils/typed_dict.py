@@ -7,7 +7,7 @@ from dagster._utils.typing_api import is_closed_python_optional_type
 _TypedDictClass = TypeVar("_TypedDictClass")
 
 
-def init_optional_typeddict(cls: Type[_TypedDictClass]) -> _TypedDictClass:
+def init_optional_typeddict(cls: type[_TypedDictClass]) -> _TypedDictClass:
     """Initialize a TypedDict with optional values."""
     if not is_typeddict(cls):
         raise Exception("Must pass a TypedDict class to init_optional_typeddict")

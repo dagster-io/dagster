@@ -47,7 +47,7 @@ class CapturedLogContext(
                 " `external_stdout_url`/`external_stderr_url`"
             )
 
-        return super(CapturedLogContext, cls).__new__(
+        return super().__new__(
             cls,
             log_key,
             external_stdout_url=external_stdout_url,
@@ -78,7 +78,7 @@ class CapturedLogData(
         stderr: Optional[bytes] = None,
         cursor: Optional[str] = None,
     ):
-        return super(CapturedLogData, cls).__new__(cls, log_key, stdout, stderr, cursor)
+        return super().__new__(cls, log_key, stdout, stderr, cursor)
 
 
 class CapturedLogMetadata(
@@ -103,7 +103,7 @@ class CapturedLogMetadata(
         stdout_download_url: Optional[str] = None,
         stderr_download_url: Optional[str] = None,
     ):
-        return super(CapturedLogMetadata, cls).__new__(
+        return super().__new__(
             cls,
             stdout_location=stdout_location,
             stderr_location=stderr_location,
@@ -296,7 +296,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     def read_log_lines_for_log_key_prefix(
         self, log_key_prefix: Sequence[str], cursor: Optional[str], io_type: ComputeIOType
-    ) -> Tuple[Sequence[str], Optional[LogLineCursor]]:
+    ) -> tuple[Sequence[str], Optional[LogLineCursor]]:
         """For a given directory defined by log_key_prefix that contains files, read the logs from the files
         as if they are a single continuous file. Reads env var DAGSTER_CAPTURED_LOG_CHUNK_SIZE lines at a time.
         Returns the lines read and the next cursor.

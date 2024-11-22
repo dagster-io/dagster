@@ -34,8 +34,8 @@ class SigmaWorkbook:
     https://help.sigmacomputing.com/docs/workbooks
     """
 
-    properties: Dict[str, Any]
-    lineage: List[Dict[str, Any]]
+    properties: dict[str, Any]
+    lineage: list[dict[str, Any]]
     datasets: AbstractSet[str]
     direct_table_deps: AbstractSet[str]
     owner_email: Optional[str]
@@ -50,7 +50,7 @@ class SigmaDataset:
     https://help.sigmacomputing.com/docs/datasets
     """
 
-    properties: Dict[str, Any]
+    properties: dict[str, Any]
     columns: AbstractSet[str]
     inputs: AbstractSet[str]
 
@@ -60,9 +60,9 @@ class SigmaDataset:
 class SigmaTable:
     """Represents a table loaded into Sigma."""
 
-    properties: Dict[str, Any]
+    properties: dict[str, Any]
 
-    def get_table_path(self) -> List[str]:
+    def get_table_path(self) -> list[str]:
         """Extracts the qualified table path from the name and path properties,
         e.g. ["MY_DB", "MY_SCHEMA", "MY_TABLE"].
         """
@@ -72,16 +72,16 @@ class SigmaTable:
 @whitelist_for_serdes
 @record
 class SigmaOrganizationData:
-    workbooks: List[SigmaWorkbook]
-    datasets: List[SigmaDataset]
-    tables: List[SigmaTable]
+    workbooks: list[SigmaWorkbook]
+    datasets: list[SigmaDataset]
+    tables: list[SigmaTable]
 
     @cached_method
-    def get_datasets_by_inode(self) -> Dict[str, SigmaDataset]:
+    def get_datasets_by_inode(self) -> dict[str, SigmaDataset]:
         return {_inode_from_url(dataset.properties["url"]): dataset for dataset in self.datasets}
 
     @cached_method
-    def get_tables_by_inode(self) -> Dict[str, SigmaTable]:
+    def get_tables_by_inode(self) -> dict[str, SigmaTable]:
         return {_inode_from_url(table.properties["urlId"]): table for table in self.tables}
 
 

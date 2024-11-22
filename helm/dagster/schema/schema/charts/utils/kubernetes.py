@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, RootModel
 
@@ -9,7 +9,7 @@ from schema.charts.utils.utils import (
 )
 
 
-class Annotations(RootModel[Dict[str, str]]):
+class Annotations(RootModel[dict[str, str]]):
     model_config = {
         "json_schema_extra": {
             "$ref": create_definition_ref(
@@ -56,7 +56,7 @@ class Service(BaseModel, extra="forbid"):
     annotations: Optional[Annotations] = None
 
 
-class NodeSelector(RootModel[Dict[str, str]]):
+class NodeSelector(RootModel[dict[str, str]]):
     model_config = {
         "json_schema_extra": {
             "extra": "allow",
@@ -65,13 +65,13 @@ class NodeSelector(RootModel[Dict[str, str]]):
     }
 
 
-class Affinity(RootModel[Dict[str, Any]]):
+class Affinity(RootModel[dict[str, Any]]):
     model_config = {
         "json_schema_extra": {"$ref": create_definition_ref("io.k8s.api.core.v1.Affinity")}
     }
 
 
-class Tolerations(RootModel[List[Dict[str, Any]]]):
+class Tolerations(RootModel[list[dict[str, Any]]]):
     model_config = {
         "json_schema_extra": {
             "$ref": create_definition_ref("io.k8s.api.core.v1.PodSpec/properties/tolerations")
@@ -79,7 +79,7 @@ class Tolerations(RootModel[List[Dict[str, Any]]]):
     }
 
 
-class PodSecurityContext(RootModel[Dict[str, Any]]):
+class PodSecurityContext(RootModel[dict[str, Any]]):
     model_config = {
         "json_schema_extra": {
             "$ref": create_definition_ref("io.k8s.api.core.v1.PodSecurityContext")
@@ -88,7 +88,7 @@ class PodSecurityContext(RootModel[Dict[str, Any]]):
 
 
 class SecurityContext(
-    RootModel[Dict[str, Any]],
+    RootModel[dict[str, Any]],
     json_schema_extra={"$ref": create_definition_ref("io.k8s.api.core.v1.SecurityContext")},
 ):
     pass
@@ -101,7 +101,7 @@ class InitContainer(BaseModel):
     }
 
 
-class Resources(RootModel[Dict[str, Any]]):
+class Resources(RootModel[dict[str, Any]]):
     model_config = {
         "json_schema_extra": {
             "$ref": create_definition_ref("io.k8s.api.core.v1.ResourceRequirements")

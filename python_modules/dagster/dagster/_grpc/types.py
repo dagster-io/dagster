@@ -61,7 +61,7 @@ class ExecutionPlanSnapshotArgs(
         asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
         mode: str = DEFAULT_MODE_NAME,
     ):
-        return super(ExecutionPlanSnapshotArgs, cls).__new__(
+        return super().__new__(
             cls,
             job_origin=check.inst_param(job_origin, "job_origin", RemoteJobOrigin),
             op_selection=check.opt_sequence_param(op_selection, "op_selection", of_type=str),
@@ -115,7 +115,7 @@ class ExecuteRunArgs(
         instance_ref: Optional[InstanceRef],
         set_exit_code_on_failure: Optional[bool] = None,
     ):
-        return super(ExecuteRunArgs, cls).__new__(
+        return super().__new__(
             cls,
             job_origin=check.inst_param(
                 job_origin,
@@ -166,7 +166,7 @@ class ResumeRunArgs(
         instance_ref: Optional[InstanceRef],
         set_exit_code_on_failure: Optional[bool] = None,
     ):
-        return super(ResumeRunArgs, cls).__new__(
+        return super().__new__(
             cls,
             job_origin=check.inst_param(
                 job_origin,
@@ -215,7 +215,7 @@ class ExecuteExternalJobArgs(
         run_id: str,
         instance_ref: Optional[InstanceRef],
     ):
-        return super(ExecuteExternalJobArgs, cls).__new__(
+        return super().__new__(
             cls,
             job_origin=check.inst_param(
                 job_origin,
@@ -260,7 +260,7 @@ class ExecuteStepArgs(
         should_verify_step: Optional[bool] = None,
         print_serialized_events: Optional[bool] = None,
     ):
-        return super(ExecuteStepArgs, cls).__new__(
+        return super().__new__(
             cls,
             job_origin=check.inst_param(job_origin, "job_origin", JobPythonOrigin),
             run_id=check.str_param(run_id, "run_id"),
@@ -311,7 +311,7 @@ class LoadableRepositorySymbol(
     NamedTuple("_LoadableRepositorySymbol", [("repository_name", str), ("attribute", str)])
 ):
     def __new__(cls, repository_name: str, attribute: str):
-        return super(LoadableRepositorySymbol, cls).__new__(
+        return super().__new__(
             cls,
             repository_name=check.str_param(repository_name, "repository_name"),
             attribute=check.str_param(attribute, "attribute"),
@@ -343,7 +343,7 @@ class ListRepositoriesResponse(
         container_context: Optional[Mapping] = None,
         dagster_library_versions: Optional[Mapping[str, str]] = None,
     ):
-        return super(ListRepositoriesResponse, cls).__new__(
+        return super().__new__(
             cls,
             repository_symbols=check.sequence_param(
                 repository_symbols, "repository_symbols", of_type=LoadableRepositorySymbol
@@ -393,7 +393,7 @@ class ListRepositoriesInput(
     ):
         check.invariant(not (module_name and python_file), "Must set only one")
         check.invariant(module_name or python_file, "Must set at least one")
-        return super(ListRepositoriesInput, cls).__new__(
+        return super().__new__(
             cls,
             module_name=check.opt_str_param(module_name, "module_name"),
             python_file=check.opt_str_param(python_file, "python_file"),
@@ -424,7 +424,7 @@ class PartitionArgs(
         job_name: Optional[str] = None,
         instance_ref: Optional[InstanceRef] = None,
     ):
-        return super(PartitionArgs, cls).__new__(
+        return super().__new__(
             cls,
             repository_origin=check.inst_param(
                 repository_origin,
@@ -466,7 +466,7 @@ class PartitionNamesArgs(
         partition_set_name: str,
         job_name: Optional[str] = None,
     ):
-        return super(PartitionNamesArgs, cls).__new__(
+        return super().__new__(
             cls,
             repository_origin=check.inst_param(
                 repository_origin, "repository_origin", RemoteRepositoryOrigin
@@ -501,7 +501,7 @@ class PartitionSetExecutionParamArgs(
         partition_names: Sequence[str],
         instance_ref: Optional[InstanceRef] = None,
     ):
-        return super(PartitionSetExecutionParamArgs, cls).__new__(
+        return super().__new__(
             cls,
             repository_origin=check.inst_param(
                 repository_origin, "repository_origin", RemoteRepositoryOrigin
@@ -541,7 +541,7 @@ class JobSubsetSnapshotArgs(
         asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
         include_parent_snapshot: Optional[bool] = None,
     ):
-        return super(JobSubsetSnapshotArgs, cls).__new__(
+        return super().__new__(
             cls,
             job_origin=check.inst_param(job_origin, "job_origin", RemoteJobOrigin),
             op_selection=check.opt_nullable_sequence_param(
@@ -566,7 +566,7 @@ class NotebookPathArgs(
     )
 ):
     def __new__(cls, code_location_origin: CodeLocationOrigin, notebook_path: str):
-        return super(NotebookPathArgs, cls).__new__(
+        return super().__new__(
             cls,
             code_location_origin=check.inst_param(
                 code_location_origin, "code_location_origin", CodeLocationOrigin
@@ -600,7 +600,7 @@ class ExternalScheduleExecutionArgs(
         log_key: Optional[Sequence[str]] = None,
         timeout: Optional[int] = None,
     ):
-        return super(ExternalScheduleExecutionArgs, cls).__new__(
+        return super().__new__(
             cls,
             repository_origin=check.inst_param(
                 repository_origin, "repository_origin", RemoteRepositoryOrigin
@@ -659,7 +659,7 @@ class SensorExecutionArgs(
         normalized_last_tick_completion_time = (
             last_tick_completion_time if last_tick_completion_time else last_completion_time
         )
-        return super(SensorExecutionArgs, cls).__new__(
+        return super().__new__(
             cls,
             repository_origin=check.inst_param(
                 repository_origin, "repository_origin", RemoteRepositoryOrigin
@@ -692,7 +692,7 @@ class ExternalJobArgs(
     def __new__(
         cls, repository_origin: RemoteRepositoryOrigin, instance_ref: InstanceRef, name: str
     ):
-        return super(ExternalJobArgs, cls).__new__(
+        return super().__new__(
             cls,
             repository_origin=check.inst_param(
                 repository_origin, "repository_origin", RemoteRepositoryOrigin
@@ -710,7 +710,7 @@ class ShutdownServerResult(
     )
 ):
     def __new__(cls, success: bool, serializable_error_info: Optional[SerializableErrorInfo]):
-        return super(ShutdownServerResult, cls).__new__(
+        return super().__new__(
             cls,
             success=check.bool_param(success, "success"),
             serializable_error_info=check.opt_inst_param(
@@ -722,7 +722,7 @@ class ShutdownServerResult(
 @whitelist_for_serdes
 class CancelExecutionRequest(NamedTuple("_CancelExecutionRequest", [("run_id", str)])):
     def __new__(cls, run_id: str):
-        return super(CancelExecutionRequest, cls).__new__(
+        return super().__new__(
             cls,
             run_id=check.str_param(run_id, "run_id"),
         )
@@ -745,7 +745,7 @@ class CancelExecutionResult(
         message: Optional[str],
         serializable_error_info: Optional[SerializableErrorInfo],
     ):
-        return super(CancelExecutionResult, cls).__new__(
+        return super().__new__(
             cls,
             success=check.bool_param(success, "success"),
             message=check.opt_str_param(message, "message"),
@@ -758,7 +758,7 @@ class CancelExecutionResult(
 @whitelist_for_serdes
 class CanCancelExecutionRequest(NamedTuple("_CanCancelExecutionRequest", [("run_id", str)])):
     def __new__(cls, run_id: str):
-        return super(CanCancelExecutionRequest, cls).__new__(
+        return super().__new__(
             cls,
             run_id=check.str_param(run_id, "run_id"),
         )
@@ -767,7 +767,7 @@ class CanCancelExecutionRequest(NamedTuple("_CanCancelExecutionRequest", [("run_
 @whitelist_for_serdes
 class CanCancelExecutionResult(NamedTuple("_CancelExecutionResult", [("can_cancel", bool)])):
     def __new__(cls, can_cancel: bool):
-        return super(CanCancelExecutionResult, cls).__new__(
+        return super().__new__(
             cls,
             can_cancel=check.bool_param(can_cancel, "can_cancel"),
         )
@@ -790,7 +790,7 @@ class StartRunResult(
         message: Optional[str],
         serializable_error_info: Optional[SerializableErrorInfo],
     ):
-        return super(StartRunResult, cls).__new__(
+        return super().__new__(
             cls,
             success=check.bool_param(success, "success"),
             message=check.opt_str_param(message, "message"),
@@ -813,7 +813,7 @@ class GetCurrentImageResult(
     def __new__(
         cls, current_image: Optional[str], serializable_error_info: Optional[SerializableErrorInfo]
     ):
-        return super(GetCurrentImageResult, cls).__new__(
+        return super().__new__(
             cls,
             current_image=check.opt_str_param(current_image, "current_image"),
             serializable_error_info=check.opt_inst_param(
@@ -837,7 +837,7 @@ class GetCurrentRunsResult(
         current_runs: Sequence[str],
         serializable_error_info: Optional[SerializableErrorInfo],
     ):
-        return super(GetCurrentRunsResult, cls).__new__(
+        return super().__new__(
             cls,
             current_runs=check.list_param(current_runs, "current_runs", of_type=str),
             serializable_error_info=check.opt_inst_param(

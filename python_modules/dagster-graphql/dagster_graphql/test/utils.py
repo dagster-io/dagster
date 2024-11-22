@@ -25,7 +25,7 @@ class GqlResult(Protocol):
     def errors(self) -> Optional[Sequence[str]]: ...
 
 
-Selector: TypeAlias = Dict[str, Any]
+Selector: TypeAlias = dict[str, Any]
 
 GqlVariables: TypeAlias = Mapping[str, Any]
 

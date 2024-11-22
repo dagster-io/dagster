@@ -107,7 +107,7 @@ class ReOriginatedReconstructableJobForTest(ReconstructableJob):
         cls,
         reconstructable_job: ReconstructableJob,
     ):
-        return super(ReOriginatedReconstructableJobForTest, cls).__new__(
+        return super().__new__(
             cls,
             reconstructable_job.repository,
             reconstructable_job.job_name,
@@ -142,7 +142,7 @@ class ReOriginatedExternalJobForTest(RemoteJob):
         self._container_image = container_image
         self._container_context = container_context
         self._filename = filename or "repo.py"
-        super(ReOriginatedExternalJobForTest, self).__init__(
+        super().__init__(
             remote_job.job_data_snap,
             remote_job.repository_handle,
         )
@@ -197,7 +197,7 @@ class ReOriginatedExternalScheduleForTest(RemoteSchedule):
         container_image=None,
     ):
         self._container_image = container_image
-        super(ReOriginatedExternalScheduleForTest, self).__init__(
+        super().__init__(
             remote_schedule._schedule_snap,  # noqa: SLF001
             remote_schedule.handle.repository_handle,
         )
@@ -312,5 +312,5 @@ def get_test_project_docker_image():
         )
 
     final_docker_image = f"{docker_repository}/{image_name}:{docker_image_tag}"
-    print("Using Docker image: %s" % final_docker_image)  # noqa: T201
+    print(f"Using Docker image: {final_docker_image}")  # noqa: T201
     return final_docker_image

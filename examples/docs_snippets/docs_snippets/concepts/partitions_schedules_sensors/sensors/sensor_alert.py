@@ -180,7 +180,7 @@ my_email_sensor(run_status_sensor_context)
 from dagster import SensorDefinition
 from typing import List
 
-my_jobs: List[SensorDefinition] = []
+my_jobs: list[SensorDefinition] = []
 
 
 @job

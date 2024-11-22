@@ -44,7 +44,7 @@ def region(partition_key: str):
         }
     ),
 )
-def write_partitioned_artifact() -> List[int]:
+def write_partitioned_artifact() -> list[int]:
     """Example of a simple op that writes a partitioned Artifact."""
     return [1, 2, 3]
 
@@ -60,7 +60,7 @@ def write_partitioned_artifact() -> List[int]:
         )
     },
 )
-def read_partitioned_artifact(context: OpExecutionContext, content: List[int]) -> None:
+def read_partitioned_artifact(context: OpExecutionContext, content: list[int]) -> None:
     """Example of a simple op that reads a partitioned Artifact."""
     context.log.info(f"Result: {content}")  # Result: [1, 2, 3]
 

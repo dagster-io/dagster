@@ -16,7 +16,7 @@ def get_dagster_repo() -> str:
 
 @contextlib.contextmanager
 def copy_directories(
-    paths: List[str], cwd: str, destination: str = "build_cache"
+    paths: list[str], cwd: str, destination: str = "build_cache"
 ) -> Iterator[None]:
     check.invariant(os.path.exists(cwd), "Image directory does not exist")
     build_cache_dir = os.path.join(cwd, destination)
@@ -59,7 +59,7 @@ def k8s_example_cm(cwd: str) -> Iterator[None]:
         yield
 
 
-def get_core_celery_k8s_dirs() -> List[str]:
+def get_core_celery_k8s_dirs() -> list[str]:
     return [
         "python_modules/dagster",
         "python_modules/libraries/dagster-postgres",
@@ -69,7 +69,7 @@ def get_core_celery_k8s_dirs() -> List[str]:
     ]
 
 
-def get_core_k8s_dirs() -> List[str]:
+def get_core_k8s_dirs() -> list[str]:
     return [
         "python_modules/dagster",
         "python_modules/libraries/dagster-postgres",
@@ -195,7 +195,7 @@ def dagster_celery_k8s_editable_cm(cwd: str) -> Iterator[None]:
 
 
 # Some images have custom build context manager functions, listed here
-CUSTOM_BUILD_CONTEXTMANAGERS: Dict[str, Callable] = {
+CUSTOM_BUILD_CONTEXTMANAGERS: dict[str, Callable] = {
     "user-code-example": user_code_example_cm,
     "user-code-example-editable": user_code_example_editable_cm,
     "dagster-k8s-editable": dagster_k8s_editable_cm,
@@ -203,7 +203,7 @@ CUSTOM_BUILD_CONTEXTMANAGERS: Dict[str, Callable] = {
 }
 
 
-def list_images(images_path: Optional[str] = None) -> List[DagsterDockerImage]:
+def list_images(images_path: Optional[str] = None) -> list[DagsterDockerImage]:
     """List all images that we manage.
 
     Returns:

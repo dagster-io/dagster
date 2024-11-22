@@ -37,16 +37,16 @@ DBT_CLOUD_PROJECT_ID = 12
 DBT_CLOUD_JOB_ID = 123
 DBT_CLOUD_RUN_ID = 1234
 
-with open(file_relative_path(__file__, "sample_manifest.json"), "r", encoding="utf8") as f:
+with open(file_relative_path(__file__, "sample_manifest.json"), encoding="utf8") as f:
     MANIFEST_JSON = json.load(f)
 
-with open(file_relative_path(__file__, "sample_run_results.json"), "r", encoding="utf8") as f:
+with open(file_relative_path(__file__, "sample_run_results.json"), encoding="utf8") as f:
     RUN_RESULTS_JSON = json.load(f)
 
 
 def _add_dbt_cloud_job_responses(
     dbt_cloud_service: DbtCloudClient,
-    dbt_commands: List[str],
+    dbt_commands: list[str],
     run_results_json: Optional[dict] = None,
 ):
     run_results_json = run_results_json or RUN_RESULTS_JSON

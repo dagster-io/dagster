@@ -4,9 +4,9 @@ from typing import Dict, Tuple
 from setuptools import find_packages, setup
 
 
-def get_version() -> Tuple[str, str, str]:
-    version: Dict[str, str] = {}
-    sdf_version: Dict[str, str] = {}
+def get_version() -> tuple[str, str, str]:
+    version: dict[str, str] = {}
+    sdf_version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_sdf/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 

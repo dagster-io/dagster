@@ -78,7 +78,7 @@ class SdfInformationSchema(IHaveNew):
     target_dir: Path
     environment: str
     information_schema_dir: Path
-    information_schema: Dict[str, pl.DataFrame]
+    information_schema: dict[str, pl.DataFrame]
 
     def __new__(
         cls,
@@ -126,21 +126,21 @@ class SdfInformationSchema(IHaveNew):
 
     def build_sdf_multi_asset_args(
         self, dagster_sdf_translator: DagsterSdfTranslator
-    ) -> Tuple[
+    ) -> tuple[
         Sequence[AssetSpec],
         Sequence[AssetCheckSpec],
     ]:
-        table_id_to_dep: Dict[str, AssetKey] = {}
-        table_id_to_upstream: Dict[str, Set[AssetKey]] = {}
+        table_id_to_dep: dict[str, AssetKey] = {}
+        table_id_to_upstream: dict[str, set[AssetKey]] = {}
         asset_specs: Sequence[AssetSpec] = []
         asset_checks: Sequence[AssetCheckSpec] = []
-        origin_remote_tables: Set[str] = set()
+        origin_remote_tables: set[str] = set()
 
         # Step 0: Filter out system and external-system tables
         table_deps = self.read_table("table_deps").filter(
             ~pl.col("purpose").is_in(["system", "external-system"])
         )
-        table_columns: Dict[str, List[TableColumn]] = {}
+        table_columns: dict[str, list[TableColumn]] = {}
         try:
             table_columns = self.get_columns()
         except Exception:
@@ -234,11 +234,11 @@ class SdfInformationSchema(IHaveNew):
                     )
         return asset_specs, asset_checks
 
-    def get_columns(self) -> Dict[str, List[TableColumn]]:
+    def get_columns(self) -> dict[str, list[TableColumn]]:
         columns = self.read_table("columns")[
             ["table_id", "column_id", "classifiers", "column_name", "datatype", "description"]
         ]
-        table_columns: Dict[str, List[TableColumn]] = {}
+        table_columns: dict[str, list[TableColumn]] = {}
         for row in columns.rows(named=True):
             if row["table_id"] not in table_columns:
                 table_columns[row["table_id"]] = []
@@ -255,7 +255,7 @@ class SdfInformationSchema(IHaveNew):
         return table_columns
 
     def _extract_code_ref(
-        self, table_row: Dict[str, Any]
+        self, table_row: dict[str, Any]
     ) -> Union[CodeReferencesMetadataSet, None]:
         code_references = None
         # Check if any of the source locations are .sql files, return the first one

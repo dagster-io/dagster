@@ -75,7 +75,7 @@ class JobSnapSerializer(RecordSerializer["JobSnap"]):
         self,
         context,
         unpacked_dict: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if unpacked_dict.get("graph_def_name") is None:
             unpacked_dict["graph_def_name"] = unpacked_dict["name"]
         if unpacked_dict.get("metadata") is None:

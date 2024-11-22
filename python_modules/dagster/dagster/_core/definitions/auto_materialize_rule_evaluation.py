@@ -42,7 +42,7 @@ class AutoMaterializeRuleEvaluationData(ABC):
         raise NotImplementedError()
 
     @property
-    def frozen_metadata(self) -> FrozenSet[Tuple[str, MetadataValue]]:
+    def frozen_metadata(self) -> frozenset[tuple[str, MetadataValue]]:
         return frozenset(self.metadata.items())
 
 
@@ -62,8 +62,8 @@ class ParentUpdatedRuleEvaluationData(
     NamedTuple(
         "_ParentUpdatedRuleEvaluationData",
         [
-            ("updated_asset_keys", FrozenSet[AssetKey]),
-            ("will_update_asset_keys", FrozenSet[AssetKey]),
+            ("updated_asset_keys", frozenset[AssetKey]),
+            ("will_update_asset_keys", frozenset[AssetKey]),
         ],
     ),
 ):
@@ -86,7 +86,7 @@ class WaitingOnAssetsRuleEvaluationData(
     AutoMaterializeRuleEvaluationData,
     NamedTuple(
         "_WaitingOnParentRuleEvaluationData",
-        [("waiting_on_asset_keys", FrozenSet[AssetKey])],
+        [("waiting_on_asset_keys", frozenset[AssetKey])],
     ),
 ):
     @property
@@ -107,7 +107,7 @@ class BackcompatNullSerializer(NamedTupleSerializer):
 
     def unpack(
         self,
-        unpacked_dict: Dict[str, UnpackedValue],
+        unpacked_dict: dict[str, UnpackedValue],
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> None:
@@ -121,7 +121,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
 
     def unpack(
         self,
-        unpacked_dict: Dict[str, UnpackedValue],
+        unpacked_dict: dict[str, UnpackedValue],
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> "AutomationConditionEvaluationWithRunIds":

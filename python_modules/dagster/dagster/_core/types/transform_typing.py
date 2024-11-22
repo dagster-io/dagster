@@ -19,13 +19,13 @@ from dagster._utils.typing_api import (
 
 
 def transform_typing_type(type_annotation):
-    if type_annotation is typing.List:
+    if type_annotation is list:
         return List
-    elif type_annotation is typing.Set:
+    elif type_annotation is set:
         return Set
-    elif type_annotation is typing.Tuple:
+    elif type_annotation is tuple:
         return Tuple
-    elif type_annotation is typing.Dict:
+    elif type_annotation is dict:
         return Dict
     elif is_closed_python_list_type(type_annotation):
         return List[transform_typing_type(get_list_inner_type(type_annotation))]

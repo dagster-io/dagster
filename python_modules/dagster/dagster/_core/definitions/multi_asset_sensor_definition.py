@@ -64,7 +64,7 @@ class MultiAssetSensorAssetCursorComponent(
         [
             ("latest_consumed_event_partition", Optional[str]),
             ("latest_consumed_event_id", Optional[int]),
-            ("trailing_unconsumed_partitioned_event_ids", Dict[str, int]),
+            ("trailing_unconsumed_partitioned_event_ids", dict[str, int]),
         ],
     )
 ):
@@ -105,7 +105,7 @@ class MultiAssetSensorAssetCursorComponent(
         latest_consumed_event_id,
         trailing_unconsumed_partitioned_event_ids,
     ):
-        return super(MultiAssetSensorAssetCursorComponent, cls).__new__(
+        return super().__new__(
             cls,
             latest_consumed_event_partition=check.opt_str_param(
                 latest_consumed_event_partition, "latest_consumed_event_partition"
@@ -129,10 +129,10 @@ class MultiAssetSensorContextCursor:
     def __init__(self, cursor: Optional[str], context: "MultiAssetSensorEvaluationContext"):
         loaded_cursor = json.loads(cursor) if cursor else {}
         loaded_cursor = loaded_cursor if isinstance(loaded_cursor, dict) else {}
-        self._cursor_component_by_asset_key: Dict[str, MultiAssetSensorAssetCursorComponent] = {}
+        self._cursor_component_by_asset_key: dict[str, MultiAssetSensorAssetCursorComponent] = {}
 
         # The initial latest consumed event ID at the beginning of the tick
-        self.initial_latest_consumed_event_ids_by_asset_key: Dict[str, Optional[int]] = {}
+        self.initial_latest_consumed_event_ids_by_asset_key: dict[str, Optional[int]] = {}
 
         for str_asset_key, cursor_list in loaded_cursor.items():
             if len(cursor_list) != 3:
@@ -261,8 +261,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         else:
             self._monitored_asset_keys = monitored_assets
 
-        self._assets_by_key: Dict[AssetKey, Optional[AssetsDefinition]] = {}
-        self._partitions_def_by_asset_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
+        self._assets_by_key: dict[AssetKey, Optional[AssetsDefinition]] = {}
+        self._partitions_def_by_asset_key: dict[AssetKey, Optional[PartitionsDefinition]] = {}
         asset_graph = self._repository_def.asset_graph
         for asset_key in self._monitored_asset_keys:
             assets_def = (
@@ -280,7 +280,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self._unpacked_cursor = MultiAssetSensorContextCursor(cursor, self)
         self._cursor_advance_state_mutation = MultiAssetSensorCursorAdvances()
 
-        self._initial_unconsumed_events_by_id: Dict[int, EventLogRecord] = {}
+        self._initial_unconsumed_events_by_id: dict[int, EventLogRecord] = {}
         self._fetched_initial_unconsumed_events = False
 
         normalized_last_tick_completion_time = normalize_renamed_param(
@@ -290,7 +290,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             "last_completion_time",
         )
 
-        super(MultiAssetSensorEvaluationContext, self).__init__(
+        super().__init__(
             instance_ref=instance_ref,
             last_tick_completion_time=normalized_last_tick_completion_time,
             last_run_key=last_run_key,
@@ -425,7 +425,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         asset_records = self.instance.get_asset_records(asset_keys)
 
-        asset_event_records: Dict[AssetKey, Optional[EventLogRecord]] = {
+        asset_event_records: dict[AssetKey, Optional[EventLogRecord]] = {
             asset_key: None for asset_key in asset_keys
         }
         for record in asset_records:
@@ -554,7 +554,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         )
 
         # Retain ordering of materializations
-        materialization_by_partition: Dict[str, EventLogRecord] = OrderedDict()
+        materialization_by_partition: dict[str, EventLogRecord] = OrderedDict()
 
         # Add unconsumed events to the materialization by partition dictionary
         # These events came before the cursor, so should be inserted in storage ID ascending order
@@ -625,9 +625,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 "All assets must be partitioned and share the same partitions definition"
             )
 
-        asset_and_materialization_tuple_by_partition: Dict[
-            str, Dict[AssetKey, "EventLogRecord"]
-        ] = defaultdict(dict)
+        asset_and_materialization_tuple_by_partition: dict[str, dict[AssetKey, EventLogRecord]] = (
+            defaultdict(dict)
+        )
 
         for asset_key in self._monitored_asset_keys:
             materialization_by_partition = self.latest_materialization_records_by_partition(
@@ -822,8 +822,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
 
 class MultiAssetSensorCursorAdvances:
-    _advanced_record_ids_by_key: Dict[AssetKey, Set[int]]
-    _partition_key_by_record_id: Dict[int, Optional[str]]
+    _advanced_record_ids_by_key: dict[AssetKey, set[int]]
+    _partition_key_by_record_id: dict[int, Optional[str]]
     advance_all_cursors_called: bool
 
     def __init__(self):
@@ -873,7 +873,7 @@ class MultiAssetSensorCursorAdvances:
     ) -> MultiAssetSensorAssetCursorComponent:
         from dagster._core.event_api import AssetRecordsFilter
 
-        advanced_records: Set[int] = self._advanced_record_ids_by_key.get(asset_key, set())
+        advanced_records: set[int] = self._advanced_record_ids_by_key.get(asset_key, set())
         if len(advanced_records) == 0:
             # No events marked as advanced for this asset key
             return initial_cursor.get_cursor_for_asset(asset_key)
@@ -886,7 +886,7 @@ class MultiAssetSensorCursorAdvances:
         latest_consumed_partition_in_tick = self._partition_key_by_record_id[
             greatest_consumed_event_id_in_tick
         ]
-        latest_unconsumed_record_by_partition: Dict[str, int] = {}
+        latest_unconsumed_record_by_partition: dict[str, int] = {}
 
         if not self.advance_all_cursors_called:
             latest_unconsumed_record_by_partition = (
@@ -968,7 +968,7 @@ class MultiAssetSensorCursorAdvances:
 def get_cursor_from_latest_materializations(
     asset_keys: Sequence[AssetKey], instance: DagsterInstance
 ) -> str:
-    cursor_dict: Dict[str, MultiAssetSensorAssetCursorComponent] = {}
+    cursor_dict: dict[str, MultiAssetSensorAssetCursorComponent] = {}
 
     for asset_key in asset_keys:
         materializations = instance.fetch_materializations(asset_key, limit=1).records
@@ -1063,7 +1063,7 @@ def build_multi_asset_sensor_context(
         asset_keys: Sequence[AssetKey]
         if isinstance(monitored_assets, AssetSelection):
             asset_keys = cast(
-                List[AssetKey],
+                list[AssetKey],
                 list(monitored_assets.resolve(list(set(repository_def.asset_graph.assets_defs)))),
             )
         else:
@@ -1152,11 +1152,11 @@ class MultiAssetSensorDefinition(SensorDefinition):
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         request_assets: Optional[AssetSelection] = None,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[set[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, object]] = None,
     ):
-        resource_arg_names: Set[str] = {
+        resource_arg_names: set[str] = {
             arg.name for arg in get_resource_args(asset_materialization_fn)
         }
 
@@ -1248,7 +1248,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
         self._raw_asset_materialization_fn = asset_materialization_fn
 
-        super(MultiAssetSensorDefinition, self).__init__(
+        super().__init__(
             name=check_valid_name(name),
             job_name=job_name,
             evaluation_fn=_wrap_asset_fn(

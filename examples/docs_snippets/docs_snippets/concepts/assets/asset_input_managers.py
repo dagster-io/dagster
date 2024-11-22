@@ -25,12 +25,12 @@ class PandasSeriesIOManager:
 
 
 @asset
-def first_asset() -> List[int]:
+def first_asset() -> list[int]:
     return [1, 2, 3]
 
 
 @asset
-def second_asset() -> List[int]:
+def second_asset() -> list[int]:
     return [4, 5, 6]
 
 

@@ -21,7 +21,7 @@ T_KubernetesModel = TypeVar("T_KubernetesModel")
 shared_k8s_model_configuration = Configuration()
 
 
-def _get_k8s_class(classname: str) -> Type[Any]:
+def _get_k8s_class(classname: str) -> type[Any]:
     if classname in ApiClient.NATIVE_TYPES_MAPPING:
         return ApiClient.NATIVE_TYPES_MAPPING[classname]
     else:
@@ -133,7 +133,7 @@ def k8s_snake_case_keys(model_class, model_dict: Mapping[str, Any]) -> Mapping[s
     return snake_case_dict
 
 
-def k8s_snake_case_dict(model_class: Type[Any], model_dict: Mapping[str, Any]) -> Mapping[str, Any]:
+def k8s_snake_case_dict(model_class: type[Any], model_dict: Mapping[str, Any]) -> Mapping[str, Any]:
     snake_case_dict = k8s_snake_case_keys(model_class, model_dict)
 
     final_dict = {}
@@ -148,7 +148,7 @@ def k8s_snake_case_dict(model_class: Type[Any], model_dict: Mapping[str, Any]) -
 # that the keys and values match the expected format. Requires k8s attribute names to be in
 # snake_case.
 def k8s_model_from_dict(
-    model_class: Type[T_KubernetesModel], model_dict: Mapping[str, Any]
+    model_class: type[T_KubernetesModel], model_dict: Mapping[str, Any]
 ) -> T_KubernetesModel:
     check.mapping_param(model_dict, "model_dict")
 

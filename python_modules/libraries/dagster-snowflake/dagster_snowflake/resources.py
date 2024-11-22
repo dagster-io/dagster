@@ -343,7 +343,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
     @property
     @cached_method
     def _sqlalchemy_connection_args(self) -> Mapping[str, Any]:
-        conn_args: Dict[str, Any] = {
+        conn_args: dict[str, Any] = {
             k: self._resolved_config_dict.get(k)
             for k in (
                 "account",
@@ -566,9 +566,6 @@ class SnowflakeConnection:
 
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
-                if sys.version_info[0] < 3:
-                    sql = sql.encode("utf-8")
-
                 self.log.info("Executing query: " + sql)
                 parameters = dict(parameters) if isinstance(parameters, Mapping) else parameters
                 cursor.execute(sql, parameters)
@@ -619,7 +616,7 @@ class SnowflakeConnection:
         if not fetch_results and use_pandas_result:
             check.failed("If use_pandas_result is True, fetch_results must also be True.")
 
-        results: List[Any] = []
+        results: list[Any] = []
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
                 for raw_sql in sql_queries:

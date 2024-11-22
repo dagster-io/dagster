@@ -91,7 +91,7 @@ class RequestRetryLocalExternalStepLauncher(LocalExternalStepLauncher):
         if step_context.previous_attempt_count == 0:
             raise RetryRequested()
         else:
-            return super(RequestRetryLocalExternalStepLauncher, self).launch_step(step_context)
+            return super().launch_step(step_context)
 
 
 @resource(config_schema=local_external_step_launcher.config_schema)
@@ -154,7 +154,7 @@ def _define_dynamic_job(launch_initial, launch_final):
         return i + 1
 
     @op(required_resource_keys={"final_launcher"})
-    def total(ins: List[int]):
+    def total(ins: list[int]):
         return sum(ins)
 
     @job(

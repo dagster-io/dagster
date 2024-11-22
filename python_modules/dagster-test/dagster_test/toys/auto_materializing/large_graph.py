@@ -31,7 +31,7 @@ def build_assets(
     id: str,
     layer_configs: Sequence[AssetLayerConfig],
     automation_condition: Optional[AutomationCondition] = AutomationCondition.eager(),
-) -> List[AssetsDefinition]:
+) -> list[AssetsDefinition]:
     layers = []
 
     with disable_dagster_warnings():

@@ -447,9 +447,10 @@ def core_dagster_event_sequence_for_step(
     else:
         yield DagsterEvent.step_start_event(step_context)
 
-    with time_execution_scope() as timer_result, enter_execution_context(
-        step_context
-    ) as compute_context:
+    with (
+        time_execution_scope() as timer_result,
+        enter_execution_context(step_context) as compute_context,
+    ):
         inputs = {}
 
         if step_context.is_sda_step:
@@ -547,11 +548,9 @@ def _type_check_and_store_output(
         step_context.step_output_capture[step_output_handle] = output.value
         step_context.step_output_metadata_capture[step_output_handle] = output.metadata
 
-    for output_event in _type_check_output(step_context, step_output_handle, output):
-        yield output_event
+    yield from _type_check_output(step_context, step_output_handle, output)
 
-    for evt in _store_output(step_context, step_output_handle, output):
-        yield evt
+    yield from _store_output(step_context, step_output_handle, output)
 
 
 def _get_output_asset_events(
@@ -568,7 +567,7 @@ def _get_output_asset_events(
     # Clear any cached record associated with this asset, since we are about to generate a new
     # materialization.
     step_context.wipe_input_asset_version_info(asset_key)
-    tags: Dict[str, str]
+    tags: dict[str, str]
     if (
         execution_type == AssetExecutionType.MATERIALIZATION
         and step_context.is_external_input_asset_version_info_loaded
@@ -657,7 +656,7 @@ class _InputProvenanceData(TypedDict):
 def _get_input_provenance_data(
     asset_key: AssetKey, step_context: StepExecutionContext
 ) -> Mapping[AssetKey, _InputProvenanceData]:
-    input_provenance: Dict[AssetKey, _InputProvenanceData] = {}
+    input_provenance: dict[AssetKey, _InputProvenanceData] = {}
     deps = step_context.job_def.asset_layer.get(asset_key).parent_keys
     for key in deps:
         # For deps external to this step, this will retrieve the cached record that was stored prior
@@ -687,8 +686,8 @@ def _build_data_version_tags(
     code_version: str,
     input_provenance_data: Mapping[AssetKey, _InputProvenanceData],
     data_version_is_user_provided: bool,
-) -> Dict[str, str]:
-    tags: Dict[str, str] = {}
+) -> dict[str, str]:
+    tags: dict[str, str] = {}
     tags[CODE_VERSION_TAG] = code_version
     for key, meta in input_provenance_data.items():
         tags[get_input_data_version_tag(key)] = meta["data_version"].value
@@ -701,7 +700,7 @@ def _build_data_version_tags(
     return tags
 
 
-def _build_data_version_observation_tags(data_version: DataVersion) -> Dict[str, str]:
+def _build_data_version_observation_tags(data_version: DataVersion) -> dict[str, str]:
     return {
         DATA_VERSION_TAG: data_version.value,
         DATA_VERSION_IS_USER_PROVIDED_TAG: "true",
@@ -718,7 +717,7 @@ def _store_output(
     output_context = step_context.get_output_context(step_output_handle, output.metadata)
 
     manager_materializations = []
-    manager_metadata: Dict[str, MetadataValue] = {}
+    manager_metadata: dict[str, MetadataValue] = {}
 
     # don't store asset check outputs, asset observation outputs, asset result outputs, or Nothing
     # type outputs
@@ -746,8 +745,7 @@ def _store_output(
 
             def _gen_fn():
                 gen_output = output_manager.handle_output(output_context, output.value)
-                for event in output_context.consume_events():
-                    yield event
+                yield from output_context.consume_events()
                 if gen_output:
                     yield gen_output
 

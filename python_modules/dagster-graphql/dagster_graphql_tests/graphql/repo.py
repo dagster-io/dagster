@@ -131,7 +131,7 @@ LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
 @dagster_type_loader(String)
 def df_input_schema(_context, path: str) -> Sequence[OrderedDict]:
-    with open(path, "r", encoding="utf8") as fd:
+    with open(path, encoding="utf8") as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
@@ -625,11 +625,11 @@ def bar_logger(init_context):
     class BarLogger(logging.Logger):
         def __init__(self, name, prefix, *args, **kwargs):
             self.prefix = prefix
-            super(BarLogger, self).__init__(name, *args, **kwargs)
+            super().__init__(name, *args, **kwargs)
 
         def log(self, lvl, msg, *args, **kwargs):
             msg = self.prefix + msg
-            super(BarLogger, self).log(lvl, msg, *args, **kwargs)
+            super().log(lvl, msg, *args, **kwargs)
 
     logger_ = BarLogger("bar", init_context.logger_config["prefix"])
     logger_.setLevel(coerce_valid_log_level(init_context.logger_config["log_level"]))
@@ -764,7 +764,7 @@ def eventually_successful():
         return depth
 
     @op
-    def collect(fan_in: List[int]):
+    def collect(fan_in: list[int]):
         if fan_in != [1, 2, 3]:
             raise Exception(f"Fan in failed, expected [1, 2, 3] got {fan_in}")
 
@@ -1742,7 +1742,7 @@ def ungrouped_asset_5():
 
 
 @multi_asset(outs={"int_asset": AssetOut(), "str_asset": AssetOut()})
-def typed_multi_asset() -> Tuple[int, str]:
+def typed_multi_asset() -> tuple[int, str]:
     return (1, "yay")
 
 

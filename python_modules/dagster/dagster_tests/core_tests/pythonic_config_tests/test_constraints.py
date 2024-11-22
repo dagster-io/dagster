@@ -110,7 +110,7 @@ def test_float_multiple() -> None:
 
 def test_list_length() -> None:
     class AListConfig(Config):
-        a_list: List[int] = Field(min_items=2, max_items=10)  # type: ignore
+        a_list: list[int] = Field(min_items=2, max_items=10)  # type: ignore
 
     AListConfig(a_list=[1, 2])
     with pytest.raises(ValidationError, match=" at least 2 items"):

@@ -31,7 +31,7 @@ from dagster_polars_tests.utils import get_saved_path
 
 
 def test_polars_upath_io_manager_type_annotations(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, df = io_manager_and_df
 
@@ -58,13 +58,13 @@ def test_polars_upath_io_manager_type_annotations(
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
 
     @asset(io_manager_def=manager)
-    def downstream_multi_partitioned_eager(upstream_partitioned: Dict[str, pl.DataFrame]) -> None:
+    def downstream_multi_partitioned_eager(upstream_partitioned: dict[str, pl.DataFrame]) -> None:
         for _df in upstream_partitioned.values():
             assert isinstance(_df, pl.DataFrame), type(_df)
         assert set(upstream_partitioned.keys()) == {"a", "b"}, upstream_partitioned.keys()
 
     @asset(io_manager_def=manager)
-    def downstream_multi_partitioned_lazy(upstream_partitioned: Dict[str, pl.LazyFrame]) -> None:
+    def downstream_multi_partitioned_lazy(upstream_partitioned: dict[str, pl.LazyFrame]) -> None:
         for _df in upstream_partitioned.values():
             assert isinstance(_df, pl.LazyFrame), type(_df)
         assert set(upstream_partitioned.keys()) == {"a", "b"}, upstream_partitioned.keys()
@@ -89,7 +89,7 @@ def test_polars_upath_io_manager_type_annotations(
 
 
 def test_polars_upath_io_manager_nested_dtypes(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, df = io_manager_and_df
 
@@ -116,7 +116,7 @@ def test_polars_upath_io_manager_nested_dtypes(
 
 
 def test_polars_upath_io_manager_input_optional_eager(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, df = io_manager_and_df
 
@@ -135,7 +135,7 @@ def test_polars_upath_io_manager_input_optional_eager(
 
 
 def test_polars_upath_io_manager_input_optional_lazy(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, df = io_manager_and_df
 
@@ -154,7 +154,7 @@ def test_polars_upath_io_manager_input_optional_lazy(
 
 
 def test_polars_upath_io_manager_input_dict_eager(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, df = io_manager_and_df
 
@@ -163,7 +163,7 @@ def test_polars_upath_io_manager_input_dict_eager(
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
 
     @asset(io_manager_def=manager)
-    def downstream(upstream: Dict[str, pl.DataFrame]) -> pl.DataFrame:
+    def downstream(upstream: dict[str, pl.DataFrame]) -> pl.DataFrame:
         dfs = []
         for df in upstream.values():
             assert isinstance(df, pl.DataFrame)
@@ -182,7 +182,7 @@ def test_polars_upath_io_manager_input_dict_eager(
 
 
 def test_polars_upath_io_manager_input_dict_eager_missing(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, df = io_manager_and_df
 
@@ -195,7 +195,7 @@ def test_polars_upath_io_manager_input_dict_eager_missing(
         )
 
     @asset(io_manager_def=manager)
-    def downstream(upstream: Dict[str, Optional[pl.DataFrame]]) -> None:
+    def downstream(upstream: dict[str, Optional[pl.DataFrame]]) -> None:
         assert len(upstream) == 1
         assert "a" in upstream
 
@@ -211,7 +211,7 @@ def test_polars_upath_io_manager_input_dict_eager_missing(
 
 
 def test_polars_upath_io_manager_input_dict_lazy(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, df = io_manager_and_df
 
@@ -220,7 +220,7 @@ def test_polars_upath_io_manager_input_dict_lazy(
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
 
     @asset(io_manager_def=manager)
-    def downstream(upstream: Dict[str, pl.LazyFrame]) -> pl.DataFrame:
+    def downstream(upstream: dict[str, pl.LazyFrame]) -> pl.DataFrame:
         dfs = []
         for df in upstream.values():
             assert isinstance(df, pl.LazyFrame)
@@ -239,7 +239,7 @@ def test_polars_upath_io_manager_input_dict_lazy(
 
 
 def test_polars_upath_io_manager_input_data_frame_partitions(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, df = io_manager_and_df
 
@@ -267,7 +267,7 @@ def test_polars_upath_io_manager_input_data_frame_partitions(
 
 
 def test_polars_upath_io_manager_input_lazy_frame_partitions_lazy(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, df = io_manager_and_df
 
@@ -295,7 +295,7 @@ def test_polars_upath_io_manager_input_lazy_frame_partitions_lazy(
 
 
 def test_polars_upath_io_manager_input_optional_eager_return_none(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, df = io_manager_and_df
 
@@ -313,7 +313,7 @@ def test_polars_upath_io_manager_input_optional_eager_return_none(
 
 
 def test_polars_upath_io_manager_output_optional_eager(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, df = io_manager_and_df
 
@@ -332,7 +332,7 @@ def test_polars_upath_io_manager_output_optional_eager(
 
 
 def test_polars_upath_io_manager_output_optional_lazy(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, df = io_manager_and_df
 
@@ -362,7 +362,7 @@ def check_skip_storage_metadata_test(io_manager_def: BasePolarsUPathIOManager):
 
 
 def test_upath_io_manager_multi_partitions_definition_load_multiple_partitions(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     io_manager_def, df = io_manager_and_df
 

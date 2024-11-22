@@ -7,14 +7,14 @@ from typing import List
 import pytest
 
 
-def get_pyright_reveal_type_output(filename) -> List[str]:
+def get_pyright_reveal_type_output(filename) -> list[str]:
     stdout = subprocess.check_output(["pyright", filename]).decode("utf-8")
     match = re.findall(r'Type of "(?:[^"]+)" is "([^"]+)"', stdout)
     assert match
     return match
 
 
-def get_mypy_type_output(filename) -> List[str]:
+def get_mypy_type_output(filename) -> list[str]:
     stdout = subprocess.check_output(["mypy", filename]).decode("utf-8")
     match = re.findall(r'note: Revealed type is "([^"]+)"', stdout)
     assert match

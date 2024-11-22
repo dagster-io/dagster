@@ -456,11 +456,11 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
 
 class TestSecretsLoader(SecretsLoader, ConfigurableClass):
-    def __init__(self, inst_data: Optional[ConfigurableClassData], env_vars: Dict[str, str]):
+    def __init__(self, inst_data: Optional[ConfigurableClassData], env_vars: dict[str, str]):
         self._inst_data = inst_data
         self.env_vars = env_vars
 
-    def get_secrets_for_environment(self, location_name: str) -> Dict[str, str]:
+    def get_secrets_for_environment(self, location_name: str) -> dict[str, str]:
         return self.env_vars.copy()
 
     @property
@@ -631,7 +631,7 @@ def test_counter():
     assert counts["bar"] == 10
 
 
-def wait_for_futures(futures: Dict[str, Future], timeout: Optional[float] = None):
+def wait_for_futures(futures: dict[str, Future], timeout: Optional[float] = None):
     start_time = time.time()
     results = {}
     for target_id, future in futures.copy().items():
@@ -761,10 +761,11 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
         else datetime.datetime.fromtimestamp(new_now, datetime.timezone.utc)
     )
 
-    with unittest.mock.patch(
-        "dagster._time._mockable_get_current_datetime", return_value=new_dt
-    ), unittest.mock.patch(
-        "dagster._time._mockable_get_current_timestamp", return_value=new_dt.timestamp()
+    with (
+        unittest.mock.patch("dagster._time._mockable_get_current_datetime", return_value=new_dt),
+        unittest.mock.patch(
+            "dagster._time._mockable_get_current_timestamp", return_value=new_dt.timestamp()
+        ),
     ):
         yield
 

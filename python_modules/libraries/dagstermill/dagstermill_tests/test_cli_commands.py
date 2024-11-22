@@ -1,5 +1,3 @@
-# encoding: utf-8
-
 import contextlib
 import json
 import os
@@ -16,7 +14,7 @@ EXPECTED_IMPORT_STATEMENT = "from dagstermill.examples.repository import define_
 
 
 def check_notebook_expected_output(notebook_path):
-    with open(notebook_path, "r", encoding="utf8") as f:
+    with open(notebook_path, encoding="utf8") as f:
         notebook_content = json.loads(f.read())
         assert set(notebook_content.keys()) == {"cells", "metadata", "nbformat", "nbformat_minor"}
         assert notebook_content["metadata"] == {
@@ -75,23 +73,19 @@ def test_scaffold():
 
 
 def test_invalid_filename_example():
-    if sys.version_info > (3,):
-        with scaffold(notebook_name="notebooks/CLI!!~@您好") as _notebook_name:
-            assert True
-    else:
-        with scaffold(notebook_name="notebooks/CLI!! ~@") as _notebook_name:
-            assert True
+    with scaffold(notebook_name="notebooks/CLI!!~@您好") as _notebook_name:
+        assert True
 
 
 def test_retroactive_scaffold():
     notebook_path = file_relative_path(__file__, "notebooks/retroactive.ipynb")
-    with open(notebook_path, "r", encoding="utf8") as fd:
+    with open(notebook_path, encoding="utf8") as fd:
         retroactive_notebook = fd.read()
     try:
         runner = CliRunner()
         args = ["--notebook", notebook_path]
         runner.invoke(retroactively_scaffold_notebook, args)
-        with open(notebook_path, "r", encoding="utf8") as fd:
+        with open(notebook_path, encoding="utf8") as fd:
             scaffolded = json.loads(fd.read())
             assert [
                 x

@@ -33,7 +33,7 @@ class SnowflakePandasPySparkIOManager(SnowflakeIOManager):
         return [SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         """If an asset is not annotated with an return type, default_load_type will be used to
         determine which TypeHandler to use to store and load the output.
         In this case, unannotated assets will be stored and loaded as Pandas DataFrames.

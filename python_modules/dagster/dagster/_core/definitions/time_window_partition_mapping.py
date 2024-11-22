@@ -101,7 +101,7 @@ class TimeWindowPartitionMapping(
         end_offset: int = 0,
         allow_nonexistent_upstream_partitions: bool = False,
     ):
-        return super(TimeWindowPartitionMapping, cls).__new__(
+        return super().__new__(
             cls,
             start_offset=check.int_param(start_offset, "start_offset"),
             end_offset=check.int_param(end_offset, "end_offset"),
@@ -205,7 +205,7 @@ class TimeWindowPartitionMapping(
             return []
 
         sorted_time_windows = sorted(time_windows, key=lambda tw: tw.start.timestamp())
-        merged_time_windows: List[TimeWindow] = [sorted_time_windows[0]]
+        merged_time_windows: list[TimeWindow] = [sorted_time_windows[0]]
 
         for window in sorted_time_windows[1:]:
             last_window = merged_time_windows[-1]

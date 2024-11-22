@@ -25,7 +25,7 @@ from dagster import AssetOut, multi_asset
     },
     group_name="my_multi_asset_group",
 )
-def write_multiple_artifacts() -> Tuple[wandb.Table, wandb.Table]:
+def write_multiple_artifacts() -> tuple[wandb.Table, wandb.Table]:
     """Example writing multiple W&B Artifact with @multi_asset.
 
     Returns:

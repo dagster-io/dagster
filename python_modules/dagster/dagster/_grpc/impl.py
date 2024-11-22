@@ -411,7 +411,7 @@ def _partitions_def_contains_dynamic_partitions_def(partitions_def: PartitionsDe
 def _get_job_partitions_and_config_for_partition_set_name(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
-) -> Tuple[JobDefinition, PartitionsDefinition, PartitionedConfig]:
+) -> tuple[JobDefinition, PartitionsDefinition, PartitionedConfig]:
     job_name = job_name_for_partition_set_snap_name(partition_set_name)
     job_def = repo_def.get_job(job_name)
     assert job_def.partitions_def and job_def.partitioned_config, (

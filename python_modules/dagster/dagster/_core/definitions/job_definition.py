@@ -113,7 +113,7 @@ class JobDefinition(IHasInternalInit):
     _asset_layer: AssetLayer
     _resource_requirements: Mapping[str, AbstractSet[str]]
     _all_node_defs: Mapping[str, NodeDefinition]
-    _cached_run_config_schemas: Dict[str, "RunConfigSchema"]
+    _cached_run_config_schemas: dict[str, "RunConfigSchema"]
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
     input_values: Mapping[str, object]
 
@@ -583,7 +583,7 @@ class JobDefinition(IHasInternalInit):
             FrozenSet[HookDefinition]
         """
         check.inst_param(handle, "handle", NodeHandle)
-        hook_defs: Set[HookDefinition] = set()
+        hook_defs: set[HookDefinition] = set()
 
         current = handle
         lineage = []
@@ -781,7 +781,7 @@ class JobDefinition(IHasInternalInit):
                     key for key in self.asset_layer.asset_keys_by_node_output_handle.values()
                 ]
 
-            unique_partitions_defs: Set[PartitionsDefinition] = set()
+            unique_partitions_defs: set[PartitionsDefinition] = set()
             for asset_key in resolved_selected_asset_keys:
                 partitions_def = self.asset_layer.get(asset_key).partitions_def
                 if partitions_def is not None:
@@ -1293,12 +1293,12 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
     """
     from dagster._core.definitions.asset_graph import AssetGraph
 
-    asset_keys_by_node_input_handle: Dict[NodeInputHandle, AssetKey] = {}
-    all_input_assets: List[AssetsDefinition] = []
-    input_asset_keys: Set[AssetKey] = set()
+    asset_keys_by_node_input_handle: dict[NodeInputHandle, AssetKey] = {}
+    all_input_assets: list[AssetsDefinition] = []
+    input_asset_keys: set[AssetKey] = set()
 
     # each entry is a graph definition and its handle relative to the job root
-    stack: List[Tuple[GraphDefinition, Optional[NodeHandle]]] = [(job_graph_def, None)]
+    stack: list[tuple[GraphDefinition, Optional[NodeHandle]]] = [(job_graph_def, None)]
 
     while stack:
         graph_def, parent_node_handle = stack.pop()
@@ -1334,7 +1334,7 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
 
 
 def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Mapping[str, NodeDefinition]:
-    all_defs: Dict[str, NodeDefinition] = {}
+    all_defs: dict[str, NodeDefinition] = {}
     for current_level_node_def in node_defs:
         for node_def in current_level_node_def.iterate_node_defs():
             if node_def.name in all_defs:

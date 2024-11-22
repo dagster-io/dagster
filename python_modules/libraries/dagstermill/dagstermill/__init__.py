@@ -1,6 +1,6 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
-import dagstermill.factory as factory  # noqa: F401
+import dagstermill.factory as factory
 from dagstermill.asset_factory import define_dagstermill_asset as define_dagstermill_asset
 from dagstermill.context import DagstermillExecutionContext as DagstermillExecutionContext
 from dagstermill.errors import DagstermillError as DagstermillError

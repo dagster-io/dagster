@@ -2,14 +2,14 @@ from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 from dagster_polars.io_managers.parquet import PolarsParquetIOManager
 
 __all__ = [
-    "PolarsParquetIOManager",
     "BasePolarsUPathIOManager",
+    "PolarsParquetIOManager",
 ]
 
 
 try:
     # provided by dagster-polars[delta]
-    from dagster_polars.io_managers.delta import DeltaWriteMode, PolarsDeltaIOManager  # noqa
+    from dagster_polars.io_managers.delta import DeltaWriteMode, PolarsDeltaIOManager
 
     __all__.extend(["DeltaWriteMode", "PolarsDeltaIOManager"])
 except ImportError as e:
@@ -22,8 +22,8 @@ except ImportError as e:
 try:
     # provided by dagster-polars[bigquery]
     from dagster_polars.io_managers.bigquery import (
-        PolarsBigQueryIOManager,  # noqa
-        PolarsBigQueryTypeHandler,  # noqa
+        PolarsBigQueryIOManager,
+        PolarsBigQueryTypeHandler,
     )
 
     __all__.extend(["PolarsBigQueryIOManager", "PolarsBigQueryTypeHandler"])

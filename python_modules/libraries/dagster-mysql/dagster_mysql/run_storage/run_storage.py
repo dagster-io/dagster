@@ -146,13 +146,11 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
 
     def has_built_index(self, migration_name: str) -> None:
         if migration_name not in self._index_migration_cache:
-            self._index_migration_cache[migration_name] = super(
-                MySQLRunStorage, self
-            ).has_built_index(migration_name)
+            self._index_migration_cache[migration_name] = super().has_built_index(migration_name)
         return self._index_migration_cache[migration_name]
 
     def mark_index_built(self, migration_name: str) -> None:
-        super(MySQLRunStorage, self).mark_index_built(migration_name)
+        super().mark_index_built(migration_name)
         if migration_name in self._index_migration_cache:
             del self._index_migration_cache[migration_name]
 

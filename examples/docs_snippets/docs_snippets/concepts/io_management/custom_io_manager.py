@@ -36,7 +36,7 @@ from dagster import ConfigurableIOManager, InputContext, OutputContext
 
 class MyIOManager(ConfigurableIOManager):
     # specifies an optional string list input, via config system
-    path_prefix: List[str] = []
+    path_prefix: list[str] = []
 
     def _get_path(self, context) -> str:
         return "/".join(self.path_prefix + context.asset_key.path)

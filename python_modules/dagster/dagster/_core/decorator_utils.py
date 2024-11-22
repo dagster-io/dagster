@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.resource_definition import ResourceDefinition
 
 Decoratable: TypeAlias = Union[
-    Type, Callable, property, staticmethod, classmethod, "OpDefinition", "ResourceDefinition"
+    type, Callable, property, staticmethod, classmethod, "OpDefinition", "ResourceDefinition"
 ]
 
 
@@ -46,7 +46,7 @@ T_Decoratable = TypeVar("T_Decoratable", bound=Decoratable)
 T_Type = TypeVar("T_Type", bound=type)
 
 
-def get_valid_name_permutations(param_name: str) -> Set[str]:
+def get_valid_name_permutations(param_name: str) -> set[str]:
     """Get all underscore permutations for provided arg name."""
     return {
         "_",

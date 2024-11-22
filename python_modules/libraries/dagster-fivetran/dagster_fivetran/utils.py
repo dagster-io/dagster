@@ -31,7 +31,7 @@ def metadata_for_table(
     table: Optional[str],
     include_column_info: bool = False,
 ) -> RawMetadataMapping:
-    metadata: Dict[str, MetadataValue] = {"connector_url": MetadataValue.url(connector_url)}
+    metadata: dict[str, MetadataValue] = {"connector_url": MetadataValue.url(connector_url)}
     column_schema = None
     table_name = None
     if table_data.get("columns"):

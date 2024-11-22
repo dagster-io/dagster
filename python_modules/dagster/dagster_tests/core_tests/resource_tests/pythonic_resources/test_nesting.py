@@ -506,7 +506,7 @@ def test_nested_resource_raw_value_io_manager() -> None:
     log = []
 
     class ConfigIOManager(ConfigurableIOManager):
-        path_prefix: List[str]
+        path_prefix: list[str]
 
         def handle_output(self, context, obj) -> None:
             log.append(
@@ -645,7 +645,7 @@ def test_nested_resource_raw_value_io_manager_with_setup_teardown() -> None:
             log.append("MyMultiwriteIOManager teardown_after_execution")
 
     class ConfigIOManager(ConfigurableIOManager):
-        path_prefix: List[str]
+        path_prefix: list[str]
 
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("ConfigIOManager setup_for_execution")
@@ -727,7 +727,7 @@ def test_nested_resource_raw_value_io_manager_with_cm_setup_teardown() -> None:
             log.append("MyMultiwriteIOManager teardown_after_execution")
 
     class ConfigIOManager(ConfigurableIOManager):
-        path_prefix: List[str]
+        path_prefix: list[str]
 
         @contextlib.contextmanager
         def yield_for_execution(self, context: InitResourceContext):

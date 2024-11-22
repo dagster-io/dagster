@@ -34,7 +34,7 @@ class InitExecutorContext(
         executor_config: Mapping[str, object],
         instance: DagsterInstance,
     ):
-        return super(InitExecutorContext, cls).__new__(
+        return super().__new__(
             cls,
             job=check.inst_param(job, "job", IJob),
             executor_def=check.inst_param(executor_def, "executor_def", ExecutorDefinition),

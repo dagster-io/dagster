@@ -253,5 +253,5 @@ class DuckDBPandasIOManager(DuckDBIOManager):
         return [DuckDBPandasTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return pd.DataFrame

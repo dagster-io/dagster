@@ -143,7 +143,7 @@ class HookContext:
             * the output values in the normal case
             * a dictionary from mapping key to corresponding value in the mapped case
         """
-        results: Dict[str, Union[Any, Dict[str, Any]]] = {}
+        results: dict[str, Union[Any, dict[str, Any]]] = {}
         captured = self._step_execution_context.step_output_capture
 
         if captured is None:
@@ -172,7 +172,7 @@ class HookContext:
             * the applied output metadata in the normal case
             * a dictionary from mapping key to corresponding metadata in the mapped case
         """
-        results: Dict[str, Union[Any, Dict[str, Any]]] = {}
+        results: dict[str, Union[Any, dict[str, Any]]] = {}
         captured = self._step_execution_context.step_output_metadata_capture
 
         if captured is None:
@@ -277,7 +277,7 @@ class UnboundHookContext(HookContext):
         raise DagsterInvalidPropertyError(_property_msg("step_key", "property"))
 
     @property
-    def required_resource_keys(self) -> Set[str]:
+    def required_resource_keys(self) -> set[str]:
         raise DagsterInvalidPropertyError(_property_msg("hook_def", "property"))
 
     @property

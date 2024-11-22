@@ -83,7 +83,7 @@ class AssetSubsetWithMetadata(NamedTuple):
     metadata: MetadataMapping
 
     @property
-    def frozen_metadata(self) -> FrozenSet[Tuple[str, MetadataValue]]:
+    def frozen_metadata(self) -> frozenset[tuple[str, MetadataValue]]:
         return frozenset(self.metadata.items())
 
 
@@ -136,7 +136,7 @@ class AutomationConditionEvaluationWithRunIds(Generic[T_EntityKey]):
     """
 
     evaluation: AutomationConditionEvaluation[T_EntityKey]
-    run_ids: FrozenSet[str]
+    run_ids: frozenset[str]
 
     @property
     def key(self) -> T_EntityKey:
@@ -158,7 +158,7 @@ class AutomationConditionNodeCursor(Generic[T_EntityKey]):
     extra_state: Optional[StructuredCursor]
 
     def get_structured_cursor(
-        self, as_type: Type[T_StructuredCursor]
+        self, as_type: type[T_StructuredCursor]
     ) -> Optional[T_StructuredCursor]:
         """Returns the extra_state value if it is of the expected type. Otherwise, returns None."""
         if isinstance(self.extra_state, as_type):

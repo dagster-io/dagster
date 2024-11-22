@@ -14,8 +14,8 @@ from dask.distributed import Client
 
 @op(
     out={
-        "scheduler_info": Out(Dict),
-        "nthreads": Out(Dict),
+        "scheduler_info": Out(dict),
+        "nthreads": Out(dict),
     },
     required_resource_keys={"dask"},
 )

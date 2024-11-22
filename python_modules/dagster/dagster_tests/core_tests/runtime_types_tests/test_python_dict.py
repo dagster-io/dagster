@@ -90,7 +90,7 @@ def test_basic_dagster_dictionary_input():
 
 
 def test_basic_typing_dictionary_output():
-    @op(out=Out(typing.Dict))
+    @op(out=Out(dict))
     def emit_dict():
         return {"key": "value"}
 
@@ -99,7 +99,7 @@ def test_basic_typing_dictionary_output():
 
 def test_basic_typing_dictionary_input():
     @op(
-        ins={"data": In(typing.Dict)},
+        ins={"data": In(dict)},
         out=Out(str),
     )
     def input_dict(data):
@@ -114,7 +114,7 @@ def test_basic_typing_dictionary_input():
 
 
 def test_basic_closed_typing_dictionary_wrong():
-    @op(out=Out(typing.Dict[int, int]))
+    @op(out=Out(dict[int, int]))
     def emit_dict():
         return 1
 
@@ -123,7 +123,7 @@ def test_basic_closed_typing_dictionary_wrong():
 
 
 def test_basic_closed_typing_dictionary_output():
-    @op(out=Out(typing.Dict[str, str]))
+    @op(out=Out(dict[str, str]))
     def emit_dict():
         return {"key": "value"}
 
@@ -135,7 +135,7 @@ def test_basic_closed_typing_dictionary_output():
 
 def test_basic_closed_typing_dictionary_input():
     @op(
-        ins={"data": In(typing.Dict[str, str])},
+        ins={"data": In(dict[str, str])},
         out=Out(str),
     )
     def input_dict(data):
@@ -150,7 +150,7 @@ def test_basic_closed_typing_dictionary_input():
 
 
 def test_basic_closed_typing_dictionary_key_wrong():
-    @op(out=Out(typing.Dict[str, str]))
+    @op(out=Out(dict[str, str]))
     def emit_dict():
         return {1: "foo"}
 
@@ -159,7 +159,7 @@ def test_basic_closed_typing_dictionary_key_wrong():
 
 
 def test_basic_closed_typing_dictionary_value_wrong():
-    @op(out=Out(typing.Dict[str, str]))
+    @op(out=Out(dict[str, str]))
     def emit_dict():
         return {"foo": 1}
 
@@ -168,7 +168,7 @@ def test_basic_closed_typing_dictionary_value_wrong():
 
 
 def test_complicated_dictionary_typing_pass():
-    @op(out=Out(typing.Dict[str, typing.List[typing.Dict[int, int]]]))
+    @op(out=Out(dict[str, list[dict[int, int]]]))
     def emit_dict():
         return {"foo": [{1: 1, 2: 2}]}
 
@@ -176,7 +176,7 @@ def test_complicated_dictionary_typing_pass():
 
 
 def test_complicated_dictionary_typing_fail():
-    @op(out=Out(typing.Dict[str, typing.List[typing.Dict[int, int]]]))
+    @op(out=Out(dict[str, list[dict[int, int]]]))
     def emit_dict():
         return {"foo": [{1: 1, "2": 2}]}
 
@@ -187,7 +187,7 @@ def test_complicated_dictionary_typing_fail():
 def test_dict_type_loader():
     test_input = {"hello": 5, "goodbye": 42}
 
-    @op(ins={"dict_input": In(dagster_type=typing.Dict[str, int])})
+    @op(ins={"dict_input": In(dagster_type=dict[str, int])})
     def emit_dict(dict_input):
         return dict_input
 
@@ -207,7 +207,7 @@ def test_dict_type_loader_typing_fail():
 
     test_input = {"hello": "foo", "goodbye": "bar"}
 
-    @op(ins={"dict_input": In(dagster_type=typing.Dict[str, CustomType])})
+    @op(ins={"dict_input": In(dagster_type=dict[str, CustomType])})
     def emit_dict(dict_input):
         return dict_input
 
@@ -225,7 +225,7 @@ def test_dict_type_loader_typing_fail():
 def test_dict_type_loader_inner_type_mismatch():
     test_input = {"hello": "foo", "goodbye": "bar"}
 
-    @op(ins={"dict_input": In(dagster_type=typing.Dict[str, int])})
+    @op(ins={"dict_input": In(dagster_type=dict[str, int])})
     def emit_dict(dict_input):
         return dict_input
 

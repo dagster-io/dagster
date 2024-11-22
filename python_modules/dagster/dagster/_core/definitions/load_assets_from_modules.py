@@ -35,7 +35,7 @@ def find_objects_in_module_of_types(module: ModuleType, types) -> Iterator:
 
 def assets_from_modules(
     modules: Iterable[ModuleType], extra_source_assets: Optional[Sequence[SourceAsset]] = None
-) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
+) -> tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
     """Constructs three lists, a list of assets, a list of source assets, and a list of cacheable
     assets from the given modules.
 
@@ -49,13 +49,13 @@ def assets_from_modules(
             A tuple containing a list of assets, a list of source assets, and a list of
             cacheable assets defined in the given modules.
     """
-    asset_ids: Set[int] = set()
-    asset_keys: Dict[AssetKey, ModuleType] = dict()
-    source_assets: List[SourceAsset] = list(
+    asset_ids: set[int] = set()
+    asset_keys: dict[AssetKey, ModuleType] = dict()
+    source_assets: list[SourceAsset] = list(
         check.opt_sequence_param(extra_source_assets, "extra_source_assets", of_type=SourceAsset)
     )
-    cacheable_assets: List[CacheableAssetsDefinition] = []
-    assets: Dict[AssetKey, AssetsDefinition] = {}
+    cacheable_assets: list[CacheableAssetsDefinition] = []
+    assets: dict[AssetKey, AssetsDefinition] = {}
     for module in modules:
         for asset in find_objects_in_module_of_types(
             module, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
@@ -207,7 +207,7 @@ def load_assets_from_current_module(
 def assets_from_package_module(
     package_module: ModuleType,
     extra_source_assets: Optional[Sequence[SourceAsset]] = None,
-) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
+) -> tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
     """Constructs three lists, a list of assets, a list of source assets, and a list of cacheable assets
     from the given package module.
 
@@ -354,7 +354,7 @@ def prefix_assets(
     key_prefix: CoercibleToAssetKeyPrefix,
     source_assets: Sequence[SourceAsset],
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix],
-) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset]]:
+) -> tuple[Sequence[AssetsDefinition], Sequence[SourceAsset]]:
     """Given a list of assets, prefix the input and output asset keys and check specs with key_prefix.
     The prefix is not added to source assets.
 
@@ -403,7 +403,7 @@ def prefix_assets(
     if isinstance(source_key_prefix, str):
         source_key_prefix = [source_key_prefix]
 
-    result_assets: List[AssetsDefinition] = []
+    result_assets: list[AssetsDefinition] = []
     for assets_def in assets_defs:
         output_asset_key_replacements = {
             asset_key: AssetKey([*key_prefix, *asset_key.path])

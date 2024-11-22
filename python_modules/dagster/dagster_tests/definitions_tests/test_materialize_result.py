@@ -298,7 +298,7 @@ def test_materialize_result_output_typing():
     assert mats[0].metadata["foo"].value == "bar"
 
     @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
-    def multi_asset_with_outs_and_type_annotation() -> Tuple[MaterializeResult, MaterializeResult]:
+    def multi_asset_with_outs_and_type_annotation() -> tuple[MaterializeResult, MaterializeResult]:
         return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
 
     _exec_asset(
@@ -306,7 +306,7 @@ def test_materialize_result_output_typing():
     )
 
     @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
-    def multi_asset_with_specs_and_type_annotation() -> Tuple[MaterializeResult, MaterializeResult]:
+    def multi_asset_with_specs_and_type_annotation() -> tuple[MaterializeResult, MaterializeResult]:
         return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
 
     _exec_asset(
@@ -348,7 +348,7 @@ def test_materialize_result_output_typing():
             AssetCheckSpec(name="check_two", asset="asset_two"),
         ],
     )
-    def multi_checks(context: AssetExecutionContext) -> Tuple[MaterializeResult, MaterializeResult]:
+    def multi_checks(context: AssetExecutionContext) -> tuple[MaterializeResult, MaterializeResult]:
         return MaterializeResult(
             asset_key="asset_one",
             check_results=[

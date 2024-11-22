@@ -1,5 +1,4 @@
 import subprocess
-from typing import List
 
 import pytest
 import yaml
@@ -159,7 +158,7 @@ def test_workspace_server_location_name_renders_from_helm_webserver(template: He
 
 
 def test_workspace_renders_empty(template: HelmTemplate):
-    servers: List[Server] = []
+    servers: list[Server] = []
     helm_values = DagsterHelmValues.construct(
         dagsterWebserver=Webserver.construct(workspace=Workspace(enabled=True, servers=servers)),
         dagsterUserDeployments=UserDeployments.construct(

@@ -3,9 +3,10 @@ import random
 import tarfile
 import tempfile
 import warnings
+from collections.abc import Sequence
 from contextlib import contextmanager
 from datetime import datetime
-from typing import List, NamedTuple, Optional, Sequence
+from typing import NamedTuple, Optional
 
 from dagster import (
     AssetKey,
@@ -75,9 +76,10 @@ class PerfScenario(NamedTuple):
 
     @contextmanager
     def instance_from_snapshot(self):
-        with tempfile.TemporaryDirectory() as temp_dir, tarfile.open(
-            self.instance_snapshot_path
-        ) as tf:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tarfile.open(self.instance_snapshot_path) as tf,
+        ):
             tf.extractall(temp_dir)
             with DagsterInstance.from_ref(InstanceRef.from_dir(temp_dir)) as instance:
                 yield instance
@@ -106,7 +108,7 @@ class RandomAssets(NamedTuple):
             for i in range(self.n_assets)
         }
 
-        sources: List[SourceAsset] = []
+        sources: list[SourceAsset] = []
         for i in range(self.n_sources):
             _source_asset = SourceAsset(key=f"source_{i}")
             for j in random.sample(
@@ -148,7 +150,7 @@ class RandomAssets(NamedTuple):
         defs = self.build_definitions()
         asset_graph = defs.get_asset_graph()
 
-        run_requests: List[RunRequest] = []
+        run_requests: list[RunRequest] = []
 
         if self.asset_partitions_def:
             for partition_key in partition_keys_to_backfill or []:

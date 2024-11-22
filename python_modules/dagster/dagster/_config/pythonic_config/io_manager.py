@@ -31,23 +31,23 @@ class ConfigurableIOManagerFactoryResourceDefinition(
 ):
     def __init__(
         self,
-        configurable_resource_cls: Type,
+        configurable_resource_cls: type,
         resource_fn: ResourceFunction,
         config_schema: Any,
         description: Optional[str],
         nested_resources: Mapping[str, Any],
         nested_partial_resources: Mapping[str, Any],
-        input_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
-        output_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
+        input_config_schema: Optional[Union[CoercableToConfigSchema, type[Config]]] = None,
+        output_config_schema: Optional[Union[CoercableToConfigSchema, type[Config]]] = None,
         dagster_maintained: bool = False,
     ):
         input_config_schema_resolved: CoercableToConfigSchema = (
-            cast(Type[Config], input_config_schema).to_config_schema()
+            cast(type[Config], input_config_schema).to_config_schema()
             if safe_is_subclass(input_config_schema, Config)
             else cast(CoercableToConfigSchema, input_config_schema)
         )
         output_config_schema_resolved: CoercableToConfigSchema = (
-            cast(Type[Config], output_config_schema).to_config_schema()
+            cast(type[Config], output_config_schema).to_config_schema()
             if safe_is_subclass(output_config_schema, Config)
             else cast(CoercableToConfigSchema, output_config_schema)
         )
@@ -64,7 +64,7 @@ class ConfigurableIOManagerFactoryResourceDefinition(
         self._dagster_maintained = dagster_maintained
 
     @property
-    def configurable_resource_cls(self) -> Type:
+    def configurable_resource_cls(self) -> type:
         return self._configurable_resource_cls
 
     @property
@@ -137,7 +137,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValu
         return self.create_io_manager(context)
 
     @classmethod
-    def configure_at_launch(cls: "Type[T_Self]", **kwargs) -> "PartialIOManager[T_Self]":
+    def configure_at_launch(cls: "type[T_Self]", **kwargs) -> "PartialIOManager[T_Self]":
         """Returns a partially initialized copy of the IO manager, with remaining config fields
         set at runtime.
         """
@@ -160,13 +160,13 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValu
     @classmethod
     def input_config_schema(
         cls,
-    ) -> Optional[Union[CoercableToConfigSchema, Type[Config]]]:
+    ) -> Optional[Union[CoercableToConfigSchema, type[Config]]]:
         return None
 
     @classmethod
     def output_config_schema(
         cls,
-    ) -> Optional[Union[CoercableToConfigSchema, Type[Config]]]:
+    ) -> Optional[Union[CoercableToConfigSchema, type[Config]]]:
         return None
 
 
@@ -179,8 +179,8 @@ class PartialIOManager(
         input_config_schema = None
         output_config_schema = None
         if safe_is_subclass(self.resource_cls, ConfigurableIOManagerFactory):
-            factory_cls: Type[ConfigurableIOManagerFactory] = cast(
-                Type[ConfigurableIOManagerFactory], self.resource_cls
+            factory_cls: type[ConfigurableIOManagerFactory] = cast(
+                type[ConfigurableIOManagerFactory], self.resource_cls
             )
             input_config_schema = factory_cls.input_config_schema()
             output_config_schema = factory_cls.output_config_schema()

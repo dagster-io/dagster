@@ -16,14 +16,14 @@ class TaskInfo:
     webserver_url: str
     dag_id: str
     task_id: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
     @property
     def dag_url(self) -> str:
         return f"{self.webserver_url}/dags/{self.dag_id}"
 
     @cached_property
-    def downstream_task_ids(self) -> List[str]:
+    def downstream_task_ids(self) -> list[str]:
         return check.is_list(self.metadata["downstream_task_ids"], str)
 
 
@@ -42,7 +42,7 @@ class DagInfo:
 
     webserver_url: str
     dag_id: str
-    metadata: PublicAttr[Dict[str, Any]]
+    metadata: PublicAttr[dict[str, Any]]
 
     @property
     def url(self) -> str:
@@ -77,7 +77,7 @@ class SerializedDagData:
     dag_id: str
     dag_info: DagInfo
     source_code: str
-    leaf_asset_keys: Set[AssetKey]
+    leaf_asset_keys: set[AssetKey]
     task_infos: Mapping[str, TaskInfo]
 
 
@@ -108,14 +108,14 @@ class KeyScopedDagHandles:
 @record
 class SerializedAirflowDefinitionsData:
     instance_name: str
-    key_scoped_task_handles: List[KeyScopedTaskHandles]
-    key_scoped_dag_handles: List[KeyScopedDagHandles]
+    key_scoped_task_handles: list[KeyScopedTaskHandles]
+    key_scoped_dag_handles: list[KeyScopedDagHandles]
     dag_datas: Mapping[str, SerializedDagData]
 
     @cached_property
-    def all_mapped_tasks(self) -> Dict[AssetKey, AbstractSet[TaskHandle]]:
+    def all_mapped_tasks(self) -> dict[AssetKey, AbstractSet[TaskHandle]]:
         return {item.asset_key: item.mapped_tasks for item in self.key_scoped_task_handles}
 
     @cached_property
-    def all_mapped_dags(self) -> Dict[AssetKey, AbstractSet[DagHandle]]:
+    def all_mapped_dags(self) -> dict[AssetKey, AbstractSet[DagHandle]]:
         return {item.asset_key: item.mapped_dags for item in self.key_scoped_dag_handles}

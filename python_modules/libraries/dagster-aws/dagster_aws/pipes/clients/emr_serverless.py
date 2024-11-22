@@ -88,7 +88,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
         start_job_run_params: "StartJobRunRequestRequestTypeDef",
-        extras: Optional[Dict[str, Any]] = None,
+        extras: Optional[dict[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
         """Run a workload on AWS EMR Serverless, enriched with the pipes protocol.
 
@@ -190,7 +190,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
             applicationId=start_response["applicationId"],
             jobRunId=job_run_id,
         ):
-            state: "JobRunStateType" = response["jobRun"]["state"]
+            state: JobRunStateType = response["jobRun"]["state"]
 
             if state in ["FAILED", "CANCELLED", "CANCELLING"]:
                 context.log.error(

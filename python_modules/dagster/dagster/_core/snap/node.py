@@ -47,7 +47,7 @@ class InputDefSnap(
         description: Optional[str],
         metadata: Optional[Mapping[str, MetadataValue]] = None,
     ):
-        return super(InputDefSnap, cls).__new__(
+        return super().__new__(
             cls,
             name=check.str_param(name, "name"),
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
@@ -85,7 +85,7 @@ class OutputDefSnap(
         metadata: Optional[Mapping[str, MetadataValue]] = None,
         is_dynamic: bool = False,
     ):
-        return super(OutputDefSnap, cls).__new__(
+        return super().__new__(
             cls,
             name=check.str_param(name, "name"),
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
@@ -115,7 +115,7 @@ class OutputMappingSnap(
         mapped_output_name: str,
         external_output_name: str,
     ):
-        return super(OutputMappingSnap, cls).__new__(
+        return super().__new__(
             cls,
             mapped_node_name=check.str_param(mapped_node_name, "mapped_node_name"),
             mapped_output_name=check.str_param(mapped_output_name, "mapped_output_name"),
@@ -143,7 +143,7 @@ class InputMappingSnap(
     )
 ):
     def __new__(cls, mapped_node_name: str, mapped_input_name: str, external_input_name: str):
-        return super(InputMappingSnap, cls).__new__(
+        return super().__new__(
             cls,
             mapped_node_name=check.str_param(mapped_node_name, "mapped_node_name"),
             mapped_input_name=check.str_param(mapped_input_name, "mapped_input_name"),
@@ -210,7 +210,7 @@ class GraphDefSnap(
         input_mapping_snaps: Sequence[InputMappingSnap],
         output_mapping_snaps: Sequence[OutputMappingSnap],
     ):
-        return super(GraphDefSnap, cls).__new__(
+        return super().__new__(
             cls,
             dep_structure_snapshot=check.inst_param(
                 dep_structure_snapshot, "dep_structure_snapshot", DependencyStructureSnapshot
@@ -265,7 +265,7 @@ class OpDefSnap(
         required_resource_keys: Sequence[str],
         config_field_snap: Optional[ConfigFieldSnap],
     ):
-        return super(OpDefSnap, cls).__new__(
+        return super().__new__(
             cls,
             required_resource_keys=check.sequence_param(
                 required_resource_keys, "required_resource_keys", str
@@ -310,7 +310,7 @@ class NodeDefsSnapshot(
         op_def_snaps: Sequence[OpDefSnap],
         graph_def_snaps: Sequence[GraphDefSnap],
     ):
-        return super(NodeDefsSnapshot, cls).__new__(
+        return super().__new__(
             cls,
             op_def_snaps=sorted(
                 check.sequence_param(op_def_snaps, "op_def_snaps", of_type=OpDefSnap),

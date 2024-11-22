@@ -30,7 +30,7 @@ class AirflowPersistentDatabase(AirflowDatabase):
         super().__init__(dagster_run=dagster_run, dag_run_config=dag_run_config)
 
     @staticmethod
-    def _initialize_database(uri: str, connections: List[Connection] = []):
+    def _initialize_database(uri: str, connections: list[Connection] = []):
         if is_airflow_2_loaded_in_environment("2.3.0"):
             os.environ["AIRFLOW__DATABASE__SQL_ALCHEMY_CONN"] = uri
             importlib.reload(airflow.configuration)
@@ -56,7 +56,7 @@ class AirflowPersistentDatabase(AirflowDatabase):
 
 def make_persistent_airflow_db_resource(
     uri: str = "",
-    connections: List[Connection] = [],
+    connections: list[Connection] = [],
     dag_run_config: Optional[dict] = {},
 ) -> ResourceDefinition:
     """Creates a Dagster resource that provides an persistent Airflow database.

@@ -124,13 +124,11 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def has_secondary_index(self, name):
         if name not in self._secondary_index_cache:
-            self._secondary_index_cache[name] = super(
-                ConsolidatedSqliteEventLogStorage, self
-            ).has_secondary_index(name)
+            self._secondary_index_cache[name] = super().has_secondary_index(name)
         return self._secondary_index_cache[name]
 
     def enable_secondary_index(self, name):
-        super(ConsolidatedSqliteEventLogStorage, self).enable_secondary_index(name)
+        super().enable_secondary_index(name)
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 
@@ -197,9 +195,7 @@ class ConsolidatedSqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
             event_log_storage, "event_log_storage", ConsolidatedSqliteEventLogStorage
         )
         self._log_path = event_log_storage.get_db_path()
-        super(ConsolidatedSqliteEventLogStorageWatchdog, self).__init__(
-            patterns=[self._log_path], **kwargs
-        )
+        super().__init__(patterns=[self._log_path], **kwargs)
 
     def on_modified(self, event):
         check.invariant(event.src_path == self._log_path)

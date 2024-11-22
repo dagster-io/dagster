@@ -24,7 +24,7 @@ DAGSTER_HOME = MAKEFILE_DIR / ".dagster_home"
 @contextmanager
 def modify_constants(num_dags, num_tasks, num_assets) -> Generator[None, None, None]:
     # Read the original content
-    with open(CONSTANTS_FILE, "r") as f:
+    with open(CONSTANTS_FILE) as f:
         original_content = f.read()
 
     # Write new constants
@@ -58,8 +58,9 @@ def main() -> None:
     num_tasks = check.int_param(args.num_tasks, "num_tasks")
     num_assets = check.int_param(args.num_assets, "num_assets")
 
-    with modify_constants(num_dags, num_tasks, num_assets), environ(
-        {"DAGSTER_HOME": str(DAGSTER_HOME)}
+    with (
+        modify_constants(num_dags, num_tasks, num_assets),
+        environ({"DAGSTER_HOME": str(DAGSTER_HOME)}),
     ):
         print("Scaffolding proxied state...")
         scaffold_proxied_state(num_dags=num_dags, num_tasks=num_tasks, proxied_state=True)
@@ -156,13 +157,13 @@ def main() -> None:
 
 def run_suite_for_defs(
     *,
-    module_name_to_defs_and_instance: Dict[str, Tuple[Definitions, AirflowInstance]],
+    module_name_to_defs_and_instance: dict[str, tuple[Definitions, AirflowInstance]],
     num_dags: int,
     instance: DagsterInstance,
-) -> List[str]:
+) -> list[str]:
     lines = []
-    module_name_to_repo_def_and_instance: Dict[
-        str, Tuple[RepositoryDefinition, AirflowInstance]
+    module_name_to_repo_def_and_instance: dict[
+        str, tuple[RepositoryDefinition, AirflowInstance]
     ] = {}
     for module_name, (defs, af_instance) in module_name_to_defs_and_instance.items():
         defs_initial_load_time = time.time()

@@ -22,7 +22,7 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
     """
 
     def __init__(self, *args, **kwargs) -> None:
-        super(SqlitePollingEventLogStorage, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._watcher: Optional[SqlPollingEventWatcher] = None
 
     @classmethod

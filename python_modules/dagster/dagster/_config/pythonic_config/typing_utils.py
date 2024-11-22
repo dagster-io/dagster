@@ -30,20 +30,20 @@ class LateBoundTypesForResourceTypeChecking:
     class _Temp(Generic[_TResValue]):
         pass
 
-    _ResourceDep: Type = _Temp
-    _Resource: Type = _Temp
-    _PartialResource: Type = _Temp
+    _ResourceDep: type = _Temp
+    _Resource: type = _Temp
+    _PartialResource: type = _Temp
 
     @staticmethod
-    def get_resource_rep_type() -> Type:
+    def get_resource_rep_type() -> type:
         return LateBoundTypesForResourceTypeChecking._ResourceDep
 
     @staticmethod
-    def get_resource_type() -> Type:
+    def get_resource_type() -> type:
         return LateBoundTypesForResourceTypeChecking._Resource
 
     @staticmethod
-    def get_partial_resource_type(base: Type) -> Type:
+    def get_partial_resource_type(base: type) -> type:
         # LateBoundTypesForResourceTypeChecking._PartialResource[base] would be the more
         # correct thing to return, but to enable that deeper pydantic integration
         # needs to be done on the PartialResource class
@@ -52,7 +52,7 @@ class LateBoundTypesForResourceTypeChecking:
 
     @staticmethod
     def set_actual_types_for_type_checking(
-        resource_dep_type: Type, resource_type: Type, partial_resource_type: Type
+        resource_dep_type: type, resource_type: type, partial_resource_type: type
     ) -> None:
         LateBoundTypesForResourceTypeChecking._ResourceDep = resource_dep_type
         LateBoundTypesForResourceTypeChecking._Resource = resource_type

@@ -83,7 +83,7 @@ TResValue = TypeVar("TResValue")
 
 
 def _convert_pydantic_field(
-    pydantic_field: ModelFieldCompat, model_cls: Optional[Type] = None
+    pydantic_field: ModelFieldCompat, model_cls: Optional[type] = None
 ) -> Field:
     """Transforms a Pydantic field into a corresponding Dagster config field.
 
@@ -168,7 +168,7 @@ def _config_type_for_type_on_pydantic_field(
         # These types do not exist in Pydantic 2.x
         pass
 
-    if safe_is_subclass(get_origin(potential_dagster_type), List):
+    if safe_is_subclass(get_origin(potential_dagster_type), list):
         list_inner_type = get_args(potential_dagster_type)[0]
         return Array(_config_type_for_type_on_pydantic_field(list_inner_type))
     elif is_closed_python_optional_type(potential_dagster_type):
@@ -176,7 +176,7 @@ def _config_type_for_type_on_pydantic_field(
             arg for arg in get_args(potential_dagster_type) if arg is not type(None)
         )
         return Noneable(_config_type_for_type_on_pydantic_field(optional_inner_type))
-    elif safe_is_subclass(get_origin(potential_dagster_type), Dict) or safe_is_subclass(
+    elif safe_is_subclass(get_origin(potential_dagster_type), dict) or safe_is_subclass(
         get_origin(potential_dagster_type), Mapping
     ):
         key_type, value_type = get_args(potential_dagster_type)

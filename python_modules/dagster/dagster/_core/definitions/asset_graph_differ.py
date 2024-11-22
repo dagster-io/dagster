@@ -189,7 +189,7 @@ class AssetGraphDiffer:
         branch_asset = self.branch_asset_graph.get(asset_key)
         base_asset = self.base_asset_graph.get(asset_key)
 
-        change_types: Set[AssetDefinitionChangeType] = set()
+        change_types: set[AssetDefinitionChangeType] = set()
         code_version_diff: Optional[ValueDiff] = None
         dependencies_diff: Optional[DictDiff] = None
         partitions_definition_diff: Optional[ValueDiff] = None

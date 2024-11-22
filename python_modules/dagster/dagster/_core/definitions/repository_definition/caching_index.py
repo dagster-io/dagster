@@ -10,7 +10,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 class CacheingDefinitionIndex(Generic[T_RepositoryLevelDefinition]):
     def __init__(
         self,
-        definition_class: Type[T_RepositoryLevelDefinition],
+        definition_class: type[T_RepositoryLevelDefinition],
         definition_class_name: str,
         definition_kind: str,
         definitions: Mapping[
@@ -33,7 +33,7 @@ class CacheingDefinitionIndex(Generic[T_RepositoryLevelDefinition]):
                 f"callable, got {type(definition)}",
             )
 
-        self._definition_class: Type[T_RepositoryLevelDefinition] = definition_class
+        self._definition_class: type[T_RepositoryLevelDefinition] = definition_class
         self._definition_class_name = definition_class_name
         self._definition_kind = definition_kind
         self._validation_fn: Callable[
@@ -43,7 +43,7 @@ class CacheingDefinitionIndex(Generic[T_RepositoryLevelDefinition]):
         self._definitions: Mapping[
             str, Union[T_RepositoryLevelDefinition, Callable[[], T_RepositoryLevelDefinition]]
         ] = definitions
-        self._definition_cache: Dict[str, T_RepositoryLevelDefinition] = {}
+        self._definition_cache: dict[str, T_RepositoryLevelDefinition] = {}
         self._definition_names: Optional[Sequence[str]] = None
 
         self._lazy_definitions_fn: Callable[[], Sequence[T_RepositoryLevelDefinition]] = (

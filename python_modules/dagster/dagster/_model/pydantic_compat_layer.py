@@ -21,14 +21,14 @@ class ModelFieldCompat:
     """
 
     def __init__(self, field) -> None:
-        self.field: "ModelField" = field
+        self.field: ModelField = field
 
     @property
-    def annotation(self) -> Type:
+    def annotation(self) -> type:
         return self.field.annotation
 
     @property
-    def metadata(self) -> List[str]:
+    def metadata(self) -> list[str]:
         return getattr(self.field, "metadata", [])
 
     @property
@@ -60,7 +60,7 @@ class ModelFieldCompat:
             return self.field.discriminator if hasattr(self.field, "discriminator") else None
 
 
-def model_fields(model) -> Dict[str, ModelFieldCompat]:
+def model_fields(model) -> dict[str, ModelFieldCompat]:
     """Returns a dictionary of fields for a given pydantic model, wrapped
     in a compat class to provide a consistent interface between Pydantic 1 and 2.
     """
@@ -71,7 +71,7 @@ def model_fields(model) -> Dict[str, ModelFieldCompat]:
     return {k: ModelFieldCompat(v) for k, v in fields.items()}
 
 
-def model_config(model: Type[BaseModel]):
+def model_config(model: type[BaseModel]):
     """Returns the config for a given pydantic model, wrapped such that it has
     a Pydantic 2-style interface for accessing config values.
     """
@@ -80,7 +80,7 @@ def model_config(model: Type[BaseModel]):
 
 def build_validation_error(
     base_error: ValidationError,
-    line_errors: List,
+    line_errors: list,
     hide_input: bool,
     input_type: Literal["python", "json"],
 ) -> ValidationError:
@@ -92,7 +92,7 @@ def build_validation_error(
     )
 
 
-def json_schema_from_type(model_type: Union[Type[BaseModel], Type[Sequence[BaseModel]]]):
+def json_schema_from_type(model_type: Union[type[BaseModel], type[Sequence[BaseModel]]]):
     """Pydantic version stable way to get the JSON schema for a Pydantic model."""
     # This nicely handles the case where the per_file_blueprint_type is actually
     # a union type etc.

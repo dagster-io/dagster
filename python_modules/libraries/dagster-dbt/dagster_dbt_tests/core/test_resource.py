@@ -41,7 +41,7 @@ def dbt_with_profile_vars_fixture() -> DbtCliResource:
 
 
 @pytest.mark.parametrize("global_config_flags", [[], ["--quiet"]])
-def test_dbt_cli(global_config_flags: List[str]) -> None:
+def test_dbt_cli(global_config_flags: list[str]) -> None:
     dbt = DbtCliResource(
         project_dir=os.fspath(test_jaffle_shop_path), global_config_flags=global_config_flags
     )
@@ -327,7 +327,7 @@ def test_dbt_partial_parse(dbt: DbtCliResource) -> None:
 
 
 def test_dbt_cli_debug_execution(
-    test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
+    test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -343,7 +343,7 @@ def test_dbt_cli_debug_execution(
 )
 def test_dbt_retry_execution(
     monkeypatch: pytest.MonkeyPatch,
-    test_jaffle_shop_manifest: Dict[str, Any],
+    test_jaffle_shop_manifest: dict[str, Any],
     dbt: DbtCliResource,
     testrun_uid: str,
 ) -> None:
@@ -376,7 +376,7 @@ def test_dbt_retry_execution(
     )
 
 
-def test_dbt_source_freshness_execution(test_dbt_source_freshness_manifest: Dict[str, Any]) -> None:
+def test_dbt_source_freshness_execution(test_dbt_source_freshness_manifest: dict[str, Any]) -> None:
     @dbt_assets(manifest=test_dbt_source_freshness_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
@@ -390,7 +390,7 @@ def test_dbt_source_freshness_execution(test_dbt_source_freshness_manifest: Dict
 
 
 def test_dbt_cli_asset_selection(
-    test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
+    test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource
 ) -> None:
     dbt_select = " ".join(
         [
@@ -421,7 +421,7 @@ def test_dbt_cli_asset_selection(
     ],
 )
 def test_dbt_cli_subsetted_execution(
-    test_jaffle_shop_manifest: Dict[str, Any],
+    test_jaffle_shop_manifest: dict[str, Any],
     dbt: DbtCliResource,
     dagster_dbt_translator: DagsterDbtTranslator,
 ) -> None:
@@ -439,7 +439,7 @@ def test_dbt_cli_subsetted_execution(
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["build"], context=context)
 
-        dbt_cli_args: List[str] = list(dbt_cli_invocation.process.args)  # type: ignore
+        dbt_cli_args: list[str] = list(dbt_cli_invocation.process.args)  # type: ignore
         *dbt_args, dbt_select_args = dbt_cli_args
 
         assert dbt_args == ["dbt", "build", "--select"]
@@ -460,7 +460,7 @@ def test_dbt_cli_subsetted_execution(
 
 @pytest.mark.parametrize("exclude", [None, "fqn:test_jaffle_shop.customers"])
 def test_dbt_cli_default_selection(
-    test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource, exclude: Optional[str]
+    test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource, exclude: Optional[str]
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest, exclude=exclude)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -513,7 +513,7 @@ def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -
 
 
 def test_dbt_cli_op_execution(
-    test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
+    test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource
 ) -> None:
     @op(out={})
     def my_dbt_op_yield_events(context: OpExecutionContext, dbt: DbtCliResource):
@@ -560,7 +560,7 @@ def test_custom_subclass():
     assert isinstance(custom, DbtCliResource)
 
 
-def test_metadata(test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource) -> None:
+def test_metadata(test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource) -> None:
     def assert_on_expected_metadata(metadata):
         assert isinstance(metadata["Execution Duration"], FloatMetadataValue)
         assert cast(float, metadata["Execution Duration"].value) > 0

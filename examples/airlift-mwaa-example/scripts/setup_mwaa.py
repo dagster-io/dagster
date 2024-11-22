@@ -15,7 +15,7 @@ import click
 from botocore.exceptions import ClientError
 
 
-def get_s3_objects(s3_client: boto3.client, bucket: str, prefix: str) -> List[dict]:  # pyright: ignore (reportGeneralTypeIssues)
+def get_s3_objects(s3_client: boto3.client, bucket: str, prefix: str) -> list[dict]:  # pyright: ignore (reportGeneralTypeIssues)
     """Get list of objects in the S3 bucket with the given prefix."""
     try:
         objects = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)

@@ -64,7 +64,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
         start_job_run_params: "StartJobRunRequestRequestTypeDef",
-        extras: Optional[Dict[str, Any]] = None,
+        extras: Optional[dict[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
         """Start a Glue job, enriched with the pipes protocol.
 

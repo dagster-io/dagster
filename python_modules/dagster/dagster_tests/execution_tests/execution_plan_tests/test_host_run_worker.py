@@ -53,7 +53,7 @@ class ExplodingTestPipeline(ReconstructableJob):
         op_selection=None,
         asset_selection=None,
     ):
-        return super(ExplodingTestPipeline, cls).__new__(
+        return super().__new__(
             cls,
             repository,
             pipeline_name,
@@ -64,7 +64,7 @@ class ExplodingTestPipeline(ReconstructableJob):
     def get_definition(self):
         if os.getpid() == _explode_pid["pid"]:
             raise Exception("Got the definition in the run worker process")
-        return super(ExplodingTestPipeline, self).get_definition()
+        return super().get_definition()
 
 
 def test_host_run_worker():

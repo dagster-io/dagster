@@ -82,7 +82,7 @@ class IndentingStringIoPrinter(IndentingPrinter):
     def __init__(self, **kwargs: Any):
         self.buffer = StringIO()
         self.printer = lambda x: self.buffer.write(x + "\n")
-        super(IndentingStringIoPrinter, self).__init__(printer=self.printer, **kwargs)
+        super().__init__(printer=self.printer, **kwargs)
 
     def __enter__(self) -> Self:
         return self

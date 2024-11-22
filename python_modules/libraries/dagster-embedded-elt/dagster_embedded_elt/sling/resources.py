@@ -145,13 +145,13 @@ class SlingResource(ConfigurableResource):
             )
     """
 
-    connections: List[SlingConnectionResource] = []
-    _stdout: List[str] = []
+    connections: list[SlingConnectionResource] = []
+    _stdout: list[str] = []
 
     @staticmethod
     def _get_replication_streams_for_context(
         context: Union[OpExecutionContext, AssetExecutionContext],
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Computes the sling replication streams config for a given execution context with an
         assets def, possibly involving a subset selection of sling assets.
         """
@@ -207,7 +207,7 @@ class SlingResource(ConfigurableResource):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
-    def _clean_connection_dict(self, d: Dict[str, Any]) -> Dict[str, Any]:
+    def _clean_connection_dict(self, d: dict[str, Any]) -> dict[str, Any]:
         d = _process_env_vars(d)
         if d["connection_string"]:
             d["url"] = d["connection_string"]
@@ -215,7 +215,7 @@ class SlingResource(ConfigurableResource):
             del d["connection_string"]
         return d
 
-    def prepare_environment(self) -> Dict[str, Any]:
+    def prepare_environment(self) -> dict[str, Any]:
         env = {}
 
         for conn in self.connections:
@@ -247,20 +247,19 @@ class SlingResource(ConfigurableResource):
     ) -> Generator[str, None, None]:
         with Popen(cmd, shell=True, stdin=stdin, stdout=stdout, stderr=stderr) as proc:
             if proc.stdout:
-                for line in self._process_stdout(proc.stdout, encoding=encoding):
-                    yield line
+                yield from self._process_stdout(proc.stdout, encoding=encoding)
 
             proc.wait()
             if proc.returncode != 0:
                 raise Exception("Sling command failed with error code %s", proc.returncode)
 
-    def _parse_json_table_output(self, table_output: Dict[str, Any]) -> List[Dict[str, str]]:
-        column_keys: List[str] = table_output["fields"]
-        column_values: List[List[str]] = table_output["rows"]
+    def _parse_json_table_output(self, table_output: dict[str, Any]) -> list[dict[str, str]]:
+        column_keys: list[str] = table_output["fields"]
+        column_values: list[list[str]] = table_output["rows"]
 
         return [dict(zip(column_keys, column_values)) for column_values in column_values]
 
-    def get_column_info_for_table(self, target_name: str, table_name: str) -> List[Dict[str, str]]:
+    def get_column_info_for_table(self, target_name: str, table_name: str) -> list[dict[str, str]]:
         """Fetches column metadata for a given table in a Sling target and parses it into a list of
         dictionaries, keyed by column name.
 
@@ -351,7 +350,7 @@ class SlingResource(ConfigurableResource):
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
-        replication_config: Dict[str, Any],
+        replication_config: dict[str, Any],
         dagster_sling_translator: DagsterSlingTranslator,
         debug: bool,
     ) -> Iterator[SlingEventType]:
@@ -427,7 +426,7 @@ class SlingResource(ConfigurableResource):
         yield from self._stdout
 
 
-def _process_env_vars(config: Dict[str, Any]) -> Dict[str, Any]:
+def _process_env_vars(config: dict[str, Any]) -> dict[str, Any]:
     out = {}
     for key, value in config.items():
         if isinstance(value, dict) and len(value) == 1 and next(iter(value.keys())) == "env":

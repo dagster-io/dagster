@@ -97,8 +97,7 @@ def inner_plan_execution_iterator(
                     yield event
 
                 # pass a list of step events to hooks
-                for hook_event in _trigger_hook(step_context, step_event_list):
-                    yield hook_event
+                yield from _trigger_hook(step_context, step_event_list)
 
             try:
                 capture_stack.close()
@@ -242,8 +241,7 @@ def dagster_event_sequence_for_step(
         else:
             step_events = core_dagster_event_sequence_for_step(step_context)
 
-        for step_event in check.generator(step_events):
-            yield step_event
+        yield from check.generator(step_events)
 
     # case (1) in top comment
     except RetryRequested as retry_request:

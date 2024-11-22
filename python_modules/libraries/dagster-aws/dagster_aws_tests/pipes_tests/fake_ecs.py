@@ -30,7 +30,7 @@ class LocalECSMockClient:
         self.ecs_client = ecs_client
         self.cloudwatch_client = cloudwatch_client
 
-        self._task_runs: Dict[
+        self._task_runs: dict[
             str, SimulatedTaskRun
         ] = {}  # mapping of TaskDefinitionArn to TaskDefinition
 
@@ -130,7 +130,7 @@ class LocalECSMockClient:
 
         return response
 
-    def describe_tasks(self, cluster: str, tasks: List[str]):
+    def describe_tasks(self, cluster: str, tasks: list[str]):
         assert len(tasks) == 1, "Only 1 task is supported in tests"
 
         simulated_task = cast(SimulatedTaskRun, self._task_runs[tasks[0]])

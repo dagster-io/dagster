@@ -160,7 +160,7 @@ class FivetranWorkspaceData:
         """Method that converts a `FivetranWorkspaceData` object
         to a collection of `FivetranConnectorTableProps` objects.
         """
-        data: List[FivetranConnectorTableProps] = []
+        data: list[FivetranConnectorTableProps] = []
 
         for connector in self.connectors_by_id.values():
             destination = self.destinations_by_id[connector.destination_id]

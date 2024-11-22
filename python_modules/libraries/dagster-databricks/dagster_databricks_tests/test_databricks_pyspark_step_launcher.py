@@ -15,8 +15,8 @@ def mock_step_launcher_factory():
         add_dagster_env_variables: bool = True,
         env_variables: Optional[dict] = None,
         databricks_token: Optional[str] = None,
-        oauth_creds: Optional[Dict[str, str]] = None,
-        azure_creds: Optional[Dict[str, str]] = None,
+        oauth_creds: Optional[dict[str, str]] = None,
+        azure_creds: Optional[dict[str, str]] = None,
     ):
         return DatabricksPySparkStepLauncher(
             run_config={"some": "config"},

@@ -556,7 +556,7 @@ def test_invoking_simple_assets():
     out = arg_kwarg_asset([1, 2, 3], kwarg1=[3, 2, 1])
     assert out == [1, 2, 3, 3, 2, 1]
 
-    out = arg_kwarg_asset(([1, 2, 3]))
+    out = arg_kwarg_asset([1, 2, 3])
     assert out == [1, 2, 3, 0]
 
 

@@ -80,7 +80,7 @@ def poll_for_expected_mats(
     af_instance: AirflowInstance,
     expected_mats_per_dag: Mapping[str, Sequence[Union[ExpectedMat, AssetKey]]],
 ) -> None:
-    resolved_expected_mats_per_dag: Mapping[str, List[ExpectedMat]] = {
+    resolved_expected_mats_per_dag: Mapping[str, list[ExpectedMat]] = {
         dag_id: [
             expected_mat
             if isinstance(expected_mat, ExpectedMat)

@@ -16,7 +16,7 @@ def test_cached_method() -> None:
             self.calls = []
 
         @cached_method
-        def my_method(self, arg1) -> Tuple:
+        def my_method(self, arg1) -> tuple:
             self.calls.append(arg1)
             return (arg1, self._attr1)
 
@@ -39,7 +39,7 @@ def test_kwargs_order_irrelevant_and_no_kwargs() -> None:
             self.calls = []
 
         @cached_method
-        def my_method(self, arg1, arg2) -> Tuple:
+        def my_method(self, arg1, arg2) -> tuple:
             self.calls.append(arg1)
             return arg1, arg2
 
@@ -81,7 +81,7 @@ def test_does_not_leak() -> None:
 def test_collisions() -> None:
     class MyClass:
         @cached_method
-        def stuff(self, a=None, b=None) -> Dict:
+        def stuff(self, a=None, b=None) -> dict:
             return {"a": a, "b": b}
 
     obj = MyClass()
@@ -98,7 +98,7 @@ def test_collisions() -> None:
 def test_ordinal_args() -> None:
     class MyClass:
         @cached_method
-        def stuff(self, a, b) -> Dict:
+        def stuff(self, a, b) -> dict:
             return {"a": a, "b": b}
 
     obj = MyClass()
@@ -142,7 +142,7 @@ def test_async_cached_method() -> None:
             self.calls = []
 
         @cached_method
-        async def my_method(self, arg1) -> Tuple:
+        async def my_method(self, arg1) -> tuple:
             self.calls.append(arg1)
             await asyncio.sleep(0.25 * random.random())
             return (arg1, self._attr1)
@@ -158,7 +158,7 @@ def test_async_cached_method() -> None:
     assert asyncio.run(obj1.my_method(arg1="a")) is a_result
     assert obj1.calls == ["a", "b"]
 
-    async def run_my_method_a_bunch() -> List[Tuple]:
+    async def run_my_method_a_bunch() -> list[tuple]:
         return await asyncio.gather(*[obj1.my_method(arg1="a") for i in range(100)])
 
     assert asyncio.run(run_my_method_a_bunch()) == [("a", 4)] * 100

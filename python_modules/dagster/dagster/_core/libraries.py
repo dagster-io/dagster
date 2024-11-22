@@ -5,7 +5,7 @@ from dagster.version import __version__
 
 
 class DagsterLibraryRegistry:
-    _libraries: Dict[str, str] = {"dagster": __version__}
+    _libraries: dict[str, str] = {"dagster": __version__}
 
     @classmethod
     def register(cls, name: str, version: str, *, is_dagster_package: bool = True):

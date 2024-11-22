@@ -210,7 +210,7 @@ class DagsterSlingTranslator:
         return {}
 
     @public
-    def get_kinds(self, stream_definition: Mapping[str, Any]) -> Set[str]:
+    def get_kinds(self, stream_definition: Mapping[str, Any]) -> set[str]:
         """Retrieves the kinds for a given stream definition.
 
         This method returns "sling" by default. This method can be overridden to provide custom kinds.

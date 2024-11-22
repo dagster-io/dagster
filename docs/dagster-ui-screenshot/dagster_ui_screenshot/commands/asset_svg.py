@@ -9,7 +9,7 @@ import subprocess
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
 from time import sleep
-from typing import Dict, Optional
+from typing import Optional
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -40,13 +40,13 @@ CODE_SAMPLES_ROOT = os.path.join(
 
 SVG_FONT_DATA_FILE = os.path.join(os.path.dirname(__file__), "..", "static", "font_info.svg")
 
-with open(SVG_FONT_DATA_FILE, "r", encoding="utf-8") as f:
+with open(SVG_FONT_DATA_FILE, encoding="utf-8") as f:
     SVG_FONT_DATA = f.read()
 
 
 def _add_font_info_to_svg(svg_filepath: str):
     """Adds embedded Dagster font information to an SVG file downloaded from Dagit."""
-    with open(svg_filepath, "r", encoding="utf-8") as f:
+    with open(svg_filepath, encoding="utf-8") as f:
         svg = f.read()
     with open(svg_filepath, "w", encoding="utf-8") as f:
         f.write(svg.replace('<style xmlns="http://www.w3.org/1999/xhtml"></style>', SVG_FONT_DATA))
@@ -66,7 +66,7 @@ def _setup_snippet_file(code_path: str, snippet_fn: Optional[str]):
     setting up the given snippet function as a repository if specified.
     """
     with TemporaryDirectory() as temp_dir:
-        with open(code_path, "r", encoding="utf-8") as f:
+        with open(code_path, encoding="utf-8") as f:
             code = f.read()
 
         if snippet_fn:
@@ -124,7 +124,7 @@ def generate_svg_for_file(code_path: str, destination_path: str, snippet_fn: Opt
             dagit_process.wait()
 
 
-def parse_params(param_str: str) -> Dict[str, str]:
+def parse_params(param_str: str) -> dict[str, str]:
     """Parses a set of params for a markdown code block.
 
     For example, returns {"foo": "bar", "baz": "qux"} for:
@@ -139,7 +139,7 @@ def parse_params(param_str: str) -> Dict[str, str]:
 
 def generate_svg(target_mdx_file: str):
     # Parse all code blocks in the MD file
-    with open(target_mdx_file, "r", encoding="utf-8") as f:
+    with open(target_mdx_file, encoding="utf-8") as f:
         snippets = [
             parse_params(x) for x in re.findall(r"```python([^\n]+dagimage[^\n]+)", f.read())
         ]
@@ -165,7 +165,7 @@ def generate_svg(target_mdx_file: str):
             }
         )
 
-    with open(target_mdx_file, "r", encoding="utf-8") as f:
+    with open(target_mdx_file, encoding="utf-8") as f:
         pattern = re.compile(r"(```python)([^\n]+dagimage[^\n]+)", re.S)
 
         # Find and replace the code block params with our updated params

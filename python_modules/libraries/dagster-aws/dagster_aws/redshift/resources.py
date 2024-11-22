@@ -33,7 +33,7 @@ class BaseRedshiftClient(abc.ABC):
 
 
 class RedshiftClient(BaseRedshiftClient):
-    def __init__(self, conn_args: Dict[str, Any], autocommit: Optional[bool], log: Logger):
+    def __init__(self, conn_args: dict[str, Any], autocommit: Optional[bool], log: Logger):
         # Extract parameters from resource config
         self.conn_args = conn_args
 

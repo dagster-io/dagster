@@ -46,7 +46,7 @@ class ExecutionResult(ABC):
     @property
     def all_node_events(self) -> Sequence[DagsterEvent]:
         """List[DagsterEvent]: All dagster events from the execution."""
-        step_events: List[DagsterEvent] = []
+        step_events: list[DagsterEvent] = []
 
         for node_name in self.job_def.graph.node_dict.keys():
             handle = NodeHandle.from_string(node_name)
@@ -196,7 +196,7 @@ class ExecutionResult(ABC):
         failure_events = self.filter_events(
             lambda event: event.is_step_failure or event.is_resource_init_failure
         )
-        keys: Set[str] = set()
+        keys: set[str] = set()
         for event in failure_events:
             if event.step_key:
                 keys.add(event.step_key)

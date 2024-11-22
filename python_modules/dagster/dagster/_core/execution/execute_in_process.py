@@ -31,7 +31,7 @@ def core_execute_in_process(
     raise_on_error: bool,
     run_tags: Optional[Mapping[str, str]] = None,
     run_id: Optional[str] = None,
-    asset_selection: Optional[FrozenSet[AssetKey]] = None,
+    asset_selection: Optional[frozenset[AssetKey]] = None,
 ) -> ExecuteInProcessResult:
     job_def = ephemeral_job
     job = InMemoryJob(job_def)
@@ -44,7 +44,7 @@ def core_execute_in_process(
         instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
     )
 
-    output_capture: Dict[StepOutputHandle, Any] = {}
+    output_capture: dict[StepOutputHandle, Any] = {}
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
         run = execute_instance.create_run_for_job(

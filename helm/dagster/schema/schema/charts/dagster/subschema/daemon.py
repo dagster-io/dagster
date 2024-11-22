@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import ConfigDict
 
@@ -30,7 +30,7 @@ class BlockOpConcurrencyLimitedRuns(BaseModel):
 
 class QueuedRunCoordinatorConfig(BaseModel, extra="forbid"):
     maxConcurrentRuns: Optional[IntSource] = None
-    tagConcurrencyLimits: Optional[List[TagConcurrencyLimit]] = None
+    tagConcurrencyLimits: Optional[list[TagConcurrencyLimit]] = None
     dequeueIntervalSeconds: Optional[IntSource] = None
     dequeueNumWorkers: Optional[IntSource] = None
     dequeueUseThreads: Optional[bool] = None
@@ -83,11 +83,11 @@ class Daemon(BaseModel, extra="forbid"):
     image: kubernetes.Image
     runCoordinator: RunCoordinator
     heartbeatTolerance: int
-    env: Union[Dict[str, str], List[kubernetes.EnvVar]]
-    envConfigMaps: List[kubernetes.ConfigMapEnvSource]
-    envSecrets: List[kubernetes.SecretEnvSource]
-    deploymentLabels: Dict[str, str]
-    labels: Dict[str, str]
+    env: Union[dict[str, str], list[kubernetes.EnvVar]]
+    envConfigMaps: list[kubernetes.ConfigMapEnvSource]
+    envSecrets: list[kubernetes.SecretEnvSource]
+    deploymentLabels: dict[str, str]
+    labels: dict[str, str]
     nodeSelector: kubernetes.NodeSelector
     affinity: kubernetes.Affinity
     tolerations: kubernetes.Tolerations
@@ -98,11 +98,11 @@ class Daemon(BaseModel, extra="forbid"):
     readinessProbe: kubernetes.ReadinessProbe
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
-    runMonitoring: Dict[str, Any]
+    runMonitoring: dict[str, Any]
     runRetries: RunRetries
     sensors: Sensors
     schedules: Schedules
     schedulerName: Optional[str] = None
-    volumeMounts: Optional[List[kubernetes.VolumeMount]] = None
-    volumes: Optional[List[kubernetes.Volume]] = None
+    volumeMounts: Optional[list[kubernetes.VolumeMount]] = None
+    volumes: Optional[list[kubernetes.Volume]] = None
     initContainerResources: Optional[kubernetes.Resources] = None

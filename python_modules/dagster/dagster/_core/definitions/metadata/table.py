@@ -28,7 +28,7 @@ class TableRecord(
             value_type=(str, float, int, bool, type(None)),
             additional_message="Record fields must be one of types: (str, float, int, bool)",
         )
-        return super(TableRecord, cls).__new__(cls, data=data)
+        return super().__new__(cls, data=data)
 
 
 # ########################
@@ -58,7 +58,7 @@ class TableConstraints(
         cls,
         other: Sequence[str],
     ):
-        return super(TableConstraints, cls).__new__(
+        return super().__new__(
             cls,
             other=check.sequence_param(other, "other", of_type=str),
         )
@@ -99,7 +99,7 @@ class TableColumnConstraints(
         unique: bool = False,
         other: Optional[Sequence[str]] = None,
     ):
-        return super(TableColumnConstraints, cls).__new__(
+        return super().__new__(
             cls,
             nullable=check.bool_param(nullable, "nullable"),
             unique=check.bool_param(unique, "unique"),
@@ -150,7 +150,7 @@ class TableColumn(
         constraints: Optional[TableColumnConstraints] = None,
         tags: Optional[Mapping[str, str]] = None,
     ):
-        return super(TableColumn, cls).__new__(
+        return super().__new__(
             cls,
             name=check.str_param(name, "name"),
             type=check.str_param(type, "type"),
@@ -241,7 +241,7 @@ class TableSchema(
         columns: Sequence[TableColumn],
         constraints: Optional[TableConstraints] = None,
     ):
-        return super(TableSchema, cls).__new__(
+        return super().__new__(
             cls,
             columns=check.sequence_param(columns, "columns", of_type=TableColumn),
             constraints=check.opt_inst_param(
@@ -285,7 +285,7 @@ class TableColumnDep(
         asset_key: AssetKey,
         column_name: str,
     ):
-        return super(TableColumnDep, cls).__new__(
+        return super().__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             column_name=check.str_param(column_name, "column_name"),
@@ -369,4 +369,4 @@ class TableColumnLineage(
                 f"The deps for column `{column}` must be unique by asset key and column name.",
             )
 
-        return super(TableColumnLineage, cls).__new__(cls, deps_by_column=sorted_deps_by_column)
+        return super().__new__(cls, deps_by_column=sorted_deps_by_column)

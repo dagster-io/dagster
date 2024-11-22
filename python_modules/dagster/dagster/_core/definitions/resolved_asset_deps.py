@@ -48,7 +48,7 @@ def resolve_similar_asset_names(
     similar asset keys from the list of asset definitions. We use this list to produce a helpful
     error message that can help users debug their asset dependencies.
     """
-    similar_names: List[AssetKey] = []
+    similar_names: list[AssetKey] = []
 
     target_asset_key_split = ("/".join(target_asset_key.path)).split("/")
 
@@ -133,7 +133,7 @@ def resolve_assets_def_deps(
     The returned dictionary only contains entries for assets definitions with group-resolved asset
     dependencies.
     """
-    group_names_by_key: Dict[AssetKey, str] = {}
+    group_names_by_key: dict[AssetKey, str] = {}
     for assets_def in assets_defs:
         for spec in assets_def.specs:
             group_names_by_key[spec.key] = check.not_none(spec.group_name)
@@ -142,24 +142,24 @@ def resolve_assets_def_deps(
 
     all_asset_keys = group_names_by_key.keys()
 
-    asset_keys_by_group_and_name: Dict[Tuple[str, str], List[AssetKey]] = defaultdict(list)
+    asset_keys_by_group_and_name: dict[tuple[str, str], list[AssetKey]] = defaultdict(list)
 
     for key, group in group_names_by_key.items():
         asset_keys_by_group_and_name[(group, key.path[-1])].append(key)
 
     warned = False
 
-    result: Dict[int, Mapping[AssetKey, AssetKey]] = {}
+    result: dict[int, Mapping[AssetKey, AssetKey]] = {}
     for assets_def in assets_defs:
         # If all keys have the same group name, use that
         group_names = {spec.group_name for spec in assets_def.specs}
         group_name = next(iter(group_names)) if len(group_names) == 1 else None
 
-        resolved_keys_by_unresolved_key: Dict[AssetKey, AssetKey] = {}
+        resolved_keys_by_unresolved_key: dict[AssetKey, AssetKey] = {}
         for input_name, upstream_key in assets_def.keys_by_input_name.items():
             group_and_upstream_name = (group_name, upstream_key.path[-1])
             matching_asset_keys = asset_keys_by_group_and_name.get(
-                cast(Tuple[str, str], group_and_upstream_name)
+                cast(tuple[str, str], group_and_upstream_name)
             )
             if upstream_key in all_asset_keys:
                 pass
@@ -200,7 +200,7 @@ def resolve_assets_def_deps(
                     # Arbitrarily limit to 10 similar names to avoid a huge error message
                     subset_similar_names = similar_names[:10]
                     similar_to_string = ", ".join(
-                        (similar.to_string() for similar in subset_similar_names)
+                        similar.to_string() for similar in subset_similar_names
                     )
                     msg += f" Did you mean one of the following?\n\t{similar_to_string}"
                 raise DagsterInvalidDefinitionError(msg)

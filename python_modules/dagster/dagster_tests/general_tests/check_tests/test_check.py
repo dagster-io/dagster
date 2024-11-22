@@ -1662,10 +1662,10 @@ BUILD_CASES = [
     (str, ["hi"], [Foo()]),
     (Bar, [Bar()], [Foo()]),
     (Optional[Bar], [Bar()], [Foo()]),
-    (List[str], [["a", "b"]], [[1, 2]]),
+    (list[str], [["a", "b"]], [[1, 2]]),
     (Sequence[str], [["a", "b"]], [[1, 2], "just_a_string"]),
     (Iterable[str], [["a", "b"]], [[1, 2]]),
-    (Set[str], [{"a", "b"}], [{1, 2}]),
+    (set[str], [{"a", "b"}], [{1, 2}]),
     (AbstractSet[str], [{"a", "b"}], [{1, 2}]),
     (Optional[AbstractSet[str]], [{"a", "b"}, None], [{1, 2}]),
     (
@@ -1680,23 +1680,23 @@ BUILD_CASES = [
             {"letters": ["a", "b"]},
         ],
     ),
-    (Dict[str, int], [{"a": 1}], [{1: "a"}]),
+    (dict[str, int], [{"a": 1}], [{1: "a"}]),
     (Mapping[str, int], [{"a": 1}], [{1: "a"}]),
     (Optional[int], [None], ["4"]),
     (Optional[Bar], [None], [Foo()]),
-    (Optional[List[str]], [["a", "b"]], [[1, 2]]),
+    (Optional[list[str]], [["a", "b"]], [[1, 2]]),
     (Optional[Sequence[str]], [["a", "b"]], [[1, 2]]),
     (Optional[Iterable[str]], [["a", "b"]], [[1, 2]]),
-    (Optional[Set[str]], [{"a", "b"}], [{1, 2}]),
-    (Optional[Dict[str, int]], [{"a": 1}], [{1: "a"}]),
+    (Optional[set[str]], [{"a", "b"}], [{1, 2}]),
+    (Optional[dict[str, int]], [{"a": 1}], [{1: "a"}]),
     (Optional[Mapping[str, int]], [{"a": 1}], [{1: "a"}]),
     (PublicAttr[Optional[Mapping[str, int]]], [{"a": 1}], [{1: "a"}]),  # type: ignore  # ignored for update, fix me!
     (PublicAttr[Bar], [Bar()], [Foo()]),  # type: ignore  # ignored for update, fix me!
     (Annotated[Bar, None], [Bar()], [Foo()]),
     (Annotated["Bar", None], [Bar()], [Foo()]),
-    (List[Annotated[Bar, None]], [[Bar()], []], [[Foo()]]),
+    (list[Annotated[Bar, None]], [[Bar()], []], [[Foo()]]),
     (
-        List[Annotated["TestType", ImportFrom("dagster._core.test_utils")]],
+        list[Annotated["TestType", ImportFrom("dagster._core.test_utils")]],
         [[]],  # avoid importing TestType
         [[Foo()]],
     ),
@@ -1734,7 +1734,7 @@ BUILD_CASES = [
 
 @pytest.mark.parametrize("ttype, should_succeed, should_fail", BUILD_CASES)
 def test_build_check_call(
-    ttype: Type, should_succeed: Sequence[object], should_fail: Sequence[object]
+    ttype: type, should_succeed: Sequence[object], should_fail: Sequence[object]
 ) -> None:
     eval_ctx = EvalContext(globals(), locals(), {})
     check_call = build_check_call(ttype, "test_param", eval_ctx)
@@ -1759,7 +1759,7 @@ def test_build_check_errors() -> None:
 def test_forward_ref_flow() -> None:
     # original context captured at decl
     eval_ctx = EvalContext(globals(), locals(), {})
-    ttype = List["Late"]  # class not yet defined
+    ttype = list["Late"]  # class not yet defined
 
     class Late: ...
 

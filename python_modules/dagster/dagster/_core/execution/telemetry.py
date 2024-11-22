@@ -7,4 +7,4 @@ from dagster._serdes import whitelist_for_serdes
 @whitelist_for_serdes()
 class RunTelemetryData(DagsterModel):
     run_id: str
-    datapoints: Dict[str, float]
+    datapoints: dict[str, float]

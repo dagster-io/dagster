@@ -21,7 +21,7 @@ from dagster._core.test_utils import instance_for_test
 
 def get_dynamic_job_resource_init_failure(
     executor_def: ExecutorDefinition,
-) -> Tuple[JobDefinition, Callable[[str, int, int], Dict[str, Any]]]:
+) -> tuple[JobDefinition, Callable[[str, int, int], dict[str, Any]]]:
     # Induces failure state where among a series of dynamic steps induced from
     # upstream dynamic outputs, some of those steps fail during resource
     # initialization time. Since resource initialization is happening across
@@ -75,7 +75,7 @@ def get_dynamic_job_resource_init_failure(
 
 def get_dynamic_job_op_failure(
     executor_def: ExecutorDefinition,
-) -> Tuple[JobDefinition, Callable[[str, int, int], Dict[str, Any]]]:
+) -> tuple[JobDefinition, Callable[[str, int, int], dict[str, Any]]]:
     # Induces failure state where among a series of dynamic steps induced from
     # upstream dynamic outputs, some of those steps fail during op runtime.
     # Since step runs are happening across multiple processes, it is necessary

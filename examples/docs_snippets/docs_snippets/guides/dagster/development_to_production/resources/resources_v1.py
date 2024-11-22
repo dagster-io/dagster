@@ -10,7 +10,7 @@ from dagster import ConfigurableResource
 class HNAPIClient(ConfigurableResource):
     """Hacker News client that fetches live data."""
 
-    def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
+    def fetch_item_by_id(self, item_id: int) -> Optional[dict[str, Any]]:
         """Fetches a single item from the Hacker News API by item id."""
         item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         item = requests.get(item_url, timeout=5).json()

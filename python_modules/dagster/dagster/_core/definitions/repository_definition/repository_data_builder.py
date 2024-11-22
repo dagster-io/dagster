@@ -74,7 +74,7 @@ VALID_PARTITIONS_DEFINITION_CLASSES = (
 )
 
 
-def _find_env_vars(config_entry: Any) -> Set[str]:
+def _find_env_vars(config_entry: Any) -> set[str]:
     """Given a part of a config dictionary, return a set of environment variables that are used in
     that part of the config.
     """
@@ -85,14 +85,14 @@ def _find_env_vars(config_entry: Any) -> Set[str]:
     elif isinstance(config_entry, Mapping):
         return set().union(*[_find_env_vars(v) for v in config_entry.values()])
     # Recurse into list of config items
-    elif isinstance(config_entry, List):
+    elif isinstance(config_entry, list):
         return set().union(*[_find_env_vars(v) for v in config_entry])
 
     # Otherwise, raw config value which is not an env var, so return empty set
     return set()
 
 
-def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[str]:
+def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> set[str]:
     """Given a resource definition, return a set of environment variables that are used in the
     resource's default config. This is used to extract environment variables from the top-level
     resources in a Definitions object.
@@ -172,21 +172,21 @@ def build_caching_repository_data_from_list(
         UnresolvedPartitionedAssetScheduleDefinition,
     )
 
-    schedule_and_sensor_names: Set[str] = set()
-    jobs: Dict[str, Union[JobDefinition, Callable[[], JobDefinition]]] = {}
-    coerced_graphs: Dict[str, JobDefinition] = {}
-    unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition] = {}
-    schedules: Dict[str, ScheduleDefinition] = {}
-    unresolved_partitioned_asset_schedules: Dict[
+    schedule_and_sensor_names: set[str] = set()
+    jobs: dict[str, Union[JobDefinition, Callable[[], JobDefinition]]] = {}
+    coerced_graphs: dict[str, JobDefinition] = {}
+    unresolved_jobs: dict[str, UnresolvedAssetJobDefinition] = {}
+    schedules: dict[str, ScheduleDefinition] = {}
+    unresolved_partitioned_asset_schedules: dict[
         str, UnresolvedPartitionedAssetScheduleDefinition
     ] = {}
-    sensors: Dict[str, SensorDefinition] = {}
-    assets_defs: List[AssetsDefinition] = []
-    asset_keys: Set[AssetKey] = set()
-    asset_check_keys: Set["AssetCheckKey"] = set()
-    source_assets: List[SourceAsset] = []
-    asset_checks_defs: List[AssetsDefinition] = []
-    partitions_defs: Set[PartitionsDefinition] = set()
+    sensors: dict[str, SensorDefinition] = {}
+    assets_defs: list[AssetsDefinition] = []
+    asset_keys: set[AssetKey] = set()
+    asset_check_keys: set[AssetCheckKey] = set()
+    source_assets: list[SourceAsset] = []
+    asset_checks_defs: list[AssetsDefinition] = []
+    partitions_defs: set[PartitionsDefinition] = set()
     for definition in repository_definitions:
         if isinstance(definition, JobDefinition):
             if (
@@ -370,7 +370,7 @@ def build_caching_repository_data_from_list(
 
     top_level_resources = top_level_resources or {}
 
-    utilized_env_vars: Dict[str, Set[str]] = defaultdict(set)
+    utilized_env_vars: dict[str, set[str]] = defaultdict(set)
 
     for resource_key, resource_def in top_level_resources.items():
         used_env_vars = _env_vars_from_resource_defaults(resource_def)
@@ -391,7 +391,7 @@ def build_caching_repository_data_from_list(
 
 
 def build_caching_repository_data_from_dict(
-    repository_definitions: Dict[str, Dict[str, Any]],
+    repository_definitions: dict[str, dict[str, Any]],
 ) -> "CachingRepositoryData":
     check.dict_param(repository_definitions, "repository_definitions", key_type=str)
     check.invariant(
@@ -456,8 +456,8 @@ def _process_and_validate_target_job(
     instigator_def: Union[
         SensorDefinition, ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition
     ],
-    unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition],
-    jobs: Dict[str, Union[JobDefinition, Callable[[], JobDefinition]]],
+    unresolved_jobs: dict[str, UnresolvedAssetJobDefinition],
+    jobs: dict[str, Union[JobDefinition, Callable[[], JobDefinition]]],
     job_def: Union[JobDefinition, UnresolvedAssetJobDefinition],
 ):
     """This function modifies the state of unresolved_jobs, and jobs."""
@@ -496,8 +496,8 @@ def _process_and_validate_target_assets(
     instigator_def: Union[
         SensorDefinition, ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition
     ],
-    assets_defs_by_key: Dict["AssetKey", AssetsDefinition],
-    source_assets_by_key: Dict["AssetKey", SourceAsset],
+    assets_defs_by_key: dict["AssetKey", AssetsDefinition],
+    source_assets_by_key: dict["AssetKey", SourceAsset],
     target_assets_defs: Sequence[Union[AssetsDefinition, SourceAsset]],
 ) -> None:
     for ad in target_assets_defs:
@@ -531,7 +531,7 @@ def _validate_auto_materialize_sensors(
     sensors: Iterable[SensorDefinition], asset_graph: BaseAssetGraph
 ) -> None:
     """Raises an error if two or more automation policy sensors target the same asset."""
-    sensor_names_by_asset_key: Dict["AssetKey", str] = {}
+    sensor_names_by_asset_key: dict[AssetKey, str] = {}
     for sensor in sensors:
         if isinstance(sensor, AutomationConditionSensorDefinition):
             asset_keys = sensor.asset_selection.resolve(asset_graph)

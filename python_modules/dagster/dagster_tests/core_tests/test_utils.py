@@ -109,8 +109,8 @@ def test_hash_collection():
         hash_collection(object())
 
     class Foo(NamedTuple):
-        a: List[int]
-        b: Dict[str, int]
+        a: list[int]
+        b: dict[str, int]
         c: str
 
     with pytest.raises(Exception):

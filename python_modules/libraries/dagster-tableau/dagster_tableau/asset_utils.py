@@ -17,7 +17,7 @@ class ParsedTableauAssetSpecs(
     """
 
     def __new__(cls, external_asset_specs, materializable_asset_specs):
-        return super(ParsedTableauAssetSpecs, cls).__new__(
+        return super().__new__(
             cls,
             external_asset_specs=check.list_param(
                 external_asset_specs, "external_asset_specs", AssetSpec

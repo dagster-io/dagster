@@ -1091,13 +1091,13 @@ def test_typing_types_into_config():
     )
     with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
 
-        @op(config_schema=Field(typing.List))
+        @op(config_schema=Field(typing.List))  # noqa: UP006
         def _op(_):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
 
-        @op(config_schema=typing.List)
+        @op(config_schema=typing.List)  # noqa: UP006
         def _op(_):
             pass
 
@@ -1110,24 +1110,24 @@ def test_typing_types_into_config():
 
     with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
 
-        @op(config_schema=Field(typing.List[int]))
+        @op(config_schema=Field(typing.List[int]))  # noqa: UP006
         def _op(_):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
 
-        @op(config_schema=typing.List[int])
+        @op(config_schema=typing.List[int])  # noqa: UP006
         def _op(_):
             pass
 
     for ttype in [
         typing.Optional[int],
-        typing.Set,
-        typing.Set[int],
-        typing.Dict,
-        typing.Dict[int, str],
-        typing.Tuple,
-        typing.Tuple[int, int],
+        typing.Set,  # noqa: UP006
+        typing.Set[int],  # noqa: UP006
+        typing.Dict,  # noqa: UP006
+        typing.Dict[int, str],  # noqa: UP006
+        typing.Tuple,  # noqa: UP006
+        typing.Tuple[int, int],  # noqa: UP006
     ]:
         with pytest.raises(DagsterInvalidDefinitionError):
 

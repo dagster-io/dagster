@@ -126,7 +126,7 @@ def _core_resource_initialization_event_generator(
     resource_defs: Mapping[str, ResourceDefinition],
     resource_configs: Mapping[str, ResourceConfig],
     resource_log_manager: DagsterLogManager,
-    resource_managers: Deque[EventGenerationManager],
+    resource_managers: deque[EventGenerationManager],
     execution_plan: Optional[ExecutionPlan],
     dagster_run: Optional[DagsterRun],
     resource_keys_to_init: Optional[AbstractSet[str]],
@@ -143,7 +143,7 @@ def _core_resource_initialization_event_generator(
         )
         job_name = cast(DagsterRun, dagster_run).job_name
     resource_keys_to_init = check.opt_set_param(resource_keys_to_init, "resource_keys_to_init")
-    resource_instances: Dict[str, "InitializedResource"] = {}
+    resource_instances: dict[str, InitializedResource] = {}
     resource_init_times = {}
     try:
         if emit_persistent_events and resource_keys_to_init:
@@ -249,7 +249,7 @@ def resource_initialization_event_generator(
         resource_log_manager = log_manager
 
     generator_closed = False
-    resource_managers: Deque[EventGenerationManager] = deque()
+    resource_managers: deque[EventGenerationManager] = deque()
 
     try:
         yield from _core_resource_initialization_event_generator(
@@ -355,7 +355,7 @@ def get_required_resource_keys_to_init(
     execution_plan: ExecutionPlan,
     job_def: JobDefinition,
 ) -> AbstractSet[str]:
-    resource_keys: Set[str] = set()
+    resource_keys: set[str] = set()
 
     for step_handle, step in execution_plan.step_dict.items():
         if step_handle not in execution_plan.step_handles_to_execute:
@@ -378,7 +378,7 @@ def get_transitive_required_resource_keys(
     resource_dependencies = resolve_resource_dependencies(resource_defs)
     ensure_resource_deps_satisfiable(resource_dependencies)
 
-    transitive_required_resource_keys: Set[str] = set()
+    transitive_required_resource_keys: set[str] = set()
 
     for resource_key in required_resource_keys:
         transitive_required_resource_keys = transitive_required_resource_keys.union(
@@ -391,7 +391,7 @@ def get_transitive_required_resource_keys(
 def get_required_resource_keys_for_step(
     job_def: JobDefinition, execution_step: IExecutionStep, execution_plan: ExecutionPlan
 ) -> AbstractSet[str]:
-    resource_keys: Set[str] = set()
+    resource_keys: set[str] = set()
 
     # add all the op compute resource keys
     node_def = job_def.get_node(execution_step.node_handle).definition

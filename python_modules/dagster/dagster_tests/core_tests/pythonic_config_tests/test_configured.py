@@ -18,7 +18,7 @@ def test_config_mapping_return_config_dict() -> None:
 
     # New, fancy config mapping takes in a Pythonic config object but returns normal config dict
     @configured(do_something)
-    def do_something_simplified(config_in: DoSomethingSimplifiedConfig) -> Dict[str, Any]:
+    def do_something_simplified(config_in: DoSomethingSimplifiedConfig) -> dict[str, Any]:
         return {"config_param": config_in.simplified_param}
 
     @job

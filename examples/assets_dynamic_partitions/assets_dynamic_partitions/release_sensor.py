@@ -8,7 +8,7 @@ from dagster import AssetSelection, RunRequest, SensorResult, SkipReason, sensor
 from . import assets
 
 
-def semver_tuple(release: str) -> Tuple[int, ...]:
+def semver_tuple(release: str) -> tuple[int, ...]:
     return tuple(map(int, release.split(".")))
 
 

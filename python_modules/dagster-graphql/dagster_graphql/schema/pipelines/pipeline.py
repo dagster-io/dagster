@@ -784,7 +784,7 @@ class GrapheneIPipelineSnapshotMixin:
             for key, value in (represented_pipeline.job_snapshot.run_tags or {}).items()
         ]
 
-    def resolve_metadata_entries(self, _graphene_info: ResolveInfo) -> List[GrapheneMetadataEntry]:
+    def resolve_metadata_entries(self, _graphene_info: ResolveInfo) -> list[GrapheneMetadataEntry]:
         represented_pipeline = self.get_represented_job()
         return list(iterate_metadata_entries(represented_pipeline.job_snapshot.metadata))
 
@@ -976,7 +976,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         reverse: Optional[bool] = None,
-        selected_asset_keys: Optional[List[GrapheneAssetKeyInput]] = None,
+        selected_asset_keys: Optional[list[GrapheneAssetKeyInput]] = None,
     ) -> GraphenePartitionKeys:
         result = graphene_info.context.get_partition_names(
             repository_handle=self._remote_job.repository_handle,
@@ -1000,7 +1000,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         partition_name: str,
-        selected_asset_keys: Optional[List[GrapheneAssetKeyInput]] = None,
+        selected_asset_keys: Optional[list[GrapheneAssetKeyInput]] = None,
     ) -> "GrapheneJobSelectionPartition":
         from dagster_graphql.schema.partition_sets import GrapheneJobSelectionPartition
 
@@ -1089,7 +1089,7 @@ class GrapheneRunOrError(graphene.Union):
 
 
 def _asset_key_input_list_to_asset_key_set(
-    asset_keys: Optional[List[GrapheneAssetKeyInput]],
+    asset_keys: Optional[list[GrapheneAssetKeyInput]],
 ) -> Optional[AbstractSet[AssetKey]]:
     return (
         {key_input.to_asset_key() for key_input in asset_keys} if asset_keys is not None else None

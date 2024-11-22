@@ -338,7 +338,7 @@ class CachingRepositoryData(RepositoryData):
         return resolve_partitioned_asset_schedule
 
     @staticmethod
-    def from_dict(repository_definitions: Dict[str, Dict[str, Any]]) -> "CachingRepositoryData":
+    def from_dict(repository_definitions: dict[str, dict[str, Any]]) -> "CachingRepositoryData":
         """Static constructor.
 
         Args:

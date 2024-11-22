@@ -57,7 +57,7 @@ class ActiveExecution:
         retry_mode: RetryMode,
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
         max_concurrent: Optional[int] = None,
-        tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
+        tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
         instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
     ):
         self._plan: ExecutionPlan = check.inst_param(
@@ -83,42 +83,42 @@ class ActiveExecution:
         self._context_guard: bool = False  # Prevent accidental direct use
 
         # We decide what steps to skip based on what outputs are yielded by upstream steps
-        self._step_outputs: Set[StepOutputHandle] = set(self._plan.known_state.ready_outputs)
+        self._step_outputs: set[StepOutputHandle] = set(self._plan.known_state.ready_outputs)
 
         # All steps to be executed start out here in _pending
-        self._pending: Dict[str, Set[str]] = dict(self._plan.get_executable_step_deps())
+        self._pending: dict[str, set[str]] = dict(self._plan.get_executable_step_deps())
 
         # track mapping keys from DynamicOutputs, step_key, output_name -> list of keys
         # to _gathering while in flight
-        self._gathering_dynamic_outputs: Dict[str, Mapping[str, Optional[List[str]]]] = {}
+        self._gathering_dynamic_outputs: dict[str, Mapping[str, Optional[list[str]]]] = {}
         # then on resolution move to _completed
-        self._completed_dynamic_outputs: Dict[str, Mapping[str, Optional[Sequence[str]]]] = (
+        self._completed_dynamic_outputs: dict[str, Mapping[str, Optional[Sequence[str]]]] = (
             dict(self._plan.known_state.dynamic_mappings) if self._plan.known_state else {}
         )
         self._new_dynamic_mappings: bool = False
 
         # track which upstream deps caused a step to skip
-        self._skipped_deps: Dict[str, Sequence[str]] = {}
+        self._skipped_deps: dict[str, Sequence[str]] = {}
 
         # steps move in to these buckets as a result of _update calls
-        self._executable: List[str] = []
-        self._pending_skip: List[str] = []
-        self._pending_retry: List[str] = []
-        self._pending_abandon: List[str] = []
-        self._waiting_to_retry: Dict[str, float] = {}
-        self._messaged_concurrency_slots: Dict[str, float] = {}
+        self._executable: list[str] = []
+        self._pending_skip: list[str] = []
+        self._pending_retry: list[str] = []
+        self._pending_abandon: list[str] = []
+        self._waiting_to_retry: dict[str, float] = {}
+        self._messaged_concurrency_slots: dict[str, float] = {}
 
         # then are considered _in_flight when vended via get_steps_to_*
-        self._in_flight: Set[str] = set()
+        self._in_flight: set[str] = set()
 
         # and finally their terminal state is tracked by these sets, via mark_*
-        self._success: Set[str] = set()
-        self._failed: Set[str] = set()
-        self._skipped: Set[str] = set()
-        self._abandoned: Set[str] = set()
+        self._success: set[str] = set()
+        self._failed: set[str] = set()
+        self._skipped: set[str] = set()
+        self._abandoned: set[str] = set()
 
         # see verify_complete
-        self._unknown_state: Set[str] = set()
+        self._unknown_state: set[str] = set()
 
         self._interrupted: bool = False
 
@@ -131,7 +131,7 @@ class ActiveExecution:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
@@ -197,7 +197,7 @@ class ActiveExecution:
             ),
         )
 
-    def _should_skip_step(self, step_key: str, successful_or_skipped_steps: Set[str]) -> bool:
+    def _should_skip_step(self, step_key: str, successful_or_skipped_steps: set[str]) -> bool:
         step = self.get_step_by_key(step_key)
         for step_input in step.step_inputs:
             missing_source_handles = []
@@ -223,9 +223,9 @@ class ActiveExecution:
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
         as a function of what has been _completed.
         """
-        new_steps_to_execute: List[str] = []
-        new_steps_to_skip: List[str] = []
-        new_steps_to_abandon: List[str] = []
+        new_steps_to_execute: list[str] = []
+        new_steps_to_skip: list[str] = []
+        new_steps_to_abandon: list[str] = []
 
         successful_or_skipped_steps = self._success | self._skipped
         failed_or_abandoned_steps = self._failed | self._abandoned
@@ -331,7 +331,7 @@ class ActiveExecution:
                 in_flight_steps,
             )
 
-        batch: List[ExecutionStep] = []
+        batch: list[ExecutionStep] = []
 
         for step in steps:
             if limit is not None and len(batch) >= limit:
@@ -420,11 +420,11 @@ class ActiveExecution:
         while steps_to_abandon:
             for step in steps_to_abandon:
                 step_context = job_context.for_step(step)
-                failed_inputs: List[str] = []
+                failed_inputs: list[str] = []
                 for step_input in step.step_inputs:
                     failed_inputs.extend(self._failed.intersection(step_input.dependency_keys))
 
-                abandoned_inputs: List[str] = []
+                abandoned_inputs: list[str] = []
                 for step_input in step.step_inputs:
                     abandoned_inputs.extend(
                         self._abandoned.intersection(step_input.dependency_keys)
@@ -612,7 +612,7 @@ class ActiveExecution:
     def _resolve_any_dynamic_outputs(self, step_key: str) -> None:
         if step_key in self._gathering_dynamic_outputs:
             step = self.get_step_by_key(step_key)
-            completed_mappings: Dict[str, Optional[Sequence[str]]] = {}
+            completed_mappings: dict[str, Optional[Sequence[str]]] = {}
             for output_name, mappings in self._gathering_dynamic_outputs[step_key].items():
                 # if no dynamic outputs were returned and the output was marked is_required=False
                 # set to None to indicate a skip should occur

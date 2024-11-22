@@ -151,7 +151,7 @@ class _Database:
         return f"{self.storage_path}/{key}.json"
 
     def get(self, key: str) -> _DatabaseRecord:
-        with open(self.asset_path(key), "r") as fd:
+        with open(self.asset_path(key)) as fd:
             return _DatabaseRecord(**json.load(fd))
 
     def has(self, key: str) -> bool:

@@ -4,10 +4,10 @@ from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingM
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam
 
 __all__ = [
-    "SlingResource",
-    "SlingMode",
-    "sling_assets",
     "DagsterSlingTranslator",
-    "SlingReplicationParam",
     "SlingConnectionResource",
+    "SlingMode",
+    "SlingReplicationParam",
+    "SlingResource",
+    "sling_assets",
 ]

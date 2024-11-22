@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from functools import lru_cache
+from functools import cache, lru_cache
 from typing import AbstractSet, Any, Iterable, Mapping, Optional, Type
 
 from typing_extensions import TypeVar
@@ -30,7 +30,7 @@ DIRECTLY_WRAPPED_METADATA_TYPES = {
 T_NamespacedKVSet = TypeVar("T_NamespacedKVSet", bound="NamespacedKVSet")
 
 
-def is_raw_metadata_type(t: Type) -> bool:
+def is_raw_metadata_type(t: type) -> bool:
     return issubclass(t, MetadataValue) or t in DIRECTLY_WRAPPED_METADATA_TYPES
 
 
@@ -67,7 +67,7 @@ class NamespacedKVSet(ABC, DagsterModel):
         return getattr(self, self._strip_namespace_from_key(key))
 
     @classmethod
-    def extract(cls: Type[T_NamespacedKVSet], values: Mapping[str, Any]) -> T_NamespacedKVSet:
+    def extract(cls: type[T_NamespacedKVSet], values: Mapping[str, Any]) -> T_NamespacedKVSet:
         """Extracts entries from the provided dictionary into an instance of this class.
 
         Ignores any entries in the dictionary whose keys don't correspond to fields on this
@@ -162,8 +162,8 @@ class NamespacedMetadataSet(NamespacedKVSet):
         return value
 
     @classmethod
-    @lru_cache(maxsize=None)  # this avoids wastefully recomputing this once per instance
-    def _get_accepted_types_for_field(cls, field_name: str) -> AbstractSet[Type]:
+    @cache  # this avoids wastefully recomputing this once per instance
+    def _get_accepted_types_for_field(cls, field_name: str) -> AbstractSet[type]:
         annotation = model_fields(cls)[field_name].annotation
         return flatten_unions(annotation)
 

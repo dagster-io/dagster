@@ -35,14 +35,14 @@ T = TypeVar("T", bound=DbtDagsterEventType)
 
 def _get_dbt_resource_props_from_event(
     invocation: "DbtCliInvocation", event: DbtDagsterEventType
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     unique_id = cast(TextMetadataValue, event.metadata["unique_id"]).text
     return check.not_none(invocation.manifest["nodes"].get(unique_id))
 
 
 def _fetch_column_metadata(
     invocation: "DbtCliInvocation", event: DbtDagsterEventType, with_column_lineage: bool
-) -> Optional[Dict[str, Any]]:
+) -> Optional[dict[str, Any]]:
     """Threaded task which fetches column schema and lineage metadata for dbt models in a dbt
     run once they are built, returning the metadata to be attached.
 
@@ -138,7 +138,7 @@ def _fetch_column_metadata(
 def _fetch_row_count_metadata(
     invocation: "DbtCliInvocation",
     event: DbtDagsterEventType,
-) -> Optional[Dict[str, Any]]:
+) -> Optional[dict[str, Any]]:
     """Threaded task which fetches row counts for materialized dbt models in a dbt run
     once they are built, and attaches the row count as metadata to the event.
     """
@@ -250,7 +250,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
 
     def _attach_metadata(
         self,
-        fn: Callable[["DbtCliInvocation", DbtDagsterEventType], Optional[Dict[str, Any]]],
+        fn: Callable[["DbtCliInvocation", DbtDagsterEventType], Optional[dict[str, Any]]],
     ) -> "DbtEventIterator[DbtDagsterEventType]":
         """Runs a threaded task to attach metadata to each event in the iterator.
 

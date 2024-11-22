@@ -82,7 +82,7 @@ def _make_workspace_context(
 
 def get_asset_graph_differ(
     instance,
-    base_code_locations: List[str],
+    base_code_locations: list[str],
     branch_code_location_to_definitions: Mapping[str, str],
     code_location_to_diff: str,
 ) -> AssetGraphDiffer:

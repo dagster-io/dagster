@@ -141,7 +141,7 @@ class PartitionBackfill(
             check.invariant(last_submitted_partition_name is None)
             check.invariant(reexecution_steps is None)
 
-        return super(PartitionBackfill, cls).__new__(
+        return super().__new__(
             cls,
             backfill_id=check.str_param(backfill_id, "backfill_id"),
             status=check.inst_param(status, "status", BulkActionStatus),

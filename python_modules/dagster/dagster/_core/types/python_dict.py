@@ -73,14 +73,14 @@ class _TypedPythonDict(DagsterType):
             self.key_type, type(String)
         )  # True if value_type has a DagsterTypeLoader, meaning we can load the input from config,
         # otherwise False.
-        super(_TypedPythonDict, self).__init__(
+        super().__init__(
             key=f"TypedPythonDict.{key_type.key}.{value_type.key}",
             name=None,
             loader=(
                 TypedDictLoader(self.key_type, self.value_type) if can_get_from_config else None
             ),
             type_check_fn=self.type_check_method,
-            typing_type=typing.Dict[key_type.typing_type, value_type.typing_type],
+            typing_type=dict[key_type.typing_type, value_type.typing_type],
         )
 
     def type_check_method(self, context, value):

@@ -305,5 +305,5 @@ class SnowflakePySparkIOManager(SnowflakeIOManager):
         return [SnowflakePySparkTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return DataFrame

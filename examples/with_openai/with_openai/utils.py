@@ -29,7 +29,7 @@ def get_github_docs(repo_owner, repo_name, category, archive_name="master"):
         docs_path = root_path.joinpath("docs/content", category)
         markdown_files = list(docs_path.glob("*.md*")) + list(docs_path.glob("*/*.md*"))
         for markdown_file in markdown_files:
-            with open(markdown_file, "r") as f:
+            with open(markdown_file) as f:
                 relative_path = markdown_file.relative_to(root_path)
                 github_url = f"https://github.com/{repo_owner}/{repo_name}/blob/{archive_name}/{relative_path}"
                 yield Document(page_content=f.read(), metadata={"source": github_url})

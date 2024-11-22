@@ -51,7 +51,7 @@ class OpSelection:
 
 class OpSelectionNode(NamedTuple):
     name: str
-    children: List["OpSelectionNode"]
+    children: list["OpSelectionNode"]
 
     @property
     def is_leaf(self) -> bool:
@@ -74,7 +74,7 @@ def _node_paths_to_tree(node_paths: Iterable[str]) -> OpSelectionNode:
     return _node_path_lists_to_tree(node_path_lists)
 
 
-def _node_path_lists_to_tree(paths: Sequence[Tuple[str, ...]]) -> OpSelectionNode:
+def _node_path_lists_to_tree(paths: Sequence[tuple[str, ...]]) -> OpSelectionNode:
     root = OpSelectionNode("ROOT", [])
     for k, group in itertools.groupby(paths, lambda x: x[0]):
         child = _node_path_lists_to_tree([x[1:] for x in group if len(x) > 1])._replace(name=k)
@@ -127,12 +127,12 @@ def _get_graph_subset(
     parent_handle: Optional[NodeHandle],
     selected_outputs_by_op_handle: Mapping[NodeHandle, AbstractSet[str]],
 ) -> SubselectedGraphDefinition:
-    subgraph_deps: Dict[
+    subgraph_deps: dict[
         NodeInvocation,
-        Dict[str, IDependencyDefinition],
+        dict[str, IDependencyDefinition],
     ] = {}
 
-    subgraph_nodes: Dict[str, NodeDefinition] = {}
+    subgraph_nodes: dict[str, NodeDefinition] = {}
 
     for node in graph.nodes_in_topological_order:
         # skip if the node isn't selected
@@ -170,7 +170,7 @@ def _get_graph_subset(
 
         # build dependencies for the node. we do it for both cases because nested graphs can have
         # inputs and outputs too
-        node_deps: Dict[str, IDependencyDefinition] = {}
+        node_deps: dict[str, IDependencyDefinition] = {}
         for node_input in node.inputs():
             if graph.dependency_structure.has_direct_dep(node_input):
                 node_output = graph.dependency_structure.get_direct_dep(node_input)
@@ -196,7 +196,7 @@ def _get_graph_subset(
                 ]
                 node_deps[node_input.input_name] = MultiDependencyDefinition(
                     cast(
-                        List[Union[DependencyDefinition, Type[MappedInputPlaceholder]]],
+                        list[Union[DependencyDefinition, type[MappedInputPlaceholder]]],
                         multi_dependencies,
                     )
                 )

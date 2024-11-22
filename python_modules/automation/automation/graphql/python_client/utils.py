@@ -21,14 +21,14 @@ class LegacyQueryHistoryInfo(NamedTuple):
         return LegacyQueryHistoryInfo(directory=directory, legacy_queries=legacy_queries)
 
 
-def get_queries() -> Dict[str, str]:
+def get_queries() -> dict[str, str]:
     """Helper function to index the graphql client's queries.
 
     Returns:
         Dict[str, str]: dictionary - key is variable (query) name
             the value is the query string
     """
-    res_dict: Dict[str, str] = {}
+    res_dict: dict[str, str] = {}
     for name in dir(client_queries):
         obj = getattr(client_queries, name)
         if isinstance(obj, str) and not (name.startswith("__") and name.endswith("__")):
@@ -45,10 +45,10 @@ def serialize_to_query_filename(dagster_version: str, date: str) -> str:
     return "-".join([dagster_version, date]) + ".graphql"
 
 
-def deserialize_from_query_filename(query_filename: str) -> Tuple[str, str]:
+def deserialize_from_query_filename(query_filename: str) -> tuple[str, str]:
     parts = tuple(query_filename.rstrip(".graphql").split("-"))
     check.invariant(
         len(parts) == 2,
         f"Invalid query filename {query_filename}; must have 2 '-' separated parts.",
     )
-    return cast(Tuple[str, str], parts)
+    return cast(tuple[str, str], parts)

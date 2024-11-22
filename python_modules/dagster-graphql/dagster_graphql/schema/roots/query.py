@@ -963,7 +963,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_runTagsOrError(
         self,
         graphene_info: ResolveInfo,
-        tagKeys: List[str],
+        tagKeys: list[str],
         valuePrefix: Optional[str] = None,
         limit: Optional[int] = None,
     ):
@@ -1201,7 +1201,7 @@ class GrapheneQuery(graphene.ObjectType):
         }
 
         # Build mapping of asset key to the step keys required to generate the asset
-        step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {
+        step_keys_by_asset: dict[AssetKey, Sequence[str]] = {
             remote_node.key: remote_node.resolve_to_singular_repo_scoped_node().asset_node_snap.op_names
             for remote_node in remote_nodes
         }

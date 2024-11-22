@@ -313,7 +313,7 @@ class PipesSession:
     created_at: datetime = field(default_factory=datetime.now)
 
     @cached_property
-    def default_remote_invocation_info(self) -> Dict[str, str]:
+    def default_remote_invocation_info(self) -> dict[str, str]:
         """Key-value pairs encoding metadata about the launching Dagster process, typically attached to the remote
         environment.
 

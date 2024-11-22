@@ -232,7 +232,7 @@ def _validate_shape_config(
     check.bool_param(check_for_extra_incoming_fields, "check_for_extra_incoming_fields")
 
     field_aliases = check.opt_dict_param(
-        cast(Dict[str, str], context.config_type_snap.field_aliases),
+        cast(dict[str, str], context.config_type_snap.field_aliases),
         "field_aliases",
         key_type=str,
         value_type=str,
@@ -240,7 +240,7 @@ def _validate_shape_config(
 
     if not isinstance(config_value, dict):
         return EvaluateValueResult.for_error(create_dict_type_mismatch_error(context, config_value))
-    config_value = cast(Dict[str, object], config_value)
+    config_value = cast(dict[str, object], config_value)
 
     field_snaps = check.not_none(context.config_type_snap.fields)
     defined_field_names = {cast(str, fs.name) for fs in field_snaps}
@@ -248,7 +248,7 @@ def _validate_shape_config(
 
     incoming_field_names = set(config_value.keys())
 
-    errors: List[EvaluationError] = []
+    errors: list[EvaluationError] = []
 
     if check_for_extra_incoming_fields:
         _append_if_error(
@@ -319,7 +319,7 @@ def validate_map_config(
 
     if not isinstance(config_value, dict):
         return EvaluateValueResult.for_error(create_map_error(context, config_value))
-    config_value = cast(Dict[object, object], config_value)
+    config_value = cast(dict[object, object], config_value)
 
     evaluation_results = [
         _validate_config(context.for_map_key(key), key) for key in config_value.keys()
@@ -331,7 +331,7 @@ def validate_map_config(
     errors = []
     for result in evaluation_results:
         if not result.success:
-            errors += cast(List, result.errors)
+            errors += cast(list, result.errors)
 
     return EvaluateValueResult(not bool(errors), config_value, errors)
 
@@ -346,13 +346,13 @@ def validate_shape_config(
     return _validate_shape_config(context, config_value, check_for_extra_incoming_fields=True)
 
 
-def _append_if_error(errors: List[EvaluationError], maybe_error: Optional[EvaluationError]) -> None:
+def _append_if_error(errors: list[EvaluationError], maybe_error: Optional[EvaluationError]) -> None:
     if maybe_error:
         errors.append(maybe_error)
 
 
 def _check_for_extra_incoming_fields(
-    context: ValidationContext, defined_field_names: Set[str], incoming_field_names: Set[str]
+    context: ValidationContext, defined_field_names: set[str], incoming_field_names: set[str]
 ) -> Optional[EvaluationError]:
     extra_fields = list(incoming_field_names - defined_field_names)
 
@@ -367,10 +367,10 @@ def _check_for_extra_incoming_fields(
 def _compute_missing_fields_error(
     context: ValidationContext,
     field_snaps: Sequence[ConfigFieldSnap],
-    incoming_fields: Set[str],
+    incoming_fields: set[str],
     field_aliases: Mapping[str, str],
 ) -> Optional[EvaluationError]:
-    missing_fields: List[str] = []
+    missing_fields: list[str] = []
 
     for field_snap in field_snaps:
         field_alias = field_aliases.get(cast(str, field_snap.name))
@@ -398,11 +398,11 @@ def validate_array_config(
 
     evaluation_results = [
         _validate_config(context.for_array(index), config_item)
-        for index, config_item in enumerate(cast(List[object], config_value))
+        for index, config_item in enumerate(cast(list[object], config_value))
     ]
 
-    values: List[object] = []
-    errors: List[EvaluationError] = []
+    values: list[object] = []
+    errors: list[EvaluationError] = []
     for result in evaluation_results:
         if result.success:
             values.append(result.value)

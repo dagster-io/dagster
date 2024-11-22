@@ -17,7 +17,7 @@ from dagster_airlift.in_airflow.task_proxy_operator import (
 
 def proxying_to_dagster(
     *,
-    global_vars: Dict[str, Any],
+    global_vars: dict[str, Any],
     proxied_state: AirflowProxiedState,
     logger: Optional[logging.Logger] = None,
     build_from_task_fn: Callable[
@@ -142,9 +142,9 @@ def proxying_to_dagster(
     if not logger:
         logger = logging.getLogger("dagster_airlift")
     logger.debug(f"Searching for dags proxied to dagster{suffix}...")
-    task_level_proxying_dags: List[DAG] = []
-    dag_level_proxying_dags: List[DAG] = []
-    all_dag_ids: Set[str] = set()
+    task_level_proxying_dags: list[DAG] = []
+    dag_level_proxying_dags: list[DAG] = []
+    all_dag_ids: set[str] = set()
     # Do a pass to collect dags and ensure that proxied information is set correctly.
     for obj in global_vars.values():
         if not isinstance(obj, DAG):

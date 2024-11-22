@@ -462,7 +462,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
     def test_asset_check_executions(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()
 
-        run_id_one, run_id_two = [make_new_run_id() for _ in range(2)]
+        run_id_one, run_id_two = (make_new_run_id() for _ in range(2))
         create_run_for_test(graphql_context.instance, run_id=run_id_one)
 
         graphql_context.instance.event_log_storage.store_event(
@@ -537,7 +537,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
     def test_asset_check_events(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()
 
-        run_id_one, run_id_two = [make_new_run_id() for _ in range(2)]
+        run_id_one, run_id_two = (make_new_run_id() for _ in range(2))
         create_run_for_test(graphql_context.instance, run_id=run_id_one)
 
         graphql_context.instance.event_log_storage.store_event(

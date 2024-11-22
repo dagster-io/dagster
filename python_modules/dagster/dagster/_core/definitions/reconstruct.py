@@ -87,7 +87,7 @@ class ReconstructableRepository(
     ):
         from dagster._core.definitions.repository_definition import RepositoryLoadData
 
-        return super(ReconstructableRepository, cls).__new__(
+        return super().__new__(
             cls,
             pointer=check.inst_param(pointer, "pointer", CodePointer),
             container_image=check.opt_str_param(container_image, "container_image"),
@@ -173,7 +173,7 @@ class ReconstructableRepository(
 
 
 class ReconstructableJobSerializer(NamedTupleSerializer):
-    def before_unpack(self, _, unpacked_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def before_unpack(self, _, unpacked_dict: dict[str, Any]) -> dict[str, Any]:
         solid_selection_str = unpacked_dict.get("solid_selection_str")
         solids_to_execute = unpacked_dict.get("solids_to_execute")
         if solid_selection_str:
@@ -233,7 +233,7 @@ class ReconstructableJob(
         asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
         op_selection = set(op_selection) if op_selection else None
-        return super(ReconstructableJob, cls).__new__(
+        return super().__new__(
             cls,
             repository=check.inst_param(repository, "repository", ReconstructableRepository),
             job_name=check.str_param(job_name, "job_name"),
@@ -453,7 +453,7 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
 def build_reconstructable_job(
     reconstructor_module_name: str,
     reconstructor_function_name: str,
-    reconstructable_args: Optional[Tuple[object]] = None,
+    reconstructable_args: Optional[tuple[object]] = None,
     reconstructable_kwargs: Optional[Mapping[str, object]] = None,
     reconstructor_working_directory: Optional[str] = None,
 ) -> ReconstructableJob:
@@ -523,10 +523,10 @@ def build_reconstructable_job(
         reconstructor_working_directory, "reconstructor_working_directory", os.getcwd()
     )
 
-    _reconstructable_args: List[object] = list(
+    _reconstructable_args: list[object] = list(
         check.opt_tuple_param(reconstructable_args, "reconstructable_args")
     )
-    _reconstructable_kwargs: List[List[Union[str, object]]] = list(
+    _reconstructable_kwargs: list[list[Union[str, object]]] = list(
         (
             [key, value]
             for key, value in check.opt_mapping_param(

@@ -20,7 +20,7 @@ def environ(monkeypatch, test_id):
 @pytest.fixture
 def other_docker_compose_yml(tmpdir):
     original = os.path.join(os.path.dirname(__file__), "docker-compose.yml")
-    with open(original, "r", encoding="utf8") as f:
+    with open(original, encoding="utf8") as f:
         docker_compose_yml = yaml.safe_load(f)
 
     docker_compose_yml["services"]["server"]["container_name"] = "other_server"

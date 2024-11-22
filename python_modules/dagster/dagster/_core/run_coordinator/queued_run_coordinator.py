@@ -41,7 +41,7 @@ class RunQueueConfig(
         should_block_op_concurrency_limited_runs: bool = False,
         op_concurrency_slot_buffer: int = 0,
     ):
-        return super(RunQueueConfig, cls).__new__(
+        return super().__new__(
             cls,
             check.int_param(max_concurrent_runs, "max_concurrent_runs"),
             check.opt_sequence_param(tag_concurrency_limits, "tag_concurrency_limits"),

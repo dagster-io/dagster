@@ -123,7 +123,7 @@ class GrapheneRegularConfigType(graphene.ObjectType):
 
     def resolve_recursive_config_types(
         self, graphene_info: ResolveInfo
-    ) -> List[GrapheneConfigTypeUnion]:
+    ) -> list[GrapheneConfigTypeUnion]:
         return [
             to_config_type(self._get_config_type, config_type_key)
             for config_type_key in _recursive_config_type_keys(
@@ -157,7 +157,7 @@ class GrapheneMapConfigType(graphene.ObjectType):
 
     def resolve_recursive_config_types(
         self, graphene_info: ResolveInfo
-    ) -> List[GrapheneConfigTypeUnion]:
+    ) -> list[GrapheneConfigTypeUnion]:
         return [
             to_config_type(self._get_config_type, config_type_key)
             for config_type_key in _recursive_config_type_keys(
@@ -206,7 +206,7 @@ class GrapheneArrayConfigType(graphene.ObjectType):
 
     def resolve_recursive_config_types(
         self, graphene_info: ResolveInfo
-    ) -> List[GrapheneConfigTypeUnion]:
+    ) -> list[GrapheneConfigTypeUnion]:
         return [
             to_config_type(self._get_config_type, config_type_key)
             for config_type_key in _recursive_config_type_keys(
@@ -244,7 +244,7 @@ class GrapheneScalarUnionConfigType(graphene.ObjectType):
 
     def resolve_recursive_config_types(
         self, graphene_info: ResolveInfo
-    ) -> List[GrapheneConfigTypeUnion]:
+    ) -> list[GrapheneConfigTypeUnion]:
         return [
             to_config_type(self._get_config_type, config_type_key)
             for config_type_key in _recursive_config_type_keys(
@@ -289,7 +289,7 @@ class GrapheneNullableConfigType(graphene.ObjectType):
 
     def resolve_recursive_config_types(
         self, graphene_info: ResolveInfo
-    ) -> List[GrapheneConfigTypeUnion]:
+    ) -> list[GrapheneConfigTypeUnion]:
         return [
             to_config_type(self._get_config_type, config_type_key)
             for config_type_key in _recursive_config_type_keys(
@@ -333,7 +333,7 @@ class GrapheneEnumConfigType(graphene.ObjectType):
 
     def resolve_recursive_config_types(
         self, graphene_info: ResolveInfo
-    ) -> List[GrapheneConfigTypeUnion]:
+    ) -> list[GrapheneConfigTypeUnion]:
         return [
             to_config_type(self._get_config_type, config_type_key)
             for config_type_key in _recursive_config_type_keys(
@@ -341,7 +341,7 @@ class GrapheneEnumConfigType(graphene.ObjectType):
             )
         ]
 
-    def resolve_values(self, _graphene_info: ResolveInfo) -> List[GrapheneEnumConfigValue]:
+    def resolve_values(self, _graphene_info: ResolveInfo) -> list[GrapheneEnumConfigValue]:
         return [
             GrapheneEnumConfigValue(value=ev.value, description=ev.description)
             for ev in check.not_none(self._config_type_snap.enum_values)
@@ -407,7 +407,7 @@ class GrapheneCompositeConfigType(graphene.ObjectType):
 
     def resolve_recursive_config_types(
         self, graphene_info: ResolveInfo
-    ) -> List[GrapheneConfigTypeUnion]:
+    ) -> list[GrapheneConfigTypeUnion]:
         return [
             to_config_type(self._get_config_type, config_type_key)
             for config_type_key in _recursive_config_type_keys(
@@ -415,7 +415,7 @@ class GrapheneCompositeConfigType(graphene.ObjectType):
             )
         ]
 
-    def resolve_fields(self, graphene_info: ResolveInfo) -> List[GrapheneConfigTypeField]:
+    def resolve_fields(self, graphene_info: ResolveInfo) -> list[GrapheneConfigTypeField]:
         return sorted(
             [
                 GrapheneConfigTypeField(

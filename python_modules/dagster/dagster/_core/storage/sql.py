@@ -25,7 +25,7 @@ SqlAlchemyQuery: TypeAlias = Any
 # Stand-in for a typed row object, which is only available in sqlalchemy 2+
 SqlAlchemyRow: TypeAlias = Any
 
-AlembicVersion: TypeAlias = Tuple[Optional[str], Optional[Union[str, Tuple[str, ...]]]]
+AlembicVersion: TypeAlias = tuple[Optional[str], Optional[Union[str, tuple[str, ...]]]]
 
 
 @lru_cache(maxsize=3)  # run, event, and schedule storages

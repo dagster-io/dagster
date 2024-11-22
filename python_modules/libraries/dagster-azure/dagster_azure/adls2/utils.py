@@ -26,4 +26,4 @@ def create_adls2_client(storage_account: str, credential) -> DataLakeServiceClie
     return DataLakeServiceClient(account_url, credential)
 
 
-__all__ = ["create_adls2_client", "DataLakeServiceClient", "ResourceNotFoundError"]
+__all__ = ["DataLakeServiceClient", "ResourceNotFoundError", "create_adls2_client"]

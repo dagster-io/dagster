@@ -32,7 +32,7 @@ class SdfCliEventMessage:
         raw_event (Dict[str, Any]): The raw event dictionary.
     """
 
-    raw_event: Dict[str, Any]
+    raw_event: dict[str, Any]
 
     @property
     def is_result_event(self) -> bool:

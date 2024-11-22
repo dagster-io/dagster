@@ -52,15 +52,15 @@ class AssetLayer(NamedTuple):
             assets_defs_by_outer_node_handle (Mapping[NodeHandle, AssetsDefinition]): A mapping from
                 a NodeHandle pointing to the node in the graph where the AssetsDefinition ended up.
         """
-        asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
-        asset_keys_by_node_output_handle: Dict[NodeOutputHandle, AssetKey] = {}
-        check_key_by_output: Dict[NodeOutputHandle, AssetCheckKey] = {}
+        asset_key_by_input: dict[NodeInputHandle, AssetKey] = {}
+        asset_keys_by_node_output_handle: dict[NodeOutputHandle, AssetKey] = {}
+        check_key_by_output: dict[NodeOutputHandle, AssetCheckKey] = {}
 
         node_output_handles_by_asset_check_key: Mapping[AssetCheckKey, NodeOutputHandle] = {}
-        check_names_by_asset_key_by_node_handle: Dict[NodeHandle, Dict[AssetKey, Set[str]]] = {}
-        assets_defs_by_check_key: Dict[AssetCheckKey, "AssetsDefinition"] = {}
-        outer_node_names_by_asset_key: Dict[AssetKey, str] = {}
-        assets_defs_by_op_handle: Dict[NodeHandle, "AssetsDefinition"] = {}
+        check_names_by_asset_key_by_node_handle: dict[NodeHandle, dict[AssetKey, set[str]]] = {}
+        assets_defs_by_check_key: dict[AssetCheckKey, AssetsDefinition] = {}
+        outer_node_names_by_asset_key: dict[AssetKey, str] = {}
+        assets_defs_by_op_handle: dict[NodeHandle, AssetsDefinition] = {}
 
         for node_handle, assets_def in assets_defs_by_outer_node_handle.items():
             computation = check.not_none(assets_def.computation)
@@ -210,7 +210,7 @@ class AssetLayer(NamedTuple):
 
     def downstream_dep_assets_and_checks(
         self, node_handle: NodeHandle, output_name: str
-    ) -> Set[EntityKey]:
+    ) -> set[EntityKey]:
         """Given the node handle of an op within a graph-backed asset and an output name,
         returns the asset keys dependent on that output.
 

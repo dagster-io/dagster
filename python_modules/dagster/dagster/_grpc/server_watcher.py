@@ -132,7 +132,7 @@ def create_grpc_watch_thread(
     on_error: Optional[Callable[[str], None]] = None,
     watch_interval: Optional[float] = None,
     max_reconnect_attempts: Optional[int] = None,
-) -> Tuple[threading.Event, threading.Thread]:
+) -> tuple[threading.Event, threading.Thread]:
     check.str_param(location_name, "location_name")
     check.inst_param(client, "client", DagsterGrpcClient)
 

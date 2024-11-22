@@ -79,8 +79,8 @@ def _serializable_error_info_from_tb(tb: traceback.TracebackException) -> Serial
 
 
 ExceptionInfo: TypeAlias = Union[
-    Tuple[Type[BaseException], BaseException, TracebackType],
-    Tuple[None, None, None],
+    tuple[type[BaseException], BaseException, TracebackType],
+    tuple[None, None, None],
 ]
 
 

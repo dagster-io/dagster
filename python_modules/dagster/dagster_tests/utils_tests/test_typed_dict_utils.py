@@ -11,7 +11,7 @@ class MyNestedTypedDict(TypedDict):
 class MyTypedDict(TypedDict):
     nested: MyNestedTypedDict
     optional_field: Optional[str]
-    dict_field: Dict[str, Any]
+    dict_field: dict[str, Any]
     not_required_field: NotRequired[str]
 
 

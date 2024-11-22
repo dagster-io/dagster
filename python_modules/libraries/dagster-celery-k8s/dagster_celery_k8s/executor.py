@@ -362,8 +362,8 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             job_name = "dagster-step-%s-%d" % (k8s_name_key, attempt_number)
             pod_name = "dagster-step-%s-%d" % (k8s_name_key, attempt_number)
         else:
-            job_name = "dagster-step-%s" % (k8s_name_key)
-            pod_name = "dagster-step-%s" % (k8s_name_key)
+            job_name = f"dagster-step-{k8s_name_key}"
+            pod_name = f"dagster-step-{k8s_name_key}"
 
         args = execute_step_args.get_command_args()
 

@@ -144,7 +144,7 @@ def test_invalid_string_typed_input():
 
 def test_wrapped_input_and_output_lambda():
     @op
-    def add_one(nums: List[int]) -> Optional[List[int]]:
+    def add_one(nums: list[int]) -> Optional[list[int]]:
         return [num + 1 for num in nums]
 
     assert add_one
@@ -171,7 +171,7 @@ def test_kitchen_sink():
         s: str,
         x: Any,
         o: Optional[str],
-        m: List[str],
+        m: list[str],
         c: Custom,
     ):
         pass
@@ -238,7 +238,7 @@ def test_dict_input():
 
 def test_emit_dagster_dict():
     @op
-    def emit_dagster_dict() -> Dict:
+    def emit_dagster_dict() -> dict:
         return {"foo": "bar"}
 
     solid_result = wrap_op_in_graph_and_execute(emit_dagster_dict)
@@ -248,7 +248,7 @@ def test_emit_dagster_dict():
 
 def test_dict_dagster_input():
     @op
-    def intake_dagster_dict(inp: Dict) -> str:
+    def intake_dagster_dict(inp: dict) -> str:
         return inp["foo"]
 
     solid_result = wrap_op_in_graph_and_execute(
@@ -277,7 +277,7 @@ def test_python_tuple_output():
 
 def test_nested_kitchen_sink():
     @op
-    def no_execute() -> Optional[List[Tuple[List[int], str, Dict[str, Optional[List[str]]]]]]:
+    def no_execute() -> Optional[list[tuple[list[int], str, dict[str, Optional[list[str]]]]]]:
         pass
 
     assert (
@@ -287,7 +287,7 @@ def test_nested_kitchen_sink():
 
     assert (
         no_execute.output_defs[0].dagster_type.typing_type
-        == Optional[List[Tuple[List[int], str, Dict[str, Optional[List[str]]]]]]
+        == Optional[list[tuple[list[int], str, dict[str, Optional[list[str]]]]]]
     )
 
 
@@ -574,7 +574,7 @@ def test_fan_in():
         return MyClass()
 
     @op
-    def downstream_op(_, _input: List[MyClass]):
+    def downstream_op(_, _input: list[MyClass]):
         pass
 
     @job
@@ -582,7 +582,7 @@ def test_fan_in():
         downstream_op([upstream_op.alias("a")(), upstream_op.alias("b")()])
 
     assert downstream_op.input_defs[0].dagster_type.display_name == "[MyClass]"
-    assert downstream_op.input_defs[0].dagster_type.typing_type == List[MyClass]
+    assert downstream_op.input_defs[0].dagster_type.typing_type == list[MyClass]
 
     my_job.execute_in_process()
 

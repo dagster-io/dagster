@@ -36,7 +36,7 @@ class TreatAsResourceParam(ABC):
     """
 
 
-def _is_resource_annotation(annotation: Optional[Type[Any]]) -> bool:
+def _is_resource_annotation(annotation: Optional[type[Any]]) -> bool:
     from dagster._config.pythonic_config import ConfigurableResourceFactory
 
     if isinstance(annotation, type) and (

@@ -232,7 +232,7 @@ def multi_observable_source_asset(
     description: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     can_subset: bool = False,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     resource_defs: Optional[Mapping[str, object]] = None,
     group_name: Optional[str] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,

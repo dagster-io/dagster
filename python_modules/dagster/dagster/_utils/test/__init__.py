@@ -69,7 +69,7 @@ def create_test_pipeline_execution_context(
         name="test_legacy_context",
         node_defs=[],
     ).to_job(executor_def=in_process_executor, logger_defs=logger_defs)
-    run_config: Dict[str, Dict[str, Dict]] = {"loggers": {key: {} for key in loggers}}
+    run_config: dict[str, dict[str, dict]] = {"loggers": {key: {} for key in loggers}}
     dagster_run = DagsterRun(job_name="test_legacy_context", run_config=run_config)
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(job=job_def, run_config=run_config)
@@ -105,7 +105,7 @@ def build_job_with_input_stubs(
     check.inst_param(job_def, "pipeline_def", JobDefinition)
     check.mapping_param(inputs, "inputs", key_type=str, value_type=dict)
 
-    deps: Dict[NodeInvocation, Dict[str, object]] = defaultdict(dict)
+    deps: dict[NodeInvocation, dict[str, object]] = defaultdict(dict)
     for node_name, dep_dict in job_def.dependencies.items():
         for input_name, dep in dep_dict.items():
             deps[node_name][input_name] = dep
@@ -324,7 +324,7 @@ class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, Configu
         self,
         run_id: str,
         cursor: Optional[str] = None,
-        of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
+        of_type: Optional[Union[DagsterEventType, set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
         ascending: bool = True,
     ) -> EventLogConnection:
@@ -347,7 +347,7 @@ class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, Configu
         return claim_status.with_sleep_interval(float(self._sleep_interval))
 
 
-def get_all_direct_subclasses_of_marker(marker_interface_cls: Type) -> List[Type]:
+def get_all_direct_subclasses_of_marker(marker_interface_cls: type) -> list[type]:
     import dagster as dagster
 
     return [

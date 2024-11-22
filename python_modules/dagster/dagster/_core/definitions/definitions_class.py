@@ -129,7 +129,7 @@ def _io_manager_needs_replacement(job: JobDefinition, resource_defs: Mapping[str
 def _jobs_which_will_have_io_manager_replaced(
     jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
     resource_defs: Mapping[str, Any],
-) -> List[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+) -> list[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
     """Returns whether any jobs will have their I/O manager replaced by an `io_manager` override from
     the top-level `resource_defs` provided to `Definitions` in 1.3. We will warn users if this is
     the case.
@@ -491,10 +491,10 @@ class Definitions(IHaveNew):
         self,
         asset_key: CoercibleToAssetKey,
         *,
-        python_type: Optional[Type] = None,
+        python_type: Optional[type] = None,
         instance: Optional[DagsterInstance] = None,
         partition_key: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> object:
         """Load the contents of an asset as a Python object.
 
@@ -645,9 +645,9 @@ class Definitions(IHaveNew):
         metadata = {}
 
         resources = {}
-        resource_key_indexes: Dict[str, int] = {}
+        resource_key_indexes: dict[str, int] = {}
         loggers = {}
-        logger_key_indexes: Dict[str, int] = {}
+        logger_key_indexes: dict[str, int] = {}
         executor = None
         executor_index: Optional[int] = None
 

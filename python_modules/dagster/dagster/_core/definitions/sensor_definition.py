@@ -489,8 +489,8 @@ def get_context_param_name(fn: Callable[..., Any]) -> Optional[str]:
 
 
 def validate_and_get_resource_dict(
-    resources: Resources, sensor_name: str, required_resource_keys: Set[str]
-) -> Dict[str, Any]:
+    resources: Resources, sensor_name: str, required_resource_keys: set[str]
+) -> dict[str, Any]:
     """Validates that the context has all the required resources and returns a dictionary of
     resource key to resource object.
     """
@@ -555,7 +555,7 @@ def _check_dynamic_partitions_requests(
 
 def split_run_requests(
     run_requests: Sequence[RunRequest],
-) -> Tuple[Sequence[RunRequest], Sequence[RunRequest]]:
+) -> tuple[Sequence[RunRequest], Sequence[RunRequest]]:
     """Splits RunRequests into those that must be handled by the backfill daemon and those
     that can be handled by launching a single run.
     """
@@ -648,7 +648,7 @@ class SensorDefinition(IHasInternalInit):
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         asset_selection: Optional[CoercibleToAssetSelection] = None,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[set[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, object]] = None,
         target: Optional[
@@ -714,7 +714,7 @@ class SensorDefinition(IHasInternalInit):
             SensorEvaluationFunction,
             Callable[
                 [SensorEvaluationContext],
-                List[Union[SkipReason, RunRequest, DagsterRunReaction]],
+                list[Union[SkipReason, RunRequest, DagsterRunReaction]],
             ],
         ] = wrap_sensor_evaluation(self._name, evaluation_fn)
         self._min_interval = check.opt_int_param(
@@ -731,7 +731,7 @@ class SensorDefinition(IHasInternalInit):
             AssetSelection.from_coercible(asset_selection) if asset_selection is not None else None
         )
         validate_resource_annotated_function(self._raw_fn)
-        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
+        resource_arg_names: set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
 
         check.param_invariant(
             len(required_resource_keys or []) == 0 or len(resource_arg_names) == 0,
@@ -759,7 +759,7 @@ class SensorDefinition(IHasInternalInit):
         jobs: Optional[Sequence[ExecutableDefinition]],
         default_status: DefaultSensorStatus,
         asset_selection: Optional[CoercibleToAssetSelection],
-        required_resource_keys: Optional[Set[str]],
+        required_resource_keys: Optional[set[str]],
         tags: Optional[Mapping[str, str]],
         metadata: Optional[Mapping[str, object]],
         target: Optional[
@@ -802,7 +802,7 @@ class SensorDefinition(IHasInternalInit):
 
     @public
     @property
-    def required_resource_keys(self) -> Set[str]:
+    def required_resource_keys(self) -> set[str]:
         """Set[str]: The set of keys for resources that must be provided to this sensor."""
         return self._required_resource_keys
 
@@ -850,7 +850,7 @@ class SensorDefinition(IHasInternalInit):
 
     @public
     @property
-    def jobs(self) -> List[ExecutableDefinition]:
+    def jobs(self) -> list[ExecutableDefinition]:
         """List[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]: A list of jobs
         that are targeted by this schedule.
         """
@@ -892,8 +892,8 @@ class SensorDefinition(IHasInternalInit):
         result = self._evaluation_fn(context)
 
         skip_message: Optional[str] = None
-        run_requests: List[RunRequest] = []
-        dagster_run_reactions: List[DagsterRunReaction] = []
+        run_requests: list[RunRequest] = []
+        dagster_run_reactions: list[DagsterRunReaction] = []
         dynamic_partitions_requests: Optional[
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
         ] = []
@@ -1212,7 +1212,7 @@ class SensorExecutionData(
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
-        return super(SensorExecutionData, cls).__new__(
+        return super().__new__(
             cls,
             run_requests=run_requests,
             skip_message=skip_message,
@@ -1229,7 +1229,7 @@ def wrap_sensor_evaluation(
     sensor_name: str,
     fn: RawSensorEvaluationFunction,
 ) -> SensorEvaluationFunction:
-    resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
+    resource_arg_names: set[str] = {arg.name for arg in get_resource_args(fn)}
 
     def _wrapped_fn(context: SensorEvaluationContext):
         resource_args_populated = validate_and_get_resource_dict(
@@ -1344,9 +1344,9 @@ T = TypeVar("T")
 
 def get_sensor_context_from_args_or_kwargs(
     fn: Callable[..., Any],
-    args: Tuple[Any, ...],
-    kwargs: Dict[str, Any],
-    context_type: Type[T],
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+    context_type: type[T],
 ) -> Optional[T]:
     from dagster._config.pythonic_config import is_coercible_to_resource
 
@@ -1389,7 +1389,7 @@ def get_sensor_context_from_args_or_kwargs(
 def get_or_create_sensor_context(
     fn: Callable[..., Any],
     *args: Any,
-    context_type: Type = SensorEvaluationContext,
+    context_type: type = SensorEvaluationContext,
     **kwargs: Any,
 ) -> SensorEvaluationContext:
     """Based on the passed resource function and the arguments passed to it, returns the

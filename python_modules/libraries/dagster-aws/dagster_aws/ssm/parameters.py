@@ -44,8 +44,8 @@ def construct_ssm_client(
 
 
 def get_parameters_by_tags(
-    ssm_manager, parameter_tags: Sequence[Dict[str, Any]], with_decryption: bool
-) -> Dict[str, str]:
+    ssm_manager, parameter_tags: Sequence[dict[str, Any]], with_decryption: bool
+) -> dict[str, str]:
     """Return a dictionary of AWS Secrets Manager names to arns
     for any secret tagged with `secrets_tag`.
     """
@@ -70,8 +70,8 @@ def get_parameters_by_tags(
 
 
 def get_parameters_by_name(
-    ssm_manager, parameter_names: List[str], with_decryption: bool
-) -> Dict[str, str]:
+    ssm_manager, parameter_names: list[str], with_decryption: bool
+) -> dict[str, str]:
     """Return a dictionary of AWS Parameter Store parameter names and their values."""
     parameter_values = {}
     for retrieved in ssm_manager.get_parameters(
@@ -83,8 +83,8 @@ def get_parameters_by_name(
 
 
 def get_parameters_by_paths(
-    ssm_manager, parameter_paths: List[Dict[str, str]], with_decryption: bool, recursive: bool
-) -> Dict[str, str]:
+    ssm_manager, parameter_paths: list[dict[str, str]], with_decryption: bool, recursive: bool
+) -> dict[str, str]:
     """Returns a dictionary of AWS Parameter Store parameter names and their values that match a list of paths. If
     recursive == True, then return all parameters that are prefixed by the given path.
     """

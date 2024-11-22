@@ -836,9 +836,10 @@ def test_launching_custom_task_definition(ecs, instance_cm, run, workspace, job,
         print(instance.run_launcher)  # noqa: T201
 
     # The task definition doesn't include the container name
-    with pytest.raises(CheckError), instance_cm(
-        {"task_definition": family, "container_name": "does not exist"}
-    ) as instance:
+    with (
+        pytest.raises(CheckError),
+        instance_cm({"task_definition": family, "container_name": "does not exist"}) as instance,
+    ):
         print(instance.run_launcher)  # noqa: T201
 
     # You can provide a family or a task definition ARN
@@ -998,9 +999,9 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, remote_job):
     ],
 )
 def test_propagate_tags_include_all(
-    run_tags: Dict[str, str],
-    expected_ecs_tag_keys: Set[str],
-    allow_list: List[str],
+    run_tags: dict[str, str],
+    expected_ecs_tag_keys: set[str],
+    allow_list: list[str],
     instance_cm,
     workspace,
     job,
@@ -1044,7 +1045,7 @@ def test_propagate_tags_args_validated(
     workspace,
     job,
     remote_job,
-    propagate_tags: Dict[str, Any],
+    propagate_tags: dict[str, Any],
 ):
     with pytest.raises(CheckError):
         with instance_cm({"propagate_tags": propagate_tags}) as instance:

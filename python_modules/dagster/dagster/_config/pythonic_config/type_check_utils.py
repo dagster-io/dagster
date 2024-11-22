@@ -6,7 +6,7 @@ from typing_extensions import (
 )
 
 
-def safe_is_subclass(cls: Any, possible_parent_cls: Union[Type, Tuple[Type, ...]]) -> bool:
+def safe_is_subclass(cls: Any, possible_parent_cls: Union[type, tuple[type, ...]]) -> bool:
     """Version of issubclass that returns False if cls is not a Type."""
     if not isinstance(cls, type):
         return False
@@ -20,5 +20,5 @@ def safe_is_subclass(cls: Any, possible_parent_cls: Union[Type, Tuple[Type, ...]
         return False
 
 
-def is_literal(annotation: Type) -> bool:
+def is_literal(annotation: type) -> bool:
     return get_origin(annotation) in (Literal, ExtLiteral)

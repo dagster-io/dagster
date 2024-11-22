@@ -66,7 +66,7 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
     """
 
     def __new__(cls, skip_message: Optional[str] = None):
-        return super(SkipReason, cls).__new__(
+        return super().__new__(
             cls,
             skip_message=check.opt_str_param(skip_message, "skip_message"),
         )
@@ -272,8 +272,8 @@ class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
             Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
         ],
     ) -> "DynamicPartitionsStoreAfterRequests":
-        added_partition_keys_by_partitions_def_name: Dict[str, Set[str]] = defaultdict(set)
-        deleted_partition_keys_by_partitions_def_name: Dict[str, Set[str]] = defaultdict(set)
+        added_partition_keys_by_partitions_def_name: dict[str, set[str]] = defaultdict(set)
+        deleted_partition_keys_by_partitions_def_name: dict[str, set[str]] = defaultdict(set)
 
         for req in dynamic_partitions_requests:
             name = req.partitions_def_name
@@ -346,7 +346,7 @@ class DagsterRunReaction(
         error: Optional[SerializableErrorInfo] = None,
         run_status: Optional[DagsterRunStatus] = None,
     ):
-        return super(DagsterRunReaction, cls).__new__(
+        return super().__new__(
             cls,
             dagster_run=check.opt_inst_param(dagster_run, "dagster_run", DagsterRun),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -372,7 +372,7 @@ class SensorResult(
             ),
             (
                 "asset_events",
-                List[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]],
+                list[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]],
             ),
             (
                 "automation_condition_evaluations",
@@ -427,7 +427,7 @@ class SensorResult(
         if isinstance(skip_reason, str):
             skip_reason = SkipReason(skip_reason)
 
-        return super(SensorResult, cls).__new__(
+        return super().__new__(
             cls,
             run_requests=check.opt_sequence_param(run_requests, "run_requests", RunRequest),
             skip_reason=skip_reason,

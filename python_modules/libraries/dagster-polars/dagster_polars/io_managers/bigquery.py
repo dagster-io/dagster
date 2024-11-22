@@ -106,7 +106,7 @@ class PolarsBigQueryTypeHandler(DbTypeHandler[pl.DataFrame]):
         return pl.DataFrame(result)
 
     @property
-    def supported_types(self) -> List:
+    def supported_types(self) -> list:
         return [pl.DataFrame]
 
 
@@ -189,5 +189,5 @@ class PolarsBigQueryIOManager(BigQueryIOManager):
         return [PolarsBigQueryTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return pl.DataFrame

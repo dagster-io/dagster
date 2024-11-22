@@ -288,15 +288,15 @@ def _subset_assets_defs(
     selected_asset_keys: AbstractSet[AssetKey],
     selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
     allow_extraneous_asset_keys: bool = False,
-) -> Tuple[
+) -> tuple[
     Sequence["AssetsDefinition"],
     Sequence["AssetsDefinition"],
 ]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
     """
-    included_assets: Set[AssetsDefinition] = set()
-    excluded_assets: Set[AssetsDefinition] = set()
+    included_assets: set[AssetsDefinition] = set()
+    excluded_assets: set[AssetsDefinition] = set()
 
     # Do not match any assets with no keys
     for asset in set(a for a in assets if a.has_keys or a.has_check_keys):
@@ -400,7 +400,7 @@ def _get_blocking_asset_check_output_handles_by_asset_key(
                 NodeOutputHandle(node_handle=node_handle, output_name=output_name)
             ] = check_spec
 
-    blocking_asset_check_output_handles_by_asset_key: Dict[AssetKey, Set[NodeOutputHandle]] = (
+    blocking_asset_check_output_handles_by_asset_key: dict[AssetKey, set[NodeOutputHandle]] = (
         defaultdict(set)
     )
     for node_output_handle, check_spec in check_specs_by_node_output_handle.items():
@@ -414,19 +414,19 @@ def _get_blocking_asset_check_output_handles_by_asset_key(
 
 def build_node_deps(
     asset_graph: AssetGraph,
-) -> Tuple[
+) -> tuple[
     DependencyMapping[NodeInvocation],
     Mapping[NodeHandle, AssetsDefinition],
 ]:
     # sort so that nodes get a consistent name
-    assets_defs = sorted(asset_graph.assets_defs, key=lambda ad: (sorted((ak for ak in ad.keys))))
+    assets_defs = sorted(asset_graph.assets_defs, key=lambda ad: (sorted(ak for ak in ad.keys)))
 
     # if the same graph/op is used in multiple assets_definitions, their invocations must have
     # different names. we keep track of definitions that share a name and add a suffix to their
     # invocations to solve this issue
-    collisions: Dict[str, int] = {}
-    assets_defs_by_node_handle: Dict[NodeHandle, AssetsDefinition] = {}
-    node_alias_and_output_by_asset_key: Dict[AssetKey, Tuple[str, str]] = {}
+    collisions: dict[str, int] = {}
+    assets_defs_by_node_handle: dict[NodeHandle, AssetsDefinition] = {}
+    node_alias_and_output_by_asset_key: dict[AssetKey, tuple[str, str]] = {}
     for assets_def in (ad for ad in assets_defs if ad.is_executable):
         node_name = assets_def.node_def.name
         if collisions.get(node_name):
@@ -447,7 +447,7 @@ def build_node_deps(
         )
     )
 
-    deps: Dict[NodeInvocation, Dict[str, IDependencyDefinition]] = {}
+    deps: dict[NodeInvocation, dict[str, IDependencyDefinition]] = {}
     for node_handle, assets_def in assets_defs_by_node_handle.items():
         # the key that we'll use to reference the node inside this AssetsDefinition
         node_def_name = assets_def.node_def.name
@@ -512,7 +512,7 @@ def _has_cycles(
 ) -> bool:
     """Detect if there are cycles in a dependency dictionary."""
     try:
-        node_deps: Dict[str, Set[str]] = {}
+        node_deps: dict[str, set[str]] = {}
         for upstream_node, downstream_deps in deps.items():
             # handle either NodeInvocation or str
             node_name = upstream_node.alias or upstream_node.name
@@ -548,7 +548,7 @@ def _attempt_resolve_node_cycles(asset_graph: AssetGraph) -> AssetGraph:
     that asset via a different node (i.e. there will be no cycles).
     """
     # color for each asset
-    colors: Dict[AssetKey, int] = {}
+    colors: dict[AssetKey, int] = {}
 
     # recursively color an asset and all of its downstream assets
     def _dfs(key: AssetKey, cur_color: int):
@@ -570,14 +570,14 @@ def _attempt_resolve_node_cycles(asset_graph: AssetGraph) -> AssetGraph:
     for key in root_keys:
         _dfs(key, 0)
 
-    color_mapping_by_assets_defs: Dict[AssetsDefinition, Any] = defaultdict(
+    color_mapping_by_assets_defs: dict[AssetsDefinition, Any] = defaultdict(
         lambda: defaultdict(set)
     )
     for key, color in colors.items():
         node = asset_graph.get(key)
         color_mapping_by_assets_defs[node.assets_def][color].add(key)
 
-    subsetted_assets_defs: List[AssetsDefinition] = []
+    subsetted_assets_defs: list[AssetsDefinition] = []
     for assets_def, color_mapping in color_mapping_by_assets_defs.items():
         if assets_def.is_external or len(color_mapping) == 1 or not assets_def.can_subset:
             subsetted_assets_defs.append(assets_def)

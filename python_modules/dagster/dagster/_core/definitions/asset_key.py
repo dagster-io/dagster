@@ -271,7 +271,7 @@ def asset_keys_from_defs_and_coercibles(
 ) -> Sequence[AssetKey]:
     from dagster._core.definitions.assets import AssetsDefinition
 
-    result: List[AssetKey] = []
+    result: list[AssetKey] = []
     for el in assets:
         if isinstance(el, AssetsDefinition):
             result.extend(el.keys)

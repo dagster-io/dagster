@@ -571,7 +571,7 @@ class InstanceRef(
         )
 
     @property
-    def custom_instance_class(self) -> Type["DagsterInstance"]:
+    def custom_instance_class(self) -> type["DagsterInstance"]:
         return (  # type: ignore  # (ambiguous return type)
             class_from_code_pointer(
                 self.custom_instance_class_data.module_name,

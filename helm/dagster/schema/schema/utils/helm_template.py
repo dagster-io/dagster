@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pprint import pprint
 from tempfile import NamedTemporaryFile, mkstemp
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import dagster._check as check
 import yaml
@@ -23,7 +23,7 @@ def git_repo_root():
 @dataclass
 class HelmTemplate:
     helm_dir_path: str
-    subchart_paths: List[str]
+    subchart_paths: list[str]
     output: Optional[str] = None
     model: Optional[Any] = None
     release_name: str = "release-name"
@@ -33,9 +33,9 @@ class HelmTemplate:
     def render(
         self,
         values: Optional[Union[DagsterHelmValues, DagsterUserDeploymentsHelmValues]] = None,
-        values_dict: Optional[Dict[str, Any]] = None,
+        values_dict: Optional[dict[str, Any]] = None,
         chart_version: Optional[str] = None,
-    ) -> List[Any]:
+    ) -> list[Any]:
         check.invariant(
             (values is None) != (values_dict is None), "Must provide either values or values_dict"
         )

@@ -21,7 +21,7 @@ def instance():
 
 class UserError(Exception):
     def __init__(self):
-        super(UserError, self).__init__(
+        super().__init__(
             "This is an error which has some sensitive information! My password is hunter2"
         )
 

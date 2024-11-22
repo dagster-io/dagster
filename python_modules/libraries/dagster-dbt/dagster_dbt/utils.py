@@ -132,7 +132,7 @@ def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
     }
 
 
-def _set_flag_attrs(kvs: Dict[str, Any]):
+def _set_flag_attrs(kvs: dict[str, Any]):
     from dbt.flags import get_flag_dict, set_flags
 
     new_flags = Namespace()

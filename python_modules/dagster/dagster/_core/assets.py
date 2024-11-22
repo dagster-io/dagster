@@ -14,7 +14,7 @@ class AssetDetails(NamedTuple("_AssetDetails", [("last_wipe_timestamp", Optional
 
     def __new__(cls, last_wipe_timestamp: Optional[float] = None):
         check.opt_float_param(last_wipe_timestamp, "last_wipe_timestamp")
-        return super(AssetDetails, cls).__new__(cls, last_wipe_timestamp)
+        return super().__new__(cls, last_wipe_timestamp)
 
     @staticmethod
     def from_db_string(db_string):

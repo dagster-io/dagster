@@ -116,9 +116,7 @@ class ExecuteInProcessResult(ExecutionResult):
         Returns:
             Any: The value of the retrieved output.
         """
-        return super(ExecuteInProcessResult, self).output_for_node(
-            node_str, output_name=output_name
-        )
+        return super().output_for_node(node_str, output_name=output_name)
 
     @public
     def asset_value(self, asset_key: CoercibleToAssetKey) -> Any:
@@ -148,4 +146,4 @@ class ExecuteInProcessResult(ExecutionResult):
         Returns:
             Any: The value of the retrieved output.
         """
-        return super(ExecuteInProcessResult, self).output_value(output_name=output_name)
+        return super().output_value(output_name=output_name)

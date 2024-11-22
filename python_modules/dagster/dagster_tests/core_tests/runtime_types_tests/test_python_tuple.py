@@ -44,7 +44,7 @@ def test_vanilla_tuple_input_fail():
 
 
 def test_open_typing_tuple_output():
-    @op(out=Out(Tuple))
+    @op(out=Out(tuple))
     def emit_tuple():
         return (1, 2)
 
@@ -52,7 +52,7 @@ def test_open_typing_tuple_output():
 
 
 def test_open_typing_tuple_output_fail():
-    @op(out=Out(Tuple))
+    @op(out=Out(tuple))
     def emit_tuple():
         return "foo"
 
@@ -61,7 +61,7 @@ def test_open_typing_tuple_output_fail():
 
 
 def test_open_typing_tuple_input():
-    @op(ins={"tt": In(dagster_type=Tuple)})
+    @op(ins={"tt": In(dagster_type=tuple)})
     def take_tuple(tt):
         return tt
 
@@ -72,7 +72,7 @@ def test_open_typing_tuple_input():
 
 
 def test_open_typing_tuple_input_fail():
-    @op(ins={"tt": In(dagster_type=Tuple)})
+    @op(ins={"tt": In(dagster_type=tuple)})
     def take_tuple(tt):
         return tt
 
@@ -116,7 +116,7 @@ def test_nested_python_tuple_directly():
 
 
 def test_closed_typing_tuple_output():
-    @op(out=Out(Tuple[int, int]))
+    @op(out=Out(tuple[int, int]))
     def emit_tuple():
         return (1, 2)
 
@@ -124,7 +124,7 @@ def test_closed_typing_tuple_output():
 
 
 def test_closed_typing_tuple_output_fail():
-    @op(out=Out(Tuple[int, int]))
+    @op(out=Out(tuple[int, int]))
     def emit_tuple():
         return "foo"
 
@@ -133,7 +133,7 @@ def test_closed_typing_tuple_output_fail():
 
 
 def test_closed_typing_tuple_output_fail_wrong_member_types():
-    @op(out=Out(Tuple[int, int]))
+    @op(out=Out(tuple[int, int]))
     def emit_tuple():
         return (1, "nope")
 
@@ -142,7 +142,7 @@ def test_closed_typing_tuple_output_fail_wrong_member_types():
 
 
 def test_closed_typing_tuple_output_fail_wrong_length():
-    @op(out=Out(Tuple[int, int]))
+    @op(out=Out(tuple[int, int]))
     def emit_tuple():
         return (1,)
 
@@ -151,7 +151,7 @@ def test_closed_typing_tuple_output_fail_wrong_length():
 
 
 def test_closed_typing_tuple_input():
-    @op(ins={"tt": In(dagster_type=Tuple[int, int])})
+    @op(ins={"tt": In(dagster_type=tuple[int, int])})
     def take_tuple(tt):
         return tt
 
@@ -162,7 +162,7 @@ def test_closed_typing_tuple_input():
 
 
 def test_closed_typing_tuple_input_fail():
-    @op(ins={"tt": In(dagster_type=Tuple[int, int])})
+    @op(ins={"tt": In(dagster_type=tuple[int, int])})
     def take_tuple(tt):
         return tt
 

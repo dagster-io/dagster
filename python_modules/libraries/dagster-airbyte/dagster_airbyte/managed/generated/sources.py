@@ -154,7 +154,7 @@ class LinkedinAdsSource(GeneratedAirbyteSource):
         name: str,
         credentials: Union["LinkedinAdsSource.OAuth20", "LinkedinAdsSource.AccessToken"],
         start_date: str,
-        account_ids: Optional[List[int]] = None,
+        account_ids: Optional[list[int]] = None,
     ):
         """Airbyte Source for Linkedin Ads.
 
@@ -826,9 +826,9 @@ class JiraSource(GeneratedAirbyteSource):
         api_token: str,
         domain: str,
         email: str,
-        projects: Optional[List[str]] = None,
+        projects: Optional[list[str]] = None,
         start_date: Optional[str] = None,
-        additional_fields: Optional[List[str]] = None,
+        additional_fields: Optional[list[str]] = None,
         expand_issue_changelog: Optional[bool] = None,
         render_fields: Optional[bool] = None,
         enable_experimental_streams: Optional[bool] = None,
@@ -1078,7 +1078,7 @@ class QualarooSource(GeneratedAirbyteSource):
         token: str,
         key: str,
         start_date: str,
-        survey_ids: Optional[List[str]] = None,
+        survey_ids: Optional[list[str]] = None,
     ):
         """Airbyte Source for Qualaroo.
 
@@ -1405,7 +1405,7 @@ class OracleSource(GeneratedAirbyteSource):
             "OracleSource.TLSEncryptedVerifyCertificate",
         ],
         password: Optional[str] = None,
-        schemas: Optional[List[str]] = None,
+        schemas: Optional[list[str]] = None,
         jdbc_url_params: Optional[str] = None,
     ):
         """Airbyte Source for Oracle.
@@ -1694,7 +1694,7 @@ class LookerSource(GeneratedAirbyteSource):
         domain: str,
         client_id: str,
         client_secret: str,
-        run_look_ids: Optional[List[str]] = None,
+        run_look_ids: Optional[list[str]] = None,
     ):
         """Airbyte Source for Looker.
 
@@ -1786,8 +1786,8 @@ class AmazonAdsSource(GeneratedAirbyteSource):
         report_wait_timeout: Optional[int] = None,
         report_generation_max_retries: Optional[int] = None,
         start_date: Optional[str] = None,
-        profiles: Optional[List[int]] = None,
-        state_filter: Optional[List[str]] = None,
+        profiles: Optional[list[int]] = None,
+        state_filter: Optional[list[str]] = None,
     ):
         """Airbyte Source for Amazon Ads.
 
@@ -2192,7 +2192,7 @@ class SearchMetricsSource(GeneratedAirbyteSource):
 class TypeformSource(GeneratedAirbyteSource):
     @public
     def __init__(
-        self, name: str, start_date: str, token: str, form_ids: Optional[List[str]] = None
+        self, name: str, start_date: str, token: str, form_ids: Optional[list[str]] = None
     ):
         """Airbyte Source for Typeform.
 
@@ -2355,10 +2355,10 @@ class AdjustSource(GeneratedAirbyteSource):
         self,
         name: str,
         api_token: str,
-        dimensions: List[str],
+        dimensions: list[str],
         ingest_start: str,
-        metrics: List[str],
-        additional_metrics: Optional[List[str]] = None,
+        metrics: list[str],
+        additional_metrics: Optional[list[str]] = None,
         until_today: Optional[bool] = None,
     ):
         """Airbyte Source for Adjust.
@@ -2448,7 +2448,7 @@ class GoogleAdsSource(GeneratedAirbyteSource):
         customer_id: str,
         start_date: str,
         end_date: Optional[str] = None,
-        custom_queries: Optional[List[CustomGAQLQueriesEntry]] = None,
+        custom_queries: Optional[list[CustomGAQLQueriesEntry]] = None,
         login_customer_id: Optional[str] = None,
         conversion_window_days: Optional[int] = None,
     ):
@@ -2590,7 +2590,7 @@ class SalesforceSource(GeneratedAirbyteSource):
         is_sandbox: Optional[bool] = None,
         auth_type: Optional[str] = None,
         start_date: Optional[str] = None,
-        streams_criteria: Optional[List[FilterSalesforceObjectsEntry]] = None,
+        streams_criteria: Optional[list[FilterSalesforceObjectsEntry]] = None,
     ):
         """Airbyte Source for Salesforce.
 
@@ -2836,8 +2836,8 @@ class OrbSource(GeneratedAirbyteSource):
         api_key: str,
         start_date: Optional[str] = None,
         lookback_window_days: Optional[int] = None,
-        string_event_properties_keys: Optional[List[str]] = None,
-        numeric_event_properties_keys: Optional[List[str]] = None,
+        string_event_properties_keys: Optional[list[str]] = None,
+        numeric_event_properties_keys: Optional[list[str]] = None,
     ):
         """Airbyte Source for Orb.
 
@@ -3230,7 +3230,7 @@ class SlackSource(GeneratedAirbyteSource):
         credentials: Union[
             "SlackSource.DefaultOAuth20Authorization", "SlackSource.APITokenCredentials"
         ],
-        channel_filter: Optional[List[str]] = None,
+        channel_filter: Optional[list[str]] = None,
     ):
         """Airbyte Source for Slack.
 
@@ -3575,7 +3575,7 @@ class PostgresSource(GeneratedAirbyteSource):
             "PostgresSource.SSHKeyAuthentication",
             "PostgresSource.PasswordAuthentication",
         ],
-        schemas: Optional[List[str]] = None,
+        schemas: Optional[list[str]] = None,
         password: Optional[str] = None,
         jdbc_url_params: Optional[str] = None,
         ssl: Optional[bool] = None,
@@ -3643,7 +3643,7 @@ class TrelloSource(GeneratedAirbyteSource):
         token: str,
         key: str,
         start_date: str,
-        board_ids: Optional[List[str]] = None,
+        board_ids: Optional[list[str]] = None,
     ):
         """Airbyte Source for Trello.
 
@@ -3741,7 +3741,7 @@ class S3Source(GeneratedAirbyteSource):
         def __init__(
             self,
             filetype: Optional[str] = None,
-            columns: Optional[List[str]] = None,
+            columns: Optional[list[str]] = None,
             batch_size: Optional[int] = None,
             buffer_size: Optional[int] = None,
         ):
@@ -4005,7 +4005,7 @@ class MssqlSource(GeneratedAirbyteSource):
             "MssqlSource.EncryptedVerifyCertificate",
         ],
         replication_method: Union["MssqlSource.Standard", "MssqlSource.LogicalReplicationCDC"],
-        schemas: Optional[List[str]] = None,
+        schemas: Optional[list[str]] = None,
         password: Optional[str] = None,
         jdbc_url_params: Optional[str] = None,
     ):
@@ -4096,7 +4096,7 @@ class RedshiftSource(GeneratedAirbyteSource):
         database: str,
         username: str,
         password: str,
-        schemas: Optional[List[str]] = None,
+        schemas: Optional[list[str]] = None,
         jdbc_url_params: Optional[str] = None,
     ):
         """Airbyte Source for Redshift.
@@ -4228,7 +4228,7 @@ class SentrySource(GeneratedAirbyteSource):
         organization: str,
         project: str,
         hostname: Optional[str] = None,
-        discover_fields: Optional[List[str]] = None,
+        discover_fields: Optional[list[str]] = None,
     ):
         """Airbyte Source for Sentry.
 
@@ -4317,7 +4317,7 @@ class PythonHttpTutorialSource(GeneratedAirbyteSource):
 
 class AirtableSource(GeneratedAirbyteSource):
     @public
-    def __init__(self, name: str, api_key: str, base_id: str, tables: List[str]):
+    def __init__(self, name: str, api_key: str, base_id: str, tables: list[str]):
         """Airbyte Source for Airtable.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/airtable
@@ -5123,7 +5123,7 @@ class NetsuiteSource(GeneratedAirbyteSource):
         token_key: str,
         token_secret: str,
         start_datetime: str,
-        object_types: Optional[List[str]] = None,
+        object_types: Optional[list[str]] = None,
         window_in_days: Optional[int] = None,
     ):
         """Airbyte Source for Netsuite.
@@ -5190,7 +5190,7 @@ class Dv360Source(GeneratedAirbyteSource):
         partner_id: int,
         start_date: str,
         end_date: Optional[str] = None,
-        filters: Optional[List[str]] = None,
+        filters: Optional[list[str]] = None,
     ):
         """Airbyte Source for Dv 360.
 
@@ -5775,7 +5775,7 @@ class GoogleSearchConsoleSource(GeneratedAirbyteSource):
     def __init__(
         self,
         name: str,
-        site_urls: List[str],
+        site_urls: list[str],
         start_date: str,
         authorization: Union[
             "GoogleSearchConsoleSource.OAuth",
@@ -5816,9 +5816,9 @@ class FacebookMarketingSource(GeneratedAirbyteSource):
         def __init__(
             self,
             name: str,
-            fields: Optional[List[str]] = None,
-            breakdowns: Optional[List[str]] = None,
-            action_breakdowns: Optional[List[str]] = None,
+            fields: Optional[list[str]] = None,
+            breakdowns: Optional[list[str]] = None,
+            action_breakdowns: Optional[list[str]] = None,
             time_increment: Optional[int] = None,
             start_date: Optional[str] = None,
             end_date: Optional[str] = None,
@@ -5847,7 +5847,7 @@ class FacebookMarketingSource(GeneratedAirbyteSource):
         end_date: Optional[str] = None,
         include_deleted: Optional[bool] = None,
         fetch_thumbnail_images: Optional[bool] = None,
-        custom_insights: Optional[List[InsightConfig]] = None,
+        custom_insights: Optional[list[InsightConfig]] = None,
         page_size: Optional[int] = None,
         insights_lookback_window: Optional[int] = None,
         max_batch_size: Optional[int] = None,
@@ -5891,7 +5891,7 @@ class FacebookMarketingSource(GeneratedAirbyteSource):
 class SurveymonkeySource(GeneratedAirbyteSource):
     @public
     def __init__(
-        self, name: str, access_token: str, start_date: str, survey_ids: Optional[List[str]] = None
+        self, name: str, access_token: str, start_date: str, survey_ids: Optional[list[str]] = None
     ):
         """Airbyte Source for Surveymonkey.
 

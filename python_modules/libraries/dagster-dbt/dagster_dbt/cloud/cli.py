@@ -77,7 +77,7 @@ def cache_compile_references(
             continue
 
         # Retrieve the filters for the compile override step
-        job_commands: List[str] = dbt_cloud_job["execute_steps"]
+        job_commands: list[str] = dbt_cloud_job["execute_steps"]
         job_materialization_command_step = (
             DbtCloudCacheableAssetsDefinition.get_job_materialization_command_step(
                 execute_steps=job_commands
@@ -87,7 +87,7 @@ def cache_compile_references(
         parsed_args = DbtCloudCacheableAssetsDefinition.parse_dbt_command(
             dbt_materialization_command
         )
-        dbt_compile_options: List[str] = DbtCloudCacheableAssetsDefinition.get_compile_filters(
+        dbt_compile_options: list[str] = DbtCloudCacheableAssetsDefinition.get_compile_filters(
             parsed_args=parsed_args
         )
         dbt_compile_command = f"dbt compile {' '.join(dbt_compile_options)}"

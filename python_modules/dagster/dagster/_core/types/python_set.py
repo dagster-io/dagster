@@ -37,12 +37,12 @@ class TypedSetLoader(DagsterTypeLoader):
 class _TypedPythonSet(DagsterType):
     def __init__(self, item_dagster_type):
         self.item_type = item_dagster_type
-        super(_TypedPythonSet, self).__init__(
+        super().__init__(
             key=f"TypedPythonSet.{item_dagster_type.key}",
             name=None,
             loader=(TypedSetLoader(item_dagster_type) if item_dagster_type.loader else None),
             type_check_fn=self.type_check_method,
-            typing_type=typing.Set[item_dagster_type.typing_type],
+            typing_type=set[item_dagster_type.typing_type],
         )
 
     def type_check_method(self, context, value):

@@ -445,7 +445,7 @@ def test_basic_init_with_privateattr() -> None:
             log.append(f"setup_for_execution with {self.username} and {self.password}")
             self._connection = Connection(self.username, self.password)
 
-        def query(self, query: str) -> Dict[str, Any]:
+        def query(self, query: str) -> dict[str, Any]:
             log.append(
                 f"query {query} with {self._connection.username} and {self._connection.password}"
             )
@@ -501,12 +501,12 @@ def test_nested_resources_init_with_privateattr() -> None:
             log.append(f"setup_for_execution with jwt {self.credentials.jwt}")
             self._s3_client = S3Client(self.credentials.jwt)
 
-        def get_object(self, bucket: str, key: str) -> Dict[str, Any]:
+        def get_object(self, bucket: str, key: str) -> dict[str, Any]:
             log.append(f"get_object {bucket} {key} with jwt {self.credentials.jwt}")
             return {"foo": "bar"}
 
     @op
-    def load_from_s3_op(s3: S3Resource) -> Dict[str, Any]:
+    def load_from_s3_op(s3: S3Resource) -> dict[str, Any]:
         log.append("load_from_s3_op")
         res = s3.get_object("my-bucket", "my-key")
         assert res == {"foo": "bar"}
@@ -565,12 +565,12 @@ def test_nested_resources_init_with_privateattr_runtime_config() -> None:
             log.append(f"setup_for_execution with jwt {self.credentials.jwt}")
             self._s3_client = S3Client(self.credentials.jwt)
 
-        def get_object(self, bucket: str, key: str) -> Dict[str, Any]:
+        def get_object(self, bucket: str, key: str) -> dict[str, Any]:
             log.append(f"get_object {bucket} {key} with jwt {self.credentials.jwt}")
             return {"foo": "bar"}
 
     @op
-    def load_from_s3_op(s3: S3Resource) -> Dict[str, Any]:
+    def load_from_s3_op(s3: S3Resource) -> dict[str, Any]:
         log.append("load_from_s3_op")
         res = s3.get_object("my-bucket", "my-key")
         assert res == {"foo": "bar"}

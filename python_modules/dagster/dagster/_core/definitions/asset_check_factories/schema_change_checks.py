@@ -45,7 +45,7 @@ def build_column_schema_change_checks(
 
     def _result_for_check_key(
         instance: DagsterInstance, asset_check_key: AssetCheckKey
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         materialization_records = instance.fetch_materializations(
             limit=2, records_filter=asset_check_key.asset_key
         ).records
@@ -125,7 +125,7 @@ class TableSchemaDiff(BaseModel):
         removed_columns = [
             column for column in old_table_schema.columns if column.name not in new_columns_by_key
         ]
-        column_type_changes: Dict[str, TypeChange] = {}
+        column_type_changes: dict[str, TypeChange] = {}
         for name, new_column in new_columns_by_key.items():
             old_column = old_columns_by_key.get(name)
             if old_column is not None and old_column.type != new_column.type:

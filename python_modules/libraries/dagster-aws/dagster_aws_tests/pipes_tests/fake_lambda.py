@@ -91,13 +91,13 @@ class FakeLambdaClient:
                     stderr=log_file,
                 )
 
-            response: Dict[str, Any] = {}
+            response: dict[str, Any] = {}
 
             if result.returncode == 42:
                 response["FunctionError"] = "Unhandled"
 
             elif result.returncode != 0:
-                with open(log_path, "r") as f:
+                with open(log_path) as f:
                     print(f.read())  # noqa: T201
                 result.check_returncode()
 

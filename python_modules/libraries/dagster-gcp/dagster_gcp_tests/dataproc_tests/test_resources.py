@@ -15,7 +15,7 @@ from dagster_gcp import (
 )
 
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "default_project")
-CLUSTER_NAME = "test-%s" % uuid.uuid4().hex
+CLUSTER_NAME = f"test-{uuid.uuid4().hex}"
 REGION = "us-west1"
 
 DATAPROC_BASE_URI = f"https://dataproc.googleapis.com/v1/projects/{PROJECT_ID}/regions/{REGION}"
@@ -49,7 +49,7 @@ EXPECTED_RESULTS = [
 
 class HttpSnooper(httplib2.Http):
     def __init__(self, *args, **kwargs):
-        super(HttpSnooper, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def request(
         self, uri, method="GET", body=None, headers=None, redirections=5, connection_type=None
@@ -63,7 +63,7 @@ class HttpSnooper(httplib2.Http):
 
         # Pass this one through since its the entire JSON schema used for dynamic object creation
         if uri == DATAPROC_SCHEMA_URI:
-            response, content = super(HttpSnooper, self).request(
+            response, content = super().request(
                 uri,
                 method=method,
                 body=body,

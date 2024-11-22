@@ -166,7 +166,7 @@ from typing import List
 
 
 @op(out=DynamicOut())
-def return_dynamic() -> List[DynamicOutput[str]]:
+def return_dynamic() -> list[DynamicOutput[str]]:
     outputs = []
     for idx, page_key in get_pages():
         outputs.append(DynamicOutput(page_key, mapping_key=idx))

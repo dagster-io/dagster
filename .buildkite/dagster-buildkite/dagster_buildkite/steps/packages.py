@@ -3,7 +3,11 @@ from glob import glob
 from pathlib import Path
 from typing import Iterable, List, Optional
 
-from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
+from dagster_buildkite.defines import (
+    GCP_CREDS_FILENAME,
+    GCP_CREDS_LOCAL_FILE,
+    GIT_REPO_ROOT,
+)
 from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.step_builder import BuildkiteQueue
@@ -20,27 +24,37 @@ from dagster_buildkite.utils import (
 
 
 def build_example_packages_steps() -> List[BuildkiteStep]:
-    custom_example_pkg_roots = [pkg.directory for pkg in EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG]
+    custom_example_pkg_roots = [
+        pkg.directory for pkg in EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG
+    ]
     example_packages_with_standard_config = [
         PackageSpec(pkg)
         for pkg in (
             _get_uncustomized_pkg_roots("examples", custom_example_pkg_roots)
-            + _get_uncustomized_pkg_roots("examples/experimental", custom_example_pkg_roots)
+            + _get_uncustomized_pkg_roots(
+                "examples/experimental", custom_example_pkg_roots
+            )
         )
         if pkg != "examples/deploy_ecs"
     ]
 
-    example_packages = EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
+    example_packages = (
+        EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
+    )
 
     return build_steps_from_package_specs(example_packages)
 
 
 def build_library_packages_steps() -> List[BuildkiteStep]:
-    custom_library_pkg_roots = [pkg.directory for pkg in LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG]
+    custom_library_pkg_roots = [
+        pkg.directory for pkg in LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG
+    ]
     library_packages_with_standard_config = [
         *[
             PackageSpec(pkg)
-            for pkg in _get_uncustomized_pkg_roots("python_modules", custom_library_pkg_roots)
+            for pkg in _get_uncustomized_pkg_roots(
+                "python_modules", custom_library_pkg_roots
+            )
         ],
         *[
             PackageSpec(pkg)
@@ -61,7 +75,9 @@ def build_dagster_ui_screenshot_steps() -> List[BuildkiteStep]:
     )
 
 
-def build_steps_from_package_specs(package_specs: List[PackageSpec]) -> List[BuildkiteStep]:
+def build_steps_from_package_specs(
+    package_specs: List[PackageSpec],
+) -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
     all_packages = sorted(
         package_specs,
@@ -80,10 +96,13 @@ _PACKAGE_TYPE_ORDER = ["core", "extension", "example", "infrastructure", "unknow
 # Find packages under a root subdirectory that are not configured above.
 def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: List[str]) -> List[str]:
     all_files_in_root = [
-        os.path.relpath(p, GIT_REPO_ROOT) for p in glob(os.path.join(GIT_REPO_ROOT, root, "*"))
+        os.path.relpath(p, GIT_REPO_ROOT)
+        for p in glob(os.path.join(GIT_REPO_ROOT, root, "*"))
     ]
     return [
-        p for p in all_files_in_root if p not in custom_pkg_roots and os.path.exists(f"{p}/tox.ini")
+        p
+        for p in all_files_in_root
+        if p not in custom_pkg_roots and os.path.exists(f"{p}/tox.ini")
     ]
 
 
@@ -253,7 +272,9 @@ postgres_extra_cmds = [
     "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
     "docker-compose -f docker-compose-multi.yml up -d",  # clean up in hooks/pre-exit,
     *network_buildkite_container("postgres"),
-    *connect_sibling_docker_container("postgres", "test-postgres-db", "POSTGRES_TEST_DB_HOST"),
+    *connect_sibling_docker_container(
+        "postgres", "test-postgres-db", "POSTGRES_TEST_DB_HOST"
+    ),
     *network_buildkite_container("postgres_multi"),
     *connect_sibling_docker_container(
         "postgres_multi",
@@ -415,7 +436,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
 ]
 
 
-def _unsupported_dagster_python_versions(tox_factor: Optional[str]) -> List[AvailablePythonVersion]:
+def _unsupported_dagster_python_versions(
+    tox_factor: Optional[str],
+) -> List[AvailablePythonVersion]:
     if tox_factor == "general_tests_old_protobuf":
         return [AvailablePythonVersion.V3_11, AvailablePythonVersion.V3_12]
 

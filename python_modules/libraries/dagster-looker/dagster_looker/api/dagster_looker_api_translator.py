@@ -20,9 +20,9 @@ logger = get_dagster_logger("dagster_looker")
 class LookerInstanceData:
     """A record representing all content in a Looker instance."""
 
-    explores_by_id: Dict[str, LookmlModelExplore]
-    dashboards_by_id: Dict[str, Dashboard]
-    users_by_id: Dict[str, User]
+    explores_by_id: dict[str, LookmlModelExplore]
+    dashboards_by_id: dict[str, Dashboard]
+    users_by_id: dict[str, User]
 
     def to_state(self, sdk: Looker40SDK) -> Mapping[str, Any]:
         return {

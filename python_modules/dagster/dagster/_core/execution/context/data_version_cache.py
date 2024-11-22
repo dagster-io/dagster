@@ -54,9 +54,9 @@ class InputAssetVersionInfo:
 class DataVersionCache:
     def __init__(self, context: "StepExecutionContext"):
         self._context = context
-        self.input_asset_version_info: Dict[AssetKey, Optional["InputAssetVersionInfo"]] = {}
+        self.input_asset_version_info: dict[AssetKey, Optional[InputAssetVersionInfo]] = {}
         self.is_external_input_asset_version_info_loaded = False
-        self.values: Dict[AssetKey, "DataVersion"] = {}
+        self.values: dict[AssetKey, DataVersion] = {}
 
     def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
         self.values[asset_key] = data_version
@@ -78,7 +78,7 @@ class DataVersionCache:
     def fetch_external_input_asset_version_info(self) -> None:
         output_keys = self._context.get_output_asset_keys()
 
-        all_dep_keys: List[AssetKey] = []
+        all_dep_keys: list[AssetKey] = []
         for output_key in output_keys:
             if not self._context.job_def.asset_layer.has(output_key):
                 continue
@@ -137,7 +137,7 @@ class DataVersionCache:
                     event.timestamp,
                 )
 
-    def _fetch_asset_records(self, asset_keys: Sequence[AssetKey]) -> Dict[AssetKey, "AssetRecord"]:
+    def _fetch_asset_records(self, asset_keys: Sequence[AssetKey]) -> dict[AssetKey, "AssetRecord"]:
         batch_size = int(os.getenv("GET_ASSET_RECORDS_FOR_DATA_VERSION_BATCH_SIZE", "100"))
         asset_records_by_key = {}
         to_fetch = asset_keys

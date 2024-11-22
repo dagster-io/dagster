@@ -22,11 +22,11 @@ def _build_asset_dependencies(
     graph: GraphDefinition,
     task_ids_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
     upstream_dependencies_by_asset_key: Mapping[AssetKey, AbstractSet[AssetKey]],
-) -> Tuple[AbstractSet[OutputMapping], Mapping[str, AssetKey], Mapping[str, Set[AssetKey]]]:
+) -> tuple[AbstractSet[OutputMapping], Mapping[str, AssetKey], Mapping[str, set[AssetKey]]]:
     """Builds the asset dependency graph for a given set of airflow task mappings and a dagster graph."""
     output_mappings = set()
     keys_by_output_name = {}
-    internal_asset_deps: dict[str, Set[AssetKey]] = {}
+    internal_asset_deps: dict[str, set[AssetKey]] = {}
 
     visited_nodes: dict[str, bool] = {}
     upstream_deps = set()
@@ -98,8 +98,8 @@ def load_assets_from_airflow_dag(
     dag: DAG,
     task_ids_by_asset_key: Mapping[AssetKey, AbstractSet[str]] = {},
     upstream_dependencies_by_asset_key: Mapping[AssetKey, AbstractSet[AssetKey]] = {},
-    connections: Optional[List[Connection]] = None,
-) -> List[AssetsDefinition]:
+    connections: Optional[list[Connection]] = None,
+) -> list[AssetsDefinition]:
     """[Experimental] Construct Dagster Assets for a given Airflow DAG.
 
     Args:

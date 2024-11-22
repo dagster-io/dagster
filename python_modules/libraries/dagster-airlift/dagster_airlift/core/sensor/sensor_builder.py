@@ -70,7 +70,7 @@ class AirliftSensorEventTransformerError(DagsterUserCodeExecutionError):
 
 
 def check_keys_for_asset_keys(
-    repository_def: RepositoryDefinition, asset_keys: Set[AssetKey]
+    repository_def: RepositoryDefinition, asset_keys: set[AssetKey]
 ) -> Iterable[AssetCheckKey]:
     for assets_def in repository_def.asset_graph.assets_defs:
         for check_spec in assets_def.check_specs:
@@ -143,8 +143,8 @@ def build_airflow_polling_sensor(
             offset=current_dag_offset,
             airflow_data=airflow_data,
         )
-        all_asset_events: List[AssetMaterialization] = []
-        all_check_keys: Set[AssetCheckKey] = set()
+        all_asset_events: list[AssetMaterialization] = []
+        all_check_keys: set[AssetCheckKey] = set()
         latest_offset = current_dag_offset
         repository_def = check.not_none(context.repository_def)
         while get_current_datetime() - current_date < timedelta(seconds=MAIN_LOOP_TIMEOUT_SECONDS):
@@ -196,7 +196,7 @@ def build_airflow_polling_sensor(
 def sorted_asset_events(
     asset_events: Sequence[AssetEvent],
     repository_def: RepositoryDefinition,
-) -> List[AssetEvent]:
+) -> list[AssetEvent]:
     """Sort materializations by end date and toposort order."""
     topo_aks = repository_def.asset_graph.toposorted_asset_keys
     materializations_and_timestamps = [
@@ -243,7 +243,7 @@ def _get_transformer_result(
 class BatchResult:
     idx: int
     asset_events: Sequence[AssetMaterialization]
-    all_asset_keys_materialized: Set[AssetKey]
+    all_asset_keys_materialized: set[AssetKey]
 
 
 def materializations_and_requests_from_batch_iter(
@@ -284,7 +284,7 @@ def build_synthetic_asset_materializations(
     airflow_instance: AirflowInstance,
     dag_run: DagRun,
     airflow_data: AirflowDefinitionsData,
-) -> List[AssetMaterialization]:
+) -> list[AssetMaterialization]:
     """In this function we need to return the asset materializations we want to synthesize
     on behalf of the user.
 
@@ -340,7 +340,7 @@ def get_synthetic_task_mats(
     dag_run: DagRun,
     airflow_data: AirflowDefinitionsData,
     context: SensorEvaluationContext,
-) -> List[AssetMaterialization]:
+) -> list[AssetMaterialization]:
     task_instances = airflow_instance.get_task_instance_batch(
         run_id=dag_run.run_id,
         dag_id=dag_run.dag_id,
@@ -386,7 +386,7 @@ def get_synthetic_task_mats(
 
 def automapped_tasks_asset_keys(
     dag_run: DagRun, airflow_data: AirflowDefinitionsData, task_instance: TaskInstance
-) -> Set[AssetKey]:
+) -> set[AssetKey]:
     asset_keys_to_emit = set()
     asset_keys = airflow_data.asset_keys_in_task(dag_run.dag_id, task_instance.task_id)
     for asset_key in asset_keys:

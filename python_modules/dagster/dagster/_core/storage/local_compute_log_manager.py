@@ -165,7 +165,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         path = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
         return self.read_path(path, offset or 0, max_bytes)
 
-    def parse_cursor(self, cursor: Optional[str] = None) -> Tuple[int, int]:
+    def parse_cursor(self, cursor: Optional[str] = None) -> tuple[int, int]:
         # Translates a string cursor into a set of byte offsets for stdout, stderr
         if not cursor:
             return 0, 0
@@ -174,7 +174,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         if not parts or len(parts) != 2:
             return 0, 0
 
-        stdout, stderr = [int(_) for _ in parts]
+        stdout, stderr = (int(_) for _ in parts)
         return stdout, stderr
 
     def build_cursor(self, stdout_offset: int, stderr_offset: int) -> str:
@@ -355,7 +355,7 @@ class LocalComputeLogFilesystemEventHandler(PatternMatchingEventHandler):
         self.update_paths = update_paths
         self.complete_paths = complete_paths
         patterns = update_paths + complete_paths
-        super(LocalComputeLogFilesystemEventHandler, self).__init__(patterns=patterns)
+        super().__init__(patterns=patterns)
 
     def on_created(self, event):
         if event.src_path in self.complete_paths:

@@ -232,7 +232,7 @@ def _wrap_user_fn_if_pythonic_config(
     )
 
     config_schema_from_class = infer_schema_from_config_annotation(param.annotation, param.default)
-    config_cls = cast(Type[Config], param.annotation)
+    config_cls = cast(type[Config], param.annotation)
 
     param_name = param.name
 
@@ -324,7 +324,7 @@ def configured(
         configurable_inner = cast(
             ResourceDefinition,
             (
-                cast(Type[ConfigurableResourceFactory], configurable)
+                cast(type[ConfigurableResourceFactory], configurable)
                 .configure_at_launch()
                 .get_resource_definition()
             ),

@@ -506,7 +506,7 @@ def hard_failer_graph():
 @op
 def check_volume_mount(context):
     with open(
-        "/opt/dagster/test_mount_path/volume_mounted_file.yaml", "r", encoding="utf8"
+        "/opt/dagster/test_mount_path/volume_mounted_file.yaml", encoding="utf8"
     ) as mounted_file:
         contents = mounted_file.read()
         context.log.info(f"Contents of mounted file: {contents}")

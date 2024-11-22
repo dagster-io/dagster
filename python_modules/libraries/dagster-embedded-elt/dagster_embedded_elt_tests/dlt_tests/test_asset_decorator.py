@@ -590,7 +590,7 @@ def test_with_tag_replacements(dlt_pipeline: Pipeline) -> None:
         def get_tags(self, _) -> Optional[Mapping[str, str]]:
             return expected_tags
 
-        def get_kinds(self, resource: DltResource, destination: Destination) -> Set[str]:
+        def get_kinds(self, resource: DltResource, destination: Destination) -> set[str]:
             return {"dlt", "test"}
 
     @dlt_assets(

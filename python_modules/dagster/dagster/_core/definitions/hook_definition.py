@@ -40,7 +40,7 @@ class HookDefinition(
         required_resource_keys: Optional[AbstractSet[str]] = None,
         decorated_fn: Optional[Callable[..., Any]] = None,
     ):
-        return super(HookDefinition, cls).__new__(
+        return super().__new__(
             cls,
             name=check_valid_name(name),
             hook_fn=check.callable_param(hook_fn, "hook_fn"),

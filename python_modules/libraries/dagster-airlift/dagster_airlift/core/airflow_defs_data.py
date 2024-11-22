@@ -56,7 +56,7 @@ class AirflowDefinitionsData:
         return {spec.key: spec for spec in self.all_asset_specs}
 
     @public
-    def task_ids_in_dag(self, dag_id: str) -> Set[str]:
+    def task_ids_in_dag(self, dag_id: str) -> set[str]:
         """Returns the task ids within the given dag_id.
 
         Args:

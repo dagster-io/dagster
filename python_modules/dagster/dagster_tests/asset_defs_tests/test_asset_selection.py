@@ -97,7 +97,7 @@ def george(bob, fiona):
         "walle": AssetOut(),
     },
 )
-def robots() -> Tuple[str, str, str]:
+def robots() -> tuple[str, str, str]:
     return "rosie", "r2d2", "walle"
 
 
@@ -110,7 +110,7 @@ def robots() -> Tuple[str, str, str]:
     },
     can_subset=True,
 )
-def aliens() -> Tuple[str, str, str]:
+def aliens() -> tuple[str, str, str]:
     return "zorg", "zapp", "zort"
 
 

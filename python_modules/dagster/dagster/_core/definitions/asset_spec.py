@@ -168,7 +168,7 @@ class AssetSpec(
         automation_condition: Optional[AutomationCondition] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
-        kinds: Optional[Set[str]] = None,
+        kinds: Optional[set[str]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         **kwargs,
     ):
@@ -236,7 +236,7 @@ class AssetSpec(
         automation_condition: Optional[AutomationCondition],
         owners: Optional[Sequence[str]],
         tags: Optional[Mapping[str, str]],
-        kinds: Optional[Set[str]],
+        kinds: Optional[set[str]],
         partitions_def: Optional[PartitionsDefinition],
         **kwargs,
     ) -> "AssetSpec":
@@ -274,7 +274,7 @@ class AssetSpec(
         )
 
     @cached_property
-    def kinds(self) -> Set[str]:
+    def kinds(self) -> set[str]:
         return {tag[len(KIND_PREFIX) :] for tag in self.tags if tag.startswith(KIND_PREFIX)}
 
     @public
@@ -308,7 +308,7 @@ def replace_attributes(
     automation_condition: Optional[AutomationCondition] = ...,
     owners: Optional[Sequence[str]] = ...,
     tags: Optional[Mapping[str, str]] = ...,
-    kinds: Optional[Set[str]] = ...,
+    kinds: Optional[set[str]] = ...,
     partitions_def: Optional[PartitionsDefinition] = ...,
 ) -> "AssetSpec":
     """Returns a new AssetSpec with the specified attributes replaced."""
@@ -346,7 +346,7 @@ def merge_attributes(
     metadata: Mapping[str, Any] = ...,
     owners: Sequence[str] = ...,
     tags: Mapping[str, str] = ...,
-    kinds: Set[str] = ...,
+    kinds: set[str] = ...,
 ) -> "AssetSpec":
     """Returns a new AssetSpec with the specified attributes merged with the current attributes."""
     current_tags_without_kinds = {

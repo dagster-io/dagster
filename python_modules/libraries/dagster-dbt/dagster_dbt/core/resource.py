@@ -68,7 +68,7 @@ DAGSTER_GITHUB_REPO_DBT_PACKAGE = "https://github.com/dagster-io/dagster.git"
 def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
     """Checks whether any package in the passed yaml file is the Dagster dbt package."""
     packages = cast(
-        List[Dict[str, Any]], yaml.safe_load(packages_file.read_text()).get("packages", [])
+        list[dict[str, Any]], yaml.safe_load(packages_file.read_text()).get("packages", [])
     )
     return any(package.get("git") == DAGSTER_GITHUB_REPO_DBT_PACKAGE for package in packages)
 
@@ -159,7 +159,7 @@ class DbtCliResource(ConfigurableResource):
             " information."
         ),
     )
-    global_config_flags: List[str] = Field(
+    global_config_flags: list[str] = Field(
         default=[],
         description=(
             "A list of global flags configuration to pass to the dbt CLI invocation. See"
@@ -207,7 +207,7 @@ class DbtCliResource(ConfigurableResource):
     def __init__(
         self,
         project_dir: Union[str, Path, DbtProject],
-        global_config_flags: Optional[List[str]] = None,
+        global_config_flags: Optional[list[str]] = None,
         profiles_dir: Optional[Union[str, Path]] = None,
         profile: Optional[str] = None,
         target: Optional[str] = None,
@@ -314,7 +314,7 @@ class DbtCliResource(ConfigurableResource):
         return dbt_executable
 
     @model_validator(mode="before")
-    def validate_dbt_version(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_dbt_version(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Validate that the dbt version is supported."""
         if version.parse(dbt_version) < version.parse("1.7.0"):
             raise ValueError(
@@ -623,7 +623,7 @@ class DbtCliResource(ConfigurableResource):
             **({"DBT_PROJECT_DIR": self.project_dir} if self.project_dir else {}),
         }
 
-        selection_args: List[str] = []
+        selection_args: list[str] = []
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
         if context and assets_def is not None:
             manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
@@ -648,7 +648,7 @@ class DbtCliResource(ConfigurableResource):
 
         # TODO: verify that args does not have any selection flags if the context and manifest
         # are passed to this function.
-        profile_args: List[str] = []
+        profile_args: list[str] = []
         if self.profile:
             profile_args = ["--profile", self.profile]
 
@@ -706,7 +706,7 @@ class DbtCliResource(ConfigurableResource):
             )
 
 
-def parse_cli_vars_from_args(args: Sequence[str]) -> Dict[str, Any]:
+def parse_cli_vars_from_args(args: Sequence[str]) -> dict[str, Any]:
     parser = ArgumentParser(description="Parse cli vars from dbt command")
     parser.add_argument("--vars")
     var_args, _ = parser.parse_known_args(args)
@@ -722,7 +722,7 @@ def _get_subset_selection_for_context(
     exclude: Optional[str],
     dagster_dbt_translator: DagsterDbtTranslator,
     current_dbt_indirect_selection_env: Optional[str],
-) -> Tuple[List[str], Optional[str]]:
+) -> tuple[list[str], Optional[str]]:
     """Generate a dbt selection string and DBT_INDIRECT_SELECTION setting to execute the selected
     resources in a subsetted execution context.
 

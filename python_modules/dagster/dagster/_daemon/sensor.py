@@ -256,7 +256,7 @@ class SensorLaunchContext(AbstractContextManager):
 
     def __exit__(
         self,
-        exception_type: Type[BaseException],
+        exception_type: type[BaseException],
         exception_value: Exception,
         traceback: TracebackType,
     ) -> None:
@@ -315,7 +315,7 @@ def execute_sensor_iteration_loop(
     """
     from dagster._daemon.daemon import SpanMarker
 
-    sensor_tick_futures: Dict[str, Future] = {}
+    sensor_tick_futures: dict[str, Future] = {}
     while True:
         start_time = get_current_timestamp()
         if until and start_time >= until:
@@ -357,7 +357,7 @@ def execute_sensor_iteration(
     logger: logging.Logger,
     threadpool_executor: Optional[ThreadPoolExecutor],
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
-    sensor_tick_futures: Optional[Dict[str, Future]] = None,
+    sensor_tick_futures: Optional[dict[str, Future]] = None,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
 ):
     instance = workspace_process_context.instance
@@ -376,7 +376,7 @@ def execute_sensor_iteration(
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SENSOR)
 
-    sensors: Dict[str, RemoteSensor] = {}
+    sensors: dict[str, RemoteSensor] = {}
     for location_entry in workspace_snapshot.values():
         code_location = location_entry.code_location
         if code_location:
@@ -994,9 +994,9 @@ def _resolve_run_requests(
     workspace_process_context: IWorkspaceProcessContext,
     context: SensorLaunchContext,
     remote_sensor: RemoteSensor,
-    run_ids_with_requests: Sequence[Tuple[str, RunRequest]],
+    run_ids_with_requests: Sequence[tuple[str, RunRequest]],
     has_evaluations: bool,
-) -> Sequence[Tuple[str, RunRequest]]:
+) -> Sequence[tuple[str, RunRequest]]:
     resolved_run_ids_with_requests = []
 
     for run_id, raw_run_request in run_ids_with_requests:
@@ -1080,7 +1080,7 @@ def _handle_run_requests_and_automation_condition_evaluations(
 
 
 def _submit_run_requests(
-    raw_run_ids_with_requests: Sequence[Tuple[str, RunRequest]],
+    raw_run_ids_with_requests: Sequence[tuple[str, RunRequest]],
     automation_condition_evaluations: Sequence[AutomationConditionEvaluationWithRunIds],
     instance: DagsterInstance,
     context: SensorLaunchContext,
@@ -1101,7 +1101,7 @@ def _submit_run_requests(
     )
 
     def submit_run_request(
-        run_id_with_run_request: Tuple[str, RunRequest],
+        run_id_with_run_request: tuple[str, RunRequest],
     ) -> SubmitRunRequestResult:
         run_id, run_request = run_id_with_run_request
         if run_request.requires_backfill_daemon():
@@ -1124,7 +1124,7 @@ def _submit_run_requests(
     else:
         gen_run_request_results = map(submit_run_request, resolved_run_ids_with_requests)
 
-    skipped_runs: List[SkippedSensorRun] = []
+    skipped_runs: list[SkippedSensorRun] = []
     evaluations_by_key = {
         evaluation.key: evaluation for evaluation in automation_condition_evaluations
     }
@@ -1234,7 +1234,7 @@ def _fetch_existing_runs(
         )
 
     # filter down to runs with run_key that match the sensor name and its namespace (repository)
-    valid_runs: List[DagsterRun] = []
+    valid_runs: list[DagsterRun] = []
     for run in runs_with_run_keys:
         # if the run doesn't have a set origin, just match on sensor name
         if run.remote_job_origin is None and run.tags.get(SENSOR_NAME_TAG) == remote_sensor.name:

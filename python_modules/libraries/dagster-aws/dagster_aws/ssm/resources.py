@@ -133,7 +133,7 @@ def ssm_resource(context) -> "botocore.client.ssm":  # pyright: ignore (reportAt
 
 class ParameterStoreTag(Config):
     key: str = Field(description="Tag key to search for.")
-    values: Optional[List[str]] = Field(default=None, description="List")
+    values: Optional[list[str]] = Field(default=None, description="List")
 
 
 class ParameterStoreResource(ResourceWithBoto3Configuration):
@@ -175,16 +175,16 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
             )
     """
 
-    parameters: List[str] = Field(
+    parameters: list[str] = Field(
         default=[], description="An array of AWS SSM Parameter Store parameter names to fetch."
     )
-    parameter_tags: List[ParameterStoreTag] = Field(
+    parameter_tags: list[ParameterStoreTag] = Field(
         default=[],
         description=(
             "AWS SSM Parameter store parameters with this tag will be fetched and made available."
         ),
     )
-    parameter_paths: List[str] = Field(
+    parameter_paths: list[str] = Field(
         default=[], description="List of path prefixes to pull parameters from."
     )
     with_decryption: bool = Field(
@@ -202,10 +202,10 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
     @contextmanager
     def parameters_in_environment(
         self,
-        parameters: Optional[List[str]] = None,
-        parameter_tags: Optional[List[ParameterStoreTag]] = None,
-        parameter_paths: Optional[List[str]] = None,
-    ) -> Generator[Dict[str, str], None, None]:
+        parameters: Optional[list[str]] = None,
+        parameter_tags: Optional[list[ParameterStoreTag]] = None,
+        parameter_paths: Optional[list[str]] = None,
+    ) -> Generator[dict[str, str], None, None]:
         """Yields a dict which maps selected Parameter Store parameters to their string values. Also
         sets chosen parameters as environment variables.
 
@@ -265,10 +265,10 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
 
     def fetch_parameters(
         self,
-        parameters: Optional[List[str]] = None,
-        parameter_tags: Optional[List[ParameterStoreTag]] = None,
-        parameter_paths: Optional[List[str]] = None,
-    ) -> Dict[str, str]:
+        parameters: Optional[list[str]] = None,
+        parameter_tags: Optional[list[ParameterStoreTag]] = None,
+        parameter_paths: Optional[list[str]] = None,
+    ) -> dict[str, str]:
         """Fetches parameters from SSM Parameter Store and returns them as a dict.
 
         Args:

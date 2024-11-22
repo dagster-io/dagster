@@ -1,7 +1,8 @@
 import os
 from collections import defaultdict
+from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Iterator, List, Mapping, NamedTuple, Optional, Sequence
+from typing import NamedTuple, Optional
 
 import click
 import git
@@ -103,7 +104,7 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
 
 
 def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
-    grouped_commits: Mapping[str, List[ParsedCommit]] = defaultdict(list)
+    grouped_commits: Mapping[str, list[ParsedCommit]] = defaultdict(list)
     for commit in documented:
         grouped_commits[commit.changelog_category].append(commit)
 
@@ -118,7 +119,7 @@ def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
 def _get_undocumented_section(undocumented: Sequence[ParsedCommit]) -> str:
     undocumented_text = "# Undocumented Changes"
 
-    grouped_commits: Mapping[str, List[ParsedCommit]] = defaultdict(list)
+    grouped_commits: Mapping[str, list[ParsedCommit]] = defaultdict(list)
     for commit in undocumented:
         grouped_commits[commit.author].append(commit)
 
@@ -140,8 +141,8 @@ def _get_commits(
 
 
 def _generate_changelog_text(new_version: str, prev_version: str) -> str:
-    documented: List[ParsedCommit] = []
-    undocumented: List[ParsedCommit] = []
+    documented: list[ParsedCommit] = []
+    undocumented: list[ParsedCommit] = []
 
     for commit in _get_commits([OSS_REPO, INTERNAL_REPO], new_version, prev_version):
         if commit.ignore:
@@ -174,7 +175,7 @@ def generate_changelog(new_version: str, prev_version: Optional[str] = None) -> 
         repo.git.checkout("master")
 
     new_text = _generate_changelog_text(new_version, prev_version)
-    with open(CHANGELOG_PATH, "r") as f:
+    with open(CHANGELOG_PATH) as f:
         current_changelog = f.read()
 
     new_changelog = new_text + current_changelog[1:]

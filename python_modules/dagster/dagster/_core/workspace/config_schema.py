@@ -36,7 +36,7 @@ def ensure_workspace_config(
             validation_result.errors,
             workspace_config,
         )
-    return cast(Dict[str, object], validation_result.value)
+    return cast(dict[str, object], validation_result.value)
 
 
 def _get_target_config() -> Mapping[str, ScalarUnion]:

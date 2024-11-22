@@ -128,7 +128,7 @@ class DictTypeRouter(BaseTypeRouter, Generic[T]):
 
     @staticmethod
     def match(context: Union[InputContext, OutputContext], typing_type: Any) -> bool:
-        return get_origin(typing_type) in (dict, Dict, Mapping)
+        return get_origin(typing_type) in (dict, dict, Mapping)
 
     @property
     def is_base_type(self) -> bool:

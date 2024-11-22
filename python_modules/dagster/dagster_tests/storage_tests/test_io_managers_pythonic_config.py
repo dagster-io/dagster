@@ -245,11 +245,11 @@ def test_config_schemas() -> None:
         base_dir: str
 
         @classmethod
-        def input_config_schema(cls) -> Type[Config]:
+        def input_config_schema(cls) -> type[Config]:
             return InputConfigSchema
 
         @classmethod
-        def output_config_schema(cls) -> Type[Config]:
+        def output_config_schema(cls) -> type[Config]:
             return OutputConfigSchema
 
         def handle_output(self, context, obj):
@@ -324,7 +324,7 @@ def test_load_input_handle_output_input_config() -> None:
                 return context.config["config_value"]
 
         @classmethod
-        def input_config_schema(cls) -> Type[Config]:
+        def input_config_schema(cls) -> type[Config]:
             return InputConfigSchema
 
     did_run = {}
@@ -376,11 +376,11 @@ def test_config_param_load_input_handle_output_config() -> None:
         prefix_output: str
 
         @classmethod
-        def input_config_schema(cls) -> Type[Config]:
+        def input_config_schema(cls) -> type[Config]:
             return InputConfigSchema
 
         @classmethod
-        def output_config_schema(cls) -> Type[Config]:
+        def output_config_schema(cls) -> type[Config]:
             return OutputConfigSchema
 
         def load_input(self, context: InputContext):
@@ -456,7 +456,6 @@ def test_observable_source_asset_io_manager_def() -> None:
         def load_input(self, context: "InputContext") -> object:
             with open(
                 os.path.join(self.base_path, "/".join(context.asset_key.path)),
-                mode="r",
                 encoding="utf-8",
             ) as ff:
                 return str(ff.read())

@@ -7,12 +7,12 @@ from setuptools import find_packages, setup
 
 def long_description() -> str:
     here = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(here, "README.md"), "r", encoding="utf8") as fh:
+    with open(os.path.join(here, "README.md"), encoding="utf8") as fh:
         return fh.read()
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_pandas/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 

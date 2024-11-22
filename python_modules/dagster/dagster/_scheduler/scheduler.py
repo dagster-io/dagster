@@ -194,8 +194,8 @@ def execute_scheduler_iteration_loop(
 ) -> "DaemonIterator":
     from dagster._daemon.daemon import SpanMarker
 
-    scheduler_run_futures: Dict[str, Future] = {}
-    iteration_times: Dict[str, ScheduleIterationTimes] = {}
+    scheduler_run_futures: dict[str, Future] = {}
+    iteration_times: dict[str, ScheduleIterationTimes] = {}
 
     submit_threadpool_executor = None
     threadpool_executor = None
@@ -261,10 +261,10 @@ def launch_scheduled_runs(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     end_datetime_utc: datetime.datetime,
-    iteration_times: Dict[str, ScheduleIterationTimes],
+    iteration_times: dict[str, ScheduleIterationTimes],
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    scheduler_run_futures: Optional[Dict[str, Future]] = None,
+    scheduler_run_futures: Optional[dict[str, Future]] = None,
     max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
     max_tick_retries: int = 0,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
@@ -285,7 +285,7 @@ def launch_scheduled_runs(
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SCHEDULE)
 
-    running_schedules: Dict[str, RemoteSchedule] = {}
+    running_schedules: dict[str, RemoteSchedule] = {}
     all_workspace_schedule_selector_ids = set()
     error_locations = set()
 
@@ -572,7 +572,7 @@ def launch_scheduled_runs_for_schedule_iterator(
     if not timezone_str:
         timezone_str = "UTC"
 
-    tick_times: List[datetime.datetime] = []
+    tick_times: list[datetime.datetime] = []
 
     now_timestamp = end_datetime_utc.timestamp()
 

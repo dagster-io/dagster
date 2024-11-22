@@ -3,7 +3,7 @@ from abc import abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Iterator, Optional, Sequence, Type, Union, cast
+from typing import Dict, Iterator, Optional, Sequence, Type, TypedDict, Union, cast
 
 from dagster import OutputContext
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
@@ -16,11 +16,6 @@ from dagster._core.storage.db_io_manager import (
     TableSlice,
 )
 from pydantic import Field
-
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
 
 if sys.version_info >= (3, 11):
     from typing import NotRequired
@@ -36,15 +31,15 @@ DELTA_DATE_FORMAT = "%Y-%m-%d"
 @dataclass(frozen=True)
 class TableConnection:
     table_uri: str
-    storage_options: Dict[str, str]
-    table_config: Optional[Dict[str, str]]
+    storage_options: dict[str, str]
+    table_config: Optional[dict[str, str]]
 
 
 class _StorageOptionsConfig(TypedDict, total=False):
-    local: Dict[str, str]
-    s3: Dict[str, str]
-    azure: Dict[str, str]
-    gcs: Dict[str, str]
+    local: dict[str, str]
+    s3: dict[str, str]
+    azure: dict[str, str]
+    gcs: dict[str, str]
 
 
 class WriteMode(str, Enum):
@@ -65,10 +60,10 @@ class _DeltaTableIOManagerResourceConfig(TypedDict):
     overwrite_schema: bool
     writer_engine: WriterEngine
     storage_options: _StorageOptionsConfig
-    client_options: NotRequired[Dict[str, str]]
-    table_config: NotRequired[Dict[str, str]]
-    custom_metadata: NotRequired[Dict[str, str]]
-    writer_properties: NotRequired[Dict[str, str]]
+    client_options: NotRequired[dict[str, str]]
+    table_config: NotRequired[dict[str, str]]
+    custom_metadata: NotRequired[dict[str, str]]
+    writer_properties: NotRequired[dict[str, str]]
 
 
 class DeltaLakeIOManager(ConfigurableIOManagerFactory):
@@ -141,7 +136,7 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
         default=None, description="Additional configuration passed to http client."
     )
 
-    table_config: Optional[Dict[str, str]] = Field(
+    table_config: Optional[dict[str, str]] = Field(
         default=None,
         description="Additional config and metadata added to table on creation.",
     )
@@ -150,10 +145,10 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
         default=None, alias="schema", description="Name of the schema to use."
     )  # schema is a reserved word for pydantic
 
-    custom_metadata: Optional[Dict[str, str]] = Field(
+    custom_metadata: Optional[dict[str, str]] = Field(
         default=None, description="Custom metadata that is added to transaction commit."
     )
-    writer_properties: Optional[Dict[str, str]] = Field(
+    writer_properties: Optional[dict[str, str]] = Field(
         default=None, description="Writer properties passed to the rust engine writer."
     )
 
@@ -162,7 +157,7 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
     def type_handlers() -> Sequence[DbTypeHandler]: ...
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return None
 
     def create_io_manager(self, context) -> DbIOManager:

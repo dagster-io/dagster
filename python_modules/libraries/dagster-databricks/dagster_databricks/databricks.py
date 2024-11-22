@@ -182,11 +182,8 @@ class WorkspaceClientFactory:
         azure_tenant_id: Optional[str] = None,
     ):
         """Ensure that all required credentials are provided for the given auth type."""
-        if (
-            oauth_client_id
-            and not oauth_client_secret
-            or oauth_client_secret
-            and not oauth_client_id
+        if (oauth_client_id and not oauth_client_secret) or (
+            oauth_client_secret and not oauth_client_id
         ):
             raise ValueError(
                 "If using databricks service principal oauth credentials, both oauth_client_id and"
@@ -569,7 +566,7 @@ class DatabricksJobRunner:
 
     def retrieve_logs_for_run_id(
         self, log: logging.Logger, databricks_run_id: int
-    ) -> Optional[Tuple[Optional[str], Optional[str]]]:
+    ) -> Optional[tuple[Optional[str], Optional[str]]]:
         """Retrieve the stdout and stderr logs for a run."""
         run = self.client.workspace_client.jobs.get_run(databricks_run_id)
         # Run.cluster_instance can be None. In that case, fall back to cluster instance on first

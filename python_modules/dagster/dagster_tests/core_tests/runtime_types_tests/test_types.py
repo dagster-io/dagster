@@ -38,7 +38,7 @@ class BarObj:
 
 class _Bar(PythonObjectDagsterType):
     def __init__(self):
-        super(_Bar, self).__init__(BarObj, name="Bar", description="A bar.")
+        super().__init__(BarObj, name="Bar", description="A bar.")
 
 
 Bar = _Bar()

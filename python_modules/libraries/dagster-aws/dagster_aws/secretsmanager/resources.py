@@ -168,7 +168,7 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
     for the execution of their compute functions.
     """
 
-    secrets: List[str] = Field(
+    secrets: list[str] = Field(
         default=[], description="An array of AWS Secrets Manager secrets arns to fetch."
     )
     secrets_tag: Optional[str] = Field(
@@ -183,9 +183,9 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
     @contextmanager
     def secrets_in_environment(
         self,
-        secrets: Optional[List[str]] = None,
+        secrets: Optional[list[str]] = None,
         secrets_tag: Optional[str] = None,
-    ) -> Generator[Dict[str, str], None, None]:
+    ) -> Generator[dict[str, str], None, None]:
         """Yields a dict which maps selected SecretsManager secrets to their string values. Also
         sets chosen secrets as environment variables.
 
@@ -223,9 +223,9 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
 
     def fetch_secrets(
         self,
-        secrets: Optional[List[str]] = None,
+        secrets: Optional[list[str]] = None,
         secrets_tag: Optional[str] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Fetches secrets from AWS Secrets Manager and returns them as a dict.
 
         Args:

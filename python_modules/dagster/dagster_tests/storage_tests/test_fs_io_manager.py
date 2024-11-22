@@ -318,7 +318,7 @@ def test_fs_io_manager_partitioned_multi_asset():
                 "out_2": AssetOut(key=AssetKey("upstream_asset_2")),
             },
         )
-        def upstream_asset() -> Tuple[Output[int], Output[int]]:
+        def upstream_asset() -> tuple[Output[int], Output[int]]:
             return (Output(1, output_name="out_1"), Output(2, output_name="out_2"))
 
         @asset(

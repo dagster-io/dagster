@@ -152,7 +152,7 @@ class DagsterDltTranslator:
         return {}
 
     @public
-    def get_kinds(self, resource: DltResource, destination: Destination) -> Set[str]:
+    def get_kinds(self, resource: DltResource, destination: Destination) -> set[str]:
         """A method that takes in a dlt resource and returns the kinds which should be
         attached. Defaults to the destination type and "dlt".
 

@@ -6,7 +6,7 @@ from dagster_dbt.asset_specs import build_dbt_asset_specs
 
 
 def test_build_dbt_asset_specs_as_external_assets(
-    test_jaffle_shop_manifest: Dict[str, Any],
+    test_jaffle_shop_manifest: dict[str, Any],
 ) -> None:
     assert Definitions(
         assets=[

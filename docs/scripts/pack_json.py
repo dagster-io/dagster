@@ -3,10 +3,10 @@ import json
 import os
 import re
 import shutil
-from typing import Any, Dict, List
+from typing import Any
 
 
-def read_json(filename: str) -> Dict[str, object]:
+def read_json(filename: str) -> dict[str, object]:
     with open(filename, encoding="utf8") as f:
         data = json.load(f)
         assert isinstance(data, dict)
@@ -23,7 +23,7 @@ def write_json_gz(filename: str, data: object) -> None:
         json.dump(data, gz_f, sort_keys=True)
 
 
-def extract_route_from_path(path_to_folder: str, root: str, file: str) -> List[str]:
+def extract_route_from_path(path_to_folder: str, root: str, file: str) -> list[str]:
     sub_path = root.replace(path_to_folder, "")[1:]
     route = sub_path.split("/") + [file.replace(".fjson", "")]
     return route
@@ -42,7 +42,7 @@ def add_data_at_route(root_data, route, data):
     curr[last] = data
 
 
-def rewrite_relative_links(root: str, file_data: Dict[str, object]) -> None:
+def rewrite_relative_links(root: str, file_data: dict[str, object]) -> None:
     """Transform relative links generated from Sphinx to work with the actual _apidocs URL.
 
     This method mutate the `file_data` in place.
@@ -84,7 +84,7 @@ def rewrite_relative_links(root: str, file_data: Dict[str, object]) -> None:
 
 
 def pack_directory_json(path_to_folder: str):
-    root_data: Dict[str, Any] = {}
+    root_data: dict[str, Any] = {}
 
     for root, _, files in os.walk(path_to_folder):
         for filename in files:

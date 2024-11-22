@@ -57,7 +57,7 @@ class DataVersion(
         cls,
         value: str,
     ):
-        return super(DataVersion, cls).__new__(
+        return super().__new__(
             cls,
             value=check.str_param(value, "value"),
         )
@@ -79,7 +79,7 @@ class DataVersionsByPartition(
             key_type=str,
             value_type=(str, DataVersion),
         )
-        return super(DataVersionsByPartition, cls).__new__(
+        return super().__new__(
             cls,
             data_versions_by_partition={
                 partition: DataVersion(version) if isinstance(version, str) else version
@@ -124,7 +124,7 @@ class DataProvenance(
     ):
         from dagster._core.definitions.events import AssetKey
 
-        return super(DataProvenance, cls).__new__(
+        return super().__new__(
             cls,
             code_version=check.str_param(code_version, "code_version"),
             input_data_versions=check.mapping_param(
@@ -588,7 +588,7 @@ class CachingStaleStatusResolver:
         visited = set()
         root_causes = []
         while candidates:
-            next_candidates: List[StaleCause] = []
+            next_candidates: list[StaleCause] = []
             for cause in candidates:
                 if cause.dedupe_key not in visited:
                     if cause.children is None:

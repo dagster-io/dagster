@@ -16,7 +16,7 @@ class DatabricksTaskBlueprint(BlueprintAssetsDefinition):
     """
 
     type: Literal["dagster_databricks/task"] = "dagster_databricks/task"
-    task: Dict[str, Any] = Field(
+    task: dict[str, Any] = Field(
         ...,
         description=(
             "Specification of the databricks task to run. Environment variables used by "

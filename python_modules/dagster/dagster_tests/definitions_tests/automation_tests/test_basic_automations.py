@@ -20,8 +20,8 @@ def make_automations_aware_definitions(
     schedules: Optional[Sequence[ScheduleDefinition]] = None,
     sensors: Optional[Sequence[SensorDefinition]] = None,
 ):
-    job_defs: List[Union[JobDefinition, UnresolvedAssetJobDefinition]] = []
-    assets_defs: List[Union[AssetsDefinition, SourceAsset]] = []
+    job_defs: list[Union[JobDefinition, UnresolvedAssetJobDefinition]] = []
+    assets_defs: list[Union[AssetsDefinition, SourceAsset]] = []
     for schedule_def in schedules or []:
         job_defs.append(schedule_def.target.job_def)
         assets_defs.extend(schedule_def.target.assets_defs)

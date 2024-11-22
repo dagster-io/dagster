@@ -43,7 +43,7 @@ class ObjectTypeDef(TypedDict):
     Key: str
     LastModified: datetime
     ETag: Optional[str]
-    ChecksumAlgorithm: Optional[List[ChecksumAlgorithmType]]
+    ChecksumAlgorithm: Optional[list[ChecksumAlgorithmType]]
     Size: Optional[int]
     StorageClass: Optional[ObjectStorageClassType]
     Owner: Optional[OwnerTypeDef]

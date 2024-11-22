@@ -31,7 +31,7 @@ class TypeCheckData(
     )
 ):
     def __new__(cls, success, label, description=None, metadata=None):
-        return super(TypeCheckData, cls).__new__(
+        return super().__new__(
             cls,
             success=check.bool_param(success, "success"),
             label=check.str_param(label, "label"),
@@ -57,7 +57,7 @@ class UserFailureData(
     )
 ):
     def __new__(cls, label, description=None, metadata=None):
-        return super(UserFailureData, cls).__new__(
+        return super().__new__(
             cls,
             label=check.str_param(label, "label"),
             description=check.opt_str_param(description, "description"),
@@ -91,7 +91,7 @@ class StepFailureData(
     )
 ):
     def __new__(cls, error, user_failure_data, error_source=None):
-        return super(StepFailureData, cls).__new__(
+        return super().__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
             user_failure_data=check.opt_inst_param(
@@ -152,7 +152,7 @@ class StepRetryData(
     )
 ):
     def __new__(cls, error, seconds_to_wait=None):
-        return super(StepRetryData, cls).__new__(
+        return super().__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
             seconds_to_wait=check.opt_numeric_param(seconds_to_wait, "seconds_to_wait"),
@@ -162,6 +162,4 @@ class StepRetryData(
 @whitelist_for_serdes
 class StepSuccessData(NamedTuple("_StepSuccessData", [("duration_ms", float)])):
     def __new__(cls, duration_ms):
-        return super(StepSuccessData, cls).__new__(
-            cls, duration_ms=check.float_param(duration_ms, "duration_ms")
-        )
+        return super().__new__(cls, duration_ms=check.float_param(duration_ms, "duration_ms"))

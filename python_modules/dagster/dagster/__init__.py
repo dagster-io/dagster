@@ -649,10 +649,10 @@ if TYPE_CHECKING:
     # from dagster.some.module import (
     #     Foo as Foo,
     # )
-    pass  # noqa: TCH005
+    pass  # noqa: TC005
 
 
-_DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
+_DEPRECATED: Final[Mapping[str, tuple[str, str, str]]] = {
     ##### EXAMPLE
     # "Foo": (
     #     "dagster.some.module",
@@ -661,7 +661,7 @@ _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
     # ),
 }
 
-_DEPRECATED_RENAMED: Final[Mapping[str, TypingTuple[Callable, str]]] = {
+_DEPRECATED_RENAMED: Final[Mapping[str, tuple[Callable, str]]] = {
     ##### EXAMPLE
     # "Foo": (Bar, "1.1.0"),
 }

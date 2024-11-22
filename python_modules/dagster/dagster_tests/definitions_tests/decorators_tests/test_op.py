@@ -361,8 +361,7 @@ def test_op_yields_multiple_bare_values():
 
 def test_op_returns_iterator():
     def iterator():
-        for i in range(3):
-            yield i
+        yield from range(3)
 
     @op
     def return_iterator(_):
@@ -443,8 +442,8 @@ def test_ins():
 def test_ins_dagster_types():
     assert In(dagster_type=None)
     assert In(dagster_type=int)
-    assert In(dagster_type=List)
-    assert In(dagster_type=List[int])  # typing type
+    assert In(dagster_type=list)
+    assert In(dagster_type=list[int])  # typing type
     assert In(dagster_type=Int)  # dagster type
 
 
@@ -474,8 +473,8 @@ def test_out():
 def test_out_dagster_types():
     assert Out(dagster_type=None)
     assert Out(dagster_type=int)
-    assert Out(dagster_type=List)
-    assert Out(dagster_type=List[int])  # typing type
+    assert Out(dagster_type=list)
+    assert Out(dagster_type=list[int])  # typing type
     assert Out(dagster_type=Int)  # dagster type
 
 
@@ -486,7 +485,7 @@ def test_multi_out():
             "b": Out(metadata={"y": 2}, code_version="bar"),
         }
     )
-    def my_op() -> Tuple[int, str]:
+    def my_op() -> tuple[int, str]:
         return 1, "q"
 
     assert len(my_op.output_defs) == 2
@@ -520,7 +519,7 @@ def test_multi_out():
 
 def test_tuple_out():
     @op
-    def my_op() -> Tuple[int, str]:
+    def my_op() -> tuple[int, str]:
         return 1, "a"
 
     assert len(my_op.output_defs) == 1
@@ -596,7 +595,7 @@ def test_ins_dict():
 
 def test_multi_out_dict():
     @op(out={"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})})
-    def my_op() -> Tuple[int, str]:
+    def my_op() -> tuple[int, str]:
         return 1, "q"
 
     assert len(my_op.output_defs) == 2
@@ -673,7 +672,7 @@ def test_out_dagster_type():
 
 def test_multiout_dagster_type():
     @op(out={"a": Out(dagster_type=even_type), "b": Out(dagster_type=even_type)})
-    def basic_multi() -> Tuple[int, int]:
+    def basic_multi() -> tuple[int, int]:
         return 6, 6
 
     assert basic_multi() == (6, 6)
@@ -693,7 +692,7 @@ def test_multiout_single_entry():
 def test_tuple_named_single_output():
     # Ensure functionality in the case where you want to have a named tuple output
     @op(out={"a": Out()})
-    def single_output_op_tuple() -> Tuple[int, int]:
+    def single_output_op_tuple() -> tuple[int, int]:
         return (5, 5)
 
     assert single_output_op_tuple() == (5, 5)
@@ -716,7 +715,7 @@ def test_op_multiout_incorrect_annotation():
 
 def test_op_typing_annotations():
     @op
-    def my_dict_op() -> Dict[str, int]:
+    def my_dict_op() -> dict[str, int]:
         return {"foo": 5}
 
     assert my_dict_op() == {"foo": 5}
@@ -724,7 +723,7 @@ def test_op_typing_annotations():
     my_output = {"foo": 5}, ("foo",)
 
     @op(out={"a": Out(), "b": Out()})
-    def my_dict_multiout() -> Tuple[Dict[str, int], Tuple[str]]:
+    def my_dict_multiout() -> tuple[dict[str, int], tuple[str]]:
         return {"foo": 5}, ("foo",)
 
     assert my_dict_multiout() == my_output
@@ -736,7 +735,7 @@ def test_op_typing_annotations():
 # Test simplest possible multiout case
 def test_op_multiout_base():
     @op(out={"a": Out(), "b": Out()})
-    def basic_multiout() -> Tuple[int, str]:
+    def basic_multiout() -> tuple[int, str]:
         return (5, "foo")
 
     assert basic_multiout() == (5, "foo")
@@ -756,7 +755,7 @@ def test_op_multiout_size_mismatch():
     ):
 
         @op(out={"a": Out(), "b": Out()})
-        def _basic_multiout_wrong_annotation() -> Tuple[int, int, int]:
+        def _basic_multiout_wrong_annotation() -> tuple[int, int, int]:
             return (5, 5, 5)
 
 
@@ -1126,7 +1125,7 @@ def test_output_generic_correct_inner_type():
 
 def test_generic_output_tuple_op():
     @op(out={"out1": Out(), "out2": Out()})
-    def the_op() -> Tuple[Output[str], Output[int]]:
+    def the_op() -> tuple[Output[str], Output[int]]:
         return (Output("foo"), Output(5))
 
     result = execute_op_in_graph(the_op)
@@ -1139,7 +1138,7 @@ def test_generic_output_tuple_op():
     assert result2.value == 5
 
     @op(out={"out1": Out(), "out2": Out()})
-    def the_op_bad_type_match() -> Tuple[Output[str], Output[int]]:
+    def the_op_bad_type_match() -> tuple[Output[str], Output[int]]:
         return (Output("foo"), Output("foo"))  # type: ignore
 
     with pytest.raises(
@@ -1164,7 +1163,7 @@ def test_generic_output_tuple_op():
 
 def test_generic_output_tuple_complex_types():
     @op(out={"out1": Out(), "out2": Out()})
-    def the_op() -> Tuple[Output[List[str]], Output[Dict[str, str]]]:
+    def the_op() -> tuple[Output[list[str]], Output[dict[str, str]]]:
         return (Output(["foo"]), Output({"foo": "bar"}))
 
     result = execute_op_in_graph(the_op)
@@ -1180,7 +1179,7 @@ def test_generic_output_tuple_complex_types():
 
 def test_generic_output_name_mismatch():
     @op(out={"out1": Out(), "out2": Out()})
-    def the_op() -> Tuple[Output[int], Output[str]]:
+    def the_op() -> tuple[Output[int], Output[str]]:
         return Output(42, output_name="out2"), Output("foo", output_name="out1")
 
     with pytest.raises(
@@ -1204,7 +1203,7 @@ def test_generic_output_name_mismatch():
 
 def test_generic_dynamic_output():
     @op
-    def basic() -> List[DynamicOutput[int]]:
+    def basic() -> list[DynamicOutput[int]]:
         return [
             DynamicOutput(mapping_key="1", value=1),
             DynamicOutput(mapping_key="2", value=2),
@@ -1223,7 +1222,7 @@ def test_generic_dynamic_output():
 
 def test_generic_dynamic_output_type_mismatch():
     @op
-    def basic() -> List[DynamicOutput[int]]:
+    def basic() -> list[DynamicOutput[int]]:
         return [
             DynamicOutput(mapping_key="1", value=1),
             DynamicOutput(mapping_key="2", value="2"),  # type: ignore
@@ -1250,7 +1249,7 @@ def test_generic_dynamic_output_type_mismatch():
 
 def test_generic_dynamic_output_mix_with_regular():
     @op(out={"regular": Out(), "dynamic": DynamicOut()})
-    def basic() -> Tuple[Output[int], List[DynamicOutput[str]]]:
+    def basic() -> tuple[Output[int], list[DynamicOutput[str]]]:
         return (
             Output(5),
             [
@@ -1276,7 +1275,7 @@ def test_generic_dynamic_output_mix_with_regular():
 
 def test_generic_dynamic_output_mix_with_regular_type_mismatch():
     @op(out={"regular": Out(), "dynamic": DynamicOut()})
-    def basic() -> Tuple[Output[int], List[DynamicOutput[str]]]:
+    def basic() -> tuple[Output[int], list[DynamicOutput[str]]]:
         return (
             Output(5),
             [
@@ -1306,7 +1305,7 @@ def test_generic_dynamic_output_mix_with_regular_type_mismatch():
 
 def test_generic_dynamic_output_name_not_provided():
     @op
-    def basic() -> List[DynamicOutput[int]]:
+    def basic() -> list[DynamicOutput[int]]:
         return [DynamicOutput(value=5, mapping_key="blah", output_name="blah")]
 
     with pytest.raises(
@@ -1330,7 +1329,7 @@ def test_generic_dynamic_output_name_not_provided():
 
 def test_generic_dynamic_output_name_mismatch():
     @op(out={"the_name": DynamicOut()})
-    def basic() -> List[DynamicOutput[int]]:
+    def basic() -> list[DynamicOutput[int]]:
         return [DynamicOutput(value=5, mapping_key="blah", output_name="bad_name")]
 
     with pytest.raises(
@@ -1354,7 +1353,7 @@ def test_generic_dynamic_output_name_mismatch():
 
 def test_generic_dynamic_output_bare_list():
     @op
-    def basic() -> List[DynamicOutput]:
+    def basic() -> list[DynamicOutput]:
         return [DynamicOutput(4, mapping_key="1")]
 
     result = execute_op_in_graph(basic)
@@ -1396,7 +1395,7 @@ def test_generic_dynamic_output_bare():
 
 def test_generic_dynamic_output_empty():
     @op
-    def basic() -> List[DynamicOutput]:
+    def basic() -> list[DynamicOutput]:
         return []
 
     result = execute_op_in_graph(basic)
@@ -1448,7 +1447,7 @@ def test_dynamic_output_yields_no_outputs():
 
 def test_generic_dynamic_output_empty_with_type():
     @op
-    def basic() -> List[DynamicOutput[str]]:
+    def basic() -> list[DynamicOutput[str]]:
         return []
 
     result = execute_op_in_graph(basic)
@@ -1485,7 +1484,7 @@ def test_generic_dynamic_output_empty_with_type():
 
 def test_generic_dynamic_multiple_outputs_empty():
     @op(out={"out1": Out(), "out2": DynamicOut()})
-    def basic() -> Tuple[Output, List[DynamicOutput]]:
+    def basic() -> tuple[Output, list[DynamicOutput]]:
         return (Output(5), [])
 
     result = execute_op_in_graph(basic)
@@ -1505,8 +1504,8 @@ def test_generic_dynamic_multiple_outputs_empty():
 def test_non_dynamic_empty_list():
     @op(
         out={
-            "output_1": Out(List[Dict]),
-            "output_2": Out(List[Dict]),
+            "output_1": Out(list[dict]),
+            "output_2": Out(list[dict]),
         }
     )
     def dummy_op():
@@ -1535,7 +1534,7 @@ def test_required_io_manager_op_access():
 
 def test_dynamic_output_bad_list_entry():
     @op
-    def basic() -> List[DynamicOutput[int]]:
+    def basic() -> list[DynamicOutput[int]]:
         return ["foo"]  # type: ignore
 
     with pytest.raises(
@@ -1557,7 +1556,7 @@ def test_dynamic_output_bad_list_entry():
         basic()
 
     @op(out={"out1": Out(), "out2": DynamicOut()})
-    def basic_multi_output() -> Tuple[Output[int], List[DynamicOutput[str]]]:
+    def basic_multi_output() -> tuple[Output[int], list[DynamicOutput[str]]]:
         return (5, ["foo"])  # type: ignore
 
     with pytest.raises(
@@ -1582,8 +1581,8 @@ def test_dynamic_output_bad_list_entry():
 
 
 def test_list_out_op():
-    @op(out={"list_out": Out(List[str]), "other_out": Out(int)})
-    def test_op() -> Tuple[List[str], int]:
+    @op(out={"list_out": Out(list[str]), "other_out": Out(int)})
+    def test_op() -> tuple[list[str], int]:
         return ([], 5)
 
     result = execute_op_in_graph(test_op)
@@ -1614,7 +1613,7 @@ def test_output_return_no_annotation():
 
 def test_output_mismatch_tuple_lengths():
     @op(out={"out1": Out(), "out2": Out()})
-    def the_op() -> Tuple[int, int]:
+    def the_op() -> tuple[int, int]:
         return (1, 2, 3)  # type: ignore  # (test error)
 
     with pytest.raises(DagsterInvariantViolationError, match="Length mismatch"):

@@ -62,7 +62,7 @@ class JobInfo(NamedTuple):
     job_name: str
 
     @staticmethod
-    def from_node(node: Dict[str, Any]) -> List["JobInfo"]:
+    def from_node(node: dict[str, Any]) -> list["JobInfo"]:
         repo_name = node["name"]
         repo_location_name = node["location"]["name"]
         return [

@@ -19,7 +19,7 @@ from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace, load_
     ],
 )
 def test_fetch_tableau_workspace_data(
-    clazz: Union[Type[TableauCloudWorkspace], Type[TableauServerWorkspace]],
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -60,7 +60,7 @@ def test_fetch_tableau_workspace_data(
     ],
 )
 def test_invalid_workbook(
-    clazz: Union[Type[TableauCloudWorkspace], Type[TableauServerWorkspace]],
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -114,7 +114,7 @@ def test_invalid_workbook(
 @pytest.mark.usefixtures("get_workbooks")
 @pytest.mark.usefixtures("get_workbook")
 def test_translator_spec(
-    clazz: Union[Type[TableauCloudWorkspace], Type[TableauServerWorkspace]],
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
     host_key: str,
     host_value: str,
     site_name: str,

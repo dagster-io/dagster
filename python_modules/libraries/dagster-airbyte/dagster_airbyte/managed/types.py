@@ -24,14 +24,14 @@ class AirbyteSyncMode(ABC):
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, AirbyteSyncMode) and self.to_json() == other.to_json()
 
-    def __init__(self, json_repr: Dict[str, Any]):
+    def __init__(self, json_repr: dict[str, Any]):
         self.json_repr = json_repr
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         return self.json_repr
 
     @classmethod
-    def from_json(cls, json_repr: Dict[str, Any]) -> "AirbyteSyncMode":
+    def from_json(cls, json_repr: dict[str, Any]) -> "AirbyteSyncMode":
         return cls(
             {
                 k: v
@@ -86,7 +86,7 @@ class AirbyteSyncMode(ABC):
     def incremental_append_dedup(
         cls,
         cursor_field: Optional[str] = None,
-        primary_key: Optional[Union[str, List[str]]] = None,
+        primary_key: Optional[Union[str, list[str]]] = None,
     ) -> "AirbyteSyncMode":
         """Syncs new records from the source, appending to an append-only history
         table in the destination. Also generates a deduplicated view mirroring the
@@ -349,11 +349,11 @@ class InitializedAirbyteConnection:
         )
 
 
-def _remove_none_values(obj: Dict[str, Any]) -> Dict[str, Any]:
+def _remove_none_values(obj: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in obj.items() if v is not None}
 
 
-def _dump_class(obj: Any) -> Dict[str, Any]:
+def _dump_class(obj: Any) -> dict[str, Any]:
     return json.loads(json.dumps(obj, default=lambda o: _remove_none_values(o.__dict__)))
 
 

@@ -74,7 +74,7 @@ class EventLogEntry(
         job_name=None,
         dagster_event=None,
     ):
-        return super(EventLogEntry, cls).__new__(
+        return super().__new__(
             cls,
             check.opt_inst_param(error_info, "error_info", SerializableErrorInfo),
             coerce_valid_log_level(level),

@@ -19,7 +19,7 @@ class DeltaLakePolarsTypeHandler(DeltalakeBaseArrowTypeHandler[PolarsTypes]):
     def from_arrow(
         self,
         obj: Union[ds.Dataset, pa.RecordBatchReader],
-        target_type: Type[PolarsTypes],
+        target_type: type[PolarsTypes],
     ) -> PolarsTypes:
         if isinstance(obj, pa.RecordBatchReader):
             return pl.DataFrame(obj.read_all())
@@ -32,7 +32,7 @@ class DeltaLakePolarsTypeHandler(DeltalakeBaseArrowTypeHandler[PolarsTypes]):
         else:
             raise NotImplementedError("Unsupported objected passed of type:  %s", type(obj))
 
-    def to_arrow(self, obj: PolarsTypes) -> Tuple[pa.RecordBatchReader, Dict[str, Any]]:
+    def to_arrow(self, obj: PolarsTypes) -> tuple[pa.RecordBatchReader, dict[str, Any]]:
         if isinstance(obj, pl.LazyFrame):
             obj = obj.collect()
         return obj.to_arrow().to_reader(), {"large_dtypes": True}
@@ -58,7 +58,7 @@ class DeltaLakePolarsTypeHandler(DeltalakeBaseArrowTypeHandler[PolarsTypes]):
             return self.from_arrow(dataset, context.dagster_type.typing_type)
 
     @property
-    def supported_types(self) -> Sequence[Type[object]]:
+    def supported_types(self) -> Sequence[type[object]]:
         return [pl.DataFrame, pl.LazyFrame]
 
 
@@ -68,5 +68,5 @@ class DeltaLakePolarsIOManager(DeltaLakeIOManager):
         return [DeltaLakePolarsTypeHandler(), DeltaLakePyArrowTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return pl.DataFrame

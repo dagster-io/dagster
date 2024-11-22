@@ -107,7 +107,7 @@ class UPathIOManager(IOManager):
             raise ValueError(f"Unsupported base_path type: {type(self._base_path)}")
 
     @property
-    def storage_options(self) -> Dict[str, Any]:
+    def storage_options(self) -> dict[str, Any]:
         """Utility function to get the fsspec storage_options which are often consumed by various I/O functions.
 
         Returns:
@@ -126,7 +126,7 @@ class UPathIOManager(IOManager):
         self,
         context: OutputContext,
         obj: Any,
-    ) -> Dict[str, MetadataValue]:
+    ) -> dict[str, MetadataValue]:
         """Child classes should override this method to add custom metadata to the outputs."""
         return {}
 
@@ -217,7 +217,7 @@ class UPathIOManager(IOManager):
 
     def _get_paths_for_partitions(
         self, context: Union[InputContext, OutputContext]
-    ) -> Dict[str, "UPath"]:
+    ) -> dict[str, "UPath"]:
         """Returns a dict of partition_keys into I/O paths for a given context."""
         if not context.has_asset_partitions:
             raise TypeError(
@@ -390,7 +390,7 @@ class UPathIOManager(IOManager):
             if awaited_object is not None
         }
 
-    def _load_partitions(self, context: InputContext) -> Dict[str, Any]:
+    def _load_partitions(self, context: InputContext) -> dict[str, Any]:
         # load multiple partitions
         if not inspect.iscoroutinefunction(self.load_from_path):
             return self.load_partitions(context)
@@ -398,7 +398,7 @@ class UPathIOManager(IOManager):
             # load_from_path returns a coroutine, so we need to await the results
             return self.load_partitions_async(context)
 
-    def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
+    def load_input(self, context: InputContext) -> Union[Any, dict[str, Any]]:
         # If no asset key, we are dealing with an op output which is always non-partitioned
         if not context.has_asset_key or not context.has_asset_partitions:
             path = self._get_path(context)
@@ -462,7 +462,7 @@ def is_dict_type(type_obj) -> bool:
     if type_obj == dict:
         return True
 
-    if hasattr(type_obj, "__origin__") and type_obj.__origin__ in (dict, Dict, Mapping):
+    if hasattr(type_obj, "__origin__") and type_obj.__origin__ in (dict, dict, Mapping):
         return True
 
     return False

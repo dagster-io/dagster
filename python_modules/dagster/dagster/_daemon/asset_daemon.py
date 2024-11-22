@@ -271,7 +271,7 @@ class AutoMaterializeLaunchContext:
 
     def __exit__(
         self,
-        exception_type: Type[BaseException],
+        exception_type: type[BaseException],
         exception_value: Exception,
         traceback: TracebackType,
     ) -> None:
@@ -378,7 +378,7 @@ class AssetDaemon(DagsterDaemon):
                 " migrate` to enable."
             )
 
-        amp_tick_futures: Dict[Optional[str], Future] = {}
+        amp_tick_futures: dict[Optional[str], Future] = {}
         threadpool_executor = None
         submit_threadpool_executor = None
         with ExitStack() as stack:
@@ -428,7 +428,7 @@ class AssetDaemon(DagsterDaemon):
         workspace_process_context: IWorkspaceProcessContext,
         threadpool_executor: Optional[ThreadPoolExecutor],
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
-        amp_tick_futures: Dict[Optional[str], Future],
+        amp_tick_futures: dict[Optional[str], Future],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
     ):
         instance: DagsterInstance = workspace_process_context.instance
@@ -442,7 +442,7 @@ class AssetDaemon(DagsterDaemon):
 
         workspace = workspace_process_context.create_request_context()
 
-        sensors_and_repos: Sequence[Tuple[Optional[RemoteSensor], Optional[RemoteRepository]]] = []
+        sensors_and_repos: Sequence[tuple[Optional[RemoteSensor], Optional[RemoteRepository]]] = []
 
         if use_auto_materialize_sensors:
             workspace_snapshot = {
@@ -580,7 +580,7 @@ class AssetDaemon(DagsterDaemon):
     def _create_initial_sensor_cursors_from_raw_cursor(
         self,
         instance: DagsterInstance,
-        sensors_and_repos: Sequence[Tuple[RemoteSensor, RemoteRepository]],
+        sensors_and_repos: Sequence[tuple[RemoteSensor, RemoteRepository]],
         all_sensor_states: Mapping[str, InstigatorState],
         pre_sensor_cursor: AssetDaemonCursor,
     ) -> Mapping[str, InstigatorState]:
@@ -885,9 +885,9 @@ class AssetDaemon(DagsterDaemon):
         sensor: Optional[RemoteSensor],
         workspace_process_context: IWorkspaceProcessContext,
         asset_graph: RemoteAssetGraph,
-        auto_materialize_entity_keys: Set[EntityKey],
+        auto_materialize_entity_keys: set[EntityKey],
         stored_cursor: AssetDaemonCursor,
-        auto_observe_asset_keys: Set[AssetKey],
+        auto_observe_asset_keys: set[AssetKey],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         is_retry: bool,
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
@@ -1042,9 +1042,9 @@ class AssetDaemon(DagsterDaemon):
         evaluation_id: int,
         run_request: RunRequest,
         reserved_run_id: str,
-        run_request_execution_data_cache: Dict[JobSubsetSelector, RunRequestExecutionData],
+        run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
-    ) -> Tuple[str, AbstractSet[EntityKey]]:
+    ) -> tuple[str, AbstractSet[EntityKey]]:
         # check that the run_request requires the backfill daemon rather than if the setting is enabled to
         # account for the setting changing between tick retries
         if run_request.requires_backfill_daemon():
@@ -1100,7 +1100,7 @@ class AssetDaemon(DagsterDaemon):
         instance: DagsterInstance,
         tick_context: AutoMaterializeLaunchContext,
         workspace_process_context: IWorkspaceProcessContext,
-        evaluations_by_key: Dict[EntityKey, AutomationConditionEvaluationWithRunIds],
+        evaluations_by_key: dict[EntityKey, AutomationConditionEvaluationWithRunIds],
         evaluation_id: int,
         run_requests: Sequence[RunRequest],
         reserved_run_ids: Sequence[str],
@@ -1114,8 +1114,8 @@ class AssetDaemon(DagsterDaemon):
         to_submit = zip(range(len(run_requests)), reserved_run_ids, run_requests)
 
         def submit_run_request(
-            run_id_with_run_request: Tuple[int, str, RunRequest],
-        ) -> Tuple[str, AbstractSet[EntityKey]]:
+            run_id_with_run_request: tuple[int, str, RunRequest],
+        ) -> tuple[str, AbstractSet[EntityKey]]:
             i, run_id, run_request = run_id_with_run_request
             return self._submit_run_request(
                 i=i,

@@ -250,7 +250,7 @@ class DaskExecutor(Executor):
 
                     run_config = plan_context.run_config
 
-                    dask_task_name = "%s.%s" % (job_name, step.key)
+                    dask_task_name = f"{job_name}.{step.key}"
 
                     recon_job = plan_context.reconstructable_job
 

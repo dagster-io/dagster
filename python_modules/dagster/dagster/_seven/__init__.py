@@ -10,7 +10,7 @@ from typing import Any, Callable, List, Sequence, Type
 
 from typing_extensions import TypeGuard
 
-import dagster._seven.json as json  # noqa: F401
+import dagster._seven.json as json
 from dagster._seven.json import (
     JSONDecodeError as JSONDecodeError,
     dump as dump,
@@ -73,7 +73,7 @@ def is_lambda(target: object) -> TypeGuard[Callable[..., Any]]:
 
 
 def is_function_or_decorator_instance_of(
-    target: object, kls: Type[Any]
+    target: object, kls: type[Any]
 ) -> TypeGuard[Callable[..., Any]]:
     return inspect.isfunction(target) or (isinstance(target, kls) and hasattr(target, "__name__"))
 
@@ -84,7 +84,7 @@ def qualname_differs(target: object) -> bool:
     )
 
 
-def xplat_shlex_split(s: str) -> List[str]:
+def xplat_shlex_split(s: str) -> list[str]:
     if IS_WINDOWS:
         return shlex.split(s, posix=False)
 
@@ -95,7 +95,7 @@ def get_import_error_message(import_error: ImportError) -> str:
     return import_error.msg
 
 
-def is_subclass(child_type: Type[Any], parent_type: Type[Any]):
+def is_subclass(child_type: type[Any], parent_type: type[Any]):
     """Due to some pathological interactions betwen bugs in the Python typing library
     (https://github.com/python/cpython/issues/88459 and
     https://github.com/python/cpython/issues/89010), some types (list[str] in Python 3.9, for

@@ -22,7 +22,7 @@ from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
 JAFFLE_SHOP_ROOT_PATH = os.path.normpath(test_jaffle_shop_path)
 
 
-def test_basic_attach_code_references(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+def test_basic_attach_code_references(test_jaffle_shop_manifest: dict[str, Any]) -> None:
     @dbt_assets(
         manifest=test_jaffle_shop_manifest,
         dagster_dbt_translator=DagsterDbtTranslator(
@@ -47,7 +47,7 @@ def test_basic_attach_code_references(test_jaffle_shop_manifest: Dict[str, Any])
 
 
 def test_basic_attach_code_references_no_project_dir(
-    test_jaffle_shop_manifest: Dict[str, Any],
+    test_jaffle_shop_manifest: dict[str, Any],
 ) -> None:
     # expect exception because enable_code_references=True but no project_dir
     with pytest.raises(DagsterInvalidDefinitionError):
@@ -61,7 +61,7 @@ def test_basic_attach_code_references_no_project_dir(
         def my_dbt_assets(): ...
 
 
-def test_with_source_code_references_wrapper(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+def test_with_source_code_references_wrapper(test_jaffle_shop_manifest: dict[str, Any]) -> None:
     @dbt_assets(
         manifest=test_jaffle_shop_manifest,
         dagster_dbt_translator=DagsterDbtTranslator(
@@ -87,7 +87,7 @@ def test_with_source_code_references_wrapper(test_jaffle_shop_manifest: Dict[str
         assert code_reference.file_path.endswith("test_code_references.py")
 
 
-def test_link_to_git_wrapper(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+def test_link_to_git_wrapper(test_jaffle_shop_manifest: dict[str, Any]) -> None:
     @dbt_assets(
         manifest=test_jaffle_shop_manifest,
         dagster_dbt_translator=DagsterDbtTranslator(

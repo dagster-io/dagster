@@ -348,7 +348,7 @@ def test_direct_op_invocation_complex_config() -> None:
         foo: str
         bar: bool
         baz: int
-        qux: List[str]
+        qux: list[str]
 
     @op
     def basic_op(context, config: MyBasicOpConfig):

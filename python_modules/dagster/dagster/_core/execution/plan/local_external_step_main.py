@@ -20,7 +20,7 @@ def main(step_run_ref_path: str) -> None:
     file_handle = LocalFileHandle(step_run_ref_path)
     step_run_ref = pickle.loads(file_manager.read_data(file_handle))
 
-    all_events: List[EventLogEntry] = []
+    all_events: list[EventLogEntry] = []
 
     try:
         instance = external_instance_from_step_run_ref(

@@ -28,17 +28,17 @@ from dagster_airflow.version import __version__ as __version__
 DagsterLibraryRegistry.register("dagster-airflow", __version__)
 
 __all__ = [
-    "make_dagster_definitions_from_airflow_dags_path",
-    "make_dagster_definitions_from_airflow_dag_bag",
-    "make_schedules_and_jobs_from_airflow_dag_bag",
-    "make_dagster_job_from_airflow_dag",
-    "load_assets_from_airflow_dag",
-    "make_ephemeral_airflow_db_resource",
-    "make_persistent_airflow_db_resource",
+    "DagsterCloudOperator",
     "DagsterHook",
     "DagsterLink",
     "DagsterOperator",
-    "DagsterCloudOperator",
+    "load_assets_from_airflow_dag",
+    "make_dagster_definitions_from_airflow_dag_bag",
+    "make_dagster_definitions_from_airflow_dags_path",
+    "make_dagster_job_from_airflow_dag",
+    "make_ephemeral_airflow_db_resource",
+    "make_persistent_airflow_db_resource",
+    "make_schedules_and_jobs_from_airflow_dag_bag",
 ]
 
 

@@ -9,7 +9,7 @@ from dagster._serdes import whitelist_for_serdes
 
 def get_recursive_type_keys(
     config_type_snap: "ConfigTypeSnap", config_schema_snapshot: "ConfigSchemaSnapshot"
-) -> Set[str]:
+) -> set[str]:
     check.inst_param(config_type_snap, "config_type_snap", ConfigTypeSnap)
     check.inst_param(config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot)
     result_keys = set()
@@ -144,17 +144,17 @@ class ConfigTypeSnap(IHaveNew):
     def get_child_type_keys(self) -> Sequence[str]:
         if ConfigTypeKind.is_closed_generic(self.kind):
             # all closed generics have type params
-            return cast(List[str], self.type_param_keys)
+            return cast(list[str], self.type_param_keys)
         elif ConfigTypeKind.has_fields(self.kind):
             return [
-                field.type_key for field in cast(List[ConfigFieldSnap], check.not_none(self.fields))
+                field.type_key for field in cast(list[ConfigFieldSnap], check.not_none(self.fields))
             ]
         else:
             return []
 
     def has_enum_value(self, value: object) -> bool:
         check.invariant(self.kind == ConfigTypeKind.ENUM)
-        for enum_value in cast(List[ConfigEnumValueSnap], self.enum_values):
+        for enum_value in cast(list[ConfigEnumValueSnap], self.enum_values):
             if enum_value.value == value:
                 return True
         return False

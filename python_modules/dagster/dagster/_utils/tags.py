@@ -16,12 +16,12 @@ if TYPE_CHECKING:
 class TagConcurrencyLimitsCounter:
     """Helper object that keeps track of when the tag concurrency limits are met."""
 
-    _key_limits: Dict[str, int]
-    _key_value_limits: Dict[Tuple[str, str], int]
-    _unique_value_limits: Dict[str, int]
-    _key_counts: Dict[str, int]
-    _key_value_counts: Dict[Tuple[str, str], int]
-    _unique_value_counts: Dict[Tuple[str, str], int]
+    _key_limits: dict[str, int]
+    _key_value_limits: dict[tuple[str, str], int]
+    _unique_value_limits: dict[str, int]
+    _key_counts: dict[str, int]
+    _key_value_counts: dict[tuple[str, str], int]
+    _unique_value_counts: dict[tuple[str, str], int]
 
     def __init__(
         self,
@@ -158,7 +158,7 @@ def normalize_tags(
     Returns:
         Mapping[str, str]: A dictionary of normalized tags.
     """
-    normalized_tags: Dict[str, str] = {}
+    normalized_tags: dict[str, str] = {}
     invalid_tag_keys = []
 
     for key, value in check.opt_mapping_param(tags, "tags", key_type=str).items():

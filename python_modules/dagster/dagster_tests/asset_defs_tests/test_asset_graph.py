@@ -65,7 +65,7 @@ def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
 @pytest.fixture(
     name="asset_graph_from_assets", params=[AssetGraph.from_assets, to_remote_asset_graph]
 )
-def asset_graph_from_assets_fixture(request) -> Callable[[List[AssetsDefinition]], BaseAssetGraph]:
+def asset_graph_from_assets_fixture(request) -> Callable[[list[AssetsDefinition]], BaseAssetGraph]:
     return request.param
 
 

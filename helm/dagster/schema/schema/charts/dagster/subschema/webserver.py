@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 from schema.charts.utils import kubernetes
 from schema.charts.utils.utils import BaseModel
@@ -13,7 +13,7 @@ class Server(BaseModel):
 
 class Workspace(BaseModel):
     enabled: bool
-    servers: List[Server]
+    servers: list[Server]
     externalConfigmap: Optional[str] = None
 
 
@@ -24,11 +24,11 @@ class Webserver(BaseModel, extra="forbid"):
     pathPrefix: Optional[str] = None
     service: kubernetes.Service
     workspace: Workspace
-    env: Union[Dict[str, str], List[kubernetes.EnvVar]]
-    envConfigMaps: List[kubernetes.ConfigMapEnvSource]
-    envSecrets: List[kubernetes.SecretEnvSource]
-    deploymentLabels: Dict[str, str]
-    labels: Dict[str, str]
+    env: Union[dict[str, str], list[kubernetes.EnvVar]]
+    envConfigMaps: list[kubernetes.ConfigMapEnvSource]
+    envSecrets: list[kubernetes.SecretEnvSource]
+    deploymentLabels: dict[str, str]
+    labels: dict[str, str]
     nodeSelector: kubernetes.NodeSelector
     affinity: kubernetes.Affinity
     tolerations: kubernetes.Tolerations
@@ -44,6 +44,6 @@ class Webserver(BaseModel, extra="forbid"):
     dbPoolRecycle: Optional[int] = None
     logLevel: Optional[str] = None
     schedulerName: Optional[str] = None
-    volumeMounts: Optional[List[kubernetes.VolumeMount]] = None
-    volumes: Optional[List[kubernetes.Volume]] = None
+    volumeMounts: Optional[list[kubernetes.VolumeMount]] = None
+    volumes: Optional[list[kubernetes.Volume]] = None
     initContainerResources: Optional[kubernetes.Resources] = None

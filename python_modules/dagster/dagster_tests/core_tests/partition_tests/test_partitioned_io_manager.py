@@ -34,7 +34,7 @@ def test_partitioned_io_manager(hourly, daily):
         return 42
 
     @asset(partitions_def=daily)
-    def daily_asset(hourly_asset: Dict[str, Any]):
+    def daily_asset(hourly_asset: dict[str, Any]):
         return hourly_asset
 
     with instance_for_test() as instance:
@@ -79,7 +79,7 @@ def test_partitioned_io_manager_single_partition_dependency_errors_with_wrong_ty
         return 42
 
     @asset(partitions_def=daily)
-    def daily_asset(upstream_asset: Dict[str, Any]):
+    def daily_asset(upstream_asset: dict[str, Any]):
         return upstream_asset
 
     with pytest.raises(DagsterTypeCheckDidNotPass):

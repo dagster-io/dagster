@@ -126,7 +126,9 @@ def build_celery_k8s_suite_steps() -> List[BuildkiteTopLevelStep]:
         "-default",
         "-markredis",
     ]
-    directory = os.path.join("integration_tests", "test_suites", "celery-k8s-test-suite")
+    directory = os.path.join(
+        "integration_tests", "test_suites", "celery-k8s-test-suite"
+    )
     return build_integration_suite_steps(
         directory,
         pytest_tox_factors,
@@ -153,7 +155,9 @@ def build_daemon_suite_steps():
 
 def build_auto_materialize_perf_suite_steps():
     pytest_tox_factors = None
-    directory = os.path.join("integration_tests", "test_suites", "auto_materialize_perf_tests")
+    directory = os.path.join(
+        "integration_tests", "test_suites", "auto_materialize_perf_tests"
+    )
     return build_integration_suite_steps(
         directory,
         pytest_tox_factors,
@@ -233,7 +237,9 @@ def build_integration_suite_steps(
     ).build_steps()
 
 
-def k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
+def k8s_integration_suite_pytest_extra_cmds(
+    version: AvailablePythonVersion, _
+) -> List[str]:
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
@@ -241,7 +247,9 @@ def k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) 
     ]
 
 
-def celery_k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
+def celery_k8s_integration_suite_pytest_extra_cmds(
+    version: AvailablePythonVersion, _
+) -> List[str]:
     cmds = [
         'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",

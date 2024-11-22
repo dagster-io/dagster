@@ -14,7 +14,7 @@ def check_parquet_support():
         pass
 
     try:
-        import fastparquet  # type: ignore  # noqa: F401
+        import fastparquet  # type: ignore
 
         return
     except ImportError:

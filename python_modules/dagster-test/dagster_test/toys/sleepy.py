@@ -6,7 +6,7 @@ from dagster._core.execution.context.compute import OpExecutionContext
 
 
 @op
-def sleeper(context, units: List[int]) -> int:
+def sleeper(context, units: list[int]) -> int:
     tot = 0
     for sec in units:
         context.log.info(f"Sleeping for {sec} seconds")
@@ -19,15 +19,15 @@ def sleeper(context, units: List[int]) -> int:
 @op(
     config_schema=[int],
     out={
-        "out_1": Out(List[int]),
-        "out_2": Out(List[int]),
-        "out_3": Out(List[int]),
-        "out_4": Out(List[int]),
+        "out_1": Out(list[int]),
+        "out_2": Out(list[int]),
+        "out_3": Out(list[int]),
+        "out_4": Out(list[int]),
     },
 )
-def giver(context: OpExecutionContext) -> Tuple[List[int], List[int], List[int], List[int]]:
+def giver(context: OpExecutionContext) -> tuple[list[int], list[int], list[int], list[int]]:
     units = context.op_config
-    queues: List[List[int]] = [[], [], [], []]
+    queues: list[list[int]] = [[], [], [], []]
     for i, sec in enumerate(units):
         queues[i % 4].append(sec)
 

@@ -193,8 +193,8 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
         self,
         context: Union[OpExecutionContext, AssetExecutionContext],
         session: PipesSession,
-        submit_task_dict: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        submit_task_dict: dict[str, Any],
+    ) -> dict[str, Any]:
         if "existing_cluster_id" in submit_task_dict:
             # we can't set env vars on an existing cluster
             # so we must use CLI to pass Pipes params
@@ -230,7 +230,7 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
 
         return submit_task_dict
 
-    def get_task_fields_which_support_cli_parameters(self) -> Set[str]:
+    def get_task_fields_which_support_cli_parameters(self) -> set[str]:
         return {"spark_python_task", "python_wheel_task"}
 
     def _poll_til_success(
@@ -401,7 +401,7 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         # An error here is an expected result, since an IOError will be thrown if the next message
         # chunk doesn't yet exist. Swallowing the error here is equivalent to doing a no-op on a
         # status check showing a non-existent file.
-        except IOError:
+        except OSError:
             return None
 
     def no_messages_debug_text(self) -> str:
@@ -463,7 +463,7 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
                 chunk = content[self.log_position :]
                 self.log_position = len(content)
                 return chunk
-            except IOError:
+            except OSError:
                 return None
 
     @property
@@ -479,7 +479,7 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
                 return None
             try:
                 child_dirs = list(self.dbfs_client.list(cluster_driver_log_root))
-            except IOError:
+            except OSError:
                 child_dirs = []  # log root doesn't exist yet
             match = next(
                 (

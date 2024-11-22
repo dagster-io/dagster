@@ -1,7 +1,7 @@
 # pyright: reportPrivateImportUsage=false
 
 import datetime
-import logging  # noqa: F401; used by mock in string form
+import logging
 import time
 
 import pytest

@@ -209,7 +209,7 @@ class EventRecordsFilter(
         check.inst_param(event_type, "event_type", DagsterEventType)
 
         # type-ignores work around mypy type inference bug
-        return super(EventRecordsFilter, cls).__new__(
+        return super().__new__(
             cls,
             event_type=event_type,
             asset_key=check.opt_inst_param(asset_key, "asset_key", AssetKey),
@@ -228,7 +228,7 @@ class EventRecordsFilter(
     @staticmethod
     def get_cursor_params(
         cursor: Optional[str] = None, ascending: bool = False
-    ) -> Tuple[Optional[int], Optional[int]]:
+    ) -> tuple[Optional[int], Optional[int]]:
         if not cursor:
             return None, None
 
@@ -290,7 +290,7 @@ class AssetRecordsFilter(
         before_storage_id: Optional[int] = None,
         storage_ids: Optional[Sequence[int]] = None,
     ):
-        return super(AssetRecordsFilter, cls).__new__(
+        return super().__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             asset_partitions=check.opt_nullable_sequence_param(
@@ -380,7 +380,7 @@ class RunStatusChangeRecordsFilter(
         if event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
             check.failed("Invalid event type for run status change event filter")
 
-        return super(RunStatusChangeRecordsFilter, cls).__new__(
+        return super().__new__(
             cls,
             event_type=check.inst_param(event_type, "event_type", DagsterEventType),
             after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),

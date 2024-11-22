@@ -9,7 +9,7 @@ import pytest
 from click.testing import CliRunner
 
 
-def mock_vscode_cli_command(args: List[str]) -> bytes:
+def mock_vscode_cli_command(args: list[str]) -> bytes:
     return b"redhat.vscode-yaml"
 
 

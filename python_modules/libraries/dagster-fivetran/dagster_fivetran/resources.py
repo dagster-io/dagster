@@ -169,7 +169,7 @@ class FivetranResource(ConfigurableResource):
         if connector_details["status"]["setup_state"] != "connected":
             raise Failure(f"Connector '{connector_id}' cannot be synced as it has not been setup")
 
-    def get_connector_sync_status(self, connector_id: str) -> Tuple[datetime.datetime, bool, str]:
+    def get_connector_sync_status(self, connector_id: str) -> tuple[datetime.datetime, bool, str]:
         """Gets details about the status of the most recent Fivetran sync operation for a given
         connector.
 
@@ -679,7 +679,7 @@ class FivetranWorkspace(ConfigurableResource):
 @experimental
 def load_fivetran_asset_specs(
     workspace: FivetranWorkspace,
-    dagster_fivetran_translator: Type[DagsterFivetranTranslator] = DagsterFivetranTranslator,
+    dagster_fivetran_translator: type[DagsterFivetranTranslator] = DagsterFivetranTranslator,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
@@ -723,7 +723,7 @@ def load_fivetran_asset_specs(
 @record
 class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     workspace: FivetranWorkspace
-    translator_cls: Type[DagsterFivetranTranslator]
+    translator_cls: type[DagsterFivetranTranslator]
 
     @property
     def defs_key(self) -> str:

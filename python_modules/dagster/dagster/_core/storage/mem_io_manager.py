@@ -11,7 +11,7 @@ class InMemoryIOManager(IOManager):
     """
 
     def __init__(self):
-        self.values: Dict[Tuple[object, ...], object] = {}
+        self.values: dict[tuple[object, ...], object] = {}
 
     def handle_output(self, context: OutputContext, obj: object):
         keys = tuple(context.get_identifier())

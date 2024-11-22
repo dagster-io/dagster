@@ -195,7 +195,7 @@ def de_escape_asset_key(asset_key: str) -> str:
     return asset_key.replace(ESCAPE_CHARACTER + "/", "/")
 
 
-def to_assey_key_path(asset_key: str) -> List[str]:
+def to_assey_key_path(asset_key: str) -> list[str]:
     """Converts an asset key to a collection of key parts.
 
     Forward slash (except escaped) is used as separator. De-escapes the key.
@@ -323,7 +323,7 @@ def _assert_opt_param_type(value: _T, expected_type: Any, method: str, param: st
 
 
 def _assert_env_param_type(
-    env_params: PipesParams, key: str, expected_type: Type[_T], cls: Type
+    env_params: PipesParams, key: str, expected_type: type[_T], cls: type
 ) -> _T:
     value = env_params.get(key)
     if not isinstance(value, expected_type):
@@ -335,7 +335,7 @@ def _assert_env_param_type(
 
 
 def _assert_opt_env_param_type(
-    env_params: PipesParams, key: str, expected_type: Type[_T], cls: Type
+    env_params: PipesParams, key: str, expected_type: type[_T], cls: type
 ) -> Optional[_T]:
     value = env_params.get(key)
     if value is not None and not isinstance(value, expected_type):
@@ -387,7 +387,7 @@ def _normalize_param_metadata(
     param: str,
 ) -> Mapping[str, Union[PipesMetadataRawValue, PipesMetadataValue]]:
     _assert_param_type(metadata, dict, method, param)
-    new_metadata: Dict[str, PipesMetadataValue] = {}
+    new_metadata: dict[str, PipesMetadataValue] = {}
     for key, value in metadata.items():
         if not isinstance(key, str):
             raise DagsterPipesError(
@@ -703,7 +703,7 @@ class PipesDefaultContextLoader(PipesContextLoader):
     def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
         if self.FILE_PATH_KEY in params:
             path = _assert_env_param_type(params, self.FILE_PATH_KEY, str, self.__class__)
-            with open(path, "r") as f:
+            with open(path) as f:
                 data = json.load(f)
                 yield data
         elif self.DIRECT_KEY in params:
@@ -971,7 +971,7 @@ class PipesDbfsContextLoader(PipesContextLoader):
     def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
         unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
         path = os.path.join("/dbfs", unmounted_path.lstrip("/"))
-        with open(path, "r") as f:
+        with open(path) as f:
             yield json.load(f)
 
 
@@ -1127,7 +1127,7 @@ class PipesContext:
         opened_payload = message_writer.get_opened_payload()
         self._message_channel.write_message(_make_message("opened", opened_payload))
         self._logger = _PipesLogger(self)
-        self._materialized_assets: Set[str] = set()
+        self._materialized_assets: set[str] = set()
         self._closed: bool = False
 
     def __enter__(self) -> "PipesContext":

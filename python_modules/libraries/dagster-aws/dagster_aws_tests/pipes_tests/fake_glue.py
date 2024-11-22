@@ -44,7 +44,7 @@ class LocalGlueMockClient:
 
         self.process = None  # jobs will be executed in a separate process
 
-        self._job_runs: Dict[str, SimulatedJobRun] = {}  # mapping of JobRunId to SimulatedJobRun
+        self._job_runs: dict[str, SimulatedJobRun] = {}  # mapping of JobRunId to SimulatedJobRun
 
     @property
     def meta(self):
@@ -80,7 +80,7 @@ class LocalGlueMockClient:
 
         return response
 
-    def start_job_run(self, JobName: str, Arguments: Optional[Dict[str, str]], **kwargs):
+    def start_job_run(self, JobName: str, Arguments: Optional[dict[str, str]], **kwargs):
         params = {
             "JobName": JobName,
         }
@@ -133,7 +133,7 @@ class LocalGlueMockClient:
 
         return response
 
-    def batch_stop_job_run(self, JobName: str, JobRunIds: List[str]):
+    def batch_stop_job_run(self, JobName: str, JobRunIds: list[str]):
         for job_run_id in JobRunIds:
             if simulated_job_run := self._job_runs.get(job_run_id):
                 simulated_job_run.popen.terminate()

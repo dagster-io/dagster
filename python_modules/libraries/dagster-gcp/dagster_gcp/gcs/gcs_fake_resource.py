@@ -37,7 +37,7 @@ class FakeGCSBucket:
         from unittest import mock
 
         self.name = name
-        self.blobs: Dict[str, FakeGCSBlob] = {}
+        self.blobs: dict[str, FakeGCSBlob] = {}
         self.mock_extras = mock.MagicMock()
 
     def blob(self, blob_name: str, *args, **kwargs):
@@ -57,7 +57,7 @@ class FakeGCSClient:
     def __init__(self):
         from unittest import mock
 
-        self.buckets: Dict[str, FakeGCSBucket] = {}
+        self.buckets: dict[str, FakeGCSBucket] = {}
         self.mock_extras = mock.MagicMock()
 
     def bucket(self, bucket_name: str, *args, **kwargs):
@@ -70,8 +70,7 @@ class FakeGCSClient:
 
     def list_buckets(self, *args, **kwargs):
         self.mock_extras.list_buckets(*args, **kwargs)
-        for bucket in self.buckets.values():
-            yield bucket
+        yield from self.buckets.values()
 
     def list_blobs(
         self,

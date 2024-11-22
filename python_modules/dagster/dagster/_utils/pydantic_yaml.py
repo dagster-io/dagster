@@ -14,7 +14,7 @@ T = TypeVar("T", bound=BaseModel)
 
 
 def _parse_and_populate_model_with_annotated_errors(
-    cls: Type[T],
+    cls: type[T],
     obj_parse_root: ValueAndSourcePositionTree,
     obj_key_path_prefix: KeyPath,
 ) -> T:
@@ -59,7 +59,7 @@ def _parse_and_populate_model_with_annotated_errors(
     return model
 
 
-def parse_yaml_file_to_pydantic(cls: Type[T], src: str, filename: str = "<string>") -> T:
+def parse_yaml_file_to_pydantic(cls: type[T], src: str, filename: str = "<string>") -> T:
     """Parse the YAML source and create a Pydantic model instance from it.
 
     Attaches source position information to the `_source_position_and_key_path` attribute of the
@@ -87,7 +87,7 @@ def parse_yaml_file_to_pydantic(cls: Type[T], src: str, filename: str = "<string
 
 
 def parse_yaml_file_to_pydantic_sequence(
-    cls: Type[T], src: str, filename: str = "<string>"
+    cls: type[T], src: str, filename: str = "<string>"
 ) -> Sequence[T]:
     """Parse the YAML source and create a list of Pydantic model instances from it.
 

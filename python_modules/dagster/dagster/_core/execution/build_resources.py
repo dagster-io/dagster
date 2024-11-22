@@ -33,7 +33,7 @@ def get_mapped_resource_config(
             config_evr.errors,
             resource_config,
         )
-    config_value = cast(Dict[str, Any], config_evr.value)
+    config_value = cast(dict[str, Any], config_evr.value)
     return config_map_resources(resource_defs, config_value)
 
 
@@ -113,7 +113,7 @@ def build_resources(
 
 def wrap_resources_for_execution(
     resources: Optional[Mapping[str, Any]] = None,
-) -> Dict[str, ResourceDefinition]:
+) -> dict[str, ResourceDefinition]:
     return (
         {
             resource_key: wrap_resource_for_execution(resource)

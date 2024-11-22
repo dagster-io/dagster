@@ -38,7 +38,7 @@ class InProcessPipesContextLoader(PipesContextLoader):
 
 class InProcessPipesMessageWriteChannel(PipesMessageWriterChannel):
     def __init__(self) -> None:
-        self.messages: List[PipesMessage] = []
+        self.messages: list[PipesMessage] = []
 
     def write_message(self, message: PipesMessage) -> None:
         self.messages.append(message)
@@ -111,11 +111,13 @@ class InProcessPipesClient(PipesClient, TreatAsResourceParam):
         pipes_context_data = build_external_execution_context_data(context=context, extras=extras)
         pipes_context_loader = InProcessPipesContextLoader(pipes_context_data)
         pipes_message_writer = InProcessPipesMessageWriter()
-        with PipesContext(  # construct PipesContext directly to avoid env var check in open_dagster_pipes
-            context_loader=pipes_context_loader,
-            message_writer=pipes_message_writer,
-            params_loader=InProcessPipesParamLoader(),
-        ) as pipes_context:
+        with (
+            PipesContext(  # construct PipesContext directly to avoid env var check in open_dagster_pipes
+                context_loader=pipes_context_loader,
+                message_writer=pipes_message_writer,
+                params_loader=InProcessPipesParamLoader(),
+            ) as pipes_context
+        ):
             with open_pipes_session(
                 context=context,
                 context_injector=InProcessContextInjector(),

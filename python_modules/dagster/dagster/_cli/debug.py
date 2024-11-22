@@ -63,8 +63,8 @@ def export_command(run_id, output_file):
     name="import", help="Import the relevant artifacts from debug files in to the current instance."
 )
 @click.argument("input_files", nargs=-1, type=click.Path(exists=True))
-def import_command(input_files: Tuple[str, ...]):
-    debug_payloads: List[DebugRunPayload] = []
+def import_command(input_files: tuple[str, ...]):
+    debug_payloads: list[DebugRunPayload] = []
     for input_file in input_files:
         with GzipFile(input_file, "rb") as file:
             blob = file.read().decode("utf-8")

@@ -32,7 +32,7 @@ def _kill_on_cancel(instance_ref: InstanceRef, run_id, shutdown_event):
 
 def start_run_cancellation_thread(
     instance: DagsterInstance, run_id
-) -> Tuple[threading.Thread, threading.Event]:
+) -> tuple[threading.Thread, threading.Event]:
     print("Starting run cancellation thread")  # noqa: T201
     shutdown_event = threading.Event()
     thread = threading.Thread(

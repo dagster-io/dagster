@@ -96,7 +96,7 @@ class InputDefinition:
     _raw_metadata: ArbitraryMetadataMapping
     _metadata: Mapping[str, MetadataValue]
     _asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]
-    _asset_partitions_fn: Optional[Callable[["InputContext"], Set[str]]]
+    _asset_partitions_fn: Optional[Callable[["InputContext"], set[str]]]
 
     def __init__(
         self,
@@ -106,7 +106,7 @@ class InputDefinition:
         default_value: object = NoValueSentinel,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
-        asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
+        asset_partitions: Optional[Union[set[str], Callable[["InputContext"], set[str]]]] = None,
         input_manager_key: Optional[str] = None,
         # when adding new params, make sure to update combine_with_inferred and with_dagster_type below
     ):
@@ -196,7 +196,7 @@ class InputDefinition:
         else:
             return self.hardcoded_asset_key
 
-    def get_asset_partitions(self, context: "InputContext") -> Optional[Set[str]]:
+    def get_asset_partitions(self, context: "InputContext") -> Optional[set[str]]:
         """Get the set of partitions that this op will read from this InputDefinition for the given
         :py:class:`InputContext` (if any).
 
@@ -320,7 +320,7 @@ def _checked_inferred_type(inferred: InferredInputProps) -> DagsterType:
 
 class InputPointer(NamedTuple("_InputPointer", [("node_name", str), ("input_name", str)])):
     def __new__(cls, node_name: str, input_name: str):
-        return super(InputPointer, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(node_name, "node_name"),
             check.str_param(input_name, "input_name"),
@@ -333,7 +333,7 @@ class FanInInputPointer(
     )
 ):
     def __new__(cls, node_name: str, input_name: str, fan_in_index: int):
-        return super(FanInInputPointer, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(node_name, "node_name"),
             check.str_param(input_name, "input_name"),
@@ -422,7 +422,7 @@ class In(
     NamedTuple(
         "_In",
         [
-            ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
+            ("dagster_type", PublicAttr[Union[DagsterType, type[NoValueSentinel]]]),
             ("description", PublicAttr[Optional[str]]),
             ("default_value", PublicAttr[Any]),
             ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
@@ -432,7 +432,7 @@ class In(
             ),
             (
                 "asset_partitions",
-                PublicAttr[Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]]],
+                PublicAttr[Optional[Union[set[str], Callable[["InputContext"], set[str]]]]],
             ),
             ("input_manager_key", PublicAttr[Optional[str]]),
         ],
@@ -463,15 +463,15 @@ class In(
 
     def __new__(
         cls,
-        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
+        dagster_type: Union[type, DagsterType] = NoValueSentinel,
         description: Optional[str] = None,
         default_value: Any = NoValueSentinel,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
-        asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
+        asset_partitions: Optional[Union[set[str], Callable[["InputContext"], set[str]]]] = None,
         input_manager_key: Optional[str] = None,
     ):
-        return super(In, cls).__new__(
+        return super().__new__(
             cls,
             dagster_type=(
                 NoValueSentinel
@@ -520,7 +520,7 @@ class GraphIn(NamedTuple("_GraphIn", [("description", PublicAttr[Optional[str]])
     """
 
     def __new__(cls, description: Optional[str] = None):
-        return super(GraphIn, cls).__new__(cls, description=description)
+        return super().__new__(cls, description=description)
 
     def to_definition(self, name: str) -> InputDefinition:
         return InputDefinition(name=name, description=self.description)
