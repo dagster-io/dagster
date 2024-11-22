@@ -1988,8 +1988,8 @@ class DagsterInstance(DynamicPartitionsStore):
             asset_check_key
         )
 
-    @public
     @traced
+    @deprecated(breaking_version="2.0")
     def get_event_records(
         self,
         event_records_filter: "EventRecordsFilter",
@@ -2008,7 +2008,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             List[EventLogRecord]: List of event log records stored in the event log storage.
         """
-        from dagster._core.events import DagsterEventType
+        from dagster._core.events import PIPELINE_EVENTS, DagsterEventType
 
         if (
             event_records_filter.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
@@ -2017,6 +2017,18 @@ class DagsterInstance(DynamicPartitionsStore):
             warnings.warn(
                 "Asset materialization planned events with partitions subsets will not be "
                 "returned when the event records filter contains the asset_partitions argument"
+            )
+        elif event_records_filter.event_type == DagsterEventType.ASSET_MATERIALIZATION:
+            warnings.warn(
+                "Use fetch_materializations instead of get_event_records to fetch materialization events."
+            )
+        elif event_records_filter.event_type == DagsterEventType.ASSET_OBSERVATION:
+            warnings.warn(
+                "Use fetch_observations instead of get_event_records to fetch observation events."
+            )
+        elif event_records_filter.event_type in PIPELINE_EVENTS:
+            warnings.warn(
+                "Use fetch_run_status_changes instead of get_event_records to fetch run status change events."
             )
 
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
