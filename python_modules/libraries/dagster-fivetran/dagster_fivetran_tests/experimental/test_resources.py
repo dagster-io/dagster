@@ -6,9 +6,6 @@ from dagster_fivetran import FivetranOutput, FivetranWorkspace
 from dagster_fivetran.translator import MIN_TIME_STR
 
 from dagster_fivetran_tests.experimental.conftest import (
-    FIVETRAN_API_BASE,
-    FIVETRAN_API_VERSION,
-    FIVETRAN_CONNECTOR_ENDPOINT,
     SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
     SAMPLE_SUCCESS_MESSAGE,
     TEST_ACCOUNT_ID,
@@ -16,6 +13,7 @@ from dagster_fivetran_tests.experimental.conftest import (
     TEST_API_SECRET,
     TEST_MAX_TIME_STR,
     TEST_PREVIOUS_MAX_TIME_STR,
+    get_fivetran_connector_api_url,
     get_sample_connection_details,
 )
 
@@ -97,7 +95,7 @@ def test_basic_resource_request(
     # Replace the mock API call and set `failed_at` as more recent that `succeeded_at`
     all_api_mocks.replace(
         method_or_response=responses.GET,
-        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}",
+        url=get_fivetran_connector_api_url(connector_id),
         json=get_sample_connection_details(
             succeeded_at=TEST_PREVIOUS_MAX_TIME_STR, failed_at=TEST_MAX_TIME_STR
         ),
@@ -122,9 +120,7 @@ def test_sync_and_poll(n_polls, succeed_at_end, connector_id):
     )
     client = resource.get_client()
 
-    test_connector_endpoint = (
-        f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}"
-    )
+    test_connector_api_url = get_fivetran_connector_api_url(connector_id)
 
     test_succeeded_at = TEST_MAX_TIME_STR
     test_failed_at = TEST_PREVIOUS_MAX_TIME_STR
@@ -137,17 +133,17 @@ def test_sync_and_poll(n_polls, succeed_at_end, connector_id):
         with responses.RequestsMock() as response:
             response.add(
                 responses.GET,
-                f"{test_connector_endpoint}/schemas",
+                f"{test_connector_api_url}/schemas",
                 json=SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
             )
-            response.add(responses.PATCH, test_connector_endpoint, json=SAMPLE_SUCCESS_MESSAGE)
+            response.add(responses.PATCH, test_connector_api_url, json=SAMPLE_SUCCESS_MESSAGE)
             response.add(
-                responses.POST, f"{test_connector_endpoint}/force", json=SAMPLE_SUCCESS_MESSAGE
+                responses.POST, f"{test_connector_api_url}/force", json=SAMPLE_SUCCESS_MESSAGE
             )
             # initial state
             response.add(
                 responses.GET,
-                test_connector_endpoint,
+                test_connector_api_url,
                 json=get_sample_connection_details(
                     succeeded_at=MIN_TIME_STR, failed_at=MIN_TIME_STR
                 ),
@@ -156,7 +152,7 @@ def test_sync_and_poll(n_polls, succeed_at_end, connector_id):
             for _ in range(n_polls):
                 response.add(
                     responses.GET,
-                    test_connector_endpoint,
+                    test_connector_api_url,
                     json=get_sample_connection_details(
                         succeeded_at=MIN_TIME_STR, failed_at=MIN_TIME_STR
                     ),
@@ -164,7 +160,7 @@ def test_sync_and_poll(n_polls, succeed_at_end, connector_id):
             # final state will be updated
             response.add(
                 responses.GET,
-                test_connector_endpoint,
+                test_connector_api_url,
                 json=get_sample_connection_details(
                     succeeded_at=test_succeeded_at, failed_at=test_failed_at
                 ),

@@ -397,6 +397,12 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
 SAMPLE_SUCCESS_MESSAGE = {"code": "Success", "message": "Operation performed."}
 
 
+def get_fivetran_connector_api_url(connector_id: str) -> str:
+    return (
+        f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}"
+    )
+
+
 @pytest.fixture(name="connector_id")
 def connector_id_fixture() -> str:
     return "connector_id"
@@ -442,7 +448,7 @@ def fetch_workspace_data_api_mocks_fixture(
 
         response.add(
             method=responses.GET,
-            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}/schemas",
+            url=f"{get_fivetran_connector_api_url(connector_id)}/schemas",
             json=SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
             status=200,
         )
@@ -461,7 +467,7 @@ def all_api_mocks_fixture(
 ) -> Iterator[responses.RequestsMock]:
     fetch_workspace_data_api_mocks.add(
         method=responses.GET,
-        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}",
+        url=get_fivetran_connector_api_url(connector_id),
         json=get_sample_connection_details(
             succeeded_at=TEST_MAX_TIME_STR, failed_at=TEST_PREVIOUS_MAX_TIME_STR
         ),
@@ -469,7 +475,7 @@ def all_api_mocks_fixture(
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.PATCH,
-        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}",
+        url=get_fivetran_connector_api_url(connector_id),
         json=get_sample_connection_details(
             succeeded_at=TEST_MAX_TIME_STR, failed_at=TEST_PREVIOUS_MAX_TIME_STR
         ),
@@ -477,19 +483,19 @@ def all_api_mocks_fixture(
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.POST,
-        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}/force",
+        url=f"{get_fivetran_connector_api_url(connector_id)}/force",
         json=SAMPLE_SUCCESS_MESSAGE,
         status=200,
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.POST,
-        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}/resync",
+        url=f"{get_fivetran_connector_api_url(connector_id)}/resync",
         json=SAMPLE_SUCCESS_MESSAGE,
         status=200,
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.POST,
-        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}/schemas/tables/resync",
+        url=f"{get_fivetran_connector_api_url(connector_id)}/schemas/tables/resync",
         json=SAMPLE_SUCCESS_MESSAGE,
         status=200,
     )
