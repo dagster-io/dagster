@@ -618,11 +618,7 @@ def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[s
     if code:
         return hashlib.sha1(code.encode("utf-8")).hexdigest()
 
-    return (
-        dbt_resource_props["checksum"]["checksum"]
-        if "checksum" in dbt_resource_props and "checksum" in dbt_resource_props["checksum"]
-        else None
-    )
+    return dbt_resource_props.get("checksum", {}).get("checksum")
 
 
 def _attach_sql_model_code_reference(
