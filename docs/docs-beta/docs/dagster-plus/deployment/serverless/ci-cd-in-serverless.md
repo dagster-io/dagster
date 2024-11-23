@@ -1,7 +1,7 @@
 ---
 title: 'CI/CD in Serverless '
 displayed_sidebar: 'dagsterPlus'
-sidebar_position: 10
+sidebar_position: 30
 ---
 
 # CI/CD in Serverless

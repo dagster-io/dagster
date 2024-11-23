@@ -1,7 +1,7 @@
 ---
 title: 'Security & data protection'
 displayed_sidebar: 'dagsterPlus'
-sidebar_position: 20
+sidebar_position: 50
 ---
 
 # Serverless security & data protection

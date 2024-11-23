@@ -2,7 +2,7 @@
 title: 'Serverless run isolation'
 displayed_sidebar: 'dagsterPlus'
 sidebar_label: 'Run isolation'
-sidebar_position: 35
+sidebar_position: 20
 ---
 
 # Serverless run isolation

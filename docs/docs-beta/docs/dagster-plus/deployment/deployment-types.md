@@ -1,4 +1,5 @@
 ---
+title: Deployment types
 unlisted: true
 ---
 

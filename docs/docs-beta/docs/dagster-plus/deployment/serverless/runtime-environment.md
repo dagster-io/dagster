@@ -2,7 +2,7 @@
 title: 'Serverless runtime environment'
 displayed_sidebar: 'dagsterPlus'
 sidebar_label: 'Runtime environment'
-sidebar_position: 30
+sidebar_position: 10
 ---
 
 By default, Dagster+ Serverless will package your code as PEX files and deploys them on Docker images. Using PEX files significantly reduces the time to deploy since it does not require building a new Docker image and provisioning a new container for every code change. However you are able to customize the Serverless runtime environment in various ways:
