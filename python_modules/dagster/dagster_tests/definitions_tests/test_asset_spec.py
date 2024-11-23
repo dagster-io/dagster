@@ -1,7 +1,11 @@
+from typing import cast
+
+import dagster as dg
 import pytest
 from dagster import AssetSpec, AutoMaterializePolicy, AutomationCondition
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 
@@ -142,3 +146,87 @@ def test_merge_attributes_deps() -> None:
 
     spec_new_dep = new_spec.merge_attributes(deps={AssetKey("baz")})
     assert spec_new_dep.deps == [AssetDep(AssetKey("bar")), AssetDep(AssetKey("baz"))]
+
+
+def test_map_asset_specs_basic_specs() -> None:
+    specs = [
+        AssetSpec(key="foo"),
+        AssetSpec(key="bar"),
+    ]
+
+    mapped_specs = dg.map_asset_specs(
+        lambda spec: spec.replace_attributes(owners=["ben@dagsterlabs.com"]), specs
+    )
+
+    assert all(spec.owners == ["ben@dagsterlabs.com"] for spec in mapped_specs)
+
+
+def test_map_asset_specs_basic_defs() -> None:
+    @dg.asset
+    def my_asset():
+        pass
+
+    @dg.asset
+    def my_other_asset():
+        pass
+
+    assets = [my_asset, my_other_asset]
+
+    mapped_assets = dg.map_asset_specs(
+        lambda spec: spec.replace_attributes(owners=["ben@dagsterlabs.com"]), assets
+    )
+
+    assert all(
+        spec.owners == ["ben@dagsterlabs.com"] for asset in mapped_assets for spec in asset.specs
+    )
+
+
+def test_map_asset_specs_mixed_specs_defs() -> None:
+    @dg.asset
+    def my_asset():
+        pass
+
+    spec_and_defs = [
+        my_asset,
+        AssetSpec(key="bar"),
+    ]
+
+    mapped_specs_and_defs = dg.map_asset_specs(
+        lambda spec: spec.replace_attributes(owners=["ben@dagsterlabs.com"]), spec_and_defs
+    )
+
+    assert all(
+        spec.owners == ["ben@dagsterlabs.com"]
+        for spec in cast(AssetsDefinition, mapped_specs_and_defs[0]).specs
+    )
+    assert cast(AssetSpec, mapped_specs_and_defs[1]).owners == ["ben@dagsterlabs.com"]
+
+
+def test_map_asset_specs_multi_asset() -> None:
+    @dg.multi_asset(
+        specs=[
+            AssetSpec(key="foo"),
+            AssetSpec(key="bar"),
+        ]
+    )
+    def my_multi_asset():
+        pass
+
+    @dg.multi_asset(
+        specs=[
+            AssetSpec(key="baz"),
+            AssetSpec(key="qux"),
+        ]
+    )
+    def my_other_multi_asset():
+        pass
+
+    assets = [my_multi_asset, my_other_multi_asset]
+
+    mapped_assets = dg.map_asset_specs(
+        lambda spec: spec.replace_attributes(owners=["ben@dagsterlabs.com"]), assets
+    )
+
+    assert all(
+        spec.owners == ["ben@dagsterlabs.com"] for asset in mapped_assets for spec in asset.specs
+    )

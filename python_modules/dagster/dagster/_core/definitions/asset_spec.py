@@ -4,12 +4,15 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Callable,
     Iterable,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Set,
+    Union,
+    overload,
 )
 
 import dagster._check as check
@@ -42,6 +45,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
+    from dagster._core.definitions.assets import AssetsDefinition
 
 # SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE lives on the metadata of an asset
 # (which currently ends up on the Output associated with the asset key)
@@ -382,3 +386,56 @@ class AssetSpec(
                 auto_materialize_policy=self.auto_materialize_policy,
                 partitions_def=self.partitions_def,
             )
+
+
+@overload
+def map_asset_specs(
+    func: Callable[[AssetSpec], AssetSpec], iterable: Iterable[AssetSpec]
+) -> Sequence[AssetSpec]: ...
+
+
+@overload
+def map_asset_specs(
+    func: Callable[[AssetSpec], AssetSpec], iterable: Iterable["AssetsDefinition"]
+) -> Sequence["AssetsDefinition"]: ...
+
+
+@overload
+def map_asset_specs(
+    func: Callable[[AssetSpec], AssetSpec], iterable: Iterable[Union["AssetsDefinition", AssetSpec]]
+) -> Sequence[Union["AssetsDefinition", AssetSpec]]: ...
+
+
+def map_asset_specs(
+    func: Callable[[AssetSpec], AssetSpec], iterable: Iterable[Union["AssetsDefinition", AssetSpec]]
+) -> Sequence[Union["AssetsDefinition", AssetSpec]]:
+    """Map a function over a sequence of AssetSpecs or AssetsDefinitions, replacing specs in the sequence
+    or specs in an AssetsDefinitions with the result of the function.
+
+    Args:
+        func (Callable[[AssetSpec], AssetSpec]): The function to apply to each AssetSpec.
+        iterable (Iterable[Union[AssetsDefinition, AssetSpec]]): The sequence of AssetSpecs or AssetsDefinitions.
+
+    Returns:
+        Sequence[Union[AssetsDefinition, AssetSpec]]: A sequence of AssetSpecs or AssetsDefinitions with the function applied
+            to each spec.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import AssetSpec, map_asset_specs
+
+            asset_specs = [
+                AssetSpec(key="my_asset"),
+                AssetSpec(key="my_asset_2"),
+            ]
+
+            mapped_specs = map_asset_specs(lambda spec: spec.replace_attributes(owners=["nelson@hooli.com"]), asset_specs)
+
+    """
+    from dagster._core.definitions.assets import AssetsDefinition
+
+    return [
+        obj.map_asset_specs(func) if isinstance(obj, AssetsDefinition) else func(obj)
+        for obj in iterable
+    ]
