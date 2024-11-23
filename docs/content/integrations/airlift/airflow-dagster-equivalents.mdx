@@ -34,7 +34,7 @@ def write_customers_data():
     write_file_to_s3(Path("path/to/customers.csv"))
 ```
 
-Dagster in comparison uses software-defined assets to represent the _outputs_ of a task. You define the data asset you want to exist, and then define a computation for _how_ to create that asset. Here's an example of a Dagster Asset that uploads a file to S3:
+Dagster in comparison uses software-defined assets to represent what a task produces. You define the data asset you want to exist, and then define a computation for _how_ to create that asset. If you're familiar with Airflow's Datasets, you can think of a software-defined asset as defining a task and a dataset at once. Here's an example of a Dagster asset that uploads a file to S3:
 
 ```python file=/integrations/airlift/equivalents/task_equiv_asset.py
 from pathlib import Path
@@ -190,7 +190,7 @@ def customers_data(context: AssetExecutionContext):
 
 To learn more, see our [partitions guide](/concepts/partitions-schedules-sensors/partitions).
 
-### Airflow Sensors
+### Airflow Sensors & Triggers
 
 Both Airflow and Dagster have the concept of sensors, but they function very differently. In Airflow, sensors, are used to wait for a certain condition to be met before proceeding with the execution of a task. Let's take the example scenario of waiting for new files to exist before proceeding.
 
@@ -212,7 +212,9 @@ wait_for_file = FileSensor(
 )
 ```
 
-You can use a Dagster sensor to similarly kick off compute of assets once a condition is met. Here's an example of a Dagster sensor that will kick off computation of an asset whenever a new file is added to a directory:
+Triggers in Airflow are an event-based way to accomplish a similar task: waiting for some condition to be true. They run asynchronously in a separate process.
+
+Dagster sensors combine the best of both worlds of Airflow sensors and triggers, while also providing additional capabilities. Here's an example of a Dagster sensor that will kick off computation of an asset whenever a new file is added to a directory:
 
 ```python file=/integrations/airlift/equivalents/dagster_sensor.py
 import json
@@ -238,7 +240,7 @@ def wait_for_new_files(context: SensorEvaluationContext):
     yield RunRequest() if should_trigger else SkipReason("No new files")
 ```
 
-Key differences between sensors in Airflow and Dagster:
+Key features of Dagster sensors:
 
 - In Dagster, sensors run _continuously_ and _independently_. This means that they don't use up a task slot in the scheduler, and can poll much more frequently than Airflow sensors.
 - Sensors in Dagster can track state between evaluations using cursors.
@@ -410,38 +412,25 @@ Here's a cheatsheet for Airflow users migrating to Dagster:
       <td></td>
     </tr>
     <tr>
-      <td>Task</td>
-      <td>
-        <a href="/concepts/ops-jobs-graphs/ops">Ops</a>
-      </td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Datasets</td>
+      <td>Tasks & Datasets</td>
       <td>
         <a href="/concepts/assets/software-defined-assets">Assets</a>
       </td>
       <td>
-        Dagster assets are more powerful and mature than datasets and include
-        support for things like{" "}
+        Dagster assets combine the concepts of tasks and datasets into a single
+        abstraction that can be used to define both the computation and the data
+        produced by that computation. They include support for things like{" "}
         <a href="/concepts/partitions-schedules-sensors/partitioning-assets">
           partitioning
         </a>
-        .
       </td>
     </tr>
     <tr>
-      <td>Connections/Variables</td>
+      <td>Connections/Hooks</td>
       <td>
         <ul style={{ marginTop: "0em" }}>
           <li style={{ marginTop: "0em" }}>
-            <a href="/concepts/configuration/config-schema">
-              Run configuration
-            </a>
-          </li>
-          <li>
-            <a href="/concepts/configuration/configured">Configured API</a>{" "}
-            (Legacy)
+            <a href="/concepts/resources">Resources</a>
           </li>
           <li>
             <a href="/guides/dagster/using-environment-variables-and-secrets">
@@ -451,7 +440,27 @@ Here's a cheatsheet for Airflow users migrating to Dagster:
           </li>
         </ul>
       </td>
-      <td></td>
+      <td>
+        Dagster's resource system allows you to define and configure connections
+        to external systems. Dagster+ also has a dedicated secrets management
+        system.
+      </td>
+    </tr>
+    <tr>
+      <td>Variables</td>
+      <td>
+        <ul style={{ marginTop: "0em" }}>
+          <li style={{ marginTop: "0em" }}>
+            <a href="/concepts/configuration/config-schema">
+              Run Configuration
+            </a>
+          </li>
+        </ul>
+      </td>
+      <td>
+        Dagster's rich config system allows you to define configuration
+        schematics in code, and pass configuration to computations at runtime.
+      </td>
     </tr>
     <tr>
       <td>DagBags</td>
@@ -460,12 +469,12 @@ Here's a cheatsheet for Airflow users migrating to Dagster:
       </td>
       <td>
         Multiple isolated code locations with different system and Python
-        dependencies can exist within the same Dagster instance.
+        dependencies can exist within the same Dagster deployment.
       </td>
     </tr>
     <tr>
       <td>DAG runs</td>
-      <td>Job runs</td>
+      <td>Asset Runs</td>
       <td></td>
     </tr>
     <tr>
@@ -515,17 +524,6 @@ Here's a cheatsheet for Airflow users migrating to Dagster:
       <td></td>
     </tr>
     <tr>
-      <td>Hooks</td>
-      <td>
-        <a href="/concepts/resources">Resources</a>
-      </td>
-      <td>
-        Dagster <a href="/concepts/resources">resources</a> contain a superset
-        of the functionality of hooks and have much stronger composition
-        guarantees.
-      </td>
-    </tr>
-    <tr>
       <td>Instances</td>
       <td>
         <a href="/deployment/dagster-instance">Instances</a>
@@ -534,18 +532,19 @@ Here's a cheatsheet for Airflow users migrating to Dagster:
     </tr>
     <tr>
       <td>Operators</td>
-      <td>None</td>
+      <td>Asset Factories</td>
       <td>
         Dagster uses normal Python functions instead of framework-specific
-        operator classes. For off-the-shelf functionality with third-party
-        tools, Dagster provides{" "}
-        <a href="/integrations">integration libraries</a>.
+        operator classes. To define multiple assets from a shared
+        implementation, you can use a factory function.
       </td>
     </tr>
     <tr>
-      <td>Pools</td>
+      <td>Pools & Task Concurrency</td>
       <td>
-        <a href="/deployment/run-coordinator">Run coordinators</a>
+        <a href="/guides/limiting-concurrency-in-data-pipelines">
+          Asset & Run Concurrency
+        </a>
       </td>
       <td></td>
     </tr>
@@ -564,11 +563,19 @@ Here's a cheatsheet for Airflow users migrating to Dagster:
       <td></td>
     </tr>
     <tr>
-      <td>Sensors</td>
+      <td>Sensors & Triggers</td>
       <td>
-        <a href="/concepts/partitions-schedules-sensors/sensors">Sensors</a>
+        <a href="/concepts/partitions-schedules-sensors/sensors">Sensors</a>,
+        <a href="/concepts/automation/declarative-automation">
+          Declarative Automation
+        </a>
       </td>
-      <td></td>
+      <td>
+        Dagster Sensors provide the best of both worlds of Airflow's sensors and
+        triggers, while also providing additional functionality. Declarative
+        automation makes the need for cross-dag dependency sensors like in
+        Airflow unnecessary.
+      </td>
     </tr>
     <tr>
       <td>SubDAGs/TaskGroups</td>
@@ -594,36 +601,16 @@ Here's a cheatsheet for Airflow users migrating to Dagster:
       </td>
     </tr>
     <tr>
-      <td>
-        <code>task_concurrency</code>
-      </td>
-      <td>
-        <a href="/guides/limiting-concurrency-in-data-pipelines#limiting-opasset-concurrency-across-runs">
-          Asset/op-level concurrency limits
-        </a>
-      </td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Trigger</td>
-      <td>
-        <a href="/concepts/webserver/ui">Dagster UI Launchpad</a>
-      </td>
-      <td>
-        Triggering and configuring ad-hoc runs is easier in Dagster which allows
-        them to be initiated through the{" "}
-        <a href="/concepts/webserver/ui">Dagster UI</a>, the{" "}
-        <a href="/concepts/webserver/graphql">GraphQL API</a>, or the CLI.
-      </td>
-    </tr>
-    <tr>
       <td>XComs</td>
       <td>
+        <a href="/concepts/metadata-tags">Runtime metadata</a>
         <a href="/concepts/io-management/io-managers">I/O managers</a>
       </td>
       <td>
-        I/O managers are more powerful than XComs and allow the passing of large
-        datasets between jobs.
+        For small data, you can use Dagster's rich metadata abstractions to make
+        data available between assets, and have it show up in the UI. For larger
+        datasets, I/O managers are more powerful than XComs and allow the
+        passing large datasets between jobs.
       </td>
     </tr>
   </tbody>
