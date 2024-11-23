@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import time
-
 from datetime import datetime, timedelta
 from functools import partial
 from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
@@ -11,7 +10,6 @@ from urllib.parse import urljoin
 import requests
 from dagster import (
     AssetExecutionContext,
-
     Definitions,
     Failure,
     InitResourceContext,
@@ -27,9 +25,7 @@ from dagster._annotations import experimental
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
-
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
