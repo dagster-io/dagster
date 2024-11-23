@@ -9,6 +9,7 @@ from typing import (
     Literal,
     NamedTuple,
     Optional,
+    Tuple,
     Type,
     TypeVar,
 )
@@ -16,6 +17,7 @@ from typing import (
 from dagster import _check as check
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.multi_dimensional_partitions import (
@@ -24,6 +26,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     PartitionDimensionDefinition,
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
+from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
@@ -191,6 +194,13 @@ class AssetGraphView(LoadingContext):
         value = partitions_def.empty_subset() if partitions_def else False
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
+    def get_asset_subset_from_asset_graph_subset(
+        self, asset_graph_subset: AssetGraphSubset, asset_key: AssetKey
+    ) -> Optional[EntitySubset[AssetKey]]:
+        return self.get_subset_from_serializable_subset(
+            asset_graph_subset.get_asset_subset(asset_key, self.asset_graph)
+        )
+
     def get_subset_from_serializable_subset(
         self, serializable_subset: SerializableEntitySubset[T_EntityKey]
     ) -> Optional[EntitySubset[T_EntityKey]]:
@@ -227,13 +237,58 @@ class AssetGraphView(LoadingContext):
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
+    def compute_parent_subset_and_required_but_not_existent_parent_subset(
+        self, parent_key, subset: EntitySubset[T_EntityKey]
+    ) -> Tuple[EntitySubset[AssetKey], EntitySubset[AssetKey]]:
+        check.invariant(
+            parent_key in self.asset_graph.get(subset.key).parent_entity_keys,
+        )
+        to_key = parent_key
+        to_partitions_def = self.asset_graph.get(to_key).partitions_def
+        if to_partitions_def is None or subset.is_empty:
+            empty_subset = self.get_empty_subset(key=parent_key)
+            return empty_subset, empty_subset
+
+        upstream_partition_result = self._compute_upstream_partitions_result(to_key, subset)
+
+        parent_subset = EntitySubset(
+            self,
+            key=to_key,
+            value=_ValidatedEntitySubsetValue(upstream_partition_result.partitions_subset),
+        )
+
+        required_but_nonexistent_parent_partitions = self._compute_upstream_partitions_result(
+            to_key, subset
+        ).required_but_nonexistent_partition_keys
+
+        if not required_but_nonexistent_parent_partitions:
+            required_but_nonexistent_parent_subset = self.get_empty_subset(key=parent_key)
+        else:
+            required_but_nonexistent_parent_subset = self.get_asset_subset_from_asset_partitions(
+                to_key,
+                {
+                    AssetKeyPartitionKey(parent_key, partition)
+                    for partition in required_but_nonexistent_parent_partitions
+                },
+            )
+
+        return parent_subset, required_but_nonexistent_parent_subset
+
     def compute_parent_subset(
-        self, parent_key: AssetKey, subset: EntitySubset[T_EntityKey]
+        self,
+        parent_key: AssetKey,
+        subset: EntitySubset[T_EntityKey],
+        raise_on_missing_partitions: bool = False,
     ) -> EntitySubset[AssetKey]:
         check.invariant(
             parent_key in self.asset_graph.get(subset.key).parent_entity_keys,
         )
-        return self.compute_mapped_subset(parent_key, subset, direction="up")
+        return self.compute_mapped_subset(
+            parent_key,
+            subset,
+            direction="up",
+            raise_on_missing_partitions=raise_on_missing_partitions,
+        )
 
     def compute_child_subset(
         self, child_key: T_EntityKey, subset: EntitySubset[U_EntityKey]
@@ -243,8 +298,31 @@ class AssetGraphView(LoadingContext):
         )
         return self.compute_mapped_subset(child_key, subset, direction="down")
 
+    def _compute_upstream_partitions_result(
+        self, to_key: T_EntityKey, from_subset: EntitySubset
+    ) -> UpstreamPartitionsResult:
+        from_key = from_subset.key
+        parent_key = to_key
+        partition_mapping = self.asset_graph.get_partition_mapping(from_key, parent_key)
+        from_partitions_def = self.asset_graph.get(from_key).partitions_def
+        to_partitions_def = self.asset_graph.get(to_key).partitions_def
+
+        return partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+            downstream_partitions_subset=from_subset.get_internal_subset_value()
+            if from_partitions_def is not None
+            else None,
+            downstream_partitions_def=from_partitions_def,
+            upstream_partitions_def=check.not_none(to_partitions_def),
+            dynamic_partitions_store=self._queryer,
+            current_time=self.effective_dt,
+        )
+
     def compute_mapped_subset(
-        self, to_key: T_EntityKey, from_subset: EntitySubset, direction: Literal["up", "down"]
+        self,
+        to_key: T_EntityKey,
+        from_subset: EntitySubset,
+        direction: Literal["up", "down"],
+        raise_on_missing_partitions: bool = False,
     ) -> EntitySubset[T_EntityKey]:
         from_key = from_subset.key
         from_partitions_def = self.asset_graph.get(from_key).partitions_def
@@ -281,17 +359,9 @@ class AssetGraphView(LoadingContext):
             parent_key = to_key
             partition_mapping = self.asset_graph.get_partition_mapping(child_key, parent_key)
 
-            to_partitions_subset = (
-                partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
-                    downstream_partitions_subset=from_subset.get_internal_subset_value()
-                    if from_partitions_def is not None
-                    else None,
-                    downstream_partitions_def=from_partitions_def,
-                    upstream_partitions_def=to_partitions_def,
-                    dynamic_partitions_store=self._queryer,
-                    current_time=self.effective_dt,
-                ).partitions_subset
-            )
+            to_partitions_subset = self._compute_upstream_partitions_result(
+                to_key, from_subset
+            ).partitions_subset
 
         return EntitySubset(
             self,

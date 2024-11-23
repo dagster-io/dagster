@@ -1,4 +1,4 @@
-from dagster import AssetDep, Definitions, asset
+from dagster import AssetDep, Definitions, IdentityPartitionMapping, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -25,6 +25,37 @@ def test_basic_construction_and_identity() -> None:
     assert asset_graph_view_t0._instance is instance  # noqa: SLF001
 
     assert asset_graph_view_t0.asset_graph.get_all_asset_keys() == {an_asset.key}
+
+
+def test_upstream_non_existent_partitions():
+    xy = StaticPartitionsDefinition(["x", "y"])
+    zx = StaticPartitionsDefinition(["z", "x"])
+
+    @asset(partitions_def=xy)
+    def up_asset() -> None: ...
+
+    @asset(
+        deps=[AssetDep(up_asset, partition_mapping=IdentityPartitionMapping())],
+        partitions_def=zx,
+    )
+    def down_asset(): ...
+
+    defs = Definitions([up_asset, down_asset])
+
+    with DagsterInstance.ephemeral() as instance:
+        asset_graph_view = AssetGraphView.for_test(defs, instance)
+        down_subset = asset_graph_view.get_full_subset(key=down_asset.key)
+        assert down_subset.expensively_compute_partition_keys() == {"x", "z"}
+
+        parent_subset, required_but_nonexistent_parent_subset = (
+            asset_graph_view.compute_parent_subset_and_required_but_not_existent_parent_subset(
+                parent_key=up_asset.key, subset=down_subset
+            )
+        )
+
+        assert parent_subset.expensively_compute_partition_keys() == {"x"}
+
+        assert required_but_nonexistent_parent_subset.expensively_compute_partition_keys() == {"z"}
 
 
 def test_subset_traversal_static_partitions() -> None:

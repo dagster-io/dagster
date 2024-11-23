@@ -240,15 +240,23 @@ def test_from_asset_partitions_target_subset(
     )
 
 
-def _get_instance_queryer(
+def _get_asset_graph_view(
     instance: DagsterInstance, asset_graph: BaseAssetGraph, evaluation_time: datetime.datetime
-) -> CachingInstanceQueryer:
+) -> AssetGraphView:
     return AssetGraphView(
         temporal_context=TemporalContext(
             effective_dt=evaluation_time or get_current_datetime(), last_event_id=None
         ),
         instance=instance,
         asset_graph=asset_graph,
+    )
+
+
+def _get_instance_queryer(
+    instance: DagsterInstance, asset_graph: BaseAssetGraph, evaluation_time: datetime.datetime
+) -> CachingInstanceQueryer:
+    return _get_asset_graph_view(
+        instance, asset_graph, evaluation_time
     ).get_inner_queryer_for_back_compat()
 
 
@@ -577,10 +585,9 @@ def execute_asset_backfill_iteration_consume_generator(
         for result in execute_asset_backfill_iteration_inner(
             backfill_id=backfill_id,
             asset_backfill_data=asset_backfill_data,
-            instance_queryer=_get_instance_queryer(
+            asset_graph_view=_get_asset_graph_view(
                 instance, asset_graph, asset_backfill_data.backfill_start_datetime
             ),
-            asset_graph=asset_graph,
             backfill_start_timestamp=asset_backfill_data.backfill_start_timestamp,
             logger=logging.getLogger("fake_logger"),
         ):

@@ -1,5 +1,8 @@
+import operator
 from dataclasses import dataclass, replace
-from typing import Generic, Optional, Union
+from typing import Any, Callable, Generic, Optional, Union
+
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import T_EntityKey
@@ -58,6 +61,22 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
             return int(self.bool_value)
         else:
             return len(self.subset_value)
+
+    def _oper(self, other: Self, oper: Callable[..., Any]) -> Self:
+        if oper == operator.sub and not isinstance(other.value, PartitionsSubset):
+            value = self.value if not other.value else False
+        else:
+            value = oper(self.value, other.value)
+        return self.__class__(key=self.key, value=value)
+
+    def __or__(self, other: Self) -> Self:
+        return self._oper(other, operator.or_)
+
+    def __sub__(self, other: Self) -> Self:
+        return self._oper(other, operator.sub)
+
+    def __and__(self, other: Self) -> Self:
+        return self._oper(other, operator.and_)
 
     @property
     def is_empty(self) -> bool:

@@ -107,8 +107,14 @@ class EntitySubset(Generic[T_EntityKey]):
         return self.compute_intersection(partition_subset)
 
     @cached_method
-    def compute_parent_subset(self, parent_key: AssetKey) -> "EntitySubset[AssetKey]":
-        return self._asset_graph_view.compute_parent_subset(parent_key, self)
+    def compute_parent_subset(
+        self,
+        parent_key: AssetKey,
+        raise_on_missing_partitions: bool = False,
+    ) -> "EntitySubset[AssetKey]":
+        return self._asset_graph_view.compute_parent_subset(
+            parent_key, self, raise_on_missing_partitions=raise_on_missing_partitions
+        )
 
     @cached_method
     def compute_child_subset(self, child_key: U_EntityKey) -> "EntitySubset[U_EntityKey]":
