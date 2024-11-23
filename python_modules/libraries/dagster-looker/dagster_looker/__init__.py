@@ -1,6 +1,7 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
 from dagster_looker.api.assets import (
+    build_dashboard_notification_assets_definition as build_dashboard_notification_assets_definition,
     build_looker_pdt_assets_definitions as build_looker_pdt_assets_definitions,
 )
 from dagster_looker.api.dagster_looker_api_translator import (
