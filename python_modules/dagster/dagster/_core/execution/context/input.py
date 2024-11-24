@@ -719,8 +719,11 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
     ) -> bool:
         raise NotImplementedError()
 
+    def empty_subset(self) -> "PartitionsSubset":
+        raise NotImplementedError()
+
     @classmethod
-    def empty_subset(
+    def create_empty_subset(
         cls, partitions_def: Optional["PartitionsDefinition"] = None
     ) -> "PartitionsSubset":
         raise NotImplementedError()

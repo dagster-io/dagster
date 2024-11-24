@@ -155,6 +155,25 @@ def test_observable_asset_defs() -> None:
         ),
         (
             HourlyPartitionsDefinition("2020-01-01-00:00"),
+            StaticPartitionsDefinition(
+                ["2019-01-02-00:00", "2019-01-03-00:00", "2019-01-04-00:00"]
+            ),
+            0,
+        ),
+        (
+            HourlyPartitionsDefinition("2020-01-01-00:00"),
+            StaticPartitionsDefinition(
+                ["2020-01-02-00:00", "2020-01-03-00:00", "2020-01-04-00:00"]
+            ),
+            3,
+        ),
+        (
+            HourlyPartitionsDefinition("2020-01-01-00:00"),
+            StaticPartitionsDefinition(["2019-01-02-00:00", "a", "2020-01-02-00:00"]),
+            1,
+        ),
+        (
+            HourlyPartitionsDefinition("2020-01-01-00:00"),
             StaticPartitionsDefinition(["a", "b", "c"]),
             0,
         ),

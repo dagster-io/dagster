@@ -47,24 +47,24 @@ def test_upstream_non_existent_partitions():
         down_subset = asset_graph_view.get_full_subset(key=down_asset.key)
         assert down_subset.expensively_compute_partition_keys() == {"x", "z"}
 
-        parent_subset, required_but_nonexistent_partition_keys = (
-            asset_graph_view.compute_parent_subset_and_required_but_nonexistent_partition_keys(
+        parent_subset, required_but_nonexistent_subset = (
+            asset_graph_view.compute_parent_subset_and_required_but_nonexistent_subset(
                 parent_key=up_asset.key, subset=down_subset
             )
         )
 
         assert parent_subset.expensively_compute_partition_keys() == {"x"}
-        assert required_but_nonexistent_partition_keys == ["z"]
+        assert required_but_nonexistent_subset.expensively_compute_partition_keys() == {"z"}
 
         # Mapping onto an empty subset is empty
         empty_down_subset = asset_graph_view.get_empty_subset(key=down_asset.key)
-        parent_subset, required_but_nonexistent_partition_keys = (
-            asset_graph_view.compute_parent_subset_and_required_but_nonexistent_partition_keys(
+        parent_subset, required_but_nonexistent_subset = (
+            asset_graph_view.compute_parent_subset_and_required_but_nonexistent_subset(
                 parent_key=up_asset.key, subset=empty_down_subset
             )
         )
         assert parent_subset.is_empty
-        assert required_but_nonexistent_partition_keys == []
+        assert required_but_nonexistent_subset.is_empty
 
 
 def test_subset_traversal_static_partitions() -> None:
@@ -201,13 +201,13 @@ def test_downstream_of_unpartitioned_partition_mapping() -> None:
         downstream_empty.compute_parent_subset(parent_key=unpartitioned.key) == unpartitioned_empty
     )
 
-    assert asset_graph_view.compute_parent_subset_and_required_but_nonexistent_partition_keys(
+    assert asset_graph_view.compute_parent_subset_and_required_but_nonexistent_subset(
         parent_key=unpartitioned.key, subset=downstream_full
-    ) == (unpartitioned_full, [])
+    ) == (unpartitioned_full, unpartitioned_empty)
 
-    assert asset_graph_view.compute_parent_subset_and_required_but_nonexistent_partition_keys(
+    assert asset_graph_view.compute_parent_subset_and_required_but_nonexistent_subset(
         parent_key=unpartitioned.key, subset=downstream_empty
-    ) == (unpartitioned_empty, [])
+    ) == (unpartitioned_empty, unpartitioned_empty)
 
 
 def test_upstream_of_unpartitioned_partition_mapping() -> None:

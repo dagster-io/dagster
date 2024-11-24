@@ -759,7 +759,7 @@ def test_error_on_nonexistent_upstream_partition():
     with freeze_time(create_datetime(2020, 1, 2, 10, 0)):
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="invalid partition keys",
+            match="depends on invalid partitions",
         ):
             materialize(
                 [downstream_asset, upstream_asset.to_source_asset()],
