@@ -1595,7 +1595,7 @@ def can_run_with_parent(
         )
     if (
         parent.partition_key not in asset_partitions_to_request_map[parent.asset_key]
-        and parent not in candidates_unit
+        #        and parent not in candidates_unit
     ):
         return (
             False,
