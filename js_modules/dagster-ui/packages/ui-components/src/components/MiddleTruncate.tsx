@@ -38,8 +38,8 @@ export const MiddleTruncate = ({text, showTitle = true}: Props) => {
 
   // Use a layout effect to trigger the process of calculating the truncated text, for the
   // initial render.
-  React.useLayoutEffect(() => {
-    calculateTargetStyle();
+  React.useEffect(() => {
+    window.requestAnimationFrame(calculateTargetStyle);
   }, [calculateTargetStyle]);
 
   // If the container has just been resized, recalculate.
@@ -87,7 +87,9 @@ const Container = styled.div`
  */
 const calculateMiddleTruncatedText = (container: HTMLDivElement, text: string) => {
   const font = getComputedStyle(container).font;
-  const width = container.getBoundingClientRect().width;
+
+  // https://developer.mozilla.org/en-US/docs/Web/API/CSS_Object_Model/Determining_the_dimensions_of_elements#how_much_room_does_it_use_up
+  const width = container.offsetWidth;
 
   const body = document.body;
 
