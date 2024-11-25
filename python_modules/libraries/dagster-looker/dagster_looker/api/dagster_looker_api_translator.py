@@ -115,7 +115,10 @@ class DagsterLookerApiTranslator:
     def instance_data(self) -> Optional[LookerInstanceData]:
         return self._looker_instance_data
 
-    @deprecated(breaking_version="1.10")
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
+    )
     def get_view_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
         return self.get_view_asset_spec(looker_structure).key
 
@@ -125,7 +128,10 @@ class DagsterLookerApiTranslator:
             key=AssetKey(["view", lookml_view.view_name]),
         )
 
-    @deprecated(breaking_version="1.10")
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
+    )
     def get_explore_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
         return self.get_explore_asset_spec(looker_structure).key
 
@@ -175,7 +181,10 @@ class DagsterLookerApiTranslator:
         else:
             check.assert_never(lookml_explore)
 
-    @deprecated(breaking_version="1.10")
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
+    )
     def get_dashboard_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
         return self.get_dashboard_asset_spec(looker_structure).key
 
