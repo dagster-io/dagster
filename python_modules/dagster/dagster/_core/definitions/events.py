@@ -42,6 +42,7 @@ from dagster._core.definitions.metadata import (
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.utils import DEFAULT_OUTPUT, check_valid_name
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, REPORTING_USER_TAG
+from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
 
@@ -58,6 +59,17 @@ class AssetKeyPartitionKey(NamedTuple):
     partition_key: Optional[str] = None
 
 
+# This is a "work token" associated with the background process responsible
+# for performing the work
+BackgroundWorkToken = str
+
+
+class BackgroundWorkStatus(Enum):
+    SUCCESS = "SUCCESS"
+    IN_PROGRESS = "IN_PROGRESS"
+    FAILED = "FAILED"
+
+
 # This is currently used only for the asset partition wipe codepath. In the future, we can rename
 # to AssetPartitionRange or similar for more general use.
 class AssetPartitionWipeRange(NamedTuple):
@@ -65,6 +77,20 @@ class AssetPartitionWipeRange(NamedTuple):
 
     asset_key: AssetKey
     partition_range: Optional[PartitionKeyRange]
+
+
+@whitelist_for_serdes
+@record
+class AssetWipeWorkItemPartitionKeys:
+    asset_key: AssetKey
+    partition_keys: Sequence[str]
+
+
+@whitelist_for_serdes
+@record
+class AssetWipeWorkItem:
+    assets: List[AssetKey]
+    asset_partition_keys: List[AssetWipeWorkItemPartitionKeys]
 
 
 DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]

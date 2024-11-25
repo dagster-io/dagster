@@ -10,6 +10,7 @@ from dagster._core.workspace.permissions import Permissions
 from dagster._daemon.asset_daemon import set_auto_materialize_paused
 
 from dagster_graphql.implementation.execution import (
+    background_wipe_assets,
     delete_pipeline_run,
     report_runless_asset_events,
     terminate_pipeline_execution,
@@ -746,6 +747,15 @@ class GrapheneAssetWipeSuccess(graphene.ObjectType):
         name = "AssetWipeSuccess"
 
 
+class GrapheneAssetWipeInProgress(graphene.ObjectType):
+    """Output indicating that asset history deletion is in progress."""
+
+    workToken = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "AssetWipeInProgress"
+
+
 class GrapheneAssetWipeMutationResult(graphene.Union):
     """The output from deleting asset history."""
 
@@ -758,6 +768,53 @@ class GrapheneAssetWipeMutationResult(graphene.Union):
             GrapheneAssetWipeSuccess,
         )
         name = "AssetWipeMutationResult"
+
+
+class GrapheneBackgroundAssetWipeMutationResult(graphene.Union):
+    """The output from deleting asset history."""
+
+    class Meta:
+        types = (
+            GrapheneAssetNotFoundError,
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+            GrapheneUnsupportedOperationError,
+            GrapheneAssetWipeInProgress,
+        )
+        name = "BackgroundAssetWipeMutationResult"
+
+
+class GrapheneBackgroundAssetWipeMutation(graphene.Mutation):
+    """Deletes asset history from storage in the background, returning instead a work
+    token that can be used to check the progress of the delete.
+    """
+
+    Output = graphene.NonNull(GrapheneBackgroundAssetWipeMutationResult)
+
+    class Arguments:
+        assetPartitionRanges = graphene.Argument(non_null_list(GraphenePartitionsByAssetSelector))
+
+    class Meta:
+        name = "BackgroundAssetWipeMutation"
+
+    @capture_error
+    @check_permission(Permissions.WIPE_ASSETS)
+    async def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        assetPartitionRanges: Sequence[GraphenePartitionsByAssetSelector],
+    ) -> GrapheneBackgroundAssetWipeMutationResult:
+        normalized_ranges = [
+            AssetPartitionWipeRange(
+                AssetKey.from_graphql_input(ap.assetKey),
+                PartitionKeyRange(start=ap.partitions.range.start, end=ap.partitions.range.end)
+                if ap.partitions
+                else None,
+            )
+            for ap in assetPartitionRanges
+        ]
+
+        return await background_wipe_assets(graphene_info, normalized_ranges)
 
 
 class GrapheneAssetWipeMutation(graphene.Mutation):
@@ -1040,6 +1097,7 @@ class GrapheneMutation(graphene.ObjectType):
     reloadWorkspace = GrapheneReloadWorkspaceMutation.Field()
     shutdownRepositoryLocation = GrapheneShutdownRepositoryLocationMutation.Field()
     wipeAssets = GrapheneAssetWipeMutation.Field()
+    backgroundWipeAssets = GrapheneBackgroundAssetWipeMutation.Field()
     reportRunlessAssetEvents = GrapheneReportRunlessAssetEventsMutation.Field()
     launchPartitionBackfill = GrapheneLaunchBackfillMutation.Field()
     resumePartitionBackfill = GrapheneResumeBackfillMutation.Field()

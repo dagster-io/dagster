@@ -99,6 +99,33 @@ GET_ASSET_MATERIALIZATION_WITH_PARTITION = """
 """
 
 
+BACKGROUND_WIPE_ASSETS = """
+    mutation BackgroundAssetKeyWipe($assetPartitionRanges: [PartitionsByAssetSelector!]!) {
+        backgroundWipeAssets(assetPartitionRanges: $assetPartitionRanges) {
+            __typename
+            ... on AssetWipeInProgress {
+              workToken
+            }
+        }
+    }
+"""
+
+
+BACKGROUND_ASSET_WIPE_STATUS = """
+    query BackgroundAssetKeyWipeStatus($workToken: String!) {
+        backgroundAssetWipeStatus(workToken: $workToken) {
+            __typename
+            ... on BackgroundAssetWipeSuccess {
+                completedAt
+            }
+            ... on BackgroundAssetWipeInProgress {
+                startedAt
+            }
+        }
+    }
+"""
+
+
 WIPE_ASSETS = """
     mutation AssetKeyWipe($assetPartitionRanges: [PartitionsByAssetSelector!]!) {
         wipeAssets(assetPartitionRanges: $assetPartitionRanges) {
