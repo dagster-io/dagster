@@ -200,8 +200,7 @@ def test_custom_asset_specs(
             default_spec = super().get_asset_spec(looker_structure)
             return default_spec.replace_attributes(
                 key=default_spec.key.with_prefix("my_prefix"),
-                metadata={**default_spec.metadata, "custom": "metadata"},
-            )
+            ).merge_attributes(metadata={"custom": "metadata"})
 
     all_assets = (
         asset
