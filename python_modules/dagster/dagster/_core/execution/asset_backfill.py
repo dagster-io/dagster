@@ -61,7 +61,7 @@ from dagster._core.storage.dagster_run import (
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
-    AUTO_RETRY_RUN_ID,
+    AUTO_RETRY_RUN_ID_TAG,
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
     WILL_RETRY_TAG,
@@ -978,7 +978,7 @@ def backfill_is_complete(
     if any(
         [
             get_boolean_tag_value(run.tags.get(WILL_RETRY_TAG), False)
-            and run.tags.get(AUTO_RETRY_RUN_ID) is None
+            and run.tags.get(AUTO_RETRY_RUN_ID_TAG) is None
             for run in instance.get_runs(
                 filters=RunsFilter(
                     tags={BACKFILL_ID_TAG: backfill_id},
