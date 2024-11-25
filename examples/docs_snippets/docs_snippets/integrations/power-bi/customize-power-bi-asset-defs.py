@@ -7,7 +7,6 @@ from dagster_powerbi import (
 from dagster_powerbi.translator import PowerBIContentData, PowerBIContentType
 
 import dagster as dg
-from dagster._core.definitions.asset_spec import replace_attributes
 
 power_bi_workspace = PowerBIWorkspace(
     credentials=PowerBIServicePrincipal(
@@ -27,8 +26,7 @@ class MyCustomPowerBITranslator(DagsterPowerBITranslator):
         default_spec = super().get_asset_spec(data)
         # We customize the team owner tag for all assets,
         # and we customize the asset key prefix only for dashboards.
-        return replace_attributes(
-            default_spec,
+        return default_spec.replace_attributes(
             key=(
                 default_spec.key.with_prefix("prefix")
                 if data.content_type == PowerBIContentType.DASHBOARD
