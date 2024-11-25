@@ -111,14 +111,7 @@ class DagsterTableauTranslator:
         return self._context
 
     def get_asset_key(self, data: TableauContentData) -> AssetKey:
-        if data.content_type == TableauContentType.SHEET:
-            return self.get_sheet_asset_key(data)
-        elif data.content_type == TableauContentType.DASHBOARD:
-            return self.get_dashboard_asset_key(data)
-        elif data.content_type == TableauContentType.DATA_SOURCE:
-            return self.get_data_source_asset_key(data)
-        else:
-            check.assert_never(data.content_type)
+        return self.get_asset_spec(data).key
 
     def get_asset_spec(self, data: TableauContentData) -> AssetSpec:
         if data.content_type == TableauContentType.SHEET:
@@ -131,15 +124,7 @@ class DagsterTableauTranslator:
             check.assert_never(data.content_type)
 
     def get_sheet_asset_key(self, data: TableauContentData) -> AssetKey:
-        workbook_id = data.properties["workbook"]["luid"]
-        workbook_data = self.workspace_data.workbooks_by_id[workbook_id]
-        return AssetKey(
-            [
-                _coerce_input_to_valid_name(workbook_data.properties["name"]),
-                "sheet",
-                _coerce_input_to_valid_name(data.properties["name"]),
-            ]
-        )
+        return self.get_sheet_spec(data).key
 
     def get_sheet_spec(self, data: TableauContentData) -> AssetSpec:
         sheet_embedded_data_sources = data.properties.get("parentEmbeddedDatasources", [])
@@ -150,12 +135,22 @@ class DagsterTableauTranslator:
         }
 
         data_source_keys = [
-            self.get_asset_key(self.workspace_data.data_sources_by_id[data_source_id])
+            self.get_asset_spec(self.workspace_data.data_sources_by_id[data_source_id]).key
             for data_source_id in data_source_ids
         ]
 
+        workbook_id = data.properties["workbook"]["luid"]
+        workbook_data = self.workspace_data.workbooks_by_id[workbook_id]
+        asset_key = AssetKey(
+            [
+                _coerce_input_to_valid_name(workbook_data.properties["name"]),
+                "sheet",
+                _coerce_input_to_valid_name(data.properties["name"]),
+            ]
+        )
+
         return AssetSpec(
-            key=self.get_asset_key(data),
+            key=asset_key,
             deps=data_source_keys if data_source_keys else None,
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="sheet")},
             metadata={
@@ -166,9 +161,20 @@ class DagsterTableauTranslator:
         )
 
     def get_dashboard_asset_key(self, data: TableauContentData) -> AssetKey:
+        return self.get_dashboard_spec(data).key
+
+    def get_dashboard_spec(self, data: TableauContentData) -> AssetSpec:
+        dashboard_upstream_sheets = data.properties.get("sheets", [])
+        sheet_ids = {sheet["luid"] for sheet in dashboard_upstream_sheets if sheet["luid"]}
+
+        sheet_keys = [
+            self.get_asset_spec(self.workspace_data.sheets_by_id[sheet_id]).key
+            for sheet_id in sheet_ids
+        ]
+
         workbook_id = data.properties["workbook"]["luid"]
         workbook_data = self.workspace_data.workbooks_by_id[workbook_id]
-        return AssetKey(
+        asset_key = AssetKey(
             [
                 _coerce_input_to_valid_name(workbook_data.properties["name"]),
                 "dashboard",
@@ -176,16 +182,8 @@ class DagsterTableauTranslator:
             ]
         )
 
-    def get_dashboard_spec(self, data: TableauContentData) -> AssetSpec:
-        dashboard_upstream_sheets = data.properties.get("sheets", [])
-        sheet_ids = {sheet["luid"] for sheet in dashboard_upstream_sheets if sheet["luid"]}
-
-        sheet_keys = [
-            self.get_asset_key(self.workspace_data.sheets_by_id[sheet_id]) for sheet_id in sheet_ids
-        ]
-
         return AssetSpec(
-            key=self.get_asset_key(data),
+            key=asset_key,
             deps=sheet_keys if sheet_keys else None,
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="dashboard")},
             metadata={
@@ -196,11 +194,11 @@ class DagsterTableauTranslator:
         )
 
     def get_data_source_asset_key(self, data: TableauContentData) -> AssetKey:
-        return AssetKey([_coerce_input_to_valid_name(data.properties["name"])])
+        return self.get_data_source_spec(data).key
 
     def get_data_source_spec(self, data: TableauContentData) -> AssetSpec:
         return AssetSpec(
-            key=self.get_asset_key(data),
+            key=AssetKey([_coerce_input_to_valid_name(data.properties["name"])]),
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
             metadata={**TableauMetadataSet(id=data.properties["luid"], workbook_id=None)},
         )
