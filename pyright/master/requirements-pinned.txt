@@ -327,7 +327,7 @@ langchain-community==0.3.5
 langchain-core==0.3.21
 langchain-openai==0.2.5
 langchain-text-splitters==0.3.2
-langsmith==0.1.145
+langsmith==0.1.146
 lazy-object-proxy==1.10.0
 leather==0.4.0
 limits==3.13.0
@@ -390,7 +390,7 @@ objgraph==3.6.2
 onnx==1.17.0
 onnxconverter-common==1.13.0
 onnxruntime==1.20.1
-openai==1.55.0
+openai==1.55.1
 openapi-schema-validator==0.6.2
 openapi-spec-validator==0.7.1
 opentelemetry-api==1.28.2
