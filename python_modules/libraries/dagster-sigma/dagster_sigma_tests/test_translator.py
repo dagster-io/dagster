@@ -1,7 +1,7 @@
 from typing import Union
 
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec, replace_attributes
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags import build_kind_tag_key
 from dagster_sigma.translator import (
@@ -93,8 +93,8 @@ def test_dataset_translation_custom_translator() -> None:
         def get_asset_spec(self, data: Union[SigmaDataset, SigmaWorkbook]) -> AssetSpec:
             spec = super().get_asset_spec(data)
             if isinstance(data, SigmaDataset):
-                spec = replace_attributes(
-                    spec, key=spec.key.with_prefix("sigma"), description="Custom description"
+                spec = spec.replace_attributes(
+                    key=spec.key.with_prefix("sigma"), description="Custom description"
                 )
             return spec
 
