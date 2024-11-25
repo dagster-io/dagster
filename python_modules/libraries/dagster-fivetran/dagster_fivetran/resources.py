@@ -940,22 +940,11 @@ class FivetranWorkspace(ConfigurableResource):
             dagster_fivetran_translator=dagster_fivetran_translator or DagsterFivetranTranslator(),
         )
 
-    def sync_and_poll(
-        self, context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None
+    def _generate_materialization(
+        self,
+        fivetran_output: FivetranOutput,
+        dagster_fivetran_translator: DagsterFivetranTranslator,
     ):
-        # TODO: Add docstrings
-        assets_def = context.assets_def
-        dagster_fivetran_translator = get_translator_from_fivetran_assets(assets_def)
-
-        connector_id = next(
-            check.not_none(FivetranMetadataSet.extract(spec.metadata).connector_id)
-            for spec in assets_def.specs
-        )
-
-        client = self.get_client()
-        fivetran_output = client.sync_and_poll(
-            connector_id=connector_id,
-        )
         connector = FivetranConnector.from_connector_details(
             connector_details=fivetran_output.connector_details
         )
@@ -963,7 +952,6 @@ class FivetranWorkspace(ConfigurableResource):
             schema_config_details=fivetran_output.schema_config
         )
 
-        materialized_asset_keys = set()
         for schema_source_name, schema in schema_config.schemas.items():
             if not schema.enabled:
                 continue
@@ -987,7 +975,7 @@ class FivetranWorkspace(ConfigurableResource):
                     )
                 ).key
 
-                materialization = AssetMaterialization(
+                yield AssetMaterialization(
                     asset_key=asset_key,
                     description=f"Table generated via Fivetran sync: {schema.name}.{table.name}",
                     metadata={
@@ -1003,23 +991,42 @@ class FivetranWorkspace(ConfigurableResource):
                         "table_source_name": table_source_name,
                     },
                 )
-                if not materialization:
-                    continue
 
-                # scan through all tables actually created, if it was expected then emit an Output.
-                # otherwise, emit a runtime AssetMaterialization
-                if materialization.asset_key in context.selected_asset_keys:
-                    yield Output(
-                        value=None,
-                        output_name=materialization.asset_key.to_python_identifier(),
-                        metadata=materialization.metadata,
-                    )
-                    materialized_asset_keys.add(materialization.asset_key)
-                else:
-                    context.log.warning(
-                        f"An unexpected asset was materialized: {materialization.asset_key}"
-                    )
-                    yield materialization
+    def sync_and_poll(
+        self, context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None
+    ):
+        # TODO: Add docstrings
+        assets_def = context.assets_def
+        dagster_fivetran_translator = get_translator_from_fivetran_assets(assets_def)
+
+        connector_id = next(
+            check.not_none(FivetranMetadataSet.extract(spec.metadata).connector_id)
+            for spec in assets_def.specs
+        )
+
+        client = self.get_client()
+        fivetran_output = client.sync_and_poll(
+            connector_id=connector_id,
+        )
+
+        materialized_asset_keys = set()
+        for materialization in self._generate_materialization(
+            fivetran_output=fivetran_output, dagster_fivetran_translator=dagster_fivetran_translator
+        ):
+            # scan through all tables actually created, if it was expected then emit an Output.
+            # otherwise, emit a runtime AssetMaterialization
+            if materialization.asset_key in context.selected_asset_keys:
+                yield Output(
+                    value=None,
+                    output_name=materialization.asset_key.to_python_identifier(),
+                    metadata=materialization.metadata,
+                )
+                materialized_asset_keys.add(materialization.asset_key)
+            else:
+                context.log.warning(
+                    f"An unexpected asset was materialized: {materialization.asset_key}"
+                )
+                yield materialization
 
         unmaterialized_asset_keys = context.selected_asset_keys - materialized_asset_keys
         if unmaterialized_asset_keys:
