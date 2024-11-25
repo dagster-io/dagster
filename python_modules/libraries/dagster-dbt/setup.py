@@ -54,6 +54,7 @@ setup(
     ],
     extras_require={
         "test": [
+            "flaky",
             "dbt-duckdb",
             "dagster-duckdb",
             "dagster-duckdb-pandas",
