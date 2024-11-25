@@ -58,8 +58,9 @@ def main() -> None:
     num_tasks = check.int_param(args.num_tasks, "num_tasks")
     num_assets = check.int_param(args.num_assets, "num_assets")
 
-    with modify_constants(num_dags, num_tasks, num_assets), environ(
-        {"DAGSTER_HOME": str(DAGSTER_HOME)}
+    with (
+        modify_constants(num_dags, num_tasks, num_assets),
+        environ({"DAGSTER_HOME": str(DAGSTER_HOME)}),
     ):
         print("Scaffolding proxied state...")
         scaffold_proxied_state(num_dags=num_dags, num_tasks=num_tasks, proxied_state=True)

@@ -1171,8 +1171,9 @@ def deserialize_values(
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
 ) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]:
     """Deserialize a collection of values without having to repeatedly exit/enter the deserializing context."""
-    with disable_dagster_warnings(), check.EvalContext.contextual_namespace(
-        whitelist_map.object_type_map
+    with (
+        disable_dagster_warnings(),
+        check.EvalContext.contextual_namespace(whitelist_map.object_type_map),
     ):
         unpacked_values = []
         for val in vals:

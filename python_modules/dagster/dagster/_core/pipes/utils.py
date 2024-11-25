@@ -756,9 +756,10 @@ def open_pipes_session(
     context_data = build_external_execution_context_data(context, extras)
     message_handler = PipesMessageHandler(context, message_reader)
     try:
-        with context_injector.inject_context(
-            context_data
-        ) as ci_params, message_handler.handle_messages() as mr_params:
+        with (
+            context_injector.inject_context(context_data) as ci_params,
+            message_handler.handle_messages() as mr_params,
+        ):
             yield PipesSession(
                 context_data=context_data,
                 message_handler=message_handler,
