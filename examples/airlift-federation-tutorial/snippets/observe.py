@@ -73,7 +73,6 @@ customer_metrics_dag_asset = next(
 
 # start_lineage
 customer_metrics_dag_asset = customer_metrics_dag_asset.replace_attributes(
-    customer_metrics_dag_asset,
     deps=[load_customers],
 )
 # end_lineage

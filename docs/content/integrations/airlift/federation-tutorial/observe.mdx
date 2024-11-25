@@ -191,7 +191,6 @@ Now that we have both DAGs loaded into Dagster, we can observe the cross-dag lin
 
 ```python file=../../airlift-federation-tutorial/snippets/observe.py startafter=start_lineage endbefore=end_lineage
 customer_metrics_dag_asset = customer_metrics_dag_asset.replace_attributes(
-    customer_metrics_dag_asset,
     deps=[load_customers],
 )
 ```
