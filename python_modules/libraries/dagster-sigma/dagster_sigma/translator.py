@@ -100,7 +100,7 @@ class DagsterSigmaTranslator:
 
     @deprecated(
         breaking_version="1.10",
-        additional_warn_text="Use `DagsterSigmaTranslator.get_asset_spec().key` instead",
+        additional_warn_text="Use `DagsterSigmaTranslator.get_asset_spec(...).key` instead",
     )
     def get_asset_key(self, data: Union[SigmaDataset, SigmaWorkbook]) -> AssetKey:
         """Get the AssetKey for a Sigma object, such as a workbook or dataset."""
