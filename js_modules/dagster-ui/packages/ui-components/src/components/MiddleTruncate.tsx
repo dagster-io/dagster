@@ -38,7 +38,7 @@ export const MiddleTruncate = ({text, showTitle = true}: Props) => {
 
   // Use a layout effect to trigger the process of calculating the truncated text, for the
   // initial render.
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     window.requestAnimationFrame(calculateTargetStyle);
   }, [calculateTargetStyle]);
 
