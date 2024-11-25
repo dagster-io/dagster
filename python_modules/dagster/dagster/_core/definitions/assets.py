@@ -74,7 +74,7 @@ from dagster._core.definitions.utils import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._utils import IHasInternalInit
-from dagster._utils.merger import merge_dicts
+from dagster._utils.merger import merge_dicts, reverse_dict
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import ExperimentalWarning, disable_dagster_warnings
@@ -83,6 +83,10 @@ if TYPE_CHECKING:
     from dagster._core.definitions.graph_definition import GraphDefinition
 
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
+
+
+def stringify_asset_key_to_input_name(asset_key: AssetKey) -> str:
+    return "_".join(asset_key.path).replace("-", "_")
 
 
 class AssetsDefinition(ResourceAddable, IHasInternalInit):
@@ -1286,6 +1290,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     def map_asset_specs(self, fn: Callable[[AssetSpec], AssetSpec]) -> "AssetsDefinition":
         mapped_specs = []
+        all_deps_per_asset_key: Dict[AssetKey, Set[AssetDep]] = {}
         for spec in self.specs:
             mapped_spec = fn(spec)
             if mapped_spec.key != spec.key:
@@ -1293,20 +1298,14 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                     f"Asset key {spec.key.to_user_string()} was changed to "
                     f"{mapped_spec.key.to_user_string()}. Mapping function must not change keys."
                 )
-            if (
-                # check reference equality first for performance
-                mapped_spec.deps is not spec.deps and mapped_spec.deps != spec.deps
-            ):
-                raise DagsterInvalidDefinitionError(
-                    f"Asset deps {spec.deps} were changed to {mapped_spec.deps}. Mapping function "
-                    "must not change deps."
-                )
 
+            all_deps_per_asset_key[spec.key] = set(mapped_spec.deps)
             mapped_specs.append(mapped_spec)
 
-        return self.__class__.dagster_internal_init(
+        assets_def_new_specs = self.__class__.dagster_internal_init(
             **{**self.get_attributes_dict(), "specs": mapped_specs}
         )
+        return update_asset_in_mappings_on_node(assets_def_new_specs, all_deps_per_asset_key)
 
     def subset_for(
         self,
@@ -1897,3 +1896,108 @@ def unique_id_from_asset_and_check_keys(entity_keys: Iterable["EntityKey"]) -> s
     """
     sorted_key_strs = sorted(str(key) for key in entity_keys)
     return non_secure_md5_hash_str(json.dumps(sorted_key_strs).encode("utf-8"))[:8]
+
+
+def update_asset_in_mappings_on_node(
+    assets_def: AssetsDefinition, updated_deps: Mapping[AssetKey, AbstractSet[AssetDep]]
+) -> "AssetsDefinition":
+    """This function threads additional AssetDep objects into the node definition of the
+    AssetsDefinition. It assumes that the deps have already been added to the AssetSpecs of the AssetsDefinition, and purely handles mapping those deps to inputs on the op.
+    """
+    from dagster._builtins import Nothing
+    from dagster._core.definitions.input import In
+
+    # If the assets_def is not executable (and therefore is not backed by a node definition), return the original assets_def
+    if not assets_def.is_executable:
+        return assets_def
+    original_key_to_input_mapping = reverse_dict(assets_def.node_keys_by_input_name)
+    # Get the new deps that are not already in the original mapping
+    new_deps = {
+        dep.asset_key: dep
+        for deps in updated_deps.values()
+        for dep in deps
+        if dep.asset_key not in original_key_to_input_mapping
+    }
+    # get the asset keys which have been deleted from the original mapping
+    all_remaining_and_new_dep_keys = {
+        dep.asset_key for deps in updated_deps.values() for dep in deps
+    }
+    deleted_deps = {
+        key for key in original_key_to_input_mapping if key not in all_remaining_and_new_dep_keys
+    }
+
+    # If there are no changes to the dependency structure, return the original assets_def
+    if not new_deps and not deleted_deps:
+        return assets_def
+
+    # Graph-backed assets do not currently support non-argument-based deps. Every argument to a graph-backed asset
+    # must map to an an input on an internal asset node in the graph structure.
+    # IMPROVEME BUILD-529
+    check.invariant(
+        isinstance(assets_def.node_def, OpDefinition),
+        "Can only add additional deps to an op-backed asset.",
+    )
+    # for each deleted dep, we need to make sure it is not an argument-based dep
+    for dep_key in deleted_deps:
+        input_name = original_key_to_input_mapping[dep_key]
+        input_def = assets_def.node_def.input_def_named(input_name)
+        check.invariant(
+            input_def.dagster_type.is_nothing,
+            f"Attempted to remove argument-backed dependency {dep_key} (mapped to argument {input_name}) from the asset. Only non-argument dependencies can be changed or removed using map_asset_specs.",
+        )
+
+    additional_dep_keys_by_input_name = {
+        stringify_asset_key_to_input_name(dep.asset_key): dep.asset_key for dep in new_deps.values()
+    }
+
+    remaining_node_keys_by_input_name = {
+        input_name: key
+        for input_name, key in assets_def.node_keys_by_input_name.items()
+        if key in all_remaining_and_new_dep_keys
+    }
+
+    complete_input_names_by_key = {
+        **remaining_node_keys_by_input_name,
+        **additional_dep_keys_by_input_name,
+    }
+
+    additional_input_defs = [
+        In(dagster_type=Nothing).to_definition(input_name)
+        for input_name in additional_dep_keys_by_input_name.keys()
+    ]
+    remaining_input_defs = [
+        assets_def.node_def.input_def_named(input_name)
+        for input_name in remaining_node_keys_by_input_name.keys()
+    ]
+    all_input_defs = [*remaining_input_defs, *additional_input_defs]
+    ins_from_input_defs = {
+        input_def.name: In.from_definition(input_def) for input_def in all_input_defs
+    }
+    new_node_def = assets_def.op.with_replaced_properties(
+        name=assets_def.op.name,
+        ins=ins_from_input_defs,
+    )
+
+    updated_dep_keys = {key: {dep.asset_key for dep in deps} for key, deps in updated_deps.items()}
+    return AssetsDefinition(
+        keys_by_input_name=complete_input_names_by_key,
+        keys_by_output_name=assets_def.keys_by_output_name,
+        node_def=new_node_def,
+        partitions_def=assets_def.partitions_def,
+        asset_deps=updated_dep_keys,
+        can_subset=assets_def.can_subset,
+        resource_defs=assets_def.resource_defs,
+        group_names_by_key=assets_def.group_names_by_key,
+        metadata_by_key=assets_def.metadata_by_key,
+        tags_by_key=assets_def.tags_by_key,
+        freshness_policies_by_key=assets_def.freshness_policies_by_key,
+        backfill_policy=assets_def.backfill_policy,
+        descriptions_by_key=assets_def.descriptions_by_key,
+        check_specs_by_output_name=assets_def.check_specs_by_output_name,
+        is_subset=assets_def.is_subset,
+        owners_by_key=assets_def.owners_by_key,
+        partition_mappings=assets_def._partition_mappings,  # noqa: SLF001
+        specs=None,
+        execution_type=assets_def.execution_type,
+        auto_materialize_policies_by_key=assets_def.auto_materialize_policies_by_key,
+    )
