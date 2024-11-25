@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.asset_spec import AssetSpec, replace_attributes
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
@@ -69,7 +69,7 @@ def cacheable_asset_defs_custom_translator():
     class MyCoolTranslator(DagsterTableauTranslator):
         def get_asset_spec(self, data) -> AssetSpec:
             default_spec = super().get_asset_spec(data)
-            return replace_attributes(default_spec, key=default_spec.key.with_prefix("my_prefix"))
+            return default_spec.replace_attributes(key=default_spec.key.with_prefix("my_prefix"))
 
     tableau_specs = load_tableau_asset_specs(
         workspace=resource, dagster_tableau_translator=MyCoolTranslator

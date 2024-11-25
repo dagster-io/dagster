@@ -1,5 +1,5 @@
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec, replace_attributes
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster_tableau import DagsterTableauTranslator
 from dagster_tableau.translator import TableauContentData, TableauWorkspaceData
 
@@ -69,8 +69,7 @@ def test_translator_data_source_spec(
 class MyCustomTranslator(DagsterTableauTranslator):
     def get_asset_spec(self, data: TableauContentData) -> AssetSpec:
         default_spec = super().get_asset_spec(data)
-        return replace_attributes(
-            default_spec,
+        return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("prefix"),
             metadata={**default_spec.metadata, "custom": "metadata"},
         )
