@@ -2412,6 +2412,35 @@ class DagsterInstance(DynamicPartitionsStore):
         self._event_storage.store_event(event)
 
     def should_retry_run(self, run: DagsterRun) -> bool:
+        """Determines if a run will be retried by the automatic reexcution system.
+        A run will retry if:
+        - it is failed.
+        - the number of max allowed retries is > 0 (max retries can be set via system setting or run tag).
+        - there have not already been >= max_retries retries for the run.
+
+        If the run failure reason was a step failure and the retry_on_asset_or_op_failure tag/system setting is set to false,
+        a warning message will be logged and the run will not be retried.
+
+        We determine how many retries have been launched for the run by looking at the size of the run group
+        (the set of runs that have the same root_run_id and the run with root_run_id). Since manually launched retries are
+        given a root_run_id, this means that if a user launches a manual retry of run A and then this function
+        is called because a retry for run A launched by the auto-reexecution system failed, the manual retry will be
+        counted toward max_retries.
+
+        There is potential that one "extra" retry will be launched by the automatic reexecution system
+        since manual retries could be happening in parallel with automatic retries. Here is
+        an illustrative example:
+        - Max retries is 3
+        - Run A fails
+        - The automatic reexecution system launches a retry of run A (A_1), which fails
+        - The automatic reexecution system launches a retry run A_1 (A_2), which fails
+        - This function is executing and has fetched the run_group for run A_2: (A, A_1, A_2)
+        - A user launches a manual retry of run A (A_m). The run group is now (A, A_1, A_2, A_m), but this function does
+        not have the updated run group
+        - Since the run group we've fetched is (A, A_1, A_2), this function will mark A_2 as `will_retry=true` and
+        run `A_3` will be launched. This is the "extra" retry, since usually manual retries are counted toward max_retries, but
+        in this case it was not.
+        """
         from dagster._core.events import RunFailureReason
 
         if run.status == DagsterRunStatus.FAILURE:
@@ -2430,8 +2459,8 @@ class DagsterInstance(DynamicPartitionsStore):
                 run_group = self.get_run_group(run.run_id)
                 if run_group is not None:
                     _, run_group_iter = run_group
-                    # since the original run is in the run group, we retry one more time
-                    # if the length of the run group is max_retries
+                    # since the original run is in the run group, the number of retries launched
+                    # so far is len(run_group_iter) - 1
                     if len(list(run_group_iter)) <= max_retries:
                         retry_on_asset_or_op_failure = get_boolean_tag_value(
                             run.tags.get(RETRY_ON_ASSET_OR_OP_FAILURE_TAG),
