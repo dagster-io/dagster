@@ -107,7 +107,6 @@ from dagster_sigma import (
 )
 
 import dagster as dg
-from dagster._core.definitions.asset_spec import replace_attributes
 
 sigma_organization = SigmaOrganization(
     base_url=SigmaBaseUrl.AWS_US,
@@ -122,7 +121,7 @@ class MyCustomSigmaTranslator(DagsterSigmaTranslator):
         # We create the default asset spec using super()
         default_spec = super().get_asset_spec(data)
         # we customize the team owner tag for all Sigma assets
-        return replace_attributes(default_spec, owners=["team:my_team"])
+        return default_spec.replace_attributes(owners=["team:my_team"])
 
 
 sigma_specs = load_sigma_asset_specs(
