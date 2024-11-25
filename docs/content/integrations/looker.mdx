@@ -87,7 +87,7 @@ defs = dg.Definitions(assets=[*looker_specs], resources={"looker": looker_resour
 
 ### Customize asset definition metadata for Looker assets
 
-By default, Dagster will generate asset keys for each Looker asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_looker" object="DagsterLookerApiTranslator" /> subclass to the <PyObject module="dagster_looker" method="load_looker_asset_specs" /> function. This subclass can implement methods to customize the asset keys or specs for each Looker asset type.
+By default, Dagster will generate asset specs for each Looker asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_looker" object="DagsterLookerApiTranslator" /> subclass to the <PyObject module="dagster_looker" method="load_looker_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Looker asset type.
 
 ```python file=/integrations/looker/customize-looker-assets.py
 from dagster_looker import (
@@ -109,16 +109,18 @@ looker_resource = LookerResource(
 
 class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
     def get_asset_spec(self, looker_structure: LookerStructureData) -> dg.AssetSpec:
-        asset_spec = super().get_asset_spec(looker_structure)
-
-        # Add a team owner tag for all Looker assets
-        asset_spec = asset_spec._replace(owners=["team:my_team"])
-
-        # For only Looker dashboard, prefix the asset key with "looker" for organizational purposes
-        if looker_structure.structure_type == LookerStructureType.DASHBOARD:
-            asset_spec = asset_spec._replace(key=asset_spec.key.with_prefix("looker"))
-
-        return asset_spec
+        # We create the default asset spec using super()
+        default_spec = super().get_asset_spec(looker_structure)
+        # We customize the team owner tag for all assets,
+        # and we customize the asset key prefix only for dashboards.
+        return default_spec.replace_attributes(
+            key=(
+                default_spec.key.with_prefix("looker")
+                if looker_structure.structure_type == LookerStructureType.DASHBOARD
+                else default_spec.key
+            ),
+            owners=["team:my_team"],
+        )
 
 
 looker_specs = load_looker_asset_specs(
@@ -126,6 +128,8 @@ looker_specs = load_looker_asset_specs(
 )
 defs = dg.Definitions(assets=[*looker_specs], resources={"looker": looker_resource})
 ```
+
+Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
 ### Materialize Looker PDTs from Dagster
 
