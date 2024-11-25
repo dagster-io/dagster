@@ -195,14 +195,12 @@ def test_build_defs_with_pdts(
 def test_custom_asset_specs(
     looker_resource: LookerResource, looker_instance_data_mocks: responses.RequestsMock
 ) -> None:
-    expected_metadata = {"custom": "metadata"}
-
     class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
-        def get_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
-            return super().get_asset_key(looker_structure).with_prefix("my_prefix")
-
         def get_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
-            return super().get_asset_spec(looker_structure)._replace(metadata=expected_metadata)
+            default_spec = super().get_asset_spec(looker_structure)
+            return default_spec.replace_attributes(
+                key=default_spec.key.with_prefix("my_prefix"),
+            ).merge_attributes(metadata={"custom": "metadata"})
 
     all_assets = (
         asset
@@ -216,5 +214,6 @@ def test_custom_asset_specs(
 
     for asset in all_assets:
         for metadata in asset.metadata_by_key.values():
-            assert metadata == expected_metadata
+            assert "custom" in metadata
+            assert metadata["custom"] == "metadata"
         assert all(key.path[0] == "my_prefix" for key in asset.keys)
