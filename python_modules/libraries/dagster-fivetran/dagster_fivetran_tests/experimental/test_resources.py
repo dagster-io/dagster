@@ -124,7 +124,18 @@ def test_basic_resource_request(
         ("resync_and_poll", 4, False),
         ("resync_and_poll", 30, True),
     ],
-    ids=["short_success", "short_failure", "medium_success", "medium_failure", "long_success"],
+    ids=[
+        "sync_short_success",
+        "sync_short_failure",
+        "sync_medium_success",
+        "sync_medium_failure",
+        "sync_long_success",
+        "resync_short_success",
+        "resync_short_failure",
+        "resync_medium_success",
+        "resync_medium_failure",
+        "resync_long_success",
+    ],
 )
 def test_sync_and_poll_methods(method, n_polls, succeed_at_end, connector_id):
     resource = FivetranWorkspace(
