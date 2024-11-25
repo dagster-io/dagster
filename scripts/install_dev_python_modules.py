@@ -118,26 +118,17 @@ def main(
             "python_modules/libraries/dagster-airflow",
         ]
 
-    # if sys.version_info > (3, 7):
-    #     editable_target_paths += []
-
     install_targets += list(
         itertools.chain.from_iterable(
             zip(["-e"] * len(editable_target_paths), editable_target_paths)
         )
     )
 
-    if sys.version_info > (3, 6) and sys.version_info < (3, 10):
-        install_targets += []
-
     if include_prebuilt_grpcio_wheel:
         install_targets += [
             "--find-links",
             "https://github.com/dagster-io/build-grpcio/wiki/Wheels",
         ]
-
-    # Ensure uv is installed which we use for faster package resolution
-    subprocess.run(["pip", "install", "-U", "uv"], check=True)
 
     # NOTE: These need to be installed as one long pip install command, otherwise pip will install
     # conflicting dependencies, which will break pip freeze snapshot creation during the integration
