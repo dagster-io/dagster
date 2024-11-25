@@ -1,22 +1,8 @@
-"""Bluesky atproto data ingestion.
-
-CONFIGURATION
-
-    ENVIRONMENT VARIABLES
-
-        BSKY_LOGIN
-        BSKY_APP_PASSWORD
-        BSKY_PREFERRED_LANGUAGE
-
-References:
-    https://docs.bsky.app/docs/tutorials/viewing-feeds
-
-"""
+"""The Bluesky servers impose rate limiting of the following specification."""
 
 import os
 from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, List, Optional
 
 import dagster as dg
 from atproto import Client
@@ -32,46 +18,61 @@ AWS_BUCKET_NAME = os.environ.get("AWS_BUCKET_NAME", "dagster-demo")
 class ATProtoResource(dg.ConfigurableResource):
     login: str
     password: str
+    session_cache_path: str = "atproto-session.txt"
+
+    def _login(self, client):
+        """Create a re-usable session to be used across resource instances; we are rate limited to 30/5 minutes or 300/day session."""
+        # TODO - purge cache if file was created outside of TTL
+        # TODO - write cache to S3 (can we use S3 resource here?)
+        if os.path.exists(self.session_cache_path):
+            with open(self.session_cache_path, "r") as f:
+                session_string = f.read()
+            client.login(session_string=session_string)
+        else:
+            client.login(login=self.login, password=self.password)
+            session_string = client.export_session_string()
+            with open(self.session_cache_path, "w") as f:
+                f.write(session_string)
 
     def get_client(
         self,
-    ) -> Tuple[Client, "models.AppBskyActorDefs.ProfileViewDetailed"]:
-        atproto_client = Client()
-        profile_view_detailed = atproto_client.login(
-            login=self.login,
-            password=self.password,
-        )
-        return atproto_client, profile_view_detailed
+    ) -> Client:
+        client = Client()
+        self._login(client)
+        return client
 
 
-class AuthorFeedFilter(str, Enum):
-    POSTS_WITH_REPLIES = "posts_with_replies"
-    POSTS_NO_REPLIES = "posts_no_replies"
-    POSTS_WITH_MEDIA = "posts_with_media"
-    POSTS_AND_AUTHOR_THREADS = "posts_and_author_threads"
-
-
-def get_all_feed_items(
-    client: Client, actor_did: str
-) -> List["models.AppBskyFeedDefs.FeedViewPost"]:
-    """Retrieves all author feed items for a given `actor_did`.
+def get_all_feed_items(client: Client, actor: str) -> List["models.AppBskyFeedDefs.FeedViewPost"]:
+    """Retrieves all author feed items for a given `actor`.
 
     Args:
         client (Client): AT Protocol client
-        actor_did (str): author identifier (did)
+        actor (str): author identifier (did)
 
     Returns:
         List['models.AppBskyFeedDefs.FeedViewPost'] list of feed
 
     """
+    import math
+
+    import tenacity
+
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(5),
+        wait=tenacity.wait_fixed(math.ceil(60 * 2.5)),
+    )
+    def _get_feed_with_retries(client: Client, actor: str, cursor: Optional[str]):
+        return client.get_author_feed(actor=actor, cursor=cursor, limit=100)
+
     feed = []
     cursor = None
     while True:
-        data = client.get_author_feed(actor=actor_did, cursor=cursor)
+        data = _get_feed_with_retries(client, actor, cursor)
         feed.extend(data.feed)
         cursor = data.cursor
         if not cursor:
             break
+
     return feed
 
 
@@ -99,21 +100,33 @@ def get_all_starter_pack_members(client: Client, starter_pack_uri: str):
         partition_keys=[
             "at://did:plc:lc5jzrr425fyah724df3z5ik/app.bsky.graph.starterpack/3l7cddlz5ja24",  # https://bsky.app/starter-pack/christiannolan.bsky.social/3l7cddlz5ja24
         ]
-    )
+    ),
+    automation_condition=dg.AutomationCondition.on_cron("0 0 * * *"),  # Midnight
+    kinds={"python"},
+    group_name="ingestion",
 )
 def starter_pack_snapshot(
     context: dg.AssetExecutionContext,
     atproto_resource: ATProtoResource,
     s3_resource: S3Resource,
 ) -> dg.MaterializeResult:
+    """Snapshot of members in a Bluesky starter pack partitioned by starter pack ID and written to S3 storage.
+
+    Args:
+        context (AssetExecutionContext) Dagster context
+        atproto_resource (ATProtoResource) Resource for interfacing with atmosphere protocol
+        s3_resource (S3Resource) Resource for uploading files to S3 storage
+
+    """
+    atproto_client = atproto_resource.get_client()
+
     starter_pack_uri = context.partition_key
 
-    atproto_client, _ = atproto_resource.get_client()
-    members = get_all_starter_pack_members(atproto_client, starter_pack_uri)
-    _bytes = os.linesep.join([member.model_dump_json() for member in members]).encode("utf-8")
+    list_items = get_all_starter_pack_members(atproto_client, starter_pack_uri)
+
+    _bytes = os.linesep.join([member.model_dump_json() for member in list_items]).encode("utf-8")
 
     datetime_now = datetime.now()
-
     object_key = "/".join(
         (
             "atproto_starter_pack_snapshot",
@@ -126,31 +139,41 @@ def starter_pack_snapshot(
 
     s3_resource.get_client().put_object(Body=_bytes, Bucket=AWS_BUCKET_NAME, Key=object_key)
 
+    # TODO - delete dynamic partitions that no longer exist in the list
+    context.instance.add_dynamic_partitions(
+        partitions_def_name="atproto_did_dynamic_partition",
+        partition_keys=[list_item_view.subject.did for list_item_view in list_items],
+    )
+
     return dg.MaterializeResult(
         metadata={
-            "len_members": len(members),
+            "len_members": len(list_items),
             "s3_object_key": object_key,
         }
     )
 
 
-# TODO - dynamic partition by members of the "Data" starter pack
+atproto_did_dynamic_partition = dg.DynamicPartitionsDefinition(name="atproto_did_dynamic_partition")
+
+
 @dg.asset(
-    partitions_def=dg.StaticPartitionsDefinition(
-        partition_keys=[
-            "did:plc:3otm7ydoda3uopfnqz6y3obb",  # colton.boo
-        ]
-    )
+    partitions_def=atproto_did_dynamic_partition,
+    deps=[dg.AssetDep(starter_pack_snapshot, partition_mapping=dg.AllPartitionMapping())],
+    automation_condition=dg.AutomationCondition.eager(),
+    kinds={"python"},
+    group_name="ingestion",
+    op_tags={"dagster/concurrency_key": "ingestion"},
 )
 def actor_feed_snapshot(
     context: dg.AssetExecutionContext,
     atproto_resource: ATProtoResource,
     s3_resource: S3Resource,
 ) -> dg.MaterializeResult:
-    client, _ = atproto_resource.get_client()
+    """Snapshot of full user feed written to S3 storage."""
+    client = atproto_resource.get_client()
     actor_did = context.partition_key
 
-    # TODO - determine if we need to `yield` chunks to be more memory efficient
+    # NOTE: we may need to yield chunks to be more memory efficient
     items = get_all_feed_items(client, actor_did)
 
     datetime_now = datetime.now()
@@ -166,6 +189,7 @@ def actor_feed_snapshot(
     )
 
     _bytes = os.linesep.join([item.model_dump_json() for item in items]).encode("utf-8")
+
     s3_resource.get_client().put_object(Body=_bytes, Bucket=AWS_BUCKET_NAME, Key=object_key)
 
     return dg.MaterializeResult(
