@@ -620,7 +620,10 @@ def run_backfill_to_completion(
     )
 
     while not backfill_is_complete(
-        backfill_id=backfill_id, backfill_data=backfill_data, instance=instance
+        backfill_id=backfill_id,
+        backfill_data=backfill_data,
+        instance=instance,
+        logger=logging.getLogger("fake_logger"),
     ):
         iteration_count += 1
 
