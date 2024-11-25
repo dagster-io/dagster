@@ -126,7 +126,8 @@ def test_sync_and_poll(n_polls, succeed_at_end, connector_id):
     test_failed_at = TEST_PREVIOUS_MAX_TIME_STR
     # Set `failed_at` as more recent that `succeeded_at` if the sync and poll process is expected to fail
     if not succeed_at_end:
-        test_succeeded_at, test_failed_at = test_failed_at, test_succeeded_at
+        test_succeeded_at = TEST_PREVIOUS_MAX_TIME_STR
+        test_failed_at = TEST_MAX_TIME_STR
 
     # Create mock responses to mock full sync and poll behavior, used only in this test
     def _mock_interaction():
