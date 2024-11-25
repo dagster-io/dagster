@@ -57,6 +57,9 @@ MAX_RETRIES_TAG = f"{SYSTEM_TAG_PREFIX}max_retries"
 RETRY_NUMBER_TAG = f"{SYSTEM_TAG_PREFIX}retry_number"
 RETRY_STRATEGY_TAG = f"{SYSTEM_TAG_PREFIX}retry_strategy"
 RETRY_ON_ASSET_OR_OP_FAILURE_TAG = f"{SYSTEM_TAG_PREFIX}retry_on_asset_or_op_failure"
+
+# This tag is used to indicate that the automatic retry daemon will launch a retry for this run
+# If this tag is not on a run, it means the run did not fail or automatic retries is disabled.
 WILL_RETRY_TAG = f"{SYSTEM_TAG_PREFIX}will_retry"
 
 MAX_RUNTIME_SECONDS_TAG = f"{SYSTEM_TAG_PREFIX}max_runtime"
