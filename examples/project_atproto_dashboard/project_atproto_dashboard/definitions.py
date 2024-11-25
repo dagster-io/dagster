@@ -8,14 +8,10 @@ CONFIGURATION
         BSKY_APP_PASSWORD
         BSKY_PREFERRED_LANGUAGE
 
-References:
-    https://docs.bsky.app/docs/tutorials/viewing-feeds
-
 """
 
 import os
 from datetime import datetime
-from enum import Enum
 from typing import TYPE_CHECKING, List, Tuple
 
 import dagster as dg
@@ -44,13 +40,6 @@ class ATProtoResource(dg.ConfigurableResource):
         return atproto_client, profile_view_detailed
 
 
-class AuthorFeedFilter(str, Enum):
-    POSTS_WITH_REPLIES = "posts_with_replies"
-    POSTS_NO_REPLIES = "posts_no_replies"
-    POSTS_WITH_MEDIA = "posts_with_media"
-    POSTS_AND_AUTHOR_THREADS = "posts_and_author_threads"
-
-
 def get_all_feed_items(
     client: Client, actor_did: str
 ) -> List["models.AppBskyFeedDefs.FeedViewPost"]:
@@ -67,7 +56,7 @@ def get_all_feed_items(
     feed = []
     cursor = None
     while True:
-        data = client.get_author_feed(actor=actor_did, cursor=cursor)
+        data = client.get_author_feed(actor=actor_did, cursor=cursor, limit=100)
         feed.extend(data.feed)
         cursor = data.cursor
         if not cursor:
@@ -99,13 +88,23 @@ def get_all_starter_pack_members(client: Client, starter_pack_uri: str):
         partition_keys=[
             "at://did:plc:lc5jzrr425fyah724df3z5ik/app.bsky.graph.starterpack/3l7cddlz5ja24",  # https://bsky.app/starter-pack/christiannolan.bsky.social/3l7cddlz5ja24
         ]
-    )
+    ),
+    automation_condition=dg.AutomationCondition.on_cron("0 0 * * *"),
+    kinds={"python"},
 )
 def starter_pack_snapshot(
     context: dg.AssetExecutionContext,
     atproto_resource: ATProtoResource,
     s3_resource: S3Resource,
 ) -> dg.MaterializeResult:
+    """Snapshot of members in a Bluesky starter pack partitioned by starter pack ID and written to S3 storage.
+
+    Args:
+        context (AssetExecutionContext) Dagster context
+        atproto_resource (ATProtoResource) Resource for interfacing with atmosphere protocol
+        s3_resource (S3Resource) Resource for uploading files to S3 storage
+
+    """
     atproto_client, _ = atproto_resource.get_client()
 
     starter_pack_uri = context.partition_key
@@ -145,17 +144,20 @@ atproto_did_dynamic_partition = dg.DynamicPartitionsDefinition(name="atproto_did
 
 @dg.asset(
     partitions_def=atproto_did_dynamic_partition,
-    deps=[starter_pack_snapshot],
+    deps=[dg.AssetDep(starter_pack_snapshot, partition_mapping=dg.AllPartitionMapping())],
+    automation_condition=dg.AutomationCondition.eager(),
+    kinds={"python"},
 )
 def actor_feed_snapshot(
     context: dg.AssetExecutionContext,
     atproto_resource: ATProtoResource,
     s3_resource: S3Resource,
 ) -> dg.MaterializeResult:
+    """Snapshot of full user feed written to S3 storage."""
     client, _ = atproto_resource.get_client()
     actor_did = context.partition_key
 
-    # TODO - determine if we need to `yield` chunks to be more memory efficient
+    # NOTE: we may need to yield chunks to be more memory efficient
     items = get_all_feed_items(client, actor_did)
 
     datetime_now = datetime.now()

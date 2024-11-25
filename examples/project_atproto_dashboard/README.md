@@ -1,47 +1,37 @@
 # project_atproto_dashboard
 
-This is a [Dagster](https://dagster.io/) project scaffolded with [`dagster project scaffold`](https://docs.dagster.io/getting-started/create-new-project).
+End-to-end project that demonstrates:
+
+1. Ingestion of data-related Bluesky posts
+2. Modelling data using _dbt_
+3. Representing data in a dashboard
 
 ## Getting started
 
-First, install your Dagster code location as a Python package. By using the --editable flag, pip will install your Python package in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs) so that as you develop, local code changes will automatically apply.
+### Environment Setup
 
-```bash
-pip install -e ".[dev]"
-```
+Ensure the following environments have been populated in your `.env` file:
 
-Then, start the Dagster UI web server:
+    BSKY_LOGIN
+    BSKY_APP_PASSWORD
+    BSKY_PREFERRED_LANGUAGE
 
-```bash
-dagster dev
-```
+### Development
 
-Open http://localhost:3000 with your browser to see the project.
+Install the project dependencies:
 
-You can start writing assets in `project_atproto_dashboard/assets.py`. The assets are automatically loaded into the Dagster code location as you define them.
+    pip install -e ".[dev]"
 
-## Development
+Start Dagster:
 
-### Adding new Python dependencies
-
-You can specify new Python dependencies in `setup.py`.
+    dagster dev
 
 ### Unit testing
 
 Tests are in the `project_atproto_dashboard_tests` directory and you can run tests using `pytest`:
 
-```bash
-pytest project_atproto_dashboard_tests
-```
+    pytest project_atproto_dashboard_tests
 
-### Schedules and sensors
+## Resources
 
-If you want to enable Dagster [Schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) or [Sensors](https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors) for your jobs, the [Dagster Daemon](https://docs.dagster.io/deployment/dagster-daemon) process must be running. This is done automatically when you run `dagster dev`.
-
-Once your Dagster Daemon is running, you can start turning on schedules and sensors for your jobs.
-
-## Deploy on Dagster Cloud
-
-The easiest way to deploy your Dagster project is to use Dagster Cloud.
-
-Check out the [Dagster Cloud Documentation](https://docs.dagster.cloud) to learn more.
+- https://docs.bsky.app/docs/tutorials/viewing-feeds
