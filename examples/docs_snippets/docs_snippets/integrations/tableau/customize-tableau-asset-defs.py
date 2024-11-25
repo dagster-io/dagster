@@ -6,7 +6,6 @@ from dagster_tableau import (
 from dagster_tableau.translator import TableauContentData, TableauContentType
 
 import dagster as dg
-from dagster._core.definitions.asset_spec import replace_attributes
 
 tableau_workspace = TableauCloudWorkspace(
     connected_app_client_id=dg.EnvVar("TABLEAU_CONNECTED_APP_CLIENT_ID"),
@@ -26,8 +25,7 @@ class MyCustomTableauTranslator(DagsterTableauTranslator):
         default_spec = super().get_asset_spec(data)
         # We customize the metadata and asset key prefix for all assets, including sheets,
         # and we customize the team owner tag only for sheets.
-        return replace_attributes(
-            default_spec,
+        return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("prefix"),
             metadata={**default_spec.metadata, "custom": "metadata"},
             owners=(
