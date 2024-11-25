@@ -6,7 +6,7 @@ from dagster import (
     AssetSpec,
     _check as check,
 )
-from dagster._annotations import public, deprecated
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
 from dagster._utils.log import get_dagster_logger
