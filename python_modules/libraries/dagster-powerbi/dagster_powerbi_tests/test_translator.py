@@ -1,5 +1,5 @@
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec, replace_attributes
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags import build_kind_tag
@@ -119,8 +119,7 @@ def test_translator_semantic_model_many_tables(second_workspace_data: PowerBIWor
 class MyCustomTranslator(DagsterPowerBITranslator):
     def get_asset_spec(self, data: PowerBIContentData) -> AssetSpec:
         default_spec = super().get_asset_spec(data)
-        return replace_attributes(
-            default_spec,
+        return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("prefix"),
             metadata={**default_spec.metadata, "custom": "metadata"},
         )
