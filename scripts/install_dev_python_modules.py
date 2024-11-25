@@ -124,9 +124,6 @@ def main(
         )
     )
 
-    if sys.version_info > (3, 6) and sys.version_info < (3, 10):
-        install_targets += []
-
     if include_prebuilt_grpcio_wheel:
         install_targets += [
             "--find-links",

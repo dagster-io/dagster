@@ -38,8 +38,7 @@ ENV LANG=en_US.UTF-8 \
     DOCKER_COMPOSE_VERSION=1.29.1 \
     KIND_VERSION=v0.14.0 \
     KUBECTL_VERSION=v1.20.1 \
-    FOSSA_VERSION=1.1.10 \
-    UV_VERSION=0.5.4
+    FOSSA_VERSION=1.1.10
 
 # Install Kubernetes tools: kubectl, kind, helm
 RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl" \
@@ -133,7 +132,7 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | \
     && chmod +x /usr/local/bin/docker-compose
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:${UV_VERSION} /uv /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.5.4 /uv /bin/
 
 # Install redis
 RUN wget http://download.redis.io/redis-stable.tar.gz \
@@ -169,7 +168,7 @@ COPY --from=snapshot_builder /snapshot-reqs.txt .
 
 # Preinstall non-Dagster packages in image so that the virtual environment
 # builds faster in Buildkite.
-RUN uv pip install -r /snapshot-reqs.txt \
+RUN uv pip install --system -r /snapshot-reqs.txt \
     && rm /snapshot-reqs.txt
 
 # New versions of debian require allowlisting folders where `git` can run
