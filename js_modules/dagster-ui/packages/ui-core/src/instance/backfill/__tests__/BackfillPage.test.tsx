@@ -175,7 +175,7 @@ describe('BackfillPage', () => {
 
     const assetBRow = await screen.findByTestId('backfill-asset-row-assetB');
     expect(getByTitle(assetBRow, 'assetB')).toBeVisible();
-    expect(getByText(assetBRow, 'Completed')).toBeVisible();
+    expect(getByText(assetBRow, 'Succeeded')).toBeVisible();
     expect(getAllByText(assetBRow, '-').length).toBe(3);
   });
 });

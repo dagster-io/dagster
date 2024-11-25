@@ -1,6 +1,7 @@
 import {
   Box,
   ButtonLink,
+  Caption,
   Colors,
   MiddleTruncate,
   NonIdealState,
@@ -170,18 +171,18 @@ export const VirtualizedBackfillPartitionsRow = ({
 }) => {
   let targeted;
   let inProgress;
-  let completed;
+  let succeeded;
   let failed;
   if (asset.__typename === 'AssetPartitionsStatusCounts') {
     targeted = asset.numPartitionsTargeted;
     inProgress = asset.numPartitionsInProgress;
-    completed = asset.numPartitionsMaterialized;
+    succeeded = asset.numPartitionsMaterialized;
     failed = asset.numPartitionsFailed;
   } else {
     targeted = 1;
     failed = asset.failed ? 1 : 0;
     inProgress = asset.inProgress ? 1 : 0;
-    completed = asset.materialized ? 1 : 0;
+    succeeded = asset.materialized ? 1 : 0;
   }
 
   const client = useApolloClient();
@@ -218,7 +219,10 @@ export const VirtualizedBackfillPartitionsRow = ({
     >
       <RowGrid border="bottom">
         <RowCell>
-          <Box flex={{direction: 'row', justifyContent: 'space-between'}} style={{minWidth: 0}}>
+          <Box
+            flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'baseline'}}
+            style={{minWidth: 0}}
+          >
             <ButtonLink
               style={{minWidth: 0}}
               onClick={() =>
@@ -233,7 +237,7 @@ export const VirtualizedBackfillPartitionsRow = ({
             <StatusBar
               targeted={targeted}
               inProgress={inProgress}
-              completed={completed}
+              succeeded={succeeded}
               failed={failed}
             />
           </Box>
@@ -242,7 +246,7 @@ export const VirtualizedBackfillPartitionsRow = ({
           <>
             <RowCell>{numberFormatter.format(targeted)}</RowCell>
             <RowCell>{numberFormatter.format(inProgress)}</RowCell>
-            <RowCell>{numberFormatter.format(completed)}</RowCell>
+            <RowCell>{numberFormatter.format(succeeded)}</RowCell>
             <RowCell>{numberFormatter.format(failed)}</RowCell>
           </>
         ) : (
@@ -260,9 +264,9 @@ export const VirtualizedBackfillPartitionsRow = ({
               )}
             </RowCell>
             <RowCell>
-              {completed ? (
+              {succeeded ? (
                 <div>
-                  <Tag intent="success">Completed</Tag>
+                  <Tag intent="success">Succeeded</Tag>
                 </div>
               ) : (
                 '-'
@@ -310,32 +314,39 @@ export const BACKFILL_PARTITIONS_FOR_ASSET_KEY_QUERY = gql`
 export function StatusBar({
   targeted,
   inProgress,
-  completed,
+  succeeded,
   failed,
 }: {
   targeted: number;
   inProgress: number;
-  completed: number;
+  succeeded: number;
   failed: number;
 }) {
+  const pctSucceeded = (100 * succeeded) / targeted;
+  const pctFailed = (100 * failed) / targeted;
+  const pctInProgress = (100 * inProgress) / targeted;
+
+  const pctFinal = Math.ceil(pctSucceeded + pctFailed);
+
   return (
-    <div
-      style={{
-        borderRadius: '8px',
-        backgroundColor: Colors.backgroundLight(),
-        display: 'grid',
-        gridTemplateColumns: `${(100 * completed) / targeted}% ${(100 * failed) / targeted}% ${
-          (100 * inProgress) / targeted
-        }%`,
-        gridTemplateRows: '100%',
-        height: '12px',
-        width: '200px',
-        overflow: 'hidden',
-      }}
-    >
-      <div style={{background: Colors.accentGreen()}} />
-      <div style={{background: Colors.accentRed()}} />
-      <div style={{background: Colors.accentBlue()}} />
-    </div>
+    <Box flex={{direction: 'column', alignItems: 'flex-end', gap: 2}}>
+      <div
+        style={{
+          borderRadius: '8px',
+          backgroundColor: Colors.backgroundLight(),
+          display: 'grid',
+          gridTemplateColumns: `${pctSucceeded.toFixed(2)}% ${pctFailed.toFixed(2)}% ${pctInProgress.toFixed(2)}%`,
+          gridTemplateRows: '100%',
+          height: '12px',
+          width: '200px',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{background: Colors.accentGreen()}} />
+        <div style={{background: Colors.accentRed()}} />
+        <div style={{background: Colors.accentBlue()}} />
+      </div>
+      <Caption color={Colors.textLight()}>{`${pctFinal}% completed`}</Caption>
+    </Box>
   );
 }
