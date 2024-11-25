@@ -174,7 +174,10 @@ class DagsterPowerBITranslator:
         else:
             check.assert_never(data.content_type)
 
-    @deprecated(breaking_version="1.10")
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterPowerBITranslator.get_asset_spec(...).key` instead",
+    )
     def get_dashboard_asset_key(self, data: PowerBIContentData) -> AssetKey:
         return self.get_dashboard_spec(data).key
 
@@ -205,7 +208,10 @@ class DagsterPowerBITranslator:
             kinds={"powerbi", "dashboard"},
         )
 
-    @deprecated(breaking_version="1.10")
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterPowerBITranslator.get_asset_spec(...).key` instead",
+    )
     def get_report_asset_key(self, data: PowerBIContentData) -> AssetKey:
         return self.get_report_spec(data).key
 
@@ -232,7 +238,10 @@ class DagsterPowerBITranslator:
             owners=[owner] if owner else None,
         )
 
-    @deprecated(breaking_version="1.10")
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterPowerBITranslator.get_asset_spec(...).key` instead",
+    )
     def get_semantic_model_asset_key(self, data: PowerBIContentData) -> AssetKey:
         return self.get_semantic_model_spec(data).key
 
@@ -283,7 +292,10 @@ class DagsterPowerBITranslator:
             owners=[owner] if owner else None,
         )
 
-    @deprecated(breaking_version="1.10")
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterPowerBITranslator.get_asset_spec(...).key` instead",
+    )
     def get_data_source_asset_key(self, data: PowerBIContentData) -> AssetKey:
         return self.get_data_source_spec(data).key
 
