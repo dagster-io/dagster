@@ -3,7 +3,6 @@ from typing import Iterator
 import pytest
 import responses
 from dagster import AssetKey, AssetSpec, Definitions, materialize
-from dagster._core.definitions.asset_spec import replace_attributes
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster_looker import LookerFilter
 from dagster_looker.api.assets import build_looker_pdt_assets_definitions
@@ -199,8 +198,7 @@ def test_custom_asset_specs(
     class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
         def get_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
             default_spec = super().get_asset_spec(looker_structure)
-            return replace_attributes(
-                default_spec,
+            return default_spec.replace_attributes(
                 key=default_spec.key.with_prefix("my_prefix"),
                 metadata={**default_spec.metadata, "custom": "metadata"},
             )
