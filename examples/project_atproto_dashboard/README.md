@@ -3,6 +3,9 @@
 End-to-end project that demonstrates:
 
 1. Ingestion of data-related Bluesky posts
+    * Dynamic partitions
+    * Declarative automation
+    * Concurrency limits
 2. Modelling data using _dbt_
 3. Representing data in a dashboard
 
@@ -24,7 +27,7 @@ Install the project dependencies:
 
 Start Dagster:
 
-    dagster dev
+    DAGSTER_HOME=$(pwd) dagster dev
 
 ### Unit testing
 
@@ -35,3 +38,6 @@ Tests are in the `project_atproto_dashboard_tests` directory and you can run tes
 ## Resources
 
 - https://docs.bsky.app/docs/tutorials/viewing-feeds
+- https://docs.bsky.app/docs/advanced-guides/rate-limits
+- https://atproto.blue/en/latest/atproto_client/auth.html#session-string
+- https://tenacity.readthedocs.io/en/latest/#waiting-before-retrying
