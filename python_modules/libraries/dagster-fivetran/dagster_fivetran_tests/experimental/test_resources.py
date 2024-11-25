@@ -113,6 +113,7 @@ def test_basic_resource_request(
 @pytest.mark.parametrize(
     "n_polls, succeed_at_end",
     [(0, True), (0, False), (4, True), (4, False), (30, True)],
+    ids=["short_success", "short_failure", "medium_success", "medium_failure", "long_success"],
 )
 def test_sync_and_poll(n_polls, succeed_at_end, connector_id):
     resource = FivetranWorkspace(
