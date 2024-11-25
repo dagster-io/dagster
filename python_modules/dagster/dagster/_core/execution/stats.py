@@ -9,6 +9,19 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._serdes import whitelist_for_serdes
 
+STEP_STATS_EVENT_TYPES = {
+    DagsterEventType.STEP_START,
+    DagsterEventType.STEP_FAILURE,
+    DagsterEventType.STEP_RESTARTED,
+    DagsterEventType.STEP_SUCCESS,
+    DagsterEventType.STEP_SKIPPED,
+    DagsterEventType.ASSET_MATERIALIZATION,
+    DagsterEventType.STEP_EXPECTATION_RESULT,
+    DagsterEventType.STEP_UP_FOR_RETRY,
+    DagsterEventType.STEP_RESTARTED,
+    *MARKER_EVENTS,
+}
+
 
 def build_run_stats_from_events(
     run_id: str, entries: Iterable[EventLogEntry]
@@ -91,6 +104,9 @@ def build_run_step_stats_from_events(
 
         step_key = dagster_event.step_key
         if not step_key:
+            continue
+
+        if dagster_event.event_type not in STEP_STATS_EVENT_TYPES:
             continue
 
         if dagster_event.event_type == DagsterEventType.STEP_START:

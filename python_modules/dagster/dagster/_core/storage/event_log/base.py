@@ -28,6 +28,7 @@ from dagster._core.event_api import (
 )
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.stats import (
+    STEP_STATS_EVENT_TYPES,
     RunStepKeyStatsSnapshot,
     build_run_stats_from_events,
     build_run_step_stats_from_events,
@@ -88,7 +89,9 @@ class AssetEntry(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             last_materialization_record=check.opt_inst_param(
-                last_materialization_record, "last_materialization_record", EventLogRecord
+                last_materialization_record,
+                "last_materialization_record",
+                EventLogRecord,
             ),
             last_run_id=check.opt_str_param(last_run_id, "last_run_id"),
             asset_details=check.opt_inst_param(asset_details, "asset_details", AssetDetails),
@@ -245,7 +248,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         self, run_id: str, step_keys: Optional[Sequence[str]] = None
     ) -> Sequence[RunStepKeyStatsSnapshot]:
         """Get per-step stats for a pipeline run."""
-        logs = self.get_logs_for_run(run_id)
+        logs = self.get_logs_for_run(run_id, of_type=STEP_STATS_EVENT_TYPES)
         if step_keys:
             logs = [
                 event
@@ -556,7 +559,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def claim_concurrency_slot(
-        self, concurrency_key: str, run_id: str, step_key: str, priority: Optional[int] = None
+        self,
+        concurrency_key: str,
+        run_id: str,
+        step_key: str,
+        priority: Optional[int] = None,
     ) -> ConcurrencyClaimStatus:
         """Claim concurrency slots for step."""
         raise NotImplementedError()
