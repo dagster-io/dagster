@@ -95,7 +95,7 @@ defs = dg.Definitions(assets=[*sigma_specs], resources={"sigma": sigma_organizat
 
 ### Customize asset definition metadata for Sigma assets
 
-By default, Dagster will generate asset keys for each Sigma asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_sigma" object="DagsterSigmaTranslator" /> subclass to the <PyObject module="dagster_sigma" method="load_sigma_asset_specs" /> function. This subclass can implement methods to customize the asset keys or specs for each Sigma asset type.
+By default, Dagster will generate asset specs for each Sigma asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_sigma" object="DagsterSigmaTranslator" /> subclass to the <PyObject module="dagster_sigma" method="load_sigma_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Sigma asset type.
 
 ```python file=/integrations/sigma/customize-sigma-asset-defs.py
 from dagster_sigma import (
@@ -118,8 +118,10 @@ sigma_organization = SigmaOrganization(
 # A translator class lets us customize properties of the built Sigma assets, such as the owners or asset key
 class MyCustomSigmaTranslator(DagsterSigmaTranslator):
     def get_asset_spec(self, data: SigmaWorkbook) -> dg.AssetSpec:
-        # Adds a custom team owner tag for all Sigma assets
-        return super().get_asset_spec(data)._replace(owners=["team:my_team"])
+        # We create the default asset spec using super()
+        default_spec = super().get_asset_spec(data)
+        # we customize the team owner tag for all Sigma assets
+        return default_spec.replace_attributes(owners=["team:my_team"])
 
 
 sigma_specs = load_sigma_asset_specs(
@@ -127,6 +129,8 @@ sigma_specs = load_sigma_asset_specs(
 )
 defs = dg.Definitions(assets=[*sigma_specs], resources={"sigma": sigma_organization})
 ```
+
+Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
 ### Load Sigma assets from multiple organizations
 
