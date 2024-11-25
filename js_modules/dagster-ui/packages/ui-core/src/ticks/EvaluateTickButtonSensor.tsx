@@ -1,4 +1,4 @@
-import {Box, Button, Tooltip} from '@dagster-io/ui-components';
+import {Box, Button, Icon, Tooltip} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
 import {SensorDryRunDialog} from './SensorDryRunDialog';
@@ -32,6 +32,7 @@ export const EvaluateTickButtonSensor = ({
         <Button
           disabled={sensorType !== SensorType.STANDARD}
           onClick={() => setShowTestTickDialog(true)}
+          icon={<Icon name="preview_tick" />}
         >
           Preview tick result
         </Button>

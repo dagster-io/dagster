@@ -268,6 +268,7 @@ import password from '../icon-svgs/password.svg';
 import pause from '../icon-svgs/pause.svg';
 import people from '../icon-svgs/people.svg';
 import plots from '../icon-svgs/plots.svg';
+import preview_tick from '../icon-svgs/preview_tick.svg';
 import priority_1 from '../icon-svgs/priority_1.svg';
 import priority_2 from '../icon-svgs/priority_2.svg';
 import priority_3 from '../icon-svgs/priority_3.svg';
@@ -664,6 +665,7 @@ export const Icons = {
   pause,
   people,
   plots,
+  preview_tick,
   priority_1,
   priority_2,
   priority_3,
