@@ -48,6 +48,8 @@
   "ReportEventPartitionDefinitionQuery": "e306421344493a9986106de14bca90ec554505d6f1965991ba502725edc41c95",
   "ReportEventMutation": "80b4987cdf27ec8fac25eb6b98b996bd4fdeb4cbfff605d647da5d4bb8244cb0",
   "AssetWipeMutation": "accefb0c47b3d4a980d16965e8af565afed787a8a987a03570df876bd734dc8f",
+  "BackgroundAssetWipeMutation": "855208bbb326949e82c0365a7c2d755b13dc7ddece9a6f22a90c6abb5647fae9",
+  "BackgroundAssetWipeStatus": "ed90ffb3b1984e03d7731ca9e12068b8706a2f0286ddb7037d9f1a271f58b85e",
   "RunGroupPanelQuery": "c454b4e4c3d881b2a78361c5868212f734c458291a3cb28be8ba4a63030eb004",
   "InstanceBackfillsQuery": "e9baee9c4eabc561ffe1ffcb06430969883c1d1cfb469438f98d821b90d3d06a",
   "InstanceConcurrencyLimitsQuery": "eff036379500d5b400ba5a0d3f4f22fad1bd42efefbeeafa16b43ca8b160c312",

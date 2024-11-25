@@ -5,6 +5,7 @@ import subprocess
 from contextlib import contextmanager
 
 import pytest
+import yaml
 
 from dagster_test.fixtures.utils import BUILDKITE
 
@@ -20,6 +21,7 @@ def docker_compose_cm(
 ):
     if not network_name:
         network_name = network_name_from_yml(docker_compose_yml)
+
     try:
         try:
             docker_compose_up(
@@ -192,14 +194,24 @@ def buildkite_hostnames_cm(network):
         disconnect_container_from_network(container, network)
 
 
-def default_docker_compose_yml(default_directory):
+def default_docker_compose_yml(default_directory) -> str:
     if os.path.isfile("docker-compose.yml"):
         return os.path.join(os.getcwd(), "docker-compose.yml")
     else:
         return os.path.join(default_directory, "docker-compose.yml")
 
 
-def network_name_from_yml(docker_compose_yml):
-    dirname = os.path.dirname(docker_compose_yml)
-    basename = os.path.basename(dirname)
-    return basename + "_default"
+def network_name_from_yml(docker_compose_yml) -> str:
+    with open(docker_compose_yml) as f:
+        config = yaml.safe_load(f)
+    if "name" in config:
+        name = config["name"]
+    else:
+        dirname = os.path.dirname(docker_compose_yml)
+        name = os.path.basename(dirname)
+    if "networks" in config:
+        network_name = next(iter(config["networks"].keys()))
+    else:
+        network_name = "default"
+
+    return f"{name}_{network_name}"
