@@ -1,5 +1,6 @@
 import os
 import sys
+import tempfile
 from typing import Iterator, Optional, cast
 
 import pytest
@@ -21,15 +22,22 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 
 @pytest.fixture(name="instance_module_scoped", scope="module")
 def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
-    with instance_for_test(
-        overrides={
-            "run_launcher": {
-                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                "class": "SyncInMemoryRunLauncher",
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(
+            overrides={
+                "run_launcher": {
+                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
+                    "class": "SyncInMemoryRunLauncher",
+                },
+                "event_log_storage": {
+                    "module": "dagster._core.storage.event_log",
+                    "class": "ConsolidatedSqliteEventLogStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+                "run_retries": {"enabled": True},
             }
-        }
-    ) as instance:
-        yield instance
+        ) as instance:
+            yield instance
 
 
 @pytest.fixture(name="instance", scope="function")
