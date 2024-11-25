@@ -40,7 +40,9 @@ setup(
         "lkml",
         # Remove pin after resolution of: https://github.com/looker-open-source/sdk-codegen/issues/1518
         "looker_sdk<24.18.0",
-        "sqlglot",
+        # Dialect.SET_OP_DISTINCT_BY_DEFAULT was introduced in version 25.19.0:
+        # https://github.com/tobymao/sqlglot/blob/v25.19.0/sqlglot/dialects/dialect.py
+        "sqlglot>=25.19.0",
         "python-liquid",
         "cattrs<23.2",  # https://github.com/looker-open-source/sdk-codegen/issues/1410
     ],
