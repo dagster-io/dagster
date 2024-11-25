@@ -190,10 +190,7 @@ defs = Definitions(
 Now that we have both DAGs loaded into Dagster, we can observe the cross-dag lineage between them. To do this, we'll use the `replace_attributes` function to add a dependency from the `load_customers` asset to the `customer_metrics` asset:
 
 ```python file=../../airlift-federation-tutorial/snippets/observe.py startafter=start_lineage endbefore=end_lineage
-from dagster._core.definitions.asset_spec import replace_attributes
-
-customer_metrics_dag_asset = replace_attributes(
-    customer_metrics_dag_asset,
+customer_metrics_dag_asset = customer_metrics_dag_asset.replace_attributes(
     deps=[load_customers],
 )
 ```

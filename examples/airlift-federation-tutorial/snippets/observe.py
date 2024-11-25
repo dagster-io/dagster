@@ -72,10 +72,7 @@ customer_metrics_dag_asset = next(
 )
 
 # start_lineage
-from dagster._core.definitions.asset_spec import replace_attributes
-
-customer_metrics_dag_asset = replace_attributes(
-    customer_metrics_dag_asset,
+customer_metrics_dag_asset = customer_metrics_dag_asset.replace_attributes(
     deps=[load_customers],
 )
 # end_lineage
