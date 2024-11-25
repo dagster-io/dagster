@@ -895,13 +895,14 @@ class FivetranWorkspace(ConfigurableResource):
     @cached_method
     def load_asset_specs(
         self,
-        dagster_fivetran_translator: Type[DagsterFivetranTranslator] = DagsterFivetranTranslator,
+        dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
     ) -> Sequence[AssetSpec]:
         """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
         Args:
-            dagster_fivetran_translator (Type[DagsterFivetranTranslator]): The translator to use
-                to convert Fivetran content into AssetSpecs. Defaults to DagsterFivetranTranslator.
+            dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
+                to convert Fivetran content into :py:class:`dagster.AssetSpec`.
+                Defaults to :py:class:`DagsterFivetranTranslator`.
 
         Returns:
             List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
@@ -923,8 +924,10 @@ class FivetranWorkspace(ConfigurableResource):
                 fivetran_specs = fivetran_workspace.load_asset_specs()
                 defs = dg.Definitions(assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
         """
+        dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
+
         return load_fivetran_asset_specs(
-            workspace=self, dagster_fivetran_translator=dagster_fivetran_translator
+            workspace=self, dagster_fivetran_translator=dagster_fivetran_translator.__class__
         )
 
     def sync_and_poll(

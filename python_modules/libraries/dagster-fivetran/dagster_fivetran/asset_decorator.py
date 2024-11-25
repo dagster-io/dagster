@@ -14,7 +14,7 @@ def fivetran_assets(
     workspace: FivetranWorkspace,
     name: Optional[str] = None,
     group_name: Optional[str] = None,
-    dagster_fivetran_translator: Type[DagsterFivetranTranslator] = DagsterFivetranTranslator,
+    dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to sync the tables of a given Fivetran connector.
 
@@ -24,7 +24,7 @@ def fivetran_assets(
         workspace (FivetranWorkspace): The Fivetran workspace to fetch assets from.
         name (Optional[str], optional): The name of the op.
         group_name (Optional[str], optional): The name of the asset group.
-        dagster_fivetran_translator (Type[DagsterFivetranTranslator]): The translator to use
+        dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
             to convert Fivetran content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterFivetranTranslator`.
 
@@ -89,7 +89,7 @@ def fivetran_assets(
                 name="fivetran_connector_id",
                 group_name="fivetran_connector_id",
                 workspace=fivetran_workspace,
-                dagster_fivetran_translator=CustomDagsterFivetranTranslator,
+                dagster_fivetran_translator=CustomDagsterFivetranTranslator(),
             )
             def fivetran_connector_assets(context: dg.AssetExecutionContext, fivetran: FivetranWorkspace):
                 yield from fivetran.sync_and_poll(context=context)
@@ -107,7 +107,7 @@ def fivetran_assets(
         specs=[
             spec
             for spec in workspace.load_asset_specs(
-                dagster_fivetran_translator=dagster_fivetran_translator
+                dagster_fivetran_translator=dagster_fivetran_translator or DagsterFivetranTranslator()
             )
             if FivetranMetadataSet.extract(spec.metadata).connector_id == connector_id
         ],

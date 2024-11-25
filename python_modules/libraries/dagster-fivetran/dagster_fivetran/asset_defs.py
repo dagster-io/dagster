@@ -740,14 +740,15 @@ def load_assets_from_fivetran_instance(
 def build_fivetran_assets_definitions(
     *,
     workspace: FivetranWorkspace,
-    dagster_fivetran_translator: Type[DagsterFivetranTranslator] = DagsterFivetranTranslator,
+    dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
 ) -> Sequence[AssetsDefinition]:
     """The list of AssetsDefinition for all connectors in the Fivetran workspace.
 
     Args:
         workspace (FivetranWorkspace): The Fivetran workspace to fetch assets from.
-        dagster_fivetran_translator (Type[DagsterFivetranTranslator]): The translator to use
-            to convert Fivetran content into AssetSpecs. Defaults to DagsterFivetranTranslator.
+        dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
+            to convert Fivetran content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterFivetranTranslator`.
 
     Returns:
         List[AssetsDefinition]: The list of AssetsDefinition for all connectors in the Fivetran workspace.
@@ -803,7 +804,7 @@ def build_fivetran_assets_definitions(
 
             fivetran_assets = build_fivetran_assets_definitions(
                 workspace=workspace,
-                dagster_fivetran_translator=CustomDagsterFivetranTranslator
+                dagster_fivetran_translator=CustomDagsterFivetranTranslator()
             )
 
             defs = dg.Definitions(
@@ -812,6 +813,8 @@ def build_fivetran_assets_definitions(
             )
 
     """
+    dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
+
     all_asset_specs = workspace.load_asset_specs(
         dagster_fivetran_translator=dagster_fivetran_translator
     )
