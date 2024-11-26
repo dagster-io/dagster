@@ -1081,7 +1081,8 @@
           {
             "title": "Fivetran (Legacy)",
             "path": "/integrations/fivetran/fivetran-legacy"
-          },
+          }
+        ]
       },
       {
         "title": "Google BigQuery",
