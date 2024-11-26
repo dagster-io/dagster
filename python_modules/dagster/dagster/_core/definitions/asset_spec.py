@@ -383,7 +383,6 @@ class AssetSpec(
                 owners=[*self.owners, *(owners if owners is not ... else [])],
                 tags={**current_tags_without_kinds, **(tags if tags is not ... else {})},
                 kinds={*self.kinds, *(kinds if kinds is not ... else {})},
-                auto_materialize_policy=self.auto_materialize_policy,
                 partitions_def=self.partitions_def,
             )
 
