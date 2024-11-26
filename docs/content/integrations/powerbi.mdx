@@ -70,6 +70,10 @@ defs = dg.Definitions(
 )
 ```
 
+By default, Dagster will attempt to snapshot your entire workspace using Power BI's [metadata scanner APIs](https://learn.microsoft.com/en-us/fabric/governance/metadata-scanning-overview), which are able to retrieve more detailed information about your Power BI assets, but rely on the workspace being configured to allow this access.
+
+If you encounter issues with the scanner APIs, you may disable them using `load_powerbi_asset_specs(power_bi_workspace, use_workspace_scan=False)`.
+
 ### Customize asset definition metadata for Power BI assets
 
 By default, Dagster will generate asset keys for each Power BI asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_powerbi" object="DagsterPowerBITranslator" /> subclass to the <PyObject module="dagster_powerbi" object="load_powerbi_asset_specs" /> function. This subclass can implement methods to customize the asset keys or specs for each Power BI asset type.
