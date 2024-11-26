@@ -5,6 +5,7 @@ from dagster._components import (
     ComponentCollection,
     ComponentInitContext,
     ComponentLoadContext,
+    build_defs_from_path,
 )
 from dagster._components.impls.python_script_component import PythonScript
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -13,6 +14,7 @@ from dagster._core.pipes.subprocess import PipesSubprocessClient
 LOCATION_PATH = Path(__file__).parent / "code_locations" / "python_script_location"
 init_context = ComponentInitContext()
 init_context.registry.register("python_script", PythonScript)
+init_context.registry.register("collection", ComponentCollection)
 
 
 def _assert_assets(component: Component, expected_assets: int) -> None:
@@ -45,10 +47,12 @@ def test_individual_config() -> None:
 def test_individual_spec_override_config() -> None:
     component = PythonScript.from_component_params(
         LOCATION_PATH / "scripts" / "script_one.py",
-        component_params=[
-            {"key": "a"},
-            {"key": "b", "deps": ["up1", "up2"]},
-        ],
+        component_params={
+            "assets": [
+                {"key": "a"},
+                {"key": "b", "deps": ["up1", "up2"]},
+            ]
+        },
         context=init_context,
     )
     _assert_assets(component, 4)
@@ -67,13 +71,32 @@ def test_collection_config() -> None:
         component_params={
             "component_type": "python_script",
             "components": {
-                "script_one": [
-                    {"key": "a"},
-                    {"key": "b", "deps": ["up1", "up2"]},
-                ],
-                "script_three": [{"key": "key_override"}],
+                "script_one": {
+                    "assets": [
+                        {"key": "a"},
+                        {"key": "b", "deps": ["up1", "up2"]},
+                    ]
+                },
+                "script_three": {"assets": [{"key": "key_override"}]},
             },
         },
         context=init_context,
     )
     _assert_assets(component, 6)
+
+
+def test_collection_from_path() -> None:
+    components = init_context.load(LOCATION_PATH)
+    assert len(components) == 1
+
+    _assert_assets(components[0], 6)
+
+
+def test_load_and_build_from_path() -> None:
+    defs = build_defs_from_path(
+        path=LOCATION_PATH,
+        resources={"pipes_client": PipesSubprocessClient()},
+        registry=init_context.registry,
+    )
+
+    assert len(defs.get_asset_graph().get_all_asset_keys()) == 6

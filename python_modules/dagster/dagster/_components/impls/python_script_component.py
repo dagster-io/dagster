@@ -1,6 +1,6 @@
 import shutil
 from pathlib import Path
-from typing import Any, ClassVar, Mapping, Optional, Sequence, Type, Union
+from typing import Any, ClassVar, Mapping, Optional, Sequence, Union
 
 from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
@@ -34,10 +34,12 @@ class AssetSpecModel(BaseModel):
         )
 
 
+class PythonScriptParams(BaseModel):
+    assets: Sequence[AssetSpecModel]
+
+
 class PythonScript(LoadableComponent):
-    params_schema: ClassVar[Type[Optional[Sequence[AssetSpecModel]]]] = Optional[
-        Sequence[AssetSpecModel]
-    ]
+    params_schema: ClassVar = Optional[PythonScriptParams]
     path: Path
     specs: Sequence[AssetSpec]
 
@@ -49,8 +51,8 @@ class PythonScript(LoadableComponent):
     def from_component_params(
         cls, path: Path, component_params: object, context: ComponentInitContext
     ) -> Self:
-        models = TypeAdapter(cls.params_schema).validate_python(component_params)
-        specs = [s.to_asset_spec() for s in models] if models else None
+        loaded_params = TypeAdapter(cls.params_schema).validate_python(component_params)
+        specs = [s.to_asset_spec() for s in loaded_params.assets] if loaded_params else None
         return cls(path=path, specs=specs)
 
     @classmethod
