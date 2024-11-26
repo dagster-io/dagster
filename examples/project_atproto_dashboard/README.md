@@ -3,9 +3,9 @@
 End-to-end project that demonstrates:
 
 1. Ingestion of data-related Bluesky posts
-    * Dynamic partitions
-    * Declarative automation
-    * Concurrency limits
+   - Dynamic partitions
+   - Declarative automation
+   - Concurrency limits
 2. Modelling data using _dbt_
 3. Representing data in a dashboard
 
