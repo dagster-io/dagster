@@ -217,3 +217,5 @@ def test_custom_asset_specs(
             assert "custom" in metadata
             assert metadata["custom"] == "metadata"
         assert all(key.path[0] == "my_prefix" for key in asset.keys)
+        for deps in asset.asset_deps.values():
+            assert all(key.path[0] == "my_prefix" for key in deps), str(deps)
