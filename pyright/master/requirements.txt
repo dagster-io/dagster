@@ -141,3 +141,4 @@ types-sqlalchemy==1.4.53.34
 -e examples/experimental/dagster-airlift/perf-harness
 -e examples/airlift-migration-tutorial
 -e examples/use_case_repository[dev]
+-e examples/project_atproto_dashboard
