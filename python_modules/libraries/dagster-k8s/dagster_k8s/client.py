@@ -106,6 +106,8 @@ class PatchedApiClient(ApiClient):
         if not klass.openapi_types and not hasattr(klass, "get_real_child_model"):
             return data
 
+        print("DESERIALIZING MODEL IN PATCHED API CLIENT: " + str(data))
+
         # Below is the only change from the base ApiClient implementation - pass through the
         # Configuration object to each newly created model so that each one does not have to create
         # one and acquire a lock
