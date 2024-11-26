@@ -101,6 +101,8 @@ def fivetran_assets(
             )
 
     """
+    dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
+
     return multi_asset(
         name=name,
         group_name=group_name,
@@ -111,7 +113,6 @@ def fivetran_assets(
             )
             for spec in workspace.load_asset_specs(
                 dagster_fivetran_translator=dagster_fivetran_translator
-                or DagsterFivetranTranslator()
             )
             if FivetranMetadataSet.extract(spec.metadata).connector_id == connector_id
         ],
