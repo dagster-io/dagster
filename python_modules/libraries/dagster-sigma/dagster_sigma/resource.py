@@ -256,7 +256,9 @@ class SigmaOrganization(ConfigurableResource):
                 raise
 
     @cached_method
-    async def _fetch_dataset_upstreams_by_inode(self) -> Mapping[str, AbstractSet[str]]:
+    async def _fetch_dataset_upstreams_by_inode(
+        self, sigma_filter: SigmaFilter
+    ) -> Mapping[str, AbstractSet[str]]:
         """Builds a mapping of dataset inodes to the upstream inputs they depend on.
         Sigma does not expose this information directly, so we have to infer it from
         the lineage of workbooks and the workbook queries.
@@ -265,7 +267,7 @@ class SigmaOrganization(ConfigurableResource):
 
         logger.debug("Fetching dataset dependencies")
 
-        raw_workbooks = await self._fetch_workbooks()
+        workbooks_to_fetch = await self._fetch_workbooks_and_filter(sigma_filter)
 
         async def process_workbook(workbook: Dict[str, Any]) -> None:
             logger.info("Inferring dataset dependencies for workbook %s", workbook["workbookId"])
@@ -325,19 +327,21 @@ class SigmaOrganization(ConfigurableResource):
                 ]
             )
 
-        await asyncio.gather(*[process_workbook(workbook) for workbook in raw_workbooks])
+        await asyncio.gather(*[process_workbook(workbook) for workbook in workbooks_to_fetch])
 
         return deps_by_dataset_inode
 
     @cached_method
-    async def _fetch_dataset_columns_by_inode(self) -> Mapping[str, AbstractSet[str]]:
+    async def _fetch_dataset_columns_by_inode(
+        self, sigma_filter: SigmaFilter
+    ) -> Mapping[str, AbstractSet[str]]:
         """Builds a mapping of dataset inodes to the columns they contain. Note that
         this is a partial list and will only include columns which are referenced in
         workbooks, since Sigma does not expose a direct API for querying dataset columns.
         """
         columns_by_dataset_inode = defaultdict(set)
 
-        workbooks = await self._fetch_workbooks()
+        workbooks_to_fetch = await self._fetch_workbooks_and_filter(sigma_filter)
 
         async def process_workbook(workbook: Dict[str, Any]) -> None:
             logger.info("Fetching column data from workbook %s", workbook["workbookId"])
@@ -370,7 +374,7 @@ class SigmaOrganization(ConfigurableResource):
                     inode, column_name = split
                     columns_by_dataset_inode[inode].add(column_name)
 
-        await asyncio.gather(*[process_workbook(workbook) for workbook in workbooks])
+        await asyncio.gather(*[process_workbook(workbook) for workbook in workbooks_to_fetch])
 
         return columns_by_dataset_inode
 
@@ -435,20 +439,12 @@ class SigmaOrganization(ConfigurableResource):
         )
 
     @cached_method
-    async def build_organization_data(
-        self, sigma_filter: Optional[SigmaFilter], fetch_column_data: bool
-    ) -> SigmaOrganizationData:
-        """Retrieves all workbooks and datasets in the Sigma organization and builds a
-        SigmaOrganizationData object representing the organization's assets.
-        """
-        _sigma_filter = sigma_filter or SigmaFilter()
-
-        logger.info("Beginning Sigma organization data fetch")
+    async def _fetch_workbooks_and_filter(self, sigma_filter: SigmaFilter) -> List[Dict[str, Any]]:
         raw_workbooks = await self._fetch_workbooks()
         workbooks_to_fetch = []
-        if _sigma_filter.workbook_folders:
+        if sigma_filter.workbook_folders:
             workbook_filter_strings = [
-                "/".join(folder).lower() for folder in _sigma_filter.workbook_folders
+                "/".join(folder).lower() for folder in sigma_filter.workbook_folders
             ]
             for workbook in raw_workbooks:
                 workbook_path = str(workbook["path"]).lower()
@@ -458,16 +454,29 @@ class SigmaOrganization(ConfigurableResource):
                     workbooks_to_fetch.append(workbook)
         else:
             workbooks_to_fetch = raw_workbooks
+        return workbooks_to_fetch
+
+    @cached_method
+    async def build_organization_data(
+        self, sigma_filter: Optional[SigmaFilter], fetch_column_data: bool
+    ) -> SigmaOrganizationData:
+        """Retrieves all workbooks and datasets in the Sigma organization and builds a
+        SigmaOrganizationData object representing the organization's assets.
+        """
+        _sigma_filter = sigma_filter or SigmaFilter()
+
+        logger.info("Beginning Sigma organization data fetch")
+        workbooks_to_fetch = await self._fetch_workbooks_and_filter(_sigma_filter)
 
         workbooks: List[SigmaWorkbook] = await asyncio.gather(
             *[self.load_workbook_data(workbook) for workbook in workbooks_to_fetch]
         )
 
         datasets: List[SigmaDataset] = []
-        deps_by_dataset_inode = await self._fetch_dataset_upstreams_by_inode()
+        deps_by_dataset_inode = await self._fetch_dataset_upstreams_by_inode(_sigma_filter)
 
         columns_by_dataset_inode = (
-            await self._fetch_dataset_columns_by_inode() if fetch_column_data else {}
+            await self._fetch_dataset_columns_by_inode(_sigma_filter) if fetch_column_data else {}
         )
 
         used_datasets = set()
