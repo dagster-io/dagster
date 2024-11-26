@@ -107,7 +107,9 @@ def test_model_organization_data_filter(sigma_auth_token: str, sigma_sample_data
     )
 
     with mock.patch.object(
-        SigmaOrganization, "_fetch_pages_for_workbook", wraps=resource._fetch_pages_for_workbook
+        SigmaOrganization,
+        "_fetch_pages_for_workbook",
+        wraps=resource._fetch_pages_for_workbook,  # noqa: SLF001
     ) as mock_fetch_pages:
         data = asyncio.run(
             resource.build_organization_data(
