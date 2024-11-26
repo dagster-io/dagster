@@ -1,6 +1,9 @@
+// eslint-disable-next-line no-restricted-imports
+import {Breadcrumbs2 as Breadcrumbs} from '@blueprintjs/popover2';
 import {Meta} from '@storybook/react';
 import faker from 'faker';
 import {useMemo, useRef, useState} from 'react';
+import styled from 'styled-components';
 
 import {Box} from '../Box';
 import {Colors} from '../Color';
@@ -8,6 +11,7 @@ import {Icon} from '../Icon';
 import {MiddleTruncate} from '../MiddleTruncate';
 import {Slider} from '../Slider';
 import {Tag} from '../Tag';
+import {Heading, Title} from '../Text';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -240,3 +244,62 @@ export const Containers = () => {
     </>
   );
 };
+
+export const BreadcrumbsScenario = () => {
+  const breadcrumbs = [
+    {text: 's3', href: '#'},
+    {text: 'superdomain_1', href: '#'},
+    {text: 'subdomain_1', href: '#'},
+    {text: 'subsubsubsubdosubsubsubsubdoma', href: '#'},
+    {text: 'asset1', href: '#'},
+  ];
+  return (
+    <Title>
+      <Box flex={{alignItems: 'center', gap: 4}} style={{maxWidth: '500px'}}>
+        <BreadcrumbsWithSlashes
+          items={breadcrumbs}
+          currentBreadcrumbRenderer={({text, href}) => (
+            <span key={href}>
+              <TruncatedHeading>
+                <MiddleTruncate text={text as string} />
+              </TruncatedHeading>
+            </span>
+          )}
+          $numHeaderBreadcrumbs={breadcrumbs.length}
+          breadcrumbRenderer={({text, href}) => (
+            <span key={href}>
+              <TruncatedHeading>
+                <MiddleTruncate text={text as string} />
+              </TruncatedHeading>
+            </span>
+          )}
+          popoverProps={{
+            minimal: true,
+            modifiers: {offset: {enabled: true, options: {offset: [0, 8]}}},
+            popoverClassName: 'dagster-popover',
+          }}
+        />
+      </Box>
+    </Title>
+  );
+};
+
+const TruncatedHeading = styled(Heading)`
+  max-width: 200px;
+  overflow: hidden;
+`;
+
+// Only add slashes within the asset key path
+const BreadcrumbsWithSlashes = styled(Breadcrumbs)<{$numHeaderBreadcrumbs: number}>`
+  height: auto;
+
+  & li:nth-child(n + ${(p) => p.$numHeaderBreadcrumbs + 1})::after {
+    background: none;
+    font-size: 20px;
+    font-weight: bold;
+    color: ${Colors.textLighter()};
+    content: '/';
+    width: 8px;
+    line-height: 16px;
+  }
+`;
