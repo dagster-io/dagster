@@ -250,15 +250,33 @@ export const VirtualizedBackfillPartitionsRow = ({
             <RowCell>-</RowCell>
             <RowCell>
               {inProgress ? (
-                <Tag icon="spinner" intent="primary">
-                  In progress
-                </Tag>
+                <div>
+                  <Tag icon="spinner" intent="primary">
+                    In progress
+                  </Tag>
+                </div>
               ) : (
                 '-'
               )}
             </RowCell>
-            <RowCell>{completed ? <Tag intent="success">Completed</Tag> : '-'}</RowCell>
-            <RowCell>{failed ? <Tag intent="danger">Failed</Tag> : '-'}</RowCell>
+            <RowCell>
+              {completed ? (
+                <div>
+                  <Tag intent="success">Completed</Tag>
+                </div>
+              ) : (
+                '-'
+              )}
+            </RowCell>
+            <RowCell>
+              {failed ? (
+                <div>
+                  <Tag intent="danger">Failed</Tag>
+                </div>
+              ) : (
+                '-'
+              )}
+            </RowCell>
           </>
         )}
       </RowGrid>
