@@ -5,7 +5,7 @@ from typing import Any, ClassVar, Mapping, Optional, Sequence, Type, Union
 from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
-from dagster._components import ComponentLoadContext, LoadableComponent
+from dagster._components import ComponentInitContext, ComponentLoadContext, LoadableComponent
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
@@ -46,10 +46,16 @@ class PythonScript(LoadableComponent):
         self.specs = specs or [AssetSpec(key=self.path.stem)]
 
     @classmethod
-    def from_component_params(cls, path: Path, component_params: object) -> Self:
+    def from_component_params(
+        cls, path: Path, component_params: object, context: ComponentInitContext
+    ) -> Self:
         models = TypeAdapter(cls.params_schema).validate_python(component_params)
         specs = [s.to_asset_spec() for s in models] if models else None
         return cls(path=path, specs=specs)
+
+    @classmethod
+    def loadable_paths(cls, path: Path) -> Sequence[Path]:
+        return list(path.rglob("*.py"))
 
     def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
         @multi_asset(specs=self.specs, name=f"script_{self.path.stem}")

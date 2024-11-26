@@ -15,14 +15,13 @@ from typing import (
     Optional,
     Sequence,
     Type,
+    cast,
 )
 
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import DagsterError
 from dagster._utils import snakecase
 
@@ -46,15 +45,30 @@ class Component(ABC):
 
 
 class LoadableComponent(Component):
-    params_schema: ClassVar[Optional[Type[BaseModel]]] = None
+    params_schema: ClassVar = None
 
     @classmethod
     @abstractmethod
-    def from_component_params(cls, path: Path, component_params: object) -> Self: ...
+    def from_component_params(
+        cls, path: Path, component_params: object, context: "ComponentInitContext"
+    ) -> Self: ...
+
+    @classmethod
+    def loadable_paths(cls, path: Path) -> Sequence[Path]:
+        return [path]
 
 
-class ComponentCollection(Component):
-    def __init__(self, component_type: Type[Component], components: Sequence[Component]):
+class ComponentCollectionModel(BaseModel):
+    component_type: str
+    components: Mapping[str, Any] = {}
+
+
+class ComponentCollection(LoadableComponent):
+    params_schema: ClassVar[Type[ComponentCollectionModel]] = ComponentCollectionModel
+
+    def __init__(
+        self, component_type: Type[LoadableComponent], components: Sequence[LoadableComponent]
+    ):
         self.component_type = component_type
         self.components = check.list_param(components, "components", of_type=component_type)
 
@@ -63,6 +77,25 @@ class ComponentCollection(Component):
 
         return Definitions.merge(
             *(component.build_defs(load_context) for component in self.components)
+        )
+
+    @classmethod
+    def from_component_params(
+        cls, path: Path, component_params: object, context: "ComponentInitContext"
+    ) -> "ComponentCollection":
+        loaded_params = TypeAdapter(cls.params_schema).validate_python(component_params)
+        component_type = cast(
+            Type[LoadableComponent], context.registry.get(loaded_params.component_type)
+        )
+        check.invariant(issubclass(component_type, LoadableComponent))
+        return cls(
+            component_type=component_type,
+            components=[
+                component_type.from_component_params(
+                    p, loaded_params.components.get(p.stem), context
+                )
+                for p in component_type.loadable_paths(path)
+            ],
         )
 
 
@@ -207,11 +240,6 @@ class CodeLocationProjectContext:
         )
 
 
-class ComponentLoadContext:
-    def __init__(self, resources: Mapping[str, object] = {}):
-        self.resources = resources
-
-
 class ComponentRegistry:
     def __init__(self):
         self._components: Dict[str, Type[Component]] = {}
@@ -230,6 +258,18 @@ class ComponentRegistry:
 
     def __repr__(self):
         return f"<ComponentRegistry {list(self._components.keys())}>"
+
+
+class ComponentLoadContext:
+    def __init__(self, resources: Mapping[str, object] = {}):
+        self.resources = resources
+
+
+class ComponentInitContext:
+    registry: ComponentRegistry
+
+    def __init__(self):
+        self.registry = ComponentRegistry()
 
 
 def register_components_in_module(registry: ComponentRegistry, root_module: ModuleType) -> None:
