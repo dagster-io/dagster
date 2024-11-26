@@ -1,4 +1,4 @@
-from dagster import Component, Definitions
+from dagster import Component, ComponentLoadContext, Definitions
 
 class {{ component_type_class_name }}(Component):
 
@@ -6,5 +6,5 @@ class {{ component_type_class_name }}(Component):
     def generate_files(cls) -> None:
         ...
 
-    def build_defs(self) -> Definitions:
+    def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
         ...

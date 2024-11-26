@@ -674,6 +674,7 @@ _DEPRECATED_RENAMED: Final[Mapping[str, TypingTuple[Callable, str]]] = {
 # we want to expose them to users.
 _HIDDEN: Final[Mapping[str, str]] = {
     "Component": "dagster._components",
+    "ComponentLoadContext": "dagster._components",
 }
 
 

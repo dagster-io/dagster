@@ -3,10 +3,11 @@ import os
 import sys
 from abc import ABC, abstractmethod
 from types import ModuleType
-from typing import TYPE_CHECKING, ClassVar, Dict, Final, Iterable, Optional, Type
+from typing import TYPE_CHECKING, ClassVar, Dict, Final, Iterable, Mapping, Optional, Sequence, Type
 
 from typing_extensions import Self
 
+import dagster._check as check
 from dagster._core.errors import DagsterError
 from dagster._utils import snakecase
 
@@ -26,7 +27,20 @@ class Component(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def build_defs(self) -> "Definitions": ...
+    def build_defs(self, context: "ComponentLoadContext") -> "Definitions": ...
+
+
+class ComponentCollection(Component):
+    def __init__(self, component_type: Type[Component], components: Sequence[Component]):
+        self.component_type = component_type
+        self.components = check.list_param(components, "components", of_type=component_type)
+
+    def build_defs(self, load_context: "ComponentLoadContext") -> "Definitions":
+        from dagster._core.definitions.definitions_class import Definitions
+
+        return Definitions.merge(
+            *(component.build_defs(load_context) for component in self.components)
+        )
 
 
 def is_inside_deployment_project(path: str = ".") -> bool:
@@ -168,6 +182,11 @@ class CodeLocationProjectContext:
         return os.path.exists(
             os.path.join(self._root_path, self._name, _CODE_LOCATION_COMPONENT_INSTANCES_DIR, name)
         )
+
+
+class ComponentLoadContext:
+    def __init__(self, resources: Mapping[str, object] = {}):
+        self.resources = resources
 
 
 class ComponentRegistry:
