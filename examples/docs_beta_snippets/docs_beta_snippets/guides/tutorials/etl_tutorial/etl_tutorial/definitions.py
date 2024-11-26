@@ -149,7 +149,7 @@ def missing_dimension_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
         )
 
 
-# datetime partitions & automaterializations
+# datetime partitions
 monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
 
 
@@ -158,7 +158,7 @@ monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
     compute_kind="duckdb",
     group_name="analysis",
     deps=[joined_data],
-    auto_materialize_policy=dg.AutoMaterializePolicy.eager(),  # need to adjust to declarative automation
+    automation_condition=dg.AutomationCondition.eager(), 
 )
 def monthly_sales_performance(
     context: dg.AssetExecutionContext, duckdb: DuckDBResource
@@ -265,16 +265,9 @@ def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
         }
     )
 
-
-analysis_assets = dg.AssetSelection.keys("joined_data").upstream()
-
-analysis_update_job = dg.define_asset_job(
-    name="analysis_update_job",
-    selection=analysis_assets,
-)
-
 weekly_update_schedule = dg.ScheduleDefinition(
-    job=analysis_update_job,
+    name="analysis_update_job",
+    target=dg.AssetSelection.keys("joined_data").upstream(),
     cron_schedule="0 0 * * 1",  # every Monday at midnight
 )
 
@@ -372,7 +365,7 @@ defs = dg.Definitions(
     ],
     asset_checks=[missing_dimension_check],
     schedules=[weekly_update_schedule],
-    jobs=[analysis_update_job, adhoc_request_job],
+    jobs=[adhoc_request_job],
     sensors=[adhoc_request_sensor],
     resources={"duckdb": DuckDBResource(database="data/mydb.duckdb")},
 )

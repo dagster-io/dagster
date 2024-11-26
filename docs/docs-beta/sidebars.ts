@@ -14,7 +14,12 @@ const sidebars: SidebarsConfig = {
       items: [
         'tutorial/etl-tutorial-introduction',
         'tutorial/create-and-materialize-assets',
-        'tutorial/creating-a-downstream-asset',
+        'tutorial/create-and-materialize-a-downstream-asset',
+        'tutorial/ensuring-data-quality-with-asset-checks',
+        'tutorial/create-and-materialize-partitioned-asset',
+        'tutorial/automating-your-pipeline',
+        'tutorial/creating-a-sensor-asset',
+        'tutorial/refactoring-the-project'
       ],
     },
     {
