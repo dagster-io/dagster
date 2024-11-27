@@ -2,7 +2,7 @@ from typing import Callable
 
 import responses
 from dagster._config.field_utils import EnvVar
-from dagster._core.definitions.asset_spec import AssetSpec, replace_attributes
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.test_utils import environ
 from dagster_fivetran import (
     DagsterFivetranTranslator,
@@ -36,8 +36,7 @@ def test_fivetran_workspace_data_to_fivetran_connector_table_props_data(
 class MyCustomTranslator(DagsterFivetranTranslator):
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
         default_spec = super().get_asset_spec(props)
-        return replace_attributes(
-            default_spec,
+        return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("prefix"),
             metadata={**default_spec.metadata, "custom": "metadata"},
         )

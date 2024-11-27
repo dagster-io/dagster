@@ -1,6 +1,6 @@
 import responses
 from dagster._config.field_utils import EnvVar
-from dagster._core.definitions.asset_spec import AssetSpec, replace_attributes
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.test_utils import environ
 from dagster_fivetran import (
     DagsterFivetranTranslator,
@@ -123,8 +123,7 @@ def test_cached_load_spec_with_asset_factory(
 class MyCustomTranslator(DagsterFivetranTranslator):
     def get_asset_spec(self, data: FivetranConnectorTableProps) -> AssetSpec:
         default_spec = super().get_asset_spec(data)
-        return replace_attributes(
-            default_spec,
+        return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("prefix"),
             metadata={**default_spec.metadata, "custom": "metadata"},
         )
