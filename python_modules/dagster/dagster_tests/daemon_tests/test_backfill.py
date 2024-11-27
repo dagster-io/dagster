@@ -3217,8 +3217,6 @@ def test_run_retry_not_part_of_completed_backfill(
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
 
-    # manual retry of a run
-
     # simulate a retry of a run
     run_to_retry = instance.get_runs()[0]
     remote_job = remote_repo.get_full_job(run_to_retry.job_name)
@@ -3237,7 +3235,7 @@ def test_run_retry_not_part_of_completed_backfill(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
 
     wait_for_all_runs_to_finish(instance, timeout=30)
 
