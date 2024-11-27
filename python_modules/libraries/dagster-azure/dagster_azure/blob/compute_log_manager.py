@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Mapping, Optional, Sequence
 
 import dagster._seven as seven
-from azure.identity import DefaultAzureCredential
+from azure.identity import ClientSecretCredential, DefaultAzureCredential
 from azure.storage.blob import BlobSasPermissions, BlobServiceClient, UserDelegationKey
 from dagster import (
     Field,
@@ -55,7 +55,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
     Args:
         storage_account (str): The storage account name to which to log.
         container (str): The container (or ADLS2 filesystem) to which to log.
-        secret_key (Optional[str]): Secret key for the storage account. SAS tokens are not
+        secret_key (Optional[dict]): Secret key for the storage account. SAS tokens are not
             supported because we need a secret key to generate a SAS token for a download URL.
         default_azure_credential (Optional[dict]): Use and configure DefaultAzureCredential.
             Cannot be used with sas token or secret key config.
@@ -84,10 +84,12 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         self._default_azure_credential = check.opt_dict_param(
             default_azure_credential, "default_azure_credential"
         )
-        check.opt_str_param(secret_key, "secret_key")
+        check.opt_dict_param(secret_key, "secret_key")
 
         if secret_key is not None:
-            self._blob_client = create_blob_client(storage_account, secret_key)
+            self._blob_client = create_blob_client(
+                storage_account, ClientSecretCredential(**secret_key)
+            )
         else:
             credential = DefaultAzureCredential(**self._default_azure_credential)
             self._blob_client = create_blob_client(storage_account, credential)
@@ -119,7 +121,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         return {
             "storage_account": StringSource,
             "container": StringSource,
-            "secret_key": Field(Noneable(StringSource), is_required=False, default_value=None),
+            "secret_key": Field(Noneable(Permissive()), is_required=False, default_value=None),
             "default_azure_credential": Field(
                 Noneable(Permissive(description="keyword arguments for DefaultAzureCredential")),
                 is_required=False,
