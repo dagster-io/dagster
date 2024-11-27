@@ -28,6 +28,14 @@ This guide provides instructions for using Dagster with Power BI using the `dags
 
 </details>
 
+## Set up your environment
+
+To get started, you'll need to install the `dagster` and `dagster-powerbi` Python packages:
+
+```bash
+pip install dagster dagster-powerbi
+```
+
 ## Represent Power BI assets in the asset graph
 
 To load Power BI assets into the Dagster asset graph, you must first construct a <PyObject module="dagster_powerbi" object="PowerBIWorkspace" /> resource, which allows Dagster to communicate with your Power BI workspace. You'll need to supply your workspace ID and credentials. You may configure a service principal or use an API access token, which can be passed directly or accessed from the environment using <PyObject object="EnvVar" />.
