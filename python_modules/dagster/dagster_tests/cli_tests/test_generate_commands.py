@@ -153,7 +153,7 @@ def test_generate_component_type_success():
         assert Path("bar/lib/baz.py").exists()
         _assert_module_imports("bar.lib.baz")
         context = CodeLocationProjectContext.from_path(os.getcwd())
-        assert context.has_component_type("bar.lib.baz[baz]")
+        assert context.has_component_type("baz")
 
 
 def test_generate_component_type_outside_code_location_fails():
@@ -178,7 +178,7 @@ def test_generate_component_success():
     runner = CliRunner()
     _ensure_cwd_on_sys_path()
     with isolated_example_code_location_bar_with_component_type_baz(runner):
-        result = runner.invoke(generate_component_command, ["bar.lib.baz[baz]", "qux"])
+        result = runner.invoke(generate_component_command, ["baz", "qux"])
         assert result.exit_code == 0
         assert Path("bar/components/qux").exists()
         assert Path("bar/components/qux/sample.py").exists()
@@ -187,7 +187,7 @@ def test_generate_component_success():
 def test_generate_component_outside_code_location_fails():
     runner = CliRunner()
     with isolated_example_deployment_foo(runner):
-        result = runner.invoke(generate_component_command, ["bar.lib.baz[baz]", "qux"])
+        result = runner.invoke(generate_component_command, ["baz", "qux"])
         assert result.exit_code != 0
         assert "must be run inside a Dagster code location project" in result.output
 
@@ -196,8 +196,8 @@ def test_generate_component_already_exists_fails():
     runner = CliRunner()
     _ensure_cwd_on_sys_path()
     with isolated_example_code_location_bar_with_component_type_baz(runner):
-        result = runner.invoke(generate_component_command, ["bar.lib.baz[baz]", "qux"])
+        result = runner.invoke(generate_component_command, ["baz", "qux"])
         assert result.exit_code == 0
-        result = runner.invoke(generate_component_command, ["bar.lib.baz[baz]", "qux"])
+        result = runner.invoke(generate_component_command, ["baz", "qux"])
         assert result.exit_code != 0
         assert "already exists" in result.output
