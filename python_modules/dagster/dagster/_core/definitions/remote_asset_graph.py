@@ -448,11 +448,15 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
     def get_check_keys_for_assets(
         self, asset_keys: AbstractSet[AssetKey]
     ) -> AbstractSet[AssetCheckKey]:
-        return set().union(
-            *(
-                {check.asset_check.key for check in self.get_checks_for_asset(asset_key)}
-                for asset_key in asset_keys
+        return (
+            set().union(
+                *(
+                    {check.asset_check.key for check in self.get_checks_for_asset(asset_key)}
+                    for asset_key in asset_keys
+                )
             )
+            if asset_keys
+            else set()
         )
 
     @cached_property
