@@ -1,7 +1,9 @@
 import importlib.util
+import itertools
 import os
 import sys
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from pathlib import Path
 from types import ModuleType
 from typing import (
@@ -24,6 +26,7 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._core.errors import DagsterError
 from dagster._utils import snakecase
+from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -265,11 +268,55 @@ class ComponentLoadContext:
         self.resources = resources
 
 
-class ComponentInitContext:
-    registry: ComponentRegistry
+class DefsFileModel(BaseModel):
+    component_type: str
+    component_params: Optional[Mapping[str, Any]] = None
 
-    def __init__(self):
-        self.registry = ComponentRegistry()
+
+@dataclass
+class ComponentInitContext:
+    registry: ComponentRegistry = field(default_factory=lambda: ComponentRegistry())
+    active_type: Optional[Type[LoadableComponent]] = None
+    params: Optional[Mapping[str, Any]] = None
+
+    def with_data_from_path(self, path: Path) -> "ComponentInitContext":
+        defs_path = path / "defs.yml"
+        if defs_path.exists():
+            parsed_config = parse_yaml_file_to_pydantic(
+                DefsFileModel, defs_path.read_text(), str(path)
+            )
+            return ComponentInitContext(
+                active_type=cast(
+                    Type[LoadableComponent], self.registry.get(parsed_config.component_type)
+                ),
+                registry=self.registry,
+                params=parsed_config.component_params,
+            )
+        else:
+            return self
+
+    def load(self, path: Path) -> Sequence[Component]:
+        context = self.with_data_from_path(path)
+        if context.active_type:
+            return [
+                context.active_type.from_component_params(p, context.params, self)
+                for p in context.active_type.loadable_paths(path)
+            ]
+        else:
+            return list(itertools.chain(*(context.load(p) for p in path.iterdir() if p.is_dir())))
+
+
+def build_defs_from_path(
+    path: Path,
+    registry: ComponentRegistry,
+    resources: Mapping[str, object],
+) -> "Definitions":
+    from dagster._core.definitions.definitions_class import Definitions
+
+    init_context = ComponentInitContext(registry=registry)
+    components = init_context.load(path)
+    load_context = ComponentLoadContext(resources=resources)
+    return Definitions.merge(*[c.build_defs(load_context) for c in components])
 
 
 def register_components_in_module(registry: ComponentRegistry, root_module: ModuleType) -> None:
