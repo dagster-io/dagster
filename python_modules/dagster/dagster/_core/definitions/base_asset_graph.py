@@ -355,7 +355,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     @abstractmethod
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]: ...
 
-    def get_asset_check_keys_for_assets(
+    def get_check_keys_for_assets(
         self, asset_keys: AbstractSet[AssetKey]
     ) -> AbstractSet[AssetCheckKey]:
         return {

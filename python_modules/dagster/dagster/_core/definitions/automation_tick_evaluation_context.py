@@ -403,7 +403,7 @@ def build_run_requests_with_backfill_policies(
         partition_keys,
         backfill_policy,
     ), asset_keys in assets_to_reconcile_by_partitions_def_partition_keys_backfill_policy.items():
-        asset_check_keys = asset_graph.get_asset_check_keys_for_assets(asset_keys)
+        asset_check_keys = asset_graph.get_check_keys_for_assets(asset_keys)
         if partitions_def is None and partition_keys is not None:
             check.failed("Partition key provided for unpartitioned asset")
         if partitions_def is not None and partition_keys is None:
