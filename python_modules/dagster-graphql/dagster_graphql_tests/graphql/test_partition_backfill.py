@@ -297,6 +297,8 @@ def _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id):
 def _execute_job_backfill_iteration_with_side_effects(graphql_context, backfill_id):
     """Executes a job backfill iteration with side effects (i.e. updates run status and bulk action status)."""
     with get_workspace_process_context(graphql_context.instance) as context:
+        code_location = graphql_context.get_code_location("test")
+        repository = code_location.get_repository("test_repo")
         backfill = graphql_context.instance.get_backfill(backfill_id)
         list(
             execute_job_backfill_iteration(
@@ -542,6 +544,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["reexecutionSteps"] == ["after_failure"]
 
     def test_cancel_backfill(self, graphql_context):
+        # TestDaemonPartitionBackfill::test_cancel_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
         repository_selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql(
             graphql_context,
