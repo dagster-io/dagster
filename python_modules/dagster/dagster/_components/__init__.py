@@ -3,7 +3,7 @@ import itertools
 import os
 import sys
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from types import ModuleType
 from typing import (
@@ -20,10 +20,9 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 from typing_extensions import Self
 
-import dagster._check as check
 from dagster._core.errors import DagsterError
 from dagster._utils import snakecase
 from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
@@ -53,7 +52,7 @@ class LoadableComponent(Component):
     @classmethod
     @abstractmethod
     def from_component_params(
-        cls, path: Path, component_params: object, context: "ComponentInitContext"
+        cls, init_context: "ComponentInitContext", component_params: object
     ) -> Self: ...
 
     @classmethod
@@ -61,44 +60,26 @@ class LoadableComponent(Component):
         return [path]
 
 
-class ComponentCollectionModel(BaseModel):
-    component_type: str
-    components: Mapping[str, Any] = {}
+class FileCollectionComponent(LoadableComponent):
+    """Convenience class for defining components which operate independently on files within
+    a subdirectory.
+    """
 
+    @abstractmethod
+    def loadable_paths(self) -> Sequence[Path]:
+        """Returns the paths within the subdirectory that should be loaded by this component."""
+        ...
 
-class ComponentCollection(LoadableComponent):
-    params_schema: ClassVar[Type[ComponentCollectionModel]] = ComponentCollectionModel
-
-    def __init__(
-        self, component_type: Type[LoadableComponent], components: Sequence[LoadableComponent]
-    ):
-        self.component_type = component_type
-        self.components = check.list_param(components, "components", of_type=component_type)
+    @abstractmethod
+    def build_defs_for_path(
+        self, path: Path, load_context: "ComponentLoadContext"
+    ) -> "Definitions": ...
 
     def build_defs(self, load_context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions
 
         return Definitions.merge(
-            *(component.build_defs(load_context) for component in self.components)
-        )
-
-    @classmethod
-    def from_component_params(
-        cls, path: Path, component_params: object, context: "ComponentInitContext"
-    ) -> "ComponentCollection":
-        loaded_params = TypeAdapter(cls.params_schema).validate_python(component_params)
-        component_type = cast(
-            Type[LoadableComponent], context.registry.get(loaded_params.component_type)
-        )
-        check.invariant(issubclass(component_type, LoadableComponent))
-        return cls(
-            component_type=component_type,
-            components=[
-                component_type.from_component_params(
-                    p, loaded_params.components.get(p.stem), context
-                )
-                for p in component_type.loadable_paths(path)
-            ],
+            *(self.build_defs_for_path(path, load_context) for path in self.loadable_paths())
         )
 
 
@@ -275,35 +256,33 @@ class DefsFileModel(BaseModel):
 
 @dataclass
 class ComponentInitContext:
+    path: Path
     registry: ComponentRegistry = field(default_factory=lambda: ComponentRegistry())
-    active_type: Optional[Type[LoadableComponent]] = None
-    params: Optional[Mapping[str, Any]] = None
 
-    def with_data_from_path(self, path: Path) -> "ComponentInitContext":
-        defs_path = path / "defs.yml"
+    def for_path(self, path: Path) -> "ComponentInitContext":
+        return replace(self, path=path)
+
+    def get_parsed_defs(self) -> Optional[DefsFileModel]:
+        defs_path = self.path / "defs.yml"
         if defs_path.exists():
-            parsed_config = parse_yaml_file_to_pydantic(
-                DefsFileModel, defs_path.read_text(), str(path)
-            )
-            return ComponentInitContext(
-                active_type=cast(
-                    Type[LoadableComponent], self.registry.get(parsed_config.component_type)
-                ),
-                registry=self.registry,
-                params=parsed_config.component_params,
-            )
+            return parse_yaml_file_to_pydantic(DefsFileModel, defs_path.read_text(), str(self.path))
         else:
-            return self
+            return None
 
-    def load(self, path: Path) -> Sequence[Component]:
-        context = self.with_data_from_path(path)
-        if context.active_type:
-            return [
-                context.active_type.from_component_params(p, context.params, self)
-                for p in context.active_type.loadable_paths(path)
-            ]
+    def load(self) -> Sequence[Component]:
+        if not self.path.is_dir():
+            return []
+
+        parsed_defs = self.get_parsed_defs()
+        if parsed_defs:
+            component_type = cast(
+                Type[LoadableComponent], self.registry.get(parsed_defs.component_type)
+            )
+            return [component_type.from_component_params(self, parsed_defs.component_params)]
         else:
-            return list(itertools.chain(*(context.load(p) for p in path.iterdir() if p.is_dir())))
+            return list(
+                itertools.chain(*(self.for_path(subpath).load() for subpath in self.path.iterdir()))
+            )
 
 
 def build_defs_from_path(
@@ -313,10 +292,9 @@ def build_defs_from_path(
 ) -> "Definitions":
     from dagster._core.definitions.definitions_class import Definitions
 
-    init_context = ComponentInitContext(registry=registry)
-    components = init_context.load(path)
-    load_context = ComponentLoadContext(resources=resources)
-    return Definitions.merge(*[c.build_defs(load_context) for c in components])
+    init_context = ComponentInitContext(path=path, registry=registry)
+    components = init_context.load()
+    return Definitions.merge(*[c.build_defs(ComponentLoadContext(resources)) for c in components])
 
 
 def register_components_in_module(registry: ComponentRegistry, root_module: ModuleType) -> None:

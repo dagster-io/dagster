@@ -1,11 +1,10 @@
 import shutil
 from pathlib import Path
-from typing import Any, ClassVar, Mapping, Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence
 
 from pydantic import BaseModel, TypeAdapter
-from typing_extensions import Self
 
-from dagster._components import ComponentInitContext, ComponentLoadContext, LoadableComponent
+from dagster._components import ComponentInitContext, ComponentLoadContext, FileCollectionComponent
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
@@ -38,31 +37,41 @@ class PythonScriptParams(BaseModel):
     assets: Sequence[AssetSpecModel]
 
 
-class PythonScript(LoadableComponent):
-    params_schema: ClassVar = Optional[PythonScriptParams]
-    path: Path
-    specs: Sequence[AssetSpec]
+class PythonScriptCollection(FileCollectionComponent):
+    params_schema = Mapping[str, PythonScriptParams]
 
-    def __init__(self, path: Union[str, Path], specs: Optional[Sequence[AssetSpec]] = None):
-        self.path = Path(path)
-        self.specs = specs or [AssetSpec(key=self.path.stem)]
+    def __init__(
+        self, dirpath: Path, path_specs: Optional[Mapping[str, Sequence[AssetSpec]]] = None
+    ):
+        self.dirpath = dirpath
+        # mapping from the script name (e.g. /path/to/script_abc.py -> script_abc)
+        # to the specs it produces
+        self.path_specs = path_specs or {}
 
     @classmethod
     def from_component_params(
-        cls, path: Path, component_params: object, context: ComponentInitContext
-    ) -> Self:
+        cls, init_context: ComponentInitContext, component_params: object
+    ) -> "PythonScriptCollection":
         loaded_params = TypeAdapter(cls.params_schema).validate_python(component_params)
-        specs = [s.to_asset_spec() for s in loaded_params.assets] if loaded_params else None
-        return cls(path=path, specs=specs)
+        return cls(
+            dirpath=init_context.path,
+            path_specs={
+                k: [vv.to_asset_spec() for vv in v.assets] for k, v in loaded_params.items()
+            }
+            if loaded_params
+            else None,
+        )
 
-    @classmethod
-    def loadable_paths(cls, path: Path) -> Sequence[Path]:
-        return list(path.rglob("*.py"))
+    def loadable_paths(self) -> Sequence[Path]:
+        return list(self.dirpath.rglob("*.py"))
 
-    def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
-        @multi_asset(specs=self.specs, name=f"script_{self.path.stem}")
+    def build_defs_for_path(self, path: Path, load_context: ComponentLoadContext) -> Definitions:
+        @multi_asset(
+            specs=self.path_specs.get(path.stem) or [AssetSpec(key=path.stem)],
+            name=f"script_{path.stem}",
+        )
         def _asset(context: AssetExecutionContext, pipes_client: PipesSubprocessClient):
-            cmd = [shutil.which("python"), self.path]
+            cmd = [shutil.which("python"), path]
             return pipes_client.run(command=cmd, context=context).get_results()
 
         return Definitions(assets=[_asset], resources=load_context.resources)
