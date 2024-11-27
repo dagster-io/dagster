@@ -49,13 +49,16 @@ defs = dg.Definitions(
 )
 ```
 
-
 ### Sync and materialize Fivetran assets
 
-You can use Dagster to sync Fivetran connectors and materialize Fivetran connector tables.
+You can use Dagster to sync Fivetran connectors and materialize Fivetran connector tables. You can use the <PyObject module="dagster_fivetran" method="fivetran_assets" /> decorator to create the assets definition for a given connector, or the <PyObject module="dagster_fivetran" method="build_fivetran_assets_definitions" /> factory to create all assets definitions for your Fivetran workspace.
 
 ```python file=/integrations/fivetran/sync-and-materialize-fivetran-assets.py
-from dagster_fivetran import FivetranWorkspace, fivetran_assets
+from dagster_fivetran import (
+    FivetranWorkspace,
+    build_fivetran_assets_definitions,
+    fivetran_assets,
+)
 
 import dagster as dg
 
@@ -66,6 +69,7 @@ fivetran_workspace = FivetranWorkspace(
 )
 
 
+# Creating assets definition for a given connector using the `@fivetran_assets` decorator
 @fivetran_assets(
     connector_id="fivetran_connector_id",
     name="fivetran_connector_id",
@@ -78,8 +82,12 @@ def fivetran_connector_assets(
     yield from fivetran.sync_and_poll(context=context)
 
 
+# Alternatively, creating all assets definitions for the Fivetran workspace
+# using the `build_fivetran_assets_definitions` factory
+all_fivetran_assets = build_fivetran_assets_definitions(fivetran_workspace)
+
 defs = dg.Definitions(
-    assets=[fivetran_connector_assets],
+    assets=[*all_fivetran_assets],
     resources={"fivetran": fivetran_workspace},
 )
 ```
@@ -142,12 +150,12 @@ def fivetran_connector_assets(
 
 # Alternatively, when creating all assets definitions for the Fivetran workspace
 # using the `build_fivetran_assets_definitions` factory
-fivetran_assets = build_fivetran_assets_definitions(
+all_fivetran_assets = build_fivetran_assets_definitions(
     fivetran_workspace, dagster_fivetran_translator=MyCustomFivetranTranslator()
 )
 
 defs = dg.Definitions(
-    assets=[*fivetran_assets], resources={"fivetran": fivetran_workspace}
+    assets=[*all_fivetran_assets], resources={"fivetran": fivetran_workspace}
 )
 ```
 

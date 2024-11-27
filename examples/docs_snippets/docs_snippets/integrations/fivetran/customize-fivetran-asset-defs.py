@@ -51,10 +51,10 @@ def fivetran_connector_assets(
 
 # Alternatively, when creating all assets definitions for the Fivetran workspace
 # using the `build_fivetran_assets_definitions` factory
-fivetran_assets = build_fivetran_assets_definitions(
+all_fivetran_assets = build_fivetran_assets_definitions(
     fivetran_workspace, dagster_fivetran_translator=MyCustomFivetranTranslator()
 )
 
 defs = dg.Definitions(
-    assets=[*fivetran_assets], resources={"fivetran": fivetran_workspace}
+    assets=[*all_fivetran_assets], resources={"fivetran": fivetran_workspace}
 )
