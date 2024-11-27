@@ -1,13 +1,11 @@
-component_type: collection
+component_type: python_script_collection
 
 component_params:
-  component_type: python_script
-  components:
-    script_one:
-      assets:
-        - key: a
-        - key: b
-          deps: [up1, up2]
-    script_three:
-      assets:
-        - key: override_key
+  script_one:
+    assets:
+      - key: a
+      - key: b
+        deps: [up1, up2]
+  script_three:
+    assets:
+      - key: override_key
