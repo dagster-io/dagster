@@ -712,7 +712,9 @@ def materialization_job():
                         other=["some constraint"],
                     ),
                 ),
-                "my job": MetadataValue.job("materialization_job", location_name="test_location"),
+                "my job": MetadataValue.job(
+                    "materialization_job", location_name=main_repo_location_name()
+                ),
             },
         )
         yield Output(None)

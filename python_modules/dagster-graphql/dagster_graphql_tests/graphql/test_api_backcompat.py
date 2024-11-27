@@ -3,7 +3,11 @@ import time
 from dagster import job, op, repository
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
-from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
+from dagster_graphql.test.utils import (
+    define_out_of_process_context,
+    execute_dagster_graphql,
+    main_repo_location_name,
+)
 
 RUNS_QUERY = """
 query RunsQuery {
@@ -256,7 +260,7 @@ def test_pipelines_query():
                 context,
                 PIPELINES_QUERY,
                 variables={
-                    "repositoryLocationName": "test_location",
+                    "repositoryLocationName": main_repo_location_name(),
                     "repositoryName": "my_repo",
                 },
             )
@@ -273,7 +277,7 @@ def test_launch_mutation():
                 context,
                 LAUNCH_PIPELINE,
                 variables={
-                    "repositoryLocationName": "test_location",
+                    "repositoryLocationName": main_repo_location_name(),
                     "repositoryName": "my_repo",
                     "pipelineName": "foo_job",
                     "runConfigData": {},
@@ -293,7 +297,7 @@ def test_launch_mutation_error():
                 context,
                 LAUNCH_PIPELINE,
                 variables={
-                    "repositoryLocationName": "test_location",
+                    "repositoryLocationName": main_repo_location_name(),
                     "repositoryName": "my_repo",
                     "pipelineName": "foo_job",
                     "runConfigData": {"invalid": "config"},

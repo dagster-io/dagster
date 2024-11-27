@@ -164,7 +164,7 @@ def test_handle_cleaup_by_gc_without_request_context():
 
             # Reload the location from the request context
             assert not called["yup"]
-            process_context.reload_code_location("test_location")
+            process_context.reload_code_location(main_repo_location_name())
             assert not called["yup"]
 
             request_context = None
