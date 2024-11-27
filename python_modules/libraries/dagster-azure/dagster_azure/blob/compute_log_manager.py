@@ -1,7 +1,7 @@
 import os
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Iterator, Mapping, Optional, Sequence
 
 import dagster._seven as seven
 from azure.identity import ClientSecretCredential, DefaultAzureCredential
@@ -18,7 +18,7 @@ from dagster._core.storage.cloud_storage_compute_log_manager import (
     CloudStorageComputeLogManager,
     PollingComputeLogSubscriptionManager,
 )
-from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.compute_log_manager import CapturedLogContext, ComputeIOType
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
@@ -81,7 +81,9 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         prefix="dagster",
         upload_interval=None,
         default_azure_credential=None,
+        show_url_only=True,
     ):
+        self._show_url_only = check.bool_param(show_url_only, "show_url_only")
         self._storage_account = check.str_param(storage_account, "storage_account")
         self._container = check.str_param(container, "container")
         self._blob_prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
@@ -110,12 +112,6 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         self._subscription_manager = PollingComputeLogSubscriptionManager(self)
         self._upload_interval = check.opt_int_param(upload_interval, "upload_interval")
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
-
-    @contextmanager
-    def _watch_logs(self, dagster_run, step_key=None):
-        # proxy watching to the local compute log manager, interacting with the filesystem
-        with self.local_manager._watch_logs(dagster_run, step_key):  # noqa: SLF001
-            yield
 
     @property
     def inst_data(self):
@@ -240,6 +236,21 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         url = blob.url + "?" + sas
         self._download_urls[blob_key] = url
         return url
+
+    @contextmanager
+    def capture_logs(self, log_key: Sequence[str]) -> Iterator[CapturedLogContext]:
+        with super().capture_logs(log_key) as local_context:
+            if not self._show_url_only:
+                yield local_context
+            else:
+                out_key = self._blob_key(log_key, ComputeIOType.STDOUT)
+                err_key = self._blob_key(log_key, ComputeIOType.STDERR)
+                azure_base_url = self._container_client.url
+                out_url = f"{azure_base_url}/{out_key}"
+                err_url = f"{azure_base_url}/{err_key}"
+                yield CapturedLogContext(
+                    local_context.log_key, external_stdout_url=out_url, external_stderr_url=err_url
+                )
 
     def _request_user_delegation_key(
         self,

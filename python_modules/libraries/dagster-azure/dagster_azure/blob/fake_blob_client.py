@@ -66,6 +66,10 @@ class FakeBlobContainerClient:
     def container_name(self):
         return self._container_name
 
+    @property
+    def url(self):
+        return f"https://{self.account_name}.blob.core.windows.net/{self.container_name}"
+
     def keys(self):
         return self._container.keys()
 
