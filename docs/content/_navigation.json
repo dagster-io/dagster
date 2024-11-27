@@ -556,6 +556,10 @@
                   {
                     "title": "Part 1: Setting up an AKS agent.",
                     "path": "/dagster-plus/deployment/azure/aks-agent"
+                  },
+                  {
+                    "title": "Part 2: Deploy user code using ACR.",
+                    "path": "/dagster-plus/deployment/azure/acr-user-code"
                   }
                 ]
               }
