@@ -1,4 +1,8 @@
-from dagster_fivetran import FivetranWorkspace, fivetran_assets
+from dagster_fivetran import (
+    FivetranWorkspace,
+    build_fivetran_assets_definitions,
+    fivetran_assets,
+)
 
 import dagster as dg
 
@@ -9,6 +13,7 @@ fivetran_workspace = FivetranWorkspace(
 )
 
 
+# Creating assets definition for a given connector using the `@fivetran_assets` decorator
 @fivetran_assets(
     connector_id="fivetran_connector_id",
     name="fivetran_connector_id",
@@ -21,7 +26,11 @@ def fivetran_connector_assets(
     yield from fivetran.sync_and_poll(context=context)
 
 
+# Alternatively, creating all assets definitions for the Fivetran workspace
+# using the `build_fivetran_assets_definitions` factory
+all_fivetran_assets = build_fivetran_assets_definitions(fivetran_workspace)
+
 defs = dg.Definitions(
-    assets=[fivetran_connector_assets],
+    assets=[*all_fivetran_assets],
     resources={"fivetran": fivetran_workspace},
 )
