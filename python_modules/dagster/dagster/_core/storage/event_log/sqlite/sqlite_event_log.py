@@ -8,6 +8,7 @@ import threading
 import time
 from collections import defaultdict
 from contextlib import contextmanager
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, ContextManager, Iterator, Optional, Sequence, Union
 
 import sqlalchemy as db
@@ -436,14 +437,6 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def supports_event_consumer_queries(self) -> bool:
         return False
 
-    def delete_events(self, run_id: str) -> None:
-        with self.run_connection(run_id) as conn:
-            self.delete_events_for_run(conn, run_id)
-
-        # delete the mirrored event in the cross-run index database
-        with self.index_connection() as conn:
-            self.delete_events_for_run(conn, run_id)
-
     def wipe(self) -> None:
         # should delete all the run-sharded db files and drop the contents of the index
         for filename in (
@@ -508,9 +501,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def is_run_sharded(self) -> bool:
         return True
 
-    @property
+    @cached_property
     def supports_global_concurrency_limits(self) -> bool:
-        return False
+        return self.has_table("concurrency_limits")
 
 
 class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
