@@ -1,17 +1,21 @@
 import importlib
+import inspect
 import os
 import sys
+import textwrap
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Iterator
 
 from click.testing import CliRunner
 from dagster._components import CodeLocationProjectContext
 from dagster._components.cli.generate import (
     generate_code_location_command,
-    generate_component_instance_command,
+    generate_component_command,
     generate_component_type_command,
     generate_deployment_command,
 )
+from dagster._utils import pushd
 
 
 def _ensure_cwd_on_sys_path():
@@ -22,6 +26,59 @@ def _ensure_cwd_on_sys_path():
 def _assert_module_imports(module_name: str):
     _ensure_cwd_on_sys_path()
     assert importlib.import_module(module_name)
+
+
+# This is a holder for code that is intended to be written to a file
+def _example_component_type_baz():
+    from dagster import AssetExecutionContext, Definitions, PipesSubprocessClient, asset
+    from dagster._components import Component, ComponentLoadContext
+
+    _SAMPLE_PIPES_SCRIPT = """
+    from dagster_pipes import open_dagster_pipes
+
+    context = open_dagster_pipes()
+    context.report_asset_materialization({"alpha": "beta"})
+    """
+
+    class Baz(Component):
+        @classmethod
+        def generate_files(cls):
+            with open("sample.py", "w") as f:
+                f.write(_SAMPLE_PIPES_SCRIPT)
+
+        def build_defs(self, context: ComponentLoadContext) -> Definitions:
+            @asset
+            def foo(context: AssetExecutionContext, client: PipesSubprocessClient):
+                client.run(context=context, command=["python", "sample.py"])
+
+            return Definitions(assets=[foo], resources={"client": PipesSubprocessClient()})
+
+
+@contextmanager
+def isolated_example_deployment_foo(runner: CliRunner) -> Iterator[None]:
+    with runner.isolated_filesystem():
+        runner.invoke(generate_deployment_command, ["foo"])
+        with pushd("foo"):
+            yield
+
+
+@contextmanager
+def isolated_example_code_location_bar(runner: CliRunner) -> Iterator[None]:
+    with isolated_example_deployment_foo(runner), clean_module_cache("bar"):
+        runner.invoke(generate_code_location_command, ["bar"])
+        with pushd("code_locations/bar"):
+            yield
+
+
+@contextmanager
+def isolated_example_code_location_bar_with_component_type_baz(runner: CliRunner) -> Iterator[None]:
+    with isolated_example_code_location_bar(runner):
+        with open("bar/lib/baz.py", "w") as f:
+            component_type_source = textwrap.dedent(
+                inspect.getsource(_example_component_type_baz).split("\n", 1)[1]
+            )
+            f.write(component_type_source)
+        yield
 
 
 @contextmanager
@@ -48,7 +105,7 @@ def test_generate_deployment_command_success():
         assert Path("foo/code_locations").exists()
 
 
-def test_generate_deployment_command_path_exists():
+def test_generate_deployment_command_already_exists_fails():
     runner = CliRunner()
     with runner.isolated_filesystem():
         os.mkdir("foo")
@@ -59,11 +116,7 @@ def test_generate_deployment_command_path_exists():
 
 def test_generate_code_location_success():
     runner = CliRunner()
-    with runner.isolated_filesystem():
-        # set up deployment
-        runner.invoke(generate_deployment_command, ["foo"])
-        os.chdir("foo")
-
+    with isolated_example_deployment_foo(runner):
         result = runner.invoke(generate_code_location_command, ["bar"])
         assert result.exit_code == 0
         assert Path("code_locations/bar").exists()
@@ -84,11 +137,7 @@ def test_generate_code_location_outside_deployment_fails():
 
 def test_generate_code_location_already_exists_fails():
     runner = CliRunner()
-    with runner.isolated_filesystem():
-        # set up deployment
-        runner.invoke(generate_deployment_command, ["foo"])
-        os.chdir("foo")
-
+    with isolated_example_deployment_foo(runner):
         result = runner.invoke(generate_code_location_command, ["bar"])
         assert result.exit_code == 0
         result = runner.invoke(generate_code_location_command, ["bar"])
@@ -98,14 +147,7 @@ def test_generate_code_location_already_exists_fails():
 
 def test_generate_component_type_success():
     runner = CliRunner()
-    with runner.isolated_filesystem(), clean_module_cache("bar"):
-        # set up deployment
-        runner.invoke(generate_deployment_command, ["foo"])
-        os.chdir("foo")
-        # set up code location
-        runner.invoke(generate_code_location_command, ["bar"])
-        os.chdir("code_locations/bar")
-
+    with isolated_example_code_location_bar(runner):
         result = runner.invoke(generate_component_type_command, ["baz"])
         assert result.exit_code == 0
         assert Path("bar/lib/baz.py").exists()
@@ -114,48 +156,48 @@ def test_generate_component_type_success():
         assert context.has_component_type("bar.lib.baz[baz]")
 
 
-_SAMPLE_COMPONENT_TYPE = """
-from dagster import Component, Definitions, PipesSubprocessClient
-
-_SAMPLE_PIPES_SCRIPT = \"""
-from dagster_pipes import open_dagster_pipes
-
-context = open_dagster_pipes()
-context.report_asset_materialization({"alpha": "beta"})
-\"""
-
-class Baz(Component):
-
-    @classmethod
-    def generate_files(cls):
-        with open("sample.py", "w") as f:
-            f.write(_SAMPLE_PIPES_SCRIPT)
-
-    def build_defs(self) -> Definitions:
-        @asset
-        def foo():
-            PipesSubprocessClient("foo.py").run(context, command=["python", "sample.py"])
-
-        return Definitions(
-            assets=[foo]
-        )
-
-"""
+def test_generate_component_type_outside_code_location_fails():
+    runner = CliRunner()
+    with isolated_example_deployment_foo(runner):
+        result = runner.invoke(generate_component_type_command, ["baz"])
+        assert result.exit_code != 0
+        assert "must be run inside a Dagster code location project" in result.output
 
 
-def test_generate_component_instance_success():
+def test_generate_component_type_already_exists_fails():
+    runner = CliRunner()
+    with isolated_example_code_location_bar(runner):
+        result = runner.invoke(generate_component_type_command, ["baz"])
+        assert result.exit_code == 0
+        result = runner.invoke(generate_component_type_command, ["baz"])
+        assert result.exit_code != 0
+        assert "already exists" in result.output
+
+
+def test_generate_component_success():
     runner = CliRunner()
     _ensure_cwd_on_sys_path()
-    with runner.isolated_filesystem(), clean_module_cache("bar"):
-        # set up deployment
-        runner.invoke(generate_deployment_command, ["foo"])
-        os.chdir("foo")
-        # set up code location
-        runner.invoke(generate_code_location_command, ["bar"])
-        os.chdir("code_locations/bar")
-        # set up component type
-        with open("bar/lib/baz.py", "w") as f:
-            f.write(_SAMPLE_COMPONENT_TYPE)
-        result = runner.invoke(generate_component_instance_command, ["bar.lib.baz[baz]", "qux"])
+    with isolated_example_code_location_bar_with_component_type_baz(runner):
+        result = runner.invoke(generate_component_command, ["bar.lib.baz[baz]", "qux"])
         assert result.exit_code == 0
         assert Path("bar/components/qux").exists()
+        assert Path("bar/components/qux/sample.py").exists()
+
+
+def test_generate_component_outside_code_location_fails():
+    runner = CliRunner()
+    with isolated_example_deployment_foo(runner):
+        result = runner.invoke(generate_component_command, ["bar.lib.baz[baz]", "qux"])
+        assert result.exit_code != 0
+        assert "must be run inside a Dagster code location project" in result.output
+
+
+def test_generate_component_already_exists_fails():
+    runner = CliRunner()
+    _ensure_cwd_on_sys_path()
+    with isolated_example_code_location_bar_with_component_type_baz(runner):
+        result = runner.invoke(generate_component_command, ["bar.lib.baz[baz]", "qux"])
+        assert result.exit_code == 0
+        result = runner.invoke(generate_component_command, ["bar.lib.baz[baz]", "qux"])
+        assert result.exit_code != 0
+        assert "already exists" in result.output
