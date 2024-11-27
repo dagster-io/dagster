@@ -47,6 +47,7 @@ from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
+from dagster._core.execution.retries import auto_reexecution_should_retry_run
 from dagster._core.instance.config import (
     DAGSTER_CONFIG_YAML_FILENAME,
     DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
@@ -75,6 +76,7 @@ from dagster._core.storage.tags import (
     RESUME_RETRY_TAG,
     ROOT_RUN_ID_TAG,
     TAGS_TO_OMIT_ON_RETRY,
+    WILL_RETRY_TAG,
 )
 from dagster._serdes import ConfigurableClass
 from dagster._time import get_current_datetime, get_current_timestamp
@@ -2463,7 +2465,14 @@ class DagsterInstance(DynamicPartitionsStore):
                 and event.get_dagster_event().is_job_event
             ):
                 self._run_storage.handle_run_event(run_id, event.get_dagster_event())
-
+                run = self.get_run_by_id(run_id)
+                if run and event.get_dagster_event().is_run_failure and self.run_retries_enabled:
+                    # Note that this tag is only applied to runs that fail. Successful runs will not
+                    # have a WILL_RETRY_TAG tag.
+                    self.add_run_tags(
+                        run_id,
+                        {WILL_RETRY_TAG: str(auto_reexecution_should_retry_run(self, run)).lower()},
+                    )
             for sub in self._subscribers[run_id]:
                 sub(event)
 
