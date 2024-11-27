@@ -22,7 +22,7 @@ def generate_cli():
     """Commands for generating Dagster components and related entities."""
 
 
-@click.command(name="deployment")
+@generate_cli.command(name="deployment")
 @click.argument("path", type=str)
 def generate_deployment_command(path: str) -> None:
     """Generate a Dagster deployment instance."""
@@ -36,7 +36,7 @@ def generate_deployment_command(path: str) -> None:
     generate_deployment(path)
 
 
-@click.command(name="code-location")
+@generate_cli.command(name="code-location")
 @click.argument("name", type=str)
 def generate_code_location_command(name: str) -> None:
     """Generate a Dagster code location inside a component."""
@@ -55,7 +55,7 @@ def generate_code_location_command(name: str) -> None:
     generate_code_location(code_location_path)
 
 
-@click.command(name="component-type")
+@generate_cli.command(name="component-type")
 @click.argument("name", type=str)
 def generate_component_type_command(name: str) -> None:
     """Generate a Dagster component instance."""
@@ -68,17 +68,17 @@ def generate_component_type_command(name: str) -> None:
         sys.exit(1)
 
     context = CodeLocationProjectContext.from_path(os.getcwd())
-    if context.has_component_type(name):
+    if context.has_component_type(f"{context.component_types_root_module}.{name}[{name}]"):
         click.echo(click.style(f"A component type named `{name}` already exists.", fg="red"))
         sys.exit(1)
 
     generate_component_type(context.component_types_root_path, name)
 
 
-@click.command(name="component-instance")
+@generate_cli.command(name="component")
 @click.argument("component-type", type=str)
 @click.argument("name", type=str)
-def generate_component_instance_command(component_type: str, name: str) -> None:
+def generate_component_command(component_type: str, name: str) -> None:
     """Generate a Dagster component instance."""
     if not is_inside_code_location_project():
         click.echo(

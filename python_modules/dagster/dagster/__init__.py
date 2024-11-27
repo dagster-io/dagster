@@ -670,14 +670,6 @@ _DEPRECATED_RENAMED: Final[Mapping[str, TypingTuple[Callable, str]]] = {
 }
 
 
-# Use this to expose symbols from top-level dagster for testing purposes during development, before
-# we want to expose them to users.
-_HIDDEN: Final[Mapping[str, str]] = {
-    "Component": "dagster._components",
-    "ComponentLoadContext": "dagster._components",
-}
-
-
 def __getattr__(name: str) -> TypingAny:
     if name in _DEPRECATED:
         module, breaking_version, additional_warn_text = _DEPRECATED[name]
@@ -695,9 +687,6 @@ def __getattr__(name: str) -> TypingAny:
             stacklevel=stacklevel,
         )
         return value
-    elif name in _HIDDEN:
-        module = _HIDDEN[name]
-        return getattr(importlib.import_module(module), name)
     else:
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
