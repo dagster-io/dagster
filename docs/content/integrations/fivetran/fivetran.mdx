@@ -112,8 +112,41 @@ fivetran_assets = build_fivetran_assets_definitions(
 )
 
 defs = dg.Definitions(
-    assets=[*fivetran_assets], resources={"tableau": fivetran_workspace}
+    assets=[*fivetran_assets], resources={"fivetran": fivetran_workspace}
 )
 ```
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
+
+### Load Fivetran assets from multiple workspaces
+
+Definitions from multiple Fivetran workspaces can be combined by instantiating multiple <PyObject module="dagster_fivetran" object="FivetranWorkspace" /> resources and merging their specs. This lets you view all your Fivetran assets in a single asset graph:
+
+```python file=/integrations/fivetran/multiple-fivetran-workspaces.py
+from dagster_fivetran import FivetranWorkspace, load_fivetran_asset_specs
+
+import dagster as dg
+
+sales_fivetran_workspace = FivetranWorkspace(
+    account_id=dg.EnvVar("FIVETRAN_SALES_ACCOUNT_ID"),
+    api_key=dg.EnvVar("FIVETRAN_SALES_API_KEY"),
+    api_secret=dg.EnvVar("FIVETRAN_SALES_API_SECRET"),
+)
+marketing_fivetran_workspace = FivetranWorkspace(
+    account_id=dg.EnvVar("FIVETRAN_MARKETING_ACCOUNT_ID"),
+    api_key=dg.EnvVar("FIVETRAN_MARKETING_API_KEY"),
+    api_secret=dg.EnvVar("FIVETRAN_MARKETING_API_SECRET"),
+)
+
+sales_fivetran_specs = load_fivetran_asset_specs(sales_fivetran_workspace)
+marketing_fivetran_specs = load_fivetran_asset_specs(marketing_fivetran_workspace)
+
+# Merge the specs into a single set of definitions
+defs = dg.Definitions(
+    assets=[*sales_fivetran_specs, *marketing_fivetran_specs],
+    resources={
+        "marketing_fivetran": marketing_fivetran_workspace,
+        "sales_fivetran": sales_fivetran_workspace,
+    },
+)
+```

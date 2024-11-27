@@ -56,5 +56,5 @@ fivetran_assets = build_fivetran_assets_definitions(
 )
 
 defs = dg.Definitions(
-    assets=[*fivetran_assets], resources={"tableau": fivetran_workspace}
+    assets=[*fivetran_assets], resources={"fivetran": fivetran_workspace}
 )
