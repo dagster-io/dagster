@@ -45,10 +45,6 @@ class Component(ABC):
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions": ...
 
-
-class LoadableComponent(Component):
-    params_schema: ClassVar = None
-
     @classmethod
     @abstractmethod
     def from_component_params(
@@ -60,7 +56,7 @@ class LoadableComponent(Component):
         return [path]
 
 
-class FileCollectionComponent(LoadableComponent):
+class FileCollectionComponent(Component):
     """Convenience class for defining components which operate independently on files within
     a subdirectory.
     """
@@ -277,9 +273,7 @@ class ComponentInitContext:
 
         parsed_defs = self.get_parsed_defs()
         if parsed_defs:
-            component_type = cast(
-                Type[LoadableComponent], self.registry.get(parsed_defs.component_type)
-            )
+            component_type = cast(Type[Component], self.registry.get(parsed_defs.component_type))
             return [component_type.from_component_params(self, parsed_defs.component_params)]
         else:
             return list(
