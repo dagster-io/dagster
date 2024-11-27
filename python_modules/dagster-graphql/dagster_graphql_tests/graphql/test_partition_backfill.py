@@ -19,6 +19,7 @@ from dagster._core.execution.asset_backfill import (
     execute_asset_backfill_iteration_inner,
 )
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
@@ -288,6 +289,17 @@ def _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id):
         backfill = graphql_context.instance.get_backfill(backfill_id)
         list(
             execute_asset_backfill_iteration(
+                backfill, logging.getLogger("fake_logger"), context, graphql_context.instance
+            )
+        )
+
+
+def _execute_job_backfill_iteration_with_side_effects(graphql_context, backfill_id):
+    """Executes a job backfill iteration with side effects (i.e. updates run status and bulk action status)."""
+    with get_workspace_process_context(graphql_context.instance) as context:
+        backfill = graphql_context.instance.get_backfill(backfill_id)
+        list(
+            execute_job_backfill_iteration(
                 backfill, logging.getLogger("fake_logger"), context, graphql_context.instance
             )
         )
@@ -566,6 +578,25 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         )
         assert result.data
         assert result.data["cancelPartitionBackfill"]["__typename"] == "CancelBackfillSuccess"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            PARTITION_PROGRESS_QUERY,
+            variables={"backfillId": backfill_id},
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        assert result.data["partitionBackfillOrError"]["status"] == "CANCELING"
+
+        while (
+            graphql_context.instance.get_backfill(backfill_id).status != BulkActionStatus.CANCELED
+        ):
+            _execute_job_backfill_iteration_with_side_effects(graphql_context, backfill_id)
+
+        runs = graphql_context.instance.get_runs(RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}))
+        assert len(runs) == 1
+        assert runs[0].status == DagsterRunStatus.CANCELED
 
         result = execute_dagster_graphql(
             graphql_context,
