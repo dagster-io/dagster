@@ -216,7 +216,7 @@ computeLogManager:
   #   azureBlobComputeLogManager:
   #     storageAccount: ~
   #     container: ~
-  #     secretKey: ~
+  #     secretCredential: ~
   #     defaultAzureCredential: ~
   #     localDir: ~
   #     prefix: ~

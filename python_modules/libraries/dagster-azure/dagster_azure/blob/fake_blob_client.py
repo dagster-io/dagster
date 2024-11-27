@@ -31,6 +31,10 @@ class FakeBlobServiceClient:
     def containers(self):
         return self._containers
 
+    @property
+    def url(self):
+        return f"https://{self.account_name}.blob.core.windows.net"
+
     def get_container_client(self, container):
         return self._containers.setdefault(
             container, FakeBlobContainerClient(self.account_name, container)
