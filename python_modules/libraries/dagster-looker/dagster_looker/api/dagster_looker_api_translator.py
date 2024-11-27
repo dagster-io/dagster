@@ -120,7 +120,7 @@ class DagsterLookerApiTranslator:
         additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
     )
     def get_view_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
-        return self.get_view_asset_spec(looker_structure).key
+        return self.get_asset_spec(looker_structure).key
 
     def get_view_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
         lookml_view = check.inst(looker_structure.data, LookmlView)
@@ -156,7 +156,7 @@ class DagsterLookerApiTranslator:
                 key=AssetKey(check.not_none(lookml_explore.id)),
                 deps=list(
                     {
-                        self.get_view_asset_spec(
+                        self.get_asset_spec(
                             LookerStructureData(
                                 structure_type=LookerStructureType.VIEW, data=lookml_view
                             )
@@ -186,7 +186,7 @@ class DagsterLookerApiTranslator:
         additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
     )
     def get_dashboard_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
-        return self.get_dashboard_asset_spec(looker_structure).key
+        return self.get_asset_spec(looker_structure).key
 
     def get_dashboard_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
         looker_dashboard = check.inst(looker_structure.data, Dashboard)
@@ -199,7 +199,7 @@ class DagsterLookerApiTranslator:
             key=AssetKey(f"{check.not_none(looker_dashboard.title)}_{looker_dashboard.id}"),
             deps=list(
                 {
-                    self.get_explore_asset_spec(
+                    self.get_asset_spec(
                         LookerStructureData(
                             structure_type=LookerStructureType.EXPLORE, data=dashboard_filter
                         )
