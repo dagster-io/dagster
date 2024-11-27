@@ -600,7 +600,10 @@ compute_logs:
   config:
     storage_account: mycorp-dagster
     container: compute-logs
-    secret_key: foo
+    secret_credential:
+      client_id: ...
+      tenant_id: ...
+      client_secret: ...
     local_dir: /tmp/bar
     prefix: dagster-test-
 
@@ -613,8 +616,10 @@ compute_logs:
       env: MYCORP_DAGSTER_STORAGE_ACCOUNT_NAME
     container:
       env: CONTAINER_NAME
-    secret_key:
-      env: SECRET_KEY
+    secret_credential:
+      client_id: ...
+      tenant_id: ...
+      client_secret: ...
     local_dir:
       env: LOCAL_DIR_PATH
     prefix:
