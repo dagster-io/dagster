@@ -248,6 +248,8 @@ class ComponentRegistry:
         self._components: Dict[str, Type[Component]] = {}
 
     def register(self, name: str, component: Type[Component]) -> None:
+        if name in self._components:
+            raise DagsterError(f"There is an existing component registered under {name}")
         self._components[name] = component
 
     def has(self, name: str) -> bool:
@@ -329,5 +331,4 @@ def register_components_in_module(registry: ComponentRegistry, root_module: Modu
         for component in find_subclasses_in_module(module, (Component,)):
             if component is Component:
                 continue
-            name = f"{module.__name__}[{component.registered_name()}]"
-            registry.register(name, component)
+            registry.register(component.registered_name(), component)
