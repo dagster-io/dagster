@@ -304,6 +304,7 @@ def _execute_job_backfill_iteration_with_side_effects(graphql_context, backfill_
                 logger=logging.getLogger("fake_logger"),
                 workspace_process_context=context,
                 instance=graphql_context.instance,
+                debug_crash_flags=None,
             )
         )
 
