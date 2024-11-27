@@ -13,6 +13,7 @@ from typing import (
     Dict,
     Final,
     Iterable,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -40,8 +41,8 @@ class Component(ABC):
         return cls.name or snakecase(cls.__name__)
 
     @classmethod
-    def generate_files(cls) -> None:
-        raise NotImplementedError()
+    def generate_files(cls, params: Mapping[str, Any]) -> None:
+        pass
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions": ...
@@ -190,6 +191,10 @@ class CodeLocationProjectContext:
         return self._deployment_context
 
     @property
+    def component_registry(self) -> "ComponentRegistry":
+        return self._component_registry
+
+    @property
     def component_types_root_path(self) -> str:
         return os.path.join(self._root_path, self._name, _CODE_LOCATION_CUSTOM_COMPONENTS_DIR)
 
@@ -199,6 +204,9 @@ class CodeLocationProjectContext:
 
     def has_component_type(self, name: str) -> bool:
         return self._component_registry.has(name)
+
+    def list_component_types(self) -> Iterable[str]:
+        return sorted(self._component_registry.keys())
 
     def get_component_type(self, name: str) -> Type[Component]:
         if not self.has_component_type(name):
@@ -214,6 +222,11 @@ class CodeLocationProjectContext:
         return os.listdir(
             os.path.join(self._root_path, self._name, _CODE_LOCATION_COMPONENT_INSTANCES_DIR)
         )
+
+    def get_component_instance_path(self, name: str) -> str:
+        if name not in self.component_instances:
+            raise DagsterError(f"No component instance named {name}")
+        return os.path.join(self.component_instances_root_path, name)
 
     def has_component_instance(self, name: str) -> bool:
         return os.path.exists(
@@ -285,7 +298,7 @@ class ComponentInitContext:
         return replace(self, path=path)
 
     def get_parsed_defs(self) -> Optional[DefsFileModel]:
-        defs_path = self.path / "defs.yml"
+        defs_path = self.path / "defs.yaml"
         if defs_path.exists():
             return parse_yaml_file_to_pydantic(DefsFileModel, defs_path.read_text(), str(self.path))
         else:
@@ -338,3 +351,21 @@ def global_component(cls: T_Component) -> T_Component:
         raise DagsterInvalidDefinitionError(f"{cls} is not a subclass of Component")
     _GLOBAL_REGISTRY.register(cls.registered_name(), cls)
     return cls
+
+
+def build_components_defs(
+    path: str, resources: Optional[Mapping[str, object]] = None
+) -> "Definitions":
+    from dagster._core.definitions.definitions_class import Definitions
+
+    context = CodeLocationProjectContext.from_path(path)
+    all_defs: List[Definitions] = []
+    for component in context.component_instances:
+        component_path = Path(context.get_component_instance_path(component))
+        defs = build_defs_from_path(
+            path=component_path,
+            registry=context.component_registry,
+            resources=resources or {},
+        )
+        all_defs.append(defs)
+    return Definitions.merge(*all_defs)
