@@ -3,6 +3,7 @@ from dagster._core.libraries import DagsterLibraryRegistry
 from dagster_fivetran.asset_decorator import fivetran_assets as fivetran_assets
 from dagster_fivetran.asset_defs import (
     build_fivetran_assets as build_fivetran_assets,
+    build_fivetran_assets_definitions as build_fivetran_assets_definitions,
     load_assets_from_fivetran_instance as load_assets_from_fivetran_instance,
 )
 from dagster_fivetran.ops import (
