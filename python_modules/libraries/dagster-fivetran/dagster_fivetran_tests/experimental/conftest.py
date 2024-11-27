@@ -18,6 +18,10 @@ TEST_API_KEY = "test_api_key"
 TEST_API_SECRET = "test_api_secret"
 TEST_ANOTHER_ACCOUNT_ID = "test_another_account_id"
 
+TEST_SCHEMA_NAME = "schema_name_in_destination_1"
+TEST_TABLE_NAME = "table_name_in_destination_1"
+TEST_ANOTHER_TABLE_NAME = "another_table_name_in_destination_1"
+
 # Taken from Fivetran API documentation
 # https://fivetran.com/docs/rest-api/api-reference/groups/list-all-groups
 SAMPLE_GROUPS = {
@@ -401,15 +405,46 @@ def get_sample_schema_config_for_connector(table_name: str) -> Mapping[str, Any]
 
 
 SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = get_sample_schema_config_for_connector(
-    table_name="table_name_in_destination_1"
+    table_name=TEST_TABLE_NAME
 )
 
 # We change the name of the original example to test the sync and poll materialization method
 ALTERED_SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = get_sample_schema_config_for_connector(
-    table_name="another_table_name_in_destination_1"
+    table_name=TEST_ANOTHER_TABLE_NAME
 )
 
 SAMPLE_SUCCESS_MESSAGE = {"code": "Success", "message": "Operation performed."}
+
+SAMPLE_SOURCE_TABLE_COLUMNS_CONFIG = {
+    "code": "Success",
+    "message": "Operation performed.",
+    "data": {
+        "columns": {
+            "property1": {
+                "name_in_destination": "column_name_in_destination_1",
+                "enabled": True,
+                "hashed": False,
+                "enabled_patch_settings": {
+                    "allowed": False,
+                    "reason": "...",
+                    "reason_code": "SYSTEM_COLUMN",
+                },
+                "is_primary_key": True,
+            },
+            "property2": {
+                "name_in_destination": "column_name_in_destination_2",
+                "enabled": True,
+                "hashed": False,
+                "enabled_patch_settings": {
+                    "allowed": False,
+                    "reason": "...",
+                    "reason_code": "SYSTEM_COLUMN",
+                },
+                "is_primary_key": True,
+            },
+        }
+    },
+}
 
 
 def get_fivetran_connector_api_url(connector_id: str) -> str:
@@ -480,9 +515,10 @@ def all_api_mocks_fixture(
     group_id: str,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> Iterator[responses.RequestsMock]:
+    test_connector_api_url = get_fivetran_connector_api_url(connector_id)
     fetch_workspace_data_api_mocks.add(
         method=responses.GET,
-        url=get_fivetran_connector_api_url(connector_id),
+        url=test_connector_api_url,
         json=get_sample_connection_details(
             succeeded_at=TEST_MAX_TIME_STR, failed_at=TEST_PREVIOUS_MAX_TIME_STR
         ),
@@ -490,7 +526,7 @@ def all_api_mocks_fixture(
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.PATCH,
-        url=get_fivetran_connector_api_url(connector_id),
+        url=test_connector_api_url,
         json=get_sample_connection_details(
             succeeded_at=TEST_MAX_TIME_STR, failed_at=TEST_PREVIOUS_MAX_TIME_STR
         ),
@@ -498,20 +534,26 @@ def all_api_mocks_fixture(
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.POST,
-        url=f"{get_fivetran_connector_api_url(connector_id)}/force",
+        url=f"{test_connector_api_url}/force",
         json=SAMPLE_SUCCESS_MESSAGE,
         status=200,
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.POST,
-        url=f"{get_fivetran_connector_api_url(connector_id)}/resync",
+        url=f"{test_connector_api_url}/resync",
         json=SAMPLE_SUCCESS_MESSAGE,
         status=200,
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.POST,
-        url=f"{get_fivetran_connector_api_url(connector_id)}/schemas/tables/resync",
+        url=f"{test_connector_api_url}/schemas/tables/resync",
         json=SAMPLE_SUCCESS_MESSAGE,
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{test_connector_api_url}/schemas/{TEST_SCHEMA_NAME}/tables/{TEST_TABLE_NAME}/columns",
+        json=SAMPLE_SOURCE_TABLE_COLUMNS_CONFIG,
         status=200,
     )
     yield fetch_workspace_data_api_mocks
