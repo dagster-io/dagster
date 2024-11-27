@@ -146,6 +146,7 @@ export type AssetCheck = {
   __typename: 'AssetCheck';
   additionalAssetKeys: Array<AssetKey>;
   assetKey: AssetKey;
+  automationCondition: Maybe<AutomationCondition>;
   blocking: Scalars['Boolean']['output'];
   canExecuteIndividually: AssetCheckCanExecuteIndividually;
   description: Maybe<Scalars['String']['output']>;
@@ -299,8 +300,9 @@ export type AssetConditionEvaluationNode =
 
 export type AssetConditionEvaluationRecord = {
   __typename: 'AssetConditionEvaluationRecord';
-  assetKey: AssetKey;
+  assetKey: Maybe<AssetKey>;
   endTimestamp: Maybe<Scalars['Float']['output']>;
+  entityKey: EntityKey;
   evaluation: AssetConditionEvaluation;
   evaluationId: Scalars['ID']['output'];
   evaluationNodes: Array<AutomationConditionEvaluationNode>;
@@ -1256,6 +1258,8 @@ export type EngineEvent = DisplayableEvent &
     stepKey: Maybe<Scalars['String']['output']>;
     timestamp: Scalars['String']['output'];
   };
+
+export type EntityKey = AssetCheckhandle | AssetKey;
 
 export type EnumConfigType = ConfigType & {
   __typename: 'EnumConfigType';
@@ -3813,13 +3817,15 @@ export type QueryAssetCheckExecutionsArgs = {
 };
 
 export type QueryAssetConditionEvaluationForPartitionArgs = {
-  assetKey: AssetKeyInput;
+  assetCheckKey?: InputMaybe<AssetCheckHandleInput>;
+  assetKey?: InputMaybe<AssetKeyInput>;
   evaluationId: Scalars['ID']['input'];
   partition: Scalars['String']['input'];
 };
 
 export type QueryAssetConditionEvaluationRecordsOrErrorArgs = {
-  assetKey: AssetKeyInput;
+  assetCheckKey?: InputMaybe<AssetCheckHandleInput>;
+  assetKey?: InputMaybe<AssetKeyInput>;
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit: Scalars['Int']['input'];
 };
@@ -4040,7 +4046,8 @@ export type QueryTopLevelResourceDetailsOrErrorArgs = {
 };
 
 export type QueryTruePartitionsForAutomationConditionEvaluationNodeArgs = {
-  assetKey: AssetKeyInput;
+  assetCheckKey?: InputMaybe<AssetCheckHandleInput>;
+  assetKey?: InputMaybe<AssetKeyInput>;
   evaluationId: Scalars['ID']['input'];
   nodeUniqueId?: InputMaybe<Scalars['String']['input']>;
 };
@@ -6001,6 +6008,12 @@ export const buildAssetCheck = (
         : relationshipsToOmit.has('AssetKey')
           ? ({} as AssetKey)
           : buildAssetKey({}, relationshipsToOmit),
+    automationCondition:
+      overrides && overrides.hasOwnProperty('automationCondition')
+        ? overrides.automationCondition!
+        : relationshipsToOmit.has('AutomationCondition')
+          ? ({} as AutomationCondition)
+          : buildAutomationCondition({}, relationshipsToOmit),
     blocking: overrides && overrides.hasOwnProperty('blocking') ? overrides.blocking! : true,
     canExecuteIndividually:
       overrides && overrides.hasOwnProperty('canExecuteIndividually')
@@ -6266,6 +6279,12 @@ export const buildAssetConditionEvaluationRecord = (
           : buildAssetKey({}, relationshipsToOmit),
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 4.33,
+    entityKey:
+      overrides && overrides.hasOwnProperty('entityKey')
+        ? overrides.entityKey!
+        : relationshipsToOmit.has('AssetCheckhandle')
+          ? ({} as AssetCheckhandle)
+          : buildAssetCheckhandle({}, relationshipsToOmit),
     evaluation:
       overrides && overrides.hasOwnProperty('evaluation')
         ? overrides.evaluation!

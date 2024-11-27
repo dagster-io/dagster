@@ -10,8 +10,8 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._core.definitions.metadata import DagsterAssetMetadataValue
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializeRule
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneError
 from dagster_graphql.schema.partition_keys import (
     GraphenePartitionKeys,

@@ -103,7 +103,6 @@ from dagster_graphql.schema.asset_condition_evaluations import (
     GrapheneAssetConditionEvaluationRecordsOrError,
 )
 from dagster_graphql.schema.asset_graph import (
-    GrapheneAssetKey,
     GrapheneAssetLatestInfo,
     GrapheneAssetNode,
     GrapheneAssetNodeDefinitionCollision,
@@ -118,6 +117,7 @@ from dagster_graphql.schema.backfill import (
     GraphenePartitionBackfillOrError,
     GraphenePartitionBackfillsOrError,
 )
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 from dagster_graphql.schema.external import (
     GrapheneRepositoriesOrError,
@@ -129,6 +129,7 @@ from dagster_graphql.schema.external import (
 )
 from dagster_graphql.schema.inputs import (
     GrapheneAssetBackfillPreviewParams,
+    GrapheneAssetCheckHandleInput,
     GrapheneAssetGroupSelector,
     GrapheneAssetKeyInput,
     GrapheneBulkActionsFilter,
@@ -578,7 +579,8 @@ class GrapheneQuery(graphene.ObjectType):
 
     truePartitionsForAutomationConditionEvaluationNode = graphene.Field(
         non_null_list(graphene.String),
-        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        assetKey=graphene.Argument(GrapheneAssetKeyInput),
+        assetCheckKey=graphene.Argument(GrapheneAssetCheckHandleInput, required=False),
         evaluationId=graphene.Argument(graphene.NonNull(graphene.ID)),
         nodeUniqueId=graphene.Argument(graphene.String),
         description="Retrieve the partition keys which were true for a specific automation condition evaluation node.",
@@ -594,7 +596,8 @@ class GrapheneQuery(graphene.ObjectType):
 
     assetConditionEvaluationForPartition = graphene.Field(
         GrapheneAssetConditionEvaluation,
-        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        assetKey=graphene.Argument(GrapheneAssetKeyInput),
+        assetCheckKey=graphene.Argument(GrapheneAssetCheckHandleInput, required=False),
         evaluationId=graphene.Argument(graphene.NonNull(graphene.ID)),
         partition=graphene.Argument(graphene.NonNull(graphene.String)),
         description="Retrieve the condition evaluation for an asset and partition.",
@@ -602,7 +605,8 @@ class GrapheneQuery(graphene.ObjectType):
 
     assetConditionEvaluationRecordsOrError = graphene.Field(
         GrapheneAssetConditionEvaluationRecordsOrError,
-        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        assetKey=graphene.Argument(GrapheneAssetKeyInput),
+        assetCheckKey=graphene.Argument(GrapheneAssetCheckHandleInput, required=False),
         limit=graphene.Argument(graphene.NonNull(graphene.Int)),
         cursor=graphene.Argument(graphene.String),
         description="Retrieve the condition evaluation records for an asset.",
@@ -1269,7 +1273,8 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetConditionEvaluationForPartition(
         self,
         graphene_info: ResolveInfo,
-        assetKey: GrapheneAssetKeyInput,
+        assetKey: Optional[GrapheneAssetKeyInput],
+        assetCheckKey: Optional[GrapheneAssetCheckHandleInput],
         evaluationId: str,
         partition: str,
     ):
@@ -1283,13 +1288,14 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetConditionEvaluationRecordsOrError(
         self,
         graphene_info: ResolveInfo,
-        assetKey: GrapheneAssetKeyInput,
+        assetKey: Optional[GrapheneAssetKeyInput],
         limit: int,
         cursor: Optional[str] = None,
+        assetCheckKey: Optional[GrapheneAssetCheckHandleInput] = None,
     ):
         return fetch_asset_condition_evaluation_records_for_asset_key(
             graphene_info=graphene_info,
-            graphene_asset_key=assetKey,
+            graphene_entity_key=check.not_none(assetKey or assetCheckKey),
             cursor=cursor,
             limit=limit,
         )
@@ -1297,13 +1303,14 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_truePartitionsForAutomationConditionEvaluationNode(
         self,
         graphene_info: ResolveInfo,
-        assetKey: GrapheneAssetKeyInput,
+        assetKey: Optional[GrapheneAssetKeyInput],
+        assetCheckKey: Optional[GrapheneAssetCheckHandleInput],
         evaluationId: str,
         nodeUniqueId: str,
     ):
         return fetch_true_partitions_for_evaluation_node(
             graphene_info=graphene_info,
-            graphene_asset_key=assetKey,
+            graphene_entity_key=assetKey or assetCheckKey,
             evaluation_id=int(evaluationId),
             node_unique_id=nodeUniqueId,
         )
