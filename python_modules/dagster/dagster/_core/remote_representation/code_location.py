@@ -2,6 +2,7 @@ import sys
 import threading
 from abc import abstractmethod
 from contextlib import AbstractContextManager
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -32,7 +33,7 @@ from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.timestamp import TimestampWithTimezone
@@ -153,6 +154,17 @@ class CodeLocation(AbstractContextManager):
         repo_handle = self.get_repository(selector.repository_name).handle
 
         subset_result = self.get_subset_remote_job_result(selector)
+
+        if subset_result.repository_python_origin:
+            # Prefer the python origin from the result if it is set, in case the code location
+            # just updated and any origin information (most frequently the image) has changed
+            repo_handle = RepositoryHandle(
+                repository_name=repo_handle.repository_name,
+                code_location_origin=repo_handle.code_location_origin,
+                repository_python_origin=subset_result.repository_python_origin,
+                display_metadata=repo_handle.display_metadata,
+            )
+
         job_data_snap = subset_result.job_data_snap
         if job_data_snap is None:
             error = check.not_none(subset_result.error)
@@ -342,7 +354,7 @@ class CodeLocation(AbstractContextManager):
     def container_image(self) -> Optional[str]:
         pass
 
-    @property
+    @cached_property
     def container_context(self) -> Optional[Mapping[str, Any]]:
         return None
 
@@ -383,8 +395,9 @@ class InProcessCodeLocation(CodeLocation):
         loadable_target_origin = self._origin.loadable_target_origin
         self._loaded_repositories = LoadedRepositories(
             loadable_target_origin,
-            self._origin.entry_point,
-            self._origin.container_image,
+            entry_point=self._origin.entry_point,
+            container_image=self._origin.container_image,
+            container_context=self._origin.container_context,
         )
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name
@@ -416,7 +429,7 @@ class InProcessCodeLocation(CodeLocation):
     def container_image(self) -> Optional[str]:
         return self._origin.container_image
 
-    @property
+    @cached_property
     def container_context(self) -> Optional[Mapping[str, Any]]:
         return self._origin.container_context
 
@@ -428,10 +441,11 @@ class InProcessCodeLocation(CodeLocation):
     def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
         return self._repository_code_pointer_dict
 
+    def _get_reconstructable_repository(self, repository_name: str) -> ReconstructableRepository:
+        return self._loaded_repositories.reconstructables_by_name[repository_name]
+
     def get_reconstructable_job(self, repository_name: str, name: str) -> ReconstructableJob:
-        return self._loaded_repositories.reconstructables_by_name[
-            repository_name
-        ].get_reconstructable_job(name)
+        return self._get_reconstructable_repository(repository_name).get_reconstructable_job(name)
 
     def _get_repo_def(self, name: str) -> RepositoryDefinition:
         return self._loaded_repositories.definitions_by_name[name]
@@ -457,6 +471,7 @@ class InProcessCodeLocation(CodeLocation):
 
         return get_external_pipeline_subset_result(
             self._get_repo_def(selector.repository_name),
+            self._get_reconstructable_repository(selector.repository_name),
             selector.job_name,
             selector.op_selection,
             selector.asset_selection,
@@ -756,7 +771,7 @@ class GrpcServerCodeLocation(CodeLocation):
     def container_image(self) -> str:
         return cast(str, self._container_image)
 
-    @property
+    @cached_property
     def container_context(self) -> Optional[Mapping[str, Any]]:
         return self._container_context
 
