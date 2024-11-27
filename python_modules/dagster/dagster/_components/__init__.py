@@ -2,12 +2,27 @@ import importlib.util
 import os
 import sys
 from abc import ABC, abstractmethod
+from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, ClassVar, Dict, Final, Iterable, Mapping, Optional, Sequence, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
+    Final,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+)
 
+from pydantic import BaseModel
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import DagsterError
 from dagster._utils import snakecase
 
@@ -28,6 +43,14 @@ class Component(ABC):
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions": ...
+
+
+class LoadableComponent(Component):
+    params_schema: ClassVar[Optional[Type[BaseModel]]] = None
+
+    @classmethod
+    @abstractmethod
+    def from_component_params(cls, path: Path, component_params: object) -> Self: ...
 
 
 class ComponentCollection(Component):
