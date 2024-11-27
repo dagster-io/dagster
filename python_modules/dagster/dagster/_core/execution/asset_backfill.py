@@ -25,7 +25,6 @@ import dagster._check as check
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_selection import KeysAssetSelection
 from dagster._core.definitions.automation_tick_evaluation_context import (
-    build_run_requests_from_asset_partitions,
     build_run_requests_with_backfill_policies,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
@@ -1486,37 +1485,11 @@ def execute_asset_backfill_iteration_inner(
             f"The following assets were considered for materialization but not requested:\n\n{not_requested_str}"
         )
 
-    # check if all assets have backfill policies if any of them do, otherwise, raise error
-    asset_backfill_policies = [
-        asset_graph.get(asset_key).backfill_policy
-        for asset_key in {
-            asset_partition.asset_key for asset_partition in asset_partitions_to_request
-        }
-    ]
-    all_assets_have_backfill_policies = all(
-        backfill_policy is not None for backfill_policy in asset_backfill_policies
+    run_requests = build_run_requests_with_backfill_policies(
+        asset_partitions=asset_partitions_to_request,
+        asset_graph=asset_graph,
+        dynamic_partitions_store=instance_queryer,
     )
-    if all_assets_have_backfill_policies:
-        run_requests = build_run_requests_with_backfill_policies(
-            asset_partitions=asset_partitions_to_request,
-            asset_graph=asset_graph,
-            dynamic_partitions_store=instance_queryer,
-        )
-    else:
-        if not all(backfill_policy is None for backfill_policy in asset_backfill_policies):
-            # if some assets have backfill policies, but not all of them, raise error
-            raise DagsterBackfillFailedError(
-                "Either all assets must have backfill policies or none of them must have backfill"
-                " policies. To backfill these assets together, either add backfill policies to all"
-                " assets, or remove backfill policies from all assets."
-            )
-        # When any of the assets do not have backfill policies, we fall back to the default behavior of
-        # backfilling them partition by partition.
-        run_requests = build_run_requests_from_asset_partitions(
-            asset_partitions=asset_partitions_to_request,
-            asset_graph=asset_graph,
-            run_tags={},
-        )
 
     if request_roots:
         check.invariant(
