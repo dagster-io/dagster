@@ -300,7 +300,10 @@ def _execute_job_backfill_iteration_with_side_effects(graphql_context, backfill_
         backfill = graphql_context.instance.get_backfill(backfill_id)
         list(
             execute_job_backfill_iteration(
-                backfill, logging.getLogger("fake_logger"), context, graphql_context.instance
+                backfill=backfill,
+                logger=logging.getLogger("fake_logger"),
+                workspace_process_context=context,
+                instance=graphql_context.instance,
             )
         )
 
