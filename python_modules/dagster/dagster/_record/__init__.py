@@ -128,8 +128,11 @@ def _namedtuple_record_transform(
     # parents if both are records
     base.__repr__ = _repr
     nt_iter = base.__iter__
-    base.__iter__ = _banned_iter
-    base.__getitem__ = _banned_idx
+
+    # disable iteration unless the debugger is running which uses iteration to display values
+    if not os.getenv("DEBUGPY_RUNNING"):
+        base.__iter__ = _banned_iter
+        base.__getitem__ = _banned_idx
 
     # these will override an implementation on the class if it exists
     new_class_dict = {
