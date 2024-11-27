@@ -144,15 +144,7 @@
 # name: TestPartitionSets.test_get_partition_set[2]
   dict({
     'partitionSetOrError': dict({
-      '__typename': 'PartitionSet',
-      'mode': 'default',
-      'name': 'dynamic_partitioned_assets_job_partition_set',
-      'partitionsOrError': dict({
-        'results': list([
-        ]),
-      }),
-      'pipelineName': 'dynamic_partitioned_assets_job',
-      'solidSelection': None,
+      '__typename': 'PartitionSetNotFoundError',
     }),
   })
 # ---
