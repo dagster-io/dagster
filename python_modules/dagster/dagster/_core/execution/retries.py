@@ -147,3 +147,4 @@ def auto_reexecution_should_retry_run(instance: "DagsterInstance", run: DagsterR
                     return False
                 else:
                     return True
+    return False
