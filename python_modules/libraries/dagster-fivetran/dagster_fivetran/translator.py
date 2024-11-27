@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
 
+from dagster import Failure
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._record import as_dict, record
@@ -18,6 +19,13 @@ class FivetranConnectorTableProps(NamedTuple):
     schema_config: "FivetranSchemaConfig"
     database: Optional[str]
     service: Optional[str]
+
+
+class FivetranConnectorScheduleType(str, Enum):
+    """Enum representing each schedule type for a connector in Fivetran's ontology."""
+
+    AUTO = "auto"
+    MANUAL = "manual"
 
 
 class FivetranConnectorSetupStateType(Enum):
@@ -38,6 +46,7 @@ class FivetranConnector:
     service: str
     group_id: str
     setup_state: str
+    paused: bool
 
     @property
     def url(self) -> str:
@@ -51,6 +60,20 @@ class FivetranConnector:
     def is_connected(self) -> bool:
         return self.setup_state == FivetranConnectorSetupStateType.CONNECTED.value
 
+    @property
+    def is_paused(self) -> bool:
+        return self.paused
+
+    def validate_syncable(self) -> bool:
+        """Confirms that the connector can be sync. Will raise a Failure in the event that
+        the connector is either paused or not fully set up.
+        """
+        if self.is_paused:
+            raise Failure(f"Connector '{self.id}' cannot be synced as it is currently paused.")
+        if not self.is_connected:
+            raise Failure(f"Connector '{self.id}' cannot be synced as it has not been setup")
+        return True
+
     @classmethod
     def from_connector_details(
         cls,
@@ -62,6 +85,7 @@ class FivetranConnector:
             service=connector_details["service"],
             group_id=connector_details["group_id"],
             setup_state=connector_details["status"]["setup_state"],
+            paused=connector_details["paused"],
         )
 
 

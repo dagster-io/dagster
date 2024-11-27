@@ -1,9 +1,10 @@
-import datetime
 import json
 import logging
 import os
 import time
-from typing import Any, Mapping, Optional, Sequence, Tuple, Type
+from datetime import datetime, timedelta
+from functools import partial
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Type
 from urllib.parse import urljoin
 
 import requests
@@ -32,6 +33,7 @@ from requests.exceptions import RequestException
 from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnector,
+    FivetranConnectorScheduleType,
     FivetranDestination,
     FivetranSchemaConfig,
     FivetranWorkspaceData,
@@ -169,7 +171,7 @@ class FivetranResource(ConfigurableResource):
         if connector_details["status"]["setup_state"] != "connected":
             raise Failure(f"Connector '{connector_id}' cannot be synced as it has not been setup")
 
-    def get_connector_sync_status(self, connector_id: str) -> Tuple[datetime.datetime, bool, str]:
+    def get_connector_sync_status(self, connector_id: str) -> Tuple[datetime, bool, str]:
         """Gets details about the status of the most recent Fivetran sync operation for a given
         connector.
 
@@ -294,7 +296,7 @@ class FivetranResource(ConfigurableResource):
     def poll_sync(
         self,
         connector_id: str,
-        initial_last_sync_completion: datetime.datetime,
+        initial_last_sync_completion: datetime,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
     ) -> Mapping[str, Any]:
@@ -316,7 +318,7 @@ class FivetranResource(ConfigurableResource):
         Returns:
             Dict[str, Any]: Parsed json data representing the API response.
         """
-        poll_start = datetime.datetime.now()
+        poll_start = datetime.now()
         while True:
             (
                 curr_last_sync_completion,
@@ -328,12 +330,10 @@ class FivetranResource(ConfigurableResource):
             if curr_last_sync_completion > initial_last_sync_completion:
                 break
 
-            if poll_timeout and datetime.datetime.now() > poll_start + datetime.timedelta(
-                seconds=poll_timeout
-            ):
+            if poll_timeout and datetime.now() > poll_start + timedelta(seconds=poll_timeout):
                 raise Failure(
                     f"Sync for connector '{connector_id}' timed out after "
-                    f"{datetime.datetime.now() - poll_start}."
+                    f"{datetime.now() - poll_start}."
                 )
 
             # Sleep for the configured time interval before polling again.
@@ -469,11 +469,13 @@ class FivetranClient:
         api_secret: str,
         request_max_retries: int,
         request_retry_delay: float,
+        disable_schedule_on_trigger: bool,
     ):
         self.api_key = api_key
         self.api_secret = api_secret
         self.request_max_retries = request_max_retries
         self.request_retry_delay = request_retry_delay
+        self.disable_schedule_on_trigger = disable_schedule_on_trigger
 
     @property
     def _auth(self) -> HTTPBasicAuth:
@@ -592,6 +594,57 @@ class FivetranClient:
         """
         return self._make_request("GET", "groups")
 
+    def update_schedule_type_for_connector(
+        self, connector_id: str, schedule_type: str
+    ) -> Mapping[str, Any]:
+        """Updates the schedule type property of the connector to either "auto" or "manual".
+
+        Args:
+            connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
+                "Setup" tab of a given connector in the Fivetran UI.
+            schedule_type (str): Either "auto" (to turn the schedule on) or "manual" (to
+                turn it off).
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        schedule_types = {s for s in FivetranConnectorScheduleType}
+        if schedule_type not in schedule_types:
+            check.failed(
+                f"The schedule_type for connector {connector_id} must be in {schedule_types}: "
+                f"got '{schedule_type}'"
+            )
+        return self._make_connector_request(
+            method="PATCH", endpoint=connector_id, data=json.dumps({"schedule_type": schedule_type})
+        )
+
+    def start_sync(self, connector_id: str) -> None:
+        """Initiates a sync of a Fivetran connector.
+
+        Args:
+            connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
+                "Setup" tab of a given connector in the Fivetran UI.
+
+        """
+        request_fn = partial(
+            self._make_connector_request, method="POST", endpoint=f"{connector_id}/force"
+        )
+        self._start_sync(request_fn=request_fn, connector_id=connector_id)
+
+    def _start_sync(self, request_fn: Callable[[], Mapping[str, Any]], connector_id: str) -> None:
+        connector = FivetranConnector.from_connector_details(
+            connector_details=self.get_connector_details(connector_id)
+        )
+        connector.validate_syncable()
+        if self.disable_schedule_on_trigger:
+            self._log.info(f"Disabling Fivetran sync schedule for connector {connector_id}.")
+            self.update_schedule_type_for_connector(connector_id, "manual")
+        request_fn()
+        self._log.info(
+            f"Sync initialized for connector {connector_id}. View this sync in the Fivetran"
+            " UI: " + connector.url
+        )
+
 
 @experimental
 class FivetranWorkspace(ConfigurableResource):
@@ -613,6 +666,13 @@ class FivetranWorkspace(ConfigurableResource):
         default=0.25,
         description="Time (in seconds) to wait between each request retry.",
     )
+    disable_schedule_on_trigger: bool = Field(
+        default=True,
+        description=(
+            "Whether to disable the schedule of a connector when it is synchronized using this resource."
+            "Defaults to True."
+        ),
+    )
 
     _client: FivetranClient = PrivateAttr(default=None)
 
@@ -622,6 +682,7 @@ class FivetranWorkspace(ConfigurableResource):
             api_secret=self.api_secret,
             request_max_retries=self.request_max_retries,
             request_retry_delay=self.request_retry_delay,
+            disable_schedule_on_trigger=self.disable_schedule_on_trigger,
         )
 
     def fetch_fivetran_workspace_data(

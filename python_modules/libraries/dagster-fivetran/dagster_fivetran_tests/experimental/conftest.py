@@ -380,6 +380,8 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
     },
 }
 
+SAMPLE_SUCCESS_MESSAGE = {"code": "Success", "message": "Operation performed."}
+
 TEST_ACCOUNT_ID = "test_account_id"
 TEST_API_KEY = "test_api_key"
 TEST_API_SECRET = "test_api_secret"
@@ -451,6 +453,18 @@ def all_api_mocks_fixture(
         method=responses.GET,
         url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}",
         json=SAMPLE_CONNECTOR_DETAILS,
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.PATCH,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}",
+        json=SAMPLE_CONNECTOR_DETAILS,
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.POST,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/{FIVETRAN_CONNECTOR_ENDPOINT}/{connector_id}/force",
+        json=SAMPLE_SUCCESS_MESSAGE,
         status=200,
     )
     yield fetch_workspace_data_api_mocks
