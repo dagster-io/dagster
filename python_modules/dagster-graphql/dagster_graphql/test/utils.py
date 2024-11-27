@@ -45,7 +45,7 @@ class GqlAssetCheckHandle(TypedDict):
 
 
 def main_repo_location_name() -> str:
-    return "test_location"
+    return "test"
 
 
 def main_repo_name() -> str:
