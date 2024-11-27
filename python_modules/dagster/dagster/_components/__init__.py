@@ -17,13 +17,14 @@ from typing import (
     Optional,
     Sequence,
     Type,
+    TypeVar,
     cast,
 )
 
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from dagster._core.errors import DagsterError
+from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster._utils import snakecase
 from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
 
@@ -154,7 +155,7 @@ class CodeLocationProjectContext:
     def from_path(cls, path: str) -> Self:
         root_path = _resolve_code_location_root_path(path)
         name = os.path.basename(root_path)
-        component_registry = ComponentRegistry()
+        component_registry = ComponentRegistry.get_global().copy()
 
         # TODO: Rm when a more robust solution is implemented
         # Make sure we can import from the cwd
@@ -221,13 +222,22 @@ class CodeLocationProjectContext:
 
 
 class ComponentRegistry:
-    def __init__(self):
-        self._components: Dict[str, Type[Component]] = {}
+    @staticmethod
+    def get_global():
+        return _GLOBAL_REGISTRY
+
+    def __init__(self, initial_components: Optional[Mapping[str, Type[Component]]] = None):
+        self._components: Dict[str, Type[Component]] = {**(initial_components or {})}
 
     def register(self, name: str, component: Type[Component]) -> None:
         if name in self._components:
             raise DagsterError(f"There is an existing component registered under {name}")
         self._components[name] = component
+
+    def unregister(self, name: str) -> None:
+        if name not in self._components:
+            raise DagsterError(f"No component registered under {name}")
+        del self._components[name]
 
     def has(self, name: str) -> bool:
         return name in self._components
@@ -238,8 +248,22 @@ class ComponentRegistry:
     def keys(self) -> Iterable[str]:
         return self._components.keys()
 
+    def copy(self) -> "ComponentRegistry":
+        return ComponentRegistry(self._components.copy())
+
+    def merge(self, other: "ComponentRegistry") -> "ComponentRegistry":
+        merged = ComponentRegistry()
+        for key in self.keys():
+            merged.register(key, self.get(key))
+        for key, value in other.keys():
+            merged.register(key, other.get(key))
+        return merged
+
     def __repr__(self):
         return f"<ComponentRegistry {list(self._components.keys())}>"
+
+
+_GLOBAL_REGISTRY = ComponentRegistry()
 
 
 class ComponentLoadContext:
@@ -304,3 +328,13 @@ def register_components_in_module(registry: ComponentRegistry, root_module: Modu
             if component is Component:
                 continue
             registry.register(component.registered_name(), component)
+
+
+T_Component = TypeVar("T_Component", bound=Type[Component])
+
+
+def global_component(cls: T_Component) -> T_Component:
+    if not issubclass(cls, Component):
+        raise DagsterInvalidDefinitionError(f"{cls} is not a subclass of Component")
+    _GLOBAL_REGISTRY.register(cls.registered_name(), cls)
+    return cls

@@ -22,7 +22,7 @@ def _assert_assets(component: Component, expected_assets: int) -> None:
 
 
 def test_python_native() -> None:
-    component = PythonScriptCollection(LOCATION_PATH / "scripts")
+    component = PythonScriptCollection(dirpath=LOCATION_PATH / "scripts")
     _assert_assets(component, 3)
 
 

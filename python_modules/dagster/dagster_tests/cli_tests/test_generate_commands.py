@@ -1,14 +1,18 @@
 import importlib
-import inspect
 import os
 import sys
-import textwrap
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Type
 
 from click.testing import CliRunner
-from dagster._components import CodeLocationProjectContext
+from dagster import AssetExecutionContext, Definitions, PipesSubprocessClient, asset
+from dagster._components import (
+    CodeLocationProjectContext,
+    Component,
+    ComponentLoadContext,
+    ComponentRegistry,
+)
 from dagster._components.cli.generate import (
     generate_code_location_command,
     generate_component_command,
@@ -28,30 +32,33 @@ def _assert_module_imports(module_name: str):
     assert importlib.import_module(module_name)
 
 
-# This is a holder for code that is intended to be written to a file
-def _example_component_type_baz():
-    from dagster import AssetExecutionContext, Definitions, PipesSubprocessClient, asset
-    from dagster._components import Component, ComponentLoadContext
+# ########################
+# ##### EXAMPLE COMPONENT TYPE
+# ########################
 
-    _SAMPLE_PIPES_SCRIPT = """
-    from dagster_pipes import open_dagster_pipes
+_SAMPLE_PIPES_SCRIPT = """
+from dagster_pipes import open_dagster_pipes
 
-    context = open_dagster_pipes()
-    context.report_asset_materialization({"alpha": "beta"})
-    """
+context = open_dagster_pipes()
+context.report_asset_materialization({"alpha": "beta"})
+"""
 
-    class Baz(Component):
-        @classmethod
-        def generate_files(cls):
-            with open("sample.py", "w") as f:
-                f.write(_SAMPLE_PIPES_SCRIPT)
 
-        def build_defs(self, context: ComponentLoadContext) -> Definitions:
-            @asset
-            def foo(context: AssetExecutionContext, client: PipesSubprocessClient):
-                client.run(context=context, command=["python", "sample.py"])
+class Baz(Component):
+    @classmethod
+    def generate_files(cls):
+        with open("sample.py", "w") as f:
+            f.write(_SAMPLE_PIPES_SCRIPT)
 
-            return Definitions(assets=[foo], resources={"client": PipesSubprocessClient()})
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        @asset
+        def foo(context: AssetExecutionContext, client: PipesSubprocessClient):
+            client.run(context=context, command=["python", "sample.py"])
+
+        return Definitions(assets=[foo], resources={"client": PipesSubprocessClient()})
+
+
+###############################################
 
 
 @contextmanager
@@ -71,14 +78,16 @@ def isolated_example_code_location_bar(runner: CliRunner) -> Iterator[None]:
 
 
 @contextmanager
-def isolated_example_code_location_bar_with_component_type_baz(runner: CliRunner) -> Iterator[None]:
-    with isolated_example_code_location_bar(runner):
-        with open("bar/lib/baz.py", "w") as f:
-            component_type_source = textwrap.dedent(
-                inspect.getsource(_example_component_type_baz).split("\n", 1)[1]
-            )
-            f.write(component_type_source)
+def global_component_types(*components: Type[Component]) -> Iterator[None]:
+    try:
+        global_registry = ComponentRegistry.get_global()
+        for component in components:
+            global_registry.register(component.registered_name(), component)
         yield
+    finally:
+        for component in components:
+            if global_registry.has(component.registered_name()):
+                global_registry.unregister(component.registered_name())
 
 
 @contextmanager
@@ -177,7 +186,7 @@ def test_generate_component_type_already_exists_fails():
 def test_generate_component_success():
     runner = CliRunner()
     _ensure_cwd_on_sys_path()
-    with isolated_example_code_location_bar_with_component_type_baz(runner):
+    with isolated_example_code_location_bar(runner), global_component_types(Baz):
         result = runner.invoke(generate_component_command, ["baz", "qux"])
         assert result.exit_code == 0
         assert Path("bar/components/qux").exists()
@@ -195,7 +204,7 @@ def test_generate_component_outside_code_location_fails():
 def test_generate_component_already_exists_fails():
     runner = CliRunner()
     _ensure_cwd_on_sys_path()
-    with isolated_example_code_location_bar_with_component_type_baz(runner):
+    with isolated_example_code_location_bar(runner), global_component_types(Baz):
         result = runner.invoke(generate_component_command, ["baz", "qux"])
         assert result.exit_code == 0
         result = runner.invoke(generate_component_command, ["baz", "qux"])
