@@ -30,7 +30,7 @@ This guide provides instructions for using Dagster with Fivetran using the `dags
 
 To load Fivetran assets into the Dagster asset graph, you must first construct a <PyObject module="dagster_fivetran" object="FivetranWorkspace" /> resource, which allows Dagster to communicate with your Fivetran workspace. You'll need to supply your account ID, API key and API secret. See [Getting Started](https://fivetran.com/docs/rest-api/getting-started) in the Fivetran REST API documentation for more information on how to create your API key and API secret.
 
-Dagster can automatically load all connector tables from your Sigma workspace as asset specs. Call the <PyObject module="dagster_fivetran" method="load_fivetran_asset_specs" /> function, which returns list of <PyObject object="AssetSpec" />s representing your Fivetran assets. You can then include these asset specs in your <PyObject object="Definitions" /> object:
+Dagster can automatically load all connector tables from your Fivetran workspace as asset specs. Call the <PyObject module="dagster_fivetran" method="load_fivetran_asset_specs" /> function, which returns list of <PyObject object="AssetSpec" />s representing your Fivetran assets. You can then include these asset specs in your <PyObject object="Definitions" /> object:
 
 ```python file=/integrations/fivetran/representing-fivetran-assets.py
 from dagster_fivetran import FivetranWorkspace, load_fivetran_asset_specs
@@ -46,6 +46,41 @@ fivetran_workspace = FivetranWorkspace(
 fivetran_specs = load_fivetran_asset_specs(fivetran_workspace)
 defs = dg.Definitions(
     assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
+)
+```
+
+
+### Sync and materialize Fivetran assets
+
+You can use Dagster to sync Fivetran connectors and materialize Fivetran connector tables.
+
+```python file=/integrations/fivetran/sync-and-materialize-fivetran-assets.py
+from dagster_fivetran import FivetranWorkspace, fivetran_assets
+
+import dagster as dg
+
+fivetran_workspace = FivetranWorkspace(
+    account_id=dg.EnvVar("FIVETRAN_ACCOUNT_ID"),
+    api_key=dg.EnvVar("FIVETRAN_API_KEY"),
+    api_secret=dg.EnvVar("FIVETRAN_API_SECRET"),
+)
+
+
+@fivetran_assets(
+    connector_id="fivetran_connector_id",
+    name="fivetran_connector_id",
+    group_name="fivetran_connector_id",
+    workspace=fivetran_workspace,
+)
+def fivetran_connector_assets(
+    context: dg.AssetExecutionContext, fivetran: FivetranWorkspace
+):
+    yield from fivetran.sync_and_poll(context=context)
+
+
+defs = dg.Definitions(
+    assets=[fivetran_connector_assets],
+    resources={"fivetran": fivetran_workspace},
 )
 ```
 
