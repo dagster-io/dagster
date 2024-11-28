@@ -1,9 +1,11 @@
 import os
 import posixpath
+from collections.abc import Mapping
 from typing import Any, List, Optional, Type
 
 import click
 import jinja2
+import yaml
 
 from dagster._components import Component
 from dagster._utils import camelcase, pushd
@@ -58,10 +60,13 @@ def generate_component_type(root_path: str, name: str) -> None:
     )
 
 
-def generate_component_instance(root_path: str, name: str, component_type: Type[Component]) -> None:
+def generate_component_instance(
+    root_path: str, name: str, component_type: Type[Component], params: Mapping[str, object]
+) -> None:
     click.echo(f"Creating a Dagster component instance at {root_path}/{name}.py.")
 
     component_instance_root_path = os.path.join(root_path, name)
+    component_params_str = yaml.dump({"component_params": params})
     generate_project(
         path=component_instance_root_path,
         name_placeholder="COMPONENT_INSTANCE_NAME_PLACEHOLDER",
@@ -70,9 +75,10 @@ def generate_component_instance(root_path: str, name: str, component_type: Type[
         ),
         project_name=name,
         component_type=component_type.registered_name(),
+        component_params=component_params_str,
     )
     with pushd(component_instance_root_path):
-        component_type.generate_files()
+        component_type.generate_files(params)
 
 
 def generate_repository(path: str):

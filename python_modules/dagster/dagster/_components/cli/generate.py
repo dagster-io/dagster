@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 
@@ -76,9 +77,12 @@ def generate_component_type_command(name: str) -> None:
 
 
 @generate_cli.command(name="component")
+@click.option(
+    "--params", type=str, default="{}", help="Parameter dictionary for component as a JSON string"
+)
 @click.argument("component-type", type=str)
 @click.argument("name", type=str)
-def generate_component_command(component_type: str, name: str) -> None:
+def generate_component_command(component_type: str, name: str, params: str) -> None:
     """Generate a Dagster component instance."""
     if not is_inside_code_location_project():
         click.echo(
@@ -99,4 +103,7 @@ def generate_component_command(component_type: str, name: str) -> None:
         sys.exit(1)
 
     component_type_cls = context.get_component_type(component_type)
-    generate_component_instance(context.component_instances_root_path, name, component_type_cls)
+    component_params = json.loads(params)
+    generate_component_instance(
+        context.component_instances_root_path, name, component_type_cls, component_params
+    )
