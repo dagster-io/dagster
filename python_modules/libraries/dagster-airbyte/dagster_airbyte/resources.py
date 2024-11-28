@@ -20,13 +20,12 @@ from dagster import (
 from dagster._annotations import experimental
 from dagster._config.pythonic_config import infer_schema_from_config_class
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field, PrivateAttr
 from requests.exceptions import RequestException
 
+from dagster_airbyte.translator import AirbyteWorkspaceData
 from dagster_airbyte.types import AirbyteOutput
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
@@ -799,42 +798,6 @@ def airbyte_cloud_resource(context) -> AirbyteCloudResource:
 # -------------
 # Resources v2
 # -------------
-
-
-@whitelist_for_serdes
-@record
-class AirbyteConnection:
-    """Represents an Airbyte connection, based on data as returned from the API."""
-
-    @classmethod
-    def from_connection_details(
-        cls,
-        connection_details: Mapping[str, Any],
-    ) -> "AirbyteConnection":
-        raise NotImplementedError()
-
-
-@whitelist_for_serdes
-@record
-class AirbyteDestination:
-    """Represents an Airbyte destination, based on data as returned from the API."""
-
-    @classmethod
-    def from_destination_details(
-        cls,
-        destination_details: Mapping[str, Any],
-    ) -> "AirbyteDestination":
-        raise NotImplementedError()
-
-
-@record
-class AirbyteWorkspaceData:
-    """A record representing all content in an Airbyte workspace.
-    This applies to both Airbyte OSS and Cloud.
-    """
-
-    connections_by_id: Mapping[str, AirbyteConnection]
-    destinations_by_id: Mapping[str, AirbyteDestination]
 
 
 @experimental
