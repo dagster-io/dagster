@@ -512,6 +512,34 @@ class PipesContextLoader(ABC):
 T_MessageChannel = TypeVar("T_MessageChannel", bound="PipesMessageWriterChannel")
 
 
+class PipesLogWriterChannel(ABC):
+    @contextmanager
+    @abstractmethod
+    def capture(self, capturing_started: Event) -> Iterator[None]: ...
+
+
+T_LogChannel = TypeVar("T_LogChannel", bound=PipesLogWriterChannel)
+
+
+class PipesLogWriterOpenedData(TypedDict):
+    extras: PipesExtras
+
+
+class PipesLogWriter(ABC, Generic[T_LogChannel]):
+    LOG_WRITER_KEY = "log_writer"
+
+    @abstractmethod
+    @contextmanager
+    def open(self, params: PipesParams) -> Iterator[T_LogChannel]: ...
+
+    @final
+    def get_opened_payload(self) -> PipesLogWriterOpenedData:
+        return {"extras": self.get_opened_extras()}
+
+    def get_opened_extras(self) -> PipesExtras:
+        return {}
+
+
 class PipesMessageWriter(ABC, Generic[T_MessageChannel]):
     @abstractmethod
     @contextmanager
