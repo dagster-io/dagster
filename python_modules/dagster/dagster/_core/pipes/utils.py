@@ -136,8 +136,11 @@ class PipesFileMessageReader(PipesMessageReader):
             on close of the pipes session.
     """
 
-    def __init__(self, path: str):
+    def __init__(self, path: str, include_stdio_in_messages: bool = False):
         self._path = check.str_param(path, "path")
+        self._include_stdio_in_messages = check.bool_param(
+            include_stdio_in_messages, "include_stdio_in_messages"
+        )
 
     def on_launched(self, params: PipesLaunchedData) -> None:
         self.launched_payload = params
@@ -167,7 +170,10 @@ class PipesFileMessageReader(PipesMessageReader):
                 daemon=True,
             )
             thread.start()
-            yield {PipesDefaultMessageWriter.FILE_PATH_KEY: self._path}
+            yield {
+                PipesDefaultMessageWriter.FILE_PATH_KEY: self._path,
+                PipesDefaultMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY: self._include_stdio_in_messages,
+            }
         finally:
             is_session_closed.set()
             if thread:
@@ -194,6 +200,11 @@ class PipesFileMessageReader(PipesMessageReader):
 class PipesTempFileMessageReader(PipesMessageReader):
     """Message reader that reads messages by tailing an automatically-generated temporary file."""
 
+    def __init__(self, include_stdio_in_messages: bool = False):
+        self._include_stdio_in_messages = check.bool_param(
+            include_stdio_in_messages, "include_stdio_in_messages"
+        )
+
     @contextmanager
     def read_messages(
         self,
@@ -211,7 +222,8 @@ class PipesTempFileMessageReader(PipesMessageReader):
         """
         with tempfile.TemporaryDirectory() as tempdir:
             with PipesFileMessageReader(
-                os.path.join(tempdir, _MESSAGE_READER_FILENAME)
+                os.path.join(tempdir, _MESSAGE_READER_FILENAME),
+                include_stdio_in_messages=self._include_stdio_in_messages,
             ).read_messages(handler) as params:
                 yield params
 
