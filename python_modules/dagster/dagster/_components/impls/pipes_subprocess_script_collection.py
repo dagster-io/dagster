@@ -35,12 +35,12 @@ class AssetSpecModel(BaseModel):
         )
 
 
-class PythonScriptParams(BaseModel):
+class PipesSubprocessScriptParams(BaseModel):
     assets: Sequence[AssetSpecModel]
 
 
-class PythonScriptCollection(Component):
-    params_schema = Mapping[str, PythonScriptParams]
+class PipesSubprocessScriptCollection(Component):
+    params_schema = Mapping[str, PipesSubprocessScriptParams]
 
     def __init__(
         self, dirpath: Path, path_specs: Optional[Mapping[str, Sequence[AssetSpec]]] = None
@@ -53,7 +53,7 @@ class PythonScriptCollection(Component):
     @classmethod
     def from_component_params(
         cls, init_context: ComponentInitContext, component_params: object
-    ) -> "PythonScriptCollection":
+    ) -> "PipesSubprocessScriptCollection":
         loaded_params = TypeAdapter(cls.params_schema).validate_python(component_params)
         return cls(
             dirpath=init_context.path,
@@ -69,7 +69,7 @@ class PythonScriptCollection(Component):
 
         return Definitions(
             assets=[self._create_asset_def(path) for path in list(self.dirpath.rglob("*.py"))],
-            resources=load_context.resources,
+            resources={"pipes_client": PipesSubprocessClient()},
         )
 
     def _create_asset_def(self, path: Path):
