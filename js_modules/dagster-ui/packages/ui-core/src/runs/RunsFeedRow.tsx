@@ -129,19 +129,16 @@ export const RunsFeedRow = ({
         </Box>
       </RowCell>
       <RowCell style={{flexDirection: 'row', alignItems: 'flex-start'}}>
-        <Tag>
-          <Box flex={{direction: 'row', gap: 4}}>
-            {entry.__typename === 'Run' ? (
-              <RunTargetLink
-                isJob={true}
-                run={{...entry, pipelineName: entry.jobName!, stepKeysToExecute: []}}
-                repoAddress={null}
-              />
-            ) : (
-              <BackfillTarget backfill={entry} repoAddress={null} />
-            )}
-          </Box>
-        </Tag>
+        {entry.__typename === 'Run' ? (
+          <RunTargetLink
+            isJob={true}
+            run={{...entry, pipelineName: entry.jobName!, stepKeysToExecute: []}}
+            repoAddress={null}
+            useTags={true}
+          />
+        ) : (
+          <BackfillTarget backfill={entry} repoAddress={null} useTags={true} />
+        )}
       </RowCell>
       <RowCell>
         <CreatedByTagCell tags={entry.tags || []} onAddTag={onAddTag} />
@@ -188,7 +185,7 @@ export const RunsFeedRow = ({
 };
 
 const TEMPLATE_COLUMNS =
-  '60px minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1fr) 140px 150px 120px 132px';
+  '60px minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 1fr) 140px 150px 120px 132px';
 
 export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => {
   return (
