@@ -48,7 +48,7 @@ class AirbyteWorkspaceData:
 @experimental
 class DagsterAirbyteTranslator:
     """Translator class which converts a `AirbyteConnectionTableProps` object into AssetSpecs.
-    Subclass this class to implement custom logic for Airbyte content.
+    Subclass this class to implement custom logic how to translate Airbyte content into asset spec.
     """
 
     def get_asset_spec(self, props: AirbyteConnectionTableProps) -> AssetSpec:
