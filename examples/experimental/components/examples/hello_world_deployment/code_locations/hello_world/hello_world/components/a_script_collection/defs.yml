@@ -1,0 +1,6 @@
+component_type: python_script_collection
+
+component_params:
+  script_one:
+    assets:
+      - key: a

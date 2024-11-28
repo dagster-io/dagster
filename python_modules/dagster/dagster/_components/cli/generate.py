@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 
 import click
 
@@ -40,13 +41,13 @@ def generate_deployment_command(path: str) -> None:
 @click.argument("name", type=str)
 def generate_code_location_command(name: str) -> None:
     """Generate a Dagster code location inside a component."""
-    if not is_inside_deployment_project():
+    if not is_inside_deployment_project(Path(".")):
         click.echo(
             click.style("This command must be run inside a Dagster deployment project.", fg="red")
         )
         sys.exit(1)
 
-    context = DeploymentProjectContext.from_path(os.getcwd())
+    context = DeploymentProjectContext.from_path(Path.cwd())
     if context.has_code_location(name):
         click.echo(click.style(f"A code location named {name} already exists.", fg="red"))
         sys.exit(1)
@@ -59,7 +60,7 @@ def generate_code_location_command(name: str) -> None:
 @click.argument("name", type=str)
 def generate_component_type_command(name: str) -> None:
     """Generate a Dagster component instance."""
-    if not is_inside_code_location_project():
+    if not is_inside_code_location_project(Path(".")):
         click.echo(
             click.style(
                 "This command must be run inside a Dagster code location project.", fg="red"
@@ -67,7 +68,7 @@ def generate_component_type_command(name: str) -> None:
         )
         sys.exit(1)
 
-    context = CodeLocationProjectContext.from_path(os.getcwd())
+    context = CodeLocationProjectContext.from_path(Path.cwd())
     if context.has_component_type(name):
         click.echo(click.style(f"A component type named `{name}` already exists.", fg="red"))
         sys.exit(1)
@@ -80,7 +81,7 @@ def generate_component_type_command(name: str) -> None:
 @click.argument("name", type=str)
 def generate_component_command(component_type: str, name: str) -> None:
     """Generate a Dagster component instance."""
-    if not is_inside_code_location_project():
+    if not is_inside_code_location_project(Path(".")):
         click.echo(
             click.style(
                 "This command must be run inside a Dagster code location project.", fg="red"
@@ -88,7 +89,7 @@ def generate_component_command(component_type: str, name: str) -> None:
         )
         sys.exit(1)
 
-    context = CodeLocationProjectContext.from_path(os.getcwd())
+    context = CodeLocationProjectContext.from_path(Path.cwd())
     if not context.has_component_type(component_type):
         click.echo(
             click.style(f"No component type `{component_type}` could be resolved.", fg="red")
