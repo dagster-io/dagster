@@ -17,17 +17,17 @@ We'll create a new repository based on the [Dagster+ hybrid quickstart repositor
 
 First, [create a new repository in GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository). Going forward, we'll refer to this repository as `dagster-plus-code`.
 
-Next, we'll clone both our new repository and the Dagster+ hybrid quickstart repository to our local machine.
+Next, we'll run a few commands which clone both our new repository and the Dagster+ hybrid quickstart repository to our local machine.
 
 ```bash
-git clone <your-repo-url>
+git clone <your-repo-url> dagster-plus-code
 git clone git@github.com:dagster-io/dagster-cloud-hybrid-quickstart.git
 ```
 
 We'll copy the contents of the `dagster-cloud-hybrid-quickstart` repository into our `dagster-plus-code` repository, and commit the changes.
 
 ```bash
-cp -r dagster-cloud-hybrid-quickstart/* dagster-plus-code/ --exclude=".git"
+rsync -av --exclude='.git' dagster-cloud-hybrid-quickstart/ dagster-plus-code/
 cd dagster-plus-code
 git add .
 git commit -m "Initial commit"
@@ -66,13 +66,13 @@ Next, we'll set up an Azure Container Registry to store our Docker images. We'll
 
 ```bash
 az login
-az acr create --resource-group <your_resource_group> --name dagstercodelocations --sku Basic
+az acr create --resource-group <your_resource_group> --name <your-acr-name> --sku Basic
 ```
 
 Then, we'll make images from our ACR available to our AKS cluster.
 
 ```bash
-az aks update -n <your-namespace> -g <your_resource_group> --attach-acr dagstercodelocations
+az aks update -n <your-cluster-name> -g <your_resource_group> --attach-acr <your-acr-name>
 ```
 
 ## Step 3: Setting up GitHub Actions
