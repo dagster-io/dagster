@@ -18,7 +18,6 @@ from typing import (
     Optional,
     Sequence,
     Type,
-    cast,
 )
 
 from pydantic import BaseModel
@@ -36,7 +35,7 @@ class Component(ABC):
     name: ClassVar[Optional[str]] = None
 
     @classmethod
-    def registered_name(cls):
+    def registered_name(cls) -> str:
         return cls.name or snakecase(cls.__name__)
 
     @classmethod
@@ -51,33 +50,6 @@ class Component(ABC):
     def from_component_params(
         cls, init_context: "ComponentInitContext", component_params: object
     ) -> Self: ...
-
-    @classmethod
-    def loadable_paths(cls, path: Path) -> Sequence[Path]:
-        return [path]
-
-
-class FileCollectionComponent(Component):
-    """Convenience class for defining components which operate independently on files within
-    a subdirectory.
-    """
-
-    @abstractmethod
-    def loadable_paths(self) -> Sequence[Path]:
-        """Returns the paths within the subdirectory that should be loaded by this component."""
-        ...
-
-    @abstractmethod
-    def build_defs_for_path(
-        self, path: Path, load_context: "ComponentLoadContext"
-    ) -> "Definitions": ...
-
-    def build_defs(self, load_context: "ComponentLoadContext") -> "Definitions":
-        from dagster._core.definitions.definitions_class import Definitions
-
-        return Definitions.merge(
-            *(self.build_defs_for_path(path, load_context) for path in self.loadable_paths())
-        )
 
 
 def is_inside_deployment_project(path: Path) -> bool:
@@ -250,7 +222,7 @@ class ComponentRegistry:
     def keys(self) -> Iterable[str]:
         return self._components.keys()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<ComponentRegistry {list(self._components.keys())}>"
 
 
@@ -274,7 +246,6 @@ class ComponentInitContext:
 
     def get_parsed_defs(self) -> Optional[DefsFileModel]:
         defs_path = self.path / "defs.yml"
-        # import code; code.interact(local=locals())
         if defs_path.exists():
             return parse_yaml_file_to_pydantic(DefsFileModel, defs_path.read_text(), str(self.path))
         else:
@@ -286,7 +257,7 @@ class ComponentInitContext:
 
         parsed_defs = self.get_parsed_defs()
         if parsed_defs:
-            component_type = cast(Type[Component], self.registry.get(parsed_defs.component_type))
+            component_type = self.registry.get(parsed_defs.component_type)
             return [component_type.from_component_params(self, parsed_defs.component_params)]
         else:
             return list(
