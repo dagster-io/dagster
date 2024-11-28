@@ -29,7 +29,7 @@ Then, we'll create a new managed identity for the AKS agent, and a new service a
 
 ```bash
 az identity create --resource-group <resource-group> --name agent-identity
-kubectl create serviceaccount dagster-agent-sa --namespace dagster-agent
+kubectl create serviceaccount dagster-agent-service-account --namespace dagster-agent
 ```
 
 Now we need to federate the managed identity with the service account.
