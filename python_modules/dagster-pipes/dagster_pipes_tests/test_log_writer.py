@@ -14,10 +14,13 @@ from dagster_pipes import (
 
 def test_pipes_stdio_file_log_writer(capsys):
     with tempfile.TemporaryDirectory() as tempdir:
-        with capsys.disabled(), PipesStdioFileLogWriter().open(
-            {
-                "logs_dir": tempdir,
-            }
+        with (
+            capsys.disabled(),
+            PipesStdioFileLogWriter().open(
+                {
+                    "logs_dir": tempdir,
+                }
+            ),
         ):
             print(f"Writing this to stdout 1")  # noqa
             print(f"Writing this to stderr 1", file=sys.stderr)  # noqa
@@ -49,8 +52,9 @@ def test_pipes_default_log_writer(capsys):
         message_channel = PipesFileMessageWriterChannel(file.name)
 
         log_writer = PipesDefaultLogWriter(message_channel=message_channel)
-        with capsys.disabled(), log_writer.open(
-            {PipesDefaultMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY: True}
+        with (
+            capsys.disabled(),
+            log_writer.open({PipesDefaultMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY: True}),
         ):
             print("Writing this to stdout")  # noqa
             print("And this to stderr", file=sys.stderr)  # noqa

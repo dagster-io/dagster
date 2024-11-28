@@ -37,7 +37,7 @@ from dagster._core.pipes.utils import (
     extract_message_or_forward_to_stdout,
     forward_only_logs_to_file,
 )
-from dagster_pipes import PipesDefaultMessageWriter
+from dagster_pipes import PipesBlobStoreMessageWriter, PipesDefaultMessageWriter
 
 if TYPE_CHECKING:
     from mypy_boto3_logs import CloudWatchLogsClient
@@ -121,6 +121,7 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
         bucket (str): The S3 bucket to read from.
         client (WorkspaceClient): A boto3 client.
         log_readers (Optional[Sequence[PipesLogReader]]): A set of log readers for logs on S3.
+        include_stdio_in_messages (bool): Whether to send stdout/stderr to Dagster via Pipes messages. Defaults to False.
     """
 
     def __init__(
@@ -130,18 +131,26 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
         bucket: str,
         client: boto3.client,  # pyright: ignore (reportGeneralTypeIssues)
         log_readers: Optional[Sequence[PipesLogReader]] = None,
+        include_stdio_in_messages: bool = False,
     ):
         super().__init__(
             interval=interval,
             log_readers=log_readers,
         )
         self.bucket = check.str_param(bucket, "bucket")
+        self.include_stdio_in_messages = check.bool_param(
+            include_stdio_in_messages, "include_stdio_in_messages"
+        )
         self.client = client
 
     @contextmanager
     def get_params(self) -> Iterator[PipesParams]:
         key_prefix = "".join(random.choices(string.ascii_letters, k=30))
-        yield {"bucket": self.bucket, "key_prefix": key_prefix}
+        yield {
+            "bucket": self.bucket,
+            "key_prefix": key_prefix,
+            PipesBlobStoreMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY: self.include_stdio_in_messages,
+        }
 
     def messages_are_readable(self, params: PipesParams) -> bool:
         key_prefix = params.get("key_prefix")
