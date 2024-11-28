@@ -843,7 +843,6 @@ class FivetranWorkspace(ConfigurableResource):
         self,
     ) -> FivetranWorkspaceData:
         """Retrieves all Fivetran content from the workspace and returns it as a FivetranWorkspaceData object.
-        Future work will cache this data to avoid repeated calls to the Fivetran API.
 
         Returns:
             FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
