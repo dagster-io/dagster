@@ -197,8 +197,8 @@ def execute_scheduler_iteration_loop(
     scheduler_run_futures: Dict[str, Future] = {}
     iteration_times: Dict[str, ScheduleIterationTimes] = {}
 
-    submit_threadpool_executor = None
     threadpool_executor = None
+    submit_threadpool_executor = None
 
     with ExitStack() as stack:
         settings = workspace_process_context.instance.get_scheduler_settings()
@@ -225,6 +225,7 @@ def execute_scheduler_iteration_loop(
             next_interval_time = _get_next_scheduler_iteration_time(start_time)
 
             yield SpanMarker.START_SPAN
+
             try:
                 yield from launch_scheduled_runs(
                     workspace_process_context,
@@ -248,8 +249,8 @@ def execute_scheduler_iteration_loop(
                 next_interval_time = min(start_time + ERROR_INTERVAL_TIME, next_interval_time)
 
             yield SpanMarker.END_SPAN
-            end_time = get_current_timestamp()
 
+            end_time = get_current_timestamp()
             if next_interval_time > end_time:
                 # Sleep until the beginning of the next minute, plus a small epsilon to
                 # be sure that we're past the start of the minute

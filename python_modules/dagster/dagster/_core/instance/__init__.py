@@ -831,6 +831,9 @@ class DagsterInstance(DynamicPartitionsStore):
             return self._settings.get(settings_key)
         return {}
 
+    def get_backfill_settings(self) -> Mapping[str, Any]:
+        return self.get_settings("backfills")
+
     def get_scheduler_settings(self) -> Mapping[str, Any]:
         return self.get_settings("schedules")
 
