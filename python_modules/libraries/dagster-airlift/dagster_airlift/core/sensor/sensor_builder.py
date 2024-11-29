@@ -49,6 +49,7 @@ from dagster_airlift.core.sensor.event_translation import (
     synthetic_mats_for_peered_dag_asset_keys,
     synthetic_mats_for_task_instance,
 )
+from dagster_airlift.core.serialization.serialized_data import DagHandle
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS = 1
@@ -262,8 +263,16 @@ def materializations_and_requests_from_batch_iter(
     context.log.info(f"Found {len(runs)} dag runs for {airflow_data.airflow_instance.name}")
     context.log.info(f"All runs {runs}")
     for i, dag_run in enumerate(runs):
+        peered_dag_asset_keys = airflow_data.peered_dag_asset_keys_by_dag_handle[DagHandle(dag_run.dag_id)]  
+        already_materialized = set()
+        for peered_dag_asset_key in peered_dag_asset_keys:
+            tags = context.instance.get_event_tags_for_asset(peered_dag_asset_key, {"dagster-airlift/dag_run_id": dag_run.run_id.replace(":", "__").replace("+", "__")})
+            print(f"Tags without filter: {context.instance.get_event_tags_for_asset(peered_dag_asset_key)}")
+            print(f"Tags for {peered_dag_asset_key}: {tags}")
+            if tags:
+                already_materialized.add(peered_dag_asset_key)
         mats = build_synthetic_asset_materializations(
-            context, airflow_data.airflow_instance, dag_run, airflow_data
+            context, airflow_data.airflow_instance, dag_run, airflow_data, already_materialized
         )
         context.log.info(f"Found {len(mats)} materializations for {dag_run.run_id}")
 
@@ -284,6 +293,7 @@ def build_synthetic_asset_materializations(
     airflow_instance: AirflowInstance,
     dag_run: DagRun,
     airflow_data: AirflowDefinitionsData,
+    already_materialized: Set[AssetKey],
 ) -> List[AssetMaterialization]:
     """In this function we need to return the asset materializations we want to synthesize
     on behalf of the user.
@@ -318,7 +328,7 @@ def build_synthetic_asset_materializations(
     )
     synthetic_mats = []
     # Peered dag-level materializations will always be emitted.
-    synthetic_mats.extend(synthetic_mats_for_peered_dag_asset_keys(dag_run, airflow_data))
+    synthetic_mats.extend(synthetic_mats_for_peered_dag_asset_keys(dag_run, airflow_data, already_materialized))
     # If there is a dagster run for this dag, we don't need to synthesize materializations for mapped dag assets.
     if not dagster_runs:
         synthetic_mats.extend(synthetic_mats_for_mapped_dag_asset_keys(dag_run, airflow_data))

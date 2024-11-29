@@ -34,6 +34,16 @@ with DAG(
 ) as second_dag:
     PythonOperator(task_id="task", python_callable=print_hello)
 
+with DAG(
+    "dag_shared_between_code_locations",
+    default_args=default_args,
+    schedule_interval=None,
+    is_paused_upon_creation=False,
+) as shared_dag:
+    a = PythonOperator(task_id="first_task", python_callable=print_hello)
+    b = PythonOperator(task_id="second_task", python_callable=print_hello)
+    a >> b
+
 
 proxying_to_dagster(
     proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
