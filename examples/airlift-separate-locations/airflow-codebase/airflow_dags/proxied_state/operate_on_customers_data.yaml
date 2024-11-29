@@ -1,0 +1,5 @@
+tasks:
+  - id: scrape_customers_data
+    proxied: false
+  - id: run_customers_models
+    proxied: false

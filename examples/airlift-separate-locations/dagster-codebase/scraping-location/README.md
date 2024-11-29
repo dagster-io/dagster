@@ -1,0 +1,1 @@
+This package contains all the code for creating scrapers.
