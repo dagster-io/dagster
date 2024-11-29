@@ -152,6 +152,7 @@ import slack from './kindtag-images/tool-slack-color.svg';
 import sling from './kindtag-images/tool-sling-color.svg';
 import snowflake from './kindtag-images/tool-snowflake-color.svg';
 import soda from './kindtag-images/tool-soda-color.svg';
+import spanner from './kindtag-images/tool-spanner-color.svg';
 import spark from './kindtag-images/tool-spark-color.svg';
 import sql from './kindtag-images/tool-sql-color.svg';
 import sqlite from './kindtag-images/tool-sqlite-color.svg';
@@ -395,7 +396,8 @@ export type KnownTagType =
   | 'redpanda'
   | 'scylladb'
   | 'starrocks'
-  | 'superset';
+  | 'superset'
+  | 'spanner';
 
 export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   jupyter: {
@@ -1211,6 +1213,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   superset: {
     icon: superset,
     content: 'Superset',
+  },
+  spanner: {
+    icon: spanner,
+    content: 'Spanner',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
