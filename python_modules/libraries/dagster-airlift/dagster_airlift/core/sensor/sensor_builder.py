@@ -32,6 +32,7 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_current_datetime
 
 from dagster_airlift.constants import (
+    AIRFLOW_RUN_ID_METADATA_KEY,
     AUTOMAPPED_TASK_METADATA_KEY,
     DAG_RUN_ID_TAG_KEY,
     EFFECTIVE_TIMESTAMP_METADATA_KEY,
@@ -263,16 +264,29 @@ def materializations_and_requests_from_batch_iter(
     context.log.info(f"Found {len(runs)} dag runs for {airflow_data.airflow_instance.name}")
     context.log.info(f"All runs {runs}")
     for i, dag_run in enumerate(runs):
-        peered_dag_asset_keys = airflow_data.peered_dag_asset_keys_by_dag_handle[DagHandle(dag_run.dag_id)]  
-        already_materialized = set()
-        for peered_dag_asset_key in peered_dag_asset_keys:
-            tags = context.instance.get_event_tags_for_asset(peered_dag_asset_key, {"dagster-airlift/dag_run_id": dag_run.run_id.replace(":", "__").replace("+", "__")})
-            print(f"Tags without filter: {context.instance.get_event_tags_for_asset(peered_dag_asset_key)}")
-            print(f"Tags for {peered_dag_asset_key}: {tags}")
-            if tags:
-                already_materialized.add(peered_dag_asset_key)
+        peered_dag_asset_keys = airflow_data.peered_dag_asset_keys_by_dag_handle[
+            DagHandle(dag_run.dag_id)
+        ]
+        records = context.instance.get_asset_records(list(peered_dag_asset_keys))
+        # It's possible that the dag is split across multiple code locations, and therefore might have multiple sensors polling the same dag run.
+        # As a result, we need to make sure we don't double-add materializations across both of those sensors for peered dag assets.
+        # To do this, we check if the materialization was already added via a different sensor to dedupe.
+        peered_dag_assets_already_materialized = {
+            r.asset_entry.asset_key
+            for r in records
+            if check.not_none(
+                check.not_none(r.asset_entry.last_materialization).asset_materialization
+            )
+            .metadata[AIRFLOW_RUN_ID_METADATA_KEY]
+            .value
+            == dag_run.run_id
+        }
         mats = build_synthetic_asset_materializations(
-            context, airflow_data.airflow_instance, dag_run, airflow_data, already_materialized
+            context,
+            airflow_data.airflow_instance,
+            dag_run,
+            airflow_data,
+            peered_dag_assets_already_materialized,
         )
         context.log.info(f"Found {len(mats)} materializations for {dag_run.run_id}")
 
@@ -293,7 +307,7 @@ def build_synthetic_asset_materializations(
     airflow_instance: AirflowInstance,
     dag_run: DagRun,
     airflow_data: AirflowDefinitionsData,
-    already_materialized: Set[AssetKey],
+    peered_dags_already_materialized: Set[AssetKey],
 ) -> List[AssetMaterialization]:
     """In this function we need to return the asset materializations we want to synthesize
     on behalf of the user.
@@ -328,7 +342,11 @@ def build_synthetic_asset_materializations(
     )
     synthetic_mats = []
     # Peered dag-level materializations will always be emitted.
-    synthetic_mats.extend(synthetic_mats_for_peered_dag_asset_keys(dag_run, airflow_data, already_materialized))
+    synthetic_mats.extend(
+        synthetic_mats_for_peered_dag_asset_keys(
+            dag_run, airflow_data, peered_dags_already_materialized
+        )
+    )
     # If there is a dagster run for this dag, we don't need to synthesize materializations for mapped dag assets.
     if not dagster_runs:
         synthetic_mats.extend(synthetic_mats_for_mapped_dag_asset_keys(dag_run, airflow_data))

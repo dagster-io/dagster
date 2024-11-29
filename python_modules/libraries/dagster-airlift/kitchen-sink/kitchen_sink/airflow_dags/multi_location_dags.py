@@ -42,7 +42,7 @@ with DAG(
 ) as shared_dag:
     a = PythonOperator(task_id="first_task", python_callable=print_hello)
     b = PythonOperator(task_id="second_task", python_callable=print_hello)
-    a >> b
+    a >> b  # type: ignore
 
 
 proxying_to_dagster(
