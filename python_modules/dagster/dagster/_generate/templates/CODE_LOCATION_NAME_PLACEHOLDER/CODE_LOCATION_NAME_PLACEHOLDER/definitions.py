@@ -1,3 +1,9 @@
-import dagster as dg
+from pathlib import Path
 
-defs = dg.Definitions()
+from dagster._components import ComponentRegistry, build_defs_from_toplevel_components_folder
+
+defs = build_defs_from_toplevel_components_folder(
+    path=Path(__file__).parent,
+    registry=ComponentRegistry(),
+    resources={},
+)

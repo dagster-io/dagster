@@ -4,7 +4,7 @@ from dagster._components import (
     Component,
     ComponentInitContext,
     ComponentLoadContext,
-    build_defs_from_path,
+    build_defs_from_component_folder,
 )
 from dagster._components.impls.python_script_component import PythonScriptCollection
 from dagster._core.pipes.subprocess import PipesSubprocessClient
@@ -50,7 +50,7 @@ def test_load_from_path() -> None:
 
 
 def test_build_from_path() -> None:
-    defs = build_defs_from_path(
+    defs = build_defs_from_component_folder(
         path=LOCATION_PATH,
         resources={"pipes_client": PipesSubprocessClient()},
         registry=init_context.registry,

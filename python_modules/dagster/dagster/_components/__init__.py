@@ -13,6 +13,7 @@ from typing import (
     Dict,
     Final,
     Iterable,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -79,7 +80,7 @@ class FileCollectionComponent(Component):
         )
 
 
-def is_inside_deployment_project(path: str = ".") -> bool:
+def is_inside_deployment_project(path: Path) -> bool:
     try:
         _resolve_deployment_root_path(path)
         return True
@@ -87,7 +88,7 @@ def is_inside_deployment_project(path: str = ".") -> bool:
         return False
 
 
-def _resolve_deployment_root_path(path: str) -> str:
+def _resolve_deployment_root_path(path: Path) -> str:
     current_path = os.path.abspath(path)
     while not _is_deployment_root(current_path):
         current_path = os.path.dirname(current_path)
@@ -96,7 +97,7 @@ def _resolve_deployment_root_path(path: str) -> str:
     return current_path
 
 
-def is_inside_code_location_project(path: str = ".") -> bool:
+def is_inside_code_location_project(path: Path) -> bool:
     try:
         _resolve_code_location_root_path(path)
         return True
@@ -104,7 +105,7 @@ def is_inside_code_location_project(path: str = ".") -> bool:
         return False
 
 
-def _resolve_code_location_root_path(path: str) -> str:
+def _resolve_code_location_root_path(path: Path) -> str:
     current_path = os.path.abspath(path)
     while not _is_code_location_root(current_path):
         current_path = os.path.dirname(current_path)
@@ -131,7 +132,7 @@ _CODE_LOCATION_COMPONENT_INSTANCES_DIR: Final = "components"
 
 class DeploymentProjectContext:
     @classmethod
-    def from_path(cls, path: str) -> Self:
+    def from_path(cls, path: Path) -> Self:
         return cls(root_path=_resolve_deployment_root_path(path))
 
     def __init__(self, root_path: str):
@@ -151,10 +152,12 @@ class DeploymentProjectContext:
 
 class CodeLocationProjectContext:
     @classmethod
-    def from_path(cls, path: str) -> Self:
+    def from_path(
+        cls, path: Path, component_registry: Optional["ComponentRegistry"] = None
+    ) -> Self:
         root_path = _resolve_code_location_root_path(path)
         name = os.path.basename(root_path)
-        component_registry = ComponentRegistry()
+        component_registry = component_registry or ComponentRegistry()
 
         # TODO: Rm when a more robust solution is implemented
         # Make sure we can import from the cwd
@@ -196,6 +199,10 @@ class CodeLocationProjectContext:
     def component_types_root_module(self) -> str:
         return f"{self._name}.{_CODE_LOCATION_CUSTOM_COMPONENTS_DIR}"
 
+    @property
+    def component_registry(self) -> "ComponentRegistry":
+        return self._component_registry
+
     def has_component_type(self, name: str) -> bool:
         return self._component_registry.has(name)
 
@@ -203,6 +210,11 @@ class CodeLocationProjectContext:
         if not self.has_component_type(name):
             raise DagsterError(f"No component type named {name}")
         return self._component_registry.get(name)
+
+    def get_component_instance_path(self, name: str) -> str:
+        if name not in self.component_instances:
+            raise DagsterError(f"No component instance named {name}")
+        return os.path.join(self.component_instances_root_path, name)
 
     @property
     def component_instances_root_path(self) -> str:
@@ -221,8 +233,8 @@ class CodeLocationProjectContext:
 
 
 class ComponentRegistry:
-    def __init__(self):
-        self._components: Dict[str, Type[Component]] = {}
+    def __init__(self, components: Optional[Dict[str, Type[Component]]] = None):
+        self._components: Dict[str, Type[Component]] = components or {}
 
     def register(self, name: str, component: Type[Component]) -> None:
         if name in self._components:
@@ -262,6 +274,7 @@ class ComponentInitContext:
 
     def get_parsed_defs(self) -> Optional[DefsFileModel]:
         defs_path = self.path / "defs.yml"
+        # import code; code.interact(local=locals())
         if defs_path.exists():
             return parse_yaml_file_to_pydantic(DefsFileModel, defs_path.read_text(), str(self.path))
         else:
@@ -281,15 +294,17 @@ class ComponentInitContext:
             )
 
 
-def build_defs_from_path(
+def build_defs_from_component_folder(
     path: Path,
     registry: ComponentRegistry,
     resources: Mapping[str, object],
 ) -> "Definitions":
+    """Build a definitions object from a folder within the components hierarchy."""
     from dagster._core.definitions.definitions_class import Definitions
 
     init_context = ComponentInitContext(path=path, registry=registry)
     components = init_context.load()
+
     return Definitions.merge(*[c.build_defs(ComponentLoadContext(resources)) for c in components])
 
 
@@ -304,3 +319,25 @@ def register_components_in_module(registry: ComponentRegistry, root_module: Modu
             if component is Component:
                 continue
             registry.register(component.registered_name(), component)
+
+
+def build_defs_from_toplevel_components_folder(
+    path: Path,
+    resources: Optional[Mapping[str, object]] = None,
+    registry: Optional["ComponentRegistry"] = None,
+) -> "Definitions":
+    """Build a Definitions object from an entire component hierarchy."""
+    from dagster._core.definitions.definitions_class import Definitions
+
+    context = CodeLocationProjectContext.from_path(path, registry)
+
+    all_defs: List[Definitions] = []
+    for component in context.component_instances:
+        component_path = Path(context.get_component_instance_path(component))
+        defs = build_defs_from_component_folder(
+            path=component_path,
+            registry=context.component_registry,
+            resources=resources or {},
+        )
+        all_defs.append(defs)
+    return Definitions.merge(*all_defs)
