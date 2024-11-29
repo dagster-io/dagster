@@ -4,7 +4,12 @@ from typing import Any, Mapping, Optional, Sequence
 
 from pydantic import BaseModel, TypeAdapter
 
-from dagster._components import ComponentInitContext, ComponentLoadContext, FileCollectionComponent
+from dagster._components import (
+    ComponentInitContext,
+    ComponentLoadContext,
+    FileCollectionComponent,
+    global_component,
+)
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
@@ -37,6 +42,7 @@ class PythonScriptParams(BaseModel):
     assets: Sequence[AssetSpecModel]
 
 
+@global_component
 class PythonScriptCollection(FileCollectionComponent):
     params_schema = Mapping[str, PythonScriptParams]
 

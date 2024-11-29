@@ -625,6 +625,11 @@ from dagster.version import __version__ as __version__
 
 # ruff: isort: split
 
+# Ensure that global components are available. They need to be loaded in order to register.
+import dagster._components.impls  # noqa: F401
+
+# ruff: isort: split
+
 # ########################
 # ##### DYNAMIC IMPORTS
 # ########################
