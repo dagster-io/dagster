@@ -10,6 +10,10 @@ from dagster._components.core.component_defs_builder import (
 from dagster._components.impls.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollection,
 )
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.declarative_automation.operators.dep_operators import (
+    AnyDepsCondition,
+)
 
 LOCATION_PATH = Path(__file__).parent / "code_locations" / "python_script_location"
 
@@ -36,24 +40,30 @@ def test_python_native() -> None:
     _assert_assets(component, 3)
 
 
-def test_python_params() -> None:
-    component = PipesSubprocessScriptCollection.from_decl_node(
+def load_component_with_params(component_params: dict) -> PipesSubprocessScriptCollection:
+    return PipesSubprocessScriptCollection.from_decl_node(
         load_context=script_load_context(),
         component_decl=YamlComponentDecl(
             path=LOCATION_PATH / "components" / "scripts",
             defs_file_model=DefsFileModel(
                 component_type="pipes_subprocess_script_collection",
-                component_params={
-                    "script_one": {
-                        "assets": [
-                            {"key": "a"},
-                            {"key": "b", "deps": ["up1", "up2"]},
-                        ]
-                    },
-                    "script_three": {"assets": [{"key": "key_override"}]},
-                },
+                component_params=component_params,
             ),
         ),
+    )
+
+
+def test_python_params() -> None:
+    component = load_component_with_params(
+        component_params={
+            "script_one": {
+                "assets": [
+                    {"key": "a"},
+                    {"key": "b", "deps": ["up1", "up2"]},
+                ]
+            },
+            "script_three": {"assets": [{"key": "key_override"}]},
+        },
     )
     _assert_assets(component, 6)
 
@@ -79,3 +89,89 @@ def test_build_from_path() -> None:
     )
 
     assert len(defs.get_asset_graph().get_all_asset_keys()) == 6
+
+
+def test_cron_automation_condition() -> None:
+    component = load_component_with_params(
+        component_params={
+            "script_one": {
+                "assets": [
+                    {
+                        "key": "a",
+                        "automation_condition": "on_cron('0 0 * * *', 'UTC')",
+                    },
+                ]
+            },
+        },
+    )
+
+    defs = defs_from_components(
+        context=script_load_context(),
+        components=[component],
+        resources={},
+    )
+
+    a_key = AssetKey("a")
+
+    a_spec = defs.get_assets_def(a_key).get_asset_spec(a_key)
+    assert a_spec.automation_condition
+    assert a_spec.automation_condition.get_label() == "on_cron(0 0 * * *, UTC)"
+
+
+def test_eager_automation_condition() -> None:
+    component = load_component_with_params(
+        component_params={
+            "script_one": {
+                "assets": [
+                    {"key": "a", "automation_condition": "eager()"},
+                ]
+            },
+        },
+    )
+
+    defs = defs_from_components(
+        context=script_load_context(),
+        components=[component],
+        resources={},
+    )
+
+    a_key = AssetKey("a")
+
+    a_spec = defs.get_assets_def(a_key).get_asset_spec(a_key)
+    assert a_spec.automation_condition
+    assert a_spec.automation_condition.get_label() == "eager"
+
+
+def test_more_complex_condition() -> None:
+    # in_progress_or_failed_parents = AutomationCondition.any_deps_match(
+    # AutomationCondition.in_progress() | AutomationCondition.failed()
+
+    # methods = AutomationConditionInterpreter.methods()
+    # import code
+
+    # code.interact(local=locals())
+
+    component = load_component_with_params(
+        component_params={
+            "script_one": {
+                "assets": [
+                    {
+                        "key": "a",
+                        "automation_condition": "any_deps_match(in_progress() | execution_failed())",
+                    },
+                ]
+            },
+        },
+    )
+
+    defs = defs_from_components(
+        context=script_load_context(),
+        components=[component],
+        resources={},
+    )
+
+    a_key = AssetKey("a")
+
+    a_spec = defs.get_assets_def(a_key).get_asset_spec(a_key)
+    assert a_spec.automation_condition
+    assert isinstance(a_spec.automation_condition, AnyDepsCondition)
