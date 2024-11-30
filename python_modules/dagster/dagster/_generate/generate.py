@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Type
 import click
 import jinja2
 
-from dagster._components import Component
+from dagster._components.core.component import Component
 from dagster._utils import camelcase, pushd
 from dagster.version import __version__ as dagster_version
 

@@ -1,10 +1,8 @@
 from pathlib import Path
 
-from dagster._components import (
-    Component,
-    ComponentLoadContext,
-    ComponentRegistry,
-    DefsFileModel,
+from dagster._components.core.component import Component, ComponentLoadContext, ComponentRegistry
+from dagster._components.core.component_decl_builder import DefsFileModel
+from dagster._components.core.component_defs_builder import (
     YamlComponentDecl,
     build_components_from_component_folder,
     defs_from_components,

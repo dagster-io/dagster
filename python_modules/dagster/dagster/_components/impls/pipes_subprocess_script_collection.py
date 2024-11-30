@@ -5,12 +5,8 @@ from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
 
 from pydantic import BaseModel, TypeAdapter
 
-from dagster._components import (
-    Component,
-    ComponentDeclNode,
-    ComponentLoadContext,
-    YamlComponentDecl,
-)
+from dagster._components.core.component import Component, ComponentDeclNode, ComponentLoadContext
+from dagster._components.core.component_decl_builder import YamlComponentDecl
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
