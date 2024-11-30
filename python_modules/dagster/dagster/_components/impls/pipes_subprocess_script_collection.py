@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
 
 from pydantic import BaseModel, TypeAdapter
 
-from dagster._components import Component, ComponentInitContext, ComponentLoadContext
+from dagster._components import Component, ComponentLoadContext
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
@@ -56,7 +56,7 @@ class PipesSubprocessScriptCollection(Component):
 
     @classmethod
     def from_component_params(
-        cls, init_context: ComponentInitContext, component_params: object
+        cls, init_context: ComponentLoadContext, component_params: object
     ) -> "PipesSubprocessScriptCollection":
         loaded_params = TypeAdapter(cls.params_schema).validate_python(component_params)
         return cls(
