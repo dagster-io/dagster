@@ -5,7 +5,12 @@ from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
 
 from pydantic import BaseModel, TypeAdapter
 
-from dagster._components import Component, ComponentInitContext, ComponentLoadContext
+from dagster._components import (
+    Component,
+    ComponentDeclNode,
+    ComponentLoadContext,
+    YamlComponentDecl,
+)
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
@@ -55,12 +60,15 @@ class PipesSubprocessScriptCollection(Component):
         self.path_specs = path_specs or {}
 
     @classmethod
-    def from_component_params(
-        cls, init_context: ComponentInitContext, component_params: object
+    def from_decl_node(
+        cls, load_context: ComponentLoadContext, component_decl: ComponentDeclNode
     ) -> "PipesSubprocessScriptCollection":
-        loaded_params = TypeAdapter(cls.params_schema).validate_python(component_params)
+        assert isinstance(component_decl, YamlComponentDecl)
+        loaded_params = TypeAdapter(cls.params_schema).validate_python(
+            component_decl.defs_file_model.component_params
+        )
         return cls(
-            dirpath=init_context.path,
+            dirpath=component_decl.path,
             path_specs={
                 k: [vv.to_asset_spec() for vv in v.assets] for k, v in loaded_params.items()
             }
