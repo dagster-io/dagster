@@ -3,12 +3,8 @@ import itertools
 import os
 import sys
 from abc import ABC, abstractmethod
-<<<<<<< HEAD
-from dataclasses import dataclass, replace
-=======
 from dataclasses import dataclass, field, replace
 from functools import cache, cached_property
->>>>>>> 5ce02703d8 (cp)
 from pathlib import Path
 from types import ModuleType
 from typing import (
@@ -30,6 +26,7 @@ from dagster_tests.cli_tests.workspace_tests.definitions_test_cases import defs_
 from pydantic import BaseModel
 from typing_extensions import Self
 
+from dagster import _check as check
 from dagster._core.errors import DagsterError
 from dagster._record import record
 from dagster._utils import snakecase
@@ -55,8 +52,8 @@ class Component(ABC):
 
     @classmethod
     @abstractmethod
-    def from_component_params(
-        cls, init_context: "ComponentLoadContext", component_params: object
+    def from_decl_node(
+        cls, context: "ComponentLoadContext", decl_node: "ComponentDeclNode"
     ) -> Self: ...
 
 
@@ -256,104 +253,69 @@ class DefsFileModel(BaseModel):
     component_params: Optional[Mapping[str, Any]] = None
 
 
-from dagster import _check as check
-
-
-@dataclass
-class ComponentInitContext:
-    # def __init__(self, *, path: Path, registry: Optional[ComponentRegistry] = None):
-    #     self.path = path
-    #     self.registry = registry or ComponentRegistry()
-
-    path: Path
-    registry: ComponentRegistry
-
-    def for_path(self, path: Path) -> "ComponentInitContext":
-        return replace(self, path=path)
-
-    @property
-    def defs_path(self) -> Path:
-        return self.path / "defs.yml"
-
-    @cached_property
-    def has_defs_yamls(self) -> bool:
-        return self.defs_path.exists()
-
-    def get_parsed_defs(self) -> DefsFileModel:
-        check.invariant(self.has_defs_yamls, "No defs.yml found")
-        return parse_yaml_file_to_pydantic(
-            DefsFileModel, self.defs_path.read_text(), str(self.path)
-        )
-
-    # def load(self) -> Sequence[Component]:
-    #     if self.has_defs_yamls:
-    #         parsed_defs = self.get_parsed_defs()
-    #         component_type = self.registry.get(parsed_defs.component_type)
-    #         return [component_type.from_component_params(self, parsed_defs.component_params)]
-    #     else:
-    #         return list(
-    #             itertools.chain(*(self.for_path(subpath).load() for subpath in self.path.iterdir()))
-    #         )
-
-
-class ComponentDecl: ...
+class ComponentDeclNode: ...
 
 
 @record
-class YamlComponentInstance(ComponentDecl):
+class YamlComponentDecl(ComponentDeclNode):
     path: Path
     defs_file_model: DefsFileModel
 
 
 @record
-class ComponentFolder(ComponentDecl):
+class ComponentFolder(ComponentDeclNode):
     path: Path
-    sub_components: Sequence[Union[YamlComponentInstance, "ComponentFolder"]]
+    sub_decls: Sequence[Union[YamlComponentDecl, "ComponentFolder"]]
 
 
-def find_component_decl(context: ComponentInitContext) -> Optional[ComponentDecl]:
+def find_component_decl(path: Path) -> Optional[ComponentDeclNode]:
     # right now, we only support two types of components, both of which are folders
     # if the folder contains a defs.yml file, it's a component instance
     # otherwise, it's a folder containing sub-components
 
-    if not context.path.is_dir():
+    if not path.is_dir():
         return None
 
-    defs_path = context.path / "defs.yml"
+    defs_path = path / "defs.yml"
 
     if defs_path.exists():
         defs_file_model = parse_yaml_file_to_pydantic(
-            DefsFileModel, defs_path.read_text(), str(context.path)
+            DefsFileModel, defs_path.read_text(), str(path)
         )
-        return YamlComponentInstance(path=context.path, defs_file_model=defs_file_model)
+        return YamlComponentDecl(path=path, defs_file_model=defs_file_model)
 
     subs = []
-    for subpath in context.path.iterdir():
-        component = find_component_decl(context.for_path(subpath))
+    for subpath in path.iterdir():
+        component = find_component_decl(subpath)
         if component:
             subs.append(component)
 
-    return ComponentFolder(path=context.path, sub_components=subs) if subs else None
+    return ComponentFolder(path=path, sub_decls=subs) if subs else None
 
 
 def build_component_hierarchy(
     context: ComponentLoadContext, component_folder: ComponentFolder
 ) -> Sequence[Component]:
-    for component in component_folder.sub_components:
-        if isinstance(component, YamlComponentInstance):
-            parsed_defs = component.defs_file_model
+    to_return = []
+    for decl_node in component_folder.sub_decls:
+        if isinstance(decl_node, YamlComponentDecl):
+            parsed_defs = decl_node.defs_file_model
             component_type = context.registry.get(parsed_defs.component_type)
-            return [component_type.from_component_params(self, parsed_defs.component_params)]
-        elif isinstance(component, ComponentFolder):
-            ...
+            to_return.append(component_type.from_decl_node(context, decl_node))
+        elif isinstance(decl_node, ComponentFolder):
+            to_return.extend(build_component_hierarchy(context, decl_node))
         else:
-            raise NotImplementedError(f"Unknown component type {component}")
+            raise NotImplementedError(f"Unknown component type {decl_node}")
+    return to_return
 
-    return [
-        component
-        for sub_component in component_folder.sub_components
-        for component in build_component_hierarchy(context, sub_component)
-    ]
+
+def build_components_from_component_folder(
+    context: ComponentLoadContext,
+    path: Path,
+) -> Sequence[Component]:
+    component_folder = find_component_decl(path)
+    assert isinstance(component_folder, ComponentFolder)
+    return build_component_hierarchy(context, component_folder)
 
 
 def build_defs_from_component_folder(
@@ -362,14 +324,23 @@ def build_defs_from_component_folder(
     resources: Mapping[str, object],
 ) -> "Definitions":
     """Build a definitions object from a folder within the components hierarchy."""
+    component_folder = find_component_decl(path=path)
+    assert isinstance(component_folder, ComponentFolder)
+    context = ComponentLoadContext(resources=resources, registry=registry)
+    components = build_components_from_component_folder(context=context, path=path)
+    return defs_from_components(resources=resources, context=context, components=components)
+
+
+def defs_from_components(
+    *,
+    context: ComponentLoadContext,
+    components: Sequence[Component],
+    resources: Mapping[str, object],
+) -> "Definitions":
     from dagster._core.definitions.definitions_class import Definitions
 
-    init_context = ComponentInitContext(path=path, registry=registry)
-    component_folder = find_component_decl(init_context)
-    assert isinstance(component_folder, ComponentFolder)
-
     return Definitions.merge_internal(
-        *[c.build_defs(ComponentLoadContext(resources)) for c in component_folder.sub_components]
+        [*[c.build_defs(context) for c in components], Definitions(resources=resources)]
     )
 
 
@@ -406,4 +377,4 @@ def build_defs_from_toplevel_components_folder(
             resources=resources or {},
         )
         all_defs.append(defs)
-    return Definitions.merge_internal(*all_defs)
+    return Definitions.merge_internal(all_defs)
