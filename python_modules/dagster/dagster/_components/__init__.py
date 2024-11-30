@@ -3,7 +3,7 @@ import itertools
 import os
 import sys
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 from types import ModuleType
 from typing import (
@@ -124,12 +124,9 @@ class DeploymentProjectContext:
 
 class CodeLocationProjectContext:
     @classmethod
-    def from_path(
-        cls, path: Path, component_registry: Optional["ComponentRegistry"] = None
-    ) -> Self:
+    def from_path(cls, path: Path, component_registry: "ComponentRegistry") -> Self:
         root_path = _resolve_code_location_root_path(path)
         name = os.path.basename(root_path)
-        component_registry = component_registry or ComponentRegistry()
 
         # TODO: Rm when a more robust solution is implemented
         # Make sure we can import from the cwd
@@ -205,8 +202,12 @@ class CodeLocationProjectContext:
 
 
 class ComponentRegistry:
-    def __init__(self, components: Optional[Dict[str, Type[Component]]] = None):
-        self._components: Dict[str, Type[Component]] = components or {}
+    def __init__(self, components: Dict[str, Type[Component]]):
+        self._components: Dict[str, Type[Component]] = components
+
+    @staticmethod
+    def empty() -> "ComponentRegistry":
+        return ComponentRegistry({})
 
     def register(self, name: str, component: Type[Component]) -> None:
         if name in self._components:
@@ -227,7 +228,7 @@ class ComponentRegistry:
 
 
 class ComponentLoadContext:
-    def __init__(self, resources: Mapping[str, object] = {}):
+    def __init__(self, resources: Mapping[str, object]):
         self.resources = resources
 
 
@@ -239,7 +240,7 @@ class DefsFileModel(BaseModel):
 @dataclass
 class ComponentInitContext:
     path: Path
-    registry: ComponentRegistry = field(default_factory=lambda: ComponentRegistry())
+    registry: ComponentRegistry
 
     def for_path(self, path: Path) -> "ComponentInitContext":
         return replace(self, path=path)
@@ -294,6 +295,7 @@ def register_components_in_module(registry: ComponentRegistry, root_module: Modu
             registry.register(component.registered_name(), component)
 
 
+# Public method so optional Nones are fine
 def build_defs_from_toplevel_components_folder(
     path: Path,
     resources: Optional[Mapping[str, object]] = None,
@@ -302,7 +304,7 @@ def build_defs_from_toplevel_components_folder(
     """Build a Definitions object from an entire component hierarchy."""
     from dagster._core.definitions.definitions_class import Definitions
 
-    context = CodeLocationProjectContext.from_path(path, registry)
+    context = CodeLocationProjectContext.from_path(path, registry or ComponentRegistry.empty())
 
     all_defs: List[Definitions] = []
     for component in context.component_instances:

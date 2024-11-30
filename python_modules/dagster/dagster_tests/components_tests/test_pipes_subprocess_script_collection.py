@@ -4,6 +4,7 @@ from dagster._components import (
     Component,
     ComponentInitContext,
     ComponentLoadContext,
+    ComponentRegistry,
     build_defs_from_component_folder,
 )
 from dagster._components.impls.pipes_subprocess_script_collection import (
@@ -12,7 +13,9 @@ from dagster._components.impls.pipes_subprocess_script_collection import (
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 LOCATION_PATH = Path(__file__).parent / "code_locations" / "python_script_location"
-init_context = ComponentInitContext(path=LOCATION_PATH / "scripts")
+init_context = ComponentInitContext(
+    path=LOCATION_PATH / "scripts", registry=ComponentRegistry.empty()
+)
 init_context.registry.register(
     "pipes_subprocess_script_collection", PipesSubprocessScriptCollection
 )
