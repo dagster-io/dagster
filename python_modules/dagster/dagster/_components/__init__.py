@@ -1,10 +1,7 @@
 import importlib.util
-import itertools
 import os
 import sys
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field, replace
-from functools import cache, cached_property
 from pathlib import Path
 from types import ModuleType
 from typing import (
@@ -22,11 +19,9 @@ from typing import (
     Union,
 )
 
-from dagster_tests.cli_tests.workspace_tests.definitions_test_cases import defs_file
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from dagster import _check as check
 from dagster._core.errors import DagsterError
 from dagster._record import record
 from dagster._utils import snakecase
