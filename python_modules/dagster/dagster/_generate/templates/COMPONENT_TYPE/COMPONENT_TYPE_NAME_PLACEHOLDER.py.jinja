@@ -1,5 +1,10 @@
 from dagster import Definitions
-from dagster._components import Component, ComponentLoadContext
+from dagster._components import (
+    Component,
+    ComponentRegistry,
+    ComponentLoadContext,
+    build_defs_from_toplevel_components_folder,
+)
 
 class {{ component_type_class_name }}(Component):
 

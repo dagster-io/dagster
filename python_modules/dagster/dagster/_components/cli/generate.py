@@ -4,9 +4,9 @@ from pathlib import Path
 
 import click
 
-from dagster._components import (
+from dagster._components.core.component import ComponentRegistry
+from dagster._components.core.deployment import (
     CodeLocationProjectContext,
-    ComponentRegistry,
     DeploymentProjectContext,
     is_inside_code_location_project,
     is_inside_deployment_project,
@@ -20,7 +20,7 @@ from dagster._generate.generate import (
 
 
 @click.group(name="generate")
-def generate_cli():
+def generate_cli() -> None:
     """Commands for generating Dagster components and related entities."""
 
 
