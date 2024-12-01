@@ -61,7 +61,7 @@ def test_python_params() -> None:
                             "path": "script_one.py",
                             "assets": [{"key": "a"}, {"key": "b", "deps": ["up1", "up2"]}],
                         },
-                        {"path": "script_three.py", "assets": [{"key": "key_override"}]},
+                        {"path": "subdir/script_three.py", "assets": [{"key": "key_override"}]},
                     ]
                 },
             ),
@@ -84,12 +84,13 @@ def test_load_from_path() -> None:
     assert _asset_keys(components[0]) == {
         AssetKey("a"),
         AssetKey("b"),
+        AssetKey("c"),
         AssetKey("up1"),
         AssetKey("up2"),
         AssetKey("override_key"),
     }
 
-    _assert_assets(components[0], 5)
+    _assert_assets(components[0], 6)
 
     defs = defs_from_components(
         context=script_load_context(),
@@ -100,6 +101,7 @@ def test_load_from_path() -> None:
     assert defs.get_asset_graph().get_all_asset_keys() == {
         AssetKey("a"),
         AssetKey("b"),
+        AssetKey("c"),
         AssetKey("up1"),
         AssetKey("up2"),
         AssetKey("override_key"),

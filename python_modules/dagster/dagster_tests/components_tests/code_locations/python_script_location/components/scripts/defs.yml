@@ -7,6 +7,9 @@ component_params:
         - key: a
         - key: b
           deps: [up1, up2]
-    - path: script_three.py
+    - path: script_two.py
+      assets:
+        - key: c
+    - path: subdir/script_three.py
       assets:
         - key: override_key
