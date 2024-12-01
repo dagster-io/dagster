@@ -143,14 +143,6 @@ def test_eager_automation_condition() -> None:
 
 
 def test_more_complex_condition() -> None:
-    # in_progress_or_failed_parents = AutomationCondition.any_deps_match(
-    # AutomationCondition.in_progress() | AutomationCondition.failed()
-
-    # methods = AutomationConditionInterpreter.methods()
-    # import code
-
-    # code.interact(local=locals())
-
     component = load_component_with_params(
         component_params={
             "script_one": {
