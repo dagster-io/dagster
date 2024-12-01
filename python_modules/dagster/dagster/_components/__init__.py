@@ -1,9 +1,7 @@
 import importlib.util
-import itertools
 import os
 import sys
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field, replace
 from pathlib import Path
 from types import ModuleType
 from typing import (
@@ -18,12 +16,14 @@ from typing import (
     Optional,
     Sequence,
     Type,
+    Union,
 )
 
 from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster._core.errors import DagsterError
+from dagster._record import record
 from dagster._utils import snakecase
 from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
 
@@ -47,8 +47,8 @@ class Component(ABC):
 
     @classmethod
     @abstractmethod
-    def from_component_params(
-        cls, init_context: "ComponentInitContext", component_params: object
+    def from_decl_node(
+        cls, context: "ComponentLoadContext", decl_node: "ComponentDeclNode"
     ) -> Self: ...
 
 
@@ -124,12 +124,9 @@ class DeploymentProjectContext:
 
 class CodeLocationProjectContext:
     @classmethod
-    def from_path(
-        cls, path: Path, component_registry: Optional["ComponentRegistry"] = None
-    ) -> Self:
+    def from_path(cls, path: Path, component_registry: "ComponentRegistry") -> Self:
         root_path = _resolve_code_location_root_path(path)
         name = os.path.basename(root_path)
-        component_registry = component_registry or ComponentRegistry()
 
         # TODO: Rm when a more robust solution is implemented
         # Make sure we can import from the cwd
@@ -205,8 +202,12 @@ class CodeLocationProjectContext:
 
 
 class ComponentRegistry:
-    def __init__(self, components: Optional[Dict[str, Type[Component]]] = None):
-        self._components: Dict[str, Type[Component]] = components or {}
+    def __init__(self, components: Dict[str, Type[Component]]):
+        self._components: Dict[str, Type[Component]] = components
+
+    @staticmethod
+    def empty() -> "ComponentRegistry":
+        return ComponentRegistry({})
 
     def register(self, name: str, component: Type[Component]) -> None:
         if name in self._components:
@@ -227,8 +228,19 @@ class ComponentRegistry:
 
 
 class ComponentLoadContext:
-    def __init__(self, resources: Mapping[str, object] = {}):
+    def __init__(self, *, resources: Mapping[str, object], registry: ComponentRegistry):
+        self.registry = registry
         self.resources = resources
+
+    @staticmethod
+    def for_test(
+        *,
+        resources: Optional[Mapping[str, object]] = None,
+        registry: Optional[ComponentRegistry] = None,
+    ) -> "ComponentLoadContext":
+        return ComponentLoadContext(
+            resources=resources or {}, registry=registry or ComponentRegistry.empty()
+        )
 
 
 class DefsFileModel(BaseModel):
@@ -236,33 +248,69 @@ class DefsFileModel(BaseModel):
     component_params: Optional[Mapping[str, Any]] = None
 
 
-@dataclass
-class ComponentInitContext:
+class ComponentDeclNode: ...
+
+
+@record
+class YamlComponentDecl(ComponentDeclNode):
     path: Path
-    registry: ComponentRegistry = field(default_factory=lambda: ComponentRegistry())
+    defs_file_model: DefsFileModel
 
-    def for_path(self, path: Path) -> "ComponentInitContext":
-        return replace(self, path=path)
 
-    def get_parsed_defs(self) -> Optional[DefsFileModel]:
-        defs_path = self.path / "defs.yml"
-        if defs_path.exists():
-            return parse_yaml_file_to_pydantic(DefsFileModel, defs_path.read_text(), str(self.path))
+@record
+class ComponentFolder(ComponentDeclNode):
+    path: Path
+    sub_decls: Sequence[Union[YamlComponentDecl, "ComponentFolder"]]
+
+
+def find_component_decl(path: Path) -> Optional[ComponentDeclNode]:
+    # right now, we only support two types of components, both of which are folders
+    # if the folder contains a defs.yml file, it's a component instance
+    # otherwise, it's a folder containing sub-components
+
+    if not path.is_dir():
+        return None
+
+    defs_path = path / "defs.yml"
+
+    if defs_path.exists():
+        defs_file_model = parse_yaml_file_to_pydantic(
+            DefsFileModel, defs_path.read_text(), str(path)
+        )
+        return YamlComponentDecl(path=path, defs_file_model=defs_file_model)
+
+    subs = []
+    for subpath in path.iterdir():
+        component = find_component_decl(subpath)
+        if component:
+            subs.append(component)
+
+    return ComponentFolder(path=path, sub_decls=subs) if subs else None
+
+
+def build_component_hierarchy(
+    context: ComponentLoadContext, component_folder: ComponentFolder
+) -> Sequence[Component]:
+    to_return = []
+    for decl_node in component_folder.sub_decls:
+        if isinstance(decl_node, YamlComponentDecl):
+            parsed_defs = decl_node.defs_file_model
+            component_type = context.registry.get(parsed_defs.component_type)
+            to_return.append(component_type.from_decl_node(context, decl_node))
+        elif isinstance(decl_node, ComponentFolder):
+            to_return.extend(build_component_hierarchy(context, decl_node))
         else:
-            return None
+            raise NotImplementedError(f"Unknown component type {decl_node}")
+    return to_return
 
-    def load(self) -> Sequence[Component]:
-        if not self.path.is_dir():
-            return []
 
-        parsed_defs = self.get_parsed_defs()
-        if parsed_defs:
-            component_type = self.registry.get(parsed_defs.component_type)
-            return [component_type.from_component_params(self, parsed_defs.component_params)]
-        else:
-            return list(
-                itertools.chain(*(self.for_path(subpath).load() for subpath in self.path.iterdir()))
-            )
+def build_components_from_component_folder(
+    context: ComponentLoadContext,
+    path: Path,
+) -> Sequence[Component]:
+    component_folder = find_component_decl(path)
+    assert isinstance(component_folder, ComponentFolder)
+    return build_component_hierarchy(context, component_folder)
 
 
 def build_defs_from_component_folder(
@@ -271,13 +319,23 @@ def build_defs_from_component_folder(
     resources: Mapping[str, object],
 ) -> "Definitions":
     """Build a definitions object from a folder within the components hierarchy."""
+    component_folder = find_component_decl(path=path)
+    assert isinstance(component_folder, ComponentFolder)
+    context = ComponentLoadContext(resources=resources, registry=registry)
+    components = build_components_from_component_folder(context=context, path=path)
+    return defs_from_components(resources=resources, context=context, components=components)
+
+
+def defs_from_components(
+    *,
+    context: ComponentLoadContext,
+    components: Sequence[Component],
+    resources: Mapping[str, object],
+) -> "Definitions":
     from dagster._core.definitions.definitions_class import Definitions
 
-    init_context = ComponentInitContext(path=path, registry=registry)
-    components = init_context.load()
-
     return Definitions.merge_internal(
-        *[c.build_defs(ComponentLoadContext(resources)) for c in components]
+        [*[c.build_defs(context) for c in components], Definitions(resources=resources)]
     )
 
 
@@ -294,6 +352,7 @@ def register_components_in_module(registry: ComponentRegistry, root_module: Modu
             registry.register(component.registered_name(), component)
 
 
+# Public method so optional Nones are fine
 def build_defs_from_toplevel_components_folder(
     path: Path,
     resources: Optional[Mapping[str, object]] = None,
@@ -302,7 +361,7 @@ def build_defs_from_toplevel_components_folder(
     """Build a Definitions object from an entire component hierarchy."""
     from dagster._core.definitions.definitions_class import Definitions
 
-    context = CodeLocationProjectContext.from_path(path, registry)
+    context = CodeLocationProjectContext.from_path(path, registry or ComponentRegistry.empty())
 
     all_defs: List[Definitions] = []
     for component in context.component_instances:
@@ -313,4 +372,4 @@ def build_defs_from_toplevel_components_folder(
             resources=resources or {},
         )
         all_defs.append(defs)
-    return Definitions.merge_internal(*all_defs)
+    return Definitions.merge_internal(all_defs)

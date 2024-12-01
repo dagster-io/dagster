@@ -636,10 +636,10 @@ class Definitions(IHaveNew):
             Definitions: The merged definitions.
         """
         check.sequence_param(def_sets, "def_sets", of_type=Definitions)
-        return Definitions.merge_internal(*def_sets)
+        return Definitions.merge_internal(def_sets)
 
     @staticmethod
-    def merge_internal(*def_sets: "Definitions") -> "Definitions":
+    def merge_internal(def_sets: Sequence["Definitions"]) -> "Definitions":
         check.sequence_param(def_sets, "def_sets", of_type=Definitions)
         assets = []
         schedules = []

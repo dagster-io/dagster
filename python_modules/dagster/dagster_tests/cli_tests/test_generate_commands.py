@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Iterator
 
 from click.testing import CliRunner
-from dagster._components import CodeLocationProjectContext
+from dagster._components import CodeLocationProjectContext, ComponentRegistry
 from dagster._components.cli.generate import (
     generate_code_location_command,
     generate_component_command,
@@ -152,7 +152,7 @@ def test_generate_component_type_success():
         assert result.exit_code == 0
         assert Path("bar/lib/baz.py").exists()
         _assert_module_imports("bar.lib.baz")
-        context = CodeLocationProjectContext.from_path(os.getcwd())
+        context = CodeLocationProjectContext.from_path(os.getcwd(), ComponentRegistry.empty())
         assert context.has_component_type("baz")
 
 
