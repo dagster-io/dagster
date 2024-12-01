@@ -1,4 +1,4 @@
-component_type: python_script_collection
+component_type: pipes_subprocess_script_collection
 
 component_params:
   script_one:
