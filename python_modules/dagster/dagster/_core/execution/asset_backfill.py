@@ -3,7 +3,6 @@ import logging
 import os
 import time
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from enum import Enum
 from typing import (
@@ -993,7 +992,6 @@ def execute_asset_backfill_iteration(
     logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
     instance: DagsterInstance,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor],
 ) -> Iterable[None]:
     """Runs an iteration of the backfill, including submitting runs and updating the backfill object
     in the DB.
