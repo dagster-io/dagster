@@ -57,7 +57,6 @@ def execute_backfill_iteration_loop(
     shutdown_event: threading.Event,
     until: Optional[float] = None,
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
 ) -> "DaemonIterator":
     from dagster._daemon.controller import DEFAULT_DAEMON_INTERVAL_SECONDS
     from dagster._daemon.daemon import SpanMarker
@@ -76,7 +75,6 @@ def execute_backfill_iteration_loop(
                 workspace_process_context,
                 logger,
                 threadpool_executor=threadpool_executor,
-                submit_threadpool_executor=submit_threadpool_executor,
                 backfill_futures=backfill_futures,
             )
         except Exception:
@@ -101,7 +99,6 @@ def execute_backfill_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
     backfill_futures: Optional[Dict[str, Future]] = None,
     debug_crash_flags: Optional[Mapping[str, int]] = None,
 ) -> Iterable[Optional[SerializableErrorInfo]]:
@@ -141,7 +138,6 @@ def execute_backfill_jobs(
     logger: logging.Logger,
     backfill_jobs: Sequence[PartitionBackfill],
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
     backfill_futures: Optional[Dict[str, Future]] = None,
     debug_crash_flags: Optional[Mapping[str, int]] = None,
 ) -> Iterable[Optional[SerializableErrorInfo]]:
@@ -175,7 +171,6 @@ def execute_backfill_jobs(
                         workspace_process_context,
                         debug_crash_flags,
                         instance,
-                        submit_threadpool_executor=submit_threadpool_executor,
                     )
                     backfill_futures[backfill_id] = future
                     yield
