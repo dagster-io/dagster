@@ -4,10 +4,12 @@ from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence
 from dagster._components.core.component import Component, ComponentLoadContext, ComponentRegistry
 from dagster._components.core.component_decl_builder import (
     ComponentFolder,
+    PythonComponentDecl,
     YamlComponentDecl,
     find_component_decl,
 )
 from dagster._components.core.deployment import CodeLocationProjectContext
+from dagster._seven import import_module_from_path
 from dagster._utils.warnings import suppress_dagster_warnings
 
 if TYPE_CHECKING:
@@ -23,6 +25,14 @@ def build_component_hierarchy(
             parsed_defs = decl_node.defs_file_model
             component_type = context.registry.get(parsed_defs.component_type)
             to_return.append(component_type.from_decl_node(context, decl_node))
+        elif isinstance(decl_node, PythonComponentDecl):
+            module = import_module_from_path(
+                module_name="something", path_to_file=str(decl_node.path)
+            )
+            import code
+
+            code.interact(local=locals())
+            ...
         elif isinstance(decl_node, ComponentFolder):
             to_return.extend(build_component_hierarchy(context, decl_node))
         else:

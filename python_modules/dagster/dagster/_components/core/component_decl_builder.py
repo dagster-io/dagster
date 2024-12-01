@@ -20,9 +20,14 @@ class YamlComponentDecl(ComponentDeclNode):
 
 
 @record
+class PythonComponentDecl(ComponentDeclNode):
+    path: Path
+
+
+@record
 class ComponentFolder(ComponentDeclNode):
     path: Path
-    sub_decls: Sequence[Union[YamlComponentDecl, "ComponentFolder"]]
+    sub_decls: Sequence[Union[YamlComponentDecl, "ComponentFolder", PythonComponentDecl]]
 
 
 def find_component_decl(path: Path) -> Optional[ComponentDeclNode]:
@@ -33,13 +38,18 @@ def find_component_decl(path: Path) -> Optional[ComponentDeclNode]:
     if not path.is_dir():
         return None
 
-    defs_path = path / "defs.yml"
+    defs_yml_path = path / "defs.yml"
 
-    if defs_path.exists():
+    if defs_yml_path.exists():
         defs_file_model = parse_yaml_file_to_pydantic(
-            DefsFileModel, defs_path.read_text(), str(path)
+            DefsFileModel, defs_yml_path.read_text(), str(path)
         )
         return YamlComponentDecl(path=path, defs_file_model=defs_file_model)
+
+    defs_py_path = path / "defs.py"
+
+    if defs_py_path.exists():
+        return PythonComponentDecl(path=path)
 
     subs = []
     for subpath in path.iterdir():
