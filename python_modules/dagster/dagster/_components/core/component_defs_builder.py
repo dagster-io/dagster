@@ -8,6 +8,7 @@ from dagster._components.core.component_decl_builder import (
     find_component_decl,
 )
 from dagster._components.core.deployment import CodeLocationProjectContext
+from dagster._utils.warnings import suppress_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -51,6 +52,7 @@ def build_defs_from_component_folder(
     return defs_from_components(resources=resources, context=context, components=components)
 
 
+@suppress_dagster_warnings
 def defs_from_components(
     *,
     context: ComponentLoadContext,
@@ -59,12 +61,13 @@ def defs_from_components(
 ) -> "Definitions":
     from dagster._core.definitions.definitions_class import Definitions
 
-    return Definitions.merge_internal(
-        [*[c.build_defs(context) for c in components], Definitions(resources=resources)]
+    return Definitions.merge(
+        *[*[c.build_defs(context) for c in components], Definitions(resources=resources)]
     )
 
 
 # Public method so optional Nones are fine
+@suppress_dagster_warnings
 def build_defs_from_toplevel_components_folder(
     path: Path,
     resources: Optional[Mapping[str, object]] = None,
@@ -84,4 +87,4 @@ def build_defs_from_toplevel_components_folder(
             resources=resources or {},
         )
         all_defs.append(defs)
-    return Definitions.merge_internal(all_defs)
+    return Definitions.merge(*all_defs)
