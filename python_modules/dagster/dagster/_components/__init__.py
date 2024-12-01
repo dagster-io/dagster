@@ -276,7 +276,9 @@ def build_defs_from_component_folder(
     init_context = ComponentInitContext(path=path, registry=registry)
     components = init_context.load()
 
-    return Definitions.merge(*[c.build_defs(ComponentLoadContext(resources)) for c in components])
+    return Definitions.merge_internal(
+        *[c.build_defs(ComponentLoadContext(resources)) for c in components]
+    )
 
 
 def register_components_in_module(registry: ComponentRegistry, root_module: ModuleType) -> None:
@@ -311,4 +313,4 @@ def build_defs_from_toplevel_components_folder(
             resources=resources or {},
         )
         all_defs.append(defs)
-    return Definitions.merge(*all_defs)
+    return Definitions.merge_internal(*all_defs)

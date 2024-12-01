@@ -1,4 +1,5 @@
 import shutil
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
 
@@ -10,6 +11,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
+from dagster._utils.warnings import ExperimentalWarning
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -27,12 +29,14 @@ class AssetSpecModel(BaseModel):
     tags: Mapping[str, str] = {}
 
     def to_asset_spec(self) -> AssetSpec:
-        return AssetSpec(
-            **{
-                **self.__dict__,
-                "key": AssetKey.from_user_string(self.key),
-            },
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+            return AssetSpec(
+                **{
+                    **self.__dict__,
+                    "key": AssetKey.from_user_string(self.key),
+                },
+            )
 
 
 class PipesSubprocessScriptParams(BaseModel):
