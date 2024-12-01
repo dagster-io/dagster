@@ -162,16 +162,23 @@ def execute_backfill_jobs(
                             "backfill_futures dict must be passed with threadpool_executor"
                         )
 
-                    future = threadpool_executor.submit(
-                        execute_asset_backfill_iteration
-                        if backfill.is_asset_backfill
-                        else execute_job_backfill_iteration,
-                        backfill,
-                        backfill_logger,
-                        workspace_process_context,
-                        debug_crash_flags,
-                        instance,
-                    )
+                    if backfill.is_asset_backfill:
+                        future = threadpool_executor.submit(
+                            execute_asset_backfill_iteration,
+                            backfill,
+                            backfill_logger,
+                            workspace_process_context,
+                            instance,
+                        )
+                    else:
+                        future = threadpool_executor.submit(
+                            execute_job_backfill_iteration,
+                            backfill,
+                            backfill_logger,
+                            workspace_process_context,
+                            debug_crash_flags,
+                            instance,
+                        )
                     backfill_futures[backfill_id] = future
                     yield
 
