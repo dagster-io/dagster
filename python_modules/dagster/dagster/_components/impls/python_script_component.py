@@ -1,16 +1,18 @@
 import shutil
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
 
 from pydantic import BaseModel, TypeAdapter
 
-from dagster._components import ComponentInitContext, ComponentLoadContext, FileCollectionComponent
+from dagster._components import Component, ComponentInitContext, ComponentLoadContext
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
-from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.definitions_class import Definitions
 
 
 class AssetSpecModel(BaseModel):
@@ -37,7 +39,7 @@ class PythonScriptParams(BaseModel):
     assets: Sequence[AssetSpecModel]
 
 
-class PythonScriptCollection(FileCollectionComponent):
+class PythonScriptCollection(Component):
     params_schema = Mapping[str, PythonScriptParams]
 
     def __init__(
@@ -62,10 +64,15 @@ class PythonScriptCollection(FileCollectionComponent):
             else None,
         )
 
-    def loadable_paths(self) -> Sequence[Path]:
-        return list(self.dirpath.rglob("*.py"))
+    def build_defs(self, load_context: "ComponentLoadContext") -> "Definitions":
+        from dagster._core.definitions.definitions_class import Definitions
 
-    def build_defs_for_path(self, path: Path, load_context: ComponentLoadContext) -> Definitions:
+        return Definitions(
+            assets=[self._create_asset_def(path) for path in list(self.dirpath.rglob("*.py"))],
+            resources=load_context.resources,
+        )
+
+    def _create_asset_def(self, path: Path):
         @multi_asset(
             specs=self.path_specs.get(path.stem) or [AssetSpec(key=path.stem)],
             name=f"script_{path.stem}",
@@ -74,4 +81,4 @@ class PythonScriptCollection(FileCollectionComponent):
             cmd = [shutil.which("python"), path]
             return pipes_client.run(command=cmd, context=context).get_results()
 
-        return Definitions(assets=[_asset], resources=load_context.resources)
+        return _asset
