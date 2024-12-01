@@ -119,7 +119,12 @@ def execute_backfill_iteration(
     backfill_jobs = [*in_progress_backfills, *canceling_backfills]
 
     yield from execute_backfill_jobs(
-        workspace_process_context, logger, backfill_jobs, debug_crash_flags
+        workspace_process_context,
+        logger,
+        backfill_jobs,
+        threadpool_executor,
+        backfill_futures,
+        debug_crash_flags,
     )
 
 
