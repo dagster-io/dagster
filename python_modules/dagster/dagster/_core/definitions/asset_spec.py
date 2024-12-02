@@ -32,6 +32,7 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import (
+    DEFAULT_GROUP_NAME,
     resolve_automation_condition,
     validate_asset_owner,
     validate_group_name,
@@ -383,6 +384,36 @@ class AssetSpec(
                 owners=[*self.owners, *(owners if owners is not ... else [])],
                 tags={**current_tags_without_kinds, **(tags if tags is not ... else {})},
                 kinds={*self.kinds, *(kinds if kinds is not ... else {})},
+                partitions_def=self.partitions_def,
+            )
+
+    def with_attributes(
+        self, group_name: Optional[str] = None, key: Optional[AssetKey] = None
+    ) -> "AssetSpec":
+        if (
+            self.group_name is not None
+            and self.group_name != DEFAULT_GROUP_NAME  # group name already set
+            and group_name is not None  # group name being set
+        ):
+            raise DagsterInvalidDefinitionError(
+                "A group name has already been provided to asset spec"
+                f" {self.key.to_user_string()}"
+            )
+
+        with disable_dagster_warnings():
+            return self.dagster_internal_init(
+                key=self.key,
+                deps=self.deps,
+                description=self.description,
+                metadata=self.metadata,
+                skippable=self.skippable,
+                group_name=group_name,
+                code_version=self.code_version,
+                freshness_policy=self.freshness_policy,
+                automation_condition=self.automation_condition,
+                owners=self.owners,
+                tags=self.tags,
+                kinds=self.kinds,
                 partitions_def=self.partitions_def,
             )
 

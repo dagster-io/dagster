@@ -10,6 +10,7 @@ from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
@@ -49,7 +50,12 @@ def find_subclasses_in_module(
 
 def assets_from_modules(
     modules: Iterable[ModuleType], extra_source_assets: Optional[Sequence[SourceAsset]] = None
-) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
+) -> Tuple[
+    Sequence[AssetsDefinition],
+    Sequence[SourceAsset],
+    Sequence[CacheableAssetsDefinition],
+    Sequence[AssetSpec],
+]:
     """Constructs three lists, a list of assets, a list of source assets, and a list of cacheable
     assets from the given modules.
 
@@ -70,11 +76,14 @@ def assets_from_modules(
     )
     cacheable_assets: List[CacheableAssetsDefinition] = []
     assets: Dict[AssetKey, AssetsDefinition] = {}
+    asset_specs: List[AssetSpec] = []
     for module in modules:
         for asset in find_objects_in_module_of_types(
-            module, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
+            module, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec)
         ):
-            asset = cast(Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition], asset)
+            asset = cast(
+                Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec], asset
+            )
             if id(asset) not in asset_ids:
                 asset_ids.add(id(asset))
                 if isinstance(asset, CacheableAssetsDefinition):
@@ -106,7 +115,9 @@ def assets_from_modules(
                                 assets[key] = asset
                     if isinstance(asset, SourceAsset):
                         source_assets.append(asset)
-    return list(set(assets.values())), source_assets, cacheable_assets
+                    if isinstance(asset, AssetSpec):
+                        asset_specs.append(asset)
+    return list(set(assets.values())), source_assets, cacheable_assets, asset_specs
 
 
 def load_assets_from_modules(
@@ -151,12 +162,14 @@ def load_assets_from_modules(
         assets,
         source_assets,
         cacheable_assets,
+        asset_specs,
     ) = assets_from_modules(modules)
 
     return assets_with_attributes(
         assets,
         source_assets,
         cacheable_assets,
+        asset_specs,
         key_prefix=key_prefix,
         group_name=group_name,
         freshness_policy=freshness_policy,
@@ -285,11 +298,13 @@ def load_assets_from_package_module(
         assets,
         source_assets,
         cacheable_assets,
+        asset_specs,
     ) = assets_from_package_module(package_module)
     return assets_with_attributes(
         assets,
         source_assets,
         cacheable_assets,
+        asset_specs,
         key_prefix=key_prefix,
         group_name=group_name,
         freshness_policy=freshness_policy,
@@ -458,6 +473,7 @@ def assets_with_attributes(
     assets_defs: Sequence[AssetsDefinition],
     source_assets: Sequence[SourceAsset],
     cacheable_assets: Sequence[CacheableAssetsDefinition],
+    asset_specs: Sequence[AssetSpec],
     key_prefix: Optional[Sequence[str]],
     group_name: Optional[str],
     freshness_policy: Optional[FreshnessPolicy],
@@ -496,6 +512,9 @@ def assets_with_attributes(
                 source_asset.with_attributes(group_name=group_name)
                 for source_asset in source_assets
             ]
+            asset_specs = [
+                asset_spec.with_attributes(group_name=group_name) for asset_spec in asset_specs
+            ]
         cacheable_assets = [
             cached_asset.with_attributes_for_all(
                 group_name,
@@ -508,4 +527,4 @@ def assets_with_attributes(
             for cached_asset in cacheable_assets
         ]
 
-    return [*assets_defs, *source_assets, *cacheable_assets]
+    return [*assets_defs, *source_assets, *cacheable_assets, *asset_specs]

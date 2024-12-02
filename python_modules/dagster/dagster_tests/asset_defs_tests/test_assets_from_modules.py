@@ -14,6 +14,7 @@ from dagster import (
     load_assets_from_package_module,
     load_assets_from_package_name,
 )
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
@@ -90,12 +91,12 @@ def test_load_assets_from_package_name():
     from dagster_tests.asset_defs_tests import asset_package
 
     assets_defs = load_assets_from_package_name(asset_package.__name__)
-    assert len(assets_defs) == 11
+    assert len(assets_defs) == 12
 
     assets_1 = [get_unique_asset_identifier(asset) for asset in assets_defs]
 
     assets_defs_2 = load_assets_from_package_name(asset_package.__name__)
-    assert len(assets_defs_2) == 11
+    assert len(assets_defs_2) == 12
 
     assets_2 = [get_unique_asset_identifier(asset) for asset in assets_defs]
 
@@ -106,12 +107,12 @@ def test_load_assets_from_package_module():
     from dagster_tests.asset_defs_tests import asset_package
 
     assets_1 = load_assets_from_package_module(asset_package)
-    assert len(assets_1) == 11
+    assert len(assets_1) == 12
 
     assets_1 = [get_unique_asset_identifier(asset) for asset in assets_1]
 
     assets_2 = load_assets_from_package_module(asset_package)
-    assert len(assets_2) == 11
+    assert len(assets_2) == 12
 
     assets_2 = [get_unique_asset_identifier(asset) for asset in assets_2]
 
@@ -157,11 +158,18 @@ def asset_in_current_module():
 source_asset_in_current_module = SourceAsset(AssetKey("source_asset_in_current_module"))
 
 
+asset_spec_in_current_module = AssetSpec(key=AssetKey("asset_spec_in_current_module"))
+
+
 def test_load_assets_from_current_module():
     assets = load_assets_from_current_module()
     assets = [get_unique_asset_identifier(asset) for asset in assets]
-    assert assets == ["asset_in_current_module", AssetKey("source_asset_in_current_module")]
-    assert len(assets) == 2
+    assert assets == [
+        "asset_in_current_module",
+        AssetKey("source_asset_in_current_module"),
+        AssetKey("asset_spec_in_current_module"),
+    ]
+    assert len(assets) == 3
 
 
 def test_load_assets_from_modules_with_group_name():
