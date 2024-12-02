@@ -4,7 +4,7 @@ from typing import Any
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster_graphql import ShutdownRepositoryLocationStatus
 from dagster_graphql.client.client_queries import SHUTDOWN_REPOSITORY_LOCATION_MUTATION
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, main_repo_location_name
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
@@ -22,7 +22,7 @@ class TestShutdownRepositoryLocationReadOnly(ReadonlyGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             SHUTDOWN_REPOSITORY_LOCATION_MUTATION,
-            {"repositoryLocationName": "test"},
+            {"repositoryLocationName": main_repo_location_name()},
         )
 
         assert result
@@ -36,7 +36,7 @@ class TestShutdownRepositoryLocation(BaseTestSuite):
         origin = next(iter(graphql_context.get_code_location_entries().values())).origin
         origin.create_client().heartbeat()
 
-        result = graphql_client.shutdown_repository_location("test")
+        result = graphql_client.shutdown_repository_location(main_repo_location_name())
 
         assert result.status == ShutdownRepositoryLocationStatus.SUCCESS, result.message
 
