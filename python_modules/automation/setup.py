@@ -22,8 +22,8 @@ setup(
         "pandas",
         "pytablereader",
         "requests",
-        "twine==1.15.0",
-        "virtualenv==20.25.0",
+        "twine>=1.15.0",
+        "virtualenv>=20.27.0",
         "urllib3",
     ],
     extras_require={
