@@ -26,8 +26,9 @@ def build_component_hierarchy(
             component_type = context.registry.get(parsed_defs.component_type)
             to_return.append(component_type.from_decl_node(context, decl_node))
         elif isinstance(decl_node, PythonComponentDecl):
+            # TODO need a coherent scheme for determining the module name
             module = import_module_from_path(
-                module_name="something", path_to_file=str(decl_node.path / "defs.py")
+                module_name=decl_node.path.parent.stem, path_to_file=str(decl_node.path)
             )
 
             assert hasattr(module, "component_instance")

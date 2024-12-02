@@ -49,7 +49,7 @@ def find_component_decl(path: Path) -> Optional[ComponentDeclNode]:
     defs_py_path = path / "defs.py"
 
     if defs_py_path.exists():
-        return PythonComponentDecl(path=path)
+        return PythonComponentDecl(path=defs_py_path)
 
     subs = []
     for subpath in path.iterdir():
