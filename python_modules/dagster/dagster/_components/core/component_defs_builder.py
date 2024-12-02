@@ -27,12 +27,15 @@ def build_component_hierarchy(
             to_return.append(component_type.from_decl_node(context, decl_node))
         elif isinstance(decl_node, PythonComponentDecl):
             module = import_module_from_path(
-                module_name="something", path_to_file=str(decl_node.path)
+                module_name="something", path_to_file=str(decl_node.path / "defs.py")
             )
-            import code
 
-            code.interact(local=locals())
-            ...
+            assert hasattr(module, "component_instance")
+
+            if "component_instance" in module.__dict__:
+                component_instance_fn = module.__dict__["component_instance"]
+                component = component_instance_fn(context)
+                to_return.append(component)
         elif isinstance(decl_node, ComponentFolder):
             to_return.extend(build_component_hierarchy(context, decl_node))
         else:

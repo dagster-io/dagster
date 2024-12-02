@@ -13,7 +13,7 @@ from dagster._components.impls.pipes_subprocess_script_collection import (
 )
 from dagster._core.instance import DagsterInstance
 
-LOCATION_PATH = Path(__file__).parent / "code_locations" / "python_script_location"
+YAML_BASED_LOCATION_PATH = Path(__file__).parent / "code_locations" / "python_script_location"
 
 
 def registry() -> ComponentRegistry:
@@ -46,7 +46,7 @@ def _assert_assets(component: Component, expected_assets: int) -> None:
 
 def test_python_native() -> None:
     component = PipesSubprocessScriptCollection.introspect_from_path(
-        LOCATION_PATH / "components" / "scripts"
+        YAML_BASED_LOCATION_PATH / "components" / "scripts"
     )
     _assert_assets(component, 3)
 
@@ -55,7 +55,7 @@ def test_python_params() -> None:
     component = PipesSubprocessScriptCollection.from_decl_node(
         load_context=script_load_context(),
         component_decl=YamlComponentDecl(
-            path=LOCATION_PATH / "components" / "scripts",
+            path=YAML_BASED_LOCATION_PATH / "components" / "scripts",
             defs_file_model=DefsFileModel(
                 component_type="pipes_subprocess_script_collection",
                 component_params={
@@ -81,7 +81,7 @@ def test_python_params() -> None:
 
 def test_load_from_path() -> None:
     components = build_components_from_component_folder(
-        script_load_context(), LOCATION_PATH / "components"
+        script_load_context(), YAML_BASED_LOCATION_PATH / "components"
     )
     assert len(components) == 1
     assert _asset_keys(components[0]) == {
@@ -109,3 +109,15 @@ def test_load_from_path() -> None:
         AssetKey("up2"),
         AssetKey("override_key"),
     }
+
+
+PYTHON_BASED_LOCATION_PATH = (
+    Path(__file__).parent / "code_locations" / "python_python_script_location"
+)
+
+
+def test_load_py_component_from_path() -> None:
+    components = build_components_from_component_folder(
+        script_load_context(), PYTHON_BASED_LOCATION_PATH / "components"
+    )
+    assert len(components) == 1
