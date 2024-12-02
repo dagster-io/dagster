@@ -1,7 +1,7 @@
 ---
 title: 'Google Workspace SSO'
 displayed_sidebar: 'dagsterPlus'
-sidebar_position: 20
+sidebar_position: 300
 ---
 
 # Setting up Google Workspace SSO for Dagster+

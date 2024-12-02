@@ -1,7 +1,7 @@
 ---
 title: "Saving asset filters as catalog views"
 displayed_sidebar: "dagsterPlus"
-sidebar_position: 10
+sidebar_position: 100
 ---
 
 # Saving asset filters as catalog views

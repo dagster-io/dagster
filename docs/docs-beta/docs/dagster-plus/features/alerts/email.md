@@ -1,7 +1,7 @@
 ---
 title: "Dagster+ email alerts"
 unlisted: true
-sidebar_position: 30
+sidebar_position: 300
 ---
 
 # Dagster+ email alerts

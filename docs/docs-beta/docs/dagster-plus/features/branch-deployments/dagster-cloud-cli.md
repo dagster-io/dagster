@@ -1,7 +1,7 @@
 ---
 title: "Branch deployments & the dagster-cloud CLI"
 displayed_sidebar: "dagsterPlus"
-sidebar_position: 30
+sidebar_position: 300
 sidebar_label: "dagster-cloud CLI"
 unlisted: true
 ---

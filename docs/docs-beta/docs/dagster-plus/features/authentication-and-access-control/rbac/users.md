@@ -2,7 +2,7 @@
 title: "Managing users in Dagster+"
 displayed_sidebar: "dagsterPlus"
 sidebar_label: "User management"
-sidebar_position: 40
+sidebar_position: 400
 ---
 
 Dagster+ allows you to grant specific permissions to your organization's users, ensuring that Dagster users have access only to what they require.

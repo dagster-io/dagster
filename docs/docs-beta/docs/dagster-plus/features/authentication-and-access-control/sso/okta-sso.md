@@ -1,7 +1,7 @@
 ---
 title: 'Okta SSO'
 displayed_sidebar: 'dagsterPlus'
-sidebar_position: 30
+sidebar_position: 400
 ---
 
 # Setting up Okta SSO for Dagster+

@@ -1,7 +1,7 @@
 ---
 title: 'PingOne SSO'
 displayed_sidebar: 'dagsterPlus'
-sidebar_position: 50
+sidebar_position: 600
 ---
 
 # Setting up PingOne SSO for Dagster+
