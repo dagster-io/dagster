@@ -299,6 +299,10 @@ dagster-user-deployments:
         # almost certainly not what you want.
         pullPolicy: Always
 
+        # Specify a digest instead of a tag to use a fixed image. Digest takes precedence over
+        # tag if both are set.
+        digest: ~
+
       # Arguments to `dagster api grpc`.
       # Ex: "dagster api grpc -m dagster_test.test_project.test_jobs.repo -a define_demo_execution_repo"
       # would translate to:
