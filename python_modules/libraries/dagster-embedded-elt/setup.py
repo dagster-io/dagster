@@ -34,8 +34,7 @@ setup(
     packages=find_packages(exclude=["dagster_embedded_elt_tests*"]),
     include_package_data=True,
     python_requires=">=3.9,<3.13",
-    # pin dlt<1.4.1 due to breaking change in table naming convention with double underscores; pending support response from dltHub team members
-    install_requires=[f"dagster{pin}", "sling>=1.1.5", "dlt>=0.4,<1.4.1"],
+    install_requires=[f"dagster{pin}", "sling>=1.1.5", "dlt>=0.4"],
     zip_safe=False,
     extras_require={
         "test": [
