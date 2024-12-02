@@ -457,6 +457,8 @@ def test_cloudwatch_logs_reader(cloudwatch_client: "CloudWatchLogsClient", capsy
         logEvents=[{"timestamp": int(datetime.now().timestamp() * 1000), "message": "1"}],
     )
 
+    time.sleep(0.1)
+
     assert reader.target_is_readable(
         {"log_group": log_group, "log_stream": log_stream}
     ), "Should be able to read after the stream is created"
@@ -474,6 +476,8 @@ def test_cloudwatch_logs_reader(cloudwatch_client: "CloudWatchLogsClient", capsy
         ],
     )
 
+    time.sleep(0.1)
+
     cloudwatch_client.put_log_events(
         logGroupName=log_group,
         logStreamName=log_stream,
@@ -484,6 +488,8 @@ def test_cloudwatch_logs_reader(cloudwatch_client: "CloudWatchLogsClient", capsy
             }
         ],
     )
+
+    time.sleep(0.1)
 
     is_session_closed.set()
 
