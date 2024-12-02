@@ -1,7 +1,7 @@
 ---
 title: "Code location history and rollbacks"
 displayed_sidebar: "dagsterPlus"
-sidebar_position: 4
+sidebar_position: 100
 sidebar_label: "Code location history and rollbacks"
 ---
 

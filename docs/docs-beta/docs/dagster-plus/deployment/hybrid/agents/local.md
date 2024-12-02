@@ -1,7 +1,7 @@
 ---
 title: "Running a Dagster+ agent locally"
 displayed_sidebar: "dagsterPlus"
-sidebar_position: 60
+sidebar_position: 600
 sidebar_label: "Local"
 ---
 
