@@ -31,6 +31,7 @@ def build_component_hierarchy(
                 module_name=decl_node.path.parent.stem, path_to_file=str(decl_node.path)
             )
 
+            # TODO make this more robust via a component_loader decorator or something
             assert hasattr(module, "component_loader")
 
             if "component_loader" in module.__dict__:
