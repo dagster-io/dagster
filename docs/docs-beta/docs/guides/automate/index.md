@@ -1,9 +1,6 @@
 ---
 title: "Automating Pipelines"
 description: Learn how to automate your data pipelines.
-last_update:
-  date: 2024-08-12
-  author: Pedram Navid
 sidebar_class_name: hidden
 ---
 
