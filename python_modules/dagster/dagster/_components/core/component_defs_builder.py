@@ -31,11 +31,11 @@ def build_component_hierarchy(
                 module_name=decl_node.path.parent.stem, path_to_file=str(decl_node.path)
             )
 
-            assert hasattr(module, "component_instance")
+            assert hasattr(module, "component_loader")
 
-            if "component_instance" in module.__dict__:
-                component_instance_fn = module.__dict__["component_instance"]
-                component = component_instance_fn(context)
+            if "component_loader" in module.__dict__:
+                component_loader_fn = module.__dict__["component_loader"]
+                component = component_loader_fn(context)
                 to_return.append(component)
         elif isinstance(decl_node, ComponentFolder):
             to_return.extend(build_component_hierarchy(context, decl_node))
