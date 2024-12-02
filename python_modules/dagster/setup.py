@@ -108,8 +108,7 @@ setup(
         "docstring-parser",
         "universal_pathlib; python_version<'3.12'",
         "universal_pathlib>=0.2.0; python_version>='3.12'",
-        # https://github.com/pydantic/pydantic/issues/5821
-        "pydantic>=2,<2.10",
+        "pydantic>=2,<3.0.0",
         "rich",
         "filelock",
         f"dagster-pipes{pin}",
