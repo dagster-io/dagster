@@ -1,6 +1,7 @@
 ---
 title: Deployment types
 unlisted: true
+sidebar_position: 40
 ---
 
-## Placeholder
+# Deployment types

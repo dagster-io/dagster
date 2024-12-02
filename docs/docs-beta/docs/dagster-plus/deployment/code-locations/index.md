@@ -1,7 +1,7 @@
 ---
 title: "Code locations"
 displayed_sidebar: "dagsterPlus"
-sidebar_position: 8
+sidebar_position: 5
 ---
 
 # Code locations
