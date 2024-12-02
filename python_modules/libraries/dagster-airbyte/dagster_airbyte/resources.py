@@ -20,6 +20,7 @@ from dagster import (
 from dagster._annotations import experimental
 from dagster._config.pythonic_config import infer_schema_from_config_class
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._model import DagsterModel
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field, PrivateAttr
@@ -801,21 +802,30 @@ def airbyte_cloud_resource(context) -> AirbyteCloudResource:
 
 
 @experimental
-class AirbyteCloudClient:
+class AirbyteCloudClient(DagsterModel):
     """This class exposes methods on top of the Airbyte APIs for Airbyte Cloud."""
+
+    workspace_id: str = Field(..., description="The Airbyte workspace ID")
+    client_id: str = Field(..., description="The Airbyte client ID.")
+    client_secret: str = Field(..., description="The Airbyte client secret.")
+    request_max_retries: int = Field(
+        ...,
+        description=(
+            "The maximum number of times requests to the Airbyte API should be retried "
+            "before failing."
+        ),
+    )
+    request_retry_delay: float = Field(
+        ...,
+        description="Time (in seconds) to wait between each request retry.",
+    )
+    request_timeout: int = Field(
+        ...,
+        description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
+    )
 
     _access_token_value: Optional[str] = PrivateAttr(default=None)
     _access_token_timestamp: Optional[float] = PrivateAttr(default=None)
-
-    def __init__(
-        self,
-        workspace_id: str,
-        client_id: str,
-        client_secret: str,
-    ):
-        self.workspace_id = workspace_id
-        self.client_id = client_id
-        self.client_secret = client_secret
 
     @property
     @cached_method
@@ -824,12 +834,112 @@ class AirbyteCloudClient:
 
     @property
     def api_base_url(self) -> str:
-        raise NotImplementedError()
+        return "https://api.airbyte.com/v1"
+
+    @property
+    def all_additional_request_params(self) -> Mapping[str, Any]:
+        return deep_merge_dicts(self.authorization_request_params, self.user_agent_request_params)
+
+    @property
+    def authorization_request_params(self) -> Mapping[str, Any]:
+        # Make sure the access token is refreshed before using it when calling the API.
+        if self._needs_refreshed_access_token():
+            self._refresh_access_token()
+        return {
+            "headers": {
+                "Authorization": f"Bearer {self._access_token_value}",
+            }
+        }
+
+    @property
+    def user_agent_request_params(self) -> Mapping[str, Any]:
+        return {
+            "headers": {
+                "User-Agent": "dagster",
+            }
+        }
+
+    def _refresh_access_token(self) -> None:
+        response = check.not_none(
+            self._make_request(
+                method="POST",
+                endpoint="/applications/token",
+                data={
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret,
+                },
+                # Must not pass the bearer access token when refreshing it.
+                include_additional_request_params=False,
+            )
+        )
+        self._access_token_value = str(response["access_token"])
+        self._access_token_timestamp = datetime.now().timestamp()
+
+    def _needs_refreshed_access_token(self) -> bool:
+        return (
+            not self._access_token_value
+            or not self._access_token_timestamp
+            or self._access_token_timestamp
+            <= datetime.timestamp(
+                datetime.now() - timedelta(seconds=AIRBYTE_CLOUD_REFRESH_TIMEDELTA_SECONDS)
+            )
+        )
 
     def _make_request(
-        self, method: str, endpoint: str, data: Optional[str] = None
-    ) -> Mapping[str, Any]:
-        raise NotImplementedError()
+        self,
+        method: str,
+        endpoint: str,
+        data: Optional[Mapping[str, Any]] = None,
+        include_additional_request_params: bool = True,
+    ) -> Optional[Mapping[str, Any]]:
+        """Creates and sends a request to the desired Airbyte REST API endpoint.
+
+        Args:
+            method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
+            endpoint (str): The Airbyte API endpoint to send this request to.
+            data (Optional[str]): JSON-formatted data string to be included in the request.
+            include_additional_request_params (bool): Whether to include authorization and user-agent headers
+            to the request parameters. Defaults to True.
+
+        Returns:
+            Optional[Dict[str, Any]]: Parsed json data from the response to this request
+        """
+        url = self.api_base_url + endpoint
+        headers = {"accept": "application/json"}
+
+        num_retries = 0
+        while True:
+            try:
+                request_args: Dict[str, Any] = dict(
+                    method=method,
+                    url=url,
+                    headers=headers,
+                    timeout=self.request_timeout,
+                )
+                if data:
+                    request_args["json"] = data
+
+                if include_additional_request_params:
+                    request_args = deep_merge_dicts(
+                        request_args,
+                        self.all_additional_request_params,
+                    )
+
+                response = requests.request(
+                    **request_args,
+                )
+                response.raise_for_status()
+                if response.status_code == 204:
+                    return None
+                return response.json()
+            except RequestException as e:
+                self._log.error("Request to Airbyte API failed: %s", e)
+                if num_retries == self.request_max_retries:
+                    break
+                num_retries += 1
+                time.sleep(self.request_retry_delay)
+
+        raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
 
     def get_connections(self) -> Mapping[str, Any]:
         """Fetches all connections of an Airbyte workspace from the Airbyte API."""
@@ -849,6 +959,21 @@ class AirbyteCloudWorkspace(ConfigurableResource):
     workspace_id: str = Field(..., description="The Airbyte Cloud workspace ID")
     client_id: str = Field(..., description="The Airbyte Cloud client ID.")
     client_secret: str = Field(..., description="The Airbyte Cloud client secret.")
+    request_max_retries: int = Field(
+        default=3,
+        description=(
+            "The maximum number of times requests to the Airbyte API should be retried "
+            "before failing."
+        ),
+    )
+    request_retry_delay: float = Field(
+        default=0.25,
+        description="Time (in seconds) to wait between each request retry.",
+    )
+    request_timeout: int = Field(
+        default=15,
+        description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
+    )
 
     _client: AirbyteCloudClient = PrivateAttr(default=None)
 
@@ -858,6 +983,9 @@ class AirbyteCloudWorkspace(ConfigurableResource):
             workspace_id=self.workspace_id,
             client_id=self.client_id,
             client_secret=self.client_secret,
+            request_max_retries=self.request_max_retries,
+            request_retry_delay=self.request_retry_delay,
+            request_timeout=self.request_timeout,
         )
 
     def fetch_airbyte_workspace_data(
