@@ -31,7 +31,7 @@ def asset_cli():
 
 @asset_cli.command(name="materialize", help="Execute a run to materialize a selection of assets")
 @python_origin_target_argument
-@click.option("--select", help="Asset selection to target", required=True)
+@click.option("--select", help="Comma-separated Asset selection to target", required=True)
 @click.option("--partition", help="Asset partition to target", required=False)
 @click.option(
     "--partition-range",
