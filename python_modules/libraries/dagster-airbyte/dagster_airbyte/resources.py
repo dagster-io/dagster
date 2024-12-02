@@ -889,6 +889,7 @@ class AirbyteCloudWorkspace(ConfigurableResource):
 
     _client: AirbyteClient = PrivateAttr(default=None)
 
+    @cached_method
     def get_client(self) -> AirbyteClient:
         return AirbyteClient(
             workspace_id=self.workspace_id,
