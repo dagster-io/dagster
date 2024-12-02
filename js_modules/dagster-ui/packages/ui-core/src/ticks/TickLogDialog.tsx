@@ -3,78 +3,74 @@ import {
   Button,
   Colors,
   Dialog,
-  DialogBody,
   DialogFooter,
   ExternalAnchorButton,
   Icon,
   NonIdealState,
+  SpinnerWithText,
 } from '@dagster-io/ui-components';
 
 import {INSTIGATION_EVENT_LOG_FRAGMENT, InstigationEventLogTable} from './InstigationEventLogTable';
 import {gql, useQuery} from '../apollo-client';
 import {TickLogEventsQuery, TickLogEventsQueryVariables} from './types/TickLogDialog.types';
 import {InstigationSelector} from '../graphql/types';
-import {HistoryTickFragment} from '../instigation/types/InstigationUtils.types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 
 export const TickLogDialog = ({
-  tick,
+  tickId,
+  timestamp,
   instigationSelector,
+  isOpen,
   onClose,
 }: {
-  tick: HistoryTickFragment;
+  tickId: string | null;
+  timestamp?: number;
   instigationSelector: InstigationSelector;
+  isOpen: boolean;
   onClose: () => void;
 }) => {
-  const {data} = useQuery<TickLogEventsQuery, TickLogEventsQueryVariables>(TICK_LOG_EVENTS_QUERY, {
-    variables: {instigationSelector, tickId: tick.tickId},
-    notifyOnNetworkStatusChange: true,
-  });
-
-  const events =
-    data?.instigationStateOrError.__typename === 'InstigationState' &&
-    data?.instigationStateOrError.tick
-      ? data?.instigationStateOrError.tick.logEvents.events
-      : undefined;
-
   return (
     <Dialog
-      isOpen={!!events}
+      isOpen={isOpen}
       onClose={onClose}
-      style={{width: '70vw', display: 'flex'}}
-      title={tick ? <TimestampDisplay timestamp={tick.timestamp} /> : null}
+      style={{width: '70vw', maxWidth: '1200px', minWidth: '800px'}}
+      title={
+        <span>
+          {timestamp ? (
+            <span>
+              <span>Logs for {instigationSelector.name}: </span>
+              <TimestampDisplay timestamp={timestamp} timeFormat={{showSeconds: true}} />
+            </span>
+          ) : (
+            <span>Logs for {instigationSelector.name}</span>
+          )}
+        </span>
+      }
     >
-      <DialogBody>
-        {events && events.length ? (
-          <InstigationEventLogTable events={events} />
-        ) : (
-          <Box
-            flex={{justifyContent: 'center', alignItems: 'center'}}
-            style={{flex: 1, color: Colors.textLight()}}
-          >
-            No logs available
-          </Box>
-        )}
-      </DialogBody>
-      <DialogFooter>
-        <Button intent="primary" onClick={onClose}>
-          OK
-        </Button>
-      </DialogFooter>
+      {tickId ? (
+        <QueryfulTickLogsTable instigationSelector={instigationSelector} tickId={tickId} />
+      ) : null}
+      {/* Use z-index to force the footer to sit above the lines of the logs table */}
+      <Box background={Colors.backgroundDefault()} style={{zIndex: 3, position: 'relative'}}>
+        <DialogFooter topBorder>
+          <Button onClick={onClose}>Done</Button>
+        </DialogFooter>
+      </Box>
     </Dialog>
   );
 };
 
 interface TickLogTableProps {
-  tick: HistoryTickFragment;
+  tickId: string;
   instigationSelector: InstigationSelector;
 }
 
-export const QueryfulTickLogsTable = ({instigationSelector, tick}: TickLogTableProps) => {
+export const QueryfulTickLogsTable = ({instigationSelector, tickId}: TickLogTableProps) => {
   const {data, loading} = useQuery<TickLogEventsQuery, TickLogEventsQueryVariables>(
     TICK_LOG_EVENTS_QUERY,
     {
-      variables: {instigationSelector, tickId: tick.tickId},
+      variables: {instigationSelector, tickId},
+      notifyOnNetworkStatusChange: true,
     },
   );
 
@@ -83,6 +79,14 @@ export const QueryfulTickLogsTable = ({instigationSelector, tick}: TickLogTableP
     data?.instigationStateOrError.tick
       ? data?.instigationStateOrError.tick.logEvents.events
       : undefined;
+
+  if (loading) {
+    return (
+      <Box style={{height: 500}} flex={{justifyContent: 'center', alignItems: 'center'}}>
+        <SpinnerWithText label="Loading logs…" />
+      </Box>
+    );
+  }
 
   if (events && events.length) {
     return (
@@ -113,41 +117,37 @@ export const QueryfulTickLogsTable = ({instigationSelector, tick}: TickLogTableP
       flex={{justifyContent: 'center', alignItems: 'center'}}
       padding={{vertical: 48}}
     >
-      {loading ? (
-        'Loading logs…'
-      ) : (
-        <NonIdealState
-          icon="no-results"
-          title="No logs to display"
-          description={
-            <Box flex={{direction: 'column', gap: 12}}>
-              <div>
-                Your evaluation did not emit any logs. To learn how to emit logs in your evaluation,
-                visit the documentation for more information.
-              </div>
-              {tickStatus === 'FAILURE' && (
-                <>
-                  <div>
-                    For failed evaluations, logs will only be displayed if your Dagster and Dagster
-                    Cloud agent versions 1.5.14 or higher.
-                  </div>
-                  <div>Upgrade your Dagster versions to view logs for failed evaluations.</div>
-                </>
-              )}
-            </Box>
-          }
-          action={
-            instigationLoggingDocsUrl && (
-              <ExternalAnchorButton
-                href={instigationLoggingDocsUrl}
-                rightIcon={<Icon name="open_in_new" />}
-              >
-                View documentation
-              </ExternalAnchorButton>
-            )
-          }
-        />
-      )}
+      <NonIdealState
+        icon="no-results"
+        title="No logs to display"
+        description={
+          <Box flex={{direction: 'column', gap: 12}}>
+            <div>
+              Your evaluation did not emit any logs. To learn how to emit logs in your evaluation,
+              visit the documentation for more information.
+            </div>
+            {tickStatus === 'FAILURE' && (
+              <>
+                <div>
+                  For failed evaluations, logs will only be displayed if your Dagster and Dagster
+                  Cloud agent versions 1.5.14 or higher.
+                </div>
+                <div>Upgrade your Dagster versions to view logs for failed evaluations.</div>
+              </>
+            )}
+          </Box>
+        }
+        action={
+          instigationLoggingDocsUrl && (
+            <ExternalAnchorButton
+              href={instigationLoggingDocsUrl}
+              rightIcon={<Icon name="open_in_new" />}
+            >
+              View documentation
+            </ExternalAnchorButton>
+          )
+        }
+      />
     </Box>
   );
 };
