@@ -1,9 +1,8 @@
 ---
-title: "Setting up Branch Deployments"
+title: "Setting up branch deployments"
 displayed_sidebar: "dagsterPlus"
 sidebar_position: 10
 sidebar_label: "Setting up branch deployments"
-toc_max_heading_level: 2
 ---
 
 In this guide, we'll walk you through setting up Branch Deployments for a code location. Once you're finished, any time a PR is created or updated in your repository, it will automatically create or update an associated branch deployment in Dagster+.

@@ -1,5 +1,5 @@
 ---
-title: "Testing against production with Branch Deployments"
+title: "Testing against production with branch deployments"
 unlisted: true
 sidebar_position: 40
 ---
