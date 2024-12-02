@@ -1,5 +1,6 @@
 ---
 title: "How to structure your Dagster project"
+sidebar_position: 200
 ---
 
 # How to structure your Dagster project

@@ -1,10 +1,7 @@
 ---
 title: Transforming data with dbt
-sidebar_position: 20
+sidebar_position: 200
 sidebar_label: Transform data with dbt
-last_update:
-  date: 2024-08-26
-  author: Nick Roach
 ---
 
 Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline. Dagster's asset-oriented approach allows Dagster to understand dbt at the level of individual dbt models.
