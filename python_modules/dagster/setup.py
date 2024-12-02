@@ -116,6 +116,7 @@ setup(
         "antlr4-python3-runtime",
     ],
     extras_require={
+        "sling": ["dagster-embedded-elt"],
         "docker": ["docker"],
         "test": [
             "buildkite-test-collector",
