@@ -4,14 +4,14 @@ from pathlib import Path
 
 import click
 
-from dagster._components.core.component import ComponentRegistry
-from dagster._components.core.deployment import (
+from dagster_components.core.component import ComponentRegistry
+from dagster_components.core.deployment import (
     CodeLocationProjectContext,
     DeploymentProjectContext,
     is_inside_code_location_project,
     is_inside_deployment_project,
 )
-from dagster._generate.generate import (
+from dagster_components.generate import (
     generate_code_location,
     generate_component_instance,
     generate_component_type,

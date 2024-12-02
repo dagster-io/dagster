@@ -1,17 +1,17 @@
 from pathlib import Path
 
 from dagster import AssetKey
-from dagster._components.core.component import Component, ComponentLoadContext, ComponentRegistry
-from dagster._components.core.component_decl_builder import DefsFileModel
-from dagster._components.core.component_defs_builder import (
+from dagster._core.instance import DagsterInstance
+from dagster_components.core.component import Component, ComponentLoadContext, ComponentRegistry
+from dagster_components.core.component_decl_builder import DefsFileModel
+from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
     build_components_from_component_folder,
     defs_from_components,
 )
-from dagster._components.impls.pipes_subprocess_script_collection import (
+from dagster_components.impls.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollection,
 )
-from dagster._core.instance import DagsterInstance
 
 LOCATION_PATH = Path(__file__).parent / "code_locations" / "python_script_location"
 

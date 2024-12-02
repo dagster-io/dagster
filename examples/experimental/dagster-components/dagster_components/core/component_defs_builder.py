@@ -1,14 +1,15 @@
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence
 
-from dagster._components.core.component import Component, ComponentLoadContext, ComponentRegistry
-from dagster._components.core.component_decl_builder import (
+from dagster._utils.warnings import suppress_dagster_warnings
+
+from dagster_components.core.component import Component, ComponentLoadContext, ComponentRegistry
+from dagster_components.core.component_decl_builder import (
     ComponentFolder,
     YamlComponentDecl,
     find_component_decl,
 )
-from dagster._components.core.deployment import CodeLocationProjectContext
-from dagster._utils.warnings import suppress_dagster_warnings
+from dagster_components.core.deployment import CodeLocationProjectContext
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions

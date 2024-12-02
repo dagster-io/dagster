@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from dagster._components.core.component_defs_builder import (
+from dagster_components.core.component_defs_builder import (
     build_defs_from_toplevel_components_folder,
 )
 
