@@ -2,9 +2,12 @@
 Sigma (dagster-sigma)
 #####################
 
-Dagster allows you to represent your Sigma project as assets, alongside other your other
-technologies like dbt and Sling. This allows you to see how your Sigma assets are connected to
-your other data assets, and how changes to other data assets might impact your Sigma project.
+Dagster allows you to represent the workbooks and datasets in your Sigma project as assets alongside other
+technologies including dbt and Sling. This allows you to visualize relationships between your Sigma assets
+and their dependencies.
+
+
+Related documentation pages: `Using Dagster with Sigma <https://docs.dagster.io/integrations/sigma>`_.
 
 .. currentmodule:: dagster_sigma
 

@@ -25,12 +25,16 @@ def _execute(
     terminate: bool,
     evaluation_time: datetime.datetime,
 ) -> None:
-    with get_grpc_workspace_request_context(
-        "five_runs_required", instance_ref=instance_ref
-    ) as context, get_threadpool_executor() as executor, InheritContextThreadPoolExecutor(
-        # fewer workers than runs
-        max_workers=3
-    ) as submit_executor:
+    with (
+        get_grpc_workspace_request_context(
+            "five_runs_required", instance_ref=instance_ref
+        ) as context,
+        get_threadpool_executor() as executor,
+        InheritContextThreadPoolExecutor(
+            # fewer workers than runs
+            max_workers=3
+        ) as submit_executor,
+    ):
         try:
             with freeze_time(evaluation_time):
                 _execute_ticks(

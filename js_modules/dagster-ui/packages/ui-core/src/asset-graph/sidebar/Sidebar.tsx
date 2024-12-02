@@ -306,7 +306,6 @@ export const AssetGraphExplorerSidebar = React.memo(
             padding: '12px 24px',
             paddingRight: 12,
           }}
-          border="bottom"
         >
           <SearchFilter
             values={React.useMemo(() => {
@@ -321,7 +320,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             <Button icon={<Icon name="panel_show_right" />} onClick={hideSidebar} />
           </Tooltip>
         </Box>
-        <div>
+        <Box border="top">
           {loading ? (
             <Box flex={{direction: 'column', gap: 9}} padding={12}>
               <Skeleton $height={21} $width="50%" />
@@ -407,7 +406,7 @@ export const AssetGraphExplorerSidebar = React.memo(
               </Inner>
             </Container>
           )}
-        </div>
+        </Box>
       </div>
     );
   },

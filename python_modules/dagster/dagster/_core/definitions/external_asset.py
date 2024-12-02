@@ -183,21 +183,18 @@ def create_unexecutable_external_asset_from_assets_def(
             for key in assets_def.keys:
                 orig_spec = assets_def.get_asset_spec(key)
                 specs.append(
-                    orig_spec._replace(
-                        metadata={
-                            **(orig_spec.metadata or {}),
-                            **(
-                                {
-                                    SYSTEM_METADATA_KEY_IO_MANAGER_KEY: assets_def.get_io_manager_key_for_asset_key(
-                                        key
-                                    )
-                                }
-                                if assets_def.has_output_for_asset_key(key)
-                                else {}
-                            ),
-                        },
+                    orig_spec.merge_attributes(
+                        metadata=(
+                            {
+                                SYSTEM_METADATA_KEY_IO_MANAGER_KEY: assets_def.get_io_manager_key_for_asset_key(
+                                    key
+                                )
+                            }
+                            if assets_def.has_output_for_asset_key(key)
+                            else {}
+                        ),
+                    ).replace_attributes(
                         automation_condition=None,
-                        freshness_policy=None,
                     )
                 )
             return AssetsDefinition(

@@ -12,7 +12,7 @@ export FEDERATED_AIRFLOW_HOME_2 := $(MAKEFILE_DIR)/.federated_airflow_home_2
 export DBT_PROJECT_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DAGSTER_URL := http://localhost:3333
-export AIRLIFT_MODULE_DIR := $(MAKEFILE_DIR)/../experimental/dagster-airlift
+export AIRLIFT_MODULE_DIR := $(MAKEFILE_DIR)/../../python_modules/libraries/dagster-airlift
 export DLIFT_MODULE_DIR := $(MAKEFILE_DIR)/../experimental/dagster-dlift
 
 help:

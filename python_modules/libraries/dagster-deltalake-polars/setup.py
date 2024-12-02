@@ -24,7 +24,6 @@ setup(
     description="Package for storing Polars DataFrames in Delta tables.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-deltalake-polars",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",

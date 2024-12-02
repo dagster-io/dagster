@@ -2,6 +2,12 @@
 
 import * as Types from '../../../graphql/types';
 
+export type AssetCheckEvaluationTargetMaterializationFragment = {
+  __typename: 'AssetCheckEvaluationTargetMaterializationData';
+  timestamp: number;
+  runId: string;
+};
+
 export type AssetCheckExecutionFragment = {
   __typename: 'AssetCheckExecution';
   id: string;
@@ -356,4 +362,4 @@ export type AssetCheckDetailsQuery = {
   }>;
 };
 
-export const AssetCheckDetailsQueryVersion = '7380d168a78d6cdc049c41434d80385f47955b21a368612cde00450983bf16cd';
+export const AssetCheckDetailsQueryVersion = 'c448858a73cd66132c2d6f232497570d217ece793897c47aaa1155b15c7ef8e9';

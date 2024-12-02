@@ -76,6 +76,13 @@ SAMPLE_DATASET_DATA = {
     "url": "https://app.sigmacomputing.com/dagster-labs/b/Iq557kfHN8KRu76HdGSWi",
 }
 
+SAMPLE_TABLE_INODE = "inode-C5ZiVq1GkaANMaD334AnA"
+SAMPLE_TABLE_DATA = {
+    "path": "Content Root/My Database/My Schema",
+    "urlId": SAMPLE_TABLE_INODE.split("-")[-1],
+    "name": "Payments",
+}
+
 
 @pytest.fixture(name="lineage_warn")
 def lineage_warn_fixture(responses: aioresponses) -> None:
@@ -103,20 +110,26 @@ def sigma_sample_data_fixture(responses: aioresponses) -> None:
     # Single workbook, dataset
     responses.add(
         method=hdrs.METH_GET,
-        url="https://aws-api.sigmacomputing.com/v2/workbooks",
+        url="https://aws-api.sigmacomputing.com/v2/workbooks?limit=1000",
         body=json.dumps(_build_paginated_response([SAMPLE_WORKBOOK_DATA])),
         status=200,
     )
     responses.add(
         method=hdrs.METH_GET,
-        url="https://aws-api.sigmacomputing.com/v2/datasets",
+        url="https://aws-api.sigmacomputing.com/v2/datasets?limit=1000",
         body=json.dumps(_build_paginated_response([SAMPLE_DATASET_DATA])),
+        status=200,
+    )
+    responses.add(
+        method=hdrs.METH_GET,
+        url="https://aws-api.sigmacomputing.com/v2/files?limit=1000&typeFilters=table",
+        body=json.dumps(_build_paginated_response([SAMPLE_TABLE_DATA])),
         status=200,
     )
 
     responses.add(
         method=hdrs.METH_GET,
-        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages",
+        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages?limit=1000",
         body=json.dumps(_build_paginated_response([{"pageId": "qwMyyHBCuC", "name": "Page 1"}])),
         status=200,
     )
@@ -147,17 +160,24 @@ def sigma_sample_data_fixture(responses: aioresponses) -> None:
             ],
             "vizualizationType": "bar",
         },
+        {
+            "elementId": "A49pknzHb1",
+            "type": "table",
+            "name": "Payments",
+            "columns": [],
+            "vizualizationType": "levelTable",
+        },
     ]
     responses.add(
         method=hdrs.METH_GET,
-        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages/qwMyyHBCuC/elements",
+        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages/qwMyyHBCuC/elements?limit=1000",
         body=json.dumps(_build_paginated_response(elements, 0, 1)),
         status=200,
     )
     responses.add(
         method=hdrs.METH_GET,
-        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages/qwMyyHBCuC/elements",
-        body=json.dumps(_build_paginated_response(elements, 1, 2)),
+        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages/qwMyyHBCuC/elements?limit=1000&page=1",
+        body=json.dumps(_build_paginated_response(elements, 1, 3)),
         status=200,
     )
     responses.add(
@@ -212,6 +232,29 @@ def sigma_sample_data_fixture(responses: aioresponses) -> None:
     )
     responses.add(
         method=hdrs.METH_GET,
+        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/lineage/elements/A49pknzHb1",
+        body=json.dumps(
+            {
+                "dependencies": {
+                    SAMPLE_TABLE_INODE: {
+                        "nodeId": SAMPLE_TABLE_INODE,
+                        "type": "table",
+                        "name": "Payments",
+                    },
+                },
+            }
+        ),
+        status=200,
+    )
+    responses.add(
+        method=hdrs.METH_GET,
+        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/elements/A49pknzHb1/columns",
+        body=json.dumps(_build_paginated_response([])),
+        status=200,
+    )
+
+    responses.add(
+        method=hdrs.METH_GET,
         url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/lineage/elements/V29pknzHb6",
         body=json.dumps(
             {
@@ -239,6 +282,7 @@ def sigma_sample_data_fixture(responses: aioresponses) -> None:
         ),
         status=200,
     )
+
     responses.add(
         method=hdrs.METH_GET,
         url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/elements/V29pknzHb6/columns",

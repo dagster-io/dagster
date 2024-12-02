@@ -98,10 +98,14 @@ def get_daemon_instance(
 @contextmanager
 def _get_threadpool_executor(instance: DagsterInstance):
     settings = instance.get_settings("auto_materialize")
-    with InheritContextThreadPoolExecutor(
-        max_workers=settings.get("num_workers"),
-        thread_name_prefix="asset_daemon_worker",
-    ) if settings.get("use_threads") else nullcontext() as executor:
+    with (
+        InheritContextThreadPoolExecutor(
+            max_workers=settings.get("num_workers"),
+            thread_name_prefix="asset_daemon_worker",
+        )
+        if settings.get("use_threads")
+        else nullcontext() as executor
+    ):
         yield executor
 
 

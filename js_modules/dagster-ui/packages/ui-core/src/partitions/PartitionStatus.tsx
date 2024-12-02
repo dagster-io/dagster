@@ -387,9 +387,9 @@ function assetHealthToColorSegments(ranges: Range[]) {
 
 const statusToBackgroundColor = (status: RunStatus | undefined) => {
   if (status === undefined) {
-    return Colors.accentGray();
+    return Colors.backgroundDisabled();
   }
-  return status === RunStatus.NOT_STARTED ? Colors.accentGrayHover() : RUN_STATUS_COLORS[status];
+  return status === RunStatus.NOT_STARTED ? Colors.backgroundDisabled() : RUN_STATUS_COLORS[status];
 };
 
 function opRunStatusToColorRanges(

@@ -67,7 +67,7 @@ def _attach_code_references_to_definitions(blueprint: Blueprint, defs: Definitio
 
         new_assets_defs.append(
             assets_def.map_asset_specs(
-                lambda spec: spec._replace(metadata=new_metadata_by_key[spec.key])
+                lambda spec: spec.replace_attributes(metadata=new_metadata_by_key[spec.key])
             )
         )
     return copy(defs, assets=new_assets_defs)

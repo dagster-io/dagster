@@ -1,13 +1,18 @@
+from datetime import datetime
 from enum import Enum
 from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
 
+from dagster import Failure
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._record import as_dict, record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
+from dagster._vendored.dateutil import parser
 
 from dagster_fivetran.utils import get_fivetran_connector_table_name, metadata_for_table
+
+MIN_TIME_STR = "0001-01-01 00:00:00+00"
 
 
 class FivetranConnectorTableProps(NamedTuple):
@@ -18,6 +23,13 @@ class FivetranConnectorTableProps(NamedTuple):
     schema_config: "FivetranSchemaConfig"
     database: Optional[str]
     service: Optional[str]
+
+
+class FivetranConnectorScheduleType(str, Enum):
+    """Enum representing each schedule type for a connector in Fivetran's ontology."""
+
+    AUTO = "auto"
+    MANUAL = "manual"
 
 
 class FivetranConnectorSetupStateType(Enum):
@@ -38,6 +50,10 @@ class FivetranConnector:
     service: str
     group_id: str
     setup_state: str
+    sync_state: str
+    paused: bool
+    succeeded_at: Optional[str]
+    failed_at: Optional[str]
 
     @property
     def url(self) -> str:
@@ -51,6 +67,46 @@ class FivetranConnector:
     def is_connected(self) -> bool:
         return self.setup_state == FivetranConnectorSetupStateType.CONNECTED.value
 
+    @property
+    def is_paused(self) -> bool:
+        return self.paused
+
+    @property
+    def last_sync_completed_at(self) -> datetime:
+        """Gets the datetime of the last completed sync of the Fivetran connector.
+
+        Returns:
+            datetime.datetime:
+                The datetime of the last completed sync of the Fivetran connector.
+        """
+        succeeded_at = parser.parse(self.succeeded_at or MIN_TIME_STR)
+        failed_at = parser.parse(self.failed_at or MIN_TIME_STR)
+
+        return max(succeeded_at, failed_at)
+
+    @property
+    def is_last_sync_successful(self) -> bool:
+        """Gets a boolean representing whether the last completed sync of the Fivetran connector was successful or not.
+
+        Returns:
+            bool:
+                Whether the last completed sync of the Fivetran connector was successful or not.
+        """
+        succeeded_at = parser.parse(self.succeeded_at or MIN_TIME_STR)
+        failed_at = parser.parse(self.failed_at or MIN_TIME_STR)
+
+        return succeeded_at > failed_at
+
+    def validate_syncable(self) -> bool:
+        """Confirms that the connector can be sync. Will raise a Failure in the event that
+        the connector is either paused or not fully set up.
+        """
+        if self.is_paused:
+            raise Failure(f"Connector '{self.id}' cannot be synced as it is currently paused.")
+        if not self.is_connected:
+            raise Failure(f"Connector '{self.id}' cannot be synced as it has not been setup")
+        return True
+
     @classmethod
     def from_connector_details(
         cls,
@@ -62,6 +118,10 @@ class FivetranConnector:
             service=connector_details["service"],
             group_id=connector_details["group_id"],
             setup_state=connector_details["status"]["setup_state"],
+            sync_state=connector_details["status"]["sync_state"],
+            paused=connector_details["paused"],
+            succeeded_at=connector_details.get("succeeded_at"),
+            failed_at=connector_details.get("failed_at"),
         )
 
 

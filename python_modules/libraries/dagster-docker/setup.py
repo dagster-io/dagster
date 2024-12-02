@@ -39,5 +39,10 @@ setup(
         "docker",
         "docker-image-py",
     ],
+    extras_require={
+        "test": [
+            "flaky",
+        ],
+    },
     zip_safe=False,
 )

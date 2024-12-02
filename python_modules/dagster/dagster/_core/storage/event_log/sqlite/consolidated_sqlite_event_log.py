@@ -2,6 +2,7 @@ import logging
 import os
 from collections import defaultdict
 from contextlib import contextmanager
+from functools import cached_property
 from typing import Any, Mapping, Optional
 
 import sqlalchemy as db
@@ -144,9 +145,9 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         self._watchers[run_id][callback] = cursor
 
-    @property
+    @cached_property
     def supports_global_concurrency_limits(self) -> bool:
-        return False
+        return self.has_table("concurrency_limits")
 
     def on_modified(self):
         keys = [

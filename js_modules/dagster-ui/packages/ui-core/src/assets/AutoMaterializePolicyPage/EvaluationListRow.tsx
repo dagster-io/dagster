@@ -10,8 +10,8 @@ import {
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
 
+import {EvaluationDetailDialog} from './EvaluationDetailDialog';
 import {EvaluationStatusTag} from './EvaluationStatusTag';
-import {PolicyEvaluationTable} from './PolicyEvaluationTable';
 import {AssetConditionEvaluationRecordFragment} from './types/GetEvaluationsQuery.types';
 import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
 import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
@@ -25,7 +25,6 @@ interface Props {
 
 export const EvaluationListRow = ({evaluation, definition}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
-  // const [selectedPartition, setSelectedPartition] = useState<string | null>(null);
 
   return (
     <>
@@ -49,55 +48,12 @@ export const EvaluationListRow = ({evaluation, definition}: Props) => {
           <EvaluationRunInfo evaluation={evaluation} />
         </td>
       </tr>
-      <Dialog
+      <EvaluationDetailDialog
         isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        style={{
-          width: '80vw',
-          maxWidth: '1400px',
-          minWidth: '800px',
-          height: '80vh',
-          minHeight: '400px',
-          maxHeight: '1400px',
-        }}
-      >
-        <Box flex={{direction: 'column'}} style={{height: '100%'}}>
-          <DialogHeader
-            icon="automation"
-            label={
-              <div>
-                Evaluation details:{' '}
-                <TimestampDisplay
-                  timestamp={evaluation.timestamp}
-                  timeFormat={{...DEFAULT_TIME_FORMAT, showSeconds: true}}
-                />
-              </div>
-            }
-          />
-          <div style={{flex: 1, overflowY: 'auto'}}>
-            <PolicyEvaluationTable
-              assetKeyPath={definition?.assetKey.path ?? null}
-              evaluationId={evaluation.evaluationId}
-              evaluationNodes={
-                !evaluation.isLegacy
-                  ? evaluation.evaluationNodes
-                  : // : selectedPartition && specificPartitionData?.assetConditionEvaluationForPartition
-                    //   ? specificPartitionData.assetConditionEvaluationForPartition.evaluationNodes
-                    evaluation.evaluation.evaluationNodes
-              }
-              isLegacyEvaluation={evaluation.isLegacy}
-              rootUniqueId={evaluation.evaluation.rootUniqueId}
-              // todo dish
-              selectPartition={() => {}}
-            />
-          </div>
-          <div style={{flexGrow: 0}}>
-            <DialogFooter topBorder>
-              <Button onClick={() => setIsOpen(false)}>Done</Button>
-            </DialogFooter>
-          </div>
-        </Box>
-      </Dialog>
+        setIsOpen={setIsOpen}
+        evaluationID={evaluation.id}
+        assetKeyPath={definition.assetKey.path}
+      />
     </>
   );
 };

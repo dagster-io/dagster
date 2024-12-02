@@ -8,6 +8,7 @@ from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunRecord
 from dagster._core.storage.tags import (
+    AUTO_RETRY_RUN_ID_TAG,
     MAX_RETRIES_TAG,
     RETRY_NUMBER_TAG,
     RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
@@ -63,9 +64,7 @@ def filter_runs_to_should_retry(
         else:
             return 1
 
-    default_retry_on_asset_or_op_failure: bool = instance.get_settings("run_retries").get(
-        "retry_on_asset_or_op_failure", True
-    )
+    default_retry_on_asset_or_op_failure: bool = instance.run_retries_retry_on_asset_or_op_failure
 
     for run in runs:
         retry_number = get_retry_number(run)
@@ -178,6 +177,7 @@ def retry_run(
     )
 
     instance.submit_run(new_run.run_id, workspace)
+    instance.add_run_tags(failed_run.run_id, {AUTO_RETRY_RUN_ID_TAG: new_run.run_id})
 
 
 def consume_new_runs_for_automatic_reexecution(

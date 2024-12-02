@@ -8,7 +8,7 @@ from dagster._annotations import (
     public,
 )
 from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.definitions.asset_spec import AssetSpec, replace_attributes
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -219,8 +219,7 @@ class AssetOut:
     def to_spec(
         self, key: AssetKey, deps: Sequence[AssetDep], additional_tags: Mapping[str, str] = {}
     ) -> AssetSpec:
-        return replace_attributes(
-            self._spec,
+        return self._spec.replace_attributes(
             key=key,
             tags={**additional_tags, **self.tags} if self.tags else additional_tags,
             deps=[*self._spec.deps, *deps],

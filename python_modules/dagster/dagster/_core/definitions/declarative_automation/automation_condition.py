@@ -177,20 +177,42 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
             AndAutomationCondition,
         )
 
-        # group AndAutomationConditions together
-        if isinstance(self, AndAutomationCondition):
-            return AndAutomationCondition(operands=[*self.operands, other])
-        return AndAutomationCondition(operands=[self, other])
+        # Consolidate any unlabeled `AndAutomationCondition`s together.
+        return AndAutomationCondition(
+            operands=[
+                *(
+                    self.operands
+                    if isinstance(self, AndAutomationCondition) and self.label is None
+                    else (self,)
+                ),
+                *(
+                    other.operands
+                    if isinstance(other, AndAutomationCondition) and other.label is None
+                    else (other,)
+                ),
+            ]
+        )
 
     def __or__(
         self, other: "AutomationCondition[T_EntityKey]"
     ) -> "BuiltinAutomationCondition[T_EntityKey]":
         from dagster._core.definitions.declarative_automation.operators import OrAutomationCondition
 
-        # group OrAutomationConditions together
-        if isinstance(self, OrAutomationCondition):
-            return OrAutomationCondition(operands=[*self.operands, other])
-        return OrAutomationCondition(operands=[self, other])
+        # Consolidate any unlabeled `OrAutomationCondition`s together.
+        return OrAutomationCondition(
+            operands=[
+                *(
+                    self.operands
+                    if isinstance(self, OrAutomationCondition) and self.label is None
+                    else (self,)
+                ),
+                *(
+                    other.operands
+                    if isinstance(other, OrAutomationCondition) and other.label is None
+                    else (other,)
+                ),
+            ]
+        )
 
     def __invert__(self) -> "BuiltinAutomationCondition[T_EntityKey]":
         from dagster._core.definitions.declarative_automation.operators import (

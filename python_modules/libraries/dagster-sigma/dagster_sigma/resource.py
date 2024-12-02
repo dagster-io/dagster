@@ -1,10 +1,12 @@
 import asyncio
 import contextlib
+import os
 import urllib.parse
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 from typing import (
     AbstractSet,
     Any,
@@ -28,16 +30,20 @@ from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
+from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._record import IHaveNew, record_custom
+from dagster._serdes.serdes import deserialize_value
 from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
 
+from dagster_sigma.cli import SIGMA_RECON_DATA_PREFIX, SNAPSHOT_ENV_VAR_NAME
 from dagster_sigma.translator import (
     DagsterSigmaTranslator,
     SigmaDataset,
     SigmaOrganizationData,
+    SigmaTable,
     SigmaWorkbook,
     _inode_from_url,
 )
@@ -55,13 +61,22 @@ class SigmaFilter(IHaveNew):
         workbook_folders (Optional[Sequence[Sequence[str]]]): A list of folder paths to fetch workbooks from.
             Each folder path is a list of folder names, starting from the root folder. All workbooks
             contained in the specified folders will be fetched. If not provided, all workbooks will be fetched.
+        include_unused_datasets (bool): Whether to include datasets that are not used in any workbooks.
+            Defaults to True.
     """
 
     workbook_folders: Optional[Sequence[Sequence[str]]] = None
+    include_unused_datasets: bool = True
 
-    def __new__(cls, workbook_folders: Optional[Sequence[Sequence[str]]] = None):
+    def __new__(
+        cls,
+        workbook_folders: Optional[Sequence[Sequence[str]]] = None,
+        include_unused_datasets: bool = True,
+    ):
         return super().__new__(
-            cls, workbook_folders=tuple([tuple(folder) for folder in workbook_folders or []])
+            cls,
+            workbook_folders=tuple([tuple(folder) for folder in workbook_folders or []]),
+            include_unused_datasets=include_unused_datasets,
         )
 
 
@@ -137,7 +152,7 @@ class SigmaOrganization(ConfigurableResource):
         async with aiohttp.ClientSession() as session:
             async with session.request(
                 method=method,
-                url=f"{self.base_url}/v2/{endpoint}",
+                url=url,
                 headers={
                     "Accept": "application/json",
                     "Authorization": f"Bearer {self.api_token}",
@@ -167,7 +182,7 @@ class SigmaOrganization(ConfigurableResource):
             ", fetching additional results" if result.get("hasMore") else "",
         )
 
-        while result.get("hasMore"):
+        while result.get("hasMore") in (True, "true", "True"):
             next_page = result["nextPage"]
             query_params_with_limit_and_page = {
                 **query_params_with_limit,
@@ -193,6 +208,12 @@ class SigmaOrganization(ConfigurableResource):
     @cached_method
     async def _fetch_datasets(self) -> List[Dict[str, Any]]:
         return await self._fetch_json_async_paginated_entries("datasets")
+
+    @cached_method
+    async def _fetch_tables(self) -> List[Dict[str, Any]]:
+        return await self._fetch_json_async_paginated_entries(
+            "files", query_params={"typeFilters": "table"}
+        )
 
     @cached_method
     async def _fetch_pages_for_workbook(self, workbook_id: str) -> List[Dict[str, Any]]:
@@ -235,7 +256,9 @@ class SigmaOrganization(ConfigurableResource):
                 raise
 
     @cached_method
-    async def _fetch_dataset_upstreams_by_inode(self) -> Mapping[str, AbstractSet[str]]:
+    async def _fetch_dataset_upstreams_by_inode(
+        self, sigma_filter: SigmaFilter
+    ) -> Mapping[str, AbstractSet[str]]:
         """Builds a mapping of dataset inodes to the upstream inputs they depend on.
         Sigma does not expose this information directly, so we have to infer it from
         the lineage of workbooks and the workbook queries.
@@ -244,7 +267,7 @@ class SigmaOrganization(ConfigurableResource):
 
         logger.debug("Fetching dataset dependencies")
 
-        raw_workbooks = await self._fetch_workbooks()
+        workbooks_to_fetch = await self._fetch_workbooks_and_filter(sigma_filter)
 
         async def process_workbook(workbook: Dict[str, Any]) -> None:
             logger.info("Inferring dataset dependencies for workbook %s", workbook["workbookId"])
@@ -304,19 +327,21 @@ class SigmaOrganization(ConfigurableResource):
                 ]
             )
 
-        await asyncio.gather(*[process_workbook(workbook) for workbook in raw_workbooks])
+        await asyncio.gather(*[process_workbook(workbook) for workbook in workbooks_to_fetch])
 
         return deps_by_dataset_inode
 
     @cached_method
-    async def _fetch_dataset_columns_by_inode(self) -> Mapping[str, AbstractSet[str]]:
+    async def _fetch_dataset_columns_by_inode(
+        self, sigma_filter: SigmaFilter
+    ) -> Mapping[str, AbstractSet[str]]:
         """Builds a mapping of dataset inodes to the columns they contain. Note that
         this is a partial list and will only include columns which are referenced in
         workbooks, since Sigma does not expose a direct API for querying dataset columns.
         """
         columns_by_dataset_inode = defaultdict(set)
 
-        workbooks = await self._fetch_workbooks()
+        workbooks_to_fetch = await self._fetch_workbooks_and_filter(sigma_filter)
 
         async def process_workbook(workbook: Dict[str, Any]) -> None:
             logger.info("Fetching column data from workbook %s", workbook["workbookId"])
@@ -347,9 +372,9 @@ class SigmaOrganization(ConfigurableResource):
                 split = column["columnId"].split("/")
                 if len(split) == 2:
                     inode, column_name = split
-                columns_by_dataset_inode[inode].add(column_name)
+                    columns_by_dataset_inode[inode].add(column_name)
 
-        await asyncio.gather(*[process_workbook(workbook) for workbook in workbooks])
+        await asyncio.gather(*[process_workbook(workbook) for workbook in workbooks_to_fetch])
 
         return columns_by_dataset_inode
 
@@ -362,7 +387,8 @@ class SigmaOrganization(ConfigurableResource):
         return {member["memberId"]: member["email"] for member in members}
 
     async def load_workbook_data(self, raw_workbook_data: Dict[str, Any]) -> SigmaWorkbook:
-        workbook_deps = set()
+        dataset_deps = set()
+        direct_table_deps = set()
 
         logger.info("Fetching data for workbook %s", raw_workbook_data["workbookId"])
 
@@ -400,13 +426,35 @@ class SigmaOrganization(ConfigurableResource):
         for lineage in lineages:
             for item in lineage["dependencies"].values():
                 if item.get("type") == "dataset":
-                    workbook_deps.add(item["nodeId"])
+                    dataset_deps.add(item["nodeId"])
+                if item.get("type") == "table":
+                    direct_table_deps.add(item["nodeId"])
 
         return SigmaWorkbook(
             properties=raw_workbook_data,
-            datasets=workbook_deps,
+            datasets=dataset_deps,
+            direct_table_deps=direct_table_deps,
             owner_email=None,
+            lineage=lineages,
         )
+
+    @cached_method
+    async def _fetch_workbooks_and_filter(self, sigma_filter: SigmaFilter) -> List[Dict[str, Any]]:
+        raw_workbooks = await self._fetch_workbooks()
+        workbooks_to_fetch = []
+        if sigma_filter.workbook_folders:
+            workbook_filter_strings = [
+                "/".join(folder).lower() for folder in sigma_filter.workbook_folders
+            ]
+            for workbook in raw_workbooks:
+                workbook_path = str(workbook["path"]).lower()
+                if any(
+                    workbook_path.startswith(folder_str) for folder_str in workbook_filter_strings
+                ):
+                    workbooks_to_fetch.append(workbook)
+        else:
+            workbooks_to_fetch = raw_workbooks
+        return workbooks_to_fetch
 
     @cached_method
     async def build_organization_data(
@@ -418,44 +466,50 @@ class SigmaOrganization(ConfigurableResource):
         _sigma_filter = sigma_filter or SigmaFilter()
 
         logger.info("Beginning Sigma organization data fetch")
-        raw_workbooks = await self._fetch_workbooks()
-        workbooks_to_fetch = []
-        if _sigma_filter.workbook_folders:
-            workbook_filter_strings = [
-                "/".join(folder).lower() for folder in _sigma_filter.workbook_folders
-            ]
-            for workbook in raw_workbooks:
-                workbook_path = str(workbook["path"]).lower()
-                if any(
-                    workbook_path.startswith(folder_str) for folder_str in workbook_filter_strings
-                ):
-                    workbooks_to_fetch.append(workbook)
-        else:
-            workbooks_to_fetch = raw_workbooks
+        workbooks_to_fetch = await self._fetch_workbooks_and_filter(_sigma_filter)
 
         workbooks: List[SigmaWorkbook] = await asyncio.gather(
             *[self.load_workbook_data(workbook) for workbook in workbooks_to_fetch]
         )
 
         datasets: List[SigmaDataset] = []
-        deps_by_dataset_inode = await self._fetch_dataset_upstreams_by_inode()
+        deps_by_dataset_inode = await self._fetch_dataset_upstreams_by_inode(_sigma_filter)
 
         columns_by_dataset_inode = (
-            await self._fetch_dataset_columns_by_inode() if fetch_column_data else {}
+            await self._fetch_dataset_columns_by_inode(_sigma_filter) if fetch_column_data else {}
         )
+
+        used_datasets = set()
+        used_tables = set()
+        for workbook in workbooks:
+            if _sigma_filter and not _sigma_filter.include_unused_datasets:
+                used_datasets.update(workbook.datasets)
+            used_tables.update(workbook.direct_table_deps)
 
         logger.info("Fetching dataset data")
         for dataset in await self._fetch_datasets():
             inode = _inode_from_url(dataset["url"])
-            datasets.append(
-                SigmaDataset(
-                    properties=dataset,
-                    columns=columns_by_dataset_inode.get(inode, set()),
-                    inputs=deps_by_dataset_inode[inode],
+            if _sigma_filter.include_unused_datasets or inode in used_datasets:
+                datasets.append(
+                    SigmaDataset(
+                        properties=dataset,
+                        columns=columns_by_dataset_inode.get(inode, set()),
+                        inputs=deps_by_dataset_inode[inode],
+                    )
                 )
-            )
 
-        return SigmaOrganizationData(workbooks=workbooks, datasets=datasets)
+        tables: List[SigmaTable] = []
+        logger.info("Fetching table data")
+        for table in await self._fetch_tables():
+            inode = _inode_from_url(table["urlId"])
+            if inode in used_tables:
+                tables.append(
+                    SigmaTable(
+                        properties=table,
+                    )
+                )
+
+        return SigmaOrganizationData(workbooks=workbooks, datasets=datasets, tables=tables)
 
     @public
     @deprecated(
@@ -492,6 +546,7 @@ def load_sigma_asset_specs(
     ] = DagsterSigmaTranslator,
     sigma_filter: Optional[SigmaFilter] = None,
     fetch_column_data: bool = True,
+    snapshot_path: Optional[Union[str, Path]] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Sigma content in the organization.
 
@@ -501,10 +556,16 @@ def load_sigma_asset_specs(
             to convert Sigma content into AssetSpecs. Defaults to DagsterSigmaTranslator.
         sigma_filter (Optional[SigmaFilter]): Filters the set of Sigma objects to fetch.
         fetch_column_data (bool): Whether to fetch column data for datasets, which can be slow.
+        snapshot_path (Optional[Union[str, Path]]): Path to a snapshot file to load Sigma data from,
+            rather than fetching it from the Sigma API.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Sigma content in the organization.
     """
+    snapshot = None
+    if snapshot_path and not os.getenv(SNAPSHOT_ENV_VAR_NAME):
+        snapshot = deserialize_value(Path(snapshot_path).read_text(), RepositoryLoadData)
+
     with organization.process_config_and_initialize_cm() as initialized_organization:
         return check.is_list(
             SigmaOrganizationDefsLoader(
@@ -512,6 +573,7 @@ def load_sigma_asset_specs(
                 translator_cls=dagster_sigma_translator,
                 sigma_filter=sigma_filter,
                 fetch_column_data=fetch_column_data,
+                snapshot=snapshot,
             )
             .build_defs()
             .assets,
@@ -536,14 +598,18 @@ def _get_translator_spec_assert_keys_match(
 class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganizationData]):
     organization: SigmaOrganization
     translator_cls: Callable[[SigmaOrganizationData], DagsterSigmaTranslator]
+    snapshot: Optional[RepositoryLoadData]
     sigma_filter: Optional[SigmaFilter] = None
     fetch_column_data: bool = True
 
     @property
     def defs_key(self) -> str:
-        return f"sigma_{self.organization.client_id}"
+        return f"{SIGMA_RECON_DATA_PREFIX}{self.organization.client_id}"
 
     def fetch_state(self) -> SigmaOrganizationData:
+        if self.snapshot and self.defs_key in self.snapshot.reconstruction_metadata:
+            return deserialize_value(self.snapshot.reconstruction_metadata[self.defs_key])  # type: ignore
+
         return asyncio.run(
             self.organization.build_organization_data(
                 sigma_filter=self.sigma_filter, fetch_column_data=self.fetch_column_data

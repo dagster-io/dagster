@@ -26,39 +26,47 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
     def visitStart(self, ctx: AssetSelectionParser.StartContext):
         return self.visit(ctx.expr())
 
-    def visitParenthesizedExpression(
-        self, ctx: AssetSelectionParser.ParenthesizedExpressionContext
+    def visitTraversalAllowedExpression(
+        self, ctx: AssetSelectionParser.TraversalAllowedExpressionContext
     ):
-        return self.visit(ctx.expr())
+        return self.visit(ctx.traversalAllowedExpr())
+
+    def visitUpAndDownTraversalExpression(
+        self, ctx: AssetSelectionParser.UpAndDownTraversalExpressionContext
+    ):
+        selection: AssetSelection = self.visit(ctx.traversalAllowedExpr())
+        up_depth = self.visit(ctx.traversal(0))
+        down_depth = self.visit(ctx.traversal(1))
+        return selection.upstream(depth=up_depth) | selection.downstream(depth=down_depth)
 
     def visitUpTraversalExpression(self, ctx: AssetSelectionParser.UpTraversalExpressionContext):
-        selection: AssetSelection = self.visit(ctx.expr())
+        selection: AssetSelection = self.visit(ctx.traversalAllowedExpr())
         traversal_depth = self.visit(ctx.traversal())
         return selection.upstream(depth=traversal_depth)
+
+    def visitDownTraversalExpression(
+        self, ctx: AssetSelectionParser.DownTraversalExpressionContext
+    ):
+        selection: AssetSelection = self.visit(ctx.traversalAllowedExpr())
+        traversal_depth = self.visit(ctx.traversal())
+        return selection.downstream(depth=traversal_depth)
+
+    def visitNotExpression(self, ctx: AssetSelectionParser.NotExpressionContext):
+        selection: AssetSelection = self.visit(ctx.expr())
+        return AssetSelection.all(include_sources=self.include_sources) - selection
 
     def visitAndExpression(self, ctx: AssetSelectionParser.AndExpressionContext):
         left: AssetSelection = self.visit(ctx.expr(0))
         right: AssetSelection = self.visit(ctx.expr(1))
         return left & right
 
-    def visitAllExpression(self, ctx: AssetSelectionParser.AllExpressionContext):
-        return AssetSelection.all(include_sources=self.include_sources)
-
-    def visitNotExpression(self, ctx: AssetSelectionParser.NotExpressionContext):
-        selection: AssetSelection = self.visit(ctx.expr())
-        return AssetSelection.all(include_sources=self.include_sources) - selection
-
-    def visitDownTraversalExpression(
-        self, ctx: AssetSelectionParser.DownTraversalExpressionContext
-    ):
-        selection: AssetSelection = self.visit(ctx.expr())
-        traversal_depth = self.visit(ctx.traversal())
-        return selection.downstream(depth=traversal_depth)
-
     def visitOrExpression(self, ctx: AssetSelectionParser.OrExpressionContext):
         left: AssetSelection = self.visit(ctx.expr(0))
         right: AssetSelection = self.visit(ctx.expr(1))
         return left | right
+
+    def visitAllExpression(self, ctx: AssetSelectionParser.AllExpressionContext):
+        return AssetSelection.all(include_sources=self.include_sources)
 
     def visitAttributeExpression(self, ctx: AssetSelectionParser.AttributeExpressionContext):
         return self.visit(ctx.attributeExpr())
@@ -71,13 +79,10 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
         elif function == "roots":
             return selection.roots()
 
-    def visitUpAndDownTraversalExpression(
-        self, ctx: AssetSelectionParser.UpAndDownTraversalExpressionContext
+    def visitParenthesizedExpression(
+        self, ctx: AssetSelectionParser.ParenthesizedExpressionContext
     ):
-        selection: AssetSelection = self.visit(ctx.expr())
-        up_depth = self.visit(ctx.traversal(0))
-        down_depth = self.visit(ctx.traversal(1))
-        return selection.upstream(depth=up_depth) | selection.downstream(depth=down_depth)
+        return self.visit(ctx.expr())
 
     def visitTraversal(self, ctx: AssetSelectionParser.TraversalContext):
         # Get traversal depth from a traversal context

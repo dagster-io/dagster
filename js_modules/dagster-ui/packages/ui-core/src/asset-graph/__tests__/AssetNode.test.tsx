@@ -2,6 +2,7 @@ import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
+import {withMiddleTruncation} from '../../app/Util';
 import {AssetBaseData} from '../../asset-data/AssetBaseDataProvider';
 import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
 import {AssetStaleStatusData} from '../../asset-data/AssetStaleStatusDataProvider';
@@ -13,6 +14,7 @@ import {
   AssetNodeScenariosPartitioned,
   AssetNodeScenariosSource,
 } from '../__fixtures__/AssetNode.fixtures';
+import {ASSET_NODE_NAME_MAX_LENGTH} from '../layout';
 
 const Scenarios = [
   ...AssetNodeScenariosBase,
@@ -66,7 +68,13 @@ describe('AssetNode', () => {
       await waitFor(() => {
         const assetKey = definitionCopy.assetKey;
         const displayName = assetKey.path[assetKey.path.length - 1]!;
-        expect(screen.getByText(displayName)).toBeVisible();
+        expect(
+          screen.getByText(
+            withMiddleTruncation(displayName, {
+              maxLength: ASSET_NODE_NAME_MAX_LENGTH,
+            }),
+          ),
+        ).toBeVisible();
         for (const text of scenario.expectedText) {
           expect(screen.getByText(new RegExp(text))).toBeVisible();
         }

@@ -2,6 +2,7 @@ import re
 from typing import AbstractSet, Any, Dict, List, Optional, Union
 
 from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema
+from dagster._annotations import deprecated
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn
 from dagster._record import record
@@ -35,7 +36,9 @@ class SigmaWorkbook:
     """
 
     properties: Dict[str, Any]
+    lineage: List[Dict[str, Any]]
     datasets: AbstractSet[str]
+    direct_table_deps: AbstractSet[str]
     owner_email: Optional[str]
 
 
@@ -55,13 +58,32 @@ class SigmaDataset:
 
 @whitelist_for_serdes
 @record
+class SigmaTable:
+    """Represents a table loaded into Sigma."""
+
+    properties: Dict[str, Any]
+
+    def get_table_path(self) -> List[str]:
+        """Extracts the qualified table path from the name and path properties,
+        e.g. ["MY_DB", "MY_SCHEMA", "MY_TABLE"].
+        """
+        return self.properties["path"].split("/")[1:] + [self.properties["name"]]
+
+
+@whitelist_for_serdes
+@record
 class SigmaOrganizationData:
     workbooks: List[SigmaWorkbook]
     datasets: List[SigmaDataset]
+    tables: List[SigmaTable]
 
     @cached_method
     def get_datasets_by_inode(self) -> Dict[str, SigmaDataset]:
         return {_inode_from_url(dataset.properties["url"]): dataset for dataset in self.datasets}
+
+    @cached_method
+    def get_tables_by_inode(self) -> Dict[str, SigmaTable]:
+        return {_inode_from_url(table.properties["urlId"]): table for table in self.tables}
 
 
 class DagsterSigmaTranslator:
@@ -76,9 +98,13 @@ class DagsterSigmaTranslator:
     def organization_data(self) -> SigmaOrganizationData:
         return self._context
 
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterSigmaTranslator.get_asset_spec(...).key` instead",
+    )
     def get_asset_key(self, data: Union[SigmaDataset, SigmaWorkbook]) -> AssetKey:
         """Get the AssetKey for a Sigma object, such as a workbook or dataset."""
-        return AssetKey(_coerce_input_to_valid_name(data.properties["name"]))
+        return self.get_asset_spec(data).key
 
     def get_asset_spec(self, data: Union[SigmaDataset, SigmaWorkbook]) -> AssetSpec:
         """Get the AssetSpec for a Sigma object, such as a workbook or dataset."""
@@ -89,13 +115,25 @@ class DagsterSigmaTranslator:
                 "dagster_sigma/created_at": MetadataValue.timestamp(
                     isoparse(data.properties["createdAt"])
                 ),
+                "dagster_sigma/properties": MetadataValue.json(data.properties),
+                "dagster_sigma/lineage": MetadataValue.json(data.lineage),
             }
             datasets = [self._context.get_datasets_by_inode()[inode] for inode in data.datasets]
+            tables = [
+                self._context.get_tables_by_inode()[inode] for inode in data.direct_table_deps
+            ]
+
             return AssetSpec(
-                key=self.get_asset_key(data),
+                key=AssetKey(_coerce_input_to_valid_name(data.properties["name"])),
                 metadata=metadata,
-                kinds={"sigma"},
-                deps={self.get_asset_key(dataset) for dataset in datasets},
+                kinds={"sigma", "workbook"},
+                deps={
+                    *[self.get_asset_key(dataset) for dataset in datasets],
+                    *[
+                        asset_key_from_table_name(".".join(table.get_table_path()).lower())
+                        for table in tables
+                    ],
+                },
                 owners=[data.owner_email] if data.owner_email else None,
             )
         elif isinstance(data, SigmaDataset):
@@ -104,6 +142,7 @@ class DagsterSigmaTranslator:
                 "dagster_sigma/created_at": MetadataValue.timestamp(
                     isoparse(data.properties["createdAt"])
                 ),
+                "dagster_sigma/properties": MetadataValue.json(data.properties),
                 **TableMetadataSet(
                     column_schema=TableSchema(
                         columns=[
@@ -114,9 +153,9 @@ class DagsterSigmaTranslator:
             }
 
             return AssetSpec(
-                key=self.get_asset_key(data),
+                key=AssetKey(_coerce_input_to_valid_name(data.properties["name"])),
                 metadata=metadata,
-                kinds={"sigma"},
+                kinds={"sigma", "dataset"},
                 deps={
                     asset_key_from_table_name(input_table_name.lower())
                     for input_table_name in data.inputs

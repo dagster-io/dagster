@@ -63,6 +63,7 @@ setup(
             "dbt-duckdb",
             "xgboost",
             "dagster-webserver[test]",
-        ]
+            "flaky",
+        ],
     },
 )

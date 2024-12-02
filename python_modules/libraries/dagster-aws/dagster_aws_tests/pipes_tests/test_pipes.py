@@ -487,6 +487,8 @@ def test_cloudwatch_logs_reader(cloudwatch_client: "CloudWatchLogsClient", capsy
 
     is_session_closed.set()
 
+    time.sleep(1)
+
     reader.stop()
 
     time.sleep(1)

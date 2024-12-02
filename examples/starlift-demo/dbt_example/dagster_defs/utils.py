@@ -25,7 +25,9 @@ def apply_eager_automation(defs: Definitions) -> Definitions:
             continue
         assets.append(
             asset.map_asset_specs(
-                lambda spec: spec._replace(automation_condition=AutomationCondition.eager())
+                lambda spec: spec.replace_attributes(
+                    automation_condition=AutomationCondition.eager()
+                )
                 if spec.automation_condition is None
                 else spec
             )
@@ -40,7 +42,7 @@ def apply_eager_automation(defs: Definitions) -> Definitions:
 
 
 def with_group(assets_def: AssetsDefinition, group_name: str) -> AssetsDefinition:
-    return assets_def.map_asset_specs(lambda spec: spec._replace(group_name=group_name))
+    return assets_def.map_asset_specs(lambda spec: spec.replace_attributes(group_name=group_name))
 
 
 def with_deps(
@@ -93,4 +95,6 @@ def with_deps(
 
 
 def eager(specs: Sequence[AssetSpec]) -> Sequence[AssetSpec]:
-    return [spec._replace(automation_condition=AutomationCondition.eager()) for spec in specs]
+    return [
+        spec.replace_attributes(automation_condition=AutomationCondition.eager()) for spec in specs
+    ]

@@ -4,12 +4,15 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Callable,
     Iterable,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Set,
+    Union,
+    overload,
 )
 
 import dagster._check as check
@@ -42,6 +45,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
+    from dagster._core.definitions.assets import AssetsDefinition
 
 # SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE lives on the metadata of an asset
 # (which currently ends up on the Output associated with the asset key)
@@ -293,81 +297,144 @@ class AssetSpec(
             metadata={**self.metadata, SYSTEM_METADATA_KEY_IO_MANAGER_KEY: io_manager_key}
         )
 
+    @public
+    def replace_attributes(
+        self,
+        *,
+        key: CoercibleToAssetKey = ...,
+        deps: Optional[Iterable["CoercibleToAssetDep"]] = ...,
+        description: Optional[str] = ...,
+        metadata: Optional[Mapping[str, Any]] = ...,
+        skippable: bool = ...,
+        group_name: Optional[str] = ...,
+        code_version: Optional[str] = ...,
+        automation_condition: Optional[AutomationCondition] = ...,
+        owners: Optional[Sequence[str]] = ...,
+        tags: Optional[Mapping[str, str]] = ...,
+        kinds: Optional[Set[str]] = ...,
+        partitions_def: Optional[PartitionsDefinition] = ...,
+    ) -> "AssetSpec":
+        """Returns a new AssetSpec with the specified attributes replaced."""
+        current_tags_without_kinds = {
+            tag_key: tag_value
+            for tag_key, tag_value in self.tags.items()
+            if not tag_key.startswith(KIND_PREFIX)
+        }
+        with disable_dagster_warnings():
+            return self.dagster_internal_init(
+                key=key if key is not ... else self.key,
+                deps=deps if deps is not ... else self.deps,
+                description=description if description is not ... else self.description,
+                metadata=metadata if metadata is not ... else self.metadata,
+                skippable=skippable if skippable is not ... else self.skippable,
+                group_name=group_name if group_name is not ... else self.group_name,
+                code_version=code_version if code_version is not ... else self.code_version,
+                freshness_policy=self.freshness_policy,
+                automation_condition=automation_condition
+                if automation_condition is not ...
+                else self.automation_condition,
+                owners=owners if owners is not ... else self.owners,
+                tags=tags if tags is not ... else current_tags_without_kinds,
+                kinds=kinds if kinds is not ... else self.kinds,
+                partitions_def=partitions_def if partitions_def is not ... else self.partitions_def,
+            )
 
-def replace_attributes(
-    spec: AssetSpec,
-    *,
-    key: CoercibleToAssetKey = ...,
-    deps: Optional[Iterable["CoercibleToAssetDep"]] = ...,
-    description: Optional[str] = ...,
-    metadata: Optional[Mapping[str, Any]] = ...,
-    skippable: bool = ...,
-    group_name: Optional[str] = ...,
-    code_version: Optional[str] = ...,
-    freshness_policy: Optional[FreshnessPolicy] = ...,
-    automation_condition: Optional[AutomationCondition] = ...,
-    owners: Optional[Sequence[str]] = ...,
-    tags: Optional[Mapping[str, str]] = ...,
-    kinds: Optional[Set[str]] = ...,
-    partitions_def: Optional[PartitionsDefinition] = ...,
-) -> "AssetSpec":
-    """Returns a new AssetSpec with the specified attributes replaced."""
-    current_tags_without_kinds = {
-        tag_key: tag_value
-        for tag_key, tag_value in spec.tags.items()
-        if not tag_key.startswith(KIND_PREFIX)
-    }
-    with disable_dagster_warnings():
-        return spec.dagster_internal_init(
-            key=key if key is not ... else spec.key,
-            deps=deps if deps is not ... else spec.deps,
-            description=description if description is not ... else spec.description,
-            metadata=metadata if metadata is not ... else spec.metadata,
-            skippable=skippable if skippable is not ... else spec.skippable,
-            group_name=group_name if group_name is not ... else spec.group_name,
-            code_version=code_version if code_version is not ... else spec.code_version,
-            freshness_policy=freshness_policy
-            if freshness_policy is not ...
-            else spec.freshness_policy,
-            automation_condition=automation_condition
-            if automation_condition is not ...
-            else spec.automation_condition,
-            owners=owners if owners is not ... else spec.owners,
-            tags=tags if tags is not ... else current_tags_without_kinds,
-            kinds=kinds if kinds is not ... else spec.kinds,
-            partitions_def=partitions_def if partitions_def is not ... else spec.partitions_def,
-        )
+    @public
+    def merge_attributes(
+        self,
+        *,
+        deps: Iterable["CoercibleToAssetDep"] = ...,
+        metadata: Mapping[str, Any] = ...,
+        owners: Sequence[str] = ...,
+        tags: Mapping[str, str] = ...,
+        kinds: Set[str] = ...,
+    ) -> "AssetSpec":
+        """Returns a new AssetSpec with the specified attributes merged with the current attributes.
+
+        Args:
+            deps (Optional[Iterable[CoercibleToAssetDep]]): A set of asset dependencies to add to
+                the asset self.
+            metadata (Optional[Mapping[str, Any]]): A set of metadata to add to the asset self.
+                Will overwrite any existing metadata with the same key.
+            owners (Optional[Sequence[str]]): A set of owners to add to the asset self.
+            tags (Optional[Mapping[str, str]]): A set of tags to add to the asset self.
+                Will overwrite any existing tags with the same key.
+            kinds (Optional[Set[str]]): A set of kinds to add to the asset self.
+
+        Returns:
+            AssetSpec
+        """
+        current_tags_without_kinds = {
+            tag_key: tag_value
+            for tag_key, tag_value in self.tags.items()
+            if not tag_key.startswith(KIND_PREFIX)
+        }
+        with disable_dagster_warnings():
+            return self.dagster_internal_init(
+                key=self.key,
+                deps=[*self.deps, *(deps if deps is not ... else [])],
+                description=self.description,
+                metadata={**self.metadata, **(metadata if metadata is not ... else {})},
+                skippable=self.skippable,
+                group_name=self.group_name,
+                code_version=self.code_version,
+                freshness_policy=self.freshness_policy,
+                automation_condition=self.automation_condition,
+                owners=[*self.owners, *(owners if owners is not ... else [])],
+                tags={**current_tags_without_kinds, **(tags if tags is not ... else {})},
+                kinds={*self.kinds, *(kinds if kinds is not ... else {})},
+                partitions_def=self.partitions_def,
+            )
 
 
-def merge_attributes(
-    spec: AssetSpec,
-    *,
-    deps: Iterable["CoercibleToAssetDep"] = ...,
-    metadata: Mapping[str, Any] = ...,
-    owners: Sequence[str] = ...,
-    tags: Mapping[str, str] = ...,
-    kinds: Set[str] = ...,
-) -> "AssetSpec":
-    """Returns a new AssetSpec with the specified attributes merged with the current attributes."""
-    current_tags_without_kinds = {
-        tag_key: tag_value
-        for tag_key, tag_value in spec.tags.items()
-        if not tag_key.startswith(KIND_PREFIX)
-    }
-    with disable_dagster_warnings():
-        return spec.dagster_internal_init(
-            key=spec.key,
-            deps=[*spec.deps, *(deps if deps is not ... else [])],
-            description=spec.description,
-            metadata={**spec.metadata, **(metadata if metadata is not ... else {})},
-            skippable=spec.skippable,
-            group_name=spec.group_name,
-            code_version=spec.code_version,
-            freshness_policy=spec.freshness_policy,
-            automation_condition=spec.automation_condition,
-            owners=[*spec.owners, *(owners if owners is not ... else [])],
-            tags={**current_tags_without_kinds, **(tags if tags is not ... else {})},
-            kinds={*spec.kinds, *(kinds if kinds is not ... else {})},
-            auto_materialize_policy=spec.auto_materialize_policy,
-            partitions_def=spec.partitions_def,
-        )
+@overload
+def map_asset_specs(
+    func: Callable[[AssetSpec], AssetSpec], iterable: Iterable[AssetSpec]
+) -> Sequence[AssetSpec]: ...
+
+
+@overload
+def map_asset_specs(
+    func: Callable[[AssetSpec], AssetSpec], iterable: Iterable["AssetsDefinition"]
+) -> Sequence["AssetsDefinition"]: ...
+
+
+@overload
+def map_asset_specs(
+    func: Callable[[AssetSpec], AssetSpec], iterable: Iterable[Union["AssetsDefinition", AssetSpec]]
+) -> Sequence[Union["AssetsDefinition", AssetSpec]]: ...
+
+
+def map_asset_specs(
+    func: Callable[[AssetSpec], AssetSpec], iterable: Iterable[Union["AssetsDefinition", AssetSpec]]
+) -> Sequence[Union["AssetsDefinition", AssetSpec]]:
+    """Map a function over a sequence of AssetSpecs or AssetsDefinitions, replacing specs in the sequence
+    or specs in an AssetsDefinitions with the result of the function.
+
+    Args:
+        func (Callable[[AssetSpec], AssetSpec]): The function to apply to each AssetSpec.
+        iterable (Iterable[Union[AssetsDefinition, AssetSpec]]): The sequence of AssetSpecs or AssetsDefinitions.
+
+    Returns:
+        Sequence[Union[AssetsDefinition, AssetSpec]]: A sequence of AssetSpecs or AssetsDefinitions with the function applied
+            to each spec.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import AssetSpec, map_asset_specs
+
+            asset_specs = [
+                AssetSpec(key="my_asset"),
+                AssetSpec(key="my_asset_2"),
+            ]
+
+            mapped_specs = map_asset_specs(lambda spec: spec.replace_attributes(owners=["nelson@hooli.com"]), asset_specs)
+
+    """
+    from dagster._core.definitions.assets import AssetsDefinition
+
+    return [
+        obj.map_asset_specs(func) if isinstance(obj, AssetsDefinition) else func(obj)
+        for obj in iterable
+    ]

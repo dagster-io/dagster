@@ -40,12 +40,7 @@ from dagster._core.events import (
 )
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.remote_representation.origin import RemoteJobOrigin
-from dagster._core.snap import (
-    ExecutionPlanSnapshot,
-    JobSnap,
-    create_execution_plan_snapshot_id,
-    create_job_snapshot_id,
-)
+from dagster._core.snap import ExecutionPlanSnapshot, JobSnap, create_execution_plan_snapshot_id
 from dagster._core.storage.dagster_run import (
     DagsterRun,
     DagsterRunStatus,
@@ -580,7 +575,7 @@ class SqlRunStorage(RunStorage):
         check.opt_str_param(snapshot_id, "snapshot_id")
 
         if not snapshot_id:
-            snapshot_id = create_job_snapshot_id(job_snapshot)
+            snapshot_id = job_snapshot.snapshot_id
 
         return self._add_snapshot(
             snapshot_id=snapshot_id,

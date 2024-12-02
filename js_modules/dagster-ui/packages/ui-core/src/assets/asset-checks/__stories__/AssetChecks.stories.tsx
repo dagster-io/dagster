@@ -13,7 +13,8 @@ import {
 import {AssetFeatureProvider} from '../../AssetFeatureContext';
 import {buildQueryMock} from '../../AutoMaterializePolicyPage/__fixtures__/AutoMaterializePolicyPage.fixtures';
 import {ASSET_CHECK_DETAILS_QUERY} from '../AssetCheckDetailModal';
-import {ASSET_CHECKS_QUERY, AssetChecks} from '../AssetChecks';
+import {AssetChecks} from '../AssetChecks';
+import {ASSET_CHECKS_QUERY} from '../AssetChecksQuery';
 import {
   TestAssetCheck,
   TestAssetCheckWarning,
@@ -21,7 +22,7 @@ import {
   testLatestMaterializationTimeStamp,
 } from '../__fixtures__/AssetChecks.fixtures';
 import {AssetCheckDetailsQueryVariables} from '../types/AssetCheckDetailModal.types';
-import {AssetChecksQueryVariables} from '../types/AssetChecks.types';
+import {AssetChecksQueryVariables} from '../types/AssetChecksQuery.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {

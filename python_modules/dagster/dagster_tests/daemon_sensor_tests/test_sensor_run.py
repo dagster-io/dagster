@@ -1477,9 +1477,10 @@ def test_launch_once(caplog, executor, instance, workspace_context, remote_repo)
         second=59,
     )
 
-    with freeze_time(freeze_datetime), patch.object(
-        DagsterInstance, "get_ticks", wraps=instance.get_ticks
-    ) as mock_get_ticks:
+    with (
+        freeze_time(freeze_datetime),
+        patch.object(DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
+    ):
         sensor = remote_repo.get_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
@@ -1518,9 +1519,10 @@ def test_launch_once(caplog, executor, instance, workspace_context, remote_repo)
 
     # run again (after 30 seconds), to ensure that the run key maintains idempotence
     freeze_datetime = freeze_datetime + relativedelta(seconds=30)
-    with freeze_time(freeze_datetime), patch.object(
-        DagsterInstance, "get_ticks", wraps=instance.get_ticks
-    ) as mock_get_ticks:
+    with (
+        freeze_time(freeze_datetime),
+        patch.object(DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
+    ):
         evaluate_sensors(workspace_context, executor)
         # did not need to get ticks on this call, as the preivous tick evaluated successfully
         assert mock_get_ticks.call_count == 0
@@ -1555,9 +1557,10 @@ def test_launch_once(caplog, executor, instance, workspace_context, remote_repo)
 
         # Sensor loop still executes
     freeze_datetime = freeze_datetime + relativedelta(seconds=30)
-    with freeze_time(freeze_datetime), patch.object(
-        DagsterInstance, "get_ticks", wraps=instance.get_ticks
-    ) as mock_get_ticks:
+    with (
+        freeze_time(freeze_datetime),
+        patch.object(DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
+    ):
         evaluate_sensors(workspace_context, executor)
         # did not need to get ticks on this call either
         assert mock_get_ticks.call_count == 0

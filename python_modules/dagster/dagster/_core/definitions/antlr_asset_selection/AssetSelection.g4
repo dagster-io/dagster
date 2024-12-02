@@ -4,16 +4,21 @@ start: expr EOF;
 
 // Root rule for parsing expressions
 expr
-    : attributeExpr                                # AttributeExpression
-    | traversal expr                               # UpTraversalExpression
-    | traversal expr traversal                     # UpAndDownTraversalExpression
-    | expr traversal                               # DownTraversalExpression
+    : traversalAllowedExpr                         # TraversalAllowedExpression
+    | traversal traversalAllowedExpr traversal     # UpAndDownTraversalExpression
+    | traversal traversalAllowedExpr               # UpTraversalExpression
+    | traversalAllowedExpr traversal               # DownTraversalExpression
     | NOT expr                                     # NotExpression
     | expr AND expr                                # AndExpression
     | expr OR expr                                 # OrExpression
+    | STAR                                         # AllExpression
+    ;
+
+// Allowed expressions for traversals
+traversalAllowedExpr
+    : attributeExpr                                # AttributeExpression
     | functionName LPAREN expr RPAREN              # FunctionCallExpression
     | LPAREN expr RPAREN                           # ParenthesizedExpression
-    | STAR                                         # AllExpression
     ;
 
 // Traversal operators
