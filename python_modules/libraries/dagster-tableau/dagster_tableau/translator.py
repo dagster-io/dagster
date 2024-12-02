@@ -113,7 +113,7 @@ class DagsterTableauTranslator:
 
     @deprecated(
         breaking_version="1.10",
-        additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec().key` instead",
+        additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec(...).key` instead",
     )
     def get_asset_key(self, data: TableauContentData) -> AssetKey:
         return self.get_asset_spec(data).key
@@ -128,7 +128,10 @@ class DagsterTableauTranslator:
         else:
             check.assert_never(data.content_type)
 
-    @deprecated(breaking_version="1.10")
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec(...).key` instead",
+    )
     def get_sheet_asset_key(self, data: TableauContentData) -> AssetKey:
         return self.get_sheet_spec(data).key
 
@@ -166,7 +169,10 @@ class DagsterTableauTranslator:
             },
         )
 
-    @deprecated(breaking_version="1.10")
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec(...).key` instead",
+    )
     def get_dashboard_asset_key(self, data: TableauContentData) -> AssetKey:
         return self.get_dashboard_spec(data).key
 
@@ -200,7 +206,10 @@ class DagsterTableauTranslator:
             },
         )
 
-    @deprecated(breaking_version="1.10")
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec(...).key` instead",
+    )
     def get_data_source_asset_key(self, data: TableauContentData) -> AssetKey:
         return self.get_data_source_spec(data).key
 
