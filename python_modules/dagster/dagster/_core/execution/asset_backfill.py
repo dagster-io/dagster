@@ -1292,9 +1292,9 @@ def get_canceling_asset_backfill_iteration_data(
         asset_graph,
     )
     # we fetch the failed_subset to get any new assets that have failed and add that to the set of
-    # assets we alerady know failed and their downstreams. However we need to remove any assets in
+    # assets we already know failed and their downstreams. However we need to remove any assets in
     # updated_materialized_subset to account for the case where a run retry successfully
-    # materialized a previlusly failed asset.
+    # materialized a previously failed asset.
     updated_failed_subset = (
         asset_backfill_data.failed_and_downstream_subset | failed_subset
     ) - updated_materialized_subset
