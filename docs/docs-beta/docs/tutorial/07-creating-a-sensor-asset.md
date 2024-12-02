@@ -7,7 +7,7 @@ last_update:
 
 # Sensors 
 
-There are several ways to automate pipelines and assets [in Dagster](guides/automation). 
+When building data pipelines, sometimes you need to use event driven automations to support situations where jobs occur at irregular cadences or in rapid succession. [Sensors](guides/sensors) is the building block in Dagster you can use to support this. 
 
 In this step you will:
 
@@ -16,20 +16,36 @@ In this step you will:
 
 ## 1. Event Driven Asset
 
+For our pipeline, we want to model a situation where an executive wants a pivot table report of sales results by department and product. They want that processed in real time from their request and it isnt a high priority to build the reporting to have this available and refreshing. 
+
+For this asset we need to define the structure of the request that it is expecting in the materialization context. 
+
+Other than that defining this asset is the same as our previous assets. Copy the following code beneath `product_performance` 
 
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="274" lineEnd="311"/>
 
-
 ## 2. Build the Sensor
+
+
 
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="313" lineEnd="355"/>
 
 
 ## 3. Materialize the sensor asset
 
-Your definitions object should now look like this:
+1. Update definitions object:
 
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="356" lineEnd="371"/>
+
+2. Reload definitions
+
+3. Turn on sensor 
+
+4. Add example JSON file to sensor folder
+
+5. Navigate to asset page
+
+-- need screenshot of asset materializing
 
 ## Next Steps
 

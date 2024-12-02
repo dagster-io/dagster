@@ -16,7 +16,7 @@ In this step you will:
 
 ## 1. Automating asset materialization 
 
-The reporting assets created in the last step should refresh whenever the upstream data is updated. To accomplish this we will add an eager automation condition to asset definition. 
+Ideally, the reporting assets created in the last step should refresh whenever the upstream data is updated. This can be done simply using [declarative automation](guides/declarative-automation) and adding an automation condition to the asset definition.
 
 Update the `monthly_sales_performance` asset to have the automation condition in the decorator:
 
@@ -28,7 +28,7 @@ Do the same thing for `product_performance`:
 
 ## 2. Scheduled Jobs
 
-CRON based schedules are a common use case in data orchestration. In this scenario, we need a job to update the source files on a weekly basis. Since we already defined the performance assets to materialize when the upstream data is updated the entire pipeline will refresh. 
+CRON based schedules are common in data orchestration. For our pipeline, assume updated csv's get dropped into a file location every week at a specified time by an external process. We want to have a job that runs the pipeline and materialize the asset. Since we already defined the performance assets to materialize using the eager condition, When the upstream data is updated the entire pipeline will refresh. 
 
 Copy the following code underneath the `product performance` asset:
 
@@ -48,7 +48,7 @@ To accomplish this:
 
 The job is now executing. 
 
-Additionally if you navigaet to the runs tab you will see that materializations for `monthly_sales_performance` and `product_performance` have ran as well. 
+Additionally if you navigate to the runs tab you will see that materializations for `monthly_sales_performance` and `product_performance` have ran as well. 
 
    ![2048 resolution](/images/tutorial/etl-tutorial/automation-final.png)
 
