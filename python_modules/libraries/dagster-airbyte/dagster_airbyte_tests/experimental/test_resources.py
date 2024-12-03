@@ -15,11 +15,6 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
     client = resource.get_client()
 
     base_api_mocks.add(
-        responses.POST,
-        f"{client.api_base_url}/applications/token",
-        json={"access_token": "some_access_token"},
-    )
-    base_api_mocks.add(
         method=responses.GET,
         url=f"{client.api_base_url}/test",
         json={},
