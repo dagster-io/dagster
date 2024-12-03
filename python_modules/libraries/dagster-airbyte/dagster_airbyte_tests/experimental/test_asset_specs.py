@@ -8,7 +8,7 @@ from dagster_airbyte_tests.experimental.conftest import (
 )
 
 
-def test_fetch_fivetran_workspace_data(
+def test_fetch_airbyte_workspace_data(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
     resource = AirbyteCloudWorkspace(
