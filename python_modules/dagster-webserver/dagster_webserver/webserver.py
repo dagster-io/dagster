@@ -90,7 +90,7 @@ class DagsterWebserver(
         }
 
     def make_csp_header(self, nonce: str) -> str:
-        csp_conf_path = self.relative_path("webapp/build/csp-header.txt")
+        csp_conf_path = self.relative_path(path.sep.join(["webapp", "build", "csp-header.txt"]))
         try:
             with open(csp_conf_path, encoding="utf8") as f:
                 csp_template = f.read()
@@ -201,7 +201,7 @@ class DagsterWebserver(
 
     def index_html_endpoint(self, request: Request):
         """Serves root html."""
-        index_path = self.relative_path("webapp/build/index.html")
+        index_path = self.relative_path(path.sep.join(["webapp", "build", "index.html"]))
 
         context = self.make_request_context(request)
 
@@ -257,7 +257,7 @@ class DagsterWebserver(
         mimetypes.add_type("image/svg+xml", ".svg")
 
         routes = []
-        base_dir = self.relative_path("webapp/build/")
+        base_dir = self.relative_path(path.sep.join(["webapp", "build"]))
         for subdir, _, files in walk(base_dir):
             for file in files:
                 full_path = path.join(subdir, file)
