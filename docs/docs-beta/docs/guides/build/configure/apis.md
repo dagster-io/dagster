@@ -1,6 +1,6 @@
 ---
 title: Connecting to APIs
-sidebar_position: 60
+sidebar_position: 600
 sidebar_label: API connections
 ---
 
