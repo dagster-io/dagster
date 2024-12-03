@@ -32,7 +32,8 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
+
+# from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test.definitions import lazy_definitions, scoped_definitions_load_context
@@ -496,7 +497,7 @@ def test_dynamic_failure_retry(job_fn, config_fn):
     assert_expected_failure_behavior(job_fn, config_fn)
 
 
-@op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+@op(concurrency_key="foo")
 def simple_op(context):
     time.sleep(0.1)
     foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
