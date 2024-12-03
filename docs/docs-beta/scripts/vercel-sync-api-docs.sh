@@ -13,7 +13,7 @@ cd ..
 export LC_ALL=C.UTF-8
 
 curl -LsSf https://astral.sh/uv/install.sh | sh
-source ~/.cargo/env
+source "$HOME/.local/bin/env"
 
 uv python install 3.11
 uv venv
