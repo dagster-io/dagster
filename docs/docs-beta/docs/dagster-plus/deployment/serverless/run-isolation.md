@@ -2,7 +2,7 @@
 title: 'Serverless run isolation'
 displayed_sidebar: 'dagsterPlus'
 sidebar_label: 'Run isolation'
-sidebar_position: 35
+sidebar_position: 200
 ---
 
 # Serverless run isolation
@@ -15,7 +15,7 @@ Dagster+ Serverless offers two settings for run isolation: isolated and non-isol
 To follow the steps in this guide, you'll need:
 
 - An active Dagster+ Serverless deployment
-- An understanding of [Dagster+ deployment settings](/dagster-plus/deployment/settings)
+- An understanding of [Dagster+ deployment settings](/dagster-plus/deployment/deployment-settings)
 </details>
 
 ---
@@ -57,7 +57,7 @@ While launching runs from the Launchpad, un-check `Isolate run environment`. Whe
 
 To avoid crashes and memory exhaustion, only one non-isolated run will execute at once by default. While a non-isolated run is in progress, the Launchpad will only allow isolated runs to be launched.
 
-This limit can be configured in [deployment settings](/dagster-plus/deployment/settings).
+This limit can be configured in [deployment settings](/dagster-plus/deployment/deployment-settings).
 
 ```yaml
 non_isolated_runs:

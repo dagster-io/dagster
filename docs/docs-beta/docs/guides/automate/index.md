@@ -11,8 +11,8 @@ Automation is key to building reliable, efficient data pipelines. This guide pro
 
 Before continuing, you should be familiar with:
 
-- [Asset definitions](/concepts/assets)
-- [Jobs](/concepts/ops-jobs)
+- [Asset definitions](/guides/build/assets-concepts/index.mdx
+- [Jobs](/guides/build/ops-jobs)
 
 </details>
 
@@ -47,7 +47,7 @@ Use this table to help guide your decision:
 ## Schedules
 
 Schedules allow you to run jobs at specified times, like "every Monday at 9 AM" or "daily at midnight."
-A schedule combines a selection of assets, known as a [Job](/concepts/ops-jobs), and a [cron expression](https://en.wikipedia.org/wiki/Cron)
+A schedule combines a selection of assets, known as a [Job](/guides/build/ops-jobs), and a [cron expression](https://en.wikipedia.org/wiki/Cron)
 to define when the job should be run.
 
 To make creating cron expressions easier, you can use an online tool like [Crontab Guru](https://crontab.guru/).
@@ -57,9 +57,9 @@ To make creating cron expressions easier, you can use an online tool like [Cront
 - You need to run jobs at regular intervals
 - You want basic time-based automation
 
-For examples of how to create schedules, see [How-To Use Schedules](/guides/schedules).
+For examples of how to create schedules, see [How-To Use Schedules](/guides/automate/schedules).
 
-For more information about how Schedules work, see [About Schedules](/concepts/schedules).
+For more information about how Schedules work, see [About Schedules](/guides/automate/schedules).
 
 ## Sensors
 
@@ -67,16 +67,16 @@ Sensors allow you to trigger runs based on events or conditions that you define,
 
 You must provide a function that the sensor will use to determine if it should trigger a run.
 
-Like schedules, sensors operate on a selection of assets, known as [Jobs](/concepts/ops-jobs) and can either start a pipeline through a Run or log a reason for not starting a pipeline using a SkipReason.
+Like schedules, sensors operate on a selection of assets, known as [Jobs](/guides/build/ops-jobs) and can either start a pipeline through a Run or log a reason for not starting a pipeline using a SkipReason.
 
 ### When to use sensors
 
 - You need event-driven automation
 - You want to react to changes in external systems
 
-For more examples of how to create sensors, see the [How-To Use Sensors](/guides/sensors) guide.
+For more examples of how to create sensors, see the [How-To Use Sensors](/guides/automate/sensors) guide.
 
-For more information about how sensors work, see the [About Sensors](/concepts/sensors) concept page.
+For more information about how sensors work, see the [About Sensors](/guides/automate/sensors) concept page.
 
 ## Asset sensors
 
@@ -87,7 +87,7 @@ Asset Sensors trigger jobs when specified assets are materialized, allowing you 
 - You need to trigger jobs based on asset materializations
 - You want to create dependencies between different jobs or code locations
 
-For more examples of how to create asset sensors, see the [How-To Use Asset Sensors](/guides/asset-sensors) guide.
+For more examples of how to create asset sensors, see the [How-To Use Asset Sensors](/guides/automate/asset-sensors) guide.
 
 ## Declarative Automation
 

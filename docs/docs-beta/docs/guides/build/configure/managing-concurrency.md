@@ -11,8 +11,8 @@ You often want to control the number of concurrent runs for a Dagster job, a spe
 <details>
 <summary>Prerequisites</summary>
 
-- Familiarity with [Assets](/concepts/assets)
-- Familiarity with [Jobs and Ops](/concepts/ops-jobs)
+- Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
+- Familiarity with [Jobs and Ops](/guides/build/ops-jobs)
 </details>
 
 
@@ -21,7 +21,7 @@ You often want to control the number of concurrent runs for a Dagster job, a spe
 
 
 * Dagster Core, add the following to your [dagster.yaml](/todo)
-* In Dagster+, add the following to your [deployment settings](/dagster-plus/settings)
+* In Dagster+, add the following to your [deployment settings](/dagster-plus/deployment/deployment-settings)
 
 ```yaml
 run_queue:
@@ -153,7 +153,7 @@ The possible causes for runs remaining in `QUEUED` status depend on whether you'
 
   #### Troubleshoot the Dagster daemon
 
-    * **Verify the Dagster daemon is set up and running.** In the Dagster UI, navigate to **Deployment > Daemons** and verify that the daemon is running. The **Run queue** should also be running. If you used [dagster dev](/guides/running-local-ui-development) to start the Dagster UI, the daemon should have been started for you. If the daemon isn’t running, proceed to step 2.
+    * **Verify the Dagster daemon is set up and running.** In the Dagster UI, navigate to **Deployment > Daemons** and verify that the daemon is running. The **Run queue** should also be running. If you used [dagster dev](/guides/deploy/deployment-options/running-local-ui-development) to start the Dagster UI, the daemon should have been started for you. If the daemon isn’t running, proceed to step 2.
     * **Verify the Dagster daemon can access the same storage as the Dagster webserver process.** Both the webserver process and the Dagster daemon should access the same storage, meaning they should use the same `dagster.yaml`. Locally, this means both processes should have the same set `DAGSTER_HOME` environment variable. If you used dagster dev to start the Dagster UI, both processes should be using the same storage. Refer to the [Dagster Instance docs](/todo) for more information.
 
   #### Troubleshoot the run queue configuration

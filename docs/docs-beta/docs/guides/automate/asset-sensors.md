@@ -13,8 +13,8 @@ This guide covers the most common use cases for asset sensors, such as defining 
 
 To follow this guide, you'll need:
 
-- Familiarity with [Assets](/concepts/assets)
-- Familiarity with [Ops and Jobs](/concepts/ops-jobs)
+- Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
+- Familiarity with [Ops and Jobs](/guides/build/ops-jobs)
 
 </details>
 
@@ -52,7 +52,7 @@ end
 
 This is an example of an asset sensor that triggers a job when an asset is materialized. The `daily_sales_data` asset is in the same code location as the job and other asset for this example, but the same pattern can be applied to assets in different code locations.
 
-<CodeExample filePath="guides/automation/simple-asset-sensor-example.py" language="python" />
+<CodeExample filePath="guides/automate/simple-asset-sensor-example.py" language="python" />
 
 ## Customize evaluation logic
 
@@ -81,7 +81,7 @@ stateDiagram-v2
 
 In the following example, the `@asset_sensor` decorator defines a custom evaluation function that returns a `RunRequest` object when the asset is materialized and certain metadata is present, otherwise it skips the run.
 
-<CodeExample filePath="guides/automation/asset-sensor-custom-eval.py" language="python"/>
+<CodeExample filePath="guides/automate/asset-sensor-custom-eval.py" language="python"/>
 
 ## Trigger a job with configuration
 
@@ -89,7 +89,7 @@ By providing a configuration to the `RunRequest` object, you can trigger a job w
 
 For example, you might use a sensor to trigger a job when an asset is materialized, but also pass metadata about that materialization to the job:
 
-<CodeExample filePath="guides/automation/asset-sensor-with-config.py" language="python" />
+<CodeExample filePath="guides/automate/asset-sensor-with-config.py" language="python" />
 
 ## Monitor multiple assets
 
@@ -97,9 +97,9 @@ When building a pipeline, you may want to monitor multiple assets with a single 
 
 The following example uses a `@multi_asset_sensor` to monitor multiple assets and trigger a job when any of the assets are materialized:
 
-<CodeExample filePath="guides/automation/multi-asset-sensor.py" language="python" />
+<CodeExample filePath="guides/automate/multi-asset-sensor.py" language="python" />
 
 ## Next steps
 
-- Learn more about asset sensors in [Understanding Automation](/concepts/automation)
-- Explore [Declarative Automation](/concepts/automation/declarative-automation) as an alternative to asset sensors
+- Learn more about asset sensors in [Understanding Automation](/guides/automate)
+- Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to asset sensors

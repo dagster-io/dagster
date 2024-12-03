@@ -19,8 +19,8 @@ For assets that follow this pattern, an I/O manager can streamline the code that
 
 To follow the steps in this guide, you'll need familiarity with:
 
-- [Assets](/concepts/assets)
-- [Resources](/concepts/resources)
+- [Assets](/guides/build/assets-concepts/index.mdx
+- [Resources](/guides/build/configure/resources)
 </details>
 
 ## Before you begin
@@ -37,7 +37,7 @@ To follow the steps in this guide, you'll need familiarity with:
 - Your pipeline manages I/O on its own by using other libraries/tools that write to storage
 - Your assets won't fit in memory, such as a database table with billions of rows
 
-As a general rule, if your pipeline becomes more complicated in order to use I/O managers, it's likely that I/O managers aren't a good fit. In these cases you should use `deps` to [define dependencies](/guides/asset-dependencies).
+As a general rule, if your pipeline becomes more complicated in order to use I/O managers, it's likely that I/O managers aren't a good fit. In these cases you should use `deps` to [define dependencies](/guides/build/assets-concepts/asset-dependencies).
 
 ## Using I/O managers in assets \{#io-in-assets}
 
@@ -84,5 +84,5 @@ Dagster offers built-in library implementations for I/O managers for popular dat
 
 ## Next steps
 
-- Learn to [connect databases](/guides/databases) with resources
-- Learn to [connect APIs](/guides/apis) with resources
+- Learn to [connect databases](/guides/build/configure/databases) with resources
+- Learn to [connect APIs](/guides/build/configure/apis) with resources

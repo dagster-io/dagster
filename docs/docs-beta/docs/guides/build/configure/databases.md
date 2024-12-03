@@ -14,7 +14,7 @@ This guide demonstrates how to standardize database connections and customize th
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/guides/data-assets)
+- Familiarity with [Assets](/guides/build/create-a-pipeline/data-assets)
 
 To run the examples in this guide, you'll need:
 
@@ -59,5 +59,5 @@ You can also fetch environment variables using the `os` library. Dagster treats 
 
 ## Next steps
 
-- Explore how to use resources for [Connecting to APIs](/guides/apis)
-- Go deeper into [Understanding Resources](/concepts/resources)
+- Explore how to use resources for [Connecting to APIs](/guides/build/configure/apis)
+- Go deeper into [Understanding Resources](/guides/build/configure/resources)

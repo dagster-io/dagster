@@ -13,7 +13,7 @@ You'll often want to be able to adjust parameters when materializing assets, whi
 
 To follow the steps in this guide, you'll need familiarity with:
 
-- [Assets](/guides/data-assets)
+- [Assets](/guides/build/create-a-pipeline/data-assets)
 - [Pydantic](https://docs.pydantic.dev/latest/)
 
 </details>
@@ -29,7 +29,7 @@ For example, you want to allow your team to change the lookback time window for 
 ## Specifying config using the Dagster UI
 
 :::note
-Run configurations reference an `op` which is the underlying compute associated with an asset. Refer to the [Ops vs Assets](/concepts/ops-jobs/ops-vs-assets) guide for more information.
+Run configurations reference an `op` which is the underlying compute associated with an asset. Refer to the [Ops vs Assets](/guides/build/ops-jobs/ops-vs-assets) guide for more information.
 :::
 
 When launching a run using the Launchpad in the UI, you can provide a run config file as YAML or JSON that overrides the default configuration for your asset.
@@ -44,5 +44,5 @@ This will open the Launchpad, where you can scaffold the config, customize its v
 
 ## Next steps
 
-- Learn more about Dagster [assets](/concepts/assets)
-- Connect to external [APIs](/guides/apis) and [databases](/guides/databases) with resources
+- Learn more about Dagster [assets](/guides/build/assets-concepts/index.mdx
+- Connect to external [APIs](/guides/build/configure/apis) and [databases](/guides/build/configure/databases) with resources

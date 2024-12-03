@@ -19,8 +19,8 @@ Partitioned assets in Dagster can have dependencies on other partitioned assets,
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/guides/data-assets)
-- Familiarity with [Partitions](/guides/partitioning)
+- Familiarity with [Assets](/guides/build/create-a-pipeline/data-assets)
+- Familiarity with [Partitions](/guides/build/create-a-pipeline/partitioning)
 
 </details>
 
@@ -53,7 +53,7 @@ In this example:
   - First, we specify `automation_condition=AutomationCondition.eager()` to the `weekly_sales_summary` asset. This ensures it runs weekly after all seven daily partitions of `daily_sales_data` are up-to-date.
   - Second, we specify `automation_condition=AutomationCondition.cron(cron_schedule="0 1 * * *")` to the `daily_sales_data` asset. This ensures it runs daily.
 
-Note: In a simpler example above, we manually set up a daily schedule for asset execution. For more complex dependency logic, it's recommended to use automation conditions instead of schedules. Automation conditions specify when an asset should run, which allows you to define execution criteria without custom scheduling logic. For more details, see [Declarative Automation](/concepts/automation/declarative-automation).
+Note: In a simpler example above, we manually set up a daily schedule for asset execution. For more complex dependency logic, it's recommended to use automation conditions instead of schedules. Automation conditions specify when an asset should run, which allows you to define execution criteria without custom scheduling logic. For more details, see [Declarative Automation](/guides/automate/declarative-automation).
 
 ## Dependencies between time-based partitions and un-partitioned assets
 

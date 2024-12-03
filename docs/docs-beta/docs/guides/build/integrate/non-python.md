@@ -13,7 +13,7 @@ This guide covers how to run JavaScript with Dagster using Pipes, however, the s
 
 To follow this guide, you'll need:
 
-- Familiarity with [Assets](/concepts/assets)
+- Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
 - A basic understanding of JavaScript and Node.js
 
 To run the examples, you'll need to install:
@@ -80,5 +80,5 @@ Finally, update your Dagster asset to pass in the model information that's used 
 
 ## What's next?
 
-- Schedule your pipeline to run periodically with [Automating Pipelines](/guides/automation)
-- Explore adding asset checks to validate your script with [Understanding Asset Checks](/concepts/assets/asset-checks)
+- Schedule your pipeline to run periodically with [Automating Pipelines](/guides/automate/index.md)
+- Explore adding asset checks to validate your script with [Understanding Asset Checks](/guides/test/asset-checks)
