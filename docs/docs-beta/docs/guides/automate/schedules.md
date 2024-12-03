@@ -59,6 +59,6 @@ If you have a partitioned op job:
 
 By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints:
 
-- Learn more about schedules in [Understanding automation](/guides/automate/index.mdx)
+- Learn more about schedules in [Understanding automation](/guides/automate/index.md)
 - React to events with [sensors](/guides/automate/sensors)
 - Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to schedules
