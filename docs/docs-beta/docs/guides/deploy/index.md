@@ -1,6 +1,6 @@
 ---
 title: "Deploying Dagster"
-unlisted: true
+sidebar_position: 10
 ---
 
 # Deploying Dagster
@@ -8,7 +8,7 @@ unlisted: true
 This section is about self-hosting Dagster.
 
 :::info
-To deploy to Dagster+, see the [Dagster+ getting started](/dagster-plus/getting-started) guide.
+To deploy to Dagster+, see the [Dagster+ getting started guide](/dagster-plus/getting-started).
 
-To migrate from self-hosted to Dagster+, see TK.
+To migrate from self-hosted to Dagster+, see [Migrate from self-hosted to Dagster+](/dagster-plus/deployment/migration/self-hosted-to-dagster-plus).
 :::
