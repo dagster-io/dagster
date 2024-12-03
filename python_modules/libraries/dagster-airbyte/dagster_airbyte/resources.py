@@ -838,8 +838,8 @@ class AirbyteWorkspaceData:
 
 
 @experimental
-class AirbyteClient:
-    """This class exposes methods on top of the Airbyte REST API."""
+class AirbyteCloudClient:
+    """This class exposes methods on top of the Airbyte APIs for Airbyte Cloud."""
 
     _access_token_value: Optional[str] = PrivateAttr(default=None)
     _access_token_timestamp: Optional[float] = PrivateAttr(default=None)
@@ -887,11 +887,11 @@ class AirbyteCloudWorkspace(ConfigurableResource):
     client_id: str = Field(..., description="The Airbyte Cloud client ID.")
     client_secret: str = Field(..., description="The Airbyte Cloud client secret.")
 
-    _client: AirbyteClient = PrivateAttr(default=None)
+    _client: AirbyteCloudClient = PrivateAttr(default=None)
 
     @cached_method
-    def get_client(self) -> AirbyteClient:
-        return AirbyteClient(
+    def get_client(self) -> AirbyteCloudClient:
+        return AirbyteCloudClient(
             workspace_id=self.workspace_id,
             client_id=self.client_id,
             client_secret=self.client_secret,
