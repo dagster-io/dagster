@@ -159,7 +159,7 @@ export class AntlrRunSelectionVisitor
   }
 
   visitStatusAttributeExpr(ctx: StatusAttributeExprContext) {
-    const state: string = getValue(ctx.value());
+    const state: string = getValue(ctx.value()).toLowerCase();
     return new Set([...this.all_runs].filter((i) => i.metadata?.state === state));
   }
 }
