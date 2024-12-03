@@ -19,7 +19,7 @@ There are several ways to partition your data in Dagster:
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/guides/data-assets)
+- Familiarity with [Assets](/guides/build/create-a-pipeline/data-assets)
 
 </details>
 

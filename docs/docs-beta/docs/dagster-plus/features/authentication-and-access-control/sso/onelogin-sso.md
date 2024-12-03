@@ -21,7 +21,7 @@ To follow the steps in this guide, you'll need:
 - **The following in Dagster+:**
   - A Pro plan
   - [Access to a user token](/todo)
-  - [Organization Admin permissions](/dagster-plus/access/rbac/user-roles-permissions) in your organization
+  - [Organization Admin permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) in your organization
 
 </details>
 

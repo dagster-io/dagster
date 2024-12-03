@@ -40,7 +40,7 @@ When you inform Dagster+ about a new code location, we enqueue instructions for 
 
 ### Runs
 
-Your definitions might include [automations](/guides/automation) that launch runs or materialize assets. Or your developers might launch runs directly with the web UI.
+Your definitions might include [automations](/guides/automate) that launch runs or materialize assets. Or your developers might launch runs directly with the web UI.
 
 When a run needs to be launched, Dagster+ enqueues instructions for your agent to launch a new run. The next time your agent polls Dagster+ for new work, it will see instructions about how to launch your run. It will delegate those instructions to your code server and your code server will launch a run - a new run will typically require its own container.
 

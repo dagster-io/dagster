@@ -13,7 +13,7 @@ Using an asset factory reduces complexity and creates a pluggable entry point to
 <details>
   <summary>Prerequisites</summary>
 
-This guide builds upon the concepts in the [asset factories](/guides/asset-factories) tutorial.
+This guide builds upon the concepts in the [asset factories](/guides/build/configure/asset-factories) tutorial.
 </details>
 
 ---

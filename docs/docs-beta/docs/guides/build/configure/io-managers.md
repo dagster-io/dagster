@@ -19,8 +19,8 @@ For assets that follow this pattern, an I/O manager can streamline the code that
 
 To follow the steps in this guide, you'll need familiarity with:
 
-- [Assets](/concepts/assets)
-- [Resources](/concepts/resources)
+- [Assets](/guides/build/assets-concepts)
+- [Resources](/guides/build/configure/resources)
 </details>
 
 ## Before you begin
@@ -84,5 +84,5 @@ Dagster offers built-in library implementations for I/O managers for popular dat
 
 ## Next steps
 
-- Learn to [connect databases](/guides/databases) with resources
-- Learn to [connect APIs](/guides/apis) with resources
+- Learn to [connect databases](/guides/build/configure/databases) with resources
+- Learn to [connect APIs](/guides/build/configure/apis) with resources

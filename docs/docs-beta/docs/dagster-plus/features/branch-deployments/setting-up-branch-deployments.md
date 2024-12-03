@@ -116,7 +116,7 @@ While you can use your existing production agent, we recommend creating a dedica
 
      For example:
 
-<CodeExample filePath="dagster-plus/deployment/branch-deployments/dagster.yaml" language="yaml" />
+<CodeExample filePath="dagster-plus/features/branch-deployments/dagster.yaml" language="yaml" />
 
   </TabItem>
   <TabItem value="k8s" label="Kubernetes" default>
@@ -125,7 +125,7 @@ While you can use your existing production agent, we recommend creating a dedica
 
   2. After the agent is set up, modify your Helm values file to include the following:
 
-<CodeExample filePath="dagster-plus/deployment/branch-deployments/helm.yaml" language="yaml" />
+<CodeExample filePath="dagster-plus/features/branch-deployments/helm.yaml" language="yaml" />
 
   </TabItem>
 </Tabs>
@@ -158,7 +158,7 @@ In the `dagster_cloud.yaml` file, replace `build.registry` with the registry use
 
 For example:
 
-<CodeExample filePath="dagster-plus/deployment/branch-deployments/dagster_cloud.yaml" language="yaml" />
+<CodeExample filePath="dagster-plus/features/branch-deployments/dagster_cloud.yaml" language="yaml" />
 
 ### Step 4.3: Configure GitHub Action secrets
 
@@ -267,7 +267,7 @@ In the `dagster_cloud.yaml` file, replace `build.registry` with the registry use
 
 For example:
 
-<CodeExample filePath="dagster-plus/deployment/branch-deployments/dagster_cloud.yaml" language="yaml" />
+<CodeExample filePath="dagster-plus/features/branch-deployments/dagster_cloud.yaml" language="yaml" />
 
 ### Step 4.3: configure GitLab CI/CD variables
 
@@ -444,5 +444,5 @@ dagster-cloud deployment add-location \
 
 ## Next steps
 
-- Learn more about [Branch Deployments](/dagster-plus/deployment/branch-deployments)
-- Learn how to [Track changes on a Branch Deployment](/dagster-plus/deployment/branch-deployments/change-tracking)
+- Learn more about [Branch Deployments](dagster-plus/features/branch-deployments)
+- Learn how to [Track changes on a Branch Deployment](dagster-plus/features/branch-deployments/change-tracking)

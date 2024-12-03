@@ -19,7 +19,7 @@ Using metadata in Dagster, you can:
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/guides/data-assets)
+- Familiarity with [Assets](/guides/build/create-a-pipeline/data-assets)
 </details>
 
 ## Adding owners to assets \{#owners}
@@ -31,7 +31,7 @@ In a large organization, it's important to know which individuals and teams are 
 `owners` must either be an email address or a team name prefixed by `team:`.
 
 :::tip
-With Dagster+ Pro, you can create asset-based alerts that automatically notify an asset's owners when triggered. Refer to the [Dagster+ alert documentation](/dagster-plus/deployment/alerts) for more information.
+With Dagster+ Pro, you can create asset-based alerts that automatically notify an asset's owners when triggered. Refer to the [Dagster+ alert documentation](/dagster-plus/features/alerts) for more information.
 :::
 
 ## Organizing assets with tags \{#tags}
@@ -134,7 +134,7 @@ Dagster can automatically attach code references to assets during local developm
 
 ### Customizing code references \{#custom-references}
 
-If you want to customize how code references are attached - such as when you are building [domain-specific languages with asset factories](/guides/asset-factories) - you can manually add the `dagster/code_references` metadata to asset definitions:
+If you want to customize how code references are attached - such as when you are building [domain-specific languages with asset factories](/guides/build/configure/asset-factories) - you can manually add the `dagster/code_references` metadata to asset definitions:
 
 <CodeExample filePath="guides/data-modeling/metadata/custom-local-references.py" language="python" />
 

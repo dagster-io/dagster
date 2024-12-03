@@ -11,8 +11,8 @@ Schedules enable automated execution of jobs at specified intervals. These inter
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/concepts/assets)
-- Familiarity with [Ops and Jobs](/concepts/ops-jobs)
+- Familiarity with [Assets](/guides/build/assets-concepts)
+- Familiarity with [Ops and Jobs](/guides/build/ops-jobs)
 </details>
 
 ## Basic schedule
@@ -41,7 +41,7 @@ If using partitions and jobs, you can create a schedule using the partition with
 <Tabs>
 <TabItem value="assets" label="Assets">
 
-If you have a [partitioned asset](/guides/partitioning) and job:
+If you have a [partitioned asset](/guides/build/create-a-pipeline/partitioning) and job:
 
 <CodeExample filePath="guides/automation/schedule-with-partition.py" language="python" />
 
@@ -59,6 +59,6 @@ If you have a partitioned op job:
 
 By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints:
 
-- Learn more about schedules in [Understanding automation](/concepts/automation)
+- Learn more about schedules in [Understanding automation](/guides/automate)
 - React to events with [sensors](/guides/sensors)
-- Explore [Declarative Automation](/concepts/automation/declarative-automation) as an alternative to schedules
+- Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to schedules

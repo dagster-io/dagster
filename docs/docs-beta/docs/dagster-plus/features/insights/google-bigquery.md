@@ -15,7 +15,7 @@ The BigQuery cost metric is based off of the bytes billed for queries executed w
 To use these features, you will need:
 
 - A Dagster+ account on the **Pro** plan
-- Access to the [Dagster+ Insights feature](/dagster-plus/insights)
+- Access to the [Dagster+ Insights feature](/dagster-plus/features/insights)
 - BigQuery credentials which have access to the **`INFORMATION_SCHEMA.JOBS`** table, such as a BigQuery Resource viewer role.
   - For more information, see the [BigQuery Documentation](https://cloud.google.com/bigquery/docs/information-schema-jobs)
 - The following packages installed:
@@ -40,10 +40,10 @@ To enable this behavior, replace usage of `BigQueryResource` with `InsightsBigQu
 
 <Tabs>
   <TabItem value="before" label="Before">
-    <CodeExample filePath="dagster-plus/insights/google-bigquery/bigquery-resource.py" language="python" />
+    <CodeExample filePath="dagster-plus/features/insights/google-bigquery/bigquery-resource.py" language="python" />
   </TabItem>
   <TabItem value="after" label="After" default>
-    <CodeExample filePath="dagster-plus/insights/google-bigquery/bigquery-resource-insights.py" language="python" />
+    <CodeExample filePath="dagster-plus/features/insights/google-bigquery/bigquery-resource-insights.py" language="python" />
   </TabItem>
 </Tabs>
 
@@ -55,10 +55,10 @@ First, add a `.with_insights()` call to your `dbt.cli()` command(s).
 
 <Tabs>
   <TabItem value="before" label="Before">
-    <CodeExample filePath="dagster-plus/insights/google-bigquery/bigquery-dbt-asset.py" language="python" />
+    <CodeExample filePath="dagster-plus/features/insights/google-bigquery/bigquery-dbt-asset.py" language="python" />
   </TabItem>
   <TabItem value="after" label="After" default>
-    <CodeExample filePath="dagster-plus/insights/google-bigquery/bigquery-dbt-asset-insights.py" language="python" />
+    <CodeExample filePath="dagster-plus/features/insights/google-bigquery/bigquery-dbt-asset-insights.py" language="python" />
   </TabItem>
 </Tabs>
 
@@ -66,10 +66,10 @@ Then, add the following to your `dbt_project.yml`:
 
 <Tabs>
   <TabItem value="before" label="Before">
-    <CodeExample filePath="dagster-plus/insights/google-bigquery/dbt_project.yml" language="python" />
+    <CodeExample filePath="dagster-plus/features/insights/google-bigquery/dbt_project.yml" language="python" />
   </TabItem>
   <TabItem value="after" label="After" default>
-    <CodeExample filePath="dagster-plus/insights/google-bigquery/dbt_project_insights.yml" language="python" />
+    <CodeExample filePath="dagster-plus/features/insights/google-bigquery/dbt_project_insights.yml" language="python" />
   </TabItem>
 </Tabs>
 

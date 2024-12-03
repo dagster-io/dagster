@@ -5,11 +5,11 @@ unlisted: true
 
 There are several ways to automate the execution of your data pipelines with Dagster.
 
-The first system, and the most basic, is the [Schedule](/guides/schedules), which responds to time.
+The first system, and the most basic, is the [Schedule](/guides/automate/schedules), which responds to time.
 
 [Sensors](/guides/sensors) are like schedules, but they respond to an external event defined by the user.
 
-[Asset Sensors](/guides/asset-sensors) are a special case of sensor that responds to changes in asset materialization
+[Asset Sensors](/guides/automate/asset-sensors) are a special case of sensor that responds to changes in asset materialization
 as reported by the Event Log.
 
 Finally, the Declarative Automation system is a
@@ -24,7 +24,7 @@ as the schedule is processed.
 Schedules were one of the first types of automation in Dagster, created before the introduction of Software-Defined Assets.
 As such, you may find that many of the examples can seem foreign if you are used to only working within the asset framework.
 
-For more on how assets and ops inter-relate, read about [Assets and Ops](/concepts/assets#assets-and-ops)
+For more on how assets and ops inter-relate, read about [Assets and Ops](/guides/build/assets-concepts#assets-and-ops)
 
 The `dagster-daemon` process is responsible for submitting runs by checking each schedule at a regular interval to determine
 if it's time to execute the underlying job.

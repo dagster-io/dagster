@@ -15,8 +15,8 @@ An alternative to polling with sensors is to push events to Dagster using the [D
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/concepts/assets)
-- Familiarity with [Ops and Jobs](/concepts/ops-jobs)
+- Familiarity with [Assets](/guides/build/assets-concepts)
+- Familiarity with [Ops and Jobs](/guides/build/ops-jobs)
 </details>
 
 ## Basic sensor
@@ -76,6 +76,6 @@ If you want to be able to reset a sensor's cursor, don't set `run_key`s on `RunR
 
 By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints.
 
-- Run pipelines on a [schedule](/guides/schedules)
-- Trigger cross-job dependencies with [asset sensors](/guides/asset-sensors)
-- Explore [Declarative Automation](/concepts/automation/declarative-automation) as an alternative to sensors
+- Run pipelines on a [schedule](/guides/automate/schedules)
+- Trigger cross-job dependencies with [asset sensors](/guides/automate/asset-sensors)
+- Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to sensors

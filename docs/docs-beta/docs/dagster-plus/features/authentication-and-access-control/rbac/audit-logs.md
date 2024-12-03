@@ -16,7 +16,7 @@ This guide walks through how to access the audit log and details the interaction
 <details>
 <summary>Prerequisites</summary>
 - A Dagster+ Pro organization
-- An [Organization Admin](/dagster-plus/access/rbac/user-roles-permissions) role in your Dagster+ organization
+- An [Organization Admin](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) role in your Dagster+ organization
 </details>
 
 ## View audit logs
@@ -46,15 +46,15 @@ The **Filter** button near the top left of the page can be used to filter the li
 | Log in                         | A user logs in to the Dagster+ organization                                                                   |                                                                           |
 | Update sensor                  | A user toggles a sensor on or off                                                                             | The sensor name, code location, and cursor                                |
 | Update schedule                | A user toggles a schedule on or off                                                                           | The schedule name, code location, and cursor                              |
-| Update alert policy            | A user modifies an [alert policy](/dagster-plus/deployment/alerts/ui)                                         | The new configuration for the alert policy                                |
+| Update alert policy            | A user modifies an [alert policy](/dagster-plus/features/alerts/ui)                                         | The new configuration for the alert policy                                |
 | Create deployment              | A user creates a new deployment                                             | Whether the deployment is a branch deployment                             |
 | Delete deployment              | A user removes an existing deployment                                       | Whether the deployment is a branch deployment                             |
 | Create user token              | A user creates a new user token                                                                               |                                                                           |
 | Revoke user token              | A user revokes an existing user token                                                                         |                                                                           |
-| Change user permissions        | A user alters [permissions](/dagster-plus/access/rbac/user-roles-permissions) for another user                | The permission grant and targeted deployment                              |
+| Change user permissions        | A user alters [permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) for another user                | The permission grant and targeted deployment                              |
 | Create agent token             | A user creates a new agent token                                                                              |                                                                           |
 | Revoke agent token             | A user revokes an existing agent token                                                                        |                                                                           |
-| Update agent token permissions | A user alters [permissions](/dagster-plus/access/rbac/user-roles-permissions) for an agent token              | The permission grant and targeted deployment                              |
+| Update agent token permissions | A user alters [permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) for an agent token              | The permission grant and targeted deployment                              |
 | Create secret                  | A user creates a new [environment variable](/dagster-plus/deployment/environment-variables/dagster-ui)        | The created variable name                                                 |
 | Update secret                  | A user modifies an existing [environment variable](/dagster-plus/deployment/environment-variables/dagster-ui) | The previous and current variable names and whether the value was changed |
 | Delete secret                  | A user removes an [environment variable](/dagster-plus/deployment/environment-variables/dagster-ui)           | The deleted variable name                                                 |
@@ -65,4 +65,4 @@ The **Filter** button near the top left of the page can be used to filter the li
 Audit logs can be accessed programmatically over the Dagster+ GraphQL API. You can access a visual GraphiQL interface
 by navigating to `https://<org>.dagster.cloud/<deployment>/graphql` in your browser. You can also query the API directly using the Python client.
 
-<CodeExample filePath="dagster-plus/access/rbac/audit-logs.graphql" language="graphql" title="Audit log GraphQL query" />
+<CodeExample filePath="dagster-plus/features/authentication-and-access-control/rbac/audit-logs.graphql" language="graphql" title="Audit log GraphQL query" />

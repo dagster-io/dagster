@@ -38,13 +38,13 @@ All user roles are enforced both in Dagster+ and the GraphQL API.
 
 ### Teams
 
-Dagster+ Pro users can create teams of users and assign default permission sets. Refer to the [Managing teams in Dagster+](/dagster-plus/access/rbac/teams) guide for more info.
+Dagster+ Pro users can create teams of users and assign default permission sets. Refer to the [Managing teams in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/teams) guide for more info.
 
 ## Assigning user and team roles
 
 With the exception of the **Organization Admin** role, user and team roles are set on a per-deployment basis.
 
-Organization Admins have access to the entire organization, including all [deployments](/todo), [code locations](/dagster-plus/deployment/code-locations), and [Branch Deployments](/dagster-plus/deployment/branch-deployments).
+Organization Admins have access to the entire organization, including all [deployments](/todo), [code locations](/dagster-plus/deployment/code-locations), and [Branch Deployments](dagster-plus/features/branch-deployments).
 
 | Level              | Plan      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -74,7 +74,7 @@ To override a code location role for an individual user:
 
 #### Team members
 
-Users in your organization can belong to one or more [teams](/dagster-plus/access/rbac/teams). When determining a user's level of access, Dagster+ will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants.
+Users in your organization can belong to one or more [teams](/dagster-plus/features/authentication-and-access-control/rbac/teams). When determining a user's level of access, Dagster+ will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants.
 
 For example, let's look at a user with the following roles for our `dev` deployment:
 
@@ -112,12 +112,12 @@ TODO: add picture previously at "/images/dagster-cloud/user-token-management/cod
 
 |                                                                          | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ------------------------------------------------------------------------ | ------ | -------- | ------ | ----- | ------------------------ |
-| View runs of [jobs](/concepts/ops-jobs)                                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| View runs of [jobs](/guides/build/ops-jobs)                                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
 | Launch, re-execute, terminate, and delete runs of jobs                   | ❌     | ✅       | ✅     | ✅    | ✅                       |
-| Start and stop [schedules](/concepts/schedules)                          | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Start and stop [schedules](/concepts/sensors)                            | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Start and stop [schedules](/guides/automate/schedules)                          | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Start and stop [schedules](/guides/automate/sensors)                            | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Wipe assets                                                              | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Launch and cancel [schedules](/guides/backfill) | ❌     | ✅       | ✅     | ✅    | ✅                       |
+| Launch and cancel [schedules](/guides/build/backfill) | ❌     | ✅       | ✅     | ✅    | ✅                       |
 | Add dynamic partitions                                                   | ❌     | ❌       | ✅     | ✅    | ✅                       |
 
 ### Deployments
@@ -132,7 +132,7 @@ Deployment settings are accessed in the UI by navigating to **user menu (your ic
 | View [environment variable](/dagster-plus/deployment/environment-variables)  values          | ❌     | ❌         | ✅      | ✅     | ✅                             |
 | Export [environment variables](/dagster-plus/deployment/environment-variables)               | ❌     | ❌         | ✅      | ✅     | ✅                             |
 | Create and delete [deployments](/todo)                              | ❌     | ❌         | ❌      | ❌     | ✅                             |
-| Create [Branch Deployments](/dagster-plus/deployment/branch-deployments)                     | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| Create [Branch Deployments](dagster-plus/features/branch-deployments)                     | ❌     | ❌         | ✅      | ✅     | ✅                             |
 
 ### Code locations
 
@@ -171,7 +171,7 @@ User management is accessed in the UI by navigating to **user menu (your icon) >
 
 |                                               | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | --------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| [View users](/dagster-plus/access/rbac/users) | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| [View users](/dagster-plus/features/authentication-and-access-control/rbac/users) | ✅     | ✅       | ✅     | ✅    | ✅                       |
 | Add users                                     | ❌     | ❌       | ❌     | ✅    | ✅                       |
 | Edit user roles                               | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Remove users                                  | ❌     | ❌       | ❌     | ❌    | ✅                       |
@@ -184,7 +184,7 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 
 |                                               | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | --------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| [View teams](/dagster-plus/access/rbac/teams) | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| [View teams](/dagster-plus/features/authentication-and-access-control/rbac/teams) | ✅     | ✅       | ✅     | ✅    | ✅                       |
 | Modify team permissions                       | ❌     | ❌       | ❌     | ✅    | ✅                       |
 | Create teams                                  | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Re-name teams                                 | ❌     | ❌       | ❌     | ❌    | ✅                       |
@@ -195,7 +195,7 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 
 |                                                        | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ------------------------------------------------------ | ------ | -------- | ------ | ----- | ------------------------ |
-| Manage [alerts](/dagster-plus/deployment/alerts)       | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Manage [alerts](/dagster-plus/features/alerts)       | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Edit workspace                                         | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | [Administer SAML](/dagster-plus/access/authentication) | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | [Manage SCIM](/todo)                                   | ❌     | ❌       | ❌     | ❌    | ✅                       |
@@ -205,7 +205,7 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 
 ## Next steps
 
-- Learn more about how to manage users in Dagster+ in [Understanding User Management in Dagster+](/dagster-plus/access/rbac/users)
-- Learn more about how to manage teams in Dagster+ in [Understanding Team Management in Dagster+](/dagster-plus/access/rbac/teams)
+- Learn more about how to manage users in Dagster+ in [Understanding User Management in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/users)
+- Learn more about how to manage teams in Dagster+ in [Understanding Team Management in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/teams)
 - Learn more about SCIM provisioning in [Understanding SCIM Provisioning](/todo)
 - Learn more about authentication in [Understanding Authentication](/dagster-plus/access/authentication)

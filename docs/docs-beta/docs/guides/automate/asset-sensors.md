@@ -13,8 +13,8 @@ This guide covers the most common use cases for asset sensors, such as defining 
 
 To follow this guide, you'll need:
 
-- Familiarity with [Assets](/concepts/assets)
-- Familiarity with [Ops and Jobs](/concepts/ops-jobs)
+- Familiarity with [Assets](/guides/build/assets-concepts)
+- Familiarity with [Ops and Jobs](/guides/build/ops-jobs)
 
 </details>
 
@@ -101,5 +101,5 @@ The following example uses a `@multi_asset_sensor` to monitor multiple assets an
 
 ## Next steps
 
-- Learn more about asset sensors in [Understanding Automation](/concepts/automation)
-- Explore [Declarative Automation](/concepts/automation/declarative-automation) as an alternative to asset sensors
+- Learn more about asset sensors in [Understanding Automation](/guides/automate)
+- Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to asset sensors
