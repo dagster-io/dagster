@@ -1,3 +1,4 @@
+import copy
 from abc import ABC, abstractmethod
 from types import ModuleType
 from typing import TYPE_CHECKING, ClassVar, Dict, Iterable, Mapping, Optional, Type
@@ -36,7 +37,7 @@ class Component(ABC):
 
 class ComponentRegistry:
     def __init__(self, components: Dict[str, Type[Component]]):
-        self._components: Dict[str, Type[Component]] = components
+        self._components: Dict[str, Type[Component]] = copy.copy(components)
 
     @staticmethod
     def empty() -> "ComponentRegistry":

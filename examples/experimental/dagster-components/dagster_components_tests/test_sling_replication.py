@@ -7,6 +7,7 @@ from typing import Any, Dict, Generator, Mapping
 import pytest
 import yaml
 from dagster import AssetKey
+from dagster._utils.env import environ
 from dagster_components.core.component_decl_builder import DefsFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
@@ -35,28 +36,29 @@ def sling_path() -> Generator[Path, None, None]:
     the proper temp path.
     """
     with tempfile.TemporaryDirectory() as temp_dir:
-        shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
+        with environ({"HOME": temp_dir}):
+            shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
 
-        # update the replication yaml to reference a CSV file in the tempdir
-        replication_path = Path(temp_dir) / COMPONENT_RELPATH / "replication.yaml"
+            # update the replication yaml to reference a CSV file in the tempdir
+            replication_path = Path(temp_dir) / COMPONENT_RELPATH / "replication.yaml"
 
-        def _update_replication(data: Dict[str, Any]) -> Mapping[str, Any]:
-            placeholder_data = data["streams"].pop("<PLACEHOLDER>")
-            data["streams"][f"file://{temp_dir}/input.csv"] = placeholder_data
-            return data
+            def _update_replication(data: Dict[str, Any]) -> Mapping[str, Any]:
+                placeholder_data = data["streams"].pop("<PLACEHOLDER>")
+                data["streams"][f"file://{temp_dir}/input.csv"] = placeholder_data
+                return data
 
-        _update_yaml(replication_path, _update_replication)
+            _update_yaml(replication_path, _update_replication)
 
-        # update the defs yaml to add a duckdb instance
-        defs_path = Path(temp_dir) / COMPONENT_RELPATH / "defs.yml"
+            # update the defs yaml to add a duckdb instance
+            defs_path = Path(temp_dir) / COMPONENT_RELPATH / "defs.yml"
 
-        def _update_defs(data: Dict[str, Any]) -> Mapping[str, Any]:
-            data["component_params"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
-            return data
+            def _update_defs(data: Dict[str, Any]) -> Mapping[str, Any]:
+                data["component_params"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
+                return data
 
-        _update_yaml(defs_path, _update_defs)
+            _update_yaml(defs_path, _update_defs)
 
-        yield Path(temp_dir)
+            yield Path(temp_dir)
 
 
 def test_python_params(sling_path: Path) -> None:
