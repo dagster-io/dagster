@@ -80,6 +80,11 @@ class IExecutionStep:
 
     @property
     @abstractmethod
+    def concurrency_key(self) -> Optional[str]:
+        pass
+
+    @property
+    @abstractmethod
     def step_inputs(
         self,
     ) -> Sequence[Union[StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepInput]]:
@@ -122,6 +127,7 @@ class ExecutionStep(
             ("tags", Mapping[str, str]),
             ("logging_tags", Mapping[str, str]),
             ("key", str),
+            ("concurrency_key", Optional[str]),
         ],
     ),
     IExecutionStep,
@@ -135,6 +141,7 @@ class ExecutionStep(
         step_inputs: Sequence[StepInput],
         step_outputs: Sequence[StepOutput],
         tags: Optional[Mapping[str, str]],
+        concurrency_key: Optional[str],
         logging_tags: Optional[Mapping[str, str]] = None,
         key: Optional[str] = None,
     ):
@@ -151,6 +158,7 @@ class ExecutionStep(
                 for so in check.sequence_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
             tags=tags or {},
+            concurrency_key=check.opt_str_param(concurrency_key, "concurrency_key"),
             logging_tags=merge_dicts(
                 {
                     "step_key": handle.to_key(),
@@ -221,6 +229,7 @@ class UnresolvedMappedExecutionStep(
             ("step_input_dict", Mapping[str, Union[StepInput, UnresolvedMappedStepInput]]),
             ("step_output_dict", Mapping[str, StepOutput]),
             ("tags", Mapping[str, str]),
+            ("concurrency_key", Optional[str]),
         ],
     ),
     IExecutionStep,
@@ -234,6 +243,7 @@ class UnresolvedMappedExecutionStep(
         step_inputs: Sequence[Union[StepInput, UnresolvedMappedStepInput]],
         step_outputs: Sequence[StepOutput],
         tags: Optional[Mapping[str, str]],
+        concurrency_key: Optional[str],
     ):
         return super().__new__(
             cls,
@@ -250,6 +260,7 @@ class UnresolvedMappedExecutionStep(
                 for so in check.sequence_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
             tags=check.opt_mapping_param(tags, "tags", key_type=str),
+            concurrency_key=check.opt_str_param(concurrency_key, "concurrency_key"),
         )
 
     @property
@@ -354,6 +365,7 @@ class UnresolvedMappedExecutionStep(
                     step_inputs=resolved_inputs,
                     step_outputs=self.step_outputs,
                     tags=self.tags,
+                    concurrency_key=self.concurrency_key,
                 )
             )
 
@@ -379,6 +391,7 @@ class UnresolvedCollectExecutionStep(
             ("step_input_dict", Mapping[str, Union[StepInput, UnresolvedCollectStepInput]]),
             ("step_output_dict", Mapping[str, StepOutput]),
             ("tags", Mapping[str, str]),
+            ("concurrency_key", Optional[str]),
         ],
     ),
     IExecutionStep,
@@ -392,6 +405,7 @@ class UnresolvedCollectExecutionStep(
         step_inputs: Sequence[Union[StepInput, UnresolvedCollectStepInput]],
         step_outputs: Sequence[StepOutput],
         tags: Optional[Mapping[str, str]],
+        concurrency_key: Optional[str],
     ):
         return super().__new__(
             cls,
@@ -408,6 +422,7 @@ class UnresolvedCollectExecutionStep(
                 for so in check.sequence_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
             tags=check.opt_mapping_param(tags, "tags", key_type=str),
+            concurrency_key=check.opt_str_param(concurrency_key, "concurrency_key"),
         )
 
     @property
@@ -489,4 +504,5 @@ class UnresolvedCollectExecutionStep(
             step_inputs=resolved_inputs,
             step_outputs=self.step_outputs,
             tags=self.tags,
+            concurrency_key=self.concurrency_key,
         )
