@@ -216,7 +216,7 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
 
     assert (
         str(default_sensor.asset_selection)
-        == "all materializable assets and source assets - (auto_materialize_asset or auto_observe_asset)"
+        == 'not key:"auto_materialize_asset" or key:"auto_observe_asset"'
     )
 
     assert default_sensor.asset_selection.resolve(asset_graph) == {

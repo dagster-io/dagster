@@ -16,9 +16,7 @@ EXAMPLES_TO_IGNORE = [
     "experimental",
     "use_case_repository",
     "airlift-mwaa-example",
-    "airlift-migration-tutorial",
     "starlift-demo",
-    "airlift-federation-tutorial",
     "pyproject.toml",
     "README.md",
     "temp_pins.txt",
@@ -54,6 +52,8 @@ AVAILABLE_EXAMPLES = [
     "with_pyspark",
     "with_pyspark_emr",
     "with_wandb",
+    "airlift-federation-tutorial",
+    "airlift-migration-tutorial",
 ]
 
 

@@ -98,7 +98,7 @@ filterwarnings = [
 
 [tool.ruff]
 
-target-version = "py38"
+target-version = "py39"
 
 # *.py, *.ipy are included by default
 extend-include = ["*.ipynb"]

@@ -1,4 +1,4 @@
-// Generated from /Users/marcosalazar/code/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /Users/briantu/repos/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
 
 import {ParseTreeListener} from 'antlr4ts/tree/ParseTreeListener';
 
@@ -22,6 +22,8 @@ import {
   ParenthesizedExpressionContext,
   StartContext,
   TagAttributeExprContext,
+  TraversalAllowedExprContext,
+  TraversalAllowedExpressionContext,
   TraversalContext,
   UpAndDownTraversalExpressionContext,
   UpTraversalExpressionContext,
@@ -34,30 +36,17 @@ import {
  */
 export interface AssetSelectionListener extends ParseTreeListener {
   /**
-   * Enter a parse tree produced by the `AttributeExpression`
+   * Enter a parse tree produced by the `TraversalAllowedExpression`
    * labeled alternative in `AssetSelectionParser.expr`.
    * @param ctx the parse tree
    */
-  enterAttributeExpression?: (ctx: AttributeExpressionContext) => void;
+  enterTraversalAllowedExpression?: (ctx: TraversalAllowedExpressionContext) => void;
   /**
-   * Exit a parse tree produced by the `AttributeExpression`
+   * Exit a parse tree produced by the `TraversalAllowedExpression`
    * labeled alternative in `AssetSelectionParser.expr`.
    * @param ctx the parse tree
    */
-  exitAttributeExpression?: (ctx: AttributeExpressionContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `UpTraversalExpression`
-   * labeled alternative in `AssetSelectionParser.expr`.
-   * @param ctx the parse tree
-   */
-  enterUpTraversalExpression?: (ctx: UpTraversalExpressionContext) => void;
-  /**
-   * Exit a parse tree produced by the `UpTraversalExpression`
-   * labeled alternative in `AssetSelectionParser.expr`.
-   * @param ctx the parse tree
-   */
-  exitUpTraversalExpression?: (ctx: UpTraversalExpressionContext) => void;
+  exitTraversalAllowedExpression?: (ctx: TraversalAllowedExpressionContext) => void;
 
   /**
    * Enter a parse tree produced by the `UpAndDownTraversalExpression`
@@ -71,6 +60,19 @@ export interface AssetSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitUpAndDownTraversalExpression?: (ctx: UpAndDownTraversalExpressionContext) => void;
+
+  /**
+   * Enter a parse tree produced by the `UpTraversalExpression`
+   * labeled alternative in `AssetSelectionParser.expr`.
+   * @param ctx the parse tree
+   */
+  enterUpTraversalExpression?: (ctx: UpTraversalExpressionContext) => void;
+  /**
+   * Exit a parse tree produced by the `UpTraversalExpression`
+   * labeled alternative in `AssetSelectionParser.expr`.
+   * @param ctx the parse tree
+   */
+  exitUpTraversalExpression?: (ctx: UpTraversalExpressionContext) => void;
 
   /**
    * Enter a parse tree produced by the `DownTraversalExpression`
@@ -123,32 +125,6 @@ export interface AssetSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitOrExpression?: (ctx: OrExpressionContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `FunctionCallExpression`
-   * labeled alternative in `AssetSelectionParser.expr`.
-   * @param ctx the parse tree
-   */
-  enterFunctionCallExpression?: (ctx: FunctionCallExpressionContext) => void;
-  /**
-   * Exit a parse tree produced by the `FunctionCallExpression`
-   * labeled alternative in `AssetSelectionParser.expr`.
-   * @param ctx the parse tree
-   */
-  exitFunctionCallExpression?: (ctx: FunctionCallExpressionContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `ParenthesizedExpression`
-   * labeled alternative in `AssetSelectionParser.expr`.
-   * @param ctx the parse tree
-   */
-  enterParenthesizedExpression?: (ctx: ParenthesizedExpressionContext) => void;
-  /**
-   * Exit a parse tree produced by the `ParenthesizedExpression`
-   * labeled alternative in `AssetSelectionParser.expr`.
-   * @param ctx the parse tree
-   */
-  exitParenthesizedExpression?: (ctx: ParenthesizedExpressionContext) => void;
 
   /**
    * Enter a parse tree produced by the `AllExpression`
@@ -255,6 +231,45 @@ export interface AssetSelectionListener extends ParseTreeListener {
   exitCodeLocationAttributeExpr?: (ctx: CodeLocationAttributeExprContext) => void;
 
   /**
+   * Enter a parse tree produced by the `AttributeExpression`
+   * labeled alternative in `AssetSelectionParser.traversalAllowedExpr`.
+   * @param ctx the parse tree
+   */
+  enterAttributeExpression?: (ctx: AttributeExpressionContext) => void;
+  /**
+   * Exit a parse tree produced by the `AttributeExpression`
+   * labeled alternative in `AssetSelectionParser.traversalAllowedExpr`.
+   * @param ctx the parse tree
+   */
+  exitAttributeExpression?: (ctx: AttributeExpressionContext) => void;
+
+  /**
+   * Enter a parse tree produced by the `FunctionCallExpression`
+   * labeled alternative in `AssetSelectionParser.traversalAllowedExpr`.
+   * @param ctx the parse tree
+   */
+  enterFunctionCallExpression?: (ctx: FunctionCallExpressionContext) => void;
+  /**
+   * Exit a parse tree produced by the `FunctionCallExpression`
+   * labeled alternative in `AssetSelectionParser.traversalAllowedExpr`.
+   * @param ctx the parse tree
+   */
+  exitFunctionCallExpression?: (ctx: FunctionCallExpressionContext) => void;
+
+  /**
+   * Enter a parse tree produced by the `ParenthesizedExpression`
+   * labeled alternative in `AssetSelectionParser.traversalAllowedExpr`.
+   * @param ctx the parse tree
+   */
+  enterParenthesizedExpression?: (ctx: ParenthesizedExpressionContext) => void;
+  /**
+   * Exit a parse tree produced by the `ParenthesizedExpression`
+   * labeled alternative in `AssetSelectionParser.traversalAllowedExpr`.
+   * @param ctx the parse tree
+   */
+  exitParenthesizedExpression?: (ctx: ParenthesizedExpressionContext) => void;
+
+  /**
    * Enter a parse tree produced by `AssetSelectionParser.start`.
    * @param ctx the parse tree
    */
@@ -275,6 +290,17 @@ export interface AssetSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitExpr?: (ctx: ExprContext) => void;
+
+  /**
+   * Enter a parse tree produced by `AssetSelectionParser.traversalAllowedExpr`.
+   * @param ctx the parse tree
+   */
+  enterTraversalAllowedExpr?: (ctx: TraversalAllowedExprContext) => void;
+  /**
+   * Exit a parse tree produced by `AssetSelectionParser.traversalAllowedExpr`.
+   * @param ctx the parse tree
+   */
+  exitTraversalAllowedExpr?: (ctx: TraversalAllowedExprContext) => void;
 
   /**
    * Enter a parse tree produced by `AssetSelectionParser.traversal`.

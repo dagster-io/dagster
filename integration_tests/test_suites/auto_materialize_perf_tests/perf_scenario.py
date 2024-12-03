@@ -75,9 +75,10 @@ class PerfScenario(NamedTuple):
 
     @contextmanager
     def instance_from_snapshot(self):
-        with tempfile.TemporaryDirectory() as temp_dir, tarfile.open(
-            self.instance_snapshot_path
-        ) as tf:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            tarfile.open(self.instance_snapshot_path) as tf,
+        ):
             tf.extractall(temp_dir)
             with DagsterInstance.from_ref(InstanceRef.from_dir(temp_dir)) as instance:
                 yield instance

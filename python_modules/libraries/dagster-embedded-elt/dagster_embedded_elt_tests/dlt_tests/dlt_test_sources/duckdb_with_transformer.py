@@ -52,8 +52,6 @@ def pipeline(month: Optional[str] = None):
         primary_key=["repo_id", "issue_id"],
         write_disposition="merge",
         data_from=repos,
-        # Test the case where source identifier 'Repo__Issues' differs from destination identifier 'repo_issues'.
-        table_name="Repo__Issues",
     )
     def repo_issues(repo):
         """Extracted list of issues from repositories."""

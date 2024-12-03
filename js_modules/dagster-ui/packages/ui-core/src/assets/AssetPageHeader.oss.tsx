@@ -168,6 +168,13 @@ const BreadcrumbsWithSlashes = styled(Breadcrumbs)<{$numHeaderBreadcrumbs: numbe
     width: 8px;
     line-height: 16px;
   }
+  /**
+   * Blueprint breadcrumbs annoyingly have a built-in height.
+   */
+  .bp5-breadcrumbs {
+    height: auto;
+    min-height: 30px;
+  }
 `;
 
 const BreadcrumbLink = styled(Link)`

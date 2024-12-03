@@ -133,11 +133,11 @@ types-sqlalchemy==1.4.53.34
 -e examples/with_pyspark
 -e examples/with_wandb
 -e examples/experimental/dagster-blueprints
--e examples/experimental/dagster-airlift[mwaa,dbt,test] # (includes airflow dependencies)
+-e python_modules/libraries/dagster-airlift[mwaa,dbt,test] # (includes airflow dependencies)
 -e examples/experimental/dagster-dlift
 -e examples/starlift-demo
--e examples/experimental/dagster-airlift/kitchen-sink
+-e python_modules/libraries/dagster-airlift/kitchen-sink
 -e examples/experimental/dagster-dlift/kitchen-sink
--e examples/experimental/dagster-airlift/perf-harness
+-e python_modules/libraries/dagster-airlift/perf-harness
 -e examples/airlift-migration-tutorial
 -e examples/use_case_repository[dev]

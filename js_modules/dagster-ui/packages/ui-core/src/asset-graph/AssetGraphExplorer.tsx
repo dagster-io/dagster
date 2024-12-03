@@ -16,8 +16,10 @@ import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import * as React from 'react';
 import {useCallback, useLayoutEffect, useMemo, useState} from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGraphAssetSelectionInput} from 'shared/asset-graph/AssetGraphAssetSelectionInput.oss';
 import {useAssetGraphExplorerFilters} from 'shared/asset-graph/useAssetGraphExplorerFilters.oss';
+import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionInput.oss';
 import styled from 'styled-components';
 
 import {AssetEdges} from './AssetEdges';
@@ -50,6 +52,7 @@ import {
   useFullAssetGraphData,
 } from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
+import {featureEnabled} from '../app/Flags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
@@ -58,6 +61,7 @@ import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {AssetGroupSelector} from '../graphql/types';
 import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
+import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {
   GraphExplorerOptions,
   OptionsOverlay,
@@ -107,6 +111,8 @@ export const AssetGraphExplorer = (props: Props) => {
 
   const {explorerPath, onChangeExplorerPath} = props;
 
+  const explorerPathRef = useUpdatingRef(explorerPath);
+
   const {button, filterBar, groupsFilter, kindFilter, filterFn, filteredAssetsLoading} =
     useAssetGraphExplorerFilters({
       nodes: React.useMemo(
@@ -115,16 +121,19 @@ export const AssetGraphExplorer = (props: Props) => {
       ),
       loading: fetchResult.loading,
       viewType: props.viewType,
-      explorerPath: explorerPath.opsQuery,
-      clearExplorerPath: React.useCallback(() => {
-        onChangeExplorerPath(
-          {
-            ...explorerPath,
-            opsQuery: '',
-          },
-          'push',
-        );
-      }, [explorerPath, onChangeExplorerPath]),
+      assetSelection: explorerPath.opsQuery,
+      setAssetSelection: React.useCallback(
+        (assetSelection: string) => {
+          onChangeExplorerPath(
+            {
+              ...explorerPathRef.current,
+              opsQuery: assetSelection,
+            },
+            'push',
+          );
+        },
+        [explorerPathRef, onChangeExplorerPath],
+      ),
     });
 
   useLayoutEffect(() => {
@@ -712,7 +721,6 @@ const AssetGraphExplorerWithData = ({
             <TopbarWrapper>
               <Box flex={{direction: 'column'}} style={{width: '100%'}}>
                 <Box
-                  border={filterBar ? 'bottom' : undefined}
                   flex={{gap: 12, alignItems: 'center'}}
                   padding={{left: showSidebar ? 12 : 24, vertical: 12, right: 12}}
                 >
@@ -728,13 +736,21 @@ const AssetGraphExplorerWithData = ({
                   )}
                   <div>{filterButton}</div>
                   <GraphQueryInputFlexWrap>
-                    <AssetGraphAssetSelectionInput
-                      items={graphQueryItems}
-                      value={explorerPath.opsQuery}
-                      placeholder="Type an asset subset…"
-                      onChange={onChangeAssetSelection}
-                      popoverPosition="bottom-left"
-                    />
+                    {featureEnabled(FeatureFlag.flagAssetSelectionSyntax) ? (
+                      <AssetSelectionInput
+                        assets={graphQueryItems}
+                        value={explorerPath.opsQuery}
+                        onChange={onChangeAssetSelection}
+                      />
+                    ) : (
+                      <AssetGraphAssetSelectionInput
+                        items={graphQueryItems}
+                        value={explorerPath.opsQuery}
+                        placeholder="Type an asset subset…"
+                        onChange={onChangeAssetSelection}
+                        popoverPosition="bottom-left"
+                      />
+                    )}
                   </GraphQueryInputFlexWrap>
                   <AssetLiveDataRefreshButton />
                   <LaunchAssetExecutionButton

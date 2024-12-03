@@ -237,11 +237,15 @@ class TestAzureComputeLogManager(TestComputeLogManager):
         container,
         credential,
     ):
-        with mock.patch(
-            "dagster_azure.blob.compute_log_manager.generate_blob_sas"
-        ) as generate_blob_sas, mock.patch(
-            "dagster_azure.blob.compute_log_manager.create_blob_client"
-        ) as create_blob_client, tempfile.TemporaryDirectory() as temp_dir:
+        with (
+            mock.patch(
+                "dagster_azure.blob.compute_log_manager.generate_blob_sas"
+            ) as generate_blob_sas,
+            mock.patch(
+                "dagster_azure.blob.compute_log_manager.create_blob_client"
+            ) as create_blob_client,
+            tempfile.TemporaryDirectory() as temp_dir,
+        ):
             generate_blob_sas.return_value = "fake-url"
             create_blob_client.return_value = blob_client
 
@@ -262,11 +266,15 @@ class TestAzureComputeLogManager(TestComputeLogManager):
         container,
         credential,
     ):
-        with mock.patch(
-            "dagster_azure.blob.compute_log_manager.generate_blob_sas"
-        ) as generate_blob_sas, mock.patch(
-            "dagster_azure.blob.compute_log_manager.create_blob_client"
-        ) as create_blob_client, tempfile.TemporaryDirectory() as temp_dir:
+        with (
+            mock.patch(
+                "dagster_azure.blob.compute_log_manager.generate_blob_sas"
+            ) as generate_blob_sas,
+            mock.patch(
+                "dagster_azure.blob.compute_log_manager.create_blob_client"
+            ) as create_blob_client,
+            tempfile.TemporaryDirectory() as temp_dir,
+        ):
             generate_blob_sas.return_value = "fake-url"
             create_blob_client.return_value = blob_client
 

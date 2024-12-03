@@ -1,4 +1,4 @@
-// Generated from /Users/marcosalazar/code/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /Users/briantu/repos/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
 
 import {FailedPredicateException} from 'antlr4ts/FailedPredicateException';
 import {NoViableAltException} from 'antlr4ts/NoViableAltException';
@@ -45,14 +45,16 @@ export class AssetSelectionParser extends Parser {
   public static readonly WS = 22;
   public static readonly RULE_start = 0;
   public static readonly RULE_expr = 1;
-  public static readonly RULE_traversal = 2;
-  public static readonly RULE_functionName = 3;
-  public static readonly RULE_attributeExpr = 4;
-  public static readonly RULE_value = 5;
+  public static readonly RULE_traversalAllowedExpr = 2;
+  public static readonly RULE_traversal = 3;
+  public static readonly RULE_functionName = 4;
+  public static readonly RULE_attributeExpr = 5;
+  public static readonly RULE_value = 6;
   // tslint:disable:no-trailing-whitespace
   public static readonly ruleNames: string[] = [
     'start',
     'expr',
+    'traversalAllowedExpr',
     'traversal',
     'functionName',
     'attributeExpr',
@@ -152,9 +154,9 @@ export class AssetSelectionParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 12;
+        this.state = 14;
         this.expr(0);
-        this.state = 13;
+        this.state = 15;
         this.match(AssetSelectionParser.EOF);
       }
     } catch (re) {
@@ -189,100 +191,82 @@ export class AssetSelectionParser extends Parser {
       let _alt: number;
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 36;
+        this.state = 32;
         this._errHandler.sync(this);
         switch (this.interpreter.adaptivePredict(this._input, 0, this._ctx)) {
           case 1:
             {
-              _localctx = new AttributeExpressionContext(_localctx);
+              _localctx = new TraversalAllowedExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
 
-              this.state = 16;
-              this.attributeExpr();
+              this.state = 18;
+              this.traversalAllowedExpr();
             }
             break;
 
           case 2:
             {
-              _localctx = new UpTraversalExpressionContext(_localctx);
+              _localctx = new UpAndDownTraversalExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 17;
+              this.state = 19;
               this.traversal();
-              this.state = 18;
-              this.expr(9);
+              this.state = 20;
+              this.traversalAllowedExpr();
+              this.state = 21;
+              this.traversal();
             }
             break;
 
           case 3:
             {
-              _localctx = new UpAndDownTraversalExpressionContext(_localctx);
+              _localctx = new UpTraversalExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 20;
+              this.state = 23;
               this.traversal();
-              this.state = 21;
-              this.expr(0);
-              this.state = 22;
-              this.traversal();
+              this.state = 24;
+              this.traversalAllowedExpr();
             }
             break;
 
           case 4:
             {
-              _localctx = new NotExpressionContext(_localctx);
+              _localctx = new DownTraversalExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 24;
-              this.match(AssetSelectionParser.NOT);
-              this.state = 25;
-              this.expr(6);
+              this.state = 26;
+              this.traversalAllowedExpr();
+              this.state = 27;
+              this.traversal();
             }
             break;
 
           case 5:
             {
-              _localctx = new FunctionCallExpressionContext(_localctx);
+              _localctx = new NotExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 26;
-              this.functionName();
-              this.state = 27;
-              this.match(AssetSelectionParser.LPAREN);
-              this.state = 28;
-              this.expr(0);
               this.state = 29;
-              this.match(AssetSelectionParser.RPAREN);
+              this.match(AssetSelectionParser.NOT);
+              this.state = 30;
+              this.expr(4);
             }
             break;
 
           case 6:
             {
-              _localctx = new ParenthesizedExpressionContext(_localctx);
-              this._ctx = _localctx;
-              _prevctx = _localctx;
-              this.state = 31;
-              this.match(AssetSelectionParser.LPAREN);
-              this.state = 32;
-              this.expr(0);
-              this.state = 33;
-              this.match(AssetSelectionParser.RPAREN);
-            }
-            break;
-
-          case 7:
-            {
               _localctx = new AllExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 35;
+              this.state = 31;
               this.match(AssetSelectionParser.STAR);
             }
             break;
         }
         this._ctx._stop = this._input.tryLT(-1);
-        this.state = 48;
+        this.state = 42;
         this._errHandler.sync(this);
         _alt = this.interpreter.adaptivePredict(this._input, 2, this._ctx);
         while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
@@ -292,7 +276,7 @@ export class AssetSelectionParser extends Parser {
             }
             _prevctx = _localctx;
             {
-              this.state = 46;
+              this.state = 40;
               this._errHandler.sync(this);
               switch (this.interpreter.adaptivePredict(this._input, 1, this._ctx)) {
                 case 1:
@@ -303,14 +287,14 @@ export class AssetSelectionParser extends Parser {
                       _startState,
                       AssetSelectionParser.RULE_expr,
                     );
-                    this.state = 38;
-                    if (!this.precpred(this._ctx, 5)) {
-                      throw this.createFailedPredicateException('this.precpred(this._ctx, 5)');
+                    this.state = 34;
+                    if (!this.precpred(this._ctx, 3)) {
+                      throw this.createFailedPredicateException('this.precpred(this._ctx, 3)');
                     }
-                    this.state = 39;
+                    this.state = 35;
                     this.match(AssetSelectionParser.AND);
-                    this.state = 40;
-                    this.expr(6);
+                    this.state = 36;
+                    this.expr(4);
                   }
                   break;
 
@@ -322,39 +306,20 @@ export class AssetSelectionParser extends Parser {
                       _startState,
                       AssetSelectionParser.RULE_expr,
                     );
-                    this.state = 41;
-                    if (!this.precpred(this._ctx, 4)) {
-                      throw this.createFailedPredicateException('this.precpred(this._ctx, 4)');
+                    this.state = 37;
+                    if (!this.precpred(this._ctx, 2)) {
+                      throw this.createFailedPredicateException('this.precpred(this._ctx, 2)');
                     }
-                    this.state = 42;
+                    this.state = 38;
                     this.match(AssetSelectionParser.OR);
-                    this.state = 43;
-                    this.expr(5);
-                  }
-                  break;
-
-                case 3:
-                  {
-                    _localctx = new DownTraversalExpressionContext(
-                      new ExprContext(_parentctx, _parentState),
-                    );
-                    this.pushNewRecursionContext(
-                      _localctx,
-                      _startState,
-                      AssetSelectionParser.RULE_expr,
-                    );
-                    this.state = 44;
-                    if (!this.precpred(this._ctx, 7)) {
-                      throw this.createFailedPredicateException('this.precpred(this._ctx, 7)');
-                    }
-                    this.state = 45;
-                    this.traversal();
+                    this.state = 39;
+                    this.expr(3);
                   }
                   break;
               }
             }
           }
-          this.state = 50;
+          this.state = 44;
           this._errHandler.sync(this);
           _alt = this.interpreter.adaptivePredict(this._input, 2, this._ctx);
         }
@@ -373,25 +338,93 @@ export class AssetSelectionParser extends Parser {
     return _localctx;
   }
   // @RuleVersion(0)
+  public traversalAllowedExpr(): TraversalAllowedExprContext {
+    let _localctx: TraversalAllowedExprContext = new TraversalAllowedExprContext(
+      this._ctx,
+      this.state,
+    );
+    this.enterRule(_localctx, 4, AssetSelectionParser.RULE_traversalAllowedExpr);
+    try {
+      this.state = 55;
+      this._errHandler.sync(this);
+      switch (this._input.LA(1)) {
+        case AssetSelectionParser.KEY:
+        case AssetSelectionParser.KEY_SUBSTRING:
+        case AssetSelectionParser.OWNER:
+        case AssetSelectionParser.GROUP:
+        case AssetSelectionParser.TAG:
+        case AssetSelectionParser.KIND:
+        case AssetSelectionParser.CODE_LOCATION:
+          _localctx = new AttributeExpressionContext(_localctx);
+          this.enterOuterAlt(_localctx, 1);
+          {
+            this.state = 45;
+            this.attributeExpr();
+          }
+          break;
+        case AssetSelectionParser.SINKS:
+        case AssetSelectionParser.ROOTS:
+          _localctx = new FunctionCallExpressionContext(_localctx);
+          this.enterOuterAlt(_localctx, 2);
+          {
+            this.state = 46;
+            this.functionName();
+            this.state = 47;
+            this.match(AssetSelectionParser.LPAREN);
+            this.state = 48;
+            this.expr(0);
+            this.state = 49;
+            this.match(AssetSelectionParser.RPAREN);
+          }
+          break;
+        case AssetSelectionParser.LPAREN:
+          _localctx = new ParenthesizedExpressionContext(_localctx);
+          this.enterOuterAlt(_localctx, 3);
+          {
+            this.state = 51;
+            this.match(AssetSelectionParser.LPAREN);
+            this.state = 52;
+            this.expr(0);
+            this.state = 53;
+            this.match(AssetSelectionParser.RPAREN);
+          }
+          break;
+        default:
+          throw new NoViableAltException(this);
+      }
+    } catch (re) {
+      if (re instanceof RecognitionException) {
+        _localctx.exception = re;
+        this._errHandler.reportError(this, re);
+        this._errHandler.recover(this, re);
+      } else {
+        throw re;
+      }
+    } finally {
+      this.exitRule();
+    }
+    return _localctx;
+  }
+  // @RuleVersion(0)
   public traversal(): TraversalContext {
     const _localctx: TraversalContext = new TraversalContext(this._ctx, this.state);
-    this.enterRule(_localctx, 4, AssetSelectionParser.RULE_traversal);
+    this.enterRule(_localctx, 6, AssetSelectionParser.RULE_traversal);
     try {
       let _alt: number;
-      this.state = 57;
+      this.state = 63;
       this._errHandler.sync(this);
       switch (this._input.LA(1)) {
         case AssetSelectionParser.STAR:
           this.enterOuterAlt(_localctx, 1);
           {
-            this.state = 51;
+            this.state = 57;
             this.match(AssetSelectionParser.STAR);
           }
           break;
         case AssetSelectionParser.PLUS:
           this.enterOuterAlt(_localctx, 2);
           {
-            this.state = 53;
+            this.state = 59;
             this._errHandler.sync(this);
             _alt = 1;
             do {
@@ -399,7 +432,7 @@ export class AssetSelectionParser extends Parser {
                 case 1:
                   {
                     {
-                      this.state = 52;
+                      this.state = 58;
                       this.match(AssetSelectionParser.PLUS);
                     }
                   }
@@ -407,9 +440,9 @@ export class AssetSelectionParser extends Parser {
                 default:
                   throw new NoViableAltException(this);
               }
-              this.state = 55;
+              this.state = 61;
               this._errHandler.sync(this);
-              _alt = this.interpreter.adaptivePredict(this._input, 3, this._ctx);
+              _alt = this.interpreter.adaptivePredict(this._input, 4, this._ctx);
             } while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER);
           }
           break;
@@ -432,12 +465,12 @@ export class AssetSelectionParser extends Parser {
   // @RuleVersion(0)
   public functionName(): FunctionNameContext {
     const _localctx: FunctionNameContext = new FunctionNameContext(this._ctx, this.state);
-    this.enterRule(_localctx, 6, AssetSelectionParser.RULE_functionName);
+    this.enterRule(_localctx, 8, AssetSelectionParser.RULE_functionName);
     let _la: number;
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 59;
+        this.state = 65;
         _la = this._input.LA(1);
         if (!(_la === AssetSelectionParser.SINKS || _la === AssetSelectionParser.ROOTS)) {
           this._errHandler.recoverInline(this);
@@ -466,20 +499,20 @@ export class AssetSelectionParser extends Parser {
   // @RuleVersion(0)
   public attributeExpr(): AttributeExprContext {
     let _localctx: AttributeExprContext = new AttributeExprContext(this._ctx, this.state);
-    this.enterRule(_localctx, 8, AssetSelectionParser.RULE_attributeExpr);
+    this.enterRule(_localctx, 10, AssetSelectionParser.RULE_attributeExpr);
     try {
-      this.state = 86;
+      this.state = 92;
       this._errHandler.sync(this);
       switch (this._input.LA(1)) {
         case AssetSelectionParser.KEY:
           _localctx = new KeyExprContext(_localctx);
           this.enterOuterAlt(_localctx, 1);
           {
-            this.state = 61;
+            this.state = 67;
             this.match(AssetSelectionParser.KEY);
-            this.state = 62;
+            this.state = 68;
             this.match(AssetSelectionParser.COLON);
-            this.state = 63;
+            this.state = 69;
             this.value();
           }
           break;
@@ -487,11 +520,11 @@ export class AssetSelectionParser extends Parser {
           _localctx = new KeySubstringExprContext(_localctx);
           this.enterOuterAlt(_localctx, 2);
           {
-            this.state = 64;
+            this.state = 70;
             this.match(AssetSelectionParser.KEY_SUBSTRING);
-            this.state = 65;
+            this.state = 71;
             this.match(AssetSelectionParser.COLON);
-            this.state = 66;
+            this.state = 72;
             this.value();
           }
           break;
@@ -499,20 +532,20 @@ export class AssetSelectionParser extends Parser {
           _localctx = new TagAttributeExprContext(_localctx);
           this.enterOuterAlt(_localctx, 3);
           {
-            this.state = 67;
+            this.state = 73;
             this.match(AssetSelectionParser.TAG);
-            this.state = 68;
+            this.state = 74;
             this.match(AssetSelectionParser.COLON);
-            this.state = 69;
+            this.state = 75;
             this.value();
-            this.state = 72;
+            this.state = 78;
             this._errHandler.sync(this);
-            switch (this.interpreter.adaptivePredict(this._input, 5, this._ctx)) {
+            switch (this.interpreter.adaptivePredict(this._input, 6, this._ctx)) {
               case 1:
                 {
-                  this.state = 70;
+                  this.state = 76;
                   this.match(AssetSelectionParser.EQUAL);
-                  this.state = 71;
+                  this.state = 77;
                   this.value();
                 }
                 break;
@@ -523,11 +556,11 @@ export class AssetSelectionParser extends Parser {
           _localctx = new OwnerAttributeExprContext(_localctx);
           this.enterOuterAlt(_localctx, 4);
           {
-            this.state = 74;
+            this.state = 80;
             this.match(AssetSelectionParser.OWNER);
-            this.state = 75;
+            this.state = 81;
             this.match(AssetSelectionParser.COLON);
-            this.state = 76;
+            this.state = 82;
             this.value();
           }
           break;
@@ -535,11 +568,11 @@ export class AssetSelectionParser extends Parser {
           _localctx = new GroupAttributeExprContext(_localctx);
           this.enterOuterAlt(_localctx, 5);
           {
-            this.state = 77;
+            this.state = 83;
             this.match(AssetSelectionParser.GROUP);
-            this.state = 78;
+            this.state = 84;
             this.match(AssetSelectionParser.COLON);
-            this.state = 79;
+            this.state = 85;
             this.value();
           }
           break;
@@ -547,11 +580,11 @@ export class AssetSelectionParser extends Parser {
           _localctx = new KindAttributeExprContext(_localctx);
           this.enterOuterAlt(_localctx, 6);
           {
-            this.state = 80;
+            this.state = 86;
             this.match(AssetSelectionParser.KIND);
-            this.state = 81;
+            this.state = 87;
             this.match(AssetSelectionParser.COLON);
-            this.state = 82;
+            this.state = 88;
             this.value();
           }
           break;
@@ -559,11 +592,11 @@ export class AssetSelectionParser extends Parser {
           _localctx = new CodeLocationAttributeExprContext(_localctx);
           this.enterOuterAlt(_localctx, 7);
           {
-            this.state = 83;
+            this.state = 89;
             this.match(AssetSelectionParser.CODE_LOCATION);
-            this.state = 84;
+            this.state = 90;
             this.match(AssetSelectionParser.COLON);
-            this.state = 85;
+            this.state = 91;
             this.value();
           }
           break;
@@ -586,12 +619,12 @@ export class AssetSelectionParser extends Parser {
   // @RuleVersion(0)
   public value(): ValueContext {
     const _localctx: ValueContext = new ValueContext(this._ctx, this.state);
-    this.enterRule(_localctx, 10, AssetSelectionParser.RULE_value);
+    this.enterRule(_localctx, 12, AssetSelectionParser.RULE_value);
     let _la: number;
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 88;
+        this.state = 94;
         _la = this._input.LA(1);
         if (
           !(
@@ -633,58 +666,57 @@ export class AssetSelectionParser extends Parser {
   private expr_sempred(_localctx: ExprContext, predIndex: number): boolean {
     switch (predIndex) {
       case 0:
-        return this.precpred(this._ctx, 5);
+        return this.precpred(this._ctx, 3);
 
       case 1:
-        return this.precpred(this._ctx, 4);
-
-      case 2:
-        return this.precpred(this._ctx, 7);
+        return this.precpred(this._ctx, 2);
     }
     return true;
   }
 
   public static readonly _serializedATN: string =
-    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x18]\x04\x02' +
+    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x18c\x04\x02' +
     '\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07' +
-    '\t\x07\x03\x02\x03\x02\x03\x02\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
+    '\t\x07\x04\b\t\b\x03\x02\x03\x02\x03\x02\x03\x03\x03\x03\x03\x03\x03\x03' +
     '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
-    "\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x05\x03'\n\x03" +
-    '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x07\x03' +
-    '1\n\x03\f\x03\x0E\x034\v\x03\x03\x04\x03\x04\x06\x048\n\x04\r\x04\x0E' +
-    '\x049\x05\x04<\n\x04\x03\x05\x03\x05\x03\x06\x03\x06\x03\x06\x03\x06\x03' +
-    '\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x05\x06K\n\x06\x03' +
-    '\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03' +
-    '\x06\x03\x06\x03\x06\x05\x06Y\n\x06\x03\x07\x03\x07\x03\x07\x02\x02\x03' +
-    '\x04\b\x02\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02\x02\x04\x03\x02\x14\x15' +
-    '\x03\x02\x16\x17\x02h\x02\x0E\x03\x02\x02\x02\x04&\x03\x02\x02\x02\x06' +
-    ';\x03\x02\x02\x02\b=\x03\x02\x02\x02\nX\x03\x02\x02\x02\fZ\x03\x02\x02' +
-    '\x02\x0E\x0F\x05\x04\x03\x02\x0F\x10\x07\x02\x02\x03\x10\x03\x03\x02\x02' +
-    "\x02\x11\x12\b\x03\x01\x02\x12'\x05\n\x06\x02\x13\x14\x05\x06\x04\x02" +
-    "\x14\x15\x05\x04\x03\v\x15'\x03\x02\x02\x02\x16\x17\x05\x06\x04\x02\x17" +
-    "\x18\x05\x04\x03\x02\x18\x19\x05\x06\x04\x02\x19'\x03\x02\x02\x02\x1A" +
-    "\x1B\x07\x06\x02\x02\x1B'\x05\x04\x03\b\x1C\x1D\x05\b\x05\x02\x1D\x1E" +
-    "\x07\n\x02\x02\x1E\x1F\x05\x04\x03\x02\x1F \x07\v\x02\x02 '\x03\x02\x02" +
-    '\x02!"\x07\n\x02\x02"#\x05\x04\x03\x02#$\x07\v\x02\x02$\'\x03\x02\x02' +
-    "\x02%'\x07\x07\x02\x02&\x11\x03\x02\x02\x02&\x13\x03\x02\x02\x02&\x16" +
-    '\x03\x02\x02\x02&\x1A\x03\x02\x02\x02&\x1C\x03\x02\x02\x02&!\x03\x02\x02' +
-    "\x02&%\x03\x02\x02\x02'2\x03\x02\x02\x02()\f\x07\x02\x02)*\x07\x04\x02" +
-    '\x02*1\x05\x04\x03\b+,\f\x06\x02\x02,-\x07\x05\x02\x02-1\x05\x04\x03\x07' +
-    './\f\t\x02\x02/1\x05\x06\x04\x020(\x03\x02\x02\x020+\x03\x02\x02\x020' +
-    '.\x03\x02\x02\x0214\x03\x02\x02\x0220\x03\x02\x02\x0223\x03\x02\x02\x02' +
-    '3\x05\x03\x02\x02\x0242\x03\x02\x02\x025<\x07\x07\x02\x0268\x07\b\x02' +
-    '\x0276\x03\x02\x02\x0289\x03\x02\x02\x0297\x03\x02\x02\x029:\x03\x02\x02' +
-    '\x02:<\x03\x02\x02\x02;5\x03\x02\x02\x02;7\x03\x02\x02\x02<\x07\x03\x02' +
-    '\x02\x02=>\t\x02\x02\x02>\t\x03\x02\x02\x02?@\x07\r\x02\x02@A\x07\t\x02' +
-    '\x02AY\x05\f\x07\x02BC\x07\x0E\x02\x02CD\x07\t\x02\x02DY\x05\f\x07\x02' +
-    'EF\x07\x11\x02\x02FG\x07\t\x02\x02GJ\x05\f\x07\x02HI\x07\x03\x02\x02I' +
-    'K\x05\f\x07\x02JH\x03\x02\x02\x02JK\x03\x02\x02\x02KY\x03\x02\x02\x02' +
-    'LM\x07\x0F\x02\x02MN\x07\t\x02\x02NY\x05\f\x07\x02OP\x07\x10\x02\x02P' +
-    'Q\x07\t\x02\x02QY\x05\f\x07\x02RS\x07\x12\x02\x02ST\x07\t\x02\x02TY\x05' +
-    '\f\x07\x02UV\x07\x13\x02\x02VW\x07\t\x02\x02WY\x05\f\x07\x02X?\x03\x02' +
-    '\x02\x02XB\x03\x02\x02\x02XE\x03\x02\x02\x02XL\x03\x02\x02\x02XO\x03\x02' +
-    '\x02\x02XR\x03\x02\x02\x02XU\x03\x02\x02\x02Y\v\x03\x02\x02\x02Z[\t\x03' +
-    '\x02\x02[\r\x03\x02\x02\x02\t&029;JX';
+    '\x03\x03\x03\x03\x05\x03#\n\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
+    '\x03\x03\x07\x03+\n\x03\f\x03\x0E\x03.\v\x03\x03\x04\x03\x04\x03\x04\x03' +
+    '\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x05\x04:\n\x04\x03' +
+    '\x05\x03\x05\x06\x05>\n\x05\r\x05\x0E\x05?\x05\x05B\n\x05\x03\x06\x03' +
+    '\x06\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03' +
+    '\x07\x03\x07\x03\x07\x05\x07Q\n\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03' +
+    '\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x05\x07_' +
+    '\n\x07\x03\b\x03\b\x03\b\x02\x02\x03\x04\t\x02\x02\x04\x02\x06\x02\b\x02' +
+    '\n\x02\f\x02\x0E\x02\x02\x04\x03\x02\x14\x15\x03\x02\x16\x17\x02m\x02' +
+    '\x10\x03\x02\x02\x02\x04"\x03\x02\x02\x02\x069\x03\x02\x02\x02\bA\x03' +
+    '\x02\x02\x02\nC\x03\x02\x02\x02\f^\x03\x02\x02\x02\x0E`\x03\x02\x02\x02' +
+    '\x10\x11\x05\x04\x03\x02\x11\x12\x07\x02\x02\x03\x12\x03\x03\x02\x02\x02' +
+    '\x13\x14\b\x03\x01\x02\x14#\x05\x06\x04\x02\x15\x16\x05\b\x05\x02\x16' +
+    '\x17\x05\x06\x04\x02\x17\x18\x05\b\x05\x02\x18#\x03\x02\x02\x02\x19\x1A' +
+    '\x05\b\x05\x02\x1A\x1B\x05\x06\x04\x02\x1B#\x03\x02\x02\x02\x1C\x1D\x05' +
+    '\x06\x04\x02\x1D\x1E\x05\b\x05\x02\x1E#\x03\x02\x02\x02\x1F \x07\x06\x02' +
+    '\x02 #\x05\x04\x03\x06!#\x07\x07\x02\x02"\x13\x03\x02\x02\x02"\x15\x03' +
+    '\x02\x02\x02"\x19\x03\x02\x02\x02"\x1C\x03\x02\x02\x02"\x1F\x03\x02' +
+    '\x02\x02"!\x03\x02\x02\x02#,\x03\x02\x02\x02$%\f\x05\x02\x02%&\x07\x04' +
+    "\x02\x02&+\x05\x04\x03\x06'(\f\x04\x02\x02()\x07\x05\x02\x02)+\x05\x04" +
+    "\x03\x05*$\x03\x02\x02\x02*'\x03\x02\x02\x02+.\x03\x02\x02\x02,*\x03" +
+    '\x02\x02\x02,-\x03\x02\x02\x02-\x05\x03\x02\x02\x02.,\x03\x02\x02\x02' +
+    '/:\x05\f\x07\x0201\x05\n\x06\x0212\x07\n\x02\x0223\x05\x04\x03\x0234\x07' +
+    '\v\x02\x024:\x03\x02\x02\x0256\x07\n\x02\x0267\x05\x04\x03\x0278\x07\v' +
+    '\x02\x028:\x03\x02\x02\x029/\x03\x02\x02\x0290\x03\x02\x02\x0295\x03\x02' +
+    '\x02\x02:\x07\x03\x02\x02\x02;B\x07\x07\x02\x02<>\x07\b\x02\x02=<\x03' +
+    '\x02\x02\x02>?\x03\x02\x02\x02?=\x03\x02\x02\x02?@\x03\x02\x02\x02@B\x03' +
+    '\x02\x02\x02A;\x03\x02\x02\x02A=\x03\x02\x02\x02B\t\x03\x02\x02\x02CD' +
+    '\t\x02\x02\x02D\v\x03\x02\x02\x02EF\x07\r\x02\x02FG\x07\t\x02\x02G_\x05' +
+    '\x0E\b\x02HI\x07\x0E\x02\x02IJ\x07\t\x02\x02J_\x05\x0E\b\x02KL\x07\x11' +
+    '\x02\x02LM\x07\t\x02\x02MP\x05\x0E\b\x02NO\x07\x03\x02\x02OQ\x05\x0E\b' +
+    '\x02PN\x03\x02\x02\x02PQ\x03\x02\x02\x02Q_\x03\x02\x02\x02RS\x07\x0F\x02' +
+    '\x02ST\x07\t\x02\x02T_\x05\x0E\b\x02UV\x07\x10\x02\x02VW\x07\t\x02\x02' +
+    'W_\x05\x0E\b\x02XY\x07\x12\x02\x02YZ\x07\t\x02\x02Z_\x05\x0E\b\x02[\\' +
+    '\x07\x13\x02\x02\\]\x07\t\x02\x02]_\x05\x0E\b\x02^E\x03\x02\x02\x02^H' +
+    '\x03\x02\x02\x02^K\x03\x02\x02\x02^R\x03\x02\x02\x02^U\x03\x02\x02\x02' +
+    '^X\x03\x02\x02\x02^[\x03\x02\x02\x02_\r\x03\x02\x02\x02`a\t\x03\x02\x02' +
+    'a\x0F\x03\x02\x02\x02\n"*,9?AP^';
   public static __ATN: ATN;
   public static get _ATN(): ATN {
     if (!AssetSelectionParser.__ATN) {
@@ -745,9 +777,9 @@ export class ExprContext extends ParserRuleContext {
     super.copyFrom(ctx);
   }
 }
-export class AttributeExpressionContext extends ExprContext {
-  public attributeExpr(): AttributeExprContext {
-    return this.getRuleContext(0, AttributeExprContext);
+export class TraversalAllowedExpressionContext extends ExprContext {
+  public traversalAllowedExpr(): TraversalAllowedExprContext {
+    return this.getRuleContext(0, TraversalAllowedExprContext);
   }
   constructor(ctx: ExprContext) {
     super(ctx.parent, ctx.invokingState);
@@ -755,52 +787,20 @@ export class AttributeExpressionContext extends ExprContext {
   }
   // @Override
   public enterRule(listener: AssetSelectionListener): void {
-    if (listener.enterAttributeExpression) {
-      listener.enterAttributeExpression(this);
+    if (listener.enterTraversalAllowedExpression) {
+      listener.enterTraversalAllowedExpression(this);
     }
   }
   // @Override
   public exitRule(listener: AssetSelectionListener): void {
-    if (listener.exitAttributeExpression) {
-      listener.exitAttributeExpression(this);
+    if (listener.exitTraversalAllowedExpression) {
+      listener.exitTraversalAllowedExpression(this);
     }
   }
   // @Override
   public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
-    if (visitor.visitAttributeExpression) {
-      return visitor.visitAttributeExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class UpTraversalExpressionContext extends ExprContext {
-  public traversal(): TraversalContext {
-    return this.getRuleContext(0, TraversalContext);
-  }
-  public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AssetSelectionListener): void {
-    if (listener.enterUpTraversalExpression) {
-      listener.enterUpTraversalExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: AssetSelectionListener): void {
-    if (listener.exitUpTraversalExpression) {
-      listener.exitUpTraversalExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
-    if (visitor.visitUpTraversalExpression) {
-      return visitor.visitUpTraversalExpression(this);
+    if (visitor.visitTraversalAllowedExpression) {
+      return visitor.visitTraversalAllowedExpression(this);
     } else {
       return visitor.visitChildren(this);
     }
@@ -816,8 +816,8 @@ export class UpAndDownTraversalExpressionContext extends ExprContext {
       return this.getRuleContext(i, TraversalContext);
     }
   }
-  public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
+  public traversalAllowedExpr(): TraversalAllowedExprContext {
+    return this.getRuleContext(0, TraversalAllowedExprContext);
   }
   constructor(ctx: ExprContext) {
     super(ctx.parent, ctx.invokingState);
@@ -844,9 +844,41 @@ export class UpAndDownTraversalExpressionContext extends ExprContext {
     }
   }
 }
+export class UpTraversalExpressionContext extends ExprContext {
+  public traversal(): TraversalContext {
+    return this.getRuleContext(0, TraversalContext);
+  }
+  public traversalAllowedExpr(): TraversalAllowedExprContext {
+    return this.getRuleContext(0, TraversalAllowedExprContext);
+  }
+  constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    this.copyFrom(ctx);
+  }
+  // @Override
+  public enterRule(listener: AssetSelectionListener): void {
+    if (listener.enterUpTraversalExpression) {
+      listener.enterUpTraversalExpression(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: AssetSelectionListener): void {
+    if (listener.exitUpTraversalExpression) {
+      listener.exitUpTraversalExpression(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
+    if (visitor.visitUpTraversalExpression) {
+      return visitor.visitUpTraversalExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
 export class DownTraversalExpressionContext extends ExprContext {
-  public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
+  public traversalAllowedExpr(): TraversalAllowedExprContext {
+    return this.getRuleContext(0, TraversalAllowedExprContext);
   }
   public traversal(): TraversalContext {
     return this.getRuleContext(0, TraversalContext);
@@ -984,79 +1016,6 @@ export class OrExpressionContext extends ExprContext {
     }
   }
 }
-export class FunctionCallExpressionContext extends ExprContext {
-  public functionName(): FunctionNameContext {
-    return this.getRuleContext(0, FunctionNameContext);
-  }
-  public LPAREN(): TerminalNode {
-    return this.getToken(AssetSelectionParser.LPAREN, 0);
-  }
-  public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
-  }
-  public RPAREN(): TerminalNode {
-    return this.getToken(AssetSelectionParser.RPAREN, 0);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AssetSelectionListener): void {
-    if (listener.enterFunctionCallExpression) {
-      listener.enterFunctionCallExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: AssetSelectionListener): void {
-    if (listener.exitFunctionCallExpression) {
-      listener.exitFunctionCallExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
-    if (visitor.visitFunctionCallExpression) {
-      return visitor.visitFunctionCallExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class ParenthesizedExpressionContext extends ExprContext {
-  public LPAREN(): TerminalNode {
-    return this.getToken(AssetSelectionParser.LPAREN, 0);
-  }
-  public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
-  }
-  public RPAREN(): TerminalNode {
-    return this.getToken(AssetSelectionParser.RPAREN, 0);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: AssetSelectionListener): void {
-    if (listener.enterParenthesizedExpression) {
-      listener.enterParenthesizedExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: AssetSelectionListener): void {
-    if (listener.exitParenthesizedExpression) {
-      listener.exitParenthesizedExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
-    if (visitor.visitParenthesizedExpression) {
-      return visitor.visitParenthesizedExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
 export class AllExpressionContext extends ExprContext {
   public STAR(): TerminalNode {
     return this.getToken(AssetSelectionParser.STAR, 0);
@@ -1081,6 +1040,121 @@ export class AllExpressionContext extends ExprContext {
   public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
     if (visitor.visitAllExpression) {
       return visitor.visitAllExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+
+export class TraversalAllowedExprContext extends ParserRuleContext {
+  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+    super(parent, invokingState);
+  }
+  // @Override
+  public get ruleIndex(): number {
+    return AssetSelectionParser.RULE_traversalAllowedExpr;
+  }
+  public copyFrom(ctx: TraversalAllowedExprContext): void {
+    super.copyFrom(ctx);
+  }
+}
+export class AttributeExpressionContext extends TraversalAllowedExprContext {
+  public attributeExpr(): AttributeExprContext {
+    return this.getRuleContext(0, AttributeExprContext);
+  }
+  constructor(ctx: TraversalAllowedExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    this.copyFrom(ctx);
+  }
+  // @Override
+  public enterRule(listener: AssetSelectionListener): void {
+    if (listener.enterAttributeExpression) {
+      listener.enterAttributeExpression(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: AssetSelectionListener): void {
+    if (listener.exitAttributeExpression) {
+      listener.exitAttributeExpression(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
+    if (visitor.visitAttributeExpression) {
+      return visitor.visitAttributeExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class FunctionCallExpressionContext extends TraversalAllowedExprContext {
+  public functionName(): FunctionNameContext {
+    return this.getRuleContext(0, FunctionNameContext);
+  }
+  public LPAREN(): TerminalNode {
+    return this.getToken(AssetSelectionParser.LPAREN, 0);
+  }
+  public expr(): ExprContext {
+    return this.getRuleContext(0, ExprContext);
+  }
+  public RPAREN(): TerminalNode {
+    return this.getToken(AssetSelectionParser.RPAREN, 0);
+  }
+  constructor(ctx: TraversalAllowedExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    this.copyFrom(ctx);
+  }
+  // @Override
+  public enterRule(listener: AssetSelectionListener): void {
+    if (listener.enterFunctionCallExpression) {
+      listener.enterFunctionCallExpression(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: AssetSelectionListener): void {
+    if (listener.exitFunctionCallExpression) {
+      listener.exitFunctionCallExpression(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
+    if (visitor.visitFunctionCallExpression) {
+      return visitor.visitFunctionCallExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class ParenthesizedExpressionContext extends TraversalAllowedExprContext {
+  public LPAREN(): TerminalNode {
+    return this.getToken(AssetSelectionParser.LPAREN, 0);
+  }
+  public expr(): ExprContext {
+    return this.getRuleContext(0, ExprContext);
+  }
+  public RPAREN(): TerminalNode {
+    return this.getToken(AssetSelectionParser.RPAREN, 0);
+  }
+  constructor(ctx: TraversalAllowedExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    this.copyFrom(ctx);
+  }
+  // @Override
+  public enterRule(listener: AssetSelectionListener): void {
+    if (listener.enterParenthesizedExpression) {
+      listener.enterParenthesizedExpression(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: AssetSelectionListener): void {
+    if (listener.exitParenthesizedExpression) {
+      listener.exitParenthesizedExpression(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
+    if (visitor.visitParenthesizedExpression) {
+      return visitor.visitParenthesizedExpression(this);
     } else {
       return visitor.visitChildren(this);
     }

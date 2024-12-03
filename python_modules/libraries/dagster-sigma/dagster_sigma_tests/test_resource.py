@@ -1,6 +1,7 @@
 import asyncio
 import json
 import uuid
+from unittest import mock
 
 import pytest
 import responses
@@ -105,47 +106,66 @@ def test_model_organization_data_filter(sigma_auth_token: str, sigma_sample_data
         client_secret=fake_client_secret,
     )
 
-    data = asyncio.run(
-        resource.build_organization_data(
-            sigma_filter=SigmaFilter(workbook_folders=[("My Documents", "Test Folder")]),
-            fetch_column_data=True,
+    with mock.patch.object(
+        SigmaOrganization,
+        "_fetch_pages_for_workbook",
+        wraps=resource._fetch_pages_for_workbook,  # noqa: SLF001
+    ) as mock_fetch_pages:
+        data = asyncio.run(
+            resource.build_organization_data(
+                sigma_filter=SigmaFilter(workbook_folders=[("My Documents", "Test Folder")]),
+                fetch_column_data=True,
+            )
         )
-    )
-    assert len(data.workbooks) == 0
-    assert len(data.datasets) == 1
-    data = asyncio.run(
-        resource.build_organization_data(
-            sigma_filter=SigmaFilter(
-                workbook_folders=[("My Documents", "Test Folder")], include_unused_datasets=False
-            ),
-            fetch_column_data=True,
+        assert len(data.workbooks) == 0
+        assert len(data.datasets) == 1
+
+        # We don't fetch the workbooks, so we shouldn't have made any calls
+        assert len(mock_fetch_pages.mock_calls) == 0
+
+        data = asyncio.run(
+            resource.build_organization_data(
+                sigma_filter=SigmaFilter(
+                    workbook_folders=[("My Documents", "Test Folder")],
+                    include_unused_datasets=False,
+                ),
+                fetch_column_data=True,
+            )
         )
-    )
-    assert len(data.workbooks) == 0
-    assert len(data.datasets) == 0
+        assert len(data.workbooks) == 0
+        assert len(data.datasets) == 0
 
-    data = asyncio.run(
-        resource.build_organization_data(
-            sigma_filter=SigmaFilter(
-                workbook_folders=[("My Documents", "My Subfolder")], include_unused_datasets=False
-            ),
-            fetch_column_data=True,
+        # We still don't fetch the workbooks, so we shouldn't have made any calls
+        assert len(mock_fetch_pages.mock_calls) == 0
+
+        data = asyncio.run(
+            resource.build_organization_data(
+                sigma_filter=SigmaFilter(
+                    workbook_folders=[("My Documents", "My Subfolder")],
+                    include_unused_datasets=False,
+                ),
+                fetch_column_data=True,
+            )
         )
-    )
 
-    assert len(data.workbooks) == 1
-    assert len(data.datasets) == 1
-    assert data.workbooks[0].properties["name"] == "Sample Workbook"
+        assert len(data.workbooks) == 1
+        assert len(data.datasets) == 1
+        assert data.workbooks[0].properties["name"] == "Sample Workbook"
 
-    data = asyncio.run(
-        resource.build_organization_data(
-            sigma_filter=SigmaFilter(workbook_folders=[("My Documents",)]),
-            fetch_column_data=True,
+        # We fetch the workbook thrice, once for generating the workbook object,
+        # once for fetching column data, and once for fetching lineage data
+        # (the results are cached, so we don't actually make three calls out to the API)
+        assert len(mock_fetch_pages.mock_calls) == 3
+
+        data = asyncio.run(
+            resource.build_organization_data(
+                sigma_filter=SigmaFilter(workbook_folders=[("My Documents",)]),
+                fetch_column_data=True,
+            )
         )
-    )
 
-    assert len(data.workbooks) == 1
-    assert data.workbooks[0].properties["name"] == "Sample Workbook"
+        assert len(data.workbooks) == 1
+        assert data.workbooks[0].properties["name"] == "Sample Workbook"
 
 
 @responses.activate

@@ -37,6 +37,9 @@ setup(
     install_requires=[
         f"dagster{pin}",
         "snowflake-connector-python>=3.4.0",
+        # Workaround for incorrect pin in the snowflake-connector-python package
+        # See https://github.com/snowflakedb/snowflake-connector-python/issues/2109
+        "pyOpenSSL>=22.1.0",
     ],
     extras_require={
         "snowflake.sqlalchemy": [

@@ -636,7 +636,6 @@ class Definitions(IHaveNew):
             Definitions: The merged definitions.
         """
         check.sequence_param(def_sets, "def_sets", of_type=Definitions)
-
         assets = []
         schedules = []
         sensors = []

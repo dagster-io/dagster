@@ -1049,7 +1049,10 @@ def test_fan_in():
     counter = Counter()
     traced_counter.set(counter)
     materialize_assets(all_assets, instance)[downstream_asset.key]
-    assert traced_counter.get().counts() == {
-        "DagsterInstance.get_asset_records": 1,
-        "DagsterInstance.get_run_record_by_id": 1,
-    }
+    assert (
+        traced_counter.get().counts()
+        == {
+            "DagsterInstance.get_asset_records": 1,
+            "DagsterInstance.get_run_record_by_id": 3,  # get_run_record_by_id called when handling events for the run
+        }
+    )

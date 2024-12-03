@@ -7,7 +7,6 @@ from dagster._core.snap import (
     DependencyStructureIndex,
     JobSnap,
     NodeInvocationSnap,
-    create_job_snapshot_id,
     snap_from_config_type,
 )
 from dagster._core.snap.dep_snapshot import (
@@ -51,7 +50,7 @@ def test_empty_job_snap_props(snapshot):
     assert job_snapshot == serialize_rt(job_snapshot)
 
     snapshot.assert_match(serialize_pp(job_snapshot))
-    snapshot.assert_match(create_job_snapshot_id(job_snapshot))
+    snapshot.assert_match(job_snapshot.snapshot_id)
 
 
 def test_job_snap_all_props(snapshot):
@@ -72,7 +71,7 @@ def test_job_snap_all_props(snapshot):
     assert job_snapshot == serialize_rt(job_snapshot)
 
     snapshot.assert_match(serialize_pp(job_snapshot))
-    snapshot.assert_match(create_job_snapshot_id(job_snapshot))
+    snapshot.assert_match(job_snapshot.snapshot_id)
 
 
 def test_noop_deps_snap():
@@ -107,7 +106,7 @@ def test_two_invocations_deps_snap(snapshot):
     assert job_snapshot == serialize_rt(job_snapshot)
 
     snapshot.assert_match(serialize_pp(job_snapshot))
-    snapshot.assert_match(create_job_snapshot_id(job_snapshot))
+    snapshot.assert_match(job_snapshot.snapshot_id)
 
 
 def test_basic_dep():
@@ -177,7 +176,7 @@ def test_basic_dep_fan_out(snapshot):
     assert job_snapshot == serialize_rt(job_snapshot)
 
     snapshot.assert_match(serialize_pp(job_snapshot))
-    snapshot.assert_match(create_job_snapshot_id(job_snapshot))
+    snapshot.assert_match(job_snapshot.snapshot_id)
 
 
 def test_basic_fan_in(snapshot):
@@ -218,7 +217,7 @@ def test_basic_fan_in(snapshot):
     assert job_snapshot == serialize_rt(job_snapshot)
 
     snapshot.assert_match(serialize_pp(job_snapshot))
-    snapshot.assert_match(create_job_snapshot_id(job_snapshot))
+    snapshot.assert_match(job_snapshot.snapshot_id)
 
 
 def _dict_has_stable_hashes(hydrated_map, snapshot_config_snap_map):

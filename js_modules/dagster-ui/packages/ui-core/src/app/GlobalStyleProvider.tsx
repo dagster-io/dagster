@@ -26,6 +26,7 @@ const GlobalStyle = createGlobalStyle`
     color-scheme: ${Colors.browserColorScheme()};
     background-color: ${Colors.backgroundDefault()};
     color: ${Colors.textDefault()};
+    scrollbar-color: ${Colors.accentGrayHover()} ${Colors.backgroundDefault()};
     width: 100vw;
     height: 100vh;
     overflow: hidden;

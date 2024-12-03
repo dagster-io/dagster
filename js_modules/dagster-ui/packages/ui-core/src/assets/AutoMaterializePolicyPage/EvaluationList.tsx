@@ -1,8 +1,8 @@
 import {Table} from '@dagster-io/ui-components';
 
 import {EvaluationListRow} from './EvaluationListRow';
-import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 import {AssetConditionEvaluationRecordFragment} from './types/GetEvaluationsQuery.types';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 interface Props {
   definition: AssetViewDefinitionNodeFragment;

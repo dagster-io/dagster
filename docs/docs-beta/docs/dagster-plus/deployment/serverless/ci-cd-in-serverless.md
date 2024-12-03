@@ -20,7 +20,7 @@ If you're a GitHub user, with a single click our GitHub app with GitHub Actions 
 
 - An initial commit will need to be able to be merged directly to the repo's `main` branch to automatically add the GitHub Actions workflow files. If [branch protection rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#about-protected-branches) require changes be done through a pull request, it will prevent the automatic setup from completing.
 
-  - You can temporarily disable the branch protection rules and then re-enable them after the automatic setup completes. Alternatively, you can manually set up the GitHub Actions workflows. You can use our [dagster-cloud-serverless-quickstart repo](https://github.com/dagster-io/dagster-cloud-serverless-quickstart) as a template and its [README](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/README.md) as a guide.
+  - You can temporarily disable the branch protection rules and then re-enable them after the automatic setup completes.
 
 :::
 

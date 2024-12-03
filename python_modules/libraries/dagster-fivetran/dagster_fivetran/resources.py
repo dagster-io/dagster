@@ -1,9 +1,10 @@
-import datetime
 import json
 import logging
 import os
 import time
-from typing import Any, Mapping, Optional, Sequence, Tuple, Type
+from datetime import datetime, timedelta
+from functools import partial
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Type
 from urllib.parse import urljoin
 
 import requests
@@ -32,6 +33,7 @@ from requests.exceptions import RequestException
 from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnector,
+    FivetranConnectorScheduleType,
     FivetranDestination,
     FivetranSchemaConfig,
     FivetranWorkspaceData,
@@ -169,7 +171,7 @@ class FivetranResource(ConfigurableResource):
         if connector_details["status"]["setup_state"] != "connected":
             raise Failure(f"Connector '{connector_id}' cannot be synced as it has not been setup")
 
-    def get_connector_sync_status(self, connector_id: str) -> Tuple[datetime.datetime, bool, str]:
+    def get_connector_sync_status(self, connector_id: str) -> Tuple[datetime, bool, str]:
         """Gets details about the status of the most recent Fivetran sync operation for a given
         connector.
 
@@ -294,7 +296,7 @@ class FivetranResource(ConfigurableResource):
     def poll_sync(
         self,
         connector_id: str,
-        initial_last_sync_completion: datetime.datetime,
+        initial_last_sync_completion: datetime,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
     ) -> Mapping[str, Any]:
@@ -316,7 +318,7 @@ class FivetranResource(ConfigurableResource):
         Returns:
             Dict[str, Any]: Parsed json data representing the API response.
         """
-        poll_start = datetime.datetime.now()
+        poll_start = datetime.now()
         while True:
             (
                 curr_last_sync_completion,
@@ -328,12 +330,10 @@ class FivetranResource(ConfigurableResource):
             if curr_last_sync_completion > initial_last_sync_completion:
                 break
 
-            if poll_timeout and datetime.datetime.now() > poll_start + datetime.timedelta(
-                seconds=poll_timeout
-            ):
+            if poll_timeout and datetime.now() > poll_start + timedelta(seconds=poll_timeout):
                 raise Failure(
                     f"Sync for connector '{connector_id}' timed out after "
-                    f"{datetime.datetime.now() - poll_start}."
+                    f"{datetime.now() - poll_start}."
                 )
 
             # Sleep for the configured time interval before polling again.
@@ -469,11 +469,13 @@ class FivetranClient:
         api_secret: str,
         request_max_retries: int,
         request_retry_delay: float,
+        disable_schedule_on_trigger: bool,
     ):
         self.api_key = api_key
         self.api_secret = api_secret
         self.request_max_retries = request_max_retries
         self.request_retry_delay = request_retry_delay
+        self.disable_schedule_on_trigger = disable_schedule_on_trigger
 
     @property
     def _auth(self) -> HTTPBasicAuth:
@@ -592,6 +594,211 @@ class FivetranClient:
         """
         return self._make_request("GET", "groups")
 
+    def update_schedule_type_for_connector(
+        self, connector_id: str, schedule_type: str
+    ) -> Mapping[str, Any]:
+        """Updates the schedule type property of the connector to either "auto" or "manual".
+
+        Args:
+            connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
+                "Setup" tab of a given connector in the Fivetran UI.
+            schedule_type (str): Either "auto" (to turn the schedule on) or "manual" (to
+                turn it off).
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        schedule_types = {s for s in FivetranConnectorScheduleType}
+        if schedule_type not in schedule_types:
+            check.failed(
+                f"The schedule_type for connector {connector_id} must be in {schedule_types}: "
+                f"got '{schedule_type}'"
+            )
+        return self._make_connector_request(
+            method="PATCH", endpoint=connector_id, data=json.dumps({"schedule_type": schedule_type})
+        )
+
+    def start_sync(self, connector_id: str) -> None:
+        """Initiates a sync of a Fivetran connector.
+
+        Args:
+            connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
+                "Setup" tab of a given connector in the Fivetran UI.
+
+        """
+        request_fn = partial(
+            self._make_connector_request, method="POST", endpoint=f"{connector_id}/force"
+        )
+        self._start_sync(request_fn=request_fn, connector_id=connector_id)
+
+    def start_resync(
+        self, connector_id: str, resync_parameters: Optional[Mapping[str, Sequence[str]]] = None
+    ) -> None:
+        """Initiates a historical sync of all data for multiple schema tables within a Fivetran connector.
+
+        Args:
+            connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
+                "Setup" tab of a given connector in the Fivetran UI.
+            resync_parameters (Optional[Dict[str, List[str]]]): Optional resync parameters to send to the Fivetran API.
+                An example payload can be found here: https://fivetran.com/docs/rest-api/connectors#request_7
+        """
+        request_fn = partial(
+            self._make_connector_request,
+            method="POST",
+            endpoint=(
+                f"{connector_id}/schemas/tables/resync"
+                if resync_parameters is not None
+                else f"{connector_id}/resync"
+            ),
+            data=json.dumps(resync_parameters) if resync_parameters is not None else None,
+        )
+        self._start_sync(request_fn=request_fn, connector_id=connector_id)
+
+    def _start_sync(self, request_fn: Callable[[], Mapping[str, Any]], connector_id: str) -> None:
+        connector = FivetranConnector.from_connector_details(
+            connector_details=self.get_connector_details(connector_id)
+        )
+        connector.validate_syncable()
+        if self.disable_schedule_on_trigger:
+            self._log.info(f"Disabling Fivetran sync schedule for connector {connector_id}.")
+            self.update_schedule_type_for_connector(connector_id, "manual")
+        request_fn()
+        self._log.info(
+            f"Sync initialized for connector {connector_id}. View this sync in the Fivetran"
+            " UI: " + connector.url
+        )
+
+    def poll_sync(
+        self,
+        connector_id: str,
+        previous_sync_completed_at: datetime,
+        poll_interval: float = DEFAULT_POLL_INTERVAL,
+        poll_timeout: Optional[float] = None,
+    ) -> Mapping[str, Any]:
+        """Given a Fivetran connector and the timestamp at which the previous sync completed, poll
+        until the next sync completes.
+
+        The previous sync completion time is necessary because the only way to tell when a sync
+        completes is when this value changes.
+
+        Args:
+            connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
+                "Setup" tab of a given connector in the Fivetran UI.
+            previous_sync_completed_at (datetime.datetime): The datetime of the previous completed sync
+                (successful or otherwise) for this connector, prior to running this method.
+            poll_interval (float): The time (in seconds) that will be waited between successive polls.
+            poll_timeout (float): The maximum time that will wait before this operation is timed
+                out. By default, this will never time out.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        poll_start = datetime.now()
+        while True:
+            connector_details = self.get_connector_details(connector_id)
+            connector = FivetranConnector.from_connector_details(
+                connector_details=connector_details
+            )
+            self._log.info(f"Polled '{connector_id}'. Status: [{connector.sync_state}]")
+
+            if connector.last_sync_completed_at > previous_sync_completed_at:
+                break
+
+            if poll_timeout and datetime.now() > poll_start + timedelta(seconds=poll_timeout):
+                raise Failure(
+                    f"Sync for connector '{connector_id}' timed out after "
+                    f"{datetime.now() - poll_start}."
+                )
+
+            # Sleep for the configured time interval before polling again.
+            time.sleep(poll_interval)
+
+        if not connector.is_last_sync_successful:
+            raise Failure(
+                f"Sync for connector '{connector_id}' failed!",
+                metadata={
+                    "connector_details": MetadataValue.json(connector_details),
+                    "log_url": MetadataValue.url(connector.url),
+                },
+            )
+        return connector_details
+
+    def sync_and_poll(
+        self,
+        connector_id: str,
+        poll_interval: float = DEFAULT_POLL_INTERVAL,
+        poll_timeout: Optional[float] = None,
+    ) -> FivetranOutput:
+        """Initializes a sync operation for the given connector, and polls until it completes.
+
+        Args:
+            connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
+                "Setup" tab of a given connector in the Fivetran UI.
+            poll_interval (float): The time (in seconds) that will be waited between successive polls.
+            poll_timeout (float): The maximum time that will wait before this operation is timed
+                out. By default, this will never time out.
+
+        Returns:
+            :py:class:`~FivetranOutput`:
+                Object containing details about the connector and the tables it updates
+        """
+        return self._sync_and_poll(
+            sync_fn=self.start_sync,
+            connector_id=connector_id,
+            poll_interval=poll_interval,
+            poll_timeout=poll_timeout,
+        )
+
+    def resync_and_poll(
+        self,
+        connector_id: str,
+        poll_interval: float = DEFAULT_POLL_INTERVAL,
+        poll_timeout: Optional[float] = None,
+        resync_parameters: Optional[Mapping[str, Sequence[str]]] = None,
+    ) -> FivetranOutput:
+        """Initializes a historical resync operation for the given connector, and polls until it completes.
+
+        Args:
+            connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
+                "Setup" tab of a given connector in the Fivetran UI.
+            resync_parameters (Dict[str, List[str]]): The payload to send to the Fivetran API.
+                This should be a dictionary with schema names as the keys and a list of tables
+                to resync as the values.
+            poll_interval (float): The time (in seconds) that will be waited between successive polls.
+            poll_timeout (float): The maximum time that will wait before this operation is timed
+                out. By default, this will never time out.
+
+        Returns:
+            :py:class:`~FivetranOutput`:
+                Object containing details about the connector and the tables it updates
+        """
+        return self._sync_and_poll(
+            sync_fn=partial(self.start_resync, resync_parameters=resync_parameters),
+            connector_id=connector_id,
+            poll_interval=poll_interval,
+            poll_timeout=poll_timeout,
+        )
+
+    def _sync_and_poll(
+        self,
+        sync_fn: Callable,
+        connector_id: str,
+        poll_interval: float = DEFAULT_POLL_INTERVAL,
+        poll_timeout: Optional[float] = None,
+    ) -> FivetranOutput:
+        schema_config_details = self.get_schema_config_for_connector(connector_id)
+        connector = FivetranConnector.from_connector_details(
+            connector_details=self.get_connector_details(connector_id)
+        )
+        sync_fn(connector_id=connector_id)
+        final_details = self.poll_sync(
+            connector_id=connector_id,
+            previous_sync_completed_at=connector.last_sync_completed_at,
+            poll_interval=poll_interval,
+            poll_timeout=poll_timeout,
+        )
+        return FivetranOutput(connector_details=final_details, schema_config=schema_config_details)
+
 
 @experimental
 class FivetranWorkspace(ConfigurableResource):
@@ -613,6 +820,13 @@ class FivetranWorkspace(ConfigurableResource):
         default=0.25,
         description="Time (in seconds) to wait between each request retry.",
     )
+    disable_schedule_on_trigger: bool = Field(
+        default=True,
+        description=(
+            "Whether to disable the schedule of a connector when it is synchronized using this resource."
+            "Defaults to True."
+        ),
+    )
 
     _client: FivetranClient = PrivateAttr(default=None)
 
@@ -622,6 +836,7 @@ class FivetranWorkspace(ConfigurableResource):
             api_secret=self.api_secret,
             request_max_retries=self.request_max_retries,
             request_retry_delay=self.request_retry_delay,
+            disable_schedule_on_trigger=self.disable_schedule_on_trigger,
         )
 
     def fetch_fivetran_workspace_data(
