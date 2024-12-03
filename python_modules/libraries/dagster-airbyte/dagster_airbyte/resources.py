@@ -867,6 +867,7 @@ class AirbyteCloudClient(DagsterModel):
             self._make_request(
                 method="POST",
                 endpoint="/applications/token",
+                base_url=self.api_base_url,
                 data={
                     "client_id": self.client_id,
                     "client_secret": self.client_secret,
@@ -892,6 +893,7 @@ class AirbyteCloudClient(DagsterModel):
         self,
         method: str,
         endpoint: str,
+        base_url: str,
         data: Optional[Mapping[str, Any]] = None,
         include_additional_request_params: bool = True,
     ) -> Mapping[str, Any]:
@@ -900,6 +902,7 @@ class AirbyteCloudClient(DagsterModel):
         Args:
             method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
             endpoint (str): The Airbyte API endpoint to send this request to.
+            base_url (str): The base url to the Airbyte API to use.
             data (Optional[Dict[str, Any]]): JSON-formatted data string to be included in the request.
             include_additional_request_params (bool): Whether to include authorization and user-agent headers
             to the request parameters. Defaults to True.
@@ -907,7 +910,7 @@ class AirbyteCloudClient(DagsterModel):
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request
         """
-        url = self.api_base_url + endpoint
+        url = base_url + endpoint
         headers = {"accept": "application/json"}
 
         num_retries = 0
