@@ -19,7 +19,7 @@ from dagster._core.execution.asset_backfill import (
     execute_asset_backfill_iteration_inner,
 )
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.execution.job_backfill import execute_job_backfill_iteration
+from dagster._core.execution.job_backfill import CHECKPOINT_COUNT, execute_job_backfill_iteration
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
@@ -51,7 +51,10 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
 )
-from dagster_graphql_tests.graphql.repo import get_workspace_process_context
+from dagster_graphql_tests.graphql.repo import (
+    get_workspace_process_context,
+    multiple_backfill_iterations_partitions,
+)
 
 PARTITION_PROGRESS_QUERY = """
   query PartitionProgressQuery($backfillId: String!) {
@@ -544,6 +547,8 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
     def test_cancel_backfill(self, graphql_context):
         # TestDaemonPartitionBackfill::test_cancel_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
         repository_selector = infer_repository_selector(graphql_context)
+        num_partitions = CHECKPOINT_COUNT * 2
+        target_partitions = multiple_backfill_iterations_partitions.get_partition_keys()[0:10]
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PARTITION_BACKFILL_MUTATION,
@@ -551,9 +556,9 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                 "backfillParams": {
                     "selector": {
                         "repositorySelector": repository_selector,
-                        "partitionSetName": "integers_partition_set",
+                        "partitionSetName": "lots_of_partitions_partition_set",
                     },
-                    "partitionNames": ["2", "3"],
+                    "partitionNames": target_partitions,
                 }
             },
         )
@@ -573,8 +578,10 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
-        assert result.data["partitionBackfillOrError"]["numCancelable"] == 2
-        assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 2
+
+        _execute_job_backfill_iteration_with_side_effects(graphql_context, backfill_id)
+        runs = graphql_context.instance.get_runs(RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}))
+        # assert len(runs) == CHECKPOINT_COUNT
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -600,7 +607,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             _execute_job_backfill_iteration_with_side_effects(graphql_context, backfill_id)
 
         runs = graphql_context.instance.get_runs(RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}))
-        assert len(runs) == 1
+        assert len(runs) == CHECKPOINT_COUNT
         assert runs[0].status == DagsterRunStatus.CANCELED
 
         result = execute_dagster_graphql(
