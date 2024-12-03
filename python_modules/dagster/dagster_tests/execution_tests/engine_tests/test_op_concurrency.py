@@ -10,7 +10,6 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_job, execute_run_iterator
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._core.workspace.context import WorkspaceRequestContext
 
@@ -19,12 +18,12 @@ from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor im
 )
 
 
-@op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+@op(concurrency_key="foo")
 def should_never_execute(_x):
     assert False  # this should never execute
 
 
-@op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+@op(concurrency_key="foo")
 def throw_error():
     raise Exception("bad programmer")
 
@@ -34,14 +33,14 @@ def error_graph():
     should_never_execute(throw_error())
 
 
-@op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+@op(concurrency_key="foo")
 def simple_op(context):
     time.sleep(0.1)
     foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
     return {"active": foo_info.active_slot_count, "pending": foo_info.pending_step_count}
 
 
-@op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+@op(concurrency_key="foo")
 def second_op(context, _):
     time.sleep(0.1)
     foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
@@ -67,7 +66,7 @@ def two_tier_graph():
     second_op(simple_op())
 
 
-@op(tags={GLOBAL_CONCURRENCY_TAG: "foo"}, retry_policy=RetryPolicy(max_retries=1))
+@op(concurrency_key="foo", retry_policy=RetryPolicy(max_retries=1))
 def retry_op():
     raise Failure("I fail")
 
