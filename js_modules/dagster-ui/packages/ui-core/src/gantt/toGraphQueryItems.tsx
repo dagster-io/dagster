@@ -6,7 +6,7 @@ import {StepKind} from '../graphql/types';
 import {IStepMetadata, IStepState} from '../runs/RunMetadataProvider';
 
 export type RunGraphQueryItem = GraphQueryItem & {
-  metadata: IStepMetadata | undefined;
+  metadata?: IStepMetadata;
 };
 
 /**
