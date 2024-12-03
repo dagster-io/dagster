@@ -6,8 +6,7 @@ import responses
 from dagster_airbyte import AirbyteCloudWorkspace
 
 
-@responses.activate
-def test_refresh_access_token() -> None:
+def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
     resource = AirbyteCloudWorkspace(
         workspace_id="some_workspace_id",
         client_id="some_client_id",
@@ -15,12 +14,12 @@ def test_refresh_access_token() -> None:
     )
     client = resource.get_client()
 
-    responses.add(
+    base_api_mocks.add(
         responses.POST,
         f"{client.api_base_url}/applications/token",
         json={"access_token": "some_access_token"},
     )
-    responses.add(
+    base_api_mocks.add(
         method=responses.GET,
         url=f"{client.api_base_url}/test",
         json={},
@@ -35,9 +34,9 @@ def test_refresh_access_token() -> None:
         dt.now.return_value = test_time_first_call
         client._make_request(method="GET", endpoint="/test")  # noqa
 
-        assert len(responses.calls) == 2
-        access_token_call = responses.calls[0]
-        jobs_api_call = responses.calls[1]
+        assert len(base_api_mocks.calls) == 2
+        access_token_call = base_api_mocks.calls[0]
+        jobs_api_call = base_api_mocks.calls[1]
 
         assert "Authorization" not in access_token_call.request.headers
         access_token_call_body = json.loads(access_token_call.request.body.decode("utf-8"))
@@ -45,27 +44,27 @@ def test_refresh_access_token() -> None:
         assert access_token_call_body["client_secret"] == "some_client_secret"
         assert jobs_api_call.request.headers["Authorization"] == "Bearer some_access_token"
 
-        responses.calls.reset()
+        base_api_mocks.calls.reset()
 
         # Test second call, occurs before the access token expiration, only the jobs api is called
         dt.now.return_value = test_time_before_expiration
         client._make_request(method="GET", endpoint="/test")  # noqa
 
-        assert len(responses.calls) == 1
-        jobs_api_call = responses.calls[0]
+        assert len(base_api_mocks.calls) == 1
+        jobs_api_call = base_api_mocks.calls[0]
 
         assert jobs_api_call.request.headers["Authorization"] == "Bearer some_access_token"
 
-        responses.calls.reset()
+        base_api_mocks.calls.reset()
 
         # Test third call, occurs after the token expiration,
         # must refresh the access token before calling the jobs api
         dt.now.return_value = test_time_after_expiration
         client._make_request(method="GET", endpoint="/test")  # noqa
 
-        assert len(responses.calls) == 2
-        access_token_call = responses.calls[0]
-        jobs_api_call = responses.calls[1]
+        assert len(base_api_mocks.calls) == 2
+        access_token_call = base_api_mocks.calls[0]
+        jobs_api_call = base_api_mocks.calls[1]
 
         assert "Authorization" not in access_token_call.request.headers
         access_token_call_body = json.loads(access_token_call.request.body.decode("utf-8"))

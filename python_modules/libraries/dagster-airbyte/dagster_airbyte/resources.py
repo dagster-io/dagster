@@ -29,6 +29,9 @@ from requests.exceptions import RequestException
 from dagster_airbyte.translator import AirbyteWorkspaceData
 from dagster_airbyte.types import AirbyteOutput
 
+AIRBYTE_API_BASE = "https://api.airbyte.com"
+AIRBYTE_API_VERSION = "v1"
+
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
 # The access token expire every 3 minutes in Airbyte Cloud.
@@ -834,7 +837,7 @@ class AirbyteCloudClient(DagsterModel):
 
     @property
     def api_base_url(self) -> str:
-        return "https://api.airbyte.com/v1"
+        return f"{AIRBYTE_API_BASE}/{AIRBYTE_API_VERSION}"
 
     @property
     def all_additional_request_params(self) -> Mapping[str, Any]:
