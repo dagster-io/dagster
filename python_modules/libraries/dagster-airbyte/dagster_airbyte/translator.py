@@ -1,4 +1,4 @@
-from typing import Any, Mapping, NamedTuple
+from typing import Any, Mapping, NamedTuple, Optional
 
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -14,12 +14,27 @@ class AirbyteConnectionTableProps(NamedTuple): ...
 class AirbyteConnection:
     """Represents an Airbyte connection, based on data as returned from the API."""
 
+    id: str
+    name: str
+    stream_prefix: Optional[str]
+    streams: Mapping[str, "AirbyteStream"]
+
     @classmethod
     def from_connection_details(
         cls,
         connection_details: Mapping[str, Any],
     ) -> "AirbyteConnection":
-        raise NotImplementedError()
+        return cls(
+            id=connection_details["connectionId"],
+            name=connection_details["name"],
+            stream_prefix=connection_details.get("prefix"),
+            streams={
+                stream_key: AirbyteStream.from_stream_details(stream_details=stream_details)
+                for stream_key, stream_details in connection_details["configurations"].get(
+                    "streams", []
+                )
+            },
+        )
 
 
 @whitelist_for_serdes
@@ -27,12 +42,36 @@ class AirbyteConnection:
 class AirbyteDestination:
     """Represents an Airbyte destination, based on data as returned from the API."""
 
+    id: str
+    database: Optional[str]
+    schema: Optional[str]
+
     @classmethod
     def from_destination_details(
         cls,
         destination_details: Mapping[str, Any],
     ) -> "AirbyteDestination":
-        raise NotImplementedError()
+        return cls(
+            id=destination_details["destinationId"],
+            database=destination_details["configuration"].get("database"),
+            schema=destination_details["configuration"].get("schema"),
+        )
+
+
+@whitelist_for_serdes
+@record
+class AirbyteStream:
+    """Represents an Airbyte stream, based on data as returned from the API."""
+
+    name: str
+
+    def from_stream_details(
+        cls,
+        stream_details: Mapping[str, Any],
+    ) -> "AirbyteStream":
+        return cls(
+            name=stream_details["name"],
+        )
 
 
 @record
