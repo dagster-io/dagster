@@ -42,10 +42,10 @@ Only use `create_snowflake_insights_asset_and_schedule` in a single code locatio
 
 <Tabs>
   <TabItem value="before" label="Before">
-    <CodeExample filePath="dagster-plus/features/insights/snowflake/snowflake-resource.py" language="python" />
+    <CodeExample filePath="dagster-plus/insights/snowflake/snowflake-resource.py" language="python" />
   </TabItem>
   <TabItem value="after" label="After" default>
-    <CodeExample filePath="dagster-plus/features/insights/snowflake/snowflake-resource-insights.py" language="python" />
+    <CodeExample filePath="dagster-plus/insights/snowflake/snowflake-resource-insights.py" language="python" />
   </TabItem>
 </Tabs>
 
@@ -63,10 +63,10 @@ Only use `create_snowflake_insights_asset_and_schedule` in a single code locatio
 
 <Tabs>
   <TabItem value="before" label="Before">
-    <CodeExample filePath="dagster-plus/features/insights/snowflake/snowflake-dbt-asset.py" language="python" />
+    <CodeExample filePath="dagster-plus/insights/snowflake/snowflake-dbt-asset.py" language="python" />
   </TabItem>
   <TabItem value="after" label="After" default>
-    <CodeExample filePath="dagster-plus/features/insights/snowflake/snowflake-dbt-asset-insights.py" language="python" />
+    <CodeExample filePath="dagster-plus/insights/snowflake/snowflake-dbt-asset-insights.py" language="python" />
   </TabItem>
 </Tabs>
 
@@ -74,10 +74,10 @@ Then, add the following to your `dbt_project.yml`:
 
 <Tabs>
   <TabItem value="before" label="Before">
-    <CodeExample filePath="dagster-plus/features/insights/snowflake/dbt_project.yml" language="python" />
+    <CodeExample filePath="dagster-plus/insights/snowflake/dbt_project.yml" language="python" />
   </TabItem>
   <TabItem value="after" label="After" default>
-    <CodeExample filePath="dagster-plus/features/insights/snowflake/dbt_project_insights.yml" language="python" />
+    <CodeExample filePath="dagster-plus/insights/snowflake/dbt_project_insights.yml" language="python" />
     This adds a comment to each query, which is used by Dagster+ to attribute cost metrics to the correct assets.
   </TabItem>
 
