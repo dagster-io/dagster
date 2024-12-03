@@ -46,7 +46,7 @@ describe('EvaluateScheduleTest', () => {
       expect(screen.getByTestId('tick-5')).toBeVisible();
     });
     await userEvent.click(screen.getByTestId('tick-5'));
-    await userEvent.click(screen.getByTestId('evaluate'));
+    await userEvent.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText(/1\s+run request/i)).toBeVisible();
     });
@@ -62,9 +62,9 @@ describe('EvaluateScheduleTest', () => {
     });
     await userEvent.click(screen.getByTestId('tick-5'));
     await waitFor(() => {
-      expect(screen.getByTestId('evaluate')).not.toBeDisabled();
+      expect(screen.getByTestId('continue')).not.toBeDisabled();
     });
-    await userEvent.click(screen.getByTestId('evaluate'));
+    await userEvent.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText('Failed')).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
@@ -79,7 +79,7 @@ describe('EvaluateScheduleTest', () => {
       expect(screen.getByTestId('tick-5')).toBeVisible();
     });
     await userEvent.click(screen.getByTestId('tick-5'));
-    await userEvent.click(screen.getByTestId('evaluate'));
+    await userEvent.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText('Skipped')).toBeVisible();
     });
