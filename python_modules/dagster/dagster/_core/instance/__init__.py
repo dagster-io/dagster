@@ -78,7 +78,6 @@ from dagster._core.storage.tags import (
     RESUME_RETRY_TAG,
     ROOT_RUN_ID_TAG,
     TAGS_TO_MAYBE_OMIT_ON_RETRY,
-    TAGS_TO_OMIT_ON_RETRY,
     WILL_RETRY_TAG,
 )
 from dagster._serdes import ConfigurableClass
@@ -1654,17 +1653,15 @@ class DagsterInstance(DynamicPartitionsStore):
         parent_run_id = parent_run.run_id
 
         # these can differ from remote_job.tags if tags were added at launch time
-        parent_run_tags = {}
+        parent_run_tags_to_include = {}
         if use_parent_run_tags:
-            parent_run_tags = {
+            parent_run_tags_to_include = {
                 key: val
                 for key, val in parent_run.tags.items()
-                if key not in TAGS_TO_OMIT_ON_RETRY and key not in TAGS_TO_MAYBE_OMIT_ON_RETRY
+                if key not in TAGS_TO_MAYBE_OMIT_ON_RETRY
             }
-            # for all tags in TAGS_TO_MAYBE_OMIT_ON_RETRY, add a condition that determines
-            # whether the tag should be added to the retried run
-
-            # condition for BACKFILL_ID_TAG, PARENT_BACKFILL_ID_TAG, ROOT_BACKFILL_ID_TAG
+            # condition to determine whether to include BACKFILL_ID_TAG, PARENT_BACKFILL_ID_TAG,
+            # ROOT_BACKFILL_ID_TAG on retried run
             if parent_run.tags.get(BACKFILL_ID_TAG) is not None:
                 # if the run was part of a backfill and the backfill is complete, we do not want the
                 # retry to be considered part of the backfill, so remove all backfill-related tags
@@ -1672,11 +1669,11 @@ class DagsterInstance(DynamicPartitionsStore):
                 if backfill and backfill.status == BulkActionStatus.REQUESTED:
                     for tag in BACKFILL_TAGS:
                         if parent_run.tags.get(tag) is not None:
-                            parent_run_tags[tag] = parent_run.tags[tag]
+                            parent_run_tags_to_include[tag] = parent_run.tags[tag]
 
         tags = merge_dicts(
             remote_job.tags,
-            parent_run_tags,
+            parent_run_tags_to_include,
             extra_tags or {},
             {
                 PARENT_RUN_ID_TAG: parent_run_id,
