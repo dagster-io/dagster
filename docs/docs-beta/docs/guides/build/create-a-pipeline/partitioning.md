@@ -58,7 +58,7 @@ Consider this example:
 
 <CodeExample filePath="guides/data-modeling/partitioning/dynamic_partitioning.py" language="python" title="Dynamic partitioning" />
 
-Because the partition values are unknown in advance, `DynamicPartitionsDefinition` is used to define the partition. Then, the `all_regions_sensor` 
+Because the partition values are unknown in advance, `DynamicPartitionsDefinition` is used to define the partition. Then, the `all_regions_sensor` TODO: incomplete sentence
 
 In this example:
 
@@ -67,4 +67,4 @@ In this example:
 
 ## Next steps
 
-- TODOD: Partition dependencies
+- TODO: Partition dependencies

@@ -203,7 +203,7 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
 
 ## Use private Python packages \{#private-packages}
 
-If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the following steps can install a package from a private GitHub repository, eg. `my-org/private-repo`, as a dependency:
+If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the following steps can install a package from a private GitHub repository, e.g. `my-org/private-repo`, as a dependency:
 
 1.  In your `deploy.yml` file, add the following to the top of `steps:` section in the `dagster-cloud-default-deploy` job.
 
