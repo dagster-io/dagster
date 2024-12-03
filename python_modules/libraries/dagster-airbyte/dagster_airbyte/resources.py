@@ -1034,9 +1034,12 @@ class AirbyteCloudWorkspace(ConfigurableResource):
         client = self.get_client()
         connections = client.get_connections()["data"]
 
-        for connection_details in connections:
+        for partial_connection_details in connections:
+            full_connection_details = client.get_connection_details(
+                connection_id=partial_connection_details["connectionId"]
+            )
             connection = AirbyteConnection.from_connection_details(
-                connection_details=connection_details
+                connection_details=full_connection_details
             )
             connections_by_id[connection.id] = connection
 

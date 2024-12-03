@@ -18,6 +18,7 @@ class AirbyteConnection:
     name: str
     stream_prefix: Optional[str]
     streams: Mapping[str, "AirbyteStream"]
+    destination_id: str
 
     @classmethod
     def from_connection_details(
@@ -29,11 +30,10 @@ class AirbyteConnection:
             name=connection_details["name"],
             stream_prefix=connection_details.get("prefix"),
             streams={
-                stream_key: AirbyteStream.from_stream_details(stream_details=stream_details)
-                for stream_key, stream_details in connection_details["configurations"].get(
-                    "streams", []
-                )
+                stream_details["stream"]["name"]: AirbyteStream.from_stream_details(stream_details=stream_details)
+                for stream_details in connection_details.get("syncCatalog", {}).get("streams", [])
             },
+            destination_id=connection_details["destinationId"]
         )
 
 
@@ -64,13 +64,18 @@ class AirbyteStream:
     """Represents an Airbyte stream, based on data as returned from the API."""
 
     name: str
+    selected: bool
+    json_schema: Mapping[str, Any]
 
+    @classmethod
     def from_stream_details(
         cls,
         stream_details: Mapping[str, Any],
     ) -> "AirbyteStream":
         return cls(
-            name=stream_details["name"],
+            name=stream_details["stream"]["name"],
+            selected=stream_details["config"].get("selected", False),
+            json_schema=stream_details["stream"].get("jsonSchema", {})
         )
 
 
