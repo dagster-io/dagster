@@ -796,9 +796,9 @@ def airbyte_cloud_resource(context) -> AirbyteCloudResource:
     return AirbyteCloudResource.from_resource_context(context)
 
 
-# ------------------
-# Reworked resources
-# ------------------
+# -------------
+# Resources v2
+# -------------
 
 
 @whitelist_for_serdes
@@ -830,7 +830,7 @@ class AirbyteDestination:
 @record
 class AirbyteWorkspaceData:
     """A record representing all content in an Airbyte workspace.
-    Provided as context for the translator so that it can resolve dependencies between content.
+    This applies both to Airbyte OSS and Cloud.
     """
 
     connections_by_id: Mapping[str, AirbyteConnection]
