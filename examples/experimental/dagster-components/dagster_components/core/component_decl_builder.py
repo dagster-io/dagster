@@ -1,11 +1,11 @@
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence, Union
 
-from pydantic import BaseModel
-
-from dagster._components.core.component import ComponentDeclNode
 from dagster._record import record
 from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
+from pydantic import BaseModel
+
+from dagster_components.core.component import ComponentDeclNode
 
 
 class DefsFileModel(BaseModel):

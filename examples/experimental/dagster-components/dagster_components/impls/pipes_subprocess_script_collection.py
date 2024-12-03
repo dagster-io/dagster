@@ -2,10 +2,6 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
 
-from pydantic import BaseModel, TypeAdapter
-
-from dagster._components.core.component import Component, ComponentDeclNode, ComponentLoadContext
-from dagster._components.core.component_decl_builder import YamlComponentDecl
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
@@ -13,6 +9,10 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster._utils.warnings import suppress_dagster_warnings
+from pydantic import BaseModel, TypeAdapter
+
+from dagster_components.core.component import Component, ComponentDeclNode, ComponentLoadContext
+from dagster_components.core.component_decl_builder import YamlComponentDecl
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
