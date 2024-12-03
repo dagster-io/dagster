@@ -15,6 +15,48 @@ TEST_ACCESS_TOKEN = "some_access_token"
 SAMPLE_ACCESS_TOKEN = {"access_token": TEST_ACCESS_TOKEN}
 
 
+# Taken from Airbyte API documentation
+# https://reference.airbyte.com/reference/listconnections
+SAMPLE_CONNECTIONS = {
+    "next": "https://api.airbyte.com/v1/connections?limit=5&offset=10",
+    "previous": "https://api.airbyte.com/v1/connections?limit=5&offset=0",
+    "data": [
+        {
+            "connectionId": "9924bcd0-99be-453d-ba47-c2c9766f7da5",
+            "workspaceId": "744cc0ed-7f05-4949-9e60-2a814f90c035",
+            "name": "Postgres To Snowflake",
+            "sourceId": "0c31738c-0b2d-4887-b506-e2cd1c39cc35",
+            "destinationId": "18dccc91-0ab1-4f72-9ed7-0b8fc27c5826",
+            "status": "active",
+            "schedule": {
+                "schedule_type": "cron",
+            },
+        }
+    ],
+}
+
+
+# Taken from Airbyte API documentation
+# https://reference.airbyte.com/reference/getdestination
+SAMPLE_DESTINATION_DETAILS = {
+    "destinationId": "18dccc91-0ab1-4f72-9ed7-0b8fc27c5826",
+    "name": "My Destination",
+    "sourceType": "postgres",
+    "workspaceId": "744cc0ed-7f05-4949-9e60-2a814f90c035",
+    "configuration": {
+        "conversion_window_days": 14,
+        "customer_id": "1234567890",
+        "start_date": "2023-01-01",
+        "end_date": "2024-01-01",
+    },
+}
+
+
+@pytest.fixture(name="destination_id")
+def destination_id_fixture() -> str:
+    return "18dccc91-0ab1-4f72-9ed7-0b8fc27c5826"
+
+
 @pytest.fixture(
     name="base_api_mocks",
 )
@@ -27,3 +69,25 @@ def base_api_mocks_fixture() -> Iterator[responses.RequestsMock]:
             status=201,
         )
         yield response
+
+
+@pytest.fixture(
+    name="fetch_workspace_data_api_mocks",
+)
+def fetch_workspace_data_api_mocks_fixture(
+    destination_id: str,
+    base_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    base_api_mocks.add(
+        method=responses.GET,
+        url=f"{AIRBYTE_API_BASE}/{AIRBYTE_API_VERSION}/connections",
+        json=SAMPLE_CONNECTIONS,
+        status=200,
+    )
+    base_api_mocks.add(
+        method=responses.GET,
+        url=f"{AIRBYTE_API_BASE}/{AIRBYTE_API_VERSION}/destinations/{destination_id}",
+        json=SAMPLE_DESTINATION_DETAILS,
+        status=200,
+    )
+    yield base_api_mocks

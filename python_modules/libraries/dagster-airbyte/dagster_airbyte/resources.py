@@ -862,7 +862,7 @@ class AirbyteCloudClient(DagsterModel):
         response = check.not_none(
             self._make_request(
                 method="POST",
-                endpoint="/applications/token",
+                endpoint="applications/token",
                 base_url=self.api_base_url,
                 data={
                     "client_id": self.client_id,
@@ -917,7 +917,7 @@ class AirbyteCloudClient(DagsterModel):
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request
         """
-        url = base_url + endpoint
+        url = f"{base_url}/{endpoint}"
 
         num_retries = 0
         while True:
@@ -943,11 +943,24 @@ class AirbyteCloudClient(DagsterModel):
 
     def get_connections(self) -> Mapping[str, Any]:
         """Fetches all connections of an Airbyte workspace from the Airbyte API."""
-        raise NotImplementedError()
+        return check.not_none(
+            self._make_request(
+                method="GET",
+                endpoint="connections",
+                base_url=self.api_base_url,
+                data={"workspaceIds": [self.workspace_id]},
+            )
+        )
 
     def get_destination_details(self, destination_id: str) -> Mapping[str, Any]:
         """Fetches details about a given destination from the Airbyte API."""
-        raise NotImplementedError()
+        return check.not_none(
+            self._make_request(
+                method="GET",
+                endpoint=f"destinations/{destination_id}",
+                base_url=self.api_base_url,
+            )
+        )
 
 
 @experimental
