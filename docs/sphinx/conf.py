@@ -14,7 +14,6 @@ import os
 import sys
 
 ignored_folders = ["dagster-test"]
-additional_folders = ["../../examples/experimental/dagster-airlift"]
 base_path = "../../python_modules"
 python_modules_path = os.path.abspath(base_path)
 libraries_path = os.path.abspath(os.path.join(base_path, "libraries"))
@@ -35,8 +34,6 @@ for folder in os.listdir(libraries_path):
         paths.append(folder_path)
 # Add the _ext folder
 paths.append(os.path.abspath("./_ext"))
-for path in additional_folders:
-    paths.append(os.path.abspath(path))
 
 for path in paths:
     sys.path.insert(0, path)

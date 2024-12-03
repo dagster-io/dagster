@@ -64,7 +64,7 @@ def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id:
         credentials=PowerBIToken(api_token=fake_token),
         workspace_id=workspace_id,
     )
-    all_assets = load_powerbi_asset_specs(resource)
+    all_assets = load_powerbi_asset_specs(resource, use_workspace_scan=False)
 
     # 1 dashboard, 1 report, 1 semantic model
     assert len(all_assets) == 3
@@ -94,8 +94,8 @@ def state_derived_defs_two_workspaces() -> Definitions:
     )
     return Definitions(
         assets=[
-            *load_powerbi_asset_specs(resource),
-            *load_powerbi_asset_specs(resource_second_workspace),
+            *load_powerbi_asset_specs(resource, use_workspace_scan=False),
+            *load_powerbi_asset_specs(resource_second_workspace, use_workspace_scan=False),
         ]
     )
 
@@ -125,7 +125,7 @@ def test_refreshable_semantic_model(
         workspace_id=workspace_id,
         refresh_poll_interval=0,
     )
-    all_specs = load_powerbi_asset_specs(resource)
+    all_specs = load_powerbi_asset_specs(resource, use_workspace_scan=False)
 
     assets_with_semantic_models = [
         build_semantic_model_refresh_asset_definition(resource_key="powerbi", spec=spec)
@@ -235,7 +235,7 @@ def state_derived_defs() -> Definitions:
         credentials=PowerBIToken(api_token=fake_token),
         workspace_id="a2122b8f-d7e1-42e8-be2b-a5e636ca3221",
     )
-    powerbi_specs = load_powerbi_asset_specs(resource)
+    powerbi_specs = load_powerbi_asset_specs(resource, use_workspace_scan=False)
 
     @asset
     def my_materializable_asset(): ...

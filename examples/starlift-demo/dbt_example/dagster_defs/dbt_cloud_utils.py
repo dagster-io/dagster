@@ -52,7 +52,7 @@ def filter_specs_by_tag(specs: Sequence[AssetSpec], tag: str) -> Dict[AssetKey, 
 
 
 def add_dep_to_spec(spec: AssetSpec, dep: AssetKey) -> AssetSpec:
-    return spec._replace(deps=[*spec.deps, AssetDep(dep)])
+    return spec.replace_attributes(deps=[*spec.deps, AssetDep(dep)])
 
 
 def key_for_uid(specs: Sequence[AssetSpec], uid: str) -> AssetKey:

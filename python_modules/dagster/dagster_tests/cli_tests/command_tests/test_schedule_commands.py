@@ -103,9 +103,10 @@ def test_schedules_start_all(gen_schedule_args):
 
 def test_schedules_wipe_correct_delete_message():
     runner = CliRunner()
-    with scheduler_instance() as instance, mock.patch(
-        "dagster._core.instance.DagsterInstance.get"
-    ) as _instance:
+    with (
+        scheduler_instance() as instance,
+        mock.patch("dagster._core.instance.DagsterInstance.get") as _instance,
+    ):
         _instance.return_value = instance
 
         result = runner.invoke(
@@ -122,9 +123,10 @@ def test_schedules_wipe_correct_delete_message():
 
 def test_schedules_wipe_incorrect_delete_message():
     runner = CliRunner()
-    with scheduler_instance() as instance, mock.patch(
-        "dagster._core.instance.DagsterInstance.get"
-    ) as _instance:
+    with (
+        scheduler_instance() as instance,
+        mock.patch("dagster._core.instance.DagsterInstance.get") as _instance,
+    ):
         _instance.return_value = instance
         result = runner.invoke(
             schedule_wipe_command,

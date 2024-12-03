@@ -52,9 +52,6 @@
           'type': dict({
             'const': 'bar',
             'default': 'bar',
-            'enum': list([
-              'bar',
-            ]),
             'title': 'Type',
             'type': 'string',
           }),
@@ -75,9 +72,6 @@
           'type': dict({
             'const': 'foo',
             'default': 'foo',
-            'enum': list([
-              'foo',
-            ]),
             'title': 'Type',
             'type': 'string',
           }),

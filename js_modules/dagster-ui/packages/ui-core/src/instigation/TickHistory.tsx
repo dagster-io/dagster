@@ -12,6 +12,7 @@ import {
   IconWrapper,
   Menu,
   MenuItem,
+  MiddleTruncate,
   NonIdealState,
   Select,
   Spinner,
@@ -22,6 +23,7 @@ import {
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
+import {useState} from 'react';
 import styled from 'styled-components';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
@@ -30,7 +32,7 @@ import {LiveTickTimeline} from './LiveTickTimeline2';
 import {TickDetailsDialog} from './TickDetailsDialog';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
-import {countPartitionsAddedOrDeleted, isStuckStartedTick, truncate} from './util';
+import {countPartitionsAddedOrDeleted, isStuckStartedTick} from './util';
 import {gql, useQuery} from '../apollo-client';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -94,6 +96,9 @@ export const TicksTable = ({
     queryKey: 'status',
     defaults: {status: TickStatusDisplay.ALL},
   });
+
+  const [showDetailsForTick, setShowDetailsForTick] = useState<HistoryTickFragment | null>(null);
+  const [showLogsForTick, setShowLogsForTick] = useState<HistoryTickFragment | null>(null);
 
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
   const statuses = React.useMemo(
@@ -163,7 +168,6 @@ export const TicksTable = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticks, queryResult.loading, paginationProps.hasPrevCursor]);
 
-  const [logTick, setLogTick] = React.useState<InstigationTick>();
   const {data} = queryResult;
 
   if (!data) {
@@ -194,13 +198,6 @@ export const TicksTable = ({
 
   return (
     <>
-      {logTick ? (
-        <TickLogDialog
-          tick={logTick}
-          instigationSelector={instigationSelector}
-          onClose={() => setLogTick(undefined)}
-        />
-      ) : null}
       <Box padding={{vertical: 12, horizontal: 24}}>
         <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
           {tabs}
@@ -220,6 +217,7 @@ export const TicksTable = ({
                 <th style={{width: 120}}>Cursor</th>
               ) : null}
               <th style={{width: 180}}>Result</th>
+              <th style={{width: 80}}>Logs</th>
             </tr>
           </thead>
           <tbody>
@@ -230,6 +228,8 @@ export const TicksTable = ({
                 tickResultType={tickResultType}
                 instigationSelector={instigationSelector}
                 index={index}
+                onShowDetails={setShowDetailsForTick}
+                onShowLogs={setShowLogsForTick}
               />
             ))}
           </tbody>
@@ -244,6 +244,20 @@ export const TicksTable = ({
           <CursorHistoryControls {...paginationProps} />
         </div>
       ) : null}
+      <TickDetailsDialog
+        isOpen={!!showDetailsForTick}
+        tickId={showDetailsForTick?.tickId}
+        tickResultType={tickResultType}
+        instigationSelector={instigationSelector}
+        onClose={() => setShowDetailsForTick(null)}
+      />
+      <TickLogDialog
+        isOpen={!!showLogsForTick}
+        tickId={showLogsForTick?.tickId ?? null}
+        timestamp={showLogsForTick?.timestamp}
+        instigationSelector={instigationSelector}
+        onClose={() => setShowLogsForTick(null)}
+      />
     </>
   );
 };
@@ -407,16 +421,18 @@ export const TickHistoryTimeline = ({
 function TickRow({
   tick,
   tickResultType,
-  instigationSelector,
   index,
+  onShowDetails,
+  onShowLogs,
 }: {
   tick: HistoryTickFragment;
   tickResultType: TickResultType;
   instigationSelector: InstigationSelector;
   index: number;
+  onShowDetails: (tick: HistoryTickFragment) => void;
+  onShowLogs: (tick: HistoryTickFragment) => void;
 }) {
   const copyToClipboard = useCopyToClipboard();
-  const [showResults, setShowResults] = React.useState(false);
 
   const [addedPartitions, deletedPartitions] = React.useMemo(() => {
     const requests = tick.dynamicPartitionsRequestResults;
@@ -459,11 +475,18 @@ function TickRow({
         )}
       </td>
       {tick.instigationType === InstigationType.SENSOR ? (
-        <td style={{width: 120}}>
+        <td>
           {tick.cursor ? (
             <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-              <div style={{fontFamily: FontFamily.monospace, fontSize: '14px'}}>
-                {truncate(tick.cursor || '')}
+              <div
+                style={{
+                  fontFamily: FontFamily.monospace,
+                  fontSize: '14px',
+                  maxWidth: '400px',
+                  overflow: 'hidden',
+                }}
+              >
+                <MiddleTruncate text={tick.cursor || ''} />
               </div>
               <CopyButton
                 onClick={async () => {
@@ -486,7 +509,7 @@ function TickRow({
         <Box flex={{direction: 'column', gap: 6}}>
           {tickResultType === 'runs' ? (
             <Box flex={{alignItems: 'center', gap: 8}}>
-              <ButtonLink onClick={() => setShowResults(true)}>
+              <ButtonLink onClick={() => onShowDetails(tick)}>
                 {tick.runIds.length === 1
                   ? '1 run requested'
                   : `${tick.runIds.length} runs requested`}
@@ -501,7 +524,7 @@ function TickRow({
             </Box>
           ) : (
             <Box flex={{alignItems: 'center', gap: 8}}>
-              <ButtonLink onClick={() => setShowResults(true)}>
+              <ButtonLink onClick={() => onShowDetails(tick)}>
                 {tick.requestedAssetMaterializationCount === 1
                   ? '1 materialization requested'
                   : `${tick.requestedAssetMaterializationCount} materializations requested`}
@@ -525,16 +548,10 @@ function TickRow({
               )
             </Caption>
           ) : null}
-          <TickDetailsDialog
-            isOpen={showResults}
-            tickId={tick.tickId}
-            tickResultType={tickResultType}
-            instigationSelector={instigationSelector}
-            onClose={() => {
-              setShowResults(false);
-            }}
-          />
         </Box>
+      </td>
+      <td>
+        <Button onClick={() => onShowLogs(tick)}>View logs</Button>
       </td>
     </tr>
   );

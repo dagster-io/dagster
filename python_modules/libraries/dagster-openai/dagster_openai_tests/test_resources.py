@@ -71,7 +71,7 @@ def test_openai_resource_with_op(mock_client, mock_context, mock_wrapper):
             )
 
         assert mock_client.called
-        assert mock_wrapper.not_called
+        assert not mock_wrapper.called
 
     result = wrap_op_in_graph_and_execute(
         openai_op,

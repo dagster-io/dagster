@@ -10,6 +10,7 @@ from dagster._serdes.serdes import (
     WhitelistMap as WhitelistMap,
     deserialize_value as deserialize_value,
     deserialize_values as deserialize_values,
+    get_storage_name as get_storage_name,
     pack_value as pack_value,
     serialize_value as serialize_value,
     unpack_value as unpack_value,

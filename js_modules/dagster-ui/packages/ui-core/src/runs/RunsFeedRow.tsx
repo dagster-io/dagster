@@ -188,7 +188,7 @@ export const RunsFeedRow = ({
 };
 
 const TEMPLATE_COLUMNS =
-  '60px minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1fr) 140px 150px 120px 132px';
+  '60px minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1fr) 140px 170px 120px 132px';
 
 export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => {
   return (

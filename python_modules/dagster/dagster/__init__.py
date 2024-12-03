@@ -140,7 +140,10 @@ from dagster._core.definitions.asset_selection import AssetSelection as AssetSel
 from dagster._core.definitions.asset_sensor_definition import (
     AssetSensorDefinition as AssetSensorDefinition,
 )
-from dagster._core.definitions.asset_spec import AssetSpec as AssetSpec
+from dagster._core.definitions.asset_spec import (
+    AssetSpec as AssetSpec,
+    map_asset_specs as map_asset_specs,
+)
 from dagster._core.definitions.assets import AssetsDefinition as AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import (
     AutoMaterializePolicy as AutoMaterializePolicy,

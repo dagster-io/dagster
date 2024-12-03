@@ -575,7 +575,7 @@ class TestEventLogStorage:
                 instance.delete_run(run)
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=1)
+    @pytest.mark.flaky(max_runs=2)
     def test_event_log_storage_watch(
         self,
         test_run_id: str,
@@ -1076,7 +1076,7 @@ class TestEventLogStorage:
             assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=1)
+    @pytest.mark.flaky(max_runs=2)
     def test_event_watcher_single_run_event(self, storage, test_run_id):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -1097,7 +1097,7 @@ class TestEventLogStorage:
         assert all([isinstance(event, EventLogEntry) for event in event_list])
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=1)
+    @pytest.mark.flaky(max_runs=2)
     def test_event_watcher_filter_run_event(self, instance, storage):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -1126,7 +1126,7 @@ class TestEventLogStorage:
             assert all([isinstance(event, EventLogEntry) for event in event_list])
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=1)
+    @pytest.mark.flaky(max_runs=2)
     def test_event_watcher_filter_two_runs_event(self, storage, instance):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -2193,7 +2193,7 @@ class TestEventLogStorage:
             assert len(run_status_change_events) == 6
 
     # .watch() is async, there's a small chance they don't run before the asserts
-    @pytest.mark.flaky(reruns=1)
+    @pytest.mark.flaky(max_runs=2)
     def test_watch_exc_recovery(self, storage):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")

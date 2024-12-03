@@ -6,7 +6,7 @@ from dagster import (
     AssetSpec,
     _check as check,
 )
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
 from dagster._utils.log import get_dagster_logger
@@ -115,26 +115,25 @@ class DagsterLookerApiTranslator:
     def instance_data(self) -> Optional[LookerInstanceData]:
         return self._looker_instance_data
 
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
+    )
     def get_view_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
-        lookml_view = check.inst(looker_structure.data, LookmlView)
-        return AssetKey(["view", lookml_view.view_name])
+        return self.get_asset_spec(looker_structure).key
 
     def get_view_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
-        _ = check.inst(looker_structure.data, LookmlView)
+        lookml_view = check.inst(looker_structure.data, LookmlView)
         return AssetSpec(
-            key=self.get_asset_key(looker_structure),
+            key=AssetKey(["view", lookml_view.view_name]),
         )
 
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
+    )
     def get_explore_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
-        lookml_explore = check.inst(looker_structure.data, (LookmlModelExplore, DashboardFilter))
-        if isinstance(lookml_explore, LookmlModelExplore):
-            return AssetKey(check.not_none(lookml_explore.id))
-        elif isinstance(lookml_explore, DashboardFilter):
-            lookml_model_name = check.not_none(lookml_explore.model)
-            lookml_explore_name = check.not_none(lookml_explore.explore)
-            return AssetKey(f"{lookml_model_name}::{lookml_explore_name}")
-        else:
-            check.assert_never(lookml_explore)
+        return self.get_explore_asset_spec(looker_structure).key
 
     def get_explore_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
         lookml_explore = check.inst(looker_structure.data, (LookmlModelExplore, DashboardFilter))
@@ -154,10 +153,10 @@ class DagsterLookerApiTranslator:
             ]
 
             return AssetSpec(
-                key=self.get_asset_key(looker_structure),
+                key=AssetKey(check.not_none(lookml_explore.id)),
                 deps=list(
                     {
-                        self.get_view_asset_spec(
+                        self.get_asset_spec(
                             LookerStructureData(
                                 structure_type=LookerStructureType.VIEW, data=lookml_view
                             )
@@ -176,13 +175,18 @@ class DagsterLookerApiTranslator:
                 },
             )
         elif isinstance(lookml_explore, DashboardFilter):
-            return AssetSpec(key=self.get_asset_key(looker_structure))
+            lookml_model_name = check.not_none(lookml_explore.model)
+            lookml_explore_name = check.not_none(lookml_explore.explore)
+            return AssetSpec(key=AssetKey(f"{lookml_model_name}::{lookml_explore_name}"))
         else:
             check.assert_never(lookml_explore)
 
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
+    )
     def get_dashboard_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
-        looker_dashboard = check.inst(looker_structure.data, Dashboard)
-        return AssetKey(f"{check.not_none(looker_dashboard.title)}_{looker_dashboard.id}")
+        return self.get_asset_spec(looker_structure).key
 
     def get_dashboard_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
         looker_dashboard = check.inst(looker_structure.data, Dashboard)
@@ -192,10 +196,10 @@ class DagsterLookerApiTranslator:
             user = self.instance_data.users_by_id.get(looker_dashboard.user_id)
 
         return AssetSpec(
-            key=self.get_asset_key(looker_structure),
+            key=AssetKey(f"{check.not_none(looker_dashboard.title)}_{looker_dashboard.id}"),
             deps=list(
                 {
-                    self.get_explore_asset_spec(
+                    self.get_asset_spec(
                         LookerStructureData(
                             structure_type=LookerStructureType.EXPLORE, data=dashboard_filter
                         )
@@ -226,13 +230,10 @@ class DagsterLookerApiTranslator:
         else:
             check.assert_never(looker_structure.structure_type)
 
+    @deprecated(
+        breaking_version="1.10",
+        additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
+    )
     @public
     def get_asset_key(self, looker_structure: LookerStructureData) -> AssetKey:
-        if looker_structure.structure_type == LookerStructureType.VIEW:
-            return self.get_view_asset_key(looker_structure)
-        if looker_structure.structure_type == LookerStructureType.EXPLORE:
-            return self.get_explore_asset_key(looker_structure)
-        elif looker_structure.structure_type == LookerStructureType.DASHBOARD:
-            return self.get_dashboard_asset_key(looker_structure)
-        else:
-            check.assert_never(looker_structure.structure_type)
+        return self.get_asset_spec(looker_structure).key

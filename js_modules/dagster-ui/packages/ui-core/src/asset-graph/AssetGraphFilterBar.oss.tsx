@@ -1,39 +1,44 @@
 import {Box} from '@dagster-io/ui-components';
+import {useCallback} from 'react';
 
 import {FilterTag, FilterTagHighlightedText} from '../ui/BaseFilters/useFilter';
 
 export const AssetGraphFilterBar = ({
   activeFiltersJsx,
   right,
-  explorerPath,
-  clearExplorerPath,
+  assetSelection,
+  setAssetSelection,
 }: {
   activeFiltersJsx: JSX.Element[];
   right?: JSX.Element;
-  clearExplorerPath: () => void;
-  explorerPath: string;
+  assetSelection: string;
+  setAssetSelection: (selection: string) => void;
 }) => {
-  if (!activeFiltersJsx.length && !explorerPath) {
+  const clearAssetSelection = useCallback(() => {
+    setAssetSelection('');
+  }, [setAssetSelection]);
+  if (!activeFiltersJsx.length && !assetSelection) {
     return null;
   }
   return (
     <Box
       flex={{direction: 'row', justifyContent: 'space-between', gap: 12, alignItems: 'center'}}
       padding={{vertical: 8, horizontal: 12}}
+      border="top"
     >
       <Box flex={{gap: 12, alignItems: 'center', direction: 'row', grow: 1}}>
         {activeFiltersJsx}
-        {explorerPath ? (
+        {assetSelection ? (
           <FilterTag
             label={
               <Box flex={{direction: 'row', alignItems: 'center'}}>
                 Asset selection is&nbsp;
-                <FilterTagHighlightedText tooltipText={explorerPath}>
-                  {explorerPath}
+                <FilterTagHighlightedText tooltipText={assetSelection}>
+                  {assetSelection}
                 </FilterTagHighlightedText>
               </Box>
             }
-            onRemove={clearExplorerPath}
+            onRemove={clearAssetSelection}
           />
         ) : null}
       </Box>

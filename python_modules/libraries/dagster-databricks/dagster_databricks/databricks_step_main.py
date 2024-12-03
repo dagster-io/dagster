@@ -71,9 +71,13 @@ def main(
     dagster_job_zip: str,
 ) -> None:
     events_queue = None
-    with tempfile.TemporaryDirectory() as tmp, StringIO() as stderr, StringIO() as stdout, redirect_stderr(
-        stderr
-    ), redirect_stdout(stdout):
+    with (
+        tempfile.TemporaryDirectory() as tmp,
+        StringIO() as stderr,
+        StringIO() as stdout,
+        redirect_stderr(stderr),
+        redirect_stdout(stdout),
+    ):
         step_run_dir = os.path.dirname(step_run_ref_filepath)
         stdout_filepath = os.path.join(step_run_dir, "stdout")
         stderr_filepath = os.path.join(step_run_dir, "stderr")
@@ -111,8 +115,10 @@ def main(
             )
 
             # create empty files
-            with open(events_filepath, "wb"), open(stdout_filepath, "wb"), open(
-                stderr_filepath, "wb"
+            with (
+                open(events_filepath, "wb"),
+                open(stdout_filepath, "wb"),
+                open(stderr_filepath, "wb"),
             ):
                 pass
 

@@ -836,9 +836,10 @@ def test_launching_custom_task_definition(ecs, instance_cm, run, workspace, job,
         print(instance.run_launcher)  # noqa: T201
 
     # The task definition doesn't include the container name
-    with pytest.raises(CheckError), instance_cm(
-        {"task_definition": family, "container_name": "does not exist"}
-    ) as instance:
+    with (
+        pytest.raises(CheckError),
+        instance_cm({"task_definition": family, "container_name": "does not exist"}) as instance,
+    ):
         print(instance.run_launcher)  # noqa: T201
 
     # You can provide a family or a task definition ARN

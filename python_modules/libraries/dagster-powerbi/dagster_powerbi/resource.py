@@ -383,7 +383,9 @@ class PowerBIWorkspace(ConfigurableResource):
                 build_semantic_model_refresh_asset_definition(resource_key, spec)
                 if PowerBITagSet.extract(spec.tags).asset_type == "semantic_model"
                 else spec
-                for spec in load_powerbi_asset_specs(self, dagster_powerbi_translator)
+                for spec in load_powerbi_asset_specs(
+                    self, dagster_powerbi_translator, use_workspace_scan=False
+                )
             ],
             resources={resource_key: self},
         )
@@ -393,14 +395,14 @@ class PowerBIWorkspace(ConfigurableResource):
 def load_powerbi_asset_specs(
     workspace: PowerBIWorkspace,
     dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator,
-    use_workspace_scan: bool = False,
+    use_workspace_scan: bool = True,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Power BI content in the workspace.
 
     Args:
         workspace (PowerBIWorkspace): The Power BI workspace to load assets from.
         use_workspace_scan (bool): Whether to scan the entire workspace using admin APIs
-            at once to get all content. Defaults to False.
+            at once to get all content. Defaults to True.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Power BI content in the workspace.

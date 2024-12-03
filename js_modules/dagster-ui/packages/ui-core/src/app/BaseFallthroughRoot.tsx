@@ -6,7 +6,7 @@ import {Route} from './Route';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
-import {workspacePath, workspacePipelinePath} from '../workspace/workspacePath';
+import {workspacePath} from '../workspace/workspacePath';
 
 export const BaseFallthroughRoot = () => {
   return (
@@ -59,30 +59,11 @@ const FinalRedirectOrLoadingRoot = () => {
       );
     }
   }
-
-  // If we have exactly one repo with one job, route to the job overview
-  if (reposWithVisibleJobs.length === 1) {
-    const repo = reposWithVisibleJobs[0]!;
-    const visibleJobs = getVisibleJobs(repo);
-    if (visibleJobs.length === 1) {
-      const job = visibleJobs[0]!;
-      return (
-        <Redirect
-          to={workspacePipelinePath({
-            repoName: repo.repository.name,
-            repoLocation: repo.repositoryLocation.name,
-            pipelineName: job.name,
-            isJob: job.isJob,
-          })}
-        />
-      );
-    }
-  }
-
-  // If we have more than one repo with a job, route to the instance overview
   if (reposWithVisibleJobs.length > 0) {
     return <Redirect to="/overview" />;
   }
 
+  // Ben note: We only reach here if reposWithVisibleJobs === 0 AND there is no asset group.
+  // In this case, the overview would be blank so we go to the locations page.
   return <Redirect to="/locations" />;
 };

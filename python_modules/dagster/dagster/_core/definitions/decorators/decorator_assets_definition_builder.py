@@ -588,7 +588,7 @@ class DecoratorAssetsDefinitionBuilder:
             " AssetSpecs/AssetOuts supplied to this multi_asset have a group_name defined.",
         )
 
-        return [spec._replace(group_name=self.group_name) for spec in specs]
+        return [spec.replace_attributes(group_name=self.group_name) for spec in specs]
 
     def _synthesize_specs(self) -> Sequence[AssetSpec]:
         resolved_specs = []

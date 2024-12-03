@@ -20,6 +20,8 @@ Refer to the `Asset definitions <https://docs.dagster.io/concepts/assets/softwar
 
 .. autoclass:: AssetKey
 
+.. autofunction:: map_asset_specs
+
 Graph-backed asset definitions
 ------------------------------
 

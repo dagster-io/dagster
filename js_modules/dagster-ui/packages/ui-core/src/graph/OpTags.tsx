@@ -43,6 +43,7 @@ import datadog from './kindtag-images/tool-datadog-color.svg';
 import datahub from './kindtag-images/tool-datahub-color.svg';
 import dbt from './kindtag-images/tool-dbt-color.svg';
 import delta_lake from './kindtag-images/tool-deltalake-color.svg';
+import denodo from './kindtag-images/tool-denodo-color.svg';
 import discord from './kindtag-images/tool-discord-color.svg';
 import dlthub from './kindtag-images/tool-dlthub-color.svg';
 import docker from './kindtag-images/tool-docker-color.svg';
@@ -151,6 +152,7 @@ import slack from './kindtag-images/tool-slack-color.svg';
 import sling from './kindtag-images/tool-sling-color.svg';
 import snowflake from './kindtag-images/tool-snowflake-color.svg';
 import soda from './kindtag-images/tool-soda-color.svg';
+import spanner from './kindtag-images/tool-spanner-color.svg';
 import spark from './kindtag-images/tool-spark-color.svg';
 import sql from './kindtag-images/tool-sql-color.svg';
 import sqlite from './kindtag-images/tool-sqlite-color.svg';
@@ -221,6 +223,8 @@ export type KnownTagType =
   | 'wandb'
   | 'databricks'
   | 'airflow'
+  | 'dataset'
+  | 'workbook'
   | 'airliftmapped'
   | 'airtable'
   | 'omni'
@@ -268,6 +272,7 @@ export type KnownTagType =
   | 'rust'
   | 'pytorchlightning'
   | 'deltalake'
+  | 'denodo'
   | 'parquet'
   | 'lightgbm'
   | 'xgboost'
@@ -391,7 +396,8 @@ export type KnownTagType =
   | 'redpanda'
   | 'scylladb'
   | 'starrocks'
-  | 'superset';
+  | 'superset'
+  | 'spanner';
 
 export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   jupyter: {
@@ -675,6 +681,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   deltalake: {
     icon: delta_lake,
     content: 'Delta Lake',
+  },
+  denodo: {
+    icon: denodo,
+    content: 'Denodo',
   },
   parquet: {
     icon: parquet,
@@ -1068,6 +1078,16 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     content: 'Semantic Model',
     blackAndWhite: true,
   },
+  dataset: {
+    icon: table,
+    content: 'Dataset',
+    blackAndWhite: true,
+  },
+  workbook: {
+    icon: dashboard,
+    content: 'Workbook',
+    blackAndWhite: true,
+  },
   report: {
     icon: notebook,
     content: 'Report',
@@ -1193,6 +1213,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   superset: {
     icon: superset,
     content: 'Superset',
+  },
+  spanner: {
+    icon: spanner,
+    content: 'Spanner',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };

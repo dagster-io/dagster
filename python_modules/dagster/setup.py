@@ -108,8 +108,7 @@ setup(
         "docstring-parser",
         "universal_pathlib; python_version<'3.12'",
         "universal_pathlib>=0.2.0; python_version>='3.12'",
-        # https://github.com/pydantic/pydantic/issues/5821
-        "pydantic>=2,<2.10",
+        "pydantic>=2,<3.0.0",
         "rich",
         "filelock",
         f"dagster-pipes{pin}",
@@ -125,7 +124,6 @@ setup(
             "objgraph",
             "pytest-cov==5.0.0",
             "pytest-mock==3.14.0",
-            "pytest-rerunfailures==14.0",
             "pytest-xdist==3.6.1",
             "pytest>=8",
             "pytest-asyncio",
@@ -135,6 +133,7 @@ setup(
             "morefs[asynclocal]",
             "fsspec<2024.5.0",  # morefs incompatibly
             "rapidfuzz",
+            "flaky",
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [
@@ -167,6 +166,7 @@ setup(
         "console_scripts": [
             "dagster = dagster.cli:main",
             "dagster-daemon = dagster.daemon.cli:main",
+            "dg = dagster._components.cli:main",
         ]
     },
 )
