@@ -134,6 +134,7 @@ types-sqlalchemy==1.4.53.34
 -e examples/with_wandb
 -e examples/experimental/dagster-blueprints
 -e python_modules/libraries/dagster-airlift[mwaa,dbt,test] # (includes airflow dependencies)
+-e examples/experimental/dagster-components
 -e examples/experimental/dagster-dlift
 -e examples/starlift-demo
 -e python_modules/libraries/dagster-airlift/kitchen-sink

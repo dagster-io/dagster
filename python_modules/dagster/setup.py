@@ -166,7 +166,6 @@ setup(
         "console_scripts": [
             "dagster = dagster.cli:main",
             "dagster-daemon = dagster.daemon.cli:main",
-            "dg = dagster._components.cli:main",
         ]
     },
 )

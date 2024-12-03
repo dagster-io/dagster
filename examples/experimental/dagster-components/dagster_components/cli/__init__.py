@@ -1,7 +1,7 @@
 import click
-
-from dagster._components.cli.generate import generate_cli
 from dagster.version import __version__
+
+from dagster_components.cli.generate import generate_cli
 
 
 def create_dagster_components_cli():

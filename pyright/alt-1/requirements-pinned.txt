@@ -253,7 +253,7 @@ responses==0.23.1
 rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
 rich==13.9.4
-rpds-py==0.21.0
+rpds-py==0.22.0
 rsa==4.9
 s3fs==2024.3.0
 s3transfer==0.10.4
