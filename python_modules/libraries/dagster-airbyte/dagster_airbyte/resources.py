@@ -943,23 +943,19 @@ class AirbyteCloudClient(DagsterModel):
 
     def get_connections(self) -> Mapping[str, Any]:
         """Fetches all connections of an Airbyte workspace from the Airbyte API."""
-        return check.not_none(
-            self._make_request(
-                method="GET",
-                endpoint="connections",
-                base_url=self.api_base_url,
-                data={"workspaceIds": [self.workspace_id]},
-            )
+        return self._make_request(
+            method="GET",
+            endpoint="connections",
+            base_url=self.api_base_url,
+            data={"workspaceIds": [self.workspace_id]},
         )
 
     def get_destination_details(self, destination_id: str) -> Mapping[str, Any]:
         """Fetches details about a given destination from the Airbyte API."""
-        return check.not_none(
-            self._make_request(
-                method="GET",
-                endpoint=f"destinations/{destination_id}",
-                base_url=self.api_base_url,
-            )
+        return self._make_request(
+            method="GET",
+            endpoint=f"destinations/{destination_id}",
+            base_url=self.api_base_url,
         )
 
 
