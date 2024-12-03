@@ -43,6 +43,7 @@ from dagster_graphql.test.utils import (
     execute_dagster_graphql_and_finish_runs,
     infer_job_selector,
     infer_repository_selector,
+    main_repo_location_name,
 )
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
@@ -324,7 +325,7 @@ def _mock_asset_backfill_runs(
 
 class TestPartitionBackillReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
     def _create_backfill(self, graphql_context):
-        code_location = graphql_context.get_code_location("test")
+        code_location = graphql_context.get_code_location(main_repo_location_name())
         repository = code_location.get_repository("test_repo")
 
         backfill = PartitionBackfill(
@@ -656,7 +657,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         # Update asset backfill data to contain requested partition, but does not execute side effects,
         # since launching the run will cause test process will hang forever.
-        code_location = graphql_context.get_code_location("test")
+        code_location = graphql_context.get_code_location(main_repo_location_name())
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
         _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
@@ -732,7 +733,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         # Update asset backfill data to contain requested partition, but does not execute side effects,
         # since launching the run will cause test process will hang forever.
-        code_location = graphql_context.get_code_location("test")
+        code_location = graphql_context.get_code_location(main_repo_location_name())
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
         _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
@@ -1043,7 +1044,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
 
-        code_location = graphql_context.get_code_location("test")
+        code_location = graphql_context.get_code_location(main_repo_location_name())
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
 
@@ -1086,7 +1087,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert asset_partition_status_counts[0]["numPartitionsFailed"] == 2
 
     def test_asset_backfill_status_with_upstream_failure(self, graphql_context):
-        code_location = graphql_context.get_code_location("test")
+        code_location = graphql_context.get_code_location(main_repo_location_name())
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
 
@@ -1557,7 +1558,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 10
 
     def test_reexecute_asset_backfill_from_failure(self, graphql_context):
-        code_location = graphql_context.get_code_location("test")
+        code_location = graphql_context.get_code_location(main_repo_location_name())
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
 
@@ -1654,7 +1655,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_reexecute_successful_asset_backfill(self, graphql_context):
-        code_location = graphql_context.get_code_location("test")
+        code_location = graphql_context.get_code_location(main_repo_location_name())
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
 
@@ -1741,7 +1742,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_reexecute_asset_backfill_still_in_progress(self, graphql_context):
-        code_location = graphql_context.get_code_location("test")
+        code_location = graphql_context.get_code_location(main_repo_location_name())
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
 
@@ -1865,7 +1866,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_reexecute_asset_backfill_twice(self, graphql_context):
-        code_location = graphql_context.get_code_location("test")
+        code_location = graphql_context.get_code_location(main_repo_location_name())
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
 

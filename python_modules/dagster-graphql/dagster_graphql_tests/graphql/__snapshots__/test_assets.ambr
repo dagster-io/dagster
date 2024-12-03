@@ -14,7 +14,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["asset_1"]',
+          'id': 'test_location.test_repo.["asset_1"]',
           'key': dict({
             'path': list([
               'asset_1',
@@ -22,7 +22,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["asset_2"]',
+          'id': 'test_location.test_repo.["asset_2"]',
           'key': dict({
             'path': list([
               'asset_2',
@@ -30,7 +30,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["asset_3"]',
+          'id': 'test_location.test_repo.["asset_3"]',
           'key': dict({
             'path': list([
               'asset_3',
@@ -38,7 +38,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["asset_one"]',
+          'id': 'test_location.test_repo.["asset_one"]',
           'key': dict({
             'path': list([
               'asset_one',
@@ -46,7 +46,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["asset_two"]',
+          'id': 'test_location.test_repo.["asset_two"]',
           'key': dict({
             'path': list([
               'asset_two',
@@ -54,7 +54,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["asset_with_automation_condition"]',
+          'id': 'test_location.test_repo.["asset_with_automation_condition"]',
           'key': dict({
             'path': list([
               'asset_with_automation_condition',
@@ -62,7 +62,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["asset_with_custom_automation_condition"]',
+          'id': 'test_location.test_repo.["asset_with_custom_automation_condition"]',
           'key': dict({
             'path': list([
               'asset_with_custom_automation_condition',
@@ -70,7 +70,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["asset_yields_observation"]',
+          'id': 'test_location.test_repo.["asset_yields_observation"]',
           'key': dict({
             'path': list([
               'asset_yields_observation',
@@ -86,7 +86,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["bar"]',
+          'id': 'test_location.test_repo.["bar"]',
           'key': dict({
             'path': list([
               'bar',
@@ -94,7 +94,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["baz"]',
+          'id': 'test_location.test_repo.["baz"]',
           'key': dict({
             'path': list([
               'baz',
@@ -110,7 +110,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["check_in_op_asset"]',
+          'id': 'test_location.test_repo.["check_in_op_asset"]',
           'key': dict({
             'path': list([
               'check_in_op_asset',
@@ -118,7 +118,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["diamond_source"]',
+          'id': 'test_location.test_repo.["diamond_source"]',
           'key': dict({
             'path': list([
               'diamond_source',
@@ -126,7 +126,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["downstream_asset"]',
+          'id': 'test_location.test_repo.["downstream_asset"]',
           'key': dict({
             'path': list([
               'downstream_asset',
@@ -134,7 +134,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["downstream_dynamic_partitioned_asset"]',
+          'id': 'test_location.test_repo.["downstream_dynamic_partitioned_asset"]',
           'key': dict({
             'path': list([
               'downstream_dynamic_partitioned_asset',
@@ -142,7 +142,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["downstream_static_partitioned_asset"]',
+          'id': 'test_location.test_repo.["downstream_static_partitioned_asset"]',
           'key': dict({
             'path': list([
               'downstream_static_partitioned_asset',
@@ -150,7 +150,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["downstream_time_partitioned_asset"]',
+          'id': 'test_location.test_repo.["downstream_time_partitioned_asset"]',
           'key': dict({
             'path': list([
               'downstream_time_partitioned_asset',
@@ -158,7 +158,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["downstream_weekly_partitioned_asset"]',
+          'id': 'test_location.test_repo.["downstream_weekly_partitioned_asset"]',
           'key': dict({
             'path': list([
               'downstream_weekly_partitioned_asset',
@@ -166,7 +166,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["dummy_source_asset"]',
+          'id': 'test_location.test_repo.["dummy_source_asset"]',
           'key': dict({
             'path': list([
               'dummy_source_asset',
@@ -174,7 +174,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["dynamic_in_multipartitions_fail"]',
+          'id': 'test_location.test_repo.["dynamic_in_multipartitions_fail"]',
           'key': dict({
             'path': list([
               'dynamic_in_multipartitions_fail',
@@ -182,7 +182,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["dynamic_in_multipartitions_success"]',
+          'id': 'test_location.test_repo.["dynamic_in_multipartitions_success"]',
           'key': dict({
             'path': list([
               'dynamic_in_multipartitions_success',
@@ -190,7 +190,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["executable_asset"]',
+          'id': 'test_location.test_repo.["executable_asset"]',
           'key': dict({
             'path': list([
               'executable_asset',
@@ -198,7 +198,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["fail_partition_materialization"]',
+          'id': 'test_location.test_repo.["fail_partition_materialization"]',
           'key': dict({
             'path': list([
               'fail_partition_materialization',
@@ -206,7 +206,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["first_asset"]',
+          'id': 'test_location.test_repo.["first_asset"]',
           'key': dict({
             'path': list([
               'first_asset',
@@ -214,7 +214,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["first_kinds_key"]',
+          'id': 'test_location.test_repo.["first_kinds_key"]',
           'key': dict({
             'path': list([
               'first_kinds_key',
@@ -222,7 +222,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["foo"]',
+          'id': 'test_location.test_repo.["foo"]',
           'key': dict({
             'path': list([
               'foo',
@@ -230,7 +230,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["foo_bar"]',
+          'id': 'test_location.test_repo.["foo_bar"]',
           'key': dict({
             'path': list([
               'foo_bar',
@@ -238,7 +238,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["fourth_kinds_key"]',
+          'id': 'test_location.test_repo.["fourth_kinds_key"]',
           'key': dict({
             'path': list([
               'fourth_kinds_key',
@@ -246,7 +246,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["fresh_diamond_bottom"]',
+          'id': 'test_location.test_repo.["fresh_diamond_bottom"]',
           'key': dict({
             'path': list([
               'fresh_diamond_bottom',
@@ -254,7 +254,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["fresh_diamond_left"]',
+          'id': 'test_location.test_repo.["fresh_diamond_left"]',
           'key': dict({
             'path': list([
               'fresh_diamond_left',
@@ -262,7 +262,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["fresh_diamond_right"]',
+          'id': 'test_location.test_repo.["fresh_diamond_right"]',
           'key': dict({
             'path': list([
               'fresh_diamond_right',
@@ -270,7 +270,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["fresh_diamond_top"]',
+          'id': 'test_location.test_repo.["fresh_diamond_top"]',
           'key': dict({
             'path': list([
               'fresh_diamond_top',
@@ -278,7 +278,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["grouped_asset_1"]',
+          'id': 'test_location.test_repo.["grouped_asset_1"]',
           'key': dict({
             'path': list([
               'grouped_asset_1',
@@ -286,7 +286,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["grouped_asset_2"]',
+          'id': 'test_location.test_repo.["grouped_asset_2"]',
           'key': dict({
             'path': list([
               'grouped_asset_2',
@@ -294,7 +294,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["grouped_asset_4"]',
+          'id': 'test_location.test_repo.["grouped_asset_4"]',
           'key': dict({
             'path': list([
               'grouped_asset_4',
@@ -302,7 +302,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["hanging_asset"]',
+          'id': 'test_location.test_repo.["hanging_asset"]',
           'key': dict({
             'path': list([
               'hanging_asset',
@@ -310,7 +310,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["hanging_graph"]',
+          'id': 'test_location.test_repo.["hanging_graph"]',
           'key': dict({
             'path': list([
               'hanging_graph',
@@ -318,7 +318,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["hanging_partition_asset"]',
+          'id': 'test_location.test_repo.["hanging_partition_asset"]',
           'key': dict({
             'path': list([
               'hanging_partition_asset',
@@ -326,7 +326,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["int_asset"]',
+          'id': 'test_location.test_repo.["int_asset"]',
           'key': dict({
             'path': list([
               'int_asset',
@@ -334,7 +334,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["integers_asset"]',
+          'id': 'test_location.test_repo.["integers_asset"]',
           'key': dict({
             'path': list([
               'integers_asset',
@@ -342,7 +342,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["middle_static_partitioned_asset_1"]',
+          'id': 'test_location.test_repo.["middle_static_partitioned_asset_1"]',
           'key': dict({
             'path': list([
               'middle_static_partitioned_asset_1',
@@ -350,7 +350,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["middle_static_partitioned_asset_2"]',
+          'id': 'test_location.test_repo.["middle_static_partitioned_asset_2"]',
           'key': dict({
             'path': list([
               'middle_static_partitioned_asset_2',
@@ -358,7 +358,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["multi_run_backfill_policy_asset"]',
+          'id': 'test_location.test_repo.["multi_run_backfill_policy_asset"]',
           'key': dict({
             'path': list([
               'multi_run_backfill_policy_asset',
@@ -366,7 +366,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["multipartitions_1"]',
+          'id': 'test_location.test_repo.["multipartitions_1"]',
           'key': dict({
             'path': list([
               'multipartitions_1',
@@ -374,7 +374,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["multipartitions_2"]',
+          'id': 'test_location.test_repo.["multipartitions_2"]',
           'key': dict({
             'path': list([
               'multipartitions_2',
@@ -382,7 +382,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["multipartitions_fail"]',
+          'id': 'test_location.test_repo.["multipartitions_fail"]',
           'key': dict({
             'path': list([
               'multipartitions_fail',
@@ -390,7 +390,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["never_runs_asset"]',
+          'id': 'test_location.test_repo.["never_runs_asset"]',
           'key': dict({
             'path': list([
               'never_runs_asset',
@@ -398,7 +398,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["no_multipartitions_1"]',
+          'id': 'test_location.test_repo.["no_multipartitions_1"]',
           'key': dict({
             'path': list([
               'no_multipartitions_1',
@@ -406,7 +406,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["not_included_asset"]',
+          'id': 'test_location.test_repo.["not_included_asset"]',
           'key': dict({
             'path': list([
               'not_included_asset',
@@ -414,7 +414,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["one"]',
+          'id': 'test_location.test_repo.["one"]',
           'key': dict({
             'path': list([
               'one',
@@ -422,7 +422,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["output_then_hang_asset"]',
+          'id': 'test_location.test_repo.["output_then_hang_asset"]',
           'key': dict({
             'path': list([
               'output_then_hang_asset',
@@ -430,7 +430,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["second_kinds_key"]',
+          'id': 'test_location.test_repo.["second_kinds_key"]',
           'key': dict({
             'path': list([
               'second_kinds_key',
@@ -438,7 +438,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["single_run_backfill_policy_asset"]',
+          'id': 'test_location.test_repo.["single_run_backfill_policy_asset"]',
           'key': dict({
             'path': list([
               'single_run_backfill_policy_asset',
@@ -446,7 +446,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["str_asset"]',
+          'id': 'test_location.test_repo.["str_asset"]',
           'key': dict({
             'path': list([
               'str_asset',
@@ -454,7 +454,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["third_kinds_key"]',
+          'id': 'test_location.test_repo.["third_kinds_key"]',
           'key': dict({
             'path': list([
               'third_kinds_key',
@@ -462,7 +462,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["two"]',
+          'id': 'test_location.test_repo.["two"]',
           'key': dict({
             'path': list([
               'two',
@@ -470,7 +470,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["typed_asset"]',
+          'id': 'test_location.test_repo.["typed_asset"]',
           'key': dict({
             'path': list([
               'typed_asset',
@@ -478,7 +478,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["unconnected"]',
+          'id': 'test_location.test_repo.["unconnected"]',
           'key': dict({
             'path': list([
               'unconnected',
@@ -486,7 +486,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["unexecutable_asset"]',
+          'id': 'test_location.test_repo.["unexecutable_asset"]',
           'key': dict({
             'path': list([
               'unexecutable_asset',
@@ -494,7 +494,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["ungrouped_asset_3"]',
+          'id': 'test_location.test_repo.["ungrouped_asset_3"]',
           'key': dict({
             'path': list([
               'ungrouped_asset_3',
@@ -502,7 +502,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["ungrouped_asset_5"]',
+          'id': 'test_location.test_repo.["ungrouped_asset_5"]',
           'key': dict({
             'path': list([
               'ungrouped_asset_5',
@@ -510,7 +510,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["unpartitioned_upstream_of_partitioned"]',
+          'id': 'test_location.test_repo.["unpartitioned_upstream_of_partitioned"]',
           'key': dict({
             'path': list([
               'unpartitioned_upstream_of_partitioned',
@@ -518,7 +518,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["untyped_asset"]',
+          'id': 'test_location.test_repo.["untyped_asset"]',
           'key': dict({
             'path': list([
               'untyped_asset',
@@ -526,7 +526,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["upstream_daily_partitioned_asset"]',
+          'id': 'test_location.test_repo.["upstream_daily_partitioned_asset"]',
           'key': dict({
             'path': list([
               'upstream_daily_partitioned_asset',
@@ -534,7 +534,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["upstream_dynamic_partitioned_asset"]',
+          'id': 'test_location.test_repo.["upstream_dynamic_partitioned_asset"]',
           'key': dict({
             'path': list([
               'upstream_dynamic_partitioned_asset',
@@ -542,7 +542,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["upstream_static_partitioned_asset"]',
+          'id': 'test_location.test_repo.["upstream_static_partitioned_asset"]',
           'key': dict({
             'path': list([
               'upstream_static_partitioned_asset',
@@ -550,7 +550,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["upstream_time_partitioned_asset"]',
+          'id': 'test_location.test_repo.["upstream_time_partitioned_asset"]',
           'key': dict({
             'path': list([
               'upstream_time_partitioned_asset',
@@ -558,7 +558,7 @@
           }),
         }),
         dict({
-          'id': 'test.test_repo.["yield_partition_materialization"]',
+          'id': 'test_location.test_repo.["yield_partition_materialization"]',
           'key': dict({
             'path': list([
               'yield_partition_materialization',
@@ -597,137 +597,137 @@
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["asset_1"]',
+        'id': 'test_location.test_repo.["asset_1"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["asset_2"]',
+        'id': 'test_location.test_repo.["asset_2"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["asset_3"]',
+        'id': 'test_location.test_repo.["asset_3"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["asset_one"]',
+        'id': 'test_location.test_repo.["asset_one"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["asset_two"]',
+        'id': 'test_location.test_repo.["asset_two"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["asset_with_automation_condition"]',
+        'id': 'test_location.test_repo.["asset_with_automation_condition"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["asset_with_custom_automation_condition"]',
+        'id': 'test_location.test_repo.["asset_with_custom_automation_condition"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["asset_yields_observation"]',
+        'id': 'test_location.test_repo.["asset_yields_observation"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["bar"]',
+        'id': 'test_location.test_repo.["bar"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["baz"]',
+        'id': 'test_location.test_repo.["baz"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["check_in_op_asset"]',
+        'id': 'test_location.test_repo.["check_in_op_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["diamond_source"]',
+        'id': 'test_location.test_repo.["diamond_source"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["downstream_asset"]',
+        'id': 'test_location.test_repo.["downstream_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["downstream_dynamic_partitioned_asset"]',
+        'id': 'test_location.test_repo.["downstream_dynamic_partitioned_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["downstream_static_partitioned_asset"]',
+        'id': 'test_location.test_repo.["downstream_static_partitioned_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["downstream_time_partitioned_asset"]',
+        'id': 'test_location.test_repo.["downstream_time_partitioned_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["downstream_weekly_partitioned_asset"]',
+        'id': 'test_location.test_repo.["downstream_weekly_partitioned_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["dummy_source_asset"]',
+        'id': 'test_location.test_repo.["dummy_source_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["dynamic_in_multipartitions_fail"]',
+        'id': 'test_location.test_repo.["dynamic_in_multipartitions_fail"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["dynamic_in_multipartitions_success"]',
+        'id': 'test_location.test_repo.["dynamic_in_multipartitions_success"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["executable_asset"]',
+        'id': 'test_location.test_repo.["executable_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["fail_partition_materialization"]',
+        'id': 'test_location.test_repo.["fail_partition_materialization"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["first_asset"]',
+        'id': 'test_location.test_repo.["first_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["first_kinds_key"]',
+        'id': 'test_location.test_repo.["first_kinds_key"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["foo"]',
+        'id': 'test_location.test_repo.["foo"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["foo_bar"]',
+        'id': 'test_location.test_repo.["foo_bar"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["fourth_kinds_key"]',
+        'id': 'test_location.test_repo.["fourth_kinds_key"]',
       }),
       dict({
         'freshnessInfo': dict({
@@ -738,202 +738,202 @@
           'cronSchedule': None,
           'maximumLagMinutes': 30.0,
         }),
-        'id': 'test.test_repo.["fresh_diamond_bottom"]',
+        'id': 'test_location.test_repo.["fresh_diamond_bottom"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["fresh_diamond_left"]',
+        'id': 'test_location.test_repo.["fresh_diamond_left"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["fresh_diamond_right"]',
+        'id': 'test_location.test_repo.["fresh_diamond_right"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["fresh_diamond_top"]',
+        'id': 'test_location.test_repo.["fresh_diamond_top"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["grouped_asset_1"]',
+        'id': 'test_location.test_repo.["grouped_asset_1"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["grouped_asset_2"]',
+        'id': 'test_location.test_repo.["grouped_asset_2"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["grouped_asset_4"]',
+        'id': 'test_location.test_repo.["grouped_asset_4"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["hanging_asset"]',
+        'id': 'test_location.test_repo.["hanging_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["hanging_graph"]',
+        'id': 'test_location.test_repo.["hanging_graph"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["hanging_partition_asset"]',
+        'id': 'test_location.test_repo.["hanging_partition_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["int_asset"]',
+        'id': 'test_location.test_repo.["int_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["integers_asset"]',
+        'id': 'test_location.test_repo.["integers_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["middle_static_partitioned_asset_1"]',
+        'id': 'test_location.test_repo.["middle_static_partitioned_asset_1"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["middle_static_partitioned_asset_2"]',
+        'id': 'test_location.test_repo.["middle_static_partitioned_asset_2"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["multi_run_backfill_policy_asset"]',
+        'id': 'test_location.test_repo.["multi_run_backfill_policy_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["multipartitions_1"]',
+        'id': 'test_location.test_repo.["multipartitions_1"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["multipartitions_2"]',
+        'id': 'test_location.test_repo.["multipartitions_2"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["multipartitions_fail"]',
+        'id': 'test_location.test_repo.["multipartitions_fail"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["never_runs_asset"]',
+        'id': 'test_location.test_repo.["never_runs_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["no_multipartitions_1"]',
+        'id': 'test_location.test_repo.["no_multipartitions_1"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["not_included_asset"]',
+        'id': 'test_location.test_repo.["not_included_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["one"]',
+        'id': 'test_location.test_repo.["one"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["output_then_hang_asset"]',
+        'id': 'test_location.test_repo.["output_then_hang_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["second_kinds_key"]',
+        'id': 'test_location.test_repo.["second_kinds_key"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["single_run_backfill_policy_asset"]',
+        'id': 'test_location.test_repo.["single_run_backfill_policy_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["str_asset"]',
+        'id': 'test_location.test_repo.["str_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["third_kinds_key"]',
+        'id': 'test_location.test_repo.["third_kinds_key"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["two"]',
+        'id': 'test_location.test_repo.["two"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["typed_asset"]',
+        'id': 'test_location.test_repo.["typed_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["unconnected"]',
+        'id': 'test_location.test_repo.["unconnected"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["unexecutable_asset"]',
+        'id': 'test_location.test_repo.["unexecutable_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["ungrouped_asset_3"]',
+        'id': 'test_location.test_repo.["ungrouped_asset_3"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["ungrouped_asset_5"]',
+        'id': 'test_location.test_repo.["ungrouped_asset_5"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["unpartitioned_upstream_of_partitioned"]',
+        'id': 'test_location.test_repo.["unpartitioned_upstream_of_partitioned"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["untyped_asset"]',
+        'id': 'test_location.test_repo.["untyped_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["upstream_daily_partitioned_asset"]',
+        'id': 'test_location.test_repo.["upstream_daily_partitioned_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["upstream_dynamic_partitioned_asset"]',
+        'id': 'test_location.test_repo.["upstream_dynamic_partitioned_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["upstream_static_partitioned_asset"]',
+        'id': 'test_location.test_repo.["upstream_static_partitioned_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["upstream_time_partitioned_asset"]',
+        'id': 'test_location.test_repo.["upstream_time_partitioned_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
-        'id': 'test.test_repo.["yield_partition_materialization"]',
+        'id': 'test_location.test_repo.["yield_partition_materialization"]',
       }),
     ]),
   })

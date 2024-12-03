@@ -4,14 +4,14 @@ import sys
 from pathlib import Path
 from typing import Final, Iterable, Type
 
+from dagster._core.errors import DagsterError
 from typing_extensions import Self
 
-from dagster._components.core.component import (
+from dagster_components.core.component import (
     Component,
     ComponentRegistry,
     register_components_in_module,
 )
-from dagster._core.errors import DagsterError
 
 
 def is_inside_deployment_project(path: Path) -> bool:
