@@ -30,10 +30,12 @@ class AirbyteConnection:
             name=connection_details["name"],
             stream_prefix=connection_details.get("prefix"),
             streams={
-                stream_details["stream"]["name"]: AirbyteStream.from_stream_details(stream_details=stream_details)
+                stream_details["stream"]["name"]: AirbyteStream.from_stream_details(
+                    stream_details=stream_details
+                )
                 for stream_details in connection_details.get("syncCatalog", {}).get("streams", [])
             },
-            destination_id=connection_details["destinationId"]
+            destination_id=connection_details["destinationId"],
         )
 
 
@@ -75,7 +77,7 @@ class AirbyteStream:
         return cls(
             name=stream_details["stream"]["name"],
             selected=stream_details["config"].get("selected", False),
-            json_schema=stream_details["stream"].get("jsonSchema", {})
+            json_schema=stream_details["stream"].get("jsonSchema", {}),
         )
 
 

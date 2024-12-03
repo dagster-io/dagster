@@ -1,7 +1,11 @@
 import responses
 from dagster_airbyte import AirbyteCloudWorkspace
 
-from dagster_airbyte_tests.experimental.conftest import TEST_CLIENT_ID, TEST_CLIENT_SECRET, TEST_WORKSPACE_ID
+from dagster_airbyte_tests.experimental.conftest import (
+    TEST_CLIENT_ID,
+    TEST_CLIENT_SECRET,
+    TEST_WORKSPACE_ID,
+)
 
 
 def test_fetch_fivetran_workspace_data(
