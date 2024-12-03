@@ -894,18 +894,18 @@ class AirbyteCloudClient(DagsterModel):
         endpoint: str,
         data: Optional[Mapping[str, Any]] = None,
         include_additional_request_params: bool = True,
-    ) -> Optional[Mapping[str, Any]]:
+    ) -> Mapping[str, Any]:
         """Creates and sends a request to the desired Airbyte REST API endpoint.
 
         Args:
             method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
             endpoint (str): The Airbyte API endpoint to send this request to.
-            data (Optional[str]): JSON-formatted data string to be included in the request.
+            data (Optional[Dict[str, Any]]): JSON-formatted data string to be included in the request.
             include_additional_request_params (bool): Whether to include authorization and user-agent headers
             to the request parameters. Defaults to True.
 
         Returns:
-            Optional[Dict[str, Any]]: Parsed json data from the response to this request
+            Dict[str, Any]: Parsed json data from the response to this request
         """
         url = self.api_base_url + endpoint
         headers = {"accept": "application/json"}
@@ -932,8 +932,6 @@ class AirbyteCloudClient(DagsterModel):
                     **request_args,
                 )
                 response.raise_for_status()
-                if response.status_code == 204:
-                    return None
                 return response.json()
             except RequestException as e:
                 self._log.error("Request to Airbyte API failed: %s", e)
