@@ -161,12 +161,19 @@ def test_recover_in_between_steps():
             )
 
 
-def define_concurrency_job():
-    @op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+def define_concurrency_job(use_tags):
+    if use_tags:
+        tags = {GLOBAL_CONCURRENCY_TAG: "foo"}
+        concurrency_kwarg = None
+    else:
+        tags = None
+        concurrency_kwarg = "foo"
+
+    @op(tags=tags, concurrency_key=concurrency_kwarg)
     def foo_op():
         pass
 
-    @op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+    @op(tags=tags, concurrency_key=concurrency_kwarg)
     def bar_op():
         pass
 
@@ -178,8 +185,9 @@ def define_concurrency_job():
     return foo_job
 
 
-def test_active_concurrency():
-    foo_job = define_concurrency_job()
+@pytest.mark.parametrize("use_tags", [True, False])
+def test_active_concurrency(use_tags):
+    foo_job = define_concurrency_job(use_tags)
     run_id = make_new_run_id()
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -258,8 +266,15 @@ class MockInstanceConcurrencyContext(InstanceConcurrencyContext):
         pass
 
 
-def define_concurrency_retry_job():
-    @op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+def define_concurrency_retry_job(use_tags):
+    if use_tags:
+        tags = {GLOBAL_CONCURRENCY_TAG: "foo"}
+        concurrency_kwarg = None
+    else:
+        tags = None
+        concurrency_kwarg = "foo"
+
+    @op(tags=tags, concurrency_key=concurrency_kwarg)
     def foo_op():
         pass
 
@@ -275,9 +290,10 @@ def define_concurrency_retry_job():
     return foo_job
 
 
-def test_active_concurrency_sleep():
+@pytest.mark.parametrize("use_tags", [True, False])
+def test_active_concurrency_sleep(use_tags):
     instance_concurrency_context = MockInstanceConcurrencyContext(2.0)
-    foo_job = define_concurrency_retry_job()
+    foo_job = define_concurrency_retry_job(use_tags)
     with pytest.raises(DagsterExecutionInterruptedError):
         with create_execution_plan(foo_job).start(
             RetryMode.ENABLED,

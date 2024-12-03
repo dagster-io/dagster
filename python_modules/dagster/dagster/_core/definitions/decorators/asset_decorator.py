@@ -184,7 +184,7 @@ def asset(
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     owners: Optional[Sequence[str]] = None,
     kinds: Optional[AbstractSet[str]] = None,
-    concurrency_key: Optional[str] = ...,
+    concurrency_key: Optional[str] = None,
     **kwargs,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.

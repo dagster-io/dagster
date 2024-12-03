@@ -612,7 +612,7 @@ def _validate_concurrency_key(concurrency_key, tags):
     tag_concurrency_key = tags.get(GLOBAL_CONCURRENCY_TAG)
     if concurrency_key and tag_concurrency_key and concurrency_key != tag_concurrency_key:
         raise DagsterInvalidDefinitionError(
-            f"Op '{concurrency_key}' has a concurrency key '{concurrency_key}' that conflicts with the concurrency key tag '{tag_concurrency_key}'."
+            f'Concurrency key "{concurrency_key}" that conflicts with the concurrency key tag "{tag_concurrency_key}".'
         )
 
     if concurrency_key:
