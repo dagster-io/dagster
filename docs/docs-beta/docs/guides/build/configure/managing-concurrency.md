@@ -21,7 +21,7 @@ You often want to control the number of concurrent runs for a Dagster job, a spe
 
 
 * Dagster Core, add the following to your [dagster.yaml](/todo)
-* In Dagster+, add the following to your [deployment settings](/dagster-plus/settings)
+* In Dagster+, add the following to your [deployment settings](/dagster-plus/deployment/deployment-settings)
 
 ```yaml
 run_queue:

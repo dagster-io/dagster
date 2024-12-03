@@ -29,7 +29,7 @@ Dagster is a data orchestrator built for data engineers, with integrated lineage
   <Card title="Quickstart" href="/getting-started/quickstart" imagePath="./img/getting-started/icon-start.svg">
       Build your first Dagster pipeline in our Quickstart tutorial.
   </Card>
-  <Card title="Thinking in Assets"  href="/guides/build/assets-concepts/assets" imagePath="./img/getting-started/icon-assets.svg">
+  <Card title="Thinking in Assets"  href="/guides/build/assets-concepts/" imagePath="./img/getting-started/icon-assets.svg">
     New to Dagster? Learn about how thinking in assets can help you manage your data better.
   </Card>
   <Card title="Dagster Plus" href="/dagster-plus" imagePath="./img/getting-started/icon-plus.svg">
