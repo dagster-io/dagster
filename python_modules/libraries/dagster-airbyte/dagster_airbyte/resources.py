@@ -830,7 +830,7 @@ class AirbyteDestination:
 @record
 class AirbyteWorkspaceData:
     """A record representing all content in an Airbyte workspace.
-    This applies both to Airbyte OSS and Cloud.
+    This applies to both Airbyte OSS and Cloud.
     """
 
     connections_by_id: Mapping[str, AirbyteConnection]
