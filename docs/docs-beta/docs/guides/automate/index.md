@@ -11,7 +11,7 @@ Automation is key to building reliable, efficient data pipelines. This guide pro
 
 Before continuing, you should be familiar with:
 
-- [Asset definitions](/guides/build/assets-concepts)
+- [Asset definitions](/guides/build/assets-concepts/index.mdx
 - [Jobs](/guides/build/ops-jobs)
 
 </details>
@@ -74,7 +74,7 @@ Like schedules, sensors operate on a selection of assets, known as [Jobs](/guide
 - You need event-driven automation
 - You want to react to changes in external systems
 
-For more examples of how to create sensors, see the [How-To Use Sensors](/guides/sensors) guide.
+For more examples of how to create sensors, see the [How-To Use Sensors](/guides/automate/sensors) guide.
 
 For more information about how sensors work, see the [About Sensors](/guides/automate/sensors) concept page.
 

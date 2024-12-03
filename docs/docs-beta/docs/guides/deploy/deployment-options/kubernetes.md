@@ -35,7 +35,7 @@ Next, you'll build a Docker image that contains your Dagster project and all of 
 2. Install `dagster`, `dagster-postgres`, and `dagster-k8s`, along with any other libraries your project depends on. The example project has a dependency on `pandas` so it's included in the `pip install` in the following example Dockerfile.
 3. Expose port 80, which we'll use to set up port-forwarding later.
 
-<CodeExample filePath="guides/deployment/kubernetes/Dockerfile" language="docker" title="Example Dockerfile" />
+<CodeExample filePath="guides/deploy/deployment-options/kubernetes/Dockerfile" language="docker" title="Example Dockerfile" />
 
 
 ### Step 1.2: Build and push a Docker image
@@ -114,7 +114,7 @@ To deploy your project, you'll need to set the following options:
 
 If you are following this guide on your local machine, you will also need to set `pullPolicy: IfNotPresent`. This will use the local version of the image built in Step 1. However, in production use cases when your Docker images are pushed to image registries, this value should remain `pullPolicy: Always`.
 
-<CodeExample filePath="guides/deployment/kubernetes/minimal_values.yaml" language="yaml" title="Minimal changes to make to values.yaml" />
+<CodeExample filePath="guides/deploy/deployment-options/kubernetes/minimal_values.yaml" language="yaml" title="Minimal changes to make to values.yaml" />
 
 In this example, the image `name` and `tag` are set to `iris_analysis` and `1` to match the image that was pushed in Step 1. To run the gPRC server, the path to the Dagster project needs to be specified, so `--python-file` and `/iris_analysis/definitions.py` are set for `dagsterApiGrpcArgs`.
 

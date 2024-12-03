@@ -18,7 +18,7 @@ Dagster is often used to orchestrate the ingestion of data into a data warehouse
 
 To follow this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/assets-concepts)
+- Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
 </details>
 
 ## How Dagster supports data ingestion
@@ -49,4 +49,4 @@ For example, imagine there's a CSV file of counties on the internet and you want
 ## Next steps
 
 - Transform data using [Dagster's dbt integration](/guides/build/integrate/transform-dbt)
-- Use asset checks [to test data quality](/guides/test/asset-checks) and [freshness](/guides/data-freshness-testing)
+- Use asset checks [to test data quality](/guides/test/asset-checks) and [freshness](/guides/test/data-freshness-testing)

@@ -7,7 +7,7 @@ There are several ways to automate the execution of your data pipelines with Dag
 
 The first system, and the most basic, is the [Schedule](/guides/automate/schedules), which responds to time.
 
-[Sensors](/guides/sensors) are like schedules, but they respond to an external event defined by the user.
+[Sensors](/guides/automate/sensors) are like schedules, but they respond to an external event defined by the user.
 
 [Asset Sensors](/guides/automate/asset-sensors) are a special case of sensor that responds to changes in asset materialization
 as reported by the Event Log.

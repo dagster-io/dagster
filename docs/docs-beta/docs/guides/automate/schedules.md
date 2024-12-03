@@ -11,15 +11,15 @@ Schedules enable automated execution of jobs at specified intervals. These inter
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/assets-concepts)
-- Familiarity with [Ops and Jobs](/guides/build/ops-jobs)
+- Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
+- Familiarity with [Ops and Jobs](/guides/build/ops-jobs/index.md)
 </details>
 
 ## Basic schedule
 
 A basic schedule is defined by a `JobDefinition` and a `cron_schedule` using the `ScheduleDefinition` class. A job can be thought of as a selection of assets or operations executed together.
 
-<CodeExample filePath="guides/automation/simple-schedule-example.py" language="python" />
+<CodeExample filePath="guides/automate/simple-schedule-example.py" language="python" />
 
 ## Run schedules in a different timezone
 
@@ -43,14 +43,14 @@ If using partitions and jobs, you can create a schedule using the partition with
 
 If you have a [partitioned asset](/guides/build/create-a-pipeline/partitioning) and job:
 
-<CodeExample filePath="guides/automation/schedule-with-partition.py" language="python" />
+<CodeExample filePath="guides/automate/schedule-with-partition.py" language="python" />
 
 </TabItem>
 <TabItem value="ops" label="Ops">
 
 If you have a partitioned op job:
 
-<CodeExample filePath="guides/automation/schedule-with-partition-ops.py" language="python" />
+<CodeExample filePath="guides/automate/schedule-with-partition-ops.py" language="python" />
 
 </TabItem>
 </Tabs>
@@ -59,6 +59,6 @@ If you have a partitioned op job:
 
 By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints:
 
-- Learn more about schedules in [Understanding automation](/guides/automate)
-- React to events with [sensors](/guides/sensors)
+- Learn more about schedules in [Understanding automation](/guides/automate/index.mdx)
+- React to events with [sensors](/guides/automate/sensors)
 - Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to schedules

@@ -13,7 +13,7 @@ In this guide, we'll walk you through how to invoke non-Dagster code through Pip
 <details>
 <summary>Prerequisites</summary>
 
-- Familiarity with [Assets](/guides/build/assets-concepts)
+- Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
 </details>
 
 ## Setting up an asset that invokes your external code

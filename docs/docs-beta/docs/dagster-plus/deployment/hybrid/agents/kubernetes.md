@@ -95,7 +95,7 @@ An exhaustive list of settings is available [here](/dagster-plus/deployment/hybr
 
 ### Configure your agents to serve branch deployments
 
-[Branch deployments](/dagster-plus/features/branch-deployments) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
+[Branch deployments](/dagster-plus/features/branch-deployments/index.mdx) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
 
 ```yaml
 # values.yaml

@@ -22,7 +22,7 @@ For example, external assets could be:
 To follow the steps in this guide, you'll need:
 
 - Familiarity with [Assets](/guides/build/create-a-pipeline/data-assets)
-- Familiarity with [Sensors](/guides/sensors)
+- Familiarity with [Sensors](/guides/automate/sensors)
 </details>
 
 ## Defining external assets
@@ -46,13 +46,13 @@ There are two main ways to do this:
 
 ### Pulling with sensors
 
-You can use a Dagster [sensor](/guides/sensors) to regularly poll the external system and pull information about the external asset into Dagster.
+You can use a Dagster [sensor](/guides/automate/sensors) to regularly poll the external system and pull information about the external asset into Dagster.
 
 For example, here's how you would poll an external system like an SFTP server to update an external asset whenever the file is changed.
 
 <CodeExample filePath="guides/data-modeling/external-assets/pulling-with-sensors.py" language="python" />
 
-Refer to the [Sensors guide](/guides/sensors) for more information about sensors.
+Refer to the [Sensors guide](/guides/automate/sensors) for more information about sensors.
 
 ### Pushing with the REST API
 

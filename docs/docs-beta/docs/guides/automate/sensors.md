@@ -7,7 +7,7 @@ sidebar_position: 200
 Sensors enable you to trigger Dagster runs in response to events from external systems. They run at regular intervals, either triggering a run or explaining why a run was skipped. For example, you can trigger a run when a new file is added to an Amazon S3 bucket or when a database row is updated.
 
 :::tip
-An alternative to polling with sensors is to push events to Dagster using the [Dagster API](/guides/automation#graphql-endpoint).
+An alternative to polling with sensors is to push events to Dagster using the [Dagster API](/guides/automate#graphql-endpoint).
 :::
 
 <details>
@@ -15,7 +15,7 @@ An alternative to polling with sensors is to push events to Dagster using the [D
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/assets-concepts)
+- Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
 - Familiarity with [Ops and Jobs](/guides/build/ops-jobs)
 </details>
 
@@ -25,7 +25,7 @@ Sensors are defined with the `@sensor` decorator. The following example includes
 
 If the sensor finds new files, it starts a run of `my_job`. If not, it skips the run and logs `No new files found` in the Dagster UI.
 
-<CodeExample filePath="guides/automation/simple-sensor-example.py" language="python" />
+<CodeExample filePath="guides/automate/simple-sensor-example.py" language="python" />
 
 :::tip
 Unless a sensor has a `default_status` of `DefaultSensorStatus.RUNNING`, it won't be enabled when first deployed to a Dagster instance. To find and enable the sensor, click **Automation > Sensors** in the Dagster UI.
@@ -62,7 +62,7 @@ When dealing with a large number of events, you may want to implement a cursor t
 
 The following example demonstrates how you might use a cursor to only create `RunRequests` for files in a directory that have been updated since the last time the sensor ran.
 
-<CodeExample filePath="guides/automation/sensor-cursor.py" language="python" />
+<CodeExample filePath="guides/automate/sensor-cursor.py" language="python" />
 
 For sensors that consume multiple event streams, you may need to serialize and deserialize a more complex data structure in and out of the cursor string to keep track of the sensor's progress over the multiple streams.
 

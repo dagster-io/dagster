@@ -44,7 +44,7 @@ Dagster+ Pro users can create teams of users and assign default permission sets.
 
 With the exception of the **Organization Admin** role, user and team roles are set on a per-deployment basis.
 
-Organization Admins have access to the entire organization, including all [deployments](/todo), [code locations](/dagster-plus/deployment/code-locations), and [Branch Deployments](dagster-plus/features/branch-deployments).
+Organization Admins have access to the entire organization, including all [deployments](/todo), [code locations](/dagster-plus/deployment/code-locations), and [Branch Deployments](dagster-plus/features/branch-deployments/index.mdx).
 
 | Level              | Plan      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -132,7 +132,7 @@ Deployment settings are accessed in the UI by navigating to **user menu (your ic
 | View [environment variable](/dagster-plus/deployment/environment-variables)  values          | ❌     | ❌         | ✅      | ✅     | ✅                             |
 | Export [environment variables](/dagster-plus/deployment/environment-variables)               | ❌     | ❌         | ✅      | ✅     | ✅                             |
 | Create and delete [deployments](/todo)                              | ❌     | ❌         | ❌      | ❌     | ✅                             |
-| Create [Branch Deployments](dagster-plus/features/branch-deployments)                     | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| Create [Branch Deployments](dagster-plus/features/branch-deployments/index.mdx)                     | ❌     | ❌         | ✅      | ✅     | ✅                             |
 
 ### Code locations
 
@@ -197,7 +197,7 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 | ------------------------------------------------------ | ------ | -------- | ------ | ----- | ------------------------ |
 | Manage [alerts](/dagster-plus/features/alerts)       | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Edit workspace                                         | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| [Administer SAML](/dagster-plus/access/authentication) | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| [Administer SAML](/dagster-plus/features/authentication-and-access-control/sso/authentication) | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | [Manage SCIM](/todo)                                   | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | View usage                                             | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Manage billing                                         | ❌     | ❌       | ❌     | ❌    | ✅                       |
@@ -208,4 +208,4 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 - Learn more about how to manage users in Dagster+ in [Understanding User Management in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/users)
 - Learn more about how to manage teams in Dagster+ in [Understanding Team Management in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/teams)
 - Learn more about SCIM provisioning in [Understanding SCIM Provisioning](/todo)
-- Learn more about authentication in [Understanding Authentication](/dagster-plus/access/authentication)
+- Learn more about authentication in [Understanding Authentication](/dagster-plus//features/authentication-and-access-control/authentication)
