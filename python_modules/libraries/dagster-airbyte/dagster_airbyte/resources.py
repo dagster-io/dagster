@@ -884,9 +884,9 @@ class AirbyteCloudClient(DagsterModel):
             not self._access_token_value
             or not self._access_token_timestamp
             or self._access_token_timestamp
-            <= datetime.timestamp(
+            <= (
                 datetime.now() - timedelta(seconds=AIRBYTE_CLOUD_REFRESH_TIMEDELTA_SECONDS)
-            )
+            ).timestamp()
         )
 
     def _make_request(
