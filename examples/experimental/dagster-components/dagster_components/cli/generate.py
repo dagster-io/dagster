@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 
-from dagster_components.core.component import ComponentRegistry
+from dagster_components import ComponentRegistry, __component_registry__
 from dagster_components.core.deployment import (
     CodeLocationProjectContext,
     DeploymentProjectContext,
@@ -69,7 +69,9 @@ def generate_component_type_command(name: str) -> None:
         )
         sys.exit(1)
 
-    context = CodeLocationProjectContext.from_path(Path.cwd(), ComponentRegistry.empty())
+    context = CodeLocationProjectContext.from_path(
+        Path.cwd(), ComponentRegistry(__component_registry__)
+    )
     if context.has_component_type(name):
         click.echo(click.style(f"A component type named `{name}` already exists.", fg="red"))
         sys.exit(1)
@@ -90,7 +92,9 @@ def generate_component_command(component_type: str, name: str) -> None:
         )
         sys.exit(1)
 
-    context = CodeLocationProjectContext.from_path(Path.cwd(), ComponentRegistry.empty())
+    context = CodeLocationProjectContext.from_path(
+        Path.cwd(), ComponentRegistry(__component_registry__)
+    )
     if not context.has_component_type(component_type):
         click.echo(
             click.style(f"No component type `{component_type}` could be resolved.", fg="red")
