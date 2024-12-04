@@ -5,12 +5,19 @@ from unittest import mock
 import responses
 from dagster_airbyte import AirbyteCloudWorkspace
 
+from dagster_airbyte_tests.experimental.conftest import (
+    TEST_ACCESS_TOKEN,
+    TEST_CLIENT_ID,
+    TEST_CLIENT_SECRET,
+    TEST_WORKSPACE_ID,
+)
+
 
 def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
     resource = AirbyteCloudWorkspace(
-        workspace_id="some_workspace_id",
-        client_id="some_client_id",
-        client_secret="some_client_secret",
+        workspace_id=TEST_WORKSPACE_ID,
+        client_id=TEST_CLIENT_ID,
+        client_secret=TEST_CLIENT_SECRET,
     )
     client = resource.get_client()
 
@@ -35,9 +42,9 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
 
         assert "Authorization" not in access_token_call.request.headers
         access_token_call_body = json.loads(access_token_call.request.body.decode("utf-8"))
-        assert access_token_call_body["client_id"] == "some_client_id"
-        assert access_token_call_body["client_secret"] == "some_client_secret"
-        assert jobs_api_call.request.headers["Authorization"] == "Bearer some_access_token"
+        assert access_token_call_body["client_id"] == TEST_CLIENT_ID
+        assert access_token_call_body["client_secret"] == TEST_CLIENT_SECRET
+        assert jobs_api_call.request.headers["Authorization"] == f"Bearer {TEST_ACCESS_TOKEN}"
 
         base_api_mocks.calls.reset()
 
@@ -48,7 +55,7 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
         assert len(base_api_mocks.calls) == 1
         jobs_api_call = base_api_mocks.calls[0]
 
-        assert jobs_api_call.request.headers["Authorization"] == "Bearer some_access_token"
+        assert jobs_api_call.request.headers["Authorization"] == f"Bearer {TEST_ACCESS_TOKEN}"
 
         base_api_mocks.calls.reset()
 
@@ -63,6 +70,6 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
 
         assert "Authorization" not in access_token_call.request.headers
         access_token_call_body = json.loads(access_token_call.request.body.decode("utf-8"))
-        assert access_token_call_body["client_id"] == "some_client_id"
-        assert access_token_call_body["client_secret"] == "some_client_secret"
-        assert jobs_api_call.request.headers["Authorization"] == "Bearer some_access_token"
+        assert access_token_call_body["client_id"] == TEST_CLIENT_ID
+        assert access_token_call_body["client_secret"] == TEST_CLIENT_SECRET
+        assert jobs_api_call.request.headers["Authorization"] == f"Bearer {TEST_ACCESS_TOKEN}"

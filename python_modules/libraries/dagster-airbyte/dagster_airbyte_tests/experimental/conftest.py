@@ -4,9 +4,15 @@ import pytest
 import responses
 from dagster_airbyte.resources import AIRBYTE_API_BASE, AIRBYTE_API_VERSION
 
+TEST_WORKSPACE_ID = "some_workspace_id"
+TEST_CLIENT_ID = "some_client_id"
+TEST_CLIENT_SECRET = "some_client_secret"
+
+TEST_ACCESS_TOKEN = "some_access_token"
+
 # Taken from Airbyte API documentation
 # https://reference.airbyte.com/reference/createaccesstoken
-SAMPLE_ACCESS_TOKEN = {"access_token": "some_access_token"}
+SAMPLE_ACCESS_TOKEN = {"access_token": TEST_ACCESS_TOKEN}
 
 
 @pytest.fixture(
