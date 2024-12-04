@@ -5124,6 +5124,11 @@ class TestEventLogStorage:
             while not all(f.done() for f in futures) and time.time() < start + TOTAL_TIMEOUT_TIME:
                 time.sleep(0.1)
 
+            exceptions = [f.exception() for f in futures]
+            exceptions = [ex for ex in exceptions if ex]
+            if exceptions:
+                raise exceptions[0]
+
             foo_info = storage.get_concurrency_info("foo")
             assert foo_info.slot_count == 5
             assert foo_info.active_slot_count == 0
