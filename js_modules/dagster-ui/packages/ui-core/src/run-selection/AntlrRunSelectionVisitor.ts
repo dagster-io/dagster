@@ -1,81 +1,48 @@
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
 
+import {GraphTraverser} from '../app/GraphQueryImpl';
+import {RunGraphQueryItem} from '../gantt/toGraphQueryItems';
 import {
   AllExpressionContext,
   AndExpressionContext,
   AttributeExpressionContext,
-  CodeLocationAttributeExprContext,
   DownTraversalExpressionContext,
   FunctionCallExpressionContext,
-  FunctionNameContext,
-  GroupAttributeExprContext,
-  KeyExprContext,
-  KeySubstringExprContext,
-  KindAttributeExprContext,
+  NameExprContext,
+  NameSubstringExprContext,
   NotExpressionContext,
   OrExpressionContext,
-  OwnerAttributeExprContext,
   ParenthesizedExpressionContext,
   StartContext,
-  TagAttributeExprContext,
+  StatusAttributeExprContext,
   TraversalAllowedExpressionContext,
-  TraversalContext,
   UpAndDownTraversalExpressionContext,
   UpTraversalExpressionContext,
-  ValueContext,
-} from './generated/AssetSelectionParser';
-import {AssetSelectionVisitor} from './generated/AssetSelectionVisitor';
-import {GraphTraverser} from '../app/GraphQueryImpl';
-import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
-import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
+} from './generated/RunSelectionParser';
+import {RunSelectionVisitor} from './generated/RunSelectionVisitor';
+import {
+  getFunctionName,
+  getTraversalDepth,
+  getValue,
+} from '../asset-selection/AntlrAssetSelectionVisitor';
 
-export function getTraversalDepth(ctx: TraversalContext): number {
-  if (ctx.STAR()) {
-    return Number.MAX_SAFE_INTEGER;
-  }
-  if (ctx.PLUS()) {
-    return ctx.PLUS().length;
-  }
-  throw new Error('Invalid traversal');
-}
-
-export function getFunctionName(ctx: FunctionNameContext): string {
-  if (ctx.SINKS()) {
-    return 'sinks';
-  }
-  if (ctx.ROOTS()) {
-    return 'roots';
-  }
-  throw new Error('Invalid function name');
-}
-
-export function getValue(ctx: ValueContext): string {
-  if (ctx.QUOTED_STRING()) {
-    return ctx.text.slice(1, -1);
-  }
-  if (ctx.UNQUOTED_STRING()) {
-    return ctx.text;
-  }
-  throw new Error('Invalid value');
-}
-
-export class AntlrAssetSelectionVisitor
-  extends AbstractParseTreeVisitor<Set<AssetGraphQueryItem>>
-  implements AssetSelectionVisitor<Set<AssetGraphQueryItem>>
+export class AntlrRunSelectionVisitor
+  extends AbstractParseTreeVisitor<Set<RunGraphQueryItem>>
+  implements RunSelectionVisitor<Set<RunGraphQueryItem>>
 {
-  all_assets: Set<AssetGraphQueryItem>;
-  focus_assets: Set<AssetGraphQueryItem>;
-  traverser: GraphTraverser<AssetGraphQueryItem>;
+  all_runs: Set<RunGraphQueryItem>;
+  focus_runs: Set<RunGraphQueryItem>;
+  traverser: GraphTraverser<RunGraphQueryItem>;
 
   protected defaultResult() {
-    return new Set<AssetGraphQueryItem>();
+    return new Set<RunGraphQueryItem>();
   }
 
-  constructor(all_assets: AssetGraphQueryItem[]) {
+  constructor(all_runs: RunGraphQueryItem[]) {
     super();
-    this.all_assets = new Set(all_assets);
-    this.focus_assets = new Set();
-    this.traverser = new GraphTraverser(all_assets);
+    this.all_runs = new Set(all_runs);
+    this.focus_runs = new Set();
+    this.traverser = new GraphTraverser(all_runs);
   }
 
   visitStart(ctx: StartContext) {
@@ -120,7 +87,7 @@ export class AntlrAssetSelectionVisitor
 
   visitNotExpression(ctx: NotExpressionContext) {
     const selection = this.visit(ctx.expr());
-    return new Set([...this.all_assets].filter((i) => !selection.has(i)));
+    return new Set([...this.all_runs].filter((i) => !selection.has(i)));
   }
 
   visitAndExpression(ctx: AndExpressionContext) {
@@ -136,7 +103,7 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitAllExpression(_ctx: AllExpressionContext) {
-    return this.all_assets;
+    return this.all_runs;
   }
 
   visitAttributeExpression(ctx: AttributeExpressionContext) {
@@ -147,7 +114,7 @@ export class AntlrAssetSelectionVisitor
     const function_name: string = getFunctionName(ctx.functionName());
     const selection = this.visit(ctx.expr());
     if (function_name === 'sinks') {
-      const sinks = new Set<AssetGraphQueryItem>();
+      const sinks = new Set<RunGraphQueryItem>();
       for (const item of selection) {
         const downstream = this.traverser
           .fetchDownstream(item, Number.MAX_VALUE)
@@ -159,7 +126,7 @@ export class AntlrAssetSelectionVisitor
       return sinks;
     }
     if (function_name === 'roots') {
-      const roots = new Set<AssetGraphQueryItem>();
+      const roots = new Set<RunGraphQueryItem>();
       for (const item of selection) {
         const upstream = this.traverser
           .fetchUpstream(item, Number.MAX_VALUE)
@@ -177,70 +144,22 @@ export class AntlrAssetSelectionVisitor
     return this.visit(ctx.expr());
   }
 
-  visitKeyExpr(ctx: KeyExprContext) {
+  visitNameExpr(ctx: NameExprContext) {
     const value: string = getValue(ctx.value());
-    const selection = [...this.all_assets].filter((i) => i.name === value);
-    selection.forEach((i) => this.focus_assets.add(i));
+    const selection = [...this.all_runs].filter((i) => i.name === value);
+    selection.forEach((i) => this.focus_runs.add(i));
     return new Set(selection);
   }
 
-  visitKeySubstringExpr(ctx: KeySubstringExprContext) {
+  visitNameSubstringExpr(ctx: NameSubstringExprContext) {
     const value: string = getValue(ctx.value());
-    const selection = [...this.all_assets].filter((i) => i.name.includes(value));
-    selection.forEach((i) => this.focus_assets.add(i));
+    const selection = [...this.all_runs].filter((i) => i.name.includes(value));
+    selection.forEach((i) => this.focus_runs.add(i));
     return new Set(selection);
   }
 
-  visitTagAttributeExpr(ctx: TagAttributeExprContext) {
-    const key: string = getValue(ctx.value(0));
-    if (ctx.EQUAL()) {
-      const value: string = getValue(ctx.value(1));
-      return new Set(
-        [...this.all_assets].filter((i) =>
-          i.node.tags.some((t) => t.key === key && t.value === value),
-        ),
-      );
-    }
-    return new Set([...this.all_assets].filter((i) => i.node.tags.some((t) => t.key === key)));
-  }
-
-  visitOwnerAttributeExpr(ctx: OwnerAttributeExprContext) {
-    const value: string = getValue(ctx.value());
-    return new Set(
-      [...this.all_assets].filter((i) =>
-        i.node.owners.some((o) => {
-          if (o.__typename === 'TeamAssetOwner') {
-            return o.team === value;
-          } else {
-            return o.email === value;
-          }
-        }),
-      ),
-    );
-  }
-
-  visitGroupAttributeExpr(ctx: GroupAttributeExprContext) {
-    const value: string = getValue(ctx.value());
-    return new Set([...this.all_assets].filter((i) => i.node.groupName === value));
-  }
-
-  visitKindAttributeExpr(ctx: KindAttributeExprContext) {
-    const value: string = getValue(ctx.value());
-    return new Set([...this.all_assets].filter((i) => i.node.kinds.some((k) => k === value)));
-  }
-
-  visitCodeLocationAttributeExpr(ctx: CodeLocationAttributeExprContext) {
-    const value: string = getValue(ctx.value());
-    const selection = new Set<AssetGraphQueryItem>();
-    for (const asset of this.all_assets) {
-      const location = buildRepoPathForHuman(
-        asset.node.repository.name,
-        asset.node.repository.location.name,
-      );
-      if (location === value) {
-        selection.add(asset);
-      }
-    }
-    return selection;
+  visitStatusAttributeExpr(ctx: StatusAttributeExprContext) {
+    const state: string = getValue(ctx.value()).toLowerCase();
+    return new Set([...this.all_runs].filter((i) => i.metadata?.state === state));
   }
 }

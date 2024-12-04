@@ -15,6 +15,7 @@
     "generate-graphql": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateGraphQLTypes.ts",
     "generate-perms": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generatePermissions.ts",
     "generate-asset-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateAssetSelection.ts && eslint src/asset-selection/generated/ --fix -c .eslintrc.js",
+    "generate-run-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateRunSelection.ts && eslint src/run-selection/generated/ --fix -c .eslintrc.js",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
