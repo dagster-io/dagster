@@ -44,4 +44,8 @@ setup(
             "dg = dagster_components.cli:main",
         ]
     },
+    extras_require={
+        "sling": ["dagster-embedded-elt"],
+        "test": ["dagster-embedded-elt"],
+    },
 )
