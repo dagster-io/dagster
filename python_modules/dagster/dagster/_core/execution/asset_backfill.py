@@ -61,17 +61,14 @@ from dagster._core.storage.dagster_run import (
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
-    AUTO_RETRY_RUN_ID_TAG,
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
-    WILL_RETRY_TAG,
 )
 from dagster._core.utils import make_new_run_id, toposort
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_current_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
-from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:
     from dagster._core.execution.backfill import PartitionBackfill
@@ -977,8 +974,7 @@ def backfill_is_complete(
     # Condition 3 - if there are runs that will be retried, but have not yet been retried, the backfill is not complete
     if any(
         [
-            get_boolean_tag_value(run.tags.get(WILL_RETRY_TAG), False)
-            and run.tags.get(AUTO_RETRY_RUN_ID_TAG) is None
+            run.is_complete_and_waiting_to_retry
             for run in instance.get_runs(
                 filters=RunsFilter(
                     tags={BACKFILL_ID_TAG: backfill_id},
