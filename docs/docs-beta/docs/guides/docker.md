@@ -26,8 +26,8 @@ RUN pip install \
     dagster \
     dagster-graphql \
     dagster-webserver \
-    dagster-postgres \   # Database for Dagster storage
-    dagster-docker       # Enables the Docker run launcher
+    dagster-postgres \
+    dagster-docker
 
 # Set $DAGSTER_HOME and copy dagster.yaml and workspace.yaml there
 ENV DAGSTER_HOME=/opt/dagster/dagster_home/
