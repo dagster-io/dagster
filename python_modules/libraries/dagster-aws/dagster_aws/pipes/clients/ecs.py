@@ -66,6 +66,8 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         run_task_params: "RunTaskRequestRequestTypeDef",
         extras: Optional[Dict[str, Any]] = None,
         pipes_container_name: Optional[str] = None,
+        waiter_delay: int = 6,
+        waiter_max_attempts: int = 1000000,
     ) -> PipesClientCompletedInvocation:
         """Run ECS tasks, enriched with the pipes protocol.
 
@@ -77,6 +79,10 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             extras (Optional[Dict[str, Any]]): Additional information to pass to the Pipes session in the external process.
             pipes_container_name (Optional[str]): If running more than one container in the task,
                 and using :py:class:`PipesCloudWatchMessageReader`, specify the container name which will be running Pipes.
+            waiter_delay (int): The amount of time in seconds to wait between attempts. Defaults to 6.
+            waiter_max_attempts (int): The maximum number of attempts to be made. Defaults to 1000000
+                By default the waiter is configured to wait up to 70 days (waiter_delay*waiter_max_attempts).
+                See `Boto3 API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs/waiter/TasksStopped.html>`_
 
         Returns:
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
@@ -240,7 +246,8 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                                 ),
                             )
 
-                response = self._wait_for_completion(response, cluster=cluster)
+                response = self._wait_for_completion(response, cluster=cluster, waiter_delay=waiter_delay,
+                                                     waiter_max_attempts=waiter_max_attempts)
 
                 # check for failed containers
                 failed_containers = {}
@@ -269,7 +276,8 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         )
 
     def _wait_for_completion(
-        self, start_response: "RunTaskResponseTypeDef", cluster: Optional[str] = None
+            self, start_response: "RunTaskResponseTypeDef", cluster: Optional[str] = None,
+            waiter_delay: Optional[int] = None, waiter_max_attempts: Optional[int] = None
     ) -> "DescribeTasksResponseTypeDef":
         waiter = self._client.get_waiter("tasks_stopped")
 
@@ -277,6 +285,18 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
 
         if cluster:
             params["cluster"] = cluster
+
+        if waiter_delay:
+            try:
+                params["WaiterConfig"]["Delay"] = waiter_delay
+            except KeyError:
+                params["WaiterConfig"] = {"Delay": waiter_delay}
+
+        if waiter_max_attempts:
+            try:
+                params["WaiterConfig"]["MaxAttempts"] = waiter_max_attempts
+            except KeyError:
+                params["WaiterConfig"] = {"MaxAttempts": waiter_max_attempts}
 
         waiter.wait(**params)
         return self._client.describe_tasks(**params)

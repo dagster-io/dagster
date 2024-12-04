@@ -862,6 +862,8 @@ def ecs_asset(context: AssetExecutionContext, pipes_ecs_client: PipesECSClient):
                 ]
             },
         },
+        waiter_delay=os.getenv("WAIT_DELAY", 6),
+        waiter_max_attempts=os.getenv("WAIT_MAX_ATTEMPTS", 1000000),
     ).get_results()
 
 
@@ -933,6 +935,45 @@ def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
         # breakpoint()
         assert return_dict[0]["tasks"][0]["containers"][0]["exitCode"] == 1
         assert return_dict[0]["tasks"][0]["stoppedReason"] == "Dagster process was interrupted"
+
+
+def test_ecs_pipes_waiter_config(pipes_ecs_client: PipesECSClient):
+    with instance_for_test() as instance:
+        """
+        Test Exception is thrown when the wait delay is less than the processing time.
+        """
+        os.environ.update({"WAIT_DELAY": "1", "WAIT_MAX_ATTEMPTS": "1", "SLEEP_SECONDS": "2"})
+        try:
+            materialize([ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client})
+            assert False
+        except Exception:
+            assert True
+
+        """
+        Test Exception is thrown when the wait attempts * wait delay is less than the processing time.
+        """
+        os.environ.update({"WAIT_DELAY": "1", "WAIT_MAX_ATTEMPTS": "2", "SLEEP_SECONDS": "3"})
+        try:
+            materialize([ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client})
+            assert False
+        except Exception:
+            assert True
+
+        """
+        Test asset is materialized successfully when the wait delay is greater than the processing time.
+        """
+        os.environ.update({"WAIT_DELAY": "10", "WAIT_MAX_ATTEMPTS": "1", "SLEEP_SECONDS": "2"})
+        materialize([ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client})
+        mat = instance.get_latest_materialization_event(ecs_asset.key)
+        assert mat and mat.asset_materialization
+
+        """
+        Test asset is materialized successfully when the wait attempts * wait delay is greater than the processing time.
+        """
+        os.environ.update({"WAIT_DELAY": "1", "WAIT_MAX_ATTEMPTS": "10", "SLEEP_SECONDS": "2"})
+        materialize([ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client})
+        mat = instance.get_latest_materialization_event(ecs_asset.key)
+        assert mat and mat.asset_materialization
 
 
 EMR_SERVERLESS_APP_NAME = "Example"

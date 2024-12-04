@@ -130,12 +130,21 @@ class LocalECSMockClient:
 
         return response
 
-    def describe_tasks(self, cluster: str, tasks: List[str]):
+    def describe_tasks(self, cluster: str, tasks: List[str], WaiterConfig: Optional[dict] = None):
         assert len(tasks) == 1, "Only 1 task is supported in tests"
 
         simulated_task = cast(SimulatedTaskRun, self._task_runs[tasks[0]])
 
-        response = self.ecs_client.describe_tasks(cluster=cluster, tasks=tasks)
+        args = {
+            "cluster": cluster,
+            "tasks": tasks,
+        }
+
+        # The stub library doesn't support WaiterConfig as an argument so don't pass it to the stub
+        # if WaiterConfig:
+        #     args["WaiterConfig"] = WaiterConfig
+
+        response = self.ecs_client.describe_tasks(**args)
 
         assert len(response["tasks"]) == 1, "Only 1 task is supported in tests"
 
@@ -249,12 +258,17 @@ class WaiterMock:
         self.waiter_name = waiter_name
 
     def wait(self, **kwargs):
+        waiter_config = kwargs.pop("WaiterConfig", {'MaxAttempts': 100, 'Delay': 6})
+        max_attempts = int(waiter_config.get('MaxAttempts', 100))
+        delay = int(waiter_config.get('Delay', 6))
+
         if self.waiter_name == "tasks_stopped":
-            while True:
+            while max_attempts > 0:
                 response = self.client.describe_tasks(**kwargs)
                 if all(task["lastStatus"] == "STOPPED" for task in response["tasks"]):
                     return
-                time.sleep(0.1)
+                max_attempts -= 1
+                time.sleep(delay)
 
         else:
             raise NotImplementedError(f"Waiter {self.waiter_name} is not implemented")
