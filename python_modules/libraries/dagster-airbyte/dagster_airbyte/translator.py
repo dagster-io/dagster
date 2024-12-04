@@ -11,6 +11,8 @@ from dagster_airbyte.utils import get_airbyte_connection_table_name
 
 class AirbyteConnectionTableProps(NamedTuple):
     table_name: str
+    stream_prefix: str
+    stream_name: str
     json_schema: Mapping[str, Any]
     connection_id: str
     connection_name: str
@@ -119,6 +121,8 @@ class AirbyteWorkspaceData:
                                 stream_prefix=connection.stream_prefix,
                                 stream_name=stream.name,
                             ),
+                            stream_prefix=connection.stream_prefix,
+                            stream_name=stream.name,
                             json_schema=stream.json_schema,
                             connection_id=connection.id,
                             connection_name=connection.name,
