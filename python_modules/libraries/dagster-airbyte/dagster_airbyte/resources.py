@@ -32,8 +32,8 @@ from dagster_airbyte.types import AirbyteOutput
 AIRBYTE_REST_API_BASE = "https://api.airbyte.com"
 AIRBYTE_REST_API_VERSION = "v1"
 
-AIRBYTE_SERVER_API_BASE = "https://cloud.airbyte.com/api"
-AIRBYTE_SERVER_API_VERSION = "v1"
+AIRBYTE_CONFIGURATION_API_BASE = "https://cloud.airbyte.com/api"
+AIRBYTE_CONFIGURATION_API_VERSION = "v1"
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
@@ -843,8 +843,8 @@ class AirbyteCloudClient(DagsterModel):
         return f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}"
 
     @property
-    def server_api_base_url(self) -> str:
-        return f"{AIRBYTE_SERVER_API_BASE}/{AIRBYTE_SERVER_API_VERSION}"
+    def configuration_api_base_url(self) -> str:
+        return f"{AIRBYTE_CONFIGURATION_API_BASE}/{AIRBYTE_CONFIGURATION_API_VERSION}"
 
     @property
     def all_additional_request_params(self) -> Mapping[str, Any]:
@@ -960,13 +960,13 @@ class AirbyteCloudClient(DagsterModel):
         )
 
     def get_connection_details(self, connection_id) -> Mapping[str, Any]:
-        """Fetches details about a given connection from the Airbyte Server API."""
-        # Using the Server API to get the connection details, including streams and their configs.
+        """Fetches details about a given connection from the Airbyte Configuration API."""
+        # Using the Airbyte Configuration API to get the connection details, including streams and their configs.
         # https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#post-/v1/connections/get
         return self._make_request(
             method="POST",
             endpoint="connections/get",
-            base_url=self.server_api_base_url,
+            base_url=self.configuration_api_base_url,
             data={"connectionId": connection_id},
         )
 

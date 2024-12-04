@@ -3,10 +3,10 @@ from typing import Iterator
 import pytest
 import responses
 from dagster_airbyte.resources import (
+    AIRBYTE_CONFIGURATION_API_BASE,
+    AIRBYTE_CONFIGURATION_API_VERSION,
     AIRBYTE_REST_API_BASE,
     AIRBYTE_REST_API_VERSION,
-    AIRBYTE_SERVER_API_BASE,
-    AIRBYTE_SERVER_API_VERSION,
 )
 
 TEST_WORKSPACE_ID = "some_workspace_id"
@@ -45,7 +45,7 @@ SAMPLE_CONNECTIONS = {
 }
 
 
-# Taken from Airbyte Server API documentation
+# Taken from Airbyte Configuration API documentation
 # https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#post-/v1/connections/get
 SAMPLE_CONNECTION_DETAILS = {
     "connectionId": TEST_CONNECTION_ID,
@@ -165,7 +165,7 @@ def fetch_workspace_data_api_mocks_fixture(
     )
     base_api_mocks.add(
         method=responses.POST,
-        url=f"{AIRBYTE_SERVER_API_BASE}/{AIRBYTE_SERVER_API_VERSION}/connections/get",
+        url=f"{AIRBYTE_CONFIGURATION_API_BASE}/{AIRBYTE_CONFIGURATION_API_VERSION}/connections/get",
         json=SAMPLE_CONNECTION_DETAILS,
         status=200,
     )
