@@ -46,6 +46,5 @@ setup(
     },
     extras_require={
         "sling": ["dagster-embedded-elt"],
-        "test": ["dagster-embedded-elt"],
     },
 )

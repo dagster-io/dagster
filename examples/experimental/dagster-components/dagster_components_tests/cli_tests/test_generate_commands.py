@@ -202,3 +202,19 @@ def test_generate_component_already_exists_fails() -> None:
         result = runner.invoke(generate_component_command, ["baz", "qux"])
         assert result.exit_code != 0
         assert "already exists" in result.output
+
+
+def test_generate_global_component_instance() -> None:
+    runner = CliRunner()
+    with isolated_example_code_location_bar(runner):
+        result = runner.invoke(generate_component_command, ["sling_replication", "file_ingest"])
+        assert result.exit_code == 0
+        assert Path("bar/components/file_ingest").exists()
+
+        defs_path = Path("bar/components/file_ingest/defs.yml")
+        assert defs_path.exists()
+        assert "component_type: sling_replication" in defs_path.read_text()
+
+        replication_path = Path("bar/components/file_ingest/replication.yaml")
+        assert replication_path.exists()
+        assert "source: " in replication_path.read_text()

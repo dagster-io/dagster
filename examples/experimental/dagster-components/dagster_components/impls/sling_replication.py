@@ -20,6 +20,10 @@ class SlingReplicationComponent(Component):
         self.resource = resource
 
     @classmethod
+    def registered_name(cls) -> str:
+        return "sling_replication"
+
+    @classmethod
     def from_decl_node(cls, context: ComponentLoadContext, decl_node: ComponentDeclNode) -> Self:
         assert isinstance(decl_node, YamlComponentDecl)
         loaded_params = TypeAdapter(cls.params_schema).validate_python(
@@ -39,6 +43,6 @@ class SlingReplicationComponent(Component):
         replication_path = Path(os.getcwd()) / "replication.yaml"
         with open(replication_path, "w") as f:
             yaml.dump(
-                {"source": None, "target": None, "streams": None},
+                {"source": {}, "target": {}, "streams": {}},
                 f,
             )
