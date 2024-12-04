@@ -17,10 +17,14 @@ TEST_ACCESS_TOKEN = "some_access_token"
 
 # Taken from the examples in the Airbyte REST API documentation
 TEST_DESTINATION_ID = "18dccc91-0ab1-4f72-9ed7-0b8fc27c5826"
+TEST_DESTINATION_DATABASE = "test_database"
+TEST_DESTINATION_SCHEMA = "test_schema"
 TEST_CONNECTION_ID = "9924bcd0-99be-453d-ba47-c2c9766f7da5"
-TEST_PREFIX = "test_prefix_"
+TEST_CONNECTION_NAME = "Postgres To Snowflake"
+TEST_STREAM_PREFIX = "test_prefix_"
 TEST_STREAM_NAME = "test_stream"
 TEST_SELECTED = True
+TEST_JSON_SCHEMA = {}
 
 
 # Taken from Airbyte REST API documentation
@@ -37,7 +41,7 @@ SAMPLE_CONNECTIONS = {
         {
             "connectionId": TEST_CONNECTION_ID,
             "workspaceId": "744cc0ed-7f05-4949-9e60-2a814f90c035",
-            "name": "Postgres To Snowflake",
+            "name": TEST_CONNECTION_NAME,
             "sourceId": "0c31738c-0b2d-4887-b506-e2cd1c39cc35",
             "destinationId": TEST_DESTINATION_ID,
             "status": "active",
@@ -54,10 +58,10 @@ SAMPLE_CONNECTIONS = {
 # https://github.com/airbytehq/airbyte-platform/blob/v1.0.0/airbyte-api/server-api/src/main/openapi/config.yaml
 SAMPLE_CONNECTION_DETAILS = {
     "connectionId": TEST_CONNECTION_ID,
-    "name": "string",
+    "name": TEST_CONNECTION_NAME,
     "namespaceDefinition": "source",
     "namespaceFormat": "${SOURCE_NAMESPACE}",
-    "prefix": TEST_PREFIX,
+    "prefix": TEST_STREAM_PREFIX,
     "sourceId": "0c31738c-0b2d-4887-b506-e2cd1c39cc35",
     "destinationId": TEST_DESTINATION_ID,
     "operationIds": ["1938d12e-b540-4000-8c46-1be33f00ab01"],
@@ -66,7 +70,7 @@ SAMPLE_CONNECTION_DETAILS = {
             {
                 "stream": {
                     "name": TEST_STREAM_NAME,
-                    "jsonSchema": {},
+                    "jsonSchema": TEST_JSON_SCHEMA,
                     "supportedSyncModes": ["full_refresh"],
                     "sourceDefinedCursor": False,
                     "defaultCursorField": ["string"],
@@ -138,6 +142,8 @@ SAMPLE_DESTINATION_DETAILS = {
         "customer_id": "1234567890",
         "start_date": "2023-01-01",
         "end_date": "2024-01-01",
+        "database": TEST_DESTINATION_DATABASE,
+        "schema": TEST_DESTINATION_SCHEMA,
     },
 }
 

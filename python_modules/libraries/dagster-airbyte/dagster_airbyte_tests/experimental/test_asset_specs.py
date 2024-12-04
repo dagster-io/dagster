@@ -5,8 +5,12 @@ from dagster_airbyte_tests.experimental.conftest import (
     TEST_CLIENT_ID,
     TEST_CLIENT_SECRET,
     TEST_CONNECTION_ID,
-    TEST_PREFIX,
+    TEST_CONNECTION_NAME,
+    TEST_DESTINATION_DATABASE,
+    TEST_DESTINATION_SCHEMA,
+    TEST_JSON_SCHEMA,
     TEST_STREAM_NAME,
+    TEST_STREAM_PREFIX,
     TEST_WORKSPACE_ID,
 )
 
@@ -39,5 +43,11 @@ def test_airbyte_workspace_data_to_table_props(
     )
     assert len(table_props_data) == 1
     first_table_props = next(iter(table_props_data))
-    assert first_table_props.table_name == f"{TEST_PREFIX}{TEST_STREAM_NAME}"
+    assert first_table_props.table_name == f"{TEST_STREAM_PREFIX}{TEST_STREAM_NAME}"
+    assert first_table_props.stream_prefix == TEST_STREAM_PREFIX
+    assert first_table_props.stream_name == TEST_STREAM_NAME
     assert first_table_props.connection_id == TEST_CONNECTION_ID
+    assert first_table_props.connection_name == TEST_CONNECTION_NAME
+    assert first_table_props.json_schema == TEST_JSON_SCHEMA
+    assert first_table_props.database == TEST_DESTINATION_DATABASE
+    assert first_table_props.schema == TEST_DESTINATION_SCHEMA
