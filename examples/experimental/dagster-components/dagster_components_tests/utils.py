@@ -1,18 +1,10 @@
 from dagster import AssetKey, DagsterInstance
+from dagster_components import __component_registry__
 from dagster_components.core.component import Component, ComponentLoadContext, ComponentRegistry
-from dagster_components.impls.pipes_subprocess_script_collection import (
-    PipesSubprocessScriptCollection,
-)
-from dagster_components.impls.sling_replication import SlingReplicationComponent
 
 
 def registry() -> ComponentRegistry:
-    return ComponentRegistry(
-        {
-            "sling_replication": SlingReplicationComponent,
-            "pipes_subprocess_script_collection": PipesSubprocessScriptCollection,
-        }
-    )
+    return ComponentRegistry(__component_registry__)
 
 
 def script_load_context() -> ComponentLoadContext:
