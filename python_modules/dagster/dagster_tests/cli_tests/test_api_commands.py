@@ -179,7 +179,7 @@ def test_execute_run_fail_job():
         }
     ) as instance:
         with get_bar_repo_handle(instance) as repo_handle:
-            job_handle = JobHandle("fail", repo_handle)
+            job_handle = JobHandle("fail_job", repo_handle)
             runner = CliRunner()
 
             run = create_run_for_test(
