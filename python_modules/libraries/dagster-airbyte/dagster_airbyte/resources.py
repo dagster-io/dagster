@@ -6,11 +6,12 @@ import time
 from abc import abstractmethod
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Mapping, Optional, cast
+from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 
 import requests
 from dagster import (
     ConfigurableResource,
+    Definitions,
     Failure,
     InitResourceContext,
     _check as check,
@@ -19,14 +20,22 @@ from dagster import (
 )
 from dagster._annotations import experimental
 from dagster._config.pythonic_config import infer_schema_from_config_class
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._model import DagsterModel
+from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field, PrivateAttr
 from requests.exceptions import RequestException
 
-from dagster_airbyte.translator import AirbyteConnection, AirbyteDestination, AirbyteWorkspaceData
+from dagster_airbyte.translator import (
+    AirbyteConnection,
+    AirbyteDestination,
+    AirbyteWorkspaceData,
+    DagsterAirbyteTranslator,
+)
 from dagster_airbyte.types import AirbyteOutput
 
 AIRBYTE_REST_API_BASE = "https://api.airbyte.com"
@@ -40,6 +49,8 @@ DEFAULT_POLL_INTERVAL_SECONDS = 10
 # The access token expire every 3 minutes in Airbyte Cloud.
 # Refresh is needed after 2.5 minutes to avoid the "token expired" error message.
 AIRBYTE_CLOUD_REFRESH_TIMEDELTA_SECONDS = 150
+
+AIRBYTE_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-airbyte/reconstruction_metadata"
 
 
 class AirbyteState:
@@ -1055,3 +1066,70 @@ class AirbyteCloudWorkspace(ConfigurableResource):
             connections_by_id=connections_by_id,
             destinations_by_id=destinations_by_id,
         )
+
+
+@experimental
+def load_airbyte_cloud_asset_specs(
+    workspace: AirbyteCloudWorkspace,
+    dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
+) -> Sequence[AssetSpec]:
+    """Returns a list of AssetSpecs representing the Airbyte content in the workspace.
+
+    Args:
+        workspace (AirbyteCloudWorkspace): The Airbyte Cloud workspace to fetch assets from.
+        dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
+            to convert Airbyte content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterAirbyteTranslator`.
+
+    Returns:
+        List[AssetSpec]: The set of assets representing the Airbyte content in the workspace.
+
+    Examples:
+        Loading the asset specs for a given Airbyte Cloud workspace:
+
+        .. code-block:: python
+            from dagster_airbyte import AirbyteCloudWorkspace, load_airbyte_cloud_asset_specs
+
+            import dagster as dg
+
+            airbyte_cloud_workspace = AirbyteCloudWorkspace(
+                workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+                client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+                client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+            )
+
+
+            airbyte_cloud_specs = load_airbyte_cloud_asset_specs(airbyte_cloud_workspace)
+            defs = dg.Definitions(assets=airbyte_cloud_specs, resources={"airbyte": airbyte_cloud_workspace}
+    """
+    with workspace.process_config_and_initialize_cm() as initialized_workspace:
+        return check.is_list(
+            AirbyteCloudWorkspaceDefsLoader(
+                workspace=initialized_workspace,
+                translator=dagster_airbyte_translator or DagsterAirbyteTranslator(),
+            )
+            .build_defs()
+            .assets,
+            AssetSpec,
+        )
+
+
+@record
+class AirbyteCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
+    workspace: AirbyteCloudWorkspace
+    translator: DagsterAirbyteTranslator
+
+    @property
+    def defs_key(self) -> str:
+        return f"{AIRBYTE_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.workspace_id}"
+
+    def fetch_state(self) -> AirbyteWorkspaceData:
+        return self.workspace.fetch_airbyte_workspace_data()
+
+    def defs_from_state(self, state: AirbyteWorkspaceData) -> Definitions:
+        all_asset_specs = [
+            self.translator.get_asset_spec(props)
+            for props in state.to_airbyte_connection_table_props_data()
+        ]
+
+        return Definitions(assets=all_asset_specs)
