@@ -5119,9 +5119,14 @@ class TestEventLogStorage:
             storage.free_concurrency_slot_for_step(run_id, key)
 
         with ThreadPoolExecutor() as executor:
-            list(
-                executor.map(_occupy_slot, [str(i) for i in range(100)], timeout=TOTAL_TIMEOUT_TIME)
-            )
+            start = time.time()
+            futures = [executor.submit(_occupy_slot, str(i)) for i in range(100)]
+            while not all(f.done() for f in futures) and time.time() < start + TOTAL_TIMEOUT_TIME:
+                time.sleep(0.1)
+
+            # re-raise any exceptions that occured in the threads
+            [f.result() for f in futures]
+
             foo_info = storage.get_concurrency_info("foo")
             assert foo_info.slot_count == 5
             assert foo_info.active_slot_count == 0
