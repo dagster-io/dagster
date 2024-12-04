@@ -87,8 +87,8 @@ setup(
         f"grpcio>={GRPC_VERSION_FLOOR}",
         f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
         "packaging>=20.9",
-        "protobuf>=3.20.0,<5; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and 4
-        "protobuf>=4,<5; python_version>='3.11'",
+        "protobuf>=3.20.0,<6; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and greater
+        "protobuf>=4,<6; python_version>='3.11'",
         "python-dotenv",
         "pytz",
         "requests",
