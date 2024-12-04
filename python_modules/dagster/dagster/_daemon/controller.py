@@ -95,6 +95,7 @@ def daemon_controller_from_instance(
     code_server_log_level: str = "info",
     log_level: str = "info",
     log_format: str = "colored",
+    skip_workspace_reload: bool = False
 ) -> Iterator["DagsterDaemonController"]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace_load_target, "workspace_load_target", WorkspaceLoadTarget)
@@ -122,6 +123,7 @@ def daemon_controller_from_instance(
                 heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
                 error_interval_seconds=error_interval_seconds,
                 grpc_server_registry=grpc_server_registry,
+                skip_workspace_reload=skip_workspace_reload,
             )
         )
 
@@ -150,7 +152,9 @@ class DagsterDaemonController(AbstractContextManager):
         heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
         heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
+        skip_workspace_reload: bool = False,
     ):
+        self._skip_workspace_reload = skip_workspace_reload
         self._daemon_uuid = str(uuid.uuid4())
 
         self._daemons = {}
@@ -242,6 +246,7 @@ class DagsterDaemonController(AbstractContextManager):
                 for daemon_type in self._daemons.keys()
             }
 
+
     def check_daemon_threads(self) -> None:
         failed_daemons = [
             daemon_type
@@ -271,6 +276,9 @@ class DagsterDaemonController(AbstractContextManager):
             )
 
     def check_workspace_freshness(self, last_workspace_update_time: float) -> float:
+        if self._skip_workspace_reload:
+            self._logger.info("Skipping workspace reload due to debugging mode.")
+            return last_workspace_update_time
         nowish = get_current_timestamp()
         try:
             if (nowish - last_workspace_update_time) > RELOAD_WORKSPACE_INTERVAL:
