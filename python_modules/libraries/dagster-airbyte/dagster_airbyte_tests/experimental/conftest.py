@@ -18,6 +18,9 @@ TEST_ACCESS_TOKEN = "some_access_token"
 # Taken from the examples in the Airbyte REST API documentation
 TEST_DESTINATION_ID = "18dccc91-0ab1-4f72-9ed7-0b8fc27c5826"
 TEST_CONNECTION_ID = "9924bcd0-99be-453d-ba47-c2c9766f7da5"
+TEST_PREFIX = "test_prefix_"
+TEST_STREAM_NAME = "test_stream"
+TEST_SELECTED = True
 
 
 # Taken from Airbyte REST API documentation
@@ -54,7 +57,7 @@ SAMPLE_CONNECTION_DETAILS = {
     "name": "string",
     "namespaceDefinition": "source",
     "namespaceFormat": "${SOURCE_NAMESPACE}",
-    "prefix": "string",
+    "prefix": TEST_PREFIX,
     "sourceId": "0c31738c-0b2d-4887-b506-e2cd1c39cc35",
     "destinationId": TEST_DESTINATION_ID,
     "operationIds": ["1938d12e-b540-4000-8c46-1be33f00ab01"],
@@ -62,7 +65,7 @@ SAMPLE_CONNECTION_DETAILS = {
         "streams": [
             {
                 "stream": {
-                    "name": "string",
+                    "name": TEST_STREAM_NAME,
                     "jsonSchema": {},
                     "supportedSyncModes": ["full_refresh"],
                     "sourceDefinedCursor": False,
@@ -77,7 +80,7 @@ SAMPLE_CONNECTION_DETAILS = {
                     "destinationSyncMode": "append",
                     "primaryKey": [["string"]],
                     "aliasName": "string",
-                    "selected": False,
+                    "selected": TEST_SELECTED,
                     "suggested": False,
                     "fieldSelectionEnabled": False,
                     "selectedFields": [{"fieldPath": ["string"]}],

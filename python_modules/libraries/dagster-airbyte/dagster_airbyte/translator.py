@@ -1,19 +1,18 @@
-from typing import Any, Mapping, NamedTuple, Optional, Sequence, List
+from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
 
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._utils.cached_method import cached_method
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._utils.cached_method import cached_method
 
 from dagster_airbyte.utils import get_airbyte_connection_table_name
 
 
 class AirbyteConnectionTableProps(NamedTuple):
-
-    table: str
+    table_name: str
     json_schema: Mapping[str, Any]
-    connector_id: str
+    connection_id: str
     connection_name: str
     database: Optional[str]
     schema: Optional[str]
@@ -116,12 +115,12 @@ class AirbyteWorkspaceData:
                 if stream.selected:
                     data.append(
                         AirbyteConnectionTableProps(
-                            table=get_airbyte_connection_table_name(
+                            table_name=get_airbyte_connection_table_name(
                                 stream_prefix=connection.stream_prefix,
                                 stream_name=stream.name,
                             ),
                             json_schema=stream.json_schema,
-                            connector_id=connection.id,
+                            connection_id=connection.id,
                             connection_name=connection.name,
                             database=destination.database,
                             schema=destination.schema,
