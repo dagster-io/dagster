@@ -1,12 +1,14 @@
 from typing import Any, List, Mapping, Optional, Sequence
 
 from dagster._annotations import experimental
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 
-from dagster_airbyte.utils import get_airbyte_connection_table_name
+from dagster_airbyte.utils import generate_table_schema, get_airbyte_connection_table_name
 
 
 @record
@@ -143,4 +145,29 @@ class DagsterAirbyteTranslator:
 
     def get_asset_spec(self, props: AirbyteConnectionTableProps) -> AssetSpec:
         """Get the AssetSpec for a table synced by an Airbyte connection."""
-        raise NotImplementedError()
+        table_schema_props = props.json_schema.get("properties") or props.json_schema.get(
+            "items", {}
+        ).get("properties", {})
+        column_schema = generate_table_schema(table_schema_props)
+
+        fully_qualified_table_name = (
+            f"{props.database}.{props.schema}.{props.stream_name}"
+            if props.database and props.schema
+            else None
+        )
+
+        metadata = {
+            **TableMetadataSet(
+                column_schema=column_schema,
+                table_name=fully_qualified_table_name,
+            ),
+            "connection_id": props.connection_id,
+            "connection_name": props.connection_name,
+            "stream_prefix": props.stream_prefix
+        }
+
+        return AssetSpec(
+            key=AssetKey(props.table_name),
+            metadata=metadata,
+            kinds={"airbyte"},
+        )
