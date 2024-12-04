@@ -455,6 +455,9 @@ def test_consume_new_runs_for_automatic_reexecution_mimic_daemon_fails_before_ru
         dagster_event=dagster_event,
     )
     instance.handle_new_event(event_record)
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.tags.get(WILL_RETRY_TAG) == "true"
 
     list(
         consume_new_runs_for_automatic_reexecution(
@@ -463,7 +466,7 @@ def test_consume_new_runs_for_automatic_reexecution_mimic_daemon_fails_before_ru
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
-    first_retry = instance.run_coordinator.queue()[0]
+    first_retry_run_id = instance.run_coordinator.queue()[0].run_id
 
     # if the daemon fails between creating the run and submitting the run, the run will exist in the
     # db but not the run_coordinator queue
@@ -483,7 +486,7 @@ def test_consume_new_runs_for_automatic_reexecution_mimic_daemon_fails_before_ru
     # parent_run_id as the original run. Therefore the original run will not be retried
     # This is a problem, since the retried run will be stuck in a NOT_STARTED state
     assert len(instance.run_coordinator.queue()) == 0
-    assert first_retry.status == DagsterRunStatus.NOT_STARTED
+    assert instance.get_run_by_id(first_retry_run_id).status == DagsterRunStatus.NOT_STARTED
 
 
 def test_consume_new_runs_for_automatic_reexecution_retry_run_deleted(instance, workspace_context):
@@ -514,6 +517,9 @@ def test_consume_new_runs_for_automatic_reexecution_retry_run_deleted(instance, 
         dagster_event=dagster_event,
     )
     instance.handle_new_event(event_record)
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.tags.get(WILL_RETRY_TAG) == "true"
 
     list(
         consume_new_runs_for_automatic_reexecution(
@@ -568,6 +574,9 @@ def test_code_location_unavailable(instance, workspace_context):
         dagster_event=dagster_event,
     )
     instance.handle_new_event(event_record)
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.tags.get(WILL_RETRY_TAG) == "true"
 
     def raise_code_unreachable_error(*args, **kwargs):
         raise DagsterUserCodeUnreachableError()
