@@ -27,6 +27,7 @@ from dagster_airbyte.resources import (
     airbyte_cloud_resource as airbyte_cloud_resource,
     airbyte_resource as airbyte_resource,
 )
+from dagster_airbyte.translator import DagsterAirbyteTranslator as DagsterAirbyteTranslator
 from dagster_airbyte.types import AirbyteOutput as AirbyteOutput
 from dagster_airbyte.version import __version__ as __version__
 

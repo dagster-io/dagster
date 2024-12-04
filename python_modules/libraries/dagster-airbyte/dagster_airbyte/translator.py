@@ -145,7 +145,7 @@ class DagsterAirbyteTranslator:
 
     def get_asset_spec(self, props: AirbyteConnectionTableProps) -> AssetSpec:
         """Get the AssetSpec for a table synced by an Airbyte connection."""
-        table_schema_props = props.json_schema.get("properties") or props.json_schema.get(
+        table_schema_props = props.json_schema.get("properties", {}) or props.json_schema.get(
             "items", {}
         ).get("properties", {})
         column_schema = generate_table_schema(table_schema_props)
@@ -163,7 +163,7 @@ class DagsterAirbyteTranslator:
             ),
             "connection_id": props.connection_id,
             "connection_name": props.connection_name,
-            "stream_prefix": props.stream_prefix
+            "stream_prefix": props.stream_prefix,
         }
 
         return AssetSpec(
