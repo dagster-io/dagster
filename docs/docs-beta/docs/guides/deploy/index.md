@@ -1,6 +1,6 @@
 ---
 title: "Deploying Dagster"
-sidebar_position: 10
+sidebar_position: 70
 sidebar_class_name: hidden
 ---
 
