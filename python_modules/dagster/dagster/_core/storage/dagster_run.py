@@ -24,6 +24,7 @@ from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
+    AUTO_RETRY_RUN_ID_TAG,
     AUTOMATION_CONDITION_TAG,
     BACKFILL_ID_TAG,
     PARENT_RUN_ID_TAG,
@@ -33,10 +34,12 @@ from dagster._core.storage.tags import (
     SCHEDULE_NAME_TAG,
     SENSOR_NAME_TAG,
     TICK_ID_TAG,
+    WILL_RETRY_TAG,
 )
 from dagster._core.utils import make_new_run_id
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
+from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -477,6 +480,24 @@ class DagsterRun(
     def is_resume_retry(self) -> bool:
         """bool: If this run was created from retrying another run from the point of failure."""
         return self.tags.get(RESUME_RETRY_TAG) == "true"
+
+    @property
+    def is_complete_and_waiting_to_retry(self):
+        """Indicates if a run is waiting to be retried by the auto-reexecution system.
+        Returns True if 1) the run is complete, 2) the run is in a failed state (therefore eligible for retry),
+        3) the run is marked as needing to be retried, and 4) the retried run has not been launched yet.
+        Otherwise returns False.
+        """
+        if self.status in NOT_FINISHED_STATUSES:
+            return False
+        if self.status != DagsterRunStatus.FAILURE:
+            return False
+        will_retry = get_boolean_tag_value(self.tags.get(WILL_RETRY_TAG), default_value=False)
+        retry_not_launched = self.tags.get(AUTO_RETRY_RUN_ID_TAG) is None
+        if will_retry:
+            return retry_not_launched
+
+        return False
 
     @property
     def previous_run_id(self) -> Optional[str]:
