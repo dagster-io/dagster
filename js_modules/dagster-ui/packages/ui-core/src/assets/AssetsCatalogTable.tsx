@@ -251,8 +251,6 @@ export const AssetsCatalogTable = ({
     );
   }
 
-  console.log({assets, filtered, displayed, fetchResult, filteredAssetsLoading});
-
   return (
     <AssetTable
       view={view}
