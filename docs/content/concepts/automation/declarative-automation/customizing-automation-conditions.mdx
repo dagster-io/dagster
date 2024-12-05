@@ -7,7 +7,7 @@ description: "Learn to create your own custom Declarative Automation conditions.
 
 [Declarative Automation](/concepts/automation/declarative-automation) includes pre-built conditions to handle common use cases, such as executing on a periodic schedule or whenever an upstream dependency updates, but the core system is extremely flexible and can be tailored to your specific needs.
 
-By the end of this guide, you'll understand how <PyObject object="AutomationCondition" pluralize /> work and how to create your own custom conditions.
+By the end of this guide, you'll understand how to create <PyObject object="AutomationCondition" pluralize /> for a variety of scenarios.
 
 ---
 
@@ -20,198 +20,98 @@ Before continuing, you should be familiar with:
 
 ---
 
-## How it works
+## Examples
 
-Each <PyObject object="AutomationCondition" /> consists of a set of **operands** and various **operators**. To create conditions that suit your needs, you can combine the operators and operands listed below. For example:
-
-```python
-from dagster import AutomationCondition
-
-in_progress_or_failed_parents = AutomationCondition.any_deps_match(
-    AutomationCondition.in_progress() | AutomationCondition.failed()
-)
-```
-
-This condition translates to **Any upstream dependencies (parents) are part of an in-progress run or failed during the latest run**.
-
-### Operands
-
-Operands are base conditions which can be true or false about a given target. For partitioned assets, the target will be a given partition of the asset.
-
-| Operand                                     | Description                                                                                                          |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `AutomationCondition.missing`               | Target has not been executed                                                                                         |
-| `AutomationCondition.in_progress`           | Target is part of an in-progress run                                                                                 |
-| `AutomationCondition.execution_failed`      | Target failed to be executed in its latest run                                                                       |
-| `AutomationCondition.newly_updated`         | Target was updated since the previous evaluation                                                                     |
-| `AutomationCondition.newly_requested`       | Target was requested on the previous evaluation                                                                      |
-| `AutomationCondition.code_version_changed`  | Target has a new code version since the previous evaluation                                                          |
-| `AutomationCondition.cron_tick_passed`      | A new tick of the provided cron schedule occurred since the previous evaluation                                      |
-| `AutomationCondition.in_latest_time_window` | Target falls within the latest time window of the asset’s <PyObject object="PartitionsDefinition" />, if applicable. |
-| `AutomationCondition.will_be_requested`     | Target will be requested in this tick                                                                                |
-| `AutomationCondition.initial_evaluation`    | This is the first evaluation of this condition                                                                       |
-
-### Operators
-
-The above conditions can be built into more complex expressions using the following operators:
-
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <thead>
-    <tr>
-      <th
-        style={{
-          width: "40%",
-        }}
-      >
-        Operator
-      </th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <code>~</code> (tilde)
-      </td>
-      <td>
-        NOT; condition is not true; ex: <code>~A</code>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <code>|</code> (pipe)
-      </td>
-      <td>
-        OR; either condition is true; ex: <code>A | B</code>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <code>&</code> (ampersand)
-      </td>
-      <td>
-        AND; both conditions are true; ex: <code>A & B</code>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <code>A.newly_true()</code>
-      </td>
-      <td>Condition A was false on the previous evaluation and is now true.</td>
-    </tr>
-    <tr>
-      <td>
-        <code>A.since(B)</code>
-      </td>
-      <td>Condition A became true more recently than Condition B.</td>
-    </tr>
-    <tr>
-      <td>
-        <code>AutomationCondition.any_deps_match(A)</code>
-      </td>
-      <td>
-        Condition A is true for any upstream partition. Can be used with{" "}
-        <code>.allow()</code> and <code>.ignore()</code> to target specific
-        upstream assets. Refer to the{" "}
-        <a href="#targeting-dependencies">Targeting dependencies</a> section for
-        an example.
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <code>AutomationCondition.all_deps_match(A)</code>
-      </td>
-      <td>
-        Condition A is true for at least one partition of each upstream asset.
-        Can be used with <code>.allow()</code> and <code>.ignore()</code> to
-        target specific upstream assets. Refer to the{" "}
-        <a href="#targeting-dependencies">Targeting dependencies</a> section for
-        an example.
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <code>AutomationCondition.any_downstream_condition()</code>
-      </td>
-      <td>
-        Any <PyObject object="AutomationCondition" /> on a downstream asset
-        evaluates to true
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-### Composite conditions
-
-Finally, there are a set of pre-built conditions which make it easier to construct common combinations of the above conditions.
-
-| Condition                                         | Description                                                                            |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `AutomationCondition.any_deps_updated`            | Any dependencies have been updated since the previous evaluation                       |
-| `AutomationCondition.any_deps_missing`            | Any dependencies have never been materialized or observed                              |
-| `AutomationCondition.any_deps_in_progress`        | Any dependencies are part of an in-progress run                                        |
-| `AutomationCondition.all_deps_updated_since_cron` | All dependencies have been updated since the latest tick of the provided cron schedule |
-
----
-
-## Modifying policies
-
-It's common to have use cases similar to pre-built policies but with minor differences. While it is always possible to copy the base implementation and modify it as needed, it can often be simpler to use the `.without()` method to remove the unwanted sub-conditions or add additional conditions with the `&` operator.
-
-### `AutomationCondition.eager()`: Ignoring missing upstream data
+### Ignore missing upstream data when using `AutomationCondition.eager()`
 
 By default, `AutomationCondition.eager()` will not materialize a target if it has any missing upstream data. If it is expected to have missing upstream data, remove `~AutomationCondition.any_deps_missing()` from the eager policy to allow execution:
 
-```python
-from dagster import AutomationCondition
+```python file=concepts/declarative_automation/allow_missing_upstreams.py
+import dagster as dg
 
-condition = AutomationCondition.eager().without(
-  ~AutomationCondition.any_deps_missing(),
+condition = (
+    dg.AutomationCondition.eager()
+    .without(~dg.AutomationCondition.missing())
+    .with_label("eager_allow_missing")
 )
 ```
 
-### `AutomationCondition.eager()`: Update older time partitions
+### Update older time partitions when using `AutomationCondition.eager()`
 
 By default, `AutomationCondition.eager()` will only update the latest time partition of an asset. If updates to historical partitions should result in downstream updates, then this sub-condition can be removed:
 
-```python
+```python file=concepts/declarative_automation/update_older_time_partitions.py
 from dagster import AutomationCondition
 
 condition = AutomationCondition.eager().without(
-  AutomationCondition.in_latest_time_window(),
+    AutomationCondition.in_latest_time_window(),
 )
 ```
 
-## Targeting dependencies
+### Update an older time partition when using `AutomationCondition.on_cron()`
 
-Upstream assets commonly influence downstream materialization decisions. To create automation conditions that target dependencies, use the `AutomationCondition.any_deps_match()` operator. This operator takes an arbitrary <PyObject object="AutomationCondition" />, applies it to each upstream asset, and then maps the results to the corresponding downstream partitions.
+By default, `AutomationCondition.on_cron()` will target the latest time partition of an asset. If you instead want to update partitions on a delay, then you can replace this condition with one that targets a partition that has a specific lag from the latest time window:
 
-This operator and `AutomationCondition.all_deps_match()` can be further customized to only target specific sets of upstream assets by using `.allow()` and `.ignore()`.
+```python file=concepts/declarative_automation/update_specific_older_partition.py
+from datetime import timedelta
 
-For example, to target updates from a specific asset group, you can use `any_deps_match` with the `newly_updated` operand and tell it to target only the `metrics` asset group:
+from dagster import AutomationCondition
 
-```python
-from dagster import AssetSelection, AutomationCondition
+five_days_ago_condition = AutomationCondition.in_latest_time_window(
+    timedelta(days=5)
+) & ~AutomationCondition.in_latest_time_window(timedelta(days=4))
 
-AutomationCondition.any_deps_match(
-    AutomationCondition.newly_updated()
-).allow(AssetSelection.groups("metrics"))
+condition = five_days_ago_condition & AutomationCondition.eager().without(
+    AutomationCondition.in_latest_time_window(),
+)
 ```
 
-Or to ignore missing partitions from an upstream asset, you can use `any_deps_match` with the `missing` operand and tell it to ignore a specific asset:
+### Ignore dependencies when using `AutomationCondition.on_cron()`
 
-```python
-AutomationCondition.any_deps_match(
-    AutomationCondition.missing()
-).ignore(AssetSelection.keys("taxi_trips"))
+By default, `AutomationCondition.on_cron()` will wait for all upstream dependencies to be updated before executing the asset it's attached to. In some cases, it can be useful to ignore some upstream dependencies in this calculation. This can be done by passing in an <PyObject object="AssetSelection" /> to be ignored:
+
+```python file=concepts/declarative_automation/ignore_dependencies_cron.py
+import dagster as dg
+
+all_deps_except_foo_updated = dg.AutomationCondition.all_deps_updated_since_cron(
+    "@hourly"
+).ignore(dg.AssetSelection.assets("foo"))
+
+condition = (
+    dg.AutomationCondition.on_cron("@hourly").without(
+        dg.AutomationCondition.all_deps_updated_since_cron("@hourly")
+    )
+) & all_deps_except_foo_updated
 ```
 
-Note that these `ignore()` and `allow()` methods also work for composite conditions such as `AutomationCondition.any_deps_missing()` or `AutomationCondition.any_deps_updated()`.
+Alternatively, you can pass in an <PyObject object="AssetSelection" /> to be allowed:
+
+```python file=concepts/declarative_automation/allow_dependencies_cron.py
+import dagster as dg
+
+group_abc_updated = dg.AutomationCondition.all_deps_updated_since_cron("@hourly").allow(
+    dg.AssetSelection.groups("abc")
+)
+
+condition = (
+    dg.AutomationCondition.on_cron("@hourly").without(
+        dg.AutomationCondition.all_deps_updated_since_cron("@hourly")
+    )
+) & group_abc_updated
+```
+
+### Wait for all blocking asset checks to complete before executing
+
+The `AutomationCondition.all_deps_blocking_checks_passed()` condition becomes true after all upstream blocking checks have passed. This can be combined with built-in conditions such as `AutomationCondition.on_cron()` and `AutomationCondition.eager()` to ensure that your asset does not execute if upstream data is in a bad state:
+
+```python file=concepts/declarative_automation/blocking_checks_condition.py
+import dagster as dg
+
+condition = (
+    dg.AutomationCondition.eager()
+    & dg.AutomationCondition.all_deps_blocking_checks_passed()
+)
+```
 
 ---
 
