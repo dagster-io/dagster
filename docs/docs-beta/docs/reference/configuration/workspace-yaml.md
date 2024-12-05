@@ -1,4 +1,4 @@
-# Workspace File Reference
+# Workspace file reference
 
 :::info
     This reference is only applicable to Dagster OSS, for Dagster Cloud see [the Dagster Cloud Code Locations guide](/dagster-plus/deployment/code-locations)
@@ -16,7 +16,7 @@ To load the workspace.yaml file from a different folder, use the -w argument:
 dagster dev -w path/to/workspace.yaml
 ```
 
-## File Structure
+## File structure
 
 The `workspace.yaml` file uses the following structure:
 
@@ -33,7 +33,7 @@ Where `<loading_method>` can be one of:
 
 
 
-## Loading Methods
+## Loading methods
 
 We recommend using `python_module` for most use cases.
 
@@ -93,7 +93,7 @@ load_from:
       location_name: "my_grpc_server"
 ```
 
-## Multiple Code Locations
+## Multiple code locations
 
 You can define multiple code locations in a single `workspace.yaml` file:
 

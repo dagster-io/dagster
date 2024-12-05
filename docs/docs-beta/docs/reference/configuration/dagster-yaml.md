@@ -1,12 +1,12 @@
-# dagster.yaml Reference
+# dagster.yaml reference
 
 The `dagster.yaml` file is used to configure the Dagster instance. It defines various settings for storage, run execution, logging, and other aspects of a Dagster deployment.
 
-## File Location
+## File location
 
 By default, Dagster looks for the `dagster.yaml` file in the directory specified by the `DAGSTER_HOME` environment variable.
 
-## Using Environment Variables
+## Using environment variables
 
 You can use environment variables to override values in the `dagster.yaml` file.
 
@@ -19,7 +19,7 @@ instance:
       env: ME_ENV_VAR
 ```
 
-## Full Configuration Specification
+## Full configuration specification
 
 Here's a comprehensive `dagster.yaml` specification with all available options:
 
@@ -159,7 +159,7 @@ auto_materialize:
   num_workers: 4
 ```
 
-## Configuration Options
+## Configuration options
 
 ### `storage`
 
