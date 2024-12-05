@@ -4,6 +4,7 @@ from typing import cast
 from unittest.mock import PropertyMock, patch
 
 from dagster import DagsterEvent, DagsterEventType, DagsterInstance, EventLogEntry
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import JobFailureData, RunFailureReason
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
@@ -12,8 +13,10 @@ from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     AUTO_RETRY_RUN_ID_TAG,
     MAX_RETRIES_TAG,
+    PARENT_RUN_ID_TAG,
     RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
     RETRY_STRATEGY_TAG,
+    ROOT_RUN_ID_TAG,
     WILL_RETRY_TAG,
 )
 from dagster._core.test_utils import MockedRunCoordinator, create_run_for_test, instance_for_test
@@ -420,6 +423,241 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     assert len(instance.run_coordinator.queue()) == 2
     second_retry = instance.get_run_by_id(second_retry.run_id)
     assert second_retry.tags.get(AUTO_RETRY_RUN_ID_TAG) is None
+
+
+def test_consume_new_runs_for_automatic_reexecution_mimic_daemon_fails_before_run_is_launched(
+    instance, workspace_context
+):
+    """This test documents the behavior for an edge case where the daemon fails between creating the
+    run (instance.create_reexecuted_run) and submitting the run (instance.submit_run). The current
+    implementation of the daemon does not gracefully handle this case and the run will remain stuck
+    in a NOT_STARTED status.
+    """
+    instance.wipe()
+    instance.run_coordinator.queue().clear()
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+        )
+    )
+
+    assert len(instance.run_coordinator.queue()) == 0
+
+    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name="foo",
+        message="",
+    )
+    event_record = EventLogEntry(
+        user_message="",
+        level=logging.ERROR,
+        job_name="foo",
+        run_id=run.run_id,
+        error_info=None,
+        timestamp=time.time(),
+        dagster_event=dagster_event,
+    )
+    instance.handle_new_event(event_record)
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.tags.get(WILL_RETRY_TAG) == "true"
+
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+        )
+    )
+    assert len(instance.run_coordinator.queue()) == 1
+    first_retry_run_id = instance.run_coordinator.queue()[0].run_id
+
+    # if the daemon fails between creating the run and submitting the run, the run will exist in the
+    # db but not the run_coordinator queue
+    instance.run_coordinator.queue().clear()
+    assert len(instance.run_coordinator.queue()) == 0
+    assert len(instance.get_runs()) == 2  # original run and retry run are both in the db
+
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+        )
+    )
+
+    # because the retried run already exists, it is in the run group for the original run. Because
+    # it is in the run group of the original run, we will see that the run group contains a run with
+    # parent_run_id as the original run. Therefore the original run will not be retried
+    # This is a problem, since the retried run will be stuck in a NOT_STARTED state
+    assert len(instance.run_coordinator.queue()) == 0
+    assert instance.get_run_by_id(first_retry_run_id).status == DagsterRunStatus.NOT_STARTED
+
+
+def test_consume_new_runs_for_automatic_reexecution_retry_run_deleted(instance, workspace_context):
+    """This test documents the current behavior for the case when a retry run is deleted and the original
+    run is processed by the retry daemon again. In this case, a new retry will be launched.
+
+    Note that in practice, the original run would only be processed a second time if the daemon did not
+    properly update its cursors.
+    """
+    instance.wipe()
+    instance.run_coordinator.queue().clear()
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+        )
+    )
+
+    assert len(instance.run_coordinator.queue()) == 0
+
+    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name="foo",
+        message="",
+    )
+    event_record = EventLogEntry(
+        user_message="",
+        level=logging.ERROR,
+        job_name="foo",
+        run_id=run.run_id,
+        error_info=None,
+        timestamp=time.time(),
+        dagster_event=dagster_event,
+    )
+    instance.handle_new_event(event_record)
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.tags.get(WILL_RETRY_TAG) == "true"
+
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+        )
+    )
+    assert len(instance.run_coordinator.queue()) == 1
+    first_retry = instance.run_coordinator.queue()[0]
+
+    # delete the run and remove it from the queue
+    instance.delete_run(first_retry.run_id)
+    instance.run_coordinator.queue().clear()
+    assert len(instance.run_coordinator.queue()) == 0
+    assert len(instance.get_runs()) == 1  # just the original run
+
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+        )
+    )
+
+    assert len(instance.run_coordinator.queue()) == 1
+
+
+def test_code_location_unavailable(instance, workspace_context):
+    instance.wipe()
+    instance.run_coordinator.queue().clear()
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+        )
+    )
+
+    assert len(instance.run_coordinator.queue()) == 0
+
+    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name="foo",
+        message="",
+    )
+    event_record = EventLogEntry(
+        user_message="",
+        level=logging.ERROR,
+        job_name="foo",
+        run_id=run.run_id,
+        error_info=None,
+        timestamp=time.time(),
+        dagster_event=dagster_event,
+    )
+    instance.handle_new_event(event_record)
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.tags.get(WILL_RETRY_TAG) == "true"
+
+    def raise_code_unreachable_error(*args, **kwargs):
+        raise DagsterUserCodeUnreachableError()
+
+    with patch(
+        "dagster._daemon.auto_run_reexecution.auto_run_reexecution.retry_run",
+        side_effect=raise_code_unreachable_error,
+    ):
+        list(
+            consume_new_runs_for_automatic_reexecution(
+                workspace_context,
+                instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            )
+        )
+
+        assert len(instance.run_coordinator.queue()) == 0
+
+
+def test_consume_new_runs_for_automatic_reexecution_with_manual_retry(instance, workspace_context):
+    """This test documents the current behavior for an edge case where a manual retry of a run is launched
+    before the daemon processes the original run. In this case the daemon will not launch a retry of the
+    original run because it sees a run in the run group with a parent_run_id of the original run.
+    """
+    instance.wipe()
+    instance.run_coordinator.queue().clear()
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+        )
+    )
+
+    assert len(instance.run_coordinator.queue()) == 0
+
+    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name="foo",
+        message="",
+    )
+    event_record = EventLogEntry(
+        user_message="",
+        level=logging.ERROR,
+        job_name="foo",
+        run_id=run.run_id,
+        error_info=None,
+        timestamp=time.time(),
+        dagster_event=dagster_event,
+    )
+    instance.handle_new_event(event_record)
+
+    # before the auto-reexecution daemon can run, a user manually launches a retry
+    create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
+        parent_run_id=run.run_id,
+        root_run_id=run.run_id,
+        tags={MAX_RETRIES_TAG: "2", ROOT_RUN_ID_TAG: run.run_id, PARENT_RUN_ID_TAG: run.run_id},
+    )
+
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+        )
+    )
+    # because the manually retried run already exists, it is in the run group for the original run. Because
+    # it is in the run group of the original run, we will see that the run group contains a run with
+    # parent_run_id as the original run. Therefore the original run will not be retried
+    assert len(instance.run_coordinator.queue()) == 0
 
 
 def test_daemon_enabled(instance):
