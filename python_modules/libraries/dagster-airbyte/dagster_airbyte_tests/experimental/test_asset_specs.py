@@ -39,10 +39,10 @@ def test_translator_spec(
         all_assets = load_airbyte_cloud_asset_specs(resource)
         all_assets_keys = [asset.key for asset in all_assets]
 
-        # 4 tables for the connector
+        # 1 table for the connection
         assert len(all_assets) == 1
         assert len(all_assets_keys) == 1
 
-        # Sanity check outputs, translator tests cover details here
-        first_asset_key = next(key for key in all_assets_keys)
-        assert first_asset_key.path == ["test_prefix_test_stream"]
+        # Test the asset key for the connection table
+        the_asset_key = next(iter(all_assets_keys))
+        assert the_asset_key.path == ["test_prefix_test_stream"]

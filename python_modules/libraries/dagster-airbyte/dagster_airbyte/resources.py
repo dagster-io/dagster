@@ -1100,7 +1100,7 @@ def load_airbyte_cloud_asset_specs(
 
 
             airbyte_cloud_specs = load_airbyte_cloud_asset_specs(airbyte_cloud_workspace)
-            defs = dg.Definitions(assets=airbyte_cloud_specs, resources={"airbyte": airbyte_cloud_workspace}
+            defs = dg.Definitions(assets=airbyte_cloud_specs)
     """
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
         return check.is_list(
