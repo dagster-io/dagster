@@ -6,6 +6,10 @@ from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster_airbyte.types import AirbyteOutput
 
 
+def get_airbyte_connection_table_name(stream_prefix: Optional[str], stream_name: str) -> str:
+    return f"{stream_prefix if stream_prefix else ''}{stream_name}"
+
+
 def generate_table_schema(stream_schema_props: Mapping[str, Any]) -> TableSchema:
     return TableSchema(
         columns=sorted(

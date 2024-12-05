@@ -1,12 +1,24 @@
-from typing import Any, Mapping, NamedTuple, Optional
+from typing import Any, List, Mapping, Optional, Sequence
 
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._utils.cached_method import cached_method
+
+from dagster_airbyte.utils import get_airbyte_connection_table_name
 
 
-class AirbyteConnectionTableProps(NamedTuple): ...
+@record
+class AirbyteConnectionTableProps:
+    table_name: str
+    stream_prefix: Optional[str]
+    stream_name: str
+    json_schema: Mapping[str, Any]
+    connection_id: str
+    connection_name: str
+    database: Optional[str]
+    schema: Optional[str]
 
 
 @whitelist_for_serdes
@@ -91,6 +103,36 @@ class AirbyteWorkspaceData:
 
     connections_by_id: Mapping[str, AirbyteConnection]
     destinations_by_id: Mapping[str, AirbyteDestination]
+
+    @cached_method
+    def to_airbyte_connection_table_props_data(self) -> Sequence[AirbyteConnectionTableProps]:
+        """Method that converts a `AirbyteWorkspaceData` object
+        to a collection of `AirbyteConnectionTableProps` objects.
+        """
+        data: List[AirbyteConnectionTableProps] = []
+
+        for connection in self.connections_by_id.values():
+            destination = self.destinations_by_id[connection.destination_id]
+
+            for stream in connection.streams.values():
+                if stream.selected:
+                    data.append(
+                        AirbyteConnectionTableProps(
+                            table_name=get_airbyte_connection_table_name(
+                                stream_prefix=connection.stream_prefix,
+                                stream_name=stream.name,
+                            ),
+                            stream_prefix=connection.stream_prefix,
+                            stream_name=stream.name,
+                            json_schema=stream.json_schema,
+                            connection_id=connection.id,
+                            connection_name=connection.name,
+                            database=destination.database,
+                            schema=destination.schema,
+                        )
+                    )
+
+        return data
 
 
 @experimental
