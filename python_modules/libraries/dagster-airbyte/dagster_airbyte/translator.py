@@ -3,7 +3,7 @@ from typing import Any, List, Mapping, Optional, Sequence
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
+from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
@@ -21,6 +21,14 @@ class AirbyteConnectionTableProps:
     connection_name: str
     database: Optional[str]
     schema: Optional[str]
+
+    @property
+    def fully_qualified_table_name(self) -> Optional[str]:
+        return (
+            f"{self.database}.{self.schema}.{self.stream_name}"
+            if self.database and self.schema
+            else None
+        )
 
 
 @whitelist_for_serdes
@@ -137,6 +145,16 @@ class AirbyteWorkspaceData:
         return data
 
 
+class AirbyteMetadataSet(NamespacedMetadataSet):
+    connection_id: str
+    connection_name: str
+    stream_prefix: Optional[str] = None
+
+    @classmethod
+    def namespace(cls) -> str:
+        return "dagster-airbyte"
+
+
 @experimental
 class DagsterAirbyteTranslator:
     """Translator class which converts a `AirbyteConnectionTableProps` object into AssetSpecs.
@@ -150,20 +168,16 @@ class DagsterAirbyteTranslator:
         ).get("properties", {})
         column_schema = generate_table_schema(table_schema_props)
 
-        fully_qualified_table_name = (
-            f"{props.database}.{props.schema}.{props.stream_name}"
-            if props.database and props.schema
-            else None
-        )
-
         metadata = {
             **TableMetadataSet(
                 column_schema=column_schema,
-                table_name=fully_qualified_table_name,
+                table_name=props.fully_qualified_table_name,
             ),
-            "connection_id": props.connection_id,
-            "connection_name": props.connection_name,
-            "stream_prefix": props.stream_prefix,
+            **AirbyteMetadataSet(
+                connection_id=props.connection_id,
+                connection_name=props.connection_name,
+                stream_prefix=props.stream_prefix,
+            ),
         }
 
         return AssetSpec(

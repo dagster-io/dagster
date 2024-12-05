@@ -1,8 +1,9 @@
 import responses
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.tags import has_kind
 from dagster_airbyte import AirbyteCloudWorkspace, DagsterAirbyteTranslator
-from dagster_airbyte.translator import AirbyteConnectionTableProps
+from dagster_airbyte.translator import AirbyteConnectionTableProps, AirbyteMetadataSet
 from dagster_airbyte.utils import generate_table_schema
 
 from dagster_airbyte_tests.experimental.conftest import (
@@ -56,14 +57,14 @@ def test_translator_asset_spec(
     asset_spec = translator.get_asset_spec(first_table_props)
 
     assert asset_spec.key.path == ["test_prefix_test_stream"]
-    assert asset_spec.metadata["connection_id"] == TEST_CONNECTION_ID
-    assert asset_spec.metadata["connection_name"] == TEST_CONNECTION_NAME
-    assert asset_spec.metadata["stream_prefix"] == TEST_STREAM_PREFIX
+    assert AirbyteMetadataSet.extract(asset_spec.metadata).connection_id == TEST_CONNECTION_ID
+    assert AirbyteMetadataSet.extract(asset_spec.metadata).connection_name == TEST_CONNECTION_NAME
+    assert AirbyteMetadataSet.extract(asset_spec.metadata).stream_prefix == TEST_STREAM_PREFIX
     assert (
-        asset_spec.metadata["dagster/table_name"]
+        TableMetadataSet.extract(asset_spec.metadata).table_name
         == f"{TEST_DESTINATION_DATABASE}.{TEST_DESTINATION_SCHEMA}.{TEST_STREAM_NAME}"
     )
-    assert asset_spec.metadata["dagster/column_schema"] == generate_table_schema(
+    assert TableMetadataSet.extract(asset_spec.metadata).column_schema == generate_table_schema(
         TEST_JSON_SCHEMA.get("properties", {})
     )
     assert has_kind(asset_spec.tags, "airbyte")
