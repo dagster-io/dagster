@@ -1,8 +1,6 @@
 ---
 title: 'Okta SCIM provisioning'
-displayed_sidebar: 'dagsterPlus'
-unlisted: true
-sidebar_position: 100
+sidebar_position: 200
 ---
 
-# Okta SCIM provisioning
+TK
