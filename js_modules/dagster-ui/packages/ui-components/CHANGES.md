@@ -1,3 +1,10 @@
+# 1.2.0 (December 5, 2024)
+
+- Migrate styled-components to v6
+- Fix overaggressive middle truncation in Dialog body
+- Fix scrollbar styles in dark mode
+- Stop patching global lint in CodeMirror
+
 # 1.1.4 (October 11, 2024)
 
 - Add onBlur prop to TokenizingField
