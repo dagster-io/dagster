@@ -5,6 +5,7 @@ from dagster_components.core.component_decl_builder import DefsFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
     build_components_from_component_folder,
+    build_defs_from_component_path,
     defs_from_components,
 )
 from dagster_components.impls.pipes_subprocess_script_collection import (
@@ -73,6 +74,20 @@ def test_load_from_path() -> None:
         resources={},
     )
 
+    assert defs.get_asset_graph().get_all_asset_keys() == {
+        AssetKey("a"),
+        AssetKey("b"),
+        AssetKey("c"),
+        AssetKey("up1"),
+        AssetKey("up2"),
+        AssetKey("override_key"),
+    }
+
+
+def test_load_from_location_path() -> None:
+    defs = build_defs_from_component_path(
+        LOCATION_PATH / "components" / "scripts", script_load_context().registry, {}
+    )
     assert defs.get_asset_graph().get_all_asset_keys() == {
         AssetKey("a"),
         AssetKey("b"),
