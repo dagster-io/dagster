@@ -463,7 +463,6 @@ def integers_asset(context: AssetExecutionContext):
 
 integers_asset_job = define_asset_job("integers_asset_job", selection=[integers_asset])
 
-
 alpha_partitions = StaticPartitionsDefinition(list(string.ascii_lowercase))
 
 

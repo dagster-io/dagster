@@ -542,7 +542,6 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["reexecutionSteps"] == ["after_failure"]
 
     def test_cancel_job_backfill(self, graphql_context):
-        # TestDaemonPartitionBackfill::test_cancel_job_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
         repository_selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql(
             graphql_context,
