@@ -18,5 +18,9 @@ def wait_for_new_files(context: SensorEvaluationContext):
         if file.name not in seen_files:
             seen_files.append(file.name)
             should_trigger = True
-    context.update_cursor(json.dumps(seen_files))
+    if should_trigger:
+        yield RunRequest()
+        context.update_cursor(json.dumps(seen_files))
+    else:
+        yield SkipReason("No new files")
     yield RunRequest() if should_trigger else SkipReason("No new files")
