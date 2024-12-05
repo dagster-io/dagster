@@ -146,7 +146,11 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
         tags = {}
 
     result = execute_job(
-        job=reconstructable_job, asset_selection=list(asset_keys), instance=instance, tags=tags, run_config=config
+        job=reconstructable_job,
+        asset_selection=list(asset_keys),
+        instance=instance,
+        tags=tags,
+        run_config=config,
     )
     if not result.success:
         raise click.ClickException("Materialization failed.")
