@@ -428,6 +428,11 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
 def test_consume_new_runs_for_automatic_reexecution_mimic_daemon_fails_before_run_is_launched(
     instance, workspace_context
 ):
+    """This test documents the behavior for an edge case where the daemon fails between creating the
+    run (instance.create_reexecuted_run) and submitting the run (instance.submit_run). The current
+    implementation of the daemon does not gracefully handle this case and the run will remain stuck
+    in a NOT_STARTED status.
+    """
     instance.wipe()
     instance.run_coordinator.queue().clear()
     list(
@@ -490,6 +495,12 @@ def test_consume_new_runs_for_automatic_reexecution_mimic_daemon_fails_before_ru
 
 
 def test_consume_new_runs_for_automatic_reexecution_retry_run_deleted(instance, workspace_context):
+    """This test documents the current behavior for the case when a retry run is deleted and the original
+    run is processed by the retry daemon again. In this case, a new retry will be launched.
+
+    Note that in practice, the original run would only be processed a second time if the daemon did not
+    properly update its cursors.
+    """
     instance.wipe()
     instance.run_coordinator.queue().clear()
     list(
@@ -596,6 +607,10 @@ def test_code_location_unavailable(instance, workspace_context):
 
 
 def test_consume_new_runs_for_automatic_reexecution_with_manual_retry(instance, workspace_context):
+    """This test documents the current behavior for an edge case where a manual retry of a run is launched
+    before the daemon processes the original run. In this case the daemon will not launch a retry of the
+    original run because it sees a run in the run group with a parent_run_id of the original run.
+    """
     instance.wipe()
     instance.run_coordinator.queue().clear()
     list(
