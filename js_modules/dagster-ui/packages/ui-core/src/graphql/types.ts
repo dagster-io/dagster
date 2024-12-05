@@ -2206,6 +2206,18 @@ export type LaunchBackfillSuccess = {
   launchedRunIds: Maybe<Array<Maybe<Scalars['String']['output']>>>;
 };
 
+export type LaunchMultipleRunsMutation = {
+  __typename: 'LaunchMultipleRunsMutation';
+  Output: LaunchMultipleRunsResultOrError;
+};
+
+export type LaunchMultipleRunsResult = {
+  __typename: 'LaunchMultipleRunsResult';
+  launchMultipleRunsResult: Array<LaunchRunResult>;
+};
+
+export type LaunchMultipleRunsResultOrError = LaunchMultipleRunsResult | PythonError;
+
 export type LaunchPipelineRunSuccess = {
   run: Run;
 };
@@ -2614,6 +2626,7 @@ export type Mutation = {
   deleteRun: DeletePipelineRunResult;
   freeConcurrencySlots: Scalars['Boolean']['output'];
   freeConcurrencySlotsForRun: Scalars['Boolean']['output'];
+  launchMultipleRuns: LaunchMultipleRunsResultOrError;
   launchPartitionBackfill: LaunchBackfillResult;
   launchPipelineExecution: LaunchRunResult;
   launchPipelineReexecution: LaunchRunReexecutionResult;
@@ -2679,6 +2692,10 @@ export type MutationFreeConcurrencySlotsArgs = {
 
 export type MutationFreeConcurrencySlotsForRunArgs = {
   runId: Scalars['String']['input'];
+};
+
+export type MutationLaunchMultipleRunsArgs = {
+  executionParamsList: Array<ExecutionParams>;
 };
 
 export type MutationLaunchPartitionBackfillArgs = {
@@ -9441,6 +9458,38 @@ export const buildLaunchBackfillSuccess = (
   };
 };
 
+export const buildLaunchMultipleRunsMutation = (
+  overrides?: Partial<LaunchMultipleRunsMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'LaunchMultipleRunsMutation'} & LaunchMultipleRunsMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchMultipleRunsMutation');
+  return {
+    __typename: 'LaunchMultipleRunsMutation',
+    Output:
+      overrides && overrides.hasOwnProperty('Output')
+        ? overrides.Output!
+        : relationshipsToOmit.has('LaunchMultipleRunsResult')
+          ? ({} as LaunchMultipleRunsResult)
+          : buildLaunchMultipleRunsResult({}, relationshipsToOmit),
+  };
+};
+
+export const buildLaunchMultipleRunsResult = (
+  overrides?: Partial<LaunchMultipleRunsResult>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'LaunchMultipleRunsResult'} & LaunchMultipleRunsResult => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchMultipleRunsResult');
+  return {
+    __typename: 'LaunchMultipleRunsResult',
+    launchMultipleRunsResult:
+      overrides && overrides.hasOwnProperty('launchMultipleRunsResult')
+        ? overrides.launchMultipleRunsResult!
+        : [],
+  };
+};
+
 export const buildLaunchPipelineRunSuccess = (
   overrides?: Partial<LaunchPipelineRunSuccess>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -10222,6 +10271,12 @@ export const buildMutation = (
       overrides && overrides.hasOwnProperty('freeConcurrencySlotsForRun')
         ? overrides.freeConcurrencySlotsForRun!
         : false,
+    launchMultipleRuns:
+      overrides && overrides.hasOwnProperty('launchMultipleRuns')
+        ? overrides.launchMultipleRuns!
+        : relationshipsToOmit.has('LaunchMultipleRunsResult')
+          ? ({} as LaunchMultipleRunsResult)
+          : buildLaunchMultipleRunsResult({}, relationshipsToOmit),
     launchPartitionBackfill:
       overrides && overrides.hasOwnProperty('launchPartitionBackfill')
         ? overrides.launchPartitionBackfill!
