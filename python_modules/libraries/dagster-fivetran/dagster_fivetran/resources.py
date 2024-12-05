@@ -4,7 +4,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from functools import partial
-from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
 from urllib.parse import urljoin
 
 import requests
@@ -924,10 +924,9 @@ class FivetranWorkspace(ConfigurableResource):
                 fivetran_specs = fivetran_workspace.load_asset_specs()
                 defs = dg.Definitions(assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
         """
-        dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
-
         return load_fivetran_asset_specs(
-            workspace=self, dagster_fivetran_translator=dagster_fivetran_translator.__class__
+            workspace=self,
+            dagster_fivetran_translator=dagster_fivetran_translator or DagsterFivetranTranslator(),
         )
 
     def sync_and_poll(
@@ -939,14 +938,15 @@ class FivetranWorkspace(ConfigurableResource):
 @experimental
 def load_fivetran_asset_specs(
     workspace: FivetranWorkspace,
-    dagster_fivetran_translator: Type[DagsterFivetranTranslator] = DagsterFivetranTranslator,
+    dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
     Args:
         workspace (FivetranWorkspace): The Fivetran workspace to fetch assets from.
-        dagster_fivetran_translator (Type[DagsterFivetranTranslator]): The translator to use
-            to convert Fivetran content into AssetSpecs. Defaults to DagsterFivetranTranslator.
+        dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
+            to convert Fivetran content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterFivetranTranslator`.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
@@ -972,7 +972,7 @@ def load_fivetran_asset_specs(
         return check.is_list(
             FivetranWorkspaceDefsLoader(
                 workspace=initialized_workspace,
-                translator_cls=dagster_fivetran_translator,
+                translator=dagster_fivetran_translator or DagsterFivetranTranslator(),
             )
             .build_defs()
             .assets,
@@ -983,7 +983,7 @@ def load_fivetran_asset_specs(
 @record
 class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     workspace: FivetranWorkspace
-    translator_cls: Type[DagsterFivetranTranslator]
+    translator: DagsterFivetranTranslator
 
     @property
     def defs_key(self) -> str:
@@ -993,10 +993,8 @@ class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]
         return self.workspace.fetch_fivetran_workspace_data()
 
     def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:
-        translator = self.translator_cls()
-
         all_asset_specs = [
-            translator.get_asset_spec(props)
+            self.translator.get_asset_spec(props)
             for props in state.to_fivetran_connector_table_props_data()
         ]
 
