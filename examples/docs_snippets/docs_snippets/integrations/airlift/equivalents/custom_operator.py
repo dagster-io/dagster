@@ -12,7 +12,9 @@ class UploadToS3Operator(PythonOperator):
         )
 
     def upload_to_s3(self, path: str) -> None:
-        boto3.client("s3").upload_file(path)
+        boto3.client("s3").upload_file(
+            Filepath=path, Bucket="my_bucket", Key=Path(path).name
+        )
 
 
 # end_custom_op

@@ -4,7 +4,7 @@ In this page, we'll explain how concepts map between Airflow and Dagster.
 
 ### Airflow Tasks
 
-An Airflow Task is a single computation within a DAG, which executes an `execute` method of its given Operator. Here's an example of an Airflow Task using the `PythonOperator` to upload a file to S3:
+An Airflow Task is a single computation within a DAG, which executes an `execute` method of its given Operator. Here's an example of an Airflow Task using the `PythonOperator` to upload a file to S3, as well as the taskflow-based `@task` decorator (which achieves the same thing):
 
 ```python file=/integrations/airlift/equivalents/airflow_task.py
 from pathlib import Path
@@ -74,7 +74,9 @@ class UploadToS3Operator(PythonOperator):
         )
 
     def upload_to_s3(self, path: str) -> None:
-        boto3.client("s3").upload_file(path)
+        boto3.client("s3").upload_file(
+            Filepath=path, Bucket="my_bucket", Key=Path(path).name
+        )
 ```
 
 Then, you would invoke this operator to create a task like so:
@@ -93,8 +95,8 @@ from dagster import asset
 
 def build_s3_asset(path: str):
     @asset(key=path)
-    def _s3_file(context):
-        boto3.client("s3").upload_file(path)
+    def _s3_file():
+        boto3.client("s3").upload_file(path, "my-bucket", path)
 
     return _s3_file
 ```
@@ -233,7 +235,6 @@ def wait_for_new_files(context: SensorEvaluationContext):
         if file.name not in seen_files:
             seen_files.append(file.name)
             should_trigger = True
-    context.update_cursor(json.dumps(seen_files))
     yield RunRequest() if should_trigger else SkipReason("No new files")
 ```
 
@@ -357,7 +358,7 @@ For larger amounts of data, you can use Dagster's [IOManager](/concepts/io-manag
 
 ### Airflow Templates & Macros
 
-Airflow allows templating variables into your DAGs using Jina. Dagster doesn't have a direct jinja templating feature, instead you're encouraged to use Python functions and interact with Dagster's richly typed API to pass information. The context information available to each asset's execution is on the <PyObject object="AssetExecutionContext" /> object.
+Airflow allows templating variables into your DAGs using Jinja. Dagster doesn't have a direct jinja templating feature, instead you're encouraged to use Python functions and interact with Dagster's richly typed API to pass information. The context information available to each asset's execution is on the <PyObject object="AssetExecutionContext" /> object.
 
 ### Airflow Executors
 
