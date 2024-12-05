@@ -181,12 +181,57 @@ describe('createAssetSelectionHint', () => {
         {displayText: 'sinks()', text: 'sinks()'},
         {displayText: 'roots()', text: 'roots()'},
         {displayText: 'not', text: 'not '},
-        {displayText: '*', text: '*'},
-        {displayText: '+', text: '+'},
         {displayText: '(', text: '()'},
       ],
       from: 1, // cursor location
       to: 1, // cursor location
+    });
+
+    expect(testAutocomplete('* |')).toEqual({
+      from: 2,
+      list: [
+        {displayText: 'and', text: ' and '},
+        {displayText: 'or', text: ' or '},
+      ],
+      to: 2,
+    });
+
+    expect(testAutocomplete('+ |')).toEqual({
+      from: 2,
+      list: [
+        {displayText: 'key_substring:', text: 'key_substring:'},
+        {displayText: 'key:', text: 'key:'},
+        {displayText: 'tag:', text: 'tag:'},
+        {displayText: 'owner:', text: 'owner:'},
+        {displayText: 'group:', text: 'group:'},
+        {displayText: 'kind:', text: 'kind:'},
+        {displayText: 'code_location:', text: 'code_location:'},
+        {displayText: 'sinks()', text: 'sinks()'},
+        {displayText: 'roots()', text: 'roots()'},
+        {displayText: 'not', text: 'not '},
+        {displayText: '*', text: '*'},
+        {displayText: '+', text: '+'},
+        {displayText: '(', text: '()'},
+      ],
+      to: 2,
+    });
+
+    expect(testAutocomplete('+|')).toEqual({
+      from: 1,
+      list: [
+        {displayText: 'key_substring:', text: 'key_substring:'},
+        {displayText: 'key:', text: 'key:'},
+        {displayText: 'tag:', text: 'tag:'},
+        {displayText: 'owner:', text: 'owner:'},
+        {displayText: 'group:', text: 'group:'},
+        {displayText: 'kind:', text: 'kind:'},
+        {displayText: 'code_location:', text: 'code_location:'},
+        {displayText: 'sinks()', text: 'sinks()'},
+        {displayText: 'roots()', text: 'roots()'},
+        {displayText: '+', text: '+'},
+        {displayText: '(', text: '()'},
+      ],
+      to: 1,
     });
   });
 
@@ -346,7 +391,7 @@ describe('createAssetSelectionHint', () => {
     });
   });
 
-  it('should handle IncompleteAttributeExpression inside OrExpression within ParenthesizedExpression', () => {
+  it('should suggest tag values to the right of colon of an attribute expression inside of an IncompleteAttributeExpression, OrExpression, and ParenthesizedExpression', () => {
     expect(
       testAutocomplete(
         'sinks(key_substring:"FIVETRAN/google_ads/ad_group_history" or key_substring:|)',
@@ -555,7 +600,7 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('|++sinks()++')).toEqual({
       list: [
         {text: '+', displayText: '+'},
-        {text: '(', displayText: '('},
+        {text: '()', displayText: '('},
       ],
       from: 0, // start of value
       to: 0, // end of value
@@ -564,7 +609,7 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('+|+sinks()++')).toEqual({
       list: [
         {text: '+', displayText: '+'},
-        {text: '(', displayText: '('},
+        {text: '()', displayText: '('},
       ],
       from: 1, // start of value
       to: 1, // end of value
@@ -706,6 +751,14 @@ describe('createAssetSelectionHint', () => {
         },
       ],
       to: 35,
+    });
+  });
+
+  it('suggests attribute names when cursor left of the colon', () => {
+    expect(testAutocomplete('tag:"dagster/kind/fivetran" or t|:"a"')).toEqual({
+      from: 31,
+      list: [{displayText: 'tag:', text: 'tag:'}],
+      to: 33,
     });
   });
 });

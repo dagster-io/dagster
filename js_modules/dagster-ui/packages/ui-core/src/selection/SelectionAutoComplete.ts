@@ -10,17 +10,24 @@ import {
   removeQuotesFromString,
 } from './SelectionAutoCompleteUtil';
 import {
-  AfterExpressionWhitespaceContext,
-  AfterLogicalOperatorWhitespaceContext,
   AllExpressionContext,
   AndTokenContext,
   AttributeNameContext,
   AttributeValueContext,
   ColonTokenContext,
+  DownTraversalContext,
   FunctionNameContext,
+  IncompleteAttributeExpressionMissingValueContext,
+  IncompletePlusTraversalExpressionContext,
   LeftParenTokenContext,
   OrTokenContext,
   ParenthesizedExpressionContext,
+  PostAttributeValueWhitespaceContext,
+  PostDownwardTraversalWhitespaceContext,
+  PostLogicalOperatorWhitespaceContext,
+  PostNeighborTraversalWhitespaceContext,
+  PostNotOperatorWhitespaceContext,
+  PostUpwardTraversalWhitespaceContext,
   UnmatchedValueContext,
   UpTraversalContext,
 } from './generated/SelectionAutoCompleteParser';
@@ -124,11 +131,19 @@ export class SelectionAutoCompleteVisitor
       }
       const c = node.getChild(i) as any;
       if (c.start && c.stop) {
-        const isWhiteSpace = c.constructor.name.endsWith('WhitespaceContext');
+        const isWhitespace = c.constructor.name.endsWith('WhitespaceContext');
         if (
           !this.nodeIncludesCursor(c) &&
-          (!isWhiteSpace || c.start.startIndex !== this.cursorIndex)
+          (!isWhitespace || c.start.startIndex !== this.cursorIndex)
         ) {
+          continue;
+        }
+        const nextChild = node.childCount - 1 > i ? (node.getChild(i + 1) as any) : null;
+        if (
+          !this.nodeIncludesCursor(c, 0) &&
+          nextChild?.constructor.name.endsWith('WhitespaceContext')
+        ) {
+          // Let the whitespace handle the suggestion
           continue;
         }
       }
@@ -143,11 +158,14 @@ export class SelectionAutoCompleteVisitor
 
   protected defaultResult() {}
 
-  private nodeIncludesCursor(ctx: Pick<ParserRuleContext, 'start' | 'stop'>): boolean {
+  private nodeIncludesCursor(
+    ctx: Pick<ParserRuleContext, 'start' | 'stop'>,
+    modifier: number = -1,
+  ): boolean {
     const start = ctx.start.startIndex;
     const stop = ctx.stop ? ctx.stop.stopIndex : ctx.start.startIndex;
 
-    return Math.max(0, this.cursorIndex - 1) >= start && this.cursorIndex - 1 <= stop;
+    return Math.max(0, this.cursorIndex + modifier) >= start && this.cursorIndex + modifier <= stop;
   }
 
   private addAttributeResults(value: string, textCallback: TextCallback = DEFAULT_TEXT_CALLBACK) {
@@ -182,8 +200,9 @@ export class SelectionAutoCompleteVisitor
   public addUnmatchedValueResults(
     _value: string,
     textCallback: TextCallback = DEFAULT_TEXT_CALLBACK,
-    options: {excludeNot?: boolean} = {},
+    options: {excludeNot?: boolean; excludeStar?: boolean; excludePlus?: boolean} = {},
   ) {
+    console.log('addUnmatchedValueResults', new Error());
     const value = _value.trim();
     if (value) {
       const substringMatchDisplayText = `${this.nameBase}_substring:${removeQuotesFromString(
@@ -213,11 +232,13 @@ export class SelectionAutoCompleteVisitor
       this.list.push({text: textCallback('not '), displayText: 'not'});
     }
     if (value === '') {
-      this.list.push(
-        {text: textCallback('*'), displayText: '*'},
-        {text: textCallback('+'), displayText: '+'},
-        {text: textCallback('()'), displayText: '('},
-      );
+      if (!options.excludeStar) {
+        this.list.push({text: textCallback('*'), displayText: '*'});
+      }
+      if (!options.excludePlus) {
+        this.list.push({text: textCallback('+'), displayText: '+'});
+      }
+      this.list.push({text: textCallback('()'), displayText: '('});
     }
   }
 
@@ -241,13 +262,22 @@ export class SelectionAutoCompleteVisitor
     });
   }
 
-  private addAfterExpressionResults(ctx: ParserRuleContext) {
-    this.list.push(
-      {text: ' and ', displayText: 'and'},
-      {text: ' or ', displayText: 'or'},
-      {text: '*', displayText: '*'},
-      {text: '+', displayText: '+'},
-    );
+  private addAfterExpressionResults(
+    ctx: ParserRuleContext,
+    options: {
+      excludeStar?: boolean;
+      excludePlus?: boolean;
+    } = {},
+  ) {
+    console.log('addAfterExpressionResults', new Error());
+    this.list.push({text: ' and ', displayText: 'and'}, {text: ' or ', displayText: 'or'});
+
+    if (!options.excludeStar) {
+      this.list.push({text: '*', displayText: '*'});
+    }
+    if (!options.excludePlus) {
+      this.list.push({text: '+', displayText: '+'});
+    }
 
     if (isInsideExpressionlessParenthesizedExpression(ctx)) {
       this.list.push({text: ')', displayText: ')'});
@@ -255,11 +285,18 @@ export class SelectionAutoCompleteVisitor
   }
 
   visitAllExpression(ctx: AllExpressionContext) {
-    this.startReplacementIndex = this.cursorIndex;
-    this.stopReplacementIndex = this.cursorIndex;
-    this.addUnmatchedValueResults('');
-    if (isInsideExpressionlessParenthesizedExpression(ctx)) {
-      this.list.push({text: ')', displayText: ')'});
+    if (this.nodeIncludesCursor(ctx.postExpressionWhitespace())) {
+      this.visit(ctx.postExpressionWhitespace());
+    } else {
+      this.startReplacementIndex = this.cursorIndex;
+      this.stopReplacementIndex = this.cursorIndex;
+      this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
+        excludeStar: true,
+        excludePlus: true,
+      });
+      if (isInsideExpressionlessParenthesizedExpression(ctx)) {
+        this.list.push({text: ')', displayText: ')'});
+      }
     }
   }
 
@@ -267,10 +304,10 @@ export class SelectionAutoCompleteVisitor
     if (ctx.text.includes('+')) {
       this.list.push({text: '+', displayText: '+'});
     }
-    this.list.push({text: '(', displayText: '('});
+    this.list.push({text: '()', displayText: '('});
   }
 
-  visitDownTraversal(ctx: UpTraversalContext) {
+  visitDownTraversal(ctx: DownTraversalContext) {
     this.list.push({text: ' and ', displayText: 'and'});
     this.list.push({text: ' or ', displayText: 'or'});
     if (ctx.text.includes('+')) {
@@ -286,7 +323,7 @@ export class SelectionAutoCompleteVisitor
       // Move the cursor to the right and visit that expression.
       this.cursorIndex += 1;
     }
-    this.visit(ctx.expr());
+    this.visitChildren(ctx);
   }
 
   visitFunctionName(ctx: FunctionNameContext) {
@@ -315,40 +352,32 @@ export class SelectionAutoCompleteVisitor
 
   visitColonToken(ctx: ColonTokenContext) {
     if (this.nodeIncludesCursor(ctx)) {
-      let attributeName = '';
+      let attributeName: any;
 
       let valueNode: ParserRuleContext | null = null;
       const parentChildren = ctx.parent?.children ?? [];
       if (parentChildren[0]?.constructor.name === 'AttributeNameContext') {
-        attributeName = parentChildren[0].text;
+        attributeName = parentChildren[0];
       }
       if (parentChildren[1]?.constructor.name === 'AttributeValueContext') {
         valueNode = parentChildren[1] as any;
       } else if (parentChildren[2]?.constructor.name === 'AttributeValueContext') {
         valueNode = parentChildren[2] as any;
       }
-      if (attributeName) {
-        this.startReplacementIndex = ctx.start.startIndex + 1;
-        this.stopReplacementIndex = this.startReplacementIndex;
-        if (valueNode?.stop) {
-          this.stopReplacementIndex = valueNode.stop?.stopIndex + 1;
-        }
+      if (attributeName?.stop && this.cursorIndex >= attributeName.stop?.stopIndex) {
         this.addAttributeValueResults(attributeName, getValue(valueNode));
+      } else {
+        this.startReplacementIndex = ctx.start.startIndex - 1;
+        this.stopReplacementIndex = this.startReplacementIndex;
+        this.addAttributeResults(attributeName);
       }
     }
   }
 
   visitAttributeName(ctx: AttributeNameContext) {
-    if (this.nodeIncludesCursor(ctx)) {
-      if (this.line[this.cursorIndex] === ':') {
-        //  Increase cursor index to make sure the colon character is visited.
-        this.cursorIndex += 1;
-      } else {
-        this.startReplacementIndex = ctx.start.startIndex;
-        this.stopReplacementIndex = ctx.stop!.stopIndex + 2;
-        this.addAttributeResults(ctx.text);
-      }
-    }
+    this.startReplacementIndex = ctx.start.startIndex;
+    this.stopReplacementIndex = ctx.stop!.stopIndex + 2;
+    this.addAttributeResults(ctx.text);
   }
 
   visitOrToken(ctx: OrTokenContext) {
@@ -379,25 +408,88 @@ export class SelectionAutoCompleteVisitor
     }
   }
 
-  // This is visited even if the whitespace has length 0.
-  visitAfterExpressionWhitespace(ctx: AfterExpressionWhitespaceContext) {
+  visitIncompletePlusTraversalExpression(ctx: IncompletePlusTraversalExpressionContext) {
+    if (
+      this.nodeIncludesCursor(ctx.postNeighborTraversalWhitespace()) &&
+      ctx.postNeighborTraversalWhitespace().text.length
+    ) {
+      return this.visit(ctx.postNeighborTraversalWhitespace());
+    }
+    this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
+      excludeStar: true,
+      excludeNot: true,
+    });
+  }
+
+  visitIncompleteAttributeExpressionMissingValue(
+    ctx: IncompleteAttributeExpressionMissingValueContext,
+  ) {
+    if (this.nodeIncludesCursor(ctx.attributeName())) {
+      this.visit(ctx.attributeName());
+    } else {
+      this.startReplacementIndex = ctx.attributeValueWhitespace().start.startIndex;
+      this.stopReplacementIndex = this.startReplacementIndex;
+      this.addAttributeValueResults(ctx.attributeName().text, '');
+    }
+  }
+
+  visitPostNotOperatorWhitespace(_ctx: PostNotOperatorWhitespaceContext) {
+    this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
+      excludeNot: true,
+    });
+  }
+
+  visitPostNeighborTraversalWhitespace(ctx: PostNeighborTraversalWhitespaceContext) {
+    this.startReplacementIndex = ctx.start.startIndex;
+    this.stopReplacementIndex = ctx.stop!.stopIndex;
+    this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
+      excludeStar: true,
+    });
+  }
+
+  visitPostUpwardTraversalWhitespace(ctx: PostUpwardTraversalWhitespaceContext) {
+    this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
+      excludeStar: true,
+      excludePlus: ctx.parent?.children?.[0]?.text.includes('+'),
+    });
+  }
+
+  visitPostDownwardTraversalWhitespace(ctx: PostDownwardTraversalWhitespaceContext) {
+    this.addAfterExpressionResults(ctx, {
+      excludeStar: true,
+      excludePlus: ctx.parent?.children?.[0]?.text.includes('+'),
+    });
+  }
+
+  visitPostExpressionWhitespace(ctx: ParserRuleContext) {
     if (!this.list.length) {
-      // Check if anything before us already made suggestions
-      // Since we get called even if the previous token handled it
       this.addAfterExpressionResults(ctx);
     }
   }
 
   // This is visited even if the whitespace has length 0.
-  visitAfterLogicalOperatorWhitespace(ctx: AfterLogicalOperatorWhitespaceContext) {
+  visitPostLogicalOperatorWhitespace(ctx: PostLogicalOperatorWhitespaceContext) {
     // Check if anything before us already made suggestions
     // Since we get called even if the previous token handled it
     if (!this.list.length) {
       const isAfterNot = this.line.slice(0, this.cursorIndex).trim().toLowerCase().endsWith('not');
-      const needsWhitespace = this.cursorIndex === ctx.start.startIndex;
+
+      const isAfterLeftParen = this.line[this.cursorIndex - 1] === '(';
+
+      // If the cursor is at the start then we need a space before...
+      const needsWhitespace = !isAfterLeftParen && this.cursorIndex === ctx.start.startIndex;
       this.addUnmatchedValueResults('', (text) => `${needsWhitespace ? ' ' : ''}${text}`, {
         excludeNot: isAfterNot,
       });
+    }
+  }
+
+  visitPostAttributeValueWhitespace(ctx: PostAttributeValueWhitespaceContext) {
+    if (this.cursorIndex === ctx.start.startIndex + 1) {
+      this.cursorIndex -= 1;
+      ctx.parent!.accept(this);
+    } else {
+      this.visitPostExpressionWhitespace(ctx);
     }
   }
 

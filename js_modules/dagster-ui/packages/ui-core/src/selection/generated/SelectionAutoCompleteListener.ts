@@ -3,17 +3,16 @@
 import {ParseTreeListener} from 'antlr4ts/tree/ParseTreeListener';
 
 import {
-  AfterExpressionWhitespaceContext,
-  AfterLogicalOperatorWhitespaceContext,
   AllExpressionContext,
   AndExpressionContext,
   AndTokenContext,
   AttributeExpressionContext,
   AttributeNameContext,
   AttributeValueContext,
+  AttributeValueWhitespaceContext,
   ColonTokenContext,
   DownTraversalContext,
-  DownTraversalExpContext,
+  DownTraversalExprContext,
   DownTraversalExpressionContext,
   ExprContext,
   ExpressionLessParenthesizedExprContext,
@@ -25,13 +24,13 @@ import {
   IncompleteAndExpressionContext,
   IncompleteAttributeExpressionMissingKeyContext,
   IncompleteAttributeExpressionMissingValueContext,
+  IncompleteExprContext,
   IncompleteExpressionContext,
-  IncompleteExpressionsWrapperContext,
   IncompleteLeftQuotedStringValueContext,
   IncompleteNotExpressionContext,
   IncompleteOrExpressionContext,
+  IncompletePlusTraversalExpressionContext,
   IncompleteRightQuotedStringValueContext,
-  IncompleteTraversalExpressionContext,
   LeftParenTokenContext,
   NotExpressionContext,
   NotTokenContext,
@@ -39,12 +38,19 @@ import {
   OrTokenContext,
   ParenthesizedExprContext,
   ParenthesizedExpressionContext,
-  ParenthesizedExpressionWrapperContext,
+  PostAttributeValueWhitespaceContext,
+  PostDownwardTraversalWhitespaceContext,
+  PostExpressionWhitespaceContext,
+  PostLogicalOperatorWhitespaceContext,
+  PostNeighborTraversalWhitespaceContext,
+  PostNotOperatorWhitespaceContext,
+  PostUpwardTraversalWhitespaceContext,
   QuotedStringValueContext,
   RightParenTokenContext,
   StartContext,
   TraversalAllowedExprContext,
   TraversalAllowedExpressionContext,
+  TraversalAllowedParenthesizedExpressionContext,
   TraversalContext,
   UnclosedExpressionlessFunctionExpressionContext,
   UnclosedExpressionlessParenthesizedExpressionContext,
@@ -55,7 +61,7 @@ import {
   UnquotedStringValueContext,
   UpAndDownTraversalExpressionContext,
   UpTraversalContext,
-  UpTraversalExpContext,
+  UpTraversalExprContext,
   UpTraversalExpressionContext,
   ValueContext,
 } from './SelectionAutoCompleteParser';
@@ -65,19 +71,6 @@ import {
  * `SelectionAutoCompleteParser`.
  */
 export interface SelectionAutoCompleteListener extends ParseTreeListener {
-  /**
-   * Enter a parse tree produced by the `DownTraversal`
-   * labeled alternative in `SelectionAutoCompleteParser.downTraversalExp`.
-   * @param ctx the parse tree
-   */
-  enterDownTraversal?: (ctx: DownTraversalContext) => void;
-  /**
-   * Exit a parse tree produced by the `DownTraversal`
-   * labeled alternative in `SelectionAutoCompleteParser.downTraversalExp`.
-   * @param ctx the parse tree
-   */
-  exitDownTraversal?: (ctx: DownTraversalContext) => void;
-
   /**
    * Enter a parse tree produced by the `AttributeExpression`
    * labeled alternative in `SelectionAutoCompleteParser.traversalAllowedExpr`.
@@ -105,17 +98,21 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
   exitFunctionCallExpression?: (ctx: FunctionCallExpressionContext) => void;
 
   /**
-   * Enter a parse tree produced by the `ParenthesizedExpressionWrapper`
+   * Enter a parse tree produced by the `TraversalAllowedParenthesizedExpression`
    * labeled alternative in `SelectionAutoCompleteParser.traversalAllowedExpr`.
    * @param ctx the parse tree
    */
-  enterParenthesizedExpressionWrapper?: (ctx: ParenthesizedExpressionWrapperContext) => void;
+  enterTraversalAllowedParenthesizedExpression?: (
+    ctx: TraversalAllowedParenthesizedExpressionContext,
+  ) => void;
   /**
-   * Exit a parse tree produced by the `ParenthesizedExpressionWrapper`
+   * Exit a parse tree produced by the `TraversalAllowedParenthesizedExpression`
    * labeled alternative in `SelectionAutoCompleteParser.traversalAllowedExpr`.
    * @param ctx the parse tree
    */
-  exitParenthesizedExpressionWrapper?: (ctx: ParenthesizedExpressionWrapperContext) => void;
+  exitTraversalAllowedParenthesizedExpression?: (
+    ctx: TraversalAllowedParenthesizedExpressionContext,
+  ) => void;
 
   /**
    * Enter a parse tree produced by the `IncompleteExpression`
@@ -132,153 +129,16 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
 
   /**
    * Enter a parse tree produced by the `UpTraversal`
-   * labeled alternative in `SelectionAutoCompleteParser.upTraversalExp`.
+   * labeled alternative in `SelectionAutoCompleteParser.upTraversalExpr`.
    * @param ctx the parse tree
    */
   enterUpTraversal?: (ctx: UpTraversalContext) => void;
   /**
    * Exit a parse tree produced by the `UpTraversal`
-   * labeled alternative in `SelectionAutoCompleteParser.upTraversalExp`.
+   * labeled alternative in `SelectionAutoCompleteParser.upTraversalExpr`.
    * @param ctx the parse tree
    */
   exitUpTraversal?: (ctx: UpTraversalContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `IncompleteAttributeExpressionMissingValue`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  enterIncompleteAttributeExpressionMissingValue?: (
-    ctx: IncompleteAttributeExpressionMissingValueContext,
-  ) => void;
-  /**
-   * Exit a parse tree produced by the `IncompleteAttributeExpressionMissingValue`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  exitIncompleteAttributeExpressionMissingValue?: (
-    ctx: IncompleteAttributeExpressionMissingValueContext,
-  ) => void;
-
-  /**
-   * Enter a parse tree produced by the `ExpressionlessFunctionExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  enterExpressionlessFunctionExpression?: (ctx: ExpressionlessFunctionExpressionContext) => void;
-  /**
-   * Exit a parse tree produced by the `ExpressionlessFunctionExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  exitExpressionlessFunctionExpression?: (ctx: ExpressionlessFunctionExpressionContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `UnclosedExpressionlessFunctionExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  enterUnclosedExpressionlessFunctionExpression?: (
-    ctx: UnclosedExpressionlessFunctionExpressionContext,
-  ) => void;
-  /**
-   * Exit a parse tree produced by the `UnclosedExpressionlessFunctionExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  exitUnclosedExpressionlessFunctionExpression?: (
-    ctx: UnclosedExpressionlessFunctionExpressionContext,
-  ) => void;
-
-  /**
-   * Enter a parse tree produced by the `UnclosedFunctionExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  enterUnclosedFunctionExpression?: (ctx: UnclosedFunctionExpressionContext) => void;
-  /**
-   * Exit a parse tree produced by the `UnclosedFunctionExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  exitUnclosedFunctionExpression?: (ctx: UnclosedFunctionExpressionContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `UnclosedParenthesizedExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  enterUnclosedParenthesizedExpression?: (ctx: UnclosedParenthesizedExpressionContext) => void;
-  /**
-   * Exit a parse tree produced by the `UnclosedParenthesizedExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  exitUnclosedParenthesizedExpression?: (ctx: UnclosedParenthesizedExpressionContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `ExpressionlessParenthesizedExpressionWrapper`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  enterExpressionlessParenthesizedExpressionWrapper?: (
-    ctx: ExpressionlessParenthesizedExpressionWrapperContext,
-  ) => void;
-  /**
-   * Exit a parse tree produced by the `ExpressionlessParenthesizedExpressionWrapper`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  exitExpressionlessParenthesizedExpressionWrapper?: (
-    ctx: ExpressionlessParenthesizedExpressionWrapperContext,
-  ) => void;
-
-  /**
-   * Enter a parse tree produced by the `UnclosedExpressionlessParenthesizedExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  enterUnclosedExpressionlessParenthesizedExpression?: (
-    ctx: UnclosedExpressionlessParenthesizedExpressionContext,
-  ) => void;
-  /**
-   * Exit a parse tree produced by the `UnclosedExpressionlessParenthesizedExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  exitUnclosedExpressionlessParenthesizedExpression?: (
-    ctx: UnclosedExpressionlessParenthesizedExpressionContext,
-  ) => void;
-
-  /**
-   * Enter a parse tree produced by the `IncompleteTraversalExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  enterIncompleteTraversalExpression?: (ctx: IncompleteTraversalExpressionContext) => void;
-  /**
-   * Exit a parse tree produced by the `IncompleteTraversalExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  exitIncompleteTraversalExpression?: (ctx: IncompleteTraversalExpressionContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `IncompleteAttributeExpressionMissingKey`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  enterIncompleteAttributeExpressionMissingKey?: (
-    ctx: IncompleteAttributeExpressionMissingKeyContext,
-  ) => void;
-  /**
-   * Exit a parse tree produced by the `IncompleteAttributeExpressionMissingKey`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   */
-  exitIncompleteAttributeExpressionMissingKey?: (
-    ctx: IncompleteAttributeExpressionMissingKeyContext,
-  ) => void;
 
   /**
    * Enter a parse tree produced by the `ParenthesizedExpression`
@@ -480,6 +340,19 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
   ) => void;
 
   /**
+   * Enter a parse tree produced by the `DownTraversal`
+   * labeled alternative in `SelectionAutoCompleteParser.downTraversalExpr`.
+   * @param ctx the parse tree
+   */
+  enterDownTraversal?: (ctx: DownTraversalContext) => void;
+  /**
+   * Exit a parse tree produced by the `DownTraversal`
+   * labeled alternative in `SelectionAutoCompleteParser.downTraversalExpr`.
+   * @param ctx the parse tree
+   */
+  exitDownTraversal?: (ctx: DownTraversalContext) => void;
+
+  /**
    * Enter a parse tree produced by the `QuotedStringValue`
    * labeled alternative in `SelectionAutoCompleteParser.value`.
    * @param ctx the parse tree
@@ -532,6 +405,143 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
   exitUnquotedStringValue?: (ctx: UnquotedStringValueContext) => void;
 
   /**
+   * Enter a parse tree produced by the `IncompleteAttributeExpressionMissingValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  enterIncompleteAttributeExpressionMissingValue?: (
+    ctx: IncompleteAttributeExpressionMissingValueContext,
+  ) => void;
+  /**
+   * Exit a parse tree produced by the `IncompleteAttributeExpressionMissingValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  exitIncompleteAttributeExpressionMissingValue?: (
+    ctx: IncompleteAttributeExpressionMissingValueContext,
+  ) => void;
+
+  /**
+   * Enter a parse tree produced by the `ExpressionlessFunctionExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  enterExpressionlessFunctionExpression?: (ctx: ExpressionlessFunctionExpressionContext) => void;
+  /**
+   * Exit a parse tree produced by the `ExpressionlessFunctionExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  exitExpressionlessFunctionExpression?: (ctx: ExpressionlessFunctionExpressionContext) => void;
+
+  /**
+   * Enter a parse tree produced by the `UnclosedExpressionlessFunctionExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  enterUnclosedExpressionlessFunctionExpression?: (
+    ctx: UnclosedExpressionlessFunctionExpressionContext,
+  ) => void;
+  /**
+   * Exit a parse tree produced by the `UnclosedExpressionlessFunctionExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  exitUnclosedExpressionlessFunctionExpression?: (
+    ctx: UnclosedExpressionlessFunctionExpressionContext,
+  ) => void;
+
+  /**
+   * Enter a parse tree produced by the `UnclosedFunctionExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  enterUnclosedFunctionExpression?: (ctx: UnclosedFunctionExpressionContext) => void;
+  /**
+   * Exit a parse tree produced by the `UnclosedFunctionExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  exitUnclosedFunctionExpression?: (ctx: UnclosedFunctionExpressionContext) => void;
+
+  /**
+   * Enter a parse tree produced by the `UnclosedParenthesizedExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  enterUnclosedParenthesizedExpression?: (ctx: UnclosedParenthesizedExpressionContext) => void;
+  /**
+   * Exit a parse tree produced by the `UnclosedParenthesizedExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  exitUnclosedParenthesizedExpression?: (ctx: UnclosedParenthesizedExpressionContext) => void;
+
+  /**
+   * Enter a parse tree produced by the `ExpressionlessParenthesizedExpressionWrapper`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  enterExpressionlessParenthesizedExpressionWrapper?: (
+    ctx: ExpressionlessParenthesizedExpressionWrapperContext,
+  ) => void;
+  /**
+   * Exit a parse tree produced by the `ExpressionlessParenthesizedExpressionWrapper`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  exitExpressionlessParenthesizedExpressionWrapper?: (
+    ctx: ExpressionlessParenthesizedExpressionWrapperContext,
+  ) => void;
+
+  /**
+   * Enter a parse tree produced by the `UnclosedExpressionlessParenthesizedExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  enterUnclosedExpressionlessParenthesizedExpression?: (
+    ctx: UnclosedExpressionlessParenthesizedExpressionContext,
+  ) => void;
+  /**
+   * Exit a parse tree produced by the `UnclosedExpressionlessParenthesizedExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  exitUnclosedExpressionlessParenthesizedExpression?: (
+    ctx: UnclosedExpressionlessParenthesizedExpressionContext,
+  ) => void;
+
+  /**
+   * Enter a parse tree produced by the `IncompletePlusTraversalExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  enterIncompletePlusTraversalExpression?: (ctx: IncompletePlusTraversalExpressionContext) => void;
+  /**
+   * Exit a parse tree produced by the `IncompletePlusTraversalExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  exitIncompletePlusTraversalExpression?: (ctx: IncompletePlusTraversalExpressionContext) => void;
+
+  /**
+   * Enter a parse tree produced by the `IncompleteAttributeExpressionMissingKey`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  enterIncompleteAttributeExpressionMissingKey?: (
+    ctx: IncompleteAttributeExpressionMissingKeyContext,
+  ) => void;
+  /**
+   * Exit a parse tree produced by the `IncompleteAttributeExpressionMissingKey`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  exitIncompleteAttributeExpressionMissingKey?: (
+    ctx: IncompleteAttributeExpressionMissingKeyContext,
+  ) => void;
+
+  /**
    * Enter a parse tree produced by `SelectionAutoCompleteParser.start`.
    * @param ctx the parse tree
    */
@@ -576,15 +586,15 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
   exitParenthesizedExpr?: (ctx: ParenthesizedExprContext) => void;
 
   /**
-   * Enter a parse tree produced by `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.incompleteExpr`.
    * @param ctx the parse tree
    */
-  enterIncompleteExpressionsWrapper?: (ctx: IncompleteExpressionsWrapperContext) => void;
+  enterIncompleteExpr?: (ctx: IncompleteExprContext) => void;
   /**
-   * Exit a parse tree produced by `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.incompleteExpr`.
    * @param ctx the parse tree
    */
-  exitIncompleteExpressionsWrapper?: (ctx: IncompleteExpressionsWrapperContext) => void;
+  exitIncompleteExpr?: (ctx: IncompleteExprContext) => void;
 
   /**
    * Enter a parse tree produced by `SelectionAutoCompleteParser.expressionLessParenthesizedExpr`.
@@ -598,26 +608,26 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
   exitExpressionLessParenthesizedExpr?: (ctx: ExpressionLessParenthesizedExprContext) => void;
 
   /**
-   * Enter a parse tree produced by `SelectionAutoCompleteParser.upTraversalExp`.
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.upTraversalExpr`.
    * @param ctx the parse tree
    */
-  enterUpTraversalExp?: (ctx: UpTraversalExpContext) => void;
+  enterUpTraversalExpr?: (ctx: UpTraversalExprContext) => void;
   /**
-   * Exit a parse tree produced by `SelectionAutoCompleteParser.upTraversalExp`.
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.upTraversalExpr`.
    * @param ctx the parse tree
    */
-  exitUpTraversalExp?: (ctx: UpTraversalExpContext) => void;
+  exitUpTraversalExpr?: (ctx: UpTraversalExprContext) => void;
 
   /**
-   * Enter a parse tree produced by `SelectionAutoCompleteParser.downTraversalExp`.
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.downTraversalExpr`.
    * @param ctx the parse tree
    */
-  enterDownTraversalExp?: (ctx: DownTraversalExpContext) => void;
+  enterDownTraversalExpr?: (ctx: DownTraversalExprContext) => void;
   /**
-   * Exit a parse tree produced by `SelectionAutoCompleteParser.downTraversalExp`.
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.downTraversalExpr`.
    * @param ctx the parse tree
    */
-  exitDownTraversalExp?: (ctx: DownTraversalExpContext) => void;
+  exitDownTraversalExpr?: (ctx: DownTraversalExprContext) => void;
 
   /**
    * Enter a parse tree produced by `SelectionAutoCompleteParser.traversal`.
@@ -730,26 +740,92 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
   exitRightParenToken?: (ctx: RightParenTokenContext) => void;
 
   /**
-   * Enter a parse tree produced by `SelectionAutoCompleteParser.afterExpressionWhitespace`.
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.attributeValueWhitespace`.
    * @param ctx the parse tree
    */
-  enterAfterExpressionWhitespace?: (ctx: AfterExpressionWhitespaceContext) => void;
+  enterAttributeValueWhitespace?: (ctx: AttributeValueWhitespaceContext) => void;
   /**
-   * Exit a parse tree produced by `SelectionAutoCompleteParser.afterExpressionWhitespace`.
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.attributeValueWhitespace`.
    * @param ctx the parse tree
    */
-  exitAfterExpressionWhitespace?: (ctx: AfterExpressionWhitespaceContext) => void;
+  exitAttributeValueWhitespace?: (ctx: AttributeValueWhitespaceContext) => void;
 
   /**
-   * Enter a parse tree produced by `SelectionAutoCompleteParser.afterLogicalOperatorWhitespace`.
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.postAttributeValueWhitespace`.
    * @param ctx the parse tree
    */
-  enterAfterLogicalOperatorWhitespace?: (ctx: AfterLogicalOperatorWhitespaceContext) => void;
+  enterPostAttributeValueWhitespace?: (ctx: PostAttributeValueWhitespaceContext) => void;
   /**
-   * Exit a parse tree produced by `SelectionAutoCompleteParser.afterLogicalOperatorWhitespace`.
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.postAttributeValueWhitespace`.
    * @param ctx the parse tree
    */
-  exitAfterLogicalOperatorWhitespace?: (ctx: AfterLogicalOperatorWhitespaceContext) => void;
+  exitPostAttributeValueWhitespace?: (ctx: PostAttributeValueWhitespaceContext) => void;
+
+  /**
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.postExpressionWhitespace`.
+   * @param ctx the parse tree
+   */
+  enterPostExpressionWhitespace?: (ctx: PostExpressionWhitespaceContext) => void;
+  /**
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.postExpressionWhitespace`.
+   * @param ctx the parse tree
+   */
+  exitPostExpressionWhitespace?: (ctx: PostExpressionWhitespaceContext) => void;
+
+  /**
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.postNotOperatorWhitespace`.
+   * @param ctx the parse tree
+   */
+  enterPostNotOperatorWhitespace?: (ctx: PostNotOperatorWhitespaceContext) => void;
+  /**
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.postNotOperatorWhitespace`.
+   * @param ctx the parse tree
+   */
+  exitPostNotOperatorWhitespace?: (ctx: PostNotOperatorWhitespaceContext) => void;
+
+  /**
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.postLogicalOperatorWhitespace`.
+   * @param ctx the parse tree
+   */
+  enterPostLogicalOperatorWhitespace?: (ctx: PostLogicalOperatorWhitespaceContext) => void;
+  /**
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.postLogicalOperatorWhitespace`.
+   * @param ctx the parse tree
+   */
+  exitPostLogicalOperatorWhitespace?: (ctx: PostLogicalOperatorWhitespaceContext) => void;
+
+  /**
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.postNeighborTraversalWhitespace`.
+   * @param ctx the parse tree
+   */
+  enterPostNeighborTraversalWhitespace?: (ctx: PostNeighborTraversalWhitespaceContext) => void;
+  /**
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.postNeighborTraversalWhitespace`.
+   * @param ctx the parse tree
+   */
+  exitPostNeighborTraversalWhitespace?: (ctx: PostNeighborTraversalWhitespaceContext) => void;
+
+  /**
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.postUpwardTraversalWhitespace`.
+   * @param ctx the parse tree
+   */
+  enterPostUpwardTraversalWhitespace?: (ctx: PostUpwardTraversalWhitespaceContext) => void;
+  /**
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.postUpwardTraversalWhitespace`.
+   * @param ctx the parse tree
+   */
+  exitPostUpwardTraversalWhitespace?: (ctx: PostUpwardTraversalWhitespaceContext) => void;
+
+  /**
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.postDownwardTraversalWhitespace`.
+   * @param ctx the parse tree
+   */
+  enterPostDownwardTraversalWhitespace?: (ctx: PostDownwardTraversalWhitespaceContext) => void;
+  /**
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.postDownwardTraversalWhitespace`.
+   * @param ctx the parse tree
+   */
+  exitPostDownwardTraversalWhitespace?: (ctx: PostDownwardTraversalWhitespaceContext) => void;
 
   /**
    * Enter a parse tree produced by `SelectionAutoCompleteParser.value`.

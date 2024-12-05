@@ -98,7 +98,7 @@ export class SyntaxHighlightingVisitor
   }
 
   visitAllExpression(ctx: AllExpressionContext) {
-    this.addClass(ctx, 'value');
+    this.addClass(ctx, 'expression');
     this.visitChildren(ctx);
   }
   visitIncompleteLeftQuotedStringValue(ctx: ParserRuleContext) {
@@ -218,7 +218,7 @@ export const SelectionAutoCompleteInputCSS = css`
     color: ${Colors.textDefault()};
   }
 
-  .CodeMirror-line .selection:not(.expression),
+  .CodeMirror-line .selection:not(.expression):not(.value),
   .CodeMirror-lint-mark-error {
     background: unset;
     text-decoration-line: underline;

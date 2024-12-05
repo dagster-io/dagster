@@ -3,17 +3,16 @@
 import {ParseTreeVisitor} from 'antlr4ts/tree/ParseTreeVisitor';
 
 import {
-  AfterExpressionWhitespaceContext,
-  AfterLogicalOperatorWhitespaceContext,
   AllExpressionContext,
   AndExpressionContext,
   AndTokenContext,
   AttributeExpressionContext,
   AttributeNameContext,
   AttributeValueContext,
+  AttributeValueWhitespaceContext,
   ColonTokenContext,
   DownTraversalContext,
-  DownTraversalExpContext,
+  DownTraversalExprContext,
   DownTraversalExpressionContext,
   ExprContext,
   ExpressionLessParenthesizedExprContext,
@@ -25,13 +24,13 @@ import {
   IncompleteAndExpressionContext,
   IncompleteAttributeExpressionMissingKeyContext,
   IncompleteAttributeExpressionMissingValueContext,
+  IncompleteExprContext,
   IncompleteExpressionContext,
-  IncompleteExpressionsWrapperContext,
   IncompleteLeftQuotedStringValueContext,
   IncompleteNotExpressionContext,
   IncompleteOrExpressionContext,
+  IncompletePlusTraversalExpressionContext,
   IncompleteRightQuotedStringValueContext,
-  IncompleteTraversalExpressionContext,
   LeftParenTokenContext,
   NotExpressionContext,
   NotTokenContext,
@@ -39,12 +38,19 @@ import {
   OrTokenContext,
   ParenthesizedExprContext,
   ParenthesizedExpressionContext,
-  ParenthesizedExpressionWrapperContext,
+  PostAttributeValueWhitespaceContext,
+  PostDownwardTraversalWhitespaceContext,
+  PostExpressionWhitespaceContext,
+  PostLogicalOperatorWhitespaceContext,
+  PostNeighborTraversalWhitespaceContext,
+  PostNotOperatorWhitespaceContext,
+  PostUpwardTraversalWhitespaceContext,
   QuotedStringValueContext,
   RightParenTokenContext,
   StartContext,
   TraversalAllowedExprContext,
   TraversalAllowedExpressionContext,
+  TraversalAllowedParenthesizedExpressionContext,
   TraversalContext,
   UnclosedExpressionlessFunctionExpressionContext,
   UnclosedExpressionlessParenthesizedExpressionContext,
@@ -55,7 +61,7 @@ import {
   UnquotedStringValueContext,
   UpAndDownTraversalExpressionContext,
   UpTraversalContext,
-  UpTraversalExpContext,
+  UpTraversalExprContext,
   UpTraversalExpressionContext,
   ValueContext,
 } from './SelectionAutoCompleteParser';
@@ -68,14 +74,6 @@ import {
  * operations with no return type.
  */
 export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<Result> {
-  /**
-   * Visit a parse tree produced by the `DownTraversal`
-   * labeled alternative in `SelectionAutoCompleteParser.downTraversalExp`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitDownTraversal?: (ctx: DownTraversalContext) => Result;
-
   /**
    * Visit a parse tree produced by the `AttributeExpression`
    * labeled alternative in `SelectionAutoCompleteParser.traversalAllowedExpr`.
@@ -93,12 +91,14 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   visitFunctionCallExpression?: (ctx: FunctionCallExpressionContext) => Result;
 
   /**
-   * Visit a parse tree produced by the `ParenthesizedExpressionWrapper`
+   * Visit a parse tree produced by the `TraversalAllowedParenthesizedExpression`
    * labeled alternative in `SelectionAutoCompleteParser.traversalAllowedExpr`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitParenthesizedExpressionWrapper?: (ctx: ParenthesizedExpressionWrapperContext) => Result;
+  visitTraversalAllowedParenthesizedExpression?: (
+    ctx: TraversalAllowedParenthesizedExpressionContext,
+  ) => Result;
 
   /**
    * Visit a parse tree produced by the `IncompleteExpression`
@@ -110,93 +110,11 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
 
   /**
    * Visit a parse tree produced by the `UpTraversal`
-   * labeled alternative in `SelectionAutoCompleteParser.upTraversalExp`.
+   * labeled alternative in `SelectionAutoCompleteParser.upTraversalExpr`.
    * @param ctx the parse tree
    * @return the visitor result
    */
   visitUpTraversal?: (ctx: UpTraversalContext) => Result;
-
-  /**
-   * Visit a parse tree produced by the `IncompleteAttributeExpressionMissingValue`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitIncompleteAttributeExpressionMissingValue?: (
-    ctx: IncompleteAttributeExpressionMissingValueContext,
-  ) => Result;
-
-  /**
-   * Visit a parse tree produced by the `ExpressionlessFunctionExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitExpressionlessFunctionExpression?: (ctx: ExpressionlessFunctionExpressionContext) => Result;
-
-  /**
-   * Visit a parse tree produced by the `UnclosedExpressionlessFunctionExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitUnclosedExpressionlessFunctionExpression?: (
-    ctx: UnclosedExpressionlessFunctionExpressionContext,
-  ) => Result;
-
-  /**
-   * Visit a parse tree produced by the `UnclosedFunctionExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitUnclosedFunctionExpression?: (ctx: UnclosedFunctionExpressionContext) => Result;
-
-  /**
-   * Visit a parse tree produced by the `UnclosedParenthesizedExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitUnclosedParenthesizedExpression?: (ctx: UnclosedParenthesizedExpressionContext) => Result;
-
-  /**
-   * Visit a parse tree produced by the `ExpressionlessParenthesizedExpressionWrapper`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitExpressionlessParenthesizedExpressionWrapper?: (
-    ctx: ExpressionlessParenthesizedExpressionWrapperContext,
-  ) => Result;
-
-  /**
-   * Visit a parse tree produced by the `UnclosedExpressionlessParenthesizedExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitUnclosedExpressionlessParenthesizedExpression?: (
-    ctx: UnclosedExpressionlessParenthesizedExpressionContext,
-  ) => Result;
-
-  /**
-   * Visit a parse tree produced by the `IncompleteTraversalExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitIncompleteTraversalExpression?: (ctx: IncompleteTraversalExpressionContext) => Result;
-
-  /**
-   * Visit a parse tree produced by the `IncompleteAttributeExpressionMissingKey`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitIncompleteAttributeExpressionMissingKey?: (
-    ctx: IncompleteAttributeExpressionMissingKeyContext,
-  ) => Result;
 
   /**
    * Visit a parse tree produced by the `ParenthesizedExpression`
@@ -321,6 +239,14 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   ) => Result;
 
   /**
+   * Visit a parse tree produced by the `DownTraversal`
+   * labeled alternative in `SelectionAutoCompleteParser.downTraversalExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitDownTraversal?: (ctx: DownTraversalContext) => Result;
+
+  /**
    * Visit a parse tree produced by the `QuotedStringValue`
    * labeled alternative in `SelectionAutoCompleteParser.value`.
    * @param ctx the parse tree
@@ -353,6 +279,90 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   visitUnquotedStringValue?: (ctx: UnquotedStringValueContext) => Result;
 
   /**
+   * Visit a parse tree produced by the `IncompleteAttributeExpressionMissingValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitIncompleteAttributeExpressionMissingValue?: (
+    ctx: IncompleteAttributeExpressionMissingValueContext,
+  ) => Result;
+
+  /**
+   * Visit a parse tree produced by the `ExpressionlessFunctionExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitExpressionlessFunctionExpression?: (ctx: ExpressionlessFunctionExpressionContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `UnclosedExpressionlessFunctionExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitUnclosedExpressionlessFunctionExpression?: (
+    ctx: UnclosedExpressionlessFunctionExpressionContext,
+  ) => Result;
+
+  /**
+   * Visit a parse tree produced by the `UnclosedFunctionExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitUnclosedFunctionExpression?: (ctx: UnclosedFunctionExpressionContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `UnclosedParenthesizedExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitUnclosedParenthesizedExpression?: (ctx: UnclosedParenthesizedExpressionContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `ExpressionlessParenthesizedExpressionWrapper`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitExpressionlessParenthesizedExpressionWrapper?: (
+    ctx: ExpressionlessParenthesizedExpressionWrapperContext,
+  ) => Result;
+
+  /**
+   * Visit a parse tree produced by the `UnclosedExpressionlessParenthesizedExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitUnclosedExpressionlessParenthesizedExpression?: (
+    ctx: UnclosedExpressionlessParenthesizedExpressionContext,
+  ) => Result;
+
+  /**
+   * Visit a parse tree produced by the `IncompletePlusTraversalExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitIncompletePlusTraversalExpression?: (
+    ctx: IncompletePlusTraversalExpressionContext,
+  ) => Result;
+
+  /**
+   * Visit a parse tree produced by the `IncompleteAttributeExpressionMissingKey`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitIncompleteAttributeExpressionMissingKey?: (
+    ctx: IncompleteAttributeExpressionMissingKeyContext,
+  ) => Result;
+
+  /**
    * Visit a parse tree produced by `SelectionAutoCompleteParser.start`.
    * @param ctx the parse tree
    * @return the visitor result
@@ -381,11 +391,11 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   visitParenthesizedExpr?: (ctx: ParenthesizedExprContext) => Result;
 
   /**
-   * Visit a parse tree produced by `SelectionAutoCompleteParser.incompleteExpressionsWrapper`.
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.incompleteExpr`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitIncompleteExpressionsWrapper?: (ctx: IncompleteExpressionsWrapperContext) => Result;
+  visitIncompleteExpr?: (ctx: IncompleteExprContext) => Result;
 
   /**
    * Visit a parse tree produced by `SelectionAutoCompleteParser.expressionLessParenthesizedExpr`.
@@ -395,18 +405,18 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   visitExpressionLessParenthesizedExpr?: (ctx: ExpressionLessParenthesizedExprContext) => Result;
 
   /**
-   * Visit a parse tree produced by `SelectionAutoCompleteParser.upTraversalExp`.
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.upTraversalExpr`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitUpTraversalExp?: (ctx: UpTraversalExpContext) => Result;
+  visitUpTraversalExpr?: (ctx: UpTraversalExprContext) => Result;
 
   /**
-   * Visit a parse tree produced by `SelectionAutoCompleteParser.downTraversalExp`.
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.downTraversalExpr`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitDownTraversalExp?: (ctx: DownTraversalExpContext) => Result;
+  visitDownTraversalExpr?: (ctx: DownTraversalExprContext) => Result;
 
   /**
    * Visit a parse tree produced by `SelectionAutoCompleteParser.traversal`.
@@ -479,18 +489,60 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   visitRightParenToken?: (ctx: RightParenTokenContext) => Result;
 
   /**
-   * Visit a parse tree produced by `SelectionAutoCompleteParser.afterExpressionWhitespace`.
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.attributeValueWhitespace`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitAfterExpressionWhitespace?: (ctx: AfterExpressionWhitespaceContext) => Result;
+  visitAttributeValueWhitespace?: (ctx: AttributeValueWhitespaceContext) => Result;
 
   /**
-   * Visit a parse tree produced by `SelectionAutoCompleteParser.afterLogicalOperatorWhitespace`.
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.postAttributeValueWhitespace`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitAfterLogicalOperatorWhitespace?: (ctx: AfterLogicalOperatorWhitespaceContext) => Result;
+  visitPostAttributeValueWhitespace?: (ctx: PostAttributeValueWhitespaceContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.postExpressionWhitespace`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitPostExpressionWhitespace?: (ctx: PostExpressionWhitespaceContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.postNotOperatorWhitespace`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitPostNotOperatorWhitespace?: (ctx: PostNotOperatorWhitespaceContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.postLogicalOperatorWhitespace`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitPostLogicalOperatorWhitespace?: (ctx: PostLogicalOperatorWhitespaceContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.postNeighborTraversalWhitespace`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitPostNeighborTraversalWhitespace?: (ctx: PostNeighborTraversalWhitespaceContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.postUpwardTraversalWhitespace`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitPostUpwardTraversalWhitespace?: (ctx: PostUpwardTraversalWhitespaceContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.postDownwardTraversalWhitespace`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitPostDownwardTraversalWhitespace?: (ctx: PostDownwardTraversalWhitespaceContext) => Result;
 
   /**
    * Visit a parse tree produced by `SelectionAutoCompleteParser.value`.

@@ -1,147 +1,127 @@
 grammar SelectionAutoComplete;
 
-// Root rule for parsing expressions
 start: expr EOF;
 
-// Root expression rule
-expr
-    : traversalAllowedExpr afterExpressionWhitespace                                                                # TraversalAllowedExpression
-    | upTraversalExp traversalAllowedExpr downTraversalExp afterExpressionWhitespace                                # UpAndDownTraversalExpression
-    | upTraversalExp traversalAllowedExpr afterExpressionWhitespace                                                 # UpTraversalExpression
-    | traversalAllowedExpr downTraversalExp afterExpressionWhitespace                                               # DownTraversalExpression
-    | notToken afterLogicalOperatorWhitespace expr afterExpressionWhitespace                                        # NotExpression
-    | expr afterExpressionWhitespace andToken afterLogicalOperatorWhitespace expr afterExpressionWhitespace         # AndExpression
-    | expr afterExpressionWhitespace orToken afterLogicalOperatorWhitespace expr afterExpressionWhitespace          # OrExpression
-    | expr afterExpressionWhitespace andToken afterLogicalOperatorWhitespace                                        # IncompleteAndExpression
-    | expr afterExpressionWhitespace orToken afterLogicalOperatorWhitespace                                         # IncompleteOrExpression
-    | notToken afterLogicalOperatorWhitespace                                                                       # IncompleteNotExpression
-    | expr afterExpressionWhitespace value afterLogicalOperatorWhitespace                                           # UnmatchedExpressionContinuation
-    | STAR afterExpressionWhitespace                                                                                # AllExpression
-    | value afterExpressionWhitespace                                                                               # UnmatchedValue
-    ;
-
+/*
+ * Apply a specific whitespace parser rule (e.g., afterLogicalOperatorWhitespace,
+ * afterExpressionWhitespace) after every leaf node. This strategy prevents multiple parser rules
+ * from conflicting over the same whitespace. Add more whitespace types to adjust autocomplete
+ * boundary behavior within and after tokens.
+ */
+expr:
+	traversalAllowedExpr										# TraversalAllowedExpression
+	| upTraversalExpr traversalAllowedExpr downTraversalExpr	# UpAndDownTraversalExpression
+	| upTraversalExpr traversalAllowedExpr						# UpTraversalExpression
+	| traversalAllowedExpr downTraversalExpr					# DownTraversalExpression
+	| notToken postNotOperatorWhitespace expr					# NotExpression
+	| expr andToken postLogicalOperatorWhitespace expr			# AndExpression
+	| expr orToken postLogicalOperatorWhitespace expr			# OrExpression
+	| expr andToken postLogicalOperatorWhitespace				# IncompleteAndExpression
+	| expr orToken postLogicalOperatorWhitespace				# IncompleteOrExpression
+	| notToken postNotOperatorWhitespace						# IncompleteNotExpression
+	| expr value postLogicalOperatorWhitespace					# UnmatchedExpressionContinuation
+	| STAR postExpressionWhitespace								# AllExpression
+	| value postExpressionWhitespace							# UnmatchedValue;
 
 // Allowed expressions within traversal contexts
-traversalAllowedExpr
-    : attributeName colonToken attributeValue           # AttributeExpression
-    | functionName parenthesizedExpr                    # FunctionCallExpression
-    | parenthesizedExpr                                 # ParenthesizedExpressionWrapper
-    | incompleteExpressionsWrapper                      # IncompleteExpression
-    ;
+traversalAllowedExpr:
+	attributeName colonToken attributeValue postAttributeValueWhitespace	# AttributeExpression
+	| functionName parenthesizedExpr										# FunctionCallExpression
+	| parenthesizedExpr														# TraversalAllowedParenthesizedExpression
+	| incompleteExpr														# IncompleteExpression;
 
+parenthesizedExpr:
+	leftParenToken postLogicalOperatorWhitespace expr rightParenToken postExpressionWhitespace #
+		ParenthesizedExpression;
 
-parenthesizedExpr
-    : leftParenToken expr rightParenToken               # ParenthesizedExpression
-    ;
+incompleteExpr:
+	attributeName colonToken attributeValueWhitespace			# IncompleteAttributeExpressionMissingValue
+	| functionName expressionLessParenthesizedExpr				# ExpressionlessFunctionExpression
+	| functionName leftParenToken postLogicalOperatorWhitespace	#
+		UnclosedExpressionlessFunctionExpression
+	| functionName leftParenToken expr						# UnclosedFunctionExpression
+	| leftParenToken postLogicalOperatorWhitespace expr		# UnclosedParenthesizedExpression
+	| expressionLessParenthesizedExpr						# ExpressionlessParenthesizedExpressionWrapper
+	| leftParenToken postLogicalOperatorWhitespace			# UnclosedExpressionlessParenthesizedExpression
+	| PLUS+ postNeighborTraversalWhitespace					# IncompletePlusTraversalExpression
+	| colonToken attributeValue postExpressionWhitespace	# IncompleteAttributeExpressionMissingKey;
 
-// Incomplete expressions wrapper
-incompleteExpressionsWrapper
-    : attributeName colonToken                          # IncompleteAttributeExpressionMissingValue
-    | functionName expressionLessParenthesizedExpr      # ExpressionlessFunctionExpression
-    | functionName leftParenToken                       # UnclosedExpressionlessFunctionExpression
-    | functionName leftParenToken expr                  # UnclosedFunctionExpression
-    | leftParenToken expr                               # UnclosedParenthesizedExpression
-    | expressionLessParenthesizedExpr                   # ExpressionlessParenthesizedExpressionWrapper
-    | leftParenToken                                    # UnclosedExpressionlessParenthesizedExpression 
-    | PLUS+                                             # IncompleteTraversalExpression
-    | colonToken attributeValue                         # IncompleteAttributeExpressionMissingKey
-    ;
+expressionLessParenthesizedExpr:
+	leftParenToken postLogicalOperatorWhitespace rightParenToken postExpressionWhitespace #
+		ExpressionlessParenthesizedExpression;
 
-expressionLessParenthesizedExpr
-    : leftParenToken rightParenToken                    # ExpressionlessParenthesizedExpression
-    ;
+upTraversalExpr:
+	traversal postUpwardTraversalWhitespace # UpTraversal;
 
-upTraversalExp
-  : traversal                                           # UpTraversal
-  ;
+downTraversalExpr:
+	traversal postDownwardTraversalWhitespace # DownTraversal;
 
-downTraversalExp
-  : traversal                                           # DownTraversal
-  ;
-
-traversal
-    : STAR
-    | PLUS+
-    ;
+traversal: STAR | PLUS+;
 
 // Attribute and function names (to be validated externally)
-attributeName
-    : IDENTIFIER
-    ;
+attributeName: IDENTIFIER;
 
+attributeValue: value;
 
-attributeValue
-    : value
-    ;
+functionName: IDENTIFIER;
 
-functionName
-    : IDENTIFIER
-    ;
+orToken: OR;
 
-orToken
-    : OR
-    ;
+andToken: AND;
 
-andToken
-    : AND
-    ;
+notToken: NOT;
 
-notToken
-    : NOT
-    ;
+colonToken: COLON;
 
-colonToken
-    : COLON
-    ;
+leftParenToken: LPAREN;
 
-leftParenToken
-    : LPAREN
-    ;
+rightParenToken: RPAREN;
 
-rightParenToken
-    : RPAREN
-    ;
+attributeValueWhitespace: WS*;
 
-afterExpressionWhitespace
-    : WS*
-    ;
+postAttributeValueWhitespace: WS*;
 
-afterLogicalOperatorWhitespace
-   : WS*
-   ;
-    
+postExpressionWhitespace: WS*;
+
+postNotOperatorWhitespace: WS*;
+
+postLogicalOperatorWhitespace: WS*;
+
+postNeighborTraversalWhitespace: WS*;
+
+postUpwardTraversalWhitespace: WS*;
+
+postDownwardTraversalWhitespace: WS*;
 
 // Value can be a quoted string, unquoted string, or identifier
-value
-    : QUOTED_STRING # QuotedStringValue
-    | INCOMPLETE_LEFT_QUOTED_STRING # IncompleteLeftQuotedStringValue
-    | INCOMPLETE_RIGHT_QUOTED_STRING # IncompleteRightQuotedStringValue
-    | IDENTIFIER # UnquotedStringValue
-    ;
+value:
+	QUOTED_STRING						# QuotedStringValue
+	| INCOMPLETE_LEFT_QUOTED_STRING		# IncompleteLeftQuotedStringValue
+	| INCOMPLETE_RIGHT_QUOTED_STRING	# IncompleteRightQuotedStringValue
+	| IDENTIFIER						# UnquotedStringValue;
 
 // Tokens for operators and keywords
-AND : 'and';
-OR : 'or';
-NOT : 'not';
+AND: 'and';
+OR: 'or';
+NOT: 'not';
 
-STAR : '*';
-PLUS : '+';
+STAR: '*';
+PLUS: '+';
 
-COLON : ':';
+COLON: ':';
 
-LPAREN : '(';
-RPAREN : ')';
+LPAREN: '(';
+RPAREN: ')';
 
-EQUAL : '=';
+EQUAL: '=';
 
 // Tokens for strings
-QUOTED_STRING  : '"' (~["\\\r\n])* '"' ;
-INCOMPLETE_LEFT_QUOTED_STRING: '"' (~["\\\r\n():])* ;
-INCOMPLETE_RIGHT_QUOTED_STRING:  (~["\\\r\n:()])* '"' ;
+QUOTED_STRING: '"' (~["\\\r\n])* '"';
+INCOMPLETE_LEFT_QUOTED_STRING: '"' (~["\\\r\n():])*;
+INCOMPLETE_RIGHT_QUOTED_STRING: (~["\\\r\n:()])* '"';
 
 // Identifiers (attributes and functions)
-IDENTIFIER : [a-zA-Z_][a-zA-Z0-9_]*;
-
+IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;
 
 // Whitespace
-WS : [ \t\r\n]+;
+WS: [ \t\r\n]+;

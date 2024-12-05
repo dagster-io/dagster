@@ -8,22 +8,18 @@ import {AssetSelectionParser} from '../generated/AssetSelectionParser';
 export const lintAssetSelection = (text: string) => {
   const errorListener = new AssetSelectionSyntaxErrorListener();
 
-  try {
-    const inputStream = CharStreams.fromString(text);
-    const lexer = new AssetSelectionLexer(inputStream);
+  const inputStream = CharStreams.fromString(text);
+  const lexer = new AssetSelectionLexer(inputStream);
 
-    lexer.removeErrorListeners();
-    lexer.addErrorListener(errorListener);
+  lexer.removeErrorListeners();
+  lexer.addErrorListener(errorListener);
 
-    const tokens = new CommonTokenStream(lexer);
-    const parser = new AssetSelectionParser(tokens);
+  const tokens = new CommonTokenStream(lexer);
+  const parser = new AssetSelectionParser(tokens);
 
-    parser.removeErrorListeners(); // Remove default console error listener
-    parser.addErrorListener(errorListener);
+  parser.removeErrorListeners(); // Remove default console error listener
+  parser.addErrorListener(errorListener);
 
-    // Attempt to parse the input
-    parser.start(); // Assuming 'start' is the entry point of your grammar
-  } catch {}
   // Map syntax errors to CodeMirror's lint format
   const lintErrors = errorListener.errors.map((error) => ({
     message: error.message.replace('<EOF>, ', ''),
@@ -31,6 +27,8 @@ export const lintAssetSelection = (text: string) => {
     from: CodeMirror.Pos(error.line, error.column),
     to: CodeMirror.Pos(error.line, text.length),
   }));
+
+  console.log({lintErrors});
 
   return lintErrors;
 };
