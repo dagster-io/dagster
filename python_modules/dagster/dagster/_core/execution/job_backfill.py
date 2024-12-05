@@ -62,45 +62,46 @@ def execute_job_backfill_iteration(
 
     partition_set = _get_partition_set(workspace_process_context, backfill)
 
+    # refetch in case the backfill status has changed
+    backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
+    if backfill.status == BulkActionStatus.CANCELING:
+        if not instance.run_coordinator:
+            check.failed("The instance must have a run coordinator in order to cancel runs")
+
+        # Query for cancelable runs, enforcing a limit on the number of runs to cancel in an iteration
+        # as canceling runs incurs cost
+        runs_to_cancel_in_iteration = instance.run_storage.get_run_ids(
+            filters=RunsFilter(
+                statuses=CANCELABLE_RUN_STATUSES,
+                tags={
+                    BACKFILL_ID_TAG: backfill.backfill_id,
+                },
+            ),
+            limit=MAX_RUNS_CANCELED_PER_ITERATION,
+        )
+
+        yield None
+
+        if runs_to_cancel_in_iteration:
+            for run_id in runs_to_cancel_in_iteration:
+                instance.run_coordinator.cancel_run(run_id)
+                yield None
+        else:
+            # no runs to cancel, check if we are waiting on any runs to reach a terminal state
+            # before marking the backfill as CANCELED
+            run_waiting_to_cancel = instance.get_run_ids(
+                RunsFilter(
+                    tags={BACKFILL_ID_TAG: backfill.backfill_id},
+                    statuses=IN_PROGRESS_RUN_STATUSES,
+                ),
+                limit=1,
+            )
+            if len(run_waiting_to_cancel) == 0:
+                instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
+        return
+
     has_more = True
     while has_more:
-        # refetch in case the backfill status has changed
-        backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
-        if backfill.status == BulkActionStatus.CANCELING:
-            if not instance.run_coordinator:
-                check.failed("The instance must have a run coordinator in order to cancel runs")
-
-            # Query for cancelable runs, enforcing a limit on the number of runs to cancel in an iteration
-            # as canceling runs incurs cost
-            runs_to_cancel_in_iteration = instance.run_storage.get_run_ids(
-                filters=RunsFilter(
-                    statuses=CANCELABLE_RUN_STATUSES,
-                    tags={
-                        BACKFILL_ID_TAG: backfill.backfill_id,
-                    },
-                ),
-                limit=MAX_RUNS_CANCELED_PER_ITERATION,
-            )
-
-            yield None
-
-            if runs_to_cancel_in_iteration:
-                for run_id in runs_to_cancel_in_iteration:
-                    instance.run_coordinator.cancel_run(run_id)
-                    yield None
-            else:
-                # no runs to cancel, check if we are waiting on any runs to reach a terminal state
-                # before marking the backfill as CANCELED
-                run_waiting_to_cancel = instance.get_run_ids(
-                    RunsFilter(
-                        tags={BACKFILL_ID_TAG: backfill.backfill_id},
-                        statuses=IN_PROGRESS_RUN_STATUSES,
-                    ),
-                    limit=1,
-                )
-                if len(run_waiting_to_cancel) == 0:
-                    instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
-
         if backfill.status != BulkActionStatus.REQUESTED:
             break
 
