@@ -6,9 +6,9 @@ import {
   Menu,
   MenuItem,
   Popover,
-  StyledRawCodeMirror,
   Table,
 } from '@dagster-io/ui-components';
+import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import {useMemo, useState} from 'react';
 import * as yaml from 'yaml';
 

@@ -17,13 +17,13 @@ import {
   PageHeader,
   Popover,
   Spinner,
-  StyledRawCodeMirror,
   Subheading,
   Table,
   Tag,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
+import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
