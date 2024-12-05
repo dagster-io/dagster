@@ -461,27 +461,6 @@ def integers_asset(context: AssetExecutionContext):
     return {k: 1 for k in context.partition_keys}
 
 
-multiple_backfill_iterations_partitions = StaticPartitionsDefinition([str(i) for i in range(100)])
-
-multiple_backfill_iterations_config = PartitionedConfig(
-    partitions_def=multiple_backfill_iterations_partitions,
-    run_config_for_partition_fn=lambda partition: {},
-    tags_for_partition_fn=lambda partition: {"foo": partition.name},
-)
-
-
-@job(
-    partitions_def=multiple_backfill_iterations_partitions,
-    config=multiple_backfill_iterations_config,
-)
-def lots_of_partitions():
-    @op
-    def just_one():
-        return 1
-
-    just_one()
-
-
 integers_asset_job = define_asset_job("integers_asset_job", selection=[integers_asset])
 
 
@@ -1422,6 +1401,15 @@ def hanging_op(context, my_op):
         time.sleep(0.1)
 
 
+@job(
+    partitions_def=integers_partitions,
+    config=integers_config,
+    resource_defs={"hanging_asset_resource": hanging_asset_resource},
+)
+def hanging_partitioned_job():
+    hanging_op(my_op())
+
+
 @op
 def never_runs_op(hanging_op):
     pass
@@ -2058,7 +2046,7 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         hard_failer,
         hello_world_with_tags,
         infinite_loop_job,
-        lots_of_partitions,
+        hanging_partitioned_job,
         integers,
         job_with_default_config,
         job_with_enum_config,
