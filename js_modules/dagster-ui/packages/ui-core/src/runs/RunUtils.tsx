@@ -7,7 +7,11 @@ import {StepSelection} from './StepSelection';
 import {TimeElapsed} from './TimeElapsed';
 import {RunFragment} from './types/RunFragments.types';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
-import {LaunchPipelineExecutionMutation, RunTimeFragment} from './types/RunUtils.types';
+import {
+  LaunchMultipleRunsMutation,
+  LaunchPipelineExecutionMutation,
+  RunTimeFragment,
+} from './types/RunUtils.types';
 import {Mono} from '../../../ui-components/src';
 import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -107,11 +111,96 @@ export async function handleLaunchResult(
 
     if ('errors' in result) {
       message += ` Please fix the following errors:\n\n${result.errors
-        .map((error) => error.message)
+        .map((error: {message: any}) => error.message)
         .join('\n\n')}`;
     }
 
     showCustomAlert({body: message});
+  }
+}
+
+export async function handleLaunchMultipleResult(
+  result: void | null | LaunchMultipleRunsMutation['launchMultipleRuns'],
+  history: History<unknown>,
+  options: {behavior: LaunchBehavior; preserveQuerystring?: boolean},
+) {
+  if (!result) {
+    showCustomAlert({body: `No data was returned. Did dagster-webserver crash?`});
+    return;
+  }
+  const successfulRunIds: string[] = [];
+  const failedRunsErrors: {message: string}[] = [];
+
+  if (result.__typename === 'PythonError') {
+    // if launch multiple runs errors out, show the PythonError and return
+    showCustomAlert({
+      title: 'Error',
+      body: <PythonErrorInfo error={result} />,
+    });
+    return;
+  } else if (result.__typename === 'LaunchMultipleRunsResult') {
+    // show corresponding toasts
+    const launchMultipleRunsResult = result.launchMultipleRunsResult;
+
+    for (const individualResult of launchMultipleRunsResult) {
+      if (individualResult.__typename === 'LaunchRunSuccess') {
+        successfulRunIds.push(individualResult.run.id);
+
+        const pathname = `/runs/${individualResult.run.id}`;
+        const search = options.preserveQuerystring ? history.location.search : '';
+        const openInSameTab = () => history.push({pathname, search});
+
+        // using open with multiple runs will spam new tabs
+        if (options.behavior === 'open') {
+          openInSameTab();
+        }
+      } else if (individualResult.__typename === 'PythonError') {
+        failedRunsErrors.push({message: individualResult.message});
+      } else {
+        let message = `Error launching run.`;
+        if (
+          individualResult &&
+          typeof individualResult === 'object' &&
+          'errors' in individualResult
+        ) {
+          const errors = individualResult.errors as {message: string}[];
+          message += ` Please fix the following errors:\n\n${errors
+            .map((error) => error.message)
+            .join('\n\n')}`;
+        }
+        if (
+          individualResult &&
+          typeof individualResult === 'object' &&
+          'message' in individualResult
+        ) {
+          message += `\n\n${individualResult.message}`;
+        }
+
+        failedRunsErrors.push({message});
+      }
+    }
+  }
+  document.dispatchEvent(new CustomEvent('run-launched'));
+
+  // link to runs page filtered to run IDs
+  const params = new URLSearchParams();
+  successfulRunIds.forEach((id) => params.append('q[]', `id:${id}`));
+
+  const queryString = `/runs?${params.toString()}`;
+  history.push(queryString);
+
+  await showSharedToaster({
+    intent: 'success',
+    message: <div>Launched {successfulRunIds.length} runs</div>,
+    action: {
+      text: 'View',
+      href: history.createHref({pathname: queryString}),
+    },
+  });
+
+  // show list of errors that occurred
+  if (failedRunsErrors.length > 0) {
+    showCustomAlert({body: failedRunsErrors.map((e) => e.message).join('\n\n')});
   }
 }
 
@@ -201,6 +290,65 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
     }
   }
 
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const LAUNCH_MULTIPLE_RUNS_MUTATION = gql`
+  mutation LaunchMultipleRuns($executionParamsList: [ExecutionParams!]!) {
+    launchMultipleRuns(executionParamsList: $executionParamsList) {
+      __typename
+      ... on LaunchMultipleRunsResult {
+        launchMultipleRunsResult {
+          __typename
+          ... on InvalidStepError {
+            invalidStepKey
+          }
+          ... on InvalidOutputError {
+            stepKey
+            invalidOutputName
+          }
+          ... on LaunchRunSuccess {
+            run {
+              id
+              pipeline {
+                name
+              }
+              tags {
+                key
+                value
+              }
+              status
+              runConfigYaml
+              mode
+              resolvedOpSelection
+            }
+          }
+          ... on ConflictingExecutionParamsError {
+            message
+          }
+          ... on PresetNotFoundError {
+            preset
+            message
+          }
+          ... on RunConfigValidationInvalid {
+            pipelineName
+            errors {
+              __typename
+              message
+              path
+              reason
+            }
+          }
+          ... on PipelineNotFoundError {
+            message
+            pipelineName
+          }
+          ...PythonErrorFragment
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
