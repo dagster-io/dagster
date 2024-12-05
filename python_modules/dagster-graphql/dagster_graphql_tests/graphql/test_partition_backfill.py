@@ -687,10 +687,13 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
             assert not result.errors
             assert result.data
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
             # ensure the execution has happened
+            start = time.time()
             while not os.path.exists(path):
                 time.sleep(0.1)
+                assert time.time() - start < 60, "timed out waiting for file"
 
             result = execute_dagster_graphql(
                 graphql_context,
@@ -763,10 +766,13 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
             assert not result.errors
             assert result.data
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
             # ensure the execution has happened
+            start = time.time()
             while not os.path.exists(path):
                 time.sleep(0.1)
+                assert time.time() - start < 60, "timed out waiting for file"
 
             result = execute_dagster_graphql(
                 graphql_context,
