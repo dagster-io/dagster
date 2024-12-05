@@ -1,7 +1,7 @@
 import copy
 from abc import ABC, abstractmethod
 from types import ModuleType
-from typing import TYPE_CHECKING, ClassVar, Dict, Iterable, Mapping, Optional, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Iterable, Mapping, Optional, Type
 
 from dagster._core.errors import DagsterError
 from dagster._utils import snakecase
@@ -22,8 +22,8 @@ class Component(ABC):
         return cls.name or snakecase(cls.__name__)
 
     @classmethod
-    def generate_files(cls) -> None:
-        raise NotImplementedError()
+    def generate_files(cls) -> Optional[Mapping[str, Any]]:
+        pass
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions": ...

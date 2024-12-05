@@ -1,3 +1,4 @@
+import functools
 import os
 import sys
 from pathlib import Path
@@ -79,30 +80,42 @@ def generate_component_type_command(name: str) -> None:
     generate_component_type(context.component_types_root_path, name)
 
 
-@generate_cli.command(name="component")
-@click.argument("component-type", type=str)
-@click.argument("name", type=str)
-def generate_component_command(component_type: str, name: str) -> None:
-    """Generate a Dagster component instance."""
-    if not is_inside_code_location_project(Path(".")):
-        click.echo(
-            click.style(
-                "This command must be run inside a Dagster code location project.", fg="red"
+@click.group()
+def component() -> None: ...
+
+
+# add subcommands for each generate_files classmethod in the registry
+generate_cli.add_command(component)
+for component_name, component_type in __component_registry__.items():
+
+    @component.command(name=component_name)
+    @functools.wraps(component_type.generate_files)
+    def subcommand(**kwargs) -> None:
+        if not is_inside_code_location_project(Path(".")):
+            click.echo(
+                click.style(
+                    "This command must be run inside a Dagster code location project.", fg="red"
+                )
             )
-        )
-        sys.exit(1)
+            sys.exit(1)
 
-    context = CodeLocationProjectContext.from_path(
-        Path.cwd(), ComponentRegistry(__component_registry__)
-    )
-    if not context.has_component_type(component_type):
-        click.echo(
-            click.style(f"No component type `{component_type}` could be resolved.", fg="red")
+        context = CodeLocationProjectContext.from_path(
+            Path.cwd(), ComponentRegistry(__component_registry__)
         )
-        sys.exit(1)
-    elif context.has_component_instance(name):
-        click.echo(click.style(f"A component instance named `{name}` already exists.", fg="red"))
-        sys.exit(1)
+        if not context.has_component_type(component_name):
+            click.echo(
+                click.style(f"No component type `{component_name}` could be resolved.", fg="red")
+            )
+            sys.exit(1)
+        elif context.has_component_instance(component_name):
+            click.echo(
+                click.style(
+                    f"A component instance named `{component_name}` already exists.", fg="red"
+                )
+            )
+            sys.exit(1)
 
-    component_type_cls = context.get_component_type(component_type)
-    generate_component_instance(context.component_instances_root_path, name, component_type_cls)
+        component_type_cls = context.get_component_type(component_name)
+        generate_component_instance(
+            context.component_instances_root_path, component_name, component_type_cls, **kwargs
+        )
