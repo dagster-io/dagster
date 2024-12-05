@@ -29,8 +29,11 @@ from requests.exceptions import RequestException
 from dagster_airbyte.translator import AirbyteWorkspaceData
 from dagster_airbyte.types import AirbyteOutput
 
-AIRBYTE_API_BASE = "https://api.airbyte.com"
-AIRBYTE_API_VERSION = "v1"
+AIRBYTE_REST_API_BASE = "https://api.airbyte.com"
+AIRBYTE_REST_API_VERSION = "v1"
+
+AIRBYTE_CONFIGURATION_API_BASE = "https://cloud.airbyte.com/api"
+AIRBYTE_CONFIGURATION_API_VERSION = "v1"
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
@@ -836,8 +839,12 @@ class AirbyteCloudClient(DagsterModel):
         return get_dagster_logger()
 
     @property
-    def api_base_url(self) -> str:
-        return f"{AIRBYTE_API_BASE}/{AIRBYTE_API_VERSION}"
+    def rest_api_base_url(self) -> str:
+        return f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}"
+
+    @property
+    def configuration_api_base_url(self) -> str:
+        return f"{AIRBYTE_CONFIGURATION_API_BASE}/{AIRBYTE_CONFIGURATION_API_VERSION}"
 
     @property
     def all_additional_request_params(self) -> Mapping[str, Any]:
@@ -862,8 +869,8 @@ class AirbyteCloudClient(DagsterModel):
         response = check.not_none(
             self._make_request(
                 method="POST",
-                endpoint="/applications/token",
-                base_url=self.api_base_url,
+                endpoint="applications/token",
+                base_url=self.rest_api_base_url,
                 data={
                     "client_id": self.client_id,
                     "client_secret": self.client_secret,
@@ -902,6 +909,7 @@ class AirbyteCloudClient(DagsterModel):
         endpoint: str,
         base_url: str,
         data: Optional[Mapping[str, Any]] = None,
+        params: Optional[Mapping[str, Any]] = None,
         include_additional_request_params: bool = True,
     ) -> Mapping[str, Any]:
         """Creates and sends a request to the desired Airbyte REST API endpoint.
@@ -911,13 +919,14 @@ class AirbyteCloudClient(DagsterModel):
             endpoint (str): The Airbyte API endpoint to send this request to.
             base_url (str): The base url to the Airbyte API to use.
             data (Optional[Dict[str, Any]]): JSON-formatted data string to be included in the request.
+            params (Optional[Dict[str, Any]]): JSON-formatted query params to be included in the request.
             include_additional_request_params (bool): Whether to include authorization and user-agent headers
             to the request parameters. Defaults to True.
 
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request
         """
-        url = base_url + endpoint
+        url = f"{base_url}/{endpoint}"
 
         num_retries = 0
         while True:
@@ -926,7 +935,7 @@ class AirbyteCloudClient(DagsterModel):
                     include_additional_request_params=include_additional_request_params
                 )
                 response = session.request(
-                    method=method, url=url, json=data, timeout=self.request_timeout
+                    method=method, url=url, json=data, params=params, timeout=self.request_timeout
                 )
                 response.raise_for_status()
                 return response.json()
@@ -942,12 +951,35 @@ class AirbyteCloudClient(DagsterModel):
         raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
 
     def get_connections(self) -> Mapping[str, Any]:
-        """Fetches all connections of an Airbyte workspace from the Airbyte API."""
-        raise NotImplementedError()
+        """Fetches all connections of an Airbyte workspace from the Airbyte REST API."""
+        return self._make_request(
+            method="GET",
+            endpoint="connections",
+            base_url=self.rest_api_base_url,
+            params={"workspaceIds": self.workspace_id},
+        )
+
+    def get_connection_details(self, connection_id) -> Mapping[str, Any]:
+        """Fetches details about a given connection from the Airbyte Configuration API.
+        The Airbyte Configuration API is an internal and may change in the future.
+        """
+        # Using the Airbyte Configuration API to get the connection details, including streams and their configs.
+        # https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#post-/v1/connections/get
+        # https://github.com/airbytehq/airbyte-platform/blob/v1.0.0/airbyte-api/server-api/src/main/openapi/config.yaml
+        return self._make_request(
+            method="POST",
+            endpoint="connections/get",
+            base_url=self.configuration_api_base_url,
+            data={"connectionId": connection_id},
+        )
 
     def get_destination_details(self, destination_id: str) -> Mapping[str, Any]:
-        """Fetches details about a given destination from the Airbyte API."""
-        raise NotImplementedError()
+        """Fetches details about a given destination from the Airbyte REST API."""
+        return self._make_request(
+            method="GET",
+            endpoint=f"destinations/{destination_id}",
+            base_url=self.rest_api_base_url,
+        )
 
 
 @experimental
