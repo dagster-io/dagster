@@ -12,6 +12,7 @@ from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
+from dagster_components.core.component import component
 from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
 
 
@@ -24,16 +25,13 @@ class DbtGenerateParams(BaseModel):
     project_path: Optional[str] = None
 
 
+@component(name="dbt_project")
 class DbtProjectComponent(Component):
     params_schema = DbtProjectParams
     generate_params_schema = DbtGenerateParams
 
     def __init__(self, dbt_resource: DbtCliResource):
         self.dbt_resource = dbt_resource
-
-    @classmethod
-    def registered_name(cls) -> str:
-        return "dbt_project"
 
     @classmethod
     def from_decl_node(cls, context: ComponentLoadContext, decl_node: ComponentDeclNode) -> Self:

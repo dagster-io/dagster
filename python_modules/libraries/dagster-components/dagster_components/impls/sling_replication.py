@@ -1,15 +1,18 @@
 import os
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Iterator, Optional, Union
 
 import yaml
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.result import MaterializeResult
 from dagster_embedded_elt.sling import SlingResource, sling_assets
 from dagster_embedded_elt.sling.resources import AssetExecutionContext
 from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
+from dagster_components.core.component import component
 from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
 
 
@@ -23,6 +26,7 @@ class SlingReplicationParams(BaseModel):
     op: Optional[OpSpecBaseModel] = None
 
 
+@component(name="sling_replication")
 class SlingReplicationComponent(Component):
     params_schema = SlingReplicationParams
 
@@ -32,10 +36,6 @@ class SlingReplicationComponent(Component):
         self.dirpath = dirpath
         self.resource = resource
         self.op_spec = op_spec
-
-    @classmethod
-    def registered_name(cls) -> str:
-        return "sling_replication"
 
     @classmethod
     def from_decl_node(cls, context: ComponentLoadContext, decl_node: ComponentDeclNode) -> Self:
@@ -52,7 +52,7 @@ class SlingReplicationComponent(Component):
             replication_config=self.dirpath / "replication.yaml",
         )
         def _fn(context: AssetExecutionContext, sling: SlingResource):
-            yield from sling.replicate(context=context)
+            yield from self.execute(context=context, sling=sling)
 
         return Definitions(assets=[_fn], resources={"sling": self.resource})
 
@@ -64,3 +64,8 @@ class SlingReplicationComponent(Component):
                 {"source": {}, "target": {}, "streams": {}},
                 f,
             )
+
+    def execute(
+        self, context: AssetExecutionContext, sling: SlingResource
+    ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+        yield from sling.replicate(context=context)

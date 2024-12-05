@@ -6,7 +6,7 @@ import yaml
 from dagster._generate.generate import generate_project
 from dagster._utils import camelcase, pushd
 
-from dagster_components.core.component import Component
+from dagster_components.core.component import Component, component_registry_key_of
 
 
 class DefsDumper(yaml.Dumper):
@@ -50,6 +50,7 @@ def generate_component_type(root_path: str, name: str) -> None:
         templates_path=os.path.join(os.path.dirname(__file__), "templates", "COMPONENT_TYPE"),
         project_name=name,
         component_type_class_name=camelcase(name),
+        component_type=name,
     )
 
 
@@ -59,6 +60,7 @@ def generate_component_instance(
     click.echo(f"Creating a Dagster component instance at {root_path}/{name}.py.")
 
     component_instance_root_path = os.path.join(root_path, name)
+    component_registry_key = component_registry_key_of(component_type)
     generate_project(
         path=component_instance_root_path,
         name_placeholder="COMPONENT_INSTANCE_NAME_PLACEHOLDER",
@@ -66,10 +68,10 @@ def generate_component_instance(
             os.path.dirname(__file__), "templates", "COMPONENT_INSTANCE_NAME_PLACEHOLDER"
         ),
         project_name=name,
-        component_type=component_type.registered_name(),
+        component_type=component_registry_key,
     )
     with pushd(component_instance_root_path):
-        defs_data: dict = {"component_type": component_type.registered_name()}
+        defs_data: dict = {"component_type": component_registry_key}
         component_params = (
             component_type.generate_files(generate_params)
             if generate_params

@@ -4,8 +4,10 @@ from dagster_components import (
     ComponentRegistry,
     ComponentLoadContext,
     build_defs_from_toplevel_components_folder,
+    component,
 )
 
+@component(name="{{ name }}")
 class {{ component_type_class_name }}(Component):
 
     @classmethod
