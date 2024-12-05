@@ -7,6 +7,7 @@ from subprocess import PIPE, Popen
 from typing import Dict, List, Optional, cast
 
 import boto3
+import botocore
 
 
 @dataclass
@@ -269,6 +270,12 @@ class WaiterMock:
                     return
                 max_attempts -= 1
                 time.sleep(delay)
+            else:
+                raise botocore.exceptions.WaiterError(
+                    name=self.waiter_name,
+                    reason='Max attempts exceeded',
+                    last_response=response,
+                )
 
         else:
             raise NotImplementedError(f"Waiter {self.waiter_name} is not implemented")

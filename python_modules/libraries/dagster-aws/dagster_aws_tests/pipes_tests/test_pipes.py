@@ -26,6 +26,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MarkdownMetadataValue
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.pipes.subprocess import PipesSubprocessClient
@@ -940,23 +941,23 @@ def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
 def test_ecs_pipes_waiter_config(pipes_ecs_client: PipesECSClient):
     with instance_for_test() as instance:
         """
-        Test Exception is thrown when the wait delay is less than the processing time.
+        Test Error is thrown when the wait delay is less than the processing time.
         """
         os.environ.update({"WAIT_DELAY": "1", "WAIT_MAX_ATTEMPTS": "1", "SLEEP_SECONDS": "2"})
         try:
             materialize([ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client})
             assert False
-        except Exception:
+        except DagsterInvariantViolationError:
             assert True
 
         """
-        Test Exception is thrown when the wait attempts * wait delay is less than the processing time.
+        Test Error is thrown when the wait attempts * wait delay is less than the processing time.
         """
         os.environ.update({"WAIT_DELAY": "1", "WAIT_MAX_ATTEMPTS": "2", "SLEEP_SECONDS": "3"})
         try:
             materialize([ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client})
             assert False
-        except Exception:
+        except DagsterInvariantViolationError:
             assert True
 
         """

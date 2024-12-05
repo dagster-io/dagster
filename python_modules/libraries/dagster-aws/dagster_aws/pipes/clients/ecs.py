@@ -298,7 +298,11 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             except KeyError:
                 params["WaiterConfig"] = {"MaxAttempts": waiter_max_attempts}
 
-        waiter.wait(**params)
+        try:
+            waiter.wait(**params)
+        except botocore.exceptions.WaiterError:
+            pass
+
         return self._client.describe_tasks(**params)
 
     def _extract_dagster_metadata(
