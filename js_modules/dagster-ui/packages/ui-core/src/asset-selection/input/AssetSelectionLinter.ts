@@ -20,6 +20,8 @@ export const lintAssetSelection = (text: string) => {
   parser.removeErrorListeners(); // Remove default console error listener
   parser.addErrorListener(errorListener);
 
+  parser.start();
+
   // Map syntax errors to CodeMirror's lint format
   const lintErrors = errorListener.errors.map((error) => ({
     message: error.message.replace('<EOF>, ', ''),
@@ -27,8 +29,6 @@ export const lintAssetSelection = (text: string) => {
     from: CodeMirror.Pos(error.line, error.column),
     to: CodeMirror.Pos(error.line, text.length),
   }));
-
-  console.log({lintErrors});
 
   return lintErrors;
 };
