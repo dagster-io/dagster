@@ -610,8 +610,10 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
             # ensure the execution has happened
+            start = time.time()
             while not os.path.exists(path):
                 time.sleep(0.1)
+                assert time.time() - start < 60, "timed out waiting for file"
 
         runs = graphql_context.instance.get_runs(RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}))
         assert len(runs) == 1
