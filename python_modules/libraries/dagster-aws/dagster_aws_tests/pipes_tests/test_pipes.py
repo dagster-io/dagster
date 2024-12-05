@@ -862,8 +862,8 @@ def ecs_asset(context: AssetExecutionContext, pipes_ecs_client: PipesECSClient):
                 ]
             },
         },
-        waiter_delay=os.getenv("WAIT_DELAY", 6),
-        waiter_max_attempts=os.getenv("WAIT_MAX_ATTEMPTS", 1000000),
+        waiter_delay=int(os.getenv("WAIT_DELAY", "6")),
+        waiter_max_attempts=int(os.getenv("WAIT_MAX_ATTEMPTS", "1000000")),
     ).get_results()
 
 
