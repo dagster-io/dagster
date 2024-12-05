@@ -8,6 +8,8 @@ import {
   DialogFooter,
   Group,
   Icon,
+  NonIdealState,
+  NonIdealStateWrapper,
   Spinner,
   Subheading,
   Tag,
@@ -75,6 +77,10 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   const [sensorDryRun] = useMutation<SensorDryRunMutation, SensorDryRunMutationVariables>(
     EVALUATE_SENSOR_MUTATION,
   );
+  const [setCursorMutation] = useMutation<
+    SetSensorCursorMutation,
+    SetSensorCursorMutationVariables
+  >(SET_CURSOR_MUTATION);
 
   const [cursor, setCursor] = useState(currentCursor);
 
@@ -131,109 +137,16 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     setSubmitting(false);
   }, [sensorDryRun, sensorSelector, cursor, name]);
 
-  const launchMultipleRunsWithTelemetry = useLaunchMultipleRunsWithTelemetry();
-
-  const canLaunchAll = useMemo(() => {
-    return executionParamsList != null && executionParamsList.length > 0;
-  }, [executionParamsList]);
-
-  const onLaunchAll = useCallback(async () => {
-    if (!canLaunchAll) {
-      return;
-    }
-    setLaunching(true);
-
-    try {
-      if (executionParamsList) {
-        await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    setLaunching(false);
-    onClose();
-  }, [canLaunchAll, executionParamsList, launchMultipleRunsWithTelemetry, onClose]);
-
-  const buttons = useMemo(() => {
-    if (launching) {
-      return <Box flex={{direction: 'row', gap: 8}}></Box>;
-    }
-
-    if (sensorExecutionData || error) {
-      return (
-        <Box flex={{direction: 'row', gap: 8}}>
-          <Tooltip
-            canShow={!canLaunchAll || launching}
-            content="Preparing to launch runs"
-            placement="top-end"
-          >
-            <Button disabled={!canLaunchAll || launching} onClick={onLaunchAll}>
-              <div>Launch all</div>
-            </Button>
-          </Tooltip>
-          <Button
-            data-testid={testId('test-again')}
-            onClick={() => {
-              setSensorExecutionData(null);
-              setError(null);
-            }}
-          >
-            Test again
-          </Button>
-          <Button intent="primary" onClick={onClose}>
-            Close
-          </Button>
-        </Box>
-      );
-    }
-    if (submitting) {
-      return (
-        <Box flex={{direction: 'row', gap: 8}}>
-          <Button onClick={onClose}>Cancel</Button>
-        </Box>
-      );
-    } else {
-      return (
-        <Box flex={{direction: 'row', gap: 8}}>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button onClick={submitTest} intent="primary" data-testid={testId('continue')}>
-            Continue
-          </Button>
-        </Box>
-      );
-    }
-  }, [
-    launching,
-    sensorExecutionData,
-    error,
-    submitting,
-    canLaunchAll,
-    onLaunchAll,
-    onClose,
-    submitTest,
-  ]);
-
-  const [cursorState, setCursorState] = useState<'Unpersisted' | 'Persisting' | 'Persisted'>(
-    'Unpersisted',
-  );
-  const [setCursorMutation] = useMutation<
-    SetSensorCursorMutation,
-    SetSensorCursorMutationVariables
-  >(SET_CURSOR_MUTATION);
-
-  const onPersistCursorValue = useCallback(async () => {
+  const onCommitTickResult = useCallback(async () => {
     const cursor = sensorExecutionData?.evaluationResult?.cursor;
     if (!cursor) {
-      assertUnreachable('Did not expect to get here' as never);
+      return;
     }
-    setCursorState('Persisting');
     const {data} = await setCursorMutation({
       variables: {sensorSelector, cursor},
     });
     if (data?.setSensorCursor.__typename === 'Sensor') {
       await showSharedToaster({message: 'Cursor value updated', intent: 'success'});
-      setCursorState('Persisted');
     } else if (data?.setSensorCursor) {
       const error = data.setSensorCursor;
       await showSharedToaster({
@@ -264,6 +177,144 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     }
   }, [sensorExecutionData?.evaluationResult?.cursor, sensorSelector, setCursorMutation]);
 
+  const launchMultipleRunsWithTelemetry = useLaunchMultipleRunsWithTelemetry();
+
+  const canLaunchAll = useMemo(() => {
+    return executionParamsList != null && executionParamsList.length > 0;
+  }, [executionParamsList]);
+
+  const onLaunchAll = useCallback(async () => {
+    if (!canLaunchAll) {
+      return;
+    }
+    setLaunching(true);
+
+    try {
+      if (executionParamsList) {
+        await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
+        onCommitTickResult(); // persist tick
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    setLaunching(false);
+    onClose();
+  }, [
+    canLaunchAll,
+    executionParamsList,
+    launchMultipleRunsWithTelemetry,
+    onClose,
+    onCommitTickResult,
+  ]);
+
+  const leftButtons = useMemo(() => {
+    if (launching) {
+      return null;
+    }
+
+    if (sensorExecutionData || error) {
+      return (
+        <Button
+          icon={<Icon name="settings_backup_restore" />}
+          data-testid={testId('try-again')}
+          onClick={() => {
+            setSensorExecutionData(null);
+            setError(null);
+          }}
+        >
+          Try again
+        </Button>
+      );
+    } else {
+      return null;
+    }
+  }, [launching, sensorExecutionData, error]);
+
+  const rightButtons = useMemo(() => {
+    if (launching) {
+      return <Box flex={{direction: 'row', gap: 8}}></Box>;
+    }
+
+    if (sensorExecutionData || error) {
+      const runRequests = sensorExecutionData?.evaluationResult?.runRequests;
+      const numRunRequests = runRequests?.length || 0;
+      const didSkip = !error && numRunRequests === 0;
+
+      if (error) {
+        return (
+          <Box flex={{direction: 'row', gap: 8}}>
+            <Button onClick={onClose}>Close</Button>
+          </Box>
+        );
+      } else if (didSkip) {
+        return (
+          <Box flex={{direction: 'row', gap: 8}}>
+            <Button onClick={onClose}>Close</Button>
+
+            <Tooltip content="Commits tick result" placement="top-end">
+              <Button
+                icon={<Icon name="check_filled" />}
+                intent="primary"
+                onClick={onCommitTickResult}
+                data-testid={testId('commit-tick-result')}
+              >
+                <div>Commit tick result</div>
+              </Button>
+            </Tooltip>
+          </Box>
+        );
+      } else {
+        return (
+          <Box flex={{direction: 'row', gap: 8}}>
+            <Button onClick={onClose}>Close</Button>
+            <Tooltip
+              canShow={!canLaunchAll || launching}
+              content="Launches all runs and commits tick result"
+              placement="top-end"
+            >
+              <Button
+                icon={<Icon name="check_filled" />}
+                intent="primary"
+                disabled={!canLaunchAll || launching}
+                onClick={onLaunchAll}
+                data-testid={testId('launch-all')}
+              >
+                <div>Launch all & commit tick result</div>
+              </Button>
+            </Tooltip>
+          </Box>
+        );
+      }
+    }
+    if (submitting) {
+      return (
+        <Box flex={{direction: 'row', gap: 8}}>
+          <Button onClick={onClose}>Cancel</Button>
+        </Box>
+      );
+    } else {
+      return (
+        <Box flex={{direction: 'row', gap: 8}}>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={submitTest} intent="primary" data-testid={testId('continue')}>
+            Continue
+          </Button>
+        </Box>
+      );
+    }
+  }, [
+    launching,
+    sensorExecutionData,
+    error,
+    submitting,
+    onClose,
+    onCommitTickResult,
+    canLaunchAll,
+    onLaunchAll,
+    submitTest,
+  ]);
+
   const content = useMemo(() => {
     if (launching) {
       return (
@@ -281,80 +332,71 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
         sensorExecutionData?.evaluationResult?.dynamicPartitionsRequests;
       return (
         <Box flex={{direction: 'column', gap: 8}}>
+          <Grid>
+            <div>
+              <Subheading>Result</Subheading>
+              <Box flex={{grow: 1, alignItems: 'center'}}>
+                <div>
+                  {error ? (
+                    <Tag intent="danger">Failed</Tag>
+                  ) : numRunRequests ? (
+                    <Tag intent="success">{numRunRequests} run requests</Tag>
+                  ) : (
+                    <Tag intent="warning">Skipped</Tag>
+                  )}
+                </div>
+              </Box>
+            </div>
+            <div>
+              <Subheading>Used cursor value</Subheading>
+              <pre>{cursor?.length ? cursor : 'None'}</pre>
+            </div>
+          </Grid>
           <Box>
-            <Grid>
-              <div>
-                <Subheading>Result</Subheading>
-                <Box flex={{grow: 1, alignItems: 'center'}}>
-                  <div>
-                    {error ? (
-                      <Tag intent="danger">Failed</Tag>
-                    ) : numRunRequests ? (
-                      <Tag intent="success">{numRunRequests} run requests</Tag>
-                    ) : (
-                      <Tag intent="warning">Skipped</Tag>
-                    )}
-                  </div>
-                </Box>
-              </div>
-              <div>
-                <Subheading>Used cursor value</Subheading>
-                <pre>{cursor?.length ? cursor : 'None'}</pre>
-              </div>
-              <div>
-                <Subheading>Computed cursor value</Subheading>
-                <pre>
-                  {sensorExecutionData?.evaluationResult?.cursor?.length
-                    ? sensorExecutionData?.evaluationResult.cursor
-                    : error
-                      ? 'Error'
-                      : 'None'}
-                </pre>
-                {error ||
-                (currentCursor ?? '') ===
-                  (sensorExecutionData?.evaluationResult?.cursor ?? '') ? null : (
-                  <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                    <Button
-                      disabled={['Persisting', 'Persisted'].includes(cursorState)}
-                      loading={cursorState === 'Persisting'}
-                      onClick={onPersistCursorValue}
-                    >
-                      <span data-testid={testId('persist-cursor')}>
-                        {cursorState === 'Persisting'
-                          ? 'Persisting'
-                          : cursorState === 'Persisted'
-                            ? 'Persisted'
-                            : 'Persist computed cursor value'}
-                      </span>
-                    </Button>
-                    {cursorState === 'Persisted' ? (
-                      <Icon name="check_circle" color={Colors.accentGreen()} />
-                    ) : null}
-                  </Box>
-                )}
-              </div>
-            </Grid>
             {error ? (
               <div>
                 <PythonErrorInfo error={error} />
               </div>
             ) : null}
             {didSkip ? (
-              <div>
-                <Subheading>Skip reason</Subheading>
+              <Box flex={{direction: 'column', gap: 8}}>
+                <Subheading style={{marginBottom: 8}}>Requested runs (0)</Subheading>
                 <div>
-                  {sensorExecutionData?.evaluationResult?.skipReason || 'No skip reason was output'}
+                  <SkipReasonNonIdealStateWrapper>
+                    <NonIdealState
+                      icon="missing"
+                      title="No runs requested"
+                      description={
+                        <>
+                          <span>
+                            The sensor function was successfully evaluated but didn&apos;t return
+                            any run requests.
+                          </span>
+                          <span>
+                            <br />
+                            Skip reason:{' '}
+                            {sensorExecutionData?.evaluationResult?.skipReason
+                              ? `"${sensorExecutionData.evaluationResult.skipReason}"`
+                              : 'No skip reason was output'}
+                          </span>
+                        </>
+                      }
+                    />
+                  </SkipReasonNonIdealStateWrapper>
                 </div>
-              </div>
+              </Box>
             ) : null}
             {numRunRequests && runRequests ? (
-              <RunRequestTable
-                runRequests={runRequests}
-                name={name}
-                jobName={jobName}
-                isJob={true}
-                repoAddress={repoAddress}
-              />
+              <Box flex={{direction: 'column', gap: 8}}>
+                <Subheading>Requested runs ({numRunRequests})</Subheading>
+                <RunRequestTable
+                  runRequests={runRequests}
+                  name={name}
+                  jobName={jobName}
+                  isJob={true}
+                  repoAddress={repoAddress}
+                />
+              </Box>
             ) : null}
             {dynamicPartitionRequests?.length ? (
               <div style={{marginTop: '24px'}}>
@@ -362,6 +404,17 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
               </div>
             ) : null}
           </Box>
+
+          <ComputedCursorGrid>
+            <Subheading>Computed cursor value</Subheading>
+            <pre>
+              {sensorExecutionData?.evaluationResult?.cursor?.length
+                ? sensorExecutionData?.evaluationResult.cursor
+                : error
+                  ? 'Error'
+                  : 'None'}
+            </pre>
+          </ComputedCursorGrid>
         </Box>
       );
     }
@@ -396,26 +449,16 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
         </Box>
       );
     }
-  }, [
-    sensorExecutionData,
-    error,
-    submitting,
-    launching,
-    currentCursor,
-    cursorState,
-    onPersistCursorValue,
-    name,
-    jobName,
-    repoAddress,
-    cursor,
-  ]);
+  }, [sensorExecutionData, error, submitting, launching, name, jobName, repoAddress, cursor]);
 
   return (
     <>
       <DialogBody>
         <div style={{minHeight: '300px'}}>{content}</div>
       </DialogBody>
-      <DialogFooter topBorder>{buttons}</DialogFooter>
+      <DialogFooter topBorder left={leftButtons}>
+        {rightButtons}
+      </DialogFooter>
     </>
   );
 };
@@ -455,10 +498,9 @@ export const EVALUATE_SENSOR_MUTATION = gql`
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   padding-bottom: 12px;
   border-bottom: 1px solid ${Colors.keylineDefault()};
-  margin-bottom: 12px;
   ${Subheading} {
     padding-bottom: 4px;
     display: block;
@@ -468,5 +510,29 @@ const Grid = styled.div`
   }
   button {
     margin-top: 4px;
+  }
+`;
+
+const ComputedCursorGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  padding-bottom: 12px;
+  ${Subheading} {
+    padding-bottom: 4px;
+    display: block;
+  }
+  pre {
+    margin: 0;
+  }
+  button {
+    margin-top: 4px;
+  }
+`;
+
+const SkipReasonNonIdealStateWrapper = styled.div`
+  ${NonIdealStateWrapper} {
+    margin: auto !important;
+    width: unset !important;
+    max-width: unset !important;
   }
 `;

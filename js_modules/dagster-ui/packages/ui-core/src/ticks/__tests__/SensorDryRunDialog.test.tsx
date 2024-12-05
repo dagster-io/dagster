@@ -44,11 +44,6 @@ describe('SensorDryRunTest', () => {
       expect(screen.queryByText('Skipped')).toBe(null);
       expect(screen.queryByText('Failed')).toBe(null);
     });
-    await userEvent.click(screen.getByTestId('persist-cursor'));
-    expect(screen.getByText('Persisting')).toBeVisible();
-    await waitFor(() => {
-      expect(screen.getByText('Persisted')).toBeVisible();
-    });
   });
 
   it('renders errors', async () => {
@@ -71,7 +66,7 @@ describe('SensorDryRunTest', () => {
       expect(screen.getByText('Failed')).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
     });
-    await userEvent.click(screen.getByTestId('test-again'));
+    await userEvent.click(screen.getByTestId('try-again'));
     expect(screen.queryByText('Failed')).toBe(null);
     expect(screen.queryByText('Skipped')).toBe(null);
     expect(screen.getByTestId('cursor-input')).toBeVisible();
