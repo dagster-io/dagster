@@ -41,6 +41,7 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import DynamicPartitionsDefinition, PartitionedConfig
 from dagster._core.definitions.selector import (
+    JobSubsetSelector,
     PartitionRangeSelector,
     PartitionsByAssetSelector,
     PartitionsSelector,
@@ -53,11 +54,13 @@ from dagster._core.execution.asset_backfill import (
     get_asset_backfill_run_chunk_size,
 )
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.remote_representation import (
     InProcessCodeLocationOrigin,
     RemoteRepository,
     RemoteRepositoryOrigin,
 )
+from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -69,6 +72,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
     BACKFILL_ID_TAG,
+    BACKFILL_TAGS,
     MAX_RETRIES_TAG,
     PARTITION_NAME_TAG,
 )
@@ -3164,3 +3168,85 @@ def test_asset_backfill_retries_make_downstreams_runnable(
         backfill.asset_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets
         == 0
     )
+
+
+def test_run_retry_not_part_of_completed_backfill(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    code_location: CodeLocation,
+    remote_repo: RemoteRepository,
+):
+    backfill_id = "run_retries_backfill"
+    partition_keys = static_partitions.get_partition_keys()
+    asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=workspace_context.create_request_context().asset_graph,
+            backfill_id=backfill_id,
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_start(instance, timeout=30)
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    assert instance.get_runs_count() == 3
+    runs = reversed(list(instance.get_runs()))
+    for run in runs:
+        assert run.tags[BACKFILL_ID_TAG] == backfill_id
+        assert run.tags["custom_tag_key"] == "custom_tag_value"
+        assert step_succeeded(instance, run, "foo")
+        assert step_succeeded(instance, run, "reusable")
+        assert step_succeeded(instance, run, "bar")
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+
+    # simulate a retry of a run
+    run_to_retry = instance.get_runs()[0]
+    selector = JobSubsetSelector(
+        location_name=code_location.name,
+        repository_name=remote_repo.name,
+        job_name=run_to_retry.job_name,
+        asset_selection=run_to_retry.asset_selection,
+        op_selection=None,
+    )
+    remote_job = code_location.get_job(selector)
+    retried_run = instance.create_reexecuted_run(
+        parent_run=run_to_retry,
+        code_location=code_location,
+        remote_job=remote_job,
+        strategy=ReexecutionStrategy.ALL_STEPS,
+        run_config=run_to_retry.run_config,
+        use_parent_run_tags=True,  # ensures that the logic for not copying over backfill tags is tested
+    )
+
+    for tag in BACKFILL_TAGS:
+        assert tag not in retried_run.tags.keys()
+
+    # Since the backfill is alerady complete, it should not be processed by the backfill daemon and
+    # should remain in a completed state
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+
+    assert retried_run.run_id not in [
+        r.run_id for r in instance.get_runs(filters=RunsFilter.for_backfill(backfill_id))
+    ]
