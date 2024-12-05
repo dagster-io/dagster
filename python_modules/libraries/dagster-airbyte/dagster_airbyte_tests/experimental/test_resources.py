@@ -1,9 +1,17 @@
 import json
 from datetime import datetime
 from unittest import mock
+from typing import Optional
 
 import responses
 from dagster_airbyte import AirbyteCloudWorkspace
+
+from dagster_airbyte.resources import (
+    AIRBYTE_REST_API_BASE,
+    AIRBYTE_REST_API_VERSION,
+    AIRBYTE_CONFIGURATION_API_BASE,
+    AIRBYTE_CONFIGURATION_API_VERSION,
+)
 
 from dagster_airbyte_tests.experimental.conftest import (
     TEST_ACCESS_TOKEN,
@@ -13,6 +21,29 @@ from dagster_airbyte_tests.experimental.conftest import (
     TEST_DESTINATION_ID,
     TEST_WORKSPACE_ID,
 )
+
+
+def assert_token_call_and_split_calls(calls: responses.CallList):
+    access_token_call = calls[0]
+    assert "Authorization" not in access_token_call.request.headers
+    access_token_call_body = json.loads(access_token_call.request.body.decode("utf-8"))
+    assert access_token_call_body["client_id"] == TEST_CLIENT_ID
+    assert access_token_call_body["client_secret"] == TEST_CLIENT_SECRET
+    assert access_token_call.request.url == f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/applications/token"
+    return calls[1:]
+
+
+def assert_rest_api_call(call: responses.Call, endpoint: str):
+    rest_api_url = call.request.url.split("?")[0]
+    assert rest_api_url == f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/{endpoint}"
+    assert call.request.headers["Authorization"] == f"Bearer {TEST_ACCESS_TOKEN}"
+
+
+def assert_configuration_api_call(call: responses.Call, endpoint: str, object_id: Optional[str] = None):
+    assert call.request.url == f"{AIRBYTE_CONFIGURATION_API_BASE}/{AIRBYTE_CONFIGURATION_API_VERSION}/{endpoint}"
+    if object_id:
+        assert object_id in call.request.body.decode()
+    assert call.request.headers["Authorization"] == f"Bearer {TEST_ACCESS_TOKEN}"
 
 
 def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
@@ -45,14 +76,10 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
         client._make_request(method="GET", endpoint="test", base_url=client.rest_api_base_url)  # noqa
 
         assert len(base_api_mocks.calls) == 2
-        access_token_call = base_api_mocks.calls[0]
-        jobs_api_call = base_api_mocks.calls[1]
+        api_calls = assert_token_call_and_split_calls(calls=base_api_mocks.calls)
 
-        assert "Authorization" not in access_token_call.request.headers
-        access_token_call_body = json.loads(access_token_call.request.body.decode("utf-8"))
-        assert access_token_call_body["client_id"] == TEST_CLIENT_ID
-        assert access_token_call_body["client_secret"] == TEST_CLIENT_SECRET
-        assert jobs_api_call.request.headers["Authorization"] == f"Bearer {TEST_ACCESS_TOKEN}"
+        assert len(api_calls) == 1
+        assert_rest_api_call(call=api_calls[0], endpoint="test")
 
         base_api_mocks.calls.reset()
 
@@ -61,9 +88,7 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
         client._make_request(method="GET", endpoint="test", base_url=client.rest_api_base_url)  # noqa
 
         assert len(base_api_mocks.calls) == 1
-        jobs_api_call = base_api_mocks.calls[0]
-
-        assert jobs_api_call.request.headers["Authorization"] == f"Bearer {TEST_ACCESS_TOKEN}"
+        assert_rest_api_call(call=base_api_mocks.calls[0], endpoint="test")
 
         base_api_mocks.calls.reset()
 
@@ -73,14 +98,10 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
         client._make_request(method="GET", endpoint="test", base_url=client.rest_api_base_url)  # noqa
 
         assert len(base_api_mocks.calls) == 2
-        access_token_call = base_api_mocks.calls[0]
-        jobs_api_call = base_api_mocks.calls[1]
+        api_calls = assert_token_call_and_split_calls(calls=base_api_mocks.calls)
 
-        assert "Authorization" not in access_token_call.request.headers
-        access_token_call_body = json.loads(access_token_call.request.body.decode("utf-8"))
-        assert access_token_call_body["client_id"] == TEST_CLIENT_ID
-        assert access_token_call_body["client_secret"] == TEST_CLIENT_SECRET
-        assert jobs_api_call.request.headers["Authorization"] == f"Bearer {TEST_ACCESS_TOKEN}"
+        assert len(api_calls) == 1
+        assert_rest_api_call(call=api_calls[0], endpoint="test")
 
 
 def test_basic_resource_request(
@@ -100,11 +121,8 @@ def test_basic_resource_request(
 
     assert len(fetch_workspace_data_api_mocks.calls) == 4
     # The first call is to create the access token
-    assert "Authorization" not in fetch_workspace_data_api_mocks.calls[0].request.headers
-    # The two next calls are actual API calls
-    assert "connections" in fetch_workspace_data_api_mocks.calls[1].request.url
-    assert "connections/get" in fetch_workspace_data_api_mocks.calls[2].request.url
-    assert TEST_CONNECTION_ID in fetch_workspace_data_api_mocks.calls[2].request.body.decode()
-    assert (
-        f"destinations/{TEST_DESTINATION_ID}" in fetch_workspace_data_api_mocks.calls[3].request.url
-    )
+    api_calls = assert_token_call_and_split_calls(calls=fetch_workspace_data_api_mocks.calls)
+    # The next calls are actual API calls
+    assert_rest_api_call(call=api_calls[0], endpoint="connections")
+    assert_configuration_api_call(call=api_calls[1], endpoint="connections/get", object_id=TEST_CONNECTION_ID)
+    assert_rest_api_call(call=api_calls[2], endpoint=f"destinations/{TEST_DESTINATION_ID}")

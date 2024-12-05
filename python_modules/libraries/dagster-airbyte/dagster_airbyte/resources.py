@@ -960,9 +960,12 @@ class AirbyteCloudClient(DagsterModel):
         )
 
     def get_connection_details(self, connection_id) -> Mapping[str, Any]:
-        """Fetches details about a given connection from the Airbyte Configuration API."""
+        """Fetches details about a given connection from the Airbyte Configuration API.
+        The Airbyte Configuration API is an internal and may change in the future.
+        """
         # Using the Airbyte Configuration API to get the connection details, including streams and their configs.
         # https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#post-/v1/connections/get
+        # https://github.com/airbytehq/airbyte-platform/blob/v1.0.0/airbyte-api/server-api/src/main/openapi/config.yaml
         return self._make_request(
             method="POST",
             endpoint="connections/get",

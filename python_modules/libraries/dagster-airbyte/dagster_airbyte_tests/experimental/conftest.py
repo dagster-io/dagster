@@ -15,6 +15,7 @@ TEST_CLIENT_SECRET = "some_client_secret"
 
 TEST_ACCESS_TOKEN = "some_access_token"
 
+# Taken from the examples in the Airbyte REST API documentation
 TEST_DESTINATION_ID = "18dccc91-0ab1-4f72-9ed7-0b8fc27c5826"
 TEST_CONNECTION_ID = "9924bcd0-99be-453d-ba47-c2c9766f7da5"
 
@@ -47,6 +48,7 @@ SAMPLE_CONNECTIONS = {
 
 # Taken from Airbyte Configuration API documentation
 # https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#post-/v1/connections/get
+# https://github.com/airbytehq/airbyte-platform/blob/v1.0.0/airbyte-api/server-api/src/main/openapi/config.yaml
 SAMPLE_CONNECTION_DETAILS = {
     "connectionId": TEST_CONNECTION_ID,
     "name": "string",
