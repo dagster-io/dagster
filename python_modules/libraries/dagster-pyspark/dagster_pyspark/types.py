@@ -170,7 +170,7 @@ WriteCompressionParquetOptions = Enum(
                             If None is set, ``true`` is used by default.
                         """,
                     ),
-                    "ignoreLeadingWhitespace": Field(
+                    "ignoreLeadingWhiteSpace": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -178,7 +178,7 @@ WriteCompressionParquetOptions = Enum(
                             If None is set, it uses the default value, ``false``.
                         """,
                     ),
-                    "ignoreTrailingWhitespace": Field(
+                    "ignoreTrailingWhiteSpace": Field(
                         Bool,
                         is_required=False,
                         description="""
