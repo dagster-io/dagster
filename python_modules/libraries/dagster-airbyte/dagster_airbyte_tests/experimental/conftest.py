@@ -8,6 +8,7 @@ from dagster_airbyte.resources import (
     AIRBYTE_REST_API_BASE,
     AIRBYTE_REST_API_VERSION,
 )
+from dagster_airbyte.translator import AirbyteConnectionTableProps
 
 TEST_WORKSPACE_ID = "some_workspace_id"
 TEST_CLIENT_ID = "some_client_id"
@@ -25,6 +26,17 @@ TEST_STREAM_PREFIX = "test_prefix_"
 TEST_STREAM_NAME = "test_stream"
 TEST_SELECTED = True
 TEST_JSON_SCHEMA = {}
+
+TEST_AIRBYTE_CONNECTION_TABLE_PROPS = AirbyteConnectionTableProps(
+    table_name=f"{TEST_STREAM_PREFIX}{TEST_STREAM_NAME}",
+    stream_prefix=TEST_STREAM_PREFIX,
+    stream_name=TEST_STREAM_NAME,
+    connection_id=TEST_CONNECTION_ID,
+    connection_name=TEST_CONNECTION_NAME,
+    json_schema=TEST_JSON_SCHEMA,
+    database=TEST_DESTINATION_DATABASE,
+    schema=TEST_DESTINATION_SCHEMA,
+)
 
 
 # Taken from Airbyte REST API documentation

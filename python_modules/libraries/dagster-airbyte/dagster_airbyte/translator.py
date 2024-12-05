@@ -1,4 +1,4 @@
-from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, List, Mapping, Optional, Sequence
 
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -9,7 +9,8 @@ from dagster._utils.cached_method import cached_method
 from dagster_airbyte.utils import get_airbyte_connection_table_name
 
 
-class AirbyteConnectionTableProps(NamedTuple):
+@record
+class AirbyteConnectionTableProps:
     table_name: str
     stream_prefix: Optional[str]
     stream_name: str
