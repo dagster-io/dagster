@@ -1,7 +1,13 @@
 import responses
 from dagster._config.field_utils import EnvVar
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.test_utils import environ
-from dagster_fivetran import FivetranWorkspace, load_fivetran_asset_specs
+from dagster_fivetran import (
+    DagsterFivetranTranslator,
+    FivetranConnectorTableProps,
+    FivetranWorkspace,
+    load_fivetran_asset_specs,
+)
 from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
 from dagster_fivetran.translator import FivetranMetadataSet
 
@@ -112,3 +118,37 @@ def test_cached_load_spec_with_asset_factory(
         # then load_fivetran_asset_specs is called once per connector ID in fivetran_assets
         build_fivetran_assets_definitions(workspace=resource)
         assert len(fetch_workspace_data_api_mocks.calls) == 4
+
+
+class MyCustomTranslator(DagsterFivetranTranslator):
+    def get_asset_spec(self, data: FivetranConnectorTableProps) -> AssetSpec:
+        default_spec = super().get_asset_spec(data)
+        return default_spec.replace_attributes(
+            key=default_spec.key.with_prefix("prefix"),
+            metadata={**default_spec.metadata, "custom": "metadata"},
+        )
+
+
+def test_translator_custom_metadata(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
+        workspace = FivetranWorkspace(
+            account_id=TEST_ACCOUNT_ID,
+            api_key=EnvVar("FIVETRAN_API_KEY"),
+            api_secret=EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        all_asset_specs = load_fivetran_asset_specs(
+            workspace=workspace, dagster_fivetran_translator=MyCustomTranslator()
+        )
+        asset_spec = next(spec for spec in all_asset_specs)
+
+        assert "custom" in asset_spec.metadata
+        assert asset_spec.metadata["custom"] == "metadata"
+        assert asset_spec.key.path == [
+            "prefix",
+            "schema_name_in_destination_1",
+            "table_name_in_destination_1",
+        ]
+        assert "dagster/kind/fivetran" in asset_spec.tags

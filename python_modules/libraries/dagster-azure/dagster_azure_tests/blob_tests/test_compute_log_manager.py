@@ -57,7 +57,7 @@ def test_compute_log_manager(
                 container=container,
                 prefix="my_prefix",
                 local_dir=temp_dir,
-                secret_key=credential,
+                secret_credential=credential,
             )
             instance = DagsterInstance(
                 instance_type=InstanceType.PERSISTENT,
@@ -122,7 +122,10 @@ compute_logs:
   config:
     storage_account: "{storage_account}"
     container: {container}
-    secret_key: {credential}
+    secret_credential:
+        client_id: "{credential['client_id']}"
+        client_secret: "{credential['client_secret']}"
+        tenant_id: "{credential['tenant_id']}"
     local_dir: "/tmp/cool"
     prefix: "{prefix}"
 """
@@ -149,7 +152,7 @@ def test_prefix_filter(mock_create_blob_client, storage_account, container, cred
             container=container,
             prefix=blob_prefix,
             local_dir=temp_dir,
-            secret_key=credential,
+            secret_credential=credential,
         )
         log_key = ["arbitrary", "log", "key"]
         with manager.open_log_stream(log_key, ComputeIOType.STDERR) as write_stream:
@@ -178,7 +181,7 @@ def test_get_log_keys_for_log_key_prefix(
             container=container,
             prefix=blob_prefix,
             local_dir=temp_dir,
-            secret_key=credential,
+            secret_credential=credential,
         )
         log_key_prefix = ["test_log_bucket", evaluation_time.strftime("%Y%m%d_%H%M%S")]
 
@@ -254,7 +257,7 @@ class TestAzureComputeLogManager(TestComputeLogManager):
                 container=container,
                 prefix="my_prefix",
                 local_dir=temp_dir,
-                secret_key=credential,
+                secret_credential=credential,
             )
 
     # for streaming tests
@@ -283,7 +286,7 @@ class TestAzureComputeLogManager(TestComputeLogManager):
                 container=container,
                 prefix="my_prefix",
                 local_dir=temp_dir,
-                secret_key=credential,
+                secret_credential=credential,
                 upload_interval=1,
             )
 

@@ -17,6 +17,7 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
+from dagster._annotations import experimental
 from dagster._config.pythonic_config import infer_schema_from_config_class
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.cached_method import cached_method
@@ -24,6 +25,7 @@ from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field, PrivateAttr
 from requests.exceptions import RequestException
 
+from dagster_airbyte.translator import AirbyteWorkspaceData
 from dagster_airbyte.types import AirbyteOutput
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
@@ -791,3 +793,79 @@ def airbyte_cloud_resource(context) -> AirbyteCloudResource:
 
     """
     return AirbyteCloudResource.from_resource_context(context)
+
+
+# -------------
+# Resources v2
+# -------------
+
+
+@experimental
+class AirbyteCloudClient:
+    """This class exposes methods on top of the Airbyte APIs for Airbyte Cloud."""
+
+    _access_token_value: Optional[str] = PrivateAttr(default=None)
+    _access_token_timestamp: Optional[float] = PrivateAttr(default=None)
+
+    def __init__(
+        self,
+        workspace_id: str,
+        client_id: str,
+        client_secret: str,
+    ):
+        self.workspace_id = workspace_id
+        self.client_id = client_id
+        self.client_secret = client_secret
+
+    @property
+    @cached_method
+    def _log(self) -> logging.Logger:
+        return get_dagster_logger()
+
+    @property
+    def api_base_url(self) -> str:
+        raise NotImplementedError()
+
+    def _make_request(
+        self, method: str, endpoint: str, data: Optional[str] = None
+    ) -> Mapping[str, Any]:
+        raise NotImplementedError()
+
+    def get_connections(self) -> Mapping[str, Any]:
+        """Fetches all connections of an Airbyte workspace from the Airbyte API."""
+        raise NotImplementedError()
+
+    def get_destination_details(self, destination_id: str) -> Mapping[str, Any]:
+        """Fetches details about a given destination from the Airbyte API."""
+        raise NotImplementedError()
+
+
+@experimental
+class AirbyteCloudWorkspace(ConfigurableResource):
+    """This class represents a Airbyte Cloud workspace and provides utilities
+    to interact with Airbyte APIs.
+    """
+
+    workspace_id: str = Field(..., description="The Airbyte Cloud workspace ID")
+    client_id: str = Field(..., description="The Airbyte Cloud client ID.")
+    client_secret: str = Field(..., description="The Airbyte Cloud client secret.")
+
+    _client: AirbyteCloudClient = PrivateAttr(default=None)
+
+    @cached_method
+    def get_client(self) -> AirbyteCloudClient:
+        return AirbyteCloudClient(
+            workspace_id=self.workspace_id,
+            client_id=self.client_id,
+            client_secret=self.client_secret,
+        )
+
+    def fetch_airbyte_workspace_data(
+        self,
+    ) -> AirbyteWorkspaceData:
+        """Retrieves all Airbyte content from the workspace and returns it as a AirbyteWorkspaceData object.
+
+        Returns:
+            AirbyteWorkspaceData: A snapshot of the Airbyte workspace's content.
+        """
+        raise NotImplementedError()

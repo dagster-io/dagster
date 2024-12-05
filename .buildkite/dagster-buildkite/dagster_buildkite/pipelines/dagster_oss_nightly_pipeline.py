@@ -64,6 +64,17 @@ def build_dagster_oss_nightly_steps() -> List[BuildkiteStep]:
                     "KS_DBT_CLOUD_DISCOVERY_API_URL",
                 ],
             ),
+            PackageSpec(
+                "integration_tests/test_suites/dagster-azure-live-tests",
+                name="azure-live-tests",
+                env_vars=[
+                    "TEST_AZURE_TENANT_ID",
+                    "TEST_AZURE_CLIENT_ID",
+                    "TEST_AZURE_CLIENT_SECRET",
+                    "TEST_AZURE_STORAGE_ACCOUNT_ID",
+                    "TEST_AZURE_CONTAINER_ID",
+                ],
+            ),
         ]
     )
 
