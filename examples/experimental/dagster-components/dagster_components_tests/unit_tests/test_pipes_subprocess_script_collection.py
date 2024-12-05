@@ -14,7 +14,7 @@ from dagster_components.impls.pipes_subprocess_script_collection import (
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
 
-LOCATION_PATH = Path(__file__).parent / "code_locations" / "python_script_location"
+LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "python_script_location"
 
 
 def test_python_native() -> None:
