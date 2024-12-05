@@ -841,7 +841,7 @@ class AirbyteCloudClient(DagsterModel):
 
     @property
     def all_additional_request_params(self) -> Mapping[str, Any]:
-        return deep_merge_dicts(self.authorization_request_params, self.user_agent_request_params)
+        return {**self.authorization_request_params, **self.user_agent_request_params}
 
     @property
     def authorization_request_params(self) -> Mapping[str, Any]:
@@ -849,17 +849,13 @@ class AirbyteCloudClient(DagsterModel):
         if self._needs_refreshed_access_token():
             self._refresh_access_token()
         return {
-            "headers": {
-                "Authorization": f"Bearer {self._access_token_value}",
-            }
+            "Authorization": f"Bearer {self._access_token_value}",
         }
 
     @property
     def user_agent_request_params(self) -> Mapping[str, Any]:
         return {
-            "headers": {
-                "User-Agent": "dagster",
-            }
+            "User-Agent": "dagster",
         }
 
     def _refresh_access_token(self) -> None:
@@ -889,6 +885,17 @@ class AirbyteCloudClient(DagsterModel):
             ).timestamp()
         )
 
+    def _get_session(self, include_additional_request_params: bool) -> requests.Session:
+        headers = {"accept": "application/json"}
+        if include_additional_request_params:
+            headers = {
+                **headers,
+                **self.all_additional_request_params,
+            }
+        session = requests.Session()
+        session.headers.update(headers)
+        return session
+
     def _make_request(
         self,
         method: str,
@@ -911,33 +918,22 @@ class AirbyteCloudClient(DagsterModel):
             Dict[str, Any]: Parsed json data from the response to this request
         """
         url = base_url + endpoint
-        headers = {"accept": "application/json"}
 
         num_retries = 0
         while True:
             try:
-                request_args: Dict[str, Any] = dict(
-                    method=method,
-                    url=url,
-                    headers=headers,
-                    timeout=self.request_timeout,
+                session = self._get_session(
+                    include_additional_request_params=include_additional_request_params
                 )
-                if data:
-                    request_args["json"] = data
-
-                if include_additional_request_params:
-                    request_args = deep_merge_dicts(
-                        request_args,
-                        self.all_additional_request_params,
-                    )
-
-                response = requests.request(
-                    **request_args,
+                response = session.request(
+                    method=method, url=url, json=data, timeout=self.request_timeout
                 )
                 response.raise_for_status()
                 return response.json()
             except RequestException as e:
-                self._log.error("Request to Airbyte API failed: %s", e)
+                self._log.error(
+                    f"Request to Airbyte API failed for url {url} with method {method} : {e}"
+                )
                 if num_retries == self.request_max_retries:
                     break
                 num_retries += 1

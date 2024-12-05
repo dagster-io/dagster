@@ -14,6 +14,12 @@ from dagster_airbyte_tests.experimental.conftest import (
 
 
 def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
+    """Tests the `AirbyteCloudClient._make_request` method and how the API access token is refreshed.
+
+    Args:
+        base_api_mocks (responses.RequestsMock): The mock responses for the base API requests,
+        i.e. generating the access token.
+    """
     resource = AirbyteCloudWorkspace(
         workspace_id=TEST_WORKSPACE_ID,
         client_id=TEST_CLIENT_ID,
