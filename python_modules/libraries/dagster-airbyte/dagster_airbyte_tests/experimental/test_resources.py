@@ -1,16 +1,15 @@
 import json
 from datetime import datetime
-from unittest import mock
 from typing import Optional
+from unittest import mock
 
 import responses
 from dagster_airbyte import AirbyteCloudWorkspace
-
 from dagster_airbyte.resources import (
-    AIRBYTE_REST_API_BASE,
-    AIRBYTE_REST_API_VERSION,
     AIRBYTE_CONFIGURATION_API_BASE,
     AIRBYTE_CONFIGURATION_API_VERSION,
+    AIRBYTE_REST_API_BASE,
+    AIRBYTE_REST_API_VERSION,
 )
 
 from dagster_airbyte_tests.experimental.conftest import (
@@ -29,7 +28,10 @@ def assert_token_call_and_split_calls(calls: responses.CallList):
     access_token_call_body = json.loads(access_token_call.request.body.decode("utf-8"))
     assert access_token_call_body["client_id"] == TEST_CLIENT_ID
     assert access_token_call_body["client_secret"] == TEST_CLIENT_SECRET
-    assert access_token_call.request.url == f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/applications/token"
+    assert (
+        access_token_call.request.url
+        == f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/applications/token"
+    )
     return calls[1:]
 
 
@@ -39,8 +41,13 @@ def assert_rest_api_call(call: responses.Call, endpoint: str):
     assert call.request.headers["Authorization"] == f"Bearer {TEST_ACCESS_TOKEN}"
 
 
-def assert_configuration_api_call(call: responses.Call, endpoint: str, object_id: Optional[str] = None):
-    assert call.request.url == f"{AIRBYTE_CONFIGURATION_API_BASE}/{AIRBYTE_CONFIGURATION_API_VERSION}/{endpoint}"
+def assert_configuration_api_call(
+    call: responses.Call, endpoint: str, object_id: Optional[str] = None
+):
+    assert (
+        call.request.url
+        == f"{AIRBYTE_CONFIGURATION_API_BASE}/{AIRBYTE_CONFIGURATION_API_VERSION}/{endpoint}"
+    )
     if object_id:
         assert object_id in call.request.body.decode()
     assert call.request.headers["Authorization"] == f"Bearer {TEST_ACCESS_TOKEN}"
@@ -124,5 +131,7 @@ def test_basic_resource_request(
     api_calls = assert_token_call_and_split_calls(calls=fetch_workspace_data_api_mocks.calls)
     # The next calls are actual API calls
     assert_rest_api_call(call=api_calls[0], endpoint="connections")
-    assert_configuration_api_call(call=api_calls[1], endpoint="connections/get", object_id=TEST_CONNECTION_ID)
+    assert_configuration_api_call(
+        call=api_calls[1], endpoint="connections/get", object_id=TEST_CONNECTION_ID
+    )
     assert_rest_api_call(call=api_calls[2], endpoint=f"destinations/{TEST_DESTINATION_ID}")
