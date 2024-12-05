@@ -1,17 +1,17 @@
 ---
 title: 'CI/CD in Serverless '
 displayed_sidebar: 'dagsterPlus'
-sidebar_position: 10
+sidebar_position: 300
 ---
 
 # CI/CD in Serverless
 
-If you're a GitHub or GitLab user, you can use our predefined workflows to seamlessly deploy and synchronize your code to Dagster+. You can also use other Git providers or a local Git repository with our [dagster-cloud CLI](/dagster-plus/deployment/branch-deployments/dagster-cloud-cli) to run your own CI/CD process.
+If you're a GitHub or GitLab user, you can use our predefined workflows to seamlessly deploy and synchronize your code to Dagster+. You can also use other Git providers or a local Git repository with our [dagster-cloud CLI](/dagster-plus/features/branch-deployments/dagster-cloud-cli) to run your own CI/CD process.
 
 <Tabs groupId="method">
 <TabItem value="GitHub" label="With GitHub">
 
-If you're a GitHub user, with a single click our GitHub app with GitHub Actions can set up a repo containing skeleton code and configuration for you consistent with Dagster+'s best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/deployment/branch-deployments) that you can view in the Dagster+ UI for previewing and testing.
+If you're a GitHub user, with a single click our GitHub app with GitHub Actions can set up a repo containing skeleton code and configuration for you consistent with Dagster+'s best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/features/branch-deployments/index.mdx) that you can view in the Dagster+ UI for previewing and testing.
 
 :::note
 **If you are importing a Dagster project that's in an existing GitHub repo:**
@@ -28,13 +28,13 @@ If you're a GitHub user, with a single click our GitHub app with GitHub Actions 
 
 <TabItem value="GitLab" label="With GitLab">
 
-If you're a GitLab user, with a single click our GitLab app can set up a repo containing skeleton code and CI/CD configuration for you consistent with Dagster+'s best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/deployment/branch-deployments) that you can view in the Dagster+ UI for previewing and testing.
+If you're a GitLab user, with a single click our GitLab app can set up a repo containing skeleton code and CI/CD configuration for you consistent with Dagster+'s best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/features/branch-deployments/index.mdx) that you can view in the Dagster+ UI for previewing and testing.
 
 </TabItem>
 
 <TabItem value="Other" label="Other Git providers or local development">
 
-If you don't want to use our automated GitHub/GitLab process, we offer [the powerful `dagster-cloud` command-line interface (CLI)](/dagster-plus/deployment/branch-deployments/dagster-cloud-cli) that you can use in another CI environment or locally.
+If you don't want to use our automated GitHub/GitLab process, we offer [the powerful `dagster-cloud` command-line interface (CLI)](/dagster-plus/features/branch-deployments/dagster-cloud-cli) that you can use in another CI environment or locally.
 
 First, [create a new project](/getting-started/quickstart) with the Dagster open source CLI.
 
@@ -62,7 +62,7 @@ install_requires=[
 
 :::
 
-Next, install the [`dagster-cloud` CLI](/dagster-plus/deployment/branch-deployments/dagster-cloud-cli) and use its `configure` command to authenticate it to your Dagster+ organization.
+Next, install the [`dagster-cloud` CLI](/dagster-plus/features/branch-deployments/dagster-cloud-cli) and use its `configure` command to authenticate it to your Dagster+ organization.
 
 **Note:** The CLI requires a recent version of Python 3 and Docker.
 
@@ -71,7 +71,7 @@ pip install dagster-cloud
 dagster-cloud configure
 ```
 
-You can also configure the `dagster-cloud` tool non-interactively; see [the CLI docs](/dagster-plus/deployment/branch-deployments/dagster-cloud-cli) for more information.
+You can also configure the `dagster-cloud` tool non-interactively; see [the CLI docs](/dagster-plus/features/branch-deployments/dagster-cloud-cli) for more information.
 
 Finally, deploy your project to Dagster+ using the `serverless` command:
 

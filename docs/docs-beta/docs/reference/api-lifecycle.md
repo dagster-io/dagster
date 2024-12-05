@@ -1,5 +1,5 @@
 ---
-title: API Lifecycle Stages
+title: API lifecycle stages
 ---
 
 This reference guide outlines the different stages in the lifecycle of Dagster APIs, from preview to deprecation. Understanding these stages helps developers make informed decisions about which APIs to use in their projects.
@@ -8,7 +8,7 @@ Dagster's API lifecycle is designed to balance innovation with stability, ensuri
 
 The lifecycle stages described below provide a clear framework for understanding the maturity and reliability of different Dagster APIs. This transparency helps developers make informed decisions about which APIs to adopt in their projects, based on their specific needs for stability, feature completeness, and long-term support.
 
-## API Lifecycle Stages
+## API lifecycle stages
 
 | Stage   | Description                                                                                                | Lifetime                                                                               |
 |---------|------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
@@ -19,7 +19,7 @@ The lifecycle stages described below provide a clear framework for understanding
 | Deprecated | API is still available but will be removed in the future; avoid new usage. | Will be removed in a minor release, the DeprecationWarning will indicate the next release that will remove the API.
 
 
-## Understanding the Stages
+## Understanding the stages
 
 ### Preview
 - **Purpose**: For early testing and feedback
