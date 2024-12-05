@@ -101,6 +101,7 @@ import dagster_reversed from '../icon-svgs/dagster_reversed.svg';
 import dagster_solid from '../icon-svgs/dagster_solid.svg';
 import dagsterlabs from '../icon-svgs/dagsterlabs.svg';
 import dash from '../icon-svgs/dash.svg';
+import data_object from '../icon-svgs/data_object.svg';
 import data_reliability from '../icon-svgs/data_reliability.svg';
 import data_type from '../icon-svgs/data_type.svg';
 import database from '../icon-svgs/database.svg';
@@ -503,6 +504,7 @@ export const Icons = {
   dash,
   data_reliability,
   data_type,
+  data_object,
   database,
   datatype_array,
   datatype_bool,
