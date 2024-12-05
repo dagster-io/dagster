@@ -127,7 +127,7 @@ API documentation is built in Vercel by overriding the _Build Command_ to the fo
 yarn sync-api-docs && yarn build
 ```
 
-This runs the `scripts/vercel-sync-api-docs.sh` script which builds the MDX files using the custom `sphinx-mdx-builder`, and copies the resulting MDX files to `docs/api`.
+This runs the `scripts/vercel-sync-api-docs.sh` script which builds the MDX files using the custom `sphinx-mdx-builder`, and copies the resulting MDX files to `docs/api/python-api`.
 
 ## Search
 
