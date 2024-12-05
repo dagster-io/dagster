@@ -255,7 +255,7 @@ export const AssetsCatalogTable = ({
     <AssetTable
       view={view}
       assets={displayed}
-      isLoading={filteredAssetsLoading}
+      isLoading={filteredAssetsLoading || fetchResult.loading}
       isFiltered={isFiltered}
       actionBarComponents={
         <div
