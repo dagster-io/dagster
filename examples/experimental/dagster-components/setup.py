@@ -47,5 +47,6 @@ setup(
     extras_require={
         "sling": ["dagster-embedded-elt"],
         "dbt": ["dagster-dbt"],
+        "test": ["dbt-duckdb"],
     },
 )
