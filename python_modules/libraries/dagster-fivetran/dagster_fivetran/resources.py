@@ -4,15 +4,17 @@ import os
 import time
 from datetime import datetime, timedelta
 from functools import partial
-from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Type, Union
 from urllib.parse import urljoin
 
 import requests
 from dagster import (
+    AssetExecutionContext,
     Definitions,
     Failure,
     InitResourceContext,
     MetadataValue,
+    OpExecutionContext,
     __version__,
     _check as check,
     get_dagster_logger,
@@ -889,6 +891,49 @@ class FivetranWorkspace(ConfigurableResource):
             destinations_by_id=destinations_by_id,
             schema_configs_by_connector_id=schema_configs_by_connector_id,
         )
+
+    @cached_method
+    def load_asset_specs(
+        self,
+        dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
+    ) -> Sequence[AssetSpec]:
+        """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
+
+        Args:
+            dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
+                to convert Fivetran content into :py:class:`dagster.AssetSpec`.
+                Defaults to :py:class:`DagsterFivetranTranslator`.
+
+        Returns:
+            List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
+
+        Examples:
+            Loading the asset specs for a given Fivetran workspace:
+
+            .. code-block:: python
+                from dagster_fivetran import FivetranWorkspace, load_fivetran_asset_specs
+
+                import dagster as dg
+
+                fivetran_workspace = FivetranWorkspace(
+                    account_id=dg.EnvVar("FIVETRAN_ACCOUNT_ID"),
+                    api_key=dg.EnvVar("FIVETRAN_API_KEY"),
+                    api_secret=dg.EnvVar("FIVETRAN_API_SECRET"),
+                )
+
+                fivetran_specs = fivetran_workspace.load_asset_specs()
+                defs = dg.Definitions(assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
+        """
+        dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
+
+        return load_fivetran_asset_specs(
+            workspace=self, dagster_fivetran_translator=dagster_fivetran_translator.__class__
+        )
+
+    def sync_and_poll(
+        self, context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None
+    ):
+        raise NotImplementedError()
 
 
 @experimental
