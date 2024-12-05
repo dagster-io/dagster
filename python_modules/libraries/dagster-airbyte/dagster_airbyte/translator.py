@@ -63,7 +63,9 @@ class AirbyteDestination:
 @whitelist_for_serdes
 @record
 class AirbyteStream:
-    """Represents an Airbyte stream, based on data as returned from the API."""
+    """Represents an Airbyte stream, based on data as returned from the API.
+    A stream in Airbyte corresponds to a table.
+    """
 
     name: str
     selected: bool
