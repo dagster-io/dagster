@@ -1,6 +1,7 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {MemoryRouter, useHistory} from 'react-router-dom';
 
 import {Resolvers} from '../../apollo-client';
 import {SensorDryRunDialog} from '../SensorDryRunDialog';
@@ -12,6 +13,12 @@ jest.mock('../DryRunRequestTable', () => {
     RunRequestTable: () => <div />,
   };
 });
+
+// Mocking useHistory
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useHistory: jest.fn(),
+}));
 
 const onCloseMock = jest.fn();
 
@@ -83,7 +90,25 @@ describe('SensorDryRunTest', () => {
   });
 
   it('launches all runs', async () => {
-    render(<Test mocks={[Mocks.SensorDryRunMutationRunRequests, Mocks.PersistCursorValueMock]} />);
+    const pushSpy = jest.fn();
+    const createHrefSpy = jest.fn();
+
+    (useHistory as jest.Mock).mockReturnValue({
+      push: pushSpy,
+      createHref: createHrefSpy,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/automation']}>
+        <Test
+          mocks={[
+            Mocks.SensorDryRunMutationRunRequests,
+            Mocks.PersistCursorValueMock,
+            Mocks.SensorLaunchAllMutation,
+          ]}
+        />
+      </MemoryRouter>,
+    );
     const cursorInput = await screen.findByTestId('cursor-input');
     await userEvent.type(cursorInput, 'testing123');
     await userEvent.click(screen.getByTestId('continue'));
@@ -102,5 +127,9 @@ describe('SensorDryRunTest', () => {
     await waitFor(() => {
       expect(screen.getByText(/Launching runs/i)).toBeVisible();
     });
-  }, 10000);
+
+    await waitFor(() => {
+      expect(pushSpy).toHaveBeenCalled();
+    });
+  });
 });

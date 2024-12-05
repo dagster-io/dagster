@@ -1,6 +1,7 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {MemoryRouter, useHistory} from 'react-router-dom';
 
 import {Resolvers} from '../../apollo-client';
 import {EvaluateScheduleDialog} from '../EvaluateScheduleDialog';
@@ -9,6 +10,7 @@ import {
   ScheduleDryRunMutationError,
   ScheduleDryRunMutationRunRequests,
   ScheduleDryRunMutationSkipped,
+  ScheduleLaunchAllMutation,
 } from '../__fixtures__/EvaluateScheduleDialog.fixtures';
 
 // This component is unit tested separately so mocking it out
@@ -17,6 +19,12 @@ jest.mock('../DryRunRequestTable', () => {
     RunRequestTable: () => <div />,
   };
 });
+
+// Mocking useHistory
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useHistory: jest.fn(),
+}));
 
 const onCloseMock = jest.fn();
 
@@ -103,7 +111,25 @@ describe('EvaluateScheduleTest', () => {
   });
 
   it('launches all runs', async () => {
-    render(<Test mocks={[GetScheduleQueryMock, ScheduleDryRunMutationRunRequests]} />);
+    const pushSpy = jest.fn();
+    const createHrefSpy = jest.fn();
+
+    (useHistory as jest.Mock).mockReturnValue({
+      push: pushSpy,
+      createHref: createHrefSpy,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/automation']}>
+        <Test
+          mocks={[
+            GetScheduleQueryMock,
+            ScheduleDryRunMutationRunRequests,
+            ScheduleLaunchAllMutation,
+          ]}
+        />
+      </MemoryRouter>,
+    );
     const selectButton = await screen.findByTestId('tick-selection');
     await userEvent.click(selectButton);
     await waitFor(() => {
@@ -121,5 +147,9 @@ describe('EvaluateScheduleTest', () => {
     await waitFor(() => {
       expect(screen.getByText(/Launching runs/i)).toBeVisible();
     });
-  }, 10000);
+
+    await waitFor(() => {
+      expect(pushSpy).toHaveBeenCalled();
+    });
+  });
 });
