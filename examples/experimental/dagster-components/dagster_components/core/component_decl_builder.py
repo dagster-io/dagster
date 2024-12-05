@@ -25,7 +25,7 @@ class ComponentFolder(ComponentDeclNode):
     sub_decls: Sequence[Union[YamlComponentDecl, "ComponentFolder"]]
 
 
-def find_component_decl(path: Path) -> Optional[ComponentDeclNode]:
+def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
     # right now, we only support two types of components, both of which are folders
     # if the folder contains a defs.yml file, it's a component instance
     # otherwise, it's a folder containing sub-components
@@ -43,7 +43,7 @@ def find_component_decl(path: Path) -> Optional[ComponentDeclNode]:
 
     subs = []
     for subpath in path.iterdir():
-        component = find_component_decl(subpath)
+        component = path_to_decl_node(subpath)
         if component:
             subs.append(component)
 

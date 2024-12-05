@@ -3,11 +3,16 @@ from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence
 
 from dagster._utils.warnings import suppress_dagster_warnings
 
-from dagster_components.core.component import Component, ComponentLoadContext, ComponentRegistry
+from dagster_components.core.component import (
+    Component,
+    ComponentDeclNode,
+    ComponentLoadContext,
+    ComponentRegistry,
+)
 from dagster_components.core.component_decl_builder import (
     ComponentFolder,
     YamlComponentDecl,
-    find_component_decl,
+    path_to_decl_node,
 )
 from dagster_components.core.deployment import CodeLocationProjectContext
 
@@ -15,41 +20,43 @@ if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 
-def build_component_hierarchy(
-    context: ComponentLoadContext, component_folder: ComponentFolder
+def build_components_from_decl_node(
+    context: ComponentLoadContext, decl_node: ComponentDeclNode
 ) -> Sequence[Component]:
-    to_return = []
-    for decl_node in component_folder.sub_decls:
-        if isinstance(decl_node, YamlComponentDecl):
-            parsed_defs = decl_node.defs_file_model
-            component_type = context.registry.get(parsed_defs.component_type)
-            to_return.append(component_type.from_decl_node(context, decl_node))
-        elif isinstance(decl_node, ComponentFolder):
-            to_return.extend(build_component_hierarchy(context, decl_node))
-        else:
-            raise NotImplementedError(f"Unknown component type {decl_node}")
-    return to_return
+    if isinstance(decl_node, YamlComponentDecl):
+        parsed_defs = decl_node.defs_file_model
+        component_type = context.registry.get(parsed_defs.component_type)
+        return [component_type.from_decl_node(context, decl_node)]
+    elif isinstance(decl_node, ComponentFolder):
+        components = []
+        for sub_decl in decl_node.sub_decls:
+            components.extend(build_components_from_decl_node(context, sub_decl))
+        return components
+
+    raise NotImplementedError(f"Unknown component type {decl_node}")
 
 
 def build_components_from_component_folder(
     context: ComponentLoadContext,
     path: Path,
 ) -> Sequence[Component]:
-    component_folder = find_component_decl(path)
+    component_folder = path_to_decl_node(path)
     assert isinstance(component_folder, ComponentFolder)
-    return build_component_hierarchy(context, component_folder)
+    return build_components_from_decl_node(context, component_folder)
 
 
-def build_defs_from_component_folder(
+def build_defs_from_component_path(
     path: Path,
     registry: ComponentRegistry,
     resources: Mapping[str, object],
 ) -> "Definitions":
     """Build a definitions object from a folder within the components hierarchy."""
-    component_folder = find_component_decl(path=path)
-    assert isinstance(component_folder, ComponentFolder)
     context = ComponentLoadContext(resources=resources, registry=registry)
-    components = build_components_from_component_folder(context=context, path=path)
+
+    decl_node = path_to_decl_node(path=path)
+    if not decl_node:
+        raise Exception(f"No component found at path {path}")
+    components = build_components_from_decl_node(context, decl_node)
     return defs_from_components(resources=resources, context=context, components=components)
 
 
@@ -82,7 +89,7 @@ def build_defs_from_toplevel_components_folder(
     all_defs: List[Definitions] = []
     for component in context.component_instances:
         component_path = Path(context.get_component_instance_path(component))
-        defs = build_defs_from_component_folder(
+        defs = build_defs_from_component_path(
             path=component_path,
             registry=context.component_registry,
             resources=resources or {},
