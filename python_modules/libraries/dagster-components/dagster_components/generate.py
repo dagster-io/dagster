@@ -1,5 +1,6 @@
 import os
-from typing import Any, Type
+import textwrap
+from typing import Any, Optional, Type
 
 import click
 import yaml
@@ -29,8 +30,19 @@ def generate_deployment(path: str) -> None:
     )
 
 
-def generate_code_location(path: str) -> None:
+def generate_code_location(path: str, editable_dagster_root: Optional[str] = None) -> None:
     click.echo(f"Creating a Dagster code location at {path}.")
+
+    if editable_dagster_root:
+        uv_sources = textwrap.dedent(f"""
+        [tool.uv.sources]
+        dagster = {{ path = "{editable_dagster_root}/python_modules/dagster", editable = true }}
+        dagster-components = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-components", editable = true }}
+        dagster-pipes = {{ path = "{editable_dagster_root}/python_modules/dagster-pipes", editable = true }}
+        dagster-webserver = {{ path = "{editable_dagster_root}/python_modules/dagster-webserver", editable = true }}
+        """)
+    else:
+        uv_sources = ""
 
     generate_project(
         path=path,
@@ -38,6 +50,7 @@ def generate_code_location(path: str) -> None:
         templates_path=os.path.join(
             os.path.dirname(__file__), "templates", "CODE_LOCATION_NAME_PLACEHOLDER"
         ),
+        uv_sources=uv_sources,
     )
 
 
