@@ -2,10 +2,14 @@
 name = "{{ project_name }}"
 requires-python = ">=3.9,<3.13"
 version = "0.1.0"
-dependencies = []
+dependencies = [
+    "dagster",
+]
 
 [project.optional-dependencies]
-dev = []
+dev = [
+    "dagster-webserver",
+]
 
 [build-system]
 requires = ["setuptools"]
@@ -17,3 +21,5 @@ project_name = "{{ project_name }}"
 
 [tool.setuptools.packages.find]
 exclude=["{{ project_name }}_tests"]
+
+{{ uv_sources }}
