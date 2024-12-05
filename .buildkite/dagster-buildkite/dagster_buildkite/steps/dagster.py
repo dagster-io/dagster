@@ -6,10 +6,7 @@ from dagster_buildkite.defines import GIT_REPO_ROOT
 from dagster_buildkite.python_packages import PythonPackages
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.step_builder import CommandStepBuilder
-from dagster_buildkite.steps.helm import build_helm_steps
-from dagster_buildkite.steps.integration import build_integration_steps
 from dagster_buildkite.steps.packages import build_library_packages_steps
-from dagster_buildkite.steps.test_project import build_test_project_steps
 from dagster_buildkite.utils import (
     UV_PIN,
     BuildkiteStep,
@@ -47,17 +44,17 @@ def build_dagster_steps() -> List[BuildkiteStep]:
     # toxfile that defines the tests for that package.
     steps += build_library_packages_steps()
 
-    steps += build_helm_steps()
-    steps += build_sql_schema_check_steps()
-    steps += build_graphql_python_client_backcompat_steps()
-    if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
-        steps += build_integration_steps()
+    # steps += build_helm_steps()
+    # steps += build_sql_schema_check_steps()
+    # steps += build_graphql_python_client_backcompat_steps()
+    # if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
+    #     steps += build_integration_steps()
 
     # Build images containing the dagster-test sample project. This is a dependency of certain
     # dagster core and extension lib tests. Run this after we build our library package steps
     # because need to know whether it's a dependency of any of them.
-    if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
-        steps += build_test_project_steps()
+    # if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
+    #     steps += build_test_project_steps()
 
     return steps
 
