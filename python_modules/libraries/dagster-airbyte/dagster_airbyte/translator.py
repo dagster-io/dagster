@@ -1,4 +1,4 @@
-from typing import Any, Mapping, NamedTuple
+from typing import Any, Mapping, NamedTuple, Optional
 
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -14,12 +14,29 @@ class AirbyteConnectionTableProps(NamedTuple): ...
 class AirbyteConnection:
     """Represents an Airbyte connection, based on data as returned from the API."""
 
+    id: str
+    name: str
+    stream_prefix: Optional[str]
+    streams: Mapping[str, "AirbyteStream"]
+    destination_id: str
+
     @classmethod
     def from_connection_details(
         cls,
         connection_details: Mapping[str, Any],
     ) -> "AirbyteConnection":
-        raise NotImplementedError()
+        return cls(
+            id=connection_details["connectionId"],
+            name=connection_details["name"],
+            stream_prefix=connection_details.get("prefix"),
+            streams={
+                stream_details["stream"]["name"]: AirbyteStream.from_stream_details(
+                    stream_details=stream_details
+                )
+                for stream_details in connection_details.get("syncCatalog", {}).get("streams", [])
+            },
+            destination_id=connection_details["destinationId"],
+        )
 
 
 @whitelist_for_serdes
@@ -27,12 +44,43 @@ class AirbyteConnection:
 class AirbyteDestination:
     """Represents an Airbyte destination, based on data as returned from the API."""
 
+    id: str
+    database: Optional[str]
+    schema: Optional[str]
+
     @classmethod
     def from_destination_details(
         cls,
         destination_details: Mapping[str, Any],
     ) -> "AirbyteDestination":
-        raise NotImplementedError()
+        return cls(
+            id=destination_details["destinationId"],
+            database=destination_details["configuration"].get("database"),
+            schema=destination_details["configuration"].get("schema"),
+        )
+
+
+@whitelist_for_serdes
+@record
+class AirbyteStream:
+    """Represents an Airbyte stream, based on data as returned from the API.
+    A stream in Airbyte corresponds to a table.
+    """
+
+    name: str
+    selected: bool
+    json_schema: Mapping[str, Any]
+
+    @classmethod
+    def from_stream_details(
+        cls,
+        stream_details: Mapping[str, Any],
+    ) -> "AirbyteStream":
+        return cls(
+            name=stream_details["stream"]["name"],
+            selected=stream_details["config"].get("selected", False),
+            json_schema=stream_details["stream"].get("jsonSchema", {}),
+        )
 
 
 @record
