@@ -192,6 +192,8 @@ describe('createAssetSelectionHint', () => {
       list: [
         {displayText: 'and', text: ' and '},
         {displayText: 'or', text: ' or '},
+        {displayText: '*', text: '*'},
+        {displayText: '+', text: '+'},
       ],
       to: 2,
     });

@@ -202,7 +202,6 @@ export class SelectionAutoCompleteVisitor
     textCallback: TextCallback = DEFAULT_TEXT_CALLBACK,
     options: {excludeNot?: boolean; excludeStar?: boolean; excludePlus?: boolean} = {},
   ) {
-    console.log('addUnmatchedValueResults', new Error());
     const value = _value.trim();
     if (value) {
       const substringMatchDisplayText = `${this.nameBase}_substring:${removeQuotesFromString(
@@ -269,7 +268,6 @@ export class SelectionAutoCompleteVisitor
       excludePlus?: boolean;
     } = {},
   ) {
-    console.log('addAfterExpressionResults', new Error());
     this.list.push({text: ' and ', displayText: 'and'}, {text: ' or ', displayText: 'or'});
 
     if (!options.excludeStar) {
@@ -337,7 +335,7 @@ export class SelectionAutoCompleteVisitor
   visitAttributeValue(ctx: AttributeValueContext) {
     if (this.nodeIncludesCursor(ctx)) {
       const stopIndex = ctx.stop!.stopIndex;
-      if (this.cursorIndex > stopIndex && this.line[stopIndex] === '"') {
+      if (this.cursorIndex >= stopIndex && this.line[stopIndex] === '"') {
         this.addAfterExpressionResults(ctx);
         return;
       }
@@ -433,17 +431,17 @@ export class SelectionAutoCompleteVisitor
     }
   }
 
-  visitPostNotOperatorWhitespace(_ctx: PostNotOperatorWhitespaceContext) {
-    this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
+  visitPostNotOperatorWhitespace(ctx: PostNotOperatorWhitespaceContext) {
+    const needsWhitespace = this.cursorIndex === ctx.start.startIndex;
+    this.addUnmatchedValueResults('', (value) => `${needsWhitespace ? ' ' : ''}${value}`, {
       excludeNot: true,
     });
   }
 
   visitPostNeighborTraversalWhitespace(ctx: PostNeighborTraversalWhitespaceContext) {
-    this.startReplacementIndex = ctx.start.startIndex;
-    this.stopReplacementIndex = ctx.stop!.stopIndex;
+    const isAtStart = this.cursorIndex === ctx.start.startIndex;
     this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
-      excludeStar: true,
+      excludeStar: isAtStart,
     });
   }
 
@@ -485,9 +483,10 @@ export class SelectionAutoCompleteVisitor
   }
 
   visitPostAttributeValueWhitespace(ctx: PostAttributeValueWhitespaceContext) {
-    if (this.cursorIndex === ctx.start.startIndex + 1) {
+    const attributeValue = ctx.parent!.getChild(2) as any;
+    if (this.cursorIndex === attributeValue?.stop?.stopIndex + 1) {
       this.cursorIndex -= 1;
-      ctx.parent!.accept(this);
+      attributeValue.accept(this);
     } else {
       this.visitPostExpressionWhitespace(ctx);
     }
