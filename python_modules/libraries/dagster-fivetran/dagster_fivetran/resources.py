@@ -1034,7 +1034,8 @@ class FivetranWorkspace(ConfigurableResource):
                 materialized_asset_keys.add(materialization.asset_key)
             else:
                 context.log.warning(
-                    f"An unexpected asset was materialized: {materialization.asset_key}"
+                    f"An unexpected asset was materialized: {materialization.asset_key}. "
+                    f"Yielding a materialization event."
                 )
                 yield materialization
 

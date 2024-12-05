@@ -518,7 +518,7 @@ def all_api_mocks_fixture(
 
 
 @pytest.fixture(name="sync_and_poll")
-def poll_and_sync_fixture():
+def sync_and_poll_fixture():
     with patch("dagster_fivetran.resources.FivetranClient.sync_and_poll") as mocked_function:
         # Fivetran output where all sync'd tables match the workspace data that was used to create the assets def
         expected_fivetran_output = FivetranOutput(

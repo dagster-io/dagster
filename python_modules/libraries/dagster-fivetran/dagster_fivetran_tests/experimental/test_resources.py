@@ -1,3 +1,4 @@
+import re
 from unittest.mock import MagicMock
 
 import pytest
@@ -142,7 +143,7 @@ def test_basic_resource_request(
         "resync_long_success",
     ],
 )
-def test_sync_and_poll_methods(method, n_polls, succeed_at_end, connector_id):
+def test_sync_and_poll_client_methods(method, n_polls, succeed_at_end, connector_id):
     resource = FivetranWorkspace(
         account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
     )
@@ -212,10 +213,11 @@ def test_sync_and_poll_methods(method, n_polls, succeed_at_end, connector_id):
             _mock_interaction()
 
 
-def test_fivetran_materialization(
+def test_fivetran_sync_and_poll_materialization_method(
     connector_id: str,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
     sync_and_poll: MagicMock,
+    capsys: pytest.CaptureFixture,
 ) -> None:
     with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
         workspace = FivetranWorkspace(
@@ -252,6 +254,7 @@ def test_fivetran_materialization(
             [my_fivetran_assets],
             resources={"fivetran": workspace},
         )
+
         assert result.success
         asset_materializations = [
             event
@@ -271,4 +274,12 @@ def test_fivetran_materialization(
         assert (
             AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1"])
             not in materialized_asset_keys
+        )
+
+        captured = capsys.readouterr()
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - An unexpected asset was materialized", captured.err
+        )
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - Assets were not materialized", captured.err
         )
