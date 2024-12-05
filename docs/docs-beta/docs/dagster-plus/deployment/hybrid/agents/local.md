@@ -1,7 +1,7 @@
 ---
-title: "Running a Dagster+ agent locally"
-sidebar_position: 600
-sidebar_label: "Local"
+title: Running a local agent
+sidebar_position: 10
+sidebar_label: Local agent
 ---
 
 Local agents are a good way to experiment with Dagster+ before deploying a more scalable Hybrid agent like [Kubernetes](/dagster-plus/deployment/hybrid/agents/kubernetes) or [Amazon ECS](/todo).
