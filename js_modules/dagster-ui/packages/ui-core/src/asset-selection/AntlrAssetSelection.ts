@@ -14,7 +14,7 @@ import {AssetSelectionParser} from './generated/AssetSelectionParser';
 import {featureEnabled} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';
 
-class AntlrInputErrorListener implements ANTLRErrorListener<any> {
+export class AntlrInputErrorListener implements ANTLRErrorListener<any> {
   syntaxError(
     recognizer: Recognizer<any, any>,
     offendingSymbol: any,
@@ -38,27 +38,31 @@ type AssetSelectionQueryResult = {
 export const parseAssetSelectionQuery = (
   all_assets: AssetGraphQueryItem[],
   query: string,
-): AssetSelectionQueryResult => {
-  const lexer = new AssetSelectionLexer(CharStreams.fromString(query));
-  lexer.removeErrorListeners();
-  lexer.addErrorListener(new AntlrInputErrorListener());
+): AssetSelectionQueryResult | Error => {
+  try {
+    const lexer = new AssetSelectionLexer(CharStreams.fromString(query));
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(new AntlrInputErrorListener());
 
-  const tokenStream = new CommonTokenStream(lexer);
+    const tokenStream = new CommonTokenStream(lexer);
 
-  const parser = new AssetSelectionParser(tokenStream);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new AntlrInputErrorListener());
+    const parser = new AssetSelectionParser(tokenStream);
+    parser.removeErrorListeners();
+    parser.addErrorListener(new AntlrInputErrorListener());
 
-  const tree = parser.start();
+    const tree = parser.start();
 
-  const visitor = new AntlrAssetSelectionVisitor(all_assets);
-  const all_selection = visitor.visit(tree);
-  const focus_selection = visitor.focus_assets;
+    const visitor = new AntlrAssetSelectionVisitor(all_assets);
+    const all_selection = visitor.visit(tree);
+    const focus_selection = visitor.focus_assets;
 
-  return {
-    all: Array.from(all_selection),
-    focus: Array.from(focus_selection),
-  };
+    return {
+      all: Array.from(all_selection),
+      focus: Array.from(focus_selection),
+    };
+  } catch (e) {
+    return e as Error;
+  }
 };
 
 export const filterAssetSelectionByQuery = (
@@ -66,9 +70,12 @@ export const filterAssetSelectionByQuery = (
   query: string,
 ): AssetSelectionQueryResult => {
   if (featureEnabled(FeatureFlag.flagAssetSelectionSyntax)) {
-    try {
-      return parseAssetSelectionQuery(all_assets, query);
-    } catch {}
+    const result = parseAssetSelectionQuery(all_assets, query);
+    if (result instanceof Error) {
+      // fall back to old behavior
+      return filterByQuery(all_assets, query);
+    }
+    return result;
   }
   return filterByQuery(all_assets, query);
 };

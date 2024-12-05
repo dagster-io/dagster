@@ -105,7 +105,7 @@ export const MenuDivider = styled(BlueprintMenuDivider)`
   border-top: 1px solid ${Colors.keylineDefault()};
   margin: 2px 0;
 
-  :focus {
+  &:focus {
     outline: none;
   }
 

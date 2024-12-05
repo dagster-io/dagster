@@ -4,7 +4,6 @@ import styled from 'styled-components';
 import {Colors} from './Color';
 import {IconWrapper} from './Icon';
 import {SpinnerWrapper} from './Spinner';
-
 interface Props {
   fillColor?: string;
   textColor?: string;

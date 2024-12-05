@@ -1,15 +1,13 @@
 import {Caption, Colors, Tooltip, ifPlural, useViewport} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import memoize from 'lodash/memoize';
-import {memo, useContext, useEffect, useMemo, useState} from 'react';
+import {memo, useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
+import {Timestamp} from '../app/time/Timestamp';
 import {TickResultType} from '../ticks/TickStatusTag';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {isStuckStartedTick} from './util';
-import {TimeContext} from '../app/time/TimeContext';
-import {browserTimezone} from '../app/time/browserTimezone';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus} from '../graphql/types';
 
@@ -35,16 +33,6 @@ const MIN_WIDTH = 8; // At least 8px wide
 
 const MINUTE = 60000;
 
-const timestampFormat = memoize((timezone: string) => {
-  return new Intl.DateTimeFormat(navigator.language, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23',
-    timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
-    timeZoneName: 'short',
-  });
-});
 export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTickFragment>({
   ticks,
   tickResultType,
@@ -79,6 +67,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
 
   const maxX = exactRange?.[1] ? exactRange[1] * 1000 : now + timeAfter;
   const minX = exactRange?.[0] ? exactRange[0] * 1000 : now - timeRange;
+  const showNowLine = minX < now && now < maxX;
 
   const fullRange = maxX - minX;
 
@@ -110,21 +99,21 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   const timeTickGridDelta = Math.max((maxX - minX) / 25, tickGrid);
   const tickGridDelta = timeTickGridDelta / 5;
   const startTickGridX = Math.ceil(minX / tickGridDelta) * tickGridDelta;
+  const numTicks = Math.ceil((maxX - startTickGridX) / tickGridDelta);
+  const numLabels = Math.ceil(numTicks / 5);
+
   const gridTicks = useMemo(() => {
     const ticks = [];
-    for (let i = startTickGridX; i <= maxX; i += tickGridDelta) {
+    for (let ii = 0; ii < numTicks; ii++) {
+      const time = startTickGridX + ii * tickGridDelta;
       ticks.push({
-        time: i,
-        x: getX(i, viewport.width, minX, fullRange),
-        showLabel: i % timeTickGridDelta === 0,
+        time,
+        x: getX(time, viewport.width, minX, fullRange),
+        showLabel: ii % numLabels === 0,
       });
     }
     return ticks;
-  }, [maxX, startTickGridX, tickGridDelta, viewport.width, minX, fullRange, timeTickGridDelta]);
-
-  const {
-    timezone: [timezone],
-  } = useContext(TimeContext);
+  }, [numTicks, startTickGridX, tickGridDelta, viewport.width, minX, fullRange, numLabels]);
 
   return (
     <div style={{marginRight: '8px'}}>
@@ -140,7 +129,9 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
               <GridTickLine />
               {tick.showLabel ? (
                 <GridTickTime>
-                  <Caption>{timestampFormat(timezone).format(new Date(tick.time))}</Caption>
+                  <Caption>
+                    <Timestamp timestamp={{ms: tick.time}} timeFormat={{showSeconds: true}} />
+                  </Caption>
                 </GridTickTime>
               ) : null}
             </GridTick>
@@ -178,11 +169,13 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
               </Tick>
             );
           })}
-          <NowIndicator
-            style={{
-              transform: `translateX(${getX(now, viewport.width, minX, fullRange)}px)`,
-            }}
-          />
+          {showNowLine ? (
+            <NowIndicator
+              style={{
+                transform: `translateX(${getX(now, viewport.width, minX, fullRange)}px)`,
+              }}
+            />
+          ) : null}
         </TicksWrapper>
         <TimeAxisWrapper></TimeAxisWrapper>
       </div>
@@ -215,11 +208,16 @@ const TickTooltip = memo(
         return `${tick.runs?.length || 0} run${ifPlural(tick.runs?.length, '', 's')} requested`;
       }
     }, [tick, tickResultType]);
+
     const startTime = dayjs(1000 * tick.timestamp!);
     const endTime = dayjs(tick.endTimestamp ? 1000 * tick.endTimestamp : Date.now());
     const elapsedTime = startTime.to(endTime, true);
+
     return (
       <div>
+        <Caption as="div">
+          <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showSeconds: true}} />
+        </Caption>
         <Caption as="div">
           {status} ({elapsedTime})
         </Caption>

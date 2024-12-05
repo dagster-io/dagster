@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {ReactNode} from 'react';
 import styled, {css} from 'styled-components';
 
 import {Box} from './Box';
@@ -52,17 +53,22 @@ export const Group = (props: Props) => {
   );
 };
 
-type GroupChildProps = {
+type GroupChildProps = React.ComponentProps<typeof Box> & {
   empty: boolean;
+  children: ReactNode;
 };
 
-const GroupChild = styled(({empty: _empty, ...rest}) => <Box {...rest} />)<GroupChildProps>`
+const GroupChild = styled(({empty: _empty, ...rest}: GroupChildProps) => (
+  <Box {...rest} />
+))<GroupChildProps>`
   ${({empty}) => (empty ? 'display: none;' : '')}
   pointer-events: auto;
 `;
 
-type InnerProps = {
+type InnerProps = React.ComponentProps<typeof Box> & {
+  direction: Direction;
   spacing: Spacing;
+  children: ReactNode;
 };
 
 const marginAdjustment = (props: InnerProps) => {
@@ -77,7 +83,7 @@ const Outer = styled(Box)`
   pointer-events: none;
 `;
 
-const Inner = styled(({direction: _direction, spacing: _spacing, ...rest}) => (
+const Inner = styled(({direction: _direction, spacing: _spacing, ...rest}: InnerProps) => (
   <Box {...rest} />
 ))<InnerProps>`
   ${marginAdjustment}

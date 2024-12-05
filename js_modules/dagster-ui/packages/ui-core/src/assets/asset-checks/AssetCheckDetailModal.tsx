@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
+  FontFamily,
   Mono,
   NonIdealState,
 } from '@dagster-io/ui-components';
@@ -34,10 +35,12 @@ export function MetadataCell({metadataEntries}: {metadataEntries?: MetadataEntry
         onClose={() => setShowMetadata(false)}
         canOutsideClickClose
         canEscapeKeyClose
-        style={{width: '80%', minWidth: '800px'}}
+        style={{width: '80vw', minWidth: '600px', maxWidth: '800px'}}
       >
         <DialogBody>
-          <MetadataEntries entries={metadataEntries} />
+          <div style={{fontFamily: FontFamily.monospace, fontSize: '12px'}}>
+            <MetadataEntries entries={metadataEntries} />
+          </div>
         </DialogBody>
         <DialogFooter topBorder>
           <Button onClick={() => setShowMetadata(false)} intent="primary">
@@ -48,6 +51,13 @@ export function MetadataCell({metadataEntries}: {metadataEntries?: MetadataEntry
     </div>
   );
 }
+
+export const ASSET_CHECK_EVALUATION_TARGET_MATERIALIZATION_FRAGMENT = gql`
+  fragment AssetCheckEvaluationTargetMaterializationFragment on AssetCheckEvaluationTargetMaterializationData {
+    timestamp
+    runId
+  }
+`;
 
 export const ASSET_CHECK_EXECUTION_FRAGMENT = gql`
   fragment AssetCheckExecutionFragment on AssetCheckExecution {
@@ -61,8 +71,7 @@ export const ASSET_CHECK_EXECUTION_FRAGMENT = gql`
       timestamp
       description
       targetMaterialization {
-        timestamp
-        runId
+        ...AssetCheckEvaluationTargetMaterializationFragment
       }
       metadataEntries {
         ...MetadataEntryFragment
@@ -70,6 +79,7 @@ export const ASSET_CHECK_EXECUTION_FRAGMENT = gql`
     }
   }
   ${METADATA_ENTRY_FRAGMENT}
+  ${ASSET_CHECK_EVALUATION_TARGET_MATERIALIZATION_FRAGMENT}
 `;
 
 export const ASSET_CHECK_DETAILS_QUERY = gql`

@@ -27,7 +27,7 @@ export const Default = () => {
         <Tab id="backfills" title="Backfills" disabled />
         <Tab id="config" title={<a href="/?path=/story/box">Box Component</a>} />
       </Tabs>
-      <Tabs small selectedTabId={tab} onChange={setTab}>
+      <Tabs size="small" selectedTabId={tab} onChange={setTab}>
         <Tab id="health" title="Health" />
         <Tab id="schedules" title="Schedules" count={2} disabled />
         <Tab

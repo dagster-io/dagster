@@ -824,14 +824,14 @@ export const Icon = React.memo((props: Props) => {
     />
   );
 });
-interface WrapperProps {
+export interface IconWrapperProps {
   $color: string | null;
   $size: number;
   $img: string;
   $rotation: string | null;
 }
 
-export const IconWrapper = styled.div<WrapperProps>`
+export const IconWrapper = styled.div<IconWrapperProps>`
   width: ${(p) => p.$size}px;
   height: ${(p) => p.$size}px;
   flex-shrink: 0;

@@ -37,7 +37,7 @@ export const StyledButton = styled.button<StyledButtonProps>`
 
   box-shadow: ${({$strokeColor}) => `${$strokeColor} inset 0px 0px 0px 1px`};
 
-  :hover:not(:disabled) {
+  &:hover:not(:disabled) {
     background-color: ${({$fillColor, $fillColorHover}) =>
       $fillColorHover || $fillColor || 'transparent'};
     box-shadow: ${({$strokeColor, $strokeColorHover}) =>
@@ -48,28 +48,28 @@ export const StyledButton = styled.button<StyledButtonProps>`
     text-decoration: none;
   }
 
-  :focus,
-  :focus-visible,
-  :focus:hover:not(:disabled) {
+  &:focus,
+  &:focus-visible,
+  &:focus:hover:not(:disabled) {
     box-shadow: ${Colors.focusRing()} 0 0 0 2px;
     outline: none;
   }
 
-  :focus:not(:focus-visible) {
+  &:focus:not(:focus-visible) {
     box-shadow: ${({$strokeColor}) =>
       `${$strokeColor} inset 0px 0px 0px 1px, ${Colors.shadowDefault()} 0px 2px 12px 0px;`};
   }
 
-  :active:not(:disabled) {
+  &:active:not(:disabled) {
     filter: brightness(0.95);
   }
 
-  :disabled {
+  &:disabled {
     cursor: default;
     opacity: 0.5;
   }
 
-  :disabled:hover {
+  &:disabled:hover {
     box-shadow: ${({$strokeColor}) => `${$strokeColor} inset 0px 0px 0px 1px`};
   }
 

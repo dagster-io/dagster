@@ -1,5 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Spinner as BlueprintSpinner} from '@blueprintjs/core';
+import {ReactNode} from 'react';
 import styled from 'styled-components';
 
 import {Colors} from './Color';
@@ -53,7 +54,13 @@ export const Spinner = ({
   );
 };
 
-export const SpinnerWrapper = styled.div<{$padding: number}>`
+interface WrapperProps {
+  $padding: number;
+  children: ReactNode;
+  title?: string;
+}
+
+export const SpinnerWrapper = styled.div<WrapperProps>`
   padding: ${({$padding}) => $padding}px;
 `;
 

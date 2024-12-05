@@ -29,7 +29,7 @@ import {GraphTraverser} from '../app/GraphQueryImpl';
 import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
-function getTraversalDepth(ctx: TraversalContext): number {
+export function getTraversalDepth(ctx: TraversalContext): number {
   if (ctx.STAR()) {
     return Number.MAX_SAFE_INTEGER;
   }
@@ -39,7 +39,7 @@ function getTraversalDepth(ctx: TraversalContext): number {
   throw new Error('Invalid traversal');
 }
 
-function getFunctionName(ctx: FunctionNameContext): string {
+export function getFunctionName(ctx: FunctionNameContext): string {
   if (ctx.SINKS()) {
     return 'sinks';
   }
@@ -49,7 +49,7 @@ function getFunctionName(ctx: FunctionNameContext): string {
   throw new Error('Invalid function name');
 }
 
-function getValue(ctx: ValueContext): string {
+export function getValue(ctx: ValueContext): string {
   if (ctx.QUOTED_STRING()) {
     return ctx.text.slice(1, -1);
   }

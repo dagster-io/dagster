@@ -2,63 +2,46 @@ import {
   Body2,
   Box,
   Caption,
-  CollapsibleSection,
   Colors,
-  CursorHistoryControls,
-  CursorPaginationProps,
-  ExternalAnchorButton,
   Icon,
   MiddleTruncate,
   NonIdealState,
-  Spinner,
   Subtitle1,
-  Subtitle2,
-  Table,
   TextInput,
   useViewport,
 } from '@dagster-io/ui-components';
 import {RowProps} from '@dagster-io/ui-components/src/components/VirtualizedTable';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useMemo} from 'react';
-import {Link} from 'react-router-dom';
+import React, {useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {
   ASSET_CHECK_DETAILS_QUERY,
   AgentUpgradeRequired,
-  MetadataCell,
   MigrationRequired,
   NeedsUserCodeUpgrade,
 } from './AssetCheckDetailModal';
-import {AssetCheckStatusTag} from './AssetCheckStatusTag';
-import {
-  EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT,
-  EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT,
-  ExecuteChecksButton,
-} from './ExecuteChecksButton';
-import {ASSET_CHECK_TABLE_FRAGMENT} from './VirtualizedAssetCheckTable';
+import {AssetCheckExecutionList} from './AssetCheckExecutionList';
+import {AssetCheckOverview} from './AssetCheckOverview';
+import {ASSET_CHECKS_QUERY} from './AssetChecksQuery';
+import {ExecuteChecksButton} from './ExecuteChecksButton';
 import {
   AssetCheckDetailsQuery,
   AssetCheckDetailsQueryVariables,
 } from './types/AssetCheckDetailModal.types';
-import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecks.types';
 import {assetCheckStatusDescription, getCheckIcon} from './util';
-import {gql, useQuery} from '../../apollo-client';
+import {useQuery} from '../../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
-import {Timestamp} from '../../app/time/Timestamp';
 import {AssetKeyInput} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
-import {MetadataEntries} from '../../metadata/MetadataEntry';
-import {Description} from '../../pipelines/Description';
-import {linkToRunEvent} from '../../runs/RunUtils';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
-import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {numberFormatter} from '../../ui/formatters';
-import {AssetMaterializationGraphs} from '../AssetMaterializationGraphs';
 import {PAGE_SIZE} from '../AutoMaterializePolicyPage/useEvaluationsQueryResult';
 import {AssetKey} from '../types';
+import {AssetChecksTabType, AssetChecksTabs} from './AssetChecksTabs';
+import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecksQuery.types';
 
 export const AssetChecks = ({
   assetKey,
@@ -75,6 +58,8 @@ export const AssetChecks = ({
   const [selectedCheckName, setSelectedCheckName] = useQueryPersistedState<string>({
     queryKey: 'checkDetail',
   });
+
+  const [activeTab, setActiveTab] = useState<AssetChecksTabType>('overview');
 
   const assetNode =
     data?.assetNodeOrError.__typename === 'AssetNode' ? data.assetNodeOrError : null;
@@ -120,17 +105,6 @@ export const AssetChecks = ({
     selectedCheck ? {assetKey, checkName: selectedCheck.name} : null,
   );
   const pastExecutions = useMemo(() => executions.slice(1), [executions]);
-  const executionPlotGroups = useMemo(
-    () =>
-      executions
-        .filter((e) => e.evaluation)
-        .map((e) => ({
-          metadataEntries: e.evaluation!.metadataEntries,
-          timestamp: `${Math.round(e.evaluation!.timestamp * 1000)}`,
-        }))
-        .map((e) => ({latest: e, all: [e], timestamp: e.timestamp})),
-    [executions],
-  );
 
   if (!data) {
     return null;
@@ -159,7 +133,7 @@ export const AssetChecks = ({
           title="No checks defined for this asset"
           icon="asset_check"
           description={
-            <Box flex={{direction: 'column', gap: 6}}>
+            <Box flex={{direction: 'column', gap: 8}}>
               <Body2>
                 Asset checks can verify properties of a data asset, e.g. that there are no null
                 values in a particular column.
@@ -175,7 +149,7 @@ export const AssetChecks = ({
   }
 
   const lastExecution = selectedCheck.executionForLatestMaterialization;
-  const targetMaterialization = lastExecution?.evaluation?.targetMaterialization;
+  const targetMaterialization = lastExecution?.evaluation?.targetMaterialization ?? null;
 
   return (
     <Box flex={{grow: 1, direction: 'column'}}>
@@ -218,7 +192,7 @@ export const AssetChecks = ({
                         }}
                       >
                         <Box flex={{direction: 'column', gap: 2}}>
-                          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                          <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
                             <Box
                               flex={{alignItems: 'center', justifyContent: 'center'}}
                               style={{
@@ -230,15 +204,13 @@ export const AssetChecks = ({
                             </Box>
                             <Body2 style={{overflow: 'hidden'}}>
                               <MiddleTruncate text={check.name} />
+                              <Caption
+                                color={Colors.textLight()}
+                                style={{textTransform: 'capitalize'}}
+                              >
+                                {assetCheckStatusDescription(check)}
+                              </Caption>
                             </Body2>
-                          </Box>
-                          <Box padding={{horizontal: 24}}>
-                            <Caption
-                              color={Colors.textLight()}
-                              style={{textTransform: 'capitalize'}}
-                            >
-                              {assetCheckStatusDescription(check)}
-                            </Caption>
                           </Box>
                         </Box>
                       </CheckRow>
@@ -256,141 +228,40 @@ export const AssetChecks = ({
             flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
             padding={{vertical: 12, horizontal: 24}}
           >
-            <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <Icon name="asset_check" />
               <Subtitle1>{selectedCheck.name}</Subtitle1>
             </Box>
             <ExecuteChecksButton assetNode={assetNode} checks={[selectedCheck]} label="Execute" />
           </Box>
-          <Box
-            flex={{grow: 1, direction: 'column', gap: 12}}
-            padding={{horizontal: 24, vertical: 12}}
-          >
-            <CollapsibleSection
-              header={<Subtitle1>About</Subtitle1>}
-              headerWrapperProps={headerWrapperProps}
-              arrowSide="right"
-            >
-              <Box padding={{top: 12}} flex={{gap: 12, direction: 'column'}}>
-                {selectedCheck.description ? (
-                  <Description description={selectedCheck.description} maxHeight={260} />
-                ) : (
-                  <Caption color={Colors.textLight()}>No description provided</Caption>
-                )}
-                {/* {selectedCheck.dependencies?.length ? (
-                  <Box flex={{direction: 'row', gap: 6}}>
-                    {assetNode.dependencies.map((dep) => {
-                      const key = dep.asset.assetKey;
-                      return (
-                        <Link to={assetDetailsPathForKey(key)} key={tokenForAssetKey(key)}>
-                          <Tag icon="asset">{displayNameForAssetKey(key)}</Tag>
-                        </Link>
-                      );
-                    })}
-                  </Box>
-                ) : (
-                  <Caption color={Colors.textLight()}>No dependencies</Caption>
-                )} */}
-              </Box>
-            </CollapsibleSection>
-            <CollapsibleSection
-              header={<Subtitle1>Latest execution</Subtitle1>}
-              headerWrapperProps={headerWrapperProps}
-              arrowSide="right"
-            >
-              {lastExecution?.evaluation?.description ? (
-                <Box padding={{top: 12}} flex={{gap: 12, direction: 'column'}}>
-                  <Description description={lastExecution.evaluation.description} maxHeight={260} />
-                </Box>
-              ) : null}
-              <Box padding={{top: 12}} flex={{direction: 'column', gap: 12}}>
-                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 24}}>
-                  <Box flex={{direction: 'column', gap: 6}}>
-                    <Subtitle2>Evaluation result</Subtitle2>
-                    <div>
-                      <AssetCheckStatusTag
-                        execution={selectedCheck.executionForLatestMaterialization}
-                      />
-                    </div>
-                  </Box>
-                  {lastExecution ? (
-                    <Box flex={{direction: 'column', gap: 6}}>
-                      <Subtitle2>Timestamp</Subtitle2>
-                      <Link
-                        to={linkToRunEvent(
-                          {id: lastExecution.runId},
-                          {stepKey: lastExecution.stepKey, timestamp: lastExecution.timestamp},
-                        )}
-                      >
-                        <Timestamp timestamp={{unix: lastExecution.timestamp}} />
-                      </Link>
-                    </Box>
-                  ) : null}
-                  {targetMaterialization ? (
-                    <Box flex={{direction: 'column', gap: 6}}>
-                      <Subtitle2>Target materialization</Subtitle2>
-                      <Link to={`/runs/${targetMaterialization.runId}`}>
-                        <Timestamp timestamp={{unix: targetMaterialization.timestamp}} />
-                      </Link>
-                    </Box>
-                  ) : null}
-                </div>
-                {lastExecution?.evaluation?.metadataEntries.length ? (
-                  <Box flex={{direction: 'column', gap: 6}}>
-                    <Subtitle2>Metadata</Subtitle2>
-                    <MetadataEntries entries={lastExecution.evaluation.metadataEntries} />
-                  </Box>
-                ) : null}
-              </Box>
-            </CollapsibleSection>
-            <CollapsibleSection
-              header={<Subtitle1>Plots</Subtitle1>}
-              headerWrapperProps={headerWrapperProps}
-              isInitiallyCollapsed={executionsLoading || executionPlotGroups.length === 0}
-              key={`reset-collapsed-on-load-${executionsLoading}`}
-              arrowSide="right"
-            >
-              <AssetMaterializationGraphs
-                xAxis="time"
-                groups={executionPlotGroups}
-                emptyState={
-                  <Box padding={{horizontal: 24, vertical: 24}}>
-                    <NonIdealState
-                      shrinkable
-                      icon="asset_plot"
-                      title="Plots are automatically generated by metadata"
-                      description="Include numeric metadata entries in your check metadata to see data graphed."
-                      action={
-                        <ExternalAnchorButton href="https://docs.dagster.io/concepts/metadata-tags/asset-metadata">
-                          View documentation
-                        </ExternalAnchorButton>
-                      }
-                    />
-                  </Box>
-                }
-              />
-            </CollapsibleSection>
-            <CollapsibleSection
-              header={<Subtitle1>Execution history</Subtitle1>}
-              headerWrapperProps={headerWrapperProps}
-              arrowSide="right"
-            >
-              <Box padding={{top: 12}}>
-                {pastExecutions.length > 0 ? (
-                  <CheckExecutions executions={pastExecutions} paginationProps={paginationProps} />
-                ) : (
-                  <Caption color={Colors.textLight()}>No execution history</Caption>
-                )}
-              </Box>
-            </CollapsibleSection>
+          <Box padding={{horizontal: 24}} border="bottom">
+            <AssetChecksTabs
+              activeTab={activeTab}
+              onChange={(tab) => {
+                setActiveTab(tab);
+              }}
+            />
           </Box>
+          {activeTab === 'overview' ? (
+            <AssetCheckOverview
+              selectedCheck={selectedCheck}
+              lastExecution={lastExecution}
+              targetMaterialization={targetMaterialization}
+              executions={executions}
+              executionsLoading={executionsLoading}
+            />
+          ) : null}
+          {activeTab === 'execution-history' ? (
+            <AssetCheckExecutionList
+              executions={pastExecutions}
+              paginationProps={paginationProps}
+            />
+          ) : null}
         </Box>
       </Box>
     </Box>
   );
 };
-
-type Execution = AssetCheckDetailsQuery['assetCheckExecutions'][0];
 
 const useHistoricalCheckExecutions = (
   variables: {assetKey: AssetKeyInput; checkName: string} | null,
@@ -429,85 +300,6 @@ const useHistoricalCheckExecutions = (
   return {executions, executionsLoading, paginationProps};
 };
 
-const CheckExecutions = ({
-  executions,
-  paginationProps,
-}: {
-  executions: Execution[];
-  paginationProps: CursorPaginationProps;
-}) => {
-  const runHistory = () => {
-    if (!executions) {
-      return;
-    }
-    return (
-      <div>
-        <Table>
-          <thead>
-            <tr>
-              <th style={{width: '160px'}}>Evaluation result</th>
-              <th style={{width: '200px'}}>Timestamp</th>
-              <th style={{width: '200px'}}>Target materialization</th>
-              <th>Metadata</th>
-            </tr>
-          </thead>
-          <tbody>
-            {executions.map((execution) => {
-              return (
-                <tr key={execution.id}>
-                  <td>
-                    <AssetCheckStatusTag execution={execution} />
-                  </td>
-                  <td>
-                    {execution.evaluation?.timestamp ? (
-                      <Link
-                        to={linkToRunEvent(
-                          {id: execution.runId},
-                          {stepKey: execution.stepKey, timestamp: execution.timestamp},
-                        )}
-                      >
-                        <TimestampDisplay timestamp={execution.evaluation.timestamp} />
-                      </Link>
-                    ) : (
-                      <TimestampDisplay timestamp={execution.timestamp} />
-                    )}
-                  </td>
-                  <td>
-                    {execution.evaluation?.targetMaterialization ? (
-                      <Link to={`/runs/${execution.evaluation.targetMaterialization.runId}`}>
-                        <TimestampDisplay
-                          timestamp={execution.evaluation.targetMaterialization.timestamp}
-                        />
-                      </Link>
-                    ) : (
-                      ' - '
-                    )}
-                  </td>
-                  <td>
-                    <MetadataCell metadataEntries={execution.evaluation?.metadataEntries} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-        <div style={{paddingBottom: '16px'}}>
-          <CursorHistoryControls {...paginationProps} />
-        </div>
-      </div>
-    );
-  };
-
-  if (!executions) {
-    return (
-      <Box flex={{direction: 'column'}} padding={24}>
-        <Spinner purpose="section" />
-      </Box>
-    );
-  }
-  return <Box flex={{direction: 'column'}}>{runHistory()}</Box>;
-};
-
 const FixedScrollContainer = ({children}: {children: React.ReactNode}) => {
   // This is kind of hacky but basically the height of the parent of this element is dynamic (its parent has flex grow)
   // but we don't want it to grow with the content inside of this node, instead we want it only to grow with the content of our sibling node.
@@ -530,38 +322,4 @@ const CheckRow = styled(Row)<{$selected: boolean} & RowProps>`
     background: ${Colors.backgroundLightHover()};
   }
   ${({$selected}) => ($selected ? `background: ${Colors.backgroundBlue()};` : '')}
-`;
-
-const headerWrapperProps: React.ComponentProps<typeof Box> = {
-  border: 'bottom',
-  padding: {vertical: 12},
-  style: {
-    cursor: 'pointer',
-  },
-};
-
-export const ASSET_CHECKS_QUERY = gql`
-  query AssetChecksQuery($assetKey: AssetKeyInput!) {
-    assetNodeOrError(assetKey: $assetKey) {
-      ... on AssetNode {
-        id
-        ...ExecuteChecksButtonAssetNodeFragment
-
-        assetChecksOrError {
-          ... on AssetCheckNeedsMigrationError {
-            message
-          }
-          ... on AssetChecks {
-            checks {
-              ...ExecuteChecksButtonCheckFragment
-              ...AssetCheckTableFragment
-            }
-          }
-        }
-      }
-    }
-  }
-  ${EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT}
-  ${EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT}
-  ${ASSET_CHECK_TABLE_FRAGMENT}
 `;

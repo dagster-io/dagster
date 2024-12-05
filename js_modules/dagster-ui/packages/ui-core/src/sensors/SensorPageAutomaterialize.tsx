@@ -167,7 +167,7 @@ export const SensorPageAutomaterialize = (props: Props) => {
 
   return (
     <>
-      <SensorInfo assetDaemonHealth={daemonStatus} padding={{vertical: 16, horizontal: 24}} />
+      <SensorInfo assetDaemonStatus={daemonStatus} padding={{vertical: 16, horizontal: 24}} />
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
         <Subtitle2>Evaluation timeline</Subtitle2>
       </Box>

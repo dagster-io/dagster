@@ -260,7 +260,7 @@ export const SearchBox = styled.div<SearchBoxProps>`
   padding: 12px 20px 12px 12px;
   transition: all 100ms linear;
 
-  :hover {
+  &:hover {
     box-shadow: ${({$hasQueryString}) =>
         $hasQueryString ? Colors.keylineDefault() : Colors.borderHover()}
       0 0 0 1px inset;

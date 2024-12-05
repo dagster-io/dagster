@@ -119,8 +119,8 @@ export const SearchableListRow = ({iconName, label, path}: SearchableListRowProp
 };
 
 const ListLink = styled(Link)`
-  :active,
-  :focus {
+  &:active,
+  &:focus {
     outline: none;
   }
 `;

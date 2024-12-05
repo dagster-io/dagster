@@ -117,32 +117,34 @@ export const Tab = styled((props: TabProps) => {
   ${tabCSS}
 `;
 
-interface TabsProps {
-  children: Array<React.ReactElement<TabProps>>;
+type TabsProps = Omit<React.HTMLProps<HTMLDivElement>, 'size' | 'onChange'> & {
+  children: Array<React.ReactElement<TabProps> | null>;
   selectedTabId?: string;
   onChange?: (selectedTabId: string) => void;
   size?: 'small' | 'large';
-}
+};
 
-export const Tabs = styled(({selectedTabId, children, onChange, size = 'large', ...rest}) => {
-  return (
-    <div {...rest} role="tablist">
-      {React.Children.map(children, (child) =>
-        child
-          ? React.cloneElement(child, {
-              selected: child.props.selected || child.props.id === selectedTabId,
-              $size: size,
-              ...(onChange
-                ? {
-                    onClick: () => onChange(child.props.id),
-                  }
-                : {}),
-            })
-          : null,
-      )}
-    </div>
-  );
-})<TabsProps>`
+export const Tabs = styled(
+  ({selectedTabId, children, onChange, size = 'large', ...rest}: TabsProps) => {
+    return (
+      <div {...rest} role="tablist">
+        {React.Children.map(children, (child) =>
+          child
+            ? React.cloneElement(child, {
+                selected: child.props.selected || child.props.id === selectedTabId,
+                $size: size,
+                ...(onChange
+                  ? {
+                      onClick: () => child.props.id && onChange(child.props.id),
+                    }
+                  : {}),
+              })
+            : null,
+        )}
+      </div>
+    );
+  },
+)<TabsProps>`
   display: flex;
   gap: 16px;
   font-size: ${({size}) => (size === 'small' ? '12px' : '14px')};

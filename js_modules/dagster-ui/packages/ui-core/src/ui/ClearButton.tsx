@@ -13,15 +13,15 @@ export const ClearButton = styled.button`
     transition: background-color 100ms linear;
   }
 
-  :hover ${IconWrapper}, :focus ${IconWrapper} {
+  &:hover ${IconWrapper}, &:focus ${IconWrapper} {
     background-color: ${Colors.accentGrayHover()};
   }
 
-  :active ${IconWrapper} {
+  &:active ${IconWrapper} {
     background-color: ${Colors.textDefault()};
   }
 
-  :focus {
+  &:focus {
     outline: none;
   }
 `;

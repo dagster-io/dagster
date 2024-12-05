@@ -1,7 +1,7 @@
 import {Box, Caption, Colors, Popover} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {TagType} from '../runs/RunTag';
 
@@ -19,11 +19,9 @@ export const TagActions = ({data, actions}: {data: TagType; actions: TagAction[]
   <ActionContainer background={Colors.tooltipBackground()} flex={{direction: 'row'}}>
     {actions.map((action, ii) =>
       'to' in action ? (
-        <Link to={action.to} key={ii}>
-          <TagButton>
-            <Caption>{action.label}</Caption>
-          </TagButton>
-        </Link>
+        <TagButtonLink to={action.to} key={ii}>
+          <Caption>{action.label}</Caption>
+        </TagButtonLink>
       ) : (
         <TagButton key={ii} onClick={() => action.onClick(data)}>
           <Caption>{action.label}</Caption>
@@ -63,7 +61,7 @@ const ActionContainer = styled(Box)`
   overflow: hidden;
 `;
 
-const TagButton = styled.button`
+const TagButtonSharedStyles = css`
   border: none;
   background: ${Colors.tooltipBackground()};
   color: ${Colors.tooltipText()};
@@ -73,15 +71,29 @@ const TagButton = styled.button`
   opacity: 0.85;
   transition: opacity 50ms linear;
 
-  :not(:last-child) {
+  &:not(:last-child) {
     box-shadow: -1px 0 0 inset ${Colors.borderHover()};
   }
 
-  :focus {
+  &:focus {
     outline: none;
   }
+`;
+
+const TagButton = styled.button`
+  ${TagButtonSharedStyles}
+
+  &:hover {
+    opacity: 1;
+  }
+`;
+
+const TagButtonLink = styled(Link)`
+  ${TagButtonSharedStyles}
 
   :hover {
+    color: ${Colors.tooltipText()};
+    text-decoration: none;
     opacity: 1;
   }
 `;

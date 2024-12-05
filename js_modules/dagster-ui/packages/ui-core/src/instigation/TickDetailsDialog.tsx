@@ -7,14 +7,13 @@ import {
   DialogFooter,
   DialogHeader,
   MiddleTruncate,
-  Spinner,
+  NonIdealState,
+  SpinnerWithText,
   Subtitle2,
-  Tab,
   Table,
-  Tabs,
   Tag,
 } from '@dagster-io/ui-components';
-import {useMemo, useState} from 'react';
+import {useMemo} from 'react';
 
 import {RunList, TargetedRunList} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
@@ -35,7 +34,6 @@ import {
   InstigationTickStatus,
 } from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {QueryfulTickLogsTable} from '../ticks/TickLogDialog';
 import {TickResultType} from '../ticks/TickStatusTag';
 
 interface DialogProps extends InnerProps {
@@ -61,13 +59,9 @@ export const TickDetailsDialog = ({
         tickResultType={tickResultType}
         instigationSelector={instigationSelector}
       />
-      {/* The logs table uses z-index for the column lines. Create a new stacking index
-      for the footer so that the lines don't sit above it. */}
-      <div style={{zIndex: 1}}>
-        <DialogFooter topBorder>
-          <Button onClick={onClose}>Close</Button>
-        </DialogFooter>
-      </div>
+      <DialogFooter topBorder>
+        <Button onClick={onClose}>Close</Button>
+      </DialogFooter>
     </Dialog>
   );
 };
@@ -79,12 +73,13 @@ interface InnerProps {
 }
 
 const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: InnerProps) => {
-  const [activeTab, setActiveTab] = useState<'result' | 'logs'>('result');
-
-  const {data} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(JOB_SELECTED_TICK_QUERY, {
-    variables: {instigationSelector, tickId: tickId || ''},
-    skip: !tickId,
-  });
+  const {data, loading} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(
+    JOB_SELECTED_TICK_QUERY,
+    {
+      variables: {instigationSelector, tickId: tickId || ''},
+      skip: !tickId,
+    },
+  );
 
   const tick =
     data?.instigationStateOrError.__typename === 'InstigationState'
@@ -105,11 +100,29 @@ const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: In
     return [added, deleted];
   }, [tick?.dynamicPartitionsRequestResults]);
 
+  if (loading) {
+    return (
+      <>
+        <DialogHeader label={`Tick for ${instigationSelector.name}`} />
+        <Box style={{padding: 64}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+          <SpinnerWithText label="Loading tick details…" />
+        </Box>
+      </>
+    );
+  }
+
   if (!tick) {
     return (
-      <Box style={{padding: 32}} flex={{alignItems: 'center', justifyContent: 'center'}}>
-        <Spinner purpose="section" />
-      </Box>
+      <>
+        <DialogHeader label={`Tick for ${instigationSelector.name}`} />
+        <Box style={{padding: 64}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+          <NonIdealState
+            icon="no-results"
+            title="Tick details not found"
+            description="Details for this tick could not be found."
+          />
+        </Box>
+      </>
     );
   }
 
@@ -117,25 +130,20 @@ const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: In
     <>
       <DialogHeader
         label={
-          <TimestampDisplay
-            timestamp={tick.timestamp}
-            timeFormat={{showTimezone: false, showSeconds: true}}
-          />
+          <>
+            <span>Tick for {instigationSelector.name}: </span>
+            <TimestampDisplay
+              timestamp={tick.timestamp}
+              timeFormat={{showTimezone: false, showSeconds: true}}
+            />
+          </>
         }
       />
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
         <TickDetailSummary tick={tick} tickResultType={tickResultType} />
       </Box>
-      <Box padding={{horizontal: 24}} border="bottom">
-        <Tabs selectedTabId={activeTab} onChange={setActiveTab}>
-          <Tab id="result" title="Result" />
-          <Tab id="logs" title="Logs" />
-        </Tabs>
-      </Box>
-      {tickResultType === 'materializations' && activeTab === 'result' ? (
-        <TickMaterializationsTable tick={tick} />
-      ) : null}
-      {tickResultType === 'runs' && activeTab === 'result' ? (
+      {tickResultType === 'materializations' ? <TickMaterializationsTable tick={tick} /> : null}
+      {tickResultType === 'runs' ? (
         <div style={{height: '500px', overflowY: 'auto'}}>
           {tick.runIds.length ? (
             <>
@@ -174,9 +182,6 @@ const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: In
             </Box>
           ) : null}
         </div>
-      ) : null}
-      {activeTab === 'logs' ? (
-        <QueryfulTickLogsTable instigationSelector={instigationSelector} tick={tick} />
       ) : null}
     </>
   );

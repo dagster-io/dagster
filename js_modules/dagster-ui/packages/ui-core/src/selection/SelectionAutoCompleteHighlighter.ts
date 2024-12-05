@@ -98,7 +98,7 @@ export class SyntaxHighlightingVisitor
   }
 
   visitAllExpression(ctx: AllExpressionContext) {
-    this.addClass(ctx, 'expression');
+    this.addClass(ctx, 'expression value');
     this.visitChildren(ctx);
   }
   visitIncompleteLeftQuotedStringValue(ctx: ParserRuleContext) {

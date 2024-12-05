@@ -129,12 +129,12 @@ const RepoLabel = styled.label`
   user-select: none;
   white-space: nowrap;
 
-  :focus,
-  :active {
+  &:focus,
+  &:active {
     outline: none;
   }
 
-  :hover {
+  &:hover {
     filter: opacity(0.8);
   }
 `;
@@ -188,11 +188,11 @@ const ReloadButtonInner = styled.button`
   margin: -6px;
   outline: none;
 
-  :disabled {
+  &:disabled {
     cursor: default;
   }
 
-  :disabled ${IconWrapper} {
+  &:disabled ${IconWrapper} {
     background-color: ${Colors.textDisabled()};
     transition: background-color 100ms;
   }
@@ -202,11 +202,11 @@ const ReloadButtonInner = styled.button`
     transition: background-color 100ms;
   }
 
-  :hover:not(:disabled) ${IconWrapper} {
+  &:hover:not(:disabled) ${IconWrapper} {
     background-color: ${Colors.textLighter()};
   }
 
-  :focus ${IconWrapper} {
+  &:focus ${IconWrapper} {
     background-color: ${Colors.linkDefault()};
   }
 `;
