@@ -1,4 +1,4 @@
-import {YamlModeValidationResult} from '@dagster-io/ui-components';
+import {YamlModeValidationResult} from '@dagster-io/ui-components/editor';
 import yaml from 'yaml';
 
 import {gql} from '../apollo-client';

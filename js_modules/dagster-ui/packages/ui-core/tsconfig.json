@@ -2,6 +2,7 @@
   "compilerOptions": {
     "paths": {
       "@dagster-io/ui-components": ["../ui-components/src"],
+      "@dagster-io/ui-components/editor": ["../ui-components/src/editor"],
       "shared/*": ["./src/*"]
     },
     "module": "es2022",

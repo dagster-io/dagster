@@ -1,11 +1,5 @@
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogFooter,
-  StyledRawCodeMirror,
-  Subheading,
-} from '@dagster-io/ui-components';
+import {Box, Button, Dialog, DialogFooter, Subheading} from '@dagster-io/ui-components';
+import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import styled from 'styled-components';
 
 import {RunTags} from './RunTags';
