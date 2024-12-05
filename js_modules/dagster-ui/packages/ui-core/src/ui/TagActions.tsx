@@ -71,11 +71,11 @@ const TagButtonSharedStyles = css`
   opacity: 0.85;
   transition: opacity 50ms linear;
 
-  :not(:last-child) {
+  &:not(:last-child) {
     box-shadow: -1px 0 0 inset ${Colors.borderHover()};
   }
 
-  :focus {
+  &:focus {
     outline: none;
   }
 `;
@@ -83,7 +83,7 @@ const TagButtonSharedStyles = css`
 const TagButton = styled.button`
   ${TagButtonSharedStyles}
 
-  :hover {
+  &:hover {
     opacity: 1;
   }
 `;

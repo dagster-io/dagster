@@ -302,10 +302,7 @@ const HoveredDictEntryContextProvider = React.memo(({children}: {children: React
 });
 
 const DictEntry = React.forwardRef(
-  (
-    props: React.ComponentProps<typeof DictEntryDiv>,
-    ref: React.ForwardedRef<HTMLButtonElement>,
-  ) => {
+  (props: React.ComponentProps<typeof DictEntryDiv>, ref: React.ForwardedRef<HTMLDivElement>) => {
     const {hovered, onMouseEnter, onMouseLeave} =
       React.useContext(HoveredDictEntryContext).useDictEntryHover();
 
@@ -324,7 +321,7 @@ const DictEntry = React.forwardRef(
 );
 
 const DictEntryDiv2 = styled.div``;
-const DictEntryDiv = styled.div<{$hovered: boolean}>`
+const DictEntryDiv = styled.div<{$hovered?: boolean}>`
   border: 1px solid transparent;
 
   ${({$hovered}) =>

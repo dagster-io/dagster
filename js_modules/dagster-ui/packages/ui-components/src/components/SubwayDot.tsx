@@ -93,8 +93,8 @@ const Blob = styled.div<BlobProps>`
   user-select: none;
   width: ${({$blobSize}) => `${$blobSize}px`};
 
-  :focus,
-  :active {
+  &:focus,
+  &:active {
     outline: none;
   }
 `;

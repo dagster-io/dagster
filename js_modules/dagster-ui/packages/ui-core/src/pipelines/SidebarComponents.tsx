@@ -53,7 +53,7 @@ export const SidebarTitle = styled.h3`
   overflow: hidden;
   text-overflow: ellipsis;
 
-  :first-child:last-child {
+  &:first-child:last-child {
     margin-bottom: 0;
   }
 `;

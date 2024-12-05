@@ -52,6 +52,8 @@ export const ZoomSlider = React.memo((props: {value: number; onChange: (v: numbe
   );
 });
 
-const ZoomSliderContainer = styled.div`
+const ZoomSliderContainer = styled.div<{
+  $fillColor: string;
+}>`
   ${SliderStyles}
 `;

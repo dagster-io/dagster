@@ -260,16 +260,16 @@ const IconButton = styled.button`
   position: relative;
   border-radius: 8px;
   transition: background 200ms ease-in-out;
-}
-  :hover {
+
+  &:hover {
     background-color: ${Colors.backgroundLightHover()};
   }
 
-  :focus {
+  &:focus {
     outline: none;
   }
 
-  :active {
+  &:active {
     background-color: ${Colors.backgroundLight()};
   }
 `;

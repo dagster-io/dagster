@@ -42,7 +42,7 @@ export const HeaderCell = ({
   ...rest
 }: React.ComponentProps<typeof CellBox>) => {
   // no text select
-  const clickStyle = onClick ? {cursor: 'pointer', userSelect: 'none'} : {};
+  const clickStyle = onClick ? {cursor: 'pointer', userSelect: 'none' as const} : {};
 
   return (
     <CellBox
@@ -82,11 +82,11 @@ export const RowCell = ({
 
 export const CellBox = styled(Box)`
   overflow: hidden;
-  :first-child {
+  &:first-child {
     padding-left: 24px;
   }
 
-  :last-child {
+  &:last-child {
     padding-right: 24px;
     box-shadow: none;
   }

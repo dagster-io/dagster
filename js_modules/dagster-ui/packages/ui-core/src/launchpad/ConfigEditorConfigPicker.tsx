@@ -445,11 +445,11 @@ export const SortButton = styled.button`
   border-radius: 4px;
   transition: background-color 100ms;
 
-  :focus {
+  &:focus {
     background-color: ${Colors.backgroundLighterHover()};
     outline: none;
   }
-  :hover {
+  &:hover {
     ${IconWrapper} {
       background-color: ${Colors.backgroundLight()};
     }
