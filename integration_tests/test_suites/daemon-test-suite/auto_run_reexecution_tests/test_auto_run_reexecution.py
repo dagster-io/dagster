@@ -719,6 +719,15 @@ def test_consume_new_runs_for_automatic_reexecution_retry_run_deleted(instance, 
 
 
 def test_code_location_unavailable(instance, workspace_context):
+    """This test documents the behavior of the daemon if retry_run raises an exception. Since we
+    catch any exception raised by retry_run and log the error instead of re-raising, the daemon will
+    update the cursors and continue as normal. This means that if retry_run fails, the run will not
+    get processed again by the daemon. So we need to mark that the run will not be retried so that
+    the tags reflect the state of the system.
+
+    If we modify the EventLogConsumerDaemon so that we can re-process runs where an error was raised, then
+    we could reconsider this behavior and try to reprocess runs where something in retry_run failed.
+    """
     instance.wipe()
     instance.run_coordinator.queue().clear()
     list(

@@ -210,7 +210,12 @@ def consume_new_runs_for_automatic_reexecution(
                 run,
                 engine_event_data=EngineEventData(error=error_info),
             )
-            # mark that this run will not be retried so that the tags reflect the state of the system
+            # Since something failed when retrying this run, mark that we will not retry it so that we
+            # don't retry it again in the future, and so that the tags reflect the state of the system.
+            # We may want to split out the kinds of exceptions and handle them differently in the future so
+            # that this can be more resiliant to transient errors. However, this would also require some changes
+            # to the EventLogConsumerDaemon so that the cursors are not updated in a way that prevents this run
+            # from being processed in the next tick.
             workspace_process_context.instance.add_run_tags(
                 run_id=run.run_id, new_tags={WILL_RETRY_TAG: "false"}
             )
