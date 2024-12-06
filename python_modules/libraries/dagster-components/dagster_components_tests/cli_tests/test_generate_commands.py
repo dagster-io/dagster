@@ -32,7 +32,7 @@ def _assert_module_imports(module_name: str):
 # This is a holder for code that is intended to be written to a file
 def _example_component_type_baz():
     from dagster import AssetExecutionContext, Definitions, PipesSubprocessClient, asset
-    from dagster_components import Component, ComponentLoadContext
+    from dagster_components import Component, ComponentLoadContext, component
 
     _SAMPLE_PIPES_SCRIPT = """
     from dagster_pipes import open_dagster_pipes
@@ -41,6 +41,7 @@ def _example_component_type_baz():
     context.report_asset_materialization({"alpha": "beta"})
     """
 
+    @component(name="baz")
     class Baz(Component):
         @classmethod
         def generate_files(cls):
@@ -91,6 +92,13 @@ def clean_module_cache(module_name: str):
     for key in keys_to_del:
         del sys.modules[key]
     yield
+
+
+def ensure_invoke_success(runner: CliRunner, command, *args):
+    result = runner.invoke(command, args)
+    if result.exit_code != 0:
+        raise Exception(result.output)
+    return result
 
 
 def test_generate_deployment_command_success() -> None:
@@ -179,8 +187,7 @@ def test_generate_component_success() -> None:
     runner = CliRunner()
     _ensure_cwd_on_sys_path()
     with isolated_example_code_location_bar_with_component_type_baz(runner):
-        result = runner.invoke(generate_component_command, ["baz", "qux"])
-        assert result.exit_code == 0
+        ensure_invoke_success(runner, generate_component_command, "baz", "qux")
         assert Path("bar/components/qux").exists()
         assert Path("bar/components/qux/sample.py").exists()
 

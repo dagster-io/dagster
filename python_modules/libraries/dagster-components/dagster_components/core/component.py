@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, Iterable, Mapping, Optional, Type
 
+from dagster import _check as check
 from dagster._core.errors import DagsterError
 from dagster._utils import snakecase
 from typing_extensions import Self
@@ -18,10 +19,6 @@ class Component(ABC):
     name: ClassVar[Optional[str]] = None
     defs_params_schema: ClassVar[Type] = Type[None]
     generate_params_schema: ClassVar[Type] = Type[None]
-
-    @classmethod
-    def registered_name(cls) -> str:
-        return cls.name or snakecase(cls.__name__)
 
     @classmethod
     def generate_files(cls, params: Any) -> Optional[Mapping[str, Any]]: ...
@@ -70,9 +67,8 @@ def register_components_in_module(registry: ComponentRegistry, root_module: Modu
 
     for module in find_modules_in_package(root_module):
         for component in find_subclasses_in_module(module, (Component,)):
-            if component is Component:
-                continue
-            registry.register(component.registered_name(), component)
+            if is_component(component):
+                registry.register(get_component_name(component), component)
 
 
 class ComponentLoadContext:
@@ -89,3 +85,43 @@ class ComponentLoadContext:
         return ComponentLoadContext(
             resources=resources or {}, registry=registry or ComponentRegistry.empty()
         )
+
+
+COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"
+
+
+def component(
+    cls: Optional[Type[Component]] = None,
+    *,
+    name: Optional[str] = None,
+) -> Any:
+    if cls is None:
+
+        def wrapper(actual_cls: Type[Component]) -> Type[Component]:
+            check.inst_param(actual_cls, "actual_cls", type)
+            setattr(
+                actual_cls,
+                COMPONENT_REGISTRY_KEY_ATTR,
+                name or snakecase(actual_cls.__name__),
+            )
+            return actual_cls
+
+        return wrapper
+    else:
+        # called without params
+        check.inst_param(cls, "cls", type)
+        setattr(cls, COMPONENT_REGISTRY_KEY_ATTR, name or snakecase(cls.__name__))
+        return cls
+
+
+def is_component(cls: Type) -> bool:
+    return hasattr(cls, COMPONENT_REGISTRY_KEY_ATTR)
+
+
+def get_component_name(component_type: Type[Component]) -> str:
+    check.param_invariant(
+        is_component(component_type),
+        "component_type",
+        "Expected a registered component. Use @component to register a component.",
+    )
+    return getattr(component_type, COMPONENT_REGISTRY_KEY_ATTR)
