@@ -763,4 +763,16 @@ describe('createAssetSelectionHint', () => {
       to: 33,
     });
   });
+
+  it('suggests attribute values when cursor left of the double quote', () => {
+    expect(testAutocomplete('tag:"tag|"')).toEqual({
+      from: 4,
+      list: [
+        {text: '"tag1"', displayText: 'tag1'},
+        {text: '"tag2"', displayText: 'tag2'},
+        {text: '"tag3"', displayText: 'tag3'},
+      ],
+      to: 9,
+    });
+  });
 });

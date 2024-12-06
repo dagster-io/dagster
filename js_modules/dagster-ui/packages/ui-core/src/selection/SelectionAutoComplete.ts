@@ -54,6 +54,7 @@ export class SelectionAutoCompleteVisitor
   public list: Suggestion[] = [];
   public _startReplacementIndex: number = 0;
   public _stopReplacementIndex: number = 0;
+  private forceVisitCtx = new WeakSet<any>();
 
   set startReplacementIndex(newValue: number) {
     if (DEBUG) {
@@ -104,12 +105,18 @@ export class SelectionAutoCompleteVisitor
     this._stopReplacementIndex = cursorIndex;
   }
 
+  forceVisit(ctx: ParserRuleContext) {
+    this.forceVisitCtx.add(ctx);
+    ctx.accept(this);
+  }
+
   visit(tree: ParseTree) {
     const _tree = tree as ParserRuleContext;
     if (
       _tree.start.startIndex !== undefined &&
       _tree.stop?.stopIndex !== undefined &&
-      !this.nodeIncludesCursor(_tree)
+      !this.nodeIncludesCursor(_tree) &&
+      !this.forceVisitCtx.has(_tree)
     ) {
       if (!tree.parent) {
         // If we're at the root but not within the expression then we're at the whitespace before any expression.
@@ -117,6 +124,7 @@ export class SelectionAutoCompleteVisitor
         this.startReplacementIndex = this.cursorIndex;
         this.stopReplacementIndex = this.cursorIndex;
       }
+      console.log('NOT VISITING', tree.constructor.name);
       return;
     }
     return super.visit(tree);
@@ -134,14 +142,16 @@ export class SelectionAutoCompleteVisitor
         const isWhitespace = c.constructor.name.endsWith('WhitespaceContext');
         if (
           !this.nodeIncludesCursor(c) &&
-          (!isWhitespace || c.start.startIndex !== this.cursorIndex)
+          (!isWhitespace || c.start.startIndex !== this.cursorIndex) &&
+          !this.forceVisitCtx.has(c)
         ) {
           continue;
         }
         const nextChild = node.childCount - 1 > i ? (node.getChild(i + 1) as any) : null;
         if (
           !this.nodeIncludesCursor(c, 0) &&
-          nextChild?.constructor.name.endsWith('WhitespaceContext')
+          nextChild?.constructor.name.endsWith('WhitespaceContext') &&
+          !this.forceVisitCtx.has(c)
         ) {
           // Let the whitespace handle the suggestion
           continue;
@@ -333,18 +343,19 @@ export class SelectionAutoCompleteVisitor
   }
 
   visitAttributeValue(ctx: AttributeValueContext) {
-    if (this.nodeIncludesCursor(ctx)) {
-      const stopIndex = ctx.stop!.stopIndex;
-      if (this.cursorIndex >= stopIndex && this.line[stopIndex] === '"') {
-        this.addAfterExpressionResults(ctx);
-        return;
-      }
-      this.startReplacementIndex = ctx.start!.startIndex;
-      this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
-      const parentChildren = ctx.parent?.children ?? [];
-      if (parentChildren[0]?.constructor.name === 'AttributeNameContext') {
-        this.addAttributeValueResults(parentChildren[0].text, getValue(ctx.value()));
-      }
+    const stopIndex = ctx.stop!.stopIndex;
+    console.log(stopIndex, this.cursorIndex, this.line[this.cursorIndex]);
+    if (this.cursorIndex >= stopIndex && this.line[this.cursorIndex - 1] === '"') {
+      console.log('after');
+      this.addAfterExpressionResults(ctx);
+      return;
+    }
+    this.startReplacementIndex = ctx.start!.startIndex;
+    this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
+    const parentChildren = ctx.parent?.children ?? [];
+    if (parentChildren[0]?.constructor.name === 'AttributeNameContext') {
+      console.log('attribute name context', parentChildren[0].text, getValue(ctx.value()));
+      this.addAttributeValueResults(parentChildren[0].text, getValue(ctx.value()));
     }
   }
 
@@ -485,8 +496,8 @@ export class SelectionAutoCompleteVisitor
   visitPostAttributeValueWhitespace(ctx: PostAttributeValueWhitespaceContext) {
     const attributeValue = ctx.parent!.getChild(2) as any;
     if (this.cursorIndex === attributeValue?.stop?.stopIndex + 1) {
-      this.cursorIndex -= 1;
-      attributeValue.accept(this);
+      console.log('force visiting');
+      this.forceVisit(attributeValue);
     } else {
       this.visitPostExpressionWhitespace(ctx);
     }
