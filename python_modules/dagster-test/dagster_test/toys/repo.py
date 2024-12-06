@@ -186,7 +186,7 @@ def upstream_assets_repository():
 
 @repository
 def downstream_assets_repository1():
-    return downstream_repo1_assets
+    return downstream_ repo1_assets
 
 
 @repository

@@ -120,7 +120,9 @@ class DagsterSigmaTranslator:
             }
             datasets = [self._context.get_datasets_by_inode()[inode] for inode in data.datasets]
             tables = [
-                self._context.get_tables_by_inode()[inode] for inode in data.direct_table_deps
+                self._context.get_tables_by_inode()[inode]
+                for inode in data.direct_table_deps
+                if inode in self._context.get_tables_by_inode()
             ]
 
             return AssetSpec(
