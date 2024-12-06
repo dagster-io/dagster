@@ -33,7 +33,7 @@ setup(
     entry_points={"console_scripts": ["dagster-celery = dagster_celery.cli:main"]},
     python_requires=">=3.9,<3.13",
     install_requires=[
-        f"dagster{pin}",
+        "dagster==1.9.4rc0",
         "celery>=4.3.0",
         "click>=5.0,<9.0",
         "importlib_metadata<5.0.0; python_version<'3.8'",  # https://github.com/celery/celery/issues/7783
