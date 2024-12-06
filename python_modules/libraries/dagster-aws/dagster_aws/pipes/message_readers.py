@@ -231,7 +231,11 @@ def tail_cloudwatch_events(
     if start_time is not None:
         params["startTime"] = start_time
 
-    response = client.get_log_events(**params)
+    try:
+        response = client.get_log_events(**params)
+    except client.exceptions.ResourceNotFoundException:
+        yield []
+        return
 
     while True:
         events = response.get("events")
@@ -379,7 +383,12 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         if cursor is not None:
             params["nextToken"] = cursor
 
-        response = self.client.get_log_events(**params)
+        try:
+            response = self.client.get_log_events(**params)
+        except self.client.exceptions.ResourceNotFoundException:
+            return None
+        except self.client.exceptions.ThrottlingException:
+            return None
 
         events = response.get("events")
 
