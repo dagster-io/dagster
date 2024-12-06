@@ -1,5 +1,5 @@
 from dagster_components import Component, component
-from dagster_components.core.component import component_registry_key_of, is_component
+from dagster_components.core.component import get_component_name, is_component
 
 
 def test_registered_component_with_default_name() -> None:
@@ -7,7 +7,7 @@ def test_registered_component_with_default_name() -> None:
     class RegisteredComponent(Component): ...
 
     assert is_component(RegisteredComponent)
-    assert component_registry_key_of(RegisteredComponent) == "registered_component"
+    assert get_component_name(RegisteredComponent) == "registered_component"
 
 
 def test_registered_component_with_default_name_and_parens() -> None:
@@ -15,7 +15,7 @@ def test_registered_component_with_default_name_and_parens() -> None:
     class RegisteredComponent(Component): ...
 
     assert is_component(RegisteredComponent)
-    assert component_registry_key_of(RegisteredComponent) == "registered_component"
+    assert get_component_name(RegisteredComponent) == "registered_component"
 
 
 def test_registered_component_with_explicit_kwarg_name() -> None:
@@ -23,7 +23,7 @@ def test_registered_component_with_explicit_kwarg_name() -> None:
     class RegisteredComponent(Component): ...
 
     assert is_component(RegisteredComponent)
-    assert component_registry_key_of(RegisteredComponent) == "explicit_name"
+    assert get_component_name(RegisteredComponent) == "explicit_name"
 
 
 def test_unregistered_component() -> None:

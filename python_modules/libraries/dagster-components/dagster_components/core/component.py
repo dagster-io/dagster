@@ -68,7 +68,7 @@ def register_components_in_module(registry: ComponentRegistry, root_module: Modu
     for module in find_modules_in_package(root_module):
         for component in find_subclasses_in_module(module, (Component,)):
             if is_component(component):
-                registry.register(component_registry_key_of(component), component)
+                registry.register(get_component_name(component), component)
 
 
 class ComponentLoadContext:
@@ -118,7 +118,7 @@ def is_component(cls: Type) -> bool:
     return hasattr(cls, COMPONENT_REGISTRY_KEY_ATTR)
 
 
-def component_registry_key_of(component_type: Type[Component]) -> str:
+def get_component_name(component_type: Type[Component]) -> str:
     check.param_invariant(
         is_component(component_type),
         "component_type",
