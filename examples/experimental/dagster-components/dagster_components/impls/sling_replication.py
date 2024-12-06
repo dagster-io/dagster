@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 import yaml
 from dagster._core.definitions.definitions_class import Definitions
@@ -15,6 +15,7 @@ from dagster_components.core.component_decl_builder import ComponentDeclNode, Ya
 
 class OpSpecBaseModel(BaseModel):
     name: Optional[str] = None
+    tags: Optional[Dict[str, str]] = None
 
 
 class SlingReplicationParams(BaseModel):
@@ -47,6 +48,7 @@ class SlingReplicationComponent(Component):
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         @sling_assets(
             name=self.op_spec.name if self.op_spec else self.dirpath.stem,
+            op_tags=self.op_spec.tags if self.op_spec else {},
             replication_config=self.dirpath / "replication.yaml",
         )
         def _fn(context: AssetExecutionContext, sling: SlingResource):
