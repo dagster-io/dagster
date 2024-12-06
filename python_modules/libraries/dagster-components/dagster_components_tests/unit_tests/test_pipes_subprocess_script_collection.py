@@ -8,7 +8,7 @@ from dagster_components.core.component_defs_builder import (
     build_defs_from_component_path,
     defs_from_components,
 )
-from dagster_components.impls.pipes_subprocess_script_collection import (
+from dagster_components.lib.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollection,
 )
 

@@ -42,7 +42,10 @@ setup(
     entry_points={
         "console_scripts": [
             "dg = dagster_components.cli:main",
-        ]
+        ],
+        "dagster.components": [
+            "lib = dagster_components.lib",
+        ],
     },
     extras_require={
         "sling": ["dagster-embedded-elt"],
