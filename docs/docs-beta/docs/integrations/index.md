@@ -1,8 +1,5 @@
 ---
-sidebar_class_name: hidden
 title: Integrations
 ---
 
-import DocCardList from '@theme/DocCardList';
-
-<DocCardList />
+You can integrate Dagster with external services using our libraries and libraries supported by the community.
