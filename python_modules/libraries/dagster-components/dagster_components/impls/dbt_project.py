@@ -15,10 +15,12 @@ from typing_extensions import Self
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import component
 from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
+from dagster_components.core.dsl_schema import OpSpecBaseModel
 
 
 class DbtProjectParams(BaseModel):
     dbt: DbtCliResource
+    op: Optional[OpSpecBaseModel] = None
 
 
 class DbtGenerateParams(BaseModel):
@@ -38,8 +40,9 @@ class DbtProjectComponent(Component):
     params_schema = DbtProjectParams
     generate_params_schema = DbtGenerateParams
 
-    def __init__(self, dbt_resource: DbtCliResource):
+    def __init__(self, dbt_resource: DbtCliResource, op_spec: Optional[OpSpecBaseModel]):
         self.dbt_resource = dbt_resource
+        self.op_spec = op_spec
 
     @classmethod
     def from_decl_node(cls, context: ComponentLoadContext, decl_node: ComponentDeclNode) -> Self:
@@ -50,13 +53,18 @@ class DbtProjectComponent(Component):
             loaded_params = TypeAdapter(cls.params_schema).validate_python(
                 decl_node.defs_file_model.component_params
             )
-        return cls(dbt_resource=loaded_params.dbt)
+        return cls(dbt_resource=loaded_params.dbt, op_spec=loaded_params.op)
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         project = DbtProject(self.dbt_resource.project_dir)
         project.prepare_if_dev()
 
-        @dbt_assets(manifest=project.manifest_path, project=project)
+        @dbt_assets(
+            manifest=project.manifest_path,
+            project=project,
+            name=self.op_spec.name if self.op_spec else project.name,
+            op_tags=self.op_spec.tags if self.op_spec else None,
+        )
         def _fn(context: AssetExecutionContext, dbt: DbtCliResource):
             yield from dbt.cli(["build"], context=context).stream()
 
