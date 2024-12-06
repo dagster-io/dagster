@@ -67,12 +67,19 @@ def filter_runs_to_should_retry(
             yield run
 
 
-def get_retried_run_if_exists(
-    run: DagsterRun, run_group: Sequence[DagsterRun]
+def get_automatically_retried_run_if_exists(
+    instance: DagsterInstance, run: DagsterRun, run_group: Sequence[DagsterRun]
 ) -> Optional[DagsterRun]:
-    return next(
+    if run.tags.get(AUTO_RETRY_RUN_ID_TAG) is not None:
+        return instance.get_run_by_id(run.tags[AUTO_RETRY_RUN_ID_TAG])
+    child_run = next(
         (retried_run for retried_run in run_group if run.run_id == retried_run.parent_run_id), None
     )
+    if child_run is not None and child_run.tags.get(RETRY_NUMBER_TAG) is not None:
+        # We use the presense of RETRY_NUMBER_TAG to confirm that the child run was launched
+        # by the automatic retry daemon. If the child run was launched by the user, the tag
+        # should not be present.
+        return child_run
 
 
 def get_reexecution_strategy(
@@ -145,7 +152,9 @@ def retry_run(
     # it is possible for the daemon to die between creating the run and submitting it. We account for this
     # possibility by checking if the a run already exists in the run group with the parent run id of the
     # failed run and resubmit it if necessary.
-    existing_retried_run = get_retried_run_if_exists(failed_run, run_group_list)
+    existing_retried_run = get_automatically_retried_run_if_exists(
+        instance=instance, run=failed_run, run_group=run_group_list
+    )
     if existing_retried_run is not None:
         # ensure the failed_run has the AUTO_RETRY_RUN_ID_TAG set
         if failed_run.tags.get(AUTO_RETRY_RUN_ID_TAG) is None:

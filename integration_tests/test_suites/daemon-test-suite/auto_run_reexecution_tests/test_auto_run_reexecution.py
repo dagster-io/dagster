@@ -827,12 +827,13 @@ def test_consume_new_runs_for_automatic_reexecution_with_manual_retry(instance, 
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
         )
     )
-    # because the manually retried run already exists, it is in the run group for the original run. Because
-    # it is in the run group of the original run, we will see that the run group contains a run with
-    # parent_run_id as the original run. Therefore the original run will not be retried
-    assert len(instance.run_coordinator.queue()) == 0
+    # the daemon can distinguish between a manual retry of a run and an auto-retry of a run and still
+    # launch an automatic retry. Therefore the original run will be retried
+    assert len(instance.run_coordinator.queue()) == 1
+    retry_run = instance.run_coordinator.queue()[0]
     run = instance.get_run_by_id(run.run_id)
-    assert run.tags.get(AUTO_RETRY_RUN_ID_TAG) == manual_retry.run_id
+    assert run.tags.get(AUTO_RETRY_RUN_ID_TAG) == retry_run.run_id
+    assert run.tags.get(AUTO_RETRY_RUN_ID_TAG) != manual_retry.run_id
 
 
 def test_daemon_enabled(instance):
