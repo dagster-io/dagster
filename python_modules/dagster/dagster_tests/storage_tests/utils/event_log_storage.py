@@ -5579,7 +5579,10 @@ class TestEventLogStorage:
                 == AssetCheckExecutionRecordStatus.SUCCEEDED
             )
             assert check_1_summary_record.last_check_execution_record.run_id == run_id_0
-            assert check_1_summary_record.last_completed_check_execution_record == check_1_summary_record.last_check_execution_record
+            assert (
+                check_1_summary_record.last_completed_check_execution_record
+                == check_1_summary_record.last_check_execution_record
+            )
             assert check_1_summary_record.last_completed_run_id == run_id_0
 
             check_2_summary_record = summary_records[check_key_2]
@@ -5659,7 +5662,10 @@ class TestEventLogStorage:
             )
             assert check_1_summary_record.last_check_execution_record.run_id == run_id_1
             # The latest completed data should not be updated.
-            assert check_1_summary_record.last_completed_check_execution_record == old_check_1_summary_record.last_check_execution_record
+            assert (
+                check_1_summary_record.last_completed_check_execution_record
+                == old_check_1_summary_record.last_check_execution_record
+            )
             assert check_1_summary_record.last_completed_run_id == run_id_0
 
     def test_large_asset_metadata(
