@@ -43,7 +43,7 @@ def generate_deployment_command(path: str) -> None:
 @generate_cli.command(name="code-location")
 @click.argument("name", type=str)
 def generate_code_location_command(name: str) -> None:
-    """Generate an Dagster code location subproject embedded in a deployment project."""
+    """Generate a Dagster code location subproject embedded in a deployment project."""
     if not is_inside_deployment_project(Path(".")):
         click.echo(
             click.style("This command must be run inside a Dagster deployment project.", fg="red")
