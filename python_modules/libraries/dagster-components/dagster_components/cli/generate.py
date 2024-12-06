@@ -29,7 +29,7 @@ def generate_cli() -> None:
 @generate_cli.command(name="deployment")
 @click.argument("path", type=str)
 def generate_deployment_command(path: str) -> None:
-    """Generate a Dagster deployment instance."""
+    """Generate a Dagster deployment project."""
     dir_abspath = os.path.abspath(path)
     if os.path.exists(dir_abspath):
         click.echo(
@@ -43,7 +43,7 @@ def generate_deployment_command(path: str) -> None:
 @generate_cli.command(name="code-location")
 @click.argument("name", type=str)
 def generate_code_location_command(name: str) -> None:
-    """Generate a Dagster code location inside a component."""
+    """Generate a Dagster code location inside a deployment."""
     if not is_inside_deployment_project(Path(".")):
         click.echo(
             click.style("This command must be run inside a Dagster deployment project.", fg="red")
@@ -62,7 +62,7 @@ def generate_code_location_command(name: str) -> None:
 @generate_cli.command(name="component-type")
 @click.argument("name", type=str)
 def generate_component_type_command(name: str) -> None:
-    """Generate a Dagster component instance."""
+    """Generate a Dagster component type in the current project's component library."""
     if not is_inside_code_location_project(Path(".")):
         click.echo(
             click.style(
