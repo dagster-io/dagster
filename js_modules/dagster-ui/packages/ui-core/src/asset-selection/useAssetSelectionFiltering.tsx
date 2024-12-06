@@ -13,9 +13,11 @@ export const useAssetSelectionFiltering = <
     definition?: FilterableAssetDefinition | null;
   },
 >({
+  loading: assetsLoading,
   assetSelection,
   assets,
 }: {
+  loading?: boolean;
   assetSelection: string;
 
   assets: T[];
@@ -25,7 +27,7 @@ export const useAssetSelectionFiltering = <
     [assets],
   );
 
-  const {fetchResult, graphQueryItems, graphAssetKeys} = useAssetGraphData(
+  const {loading, graphQueryItems, graphAssetKeys} = useAssetGraphData(
     assetSelection,
     useMemo(
       () => ({
@@ -33,8 +35,9 @@ export const useAssetSelectionFiltering = <
         hideNodesMatching: (node: AssetNodeForGraphQueryFragment) => {
           return !assetsByKey[tokenForAssetKey(node.assetKey)];
         },
+        loading: !!assetsLoading,
       }),
-      [assetsByKey],
+      [assetsByKey, assetsLoading],
     ),
   );
 
@@ -51,5 +54,5 @@ export const useAssetSelectionFiltering = <
     [filtered],
   );
 
-  return {filtered, filteredByKey, fetchResult, graphAssetKeys, graphQueryItems};
+  return {filtered, filteredByKey, loading, graphAssetKeys, graphQueryItems};
 };

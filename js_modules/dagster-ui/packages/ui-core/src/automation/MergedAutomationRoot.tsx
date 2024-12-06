@@ -25,9 +25,9 @@ import {makeAutomationKey} from '../sensors/makeSensorKey';
 import {useFilters} from '../ui/BaseFilters';
 import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {CheckAllBox} from '../ui/CheckAllBox';
+import {doesFilterArrayMatchValueArray} from '../ui/Filters/doesFilterArrayMatchValueArray';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {
-  doesFilterArrayMatchValueArray,
   useDefinitionTagFilterWithManagedState,
   useTagsForObjects,
 } from '../ui/Filters/useDefinitionTagFilter';

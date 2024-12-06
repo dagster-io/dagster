@@ -134,7 +134,7 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
   hashFn?: (arg: T, ...rest: any[]) => any,
   hashSize?: number,
 ): U {
-  const cache = new LRU(hashSize || 50);
+  const cache = new LRU<any, R>(hashSize || 50);
   return (async (arg: T, ...rest: any[]) => {
     const key = hashFn ? hashFn(arg, ...rest) : arg;
     if (cache.has(key)) {
