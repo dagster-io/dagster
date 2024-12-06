@@ -504,6 +504,17 @@ class SigmaOrganization(ConfigurableResource):
 
         tables: List[SigmaTable] = []
         logger.info("Fetching table data")
+        with self.try_except_http_warn(
+            self.warn_on_table_fetch_error, "Failed to fetch raw table data"
+        ):
+            for table in await self._fetch_tables():
+                inode = _inode_from_url(table["urlId"])
+                if inode in used_tables:
+                    tables.append(
+                        SigmaTable(
+                            properties=table,
+                        )
+                    )
 
         return SigmaOrganizationData(workbooks=workbooks, datasets=datasets, tables=tables)
 
