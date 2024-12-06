@@ -6,7 +6,7 @@ from typing import Generator
 
 import pytest
 from dagster import AssetKey
-from dagster_components.core.component_decl_builder import DefsFileModel
+from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
     build_components_from_component_folder,
@@ -52,9 +52,9 @@ def test_python_params(dbt_path: Path) -> None:
         context=script_load_context(),
         decl_node=YamlComponentDecl(
             path=dbt_path / COMPONENT_RELPATH,
-            defs_file_model=DefsFileModel(
-                component_type="dbt_project",
-                component_params={
+            component_file_model=ComponentFileModel(
+                type="dbt_project",
+                params={
                     "dbt": {"project_dir": "jaffle_shop"},
                     "translator": {"key": "some_prefix/{{ node.name }}"},
                 },

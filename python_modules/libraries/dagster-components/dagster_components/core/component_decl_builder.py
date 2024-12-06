@@ -8,15 +8,15 @@ from pydantic import BaseModel
 from dagster_components.core.component import ComponentDeclNode
 
 
-class DefsFileModel(BaseModel):
-    component_type: str
-    component_params: Optional[Mapping[str, Any]] = None
+class ComponentFileModel(BaseModel):
+    type: str
+    params: Optional[Mapping[str, Any]] = None
 
 
 @record
 class YamlComponentDecl(ComponentDeclNode):
     path: Path
-    defs_file_model: DefsFileModel
+    component_file_model: ComponentFileModel
 
 
 @record
@@ -27,19 +27,19 @@ class ComponentFolder(ComponentDeclNode):
 
 def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
     # right now, we only support two types of components, both of which are folders
-    # if the folder contains a defs.yml file, it's a component instance
+    # if the folder contains a component.yaml file, it's a component instance
     # otherwise, it's a folder containing sub-components
 
     if not path.is_dir():
         return None
 
-    defs_path = path / "defs.yml"
+    component_path = path / "component.yaml"
 
-    if defs_path.exists():
-        defs_file_model = parse_yaml_file_to_pydantic(
-            DefsFileModel, defs_path.read_text(), str(path)
+    if component_path.exists():
+        component_file_model = parse_yaml_file_to_pydantic(
+            ComponentFileModel, component_path.read_text(), str(path)
         )
-        return YamlComponentDecl(path=path, defs_file_model=defs_file_model)
+        return YamlComponentDecl(path=path, component_file_model=component_file_model)
 
     subs = []
     for subpath in path.iterdir():

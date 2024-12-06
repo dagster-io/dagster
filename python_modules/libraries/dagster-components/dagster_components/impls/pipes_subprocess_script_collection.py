@@ -68,7 +68,7 @@ class PipesSubprocessScriptCollection(Component):
     ) -> "PipesSubprocessScriptCollection":
         assert isinstance(component_decl, YamlComponentDecl)
         loaded_params = TypeAdapter(cls.params_schema).validate_python(
-            component_decl.defs_file_model.component_params
+            component_decl.component_file_model.params
         )
 
         path_specs = {}

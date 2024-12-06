@@ -57,9 +57,9 @@ def build_components_from_decl_node(
 def component_type_from_yaml_decl(
     context: ComponentLoadContext, decl_node: YamlComponentDecl
 ) -> Type:
-    parsed_defs = decl_node.defs_file_model
-    if parsed_defs.component_type.startswith("."):
-        component_registry_key = parsed_defs.component_type[1:]
+    parsed_defs = decl_node.component_file_model
+    if parsed_defs.type.startswith("."):
+        component_registry_key = parsed_defs.type[1:]
 
         # Iterate over Python files in the folder
         for py_file in decl_node.path.glob("*.py"):
@@ -76,7 +76,7 @@ def component_type_from_yaml_decl(
             f"Could not find component type {component_registry_key} in {decl_node.path}"
         )
 
-    return context.registry.get(parsed_defs.component_type)
+    return context.registry.get(parsed_defs.type)
 
 
 def build_components_from_component_folder(

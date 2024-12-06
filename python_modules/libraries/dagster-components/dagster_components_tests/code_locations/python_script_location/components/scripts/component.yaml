@@ -1,6 +1,6 @@
-component_type: pipes_subprocess_script_collection
+type: pipes_subprocess_script_collection
 
-component_params:
+params:
   scripts:
     - path: script_one.py
       assets:

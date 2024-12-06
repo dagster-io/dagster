@@ -35,7 +35,7 @@ class SlingReplicationComponent(Component):
     def from_decl_node(cls, context: ComponentLoadContext, decl_node: ComponentDeclNode) -> Self:
         assert isinstance(decl_node, YamlComponentDecl)
         loaded_params = TypeAdapter(cls.params_schema).validate_python(
-            decl_node.defs_file_model.component_params
+            decl_node.component_file_model.params
         )
         return cls(dirpath=decl_node.path, resource=loaded_params.sling, op_spec=loaded_params.op)
 

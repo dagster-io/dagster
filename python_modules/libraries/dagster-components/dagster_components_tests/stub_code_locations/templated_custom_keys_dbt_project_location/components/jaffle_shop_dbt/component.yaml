@@ -1,6 +1,6 @@
-component_type: dbt_project
+type: dbt_project
 
-component_params:
+params:
   dbt:
     project_dir: jaffle_shop
 
