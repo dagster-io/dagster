@@ -1,0 +1,11 @@
+table:
+  name: raw_customers
+  location: seeds/raw_customers.csv
+  with-header: true
+  file-format: csv
+---
+table:
+  name: raw_orders
+  location: seeds/raw_orders.csv
+  with-header: true
+  file-format: csv

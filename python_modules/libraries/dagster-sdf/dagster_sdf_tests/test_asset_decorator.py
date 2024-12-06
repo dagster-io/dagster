@@ -59,6 +59,19 @@ def test_asset_deps(moms_flower_shop_target_dir: Path) -> None:
     )
     assert asset_key == AssetKey(["moms_flower_shop", "raw", "raw_addresses"])
 
+    # What happens when we select a target which has deps?
+    @sdf_assets(
+        workspace=SdfWorkspace(
+            workspace_dir=moms_flower_shop_path, target_dir=moms_flower_shop_target_dir
+        ),
+        targets={"moms_flower_shop.raw.raw_addresses"},
+    )
+    def only_raw_addresses(): ...
+
+    assert only_raw_addresses.asset_deps == {
+        AssetKey(["moms_flower_shop", "raw", "raw_addresses"]): set(),
+    }
+
 
 def test_upstream_deps(lineage_upstream_target_dir: Path) -> None:
     @sdf_assets(

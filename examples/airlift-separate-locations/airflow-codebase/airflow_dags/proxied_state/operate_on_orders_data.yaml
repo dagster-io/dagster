@@ -1,0 +1,5 @@
+tasks:
+  - id: run_bespoke_in_isolated_env
+    proxied: false
+  - id: run_orders_models
+    proxied: false

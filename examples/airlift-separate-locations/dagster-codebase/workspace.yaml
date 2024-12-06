@@ -1,0 +1,11 @@
+# this corresponds to dagster_cloud.yaml in dagster cloud.
+load_from:
+  - python_module:
+      module_name: my_sdf.defs
+      location_name: sdf_models 
+  - python_module:
+      module_name: scraping.defs
+      location_name: scrapers 
+  - python_module:
+      module_name: adhoc.defs
+      location_name: adhoc

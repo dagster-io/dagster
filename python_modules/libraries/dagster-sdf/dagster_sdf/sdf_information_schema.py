@@ -125,7 +125,9 @@ class SdfInformationSchema(IHaveNew):
         )
 
     def build_sdf_multi_asset_args(
-        self, dagster_sdf_translator: DagsterSdfTranslator
+        self,
+        dagster_sdf_translator: DagsterSdfTranslator,
+        targets: Optional[AbstractSet[str]] = None,
     ) -> Tuple[
         Sequence[AssetSpec],
         Sequence[AssetCheckSpec],
@@ -170,6 +172,8 @@ class SdfInformationSchema(IHaveNew):
 
         # Step 3: Build Dagster Asset Outs and Internal Asset Deps
         for table_row in table_deps.rows(named=True):
+            if targets and table_row["table_id"] not in targets:
+                continue
             asset_key = dagster_sdf_translator.get_asset_key(
                 table_row["catalog_name"], table_row["schema_name"], table_row["table_name"]
             )

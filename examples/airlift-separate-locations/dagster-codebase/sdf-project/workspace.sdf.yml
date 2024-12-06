@@ -1,0 +1,26 @@
+workspace:
+  name: jaffle_shop # The name of this workspace -- required
+  edition: "1.3" # The edition of this workspace -- required
+  description:
+    This workspace models the DBT / DuckDB Jaffle Shop example project.
+    The functionality of both DBT and DuckDB are encapsulated by SDF, as this project can be run entirely locally, with no external dependencies on data or compute providers.
+
+    Try compiling first with `sdf compile`. This validates all SQL and dependencies are correct.
+    Then, run everything locally with `sdf run`. This will run the entire DAG locally.
+    Lastly, track lineage with `sdf lineage`. Specify the fully qualified name after the command to see lineage for a specific table of column.
+  
+  defaults:
+    catalog: jaffle_shop
+    schema: public
+    preprocessor: jinja
+    materialization: table
+
+  includes:
+    - path: models # The path to sql sources for this workspace -- at least one path is required
+      index: schema-table-name # Infers the schema from the directory name, enabling faster compile and a more intuitive project structure.
+    - path: seeds
+      type: resource
+    - path: models/staging
+      index: schema-table-name
+      defaults:
+        materialization: view

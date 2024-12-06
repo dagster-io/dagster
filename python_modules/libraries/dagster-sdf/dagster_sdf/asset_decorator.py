@@ -1,4 +1,4 @@
-from typing import Any, Callable, Mapping, Optional, Set
+from typing import AbstractSet, Any, Callable, Mapping, Optional, Set
 
 from dagster import (
     AssetsDefinition,
@@ -28,6 +28,7 @@ def sdf_assets(
     op_tags: Optional[Mapping[str, Any]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     retry_policy: Optional[RetryPolicy] = None,
+    targets: Optional[AbstractSet[str]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     dagster_sdf_translator = validate_translator(dagster_sdf_translator or DagsterSdfTranslator())
     information_schema = SdfInformationSchema(
@@ -36,7 +37,7 @@ def sdf_assets(
         environment=workspace.environment,
     )
     (specs, check_specs) = information_schema.build_sdf_multi_asset_args(
-        dagster_sdf_translator=dagster_sdf_translator,
+        dagster_sdf_translator=dagster_sdf_translator, targets=targets
     )
 
     if (

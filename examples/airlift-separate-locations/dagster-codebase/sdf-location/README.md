@@ -1,0 +1,1 @@
+This directory contains all of the code to materialize sdf models. The actual sdf code lives in a separate directory at the top level, because there's no reason to colocate it nested under a bunch of directories here.
