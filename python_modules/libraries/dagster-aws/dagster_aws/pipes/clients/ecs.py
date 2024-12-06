@@ -1,10 +1,8 @@
 from pprint import pformat
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast, TypedDict
+from typing import TYPE_CHECKING, Any, Dict, Optional, TypedDict, Union, cast
 
 import boto3
 import botocore
-from typing_extensions import NotRequired
-
 import dagster._check as check
 from dagster import DagsterInvariantViolationError, MetadataValue, PipesClient
 from dagster._annotations import experimental, public
@@ -19,6 +17,7 @@ from dagster._core.pipes.client import (
     PipesMessageReader,
 )
 from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
+from typing_extensions import NotRequired
 
 from dagster_aws.pipes.message_readers import PipesCloudWatchLogReader, PipesCloudWatchMessageReader
 
@@ -40,8 +39,10 @@ class WaiterConfig(TypedDict):
             By default the waiter is configured to wait up to 70 days (waiter_delay*waiter_max_attempts).
             See `Boto3 API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs/waiter/TasksStopped.html>`_
     """
+
     Delay: NotRequired[int]
     MaxAttempts: NotRequired[int]
+
 
 @experimental
 class PipesECSClient(PipesClient, TreatAsResourceParam):
@@ -92,7 +93,8 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             extras (Optional[Dict[str, Any]]): Additional information to pass to the Pipes session in the external process.
             pipes_container_name (Optional[str]): If running more than one container in the task,
                 and using :py:class:`PipesCloudWatchMessageReader`, specify the container name which will be running Pipes.
-            waiter_config (Optional[WaiterConfig]): Optional waiter configuration to use.
+            waiter_config (Optional[WaiterConfig]): Optional waiter configuration to use. Defaults to 70 days (Delay: 6, MaxAttempts: 1000000).
+
         Returns:
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
             process.
@@ -256,9 +258,11 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                             )
 
                 if waiter_config is None:
-                    # If not waiter_config is set, default to ~70 days
+                    # If waiter_config is not set, default to ~70 days
                     waiter_config = WaiterConfig(Delay=6, MaxAttempts=1000000)
-                response = self._wait_for_completion(response, cluster=cluster, waiter_config=waiter_config)
+                response = self._wait_for_completion(
+                    response, cluster=cluster, waiter_config=waiter_config
+                )
 
                 # check for failed containers
                 failed_containers = {}
@@ -287,8 +291,10 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         )
 
     def _wait_for_completion(
-            self, start_response: "RunTaskResponseTypeDef", cluster: Optional[str] = None,
-            waiter_config: Optional[WaiterConfig] = None
+        self,
+        start_response: "RunTaskResponseTypeDef",
+        cluster: Optional[str] = None,
+        waiter_config: Optional[WaiterConfig] = None,
     ) -> "DescribeTasksResponseTypeDef":
         waiter = self._client.get_waiter("tasks_stopped")
 
@@ -297,12 +303,9 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         if cluster:
             params["cluster"] = cluster
 
-        if waiter_config:
-            params["WaiterConfig"] = waiter_config
+        waiter_params = {"WaiterConfig": waiter_config, **params} if waiter_config else params
 
-        waiter.wait(**params)
-
-        params.pop('WaiterConfig', None)
+        waiter.wait(**waiter_params)
 
         return self._client.describe_tasks(**params)
 

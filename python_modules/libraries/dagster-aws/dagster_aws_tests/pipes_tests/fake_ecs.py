@@ -250,9 +250,9 @@ class WaiterMock:
         self.waiter_name = waiter_name
 
     def wait(self, **kwargs):
-        waiter_config = kwargs.pop("WaiterConfig", {'MaxAttempts': 100, 'Delay': 6})
-        max_attempts = int(waiter_config.get('MaxAttempts', 100))
-        delay = int(waiter_config.get('Delay', 6))
+        waiter_config = kwargs.pop("WaiterConfig", {"MaxAttempts": 100, "Delay": 6})
+        max_attempts = int(waiter_config.get("MaxAttempts", 100))
+        delay = int(waiter_config.get("Delay", 6))
         num_attempts = 0
 
         if self.waiter_name == "tasks_stopped":
@@ -266,7 +266,7 @@ class WaiterMock:
                 if num_attempts >= max_attempts:
                     raise botocore.exceptions.WaiterError(
                         name=self.waiter_name,
-                        reason='Max attempts exceeded',
+                        reason="Max attempts exceeded",
                         last_response=response,
                     )
 
