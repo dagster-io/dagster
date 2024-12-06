@@ -2,13 +2,14 @@ import os
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
+import click
 import dagster._check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 from dagster_embedded_elt.sling.resources import AssetExecutionContext
 from dbt.cli.main import dbtRunner
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, Field, TypeAdapter
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
@@ -21,8 +22,15 @@ class DbtProjectParams(BaseModel):
 
 
 class DbtGenerateParams(BaseModel):
-    init: bool = False
+    init: bool = Field(default=False)
     project_path: Optional[str] = None
+
+    @staticmethod
+    @click.command
+    @click.option("--project-path", "-p", type=click.Path(resolve_path=True), default=None)
+    @click.option("--init", "-i", is_flag=True, default=False)
+    def cli(project_path: Optional[str], init: bool) -> "DbtGenerateParams":
+        return DbtGenerateParams(project_path=project_path, init=init)
 
 
 @component(name="dbt_project")

@@ -1,5 +1,6 @@
 import importlib
 import inspect
+import json
 import os
 import sys
 import textwrap
@@ -7,6 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 
+import pytest
 from click.testing import CliRunner
 from dagster._utils import pushd
 from dagster_components.cli.generate import (
@@ -211,7 +213,7 @@ def test_generate_component_already_exists_fails() -> None:
         assert "already exists" in result.output
 
 
-def test_generate_global_component_instance() -> None:
+def test_generate_sling_replication_instance() -> None:
     runner = CliRunner()
     with isolated_example_code_location_bar(runner):
         result = runner.invoke(generate_component_command, ["sling_replication", "file_ingest"])
@@ -225,3 +227,29 @@ def test_generate_global_component_instance() -> None:
         replication_path = Path("bar/components/file_ingest/replication.yaml")
         assert replication_path.exists()
         assert "source: " in replication_path.read_text()
+
+
+dbt_project_path = "../stub_code_locations/dbt_project_location/components/jaffle_shop"
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        ["--json-params", json.dumps({"project_path": str(dbt_project_path)})],
+        ["--", "--project-path", dbt_project_path],
+    ],
+)
+def test_generate_dbt_project_instance(params) -> None:
+    runner = CliRunner()
+    with isolated_example_code_location_bar(runner):
+        result = runner.invoke(generate_component_command, ["dbt_project", "my_project", *params])
+        assert result.exit_code == 0
+        assert Path("bar/components/my_project").exists()
+
+        defs_path = Path("bar/components/my_project/defs.yml")
+        assert defs_path.exists()
+        assert "component_type: dbt_project" in defs_path.read_text()
+        assert (
+            "stub_code_locations/dbt_project_location/components/jaffle_shop"
+            in defs_path.read_text()
+        )
