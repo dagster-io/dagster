@@ -1233,6 +1233,14 @@
                 'handleID': 'hanging_graph.hanging_op',
               }),
             }),
+            dict({
+              'pipeline': dict({
+                'name': 'hanging_partitioned_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'hanging_op',
+              }),
+            }),
           ]),
         }),
         dict({
@@ -1580,6 +1588,14 @@
             dict({
               'pipeline': dict({
                 'name': 'daily_partitioned_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'my_op',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': 'hanging_partitioned_job',
               }),
               'solidHandle': dict({
                 'handleID': 'my_op',
