@@ -1,6 +1,7 @@
 import os
 import textwrap
 from pathlib import Path
+import subprocess
 from typing import Any, Optional, Type
 
 import click
@@ -54,6 +55,9 @@ def generate_code_location(path: str, editable_dagster_root: Optional[str] = Non
         uv_sources=uv_sources,
     )
 
+    with pushd(path):
+        subprocess.check_call(["uv", "venv"])
+
 
 def generate_component_type(root_path: str, name: str) -> None:
     click.echo(f"Creating a Dagster component type at {root_path}/{name}.py.")
@@ -88,7 +92,7 @@ def generate_component_instance(
         component_params = (
             component_type.generate_files(generate_params)
             if generate_params
-            else component_type.generate_files()  # type: ignore
+            else component_type.generate_files()
         )
         component_data = {"type": component_registry_key, "params": component_params or {}}
     with open(Path(component_instance_root_path) / "component.yaml", "w") as f:
