@@ -1,5 +1,5 @@
-import {memoize} from 'lodash';
 import keyBy from 'lodash/keyBy';
+import memoize from 'lodash/memoize';
 import reject from 'lodash/reject';
 import throttle from 'lodash/throttle';
 import {useEffect, useMemo, useRef, useState} from 'react';
