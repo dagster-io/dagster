@@ -6,7 +6,7 @@ from dagster_components.impls.sling_replication import SlingReplicationComponent
 from dagster_embedded_elt.sling import SlingResource
 
 
-@component("debug_sling_replication")
+@component(name="debug_sling_replication")
 class DebugSlingReplicationComponent(SlingReplicationComponent):
     def execute(self, context: AssetExecutionContext, sling: SlingResource) -> Iterator:
         return sling.replicate(context=context, debug=True)
