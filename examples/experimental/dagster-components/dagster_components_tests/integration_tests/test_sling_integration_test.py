@@ -64,8 +64,9 @@ def sling_path() -> Generator[Path, None, None]:
 
 
 def test_python_params(sling_path: Path) -> None:
+    context = script_load_context()
     component = SlingReplicationComponent.from_decl_node(
-        context=script_load_context(),
+        context=context,
         decl_node=YamlComponentDecl(
             path=sling_path / COMPONENT_RELPATH,
             defs_file_model=DefsFileModel(
@@ -74,10 +75,38 @@ def test_python_params(sling_path: Path) -> None:
             ),
         ),
     )
+    assert component.op_spec is None
     assert get_asset_keys(component) == {
         AssetKey("input_csv"),
         AssetKey("input_duckdb"),
     }
+
+    defs = component.build_defs(context)
+    # inherited from directory name
+    assert defs.get_assets_def("input_duckdb").op.name == "ingest"
+
+
+def test_python_params_op_name(sling_path: Path) -> None:
+    context = script_load_context()
+    component = SlingReplicationComponent.from_decl_node(
+        context=context,
+        decl_node=YamlComponentDecl(
+            path=sling_path / COMPONENT_RELPATH,
+            defs_file_model=DefsFileModel(
+                component_type="sling_replication",
+                component_params={"sling": {}, "op": {"name": "my_op"}},
+            ),
+        ),
+    )
+    assert component.op_spec
+    assert component.op_spec.name == "my_op"
+    defs = component.build_defs(context)
+    assert defs.get_asset_graph().get_all_asset_keys() == {
+        AssetKey("input_csv"),
+        AssetKey("input_duckdb"),
+    }
+
+    assert defs.get_assets_def("input_duckdb").op.name == "my_op"
 
 
 def test_load_from_path(sling_path: Path) -> None:
