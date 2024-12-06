@@ -80,7 +80,8 @@ def generate_component_type_command(name: str) -> None:
         )
         sys.exit(1)
     context = CodeLocationProjectContext.from_path(Path.cwd())
-    if context.has_component_type(name):
+    full_component_name = f"{context.name}.{name}"
+    if context.has_component_type(full_component_name):
         click.echo(click.style(f"A component type named `{name}` already exists.", fg="red"))
         sys.exit(1)
 

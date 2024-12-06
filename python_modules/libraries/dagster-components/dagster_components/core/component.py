@@ -1,7 +1,10 @@
 import copy
+import importlib
+import importlib.metadata
+import sys
 from abc import ABC, abstractmethod
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Iterable, Mapping, Optional, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Iterable, Mapping, Optional, Sequence, Type
 
 from dagster import _check as check
 from dagster._core.errors import DagsterError
@@ -33,7 +36,33 @@ class Component(ABC):
     ) -> Self: ...
 
 
+def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.metadata.EntryPoint]:
+    if sys.version_info >= (3, 10):
+        return importlib.metadata.entry_points(group=group)
+    else:
+        return importlib.metadata.entry_points().get(group, [])
+
+
+COMPONENTS_ENTRY_POINT_GROUP = "dagster.components"
+
+
 class ComponentRegistry:
+    @classmethod
+    def from_entry_point_discovery(cls) -> "ComponentRegistry":
+        components: Dict[str, Type[Component]] = {}
+        for entry_point in get_entry_points_from_python_environment(COMPONENTS_ENTRY_POINT_GROUP):
+            root_module = entry_point.load()
+            if not isinstance(root_module, ModuleType):
+                raise DagsterError(
+                    f"Invalid entry point {entry_point.name} in group {COMPONENTS_ENTRY_POINT_GROUP}. "
+                    f"Value expected to be a module, got {root_module}."
+                )
+            for component in get_registered_components_in_module(root_module):
+                key = f"{entry_point.name}.{get_component_name(component)}"
+                components[key] = component
+
+        return cls(components)
+
     def __init__(self, components: Dict[str, Type[Component]]):
         self._components: Dict[str, Type[Component]] = copy.copy(components)
 
@@ -59,7 +88,7 @@ class ComponentRegistry:
         return f"<ComponentRegistry {list(self._components.keys())}>"
 
 
-def register_components_in_module(registry: ComponentRegistry, root_module: ModuleType) -> None:
+def get_registered_components_in_module(root_module: ModuleType) -> Iterable[Type[Component]]:
     from dagster._core.definitions.load_assets_from_modules import (
         find_modules_in_package,
         find_subclasses_in_module,
@@ -67,8 +96,8 @@ def register_components_in_module(registry: ComponentRegistry, root_module: Modu
 
     for module in find_modules_in_package(root_module):
         for component in find_subclasses_in_module(module, (Component,)):
-            if is_component(component):
-                registry.register(get_component_name(component), component)
+            if is_registered_component(component):
+                yield component
 
 
 class ComponentLoadContext:
@@ -114,13 +143,13 @@ def component(
         return cls
 
 
-def is_component(cls: Type) -> bool:
+def is_registered_component(cls: Type) -> bool:
     return hasattr(cls, COMPONENT_REGISTRY_KEY_ATTR)
 
 
 def get_component_name(component_type: Type[Component]) -> str:
     check.param_invariant(
-        is_component(component_type),
+        is_registered_component(component_type),
         "component_type",
         "Expected a registered component. Use @component to register a component.",
     )

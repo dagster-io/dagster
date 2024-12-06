@@ -13,7 +13,7 @@ from dagster_components.core.component import (
     ComponentLoadContext,
     ComponentRegistry,
     get_component_name,
-    is_component,
+    is_registered_component,
 )
 from dagster_components.core.component_decl_builder import (
     ComponentFolder,
@@ -69,7 +69,10 @@ def component_type_from_yaml_decl(
 
             for _name, obj in inspect.getmembers(module, inspect.isclass):
                 assert isinstance(obj, Type)
-                if is_component(obj) and get_component_name(obj) == component_registry_key:
+                if (
+                    is_registered_component(obj)
+                    and get_component_name(obj) == component_registry_key
+                ):
                     return obj
 
         raise Exception(
