@@ -39,7 +39,7 @@ interface Props {
   belowActionBarComponents: React.ReactNode;
   prefixPath: string[];
   displayPathForAsset: (asset: Asset) => string[];
-  assetSelection: string;
+  searchPath: string;
   isFiltered: boolean;
   kindFilter?: StaticSetFilter<string>;
   isLoading: boolean;
@@ -52,7 +52,7 @@ export const AssetTable = ({
   refreshState,
   prefixPath,
   displayPathForAsset,
-  assetSelection,
+  searchPath,
   isFiltered,
   view,
   kindFilter,
@@ -80,8 +80,8 @@ export const AssetTable = ({
   }, [checkedDisplayKeys, displayKeys, groupedByDisplayKey]);
 
   const content = () => {
-    if (!assets.length && !isLoading) {
-      if (assetSelection) {
+    if (!assets.length) {
+      if (searchPath) {
         return (
           <Box padding={{top: 64}}>
             <NonIdealState
@@ -90,12 +90,12 @@ export const AssetTable = ({
               description={
                 isFiltered ? (
                   <div>
-                    No assets matching <strong>{assetSelection}</strong> were found in the selected
+                    No assets matching <strong>{searchPath}</strong> were found in the selected
                     filters
                   </div>
                 ) : (
                   <div>
-                    No assets matching <strong>{assetSelection}</strong> were found
+                    No assets matching <strong>{searchPath}</strong> were found
                   </div>
                 )
               }
@@ -150,40 +150,29 @@ export const AssetTable = ({
   return (
     <>
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-        <div
-          style={{
-            padding: '12px 24px',
-            position: 'sticky',
-            top: 0,
-            zIndex: 1,
-            background: Colors.backgroundDefault(),
-            alignItems: 'center',
-            gap: 12,
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) auto',
-          }}
+        <Box
+          background={Colors.backgroundDefault()}
+          flex={{alignItems: 'center', gap: 12}}
+          padding={{vertical: 12, horizontal: 24}}
+          style={{position: 'sticky', top: 0, zIndex: 1}}
         >
-          <div>{actionBarComponents}</div>
-          <Box
-            style={{alignSelf: 'end'}}
-            flex={{gap: 12, direction: 'row-reverse', alignItems: 'center'}}
-          >
-            <QueryRefreshCountdown refreshState={refreshState} />
-            <Box flex={{alignItems: 'center', gap: 8}}>
-              <LaunchAssetExecutionButton
-                scope={{
-                  selected: checkedAssets
-                    .filter((a): a is AssetWithDefinition => !!a.definition)
-                    .map((a) => ({...a.definition, assetKey: a.key})),
-                }}
-              />
-              <MoreActionsDropdown
-                selected={checkedAssets}
-                clearSelection={() => onToggleAll(false)}
-              />
-            </Box>
+          {actionBarComponents}
+          <div style={{flex: 1}} />
+          <QueryRefreshCountdown refreshState={refreshState} />
+          <Box flex={{alignItems: 'center', gap: 8}}>
+            <LaunchAssetExecutionButton
+              scope={{
+                selected: checkedAssets
+                  .filter((a): a is AssetWithDefinition => !!a.definition)
+                  .map((a) => ({...a.definition, assetKey: a.key})),
+              }}
+            />
+            <MoreActionsDropdown
+              selected={checkedAssets}
+              clearSelection={() => onToggleAll(false)}
+            />
           </Box>
-        </div>
+        </Box>
         {belowActionBarComponents}
         {content()}
       </Box>

@@ -24,7 +24,6 @@ export const AssetGraphFilterBar = ({
     <Box
       flex={{direction: 'row', justifyContent: 'space-between', gap: 12, alignItems: 'center'}}
       padding={{vertical: 8, horizontal: 12}}
-      border="top"
     >
       <Box flex={{gap: 12, alignItems: 'center', direction: 'row', grow: 1}}>
         {activeFiltersJsx}
