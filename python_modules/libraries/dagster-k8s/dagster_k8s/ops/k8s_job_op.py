@@ -418,11 +418,17 @@ def execute_k8s_job(
     except (DagsterExecutionInterruptedError, Exception) as e:
         try:
             pods = api_client.get_pod_names_in_job(job_name=job_name, namespace=namespace)
-            pod_debug_info = "\n\n".join([api_client.get_pod_debug_info(pod_name, namespace) for pod_name in pods])
+            pod_debug_info = "\n\n".join(
+                [api_client.get_pod_debug_info(pod_name, namespace) for pod_name in pods]
+            )
         except Exception:
-            context.log.exception(f"Error trying to get pod debug information for failed k8s job {job_name}")
+            context.log.exception(
+                f"Error trying to get pod debug information for failed k8s job {job_name}"
+            )
         else:
-            context.log.error(f"Debug information for failed k8s job {job_name}:\n\n{pod_debug_info}")
+            context.log.error(
+                f"Debug information for failed k8s job {job_name}:\n\n{pod_debug_info}"
+            )
 
         if delete_failed_k8s_jobs:
             context.log.info(
