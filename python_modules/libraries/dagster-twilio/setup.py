@@ -34,6 +34,6 @@ setup(
     packages=find_packages(exclude=["dagster_twilio_tests*"]),
     include_package_data=True,
     python_requires=">=3.9,<3.13",
-    install_requires=["dagster==1.9.4rc0", "twilio"],
+    install_requires=["dagster==1.9.4", "twilio"],
     zip_safe=False,
 )

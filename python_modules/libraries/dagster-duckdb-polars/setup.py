@@ -34,8 +34,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.13",
     install_requires=[
-        "dagster==1.9.4rc0",
-        "dagster-duckdb==0.25.4rc0",
+        "dagster==1.9.4",
+        "dagster-duckdb==0.25.4",
         "polars[pyarrow]",
     ],
     zip_safe=False,

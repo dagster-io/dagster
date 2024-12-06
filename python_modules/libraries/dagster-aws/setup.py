@@ -37,7 +37,7 @@ setup(
     install_requires=[
         "boto3",
         "boto3-stubs-lite[ecs,glue,emr,emr-serverless]",
-        "dagster==1.9.4rc0",
+        "dagster==1.9.4",
         "packaging",
         "requests",
     ],
