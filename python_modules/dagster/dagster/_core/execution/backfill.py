@@ -523,16 +523,10 @@ class PartitionBackfill(
 def cancel_backfill_runs_and_cancellation_complete(
     instance: "DagsterInstance", backfill_id: str
 ) -> Iterator[Union[None, bool]]:
-    """Cancels MAX_RUNS_CANCELED_PER_ITERATION runs associated with the backfill_id.
+    """Cancels MAX_RUNS_CANCELED_PER_ITERATION runs associated with the backfill_id. Ensures that
+    all runs for the backfill are in a terminal state before indicating that the backfill can be marked
+    CANCELED.
     Yields a boolean indicating the backfill can be considered canceled (ie all runs are canceled).
-    The boolean will be True if:
-        - There are no more runs to cancel. This is computed by proxy. If any runs are canceled in the
-            iteration, we assume there are more runs to cancel. This may result in the backfill
-            ticking one additional time, but it gives more confidence that we don't miss any runs
-            that need to be canceled.
-        - There are no runs that are still waiting to move into a terminal status. This allows us to
-            ensure that all runs launched by the backfill are in a terminal state before marking the
-            backfill as canceled.
     """
     if not instance.run_coordinator:
         check.failed("The instance must have a run coordinator in order to cancel runs")
@@ -552,18 +546,15 @@ def cancel_backfill_runs_and_cancellation_complete(
     yield None
 
     if runs_to_cancel_in_iteration:
+        # since we are canceling some runs in this iteration, we know that there is more work to do.
+        # Either cancelling more runs, or waiting for the canceled runs to get to a terminal state
         work_done = False
         for run_id in runs_to_cancel_in_iteration:
             instance.run_coordinator.cancel_run(run_id)
             yield None
     else:
-        # Check at the beginning of the tick whether there are any runs that we are still
-        # waiting to move into a terminal state. If there are none and the backfill data is
-        # still missing partitions at the end of the tick, that indicates a framework problem.
-        # (It's important that we check for these runs before updating the backfill data -
-        # if we did them in the reverse order, a run that finishes between the two checks
-        # might not be incorporated into the backfill data, causing us to incorrectly decide
-        # there was a framework error.
+        # If there are no runs to cancel, check if there are any runs still in progress. If there are,
+        # then we want to wait for them to reach a terminal state before the backfill is marked CANCELED.
         run_waiting_to_cancel = instance.get_run_ids(
             RunsFilter(
                 tags={BACKFILL_ID_TAG: backfill_id},
