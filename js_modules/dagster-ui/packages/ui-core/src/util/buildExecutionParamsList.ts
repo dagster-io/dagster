@@ -1,8 +1,9 @@
 import * as yaml from 'yaml';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {ExecutionParams, SensorSelector} from '../graphql/types';
+import {ExecutionParams, ScheduleSelector, SensorSelector} from '../graphql/types';
 import {sanitizeConfigYamlString} from '../launchpad/yamlUtils';
+import {ScheduleDryRunInstigationTick} from '../ticks/EvaluateScheduleDialog';
 import {SensorDryRunInstigationTick} from '../ticks/SensorDryRunDialog';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
@@ -31,6 +32,48 @@ export const buildExecutionParamsListSensor = (
       return;
     }
     const {repositoryLocationName, repositoryName} = sensorSelector;
+
+    const executionParams: ExecutionParams = {
+      runConfigData: configYamlOrEmpty,
+      selector: {
+        jobName: request.jobName, // get jobName from runRequest
+        repositoryLocationName,
+        repositoryName,
+        assetSelection: [],
+        assetCheckSelection: [],
+        solidSelection: undefined,
+      },
+      mode: 'default',
+      executionMetadata: {
+        tags: [...request.tags.map(onlyKeyAndValue)],
+      },
+    };
+    executionParamsList.push(executionParams);
+  });
+  return executionParamsList;
+};
+
+// adapted from buildExecutionVariables() in LaunchpadSession.tsx
+export const buildExecutionParamsListSchedule = (
+  scheduleExecutionData: ScheduleDryRunInstigationTick,
+  scheduleSelector: ScheduleSelector,
+) => {
+  if (!scheduleExecutionData) {
+    return [];
+  }
+
+  const executionParamsList: ExecutionParams[] = [];
+
+  scheduleExecutionData?.evaluationResult?.runRequests?.forEach((request) => {
+    const configYamlOrEmpty = sanitizeConfigYamlString(request.runConfigYaml);
+
+    try {
+      yaml.parse(configYamlOrEmpty);
+    } catch {
+      showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
+      return;
+    }
+    const {repositoryLocationName, repositoryName} = scheduleSelector;
 
     const executionParams: ExecutionParams = {
       runConfigData: configYamlOrEmpty,
