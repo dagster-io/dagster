@@ -42,7 +42,8 @@ def generate_deployment_command(path: str) -> None:
 
 @generate_cli.command(name="code-location")
 @click.argument("name", type=str)
-def generate_code_location_command(name: str) -> None:
+@click.option("--use-editable-dagster", is_flag=True, default=False)
+def generate_code_location_command(name: str, use_editable_dagster: bool) -> None:
     """Generate a Dagster code location inside a component."""
     if not is_inside_deployment_project(Path(".")):
         click.echo(
@@ -55,8 +56,22 @@ def generate_code_location_command(name: str) -> None:
         click.echo(click.style(f"A code location named {name} already exists.", fg="red"))
         sys.exit(1)
 
+    if use_editable_dagster:
+        if "DAGSTER_GIT_REPO_DIR" not in os.environ:
+            click.echo(
+                click.style(
+                    "The `--use-editable-dagster` flag requires the `DAGSTER_GIT_REPO_DIR` environment variable to be set.",
+                    fg="red",
+                )
+            )
+            sys.exit(1)
+        editable_dagster_root = os.environ["DAGSTER_GIT_REPO_DIR"]
+    else:
+        editable_dagster_root = None
+
     code_location_path = os.path.join(context.code_location_root_path, name)
-    generate_code_location(code_location_path)
+
+    generate_code_location(code_location_path, editable_dagster_root)
 
 
 @generate_cli.command(name="component-type")
