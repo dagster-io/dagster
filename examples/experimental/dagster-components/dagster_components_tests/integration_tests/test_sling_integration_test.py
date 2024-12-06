@@ -109,6 +109,24 @@ def test_python_params_op_name(sling_path: Path) -> None:
     assert defs.get_assets_def("input_duckdb").op.name == "my_op"
 
 
+def test_python_params_op_tags(sling_path: Path) -> None:
+    context = script_load_context()
+    component = SlingReplicationComponent.from_decl_node(
+        context=context,
+        decl_node=YamlComponentDecl(
+            path=sling_path / COMPONENT_RELPATH,
+            defs_file_model=DefsFileModel(
+                component_type="sling_replication",
+                component_params={"sling": {}, "op": {"tags": {"tag1": "value1"}}},
+            ),
+        ),
+    )
+    assert component.op_spec
+    assert component.op_spec.tags == {"tag1": "value1"}
+    defs = component.build_defs(context)
+    assert defs.get_assets_def("input_duckdb").op.tags == {"tag1": "value1"}
+
+
 def test_load_from_path(sling_path: Path) -> None:
     components = build_components_from_component_folder(
         script_load_context(), sling_path / "components"
