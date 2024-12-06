@@ -1,4 +1,4 @@
-import {Box, Button} from '@dagster-io/ui-components';
+import {Box, Button, Icon} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
 import {EvaluateScheduleDialog} from './EvaluateScheduleDialog';
@@ -20,6 +20,7 @@ export const EvaluateTickButtonSchedule = ({
   return (
     <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
       <Button
+        icon={<Icon name="preview_tick" />}
         onClick={() => {
           setShowTestTickDialog(true);
         }}

@@ -88,12 +88,6 @@ export const VirtualizedAutomationSensorRow = forwardRef(
       return data.sensorOrError;
     }, [data]);
 
-    const cursor =
-      sensorData &&
-      sensorData.sensorState.typeSpecificData &&
-      sensorData.sensorState.typeSpecificData.__typename === 'SensorData' &&
-      sensorData.sensorState.typeSpecificData.lastCursor;
-
     const onChange = (e: React.FormEvent<HTMLInputElement>) => {
       if (onToggleChecked && e.target instanceof HTMLInputElement) {
         const {checked} = e.target;

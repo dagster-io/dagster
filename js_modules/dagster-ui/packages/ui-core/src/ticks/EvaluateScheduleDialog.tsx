@@ -10,6 +10,7 @@ import {
   MenuItem,
   Mono,
   NonIdealState,
+  NonIdealStateWrapper,
   Popover,
   Spinner,
   Subheading,
@@ -65,8 +66,8 @@ export const EvaluateScheduleDialog = (props: Props) => {
       style={{width: '70vw', display: 'flex'}}
       title={
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-          <Icon name="schedule" />
-          <span>{props.name}</span>
+          <Icon name="preview_tick" />
+          <span>Preview tick result for {props.name}</span>
         </Box>
       }
     >
@@ -266,8 +267,8 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
       }));
       selectedTimestampRef.current = selectedTimestamp || timestamps[0] || null;
       return (
-        <div>
-          <ScheduleDescriptor>Select a mock evaluation time</ScheduleDescriptor>
+        <Box flex={{direction: 'column', gap: 8}}>
+          <ScheduleDescriptor>Select an evaluation time to simulate</ScheduleDescriptor>
           <Popover
             isOpen={isTickSelectionOpen}
             position="bottom-left"
@@ -298,7 +299,17 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
               </Button>
             </div>
           </Popover>
-        </div>
+          <div>
+            Each evaluation of a schedule is called a tick, which is an opportunity for one or more
+            runs to be launched. Ticks kick off runs, which either materialize a selection of assets
+            or execute a <a href="https://docs.dagster.io/concepts/ops-jobs-graphs/jobs">job</a>.
+            You can preview the result for a given tick in the next step.
+          </div>
+          <div>
+            <a href="https://docs.dagster.io/concepts/automation/schedules">Learn more</a> about
+            schedules
+          </div>
+        </Box>
       );
     }
   }, [
@@ -317,59 +328,88 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
     userTimezone,
   ]);
 
-  const buttons = useMemo(() => {
+  const leftButtons = useMemo(() => {
+    if (launching) {
+      return null;
+    }
+
+    if (scheduleExecutionData || scheduleExecutionError) {
+      return (
+        <Button
+          icon={<Icon name="settings_backup_restore" />}
+          data-testid={testId('try-again')}
+          onClick={() => {
+            setScheduleExecutionData(null);
+            setScheduleExecutionError(null);
+          }}
+        >
+          Try again
+        </Button>
+      );
+    } else {
+      return null;
+    }
+  }, [launching, scheduleExecutionData, scheduleExecutionError]);
+
+  const rightButtons = useMemo(() => {
     if (launching) {
       return <Box flex={{direction: 'row', gap: 8}}></Box>;
     }
 
     if (scheduleExecutionData || scheduleExecutionError) {
-      return (
-        <Box flex={{direction: 'row', gap: 8}}>
-          <Tooltip
-            canShow={!canLaunchAll || launching}
-            content="Preparing to launch runs"
-            placement="top-end"
-          >
-            <Button disabled={!canLaunchAll || launching} onClick={onLaunchAll}>
-              <div>Launch all</div>
-            </Button>
-          </Tooltip>
+      const runRequests = scheduleExecutionData?.evaluationResult?.runRequests;
+      const numRunRequests = runRequests?.length || 0;
+      const didSkip = !scheduleExecutionError && numRunRequests === 0;
 
-          <Button
-            data-testid={testId('test-again')}
-            onClick={() => {
-              setScheduleExecutionData(null);
-              setScheduleExecutionError(null);
-            }}
-          >
-            Test again
-          </Button>
-          <Button intent="primary" onClick={onClose}>
-            Close
-          </Button>
-        </Box>
-      );
+      if (scheduleExecutionError || didSkip) {
+        return (
+          <Box flex={{direction: 'row', gap: 8}}>
+            <Button onClick={onClose}>Close</Button>
+          </Box>
+        );
+      } else {
+        return (
+          <Box flex={{direction: 'row', gap: 8}}>
+            <Button onClick={onClose}>Close</Button>
+            <Tooltip
+              canShow={!canLaunchAll || launching}
+              content="Launches all runs and commits tick result"
+              placement="top-end"
+            >
+              <Button
+                icon={<Icon name="check_filled" />}
+                intent="primary"
+                disabled={!canLaunchAll || launching}
+                onClick={onLaunchAll}
+                data-testid={testId('launch-all')}
+              >
+                <div>Launch all & commit tick result</div>
+              </Button>
+            </Tooltip>
+          </Box>
+        );
+      }
     }
 
     if (scheduleDryRunMutationLoading) {
       return (
         <Box flex={{direction: 'row', gap: 8}}>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>Close</Button>
         </Box>
       );
     } else {
       return (
         <>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>Close</Button>
           <Button
-            data-testid={testId('evaluate')}
+            data-testid={testId('continue')}
             intent="primary"
             disabled={!canSubmitTest}
             onClick={() => {
               submitTest();
             }}
           >
-            Evaluate
+            Continue
           </Button>
         </>
       );
@@ -391,7 +431,9 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
       <DialogBody>
         <div style={{minHeight: '300px'}}>{content}</div>
       </DialogBody>
-      {buttons ? <DialogFooter topBorder>{buttons}</DialogFooter> : null}
+      <DialogFooter topBorder left={leftButtons}>
+        {rightButtons}
+      </DialogFooter>
     </>
   );
 };
@@ -449,6 +491,7 @@ const EvaluateScheduleResult = ({
     }
 
     const data = scheduleExecutionData;
+
     if (!data || !evaluationResult) {
       return (
         <NonIdealState
@@ -470,20 +513,45 @@ const EvaluateScheduleResult = ({
     }
     if (!evaluationResult.runRequests?.length) {
       return (
-        <div>
-          <Subheading>Skip Reason</Subheading>
-          <div>{evaluationResult?.skipReason || 'No skip reason was output'}</div>
-        </div>
+        <Box flex={{direction: 'column', gap: 8}}>
+          <Subheading style={{marginBottom: 8}}>Requested runs (0)</Subheading>
+          <div>
+            <SkipReasonNonIdealStateWrapper>
+              <NonIdealState
+                icon="missing"
+                title="No runs requested"
+                description={
+                  <>
+                    <span>
+                      The schedule function was successfully evaluated but didn&apos;t return any
+                      run requests.
+                    </span>
+                    <span>
+                      <br />
+                      Skip reason:{' '}
+                      {evaluationResult?.skipReason
+                        ? `"${evaluationResult.skipReason}"`
+                        : 'No skip reason was output'}
+                    </span>
+                  </>
+                }
+              />
+            </SkipReasonNonIdealStateWrapper>
+          </div>
+        </Box>
       );
     } else {
       return (
-        <RunRequestTable
-          runRequests={evaluationResult.runRequests}
-          repoAddress={repoAddress}
-          isJob={true}
-          jobName={jobName}
-          name={name}
-        />
+        <Box flex={{direction: 'column', gap: 8}}>
+          <Subheading>Requested runs ({numRunRequests})</Subheading>
+          <RunRequestTable
+            runRequests={evaluationResult.runRequests}
+            repoAddress={repoAddress}
+            isJob={true}
+            jobName={jobName}
+            name={name}
+          />
+        </Box>
       );
     }
   };
@@ -576,4 +644,12 @@ const Grid = styled.div`
 
 const ScheduleDescriptor = styled.div`
   padding-bottom: 2px;
+`;
+
+const SkipReasonNonIdealStateWrapper = styled.div`
+  ${NonIdealStateWrapper} {
+    margin: auto !important;
+    width: unset !important;
+    max-width: unset !important;
+  }
 `;
