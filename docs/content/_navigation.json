@@ -935,6 +935,10 @@
         "path": "/integrations/airlift",
         "children": [
           {
+            "title": "Mapping Airflow Concepts to Dagster",
+            "path": "/integrations/airlift/airflow-dagster-equivalents"
+          },
+          {
             "title": "Airflow Migration Tutorial",
             "path": "/integrations/airlift/tutorial/overview",
             "children": [
