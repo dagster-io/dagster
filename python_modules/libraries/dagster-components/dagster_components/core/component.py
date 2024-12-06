@@ -17,7 +17,7 @@ class ComponentDeclNode: ...
 
 class Component(ABC):
     name: ClassVar[Optional[str]] = None
-    defs_params_schema: ClassVar = None
+    component_params_schema: ClassVar = None
     generate_params_schema: ClassVar = None
 
     @classmethod

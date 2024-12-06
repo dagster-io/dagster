@@ -9,7 +9,7 @@ from dagster._utils import camelcase, pushd
 from dagster_components.core.component import Component, get_component_name
 
 
-class DefsDumper(yaml.Dumper):
+class ComponentDumper(yaml.Dumper):
     def write_line_break(self) -> None:
         # add an extra line break between top-level keys
         if self.indent == 0:
@@ -71,13 +71,15 @@ def generate_component_instance(
         component_type=component_registry_key,
     )
     with pushd(component_instance_root_path):
-        defs_data: dict = {"component_type": component_registry_key}
+        component_data: dict = {"component_type": component_registry_key}
         component_params = (
             component_type.generate_files(generate_params)
             if generate_params
             else component_type.generate_files()  # type: ignore
         )
         if component_params:
-            defs_data["component_params"] = component_params
-        with open("defs.yml", "w") as f:
-            yaml.dump(defs_data, f, Dumper=DefsDumper, sort_keys=False, default_flow_style=False)
+            component_data["component_params"] = component_params
+        with open("component.yaml", "w") as f:
+            yaml.dump(
+                component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
+            )

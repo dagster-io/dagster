@@ -1,6 +1,6 @@
-component_type: sling_replication
+type: sling_replication
 
-component_params:
+params:
   sling:
     connections:
       - name: DUCKDB

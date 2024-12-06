@@ -81,7 +81,7 @@ class DbtProjectComponent(Component):
         # all paths should be resolved relative to the directory we're in
         with pushd(str(decl_node.path)):
             loaded_params = TypeAdapter(cls.params_schema).validate_python(
-                decl_node.defs_file_model.component_params,
+                decl_node.component_file_model.params
             )
         return cls(
             dbt_resource=loaded_params.dbt,
