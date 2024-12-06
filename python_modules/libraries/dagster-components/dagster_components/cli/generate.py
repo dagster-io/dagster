@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 import click
 from pydantic import TypeAdapter
@@ -82,11 +82,16 @@ def generate_component_type_command(name: str) -> None:
 
 
 @generate_cli.command(name="component")
-@click.argument("component-type", type=str)
-@click.argument("name", type=str)
-@click.option("--params", type=str, default=None)
-def generate_component_command(component_type: str, name: str, params: Optional[str]) -> None:
-    """Generate a Dagster component instance."""
+@click.argument("component_type", type=str)
+@click.argument("component_name", type=str)
+@click.option("--json-params", type=str, default=None)
+@click.argument("extra_args", nargs=-1, type=str)
+def generate_component_command(
+    component_type: str,
+    component_name: str,
+    json_params: Optional[str],
+    extra_args: Tuple[str, ...],
+) -> None:
     if not is_inside_code_location_project(Path(".")):
         click.echo(
             click.style(
@@ -103,16 +108,25 @@ def generate_component_command(component_type: str, name: str, params: Optional[
             click.style(f"No component type `{component_type}` could be resolved.", fg="red")
         )
         sys.exit(1)
-    elif context.has_component_instance(name):
-        click.echo(click.style(f"A component instance named `{name}` already exists.", fg="red"))
+    elif context.has_component_instance(component_name):
+        click.echo(
+            click.style(f"A component instance named `{component_name}` already exists.", fg="red")
+        )
         sys.exit(1)
 
     component_type_cls = context.get_component_type(component_type)
-    generate_params = (
-        TypeAdapter(component_type_cls.generate_params_schema).validate_json(params)
-        if params
-        else None
-    )
+    generate_params_schema = component_type_cls.generate_params_schema
+    generate_params_cli = getattr(generate_params_schema, "cli", None)
+    if generate_params_schema is None:
+        generate_params = None
+    elif json_params is not None:
+        generate_params = TypeAdapter(generate_params_schema).validate_json(json_params)
+    elif generate_params_cli is not None:
+        inner_ctx = click.Context(generate_params_cli)
+        generate_params_cli.parse_args(inner_ctx, list(extra_args))
+        generate_params = inner_ctx.invoke(generate_params_schema.cli, **inner_ctx.params)
+    else:
+        generate_params = None
     generate_component_instance(
-        context.component_instances_root_path, name, component_type_cls, generate_params
+        context.component_instances_root_path, component_name, component_type_cls, generate_params
     )

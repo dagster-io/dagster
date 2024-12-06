@@ -17,8 +17,8 @@ class ComponentDeclNode: ...
 
 class Component(ABC):
     name: ClassVar[Optional[str]] = None
-    defs_params_schema: ClassVar[Type] = Type[None]
-    generate_params_schema: ClassVar[Type] = Type[None]
+    defs_params_schema: ClassVar = None
+    generate_params_schema: ClassVar = None
 
     @classmethod
     def generate_files(cls, params: Any) -> Optional[Mapping[str, Any]]: ...
