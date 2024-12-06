@@ -131,21 +131,12 @@ class LocalECSMockClient:
 
         return response
 
-    def describe_tasks(self, cluster: str, tasks: List[str], WaiterConfig: Optional[dict] = None):
+    def describe_tasks(self, cluster: str, tasks: List[str]):
         assert len(tasks) == 1, "Only 1 task is supported in tests"
 
         simulated_task = cast(SimulatedTaskRun, self._task_runs[tasks[0]])
 
-        args = {
-            "cluster": cluster,
-            "tasks": tasks,
-        }
-
-        # The stub library doesn't support WaiterConfig as an argument so don't pass it to the stub
-        # if WaiterConfig:
-        #     args["WaiterConfig"] = WaiterConfig
-
-        response = self.ecs_client.describe_tasks(**args)
+        response = self.ecs_client.describe_tasks(cluster=cluster, tasks=tasks)
 
         assert len(response["tasks"]) == 1, "Only 1 task is supported in tests"
 

@@ -1,8 +1,10 @@
 from pprint import pformat
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast, TypedDict
 
 import boto3
 import botocore
+from typing_extensions import NotRequired
+
 import dagster._check as check
 from dagster import DagsterInvariantViolationError, MetadataValue, PipesClient
 from dagster._annotations import experimental, public
@@ -28,6 +30,18 @@ if TYPE_CHECKING:
         RunTaskResponseTypeDef,
     )
 
+
+class WaiterConfig(TypedDict):
+    """A WaiterConfig representing the configuration of the waiter.
+
+    Args:
+        Delay (NotRequired[int]): The amount of time in seconds to wait between attempts. Defaults to 6.
+        MaxAttempts (NotRequired[int]): The maximum number of attempts to be made. Defaults to 1000000
+            By default the waiter is configured to wait up to 70 days (waiter_delay*waiter_max_attempts).
+            See `Boto3 API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs/waiter/TasksStopped.html>`_
+    """
+    Delay: NotRequired[int]
+    MaxAttempts: NotRequired[int]
 
 @experimental
 class PipesECSClient(PipesClient, TreatAsResourceParam):
@@ -66,8 +80,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         run_task_params: "RunTaskRequestRequestTypeDef",
         extras: Optional[Dict[str, Any]] = None,
         pipes_container_name: Optional[str] = None,
-        waiter_delay: int = 6,
-        waiter_max_attempts: int = 1000000,
+        waiter_config: Optional[WaiterConfig] = None,
     ) -> PipesClientCompletedInvocation:
         """Run ECS tasks, enriched with the pipes protocol.
 
@@ -79,11 +92,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             extras (Optional[Dict[str, Any]]): Additional information to pass to the Pipes session in the external process.
             pipes_container_name (Optional[str]): If running more than one container in the task,
                 and using :py:class:`PipesCloudWatchMessageReader`, specify the container name which will be running Pipes.
-            waiter_delay (int): The amount of time in seconds to wait between attempts. Defaults to 6.
-            waiter_max_attempts (int): The maximum number of attempts to be made. Defaults to 1000000
-                By default the waiter is configured to wait up to 70 days (waiter_delay*waiter_max_attempts).
-                See `Boto3 API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs/waiter/TasksStopped.html>`_
-
+            waiter_config (Optional[WaiterConfig]): Optional waiter configuration to use.
         Returns:
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
             process.
@@ -246,8 +255,10 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                                 ),
                             )
 
-                response = self._wait_for_completion(response, cluster=cluster, waiter_delay=waiter_delay,
-                                                     waiter_max_attempts=waiter_max_attempts)
+                if waiter_config is None:
+                    # If not waiter_config is set, default to ~70 days
+                    waiter_config = WaiterConfig(Delay=6, MaxAttempts=1000000)
+                response = self._wait_for_completion(response, cluster=cluster, waiter_config=waiter_config)
 
                 # check for failed containers
                 failed_containers = {}
@@ -277,7 +288,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
 
     def _wait_for_completion(
             self, start_response: "RunTaskResponseTypeDef", cluster: Optional[str] = None,
-            waiter_delay: Optional[int] = None, waiter_max_attempts: Optional[int] = None
+            waiter_config: Optional[WaiterConfig] = None
     ) -> "DescribeTasksResponseTypeDef":
         waiter = self._client.get_waiter("tasks_stopped")
 
@@ -286,22 +297,12 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         if cluster:
             params["cluster"] = cluster
 
-        if waiter_delay:
-            try:
-                params["WaiterConfig"]["Delay"] = waiter_delay
-            except KeyError:
-                params["WaiterConfig"] = {"Delay": waiter_delay}
+        if waiter_config:
+            params["WaiterConfig"] = waiter_config
 
-        if waiter_max_attempts:
-            try:
-                params["WaiterConfig"]["MaxAttempts"] = waiter_max_attempts
-            except KeyError:
-                params["WaiterConfig"] = {"MaxAttempts": waiter_max_attempts}
+        waiter.wait(**params)
 
-        try:
-            waiter.wait(**params)
-        except botocore.exceptions.WaiterError:
-            pass
+        params.pop('WaiterConfig', None)
 
         return self._client.describe_tasks(**params)
 
