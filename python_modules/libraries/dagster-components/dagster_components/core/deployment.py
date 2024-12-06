@@ -2,7 +2,7 @@ import importlib.util
 import os
 import sys
 from pathlib import Path
-from typing import Final, Iterable, Type
+from typing import Final, Iterable, Sequence, Type
 
 from dagster._core.errors import DagsterError
 from typing_extensions import Self
@@ -83,6 +83,8 @@ class DeploymentProjectContext:
     def has_code_location(self, name: str) -> bool:
         return os.path.exists(os.path.join(self._root_path, "code_locations", name))
 
+    def list_code_locations(self) -> Sequence[str]:
+        return sorted(os.listdir(self.code_location_root_path))
 
 class CodeLocationProjectContext:
     @classmethod
@@ -153,9 +155,9 @@ class CodeLocationProjectContext:
 
     @property
     def component_instances(self) -> Iterable[str]:
-        return os.listdir(
+        return sorted(os.listdir(
             os.path.join(self._root_path, self._name, _CODE_LOCATION_COMPONENT_INSTANCES_DIR)
-        )
+        ))
 
     def has_component_instance(self, name: str) -> bool:
         return os.path.exists(
