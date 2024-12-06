@@ -5133,7 +5133,7 @@ class TestEventLogStorage:
                     break
                 else:
                     claim_status = storage.claim_concurrency_slot("foo", run_id, key)
-                    _log(key, "claim", claim_status.slot_status)
+                    _log(key, "claim", claim_status.slot_status, claim_status)
                     time.sleep(0.05)
             _log(key, "free")
             storage.free_concurrency_slot_for_step(run_id, key)
