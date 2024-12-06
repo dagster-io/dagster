@@ -1164,7 +1164,7 @@ def execute_asset_backfill_iteration(
 
         if not isinstance(all_runs_canceled, bool):
             check.failed(
-                "Expected cancel_backfill_runs_and_cancellation_complete to return an boolean"
+                "Expected cancel_backfill_runs_and_cancellation_complete to return a boolean"
             )
 
         # Update the asset backfill data to contain the newly materialized/failed partitions.

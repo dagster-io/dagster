@@ -573,4 +573,4 @@ def cancel_backfill_runs_and_cancellation_complete(
         )
         work_done = len(run_waiting_to_cancel) == 0
 
-        yield work_done
+    yield work_done
