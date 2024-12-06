@@ -124,6 +124,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     if (sensorExecutionData || error) {
       return (
         <Box flex={{direction: 'row', gap: 8}}>
+          <Button>Launch all</Button>
           <Button
             data-testid={testId('test-again')}
             onClick={() => {
