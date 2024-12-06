@@ -22,6 +22,7 @@ import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {indexedDBAsyncMemoize} from '../app/Util';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
 
 export interface AssetGraphFetchScope {
@@ -165,6 +166,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   ]);
 
   const loading = fetchResult.loading || graphDataLoading;
+  useBlockTraceUntilTrue('useAssetGraphData', !loading);
   return {
     loading,
     fetchResult,
