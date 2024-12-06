@@ -43,7 +43,6 @@ from dagster._utils.merger import merge_dicts
 # of jobs all at once
 CHECKPOINT_INTERVAL = 1
 CHECKPOINT_COUNT = 25
-MAX_RUNS_CANCELED_PER_ITERATION = 50
 
 
 def execute_job_backfill_iteration(

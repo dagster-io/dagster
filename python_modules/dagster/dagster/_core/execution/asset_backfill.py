@@ -74,8 +74,6 @@ def get_asset_backfill_run_chunk_size():
 
 MATERIALIZATION_CHUNK_SIZE = 1000
 
-MAX_RUNS_CANCELED_PER_ITERATION = 50
-
 
 class AssetBackfillStatus(Enum):
     IN_PROGRESS = "IN_PROGRESS"
