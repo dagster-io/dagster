@@ -18,3 +18,9 @@ __component_registry__ = {
     "sling_replication": SlingReplicationComponent,
     "dbt_project": DbtProjectComponent,
 }
+
+from dagster._core.libraries import DagsterLibraryRegistry
+
+from dagster_components.version import __version__ as __version__
+
+DagsterLibraryRegistry.register("dagster-components", __version__)
