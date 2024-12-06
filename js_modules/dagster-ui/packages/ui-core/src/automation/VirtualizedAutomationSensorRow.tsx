@@ -8,7 +8,6 @@ import {
 } from '@dagster-io/ui-components';
 import {forwardRef, useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {AutomationTargetList} from './AutomationTargetList';
 import {AutomationRowGrid} from './VirtualizedAutomationRow';
@@ -22,7 +21,6 @@ import {
   SensorAssetSelectionQuery,
   SensorAssetSelectionQueryVariables,
 } from '../sensors/types/SensorRoot.types';
-import {EvaluateTickButtonSensor} from '../ticks/EvaluateTickButtonSensor';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RowCell} from '../ui/VirtualizedTable';
 import {SENSOR_TYPE_META, SINGLE_SENSOR_QUERY} from '../workspace/VirtualizedSensorRow';
@@ -163,19 +161,6 @@ export const VirtualizedAutomationSensorRow = forwardRef(
                   <MiddleTruncate text={name} />
                 </Link>
               </Box>
-              {sensorData ? (
-                <EvaluateTickButtonSensorWrapper>
-                  <EvaluateTickButtonSensor
-                    cursor={cursor || ''}
-                    name={sensorData?.name || ''}
-                    repoAddress={repoAddress}
-                    jobName={sensorData?.targets?.[0]?.pipelineName || ''}
-                    sensorType={sensorData.sensorType}
-                  />
-                </EvaluateTickButtonSensorWrapper>
-              ) : (
-                <div style={{width: 30}} />
-              )}
             </Box>
           </RowCell>
           <RowCell>
@@ -235,9 +220,3 @@ export const VirtualizedAutomationSensorRow = forwardRef(
     );
   },
 );
-
-const EvaluateTickButtonSensorWrapper = styled.div`
-  button {
-    height: 24px;
-  }
-`;
