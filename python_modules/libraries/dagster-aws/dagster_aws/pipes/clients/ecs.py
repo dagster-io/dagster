@@ -99,6 +99,8 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
             process.
         """
+        waiter_config = waiter_config or WaiterConfig(Delay=6, MaxAttempts=1000000)
+
         with open_pipes_session(
             context=context,
             message_reader=self._message_reader,
@@ -257,9 +259,6 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                                 ),
                             )
 
-                if waiter_config is None:
-                    # If waiter_config is not set, default to ~70 days
-                    waiter_config = WaiterConfig(Delay=6, MaxAttempts=1000000)
                 response = self._wait_for_completion(
                     response, cluster=cluster, waiter_config=waiter_config
                 )
