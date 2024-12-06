@@ -1,4 +1,5 @@
 import * as React from 'react';
+import styled from 'styled-components';
 
 import {Box} from './Box';
 import {Colors} from './Color';
@@ -27,7 +28,7 @@ export const NonIdealState = ({
   const singleContentElement = [title, description, action].filter(Boolean).length === 1;
 
   return (
-    <Box
+    <NonIdealStateWrapper
       flex={{gap: 20, alignItems: singleContentElement ? 'center' : 'flex-start'}}
       background={Colors.backgroundLight()}
       padding={24}
@@ -58,6 +59,8 @@ export const NonIdealState = ({
         {description && <div style={{color: Colors.textDefault()}}>{description}</div>}
         {action}
       </Box>
-    </Box>
+    </NonIdealStateWrapper>
   );
 };
+
+export const NonIdealStateWrapper = styled(Box)``;
