@@ -1,11 +1,20 @@
 import os
-from typing import Type
+from typing import Any, Type
 
 import click
+import yaml
 from dagster._generate.generate import generate_project
 from dagster._utils import camelcase, pushd
 
 from dagster_components.core.component import Component
+
+
+class DefsDumper(yaml.Dumper):
+    def write_line_break(self) -> None:
+        # add an extra line break between top-level keys
+        if self.indent == 0:
+            super().write_line_break()
+        super().write_line_break()
 
 
 def generate_deployment(path: str) -> None:
@@ -44,7 +53,9 @@ def generate_component_type(root_path: str, name: str) -> None:
     )
 
 
-def generate_component_instance(root_path: str, name: str, component_type: Type[Component]) -> None:
+def generate_component_instance(
+    root_path: str, name: str, component_type: Type[Component], generate_params: Any
+) -> None:
     click.echo(f"Creating a Dagster component instance at {root_path}/{name}.py.")
 
     component_instance_root_path = os.path.join(root_path, name)
@@ -58,4 +69,13 @@ def generate_component_instance(root_path: str, name: str, component_type: Type[
         component_type=component_type.registered_name(),
     )
     with pushd(component_instance_root_path):
-        component_type.generate_files()
+        defs_data: dict = {"component_type": component_type.registered_name()}
+        component_params = (
+            component_type.generate_files(generate_params)
+            if generate_params
+            else component_type.generate_files()  # type: ignore
+        )
+        if component_params:
+            defs_data["component_params"] = component_params
+        with open("defs.yml", "w") as f:
+            yaml.dump(defs_data, f, Dumper=DefsDumper, sort_keys=False, default_flow_style=False)

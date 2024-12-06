@@ -1,7 +1,7 @@
 import copy
 from abc import ABC, abstractmethod
 from types import ModuleType
-from typing import TYPE_CHECKING, ClassVar, Dict, Iterable, Mapping, Optional, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Iterable, Mapping, Optional, Type
 
 from dagster._core.errors import DagsterError
 from dagster._utils import snakecase
@@ -16,14 +16,15 @@ class ComponentDeclNode: ...
 
 class Component(ABC):
     name: ClassVar[Optional[str]] = None
+    defs_params_schema: ClassVar[Type] = Type[None]
+    generate_params_schema: ClassVar[Type] = Type[None]
 
     @classmethod
     def registered_name(cls) -> str:
         return cls.name or snakecase(cls.__name__)
 
     @classmethod
-    def generate_files(cls) -> None:
-        raise NotImplementedError()
+    def generate_files(cls, params: Any) -> Optional[Mapping[str, Any]]: ...
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions": ...
