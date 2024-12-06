@@ -105,6 +105,7 @@ class AirbyteStream:
         )
 
 
+@whitelist_for_serdes
 @record
 class AirbyteWorkspaceData:
     """A record representing all content in an Airbyte workspace.
