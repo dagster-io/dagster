@@ -1,7 +1,8 @@
 component_type: sling_replication
 
 component_params:
-  connections:
-    - name: DUCKDB
-      type: duckdb
-      instance: <PLACEHOLDER>
+  sling:
+    connections:
+      - name: DUCKDB
+        type: duckdb
+        instance: <PLACEHOLDER>

@@ -53,7 +53,9 @@ def sling_path() -> Generator[Path, None, None]:
             defs_path = Path(temp_dir) / COMPONENT_RELPATH / "defs.yml"
 
             def _update_defs(data: Dict[str, Any]) -> Mapping[str, Any]:
-                data["component_params"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
+                data["component_params"]["sling"]["connections"][0]["instance"] = (
+                    f"{temp_dir}/duckdb"
+                )
                 return data
 
             _update_yaml(defs_path, _update_defs)
@@ -68,7 +70,7 @@ def test_python_params(sling_path: Path) -> None:
             path=sling_path / COMPONENT_RELPATH,
             defs_file_model=DefsFileModel(
                 component_type="sling_replication",
-                component_params={},
+                component_params={"sling": {}},
             ),
         ),
     )
