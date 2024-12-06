@@ -5,15 +5,19 @@ import yaml
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_embedded_elt.sling import SlingResource, sling_assets
 from dagster_embedded_elt.sling.resources import AssetExecutionContext
-from pydantic import TypeAdapter
+from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
 
 
+class SlingReplicationParams(BaseModel):
+    sling: SlingResource
+
+
 class SlingReplicationComponent(Component):
-    params_schema = SlingResource
+    params_schema = SlingReplicationParams
 
     def __init__(self, dirpath: Path, resource: SlingResource):
         self.dirpath = dirpath
@@ -29,7 +33,7 @@ class SlingReplicationComponent(Component):
         loaded_params = TypeAdapter(cls.params_schema).validate_python(
             decl_node.defs_file_model.component_params
         )
-        return cls(dirpath=decl_node.path, resource=loaded_params)
+        return cls(dirpath=decl_node.path, resource=loaded_params.sling)
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         @sling_assets(replication_config=self.dirpath / "replication.yaml")
