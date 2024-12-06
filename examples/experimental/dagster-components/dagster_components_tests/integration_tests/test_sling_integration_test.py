@@ -17,7 +17,7 @@ from dagster_components.impls.sling_replication import SlingReplicationComponent
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
 
-STUB_LOCATION_PATH = Path(__file__).parent / "stub_code_locations" / "sling_location"
+STUB_LOCATION_PATH = Path(__file__).parent.parent / "stub_code_locations" / "sling_location"
 COMPONENT_RELPATH = "components/ingest"
 
 

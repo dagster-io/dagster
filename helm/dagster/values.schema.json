@@ -37,20 +37,17 @@
                     ],
                     "title": "Container"
                 },
-                "secretKey": {
+                "secretCredential": {
                     "anyOf": [
                         {
-                            "type": "string"
-                        },
-                        {
-                            "$ref": "#/$defs/Source"
+                            "type": "object"
                         },
                         {
                             "type": "null"
                         }
                     ],
                     "default": null,
-                    "title": "Secretkey"
+                    "title": "Secretcredential"
                 },
                 "defaultAzureCredential": {
                     "anyOf": [

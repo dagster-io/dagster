@@ -1,8 +1,10 @@
 import os
 import sys
 from pathlib import Path
+from typing import Optional
 
 import click
+from pydantic import TypeAdapter
 
 from dagster_components import ComponentRegistry, __component_registry__
 from dagster_components.core.deployment import (
@@ -82,7 +84,8 @@ def generate_component_type_command(name: str) -> None:
 @generate_cli.command(name="component")
 @click.argument("component-type", type=str)
 @click.argument("name", type=str)
-def generate_component_command(component_type: str, name: str) -> None:
+@click.option("--params", type=str, default=None)
+def generate_component_command(component_type: str, name: str, params: Optional[str]) -> None:
     """Generate a Dagster component instance."""
     if not is_inside_code_location_project(Path(".")):
         click.echo(
@@ -105,4 +108,11 @@ def generate_component_command(component_type: str, name: str) -> None:
         sys.exit(1)
 
     component_type_cls = context.get_component_type(component_type)
-    generate_component_instance(context.component_instances_root_path, name, component_type_cls)
+    generate_params = (
+        TypeAdapter(component_type_cls.generate_params_schema).validate_json(params)
+        if params
+        else None
+    )
+    generate_component_instance(
+        context.component_instances_root_path, name, component_type_cls, generate_params
+    )

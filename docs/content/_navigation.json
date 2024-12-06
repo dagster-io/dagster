@@ -548,6 +548,24 @@
               {
                 "title": "Setting environment variables",
                 "path": "/dagster-plus/managing-deployments/setting-environment-variables-agents"
+              },
+              {
+                "title": "Deploying on Azure: Full guide",
+                "path": "/dagster-plus/deployment/azure/overview",
+                "children": [
+                  {
+                    "title": "Part 1: Setting up an AKS agent.",
+                    "path": "/dagster-plus/deployment/azure/aks-agent"
+                  },
+                  {
+                    "title": "Part 2: Deploy user code using ACR.",
+                    "path": "/dagster-plus/deployment/azure/acr-user-code"
+                  },
+                  {
+                    "title": "Part 3: Storing compute logs in Azure Blob Storage / Azure Data Lake",
+                    "path": "/dagster-plus/deployment/azure/blob-compute-logs"
+                  }
+                ]
               }
             ]
           }
