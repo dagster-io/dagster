@@ -51,11 +51,11 @@ def create_run(instance, **kwargs):
 def process_runs_in_queue(instance, queue: Sequence[DagsterRun]):
     """The MockedRunCoordinator doesn't update the status of a run when submit_run is called. All other
     RunCoordinators move the run from NOT_STARTED to another status, so post-process the queue to update the
-    status of each run to STARTED, since the auto-reexecution logic checks the status of the runs.
+    status of each run to QUEUED, since the auto-reexecution logic checks the status of the runs.
     """
     for run in queue:
         updated_run = instance.get_run_by_id(run.run_id)
-        if updated_run.status == DagsterRunStatus.NOT_STARTED:
+        if updated_run.status == DagsterRunStatus.QUEUED:
             launch_started_event = DagsterEvent(
                 event_type_value=DagsterEventType.PIPELINE_STARTING.value,
                 job_name=run.job_name,
