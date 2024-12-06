@@ -253,20 +253,24 @@ class WaiterMock:
         waiter_config = kwargs.pop("WaiterConfig", {'MaxAttempts': 100, 'Delay': 6})
         max_attempts = int(waiter_config.get('MaxAttempts', 100))
         delay = int(waiter_config.get('Delay', 6))
+        num_attempts = 0
 
         if self.waiter_name == "tasks_stopped":
-            while max_attempts > 0:
+            while True:
                 response = self.client.describe_tasks(**kwargs)
+                num_attempts += 1
+
                 if all(task["lastStatus"] == "STOPPED" for task in response["tasks"]):
                     return
-                max_attempts -= 1
+
+                if num_attempts >= max_attempts:
+                    raise botocore.exceptions.WaiterError(
+                        name=self.waiter_name,
+                        reason='Max attempts exceeded',
+                        last_response=response,
+                    )
+
                 time.sleep(delay)
-            else:
-                raise botocore.exceptions.WaiterError(
-                    name=self.waiter_name,
-                    reason='Max attempts exceeded',
-                    last_response=response,
-                )
 
         else:
             raise NotImplementedError(f"Waiter {self.waiter_name} is not implemented")
