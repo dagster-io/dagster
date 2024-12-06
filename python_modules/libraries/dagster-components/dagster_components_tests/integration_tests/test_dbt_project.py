@@ -50,11 +50,17 @@ def test_python_params(dbt_path: Path) -> None:
             path=dbt_path / COMPONENT_RELPATH,
             defs_file_model=DefsFileModel(
                 component_type="dbt_project",
-                component_params={"dbt": {"project_dir": "jaffle_shop"}},
+                component_params={
+                    "dbt": {"project_dir": "jaffle_shop"},
+                    "op": {"name": "some_op", "tags": {"tag1": "value"}},
+                },
             ),
         ),
     )
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
+    defs = component.build_defs(script_load_context())
+    assert defs.get_assets_def("stg_customers").op.name == "some_op"
+    assert defs.get_assets_def("stg_customers").op.tags["tag1"] == "value"
 
 
 def test_load_from_path(dbt_path: Path) -> None:

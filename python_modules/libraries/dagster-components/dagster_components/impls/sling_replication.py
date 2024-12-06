@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict, Iterator, Optional, Union
+from typing import Iterator, Optional, Union
 
 import yaml
 from dagster._core.definitions.definitions_class import Definitions
@@ -14,11 +14,7 @@ from typing_extensions import Self
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import component
 from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
-
-
-class OpSpecBaseModel(BaseModel):
-    name: Optional[str] = None
-    tags: Optional[Dict[str, str]] = None
+from dagster_components.core.dsl_schema import OpSpecBaseModel
 
 
 class SlingReplicationParams(BaseModel):
@@ -30,9 +26,7 @@ class SlingReplicationParams(BaseModel):
 class SlingReplicationComponent(Component):
     params_schema = SlingReplicationParams
 
-    def __init__(
-        self, dirpath: Path, resource: SlingResource, op_spec: Optional[OpSpecBaseModel] = None
-    ):
+    def __init__(self, dirpath: Path, resource: SlingResource, op_spec: Optional[OpSpecBaseModel]):
         self.dirpath = dirpath
         self.resource = resource
         self.op_spec = op_spec
