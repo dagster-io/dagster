@@ -1,3 +1,4 @@
+import {memoize} from 'lodash';
 import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
 import throttle from 'lodash/throttle';
@@ -18,7 +19,7 @@ import {
 } from './types/useAssetGraphData.types';
 import {usePrefixedCacheKey} from '../app/AppProvider';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
-import {asyncMemoize} from '../app/Util';
+import {indexedDBAsyncMemoize} from '../app/Util';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
@@ -29,7 +30,10 @@ export interface AssetGraphFetchScope {
   pipelineSelector?: PipelineSelector;
   groupSelector?: AssetGroupSelector;
   kinds?: string[];
-  loading: boolean; // true if we shouldn't start handling any input.
+
+  // This is used to indicate we shouldn't start handling any input.
+  // This is used by pages where `hideNodesMatching` is only available asynchronously.
+  loading?: boolean;
 }
 
 export type AssetGraphQueryItem = GraphQueryItem & {
@@ -121,7 +125,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   );
 
   const [state, setState] = useState<GraphDataState>(INITIAL_STATE);
-  const {assetGraphData, graphAssetKeys, allAssetKeys} = state;
 
   const {kinds, hideEdgesToNodesOutsideQuery} = options;
 
@@ -145,6 +148,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       flagAssetSelectionSyntax: featureEnabled(FeatureFlag.flagAssetSelectionSyntax),
     })?.then((data) => {
       if (lastProcessedRequestRef.current < requestId) {
+        lastProcessedRequestRef.current = requestId;
         setState(data);
         if (requestId === currentRequestRef.current) {
           setGraphDataLoading(false);
@@ -164,10 +168,10 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   return {
     loading,
     fetchResult,
-    assetGraphData,
+    assetGraphData: state.assetGraphData,
     graphQueryItems,
-    graphAssetKeys,
-    allAssetKeys,
+    graphAssetKeys: state.graphAssetKeys,
+    allAssetKeys: state.allAssetKeys,
   };
 }
 
@@ -294,22 +298,27 @@ export const ASSET_GRAPH_QUERY = gql`
 `;
 
 const computeGraphData = throttle(
-  asyncMemoize<ComputeGraphDataMessageType, GraphDataState, typeof computeGraphDataWrapper>(
-    computeGraphDataWrapper,
-  ),
+  indexedDBAsyncMemoize<
+    ComputeGraphDataMessageType,
+    GraphDataState,
+    typeof computeGraphDataWrapper
+  >(computeGraphDataWrapper, (props) => {
+    return JSON.stringify(props);
+  }),
   2000,
   {leading: true},
 );
+
+const getWorker = memoize(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url)));
 
 async function computeGraphDataWrapper(
   props: Omit<ComputeGraphDataMessageType, 'type'>,
 ): Promise<GraphDataState> {
   if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
+    const worker = getWorker();
     return new Promise<GraphDataState>((resolve) => {
-      const worker = new Worker(new URL('./ComputeGraphData.worker', import.meta.url));
       worker.addEventListener('message', (event) => {
         resolve(event.data as GraphDataState);
-        worker.terminate();
       });
       const message: ComputeGraphDataMessageType = {
         type: 'computeGraphData',

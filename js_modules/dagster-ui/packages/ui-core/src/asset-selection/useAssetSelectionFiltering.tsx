@@ -27,6 +27,7 @@ export const useAssetSelectionFiltering = <
     [assets],
   );
 
+  const assetsByKeyStringified = useMemo(() => JSON.stringify(assetsByKey), [assetsByKey]);
   const {loading, graphQueryItems, graphAssetKeys} = useAssetGraphData(
     assetSelection,
     useMemo(
@@ -37,17 +38,24 @@ export const useAssetSelectionFiltering = <
         },
         loading: !!assetsLoading,
       }),
-      [assetsByKey, assetsLoading],
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [assetsByKeyStringified, assetsLoading],
     ),
   );
 
   const filtered = useMemo(() => {
+    if (!assetSelection) {
+      return assets;
+    }
     return (
       graphAssetKeys
-        .map((key) => assetsByKey[tokenForAssetKey(key)]!)
+        .map((key) => {
+          return assetsByKey[tokenForAssetKey(key)]!;
+        })
+        .filter((a) => a)
         .sort((a, b) => COMMON_COLLATOR.compare(a.key.path.join(''), b.key.path.join(''))) ?? []
     );
-  }, [graphAssetKeys, assetsByKey]);
+  }, [assetSelection, graphAssetKeys, assets, assetsByKey]);
 
   const filteredByKey = useMemo(
     () => Object.fromEntries(filtered.map((asset) => [tokenForAssetKey(asset.key), asset])),

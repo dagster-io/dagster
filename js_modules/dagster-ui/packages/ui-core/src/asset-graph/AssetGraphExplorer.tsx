@@ -98,11 +98,11 @@ type Props = {
 export const MINIMAL_SCALE = 0.6;
 export const GROUPS_ONLY_SCALE = 0.15;
 
+const DEFAULT_SET_HIDE_NODES_MATCH = (_node: AssetNodeForGraphQueryFragment) => true;
+
 export const AssetGraphExplorer = (props: Props) => {
   const fullAssetGraphData = useFullAssetGraphData(props.fetchOptions);
-  const [hideNodesMatching, setHideNodesMatching] = useState(
-    () => (_node: AssetNodeForGraphQueryFragment) => true,
-  );
+  const [hideNodesMatching, setHideNodesMatching] = useState(() => DEFAULT_SET_HIDE_NODES_MATCH);
 
   const {
     loading: graphDataLoading,
@@ -110,7 +110,13 @@ export const AssetGraphExplorer = (props: Props) => {
     assetGraphData,
     graphQueryItems,
     allAssetKeys,
-  } = useAssetGraphData(props.explorerPath.opsQuery, {...props.fetchOptions, hideNodesMatching});
+  } = useAssetGraphData(
+    props.explorerPath.opsQuery,
+    useMemo(
+      () => ({...props.fetchOptions, hideNodesMatching}),
+      [props.fetchOptions, hideNodesMatching],
+    ),
+  );
 
   const {explorerPath, onChangeExplorerPath} = props;
 
