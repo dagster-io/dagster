@@ -142,6 +142,10 @@ def test_generate_code_location_inside_deployment_success() -> None:
         assert Path("code_locations/bar/bar_tests").exists()
         assert Path("code_locations/bar/pyproject.toml").exists()
 
+        # Check venv created
+        assert Path("code_locations/bar/.venv").exists()
+        assert Path("code_locations/bar/uv.lock").exists()
+
         # Commented out because we are always adding sources right now
         # with open("code_locations/bar/pyproject.toml") as f:
         #     toml = tomli.loads(f.read())
@@ -161,6 +165,10 @@ def test_generate_code_location_outside_deployment_success() -> None:
         assert Path("bar/bar/components").exists()
         assert Path("bar/bar_tests").exists()
         assert Path("bar/pyproject.toml").exists()
+
+        # Check venv created
+        assert Path("bar/.venv").exists()
+        assert Path("bar/uv.lock").exists()
 
 
 def _find_git_root():
