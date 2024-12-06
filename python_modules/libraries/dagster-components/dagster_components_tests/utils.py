@@ -1,10 +1,9 @@
 from dagster import AssetKey, DagsterInstance
-from dagster_components import __component_registry__
 from dagster_components.core.component import Component, ComponentLoadContext, ComponentRegistry
 
 
 def registry() -> ComponentRegistry:
-    return ComponentRegistry(__component_registry__)
+    return ComponentRegistry.from_entry_point_discovery()
 
 
 def script_load_context() -> ComponentLoadContext:

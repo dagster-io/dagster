@@ -1,4 +1,4 @@
-type: pipes_subprocess_script_collection
+type: dagster_components.pipes_subprocess_script_collection
 
 params:
   scripts:
