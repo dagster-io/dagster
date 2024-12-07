@@ -1,0 +1,21 @@
+{{ range $deployment := .Values.deployments }}
+{{ if $deployment.pdb }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "dagster.fullname" $ -}}-{{- $deployment.name }}
+  labels:
+    {{- include "dagster.labels" $ | nindent 4 }}
+    component: user-deployments
+    deployment: {{ $deployment.name }}
+  annotations: {{ $deployment.annotations | toYaml | nindent 4 }}
+spec:
+  {{- $deployment.pdb | toYaml | nindent 2 }}
+  selector:
+    matchLabels:
+      {{- include "dagster.selectorLabels" $ | nindent 6 }}
+      component: user-deployments
+      deployment: {{ $deployment.name }}
+---
+{{ end }}
+{{ end }}
