@@ -113,7 +113,6 @@ def trips_by_week(database: DuckDBResource) -> None:
     current_date = datetime.strptime("2023-01-01", constants.DATE_FORMAT)
     end_date = datetime.now()
 
-    result = pd.DataFrame()
 
     while current_date < end_date:
         current_date_str = current_date.strftime(constants.DATE_FORMAT)
@@ -134,19 +133,27 @@ def trips_by_week(database: DuckDBResource) -> None:
             "passenger_count": "sum"
         }).rename({"vendor_id": "num_trips"}).to_frame().T # type: ignore
 
-        aggregate["period"] = current_date
+        aggregate["period"] = current_date_str
 
-        result = pd.concat([result, aggregate])
+        # clean up the formatting of the dataframe
+        aggregate["num_trips"] = aggregate["num_trips"].astype(int)
+        aggregate["passenger_count"] = aggregate["passenger_count"].astype(int)
+        aggregate["total_amount"] = aggregate["total_amount"].round(2).astype(float)
+        aggregate["trip_distance"] = aggregate["trip_distance"].round(2).astype(float)
+        aggregate = aggregate[
+            ["period", "num_trips", "total_amount", "trip_distance", "passenger_count"]
+        ]
+        aggregate = aggregate.sort_values(by="period")
+
+        try:
+            # If the file already exists, append to it, but replace the existing month's data
+            existing = pd.read_csv(constants.TRIPS_BY_WEEK_FILE_PATH)
+            existing = existing[existing["period"] != current_date_str]
+            existing = pd.concat([existing, aggregate]).sort_values(by="period")
+            existing.to_csv(constants.TRIPS_BY_WEEK_FILE_PATH, index=False)
+        except FileNotFoundError:
+            aggregate.to_csv(constants.TRIPS_BY_WEEK_FILE_PATH, index=False)
 
         current_date += timedelta(days=7)
 
-    # clean up the formatting of the dataframe
-    result['num_trips'] = result['num_trips'].astype(int)
-    result['passenger_count'] = result['passenger_count'].astype(int)
-    result['total_amount'] = result['total_amount'].round(2).astype(float)
-    result['trip_distance'] = result['trip_distance'].round(2).astype(float)
-    result = result[["period", "num_trips", "total_amount", "trip_distance", "passenger_count"]]
-    result = result.sort_values(by="period")
-
-    result.to_csv(constants.TRIPS_BY_WEEK_FILE_PATH, index=False)
 ```
