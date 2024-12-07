@@ -18,7 +18,7 @@ from dagster_components.core.dsl_schema import OpSpecBaseModel
 
 
 class SlingReplicationParams(BaseModel):
-    sling: SlingResource
+    sling: Optional[SlingResource] = None
     op: Optional[OpSpecBaseModel] = None
 
 
@@ -37,7 +37,11 @@ class SlingReplicationComponent(Component):
         loaded_params = TypeAdapter(cls.params_schema).validate_python(
             decl_node.component_file_model.params
         )
-        return cls(dirpath=decl_node.path, resource=loaded_params.sling, op_spec=loaded_params.op)
+        return cls(
+            dirpath=decl_node.path,
+            resource=loaded_params.sling or SlingResource(),
+            op_spec=loaded_params.op,
+        )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         @sling_assets(

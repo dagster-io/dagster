@@ -127,7 +127,11 @@ def build_defs_from_toplevel_components_folder(
     """Build a Definitions object from an entire component hierarchy."""
     from dagster._core.definitions.definitions_class import Definitions
 
-    context = CodeLocationProjectContext.from_path(path, registry or ComponentRegistry.empty())
+    from dagster_components import __component_registry__
+
+    context = CodeLocationProjectContext.from_path(
+        path, registry or ComponentRegistry(__component_registry__)
+    )
 
     all_defs: List[Definitions] = []
     for component in context.component_instances:
