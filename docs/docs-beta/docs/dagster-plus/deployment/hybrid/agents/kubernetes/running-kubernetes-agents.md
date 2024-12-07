@@ -1,8 +1,6 @@
 ---
-title: "Running Dagster+ agents on Kubernetes"
-displayed_sidebar: "dagsterPlus"
-sidebar_position: 300
-sidebar_label: "Kubernetes"
+title: Running a Kubernetes agents on a Kubernetes cluster
+sidebar_position: 100
 ---
 
 # Running Dagster+ agents on Kubernetes
