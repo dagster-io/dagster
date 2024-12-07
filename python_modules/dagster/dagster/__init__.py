@@ -402,6 +402,7 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus as DefaultSensorStatus,
     SensorDefinition as SensorDefinition,
     SensorEvaluationContext as SensorEvaluationContext,
+    SensorReturnTypesUnion as SensorReturnTypesUnion,
     build_sensor_context as build_sensor_context,
 )
 from dagster._core.definitions.source_asset import SourceAsset as SourceAsset

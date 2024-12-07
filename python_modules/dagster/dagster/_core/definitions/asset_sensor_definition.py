@@ -9,8 +9,8 @@ from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.run_request import RunRequest, SkipReason
 from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
-    RawSensorEvaluationFunctionReturn,
     SensorDefinition,
+    SensorReturnTypesUnion,
     SensorType,
     validate_and_get_resource_dict,
 )
@@ -80,7 +80,7 @@ class AssetSensorDefinition(SensorDefinition):
         job_name: Optional[str],
         asset_materialization_fn: Callable[
             ...,
-            RawSensorEvaluationFunctionReturn,
+            SensorReturnTypesUnion,
         ],
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
