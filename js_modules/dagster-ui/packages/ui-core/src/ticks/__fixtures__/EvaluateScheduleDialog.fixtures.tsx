@@ -4,8 +4,12 @@ import {
   RunStatus,
   buildDryRunInstigationTick,
   buildErrorChainLink,
+  buildLaunchMultipleRunsResult,
+  buildLaunchRunSuccess,
+  buildPipelineSnapshot,
   buildPipelineTag,
   buildPythonError,
+  buildRun,
   buildRunRequest,
   buildSchedule,
   buildTickEvaluation,
@@ -211,18 +215,14 @@ export const ScheduleLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutatio
   result: {
     data: {
       __typename: 'Mutation',
-      launchMultipleRuns: {
-        __typename: 'LaunchMultipleRunsResult',
+      launchMultipleRuns: buildLaunchMultipleRunsResult({
         launchMultipleRunsResult: [
-          {
-            __typename: 'LaunchRunSuccess',
-            run: {
-              __typename: 'Run',
+          buildLaunchRunSuccess({
+            run: buildRun({
               id: '504b3a77-d6c4-440c-a128-7f59c9d75d59',
-              pipeline: {
-                __typename: 'PipelineSnapshot',
+              pipeline: buildPipelineSnapshot({
                 name: 'saepe',
-              },
+              }),
               tags: [
                 buildPipelineTag({
                   key: 'dagster/schedule_name',
@@ -246,10 +246,10 @@ export const ScheduleLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutatio
                 'ops:\n  configurable_op:\n    config:\n      scheduled_date: 2023-01-29',
               mode: 'default',
               resolvedOpSelection: null,
-            },
-          },
+            }),
+          }),
         ],
-      },
+      }),
     },
   },
 };
