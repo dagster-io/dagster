@@ -85,9 +85,9 @@ def test_python_params_group(dbt_path: Path) -> None:
         context=script_load_context(),
         decl_node=YamlComponentDecl(
             path=dbt_path / COMPONENT_RELPATH,
-            defs_file_model=DefsFileModel(
-                component_type="dbt_project",
-                component_params={
+            component_file_model=ComponentFileModel(
+                type="dbt_project",
+                params={
                     "dbt": {"project_dir": "jaffle_shop"},
                     "translator": {
                         "group": "some_group",
