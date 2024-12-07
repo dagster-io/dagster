@@ -91,3 +91,23 @@ def test_daemon_rich_logs() -> None:
             workspace_load_target=EmptyWorkspaceTarget(),
             log_format="rich",
         )
+
+def test_skip_workspace_reload_behavior():
+    # Step 1: Create a mock instance
+    with instance_for_test() as instance:
+        # Step 2: Create a daemon controller with skip_workspace_reload=True
+        with daemon_controller_from_instance(
+                instance,
+                workspace_load_target=EmptyWorkspaceTarget(),
+                skip_workspace_reload=True,  # Enable the new feature
+        ) as controller:
+            # Step 3: Verify the controller initializes with skip_workspace_reload=True
+            assert getattr(controller, "_skip_workspace_reload", None) is True
+        # Step 4: Create another daemon controller with skip_workspace_reload=False
+        with daemon_controller_from_instance(
+                instance,
+                workspace_load_target=EmptyWorkspaceTarget(),
+                skip_workspace_reload=False,  # Disable the new feature
+        ) as controller:
+            # Verify the controller initializes with skip_workspace_reload=False
+            assert getattr(controller, "_skip_workspace_reload", None) is False
