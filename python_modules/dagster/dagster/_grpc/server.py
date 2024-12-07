@@ -227,8 +227,9 @@ class LoadedRepositories:
     def __init__(
         self,
         loadable_target_origin: Optional[LoadableTargetOrigin],
+        container_image: Optional[str],
         entry_point: Sequence[str],
-        container_image: Optional[str] = None,
+        container_context: Optional[Mapping[str, Any]],
     ):
         self._loadable_target_origin = loadable_target_origin
 
@@ -236,6 +237,8 @@ class LoadedRepositories:
         self._recon_repos_by_name: Dict[str, ReconstructableRepository] = {}
         self._repo_defs_by_name: Dict[str, RepositoryDefinition] = {}
         self._loadable_repository_symbols: List[LoadableRepositorySymbol] = []
+
+        self._container_context = container_context
 
         if not loadable_target_origin:
             # empty workspace
@@ -264,8 +267,9 @@ class LoadedRepositories:
                 recon_repo = ReconstructableRepository(
                     pointer,
                     container_image,
-                    sys.executable,
+                    executable_path=loadable_target_origin.executable_path or sys.executable,
                     entry_point=entry_point,
+                    container_context=self._container_context,
                 )
                 with user_code_error_boundary(
                     DagsterUserCodeLoadError,
@@ -420,8 +424,9 @@ class DagsterApiServer(DagsterApiServicer):
 
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
                 loadable_target_origin,
-                self._entry_point,
-                self._container_image,
+                entry_point=self._entry_point,
+                container_image=self._container_image,
+                container_context=self._container_context,
             )
         except Exception:
             if not lazy_load_user_code:
@@ -523,6 +528,17 @@ class DagsterApiServer(DagsterApiServicer):
                 f'Could not find a repository called "{remote_repo_origin.repository_name}"'
             )
         return loaded_repos.definitions_by_name[remote_repo_origin.repository_name]
+
+    def _get_reconstructable_repo_for_origin(
+        self,
+        remote_repo_origin: RemoteRepositoryOrigin,
+    ) -> ReconstructableRepository:
+        loaded_repos = check.not_none(self._loaded_repositories)
+        if remote_repo_origin.repository_name not in loaded_repos.definitions_by_name:
+            raise Exception(
+                f'Could not find a repository called "{remote_repo_origin.repository_name}"'
+            )
+        return loaded_repos.reconstructables_by_name[remote_repo_origin.repository_name]
 
     def ReloadCode(
         self, _request: api_pb2.ReloadCodeRequest, _context: grpc.ServicerContext
@@ -758,6 +774,9 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_pipeline_subset_result = serialize_value(
                 get_external_pipeline_subset_result(
                     self._get_repo_for_origin(
+                        job_subset_snapshot_args.job_origin.repository_origin
+                    ),
+                    self._get_reconstructable_repo_for_origin(
                         job_subset_snapshot_args.job_origin.repository_origin
                     ),
                     job_subset_snapshot_args.job_origin.job_name,

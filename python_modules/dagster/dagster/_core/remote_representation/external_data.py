@@ -95,6 +95,7 @@ from dagster._core.definitions.time_window_partitions import TimeWindowPartition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.origin import RepositoryPythonOrigin
 from dagster._core.snap import JobSnap
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
@@ -425,6 +426,7 @@ class RemoteJobSubsetResult:
     success: bool
     error: Optional[SerializableErrorInfo] = None
     job_data_snap: Optional[JobDataSnap] = None
+    repository_python_origin: Optional[RepositoryPythonOrigin] = None
 
 
 @whitelist_for_serdes
