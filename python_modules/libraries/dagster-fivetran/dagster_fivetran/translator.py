@@ -153,7 +153,7 @@ class FivetranTable:
 
     enabled: bool
     name_in_destination: str
-    # We keep the raw data for columns to add it as `column_info in the metadata.
+    # We keep the raw data for columns to add it as `column_info` in the metadata.
     columns: Optional[Mapping[str, Any]]
 
     @classmethod

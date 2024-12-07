@@ -19,6 +19,8 @@ from dagster_fivetran_tests.experimental.conftest import (
     TEST_API_SECRET,
     TEST_MAX_TIME_STR,
     TEST_PREVIOUS_MAX_TIME_STR,
+    TEST_SCHEMA_NAME,
+    TEST_TABLE_NAME,
     get_fivetran_connector_api_url,
     get_sample_connection_details,
 )
@@ -57,6 +59,17 @@ def test_basic_resource_request(
     assert connector_id in all_api_mocks.calls[0].request.url
     assert connector_id in all_api_mocks.calls[1].request.url
     assert all_api_mocks.calls[1].request.method == "PATCH"
+
+    # columns config calls
+    all_api_mocks.calls.reset()
+    client.get_columns_config_for_table(
+        connector_id=connector_id, schema_name=TEST_SCHEMA_NAME, table_name=TEST_TABLE_NAME
+    )
+    assert len(all_api_mocks.calls) == 1
+    assert (
+        f"{connector_id}/schemas/{TEST_SCHEMA_NAME}/tables/{TEST_TABLE_NAME}/columns"
+        in all_api_mocks.calls[0].request.url
+    )
 
     # sync calls
     all_api_mocks.calls.reset()
