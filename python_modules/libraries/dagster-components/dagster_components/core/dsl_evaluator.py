@@ -5,8 +5,8 @@ from jinja2 import Template
 
 
 class DslEvaluator:
-    def __init__(self, dsl_contexst: Mapping[str, Any]):
-        self.dsl_context = dsl_contexst
+    def __init__(self, dsl_context: Mapping[str, Any]):
+        self.dsl_context = dsl_context
 
     @contextmanager
     def with_dsl_context(
