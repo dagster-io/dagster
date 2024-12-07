@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING, Generator, Iterator
 
 import pytest
 from dagster import AssetKey
@@ -103,6 +103,7 @@ def test_python_params_group(dbt_path: Path) -> None:
         assert defs.get_assets_def(key).get_asset_spec(key).group_name == "some_group"
 
 
+@contextmanager
 def with_os_environ(key: str, value: str) -> Generator[None, None, None]:
     old_value = os.environ.get(key)
     os.environ[key] = value
@@ -116,25 +117,26 @@ def with_os_environ(key: str, value: str) -> Generator[None, None, None]:
 
 
 def test_render_vars(dbt_path: Path) -> None:
-    comp = DbtProjectComponent.from_decl_node(
-        context=script_load_context(),
-        decl_node=YamlComponentDecl(
-            path=dbt_path / COMPONENT_RELPATH,
-            component_file_model=ComponentFileModel(
-                type="dbt_project",
-                params={
-                    "dbt": {"project_dir": "jaffle_shop"},
-                    "translator": {
-                        "group": "some_group",
+    with with_os_environ("GROUP_AS_ENV", "group_in_env"):
+        comp = DbtProjectComponent.from_decl_node(
+            context=script_load_context(),
+            decl_node=YamlComponentDecl(
+                path=dbt_path / COMPONENT_RELPATH,
+                component_file_model=ComponentFileModel(
+                    type="dbt_project",
+                    params={
+                        "dbt": {"project_dir": "jaffle_shop"},
+                        "translator": {
+                            "group": "{{ var('GROUP_AS_ENV') }}",
+                        },
                     },
-                },
+                ),
             ),
-        ),
-    )
-    assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
-    defs: Definitions = comp.build_defs(script_load_context())
-    for key in get_asset_keys(comp):
-        assert defs.get_assets_def(key).get_asset_spec(key).group_name == "some_group"
+        )
+        assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
+        defs: Definitions = comp.build_defs(script_load_context())
+        for key in get_asset_keys(comp):
+            assert defs.get_assets_def(key).get_asset_spec(key).group_name == "group_in_env"
 
 
 def test_load_from_path(dbt_path: Path) -> None:

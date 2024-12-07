@@ -1,3 +1,4 @@
+from dagster_components.core.dsl_evaluator import DslEvaluator
 from dagster import AssetKey, DagsterInstance
 from dagster_components import __component_registry__
 from dagster_components.core.component import Component, ComponentLoadContext, ComponentRegistry
@@ -8,7 +9,7 @@ def registry() -> ComponentRegistry:
 
 
 def script_load_context() -> ComponentLoadContext:
-    return ComponentLoadContext.for_test()
+    return ComponentLoadContext.for_test(dsl_evaluator=DslEvaluator.with_os_environ_as_vars())
 
 
 def get_asset_keys(component: Component) -> set[AssetKey]:

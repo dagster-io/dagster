@@ -90,11 +90,12 @@ class ComponentLoadContext:
         *,
         resources: Optional[Mapping[str, object]] = None,
         registry: Optional[ComponentRegistry] = None,
+        dsl_evaluator: Optional[DslEvaluator] = None,
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
             resources=resources or {},
             registry=registry or ComponentRegistry.empty(),
-            dsl_evaluator=DslEvaluator({}),
+            dsl_evaluator=dsl_evaluator or DslEvaluator({}),
         )
 
 
