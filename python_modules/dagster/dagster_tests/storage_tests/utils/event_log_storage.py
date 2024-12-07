@@ -5,6 +5,7 @@ import re
 import string
 import sys
 import time
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
 from typing import List, Optional, Sequence, Tuple, cast
@@ -5101,29 +5102,57 @@ class TestEventLogStorage:
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
 
-        TOTAL_TIMEOUT_TIME = 30
+        LOGGED_MESSAGES = defaultdict(list)
+        NUM_SLOTS = 5
+        MAX_NUM_WORKERS = None
+        THREAD_TIMEOUT = 30
+        TOTAL_TIMEOUT_TIME = 10
 
         run_id = make_new_run_id()
 
-        storage.set_concurrency_slots("foo", 5)
+        storage.set_concurrency_slots("foo", NUM_SLOTS)
+
+        def _log(key, *args):
+            now = time.time()
+            LOGGED_MESSAGES[key].append((now, key, *args))
+
+        def _dump_logs():
+            all_logs = sorted(
+                [msg for key_msgs in LOGGED_MESSAGES.values() for msg in key_msgs],
+                key=lambda x: x[0],
+            )
+            print("LOGS: ", all_logs)  # noqa
 
         def _occupy_slot(key: str):
             start = time.time()
+            _log(key, "start")
             claim_status = storage.claim_concurrency_slot("foo", run_id, key)
-            while time.time() < start + TOTAL_TIMEOUT_TIME:
+            _log(key, "claim", claim_status.slot_status)
+            while time.time() < start + THREAD_TIMEOUT:
                 if claim_status.slot_status == ConcurrencySlotStatus.CLAIMED:
                     break
                 else:
                     claim_status = storage.claim_concurrency_slot("foo", run_id, key)
+                    _log(key, "claim", claim_status.slot_status, claim_status)
                     time.sleep(0.05)
+            _log(key, "free")
             storage.free_concurrency_slot_for_step(run_id, key)
+            _log(key, "stop")
 
-        with ThreadPoolExecutor() as executor:
-            list(
-                executor.map(_occupy_slot, [str(i) for i in range(100)], timeout=TOTAL_TIMEOUT_TIME)
-            )
+        with ThreadPoolExecutor(max_workers=MAX_NUM_WORKERS) as executor:
+            try:
+                list(
+                    executor.map(
+                        _occupy_slot, [str(i) for i in range(100)], timeout=TOTAL_TIMEOUT_TIME
+                    )
+                )
+            except:
+                _dump_logs()
+                raise
+
+            _dump_logs()
             foo_info = storage.get_concurrency_info("foo")
-            assert foo_info.slot_count == 5
+            assert foo_info.slot_count == NUM_SLOTS
             assert foo_info.active_slot_count == 0
             assert foo_info.pending_step_count == 0
             assert foo_info.assigned_step_count == 0

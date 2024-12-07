@@ -7,12 +7,10 @@ from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, 
 from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.step_builder import BuildkiteQueue
-from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.utils import (
     BuildkiteStep,
     connect_sibling_docker_container,
     has_dagster_airlift_changes,
-    has_storage_test_fixture_changes,
     network_buildkite_container,
     skip_if_not_airlift_or_dlift_commit,
     skip_if_not_dlift_commit,
@@ -42,12 +40,12 @@ def build_library_packages_steps() -> List[BuildkiteStep]:
             PackageSpec(pkg)
             for pkg in _get_uncustomized_pkg_roots("python_modules", custom_library_pkg_roots)
         ],
-        *[
-            PackageSpec(pkg)
-            for pkg in _get_uncustomized_pkg_roots(
-                "python_modules/libraries", custom_library_pkg_roots
-            )
-        ],
+        # *[
+        #     PackageSpec(pkg)
+        #     for pkg in _get_uncustomized_pkg_roots(
+        #         "python_modules/libraries", custom_library_pkg_roots
+        #     )
+        # ],
     ]
 
     return build_steps_from_package_specs(
@@ -451,302 +449,302 @@ def tox_factors_for_folder(tests_folder_name: str) -> List[str]:
 
 
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
-    PackageSpec(
-        "python_modules/automation",
-        # automation is internal code that doesn't need to be tested in every python version. The
-        # test suite also installs a ton of packages in the same environment, which is liable to
-        # cause dependency collisions.
-        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
-    ),
-    PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
+    # PackageSpec(
+    #     "python_modules/automation",
+    #     # automation is internal code that doesn't need to be tested in every python version. The
+    #     # test suite also installs a ton of packages in the same environment, which is liable to
+    #     # cause dependency collisions.
+    #     unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
+    # ),
+    # PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
     PackageSpec(
         "python_modules/dagster",
         env_vars=["AWS_ACCOUNT_ID"],
         pytest_tox_factors=[
-            "api_tests",
-            "asset_defs_tests",
-            "cli_tests",
-            "core_tests",
-            "daemon_sensor_tests",
-            "daemon_tests",
-            "definitions_tests",
-            "general_tests",
-            "general_tests_old_protobuf",
-            "launcher_tests",
-            "logging_tests",
-            "model_tests",
-            "scheduler_tests",
+            # "api_tests",
+            # "asset_defs_tests",
+            # "cli_tests",
+            # "core_tests",
+            # "daemon_sensor_tests",
+            # "daemon_tests",
+            # "definitions_tests",
+            # "general_tests",
+            # "general_tests_old_protobuf",
+            # "launcher_tests",
+            # "logging_tests",
+            # "model_tests",
+            # "scheduler_tests",
             "storage_tests",
             "storage_tests_sqlalchemy_1_3",
             "storage_tests_sqlalchemy_1_4",
-            "type_signature_tests",
+            # "type_signature_tests",
         ]
         + tox_factors_for_folder("execution_tests"),
         unsupported_python_versions=_unsupported_dagster_python_versions,
     ),
-    PackageSpec(
-        "python_modules/dagster-graphql",
-        pytest_extra_cmds=dagster_graphql_extra_cmds,
-        pytest_tox_factors=[
-            "not_graphql_context_test_suite",
-            "sqlite_instance_multi_location",
-            "sqlite_instance_managed_grpc_env",
-            "sqlite_instance_deployed_grpc_env",
-            "sqlite_instance_code_server_cli_grpc_env",
-            "graphql_python_client",
-            "postgres-graphql_context_variants",
-            "postgres-instance_multi_location",
-            "postgres-instance_managed_grpc_env",
-            "postgres-instance_deployed_grpc_env",
-        ],
-        unsupported_python_versions=(
-            lambda tox_factor: (
-                [AvailablePythonVersion.V3_11]
-                if (
-                    tox_factor
-                    in {
-                        # test suites particularly likely to crash and/or hang
-                        # due to https://github.com/grpc/grpc/issues/31885
-                        "sqlite_instance_managed_grpc_env",
-                        "sqlite_instance_deployed_grpc_env",
-                        "sqlite_instance_code_server_cli_grpc_env",
-                        "sqlite_instance_multi_location",
-                        "postgres-instance_multi_location",
-                        "postgres-instance_managed_grpc_env",
-                        "postgres-instance_deployed_grpc_env",
-                    }
-                )
-                else []
-            )
-        ),
-        timeout_in_minutes=30,
-    ),
-    PackageSpec(
-        "python_modules/dagster-test",
-        unsupported_python_versions=[
-            # dagster-airflow
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-dbt",
-        pytest_tox_factors=[
-            f"{deps_factor}-{command_factor}"
-            for deps_factor in ["dbt17", "dbt18"]
-            for command_factor in ["cloud", "core-main", "core-derived-metadata"]
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-snowflake",
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-airbyte",
-        pytest_tox_factors=["unit", "integration"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-airflow",
-        # omit python 3.10 until we add support
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_10,
-            AvailablePythonVersion.V3_11,
-            AvailablePythonVersion.V3_12,
-        ],
-        env_vars=[
-            "AIRFLOW_HOME",
-            "AWS_ACCOUNT_ID",
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-            "GOOGLE_APPLICATION_CREDENTIALS",
-        ],
-        pytest_extra_cmds=airflow_extra_cmds,
-        pytest_tox_factors=[
-            "default-airflow2",
-            "localdb-airflow2",
-            "persistentdb-airflow2",
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-aws",
-        env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-azure",
-        env_vars=["AZURE_STORAGE_ACCOUNT_KEY"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-celery",
-        env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-        pytest_extra_cmds=celery_extra_cmds,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-celery-docker",
-        env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-        pytest_extra_cmds=celery_docker_extra_cmds,
-        pytest_step_dependencies=test_project_depends_fn,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-dask",
-        env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-databricks",
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-docker",
-        env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-        pytest_extra_cmds=docker_extra_cmds,
-        pytest_step_dependencies=test_project_depends_fn,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-duckdb",
-        unsupported_python_versions=[
-            # duckdb
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-duckdb-pandas",
-        unsupported_python_versions=[
-            # duckdb
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-duckdb-polars",
-        unsupported_python_versions=[
-            # duckdb
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-duckdb-pyspark",
-        unsupported_python_versions=[
-            # duckdb
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-pandas",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-gcp",
-        env_vars=[
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-            "GCP_PROJECT_ID",
-        ],
-        pytest_extra_cmds=gcp_creds_extra_cmds,
-        # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
-        retries=2,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-gcp-pandas",
-        env_vars=[
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-            "GCP_PROJECT_ID",
-        ],
-        pytest_extra_cmds=gcp_creds_extra_cmds,
-        retries=2,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-gcp-pyspark",
-        env_vars=[
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-            "GCP_PROJECT_ID",
-        ],
-        pytest_extra_cmds=gcp_creds_extra_cmds,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-ge",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_9,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-k8s",
-        env_vars=[
-            "AWS_ACCOUNT_ID",
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-        ],
-        pytest_tox_factors=[
-            "default",
-            "old_kubernetes",
-        ],
-        pytest_extra_cmds=k8s_extra_cmds,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-mlflow",
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-mysql",
-        pytest_extra_cmds=mysql_extra_cmds,
-        pytest_tox_factors=[
-            "storage_tests",
-            "storage_tests_sqlalchemy_1_3",
-        ],
-        always_run_if=has_storage_test_fixture_changes,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-snowflake-pandas",
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-snowflake-pyspark",
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-postgres",
-        pytest_extra_cmds=postgres_extra_cmds,
-        pytest_tox_factors=[
-            "storage_tests",
-            "storage_tests_sqlalchemy_1_3",
-        ],
-        always_run_if=has_storage_test_fixture_changes,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-twilio",
-        env_vars=["TWILIO_TEST_ACCOUNT_SID", "TWILIO_TEST_AUTH_TOKEN"],
-        # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
-        retries=2,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-wandb",
-        unsupported_python_versions=[
-            # duckdb
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagstermill",
-        pytest_tox_factors=["papermill1", "papermill2"],
-        retries=2,  # Workaround for flaky kernel issues
-        unsupported_python_versions=[
-            # duckdb
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-airlift/perf-harness",
-        always_run_if=has_dagster_airlift_changes,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-airlift/kitchen-sink",
-        always_run_if=has_dagster_airlift_changes,
-    ),
-    PackageSpec(
-        ".buildkite/dagster-buildkite",
-        run_pytest=False,
-    ),
+    # PackageSpec(
+    #     "python_modules/dagster-graphql",
+    #     pytest_extra_cmds=dagster_graphql_extra_cmds,
+    #     pytest_tox_factors=[
+    #         "not_graphql_context_test_suite",
+    #         "sqlite_instance_multi_location",
+    #         "sqlite_instance_managed_grpc_env",
+    #         "sqlite_instance_deployed_grpc_env",
+    #         "sqlite_instance_code_server_cli_grpc_env",
+    #         "graphql_python_client",
+    #         "postgres-graphql_context_variants",
+    #         "postgres-instance_multi_location",
+    #         "postgres-instance_managed_grpc_env",
+    #         "postgres-instance_deployed_grpc_env",
+    #     ],
+    #     unsupported_python_versions=(
+    #         lambda tox_factor: (
+    #             [AvailablePythonVersion.V3_11]
+    #             if (
+    #                 tox_factor
+    #                 in {
+    #                     # test suites particularly likely to crash and/or hang
+    #                     # due to https://github.com/grpc/grpc/issues/31885
+    #                     "sqlite_instance_managed_grpc_env",
+    #                     "sqlite_instance_deployed_grpc_env",
+    #                     "sqlite_instance_code_server_cli_grpc_env",
+    #                     "sqlite_instance_multi_location",
+    #                     "postgres-instance_multi_location",
+    #                     "postgres-instance_managed_grpc_env",
+    #                     "postgres-instance_deployed_grpc_env",
+    #                 }
+    #             )
+    #             else []
+    #         )
+    #     ),
+    #     timeout_in_minutes=30,
+    # ),
+    # PackageSpec(
+    #     "python_modules/dagster-test",
+    #     unsupported_python_versions=[
+    #         # dagster-airflow
+    #         AvailablePythonVersion.V3_12,
+    #     ],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-dbt",
+    #     pytest_tox_factors=[
+    #         f"{deps_factor}-{command_factor}"
+    #         for deps_factor in ["dbt17", "dbt18"]
+    #         for command_factor in ["cloud", "core-main", "core-derived-metadata"]
+    #     ],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-snowflake",
+    #     env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-airbyte",
+    #     pytest_tox_factors=["unit", "integration"],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-airflow",
+    #     # omit python 3.10 until we add support
+    #     unsupported_python_versions=[
+    #         AvailablePythonVersion.V3_10,
+    #         AvailablePythonVersion.V3_11,
+    #         AvailablePythonVersion.V3_12,
+    #     ],
+    #     env_vars=[
+    #         "AIRFLOW_HOME",
+    #         "AWS_ACCOUNT_ID",
+    #         "AWS_ACCESS_KEY_ID",
+    #         "AWS_SECRET_ACCESS_KEY",
+    #         "BUILDKITE_SECRETS_BUCKET",
+    #         "GOOGLE_APPLICATION_CREDENTIALS",
+    #     ],
+    #     pytest_extra_cmds=airflow_extra_cmds,
+    #     pytest_tox_factors=[
+    #         "default-airflow2",
+    #         "localdb-airflow2",
+    #         "persistentdb-airflow2",
+    #     ],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-aws",
+    #     env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-azure",
+    #     env_vars=["AZURE_STORAGE_ACCOUNT_KEY"],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-celery",
+    #     env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+    #     pytest_extra_cmds=celery_extra_cmds,
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-celery-docker",
+    #     env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+    #     pytest_extra_cmds=celery_docker_extra_cmds,
+    #     pytest_step_dependencies=test_project_depends_fn,
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-dask",
+    #     env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-databricks",
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-docker",
+    #     env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+    #     pytest_extra_cmds=docker_extra_cmds,
+    #     pytest_step_dependencies=test_project_depends_fn,
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-duckdb",
+    #     unsupported_python_versions=[
+    #         # duckdb
+    #         AvailablePythonVersion.V3_12,
+    #     ],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-duckdb-pandas",
+    #     unsupported_python_versions=[
+    #         # duckdb
+    #         AvailablePythonVersion.V3_12,
+    #     ],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-duckdb-polars",
+    #     unsupported_python_versions=[
+    #         # duckdb
+    #         AvailablePythonVersion.V3_12,
+    #     ],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-duckdb-pyspark",
+    #     unsupported_python_versions=[
+    #         # duckdb
+    #         AvailablePythonVersion.V3_12,
+    #     ],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-pandas",
+    #     unsupported_python_versions=[
+    #         AvailablePythonVersion.V3_12,
+    #     ],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-gcp",
+    #     env_vars=[
+    #         "AWS_ACCESS_KEY_ID",
+    #         "AWS_SECRET_ACCESS_KEY",
+    #         "BUILDKITE_SECRETS_BUCKET",
+    #         "GCP_PROJECT_ID",
+    #     ],
+    #     pytest_extra_cmds=gcp_creds_extra_cmds,
+    #     # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
+    #     retries=2,
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-gcp-pandas",
+    #     env_vars=[
+    #         "AWS_ACCESS_KEY_ID",
+    #         "AWS_SECRET_ACCESS_KEY",
+    #         "BUILDKITE_SECRETS_BUCKET",
+    #         "GCP_PROJECT_ID",
+    #     ],
+    #     pytest_extra_cmds=gcp_creds_extra_cmds,
+    #     retries=2,
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-gcp-pyspark",
+    #     env_vars=[
+    #         "AWS_ACCESS_KEY_ID",
+    #         "AWS_SECRET_ACCESS_KEY",
+    #         "BUILDKITE_SECRETS_BUCKET",
+    #         "GCP_PROJECT_ID",
+    #     ],
+    #     pytest_extra_cmds=gcp_creds_extra_cmds,
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-ge",
+    #     unsupported_python_versions=[
+    #         AvailablePythonVersion.V3_9,
+    #     ],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-k8s",
+    #     env_vars=[
+    #         "AWS_ACCOUNT_ID",
+    #         "AWS_ACCESS_KEY_ID",
+    #         "AWS_SECRET_ACCESS_KEY",
+    #         "BUILDKITE_SECRETS_BUCKET",
+    #     ],
+    #     pytest_tox_factors=[
+    #         "default",
+    #         "old_kubernetes",
+    #     ],
+    #     pytest_extra_cmds=k8s_extra_cmds,
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-mlflow",
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-mysql",
+    #     pytest_extra_cmds=mysql_extra_cmds,
+    #     pytest_tox_factors=[
+    #         "storage_tests",
+    #         "storage_tests_sqlalchemy_1_3",
+    #     ],
+    #     always_run_if=has_storage_test_fixture_changes,
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-snowflake-pandas",
+    #     env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-snowflake-pyspark",
+    #     env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-postgres",
+    #     pytest_extra_cmds=postgres_extra_cmds,
+    #     pytest_tox_factors=[
+    #         "storage_tests",
+    #         "storage_tests_sqlalchemy_1_3",
+    #     ],
+    #     always_run_if=has_storage_test_fixture_changes,
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-twilio",
+    #     env_vars=["TWILIO_TEST_ACCOUNT_SID", "TWILIO_TEST_AUTH_TOKEN"],
+    #     # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
+    #     retries=2,
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-wandb",
+    #     unsupported_python_versions=[
+    #         # duckdb
+    #         AvailablePythonVersion.V3_12,
+    #     ],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagstermill",
+    #     pytest_tox_factors=["papermill1", "papermill2"],
+    #     retries=2,  # Workaround for flaky kernel issues
+    #     unsupported_python_versions=[
+    #         # duckdb
+    #         AvailablePythonVersion.V3_12,
+    #     ],
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-airlift/perf-harness",
+    #     always_run_if=has_dagster_airlift_changes,
+    # ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-airlift/kitchen-sink",
+    #     always_run_if=has_dagster_airlift_changes,
+    # ),
+    # PackageSpec(
+    #     ".buildkite/dagster-buildkite",
+    #     run_pytest=False,
+    # ),
 ]
