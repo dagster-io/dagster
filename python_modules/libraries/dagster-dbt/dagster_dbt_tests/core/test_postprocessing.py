@@ -55,7 +55,7 @@ def test_jaffle_shop_manifest_standalone_duckdb_dbfile_fixture(
 def test_no_row_count(test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream()
+        yield from dbt.cli(["build"], context=context).stream(fetch_additional_metadata=False)
 
     result = materialize(
         [my_dbt_assets],
@@ -107,7 +107,11 @@ def test_row_count(request: pytest.FixtureRequest, target: str, manifest_fixture
 
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
+        yield from (
+            dbt.cli(["build"], context=context)
+            .stream(fetch_additional_metadata=False)
+            .fetch_row_counts()
+        )
 
     result = materialize(
         [my_dbt_assets],
@@ -144,7 +148,11 @@ def test_insights_err_not_snowflake_or_bq(
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream().with_insights()
+        yield from (
+            dbt.cli(["build"], context=context)
+            .stream(fetch_additional_metadata=False)
+            .with_insights()
+        )
 
     with pytest.raises(CheckError) as exc_info:
         materialize(
@@ -186,7 +194,7 @@ def test_row_count_does_not_obscure_errors(
             dbt.cli(
                 ["build", "--vars", json.dumps({"break_customer_build": "true"})],
                 context=context,
-            ).stream()
+            ).stream(fetch_additional_metadata=False)
         )
 
     result = materialize(
@@ -207,7 +215,7 @@ def test_row_count_does_not_obscure_errors(
             dbt.cli(
                 ["build", "--vars", json.dumps({"break_customer_build": "true"})], context=context
             )
-            .stream()
+            .stream(fetch_additional_metadata=False)
             .fetch_row_counts()
         )
 
@@ -245,7 +253,11 @@ def test_row_count_err(
 
         @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
         def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-            yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
+            yield from (
+                dbt.cli(["build"], context=context)
+                .stream(fetch_additional_metadata=False)
+                .fetch_row_counts()
+            )
 
         result = materialize(
             [my_dbt_assets],
@@ -295,7 +307,11 @@ def test_attach_metadata(
 
     @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream()._attach_metadata(_summarize)  # noqa: SLF001
+        yield from (
+            dbt.cli(["build"], context=context)  # noqa: SLF001
+            .stream(fetch_additional_metadata=False)
+            ._attach_metadata(_summarize)
+        )
 
     result = materialize(
         [my_dbt_assets],
@@ -321,3 +337,48 @@ def test_attach_metadata(
         len(summary.records) > 0 and "column_name" in summary.records[0].data
         for summary in summaries_by_asset_key.values()
     ), str(summaries_by_asset_key)
+
+
+@pytest.mark.parametrize("also_explicitly_fetch_row_counts", [True, False])
+def test_implicit_row_count(
+    request: pytest.FixtureRequest,
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
+    also_explicitly_fetch_row_counts: bool,
+    capsys,
+) -> None:
+    manifest = test_jaffle_shop_manifest_standalone_duckdb_dbfile
+
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        cli_execution = dbt.cli(["build"], context=context).stream()
+        if also_explicitly_fetch_row_counts:
+            cli_execution = cli_execution.fetch_row_counts()
+
+        yield from cli_execution
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
+    )
+
+    if also_explicitly_fetch_row_counts:
+        assert (
+            "Operation `fetch_row_counts` has already been applied to this dbt invocation."
+            in capsys.readouterr().err
+        )
+
+    assert result.success
+
+    metadata_by_asset_key = {
+        check.not_none(event.asset_key): event.materialization.metadata
+        for event in result.get_asset_materialization_events()
+    }
+
+    # We don't explicitly request row counts, but we now get them automatically unless
+    # we pass fetch_additional_metadata=False
+    assert all(
+        "dagster/row_count" in metadata
+        for asset_key, metadata in metadata_by_asset_key.items()
+        # staging tables are views, so we don't attempt to get row counts for them
+        if "stg" not in asset_key.path[-1]
+    ), str(metadata_by_asset_key)
