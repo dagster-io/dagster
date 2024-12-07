@@ -22,7 +22,7 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
-from dagster._annotations import experimental
+from dagster._annotations import deprecated, experimental
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
@@ -65,6 +65,7 @@ DEFAULT_POLL_INTERVAL = 10
 FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-fivetran/reconstruction_metadata"
 
 
+@deprecated(breaking_version="2.0", additional_warn_text="Use `FivetranWorkspace` instead")
 class FivetranResource(ConfigurableResource):
     """This class exposes methods on top of the Fivetran REST API."""
 
@@ -431,6 +432,7 @@ class FivetranResource(ConfigurableResource):
         return self.make_request("GET", f"destinations/{destination_id}")
 
 
+@deprecated(breaking_version="2.0", additional_warn_text="Use `FivetranWorkspace` instead")
 @dagster_maintained_resource
 @resource(config_schema=FivetranResource.to_config_schema())
 def fivetran_resource(context: InitResourceContext) -> FivetranResource:
