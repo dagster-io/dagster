@@ -178,6 +178,7 @@ class StepDelegatingExecutor(Executor):
                 instance_concurrency_context=instance_concurrency_context,
             ) as active_execution:
                 running_steps: Dict[str, ExecutionStep] = {}
+                step_worker_handles: Dict[str, Optional[str]] = {}
 
                 if plan_context.resume_from_failure:
                     DagsterEvent.engine_event(
@@ -211,7 +212,8 @@ class StepDelegatingExecutor(Executor):
 
                         try:
                             health_check = self._step_handler.check_step_health(
-                                step_handler_context
+                                step_handler_context,
+                                step_worker_handle=None,
                             )
                         except Exception:
                             # For now we assume that an exception indicates that the step should be resumed.
@@ -237,15 +239,14 @@ class StepDelegatingExecutor(Executor):
 
                         if should_retry_step:
                             # health check failed, launch the step
-                            list(
-                                self._step_handler.launch_step(
-                                    self._get_step_handler_context(
-                                        plan_context, [step], active_execution
-                                    )
+                            self._step_handler.launch_step(
+                                self._get_step_handler_context(
+                                    plan_context, [step], active_execution
                                 )
                             )
 
                         running_steps[step.key] = step
+                        step_worker_handles[step.key] = None
 
                 last_check_step_health_time = get_current_datetime()
 
@@ -262,13 +263,12 @@ class StepDelegatingExecutor(Executor):
                                     "Executor received termination signal, forwarding to steps",
                                     EngineEventData.interrupted(list(running_steps.keys())),
                                 )
-                                for step in running_steps.values():
-                                    list(
-                                        self._step_handler.terminate_step(
-                                            self._get_step_handler_context(
-                                                plan_context, [step], active_execution
-                                            )
-                                        )
+                                for step_key, step in running_steps.items():
+                                    self._step_handler.terminate_step(
+                                        self._get_step_handler_context(
+                                            plan_context, [step], active_execution
+                                        ),
+                                        step_worker_handle=step_worker_handles[step_key],
                                     )
                             else:
                                 DagsterEvent.engine_event(
@@ -311,6 +311,7 @@ class StepDelegatingExecutor(Executor):
                                     ):
                                         assert isinstance(dagster_event.step_key, str)
                                         del running_steps[dagster_event.step_key]
+                                        del step_worker_handles[dagster_event.step_key]
 
                                         if not dagster_event.is_step_up_for_retry:
                                             active_execution.verify_complete(
@@ -325,14 +326,15 @@ class StepDelegatingExecutor(Executor):
                             curr_time - last_check_step_health_time
                         ).total_seconds() >= self._check_step_health_interval_seconds:
                             last_check_step_health_time = curr_time
-                            for step in running_steps.values():
+                            for step_key, step in running_steps.items():
                                 step_context = plan_context.for_step(step)
 
                                 try:
                                     health_check_result = self._step_handler.check_step_health(
                                         self._get_step_handler_context(
                                             plan_context, [step], active_execution
-                                        )
+                                        ),
+                                        step_worker_handle=step_worker_handles[step_key],
                                     )
                                     if not health_check_result.is_healthy:
                                         health_check_error = SerializableErrorInfo(
@@ -374,11 +376,9 @@ class StepDelegatingExecutor(Executor):
 
                         for step in active_execution.get_steps_to_execute(max_steps_to_run):
                             running_steps[step.key] = step
-                            list(
-                                self._step_handler.launch_step(
-                                    self._get_step_handler_context(
-                                        plan_context, [step], active_execution
-                                    )
+                            step_worker_handles[step.key] = self._step_handler.launch_step(
+                                self._get_step_handler_context(
+                                    plan_context, [step], active_execution
                                 )
                             )
 
@@ -398,12 +398,11 @@ class StepDelegatingExecutor(Executor):
                                 error=serializable_error,
                             ),
                         )
-                        for step in running_steps.values():
-                            list(
-                                self._step_handler.terminate_step(
-                                    self._get_step_handler_context(
-                                        plan_context, [step], active_execution
-                                    )
-                                )
+                        for step_key, step in running_steps.items():
+                            self._step_handler.terminate_step(
+                                self._get_step_handler_context(
+                                    plan_context, [step], active_execution
+                                ),
+                                step_worker_handle=step_worker_handles[step_key],
                             )
                     raise
