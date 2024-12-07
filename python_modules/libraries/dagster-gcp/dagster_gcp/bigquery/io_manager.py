@@ -373,7 +373,7 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
         )
         return query + _partition_where_clause(table_slice.partition_dimensions)
     else:
-        return f"TRUNCATE TABLE `{table_slice.database}.{table_slice.schema}.{table_slice.table}`"
+        return f"DROP TABLE `{table_slice.database}.{table_slice.schema}.{table_slice.table}`"
 
 
 def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
