@@ -3,7 +3,7 @@ import * as React from 'react';
 import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
-import {AssetGraphFilterBar} from 'shared/asset-graph/AssetGraphFilterBar.oss';
+import {AssetCatalogTableBottomActionBar} from 'shared/assets/AssetCatalogTableBottomActionBar.oss';
 import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 
 import {AssetTable} from './AssetTable';
@@ -19,6 +19,7 @@ import {
   AssetCatalogTableQueryVersion,
 } from './types/AssetsCatalogTable.types';
 import {AssetViewType, useAssetView} from './useAssetView';
+import {useBasicAssetSearchInput} from './useBasicAssetSearchInput';
 import {gql, useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -26,7 +27,6 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {currentPageAtom} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {useAssetSelectionInput} from '../asset-selection/useAssetSelectionInput';
 import {AssetGroupSelector} from '../graphql/types';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
@@ -210,10 +210,13 @@ export const AssetsCatalogTable = ({
     activeFiltersJsx,
     kindFilter,
   } = useAssetCatalogFiltering({assets});
-  const {filterInput, filtered, fetchResult, assetSelection, setAssetSelection} =
-    useAssetSelectionInput(partiallyFiltered);
 
-  useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !fetchResult.loading);
+  const {searchPath, filterInput, filtered} = useBasicAssetSearchInput(
+    partiallyFiltered,
+    prefixPath,
+  );
+
+  useBlockTraceUntilTrue('useAllAssets', !!assets?.length);
 
   const {displayPathForAsset, displayed} = useMemo(
     () =>
@@ -255,17 +258,10 @@ export const AssetsCatalogTable = ({
     <AssetTable
       view={view}
       assets={displayed}
-      isLoading={filteredAssetsLoading || fetchResult.loading}
+      isLoading={filteredAssetsLoading}
       isFiltered={isFiltered}
       actionBarComponents={
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'auto auto minmax(0, 1fr)',
-            gap: 12,
-            alignItems: 'center',
-          }}
-        >
+        <>
           <ButtonGroup<AssetViewType>
             activeItems={new Set([view])}
             buttons={[
@@ -281,18 +277,14 @@ export const AssetsCatalogTable = ({
           />
           {filterButton}
           {filterInput}
-        </div>
+        </>
       }
       belowActionBarComponents={
-        <AssetGraphFilterBar
-          activeFiltersJsx={activeFiltersJsx}
-          assetSelection={assetSelection}
-          setAssetSelection={setAssetSelection}
-        />
+        <AssetCatalogTableBottomActionBar activeFiltersJsx={activeFiltersJsx} />
       }
       refreshState={refreshState}
       prefixPath={prefixPath || emptyArray}
-      assetSelection={assetSelection}
+      searchPath={searchPath}
       displayPathForAsset={displayPathForAsset}
       kindFilter={kindFilter}
     />
