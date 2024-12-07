@@ -78,6 +78,7 @@ module.exports = {
     '\\.(css|less)$': 'identity-obj-proxy',
     '^worker-loader(.*)/workers/(.*)$': '<rootDir>/jest/mocks/$2',
     '^@dagster-io/ui-components$': '<rootDir>/../ui-components/src/index',
+    '^@dagster-io/ui-components/editor$': '<rootDir>/../ui-components/src/editor',
     '^shared/(.*)$': '<rootDir>/src/$1',
   },
 

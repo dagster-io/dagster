@@ -1,3 +1,7 @@
+# 1.2.1 (December 5, 2024)
+
+- Split CodeMirror-based components out of main index export
+
 # 1.2.0 (December 5, 2024)
 
 - Migrate styled-components to v6

@@ -5,9 +5,9 @@ import {
   MiddleTruncate,
   Mono,
   SpinnerWithText,
-  StyledRawCodeMirror,
   Table,
 } from '@dagster-io/ui-components';
+import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import {useContext, useMemo} from 'react';
 import {CodeLocationPageHeader} from 'shared/code-location/CodeLocationPageHeader.oss';
 import {CodeLocationServerSection} from 'shared/code-location/CodeLocationServerSection.oss';
