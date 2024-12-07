@@ -21,7 +21,8 @@ from dagster_components.core.dsl_schema import OpSpecBaseModel
 
 
 class DbtNodeTranslatorParams(BaseModel):
-    key: str
+    key: Optional[str] = None
+    group: Optional[str] = None
 
 
 class DbtProjectParams(BaseModel):
@@ -51,12 +52,18 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
         self.translator_params = translator_params
 
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-        if not self.translator_params:
+        if not self.translator_params or not self.translator_params.key:
             return super().get_asset_key(dbt_resource_props)
 
         return AssetKey.from_user_string(
             Template(self.translator_params.key).render(node=dbt_resource_props)
         )
+
+    def get_group_name(self, dbt_resource_props) -> Optional[str]:
+        if not self.translator_params or not self.translator_params.group:
+            return super().get_group_name(dbt_resource_props)
+
+        return Template(self.translator_params.group).render(node=dbt_resource_props)
 
 
 @component(name="dbt_project")

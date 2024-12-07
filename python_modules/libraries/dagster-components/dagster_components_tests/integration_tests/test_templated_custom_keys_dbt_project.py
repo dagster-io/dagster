@@ -2,7 +2,7 @@ import shutil
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator
+from typing import TYPE_CHECKING, Generator
 
 import pytest
 from dagster import AssetKey
@@ -17,6 +17,9 @@ from dagster_dbt import DbtProject
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
 
+if TYPE_CHECKING:
+    from dagster._core.definitions.definitions_class import Definitions
+
 STUB_LOCATION_PATH = (
     Path(__file__).parent.parent
     / "stub_code_locations"
@@ -25,6 +28,17 @@ STUB_LOCATION_PATH = (
 COMPONENT_RELPATH = "components/jaffle_shop_dbt"
 
 JAFFLE_SHOP_KEYS = {
+    AssetKey("customers"),
+    AssetKey("orders"),
+    AssetKey("raw_customers"),
+    AssetKey("raw_orders"),
+    AssetKey("raw_payments"),
+    AssetKey("stg_customers"),
+    AssetKey("stg_orders"),
+    AssetKey("stg_payments"),
+}
+
+JAFFLE_SHOP_KEYS_WITH_PREFIX = {
     AssetKey(["some_prefix", "customers"]),
     AssetKey(["some_prefix", "orders"]),
     AssetKey(["some_prefix", "raw_customers"]),
@@ -47,7 +61,7 @@ def dbt_path() -> Generator[Path, None, None]:
         yield Path(temp_dir)
 
 
-def test_python_params(dbt_path: Path) -> None:
+def test_python_params_node_rename(dbt_path: Path) -> None:
     component = DbtProjectComponent.from_decl_node(
         context=script_load_context(),
         decl_node=YamlComponentDecl(
@@ -56,12 +70,36 @@ def test_python_params(dbt_path: Path) -> None:
                 type="dbt_project",
                 params={
                     "dbt": {"project_dir": "jaffle_shop"},
-                    "translator": {"key": "some_prefix/{{ node.name }}"},
+                    "translator": {
+                        "key": "some_prefix/{{ node.name }}",
+                    },
                 },
             ),
         ),
     )
-    assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
+    assert get_asset_keys(component) == JAFFLE_SHOP_KEYS_WITH_PREFIX
+
+
+def test_python_params_group(dbt_path: Path) -> None:
+    comp = DbtProjectComponent.from_decl_node(
+        context=script_load_context(),
+        decl_node=YamlComponentDecl(
+            path=dbt_path / COMPONENT_RELPATH,
+            component_file_model=ComponentFileModel(
+                type="dbt_project",
+                params={
+                    "dbt": {"project_dir": "jaffle_shop"},
+                    "translator": {
+                        "group": "some_group",
+                    },
+                },
+            ),
+        ),
+    )
+    assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
+    defs: Definitions = comp.build_defs(script_load_context())
+    for key in get_asset_keys(comp):
+        assert defs.get_assets_def(key).get_asset_spec(key).group_name == "some_group"
 
 
 def test_load_from_path(dbt_path: Path) -> None:
@@ -69,9 +107,9 @@ def test_load_from_path(dbt_path: Path) -> None:
         script_load_context(), dbt_path / "components"
     )
     assert len(components) == 1
-    assert get_asset_keys(components[0]) == JAFFLE_SHOP_KEYS
+    assert get_asset_keys(components[0]) == JAFFLE_SHOP_KEYS_WITH_PREFIX
 
-    assert_assets(components[0], len(JAFFLE_SHOP_KEYS))
+    assert_assets(components[0], len(JAFFLE_SHOP_KEYS_WITH_PREFIX))
 
     defs = defs_from_components(
         context=script_load_context(),
@@ -79,4 +117,4 @@ def test_load_from_path(dbt_path: Path) -> None:
         resources={},
     )
 
-    assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
+    assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS_WITH_PREFIX
