@@ -7,7 +7,11 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import (
+    BulkActionStatus,
+    PartitionBackfill,
+    cancel_backfill_runs_and_cancellation_complete,
+)
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -58,10 +62,25 @@ def execute_job_backfill_iteration(
 
     partition_set = _get_partition_set(workspace_process_context, backfill)
 
+    # refetch in case the backfill status has changed
+    backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
+    if backfill.status == BulkActionStatus.CANCELING:
+        for all_runs_canceled in cancel_backfill_runs_and_cancellation_complete(
+            instance=instance, backfill_id=backfill.backfill_id
+        ):
+            yield None
+
+        if not isinstance(all_runs_canceled, bool):
+            check.failed(
+                "Expected cancel_backfill_runs_and_cancellation_complete to return a boolean"
+            )
+
+        if all_runs_canceled:
+            instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
+        return
+
     has_more = True
     while has_more:
-        # refetch in case the backfill status has changed
-        backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
         if backfill.status != BulkActionStatus.REQUESTED:
             break
 

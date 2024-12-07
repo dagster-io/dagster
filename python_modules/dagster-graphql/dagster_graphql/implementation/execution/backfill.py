@@ -312,19 +312,14 @@ def cancel_partition_backfill(
             backfill.asset_selection,
             Permissions.CANCEL_PARTITION_BACKFILL,
         )
-        graphene_info.context.instance.update_backfill(
-            backfill.with_status(BulkActionStatus.CANCELING)
-        )
-
     else:
         partition_set_origin = check.not_none(backfill.partition_set_origin)
         location_name = partition_set_origin.selector.location_name
         assert_permission_for_location(
             graphene_info, Permissions.CANCEL_PARTITION_BACKFILL, location_name
         )
-        graphene_info.context.instance.update_backfill(
-            backfill.with_status(BulkActionStatus.CANCELED)
-        )
+
+    graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELING))
 
     return GrapheneCancelBackfillSuccess(backfill_id=backfill_id)
 

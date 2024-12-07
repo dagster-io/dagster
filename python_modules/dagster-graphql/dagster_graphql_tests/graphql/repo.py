@@ -1400,6 +1400,15 @@ def hanging_op(context, my_op):
         time.sleep(0.1)
 
 
+@job(
+    partitions_def=integers_partitions,
+    config=integers_config,
+    resource_defs={"hanging_asset_resource": hanging_asset_resource},
+)
+def hanging_partitioned_job():
+    hanging_op(my_op())
+
+
 @op
 def never_runs_op(hanging_op):
     pass
@@ -2036,6 +2045,7 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         hard_failer,
         hello_world_with_tags,
         infinite_loop_job,
+        hanging_partitioned_job,
         integers,
         job_with_default_config,
         job_with_enum_config,
