@@ -12,6 +12,7 @@ from dagster_components.core.component import (
     ComponentDeclNode,
     ComponentLoadContext,
     ComponentRegistry,
+    DslEvaluator,
     get_component_name,
     is_component,
 )
@@ -94,7 +95,9 @@ def build_defs_from_component_path(
     resources: Mapping[str, object],
 ) -> "Definitions":
     """Build a definitions object from a folder within the components hierarchy."""
-    context = ComponentLoadContext(resources=resources, registry=registry)
+    context = ComponentLoadContext(
+        resources=resources, registry=registry, dsl_evaluator=DslEvaluator(dsl_context={})
+    )
 
     decl_node = path_to_decl_node(path=path)
     if not decl_node:

@@ -47,25 +47,25 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
     def __init__(
         self,
         *,
-        translator_params: Optional[DbtNodeTranslatorParams] = None,
+        translator_params: DbtNodeTranslatorParams,
+        dsl_evaluator: DslEvaluator,
     ):
         self.translator_params = translator_params
-        # TODO thread from above
-        self.evaluator = DslEvaluator({})
+        self.dsl_evaluator = dsl_evaluator
 
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-        if not self.translator_params or not self.translator_params.key:
+        if not self.translator_params.key:
             return super().get_asset_key(dbt_resource_props)
 
         return AssetKey.from_user_string(
-            self.evaluator.eval_with_kwargs(self.translator_params.key, node=dbt_resource_props)
+            self.dsl_evaluator.eval_with_kwargs(self.translator_params.key, node=dbt_resource_props)
         )
 
     def get_group_name(self, dbt_resource_props) -> Optional[str]:
-        if not self.translator_params or not self.translator_params.group:
+        if not self.translator_params.group:
             return super().get_group_name(dbt_resource_props)
 
-        return self.evaluator.eval_with_kwargs(
+        return self.dsl_evaluator.eval_with_kwargs(
             self.translator_params.group, node=dbt_resource_props
         )
 
@@ -98,7 +98,8 @@ class DbtProjectComponent(Component):
             dbt_resource=loaded_params.dbt,
             op_spec=loaded_params.op,
             dbt_translator=DbtProjectComponentTranslator(
-                translator_params=loaded_params.translator
+                translator_params=loaded_params.translator or DbtNodeTranslatorParams(),
+                dsl_evaluator=context.dsl_evaluator,
             ),
         )
 

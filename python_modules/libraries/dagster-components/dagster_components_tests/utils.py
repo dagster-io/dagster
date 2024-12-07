@@ -8,7 +8,7 @@ def registry() -> ComponentRegistry:
 
 
 def script_load_context() -> ComponentLoadContext:
-    return ComponentLoadContext(registry=registry(), resources={})
+    return ComponentLoadContext.for_test()
 
 
 def get_asset_keys(component: Component) -> set[AssetKey]:

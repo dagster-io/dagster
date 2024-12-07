@@ -1,3 +1,4 @@
+import os
 import shutil
 import tempfile
 from contextlib import contextmanager
@@ -81,6 +82,40 @@ def test_python_params_node_rename(dbt_path: Path) -> None:
 
 
 def test_python_params_group(dbt_path: Path) -> None:
+    comp = DbtProjectComponent.from_decl_node(
+        context=script_load_context(),
+        decl_node=YamlComponentDecl(
+            path=dbt_path / COMPONENT_RELPATH,
+            component_file_model=ComponentFileModel(
+                type="dbt_project",
+                params={
+                    "dbt": {"project_dir": "jaffle_shop"},
+                    "translator": {
+                        "group": "some_group",
+                    },
+                },
+            ),
+        ),
+    )
+    assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
+    defs: Definitions = comp.build_defs(script_load_context())
+    for key in get_asset_keys(comp):
+        assert defs.get_assets_def(key).get_asset_spec(key).group_name == "some_group"
+
+
+def with_os_environ(key: str, value: str) -> Generator[None, None, None]:
+    old_value = os.environ.get(key)
+    os.environ[key] = value
+    try:
+        yield
+    finally:
+        if old_value is None:
+            del os.environ[key]
+        else:
+            os.environ[key] = old_value
+
+
+def test_render_vars(dbt_path: Path) -> None:
     comp = DbtProjectComponent.from_decl_node(
         context=script_load_context(),
         decl_node=YamlComponentDecl(

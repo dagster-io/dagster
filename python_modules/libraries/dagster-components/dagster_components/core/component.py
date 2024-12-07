@@ -8,6 +8,8 @@ from dagster._core.errors import DagsterError
 from dagster._utils import snakecase
 from typing_extensions import Self
 
+from dagster_components.core.dsl_evaluator import DslEvaluator
+
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
@@ -72,9 +74,16 @@ def register_components_in_module(registry: ComponentRegistry, root_module: Modu
 
 
 class ComponentLoadContext:
-    def __init__(self, *, resources: Mapping[str, object], registry: ComponentRegistry):
+    def __init__(
+        self,
+        *,
+        resources: Mapping[str, object],
+        registry: ComponentRegistry,
+        dsl_evaluator: DslEvaluator,
+    ):
         self.registry = registry
         self.resources = resources
+        self.dsl_evaluator = dsl_evaluator
 
     @staticmethod
     def for_test(
@@ -83,7 +92,9 @@ class ComponentLoadContext:
         registry: Optional[ComponentRegistry] = None,
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
-            resources=resources or {}, registry=registry or ComponentRegistry.empty()
+            resources=resources or {},
+            registry=registry or ComponentRegistry.empty(),
+            dsl_evaluator=DslEvaluator({}),
         )
 
 
