@@ -1,11 +1,14 @@
 import time
+from typing import AbstractSet, Optional, Tuple
 
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetMaterialization,
     DagsterEventType,
     DailyPartitionsDefinition,
+    Definitions,
     DynamicPartitionsDefinition,
     EventLogEntry,
     MultiPartitionKey,
@@ -15,18 +18,24 @@ from dagster import (
     define_asset_job,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 from dagster._core.events import (
     AssetMaterializationPlannedData,
     DagsterEvent,
     StepMaterializationData,
 )
+from dagster._core.loader import LoadingContextForTest
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.partition_status_cache import (
     RUN_FETCH_BATCH_SIZE,
+    AssetStatusCacheValue,
     build_failed_and_in_progress_partition_subset,
     get_and_update_asset_status_cache_value,
+    get_failed_partitions_subset,
+    get_in_progress_partitions_subset,
     get_last_planned_storage_id,
+    get_materialized_partitions_subset,
 )
 from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_run_id
@@ -45,7 +54,7 @@ class TestPartitionStatusCache:
     def delete_runs_instance(self, instance):
         return instance
 
-    def test_get_cached_status_unpartitioned(self, instance):
+    def test_get_cached_status_unpartitioned(self, instance) -> None:
         @asset
         def asset1():
             return 1
@@ -72,8 +81,8 @@ class TestPartitionStatusCache:
             ).storage_id
         )
         assert cached_status.partitions_def_id is None
-        assert cached_status.serialized_materialized_partition_subset is None
-        assert cached_status.serialized_failed_partition_subset is None
+        assert cached_status.materialized_subset is None
+        assert cached_status.failed_subset is None
 
     def test_get_cached_partition_status_changed_time_partitions(self, instance):
         original_partitions_def = HourlyPartitionsDefinition(start_date="2022-01-01-00:00")
@@ -114,17 +123,15 @@ class TestPartitionStatusCache:
         assert cached_status
         assert cached_status.latest_storage_id
         assert cached_status.partitions_def_id
-        assert cached_status.serialized_materialized_partition_subset
+        assert cached_status.materialized_subset
         materialized_keys = list(
-            new_partitions_def.deserialize_subset(
-                cached_status.serialized_materialized_partition_subset
-            ).get_partition_keys()
+            cached_status.materialized_subset.subset_value.get_partition_keys()
         )
         assert set(materialized_keys) == {"2022-02-02"}
         counts = traced_counter.get().counts()
         assert counts.get("DagsterInstance.get_materialized_partitions") == 1
 
-    def test_get_cached_partition_status_by_asset(self, instance):
+    def test_get_cached_partition_status_by_asset(self, instance) -> None:
         partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
         @asset(partitions_def=partitions_def)
@@ -159,15 +166,13 @@ class TestPartitionStatusCache:
         assert cached_status
         assert cached_status.latest_storage_id
         assert cached_status.partitions_def_id
-        assert cached_status.serialized_materialized_partition_subset
+        assert cached_status.materialized_subset
         materialized_keys = list(
-            partitions_def.deserialize_subset(
-                cached_status.serialized_materialized_partition_subset
-            ).get_partition_keys()
+            cached_status.materialized_subset.subset_value.get_partition_keys()
         )
         assert len(materialized_keys) == 1
         assert "2022-02-01" in materialized_keys
-        counts = traced_counter.get().counts()
+        counts = traced_counter.get().counts()  # type: ignore
         assert counts.get("DagsterInstance.get_materialized_partitions") == 1
 
         asset_job.execute_in_process(instance=instance, partition_key="2022-02-02")
@@ -178,11 +183,9 @@ class TestPartitionStatusCache:
         assert cached_status
         assert cached_status.latest_storage_id
         assert cached_status.partitions_def_id
-        assert cached_status.serialized_materialized_partition_subset
+        assert cached_status.materialized_subset
         materialized_keys = list(
-            partitions_def.deserialize_subset(
-                cached_status.serialized_materialized_partition_subset
-            ).get_partition_keys()
+            cached_status.materialized_subset.subset_value.get_partition_keys()
         )
         assert len(materialized_keys) == 2
         assert all(
@@ -198,17 +201,15 @@ class TestPartitionStatusCache:
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status
-        assert cached_status.serialized_materialized_partition_subset
-        materialized_partition_subset = static_partitions_def.deserialize_subset(
-            cached_status.serialized_materialized_partition_subset
-        )
+        assert cached_status.materialized_subset
+        materialized_partition_subset = cached_status.materialized_subset.subset_value
         assert "a" in materialized_partition_subset.get_partition_keys()
         assert all(
             partition not in materialized_partition_subset.get_partition_keys()
             for partition in ["b", "c"]
         )
 
-    def test_multipartition_get_cached_partition_status(self, instance):
+    def test_multipartition_get_cached_partition_status(self, instance) -> None:
         partitions_def = MultiPartitionsDefinition(
             {
                 "ab": StaticPartitionsDefinition(["a", "b"]),
@@ -239,10 +240,8 @@ class TestPartitionStatusCache:
         assert cached_status
         assert cached_status.latest_storage_id
         assert cached_status.partitions_def_id
-        assert cached_status.serialized_materialized_partition_subset
-        materialized_keys = partitions_def.deserialize_subset(
-            cached_status.serialized_materialized_partition_subset
-        ).get_partition_keys()
+        assert cached_status.materialized_subset
+        materialized_keys = cached_status.materialized_subset.subset_value.get_partition_keys()
         assert len(list(materialized_keys)) == 1
         assert MultiPartitionKey({"ab": "a", "12": "1"}) in materialized_keys
 
@@ -254,10 +253,8 @@ class TestPartitionStatusCache:
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status
-        assert cached_status.serialized_materialized_partition_subset
-        materialized_keys = partitions_def.deserialize_subset(
-            cached_status.serialized_materialized_partition_subset
-        ).get_partition_keys()
+        assert cached_status.materialized_subset
+        materialized_keys = cached_status.materialized_subset.subset_value.get_partition_keys()
         assert len(list(materialized_keys)) == 2
         assert all(
             key in materialized_keys
@@ -267,7 +264,7 @@ class TestPartitionStatusCache:
             ]
         )
 
-    def test_cached_status_on_wipe(self, instance):
+    def test_cached_status_on_wipe(self, instance) -> None:
         partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
         @asset(partitions_def=partitions_def)
@@ -287,16 +284,12 @@ class TestPartitionStatusCache:
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status
-        assert cached_status.serialized_materialized_partition_subset
-        materialized_keys = list(
-            partitions_def.deserialize_subset(
-                cached_status.serialized_materialized_partition_subset
-            ).get_partition_keys()
-        )
-        assert len(materialized_keys) == 1
+        assert cached_status.materialized_subset
+        materialized_keys = cached_status.materialized_subset.subset_value.get_partition_keys()
+        assert len(list(materialized_keys)) == 1
         assert "2022-02-01" in materialized_keys
 
-    def test_dynamic_partitions_status_not_cached(self, instance):
+    def test_dynamic_partitions_status_not_cached(self, instance) -> None:
         dynamic_fn = lambda _current_time: ["a_partition"]
         dynamic = DynamicPartitionsDefinition(dynamic_fn)
 
@@ -318,8 +311,9 @@ class TestPartitionStatusCache:
         )
         assert cached_status
         assert cached_status.serialized_materialized_partition_subset is None
+        assert cached_status.materialized_subset is None
 
-    def test_failure_cache(self, instance):
+    def test_failure_cache(self, instance) -> None:
         partitions_def = StaticPartitionsDefinition(["good1", "good2", "fail1", "fail2"])
 
         @asset(partitions_def=partitions_def)
@@ -343,15 +337,9 @@ class TestPartitionStatusCache:
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
         # failed partition
-        assert partitions_def.deserialize_subset(
-            cached_status.serialized_failed_partition_subset
-        ).get_partition_keys() == {"fail1"}
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
+        assert cached_status and cached_status.failed_subset and cached_status.in_progress_subset
+        assert cached_status.failed_subset.subset_value.get_partition_keys() == {"fail1"}
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == set()
 
         asset_job.execute_in_process(instance=instance, partition_key="good1", raise_on_error=False)
         asset_job.execute_in_process(instance=instance, partition_key="fail2", raise_on_error=False)
@@ -360,15 +348,9 @@ class TestPartitionStatusCache:
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
         # cache is updated with new failed partition, successful partition is ignored
-        assert partitions_def.deserialize_subset(
-            cached_status.serialized_failed_partition_subset
-        ).get_partition_keys() == {"fail1", "fail2"}
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
+        assert cached_status and cached_status.failed_subset and cached_status.in_progress_subset
+        assert cached_status.failed_subset.subset_value.get_partition_keys() == {"fail1", "fail2"}
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == set()
 
         run_1 = create_run_for_test(instance)
         instance.event_log_storage.store_event(
@@ -392,15 +374,9 @@ class TestPartitionStatusCache:
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
         # cache is updated after successful materialization of fail1
-        assert partitions_def.deserialize_subset(
-            cached_status.serialized_failed_partition_subset
-        ).get_partition_keys() == {"fail2"}
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
+        assert cached_status and cached_status.failed_subset and cached_status.in_progress_subset
+        assert cached_status.failed_subset.subset_value.get_partition_keys() == {"fail2"}
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == set()
 
         run_2 = create_run_for_test(instance)
         instance.event_log_storage.store_event(
@@ -422,14 +398,11 @@ class TestPartitionStatusCache:
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
         # in progress materialization is ignored
-        assert partitions_def.deserialize_subset(
-            cached_status.serialized_failed_partition_subset
-        ).get_partition_keys() == {"fail2"}
-        assert cached_status.deserialize_in_progress_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"good2"}
+        assert cached_status and cached_status.failed_subset and cached_status.in_progress_subset
+        assert cached_status.failed_subset.subset_value.get_partition_keys() == {"fail2"}
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == {"good2"}
 
-    def test_failure_cache_added(self, instance):
+    def test_failure_cache_added(self, instance) -> None:
         partitions_def = StaticPartitionsDefinition(["good1", "good2", "fail1", "fail2"])
 
         @asset(partitions_def=partitions_def)
@@ -447,11 +420,10 @@ class TestPartitionStatusCache:
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
         # failed partition
-        assert partitions_def.deserialize_subset(
-            cached_status.serialized_failed_partition_subset
-        ).get_partition_keys() == {"fail1"}
+        assert cached_status and cached_status.failed_subset
+        assert cached_status.failed_subset.subset_value.get_partition_keys() == {"fail1"}
 
-    def test_failure_cache_in_progress_runs(self, instance):
+    def test_failure_cache_in_progress_runs(self, instance) -> None:
         partitions_def = StaticPartitionsDefinition(["good1", "good2", "fail1", "fail2"])
 
         @asset(partitions_def=partitions_def)
@@ -490,15 +462,9 @@ class TestPartitionStatusCache:
         cached_status = get_and_update_asset_status_cache_value(
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
-        assert cached_status.deserialize_failed_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"fail1"}
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
+        assert cached_status and cached_status.failed_subset and cached_status.in_progress_subset
+        assert cached_status.failed_subset.subset_value.get_partition_keys() == {"fail1"}
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == set()
 
         run_2 = create_run_for_test(instance, status=DagsterRunStatus.STARTED)
         instance.event_log_storage.store_event(
@@ -521,29 +487,20 @@ class TestPartitionStatusCache:
         cached_status = get_and_update_asset_status_cache_value(
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
-        assert cached_status.deserialize_failed_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"fail1"}
-        assert cached_status.deserialize_in_progress_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"fail2"}
+        assert cached_status and cached_status.failed_subset and cached_status.in_progress_subset
+        assert cached_status.failed_subset.subset_value.get_partition_keys() == {"fail1"}
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == {"fail2"}
 
         instance.report_run_failed(run_2)
 
         cached_status = get_and_update_asset_status_cache_value(
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
-        assert cached_status.deserialize_failed_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"fail1", "fail2"}
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
+        assert cached_status and cached_status.failed_subset and cached_status.in_progress_subset
+        assert cached_status.failed_subset.subset_value.get_partition_keys() == {"fail1", "fail2"}
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == set()
 
-    def test_cache_deleted_runs(self, instance, delete_runs_instance):
+    def test_cache_deleted_runs(self, instance, delete_runs_instance) -> None:
         partitions_def = StaticPartitionsDefinition(["good1", "good2"])
 
         @asset(partitions_def=partitions_def)
@@ -562,14 +519,10 @@ class TestPartitionStatusCache:
         assert cached_status
         assert cached_status.latest_storage_id
         assert cached_status.partitions_def_id
-        assert cached_status.serialized_materialized_partition_subset
+        assert cached_status.materialized_subset
 
-        materialized_keys = list(
-            partitions_def.deserialize_subset(
-                cached_status.serialized_materialized_partition_subset
-            ).get_partition_keys()
-        )
-        assert len(materialized_keys) == 1
+        materialized_keys = cached_status.materialized_subset.subset_value.get_partition_keys()
+        assert len(list(materialized_keys)) == 1
         assert "good1" in materialized_keys
 
         run_1 = create_run_for_test(instance)
@@ -593,34 +546,23 @@ class TestPartitionStatusCache:
         cached_status = get_and_update_asset_status_cache_value(
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
-
-        assert cached_status.deserialize_in_progress_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"good1"}
+        assert cached_status and cached_status.in_progress_subset
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == {"good1"}
 
         delete_runs_instance.delete_run(run_1.run_id)
 
         cached_status = get_and_update_asset_status_cache_value(
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
+        assert (
+            cached_status and cached_status.materialized_subset and cached_status.in_progress_subset
+        )
         assert not cached_status.earliest_in_progress_materialization_event_id
 
-        materialized_keys = list(
-            partitions_def.deserialize_subset(
-                cached_status.serialized_materialized_partition_subset
-            ).get_partition_keys()
-        )
-        assert len(materialized_keys) == 1
-        assert "good1" in materialized_keys
+        assert cached_status.materialized_subset.subset_value.get_partition_keys() == {"good1"}
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == set()
 
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
-
-    def test_cache_cancelled_runs(self, instance):
+    def test_cache_cancelled_runs(self, instance) -> None:
         partitions_def = StaticPartitionsDefinition(["good1", "good2", "fail1", "fail2"])
 
         @asset(partitions_def=partitions_def)
@@ -653,10 +595,9 @@ class TestPartitionStatusCache:
         cached_status = get_and_update_asset_status_cache_value(
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
+        assert cached_status and cached_status.in_progress_subset
         early_id = cached_status.earliest_in_progress_materialization_event_id
-        assert cached_status.deserialize_in_progress_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"fail1"}
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == {"fail1"}
 
         run_2 = create_run_for_test(instance, status=DagsterRunStatus.STARTED)
         instance.event_log_storage.store_event(
@@ -679,15 +620,12 @@ class TestPartitionStatusCache:
         cached_status = get_and_update_asset_status_cache_value(
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
-        assert (
-            partitions_def.deserialize_subset(
-                cached_status.serialized_failed_partition_subset
-            ).get_partition_keys()
-            == set()
-        )
-        assert cached_status.deserialize_in_progress_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"fail1", "fail2"}
+        assert cached_status and cached_status.failed_subset and cached_status.in_progress_subset
+        assert cached_status.failed_subset.subset_value.get_partition_keys() == set()
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == {
+            "fail1",
+            "fail2",
+        }
         assert cached_status.earliest_in_progress_materialization_event_id == early_id
 
         instance.report_run_failed(run_2)
@@ -695,12 +633,9 @@ class TestPartitionStatusCache:
         cached_status = get_and_update_asset_status_cache_value(
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
-        assert partitions_def.deserialize_subset(
-            cached_status.serialized_failed_partition_subset
-        ).get_partition_keys() == {"fail2"}
-        assert cached_status.deserialize_in_progress_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"fail1"}
+        assert cached_status and cached_status.failed_subset and cached_status.in_progress_subset
+        assert cached_status.failed_subset.subset_value.get_partition_keys() == {"fail2"}
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == {"fail1"}
         assert cached_status.earliest_in_progress_materialization_event_id == early_id
 
         instance.report_run_canceled(run_1)
@@ -708,18 +643,12 @@ class TestPartitionStatusCache:
         cached_status = get_and_update_asset_status_cache_value(
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
-        assert partitions_def.deserialize_subset(
-            cached_status.serialized_failed_partition_subset
-        ).get_partition_keys() == {"fail2"}
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
+        assert cached_status and cached_status.failed_subset and cached_status.in_progress_subset
+        assert cached_status.failed_subset.subset_value.get_partition_keys() == {"fail2"}
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == set()
         assert cached_status.earliest_in_progress_materialization_event_id is None
 
-    def test_failure_cache_concurrent_materializations(self, instance):
+    def test_failure_cache_concurrent_materializations(self, instance) -> None:
         partitions_def = StaticPartitionsDefinition(["good1", "good2", "fail1", "fail2"])
 
         @asset(partitions_def=partitions_def)
@@ -770,9 +699,8 @@ class TestPartitionStatusCache:
         cached_status = get_and_update_asset_status_cache_value(
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
-        assert cached_status.deserialize_in_progress_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"fail1"}
+        assert cached_status and cached_status.in_progress_subset
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == {"fail1"}
         assert cached_status.earliest_in_progress_materialization_event_id is not None
 
         instance.report_run_failed(run_2)
@@ -780,19 +708,14 @@ class TestPartitionStatusCache:
         cached_status = get_and_update_asset_status_cache_value(
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
-        assert partitions_def.deserialize_subset(
-            cached_status.serialized_failed_partition_subset
-        ).get_partition_keys() == {"fail1"}
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
+        assert cached_status and cached_status.failed_subset and cached_status.in_progress_subset
+        assert cached_status.failed_subset.subset_value.get_partition_keys() == {"fail1"}
+        assert cached_status.in_progress_subset.subset_value.get_partition_keys() == set()
+
         # run_1 is still in progress, but run_2 started after and failed, so we move on
         assert cached_status.earliest_in_progress_materialization_event_id is None
 
-    def test_failed_partitioned_asset_converted_to_multipartitioned(self, instance):
+    def test_failed_partitioned_asset_converted_to_multipartitioned(self, instance) -> None:
         daily_def = DailyPartitionsDefinition("2023-01-01")
 
         @asset(
@@ -823,12 +746,10 @@ class TestPartitionStatusCache:
         cached_status = get_and_update_asset_status_cache_value(
             instance, asset_key, asset_graph.get(asset_key).partitions_def
         )
-        failed_subset = cached_status.deserialize_failed_partition_subsets(
-            asset_graph.get(asset_key).partitions_def
-        )
-        assert failed_subset.get_partition_keys() == set()
+        assert cached_status and cached_status.failed_subset
+        assert cached_status.failed_subset.subset_value.get_partition_keys() == set()
 
-    def test_batch_canceled_partitions(self, instance, delete_runs_instance):
+    def test_batch_canceled_partitions(self, instance, delete_runs_instance) -> None:
         my_asset = AssetKey("my_asset")
 
         # one more than the batch size to ensure we're hitting the pagination logic
@@ -877,6 +798,101 @@ class TestPartitionStatusCache:
             )
             assert failed_subset.get_partition_keys() == set()
             assert in_progress_subset.get_partition_keys() == set()
+
+    def _update_defs(self, defs: Definitions, delete_runs_instance) -> None:
+        # to be overridden in cases where this is necessary
+        pass
+
+    def _get_partition_key_sets(
+        self, cache_value: Optional[AssetStatusCacheValue], partitions_def: PartitionsDefinition
+    ) -> Tuple[AbstractSet[str], AbstractSet[str], AbstractSet[str]]:
+        assert cache_value
+        materialized = get_materialized_partitions_subset(cache_value, partitions_def)
+        failed = get_failed_partitions_subset(cache_value, partitions_def)
+        in_progress = get_in_progress_partitions_subset(cache_value, partitions_def)
+
+        return (
+            set(materialized.get_partition_keys()),
+            set(failed.get_partition_keys()),
+            set(in_progress.get_partition_keys()),
+        )
+
+    def test_instance_method(self, instance, delete_runs_instance) -> None:
+        key = AssetKey("the_asset")
+
+        def _get_defs(partitions_def: Optional[PartitionsDefinition]) -> Definitions:
+            @asset(key=key, partitions_def=partitions_def)
+            def the_asset(context: AssetExecutionContext) -> None:
+                if context.partition_key == "2024-10-31":
+                    raise Exception("boo")
+
+            return Definitions(assets=[the_asset])
+
+        partitions_def = DailyPartitionsDefinition(start_date="2024-08-16")
+        defs = _get_defs(partitions_def)
+        self._update_defs(defs, delete_runs_instance)
+
+        context = LoadingContextForTest(instance)
+        val = AssetStatusCacheValue.blocking_get(context, (key, partitions_def))
+        assert not val
+
+        # materialize one
+        defs.get_implicit_global_asset_job_def().execute_in_process(
+            instance=instance, partition_key="2024-08-16"
+        )
+        context = LoadingContextForTest(instance)
+        val = AssetStatusCacheValue.blocking_get(context, (key, partitions_def))
+        assert self._get_partition_key_sets(val, partitions_def) == ({"2024-08-16"}, set(), set())
+
+        # fail one
+        defs.get_implicit_global_asset_job_def().execute_in_process(
+            instance=instance, partition_key="2024-10-31", raise_on_error=False
+        )
+        context = LoadingContextForTest(instance)
+        val = AssetStatusCacheValue.blocking_get(context, (key, partitions_def))
+        assert self._get_partition_key_sets(val, partitions_def) == (
+            {"2024-08-16"},
+            {"2024-10-31"},
+            set(),
+        )
+
+        # in progress one
+        run = create_run_for_test(instance)
+        instance.event_log_storage.store_event(
+            _create_test_planned_materialization_record(run.run_id, key, "2024-11-11")
+        )
+        context = LoadingContextForTest(instance)
+        val = AssetStatusCacheValue.blocking_get(context, (key, partitions_def))
+        assert self._get_partition_key_sets(val, partitions_def) == (
+            {"2024-08-16"},
+            {"2024-10-31"},
+            {"2024-11-11"},
+        )
+
+        # switch to static
+        partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+        defs = _get_defs(partitions_def)
+        self._update_defs(defs, delete_runs_instance)
+
+        # empty out the cache
+        context = LoadingContextForTest(instance)
+        val = AssetStatusCacheValue.blocking_get(context, (key, partitions_def))
+        assert self._get_partition_key_sets(val, partitions_def) == (set(), set(), set())
+
+        # materialize two
+        defs.get_implicit_global_asset_job_def().execute_in_process(
+            instance=instance, partition_key="a"
+        )
+        defs.get_implicit_global_asset_job_def().execute_in_process(
+            instance=instance, partition_key="b"
+        )
+        context = LoadingContextForTest(instance)
+        val = AssetStatusCacheValue.blocking_get(context, (key, partitions_def))
+        assert self._get_partition_key_sets(val, partitions_def) == (
+            {"a", "b"},
+            set(),
+            set(),
+        )
 
 
 def _create_test_planned_materialization_record(run_id: str, asset_key: AssetKey, partition: str):

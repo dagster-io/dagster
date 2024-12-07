@@ -411,18 +411,18 @@ class AssetGraphView(LoadingContext):
         return await self.compute_subset_with_status(key, None)
 
     async def _compute_run_in_progress_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
-        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+        from dagster._core.storage.partition_status_cache import (
+            AssetStatusCacheValue,
+            get_in_progress_partitions_subset,
+        )
 
         partitions_def = self._get_partitions_def(key)
         if partitions_def:
             cache_value = await AssetStatusCacheValue.gen(self, (key, partitions_def))
-            return (
-                cache_value.get_in_progress_subset(self, key, partitions_def)
-                if cache_value
-                else self.get_empty_subset(key=key)
-            )
-        value = self._queryer.get_in_progress_asset_subset(asset_key=key).value
-        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+            inner_value = get_in_progress_partitions_subset(cache_value, partitions_def)
+        else:
+            inner_value = self._queryer.get_in_progress_asset_subset(asset_key=key).value
+        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(inner_value))
 
     async def _compute_backfill_in_progress_asset_subset(
         self, key: AssetKey
@@ -435,18 +435,28 @@ class AssetGraphView(LoadingContext):
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
     async def _compute_execution_failed_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
-        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+        from dagster._core.storage.partition_status_cache import (
+            AssetStatusCacheValue,
+            get_failed_partitions_subset,
+        )
 
         partitions_def = self._get_partitions_def(key)
         if partitions_def:
             cache_value = await AssetStatusCacheValue.gen(self, (key, partitions_def))
-            return (
-                cache_value.get_failed_subset(self, key, partitions_def)
-                if cache_value
-                else self.get_empty_subset(key=key)
-            )
-        value = self._queryer.get_failed_asset_subset(asset_key=key).value
-        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+            inner_value = get_failed_partitions_subset(cache_value, partitions_def)
+        else:
+            inner_value = self._queryer.get_failed_asset_subset(asset_key=key).value
+        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(inner_value))
+
+    def _get_asset_status_cache_subset(
+        self, key: AssetKey, serializable_subset: Optional[SerializableEntitySubset]
+    ) -> EntitySubset[AssetKey]:
+        entity_subset = (
+            self.get_subset_from_serializable_subset(serializable_subset)
+            if serializable_subset
+            else None
+        )
+        return entity_subset or self.get_empty_subset(key=key)
 
     async def _compute_missing_asset_subset(
         self, key: AssetKey, from_subset: EntitySubset
@@ -454,7 +464,10 @@ class AssetGraphView(LoadingContext):
         """Returns a subset which is the subset of the input subset that has never been materialized
         (if it is a materializable asset) or observered (if it is an observable asset).
         """
-        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+        from dagster._core.storage.partition_status_cache import (
+            AssetStatusCacheValue,
+            get_materialized_partitions_subset,
+        )
 
         # TODO: this logic should be simplified once we have a unified way of detecting both
         # materializations and observations through the parittion status cache. at that point, the
@@ -465,16 +478,12 @@ class AssetGraphView(LoadingContext):
             partitions_def = self._get_partitions_def(key)
             if partitions_def:
                 cache_value = await AssetStatusCacheValue.gen(self, (key, partitions_def))
-                materialized_subset = (
-                    cache_value.get_materialized_subset(self, key, partitions_def)
-                    if cache_value
-                    else self.get_empty_subset(key=key)
-                )
+                inner_value = get_materialized_partitions_subset(cache_value, partitions_def)
             else:
-                value = self._queryer.get_materialized_asset_subset(asset_key=key).value
-                materialized_subset = EntitySubset(
-                    self, key=key, value=_ValidatedEntitySubsetValue(value)
-                )
+                inner_value = self._queryer.get_materialized_asset_subset(asset_key=key).value
+            materialized_subset = EntitySubset(
+                self, key=key, value=_ValidatedEntitySubsetValue(inner_value)
+            )
             return from_subset.compute_difference(materialized_subset)
         else:
             # more expensive call

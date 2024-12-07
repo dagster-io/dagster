@@ -141,27 +141,28 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """Returns a PartitionsSubset representing the set of partitions that are either in progress
         or whose last materialization attempt failed.
         """
+        from dagster._core.storage.partition_status_cache import (
+            get_failed_partitions_subset,
+            get_in_progress_partitions_subset,
+        )
+
         partitions_def = check.not_none(self.asset_graph.get(asset_key).partitions_def)
         cache_value = self._get_updated_cache_value(asset_key=asset_key)
-        if cache_value is None:
-            return partitions_def.empty_subset()
-
-        return cache_value.deserialize_failed_partition_subsets(
-            partitions_def
-        ) | cache_value.deserialize_in_progress_partition_subsets(partitions_def)
+        return get_failed_partitions_subset(
+            cache_value, partitions_def
+        ) | get_in_progress_partitions_subset(cache_value, partitions_def)
 
     @cached_method
     def get_materialized_asset_subset(
         self, *, asset_key: AssetKey
     ) -> SerializableEntitySubset[AssetKey]:
         """Returns an AssetSubset representing the subset of the asset that has been materialized."""
+        from dagster._core.storage.partition_status_cache import get_materialized_partitions_subset
+
         partitions_def = self.asset_graph.get(asset_key).partitions_def
         if partitions_def:
             cache_value = self._get_updated_cache_value(asset_key=asset_key)
-            if cache_value is None:
-                value = partitions_def.empty_subset()
-            else:
-                value = cache_value.deserialize_materialized_partition_subsets(partitions_def)
+            value = get_materialized_partitions_subset(cache_value, partitions_def)
         else:
             value = self.asset_partition_has_materialization_or_observation(
                 AssetKeyPartitionKey(asset_key)
@@ -173,13 +174,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self, *, asset_key: AssetKey
     ) -> SerializableEntitySubset[AssetKey]:
         """Returns an AssetSubset representing the subset of the asset that is currently in progress."""
+        from dagster._core.storage.partition_status_cache import get_in_progress_partitions_subset
+
         partitions_def = self.asset_graph.get(asset_key).partitions_def
         if partitions_def:
             cache_value = self._get_updated_cache_value(asset_key=asset_key)
-            if cache_value is None:
-                value = partitions_def.empty_subset()
-            else:
-                value = cache_value.deserialize_in_progress_partition_subsets(partitions_def)
+            value = get_in_progress_partitions_subset(cache_value, partitions_def)
         else:
             # NOTE: this computation is not correct in all cases for unpartitioned assets. it is
             # possible (though rare) for run A to be launched targeting an asset, then later run B
@@ -232,13 +232,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """Returns an AssetSubset representing the subset of the asset that failed to be
         materialized its most recent run.
         """
+        from dagster._core.storage.partition_status_cache import get_failed_partitions_subset
+
         partitions_def = self.asset_graph.get(asset_key).partitions_def
         if partitions_def:
             cache_value = self._get_updated_cache_value(asset_key=asset_key)
-            if cache_value is None:
-                value = partitions_def.empty_subset()
-            else:
-                value = cache_value.deserialize_failed_partition_subsets(partitions_def)
+            value = get_failed_partitions_subset(cache_value, partitions_def)
         else:
             # ideally, unpartitioned assets would also be handled by the asset status cache
             planned_materialization_info = (

@@ -36,6 +36,7 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions import ExpectationResult
 from dagster._core.definitions.asset_check_evaluation import (
@@ -103,7 +104,10 @@ from dagster._core.storage.event_log.migration import (
 from dagster._core.storage.event_log.schema import SqlEventLogStorageTable
 from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster._core.storage.io_manager import IOManager
-from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+from dagster._core.storage.partition_status_cache import (
+    AssetStatusCacheValue,
+    get_materialized_partitions_subset,
+)
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -4686,16 +4690,11 @@ class TestEventLogStorage:
             cache_value = AssetStatusCacheValue(
                 latest_storage_id=1,
                 partitions_def_id="foo",
-                serialized_materialized_partition_subset="bar",
-                serialized_failed_partition_subset="baz",
-                serialized_in_progress_partition_subset="qux",
+                materialized_subset=SerializableEntitySubset(asset_key, True),
+                in_progress_subset=SerializableEntitySubset(asset_key, True),
+                failed_subset=SerializableEntitySubset(asset_key, True),
                 earliest_in_progress_materialization_event_id=42,
             )
-
-            # Check that AssetStatusCacheValue has all fields set. This ensures that we test that the
-            # cloud gql representation is complete.
-            for field in cache_value._fields:
-                assert getattr(cache_value, field) is not None
 
             if storage.can_write_asset_status_cache():
                 storage.update_asset_cached_status_data(
@@ -4707,7 +4706,7 @@ class TestEventLogStorage:
                 cache_value = AssetStatusCacheValue(
                     latest_storage_id=1,
                     partitions_def_id=None,
-                    serialized_materialized_partition_subset=None,
+                    materialized_subset=None,
                 )
 
                 storage.update_asset_cached_status_data(
@@ -4718,7 +4717,7 @@ class TestEventLogStorage:
             cache_value = AssetStatusCacheValue(
                 latest_storage_id=1,
                 partitions_def_id=None,
-                serialized_materialized_partition_subset=None,
+                materialized_subset=None,
             )
             storage.update_asset_cached_status_data(asset_key=asset_key, cache_values=cache_value)
             assert _get_cached_status_for_asset(storage, asset_key) == cache_value
@@ -6017,15 +6016,15 @@ class TestEventLogStorage:
 
     def test_get_updated_asset_status_cache_values(
         self, instance: DagsterInstance, storage: EventLogStorage
-    ):
-        partition_defs_by_key = {
-            AssetKey("hourly"): HourlyPartitionsDefinition("2020-01-01-00:00"),
-            AssetKey("daily"): DailyPartitionsDefinition("2020-01-01"),
-            AssetKey("static"): StaticPartitionsDefinition(["a", "b", "c"]),
-        }
+    ) -> None:
+        partition_defs_by_key = [
+            (AssetKey("hourly"), HourlyPartitionsDefinition("2020-01-01-00:00")),
+            (AssetKey("daily"), DailyPartitionsDefinition("2020-01-01")),
+            (AssetKey("static"), StaticPartitionsDefinition(["a", "b", "c"])),
+        ]
 
         assert storage.get_asset_status_cache_values(
-            partition_defs_by_key.items(), LoadingContextForTest(instance)
+            partition_defs_by_key, LoadingContextForTest(instance)
         ) == [
             None,
             None,
@@ -6040,11 +6039,15 @@ class TestEventLogStorage:
         )
         instance.report_runless_asset_event(AssetMaterialization(asset_key="static", partition="a"))
 
-        partition_defs = list(partition_defs_by_key.values())
-        for i, value in enumerate(
+        for value, (_, partitions_def) in zip(
             storage.get_asset_status_cache_values(
-                partition_defs_by_key.items(), LoadingContextForTest(instance)
+                partition_defs_by_key, LoadingContextForTest(instance)
             ),
+            partition_defs_by_key,
         ):
-            assert value is not None
-            assert len(value.deserialize_materialized_partition_subsets(partition_defs[i])) == 1
+            assert value is not None and (
+                value.materialized_subset is not None
+                or value.serialized_materialized_partition_subset is not None
+            )
+            partitions_subset = get_materialized_partitions_subset(value, partitions_def)
+            assert len(partitions_subset) == 1
