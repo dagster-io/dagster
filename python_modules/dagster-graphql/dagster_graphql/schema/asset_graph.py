@@ -839,7 +839,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_automationCondition(
         self, _graphene_info: ResolveInfo
-    ) -> Optional[GrapheneAutoMaterializePolicy]:
+    ) -> Optional[GrapheneAutomationCondition]:
         automation_condition = (
             self._asset_node_snap.automation_condition_snapshot
             or self._asset_node_snap.automation_condition

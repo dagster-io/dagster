@@ -29,6 +29,12 @@ class GrapheneAssetCheckHandleInput(graphene.InputObjectType):
         name = "AssetCheckHandleInput"
 
 
+class GrapheneEntityKeyInput(graphene.Union):
+    class Meta:
+        types = (GrapheneAssetKeyInput, GrapheneAssetCheckHandleInput)
+        name = "EntityKeyInput"
+
+
 class GrapheneExecutionTag(graphene.InputObjectType):
     key = graphene.NonNull(graphene.String)
     value = graphene.NonNull(graphene.String)

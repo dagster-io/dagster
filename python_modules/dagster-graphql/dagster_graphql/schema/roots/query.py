@@ -132,6 +132,7 @@ from dagster_graphql.schema.inputs import (
     GrapheneAssetGroupSelector,
     GrapheneAssetKeyInput,
     GrapheneBulkActionsFilter,
+    GrapheneEntityKeyInput,
     GrapheneGraphSelector,
     GrapheneInstigationSelector,
     GraphenePipelineSelector,
@@ -1269,7 +1270,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetConditionEvaluationForPartition(
         self,
         graphene_info: ResolveInfo,
-        assetKey: GrapheneAssetKeyInput,
+        assetKey: GrapheneEntityKeyInput,
         evaluationId: str,
         partition: str,
     ):
@@ -1283,7 +1284,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetConditionEvaluationRecordsOrError(
         self,
         graphene_info: ResolveInfo,
-        assetKey: GrapheneAssetKeyInput,
+        assetKey: GrapheneEntityKeyInput,
         limit: int,
         cursor: Optional[str] = None,
     ):
