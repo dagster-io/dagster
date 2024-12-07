@@ -32,6 +32,14 @@ def test_multiple_code_locations_materialize(
         "dag_second_code_location": [
             ExpectedMat(AssetKey("dag_first_code_location__asset"), runs_in_dagster=False)
         ],
+        "dag_shared_between_code_locations": [
+            ExpectedMat(
+                AssetKey("dag_shared_between_code_locations__first_asset"), runs_in_dagster=False
+            ),
+            ExpectedMat(
+                AssetKey("dag_shared_between_code_locations__second_asset"), runs_in_dagster=False
+            ),
+        ],
     }
 
     poll_for_expected_mats(af_instance, expected_mats_per_dag)
