@@ -344,7 +344,6 @@ def execute_sensor_iteration_loop(
         yield SpanMarker.END_SPAN
 
         end_time = get_current_timestamp()
-
         loop_duration = end_time - start_time
         sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
         shutdown_event.wait(sleep_time)
