@@ -29,6 +29,8 @@ from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogCons
 
 from auto_run_reexecution_tests.utils import foo, get_foo_job_handle
 
+logger = logging.getLogger("dagster.test_auto_run_reexecution")
+
 
 def create_run(instance, **kwargs):
     with get_foo_job_handle(instance) as handle:
@@ -317,6 +319,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
 
@@ -347,6 +350,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
@@ -359,6 +363,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
@@ -387,6 +392,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
     assert len(instance.run_coordinator.queue()) == 2
@@ -418,6 +424,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
     assert len(instance.run_coordinator.queue()) == 2
@@ -736,6 +743,7 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
     assert len(run_coordinator.queue()) == 1
