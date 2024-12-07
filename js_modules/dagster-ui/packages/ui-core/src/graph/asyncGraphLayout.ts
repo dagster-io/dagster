@@ -35,8 +35,6 @@ const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraph
   });
 }, _opLayoutCacheKey);
 
-// Asset Graph
-
 const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
   // Note: The "show secondary edges" toggle means that we need a cache key that incorporates
   // both the displayed nodes and the displayed edges.
@@ -202,7 +200,7 @@ export function useAssetLayout(
 
   const graphData = useMemo(() => ({..._graphData, expandedGroups}), [expandedGroups, _graphData]);
 
-  const cacheKey = _assetLayoutCacheKey(graphData, opts);
+  const cacheKey = useMemo(() => _assetLayoutCacheKey(graphData, opts), [graphData, opts]);
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 

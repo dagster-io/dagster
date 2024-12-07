@@ -93,7 +93,7 @@ export const AssetGroupRoot = ({
     [history, openInNewTab],
   );
 
-  const fetchOptions = React.useMemo(() => ({groupSelector}), [groupSelector]);
+  const fetchOptions = React.useMemo(() => ({groupSelector, loading: false}), [groupSelector]);
 
   const lineageOptions = React.useMemo(
     () => ({preferAssetRendering: true, explodeComposites: true}),

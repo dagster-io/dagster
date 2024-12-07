@@ -99,3 +99,6 @@ class MockBroadcastChannel {
 }
 
 (global as any).BroadcastChannel = MockBroadcastChannel;
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+require('fast-text-encoding');

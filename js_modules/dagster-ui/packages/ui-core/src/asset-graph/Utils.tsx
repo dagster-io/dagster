@@ -132,7 +132,7 @@ export const graphHasCycles = (graphData: GraphData) => {
   };
   let hasCycles = false;
   while (nodes.size !== 0 && !hasCycles) {
-    hasCycles = search([], nodes.values().next().value);
+    hasCycles = search([], nodes.values().next().value!);
   }
   return hasCycles;
 };

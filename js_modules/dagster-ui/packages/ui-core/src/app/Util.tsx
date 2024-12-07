@@ -134,7 +134,7 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
   hashFn?: (arg: T, ...rest: any[]) => any,
   hashSize?: number,
 ): U {
-  const cache = new LRU(hashSize || 50);
+  const cache = new LRU<any, R>(hashSize || 50);
   return (async (arg: T, ...rest: any[]) => {
     const key = hashFn ? hashFn(arg, ...rest) : arg;
     if (cache.has(key)) {
@@ -160,6 +160,8 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
     });
   } catch {}
 
+  const hashToPromise: Record<string, Promise<R>> = {};
+
   async function genHashKey(arg: T, ...rest: any[]) {
     const hash = hashFn ? hashFn(arg, ...rest) : arg;
 
@@ -182,17 +184,21 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
         const {value} = await lru.get(hashKey);
         resolve(value);
         return;
-      }
-
-      const result = await fn(arg, ...rest);
-      // Resolve the promise before storing the result in IndexedDB
-      resolve(result);
-      if (lru) {
-        await lru.set(hashKey, result, {
-          // Some day in the year 2050...
-          expiry: new Date(9 ** 13),
+      } else if (!hashToPromise[hashKey]) {
+        hashToPromise[hashKey] = new Promise(async (res) => {
+          const result = await fn(arg, ...rest);
+          // Resolve the promise before storing the result in IndexedDB
+          res(result);
+          if (lru) {
+            await lru.set(hashKey, result, {
+              // Some day in the year 2050...
+              expiry: new Date(9 ** 13),
+            });
+            delete hashToPromise[hashKey];
+          }
         });
       }
+      resolve(await hashToPromise[hashKey]!);
     });
   }) as any;
   ret.isCached = async (arg: T, ...rest: any) => {

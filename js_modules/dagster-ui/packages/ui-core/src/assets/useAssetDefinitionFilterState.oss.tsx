@@ -10,7 +10,8 @@ import {
   DefinitionTag,
 } from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {Tag, doesFilterArrayMatchValueArray} from '../ui/Filters/useDefinitionTagFilter';
+import {doesFilterArrayMatchValueArray} from '../ui/Filters/doesFilterArrayMatchValueArray';
+import {Tag} from '../ui/Filters/useDefinitionTagFilter';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 

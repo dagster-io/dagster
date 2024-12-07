@@ -1,4 +1,3 @@
-import isEqual from 'lodash/isEqual';
 import memoize from 'lodash/memoize';
 import {useCallback, useMemo} from 'react';
 
@@ -91,23 +90,6 @@ export function useTagsForObjects<T>(
             : a.key.localeCompare(b.key),
         ),
     [objects, getTags],
-  );
-}
-
-export function doesFilterArrayMatchValueArray<T, V>(
-  filterArray: T[],
-  valueArray: V[],
-  isMatch: (value1: T, value2: V) => boolean = (val1, val2) => {
-    return isEqual(val1, val2);
-  },
-) {
-  if (filterArray.length && !valueArray.length) {
-    return false;
-  }
-  return !filterArray.some(
-    (filterTag) =>
-      // If no asset tags match this filter tag return true
-      !valueArray.find((value) => isMatch(filterTag, value)),
   );
 }
 
