@@ -67,7 +67,7 @@ export const ScheduleDetails = (props: {
                 setShowTestTickDialog(true);
               }}
             >
-              Test Schedule
+              Evaluate tick
             </Button>
           </Box>
         }
