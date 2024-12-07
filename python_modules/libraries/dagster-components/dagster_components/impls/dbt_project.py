@@ -109,11 +109,14 @@ class DbtProjectComponent(Component):
 
     @classmethod
     def generate_files(cls, params: DbtGenerateParams) -> Mapping[str, Any]:
+        cwd = os.getcwd()
         if params.project_path:
-            relative_path = os.path.relpath(params.project_path, start=os.getcwd())
+            relative_path = os.path.relpath(params.project_path, start=cwd)
         elif params.init:
             dbtRunner().invoke(["init"])
-            subpaths = list(Path(os.getcwd()).iterdir())
+            subpaths = [
+                path for path in Path(cwd).iterdir() if path.is_dir() and path.name != "logs"
+            ]
             check.invariant(len(subpaths) == 1, "Expected exactly one subpath to be created.")
             # this path should be relative to this directory
             relative_path = subpaths[0].name

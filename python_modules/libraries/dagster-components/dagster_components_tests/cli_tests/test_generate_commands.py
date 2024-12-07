@@ -222,7 +222,7 @@ def test_generate_sling_replication_instance() -> None:
 
         defs_path = Path("bar/components/file_ingest/component.yaml")
         assert defs_path.exists()
-        assert "component_type: sling_replication" in defs_path.read_text()
+        assert "type: sling_replication" in defs_path.read_text()
 
         replication_path = Path("bar/components/file_ingest/replication.yaml")
         assert replication_path.exists()
@@ -248,7 +248,7 @@ def test_generate_dbt_project_instance(params) -> None:
 
         defs_path = Path("bar/components/my_project/component.yaml")
         assert defs_path.exists()
-        assert "component_type: dbt_project" in defs_path.read_text()
+        assert "type: dbt_project" in defs_path.read_text()
         assert (
             "stub_code_locations/dbt_project_location/components/jaffle_shop"
             in defs_path.read_text()
