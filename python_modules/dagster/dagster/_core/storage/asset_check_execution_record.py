@@ -29,6 +29,12 @@ class AssetCheckExecutionRecordStatus(enum.Enum):
     FAILED = "FAILED"  # explicit fail result
 
 
+COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES = {
+    AssetCheckExecutionRecordStatus.SUCCEEDED,
+    AssetCheckExecutionRecordStatus.FAILED,
+}
+
+
 class AssetCheckExecutionResolvedStatus(enum.Enum):
     IN_PROGRESS = "IN_PROGRESS"
     SUCCEEDED = "SUCCEEDED"
