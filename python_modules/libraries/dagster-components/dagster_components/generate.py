@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Any, Type
 
 import click
@@ -71,15 +72,13 @@ def generate_component_instance(
         component_type=component_registry_key,
     )
     with pushd(component_instance_root_path):
-        component_data: dict = {"component_type": component_registry_key}
         component_params = (
             component_type.generate_files(generate_params)
             if generate_params
             else component_type.generate_files()  # type: ignore
         )
-        if component_params:
-            component_data["component_params"] = component_params
-        with open("component.yaml", "w") as f:
-            yaml.dump(
-                component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
-            )
+        component_data = {"type": component_registry_key, "params": component_params or {}}
+    with open(Path(component_instance_root_path) / "component.yaml", "w") as f:
+        yaml.dump(
+            component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
+        )
