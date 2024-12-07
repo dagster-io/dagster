@@ -47,14 +47,14 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
     def __init__(
         self,
         *,
-        translator_params: Optional[DbtNodeTranslatorParams] = None,
+        translator_params: DbtNodeTranslatorParams,
+        param_resolver: TemplatedParamResolver,
     ):
         self.translator_params = translator_params
-        # TODO thread from above
-        self.param_resolver = TemplatedParamResolver({})
+        self.param_resolver = param_resolver
 
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-        if not self.translator_params or not self.translator_params.key:
+        if not self.translator_params.key:
             return super().get_asset_key(dbt_resource_props)
 
         return AssetKey.from_user_string(
@@ -64,7 +64,7 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
         )
 
     def get_group_name(self, dbt_resource_props) -> Optional[str]:
-        if not self.translator_params or not self.translator_params.group:
+        if not self.translator_params.group:
             return super().get_group_name(dbt_resource_props)
 
         return self.param_resolver.resolve_with_kwargs(
@@ -100,7 +100,8 @@ class DbtProjectComponent(Component):
             dbt_resource=loaded_params.dbt,
             op_spec=loaded_params.op,
             dbt_translator=DbtProjectComponentTranslator(
-                translator_params=loaded_params.translator
+                translator_params=loaded_params.translator or DbtNodeTranslatorParams(),
+                param_resolver=context.param_resolver,
             ),
         )
 

@@ -8,6 +8,8 @@ from dagster._core.errors import DagsterError
 from dagster._utils import snakecase
 from typing_extensions import Self
 
+from dagster_components.core.templated_param_resolver import TemplatedParamResolver
+
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
@@ -72,18 +74,28 @@ def register_components_in_module(registry: ComponentRegistry, root_module: Modu
 
 
 class ComponentLoadContext:
-    def __init__(self, *, resources: Mapping[str, object], registry: ComponentRegistry):
+    def __init__(
+        self,
+        *,
+        resources: Mapping[str, object],
+        registry: ComponentRegistry,
+        param_resolver: TemplatedParamResolver,
+    ):
         self.registry = registry
         self.resources = resources
+        self.param_resolver = param_resolver
 
     @staticmethod
     def for_test(
         *,
         resources: Optional[Mapping[str, object]] = None,
         registry: Optional[ComponentRegistry] = None,
+        param_resolver: Optional[TemplatedParamResolver] = None,
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
-            resources=resources or {}, registry=registry or ComponentRegistry.empty()
+            resources=resources or {},
+            registry=registry or ComponentRegistry.empty(),
+            param_resolver=param_resolver or TemplatedParamResolver({}),
         )
 
 

@@ -21,6 +21,7 @@ from dagster_components.core.component_decl_builder import (
     path_to_decl_node,
 )
 from dagster_components.core.deployment import CodeLocationProjectContext
+from dagster_components.core.templated_param_resolver import TemplatedParamResolver
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -94,7 +95,11 @@ def build_defs_from_component_path(
     resources: Mapping[str, object],
 ) -> "Definitions":
     """Build a definitions object from a folder within the components hierarchy."""
-    context = ComponentLoadContext(resources=resources, registry=registry)
+    context = ComponentLoadContext(
+        resources=resources,
+        registry=registry,
+        param_resolver=TemplatedParamResolver.with_os_environ_as_vars(),
+    )
 
     decl_node = path_to_decl_node(path=path)
     if not decl_node:
