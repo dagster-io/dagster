@@ -7,8 +7,12 @@ import {
   buildDryRunInstigationTick,
   buildErrorChainLink,
   buildInstigationState,
+  buildLaunchMultipleRunsResult,
+  buildLaunchRunSuccess,
+  buildPipelineSnapshot,
   buildPipelineTag,
   buildPythonError,
+  buildRun,
   buildRunRequest,
   buildSensor,
   buildSensorData,
@@ -267,18 +271,16 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
   result: {
     data: {
       __typename: 'Mutation',
-      launchMultipleRuns: {
-        __typename: 'LaunchMultipleRunsResult',
+      launchMultipleRuns: buildLaunchMultipleRunsResult({
         launchMultipleRunsResult: [
-          {
+          buildLaunchRunSuccess({
             __typename: 'LaunchRunSuccess',
-            run: {
+            run: buildRun({
               __typename: 'Run',
               id: '504b3a77-d6c4-440c-a128-7f59c9d75d59',
-              pipeline: {
-                __typename: 'PipelineSnapshot',
+              pipeline: buildPipelineSnapshot({
                 name: 'saepe',
-              },
+              }),
               tags: [
                 buildPipelineTag({key: 'dagster2', value: 'test'}),
                 buildPipelineTag({key: 'marco2', value: 'salazar2'}),
@@ -288,17 +290,16 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
                 'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx\n',
               mode: 'default',
               resolvedOpSelection: null,
-            },
-          },
-          {
+            }),
+          }),
+          buildLaunchRunSuccess({
             __typename: 'LaunchRunSuccess',
-            run: {
+            run: buildRun({
               __typename: 'Run',
               id: '6745cd03-3d89-4fd2-a41f-6b9d9ffdc134',
-              pipeline: {
-                __typename: 'PipelineSnapshot',
+              pipeline: buildPipelineSnapshot({
                 name: 'saepe',
-              },
+              }),
               tags: [
                 buildPipelineTag({key: 'dagster3', value: 'test'}),
                 buildPipelineTag({key: 'marco3', value: 'salazar3'}),
@@ -307,20 +308,16 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
               status: RunStatus.QUEUED,
               runConfigYaml:
                 'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx\n',
-
               mode: 'default',
               resolvedOpSelection: null,
-            },
-          },
-          {
-            __typename: 'LaunchRunSuccess',
-            run: {
-              __typename: 'Run',
+            }),
+          }),
+          buildLaunchRunSuccess({
+            run: buildRun({
               id: '7ed35f69-42cf-4518-84a4-c97d0551a56b',
-              pipeline: {
-                __typename: 'PipelineSnapshot',
+              pipeline: buildPipelineSnapshot({
                 name: 'simple_config_job',
-              },
+              }),
               tags: [
                 buildPipelineTag({key: 'dagster6', value: 'test'}),
                 buildPipelineTag({key: 'marco6', value: 'salazar6'}),
@@ -331,10 +328,10 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
 
               mode: 'default',
               resolvedOpSelection: null,
-            },
-          },
+            }),
+          }),
         ],
-      },
+      }),
     },
   },
 };
