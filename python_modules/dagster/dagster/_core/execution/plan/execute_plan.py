@@ -40,6 +40,7 @@ def inner_plan_execution_iterator(
     with execution_plan.start(
         retry_mode=job_context.retry_mode,
         instance_concurrency_context=instance_concurrency_context,
+        plan_context=job_context,
     ) as active_execution:
         with ExitStack() as capture_stack:
             # begin capturing logs for the whole process
