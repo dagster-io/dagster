@@ -211,6 +211,7 @@ class DbtProject(IHaveNew):
 
     def __new__(
         cls,
+        # trigger CI
         project_dir: Union[Path, str],
         *,
         target_path: Union[Path, str] = Path("target"),
