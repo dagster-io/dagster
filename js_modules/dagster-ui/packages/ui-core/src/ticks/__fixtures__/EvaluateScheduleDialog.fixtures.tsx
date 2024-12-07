@@ -1,14 +1,21 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
+  RunStatus,
   buildDryRunInstigationTick,
   buildErrorChainLink,
+  buildLaunchMultipleRunsResult,
+  buildLaunchRunSuccess,
+  buildPipelineSnapshot,
   buildPipelineTag,
   buildPythonError,
+  buildRun,
   buildRunRequest,
   buildSchedule,
   buildTickEvaluation,
 } from '../../graphql/types';
+import {LAUNCH_MULTIPLE_RUNS_MUTATION} from '../../runs/RunUtils';
+import {LaunchMultipleRunsMutation} from '../../runs/types/RunUtils.types';
 import {GET_SCHEDULE_QUERY, SCHEDULE_DRY_RUN_MUTATION} from '../EvaluateScheduleDialog';
 import {GetScheduleQuery, ScheduleDryRunMutation} from '../types/EvaluateScheduleDialog.types';
 
@@ -63,7 +70,7 @@ export const scheduleDryWithWithRunRequest = {
               value: 'okay',
             }),
           ],
-          runKey: null,
+          runKey: 'EvaluateScheduleDialog.test.tsx:1675705668.993122345',
         }),
       ],
       skipReason: null,
@@ -160,6 +167,88 @@ export const ScheduleDryRunMutationSkipped: MockedResponse<ScheduleDryRunMutatio
             'No directory specified at environment variable `DAGSTER_TOY_SENSOR_DIRECTORY`',
           error: null,
         }),
+      }),
+    },
+  },
+};
+
+export const ScheduleLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation> = {
+  request: {
+    query: LAUNCH_MULTIPLE_RUNS_MUTATION,
+    variables: {
+      executionParamsList: [
+        {
+          runConfigData: 'ops:\n  configurable_op:\n    config:\n      scheduled_date: 2023-01-29',
+          selector: {
+            jobName: 'saepe',
+            repositoryLocationName: 'testLocation',
+            repositoryName: 'testName',
+            assetSelection: [],
+            assetCheckSelection: [],
+            solidSelection: undefined,
+          },
+          mode: 'default',
+          executionMetadata: {
+            tags: [
+              {
+                key: 'dagster/schedule_name',
+                value: 'configurable_job_schedule',
+              },
+              {
+                key: 'date',
+                value: '2023-01-29',
+              },
+              {
+                key: 'github_test',
+                value: 'test',
+              },
+              {
+                key: 'okay_t2',
+                value: 'okay',
+              },
+            ],
+          },
+        },
+      ],
+    },
+  },
+  result: {
+    data: {
+      __typename: 'Mutation',
+      launchMultipleRuns: buildLaunchMultipleRunsResult({
+        launchMultipleRunsResult: [
+          buildLaunchRunSuccess({
+            run: buildRun({
+              id: '504b3a77-d6c4-440c-a128-7f59c9d75d59',
+              pipeline: buildPipelineSnapshot({
+                name: 'saepe',
+              }),
+              tags: [
+                buildPipelineTag({
+                  key: 'dagster/schedule_name',
+                  value: 'configurable_job_schedule',
+                }),
+                buildPipelineTag({
+                  key: 'date',
+                  value: '2023-01-29',
+                }),
+                buildPipelineTag({
+                  key: 'github_test',
+                  value: 'test',
+                }),
+                buildPipelineTag({
+                  key: 'okay_t2',
+                  value: 'okay',
+                }),
+              ],
+              status: RunStatus.QUEUED,
+              runConfigYaml:
+                'ops:\n  configurable_op:\n    config:\n      scheduled_date: 2023-01-29',
+              mode: 'default',
+              resolvedOpSelection: null,
+            }),
+          }),
+        ],
       }),
     },
   },

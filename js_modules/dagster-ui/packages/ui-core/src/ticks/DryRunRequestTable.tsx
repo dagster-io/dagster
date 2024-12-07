@@ -52,6 +52,7 @@ export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}
             </td>
             <td style={{width: '7.5%', verticalAlign: 'middle', textAlign: 'center'}}>
               <PreviewButton
+                request={request}
                 onClick={() => {
                   setSelectedRequest(request);
                   setVisibleDialog('config');
@@ -91,10 +92,14 @@ export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}
   );
 };
 
-function PreviewButton({onClick}: {onClick: () => void}) {
+function PreviewButton({request, onClick}: {request: RunRequestFragment; onClick: () => void}) {
   return (
     <Tooltip content="Preview run config and tags" placement="left-start">
-      <Button icon={<Icon name="data_object" />} onClick={onClick} />
+      <Button
+        icon={<Icon name="data_object" />}
+        onClick={onClick}
+        data-testid={testId(`preview-${request.runKey || ''}`)}
+      />
     </Tooltip>
   );
 }

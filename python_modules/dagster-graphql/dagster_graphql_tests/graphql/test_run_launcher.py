@@ -272,7 +272,7 @@ class TestSuccessAndFailureMultipleLaunch(BaseTestSuite):
         launchSuccessExecutionParams = [
             {
                 "selector": {
-                    "repositoryLocationName": "test",
+                    "repositoryLocationName": "test_location",
                     "repositoryName": "test_repo",
                     "pipelineName": "no_config_job",
                     "solidSelection": None,
@@ -283,7 +283,7 @@ class TestSuccessAndFailureMultipleLaunch(BaseTestSuite):
             },
             {
                 "selector": {
-                    "repositoryLocationName": "test",
+                    "repositoryLocationName": "test_location",
                     "repositoryName": "test_repo",
                     "pipelineName": "no_config_job",
                     "solidSelection": None,
@@ -297,7 +297,7 @@ class TestSuccessAndFailureMultipleLaunch(BaseTestSuite):
         pipelineNotFoundExecutionParams = [
             {
                 "selector": {
-                    "repositoryLocationName": "test",
+                    "repositoryLocationName": "test_location",
                     "repositoryName": "test_dict_repo",
                     "pipelineName": "no_config_job",
                     "solidSelection": None,
@@ -308,7 +308,7 @@ class TestSuccessAndFailureMultipleLaunch(BaseTestSuite):
             },
             {
                 "selector": {
-                    "repositoryLocationName": "test",
+                    "repositoryLocationName": "test_location",
                     "repositoryName": "test_dict_repo",
                     "pipelineName": "no_config_job",
                     "solidSelection": None,
