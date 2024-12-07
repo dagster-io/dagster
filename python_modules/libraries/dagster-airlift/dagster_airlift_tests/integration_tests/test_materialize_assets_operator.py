@@ -59,7 +59,13 @@ def test_dagster_operator(airflow_instance: None, dagster_dev: None, dagster_hom
             run
             for run in runs
             if set(list(run.asset_selection))  # type: ignore
-            == {AssetKey(["some_asset"]), AssetKey(["other_asset"]), AssetKey(["nested", "asset"])}
+            == {
+                AssetKey(["some_asset"]),
+                AssetKey(["other_asset"]),
+                AssetKey(["nested", "asset"]),
+                AssetKey(["string", "interpretation"]),
+                AssetKey(["backslash/interpretation"]),
+            }
         ][0]
         assert the_run.status == DagsterRunStatus.SUCCESS
 
