@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Generator, Iterator
+from typing import TYPE_CHECKING, Generator
 
 import pytest
 from dagster import AssetKey
