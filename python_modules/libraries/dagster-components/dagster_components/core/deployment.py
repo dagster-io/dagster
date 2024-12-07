@@ -1,17 +1,11 @@
-import importlib.util
 import os
-import sys
 from pathlib import Path
 from typing import Final, Iterable, Type
 
 from dagster._core.errors import DagsterError
 from typing_extensions import Self
 
-from dagster_components.core.component import (
-    Component,
-    ComponentRegistry,
-    register_components_in_module,
-)
+from dagster_components.core.component import Component, ComponentRegistry
 
 
 def is_inside_deployment_project(path: Path) -> bool:
@@ -88,17 +82,6 @@ class CodeLocationProjectContext:
     @classmethod
     def from_path(cls, path: Path, component_registry: "ComponentRegistry") -> Self:
         root_path = _resolve_code_location_root_path(path)
-        name = os.path.basename(root_path)
-
-        # TODO: Rm when a more robust solution is implemented
-        # Make sure we can import from the cwd
-        if sys.path[0] != "":
-            sys.path.insert(0, "")
-
-        components_lib_module = f"{name}.{_CODE_LOCATION_CUSTOM_COMPONENTS_DIR}"
-        module = importlib.import_module(components_lib_module)
-        register_components_in_module(component_registry, module)
-
         return cls(
             deployment_context=DeploymentProjectContext.from_path(path),
             root_path=root_path,

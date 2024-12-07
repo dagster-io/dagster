@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 import click
 from pydantic import TypeAdapter
 
-from dagster_components import ComponentRegistry, __component_registry__
+from dagster_components import ComponentRegistry
 from dagster_components.core.deployment import (
     CodeLocationProjectContext,
     DeploymentProjectContext,
@@ -72,7 +72,7 @@ def generate_component_type_command(name: str) -> None:
         sys.exit(1)
 
     context = CodeLocationProjectContext.from_path(
-        Path.cwd(), ComponentRegistry(__component_registry__)
+        Path.cwd(), ComponentRegistry.from_entry_point_discovery()
     )
     if context.has_component_type(name):
         click.echo(click.style(f"A component type named `{name}` already exists.", fg="red"))
@@ -101,7 +101,7 @@ def generate_component_command(
         sys.exit(1)
 
     context = CodeLocationProjectContext.from_path(
-        Path.cwd(), ComponentRegistry(__component_registry__)
+        Path.cwd(), ComponentRegistry.from_entry_point_discovery()
     )
     if not context.has_component_type(component_type):
         click.echo(
