@@ -355,6 +355,7 @@ def launch_scheduled_runs(
             instance.delete_instigator_state(state.instigator_origin_id, state.selector_id)
 
     if not running_schedules:
+        logger.debug("no running schedules")
         yield
         return
 
