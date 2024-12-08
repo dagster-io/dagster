@@ -315,6 +315,30 @@ def test_static_partitioned_asset(tmp_path, io_manager):
 
 
 @asset(
+    partitions_def=StaticPartitionsDefinition(["red", "yellow", "blue"]),
+    key_prefix=["my_schema"],
+    metadata={"partition_expr": "color"},
+)
+def load_partitioned_static(context, static_partitioned: pa.Table) -> pa.Table:
+    return static_partitioned
+
+
+def test_load_static_partitioned_asset(tmp_path, io_manager):
+    resource_defs = {"io_manager": io_manager}
+
+    res = materialize(
+        [static_partitioned, load_partitioned_static],
+        partition_key="red",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__static_partitioned": {"config": {"value": "1"}}}},
+    )
+
+    assert res.success
+    table = res.asset_value(["my_schema", "load_partitioned_static"])
+    assert table.shape[0] == 3
+
+
+@asset(
     partitions_def=MultiPartitionsDefinition(
         {
             "time": DailyPartitionsDefinition(start_date="2022-01-01"),
