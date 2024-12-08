@@ -30,13 +30,20 @@ If release name contains chart name it will be used as a full name.
 {{- .repository -}}:{{- .tag -}}
 {{- end }}
 
-{{- define "dagster.dagsterImage.name" }}
+{{- define "dagster.dagsterImage.tag" }}
   {{- $ := index . 0 }}
 
   {{- with index . 1 }}
     {{- /* Filter the tag to parse strings, string integers, and string floats. */}}
-    {{- $tag := .tag | default $.Chart.Version | toYaml | trimAll "\"" }}
-    {{- printf "%s:%s" .repository $tag }}
+    {{- .tag | default $.Chart.Version | toYaml | trimAll "\"" }}
+  {{- end }}
+{{- end }}
+
+{{- define "dagster.dagsterImage.repository" }}
+  {{- $ := index . 0 }}
+
+  {{- with index . 1 }}
+    {{- .repository }}
   {{- end }}
 {{- end }}
 
@@ -198,7 +205,7 @@ This includes the Dagster webserver, Celery Workers, Run Worker, and Step Worker
 DAGSTER_HOME: {{ .Values.global.dagsterHome | quote }}
 DAGSTER_K8S_PIPELINE_RUN_NAMESPACE: "{{ .Release.Namespace }}"
 DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pipeline-env"
-DAGSTER_K8S_PIPELINE_RUN_IMAGE: {{ include "dagster.dagsterImage.name" (list $ .Values.pipelineRun.image) | quote }}
+DAGSTER_K8S_PIPELINE_RUN_IMAGE: {{ printf "%s:%s" (include "dagster.dagsterImage.repository" (list $ .Values.pipelineRun.image)) (include "dagster.dagsterImage.tag" (list $ .Values.pipelineRun.image)) }}
 DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY: "{{ .Values.pipelineRun.image.pullPolicy }}"
 {{- end -}}
 
