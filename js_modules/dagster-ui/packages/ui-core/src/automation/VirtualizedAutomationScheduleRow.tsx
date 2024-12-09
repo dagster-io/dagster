@@ -8,7 +8,6 @@ import {
 } from '@dagster-io/ui-components';
 import {forwardRef, useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {AutomationTargetList} from './AutomationTargetList';
 import {AutomationRowGrid} from './VirtualizedAutomationRow';
@@ -25,7 +24,6 @@ import {
   ScheduleAssetSelectionQuery,
   ScheduleAssetSelectionQueryVariables,
 } from '../schedules/types/ScheduleAssetSelectionsQuery.types';
-import {EvaluateTickButtonSchedule} from '../ticks/EvaluateTickButtonSchedule';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RowCell} from '../ui/VirtualizedTable';
 import {SINGLE_SCHEDULE_QUERY} from '../workspace/VirtualizedScheduleRow';
@@ -164,13 +162,6 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
                   <MiddleTruncate text={name} />
                 </Link>
               </Box>
-              <EvaluateTickButtonScheduleWrapper>
-                <EvaluateTickButtonSchedule
-                  name={scheduleData?.name || ''}
-                  repoAddress={repoAddress}
-                  jobName={scheduleData?.pipelineName || ''}
-                />
-              </EvaluateTickButtonScheduleWrapper>
             </Box>
           </RowCell>
           <RowCell>
@@ -242,9 +233,3 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
     );
   },
 );
-
-const EvaluateTickButtonScheduleWrapper = styled.div`
-  button {
-    height: 24px;
-  }
-`;
