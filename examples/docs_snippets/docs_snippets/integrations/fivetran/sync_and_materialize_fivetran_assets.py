@@ -31,6 +31,6 @@ def fivetran_connector_assets(
 all_fivetran_assets = build_fivetran_assets_definitions(fivetran_workspace)
 
 defs = dg.Definitions(
-    assets=[*all_fivetran_assets],
+    assets=all_fivetran_assets,
     resources={"fivetran": fivetran_workspace},
 )
