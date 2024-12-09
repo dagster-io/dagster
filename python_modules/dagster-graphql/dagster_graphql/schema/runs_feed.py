@@ -5,6 +5,15 @@ from dagster_graphql.schema.errors import GraphenePythonError
 from dagster_graphql.schema.util import non_null_list
 
 
+class GrapheneRunsFeedView(graphene.Enum):
+    ALL = "ALL"
+    RUNS = "RUNS"
+    BACKFILLS = "BACKFILLS"
+
+    class Meta:
+        name = "RunsFeedView"
+
+
 class GrapheneRunsFeedEntry(graphene.Interface):
     id = graphene.NonNull(graphene.ID)
     runStatus = graphene.Field("dagster_graphql.schema.pipelines.pipeline.GrapheneRunStatus")

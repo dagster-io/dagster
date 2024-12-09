@@ -191,6 +191,7 @@ from dagster_graphql.schema.runs import (
     parse_run_config_input,
 )
 from dagster_graphql.schema.runs_feed import (
+    GrapheneRunsFeedView,
     GrapheneRunsFeedConnectionOrError,
     GrapheneRunsFeedCount,
     GrapheneRunsFeedCountOrError,
@@ -387,14 +388,14 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneRunsFeedConnectionOrError),
         limit=graphene.NonNull(graphene.Int),
         cursor=graphene.String(),
+        view=graphene.NonNull(GrapheneRunsFeedView),
         filter=graphene.Argument(GrapheneRunsFilter),
-        includeRunsFromBackfills=graphene.Boolean(),
         description="Retrieve entries for the Runs Feed after applying a filter, cursor and limit.",
     )
     runsFeedCountOrError = graphene.Field(
         graphene.NonNull(GrapheneRunsFeedCountOrError),
+        view=graphene.NonNull(GrapheneRunsFeedView),
         filter=graphene.Argument(GrapheneRunsFilter),
-        includeRunsFromBackfills=graphene.Boolean(),
         description="Retrieve the number of entries for the Runs Feed after applying a filter.",
     )
     runTagKeysOrError = graphene.Field(
@@ -900,6 +901,7 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         limit: int,
+        view: GrapheneRunsFeedView,
         includeRunsFromBackfills: bool,
         cursor: Optional[str] = None,
         filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
@@ -910,13 +912,13 @@ class GrapheneQuery(graphene.ObjectType):
             cursor=cursor,
             limit=limit,
             filters=selector,
-            include_runs_from_backfills=includeRunsFromBackfills,
+            view=view
         )
 
     def resolve_runsFeedCountOrError(
         self,
         graphene_info: ResolveInfo,
-        includeRunsFromBackfills: bool,
+        view: GrapheneRunsFeedView,
         filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
     ):
         selector = filter.to_selector() if filter is not None else None
@@ -924,7 +926,7 @@ class GrapheneQuery(graphene.ObjectType):
             get_runs_feed_count(
                 graphene_info,
                 selector,
-                include_runs_from_backfills=includeRunsFromBackfills,
+                view=view,
             )
         )
 
