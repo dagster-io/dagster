@@ -17,9 +17,9 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.decorators.asset_decorator import make_asset_deps
 from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
-    DecoratorAssetsDefinitionBuilder,
-    DecoratorAssetsDefinitionBuilderArgs,
+    DecoratorAssetsDefinitionUnderlyingOpBuilderArgs,
     NamedIn,
+    UnderlyingOpDecoratorAssetsDefinitionBuilder,
     build_named_ins,
     compute_required_resource_keys,
     get_function_params_without_context_or_config_or_resources,
@@ -214,7 +214,7 @@ def asset_check(
 
         resource_defs_for_execution = wrap_resources_for_execution(resource_defs)
 
-        builder_args = DecoratorAssetsDefinitionBuilderArgs(
+        builder_args = DecoratorAssetsDefinitionUnderlyingOpBuilderArgs(
             decorator_name="@asset_check",
             name=name,
             # @asset_check previous behavior is to not set description on underlying op
@@ -242,7 +242,7 @@ def asset_check(
             execution_type=None,
         )
 
-        builder = DecoratorAssetsDefinitionBuilder(
+        builder = UnderlyingOpDecoratorAssetsDefinitionBuilder(
             named_ins_by_asset_key=named_in_by_asset_key,
             named_outs_by_asset_key={},
             internal_deps={},

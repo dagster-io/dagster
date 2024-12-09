@@ -12,8 +12,8 @@ from dagster._core.definitions.decorators.asset_decorator import (
     resolve_asset_key_and_name_for_decorator,
 )
 from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
-    DecoratorAssetsDefinitionBuilder,
-    DecoratorAssetsDefinitionBuilderArgs,
+    DecoratorAssetsDefinitionUnderlyingOpBuilderArgs,
+    UnderlyingOpDecoratorAssetsDefinitionBuilder,
     create_check_specs_by_output_name,
 )
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
@@ -271,7 +271,7 @@ def multi_observable_source_asset(
     """
     from dagster._core.execution.build_resources import wrap_resources_for_execution
 
-    args = DecoratorAssetsDefinitionBuilderArgs(
+    args = DecoratorAssetsDefinitionUnderlyingOpBuilderArgs(
         name=name,
         op_description=description,
         specs=check.opt_list_param(specs, "specs", of_type=AssetSpec),
@@ -303,7 +303,7 @@ def multi_observable_source_asset(
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-        builder = DecoratorAssetsDefinitionBuilder.from_multi_asset_specs(
+        builder = UnderlyingOpDecoratorAssetsDefinitionBuilder.from_multi_asset_specs(
             can_subset=can_subset,
             asset_specs=specs,
             op_name=name or fn.__name__,

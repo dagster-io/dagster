@@ -38,8 +38,8 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
-    DecoratorAssetsDefinitionBuilder,
-    DecoratorAssetsDefinitionBuilderArgs,
+    UnderlyingOpDecoratorAssetsDefinitionBuilder,
+    DecoratorAssetsDefinitionUnderlyingOpBuilderArgs,
     build_named_ins,
     build_named_outs,
     create_check_specs_by_output_name,
@@ -471,7 +471,7 @@ def create_assets_def_from_fn_and_decorator_args(
             )
 
     with disable_dagster_warnings():
-        builder_args = DecoratorAssetsDefinitionBuilderArgs(
+        builder_args = DecoratorAssetsDefinitionUnderlyingOpBuilderArgs(
             name=args.name,
             op_description=args.description,
             check_specs_by_output_name=create_check_specs_by_output_name(args.check_specs),
@@ -516,7 +516,7 @@ def create_assets_def_from_fn_and_decorator_args(
             execution_type=AssetExecutionType.MATERIALIZATION,
         )
 
-        builder = DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
+        builder = UnderlyingOpDecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
             fn=fn,
             op_name=out_asset_key.to_python_identifier(),
             asset_in_map=builder_args.asset_in_map,
@@ -649,7 +649,7 @@ def multi_asset(
 
     only_allow_hidden_params_in_kwargs(multi_asset, kwargs)
 
-    args = DecoratorAssetsDefinitionBuilderArgs(
+    args = DecoratorAssetsDefinitionUnderlyingOpBuilderArgs(
         name=name,
         op_description=description,
         specs=check.opt_sequence_param(specs, "specs", of_type=AssetSpec),
@@ -692,7 +692,7 @@ def multi_asset(
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-        builder = DecoratorAssetsDefinitionBuilder.for_multi_asset(args=args, fn=fn)
+        builder = UnderlyingOpDecoratorAssetsDefinitionBuilder.for_multi_asset(args=args, fn=fn)
 
         check.invariant(
             len(builder.overlapping_output_names) == 0,
@@ -916,7 +916,6 @@ def graph_asset_no_defaults(
 ) -> AssetsDefinition:
     ins = ins or {}
     named_ins = build_named_ins(compose_fn, ins or {}, set())
-    if specs is None:
     out_asset_key, _asset_name = resolve_asset_key_and_name_for_decorator(
         key=key,
         key_prefix=key_prefix,
