@@ -132,7 +132,7 @@ fivetran_specs = load_fivetran_asset_specs(
 )
 
 
-# Alternatively, when creating assets definition for a given connector using the `@fivetran_assets` decorator
+# Alternatively, creating the AssetsDefinition for a given connector using the `@fivetran_assets` decorator
 @fivetran_assets(
     connector_id="fivetran_connector_id",
     name="fivetran_connector_id",
@@ -146,7 +146,7 @@ def fivetran_connector_assets(
     yield from fivetran.sync_and_poll(context=context)
 
 
-# Alternatively, when creating all assets definitions for the Fivetran workspace
+# Alternatively, creating a list of AssetsDefinition for the Fivetran workspace
 # using the `build_fivetran_assets_definitions` factory
 all_fivetran_assets = build_fivetran_assets_definitions(
     fivetran_workspace, dagster_fivetran_translator=MyCustomFivetranTranslator()
