@@ -55,7 +55,7 @@ def process_runs_in_queue(instance, queue: Sequence[DagsterRun]):
     """
     for run in queue:
         updated_run = instance.get_run_by_id(run.run_id)
-        if updated_run.status == DagsterRunStatus.QUEUED:
+        if updated_run.status == DagsterRunStatus.NOT_STARTED:
             launch_started_event = DagsterEvent(
                 event_type_value=DagsterEventType.PIPELINE_STARTING.value,
                 job_name=run.job_name,
