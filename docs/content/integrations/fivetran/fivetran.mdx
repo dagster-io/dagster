@@ -32,7 +32,7 @@ To load Fivetran assets into the Dagster asset graph, you must first construct a
 
 Dagster can automatically load all connector tables from your Fivetran workspace as asset specs. Call the <PyObject module="dagster_fivetran" method="load_fivetran_asset_specs" /> function, which returns list of <PyObject object="AssetSpec" />s representing your Fivetran assets. You can then include these asset specs in your <PyObject object="Definitions" /> object:
 
-```python file=/integrations/fivetran/representing-fivetran-assets.py
+```python file=/integrations/fivetran/representing_fivetran_assets.py
 from dagster_fivetran import FivetranWorkspace, load_fivetran_asset_specs
 
 import dagster as dg
@@ -53,7 +53,7 @@ defs = dg.Definitions(
 
 You can use Dagster to sync Fivetran connectors and materialize Fivetran connector tables. You can use the <PyObject module="dagster_fivetran" method="fivetran_assets" /> decorator to create the assets definition for a given connector, or the <PyObject module="dagster_fivetran" method="build_fivetran_assets_definitions" /> factory to create all assets definitions for your Fivetran workspace.
 
-```python file=/integrations/fivetran/sync-and-materialize-fivetran-assets.py
+```python file=/integrations/fivetran/sync_and_materialize_fivetran_assets.py
 from dagster_fivetran import (
     FivetranWorkspace,
     build_fivetran_assets_definitions,
@@ -96,7 +96,7 @@ defs = dg.Definitions(
 
 By default, Dagster will generate asset specs for each Fivetran asset and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_fivetran" object="DagsterFivetranTranslator" /> subclass to the <PyObject module="dagster_fivetran" method="load_fivetran_asset_specs" /> function, the <PyObject module="dagster_fivetran" method="fivetran_assets" /> decorator or the <PyObject module="dagster_fivetran" method="build_fivetran_assets_definitions" /> factory.
 
-```python file=/integrations/fivetran/customize-fivetran-asset-defs.py
+```python file=/integrations/fivetran/customize_fivetran_asset_defs.py
 from dagster_fivetran import (
     DagsterFivetranTranslator,
     FivetranConnectorTableProps,
@@ -165,7 +165,7 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 Definitions from multiple Fivetran workspaces can be combined by instantiating multiple <PyObject module="dagster_fivetran" object="FivetranWorkspace" /> resources and merging their specs. This lets you view all your Fivetran assets in a single asset graph:
 
-```python file=/integrations/fivetran/multiple-fivetran-workspaces.py
+```python file=/integrations/fivetran/multiple_fivetran_workspaces.py
 from dagster_fivetran import FivetranWorkspace, load_fivetran_asset_specs
 
 import dagster as dg
