@@ -11,7 +11,16 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Tutorial',
       collapsed: false,
-      items: ['tutorial/tutorial-etl'],
+      items: [
+        'tutorial/etl-tutorial-introduction',
+        'tutorial/create-and-materialize-assets',
+        'tutorial/create-and-materialize-a-downstream-asset',
+        'tutorial/ensuring-data-quality-with-asset-checks',
+        'tutorial/create-and-materialize-partitioned-asset',
+        'tutorial/automating-your-pipeline',
+        'tutorial/creating-a-sensor-asset',
+        'tutorial/refactoring-the-project'
+      ],
     },
     {
       type: 'category',
