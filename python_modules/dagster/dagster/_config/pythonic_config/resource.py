@@ -328,6 +328,13 @@ class ConfigurableResourceFactory(
         """
         return PartialResource(cls, data=kwargs)
 
+    @classmethod
+    def partial(cls: "Type[T_Self]", **kwargs) -> "PartialResource[T_Self]":
+        """Returns a partially initialized copy of the resource, with remaining config fields
+        set at runtime.
+        """
+        return PartialResource(cls, data=kwargs, is_partial=True)
+
     def _with_updated_values(
         self, values: Optional[Mapping[str, Any]]
     ) -> "ConfigurableResourceFactory[TResValue]":
@@ -658,8 +665,18 @@ class PartialResource(
         self,
         resource_cls: Type[ConfigurableResourceFactory[TResValue]],
         data: Dict[str, Any],
+        is_partial: bool = False,
     ):
-        resource_pointers, _data_without_resources = separate_resource_params(resource_cls, data)
+        resource_pointers, data_without_resources = separate_resource_params(resource_cls, data)
+
+        if not is_partial and data_without_resources:
+            resource_name = resource_cls.__name__
+            parameter_names = list(data_without_resources.keys())
+            raise DagsterInvalidDefinitionError(
+                f"'{resource_name}.configure_at_launch' was called but non-resource parameters"
+                f" were passed: {parameter_names}. Did you mean to call '{resource_name}.partial'"
+                " instead?"
+            )
 
         super().__init__(data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
 
@@ -672,15 +689,19 @@ class PartialResource(
             )  # So that collisions are resolved in favor of the latest provided run config
             return instantiated._get_initialize_and_run_fn()(context)  # noqa: SLF001
 
+        schema = infer_schema_from_config_class(
+            resource_cls, fields_to_omit=set(resource_pointers.keys())
+        )
+        resolved_config_dict = config_dictionary_from_values(data_without_resources, schema)
+        curried_schema = _curry_config_schema(schema, resolved_config_dict)
+
         self._state__internal__ = PartialResourceState(
             # We keep track of any resources we depend on which are not fully configured
             # so that we can retrieve them at runtime
             nested_partial_resources={
                 k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
             },
-            config_schema=infer_schema_from_config_class(
-                resource_cls, fields_to_omit=set(resource_pointers.keys())
-            ),
+            config_schema=curried_schema.as_field(),
             resource_fn=resource_fn,
             description=resource_cls.__doc__,
             nested_resources={k: v for k, v in resource_pointers.items()},
