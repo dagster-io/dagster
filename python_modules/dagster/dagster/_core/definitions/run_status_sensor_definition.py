@@ -31,11 +31,11 @@ from dagster._core.definitions.scoped_resources_builder import Resources, Scoped
 from dagster._core.definitions.sensor_definition import (
     DagsterRunReaction,
     DefaultSensorStatus,
-    RawSensorEvaluationFunctionReturn,
     RunRequest,
     SensorDefinition,
     SensorEvaluationContext,
     SensorResult,
+    SensorReturnTypesUnion,
     SensorType,
     SkipReason,
     get_context_param_name,
@@ -71,12 +71,12 @@ if TYPE_CHECKING:
     )
 
 RunStatusSensorEvaluationFunction: TypeAlias = Union[
-    Callable[..., RawSensorEvaluationFunctionReturn],
-    Callable[..., RawSensorEvaluationFunctionReturn],
+    Callable[..., SensorReturnTypesUnion],
+    Callable[..., SensorReturnTypesUnion],
 ]
 RunFailureSensorEvaluationFn: TypeAlias = Union[
-    Callable[..., RawSensorEvaluationFunctionReturn],
-    Callable[..., RawSensorEvaluationFunctionReturn],
+    Callable[..., SensorReturnTypesUnion],
+    Callable[..., SensorReturnTypesUnion],
 ]
 
 
@@ -980,7 +980,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             metadata=metadata,
         )
 
-    def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
+    def __call__(self, *args, **kwargs) -> SensorReturnTypesUnion:
         context_param_name = get_context_param_name(self._run_status_sensor_fn)
         context = get_or_create_sensor_context(
             self._run_status_sensor_fn,
