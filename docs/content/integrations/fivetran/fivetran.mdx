@@ -44,9 +44,7 @@ fivetran_workspace = FivetranWorkspace(
 )
 
 fivetran_specs = load_fivetran_asset_specs(fivetran_workspace)
-defs = dg.Definitions(
-    assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
-)
+defs = dg.Definitions(assets=fivetran_specs, resources={"fivetran": fivetran_workspace})
 ```
 
 ### Sync and materialize Fivetran assets
@@ -87,7 +85,7 @@ def fivetran_connector_assets(
 all_fivetran_assets = build_fivetran_assets_definitions(fivetran_workspace)
 
 defs = dg.Definitions(
-    assets=[*all_fivetran_assets],
+    assets=all_fivetran_assets,
     resources={"fivetran": fivetran_workspace},
 )
 ```
@@ -155,7 +153,7 @@ all_fivetran_assets = build_fivetran_assets_definitions(
 )
 
 defs = dg.Definitions(
-    assets=[*all_fivetran_assets], resources={"fivetran": fivetran_workspace}
+    assets=all_fivetran_assets, resources={"fivetran": fivetran_workspace}
 )
 ```
 
