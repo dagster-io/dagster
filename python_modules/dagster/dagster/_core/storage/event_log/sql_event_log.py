@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
@@ -2464,14 +2465,14 @@ class SqlEventLogStorage(EventLogStorage):
             ).fetchone()
             return row and cast(int, row[0]) > 0
 
-    def assign_pending_steps(self, concurrency_keys: Sequence[str]):
+    def assign_pending_steps(self, concurrency_keys: Sequence[str], step_key: Optional[str] = None):
         if not concurrency_keys:
             return
 
         with self.index_connection() as conn:
             for key in concurrency_keys:
                 row = conn.execute(
-                    db_select([PendingStepsTable.c.id])
+                    db_select([PendingStepsTable.c.id, PendingStepsTable.c.step_key])
                     .where(
                         db.and_(
                             PendingStepsTable.c.concurrency_key == key,
@@ -2485,6 +2486,7 @@ class SqlEventLogStorage(EventLogStorage):
                     .limit(1)
                 ).fetchone()
                 if row:
+                    print(time.time(), step_key, ": assigning", row[0])  # noqa
                     conn.execute(
                         PendingStepsTable.update()
                         .where(PendingStepsTable.c.id == row[0])
@@ -2724,7 +2726,7 @@ class SqlEventLogStorage(EventLogStorage):
         )
         if removed_assigned_concurrency_keys:
             # assign any pending steps that can now claim a slot
-            self.assign_pending_steps(removed_assigned_concurrency_keys)
+            self.assign_pending_steps(removed_assigned_concurrency_keys, step_key)
 
     def _free_concurrency_slots(self, run_id: str, step_key: Optional[str] = None) -> Sequence[str]:
         """Frees concurrency slots for a given run/step.
