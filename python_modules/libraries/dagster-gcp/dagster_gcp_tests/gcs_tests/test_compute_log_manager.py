@@ -329,7 +329,7 @@ def test_storage_download_url_fallback(gcs_bucket):
                 write_stream.write("hello hello")
 
             # can read bytes
-            log_data, _ = manager.log_data_for_type(log_key, ComputeIOType.STDERR, 0, None)
+            log_data, _ = manager.get_log_data_for_type(log_key, ComputeIOType.STDERR, 0, None)
             assert log_data.decode("utf-8") == "hello hello"
 
             url = manager.download_url_for_type(log_key, ComputeIOType.STDERR)
