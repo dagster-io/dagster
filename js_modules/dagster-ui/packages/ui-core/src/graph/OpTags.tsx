@@ -62,6 +62,7 @@ import gitlab from './kindtag-images/tool-gitlab-color.svg';
 import go from './kindtag-images/tool-go-color.svg';
 import google from './kindtag-images/tool-google-color.svg';
 import googlecloud from './kindtag-images/tool-googlecloud-color.svg';
+import googledrive from './kindtag-images/tool-googledrive-color.svg';
 import googlesheets from './kindtag-images/tool-googlesheets-color.svg';
 import graphql from './kindtag-images/tool-graphql-color.svg';
 import greatexpectations from './kindtag-images/tool-greatexpectations-color.svg';
@@ -247,6 +248,7 @@ export type KnownTagType =
   | 'powerbi'
   | 'gcp'
   | 'googlecloud'
+  | 'googledrive'
   | 'looker'
   | 'tableau'
   | 'segment'
@@ -577,6 +579,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   googlecloud: {
     icon: googlecloud,
     content: 'Google Cloud',
+  },
+  googledrive: {
+    icon: googledrive,
+    content: 'Google Drive',
   },
   looker: {
     icon: looker,
