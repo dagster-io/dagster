@@ -28,7 +28,7 @@ height={802}
 
 Using asset checks helps you:
 
-- Create a single place in the Dagstser UI to learn about and investigate issues in your data pipeline
+- Create a single place in the Dagster UI to learn about and investigate issues in your data pipeline
 - Ensure that data produced by your pipeline is timely and high quality by applying basic suites of tests to all assets
 - Identify problems in the source data that your pipeline depends on, such as checking data quality on source assets where dbt tests aren't possible
 - Communicate what the data produced by your pipeline is expected to look like (aka act as a data contract)
@@ -89,7 +89,7 @@ The following table lists Dagster's built-in utility methods for creating asset 
 | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | <PyObject object="build_metadata_bounds_checks" />          | Builds asset checks that pass if numeric metadata value falls within a particular range                   |
 | <PyObject object="build_column_schema_change_checks" />     | Builds asset checks that pass if an asset's columns are the same, compared with its prior materialization |
-| <PyObject object="build_last_update_freshness_checks" />    | Builds asset checks that pass if not too much time has elapsed since the latest time an asset was updated |
+| <PyObject object="build_last_update_freshness_checks" />    | Builds asset checks that pass if they were updated within a given threshold                               |
 | <PyObject object="build_time_partition_freshness_checks" /> | Builds asset checks that pass if an asset's most recent partition has been materialized before a deadline |
 
 ### Limitations
