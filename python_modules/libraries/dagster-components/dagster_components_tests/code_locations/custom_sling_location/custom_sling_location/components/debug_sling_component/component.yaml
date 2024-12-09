@@ -1,0 +1,7 @@
+type: .debug_sling_replication
+
+params:
+  sling:
+    connections:
+      - name: snowflake
+        type: snowflake

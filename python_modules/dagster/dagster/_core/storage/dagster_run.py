@@ -1,5 +1,7 @@
+import os
 from datetime import datetime
 from enum import Enum
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -24,6 +26,7 @@ from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
+    AUTO_RETRY_RUN_ID_TAG,
     AUTOMATION_CONDITION_TAG,
     BACKFILL_ID_TAG,
     PARENT_RUN_ID_TAG,
@@ -33,10 +36,12 @@ from dagster._core.storage.tags import (
     SCHEDULE_NAME_TAG,
     SENSOR_NAME_TAG,
     TICK_ID_TAG,
+    WILL_RETRY_TAG,
 )
 from dagster._core.utils import make_new_run_id
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
+from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -428,6 +433,56 @@ class DagsterRun(
     def get_parent_run_id(self) -> Optional[str]:
         return self.tags.get(PARENT_RUN_ID_TAG)
 
+    @cached_property
+    def dagster_execution_info(self) -> Mapping[str, str]:
+        """Key-value pairs encoding metadata about the current Dagster run, typically attached to external execution resources.
+
+        Remote execution environments commonly have their own concepts of tags or labels. It's useful to include
+        Dagster-specific metadata in these environments to help with debugging, monitoring, and linking remote
+        resources back to Dagster. For example, the Kubernetes Executor and Pipes client are using these tags as Kubernetes labels.
+
+        By default the tags include:
+        * dagster/run-id
+        * dagster/job
+
+        And, if available:
+        * dagster/partition
+        * dagster/code-location
+        * dagster/user
+
+        And, for Dagster+ deployments:
+        * dagster/deployment-name
+        * dagster/git-repo
+        * dagster/git-branch
+        * dagster/git-sha
+        """
+        tags = {
+            "dagster/run-id": self.run_id,
+            "dagster/job": self.job_name,
+        }
+
+        if self.remote_job_origin:
+            tags["dagster/code-location"] = (
+                self.remote_job_origin.repository_origin.code_location_origin.location_name
+            )
+
+        if user := self.tags.get("dagster/user"):
+            tags["dagster/user"] = user
+
+        if partition := self.tags.get("dagster/partition"):
+            tags["dagster/partition"] = partition
+
+        for env_var, tag in {
+            "DAGSTER_CLOUD_DEPLOYMENT_NAME": "deployment-name",
+            "DAGSTER_CLOUD_GIT_REPO": "git-repo",
+            "DAGSTER_CLOUD_GIT_BRANCH": "git-branch",
+            "DAGSTER_CLOUD_GIT_SHA": "git-sha",
+        }.items():
+            if value := os.getenv(env_var):
+                tags[f"dagster/{tag}"] = value
+
+        return tags
+
     def tags_for_storage(self) -> Mapping[str, str]:
         repository_tags = {}
         if self.remote_job_origin:
@@ -477,6 +532,24 @@ class DagsterRun(
     def is_resume_retry(self) -> bool:
         """bool: If this run was created from retrying another run from the point of failure."""
         return self.tags.get(RESUME_RETRY_TAG) == "true"
+
+    @property
+    def is_complete_and_waiting_to_retry(self):
+        """Indicates if a run is waiting to be retried by the auto-reexecution system.
+        Returns True if 1) the run is complete, 2) the run is in a failed state (therefore eligible for retry),
+        3) the run is marked as needing to be retried, and 4) the retried run has not been launched yet.
+        Otherwise returns False.
+        """
+        if self.status in NOT_FINISHED_STATUSES:
+            return False
+        if self.status != DagsterRunStatus.FAILURE:
+            return False
+        will_retry = get_boolean_tag_value(self.tags.get(WILL_RETRY_TAG), default_value=False)
+        retry_not_launched = self.tags.get(AUTO_RETRY_RUN_ID_TAG) is None
+        if will_retry:
+            return retry_not_launched
+
+        return False
 
     @property
     def previous_run_id(self) -> Optional[str]:
