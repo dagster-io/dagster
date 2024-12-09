@@ -30,6 +30,19 @@ jest.mock('../../live-data-provider/util', () => {
   };
 });
 
+jest.mock('../../live-data-provider/LiveDataScheduler', () => {
+  return {
+    LiveDataScheduler: class LiveDataScheduler {
+      scheduleStartFetchLoop(doStart: () => void) {
+        doStart();
+      }
+      scheduleStopFetchLoop(doStop: () => void) {
+        doStop();
+      }
+    },
+  };
+});
+
 function Test({
   mocks,
   hooks,
