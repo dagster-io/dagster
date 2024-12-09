@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
-from dagster import AssetKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 from dagster_graphql.schema.asset_condition_evaluations import (
@@ -13,7 +13,7 @@ from dagster_graphql.schema.asset_condition_evaluations import (
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
 )
-from dagster_graphql.schema.inputs import GrapheneAssetKeyInput
+from dagster_graphql.schema.inputs import GrapheneAssetKeyInput, GrapheneEntityKeyInput
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
@@ -67,20 +67,27 @@ def fetch_asset_condition_evaluation_record_for_partition(
     )
 
 
+def entity_key_from_graphql_input(graphene_input: GrapheneEntityKeyInput) -> EntityKey:
+    if "path" in graphene_input:
+        return AssetKey.from_graphql_input(graphene_input)
+    else:
+        return AssetCheckKey.from_graphql_input(graphene_input)
+
+
 def fetch_true_partitions_for_evaluation_node(
     graphene_info: "ResolveInfo",
-    graphene_asset_key: GrapheneAssetKeyInput,
+    graphene_asset_key: GrapheneEntityKeyInput,
     evaluation_id: int,
     node_unique_id: str,
 ) -> Sequence[str]:
-    asset_key = AssetKey.from_graphql_input(graphene_asset_key)
+    key = entity_key_from_graphql_input(graphene_asset_key)
     schedule_storage = check.not_none(graphene_info.context.instance.schedule_storage)
     record = next(
         iter(
             schedule_storage.get_auto_materialize_asset_evaluations(
                 # there is no method to get a specific evaluation by id, so instead get the first
                 # evaluation before evaluation_id + 1
-                key=asset_key,
+                key=key,
                 cursor=evaluation_id + 1,
                 limit=1,
             )
@@ -104,7 +111,7 @@ def fetch_true_partitions_for_evaluation_node(
 
 def fetch_asset_condition_evaluation_records_for_asset_key(
     graphene_info: "ResolveInfo",
-    graphene_asset_key: GrapheneAssetKeyInput,
+    graphene_asset_key: GrapheneEntityKeyInput,
     limit: int,
     cursor: Optional[str],
 ) -> GrapheneAssetConditionEvaluationRecordsOrError:
@@ -113,13 +120,13 @@ def fetch_asset_condition_evaluation_records_for_asset_key(
     if migration_error:
         return migration_error
 
-    asset_key = AssetKey.from_graphql_input(graphene_asset_key)
+    key = entity_key_from_graphql_input(graphene_asset_key)
 
     schedule_storage = check.not_none(graphene_info.context.instance.schedule_storage)
     return _get_graphene_records_from_evaluations(
         graphene_info,
         schedule_storage.get_auto_materialize_asset_evaluations(
-            key=asset_key,
+            key=key,
             limit=limit,
             cursor=int(cursor) if cursor else None,
         ),
