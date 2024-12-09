@@ -20,10 +20,9 @@ class MyCustomFivetranTranslator(DagsterFivetranTranslator):
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
         # We create the default asset spec using super()
         default_spec = super().get_asset_spec(props)
-        # We customize the metadata, asset key prefix and team owner tag for all assets
+        # We customize the metadata and asset key prefix for all assets
         return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("prefix"),
-            owners=["team:my_team"],
         ).merge_attributes(metadata={"custom": "metadata"})
 
 

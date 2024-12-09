@@ -52,11 +52,7 @@ defs = dg.Definitions(assets=fivetran_specs, resources={"fivetran": fivetran_wor
 You can use Dagster to sync Fivetran connectors and materialize Fivetran connector tables. You can use the <PyObject module="dagster_fivetran" method="build_fivetran_assets_definitions" /> factory to create all assets definitions for your Fivetran workspace.
 
 ```python file=/integrations/fivetran/sync_and_materialize_fivetran_assets.py
-from dagster_fivetran import (
-    FivetranWorkspace,
-    build_fivetran_assets_definitions,
-    fivetran_assets,
-)
+from dagster_fivetran import FivetranWorkspace, build_fivetran_assets_definitions
 
 import dagster as dg
 
@@ -66,7 +62,7 @@ fivetran_workspace = FivetranWorkspace(
     api_secret=dg.EnvVar("FIVETRAN_API_SECRET"),
 )
 
-all_fivetran_assets = build_fivetran_assets_definitions(fivetran_workspace)
+all_fivetran_assets = build_fivetran_assets_definitions(workspace=fivetran_workspace)
 
 defs = dg.Definitions(
     assets=all_fivetran_assets,
@@ -76,14 +72,10 @@ defs = dg.Definitions(
 
 ### Customize the materialization of Fivetran assets
 
-You can use the <PyObject module="dagster_fivetran" method="fivetran_assets" /> decorator to create the assets definition for a given connector. Using this approach, you can customize the code within your `@fivetran_assets`-decorated function.
+If you want to customize the sync of your connectors, you can use the <PyObject module="dagster_fivetran" method="fivetran_assets" /> decorator to do so. This allows you to execute custom code before and after the call to the fivetran sync.
 
-``` python file=/integrations/fivetran/customize_fivetran_asset_defs.py
-from dagster_fivetran import (
-    FivetranWorkspace,
-    build_fivetran_assets_definitions,
-    fivetran_assets,
-)
+```python file=/integrations/fivetran/customize_fivetran_asset_defs.py
+from dagster_fivetran import FivetranWorkspace, fivetran_assets
 
 import dagster as dg
 
@@ -105,6 +97,7 @@ def fivetran_connector_assets(
 ):
     # Do something before the materialization...
     yield from fivetran.sync_and_poll(context=context)
+    # Do something after the materialization...
 
 
 defs = dg.Definitions(
@@ -140,10 +133,9 @@ class MyCustomFivetranTranslator(DagsterFivetranTranslator):
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
         # We create the default asset spec using super()
         default_spec = super().get_asset_spec(props)
-        # We customize the metadata, asset key prefix and team owner tag for all assets
+        # We customize the metadata and asset key prefix for all assets
         return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("prefix"),
-            owners=["team:my_team"],
         ).merge_attributes(metadata={"custom": "metadata"})
 
 
@@ -156,7 +148,7 @@ defs = dg.Definitions(assets=fivetran_specs, resources={"fivetran": fivetran_wor
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
-Alternatively, you can also pass an instance of the custom <PyObject module="dagster_fivetran" object="DagsterFivetranTranslator" /> to the <PyObject module="dagster_fivetran" method="fivetran_assets" /> decorator or the <PyObject module="dagster_fivetran" method="build_fivetran_assets_definitions" /> factory.
+You can pass an instance of the custom <PyObject module="dagster_fivetran" object="DagsterFivetranTranslator" /> to the <PyObject module="dagster_fivetran" method="fivetran_assets" /> decorator or the <PyObject module="dagster_fivetran" method="build_fivetran_assets_definitions" /> factory.
 
 ### Load Fivetran assets from multiple workspaces
 

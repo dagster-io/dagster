@@ -1,8 +1,4 @@
-from dagster_fivetran import (
-    FivetranWorkspace,
-    build_fivetran_assets_definitions,
-    fivetran_assets,
-)
+from dagster_fivetran import FivetranWorkspace, fivetran_assets
 
 import dagster as dg
 
@@ -24,6 +20,7 @@ def fivetran_connector_assets(
 ):
     # Do something before the materialization...
     yield from fivetran.sync_and_poll(context=context)
+    # Do something after the materialization...
 
 
 defs = dg.Definitions(
