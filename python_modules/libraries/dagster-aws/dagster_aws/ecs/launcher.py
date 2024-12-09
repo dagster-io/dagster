@@ -19,6 +19,7 @@ from dagster import (
     StringSource,
     _check as check,
 )
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import EngineEventData
 from dagster._core.instance import T_DagsterInstance
 from dagster._core.launcher.base import (
@@ -487,8 +488,6 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         )
         command = self._get_command_args(args, context)
         image = self._get_image_for_run(context)
-        if image is None:
-            raise ValueError("Could not determine image for run")
 
         run_task_kwargs = self._run_task_kwargs(run, image, container_context)
 
@@ -649,7 +648,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         return container_context.container_name or self.container_name
 
     def _run_task_kwargs(
-        self, run: DagsterRun, image: str, container_context: EcsContainerContext
+        self, run: DagsterRun, image: Optional[str], container_context: EcsContainerContext
     ) -> Dict[str, Any]:
         """Return a dictionary of args to launch the ECS task, registering a new task
         definition if needed.
@@ -661,7 +660,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         if container_context.task_definition_arn:
             task_definition = container_context.task_definition_arn
-        else:
+        elif image is not None:
             family = self._get_run_task_definition_family(run)
 
             if self.task_definition_dict or not self.use_current_ecs_task_config:
@@ -755,6 +754,11 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             )
 
             task_definition = family
+        else:
+            # since image was not set, we cannot construct a task definition automatically
+            raise DagsterInvariantViolationError(
+                "Could not determine image to use for the run. It has to be provided in the code location: https://docs.dagster.io/concepts/code-locations/workspace-files#specifying-a-docker-image"
+            )
 
         if self.use_current_ecs_task_config:
             current_task_metadata = get_current_ecs_task_metadata()
