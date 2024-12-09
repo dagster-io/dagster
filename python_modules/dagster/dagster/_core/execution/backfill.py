@@ -22,7 +22,7 @@ from dagster._core.remote_representation.external_data import job_name_for_parti
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
-    IN_PROGRESS_RUN_STATUSES,
+    NOT_FINISHED_STATUSES,
     RunsFilter,
 )
 from dagster._core.storage.tags import BACKFILL_ID_TAG, USER_TAG
@@ -558,7 +558,7 @@ def cancel_backfill_runs_and_cancellation_complete(
         run_waiting_to_cancel = instance.get_run_ids(
             RunsFilter(
                 tags={BACKFILL_ID_TAG: backfill_id},
-                statuses=IN_PROGRESS_RUN_STATUSES,
+                statuses=NOT_FINISHED_STATUSES,
             ),
             limit=1,
         )
