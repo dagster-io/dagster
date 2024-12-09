@@ -54,6 +54,9 @@ def scan_parquet(path: "UPath", context: InputContext) -> pl.LazyFrame:
         (path.storage_options if hasattr(path, "storage_options") else None),
     )
 
+    if storage_options == {}:
+        storage_options = None
+
     kwargs = dict(
         n_rows=context_metadata.get("n_rows", None),
         cache=context_metadata.get("cache", True),
