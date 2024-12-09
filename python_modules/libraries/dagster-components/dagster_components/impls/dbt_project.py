@@ -10,7 +10,6 @@ from dagster._utils import pushd
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
 from dagster_embedded_elt.sling.resources import AssetExecutionContext
 from dbt.cli.main import dbtRunner
-from jinja2 import Template
 from pydantic import BaseModel, Field, TypeAdapter
 from typing_extensions import Self
 
@@ -18,6 +17,7 @@ from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import component
 from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
 from dagster_components.core.dsl_schema import OpSpecBaseModel
+from dagster_components.core.templated_param_resolver import TemplatedParamResolver
 
 
 class DbtNodeTranslatorParams(BaseModel):
@@ -50,20 +50,26 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
         translator_params: Optional[DbtNodeTranslatorParams] = None,
     ):
         self.translator_params = translator_params
+        # TODO thread from above
+        self.param_resolver = TemplatedParamResolver({})
 
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         if not self.translator_params or not self.translator_params.key:
             return super().get_asset_key(dbt_resource_props)
 
         return AssetKey.from_user_string(
-            Template(self.translator_params.key).render(node=dbt_resource_props)
+            self.param_resolver.resolve_with_kwargs(
+                self.translator_params.key, node=dbt_resource_props
+            )
         )
 
     def get_group_name(self, dbt_resource_props) -> Optional[str]:
         if not self.translator_params or not self.translator_params.group:
             return super().get_group_name(dbt_resource_props)
 
-        return Template(self.translator_params.group).render(node=dbt_resource_props)
+        return self.param_resolver.resolve_with_kwargs(
+            self.translator_params.group, node=dbt_resource_props
+        )
 
 
 @component(name="dbt_project")
