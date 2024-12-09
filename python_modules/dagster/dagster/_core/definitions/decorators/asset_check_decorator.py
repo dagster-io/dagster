@@ -246,12 +246,12 @@ def asset_check(
             named_ins_by_asset_key=named_in_by_asset_key,
             named_outs_by_asset_key={},
             internal_deps={},
-            op_name=spec.get_python_identifier(),
+            node_name=spec.get_python_identifier(),
             args=builder_args,
             fn=fn,
         )
 
-        op_def = builder.create_op_definition()
+        op_def = builder.create_node_definition()
 
         return AssetChecksDefinition.create(
             keys_by_input_name={

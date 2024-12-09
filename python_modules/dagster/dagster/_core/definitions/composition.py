@@ -938,10 +938,10 @@ def do_composition(
         fn_name=graph_name,
         compute_fn=compute_fn,
         explicit_input_defs=provided_input_defs,
-        exclude_nothing=False,
+        exclude_nothing=True,
     )
 
-    kwargs = {input_def.name: InputMappingNode(input_def) for input_def in actual_input_defs}
+    kwargs = {input_def.name: InputMappingNode(input_def) for input_def in actual_input_defs if not input_def.dagster_type.is_nothing}
 
     output = None
     returned_mapping = None
@@ -963,6 +963,7 @@ def do_composition(
         f'"{context.name}" expected "{graph_name}"',
     )
 
+    node_defs = context.node_defs
     # line up mappings in definition order
     input_mappings = []
     for defn in actual_input_defs:
@@ -971,10 +972,10 @@ def do_composition(
         ]
 
         if len(mappings) == 0:
-            raise DagsterInvalidDefinitionError(
-                f"{decorator_name} '{graph_name}' has unmapped input '{defn.name}'. "
-                "Remove it or pass it to the appropriate op/graph invocation."
-            )
+            # If there are no mappings, we need to add nothing inputs to every internal node def.
+            node_defs = [
+                node_def.add_nothing_input_def(defn.name) for node_def in node_defs
+            ]
 
         input_mappings += mappings
 

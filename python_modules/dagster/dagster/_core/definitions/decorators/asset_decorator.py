@@ -767,6 +767,7 @@ def graph_asset(
     code_version: Optional[str] = None,
     key: Optional[CoercibleToAssetKey] = None,
     kinds: Optional[AbstractSet[str]] = None,
+    specs: Optional[Sequence[AssetSpec]] = None,
     **kwargs,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Creates a software-defined asset that's computed using a graph of ops.
@@ -861,6 +862,7 @@ def graph_asset(
             code_version=code_version,
             key=key,
             kinds=kinds,
+            specs=specs,
         )
     else:
         return graph_asset_no_defaults(
@@ -885,6 +887,7 @@ def graph_asset(
             code_version=code_version,
             key=key,
             kinds=kinds,
+            specs=specs,
         )
 
 
@@ -909,9 +912,11 @@ def graph_asset_no_defaults(
     code_version: Optional[str],
     key: Optional[CoercibleToAssetKey],
     kinds: Optional[AbstractSet[str]],
+    specs: Optional[Sequence[AssetSpec]],
 ) -> AssetsDefinition:
     ins = ins or {}
     named_ins = build_named_ins(compose_fn, ins or {}, set())
+    if specs is None:
     out_asset_key, _asset_name = resolve_asset_key_and_name_for_decorator(
         key=key,
         key_prefix=key_prefix,
@@ -987,6 +992,7 @@ def graph_multi_asset(
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    asset_specs: Optional[Sequence[AssetSpec]] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same graph of

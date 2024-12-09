@@ -85,6 +85,9 @@ class NodeDefinition(NamedConfigurableDefinition):
     def describe_node(self) -> str:
         return f"{self.node_type_str} '{self.name}'"
 
+    @abstractmethod
+    def add_nothing_input_def(self, name: str) -> "NodeDefinition": ...
+
     @property
     def description(self) -> Optional[str]:
         return self._description

@@ -250,13 +250,13 @@ class DecoratorAssetsDefinitionBuilder:
         named_ins_by_asset_key: Mapping[AssetKey, NamedIn],
         named_outs_by_asset_key: Mapping[AssetKey, NamedOut],
         internal_deps: Mapping[AssetKey, Set[AssetKey]],
-        op_name: str,
+        node_name: str,
         args: DecoratorAssetsDefinitionBuilderArgs,
         fn: Callable[..., Any],
     ) -> None:
         self.named_outs_by_asset_key = named_outs_by_asset_key
         self.internal_deps = internal_deps
-        self.op_name = op_name
+        self.node_name = node_name
         self.args = args
         self.fn = fn
 
@@ -385,7 +385,7 @@ class DecoratorAssetsDefinitionBuilder:
             named_ins_by_asset_key=named_ins_by_asset_key,
             named_outs_by_asset_key=named_outs_by_asset_key,
             internal_deps=internal_deps,
-            op_name=op_name,
+            node_name=op_name,
             args=passed_args,
             fn=fn,
         )
@@ -452,7 +452,7 @@ class DecoratorAssetsDefinitionBuilder:
             named_ins_by_asset_key=named_ins_by_asset_key,
             named_outs_by_asset_key=named_outs_by_asset_key,
             internal_deps=internal_deps,
-            op_name=op_name,
+            node_name=op_name,
             args=passed_args,
             fn=fn,
         )
@@ -530,7 +530,7 @@ class DecoratorAssetsDefinitionBuilder:
         return get_partition_mappings_from_deps(
             partition_mappings=partition_mappings,
             deps=self.args.upstream_asset_deps,
-            asset_name=self.op_name,
+            asset_name=self.node_name,
         )
 
     @cached_property
@@ -542,9 +542,9 @@ class DecoratorAssetsDefinitionBuilder:
             decorator_name=self.args.decorator_name,
         )
 
-    def create_op_definition(self) -> OpDefinition:
+    def create_node_definition(self) -> OpDefinition:
         return _Op(
-            name=self.op_name,
+            name=self.node_name,
             description=self.args.op_description,
             ins=self.ins_by_input_names,
             out=self.combined_outs_by_output_name,
@@ -562,7 +562,7 @@ class DecoratorAssetsDefinitionBuilder:
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=self.asset_keys_by_input_names,
             keys_by_output_name=self.asset_keys_by_output_name,
-            node_def=self.create_op_definition(),
+            node_def=self.create_node_definition(),
             partitions_def=self.args.partitions_def,
             can_subset=self.args.can_subset,
             resource_defs=self.args.assets_def_resource_defs,
