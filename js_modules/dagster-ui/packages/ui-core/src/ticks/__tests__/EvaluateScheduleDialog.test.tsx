@@ -61,6 +61,9 @@ describe('EvaluateScheduleTest', () => {
       expect(screen.getByTestId('tick-5')).toBeVisible();
     });
     await userEvent.click(screen.getByTestId('tick-5'));
+    await waitFor(() => {
+      expect(screen.getByTestId('evaluate')).not.toBeDisabled();
+    });
     await userEvent.click(screen.getByTestId('evaluate'));
     await waitFor(() => {
       expect(screen.getByText('Failed')).toBeVisible();

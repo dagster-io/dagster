@@ -25,23 +25,26 @@ export function useLaunchMultipleRunsWithTelemetry() {
 
   return useCallback(
     async (variables: LaunchMultipleRunsMutationVariables, behavior: LaunchBehavior) => {
-      const executionParamsList = Array.isArray(variables.executionParamsList)
-        ? variables.executionParamsList
-        : [variables.executionParamsList];
-      const jobNames = executionParamsList.map((params) => params.selector?.jobName);
-
-      if (jobNames.length !== executionParamsList.length || jobNames.includes(undefined)) {
-        return;
-      }
-
-      const metadata: {[key: string]: string | string[] | null | undefined} = {
-        jobNames: jobNames.filter((name): name is string => name !== undefined),
-        opSelection: undefined,
-      };
-
-      let result;
       try {
-        result = (await launchMultipleRuns({variables})).data?.launchMultipleRuns;
+        const executionParamsList = Array.isArray(variables.executionParamsList)
+          ? variables.executionParamsList
+          : [variables.executionParamsList];
+        const jobNames = executionParamsList.map((params) => params.selector?.jobName);
+
+        if (
+          jobNames.length !== executionParamsList.length ||
+          jobNames.includes(undefined) ||
+          jobNames.includes(null)
+        ) {
+          throw new Error('Invalid job names');
+        }
+
+        const metadata: {[key: string]: string | string[] | null | undefined} = {
+          jobNames: jobNames.filter((name): name is string => name !== undefined),
+          opSelection: undefined,
+        };
+
+        const result = (await launchMultipleRuns({variables})).data?.launchMultipleRuns;
         if (result) {
           handleLaunchMultipleResult(result, history, {behavior});
           logTelemetry(
