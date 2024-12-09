@@ -14,10 +14,10 @@ import {
   NonIdealState,
   Popover,
   Spinner,
-  StyledRawCodeMirror,
   Subheading,
   Table,
 } from '@dagster-io/ui-components';
+import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import qs from 'qs';
 import {memo, useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
