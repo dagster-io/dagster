@@ -1,3 +1,4 @@
+import {LiveDataScheduler} from './LiveDataScheduler';
 import {LiveDataThreadManager} from './LiveDataThreadManager';
 import {BATCH_PARALLEL_FETCHES, BATCH_SIZE, threadIDToLimits} from './util';
 
@@ -19,6 +20,8 @@ export class LiveDataThread<T> {
     return {};
   }
 
+  private _scheduler: LiveDataScheduler<T>;
+
   constructor(
     id: string,
     manager: LiveDataThreadManager<T>,
@@ -33,6 +36,7 @@ export class LiveDataThread<T> {
     this.listenersCount = {};
     this.manager = manager;
     this.intervals = [];
+    this._scheduler = new LiveDataScheduler(this);
   }
 
   public setPollRate(pollRate: number) {
@@ -53,9 +57,7 @@ export class LiveDataThread<T> {
     if (this.listenersCount[key] === 0) {
       delete this.listenersCount[key];
     }
-    if (this.getObservedKeys().length === 0) {
-      this.stopFetchLoop();
-    }
+    this.stopFetchLoop(false);
   }
 
   public getObservedKeys() {
@@ -63,19 +65,25 @@ export class LiveDataThread<T> {
   }
 
   public startFetchLoop() {
-    if (this.activeFetches !== this.parallelFetches) {
-      requestAnimationFrame(this._batchedQueryKeys);
-    }
-    if (this.intervals.length !== this.parallelFetches) {
-      this.intervals.push(setInterval(this._batchedQueryKeys, 5000));
-    }
+    this._scheduler.scheduleStartFetchLoop(() => {
+      if (this.activeFetches !== this.parallelFetches) {
+        requestAnimationFrame(this._batchedQueryKeys);
+      }
+      if (this.intervals.length !== this.parallelFetches) {
+        this.intervals.push(setInterval(this._batchedQueryKeys, 5000));
+      }
+    });
   }
 
-  public stopFetchLoop() {
-    this.intervals.forEach((id) => {
-      clearInterval(id);
+  public stopFetchLoop(force: boolean) {
+    this._scheduler.scheduleStopFetchLoop(() => {
+      if (force || this.getObservedKeys().length === 0) {
+        this.intervals.forEach((id) => {
+          clearInterval(id);
+        });
+        this.intervals = [];
+      }
     });
-    this.intervals = [];
   }
 
   private _batchedQueryKeys = async () => {

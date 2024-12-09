@@ -12,8 +12,6 @@ export function generateObjectHashStream(
   obj: any,
   replacer?: (key: string, value: any) => any,
 ): string {
-  console.time('generateObjectHash');
-  console.log('generateObjectHash', obj);
   const hash = new SparkMD5.ArrayBuffer();
   const encoder = new TextEncoder();
 
