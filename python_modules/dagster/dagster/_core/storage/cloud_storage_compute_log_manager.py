@@ -5,12 +5,11 @@ import time
 from abc import abstractmethod
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import IO, Iterator, Optional, Sequence
+from typing import IO, Iterator, Optional, Sequence, Tuple
 
 from dagster._core.instance import T_DagsterInstance
 from dagster._core.storage.compute_log_manager import (
     CapturedLogContext,
-    CapturedLogData,
     CapturedLogMetadata,
     CapturedLogSubscription,
     ComputeIOType,
@@ -95,9 +94,13 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
         # check remote storage
         return self.cloud_storage_has_logs(log_key, ComputeIOType.STDERR)
 
-    def log_data_for_type(
-        self, log_key: Sequence[str], io_type: ComputeIOType, offset: int, max_bytes: Optional[int]
-    ):
+    def get_log_data_for_type(
+        self,
+        log_key: Sequence[str],
+        io_type: ComputeIOType,
+        offset: int,
+        max_bytes: Optional[int],
+    ) -> Tuple[Optional[bytes], int]:
         if self.has_local_file(log_key, io_type):
             local_path = self.local_manager.get_captured_local_path(
                 log_key, IO_TYPE_EXTENSION[io_type]
@@ -117,26 +120,6 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
             return self.local_manager.read_path(local_path, offset=offset, max_bytes=max_bytes)
 
         return None, offset
-
-    def get_log_data(
-        self,
-        log_key: Sequence[str],
-        cursor: Optional[str] = None,
-        max_bytes: Optional[int] = None,
-    ) -> CapturedLogData:
-        stdout_offset, stderr_offset = self.local_manager.parse_cursor(cursor)
-        stdout, new_stdout_offset = self.log_data_for_type(
-            log_key, ComputeIOType.STDOUT, stdout_offset, max_bytes
-        )
-        stderr, new_stderr_offset = self.log_data_for_type(
-            log_key, ComputeIOType.STDERR, stderr_offset, max_bytes
-        )
-        return CapturedLogData(
-            log_key=log_key,
-            stdout=stdout,
-            stderr=stderr,
-            cursor=self.local_manager.build_cursor(new_stdout_offset, new_stderr_offset),
-        )
 
     def get_log_metadata(self, log_key: Sequence[str]) -> CapturedLogMetadata:
         return CapturedLogMetadata(
