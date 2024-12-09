@@ -1,6 +1,7 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {MemoryRouter, useHistory} from 'react-router-dom';
 
 import {Resolvers} from '../../apollo-client';
 import {EvaluateScheduleDialog} from '../EvaluateScheduleDialog';
@@ -9,6 +10,7 @@ import {
   ScheduleDryRunMutationError,
   ScheduleDryRunMutationRunRequests,
   ScheduleDryRunMutationSkipped,
+  ScheduleLaunchAllMutation,
 } from '../__fixtures__/EvaluateScheduleDialog.fixtures';
 
 // This component is unit tested separately so mocking it out
@@ -17,6 +19,12 @@ jest.mock('../DryRunRequestTable', () => {
     RunRequestTable: () => <div />,
   };
 });
+
+// Mocking useHistory
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useHistory: jest.fn(),
+}));
 
 const onCloseMock = jest.fn();
 
@@ -82,6 +90,66 @@ describe('EvaluateScheduleTest', () => {
     await userEvent.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText('Skipped')).toBeVisible();
+    });
+  });
+
+  it('allows you to test again', async () => {
+    render(<Test mocks={[GetScheduleQueryMock, ScheduleDryRunMutationSkipped]} />);
+    const selectButton = await screen.findByTestId('tick-selection');
+    await userEvent.click(selectButton);
+    await waitFor(() => {
+      expect(screen.getByTestId('tick-5')).toBeVisible();
+    });
+    await userEvent.click(screen.getByTestId('tick-5'));
+    await userEvent.click(screen.getByTestId('continue'));
+    await waitFor(() => {
+      expect(screen.getByText('Skipped')).toBeVisible();
+    });
+    await userEvent.click(screen.getByTestId('try-again'));
+    expect(screen.queryByText('Failed')).toBe(null);
+    expect(screen.queryByText('Skipped')).toBe(null);
+  });
+
+  it('launches all runs', async () => {
+    const pushSpy = jest.fn();
+    const createHrefSpy = jest.fn();
+
+    (useHistory as jest.Mock).mockReturnValue({
+      push: pushSpy,
+      createHref: createHrefSpy,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/automation']}>
+        <Test
+          mocks={[
+            GetScheduleQueryMock,
+            ScheduleDryRunMutationRunRequests,
+            ScheduleLaunchAllMutation,
+          ]}
+        />
+      </MemoryRouter>,
+    );
+    const selectButton = await screen.findByTestId('tick-selection');
+    await userEvent.click(selectButton);
+    await waitFor(() => {
+      expect(screen.getByTestId('tick-5')).toBeVisible();
+    });
+    await userEvent.click(screen.getByTestId('tick-5'));
+    await userEvent.click(screen.getByTestId('continue'));
+    await waitFor(() => {
+      expect(screen.getByText(/1\s+run request/i)).toBeVisible();
+      expect(screen.getByTestId('launch-all')).not.toBeDisabled();
+    });
+
+    userEvent.click(screen.getByTestId('launch-all'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Launching runs/i)).toBeVisible();
+    });
+
+    await waitFor(() => {
+      expect(pushSpy).toHaveBeenCalled();
     });
   });
 });

@@ -1,6 +1,7 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {MemoryRouter, useHistory} from 'react-router-dom';
 
 import {Resolvers} from '../../apollo-client';
 import {SensorDryRunDialog} from '../SensorDryRunDialog';
@@ -12,6 +13,12 @@ jest.mock('../DryRunRequestTable', () => {
     RunRequestTable: () => <div />,
   };
 });
+
+// Mocking useHistory
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useHistory: jest.fn(),
+}));
 
 const onCloseMock = jest.fn();
 
@@ -57,6 +64,16 @@ describe('SensorDryRunTest', () => {
     });
   });
 
+  it('renders skip reason', async () => {
+    render(<Test mocks={[Mocks.SensorDryRunMutationSkipped]} />);
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await userEvent.type(cursorInput, 'testing123');
+    await userEvent.click(screen.getByTestId('continue'));
+    await waitFor(() => {
+      expect(screen.getByText('Skipped')).toBeVisible();
+    });
+  });
+
   it('allows you to test again', async () => {
     render(<Test mocks={[Mocks.SensorDryRunMutationError]} />);
     const cursorInput = await screen.findByTestId('cursor-input');
@@ -72,13 +89,47 @@ describe('SensorDryRunTest', () => {
     expect(screen.getByTestId('cursor-input')).toBeVisible();
   });
 
-  it('renders skip reason', async () => {
-    render(<Test mocks={[Mocks.SensorDryRunMutationSkipped]} />);
+  it('launches all runs', async () => {
+    const pushSpy = jest.fn();
+    const createHrefSpy = jest.fn();
+
+    (useHistory as jest.Mock).mockReturnValue({
+      push: pushSpy,
+      createHref: createHrefSpy,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/automation']}>
+        <Test
+          mocks={[
+            Mocks.SensorDryRunMutationRunRequests,
+            Mocks.PersistCursorValueMock,
+            Mocks.SensorLaunchAllMutation,
+          ]}
+        />
+      </MemoryRouter>,
+    );
     const cursorInput = await screen.findByTestId('cursor-input');
     await userEvent.type(cursorInput, 'testing123');
     await userEvent.click(screen.getByTestId('continue'));
     await waitFor(() => {
-      expect(screen.getByText('Skipped')).toBeVisible();
+      expect(screen.getByText(/3\srun requests/g)).toBeVisible();
+      expect(screen.queryByText('Skipped')).toBe(null);
+      expect(screen.queryByText('Failed')).toBe(null);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('launch-all')).not.toBeDisabled();
+    });
+
+    userEvent.click(screen.getByTestId('launch-all'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Launching runs/i)).toBeVisible();
+    });
+
+    await waitFor(() => {
+      expect(pushSpy).toHaveBeenCalled();
     });
   });
 });
