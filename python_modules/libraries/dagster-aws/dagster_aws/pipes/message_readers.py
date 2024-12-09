@@ -4,7 +4,6 @@ import os
 import random
 import string
 import sys
-import time
 from contextlib import contextmanager
 from datetime import datetime
 from threading import Event, Thread
@@ -38,6 +37,7 @@ from dagster._core.pipes.utils import (
     extract_message_or_forward_to_stdout,
     forward_only_logs_to_file,
 )
+from dagster._utils.backoff import backoff
 from dagster_pipes import PipesBlobStoreMessageWriter, PipesDefaultMessageWriter
 
 if TYPE_CHECKING:
@@ -217,21 +217,13 @@ class PipesLambdaLogsMessageReader(PipesMessageReader):
         )
 
 
-def get_log_events(client: "CloudWatchLogsClient", attempts: Optional[int] = None, **log_params):
-    sleep = 1
-    attempts = attempts or 10
-    num_attempts = 0
-    while True:
-        try:
-            response = client.get_log_events(**log_params)
-            return response
-        except client.exceptions.ThrottlingException:
-            if num_attempts >= attempts:
-                raise
-            time.sleep(sleep)
-            num_attempts += 1
-            sleep *= 2  # Double the sleep time (exponential backoff)
-            sleep += random.uniform(0, 1)  # Add jitter
+def get_log_events(client: "CloudWatchLogsClient", **log_params):
+    return backoff(
+        fn=client.get_log_events,
+        kwargs=log_params,
+        retry_on=(client.exceptions.ThrottlingException,),
+        max_retries=5,
+    )
 
 
 def tail_cloudwatch_events(
@@ -297,10 +289,10 @@ class PipesCloudWatchLogReader(PipesLogReader):
                     logStreamNamePrefix=log_stream,
                 )
 
-                if not resp.get("logStreams", []):
+                if resp.get("logStreams", []):
+                    return True
+                else:
                     return False
-
-                return True
             except self.client.exceptions.ResourceNotFoundException:
                 return False
         else:
@@ -384,10 +376,10 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
                     logStreamNamePrefix=self.log_stream,
                 )
 
-                if not resp.get("logStreams", []):
+                if resp.get("logStreams", []):
+                    return True
+                else:
                     return False
-
-                return True
             except self.client.exceptions.ResourceNotFoundException:
                 return False
         else:
