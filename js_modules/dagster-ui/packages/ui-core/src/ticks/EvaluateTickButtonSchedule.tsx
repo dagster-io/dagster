@@ -27,7 +27,6 @@ export const EvaluateTickButtonSchedule = ({
         Evaluate tick
       </Button>
       <EvaluateScheduleDialog
-        key={showTestTickDialog ? '1' : '0'} // change key to reset dialog state
         isOpen={showTestTickDialog}
         onClose={() => {
           setShowTestTickDialog(false);
