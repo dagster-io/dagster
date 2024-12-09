@@ -1,12 +1,11 @@
 import os
-import textwrap
 from pathlib import Path
-from typing import Any, Optional, Type
+from typing import Any, Type
 
 import click
 import yaml
 from dagster._generate.generate import generate_project
-from dagster._utils import camelcase, pushd
+from dagster._utils import pushd
 
 from dagster_components.core.component import Component, get_component_name
 
@@ -17,55 +16,6 @@ class ComponentDumper(yaml.Dumper):
         if self.indent == 0:
             super().write_line_break()
         super().write_line_break()
-
-
-def generate_deployment(path: str) -> None:
-    click.echo(f"Creating a Dagster deployment at {path}.")
-
-    generate_project(
-        path=path,
-        name_placeholder="DEPLOYMENT_NAME_PLACEHOLDER",
-        templates_path=os.path.join(
-            os.path.dirname(__file__), "templates", "DEPLOYMENT_NAME_PLACEHOLDER"
-        ),
-    )
-
-
-def generate_code_location(path: str, editable_dagster_root: Optional[str] = None) -> None:
-    click.echo(f"Creating a Dagster code location at {path}.")
-
-    if editable_dagster_root:
-        uv_sources = textwrap.dedent(f"""
-        [tool.uv.sources]
-        dagster = {{ path = "{editable_dagster_root}/python_modules/dagster", editable = true }}
-        dagster-components = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-components", editable = true }}
-        dagster-pipes = {{ path = "{editable_dagster_root}/python_modules/dagster-pipes", editable = true }}
-        dagster-webserver = {{ path = "{editable_dagster_root}/python_modules/dagster-webserver", editable = true }}
-        """)
-    else:
-        uv_sources = ""
-
-    generate_project(
-        path=path,
-        name_placeholder="CODE_LOCATION_NAME_PLACEHOLDER",
-        templates_path=os.path.join(
-            os.path.dirname(__file__), "templates", "CODE_LOCATION_NAME_PLACEHOLDER"
-        ),
-        uv_sources=uv_sources,
-    )
-
-
-def generate_component_type(root_path: str, name: str) -> None:
-    click.echo(f"Creating a Dagster component type at {root_path}/{name}.py.")
-
-    generate_project(
-        path=root_path,
-        name_placeholder="COMPONENT_TYPE_NAME_PLACEHOLDER",
-        templates_path=os.path.join(os.path.dirname(__file__), "templates", "COMPONENT_TYPE"),
-        project_name=name,
-        component_type_class_name=camelcase(name),
-        component_type=name,
-    )
 
 
 def generate_component_instance(
