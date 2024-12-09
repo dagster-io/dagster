@@ -1,10 +1,7 @@
 ---
 title: 'Azure Active Directory'
 displayed_sidebar: 'dagsterPlus'
-unlisted: true
-sidebar_position: 200
+sidebar_position: 300
 ---
 
-# Azure Active Directory
-
-See the [Dagster Cloud provisioning tutorial](https://learn.microsoft.com/en-us/azure/active-directory/saas-apps/dagster-cloud-provisioning-tutorial).
+See the [Microsoft Dagster Cloud provisioning tutorial](https://learn.microsoft.com/en-us/azure/active-directory/saas-apps/dagster-cloud-provisioning-tutorial).

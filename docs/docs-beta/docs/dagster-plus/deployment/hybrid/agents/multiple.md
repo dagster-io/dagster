@@ -1,8 +1,7 @@
 ---
-title: "Using multiple agents"
-displayed_sidebar: "dagsterPlus"
-sidebar_position: 400
-unlisted: true
+title: Running multiple agents
+sidebar_position: 50
+sidebar_label: Multiple agents
 ---
 
-# Use multiple agents with Dagster+
+TK
