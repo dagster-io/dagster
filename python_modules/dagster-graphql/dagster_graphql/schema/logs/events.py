@@ -635,8 +635,12 @@ class GrapheneRunStepStats(graphene.ObjectType):
             status=stats.status.value,
             startTime=stats.start_time,
             endTime=stats.end_time,
-            materializations=stats.materialization_events,
-            expectationResults=stats.expectation_results,
+            materializations=[
+                GrapheneMaterializationEvent(event) for event in stats.materialization_events
+            ],
+            expectationResults=[
+                GrapheneExpectationResult(event) for event in stats.expectation_results
+            ],
             attempts=[
                 GrapheneRunMarker(startTime=attempt.start_time, endTime=attempt.end_time)
                 for attempt in stats.attempts_list
