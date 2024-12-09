@@ -1,4 +1,4 @@
-from dagster import AssetDep, Definitions, asset
+from dagster import AssetDep, Definitions, IdentityPartitionMapping, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -25,6 +25,46 @@ def test_basic_construction_and_identity() -> None:
     assert asset_graph_view_t0._instance is instance  # noqa: SLF001
 
     assert asset_graph_view_t0.asset_graph.get_all_asset_keys() == {an_asset.key}
+
+
+def test_upstream_non_existent_partitions():
+    xy = StaticPartitionsDefinition(["x", "y"])
+    zx = StaticPartitionsDefinition(["z", "x"])
+
+    @asset(partitions_def=xy)
+    def up_asset() -> None: ...
+
+    @asset(
+        deps=[AssetDep(up_asset, partition_mapping=IdentityPartitionMapping())],
+        partitions_def=zx,
+    )
+    def down_asset(): ...
+
+    defs = Definitions([up_asset, down_asset])
+
+    with DagsterInstance.ephemeral() as instance:
+        asset_graph_view = AssetGraphView.for_test(defs, instance)
+        down_subset = asset_graph_view.get_full_subset(key=down_asset.key)
+        assert down_subset.expensively_compute_partition_keys() == {"x", "z"}
+
+        parent_subset, required_but_nonexistent_partition_keys = (
+            asset_graph_view.compute_parent_subset_and_required_but_nonexistent_partition_keys(
+                parent_key=up_asset.key, subset=down_subset
+            )
+        )
+
+        assert parent_subset.expensively_compute_partition_keys() == {"x"}
+        assert required_but_nonexistent_partition_keys == ["z"]
+
+        # Mapping onto an empty subset is empty
+        empty_down_subset = asset_graph_view.get_empty_subset(key=down_asset.key)
+        parent_subset, required_but_nonexistent_partition_keys = (
+            asset_graph_view.compute_parent_subset_and_required_but_nonexistent_partition_keys(
+                parent_key=up_asset.key, subset=empty_down_subset
+            )
+        )
+        assert parent_subset.is_empty
+        assert required_but_nonexistent_partition_keys == []
 
 
 def test_subset_traversal_static_partitions() -> None:
@@ -131,6 +171,43 @@ def test_only_partition_keys() -> None:
     ).compute_intersection_with_partition_keys({"3"}).expensively_compute_partition_keys() == set(
         ["3"]
     )
+
+
+def test_downstream_of_unpartitioned_partition_mapping() -> None:
+    @asset
+    def unpartitioned() -> None: ...
+
+    @asset(
+        partitions_def=StaticPartitionsDefinition(["a", "b", "c"]),
+        deps=[AssetDep(unpartitioned, partition_mapping=LastPartitionMapping())],
+    )
+    def downstream() -> None: ...
+
+    defs = Definitions([downstream, unpartitioned])
+    instance = DagsterInstance.ephemeral()
+    asset_graph_view = AssetGraphView.for_test(defs, instance)
+
+    unpartitioned_full = asset_graph_view.get_full_subset(key=unpartitioned.key)
+    unpartitioned_empty = asset_graph_view.get_empty_subset(key=unpartitioned.key)
+
+    downstream_full = asset_graph_view.get_full_subset(key=downstream.key)
+    downstream_empty = asset_graph_view.get_empty_subset(key=downstream.key)
+
+    assert unpartitioned_full.compute_child_subset(child_key=downstream.key) == downstream_full
+    assert unpartitioned_empty.compute_child_subset(child_key=downstream.key) == downstream_empty
+
+    assert downstream_full.compute_parent_subset(parent_key=unpartitioned.key) == unpartitioned_full
+    assert (
+        downstream_empty.compute_parent_subset(parent_key=unpartitioned.key) == unpartitioned_empty
+    )
+
+    assert asset_graph_view.compute_parent_subset_and_required_but_nonexistent_partition_keys(
+        parent_key=unpartitioned.key, subset=downstream_full
+    ) == (unpartitioned_full, [])
+
+    assert asset_graph_view.compute_parent_subset_and_required_but_nonexistent_partition_keys(
+        parent_key=unpartitioned.key, subset=downstream_empty
+    ) == (unpartitioned_empty, [])
 
 
 def test_upstream_of_unpartitioned_partition_mapping() -> None:
