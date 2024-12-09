@@ -9,26 +9,28 @@ export class LiveDataScheduler<T> {
   constructor(thread: LiveDataThread<T>) {
     this.thread = thread;
   }
-  private _started = new WeakSet();
-  private _stopped = new WeakSet();
+  private _starting = false;
+  private _stopping = false;
 
   public scheduleStartFetchLoop(doStart: () => void) {
-    if (this._started.has(this.thread)) {
+    if (this._starting) {
       return;
     }
+    this._starting = true;
     setTimeout(() => {
       doStart();
-      this._stopped.delete(this.thread);
+      this._starting = false;
     }, 50);
   }
 
   public scheduleStopFetchLoop(doStop: () => void) {
-    if (this._stopped.has(this.thread)) {
+    if (this._stopping) {
       return;
     }
+    this._stopping = true;
     setTimeout(() => {
       doStop();
-      this._stopped.delete(this.thread);
+      this._stopping = false;
     }, 50);
   }
 }
