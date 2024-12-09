@@ -105,6 +105,29 @@ def lineage_warn_fixture(responses: aioresponses) -> None:
         )
 
 
+@pytest.fixture(name="sigma_materialization")
+def sigma_materialization_fixture(responses: aioresponses) -> None:
+    # Trigger materialization, check status, check status again
+    request_responses.add(
+        method=request_responses.POST,
+        url=f"{SigmaBaseUrl.AWS_US.value}/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/materializations",
+        status=200,
+        body=json.dumps({"materializationId": "foobar"}),
+    )
+    request_responses.add(
+        method=request_responses.GET,
+        url=f"{SigmaBaseUrl.AWS_US.value}/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/materializations/foobar",
+        status=200,
+        body=json.dumps({"materializationId": "foobar", "status": "pending"}),
+    )
+    request_responses.add(
+        method=request_responses.GET,
+        url=f"{SigmaBaseUrl.AWS_US.value}/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/materializations/foobar",
+        status=200,
+        body=json.dumps({"materializationId": "foobar", "status": "ready"}),
+    )
+
+
 @pytest.fixture(name="sigma_sample_data")
 def sigma_sample_data_fixture(responses: aioresponses) -> None:
     # Single workbook, dataset

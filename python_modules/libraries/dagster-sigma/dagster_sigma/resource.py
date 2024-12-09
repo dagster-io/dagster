@@ -350,7 +350,7 @@ class SigmaOrganization(ConfigurableResource):
         for more information.
         """
         workbook_id = check.not_none(workbook_spec.metadata.get("dagster_sigma/workbook_id"))
-        materialization_schedules = check.is_dict(
+        materialization_schedules = check.is_list(
             cast(
                 JsonMetadataValue,
                 check.not_none(
