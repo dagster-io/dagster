@@ -611,7 +611,7 @@ def get_runs_feed_entries(
 
     # if we are not showing runs within backfills and the backfill_id filter is set, we know
     # there will be no results, so we can skip fetching runs
-    should_fetch_runs = (view == GrapheneRunsFeedView.ALL or view == GrapheneRunsFeedView.BACKFILLS) and not (exclude_subruns and run_filters.tags.get(BACKFILL_ID_TAG) is not None)
+    should_fetch_runs = (view == GrapheneRunsFeedView.ALL or view == GrapheneRunsFeedView.RUNS) and not (exclude_subruns and run_filters.tags.get(BACKFILL_ID_TAG) is not None)
     if should_fetch_runs:
         runs = [
             GrapheneRun(run)

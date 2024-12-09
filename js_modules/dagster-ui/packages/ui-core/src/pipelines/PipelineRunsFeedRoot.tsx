@@ -15,7 +15,7 @@ import {RunsFilter} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {RunsFeedError} from '../runs/RunsFeedError';
-import {useIncludeRunsFromBackfillsOption} from '../runs/RunsFeedRoot';
+import {useRunsFeedView} from '../runs/RunsFeedRoot';
 import {RunsFeedTable} from '../runs/RunsFeedTable';
 import {
   RunFilterToken,
@@ -59,7 +59,7 @@ export const PipelineRunsFeedRoot = (props: {repoAddress?: RepoAddress}) => {
     ].filter(Boolean) as TokenizingFieldValue[];
   }, [isJob, pipelineName, snapshotId]);
 
-  const includeRunsFromBackfills = useIncludeRunsFromBackfillsOption();
+  const view = useRunsFeedView();
 
   const runsFilter: RunsFilter = useMemo(() => {
     const allTokens = [...filterTokens, ...permanentTokens];
@@ -83,11 +83,7 @@ export const PipelineRunsFeedRoot = (props: {repoAddress?: RepoAddress}) => {
     [filterTokens, setFilterTokens],
   );
 
-  const {entries, paginationProps, queryResult} = useRunsFeedEntries(
-    runsFilter,
-    'all',
-    includeRunsFromBackfills.value,
-  );
+  const {entries, paginationProps, queryResult} = useRunsFeedEntries(runsFilter, 'all', view.value);
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
@@ -105,7 +101,7 @@ export const PipelineRunsFeedRoot = (props: {repoAddress?: RepoAddress}) => {
       padding={{right: 16}}
     >
       {button}
-      {includeRunsFromBackfills.element}
+      {view.element}
       <div style={{flex: 1}} />
       <QueryRefreshCountdown refreshState={refreshState} />
     </Box>

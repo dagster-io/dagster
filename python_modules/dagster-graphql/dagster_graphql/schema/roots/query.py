@@ -902,7 +902,6 @@ class GrapheneQuery(graphene.ObjectType):
         graphene_info: ResolveInfo,
         limit: int,
         view: GrapheneRunsFeedView,
-        includeRunsFromBackfills: bool,
         cursor: Optional[str] = None,
         filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
     ):
