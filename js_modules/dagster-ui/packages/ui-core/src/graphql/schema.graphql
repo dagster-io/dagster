@@ -3345,6 +3345,7 @@ type Query {
   assetNodeDefinitionCollisions(assetKeys: [AssetKeyInput!]!): [AssetNodeDefinitionCollision!]!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
   assetBackfillPreview(params: AssetBackfillPreviewParams!): [AssetPartitions!]!
+  backgroundAssetWipeStatus(workToken: String!): BackgroundAssetWipeStatus!
   partitionBackfillsOrError(
     status: BulkActionStatus
     cursor: String
@@ -3542,6 +3543,26 @@ type AssetPartitions {
 input AssetBackfillPreviewParams {
   partitionNames: [String!]!
   assetSelection: [AssetKeyInput!]!
+}
+
+union BackgroundAssetWipeStatus =
+  | BackgroundAssetWipeSuccess
+  | BackgroundAssetWipeInProgress
+  | BackgroundAssetWipeFailed
+
+type BackgroundAssetWipeSuccess {
+  startedAt: Float!
+  completedAt: Float!
+}
+
+type BackgroundAssetWipeInProgress {
+  startedAt: Float!
+}
+
+type BackgroundAssetWipeFailed {
+  startedAt: Float!
+  failedAt: Float!
+  message: String!
 }
 
 union PartitionBackfillsOrError = PartitionBackfills | PythonError
@@ -3757,6 +3778,9 @@ type Mutation {
     repositoryLocationName: String!
   ): ShutdownRepositoryLocationMutationResult!
   wipeAssets(assetPartitionRanges: [PartitionsByAssetSelector!]!): AssetWipeMutationResult!
+  backgroundWipeAssets(
+    assetPartitionRanges: [PartitionsByAssetSelector!]!
+  ): BackgroundAssetWipeMutationResult!
   reportRunlessAssetEvents(
     eventParams: ReportRunlessAssetEventsParams!
   ): ReportRunlessAssetEventsResult!
@@ -3827,6 +3851,17 @@ type AssetPartitionRange {
 type PartitionRange {
   start: String!
   end: String!
+}
+
+union BackgroundAssetWipeMutationResult =
+  | AssetNotFoundError
+  | UnauthorizedError
+  | PythonError
+  | UnsupportedOperationError
+  | AssetWipeInProgress
+
+type AssetWipeInProgress {
+  workToken: String!
 }
 
 union ReportRunlessAssetEventsResult =

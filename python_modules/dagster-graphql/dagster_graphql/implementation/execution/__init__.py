@@ -16,7 +16,12 @@ from typing import (
 # re-exports
 import dagster._check as check
 from dagster._annotations import deprecated
-from dagster._core.definitions.events import AssetKey, AssetPartitionWipeRange
+from dagster._core.definitions.events import (
+    AssetKey,
+    AssetPartitionWipeRange,
+    AssetWipeWorkItem,
+    AssetWipeWorkItemPartitionKeys,
+)
 from dagster._core.events import (
     AssetMaterialization,
     AssetObservation,
@@ -57,6 +62,7 @@ if TYPE_CHECKING:
         GraphenePipelineRunLogsSubscriptionSuccess,
     )
     from dagster_graphql.schema.roots.mutation import (
+        GrapheneAssetWipeInProgress,
         GrapheneAssetWipeSuccess,
         GrapheneDeletePipelineRunSuccess,
         GrapheneReportRunlessAssetEventsSuccess,
@@ -337,11 +343,38 @@ async def gen_captured_log_data(
         subscription.dispose()
 
 
+async def background_wipe_assets(
+    graphene_info: "ResolveInfo", asset_partition_ranges: Sequence[AssetPartitionWipeRange]
+) -> Union[
+    "GrapheneAssetWipeInProgress",
+    "GrapheneAssetNotFoundError",
+]:
+    instance = graphene_info.context.instance
+    from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
+    from dagster_graphql.schema.roots.mutation import GrapheneAssetWipeInProgress
+
+    try:
+        work_item = get_asset_wipe_work(graphene_info, instance, asset_partition_ranges)
+    except AssetNotFoundError as e:
+        return GrapheneAssetNotFoundError(asset_key=e.asset_key)
+
+    work_token = instance.background_asset_wipe(work_item)
+    return GrapheneAssetWipeInProgress(workToken=work_token)
+
+
+class AssetNotFoundError(BaseException):
+    def __init__(self, asset_key: AssetKey):
+        self.asset_key = asset_key
+
+
 def wipe_assets(
     graphene_info: "ResolveInfo", asset_partition_ranges: Sequence[AssetPartitionWipeRange]
 ) -> Union[
-    "GrapheneAssetWipeSuccess", "GrapheneUnsupportedOperationError", "GrapheneAssetNotFoundError"
+    "GrapheneAssetWipeSuccess",
+    "GrapheneUnsupportedOperationError",
+    "GrapheneAssetNotFoundError",
 ]:
+    instance = graphene_info.context.instance
     from dagster_graphql.schema.backfill import GrapheneAssetPartitionRange
     from dagster_graphql.schema.errors import (
         GrapheneAssetNotFoundError,
@@ -349,37 +382,61 @@ def wipe_assets(
     )
     from dagster_graphql.schema.roots.mutation import GrapheneAssetWipeSuccess
 
-    instance = graphene_info.context.instance
-    whole_assets_to_wipe: List[AssetKey] = []
-    for apr in asset_partition_ranges:
-        if apr.partition_range is None:
-            whole_assets_to_wipe.append(apr.asset_key)
-        else:
-            if apr.asset_key not in graphene_info.context.asset_graph.asset_node_snaps_by_key:
-                return GrapheneAssetNotFoundError(asset_key=apr.asset_key)
+    try:
+        work_item = get_asset_wipe_work(graphene_info, instance, asset_partition_ranges)
+    except AssetNotFoundError as e:
+        return GrapheneAssetNotFoundError(asset_key=e.asset_key)
 
-            node = graphene_info.context.asset_graph.asset_node_snaps_by_key[apr.asset_key]
-            partitions_def = check.not_none(node.partitions).get_partitions_definition()
-            partition_keys = partitions_def.get_partition_keys_in_range(
-                apr.partition_range, dynamic_partitions_store=instance
-            )
-            try:
-                instance.wipe_asset_partitions(apr.asset_key, partition_keys)
-
-            # NotImplementedError will be thrown if the underlying EventLogStorage does not support
-            # partitioned asset wipe.
-            except NotImplementedError:
-                return GrapheneUnsupportedOperationError(
-                    "Partitioned asset wipe is not supported yet."
-                )
-
-    instance.wipe_assets(whole_assets_to_wipe)
+    try:
+        do_asset_wipe_work(instance, work_item)
+    # NotImplementedError will be thrown if the underlying EventLogStorage does not support
+    # partitioned asset wipe.
+    except NotImplementedError:
+        return GrapheneUnsupportedOperationError("Partitioned asset wipe is not supported yet.")
 
     result_ranges = [
         GrapheneAssetPartitionRange(asset_key=apr.asset_key, partition_range=apr.partition_range)
         for apr in asset_partition_ranges
     ]
     return GrapheneAssetWipeSuccess(assetPartitionRanges=result_ranges)
+
+
+def do_asset_wipe_work(instance: DagsterInstance, work_item: AssetWipeWorkItem) -> None:
+    for asset_partition_keys in work_item.asset_partition_keys:
+        instance.wipe_asset_partitions(
+            asset_partition_keys.asset_key, asset_partition_keys.partition_keys
+        )
+
+    instance.wipe_assets(work_item.assets)
+
+
+def get_asset_wipe_work(
+    graphene_info: "ResolveInfo",
+    instance: DagsterInstance,
+    asset_partition_ranges: Sequence[AssetPartitionWipeRange],
+) -> AssetWipeWorkItem:
+    whole_assets_to_wipe: List[AssetKey] = []
+    asset_partitions_to_wipe: List[AssetWipeWorkItemPartitionKeys] = []
+    for apr in asset_partition_ranges:
+        if apr.partition_range is None:
+            whole_assets_to_wipe.append(apr.asset_key)
+        else:
+            if apr.asset_key not in graphene_info.context.asset_graph.asset_node_snaps_by_key:
+                raise AssetNotFoundError(asset_key=apr.asset_key)
+
+            node = graphene_info.context.asset_graph.asset_node_snaps_by_key[apr.asset_key]
+            partitions_def = check.not_none(node.partitions).get_partitions_definition()
+            partition_keys = partitions_def.get_partition_keys_in_range(
+                apr.partition_range, dynamic_partitions_store=instance
+            )
+            asset_partitions_to_wipe.append(
+                AssetWipeWorkItemPartitionKeys(
+                    asset_key=apr.asset_key, partition_keys=partition_keys
+                )
+            )
+    return AssetWipeWorkItem(
+        assets=whole_assets_to_wipe, asset_partition_keys=asset_partitions_to_wipe
+    )
 
 
 def create_asset_event(
