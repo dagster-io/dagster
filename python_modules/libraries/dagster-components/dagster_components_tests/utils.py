@@ -1,6 +1,7 @@
 from dagster import AssetKey, DagsterInstance
 from dagster_components import __component_registry__
 from dagster_components.core.component import Component, ComponentLoadContext, ComponentRegistry
+from dagster_components.core.templated_param_resolver import TemplatedParamResolver
 
 
 def registry() -> ComponentRegistry:
@@ -8,7 +9,9 @@ def registry() -> ComponentRegistry:
 
 
 def script_load_context() -> ComponentLoadContext:
-    return ComponentLoadContext(registry=registry(), resources={})
+    return ComponentLoadContext.for_test(
+        registry=registry(), param_resolver=TemplatedParamResolver.with_os_environ_as_vars()
+    )
 
 
 def get_asset_keys(component: Component) -> set[AssetKey]:
