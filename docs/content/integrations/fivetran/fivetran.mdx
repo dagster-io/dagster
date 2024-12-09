@@ -78,7 +78,7 @@ defs = dg.Definitions(
 
 You can use the <PyObject module="dagster_fivetran" method="fivetran_assets" /> decorator to create the assets definition for a given connector. Using this approach, you can customize the code within your `@fivetran_assets`-decorated function.
 
-```python file=/integrations/fivetran/customize_fivetran_asset_defs.py
+``` python file=/integrations/fivetran/customize_fivetran_asset_defs.py
 from dagster_fivetran import (
     FivetranWorkspace,
     build_fivetran_assets_definitions,
