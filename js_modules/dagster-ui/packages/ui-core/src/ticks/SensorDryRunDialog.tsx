@@ -8,7 +8,6 @@ import {
   DialogFooter,
   Group,
   Icon,
-  NonIdealState,
   Spinner,
   Subheading,
   Tag,
@@ -64,8 +63,8 @@ export const SensorDryRunDialog = (props: Props) => {
       isOpen={isOpen}
       onClose={onClose}
       style={{width: '70vw', display: 'flex'}}
-      icon="sensors"
-      title={name}
+      icon="preview_tick"
+      title={`Preview tick result for ${name}`}
     >
       <SensorDryRun {...props} />
     </Dialog>
@@ -198,8 +197,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       return (
         <Box flex={{direction: 'row', gap: 8}}>
           <Button onClick={onClose}>Cancel</Button>
-          <Button onClick={submitTest} intent="primary" data-testid={testId('evaluate')}>
-            Evaluate
+          <Button onClick={submitTest} intent="primary" data-testid={testId('continue')}>
+            Continue
           </Button>
         </Box>
       );
@@ -376,29 +375,24 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     } else {
       return (
         <Box flex={{direction: 'column', gap: 8}}>
-          <div>Cursor</div>
+          <div>Cursor value (optional)</div>
           <TextInput
             value={cursor}
             onChange={(e) => setCursor(e.target.value)}
             data-testid={testId('cursor-input')}
+            placeholder="Enter a cursor value"
           />
-          {currentCursor === '' || !currentCursor ? (
-            <Box padding={{top: 16, bottom: 32}} flex={{justifyContent: 'center'}}>
-              <NonIdealState
-                icon="no-results"
-                title="You're not using a cursor"
-                description={
-                  <span>
-                    Check our{' '}
-                    <a href="https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors#idempotence-and-cursors">
-                      sensor documentation
-                    </a>{' '}
-                    to learn how to use cursors
-                  </span>
-                }
-              />
-            </Box>
-          ) : null}
+          <div>
+            A cursor tracks where a sensor left off, allowing the sensor to efficiently process new
+            changes or events without missing anything or duplicating work. The cursor is typically
+            a string, and can be updated within the sensor&apos;s logic to reflect the latest state.
+          </div>
+          <div>
+            <a href="https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors#idempotence-and-cursors">
+              Learn more
+            </a>{' '}
+            about cursors
+          </div>
         </Box>
       );
     }

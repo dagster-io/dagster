@@ -38,7 +38,7 @@ describe('SensorDryRunTest', () => {
     render(<Test mocks={[Mocks.SensorDryRunMutationRunRequests, Mocks.PersistCursorValueMock]} />);
     const cursorInput = await screen.findByTestId('cursor-input');
     await userEvent.type(cursorInput, 'testing123');
-    await userEvent.click(screen.getByTestId('evaluate'));
+    await userEvent.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText(/3\srun requests/g)).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
@@ -55,7 +55,7 @@ describe('SensorDryRunTest', () => {
     render(<Test mocks={[Mocks.SensorDryRunMutationError]} />);
     const cursorInput = await screen.findByTestId('cursor-input');
     await userEvent.type(cursorInput, 'testing123');
-    await userEvent.click(screen.getByTestId('evaluate'));
+    await userEvent.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText('Failed')).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
@@ -66,7 +66,7 @@ describe('SensorDryRunTest', () => {
     render(<Test mocks={[Mocks.SensorDryRunMutationError]} />);
     const cursorInput = await screen.findByTestId('cursor-input');
     await userEvent.type(cursorInput, 'testing123');
-    await userEvent.click(screen.getByTestId('evaluate'));
+    await userEvent.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText('Failed')).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
@@ -81,7 +81,7 @@ describe('SensorDryRunTest', () => {
     render(<Test mocks={[Mocks.SensorDryRunMutationSkipped]} />);
     const cursorInput = await screen.findByTestId('cursor-input');
     await userEvent.type(cursorInput, 'testing123');
-    await userEvent.click(screen.getByTestId('evaluate'));
+    await userEvent.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText('Skipped')).toBeVisible();
     });
