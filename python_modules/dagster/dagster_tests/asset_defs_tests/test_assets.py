@@ -719,7 +719,7 @@ def test_multi_asset_io_manager_execution_specs() -> None:
             self._the_list.append(obj)
 
         def load_input(self, _context):
-            pass
+            return self._the_list[-1]
 
     foo_list = []
 
@@ -743,17 +743,49 @@ def test_multi_asset_io_manager_execution_specs() -> None:
             AssetSpec(key=AssetKey("key1"), metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "foo"}),
             AssetSpec(key=AssetKey("key2"), metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "bar"}),
         ],
-        resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
     )
     def my_asset(context):
-        # Required io manager keys are available on the context, same behavoir as ops
+        # Required io manager keys are available on the context, same behavior as ops
         assert hasattr(context.resources, "foo")
         assert hasattr(context.resources, "bar")
         yield Output(1, "key1")
         yield Output(2, "key2")
 
+    resource_dict = {"foo": foo_manager, "bar": bar_manager, "baz": baz_resource}
     with instance_for_test() as instance:
-        materialize([my_asset], instance=instance)
+        materialize([my_asset], instance=instance, resources=resource_dict)
+
+    assert foo_list == [1]
+    assert bar_list == [2]
+
+    foo_list = []
+    bar_list = []
+
+    # Introduce a downstream multi-asset which overrides the input manager for one asset, and uses the default for the other.
+    @io_manager
+    def override_manager():
+        class MyOverriddenIOManager(MyIOManager):
+            def load_input(self, _context):
+                return self._the_list[-1] + 1
+
+        return MyOverriddenIOManager(bar_list)
+
+    @multi_asset(
+        specs=[
+            AssetSpec(key=AssetKey("downstream"), deps=[AssetKey("key1"), AssetKey("key2")]),
+        ],
+        ins={
+            "input_arg": AssetIn(key=AssetKey("key1")),
+            "input_arg2": AssetIn(key=AssetKey("key2"), input_manager_key="override"),
+        },
+    )
+    def downstream_asset(input_arg: int, input_arg2: int):
+        assert input_arg == 1
+        assert input_arg2 == 3
+
+    resource_dict["override"] = override_manager
+    with instance_for_test() as instance:
+        materialize([my_asset, downstream_asset], instance=instance, resources=resource_dict)
 
     assert foo_list == [1]
     assert bar_list == [2]
