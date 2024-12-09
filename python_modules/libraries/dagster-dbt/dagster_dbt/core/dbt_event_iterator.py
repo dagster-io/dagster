@@ -1,6 +1,17 @@
 from collections import abc
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Iterator, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterator,
+    Optional,
+    Union,
+    cast,
+)
 
 from dagster import (
     AssetCheckResult,
@@ -195,9 +206,11 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         self,
         events: Iterator[T],
         dbt_cli_invocation: "DbtCliInvocation",
+        operations_applied: AbstractSet[str],
     ) -> None:
         self._inner_iterator = events
         self._dbt_cli_invocation = dbt_cli_invocation
+        self._operations_applied = operations_applied
 
     def __next__(self) -> T:
         return next(self._inner_iterator)
@@ -221,7 +234,9 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                 A set of corresponding Dagster events for dbt models, with row counts attached,
                 yielded in the order they are emitted by dbt.
         """
-        return self._attach_metadata(_fetch_row_count_metadata)
+        return self._attach_metadata(
+            _fetch_row_count_metadata, operation_identifier="fetch_row_counts"
+        )
 
     @public
     @experimental
@@ -246,11 +261,12 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         fetch_metadata = lambda invocation, event: _fetch_column_metadata(
             invocation, event, with_column_lineage
         )
-        return self._attach_metadata(fetch_metadata)
+        return self._attach_metadata(fetch_metadata, operation_identifier="fetch_column_metadata")
 
     def _attach_metadata(
         self,
         fn: Callable[["DbtCliInvocation", DbtDagsterEventType], Optional[Dict[str, Any]]],
+        operation_identifier: Optional[str] = None,
     ) -> "DbtEventIterator[DbtDagsterEventType]":
         """Runs a threaded task to attach metadata to each event in the iterator.
 
@@ -258,12 +274,19 @@ class DbtEventIterator(Generic[T], abc.Iterator):
             fn (Callable[[DbtCliInvocation, DbtDagsterEventType], Optional[Dict[str, Any]]]):
                 A function which takes a DbtCliInvocation and a DbtDagsterEventType and returns
                 a dictionary of metadata to attach to the event.
+            operation_identifier (Optional[str]): An optional identifier for the operation being
+                performed. This is used to ensure we don't run the same operation multiple times.
 
         Returns:
              Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
                 A set of corresponding Dagster events for dbt models, with any metadata output
                 by the function attached, yielded in the order they are emitted by dbt.
         """
+        if operation_identifier and operation_identifier in self._operations_applied:
+            logger.warning(
+                f"Operation `{operation_identifier}` has already been applied to this dbt invocation."
+            )
+            return self
 
         def _map_fn(event: DbtDagsterEventType) -> DbtDagsterEventType:
             result = fn(self._dbt_cli_invocation, event)
@@ -302,6 +325,9 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         return DbtEventIterator(
             _threadpool_wrap_map_fn(),
             dbt_cli_invocation=self._dbt_cli_invocation,
+            operations_applied={*self._operations_applied, operation_identifier}
+            if operation_identifier
+            else self._operations_applied,
         )
 
     @public
@@ -358,6 +384,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                     record_observation_usage=record_observation_usage,
                 ),
                 dbt_cli_invocation=self._dbt_cli_invocation,
+                operations_applied={*self._operations_applied, "insights"},
             )
         elif adapter_type == "bigquery":
             try:
@@ -379,6 +406,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                     record_observation_usage=record_observation_usage,
                 ),
                 dbt_cli_invocation=self._dbt_cli_invocation,
+                operations_applied={*self._operations_applied, "insights"},
             )
         else:
             check.failed(
