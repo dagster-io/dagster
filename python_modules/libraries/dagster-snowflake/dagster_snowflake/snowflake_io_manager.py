@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Optional, Sequence, Type, cast
+from typing import Any, Dict, Optional, Sequence, Type, cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
@@ -278,6 +278,14 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
     authenticator: Optional[str] = Field(
         default=None,
         description="Optional parameter to specify the authentication mechanism to use.",
+    )
+    additional_snowflake_connection_args: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description=(
+            "Additional keyword arguments to pass to the snowflake.connector.connect function. For a full list of"
+            " available arguments, see the `Snowflake documentation"
+            " <https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect>`__."
+        ),
     )
 
     @staticmethod
