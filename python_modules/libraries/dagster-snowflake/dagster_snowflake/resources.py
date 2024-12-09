@@ -384,8 +384,10 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             # read the file from the path.
             with open(config.get("private_key_path"), "rb") as key:
                 private_key = key.read()
+        elif config.get("private_key", None) is not None:
+            private_key = config["private_key"].encode()
         else:
-            private_key = config.get("private_key", None)
+            private_key = None
 
         kwargs = {}
         if config.get("private_key_password", None) is not None:
