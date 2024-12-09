@@ -96,7 +96,7 @@ export const RunGroupPanel = ({
   });
 
   return (
-    <SidebarSection title={runs[0] ? `${runs[0].pipelineName} (${runs.length})` : ''}>
+    <SidebarSection title={runs[0] ? `Retries (${runs.length - 1})` : ''}>
       <>
         {runs.map((g, idx) =>
           g ? (
