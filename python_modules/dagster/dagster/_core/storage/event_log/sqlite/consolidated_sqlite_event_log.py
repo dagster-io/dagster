@@ -113,7 +113,9 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def has_table(self, table_name: str) -> bool:
         engine = create_engine(self._conn_string, poolclass=NullPool)
-        return bool(engine.dialect.has_table(engine.connect(), table_name))
+        with engine.connect() as conn:
+            has_table = bool(engine.dialect.has_table(conn, table_name))
+        return has_table
 
     def get_db_path(self):
         return os.path.join(self._base_dir, f"{SQLITE_EVENT_LOG_FILENAME}.db")
