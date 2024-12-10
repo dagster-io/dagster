@@ -70,21 +70,21 @@ class PipesSubprocessScriptCollection(Component):
 
     @classmethod
     def from_decl_node(
-        cls, load_context: ComponentLoadContext, component_decl: ComponentDeclNode
+        cls, context: ComponentLoadContext, decl_node: ComponentDeclNode
     ) -> "PipesSubprocessScriptCollection":
-        assert isinstance(component_decl, YamlComponentDecl)
+        assert isinstance(decl_node, YamlComponentDecl)
         loaded_params = TypeAdapter(cls.params_schema).validate_python(
-            component_decl.component_file_model.params
+            decl_node.component_file_model.params
         )
 
         path_specs = {}
         for script in loaded_params.scripts:
-            script_path = component_decl.path / script.path
+            script_path = decl_node.path / script.path
             if not script_path.exists():
                 raise FileNotFoundError(f"Script {script_path} does not exist")
             path_specs[script_path] = [spec.to_asset_spec() for spec in script.assets]
 
-        return cls(dirpath=component_decl.path, path_specs=path_specs)
+        return cls(dirpath=decl_node.path, path_specs=path_specs)
 
     def build_defs(self, load_context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions
