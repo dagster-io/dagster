@@ -9,7 +9,7 @@ from typing import Any, Final, Iterator, List, Optional, Sequence, Union
 import click
 import jinja2
 
-from dg_cli.version import __version__ as dagster_version
+from dagster_dg.version import __version__ as dagster_version
 
 _CODE_LOCATION_COMMAND_PREFIX: Final = ["uv", "run", "dagster-components"]
 

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import click
 
-from dg_cli.context import (
+from dagster_dg.context import (
     CodeLocationProjectContext,
     DeploymentProjectContext,
     is_inside_code_location_project,

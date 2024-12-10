@@ -11,14 +11,14 @@ from typing import Iterator
 import pytest
 import tomli
 from click.testing import CliRunner
-from dg_cli.cli.generate import (
+from dagster_dg.cli.generate import (
     generate_code_location_command,
     generate_component_command,
     generate_component_type_command,
     generate_deployment_command,
 )
-from dg_cli.context import CodeLocationProjectContext
-from dg_cli.utils import pushd
+from dagster_dg.context import CodeLocationProjectContext
+from dagster_dg.utils import pushd
 
 
 def _ensure_cwd_on_sys_path():

@@ -6,9 +6,9 @@ from typing import Final, Iterable, Mapping, Optional, Sequence
 import tomli
 from typing_extensions import Self
 
-from dg_cli.component import RemoteComponentRegistry, RemoteComponentType
-from dg_cli.error import DgError
-from dg_cli.utils import execute_code_location_command
+from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
+from dagster_dg.error import DgError
+from dagster_dg.utils import execute_code_location_command
 
 
 def is_inside_deployment_project(path: Path) -> bool:

@@ -1,4 +1,0 @@
-include README.md
-include LICENSE
-include dg_cli/py.typed
-recursive-include dg_cli/templates *
