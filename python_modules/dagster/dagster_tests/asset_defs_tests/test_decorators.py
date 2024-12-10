@@ -1507,6 +1507,8 @@ def test_graph_inputs_error():
         def _(): ...
 
     except DagsterInvalidDefinitionError as err:
+        assert "'_' decorated function does not have argument(s) 'start'" in str(err)
+        # Ensure that dagster type code path doesn't throw since we're using Nothing type.
         assert "except for Ins that have the Nothing dagster_type" not in str(err)
 
     try:
@@ -1515,4 +1517,6 @@ def test_graph_inputs_error():
         def _(): ...
 
     except DagsterInvalidDefinitionError as err:
+        assert "'_' decorated function does not have argument(s) 'start'" in str(err)
+        # Ensure that dagster type code path doesn't throw since we're using Nothing type.
         assert "except for Ins that have the Nothing dagster_type" not in str(err)

@@ -446,8 +446,8 @@ def resolve_checked_op_fn_inputs(
         )
         raise DagsterInvalidDefinitionError(
             f"{decorator_name} '{fn_name}' decorated function does not have argument(s)"
-            f" '{undeclared_inputs_printed}'. {decorator_name}-decorated functions should have a"
-            f" keyword argument for each of their Ins{nothing_exemption}. Alternatively, they can"
+            f" '{undeclared_inputs_printed}'. {decorator_name}-decorated functions should have an"
+            f" argument for each of their Ins{nothing_exemption}. Alternatively, they can"
             " accept **kwargs."
         )
 
