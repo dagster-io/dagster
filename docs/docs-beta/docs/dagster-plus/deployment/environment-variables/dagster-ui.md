@@ -1,6 +1,5 @@
 ---
 title: "Setting environment variables with the Dagster+ UI"
-displayed_sidebar: "dagsterPlus"
 sidebar_position: 200
 sidebar_label: "Set with Dagster+ UI"
 ---
@@ -90,4 +89,4 @@ For example, if you wanted to provide different Snowflake passwords for your pro
 ## Next steps
 
 - Learn how to [access environment variables in Dagster code](/todo)
-- Learn about the [built-in environment variables](https://docs.dagster.io/dagster-plus/managing-deployments/environment-variables-and-secrets#built-in-environment-variables) provided by Dagster+
+- Learn about the [built-in environment variables](built-in) provided by Dagster+
