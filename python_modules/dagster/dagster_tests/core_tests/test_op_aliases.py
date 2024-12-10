@@ -15,7 +15,7 @@ def test_aliased_ops():
     job_def = GraphDefinition(
         node_defs=[first, not_first],
         name="test",
-        dependencies={
+        dependencies={  # pyright: ignore[reportArgumentType]
             "not_first": {"prev": DependencyDefinition("first")},
             NodeInvocation("not_first", alias="second"): {
                 "prev": DependencyDefinition("not_first")

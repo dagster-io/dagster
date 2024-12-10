@@ -256,7 +256,7 @@ class LocalFileManager(FileManager):
         check.inst_param(file_handle, "file_handle", FileHandle)
         with self.read(file_handle, "rb") as handle_obj:  # type: ignore  # (??)
             temp_file_obj = self._temp_file_manager.tempfile()
-            temp_file_obj.write(handle_obj.read())
+            temp_file_obj.write(handle_obj.read())  # pyright: ignore[reportCallIssue,reportArgumentType]
             temp_name = temp_file_obj.name
             temp_file_obj.close()
             return temp_name

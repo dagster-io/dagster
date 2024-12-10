@@ -279,7 +279,7 @@ def test_io_manager_coercion():
 def test_bad_executor():
     with pytest.raises(CheckError):
         # ignoring type to catch runtime error
-        Definitions(executor="not an executor")
+        Definitions(executor="not an executor")  # pyright: ignore[reportArgumentType]
 
 
 def test_custom_executor_in_definitions():
@@ -321,13 +321,13 @@ def test_bad_logger_key():
 
     with pytest.raises(CheckError):
         # ignore type to catch runtime error
-        Definitions(loggers={1: a_logger})
+        Definitions(loggers={1: a_logger})  # pyright: ignore[reportArgumentType]
 
 
 def test_bad_logger_value():
     with pytest.raises(CheckError):
         # ignore type to catch runtime error
-        Definitions(loggers={"not_a_logger": "not_a_logger"})
+        Definitions(loggers={"not_a_logger": "not_a_logger"})  # pyright: ignore[reportArgumentType]
 
 
 def test_kitchen_sink_on_create_helper_and_definitions():
@@ -568,7 +568,7 @@ def test_bare_executor():
     assert isinstance(job, JobDefinition)
 
     # ignore typecheck because we know our implementation doesn't use the context
-    assert job.executor_def.executor_creation_fn(None) is executor_inst
+    assert job.executor_def.executor_creation_fn(None) is executor_inst  # pyright: ignore[reportArgumentType,reportOptionalCall]
 
 
 def test_assets_with_io_manager():
@@ -1074,11 +1074,11 @@ def test_definitions_dedupe_reference_equality():
     assert len(list(underlying_repo.schedule_defs)) == 1
 
     # properties on the definitions object do not dedupe
-    assert len(defs.assets) == 2
-    assert len(defs.asset_checks) == 2
-    assert len(defs.jobs) == 2
-    assert len(defs.sensors) == 2
-    assert len(defs.schedules) == 2
+    assert len(defs.assets) == 2  # pyright: ignore[reportArgumentType]
+    assert len(defs.asset_checks) == 2  # pyright: ignore[reportArgumentType]
+    assert len(defs.jobs) == 2  # pyright: ignore[reportArgumentType]
+    assert len(defs.sensors) == 2  # pyright: ignore[reportArgumentType]
+    assert len(defs.schedules) == 2  # pyright: ignore[reportArgumentType]
 
 
 def test_definitions_class_metadata():
@@ -1088,7 +1088,7 @@ def test_definitions_class_metadata():
 
 
 def test_assets_def_with_only_checks():
-    @asset_check(asset="asset1")
+    @asset_check(asset="asset1")  # pyright: ignore[reportArgumentType]
     def check1():
         pass
 

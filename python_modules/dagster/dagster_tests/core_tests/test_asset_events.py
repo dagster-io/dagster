@@ -32,8 +32,8 @@ def test_asset_mat_planned_event_step_key():
         planned_events = _get_planned_events(instance, result.run_id)
         assert len(planned_events) == 1
         planned_event = planned_events[0]
-        assert planned_event.event_specific_data.asset_key == AssetKey("my_asset")
-        assert planned_event.step_key == "my_asset"
+        assert planned_event.event_specific_data.asset_key == AssetKey("my_asset")  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+        assert planned_event.step_key == "my_asset"  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_multi_asset_mat_planned_event_step_key():
@@ -51,9 +51,9 @@ def test_multi_asset_mat_planned_event_step_key():
         result = materialize([my_asset], instance=instance)
         planned_events = _get_planned_events(instance, result.run_id)
         assert len(planned_events) == 2
-        assert all(event.is_asset_materialization_planned for event in planned_events)
-        assert all(event.step_key == "my_asset" for event in planned_events)
-        assert set(event.asset_key for event in planned_events) == {
+        assert all(event.is_asset_materialization_planned for event in planned_events)  # pyright: ignore[reportOptionalMemberAccess]
+        assert all(event.step_key == "my_asset" for event in planned_events)  # pyright: ignore[reportOptionalMemberAccess]
+        assert set(event.asset_key for event in planned_events) == {  # pyright: ignore[reportOptionalMemberAccess]
             AssetKey("my_asset_name"),
             AssetKey("my_other_asset"),
         }
@@ -173,13 +173,17 @@ def test_asset_partition_materialization_planned_events():
         planned_events = _get_planned_events(instance, result.run_id)
         assert len(planned_events) == 2
         [my_asset_event] = [
-            event for event in planned_events if event.asset_key == AssetKey("my_asset")
+            event
+            for event in planned_events
+            if event.asset_key == AssetKey("my_asset")  # pyright: ignore[reportOptionalMemberAccess]
         ]
         [my_other_asset_event] = [
-            event for event in planned_events if event.asset_key == AssetKey("my_other_asset")
+            event
+            for event in planned_events
+            if event.asset_key == AssetKey("my_other_asset")  # pyright: ignore[reportOptionalMemberAccess]
         ]
-        assert my_asset_event.event_specific_data.partition == "b"
-        assert my_other_asset_event.event_specific_data.partition is None
+        assert my_asset_event.event_specific_data.partition == "b"  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+        assert my_other_asset_event.event_specific_data.partition is None  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
 
 
 def test_subset_on_asset_materialization_planned_event_for_single_run_backfill_allowed():
@@ -199,9 +203,9 @@ def test_subset_on_asset_materialization_planned_event_for_single_run_backfill_a
         planned_events = _get_planned_events(instance, result.run_id)
         assert len(planned_events) == 1
         planned_event = planned_events[0]
-        assert planned_event.asset_key == AssetKey("my_asset")
+        assert planned_event.asset_key == AssetKey("my_asset")  # pyright: ignore[reportOptionalMemberAccess]
         assert (
-            planned_event.event_specific_data.partitions_subset
+            planned_event.event_specific_data.partitions_subset  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
             == partitions_def.subset_with_partition_keys(["a", "b"])
         )
 
@@ -227,13 +231,17 @@ def test_single_run_backfill_with_unpartitioned_and_partitioned_mix():
         planned_events = _get_planned_events(instance, result.run_id)
         assert len(planned_events) == 2
         [partitioned_event] = [
-            event for event in planned_events if event.asset_key == partitioned.key
+            event
+            for event in planned_events
+            if event.asset_key == partitioned.key  # pyright: ignore[reportOptionalMemberAccess]
         ]
         [unpartitioned_event] = [
-            event for event in planned_events if event.asset_key == unpartitioned.key
+            event
+            for event in planned_events
+            if event.asset_key == unpartitioned.key  # pyright: ignore[reportOptionalMemberAccess]
         ]
         assert (
-            partitioned_event.event_specific_data.partitions_subset
+            partitioned_event.event_specific_data.partitions_subset  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
             == partitions_def.subset_with_partition_keys(["a", "b"])
         )
-        assert unpartitioned_event.event_specific_data.partitions_subset is None
+        assert unpartitioned_event.event_specific_data.partitions_subset is None  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]

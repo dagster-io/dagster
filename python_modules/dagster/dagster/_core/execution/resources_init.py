@@ -453,7 +453,7 @@ def _wrapped_resource_iterator(
     if isinstance(resource_or_gen, ContextDecorator):
 
         def _gen_resource():
-            with resource_or_gen as resource:
+            with resource_or_gen as resource:  # pyright: ignore[reportGeneralTypeIssues]
                 yield resource
 
         return _gen_resource()

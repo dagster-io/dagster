@@ -82,4 +82,4 @@ def test_run_priority_job(rabbitmq):
                 hi_run = hi_runs[0]
                 histats = instance.get_run_stats(hi_run.run_id)
 
-                assert lowstats.start_time < histats.start_time
+                assert lowstats.start_time < histats.start_time  # pyright: ignore[reportOperatorIssue]

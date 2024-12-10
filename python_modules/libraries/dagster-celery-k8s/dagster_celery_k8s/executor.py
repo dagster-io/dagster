@@ -287,7 +287,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         )
         check.inst_param(execute_step_args, "execute_step_args", ExecuteStepArgs)
         check.invariant(
-            len(execute_step_args.step_keys_to_execute) == 1,
+            len(execute_step_args.step_keys_to_execute) == 1,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
             "Celery K8s task executor can only execute 1 step at a time",
         )
 
@@ -315,13 +315,13 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             kubernetes.config.load_kube_config(kubeconfig_file)
 
         api_client = DagsterKubernetesClient.production_client()
-        instance = DagsterInstance.from_ref(execute_step_args.instance_ref)
+        instance = DagsterInstance.from_ref(execute_step_args.instance_ref)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         dagster_run = check.not_none(
-            instance.get_run_by_id(execute_step_args.run_id),
-            f"Could not load run {execute_step_args.run_id}",
+            instance.get_run_by_id(execute_step_args.run_id),  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            f"Could not load run {execute_step_args.run_id}",  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         )
 
-        step_key = execute_step_args.step_keys_to_execute[0]
+        step_key = execute_step_args.step_keys_to_execute[0]  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
         celery_worker_name = self.request.hostname
         celery_pod_name = os.environ.get("HOSTNAME")
@@ -353,9 +353,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             return []
 
         # Ensure we stay below k8s name length limits
-        k8s_name_key = get_k8s_job_name(execute_step_args.run_id, step_key)
+        k8s_name_key = get_k8s_job_name(execute_step_args.run_id, step_key)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
-        retry_state = execute_step_args.known_state.get_retry_state()
+        retry_state = execute_step_args.known_state.get_retry_state()  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
         if retry_state.get_attempt_count(step_key):
             attempt_number = retry_state.get_attempt_count(step_key)
@@ -365,18 +365,18 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             job_name = "dagster-step-%s" % (k8s_name_key)
             pod_name = "dagster-step-%s" % (k8s_name_key)
 
-        args = execute_step_args.get_command_args()
+        args = execute_step_args.get_command_args()  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
         labels = {
             "dagster/job": dagster_run.job_name,
             "dagster/op": step_key,
-            "dagster/run-id": execute_step_args.run_id,
+            "dagster/run-id": execute_step_args.run_id,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         }
         if dagster_run.remote_job_origin:
             labels["dagster/code-location"] = (
                 dagster_run.remote_job_origin.repository_origin.code_location_origin.location_name
             )
-        per_op_override = per_step_k8s_config.get(step_key, {})
+        per_op_override = per_step_k8s_config.get(step_key, {})  # pyright: ignore[reportOptionalMemberAccess]
 
         tag_container_context = K8sContainerContext(run_k8s_config=user_defined_k8s_config)
         executor_config_container_context = K8sContainerContext(
@@ -469,7 +469,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 job_name=job_name,
                 namespace=job_namespace,
                 instance=instance,
-                run_id=execute_step_args.run_id,
+                run_id=execute_step_args.run_id,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 wait_timeout=job_wait_timeout,
             )
         except (DagsterK8sError, DagsterK8sTimeoutError) as err:

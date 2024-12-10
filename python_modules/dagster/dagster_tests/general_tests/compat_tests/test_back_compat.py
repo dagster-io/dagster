@@ -103,7 +103,7 @@ def test_event_log_step_key_migration():
 
         runs = instance.get_runs()
         assert len(runs) == 1
-        run_ids = instance._event_storage.get_all_run_ids()
+        run_ids = instance._event_storage.get_all_run_ids()  # pyright: ignore[reportAttributeAccessIssue]
         assert run_ids == ["6405c4a0-3ccc-4600-af81-b5ee197f8528"]
         assert isinstance(instance._event_storage, SqlEventLogStorage)
         records = instance._event_storage.get_records_for_run(
@@ -116,7 +116,7 @@ def test_event_log_step_key_migration():
             row_data = instance._event_storage.get_event_log_table_data(
                 "6405c4a0-3ccc-4600-af81-b5ee197f8528", record.storage_id
             )
-            if row_data.step_key is not None:
+            if row_data.step_key is not None:  # pyright: ignore[reportOptionalMemberAccess]
                 step_key_records.append(row_data)
         assert len(step_key_records) == 0
 
@@ -128,7 +128,7 @@ def test_event_log_step_key_migration():
             row_data = instance._event_storage.get_event_log_table_data(
                 "6405c4a0-3ccc-4600-af81-b5ee197f8528", record.storage_id
             )
-            if row_data.step_key is not None:
+            if row_data.step_key is not None:  # pyright: ignore[reportOptionalMemberAccess]
                 step_key_records.append(row_data)
         assert len(step_key_records) > 0
 
@@ -184,7 +184,7 @@ def test_snapshot_0_7_6_pre_add_job_snapshot():
             noop_op()
 
         with pytest.raises(
-            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)  # pyright: ignore[reportAttributeAccessIssue]
         ):
             noop_job.execute_in_process(instance=instance)
 
@@ -202,8 +202,8 @@ def test_snapshot_0_7_6_pre_add_job_snapshot():
 
         run = instance.get_run_by_id(run_id)
 
-        assert run.run_id == run_id
-        assert run.job_snapshot_id is None
+        assert run.run_id == run_id  # pyright: ignore[reportOptionalMemberAccess]
+        assert run.job_snapshot_id is None  # pyright: ignore[reportOptionalMemberAccess]
 
         result = noop_job.execute_in_process(instance=instance)
 
@@ -216,7 +216,7 @@ def test_snapshot_0_7_6_pre_add_job_snapshot():
 
         new_run = instance.get_run_by_id(new_run_id)
 
-        assert new_run.job_snapshot_id
+        assert new_run.job_snapshot_id  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_downgrade_and_upgrade():
@@ -244,7 +244,7 @@ def test_downgrade_and_upgrade():
 
         assert len(instance.get_runs()) == 1
 
-        instance._run_storage._alembic_downgrade(rev="9fe9e746268c")
+        instance._run_storage._alembic_downgrade(rev="9fe9e746268c")  # pyright: ignore[reportAttributeAccessIssue]
 
         assert get_current_alembic_version(db_path) == "9fe9e746268c"
 
@@ -340,7 +340,7 @@ def test_mode_column_migration():
         assert instance.get_run_records()
         assert instance.create_run_for_job(_test)
 
-        instance._run_storage._alembic_downgrade(rev="72686963a802")
+        instance._run_storage._alembic_downgrade(rev="72686963a802")  # pyright: ignore[reportAttributeAccessIssue]
 
         assert get_current_alembic_version(db_path) == "72686963a802"
         assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
@@ -361,7 +361,7 @@ def test_run_partition_migration():
         assert "partition" in set(get_sqlite3_columns(db_path, "runs"))
         assert "partition_set" in set(get_sqlite3_columns(db_path, "runs"))
 
-        instance._run_storage._alembic_downgrade(rev="224640159acf")
+        instance._run_storage._alembic_downgrade(rev="224640159acf")  # pyright: ignore[reportAttributeAccessIssue]
         assert get_current_alembic_version(db_path) == "224640159acf"
 
         assert "partition" not in set(get_sqlite3_columns(db_path, "runs"))
@@ -384,7 +384,7 @@ def test_run_partition_data_migration():
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             with upgrading_instance(instance):
-                instance._run_storage.upgrade()
+                instance._run_storage.upgrade()  # pyright: ignore[reportAttributeAccessIssue]
 
         run_storage = instance._run_storage
         assert isinstance(run_storage, SqlRunStorage)
@@ -627,7 +627,7 @@ def test_start_time_end_time():
         assert instance.get_run_records()
         assert instance.create_run_for_job(_test)
 
-        instance._run_storage._alembic_downgrade(rev="7f2b1a4ca7a5")
+        instance._run_storage._alembic_downgrade(rev="7f2b1a4ca7a5")  # pyright: ignore[reportAttributeAccessIssue]
 
         assert get_current_alembic_version(db_path) == "7f2b1a4ca7a5"
         assert True
@@ -848,27 +848,27 @@ def test_jobs_selector_id_migration():
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             # runs the required data migrations
             instance.upgrade()
-            assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)
+            assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
             legacy_count = len(instance.all_instigator_state())
-            migrated_instigator_count = instance.schedule_storage.execute(
+            migrated_instigator_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 db_select([db.func.count()]).select_from(InstigatorsTable)
             )[0][0]
             assert migrated_instigator_count == legacy_count
 
-            migrated_job_count = instance.schedule_storage.execute(
+            migrated_job_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 db_select([db.func.count()])
                 .select_from(JobTable)
                 .where(JobTable.c.selector_id.isnot(None))
             )[0][0]
             assert migrated_job_count == legacy_count
 
-            legacy_tick_count = instance.schedule_storage.execute(
+            legacy_tick_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 db_select([db.func.count()]).select_from(JobTickTable)
             )[0][0]
             assert legacy_tick_count > 0
 
             # tick migrations are optional
-            migrated_tick_count = instance.schedule_storage.execute(
+            migrated_tick_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
@@ -878,7 +878,7 @@ def test_jobs_selector_id_migration():
             # run the optional migrations
             instance.reindex()
 
-            migrated_tick_count = instance.schedule_storage.execute(
+            migrated_tick_count = instance.schedule_storage.execute(  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
@@ -955,7 +955,7 @@ def test_add_bulk_actions_columns():
 
             # check data migration
             backfill_count = len(instance.get_backfills())
-            migrated_row_count = instance._run_storage.fetchone(
+            migrated_row_count = instance._run_storage.fetchone(  # pyright: ignore[reportAttributeAccessIssue]
                 db_select([db.func.count().label("count")])
                 .select_from(BulkActionsTable)
                 .where(BulkActionsTable.c.selector_id.isnot(None))
@@ -983,7 +983,7 @@ def test_add_bulk_actions_columns():
                     backfill_timestamp=get_current_timestamp(),
                 )
             )
-            unmigrated_row_count = instance._run_storage.fetchone(
+            unmigrated_row_count = instance._run_storage.fetchone(  # pyright: ignore[reportAttributeAccessIssue]
                 db_select([db.func.count().label("count")])
                 .select_from(BulkActionsTable)
                 .where(BulkActionsTable.c.selector_id.is_(None))
@@ -991,7 +991,7 @@ def test_add_bulk_actions_columns():
             assert unmigrated_row_count == 0
 
             # test downgrade
-            instance._run_storage._alembic_downgrade(rev="721d858e1dda")
+            instance._run_storage._alembic_downgrade(rev="721d858e1dda")  # pyright: ignore[reportAttributeAccessIssue]
 
             assert get_current_alembic_version(db_path) == "721d858e1dda"
             assert {"id", "key", "status", "timestamp", "body"} == set(
@@ -1019,7 +1019,7 @@ def test_add_kvs_table():
 
             assert "kvs" in get_sqlite3_tables(db_path)
             assert get_sqlite3_indexes(db_path, "kvs") == ["idx_kvs_keys_unique"]
-            instance._run_storage._alembic_downgrade(rev="6860f830e40c")
+            instance._run_storage._alembic_downgrade(rev="6860f830e40c")  # pyright: ignore[reportAttributeAccessIssue]
 
             assert "kvs" not in get_sqlite3_tables(db_path)
             assert get_sqlite3_indexes(db_path, "kvs") == []
@@ -1064,7 +1064,7 @@ def test_add_asset_event_tags_table():
             assert "idx_asset_event_tags_event_id" in indexes
             assert "idx_asset_event_tags" in indexes
 
-            instance._run_storage._alembic_downgrade(rev="a00dd8d936a1")
+            instance._run_storage._alembic_downgrade(rev="a00dd8d936a1")  # pyright: ignore[reportAttributeAccessIssue]
 
             assert "asset_event_tags" not in get_sqlite3_tables(db_path)
             assert get_sqlite3_indexes(db_path, "asset_event_tags") == []
@@ -1154,21 +1154,21 @@ def test_add_primary_keys():
             instance.upgrade()
 
             assert "id" in set(get_sqlite3_columns(db_path, "kvs"))
-            with instance.run_storage.connect():
+            with instance.run_storage.connect():  # pyright: ignore[reportAttributeAccessIssue]
                 kvs_id_count = _get_table_row_count(
                     instance.run_storage, KeyValueStoreTable, with_non_null_id=True
                 )
             assert kvs_id_count == kvs_row_count
 
             assert "id" in set(get_sqlite3_columns(db_path, "instance_info"))
-            with instance.run_storage.connect():
+            with instance.run_storage.connect():  # pyright: ignore[reportAttributeAccessIssue]
                 instance_info_id_count = _get_table_row_count(
                     instance.run_storage, InstanceInfo, with_non_null_id=True
                 )
             assert instance_info_id_count == instance_info_row_count
 
             assert "id" in set(get_sqlite3_columns(db_path, "daemon_heartbeats"))
-            with instance.run_storage.connect():
+            with instance.run_storage.connect():  # pyright: ignore[reportAttributeAccessIssue]
                 daemon_heartbeats_id_count = _get_table_row_count(
                     instance.run_storage, DaemonHeartbeatsTable, with_non_null_id=True
                 )
@@ -1225,7 +1225,7 @@ def test_add_backfill_id_column():
             assert len(instance.get_runs(filters=RunsFilter(exclude_subruns=True))) == 2
 
             instance.upgrade()
-            assert instance.run_storage.has_built_index(RUN_BACKFILL_ID)
+            assert instance.run_storage.has_built_index(RUN_BACKFILL_ID)  # pyright: ignore[reportAttributeAccessIssue]
 
             columns = get_sqlite3_columns(db_path, "runs")
             assert {
@@ -1264,7 +1264,7 @@ def test_add_backfill_id_column():
 
             backfill_ids = {
                 row["run_id"]: row["backfill_id"]
-                for row in instance._run_storage.fetchall(
+                for row in instance._run_storage.fetchall(  # pyright: ignore[reportAttributeAccessIssue]
                     db_select([RunsTable.c.run_id, RunsTable.c.backfill_id]).select_from(RunsTable)
                 )
             }
@@ -1277,7 +1277,7 @@ def test_add_backfill_id_column():
             assert len(instance.get_runs(filters=RunsFilter(exclude_subruns=True))) == 3
 
             # test downgrade
-            instance._run_storage._alembic_downgrade(rev="284a732df317")
+            instance._run_storage._alembic_downgrade(rev="284a732df317")  # pyright: ignore[reportAttributeAccessIssue]
 
             assert get_current_alembic_version(db_path) == "284a732df317"
             columns = get_sqlite3_columns(db_path, "runs")
@@ -1384,7 +1384,7 @@ def test_add_backfill_tags():
             )
             instance.add_backfill(after_migration)
 
-            with instance.run_storage.connect() as conn:
+            with instance.run_storage.connect() as conn:  # pyright: ignore[reportAttributeAccessIssue]
                 rows = conn.execute(
                     db.text("SELECT backfill_id, key, value FROM backfill_tags")
                 ).fetchall()
@@ -1395,7 +1395,7 @@ def test_add_backfill_tags():
             assert ids_to_tags[after_migration.backfill_id] == after_migration.tags
 
             # filtering by tags works after migration
-            assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)
+            assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)  # pyright: ignore[reportAttributeAccessIssue]
             # delete the run that was added pre-migration to prove that tags filtering is happening on the
             # backfill_tags table
             instance.delete_run(pre_migration_run.run_id)
@@ -1413,7 +1413,7 @@ def test_add_backfill_tags():
             )
 
             # test downgrade
-            instance._run_storage._alembic_downgrade(rev="1aca709bba64")
+            instance._run_storage._alembic_downgrade(rev="1aca709bba64")  # pyright: ignore[reportAttributeAccessIssue]
             assert get_current_alembic_version(db_path) == "1aca709bba64"
             assert "backfill_tags" not in get_sqlite3_tables(db_path)
 
@@ -1456,7 +1456,7 @@ def test_add_bulk_actions_job_name_column():
             # filtering pre-migration relies on filtering runs, so add a run with the expected job_name
             pre_migration_run = instance.run_storage.add_run(
                 DagsterRun(
-                    job_name=before_migration.job_name,
+                    job_name=before_migration.job_name,  # pyright: ignore[reportArgumentType]
                     run_id=make_new_run_id(),
                     tags={BACKFILL_ID_TAG: before_migration.backfill_id},
                     status=DagsterRunStatus.NOT_STARTED,
@@ -1495,7 +1495,7 @@ def test_add_bulk_actions_job_name_column():
             )
             instance.add_backfill(after_migration)
 
-            with instance.run_storage.connect() as conn:
+            with instance.run_storage.connect() as conn:  # pyright: ignore[reportAttributeAccessIssue]
                 rows = conn.execute(db.text("SELECT key, job_name FROM bulk_actions")).fetchall()
 
             assert len(rows) == 3  # a backfill exists in the db snapshot
@@ -1504,7 +1504,7 @@ def test_add_bulk_actions_job_name_column():
             assert ids_to_job_name[after_migration.backfill_id] == after_migration.job_name
 
             # filtering by job_name works after migration
-            assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)
+            assert instance.run_storage.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)  # pyright: ignore[reportAttributeAccessIssue]
             # delete the run that was added pre-migration to prove that tags filtering is happening on the
             # backfill_tags table
             instance.delete_run(pre_migration_run.run_id)
@@ -1522,7 +1522,7 @@ def test_add_bulk_actions_job_name_column():
             )
 
             # test downgrade
-            instance.run_storage._alembic_downgrade(rev="1aca709bba64")
+            instance.run_storage._alembic_downgrade(rev="1aca709bba64")  # pyright: ignore[reportAttributeAccessIssue]
 
             assert get_current_alembic_version(db_path) == "1aca709bba64"
             backfill_columns = get_sqlite3_columns(db_path, "bulk_actions")
@@ -1551,7 +1551,7 @@ def test_add_run_tags_run_id_idx():
         assert "idx_run_tags_run_id" in get_sqlite3_indexes(db_path, "run_tags")
 
         # After downgrade (same as before migration)
-        instance._run_storage._alembic_downgrade(rev="16e3655b4d9b")
+        instance._run_storage._alembic_downgrade(rev="16e3655b4d9b")  # pyright: ignore[reportAttributeAccessIssue]
         assert get_current_alembic_version(db_path) == "16e3655b4d9b"
         assert "run_tags" in get_sqlite3_tables(db_path)
         assert "idx_run_tags" in get_sqlite3_indexes(db_path, "run_tags")

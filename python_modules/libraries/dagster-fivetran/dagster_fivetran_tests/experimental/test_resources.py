@@ -93,7 +93,8 @@ def test_basic_resource_request(
     # Succeeded poll
     all_api_mocks.calls.reset()
     client.poll_sync(
-        connector_id=connector_id, previous_sync_completed_at=parser.parse(MIN_TIME_STR)
+        connector_id=connector_id,
+        previous_sync_completed_at=parser.parse(MIN_TIME_STR),  # pyright: ignore[reportArgumentType]
     )
     assert len(all_api_mocks.calls) == 1
 
@@ -104,7 +105,7 @@ def test_basic_resource_request(
             connector_id=connector_id,
             # The poll process will time out because the value of
             # `FivetranConnector.last_sync_completed_at` does not change in the test
-            previous_sync_completed_at=parser.parse(TEST_MAX_TIME_STR),
+            previous_sync_completed_at=parser.parse(TEST_MAX_TIME_STR),  # pyright: ignore[reportArgumentType]
             poll_timeout=2,
             poll_interval=1,
         )
@@ -123,7 +124,7 @@ def test_basic_resource_request(
     with pytest.raises(Failure, match=f"Sync for connector '{connector_id}' failed!"):
         client.poll_sync(
             connector_id=connector_id,
-            previous_sync_completed_at=parser.parse(MIN_TIME_STR),
+            previous_sync_completed_at=parser.parse(MIN_TIME_STR),  # pyright: ignore[reportArgumentType]
             poll_timeout=2,
             poll_interval=1,
         )

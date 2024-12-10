@@ -261,7 +261,7 @@ def test_asset_io_manager(storage_account, file_system, credential):
 
     @asset(
         name=f"upstream_{_id}",
-        ins={"asset3": AssetIn(asset_key=AssetKey([f"asset3_{_id}"]))},
+        ins={"asset3": AssetIn(asset_key=AssetKey([f"asset3_{_id}"]))},  # pyright: ignore[reportCallIssue]
     )
     def upstream(asset3):
         return asset3 + 1
@@ -287,7 +287,7 @@ def test_asset_io_manager(storage_account, file_system, credential):
 
     @asset(
         name=f"downstream_{_id}",
-        ins={"upstream": AssetIn(asset_key=AssetKey([f"upstream_{_id}"]))},
+        ins={"upstream": AssetIn(asset_key=AssetKey([f"upstream_{_id}"]))},  # pyright: ignore[reportCallIssue]
     )
     def downstream(upstream, source):
         assert upstream == 7

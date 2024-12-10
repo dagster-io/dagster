@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from dagster_pandas import PandasColumn, create_dagster_pandas_dataframe_type
-from pandas import DataFrame, read_csv
+from pandas import DataFrame, Timestamp, read_csv
 
 from dagster import Out, file_relative_path, job, op
 
@@ -12,10 +12,10 @@ TripDataFrame = create_dagster_pandas_dataframe_type(
         PandasColumn.integer_column("bike_id", min_value=0),
         PandasColumn.categorical_column("color", categories={"red", "green", "blue"}),
         PandasColumn.datetime_column(
-            "start_time", min_datetime=datetime(year=2020, month=2, day=10)
+            "start_time", min_datetime=Timestamp(year=2020, month=2, day=10)
         ),
         PandasColumn.datetime_column(
-            "end_time", min_datetime=datetime(year=2020, month=2, day=10)
+            "end_time", min_datetime=Timestamp(year=2020, month=2, day=10)
         ),
         PandasColumn.string_column("station"),
         PandasColumn.exists("amount_paid"),

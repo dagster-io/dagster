@@ -4,7 +4,7 @@ import time
 import uuid
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Any, List, Mapping, Optional, Sequence, Set, Type, Union
+from typing import Any, Iterator, List, Mapping, Optional, Sequence, Set, Type, Union
 
 import jwt
 import requests
@@ -254,7 +254,7 @@ class BaseTableauClient:
             headers={"kid": self.connected_app_secret_id, "iss": self.connected_app_client_id},
         )
 
-        tableau_auth = TSC.JWTAuth(jwt_token, site_id=self.site_name)  # pyright: ignore (reportAttributeAccessIssue)
+        tableau_auth = TSC.JWTAuth(jwt_token, site_id=self.site_name)
         return self._server.auth.sign_in(tableau_auth)
 
     @property
@@ -381,11 +381,13 @@ class BaseTableauWorkspace(ConfigurableResource):
         raise NotImplementedError()
 
     @contextmanager
-    def get_client(self):
+    def get_client(self) -> Iterator[Union[TableauCloudClient, TableauServerClient]]:
         if not self._client:
             self.build_client()
-        with self._client.sign_in():
-            yield self._client
+
+        client = check.not_none(self._client, "build_client failed to set _client")
+        with client.sign_in():
+            yield client
 
     def fetch_tableau_workspace_data(
         self,
@@ -407,7 +409,7 @@ class BaseTableauWorkspace(ConfigurableResource):
             for workbook_id in workbook_ids:
                 workbook = client.get_workbook(workbook_id=workbook_id)
                 workbook_data_list = check.is_list(
-                    workbook["data"]["workbooks"],
+                    workbook["data"]["workbooks"],  # pyright: ignore[reportIndexIssue]
                     additional_message=f"Invalid data for Tableau workbook for id {workbook_id}.",
                 )
                 if not workbook_data_list:

@@ -65,7 +65,7 @@ class DagsterDockerImage(
         return super(DagsterDockerImage, cls).__new__(
             cls,
             check.str_param(image, "image"),
-            check.opt_str_param(  # type: ignore
+            check.opt_str_param(
                 images_path,
                 "images_path",
                 default_images_path(),

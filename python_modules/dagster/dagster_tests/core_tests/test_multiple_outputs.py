@@ -110,7 +110,7 @@ def test_multiple_outputs_only_emit_one():
     )
     assert len(output_events) == 1
 
-    assert output_events[0].event_specific_data.step_output_handle.output_name == "output_one"
+    assert output_events[0].event_specific_data.step_output_handle.output_name == "output_one"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
     with pytest.raises(DagsterInvariantViolationError):
         result.output_for_node("not_present")
@@ -165,7 +165,7 @@ def test_missing_non_optional_output_fails():
 def test_warning_for_conditional_output(capsys):
     @op(
         config_schema={"return": bool},
-        out=Out(Any, is_required=False),
+        out=Out(Any, is_required=False),  # pyright: ignore[reportArgumentType]
     )
     def maybe(context):
         if context.op_config["return"]:

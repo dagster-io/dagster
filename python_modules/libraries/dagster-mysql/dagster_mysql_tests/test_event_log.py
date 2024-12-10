@@ -143,4 +143,4 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
             with instance_for_test(overrides=yaml.safe_load(explicit_cfg)) as explicit_instance:
                 from_explicit = explicit_instance._event_storage  # noqa: SLF001
 
-                assert from_url.mysql_url == from_explicit.mysql_url
+                assert from_url.mysql_url == from_explicit.mysql_url  # pyright: ignore[reportAttributeAccessIssue]

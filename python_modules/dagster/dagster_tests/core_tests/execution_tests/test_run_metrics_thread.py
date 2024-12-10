@@ -191,14 +191,14 @@ def test_start_run_metrics_thread(dagster_instance, dagster_run, mock_container_
 
                 time.sleep(0.1)
 
-                assert thread.is_alive()
+                assert thread.is_alive()  # pyright: ignore[reportOptionalMemberAccess]
                 assert "Starting run metrics thread" in caplog.messages[0]
 
                 time.sleep(0.1)
-                shutdown.set()
+                shutdown.set()  # pyright: ignore[reportOptionalMemberAccess]
 
-                thread.join()
-                assert thread.is_alive() is False
+                thread.join()  # pyright: ignore[reportOptionalMemberAccess]
+                assert thread.is_alive() is False  # pyright: ignore[reportOptionalMemberAccess]
                 assert "Shutting down metrics capture thread" in caplog.messages[-1]
 
 

@@ -44,4 +44,4 @@ def test_sync_run_launcher_run():
             run = instance.launch_run(run_id=run.run_id, workspace=workspace)
 
             completed_run = instance.get_run_by_id(run.run_id)
-            assert completed_run.is_success
+            assert completed_run.is_success  # pyright: ignore[reportOptionalMemberAccess]

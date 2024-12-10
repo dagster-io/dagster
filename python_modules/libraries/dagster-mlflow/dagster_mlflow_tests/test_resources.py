@@ -195,7 +195,7 @@ def test_cleanup_on_error(
         # Given: a context  passed into the __init__ for MlFlow
         mlf = MlFlow(context)
     # When: a run is started
-    mlf.start_run()
+    mlf.start_run()  # pyright: ignore[reportAttributeAccessIssue]
 
     with patch("sys.exc_info", return_value=[0, any_error]):
         # When: cleanup_on_error is called
@@ -301,7 +301,7 @@ def test_setup(mock_atexit, context):
         # - _set_all_tags is called once
         mock_set_all_tags.assert_called_once()
     # - atexit.unregister is called with mlf.end_run as an argument
-    mock_atexit.assert_called_once_with(mlf.end_run)
+    mock_atexit.assert_called_once_with(mlf.end_run)  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @patch("atexit.unregister")
@@ -330,7 +330,7 @@ def test_setup_with_passed_run_id(mock_atexit, context):
         # - _set_all_tags is called once
         mock_set_all_tags.assert_called_once()
     # - atexit.unregister is called with mlf.end_run as an argument
-    mock_atexit.assert_called_once_with(mlf.end_run)
+    mock_atexit.assert_called_once_with(mlf.end_run)  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @pytest.mark.parametrize("run_id", [None, 0, "12"])

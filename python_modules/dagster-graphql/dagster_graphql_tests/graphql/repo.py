@@ -502,7 +502,7 @@ def scalar_output_job():
     def return_bool():
         return True
 
-    @op(out=Out(Any))
+    @op(out=Out(Any))  # pyright: ignore[reportArgumentType]
     def return_any():
         return "dkjfkdjfe"
 
@@ -620,7 +620,7 @@ def foo_logger(init_context):
     return logger_
 
 
-@logger({"log_level": Field(str), "prefix": Field(str)})
+@logger({"log_level": Field(str), "prefix": Field(str)})  # pyright: ignore[reportArgumentType]
 def bar_logger(init_context):
     class BarLogger(logging.Logger):
         def __init__(self, name, prefix, *args, **kwargs):

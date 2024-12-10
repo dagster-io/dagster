@@ -264,7 +264,7 @@ class WaiterMock:
                     return
 
                 if num_attempts >= max_attempts:
-                    raise botocore.exceptions.WaiterError(
+                    raise botocore.exceptions.WaiterError(  # pyright: ignore[reportAttributeAccessIssue]
                         name=self.waiter_name,
                         reason="Max attempts exceeded",
                         last_response=response,

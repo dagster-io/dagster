@@ -16,11 +16,11 @@ def check_materialization(materialization, asset_key, parent_assets=None, metada
 
 @pytest.mark.skip(reason="no longer supporting dynamic output asset keys")
 def test_dynamic_output_definition_single_partition_materialization():
-    @op(out={"output1": Out(asset_key=AssetKey("table1"))})
+    @op(out={"output1": Out(asset_key=AssetKey("table1"))})  # pyright: ignore[reportCallIssue]
     def op1(_):
         return Output(None, "output1", metadata={"nrows": 123})
 
-    @op(out={"output2": DynamicOut(asset_key=lambda context: AssetKey(context.mapping_key))})
+    @op(out={"output2": DynamicOut(asset_key=lambda context: AssetKey(context.mapping_key))})  # pyright: ignore[reportCallIssue]
     def op2(_, _input1):
         for i in range(4):
             yield DynamicOutput(
@@ -46,7 +46,7 @@ def test_dynamic_output_definition_single_partition_materialization():
     check_materialization(materializations[0], AssetKey(["table1"]), metadata={"nrows": 123})
     seen_paths = set()
     for i in range(1, 5):
-        path = materializations[i].asset_key.path
+        path = materializations[i].asset_key.path  # pyright: ignore[reportOptionalMemberAccess]
         seen_paths.add(tuple(path))
         check_materialization(
             materializations[i],

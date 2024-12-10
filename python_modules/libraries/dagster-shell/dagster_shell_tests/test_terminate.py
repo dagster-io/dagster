@@ -76,7 +76,7 @@ def test_terminate_kills_subproc():
 
             run_id = dagster_run.run_id
 
-            assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
+            assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED  # pyright: ignore[reportOptionalMemberAccess]
 
             instance.launch_run(dagster_run.run_id, workspace)
 
@@ -84,7 +84,7 @@ def test_terminate_kills_subproc():
 
             # find pid of subprocess
             subproc_pid = poll_for_pid(instance, run_id)
-            assert psutil.pid_exists(subproc_pid)
+            assert psutil.pid_exists(subproc_pid)  # pyright: ignore[reportArgumentType]
 
             # simulate waiting a bit to terminate the job
             time.sleep(0.5)
@@ -94,8 +94,8 @@ def test_terminate_kills_subproc():
 
             terminated_dagster_run = poll_for_finished_run(instance, run_id, timeout=30)
             terminated_dagster_run = instance.get_run_by_id(run_id)
-            assert terminated_dagster_run.status == DagsterRunStatus.CANCELED
+            assert terminated_dagster_run.status == DagsterRunStatus.CANCELED  # pyright: ignore[reportOptionalMemberAccess]
 
             # make sure the subprocess is killed after a short delay
             time.sleep(0.5)
-            assert not psutil.pid_exists(subproc_pid)
+            assert not psutil.pid_exists(subproc_pid)  # pyright: ignore[reportArgumentType]

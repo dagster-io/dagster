@@ -24,7 +24,7 @@ class TypedTupleDagsterTypeLoader(DagsterTypeLoader):
     def construct_from_config_value(self, context, config_value):
         return tuple(
             (
-                self._dagster_types[idx].loader.construct_from_config_value(context, item)
+                self._dagster_types[idx].loader.construct_from_config_value(context, item)  # pyright: ignore[reportOptionalMemberAccess]
                 for idx, item in enumerate(config_value)
             )
         )
@@ -36,7 +36,7 @@ class _TypedPythonTuple(DagsterType):
         self.dagster_types = dagster_types
         typing_types = tuple(t.typing_type for t in dagster_types)
         super(_TypedPythonTuple, self).__init__(
-            key="TypedPythonTuple" + ".".join(map(lambda t: t.key, dagster_types)),
+            key="TypedPythonTuple" + ".".join(map(lambda t: t.key, dagster_types)),  # pyright: ignore[reportAttributeAccessIssue]
             name=None,
             loader=(TypedTupleDagsterTypeLoader(dagster_types) if all_have_input_configs else None),
             type_check_fn=self.type_check_method,

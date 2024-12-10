@@ -1241,7 +1241,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
                         " context.advance_all_cursors to update the cursor."
                     )
 
-                multi_asset_sensor_context.update_cursor_after_evaluation()
+                multi_asset_sensor_context.update_cursor_after_evaluation()  # pyright: ignore[reportAttributeAccessIssue]
                 context.update_cursor(multi_asset_sensor_context.cursor)
 
             return _fn

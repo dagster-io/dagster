@@ -225,13 +225,13 @@ def test_wrong_argument_to_job():
         DagsterInvalidDefinitionError,
         match="You have passed a lambda or function non_solid_func",
     ):
-        GraphDefinition(node_defs=[non_solid_func], name="test")
+        GraphDefinition(node_defs=[non_solid_func], name="test")  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="You have passed a lambda or function <lambda>",
     ):
-        GraphDefinition(node_defs=[lambda x: x], name="test")
+        GraphDefinition(node_defs=[lambda x: x], name="test")  # pyright: ignore[reportArgumentType]
 
 
 def test_descriptions():
@@ -325,7 +325,7 @@ def test_op_docstring():
     assert comp_graph.__name__ == "comp_graph"
     assert the_job.__doc__ == "THE_DOCSTRING."
     assert the_job.description == "THE_DOCSTRING."
-    assert the_job.__name__ == "the_job"
+    assert the_job.__name__ == "the_job"  # pyright: ignore[reportAttributeAccessIssue]
     assert the_op.__doc__ == "OP_DOCSTRING."
     assert the_op.description == "OP_DOCSTRING."
     assert the_op.__name__ == "the_op"
@@ -441,7 +441,7 @@ def test_ins():
 
 
 def test_ins_dagster_types():
-    assert In(dagster_type=None)
+    assert In(dagster_type=None)  # pyright: ignore[reportArgumentType]
     assert In(dagster_type=int)
     assert In(dagster_type=List)
     assert In(dagster_type=List[int])  # typing type
@@ -877,13 +877,13 @@ def test_yield_event_ordering():
         assert log.user_message == "A log"
 
         first = relevant_event_logs[0]
-        assert first.dagster_event.event_specific_data.materialization.label == "first"
+        assert first.dagster_event.event_specific_data.materialization.label == "first"  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
 
         second = relevant_event_logs[1]
-        assert second.dagster_event.event_specific_data.materialization.label == "second"
+        assert second.dagster_event.event_specific_data.materialization.label == "second"  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
 
         third = relevant_event_logs[2]
-        assert third.dagster_event.event_specific_data.materialization.label == "third"
+        assert third.dagster_event.event_specific_data.materialization.label == "third"  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
 
         assert second.timestamp - first.timestamp >= 1
         assert log.timestamp - first.timestamp >= 1
@@ -899,8 +899,8 @@ def test_metadata_logging():
     assert result.success
     assert result.output_for_node("basic") == "baz"
     events = result.events_for_node("basic")
-    assert len(events[1].event_specific_data.metadata) == 1
-    assert events[1].event_specific_data.metadata["foo"].text == "bar"
+    assert len(events[1].event_specific_data.metadata) == 1  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert events[1].event_specific_data.metadata["foo"].text == "bar"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_metadata_logging_multiple_entries():
@@ -913,9 +913,9 @@ def test_metadata_logging_multiple_entries():
     result = execute_op_in_graph(basic)
     assert result.success
     events = result.events_for_node("basic")
-    assert len(events[1].event_specific_data.metadata) == 2
-    assert events[1].event_specific_data.metadata["foo"].text == "second_value"
-    assert events[1].event_specific_data.metadata["boo"].text == "bot"
+    assert len(events[1].event_specific_data.metadata) == 2  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert events[1].event_specific_data.metadata["foo"].text == "second_value"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert events[1].event_specific_data.metadata["boo"].text == "bot"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_log_event_multi_output():
@@ -946,8 +946,8 @@ def test_log_metadata_multi_output():
     first_output_event = events[1]
     second_output_event = events[3]
 
-    assert "foo" in first_output_event.event_specific_data.metadata
-    assert "bar" in second_output_event.event_specific_data.metadata
+    assert "foo" in first_output_event.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert "bar" in second_output_event.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_log_metadata_after_output():
@@ -982,17 +982,17 @@ def test_log_metadata_multiple_dynamic_outputs():
     assert result.success
     events = result.all_node_events
     output_event_one = events[1]
-    assert output_event_one.event_specific_data.mapping_key == "one"
-    assert "one" in output_event_one.event_specific_data.metadata
+    assert output_event_one.event_specific_data.mapping_key == "one"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert "one" in output_event_one.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     output_event_two = events[3]
-    assert output_event_two.event_specific_data.mapping_key == "two"
-    assert "two" in output_event_two.event_specific_data.metadata
+    assert output_event_two.event_specific_data.mapping_key == "two"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert "two" in output_event_two.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     output_event_three = events[5]
-    assert output_event_three.event_specific_data.mapping_key == "three"
-    assert "three" in output_event_three.event_specific_data.metadata
+    assert output_event_three.event_specific_data.mapping_key == "three"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert "three" in output_event_three.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     output_event_four = events[7]
-    assert output_event_four.event_specific_data.mapping_key == "four"
-    assert "four" in output_event_four.event_specific_data.metadata
+    assert output_event_four.event_specific_data.mapping_key == "four"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert "four" in output_event_four.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_log_metadata_after_dynamic_output():

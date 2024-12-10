@@ -236,15 +236,15 @@ def test_request_asset_checks(init_load_context: None, instance: DagsterInstance
 
     dag_asset_key = make_dag_key("dag")
 
-    @asset_check(asset="a")
+    @asset_check(asset="a")  # pyright: ignore[reportArgumentType]
     def check_task_asset():
         pass
 
-    @asset_check(asset=dag_asset_key)
+    @asset_check(asset=dag_asset_key)  # pyright: ignore[reportArgumentType]
     def check_dag_asset():
         pass
 
-    @asset_check(asset="c")
+    @asset_check(asset="c")  # pyright: ignore[reportArgumentType]
     def check_unrelated_asset():
         pass
 

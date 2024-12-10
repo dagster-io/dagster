@@ -77,11 +77,11 @@ def test_partitioned_observable_source_asset():
         job_def = Definitions(assets=[foo, bar, baz]).get_implicit_job_def_for_assets([foo.key])
 
         # If the asset selection contains any materializable assets, source assets observations will not run
-        job_def.execute_in_process(partition_key="A", instance=instance)
+        job_def.execute_in_process(partition_key="A", instance=instance)  # pyright: ignore[reportOptionalMemberAccess]
         assert called == {"bar"}
 
         # If the asset selection contains only observable source assets, source assets are observed
-        job_def.execute_in_process(partition_key="A", asset_selection=[foo.key], instance=instance)
+        job_def.execute_in_process(partition_key="A", asset_selection=[foo.key], instance=instance)  # pyright: ignore[reportOptionalMemberAccess]
         assert called == {"bar", "foo"}
         record = instance.get_latest_data_version_record(AssetKey(["foo"]))
         assert record and extract_data_version_from_entry(record.event_log_entry) == DataVersion(

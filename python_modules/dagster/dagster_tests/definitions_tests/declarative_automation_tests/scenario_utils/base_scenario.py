@@ -260,7 +260,7 @@ class AssetReconciliationScenario(
 
         with freeze_time(test_time):
 
-            @repository
+            @repository  # pyright: ignore[reportArgumentType]
             def repo():
                 return self.assets
 
@@ -268,7 +268,7 @@ class AssetReconciliationScenario(
             for dagster_run in self.dagster_runs or []:
                 instance.add_run(dagster_run)
                 # make sure to log the planned events
-                for asset_key in dagster_run.asset_selection:
+                for asset_key in dagster_run.asset_selection:  # pyright: ignore[reportOptionalIterable]
                     event = DagsterEvent(
                         event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
                         job_name=dagster_run.job_name,
@@ -292,7 +292,7 @@ class AssetReconciliationScenario(
                 else:
                     target_subset = AssetGraphSubset(
                         partitions_subsets_by_asset_key={},
-                        non_partitioned_asset_keys=target,
+                        non_partitioned_asset_keys=target,  # pyright: ignore[reportArgumentType]
                     )
                 empty_subset = AssetGraphSubset(
                     partitions_subsets_by_asset_key={},
@@ -321,9 +321,9 @@ class AssetReconciliationScenario(
 
             if self.cursor_from is not None:
 
-                @repository
+                @repository  # pyright: ignore[reportArgumentType]
                 def prior_repo():
-                    return self.cursor_from.assets
+                    return self.cursor_from.assets  # pyright: ignore[reportOptionalMemberAccess]
 
                 (
                     run_requests,
@@ -359,7 +359,7 @@ class AssetReconciliationScenario(
                         instance=instance,
                         assets=[
                             a
-                            for a in self.assets
+                            for a in self.assets  # pyright: ignore[reportOptionalIterable]
                             if isinstance(a, SourceAsset) and a.key in run.asset_keys
                         ],
                     )
@@ -367,7 +367,7 @@ class AssetReconciliationScenario(
                     do_run(
                         asset_keys=run.asset_keys,
                         partition_key=run.partition_key,
-                        all_assets=self.assets,
+                        all_assets=self.assets,  # pyright: ignore[reportArgumentType]
                         instance=instance,
                         failed_asset_keys=run.failed_asset_keys,
                     )
@@ -395,7 +395,7 @@ class AssetReconciliationScenario(
             with mock.patch.object(
                 DagsterInstance,
                 "auto_materialize_respect_materialization_data_versions",
-                new=lambda: self.respect_materialization_data_versions,
+                new=lambda: self.respect_materialization_data_versions,  # pyright: ignore[reportAttributeAccessIssue]
             ):
                 run_requests, cursor, evaluations = AutomationTickEvaluationContext(
                     evaluation_id=cursor.evaluation_id + 1,
@@ -415,7 +415,7 @@ class AssetReconciliationScenario(
                 ).evaluate()
 
         for run_request in run_requests:
-            base_job = repo.get_implicit_job_def_for_assets(run_request.asset_selection)
+            base_job = repo.get_implicit_job_def_for_assets(run_request.asset_selection)  # pyright: ignore[reportArgumentType]
             assert base_job is not None
 
         return run_requests, cursor, evaluations

@@ -31,7 +31,7 @@ def test_observe_result_asset():
 
     result = observe([ret_untyped])
     assert result.success
-    observations = result.asset_observations_for_node(ret_untyped.node_def.name)
+    observations = result.asset_observations_for_node(ret_untyped.node_def.name)  # pyright: ignore[reportOptionalMemberAccess]
     assert len(observations) == 1, observations
     assert "one" in observations[0].metadata
     assert observations[0].tags["foo"] == "bar"
@@ -91,8 +91,8 @@ def test_multi_asset_observe_result():
     assert observe([outs_multi_asset]).success
 
     res = outs_multi_asset()
-    assert res[0].metadata["foo"] == "bar"
-    assert res[1].metadata["baz"] == "qux"
+    assert res[0].metadata["foo"] == "bar"  # pyright: ignore[reportIndexIssue]
+    assert res[1].metadata["baz"] == "qux"  # pyright: ignore[reportIndexIssue]
 
     @multi_observable_source_asset(
         specs=[
@@ -108,8 +108,8 @@ def test_multi_asset_observe_result():
     assert observe([specs_multi_asset]).success
 
     res = specs_multi_asset()
-    assert res[0].metadata["foo"] == "bar"
-    assert res[1].metadata["baz"] == "qux"
+    assert res[0].metadata["foo"] == "bar"  # pyright: ignore[reportIndexIssue]
+    assert res[1].metadata["baz"] == "qux"  # pyright: ignore[reportIndexIssue]
 
 
 def test_yield_materialization_multi_asset():
@@ -134,7 +134,7 @@ def test_yield_materialization_multi_asset():
     assert "one" in observations[0].metadata
     assert "two" in observations[1].metadata
 
-    direct_results = list(multi())
+    direct_results = list(multi())  # pyright: ignore[reportArgumentType]
     assert len(direct_results) == 2
 
     #
@@ -160,7 +160,7 @@ def test_yield_materialization_multi_asset():
         DagsterInvariantViolationError,
         match='Invocation of op "missing" did not return an output for non-optional output "two"',
     ):
-        list(missing())
+        list(missing())  # pyright: ignore[reportArgumentType]
 
     #
     # missing asset_key
@@ -190,7 +190,7 @@ def test_yield_materialization_multi_asset():
             " asset_key, options are:"
         ),
     ):
-        list(no_key())
+        list(no_key())  # pyright: ignore[reportArgumentType]
 
     #
     # return tuple success
@@ -216,7 +216,7 @@ def test_yield_materialization_multi_asset():
     assert "two" in observations[1].metadata
 
     res = ret_multi()
-    assert len(res) == 2
+    assert len(res) == 2  # pyright: ignore[reportArgumentType]
 
     #
     # return list error
@@ -395,7 +395,7 @@ def test_observe_result_generators():
     assert observations[0].metadata["foo"].value == "bar"
     assert observations[1].metadata["baz"].value == "qux"
 
-    result = list(generator_specs_multi_asset())
+    result = list(generator_specs_multi_asset())  # pyright: ignore[reportArgumentType]
     assert len(result) == 2
     assert result[0].metadata["foo"] == "bar"
     assert result[1].metadata["baz"] == "qux"
@@ -412,7 +412,7 @@ def test_observe_result_generators():
     assert observations[0].metadata["foo"].value == "bar"
     assert observations[1].metadata["baz"].value == "qux"
 
-    result = list(generator_outs_multi_asset())
+    result = list(generator_outs_multi_asset())  # pyright: ignore[reportArgumentType]
     assert len(result) == 2
     assert result[0].metadata["foo"] == "bar"
     assert result[1].metadata["baz"] == "qux"
@@ -430,7 +430,7 @@ def test_observe_result_generators():
     assert observations[0].metadata["foo"].value == "bar"
     assert observations[1].metadata["baz"].value == "qux"
 
-    result = asyncio.run(async_specs_multi_asset())
+    result = asyncio.run(async_specs_multi_asset())  # pyright: ignore[reportArgumentType]
     assert len(result) == 2
     assert result[0].metadata["foo"] == "bar"
     assert result[1].metadata["baz"] == "qux"
@@ -449,7 +449,7 @@ def test_observe_result_generators():
 
     async def _run_async_gen():
         results = []
-        async for result in async_gen_specs_multi_asset():
+        async for result in async_gen_specs_multi_asset():  # pyright: ignore[reportGeneralTypeIssues]
             results.append(result)
         return results
 
@@ -485,4 +485,4 @@ def test_observe_result_with_partitions_direct_invocation():
     context = build_op_context(partition_key="red")
 
     res = partitioned_asset(context)
-    assert res.metadata["key"] == "red"
+    assert res.metadata["key"] == "red"  # pyright: ignore[reportAttributeAccessIssue]

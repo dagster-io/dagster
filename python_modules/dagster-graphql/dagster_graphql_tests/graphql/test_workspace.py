@@ -145,7 +145,7 @@ class TestLoadWorkspace(BaseTestSuite):
         with mock.patch(
             "dagster._core.workspace.load_target.location_origins_from_yaml_paths",
         ) as origins_mock:
-            original_origins.append(
+            original_origins.append(  # pyright: ignore[reportAttributeAccessIssue]
                 ManagedGrpcPythonEnvCodeLocationOrigin(
                     location_name="error_location",
                     loadable_target_origin=LoadableTargetOrigin(
@@ -228,7 +228,7 @@ class TestLoadWorkspace(BaseTestSuite):
             "dagster._core.workspace.load_target.location_origins_from_yaml_paths",
         ) as origins_mock:
             # Add an error origin
-            original_origins.append(
+            original_origins.append(  # pyright: ignore[reportAttributeAccessIssue]
                 ManagedGrpcPythonEnvCodeLocationOrigin(
                     location_name="error_location",
                     loadable_target_origin=LoadableTargetOrigin(
@@ -273,7 +273,7 @@ class TestLoadWorkspace(BaseTestSuite):
         with mock.patch(
             "dagster._core.workspace.load_target.location_origins_from_yaml_paths",
         ) as origins_mock:
-            original_origins.append(
+            original_origins.append(  # pyright: ignore[reportAttributeAccessIssue]
                 ManagedGrpcPythonEnvCodeLocationOrigin(
                     location_name="error_location",
                     loadable_target_origin=LoadableTargetOrigin(

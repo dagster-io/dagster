@@ -29,7 +29,7 @@ def test_job_snapshot_api_grpc(instance):
         remote_job_subset_result = _test_job_subset_grpc(job_handle, api_client)
         assert isinstance(remote_job_subset_result, RemoteJobSubsetResult)
         assert remote_job_subset_result.success is True
-        assert remote_job_subset_result.job_data_snap.name == "foo"
+        assert remote_job_subset_result.job_data_snap.name == "foo"  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_job_snapshot_deserialize_error(instance):
@@ -60,9 +60,9 @@ def test_job_with_valid_subset_snapshot_api_grpc(instance):
         remote_job_subset_result = _test_job_subset_grpc(job_handle, api_client, ["do_something"])
         assert isinstance(remote_job_subset_result, RemoteJobSubsetResult)
         assert remote_job_subset_result.success is True
-        assert remote_job_subset_result.job_data_snap.name == "foo"
+        assert remote_job_subset_result.job_data_snap.name == "foo"  # pyright: ignore[reportOptionalMemberAccess]
         assert (
-            remote_job_subset_result.job_data_snap.parent_job
+            remote_job_subset_result.job_data_snap.parent_job  # pyright: ignore[reportOptionalMemberAccess]
             == code_location.get_repository("bar_repo").get_full_job("foo").job_snapshot
         )
 
@@ -77,8 +77,8 @@ def test_job_with_valid_subset_snapshot_without_parent_snapshot(instance):
         )
         assert isinstance(remote_job_subset_result, RemoteJobSubsetResult)
         assert remote_job_subset_result.success is True
-        assert remote_job_subset_result.job_data_snap.name == "foo"
-        assert not remote_job_subset_result.job_data_snap.parent_job
+        assert remote_job_subset_result.job_data_snap.name == "foo"  # pyright: ignore[reportOptionalMemberAccess]
+        assert not remote_job_subset_result.job_data_snap.parent_job  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_job_with_invalid_subset_snapshot_api_grpc(instance):

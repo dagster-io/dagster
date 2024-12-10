@@ -93,7 +93,7 @@ def test_composite_multi_out():
 
     @job
     def composite_multi():
-        one, numbers = multi_out()
+        one, numbers = multi_out()  # pyright: ignore[reportGeneralTypeIssues]
         echo(one)
         numbers.map(echo)
 

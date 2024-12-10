@@ -738,7 +738,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
             self._execution_properties.output_metadata[output_name][mapping_key] = metadata
 
         else:
-            self._execution_properties.output_metadata[output_name] = metadata
+            self._execution_properties.output_metadata[output_name] = metadata  # pyright: ignore[reportArgumentType]
 
     # In bound mode no conversion is done on returned values and missing but expected outputs are not
     # allowed.

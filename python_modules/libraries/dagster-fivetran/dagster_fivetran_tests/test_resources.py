@@ -177,7 +177,7 @@ def test_sync_and_poll(n_polls, succeed_at_end):
 
     if succeed_at_end:
         assert _mock_interaction() == FivetranOutput(
-            connector_details=get_sample_connector_response(data=final_data)["data"],
+            connector_details=get_sample_connector_response(data=final_data)["data"],  # pyright: ignore[reportArgumentType]
             schema_config=get_complex_sample_connector_schema_config()["data"],
         )
     else:
@@ -309,7 +309,7 @@ def test_resync_and_poll(n_polls, succeed_at_end):
 
     if succeed_at_end:
         assert _mock_interaction() == FivetranOutput(
-            connector_details=get_sample_connector_response(data=final_data)["data"],
+            connector_details=get_sample_connector_response(data=final_data)["data"],  # pyright: ignore[reportArgumentType]
             schema_config=get_complex_sample_connector_schema_config()["data"],
         )
     else:
