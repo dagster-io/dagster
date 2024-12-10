@@ -127,7 +127,7 @@ def execute_backfill_jobs(
                         e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
                     ):
                         try:
-                            raise Exception(
+                            raise DagsterUserCodeUnreachableError(
                                 "Unable to reach the code server. Backfill will resume once the code server is available."
                             ) from e
                         except:

@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from typing import TYPE_CHECKING, Callable, Dict, Iterator, List, Mapping, Optional, Sequence
 
 import dagster._check as check
@@ -11,6 +12,7 @@ from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
     consume_new_runs_for_automatic_reexecution,
 )
 from dagster._daemon.daemon import IntervalDaemon
+from dagster._daemon.utils import DaemonErrorCapture
 
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
@@ -37,7 +39,9 @@ class EventLogConsumerDaemon(IntervalDaemon):
     @property
     def handle_updated_runs_fns(
         self,
-    ) -> Sequence[Callable[[IWorkspaceProcessContext, Sequence[RunRecord]], Iterator]]:
+    ) -> Sequence[
+        Callable[[IWorkspaceProcessContext, Sequence[RunRecord], logging.Logger], Iterator]
+    ]:
         """List of functions that will be called with the list of run records that have new events."""
         return [consume_new_runs_for_automatic_reexecution]
 
@@ -84,10 +88,12 @@ class EventLogConsumerDaemon(IntervalDaemon):
             # call each handler with the list of runs that have events
             for fn in self.handle_updated_runs_fns:
                 try:
-                    yield from fn(workspace_process_context, run_records)
+                    yield from fn(workspace_process_context, run_records, self._logger)
                 except Exception:
-                    self._logger.exception(
-                        f"Error calling event event log consumer handler: {fn.__name__}"
+                    DaemonErrorCapture.on_exception(
+                        sys.exc_info(),
+                        logger=self._logger,
+                        log_message=f"Error calling event event log consumer handler: {fn.__name__}",
                     )
 
         # persist cursors now that we've processed all the events through the handlers
