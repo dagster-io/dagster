@@ -37,6 +37,7 @@ from dagster._core.pipes.utils import (
     extract_message_or_forward_to_stdout,
     forward_only_logs_to_file,
 )
+from dagster._utils.backoff import backoff
 from dagster_pipes import PipesBlobStoreMessageWriter, PipesDefaultMessageWriter
 
 if TYPE_CHECKING:
@@ -216,6 +217,15 @@ class PipesLambdaLogsMessageReader(PipesMessageReader):
         )
 
 
+def get_log_events(client: "CloudWatchLogsClient", **log_params):
+    return backoff(
+        fn=client.get_log_events,
+        kwargs=log_params,
+        retry_on=(client.exceptions.ThrottlingException,),
+        max_retries=5,
+    )
+
+
 def tail_cloudwatch_events(
     client: "CloudWatchLogsClient",
     log_group: str,
@@ -231,7 +241,7 @@ def tail_cloudwatch_events(
     if start_time is not None:
         params["startTime"] = start_time
 
-    response = client.get_log_events(**params)
+    response = get_log_events(client=client, **params)
 
     while True:
         events = response.get("events")
@@ -241,7 +251,7 @@ def tail_cloudwatch_events(
 
         params["nextToken"] = response["nextForwardToken"]
 
-        response = client.get_log_events(**params)
+        response = get_log_events(client=client, **params)
 
 
 @experimental
@@ -274,11 +284,15 @@ class PipesCloudWatchLogReader(PipesLogReader):
         if log_group is not None and log_stream is not None:
             # check if the stream actually exists
             try:
-                self.client.describe_log_streams(
+                resp = self.client.describe_log_streams(
                     logGroupName=log_group,
                     logStreamNamePrefix=log_stream,
                 )
-                return True
+
+                if resp.get("logStreams", []):
+                    return True
+                else:
+                    return False
             except self.client.exceptions.ResourceNotFoundException:
                 return False
         else:
@@ -357,11 +371,15 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         if self.log_group is not None and self.log_stream is not None:
             # check if the stream actually exists
             try:
-                self.client.describe_log_streams(
+                resp = self.client.describe_log_streams(
                     logGroupName=self.log_group,
                     logStreamNamePrefix=self.log_stream,
                 )
-                return True
+
+                if resp.get("logStreams", []):
+                    return True
+                else:
+                    return False
             except self.client.exceptions.ResourceNotFoundException:
                 return False
         else:
@@ -379,7 +397,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         if cursor is not None:
             params["nextToken"] = cursor
 
-        response = self.client.get_log_events(**params)
+        response = get_log_events(client=self.client, **params)
 
         events = response.get("events")
 
