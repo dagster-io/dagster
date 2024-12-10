@@ -16,7 +16,7 @@ ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
 pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
-    name="dg-cli",
+    name="dagster-dg",
     version=get_version(),
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
@@ -38,6 +38,7 @@ setup(
         "click>=8",
         "typing_extensions>=4.4.0,<5",
     ],
+    include_package_data=True,
     zip_safe=False,
     entry_points={
         "console_scripts": [
