@@ -1,5 +1,5 @@
 ---
-title: Setting up alerts on Dagster+
+title: Setting up alerts in Dagster+
 sidebar_label: "Dagster+ Alerts"
 sidebar_position: 30
 ---

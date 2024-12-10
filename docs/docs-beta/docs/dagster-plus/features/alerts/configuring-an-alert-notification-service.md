@@ -7,7 +7,7 @@ sidebar_position: 100
 You must have **Organization**, **Admin**, or **Editor** permissions on Dagster+ to configure an alert notification service.
 :::
 
-Before [creating alerts](creating-alerts-in-dagster-plus), you'll need to configure a service to send alerts. Dagster+ current supports sending alerts through email, Microsoft Teams, PagerDuty, and Slack.
+Before [creating alerts](creating-alerts), you'll need to configure a service to send alerts. Dagster+ current supports sending alerts through email, Microsoft Teams, PagerDuty, and Slack.
 
 <Tabs groupId="notification_service">
   <TabItem value='email' label='Email'>
