@@ -136,16 +136,25 @@ export const VirtualizedAutomationSensorRow = forwardRef(
             </Tooltip>
           </RowCell>
           <RowCell>
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
-              {/* Keyed so that a new switch is always rendered, otherwise it's reused and animates on/off */}
-              {sensorData ? (
-                <SensorSwitch key={name} repoAddress={repoAddress} sensor={sensorData} />
-              ) : (
-                <div style={{width: 30}} />
-              )}
-              <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>
-                <MiddleTruncate text={name} />
-              </Link>
+            <Box
+              flex={{
+                direction: 'row',
+                gap: 8,
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+              }}
+            >
+              <Box flex={{grow: 1, gap: 8}}>
+                {/* Keyed so that a new switch is always rendered, otherwise it's reused and animates on/off */}
+                {sensorData ? (
+                  <SensorSwitch key={name} repoAddress={repoAddress} sensor={sensorData} />
+                ) : (
+                  <div style={{width: 30}} />
+                )}
+                <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>
+                  <MiddleTruncate text={name} />
+                </Link>
+              </Box>
             </Box>
           </RowCell>
           <RowCell>

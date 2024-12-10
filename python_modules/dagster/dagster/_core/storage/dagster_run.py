@@ -1,5 +1,7 @@
+import os
 from datetime import datetime
 from enum import Enum
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -430,6 +432,56 @@ class DagsterRun(
 
     def get_parent_run_id(self) -> Optional[str]:
         return self.tags.get(PARENT_RUN_ID_TAG)
+
+    @cached_property
+    def dagster_execution_info(self) -> Mapping[str, str]:
+        """Key-value pairs encoding metadata about the current Dagster run, typically attached to external execution resources.
+
+        Remote execution environments commonly have their own concepts of tags or labels. It's useful to include
+        Dagster-specific metadata in these environments to help with debugging, monitoring, and linking remote
+        resources back to Dagster. For example, the Kubernetes Executor and Pipes client are using these tags as Kubernetes labels.
+
+        By default the tags include:
+        * dagster/run-id
+        * dagster/job
+
+        And, if available:
+        * dagster/partition
+        * dagster/code-location
+        * dagster/user
+
+        And, for Dagster+ deployments:
+        * dagster/deployment-name
+        * dagster/git-repo
+        * dagster/git-branch
+        * dagster/git-sha
+        """
+        tags = {
+            "dagster/run-id": self.run_id,
+            "dagster/job": self.job_name,
+        }
+
+        if self.remote_job_origin:
+            tags["dagster/code-location"] = (
+                self.remote_job_origin.repository_origin.code_location_origin.location_name
+            )
+
+        if user := self.tags.get("dagster/user"):
+            tags["dagster/user"] = user
+
+        if partition := self.tags.get("dagster/partition"):
+            tags["dagster/partition"] = partition
+
+        for env_var, tag in {
+            "DAGSTER_CLOUD_DEPLOYMENT_NAME": "deployment-name",
+            "DAGSTER_CLOUD_GIT_REPO": "git-repo",
+            "DAGSTER_CLOUD_GIT_BRANCH": "git-branch",
+            "DAGSTER_CLOUD_GIT_SHA": "git-sha",
+        }.items():
+            if value := os.getenv(env_var):
+                tags[f"dagster/{tag}"] = value
+
+        return tags
 
     def tags_for_storage(self) -> Mapping[str, str]:
         repository_tags = {}

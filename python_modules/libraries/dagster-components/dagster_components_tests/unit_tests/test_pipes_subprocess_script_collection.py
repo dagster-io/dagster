@@ -1,14 +1,14 @@
 from pathlib import Path
 
 from dagster import AssetKey
-from dagster_components.core.component_decl_builder import DefsFileModel
+from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
     build_components_from_component_folder,
     build_defs_from_component_path,
     defs_from_components,
 )
-from dagster_components.impls.pipes_subprocess_script_collection import (
+from dagster_components.lib.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollection,
 )
 
@@ -29,9 +29,9 @@ def test_python_params() -> None:
         load_context=script_load_context(),
         component_decl=YamlComponentDecl(
             path=LOCATION_PATH / "components" / "scripts",
-            defs_file_model=DefsFileModel(
-                component_type="pipes_subprocess_script_collection",
-                component_params={
+            component_file_model=ComponentFileModel(
+                type="pipes_subprocess_script_collection",
+                params={
                     "scripts": [
                         {
                             "path": "script_one.py",

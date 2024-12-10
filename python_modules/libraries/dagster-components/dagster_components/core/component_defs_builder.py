@@ -1,5 +1,9 @@
+import importlib
+import importlib.util
+import inspect
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence
+from types import ModuleType
+from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Type
 
 from dagster._utils.warnings import suppress_dagster_warnings
 
@@ -8,6 +12,8 @@ from dagster_components.core.component import (
     ComponentDeclNode,
     ComponentLoadContext,
     ComponentRegistry,
+    get_component_name,
+    is_registered_component,
 )
 from dagster_components.core.component_decl_builder import (
     ComponentFolder,
@@ -20,12 +26,24 @@ if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 
+def load_module_from_path(module_name, path) -> ModuleType:
+    # Create a spec from the file path
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None:
+        raise ImportError(f"Cannot create a module spec from path: {path}")
+
+    # Create and load the module
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader, "Must have a loader"
+    spec.loader.exec_module(module)
+    return module
+
+
 def build_components_from_decl_node(
     context: ComponentLoadContext, decl_node: ComponentDeclNode
 ) -> Sequence[Component]:
     if isinstance(decl_node, YamlComponentDecl):
-        parsed_defs = decl_node.defs_file_model
-        component_type = context.registry.get(parsed_defs.component_type)
+        component_type = component_type_from_yaml_decl(context, decl_node)
         return [component_type.from_decl_node(context, decl_node)]
     elif isinstance(decl_node, ComponentFolder):
         components = []
@@ -34,6 +52,34 @@ def build_components_from_decl_node(
         return components
 
     raise NotImplementedError(f"Unknown component type {decl_node}")
+
+
+def component_type_from_yaml_decl(
+    context: ComponentLoadContext, decl_node: YamlComponentDecl
+) -> Type:
+    parsed_defs = decl_node.component_file_model
+    if parsed_defs.type.startswith("."):
+        component_registry_key = parsed_defs.type[1:]
+
+        # Iterate over Python files in the folder
+        for py_file in decl_node.path.glob("*.py"):
+            module_name = py_file.stem
+
+            module = load_module_from_path(module_name, decl_node.path / f"{module_name}.py")
+
+            for _name, obj in inspect.getmembers(module, inspect.isclass):
+                assert isinstance(obj, Type)
+                if (
+                    is_registered_component(obj)
+                    and get_component_name(obj) == component_registry_key
+                ):
+                    return obj
+
+        raise Exception(
+            f"Could not find component type {component_registry_key} in {decl_node.path}"
+        )
+
+    return context.registry.get(parsed_defs.type)
 
 
 def build_components_from_component_folder(
@@ -84,7 +130,9 @@ def build_defs_from_toplevel_components_folder(
     """Build a Definitions object from an entire component hierarchy."""
     from dagster._core.definitions.definitions_class import Definitions
 
-    context = CodeLocationProjectContext.from_path(path, registry or ComponentRegistry.empty())
+    context = CodeLocationProjectContext.from_path(
+        path, registry or ComponentRegistry.from_entry_point_discovery()
+    )
 
     all_defs: List[Definitions] = []
     for component in context.component_instances:

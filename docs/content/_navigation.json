@@ -935,6 +935,10 @@
         "path": "/integrations/airlift",
         "children": [
           {
+            "title": "Mapping Airflow Concepts to Dagster",
+            "path": "/integrations/airlift/airflow-dagster-equivalents"
+          },
+          {
             "title": "Airflow Migration Tutorial",
             "path": "/integrations/airlift/tutorial/overview",
             "children": [
@@ -985,6 +989,32 @@
           {
             "title": "DAG-level migration",
             "path": "/integrations/airlift/full_dag"
+          },
+          {
+            "title": "Migration with Airflow 1",
+            "path": "/integrations/airlift/airflow-1-migration"
+          },
+          {
+            "title": "Operator Migration Reference",
+            "path": "/integrations/airlift/operator-migration/overview",
+            "children": [
+              {
+                "title": "Migrating a BashOperator for dbt",
+                "path": "/integrations/airlift/operator-migration/bash-operator-dbt"
+              },
+              {
+                "title": "Migrating a KubernetesPodOperator",
+                "path": "/integrations/airlift/operator-migration/kubernetes-pod-operator"
+              },
+              {
+                "title": "Migrating a PythonOperator",
+                "path": "/integrations/airlift/operator-migration/python-operator"
+              },
+              {
+                "title": "Migrating a BashOperator (general)",
+                "path": "/integrations/airlift/operator-migration/bash-operator-general"
+              }
+            ]
           }
         ]
       },
@@ -1094,7 +1124,13 @@
       },
       {
         "title": "Fivetran",
-        "path": "/integrations/fivetran"
+        "path": "/integrations/fivetran/fivetran",
+        "children": [
+          {
+            "title": "Fivetran (Legacy)",
+            "path": "/integrations/fivetran/fivetran-legacy"
+          }
+        ]
       },
       {
         "title": "Google BigQuery",

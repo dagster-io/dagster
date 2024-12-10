@@ -3727,6 +3727,7 @@ __metadata:
     "@types/color": "npm:^3.0.2"
     "@types/dagre": "npm:^0.7.42"
     "@types/faker": "npm:^5.1.7"
+    "@types/fast-text-encoding": "npm:^1.0.3"
     "@types/graphql": "npm:^14.5.0"
     "@types/jest": "npm:^29.5.11"
     "@types/lodash": "npm:^4.14.145"
@@ -3737,6 +3738,7 @@ __metadata:
     "@types/react-dom": "npm:^18.3.1"
     "@types/react-router": "npm:^5.1.17"
     "@types/react-router-dom": "npm:^5.3.3"
+    "@types/spark-md5": "npm:^3"
     "@types/testing-library__jest-dom": "npm:^5.14.2"
     "@types/ws": "npm:^6.0.3"
     "@typescript-eslint/eslint-plugin": "npm:^8.9.0"
@@ -3768,6 +3770,7 @@ __metadata:
     eslint-plugin-unused-imports: "npm:^4.1.4"
     fake-indexeddb: "npm:^4.0.2"
     faker: "npm:5.5.3"
+    fast-text-encoding: "npm:^1.0.6"
     fuse.js: "npm:^6.4.2"
     graphql: "npm:^16.8.1"
     graphql-codegen-persisted-query-ids: "npm:^0.2.0"
@@ -3801,6 +3804,7 @@ __metadata:
     remark: "npm:^14.0.2"
     remark-gfm: "npm:3.0.1"
     resize-observer-polyfill: "npm:^1.5.1"
+    spark-md5: "npm:^3.0.2"
     storybook: "npm:^8.2.7"
     strip-markdown: "npm:^6.0.0"
     styled-components: "npm:^6"
@@ -7164,6 +7168,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/fast-text-encoding@npm:^1.0.3":
+  version: 1.0.3
+  resolution: "@types/fast-text-encoding@npm:1.0.3"
+  checksum: 10/34ec2bbaf3e3ee36b7b74375293becc735378f77e9cd93b810ad988b42991ee80d30fb942e6ba03adfc1f0cb0e2024a0aeee84475847563ed6782e21c4c0f5f0
+  languageName: node
+  linkType: hard
+
 "@types/graceful-fs@npm:^4.1.2, @types/graceful-fs@npm:^4.1.3":
   version: 4.1.6
   resolution: "@types/graceful-fs@npm:4.1.6"
@@ -7562,6 +7573,13 @@ __metadata:
     "@types/mime": "npm:*"
     "@types/node": "npm:*"
   checksum: 10/d5f8f5aaa765be6417aa3f2ebe36591f4e9d2d8a7480edf7d3db041427420fd565cb921fc021271098dd2afafce2b443fc0d978faa3ae21a2a58ebde7d525e9e
+  languageName: node
+  linkType: hard
+
+"@types/spark-md5@npm:^3":
+  version: 3.0.5
+  resolution: "@types/spark-md5@npm:3.0.5"
+  checksum: 10/b543313e8669db34259aa67cff281f63b6746e08711e2b93d653cbb32ec63bb6153e75eeb534d3e874b5a6c1cb8cbe099dd85f9f912b23d9b0f4d51f3e968a2e
   languageName: node
   linkType: hard
 
@@ -13221,6 +13239,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fast-text-encoding@npm:^1.0.6":
+  version: 1.0.6
+  resolution: "fast-text-encoding@npm:1.0.6"
+  checksum: 10/f7b9e2e7a21e4ae5f4b8d3729850be83fb45052b28c9c38c09b8366463a291d6dc5448359238bdaf87f6a9e907d5895a94319a2c5e0e9f0786859ad6312d1d06
+  languageName: node
+  linkType: hard
+
 "fast-url-parser@npm:^1.1.3":
   version: 1.1.3
   resolution: "fast-url-parser@npm:1.1.3"
@@ -17756,21 +17781,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nanoid@npm:^3.3.6":
-  version: 3.3.6
-  resolution: "nanoid@npm:3.3.6"
+"nanoid@npm:^3.3.6, nanoid@npm:^3.3.7":
+  version: 3.3.8
+  resolution: "nanoid@npm:3.3.8"
   bin:
     nanoid: bin/nanoid.cjs
-  checksum: 10/67235c39d1bc05851383dadde5cf77ae1c90c2a1d189e845c7f20f646f0488d875ad5f5226bbba072a88cebbb085a3f784a6673117daf785bdf614a852550362
-  languageName: node
-  linkType: hard
-
-"nanoid@npm:^3.3.7":
-  version: 3.3.7
-  resolution: "nanoid@npm:3.3.7"
-  bin:
-    nanoid: bin/nanoid.cjs
-  checksum: 10/ac1eb60f615b272bccb0e2b9cd933720dad30bf9708424f691b8113826bb91aca7e9d14ef5d9415a6ba15c266b37817256f58d8ce980c82b0ba3185352565679
+  checksum: 10/2d1766606cf0d6f47b6f0fdab91761bb81609b2e3d367027aff45e6ee7006f660fb7e7781f4a34799fe6734f1268eeed2e37a5fdee809ade0c2d4eb11b0f9c40
   languageName: node
   linkType: hard
 
@@ -21479,6 +21495,13 @@ __metadata:
   version: 2.0.2
   resolution: "space-separated-tokens@npm:2.0.2"
   checksum: 10/202e97d7ca1ba0758a0aa4fe226ff98142073bcceeff2da3aad037968878552c3bbce3b3231970025375bbba5aee00c5b8206eda408da837ab2dc9c0f26be990
+  languageName: node
+  linkType: hard
+
+"spark-md5@npm:^3.0.2":
+  version: 3.0.2
+  resolution: "spark-md5@npm:3.0.2"
+  checksum: 10/60981e181a296b2d16064ef86607f78d7eb1e08a5f39366239bb9cdd6bc3838fb2f667f2506e81c8d5c71965cdd6f18a17fb1c9a8368eeb407b9dd8188e95473
   languageName: node
   linkType: hard
 

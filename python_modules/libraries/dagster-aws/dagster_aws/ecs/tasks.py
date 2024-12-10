@@ -204,7 +204,7 @@ def get_task_definition_dict_from_current_task(
     ecs,
     family,
     current_task,
-    image,
+    image: str,
     container_name,
     environment,
     command=None,

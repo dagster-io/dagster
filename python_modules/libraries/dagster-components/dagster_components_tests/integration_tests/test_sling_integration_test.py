@@ -2,18 +2,22 @@ import shutil
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Dict, Generator, Mapping
+from typing import Any, Dict, Generator, Iterator, Mapping, Union
 
 import pytest
 import yaml
 from dagster import AssetKey
+from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.result import MaterializeResult
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.env import environ
-from dagster_components.core.component_decl_builder import DefsFileModel
+from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
     build_components_from_component_folder,
 )
-from dagster_components.impls.sling_replication import SlingReplicationComponent
+from dagster_components.lib.sling_replication import SlingReplicationComponent, component
+from dagster_embedded_elt.sling import SlingResource
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
 
@@ -32,7 +36,7 @@ def _update_yaml(path: Path, fn) -> None:
 @contextmanager
 @pytest.fixture(scope="module")
 def sling_path() -> Generator[Path, None, None]:
-    """Sets up a temporary directory with a replication.yaml and defs.yml file that reference
+    """Sets up a temporary directory with a replication.yaml and component.yaml file that reference
     the proper temp path.
     """
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -50,12 +54,10 @@ def sling_path() -> Generator[Path, None, None]:
             _update_yaml(replication_path, _update_replication)
 
             # update the defs yaml to add a duckdb instance
-            defs_path = Path(temp_dir) / COMPONENT_RELPATH / "defs.yml"
+            defs_path = Path(temp_dir) / COMPONENT_RELPATH / "component.yaml"
 
             def _update_defs(data: Dict[str, Any]) -> Mapping[str, Any]:
-                data["component_params"]["sling"]["connections"][0]["instance"] = (
-                    f"{temp_dir}/duckdb"
-                )
+                data["params"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
                 return data
 
             _update_yaml(defs_path, _update_defs)
@@ -69,9 +71,9 @@ def test_python_params(sling_path: Path) -> None:
         context=context,
         decl_node=YamlComponentDecl(
             path=sling_path / COMPONENT_RELPATH,
-            defs_file_model=DefsFileModel(
-                component_type="sling_replication",
-                component_params={"sling": {}},
+            component_file_model=ComponentFileModel(
+                type="sling_replication",
+                params={"sling": {}},
             ),
         ),
     )
@@ -92,9 +94,9 @@ def test_python_params_op_name(sling_path: Path) -> None:
         context=context,
         decl_node=YamlComponentDecl(
             path=sling_path / COMPONENT_RELPATH,
-            defs_file_model=DefsFileModel(
-                component_type="sling_replication",
-                component_params={"sling": {}, "op": {"name": "my_op"}},
+            component_file_model=ComponentFileModel(
+                type="sling_replication",
+                params={"sling": {}, "op": {"name": "my_op"}},
             ),
         ),
     )
@@ -115,9 +117,9 @@ def test_python_params_op_tags(sling_path: Path) -> None:
         context=context,
         decl_node=YamlComponentDecl(
             path=sling_path / COMPONENT_RELPATH,
-            defs_file_model=DefsFileModel(
-                component_type="sling_replication",
-                component_params={"sling": {}, "op": {"tags": {"tag1": "value1"}}},
+            component_file_model=ComponentFileModel(
+                type="sling_replication",
+                params={"sling": {}, "op": {"tags": {"tag1": "value1"}}},
             ),
         ),
     )
@@ -138,3 +140,27 @@ def test_load_from_path(sling_path: Path) -> None:
     }
 
     assert_assets(components[0], 2)
+
+
+def test_sling_subclass() -> None:
+    @component(name="debug_sling_replication")
+    class DebugSlingReplicationComponent(SlingReplicationComponent):
+        def execute(
+            self, context: AssetExecutionContext, sling: SlingResource
+        ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+            return sling.replicate(context=context, debug=True)
+
+    component_inst = DebugSlingReplicationComponent.from_decl_node(
+        context=script_load_context(),
+        decl_node=YamlComponentDecl(
+            path=STUB_LOCATION_PATH / COMPONENT_RELPATH,
+            component_file_model=ComponentFileModel(
+                type="debug_sling_replication",
+                params={"sling": {}},
+            ),
+        ),
+    )
+    assert get_asset_keys(component_inst) == {
+        AssetKey("input_csv"),
+        AssetKey("input_duckdb"),
+    }

@@ -630,6 +630,24 @@ class FivetranClient:
             method="PATCH", endpoint=connector_id, data=json.dumps({"schedule_type": schedule_type})
         )
 
+    def get_columns_config_for_table(
+        self, connector_id: str, schema_name: str, table_name: str
+    ) -> Mapping[str, Any]:
+        """Fetches the source table columns config for a given table from the Fivetran API.
+
+        Args:
+            connector_id (str): The Fivetran Connector ID.
+            schema_name (str): The Fivetran Schema name.
+            table_name (str): The Fivetran Table name.
+
+        Returns:
+            Dict[str, Any]: Parsed json data from the response to this request.
+        """
+        return self._make_connector_request(
+            method="GET",
+            endpoint=f"{connector_id}/schemas/{schema_name}/tables/{table_name}/columns",
+        )
+
     def start_sync(self, connector_id: str) -> None:
         """Initiates a sync of a Fivetran connector.
 
@@ -856,7 +874,6 @@ class FivetranWorkspace(ConfigurableResource):
         self,
     ) -> FivetranWorkspaceData:
         """Retrieves all Fivetran content from the workspace and returns it as a FivetranWorkspaceData object.
-        Future work will cache this data to avoid repeated calls to the Fivetran API.
 
         Returns:
             FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
@@ -1064,6 +1081,7 @@ def load_fivetran_asset_specs(
         Loading the asset specs for a given Fivetran workspace:
 
         .. code-block:: python
+
             from dagster_fivetran import FivetranWorkspace, load_fivetran_asset_specs
 
             import dagster as dg
