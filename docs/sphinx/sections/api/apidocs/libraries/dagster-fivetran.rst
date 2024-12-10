@@ -6,24 +6,18 @@ This library provides a Dagster integration with `Fivetran <https://www.fivetran
 .. currentmodule:: dagster_fivetran
 
 
-Resources
-=========
+Assets (Fivetran API)
+=====================
 
-.. autoconfigurable:: FivetranResource
-    :annotation: ResourceDefinition
+.. autoclass:: FivetranWorkspace
 
-Assets
-======
+.. autoclass:: DagsterFivetranTranslator
 
-.. autofunction:: load_assets_from_fivetran_instance
+.. autodecorator:: fivetran_assets
 
-.. autofunction:: build_fivetran_assets
+.. autofunction:: load_fivetran_asset_specs
 
-
-Ops
-===
-
-.. autoconfigurable:: fivetran_sync_op
+.. autofunction:: build_fivetran_assets_definitions
 
 
 Legacy
@@ -31,3 +25,12 @@ Legacy
 
 .. autoconfigurable:: fivetran_resource
     :annotation: ResourceDefinition
+
+.. autoconfigurable:: FivetranResource
+    :annotation: ResourceDefinition
+
+.. autofunction:: load_assets_from_fivetran_instance
+
+.. autofunction:: build_fivetran_assets
+
+.. autoconfigurable:: fivetran_sync_op
