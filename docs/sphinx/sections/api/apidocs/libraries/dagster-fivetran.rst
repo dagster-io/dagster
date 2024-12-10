@@ -7,7 +7,7 @@ This library provides a Dagster integration with `Fivetran <https://www.fivetran
 
 
 Assets (Fivetran API)
-====================
+=====================
 
 .. autoclass:: FivetranWorkspace
 
