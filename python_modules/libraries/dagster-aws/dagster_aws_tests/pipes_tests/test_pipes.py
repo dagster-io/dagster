@@ -504,6 +504,34 @@ def test_cloudwatch_logs_reader(cloudwatch_client: "CloudWatchLogsClient", capsy
     assert capsys.readouterr().out.strip() == "1\n2\n3"
 
 
+def test_cloudwatch_logs_reader_does_not_repeat_logs(cloudwatch_client: "CloudWatchLogsClient", capsys):
+    reader = PipesCloudWatchLogReader(client=cloudwatch_client)
+
+    is_session_closed = threading.Event()
+
+    log_group = "/pipes/tests"
+    log_stream = "test-cloudwatch-logs-reader"
+
+    cloudwatch_client.create_log_group(logGroupName=log_group)
+    cloudwatch_client.create_log_stream(logGroupName=log_group, logStreamName=log_stream)
+
+    for i in range(5):
+        cloudwatch_client.put_log_events(
+            logGroupName=log_group,
+            logStreamName=log_stream,
+            logEvents=[
+                {"timestamp": int(datetime.now().timestamp() * 1000), "message": f"{i}"},
+            ],
+        )
+        time.sleep(0.1)
+
+    reader.start({"log_group": log_group, "log_stream": log_stream}, is_session_closed)
+    time.sleep(0.1)
+    reader.stop()
+
+    assert capsys.readouterr().out.strip() == "0\n1\n2\n3\n4"
+
+
 def test_cloudwatch_message_reader(cloudwatch_client: "CloudWatchLogsClient", capsys):
     log_group = "/pipes/tests/messages"
     messages_log_stream = "test-cloudwatch-messages-reader"
