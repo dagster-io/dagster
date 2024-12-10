@@ -1,4 +1,4 @@
-FROM postgres:15
+FROM public.ecr.aws/docker/library/postgres:15
 
 ENV POSTGRES_DB=finance
 ENV POSTGRES_USER=postgres

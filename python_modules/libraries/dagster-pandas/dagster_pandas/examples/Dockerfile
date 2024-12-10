@@ -1,4 +1,4 @@
-FROM python:3.7.5-slim-stretch
+FROM public.ecr.aws/docker/library/python:3.7.5-slim-stretch
 
 RUN mkdir -p /tmp/results
 

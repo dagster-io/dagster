@@ -1,5 +1,5 @@
 # Dagster
-FROM python:3.10-slim as dagster
+FROM public.ecr.aws/docker/library/python:3.10-slim as dagster
 
 RUN apt-get update && apt-get upgrade -yqq
 RUN apt-get install git -y
