@@ -8,23 +8,24 @@ For more information on getting started, see the `Airbyte integration guide <htt
 .. currentmodule:: dagster_airbyte
 
 
+Assets (Airbyte API)
+====================
 
-Resources
-=========
+.. autoclass:: AirbyteCloudWorkspace
+
+.. autoclass:: DagsterAirbyteTranslator
+
+.. autofunction:: load_airbyte_cloud_asset_specs
+
+
+Legacy
+======
 
 .. autoconfigurable:: AirbyteResource
     :annotation: ResourceDefinition
 
-
-Assets
-======
-
 .. autofunction:: load_assets_from_airbyte_instance
 
 .. autofunction:: build_airbyte_assets
-
-
-Ops
-===
 
 .. autoconfigurable:: airbyte_sync_op
