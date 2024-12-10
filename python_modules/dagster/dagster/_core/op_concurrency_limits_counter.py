@@ -10,7 +10,6 @@ from dagster._core.storage.dagster_run import (
     RunOpConcurrency,
     RunRecord,
 )
-from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._time import get_current_timestamp
 
 
@@ -28,11 +27,10 @@ def compute_run_op_concurrency_info_for_snapshot(
     for step in plan_snapshot.steps:
         if step.key not in root_step_keys:
             continue
-        concurrency_key = step.tags.get(GLOBAL_CONCURRENCY_TAG) if step.tags else None
-        if concurrency_key is None:
+        if step.concurrency_key is None:
             has_unconstrained_root_nodes = True
         else:
-            concurrency_key_counts[concurrency_key] += 1
+            concurrency_key_counts[step.concurrency_key] += 1
 
     if len(concurrency_key_counts) == 0:
         return None

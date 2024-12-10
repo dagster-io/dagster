@@ -20,6 +20,7 @@ from dagster._core.execution.plan.step import (
     UnresolvedCollectExecutionStep,
     UnresolvedMappedExecutionStep,
 )
+from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -148,6 +149,7 @@ class ExecutionStepSnap(
             ("metadata_items", Sequence["ExecutionPlanMetadataItemSnap"]),
             ("tags", Optional[Mapping[str, str]]),
             ("step_handle", Optional[StepHandleUnion]),
+            ("step_concurrency_key", Optional[str]),
         ],
     )
 ):
@@ -161,6 +163,7 @@ class ExecutionStepSnap(
         metadata_items: Sequence["ExecutionPlanMetadataItemSnap"],
         tags: Optional[Mapping[str, str]] = None,
         step_handle: Optional[StepHandleUnion] = None,
+        step_concurrency_key: Optional[str] = None,
     ):
         return super(ExecutionStepSnap, cls).__new__(
             cls,
@@ -174,7 +177,21 @@ class ExecutionStepSnap(
             ),
             tags=check.opt_nullable_mapping_param(tags, "tags", key_type=str, value_type=str),
             step_handle=check.opt_inst_param(step_handle, "step_handle", StepHandleTypes),
+            # stores the concurrency key arg as separate from the concurrency_key property since the
+            # snapshot may have been generated before concurrency_key was added as a separate
+            # argument
+            step_concurrency_key=check.opt_str_param(step_concurrency_key, "step_concurrency_key"),
         )
+
+    @property
+    def concurrency_key(self):
+        # Need to sthere in case the snapshot was created before concurrency_key was added as
+        # a separate argument from tags
+        if self.step_concurrency_key:
+            return self.step_concurrency_key
+        if not self.tags:
+            return None
+        return self.tags.get(GLOBAL_CONCURRENCY_TAG)
 
 
 @whitelist_for_serdes
@@ -308,6 +325,7 @@ def _snapshot_from_execution_step(execution_step: IExecutionStep) -> ExecutionSt
         ),
         tags=execution_step.tags,
         step_handle=execution_step.handle,
+        step_concurrency_key=execution_step.concurrency_key,
     )
 
 

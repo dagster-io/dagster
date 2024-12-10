@@ -316,6 +316,7 @@ class _PlanBuilder:
                         ),
                         step_outputs=step_outputs,
                         tags=node.tags,
+                        concurrency_key=node.definition.concurrency_key,
                     )
                 elif has_pending_input:
                     new_step = UnresolvedCollectExecutionStep(
@@ -326,6 +327,7 @@ class _PlanBuilder:
                         ),
                         step_outputs=step_outputs,
                         tags=node.tags,
+                        concurrency_key=node.definition.concurrency_key,
                     )
                 else:
                     new_step = ExecutionStep(
@@ -334,6 +336,7 @@ class _PlanBuilder:
                         step_inputs=cast(List[StepInput], step_inputs),
                         step_outputs=step_outputs,
                         tags=node.tags,
+                        concurrency_key=node.definition.concurrency_key,
                     )
 
                 self.add_step(new_step)
@@ -1028,6 +1031,7 @@ class ExecutionPlan(
                     step_inputs,  # type: ignore  # (plain StepInput only)
                     step_outputs,
                     step_snap.tags,
+                    step_snap.concurrency_key,
                 )
             elif step_snap.kind == StepKind.UNRESOLVED_MAPPED:
                 step = UnresolvedMappedExecutionStep(
@@ -1039,6 +1043,7 @@ class ExecutionPlan(
                     step_inputs,  # type: ignore  # (StepInput or UnresolvedMappedStepInput only)
                     step_outputs,
                     step_snap.tags,
+                    step_snap.concurrency_key,
                 )
             elif step_snap.kind == StepKind.UNRESOLVED_COLLECT:
                 step = UnresolvedCollectExecutionStep(
@@ -1047,6 +1052,7 @@ class ExecutionPlan(
                     step_inputs,  # type: ignore  # (StepInput or UnresolvedCollectStepInput only)
                     step_outputs,
                     step_snap.tags,
+                    step_snap.concurrency_key,
                 )
             else:
                 raise Exception(f"Unexpected step kind {step_snap.kind}")
