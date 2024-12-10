@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Final, Iterable, Mapping, Optional
+from typing import Final, Iterable, Mapping, Optional, Sequence
 
 import tomli
 from typing_extensions import Self
@@ -84,6 +84,9 @@ class DeploymentProjectContext:
     def has_code_location(self, name: str) -> bool:
         return os.path.exists(os.path.join(self._root_path, "code_locations", name))
 
+    def list_code_locations(self) -> Iterable[str]:
+        return sorted(os.listdir(os.path.join(self._root_path, "code_locations")))
+
 
 class CodeLocationProjectContext:
     _components_registry: Mapping[str, RemoteComponentType] = {}
@@ -145,6 +148,9 @@ class CodeLocationProjectContext:
         if not self.has_component_type(name):
             raise DgError(f"No component type named {name}")
         return self._component_registry.get(name)
+
+    def list_component_types(self) -> Sequence[str]:
+        return sorted(self._component_registry.keys())
 
     def get_component_instance_path(self, name: str) -> str:
         if name not in self.component_instances:

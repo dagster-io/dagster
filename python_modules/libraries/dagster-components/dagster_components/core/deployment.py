@@ -92,8 +92,10 @@ class CodeLocationProjectContext:
 
     @property
     def component_instances(self) -> Iterable[str]:
-        return os.listdir(
-            os.path.join(self._root_path, self._name, _CODE_LOCATION_COMPONENT_INSTANCES_DIR)
+        return sorted(
+            os.listdir(
+                os.path.join(self._root_path, self._name, _CODE_LOCATION_COMPONENT_INSTANCES_DIR)
+            )
         )
 
     def has_component_instance(self, name: str) -> bool:
