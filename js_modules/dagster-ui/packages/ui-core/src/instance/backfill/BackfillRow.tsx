@@ -238,7 +238,7 @@ const BackfillRequestedRange = ({
 }) => {
   const {partitionNames, numPartitions} = backfill;
 
-  if (numPartitions === null) {
+  if (numPartitions === null || numPartitions === 0) {
     return <span />;
   }
 
