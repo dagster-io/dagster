@@ -1,7 +1,7 @@
 ---
 title: "Dagster+ settings"
 unlisted: true
-sidebar_position: 200
+sidebar_position: 100
 ---
 
 # Dagster+ settings
