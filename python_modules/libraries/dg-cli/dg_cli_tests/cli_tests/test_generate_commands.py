@@ -249,6 +249,9 @@ def test_generate_component_success(in_deployment: bool) -> None:
         assert result.exit_code == 0
         assert Path("bar/components/qux").exists()
         assert Path("bar/components/qux/sample.py").exists()
+        component_yaml_path = Path("bar/components/qux/component.yaml")
+        assert component_yaml_path.exists()
+        assert "type: bar.baz" in component_yaml_path.read_text()
 
 
 def test_generate_component_outside_code_location_fails() -> None:
@@ -279,9 +282,9 @@ def test_generate_sling_replication_instance() -> None:
         assert result.exit_code == 0
         assert Path("bar/components/file_ingest").exists()
 
-        defs_path = Path("bar/components/file_ingest/component.yaml")
-        assert defs_path.exists()
-        assert "type: sling_replication" in defs_path.read_text()
+        component_yaml_path = Path("bar/components/file_ingest/component.yaml")
+        assert component_yaml_path.exists()
+        assert "type: dagster_components.sling_replication" in component_yaml_path.read_text()
 
         replication_path = Path("bar/components/file_ingest/replication.yaml")
         assert replication_path.exists()
@@ -307,10 +310,10 @@ def test_generate_dbt_project_instance(params) -> None:
         assert result.exit_code == 0
         assert Path("bar/components/my_project").exists()
 
-        defs_path = Path("bar/components/my_project/component.yaml")
-        assert defs_path.exists()
-        assert "type: dbt_project" in defs_path.read_text()
+        component_yaml_path = Path("bar/components/my_project/component.yaml")
+        assert component_yaml_path.exists()
+        assert "type: dagster_components.dbt_project" in component_yaml_path.read_text()
         assert (
             "stub_code_locations/dbt_project_location/components/jaffle_shop"
-            in defs_path.read_text()
+            in component_yaml_path.read_text()
         )

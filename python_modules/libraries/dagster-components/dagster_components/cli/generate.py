@@ -61,5 +61,9 @@ def generate_component_command(
         generate_params = None
 
     generate_component_instance(
-        context.component_instances_root_path, component_name, component_type_cls, generate_params
+        context.component_instances_root_path,
+        component_name,
+        component_type_cls,
+        component_type,
+        generate_params,
     )
