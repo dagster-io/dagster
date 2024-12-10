@@ -40,6 +40,7 @@ class CeleryK8sRunLauncherConfig(BaseModel):
     podSecurityContext: kubernetes.PodSecurityContext
     securityContext: kubernetes.SecurityContext
     resources: kubernetes.Resources
+    checkDbReadyInitContainer: Optional[bool] = None
     livenessProbe: kubernetes.LivenessProbe
     volumeMounts: List[kubernetes.VolumeMount]
     volumes: List[kubernetes.Volume]
