@@ -40,6 +40,7 @@ class SigmaWorkbook:
     datasets: AbstractSet[str]
     direct_table_deps: AbstractSet[str]
     owner_email: Optional[str]
+    materialization_schedules: Optional[List[Dict[str, Any]]]
 
 
 @whitelist_for_serdes
@@ -117,6 +118,16 @@ class DagsterSigmaTranslator:
                 ),
                 "dagster_sigma/properties": MetadataValue.json(data.properties),
                 "dagster_sigma/lineage": MetadataValue.json(data.lineage),
+                **(
+                    {
+                        "dagster_sigma/materialization_schedules": MetadataValue.json(
+                            data.materialization_schedules
+                        )
+                    }
+                    if data.materialization_schedules
+                    else {}
+                ),
+                "dagster_sigma/workbook_id": data.properties["workbookId"],
             }
             datasets = [self._context.get_datasets_by_inode()[inode] for inode in data.datasets]
             tables = [

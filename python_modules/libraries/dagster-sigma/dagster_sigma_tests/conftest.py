@@ -105,6 +105,29 @@ def lineage_warn_fixture(responses: aioresponses) -> None:
         )
 
 
+@pytest.fixture(name="sigma_materialization")
+def sigma_materialization_fixture(responses: aioresponses) -> None:
+    # Trigger materialization, check status, check status again
+    request_responses.add(
+        method=request_responses.POST,
+        url=f"{SigmaBaseUrl.AWS_US.value}/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/materializations",
+        status=200,
+        body=json.dumps({"materializationId": "foobar"}),
+    )
+    request_responses.add(
+        method=request_responses.GET,
+        url=f"{SigmaBaseUrl.AWS_US.value}/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/materializations/foobar",
+        status=200,
+        body=json.dumps({"materializationId": "foobar", "status": "pending"}),
+    )
+    request_responses.add(
+        method=request_responses.GET,
+        url=f"{SigmaBaseUrl.AWS_US.value}/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/materializations/foobar",
+        status=200,
+        body=json.dumps({"materializationId": "foobar", "status": "ready"}),
+    )
+
+
 @pytest.fixture(name="sigma_sample_data")
 def sigma_sample_data_fixture(responses: aioresponses) -> None:
     # Single workbook, dataset
@@ -131,6 +154,12 @@ def sigma_sample_data_fixture(responses: aioresponses) -> None:
         method=hdrs.METH_GET,
         url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/pages?limit=1000",
         body=json.dumps(_build_paginated_response([{"pageId": "qwMyyHBCuC", "name": "Page 1"}])),
+        status=200,
+    )
+    responses.add(
+        method=hdrs.METH_GET,
+        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/materialization-schedules?limit=1000",
+        body=json.dumps(_build_paginated_response([{"sheetId": "qwMyyHBCuC"}])),
         status=200,
     )
     elements = [
