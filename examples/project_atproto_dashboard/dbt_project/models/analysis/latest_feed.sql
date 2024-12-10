@@ -13,6 +13,10 @@ SELECT
     CAST(sfs.json.post.quote_count as int) as quotes,
     CAST(sfs.json.post.reply_count as int) as replies,
     sfs.json.post.record.text as post_text,
+    sfs.json.post.record.embed,
+    sfs.json.post.record.embed.external.description as external_embed_description,
+	sfs.json.post.record.embed.external.uri as external_embed_link,
+	sfs.json.post.record.embed.external.thumb as external_embed_thumbnail,
     cast(sfs.json.post.record.created_at as timestamp) as created_at,
 	max_update.max_extracted_timestamp,
 	max_update.profile_id
