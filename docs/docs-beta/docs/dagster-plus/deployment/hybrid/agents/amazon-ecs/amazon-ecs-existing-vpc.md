@@ -4,5 +4,3 @@ displayed_sidebar: "dagsterPlus"
 sidebar_position: 110
 sidebar_label: "Amazon ECS (Existing VPC)"
 ---
-
-TK
