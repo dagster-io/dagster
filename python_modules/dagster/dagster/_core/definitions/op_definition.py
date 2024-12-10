@@ -221,7 +221,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @property
     def is_graph_job_op_node(self) -> bool:
         return True
-    
+
     def add_nothing_input_def(self, name) -> "OpDefinition":
         if name in self._input_dict:
             raise DagsterInvalidDefinitionError(

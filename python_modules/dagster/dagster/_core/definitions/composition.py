@@ -941,7 +941,11 @@ def do_composition(
         exclude_nothing=True,
     )
 
-    kwargs = {input_def.name: InputMappingNode(input_def) for input_def in actual_input_defs if not input_def.dagster_type.is_nothing}
+    kwargs = {
+        input_def.name: InputMappingNode(input_def)
+        for input_def in actual_input_defs
+        if not input_def.dagster_type.is_nothing
+    }
 
     output = None
     returned_mapping = None
@@ -973,9 +977,7 @@ def do_composition(
 
         if len(mappings) == 0:
             # If there are no mappings, we need to add nothing inputs to every internal node def.
-            node_defs = [
-                node_def.add_nothing_input_def(defn.name) for node_def in node_defs
-            ]
+            node_defs = [node_def.add_nothing_input_def(defn.name) for node_def in node_defs]
 
         input_mappings += mappings
 

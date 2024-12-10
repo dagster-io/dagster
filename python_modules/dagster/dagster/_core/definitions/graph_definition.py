@@ -416,12 +416,10 @@ class GraphDefinition(NodeDefinition):
             if isinstance(node, GraphNode):
                 yield from node.definition.iterate_node_handles(cur_node_handle)
             yield cur_node_handle
-    
+
     def add_nothing_input_def(self, name: str) -> "GraphDefinition":
         new_input_mappings = list(self._input_mappings)
-        new_node_defs = [
-            node_def.add_nothing_input_def(name) for node_def in self._node_defs
-        ]
+        new_node_defs = [node_def.add_nothing_input_def(name) for node_def in self._node_defs]
         new_input_mappings.extend(
             [
                 InputMapping(

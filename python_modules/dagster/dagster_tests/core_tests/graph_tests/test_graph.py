@@ -1452,7 +1452,7 @@ def test_graph_add_nothing_dep() -> None:
     @graph
     def top_level_graph():
         new_graph(arg_dep=upstream_op(), nonarg_dep=upstream_op())
-    
+
     result = top_level_graph.execute_in_process()
     assert result.success
     assert len(result.get_step_success_events()) == 4
@@ -1464,5 +1464,3 @@ def test_graph_add_nothing_dep() -> None:
 
     # Probably still need to handle aliasing properly.
     # Error behavior when input name already exists?
-
-
