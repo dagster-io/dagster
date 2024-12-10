@@ -259,7 +259,7 @@ class FivetranMetadataSet(NamespacedMetadataSet):
 
 class DagsterFivetranTranslator:
     """Translator class which converts a `FivetranConnectorTableProps` object into AssetSpecs.
-    Subclass this class to implement custom logic for each type of Fivetran content.
+    Subclass this class to implement custom logic on how to translate Fivetran content into asset spec.
     """
 
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
