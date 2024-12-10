@@ -649,7 +649,6 @@ websockets==14.1
 werkzeug==2.2.3
 wheel==0.45.1
 widgetsnbextension==4.0.13
--e examples/with_airflow
 -e examples/with_great_expectations
 -e examples/with_openai
 -e examples/with_pyspark
