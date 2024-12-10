@@ -35,11 +35,7 @@ def generate_component_instance(
         component_type=component_registry_key,
     )
     with pushd(component_instance_root_path):
-        component_params = (
-            component_type.generate_files(generate_params)
-            if generate_params
-            else component_type.generate_files()  # type: ignore
-        )
+        component_params = component_type.generate_files(generate_params)
         component_data = {"type": component_registry_key, "params": component_params or {}}
     with open(Path(component_instance_root_path) / "component.yaml", "w") as f:
         yaml.dump(

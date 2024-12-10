@@ -33,6 +33,8 @@ def _assert_module_imports(module_name: str):
 
 # This is a holder for code that is intended to be written to a file
 def _example_component_type_baz():
+    from typing import Any
+
     from dagster import AssetExecutionContext, Definitions, PipesSubprocessClient, asset
     from dagster_components import Component, ComponentLoadContext, component
 
@@ -46,7 +48,7 @@ def _example_component_type_baz():
     @component(name="baz")
     class Baz(Component):
         @classmethod
-        def generate_files(cls):
+        def generate_files(cls, params: Any):
             with open("sample.py", "w") as f:
                 f.write(_SAMPLE_PIPES_SCRIPT)
 
