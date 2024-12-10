@@ -158,7 +158,7 @@ monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
     compute_kind="duckdb",
     group_name="analysis",
     deps=[joined_data],
-    automation_condition=dg.AutomationCondition.eager(), 
+    automation_condition=dg.AutomationCondition.eager(),
 )
 def monthly_sales_performance(
     context: dg.AssetExecutionContext, duckdb: DuckDBResource
@@ -264,6 +264,7 @@ def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
             "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
         }
     )
+
 
 weekly_update_schedule = dg.ScheduleDefinition(
     name="analysis_update_job",
