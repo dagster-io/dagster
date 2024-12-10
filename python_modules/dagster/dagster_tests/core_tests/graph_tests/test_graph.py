@@ -13,6 +13,7 @@ from dagster import (
     DynamicOutput,
     Enum,
     Field,
+    GraphIn,
     GraphOut,
     In,
     InputMapping,
@@ -1422,3 +1423,46 @@ def test_collision():
     result = collision_test.execute_in_process()
     assert result.output_for_node("composed.echo") == 0
     assert result.output_for_node("composed_2.echo") == 0
+
+
+def test_graph_add_nothing_dep() -> None:
+    @op(ins={"arg_dep": In(dagster_type=Nothing)})
+    def my_op():
+        pass
+
+    @op(ins={"arg_dep": In(dagster_type=Nothing)})
+    def my_op2():
+        pass
+
+    @graph(ins={"arg_dep": GraphIn()})
+    def inner_graph(arg_dep):
+        my_op2(arg_dep)
+
+    @graph(ins={"arg_dep": GraphIn()})
+    def graph_complex_inputs(arg_dep):
+        my_op(arg_dep)
+        inner_graph(arg_dep)
+
+    new_graph = graph_complex_inputs.add_nothing_input_def("nonarg_dep")
+
+    @op
+    def upstream_op():
+        pass
+
+    @graph
+    def top_level_graph():
+        new_graph(arg_dep=upstream_op(), nonarg_dep=upstream_op())
+    
+    result = top_level_graph.execute_in_process()
+    assert result.success
+    assert len(result.get_step_success_events()) == 4
+    # Ensure the upstreams ran first (doesn't matter which order they run in tho)
+    assert set([event.step_key for event in result.get_step_success_events()][:2]) == {
+        "upstream_op",
+        "upstream_op_2",
+    }
+
+    # Probably still need to handle aliasing properly.
+    # Error behavior when input name already exists?
+
+

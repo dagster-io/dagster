@@ -44,7 +44,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
+from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind, Nothing
 from dagster._utils import IHasInternalInit
 from dagster._utils.warnings import normalize_renamed_param
 
@@ -221,6 +221,17 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @property
     def is_graph_job_op_node(self) -> bool:
         return True
+    
+    def add_nothing_input_def(self, name) -> "OpDefinition":
+        if name in self._input_dict:
+            raise DagsterInvalidDefinitionError(
+                f"Input '{name}' already exists on Op '{self.name}'."
+            )
+
+        return self.with_replaced_properties(
+            name=self.name,
+            ins={**self.ins, name: In(Nothing)},
+        )
 
     @public
     @property

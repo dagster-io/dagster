@@ -223,6 +223,7 @@ class GraphDefinition(NodeDefinition):
         input_assets: Optional[
             Mapping[str, Mapping[str, Union["AssetsDefinition", "SourceAsset"]]]
         ] = None,
+        additional_input_defs: Optional[Sequence[InputDefinition]] = None,
         composition_fn: Optional[Callable] = None,
         **kwargs: Any,
     ):
@@ -246,6 +247,7 @@ class GraphDefinition(NodeDefinition):
             self._dependency_structure,
             name,
             class_name=type(self).__name__,
+            additional_input_defs=additional_input_defs,
         )
 
         # Sequence[OutputMapping]
@@ -414,6 +416,32 @@ class GraphDefinition(NodeDefinition):
             if isinstance(node, GraphNode):
                 yield from node.definition.iterate_node_handles(cur_node_handle)
             yield cur_node_handle
+    
+    def add_nothing_input_def(self, name: str) -> "GraphDefinition":
+        new_input_mappings = list(self._input_mappings)
+        new_node_defs = [
+            node_def.add_nothing_input_def(name) for node_def in self._node_defs
+        ]
+        new_input_mappings.extend(
+            [
+                InputMapping(
+                    graph_input_name=name,
+                    mapped_node_name=node_def.name,
+                    mapped_node_input_name=name,
+                )
+                for node_def in self._node_defs
+            ]
+        )
+        return GraphDefinition(
+            name=self.name,
+            node_defs=new_node_defs,
+            dependencies=self.dependencies,
+            input_mappings=new_input_mappings,
+            output_mappings=self.output_mappings,
+            config=self.config_mapping,
+            tags=self.tags,
+            input_assets=self._input_assets,
+        )
 
     @public
     @property
@@ -1046,6 +1074,7 @@ def _validate_in_mappings(
     dependency_structure: DependencyStructure,
     name: str,
     class_name: str,
+    additional_input_defs: Optional[Sequence[InputDefinition]],
 ) -> Sequence[InputDefinition]:
     from dagster._core.definitions.composition import MappedInputPlaceholder
 
@@ -1141,6 +1170,19 @@ def _validate_in_mappings(
                 input_defs_by_name[graph_input_name] = graph_input_def.with_dagster_type(
                     next(iter(target_input_types))
                 )
+
+    for input_def in additional_input_defs or []:
+        if not input_def.dagster_type.is_nothing:
+            raise DagsterInvalidDefinitionError(
+                f"Only inputs with the DagsterType 'Nothing' can be added to a graph using the"
+                f" additional_input_defs argument. Input '{input_def.name}' has type"
+                f" '{input_def.dagster_type.display_name}'."
+            )
+        if input_def.name in input_defs_by_name:
+            raise DagsterInvalidDefinitionError(
+                f"Duplicate input name '{input_def.name}' in {class_name} '{name}'."
+            )
+        input_defs_by_name[input_def.name] = input_def
 
     return list(input_defs_by_name.values())
 
