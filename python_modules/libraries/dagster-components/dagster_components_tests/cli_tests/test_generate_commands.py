@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Iterator
 
 import pytest
+import tomli
 from click.testing import CliRunner
 from dagster._utils import pushd
 from dagster_components.cli.generate import (
@@ -136,6 +137,49 @@ def test_generate_code_location_success() -> None:
         assert Path("code_locations/bar/bar/components").exists()
         assert Path("code_locations/bar/bar_tests").exists()
         assert Path("code_locations/bar/pyproject.toml").exists()
+
+        with open("code_locations/bar/pyproject.toml") as f:
+            toml = tomli.loads(f.read())
+            # No tool.uv.sources added without --use-editable-dagster
+            assert "uv" not in toml["tool"]
+
+
+def _find_git_root():
+    current = Path.cwd()
+    while current != current.parent:
+        if (current / ".git").exists():
+            return current
+        current = current.parent
+    raise Exception("Could not find git root")
+
+
+def test_generate_code_location_editable_dagster_success(monkeypatch) -> None:
+    runner = CliRunner()
+    dagster_git_repo_dir = _find_git_root()
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", dagster_git_repo_dir)
+    with isolated_example_deployment_foo(runner):
+        result = runner.invoke(generate_code_location_command, ["--use-editable-dagster", "bar"])
+        assert result.exit_code == 0
+        assert Path("code_locations/bar").exists()
+        assert Path("code_locations/bar/pyproject.toml").exists()
+        with open("code_locations/bar/pyproject.toml") as f:
+            toml = tomli.loads(f.read())
+            assert toml["tool"]["uv"]["sources"]["dagster"] == {
+                "path": f"{dagster_git_repo_dir}/python_modules/dagster",
+                "editable": True,
+            }
+            assert toml["tool"]["uv"]["sources"]["dagster-pipes"] == {
+                "path": f"{dagster_git_repo_dir}/python_modules/dagster-pipes",
+                "editable": True,
+            }
+            assert toml["tool"]["uv"]["sources"]["dagster-webserver"] == {
+                "path": f"{dagster_git_repo_dir}/python_modules/dagster-webserver",
+                "editable": True,
+            }
+            assert toml["tool"]["uv"]["sources"]["dagster-components"] == {
+                "path": f"{dagster_git_repo_dir}/python_modules/libraries/dagster-components",
+                "editable": True,
+            }
 
 
 def test_generate_code_location_outside_deployment_fails() -> None:
