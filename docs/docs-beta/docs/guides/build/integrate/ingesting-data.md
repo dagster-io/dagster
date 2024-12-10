@@ -33,10 +33,10 @@ As a data orchestrator, Dagster helps with data ingestion as it can:
 
 Dagster currently integrates with the following data ingestion tools, enabling you to sync diverse data sources into data warehouse tables using pre-built connectors:
 
-- [Airbyte](/integrations/airbyte)
-- [dlt](/integrations/dlt)
-- [Fivetran](/integrations/fivetran)
-- [Sling](/integrations/sling)
+- [Airbyte](/integrations/libraries/dagster-supported/airbyte)
+- [dlt](/integrations/libraries/dagster-supported/dlt)
+- [Fivetran](/integrations/libraries/dagster-supported/fivetran)
+- [Sling](/integrations/libraries/dagster-supported/sling)
 
 ## Writing custom data ingestion pipelines
 
