@@ -5,7 +5,6 @@ from typing import Any, Dict
 
 import click
 
-from dagster_components import __component_registry__
 from dagster_components.core.component import ComponentRegistry
 from dagster_components.core.deployment import (
     CodeLocationProjectContext,
@@ -30,7 +29,7 @@ def list_component_types_command() -> None:
         sys.exit(1)
 
     context = CodeLocationProjectContext.from_path(
-        Path.cwd(), ComponentRegistry(__component_registry__)
+        Path.cwd(), ComponentRegistry.from_entry_point_discovery()
     )
     output: Dict[str, Any] = {}
     for component_type in context.list_component_types():
