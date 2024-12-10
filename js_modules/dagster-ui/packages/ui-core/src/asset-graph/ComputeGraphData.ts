@@ -13,7 +13,7 @@ export function computeGraphData({
   opsQuery,
   kinds: _kinds,
   hideEdgesToNodesOutsideQuery,
-}: Omit<ComputeGraphDataMessageType, 'type'>): GraphDataState {
+}: Omit<ComputeGraphDataMessageType, 'id' | 'type'>): GraphDataState {
   if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
     return {
       allAssetKeys: [],

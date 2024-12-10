@@ -17,7 +17,7 @@ export default class MockWorker {
         setFeatureFlagsInternal({flagAssetSelectionSyntax: true});
       }
       const state = await computeGraphData(data);
-      this.onmessage({data: state});
+      this.onmessage({data: {...state, id: data.id}});
     }
   }
 }

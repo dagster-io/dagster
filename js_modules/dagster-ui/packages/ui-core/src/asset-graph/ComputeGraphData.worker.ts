@@ -14,7 +14,7 @@ self.addEventListener('message', async (event: MessageEvent & {data: WorkerMessa
       setFeatureFlags({[FeatureFlag.flagAssetSelectionSyntax]: true});
     }
     const state = await computeGraphData(data);
-    self.postMessage(state);
+    self.postMessage({...state, id: data.id});
   }
 });
 

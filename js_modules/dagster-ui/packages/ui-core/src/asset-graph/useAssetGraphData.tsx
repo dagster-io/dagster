@@ -1,7 +1,6 @@
 import keyBy from 'lodash/keyBy';
 import memoize from 'lodash/memoize';
 import reject from 'lodash/reject';
-import throttle from 'lodash/throttle';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
@@ -10,6 +9,7 @@ import {GraphData, buildGraphData, tokenForAssetKey} from './Utils';
 import {gql} from '../apollo-client';
 import {computeGraphData as computeGraphDataImpl} from './ComputeGraphData';
 import {ComputeGraphDataMessageType} from './ComputeGraphData.types';
+import {throttleLatest} from './throttleLatest';
 import {featureEnabled} from '../app/Flags';
 import {
   AssetGraphQuery,
@@ -147,15 +147,22 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       kinds,
       hideEdgesToNodesOutsideQuery,
       flagAssetSelectionSyntax: featureEnabled(FeatureFlag.flagAssetSelectionSyntax),
-    })?.then((data) => {
-      if (lastProcessedRequestRef.current < requestId) {
-        lastProcessedRequestRef.current = requestId;
-        setState(data);
+    })
+      ?.then((data) => {
+        if (lastProcessedRequestRef.current < requestId) {
+          lastProcessedRequestRef.current = requestId;
+          setState(data);
+          if (requestId === currentRequestRef.current) {
+            setGraphDataLoading(false);
+          }
+        }
+      })
+      .catch((e) => {
+        console.error(e);
         if (requestId === currentRequestRef.current) {
           setGraphDataLoading(false);
         }
-      }
-    });
+      });
   }, [
     repoFilteredNodes,
     graphQueryItems,
@@ -299,31 +306,38 @@ export const ASSET_GRAPH_QUERY = gql`
   ${ASSET_NODE_FRAGMENT}
 `;
 
-const computeGraphData = throttle(
+const computeGraphData = throttleLatest(
   indexedDBAsyncMemoize<
-    ComputeGraphDataMessageType,
+    Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
     GraphDataState,
     typeof computeGraphDataWrapper
   >(computeGraphDataWrapper, (props) => {
     return JSON.stringify(props);
   }),
   2000,
-  {leading: true},
 );
 
 const getWorker = memoize(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url)));
 
+let _id = 0;
 async function computeGraphDataWrapper(
-  props: Omit<ComputeGraphDataMessageType, 'type'>,
+  props: Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
 ): Promise<GraphDataState> {
   if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
     const worker = getWorker();
     return new Promise<GraphDataState>((resolve) => {
-      worker.addEventListener('message', (event) => {
-        resolve(event.data as GraphDataState);
-      });
+      const id = ++_id;
+      const callback = (event: MessageEvent) => {
+        const data = event.data as GraphDataState & {id: number};
+        if (data.id === id) {
+          resolve(data);
+          worker.removeEventListener('message', callback);
+        }
+      };
+      worker.addEventListener('message', callback);
       const message: ComputeGraphDataMessageType = {
         type: 'computeGraphData',
+        id,
         ...props,
       };
       worker.postMessage(message);
