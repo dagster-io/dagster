@@ -14,6 +14,7 @@ from dagster_airbyte_tests.experimental.conftest import (
     TEST_CONNECTION_NAME,
     TEST_DESTINATION_DATABASE,
     TEST_DESTINATION_SCHEMA,
+    TEST_DESTINATION_TYPE,
     TEST_JSON_SCHEMA,
     TEST_STREAM_NAME,
     TEST_STREAM_PREFIX,
@@ -103,3 +104,4 @@ def test_custom_translator(
     assert asset_spec.metadata["custom"] == "metadata"
     assert asset_spec.key.path == ["test_connection", "test_prefix_test_stream"]
     assert has_kind(asset_spec.tags, "airbyte")
+    assert has_kind(asset_spec.tags, TEST_DESTINATION_TYPE)

@@ -19,6 +19,7 @@ class AirbyteConnectionTableProps:
     json_schema: Mapping[str, Any]
     connection_id: str
     connection_name: str
+    destination_type: str
     database: Optional[str]
     schema: Optional[str]
 
@@ -67,6 +68,7 @@ class AirbyteDestination:
     """Represents an Airbyte destination, based on data as returned from the API."""
 
     id: str
+    type: str
     database: Optional[str]
     schema: Optional[str]
 
@@ -77,6 +79,7 @@ class AirbyteDestination:
     ) -> "AirbyteDestination":
         return cls(
             id=destination_details["destinationId"],
+            type=destination_details["destinationType"],
             database=destination_details["configuration"].get("database"),
             schema=destination_details["configuration"].get("schema"),
         )
@@ -138,6 +141,7 @@ class AirbyteWorkspaceData:
                             json_schema=stream.json_schema,
                             connection_id=connection.id,
                             connection_name=connection.name,
+                            destination_type=destination.type,
                             database=destination.database,
                             schema=destination.schema,
                         )
@@ -186,5 +190,5 @@ class DagsterAirbyteTranslator:
         return AssetSpec(
             key=AssetKey(props.table_name),
             metadata=metadata,
-            kinds={"airbyte"},
+            kinds={"airbyte", props.destination_type},
         )
