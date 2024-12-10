@@ -1082,6 +1082,7 @@ def load_fivetran_asset_specs(
         Loading the asset specs for a given Fivetran workspace:
 
         .. code-block:: python
+
             from dagster_fivetran import FivetranWorkspace, load_fivetran_asset_specs
 
             import dagster as dg
