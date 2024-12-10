@@ -1,3 +1,4 @@
+import json
 import sys
 
 import pytest
@@ -5,6 +6,7 @@ from dagster._api.snapshot_job import sync_get_external_job_subset_grpc
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.remote_representation.external_data import RemoteJobSubsetResult
 from dagster._core.remote_representation.handle import JobHandle
+from dagster._core.test_utils import environ
 from dagster._grpc.types import JobSubsetSnapshotArgs
 from dagster._serdes import deserialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -30,6 +32,32 @@ def test_job_snapshot_api_grpc(instance):
         assert isinstance(remote_job_subset_result, RemoteJobSubsetResult)
         assert remote_job_subset_result.success is True
         assert remote_job_subset_result.job_data_snap.name == "foo"
+        assert (
+            remote_job_subset_result.repository_python_origin
+            == code_location.get_repository("bar_repo").handle.repository_python_origin
+        )
+
+
+def test_job_snapshot_api_grpc_with_container_context(instance):
+    container_context = {"k8s": {"namespace": "foo"}}
+    with environ({"DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT": json.dumps(container_context)}):
+        with get_bar_repo_code_location(instance) as code_location:
+            assert code_location.container_context == container_context
+            job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
+            api_client = code_location.client
+
+            remote_job_subset_result = _test_job_subset_grpc(job_handle, api_client)
+            assert isinstance(remote_job_subset_result, RemoteJobSubsetResult)
+            assert remote_job_subset_result.success is True
+            assert remote_job_subset_result.job_data_snap.name == "foo"
+            assert (
+                remote_job_subset_result.repository_python_origin
+                == code_location.get_repository("bar_repo").handle.repository_python_origin
+            )
+            assert (
+                remote_job_subset_result.repository_python_origin.container_context
+                == container_context
+            )
 
 
 def test_job_snapshot_deserialize_error(instance):
