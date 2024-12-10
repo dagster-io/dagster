@@ -89,10 +89,10 @@ const sidebars: SidebarsConfig = {
     'integrations/index',
     {
       type: 'category',
-      label: 'Tutorials',
+      label: 'Guides',
       collapsed: false,
       items: [
-        'integrations/tutorials/multi-asset-integration'
+        'integrations/guides/multi-asset-integration'
       ]
     },
     {
