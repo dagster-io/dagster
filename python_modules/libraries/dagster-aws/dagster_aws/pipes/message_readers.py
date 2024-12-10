@@ -217,12 +217,16 @@ class PipesLambdaLogsMessageReader(PipesMessageReader):
         )
 
 
-def get_log_events(client: "CloudWatchLogsClient", **log_params):
+# Number of retries to attempt getting cloudwatch logs when faced with a throttling exception.
+DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES = 10
+
+def get_log_events(client: "CloudWatchLogsClient", max_retries: Optional[int] = None, **log_params):
+    max_retries = max_retries or DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES
     return backoff(
         fn=client.get_log_events,
         kwargs=log_params,
         retry_on=(client.exceptions.ThrottlingException,),
-        max_retries=5,
+        max_retries=max_retries,
     )
 
 
@@ -231,17 +235,19 @@ def tail_cloudwatch_events(
     log_group: str,
     log_stream: str,
     start_time: Optional[int] = None,
+    max_retries: Optional[int] = None,
 ) -> Generator[List["OutputLogEventTypeDef"], None, None]:
     """Yields events from a CloudWatch log stream."""
     params: Dict[str, Any] = {
         "logGroupName": log_group,
         "logStreamName": log_stream,
     }
+    max_retries = max_retries or DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES
 
     if start_time is not None:
         params["startTime"] = start_time
 
-    response = get_log_events(client=client, **params)
+    response = get_log_events(client=client, max_retries=max_retries, **params)
 
     while True:
         events = response.get("events")
@@ -264,6 +270,7 @@ class PipesCloudWatchLogReader(PipesLogReader):
         target_stream: Optional[IO[str]] = None,
         start_time: Optional[int] = None,
         debug_info: Optional[str] = None,
+        max_retries: Optional[int] = None,
     ):
         self.client = client or boto3.client("logs")
         self.log_group = log_group
@@ -272,6 +279,7 @@ class PipesCloudWatchLogReader(PipesLogReader):
         self.thread = None
         self.start_time = start_time
         self._debug_info = debug_info
+        self.max_retries = max_retries or DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES
 
     @property
     def debug_info(self) -> Optional[str]:
@@ -315,7 +323,7 @@ class PipesCloudWatchLogReader(PipesLogReader):
         start_time = cast(int, self.start_time or params.get("start_time"))
 
         for events in tail_cloudwatch_events(
-            self.client, log_group, log_stream, start_time=start_time
+            self.client, log_group, log_stream, start_time=start_time, max_retries=self.max_retries
         ):
             for event in events:
                 for line in event.get("message", "").splitlines():
@@ -342,6 +350,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         log_group: Optional[str] = None,
         log_stream: Optional[str] = None,
         log_readers: Optional[Sequence[PipesLogReader]] = None,
+        max_retries: Optional[int] = None,
     ):
         """Args:
         client (boto3.client): boto3 CloudWatch client.
@@ -349,6 +358,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         self.client: "CloudWatchLogsClient" = client or boto3.client("logs")
         self.log_group = log_group
         self.log_stream = log_stream
+        self.max_retries = max_retries or DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES
 
         self.start_time = datetime.now()
 
@@ -397,7 +407,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         if cursor is not None:
             params["nextToken"] = cursor
 
-        response = get_log_events(client=self.client, **params)
+        response = get_log_events(client=self.client, max_retries=self.max_retries, **params)
 
         events = response.get("events")
 
