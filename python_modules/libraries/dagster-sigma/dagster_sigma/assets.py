@@ -5,11 +5,17 @@ from dagster._annotations import experimental
 
 
 @experimental
-def build_rebuild_workbook_assets_definition(
+def build_materialize_workbook_assets_definition(
     resource_key: str,
     spec: AssetSpec,
 ) -> AssetsDefinition:
-    """Returns the AssetsDefinition which rebuilds a Sigma workbook.
+    """Returns an AssetsDefinition which will, when materialized,
+    run all materialization schedules for the targeted Sigma workbook.
+    Note that this will not update portions of a workbook which are not
+    assigned to a materialization schedule.
+
+    For more information, see
+    https://help.sigmacomputing.com/docs/materialization#create-materializations-in-workbooks
 
     Args:
         resource_key (str): The resource key to use for the Sigma resource.

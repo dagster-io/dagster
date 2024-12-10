@@ -82,14 +82,14 @@ def test_load_assets_organization_data(sigma_auth_token: str, sigma_sample_data:
 
 
 @responses.activate
-def test_rebuild_workbooks(
+def test_materialize_workbook(
     sigma_auth_token: str, sigma_sample_data: None, sigma_materialization: None
 ) -> None:
     with instance_for_test() as _instance:
         # first, we resolve the repository to generate our cached metadata
         repository_def = initialize_repository_def_from_pointer(
             CodePointer.from_python_file(
-                str(Path(__file__).parent / "rebuild_workbook.py"), "defs", None
+                str(Path(__file__).parent / "materialize_workbook.py"), "defs", None
             ),
         )
 

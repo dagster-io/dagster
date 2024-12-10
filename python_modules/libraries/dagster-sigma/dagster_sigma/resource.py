@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import enum
 import os
 import time
 import urllib.parse
@@ -20,7 +21,6 @@ from typing import (
     Sequence,
     Type,
     Union,
-    cast,
 )
 
 import aiohttp
@@ -33,7 +33,6 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.events import AssetMaterialization
-from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes.serdes import deserialize_value
@@ -49,12 +48,19 @@ from dagster_sigma.translator import (
     SigmaOrganizationData,
     SigmaTable,
     SigmaWorkbook,
+    SigmaWorkbookMetadataSet,
     _inode_from_url,
 )
 
 SIGMA_PARTNER_ID_TAG = {"X-Sigma-Partner-Id": "dagster"}
 
 logger = get_dagster_logger("dagster_sigma")
+
+
+class SigmaMaterializationStatus(str, enum.Enum):
+    PENDING = "pending"
+    BUILDING = "building"
+    READY = "ready"
 
 
 @record_custom
@@ -319,9 +325,12 @@ class SigmaOrganization(ConfigurableResource):
                 for materialization_id in remaining_materializations
             ]
             for status in materialization_statuses:
-                if status["status"] not in ("pending", "building"):
+                if status["status"] not in (
+                    SigmaMaterializationStatus.PENDING,
+                    SigmaMaterializationStatus.BUILDING,
+                ):
                     remaining_materializations.remove(status["materializationId"])
-                    if status["status"] == "ready":
+                    if status["status"] == SigmaMaterializationStatus.READY:
                         successful_sheets.add(
                             materialization_id_to_sheet[status["materializationId"]]
                         )
@@ -349,14 +358,10 @@ class SigmaOrganization(ConfigurableResource):
         See https://help.sigmacomputing.com/docs/materialization#create-materializations-in-workbooks
         for more information.
         """
-        workbook_id = check.not_none(workbook_spec.metadata.get("dagster_sigma/workbook_id"))
+        metadata = SigmaWorkbookMetadataSet.extract(workbook_spec.metadata)
+        workbook_id = metadata.workbook_id
         materialization_schedules = check.is_list(
-            cast(
-                JsonMetadataValue,
-                check.not_none(
-                    workbook_spec.metadata.get("dagster_sigma/materialization_schedules")
-                ),
-            ).value
+            check.not_none(metadata.materialization_schedules).value
         )
 
         materialization_sheets = {schedule["sheetId"] for schedule in materialization_schedules}

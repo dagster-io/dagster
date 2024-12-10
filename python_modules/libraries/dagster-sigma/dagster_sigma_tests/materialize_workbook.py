@@ -4,7 +4,7 @@ from dagster._utils.env import environ
 from dagster_sigma import (
     SigmaBaseUrl,
     SigmaOrganization,
-    build_rebuild_workbook_assets_definition,
+    build_materialize_workbook_assets_definition,
     load_sigma_asset_specs,
 )
 
@@ -25,7 +25,7 @@ with environ({"SIGMA_CLIENT_ID": fake_client_id, "SIGMA_CLIENT_SECRET": fake_cli
 
     sigma_specs = load_sigma_asset_specs(resource)
     sigma_assets = [
-        build_rebuild_workbook_assets_definition("sigma", spec)
+        build_materialize_workbook_assets_definition("sigma", spec)
         if spec.metadata.get("dagster_sigma/materialization_schedules")
         else spec
         for spec in sigma_specs
