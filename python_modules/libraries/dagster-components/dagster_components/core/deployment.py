@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Final, Iterable, Type
+from typing import Final, Iterable, Sequence, Type
 
 import tomli
 from dagster._core.errors import DagsterError
@@ -36,6 +36,9 @@ def _is_code_location_root(path: Path) -> bool:
             toml = tomli.loads(f.read())
             return bool(toml.get("tool", {}).get("dagster"))
     return False
+
+    def list_code_locations(self) -> Sequence[str]:
+        return sorted(os.listdir(self.code_location_root_path))
 
 
 class CodeLocationProjectContext:
@@ -92,8 +95,10 @@ class CodeLocationProjectContext:
 
     @property
     def component_instances(self) -> Iterable[str]:
-        return os.listdir(
-            os.path.join(self._root_path, self._name, _CODE_LOCATION_COMPONENT_INSTANCES_DIR)
+        return sorted(
+            os.listdir(
+                os.path.join(self._root_path, self._name, _CODE_LOCATION_COMPONENT_INSTANCES_DIR)
+            )
         )
 
     def has_component_instance(self, name: str) -> bool:

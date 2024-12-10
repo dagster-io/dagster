@@ -1,12 +1,14 @@
 import click
 
 from dg_cli.cli.generate import generate_cli
+from dg_cli.cli.list import list_cli
 from dg_cli.version import __version__
 
 
 def create_dg_cli():
     commands = {
         "generate": generate_cli,
+        "list": list_cli,
     }
 
     @click.group(
