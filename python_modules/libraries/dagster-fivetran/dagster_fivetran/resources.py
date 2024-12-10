@@ -26,8 +26,6 @@ from dagster._annotations import experimental
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
-from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
-from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method
@@ -1029,7 +1027,7 @@ class FivetranWorkspace(ConfigurableResource):
                 or AssetMaterialization.
         """
         return FivetranEventIterator(
-            events=self._sync_and_poll(context=context), fivetran_workspace=self
+            events=self._sync_and_poll(context=context), fivetran_workspace=self, context=context
         )
 
     def _sync_and_poll(self, context: Union[OpExecutionContext, AssetExecutionContext]):
@@ -1066,44 +1064,6 @@ class FivetranWorkspace(ConfigurableResource):
         unmaterialized_asset_keys = context.selected_asset_keys - materialized_asset_keys
         if unmaterialized_asset_keys:
             context.log.warning(f"Assets were not materialized: {unmaterialized_asset_keys}")
-
-    def _fetch_and_attach_col_metadata(
-        self, connector_id: str, materialization: AssetMaterialization
-    ) -> AssetMaterialization:
-        """Subroutine to fetch column metadata for a given table from the Fivetran API and attach it to the
-        materialization.
-        """
-        try:
-            schema_source_name = materialization.metadata["schema_source_name"].value
-            table_source_name = materialization.metadata["table_source_name"].value
-
-            table_conn_data = self.get_client().get_columns_for_table(
-                connector_id=connector_id,
-                schema_name=schema_source_name,
-                table_name=table_source_name,
-            )
-            columns = check.dict_elem(table_conn_data, "columns")
-            table_columns = sorted(
-                [
-                    TableColumn(name=col["name_in_destination"], type="")
-                    for col in columns.values()
-                    if "name_in_destination" in col and col.get("enabled")
-                ],
-                key=lambda col: col.name,
-            )
-            return materialization.with_metadata(
-                {
-                    **materialization.metadata,
-                    **TableMetadataSet(column_schema=TableSchema(table_columns)),
-                }
-            )
-        except Exception as e:
-            self._log.warning(
-                "An error occurred while fetching column metadata for table %s",
-                f"Exception: {e}",
-                exc_info=True,
-            )
-            return materialization
 
 
 @experimental
