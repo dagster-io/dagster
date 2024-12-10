@@ -264,7 +264,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             "Additional keyword arguments to pass to the snowflake.connector.connect function. For a full list of"
             " available arguments, see the `Snowflake documentation"
             " <https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect>`__."
-            "This config will be ignored if using the sqlalchemy connector."
+            " This config will be ignored if using the sqlalchemy connector."
         ),
     )
 
