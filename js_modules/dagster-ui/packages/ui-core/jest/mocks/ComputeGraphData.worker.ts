@@ -4,10 +4,17 @@ import {ComputeGraphDataMessageType} from '../../src/asset-graph/ComputeGraphDat
 
 // eslint-disable-next-line import/no-default-export
 export default class MockWorker {
-  onmessage = (_: any) => {};
+  onmessage: Array<(data: any) => void> = [];
 
   addEventListener(_type: string, handler: any) {
-    this.onmessage = handler;
+    this.onmessage.push(handler);
+  }
+
+  removeEventListener(_type: string, handler: any) {
+    const index = this.onmessage.indexOf(handler);
+    if (index !== -1) {
+      this.onmessage.splice(index, 1);
+    }
   }
 
   // mock expects data: { } instead of e: { data: { } }
@@ -17,7 +24,7 @@ export default class MockWorker {
         setFeatureFlagsInternal({flagAssetSelectionSyntax: true});
       }
       const state = await computeGraphData(data);
-      this.onmessage({data: {...state, id: data.id}});
+      this.onmessage.forEach((onmessage) => onmessage({data: {...state, id: data.id}}));
     }
   }
 }
