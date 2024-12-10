@@ -1,20 +1,27 @@
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {computeGraphData} from './ComputeGraphData';
-import {ComputeGraphDataMessageType} from './ComputeGraphData.types';
+import {BuildGraphDataMessageType, ComputeGraphDataMessageType} from './ComputeGraphData.types';
+import {buildGraphData} from './Utils';
 import {setFeatureFlags} from '../app/Flags';
+import {assertUnreachable} from '../app/Util';
 
-type WorkerMessageData = ComputeGraphDataMessageType;
+type WorkerMessageData = ComputeGraphDataMessageType | BuildGraphDataMessageType;
 
 self.addEventListener('message', async (event: MessageEvent & {data: WorkerMessageData}) => {
-  const {data} = event;
+  const data: WorkerMessageData = event.data;
+
+  if (data.flagAssetSelectionSyntax) {
+    setFeatureFlags({[FeatureFlag.flagAssetSelectionSyntax]: true});
+  }
 
   if (data.type === 'computeGraphData') {
-    if (data.flagAssetSelectionSyntax) {
-      setFeatureFlags({[FeatureFlag.flagAssetSelectionSyntax]: true});
-    }
     const state = await computeGraphData(data);
     self.postMessage({...state, id: data.id});
+  } else if (data.type === 'buildGraphData') {
+    self.postMessage({...buildGraphData(data.nodes), id: data.id});
+  } else {
+    assertUnreachable(data);
   }
 });
 

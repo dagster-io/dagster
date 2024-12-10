@@ -1,6 +1,8 @@
 import {setFeatureFlagsInternal} from '../../src/app/Flags';
+import {assertUnreachable} from '../../src/app/Util';
 import {computeGraphData} from '../../src/asset-graph/ComputeGraphData';
-import {ComputeGraphDataMessageType} from '../../src/asset-graph/ComputeGraphData.types';
+import {ComputeGraphDataWorkerMessageType} from '../../src/asset-graph/ComputeGraphData.types';
+import {buildGraphData} from '../../src/asset-graph/Utils';
 
 // eslint-disable-next-line import/no-default-export
 export default class MockWorker {
@@ -18,13 +20,19 @@ export default class MockWorker {
   }
 
   // mock expects data: { } instead of e: { data: { } }
-  async postMessage(data: ComputeGraphDataMessageType) {
+  async postMessage(data: ComputeGraphDataWorkerMessageType) {
     if (data.type === 'computeGraphData') {
       if (data.flagAssetSelectionSyntax) {
         setFeatureFlagsInternal({flagAssetSelectionSyntax: true});
       }
       const state = await computeGraphData(data);
       this.onmessage.forEach((onmessage) => onmessage({data: {...state, id: data.id}}));
+    } else if (data.type === 'buildGraphData') {
+      this.onmessage.forEach((onmessage) =>
+        onmessage({data: {...buildGraphData(data.nodes), id: data.id}}),
+      );
+    } else {
+      assertUnreachable(data);
     }
   }
 }
