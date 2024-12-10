@@ -2197,27 +2197,26 @@ class DagsterInstance(DynamicPartitionsStore):
             AssetPartitionStatus,
             AssetStatusCacheValue,
             get_and_update_asset_status_cache_value,
+            get_failed_partitions_subset,
+            get_in_progress_partitions_subset,
+            get_materialized_partitions_subset,
         )
 
-        cached_value = get_and_update_asset_status_cache_value(self, asset_key, partitions_def)
+        cache_value = get_and_update_asset_status_cache_value(self, asset_key, partitions_def)
 
-        if isinstance(cached_value, AssetStatusCacheValue):
-            materialized_partitions = cached_value.deserialize_materialized_partition_subsets(
-                partitions_def
-            )
-            failed_partitions = cached_value.deserialize_failed_partition_subsets(partitions_def)
-            in_progress_partitions = cached_value.deserialize_in_progress_partition_subsets(
-                partitions_def
-            )
+        if isinstance(cache_value, AssetStatusCacheValue):
+            materialized_subset = get_materialized_partitions_subset(cache_value, partitions_def)
+            in_progress_subset = get_in_progress_partitions_subset(cache_value, partitions_def)
+            failed_subset = get_failed_partitions_subset(cache_value, partitions_def)
 
             status_by_partition = {}
 
             for partition_key in partition_keys:
-                if partition_key in in_progress_partitions:
+                if partition_key in in_progress_subset:
                     status_by_partition[partition_key] = AssetPartitionStatus.IN_PROGRESS
-                elif partition_key in failed_partitions:
+                elif partition_key in failed_subset:
                     status_by_partition[partition_key] = AssetPartitionStatus.FAILED
-                elif partition_key in materialized_partitions:
+                elif partition_key in materialized_subset:
                     status_by_partition[partition_key] = AssetPartitionStatus.MATERIALIZED
                 else:
                     status_by_partition[partition_key] = None

@@ -46,8 +46,11 @@ from dagster._core.storage.event_log.sql_event_log import get_max_event_records_
 from dagster._core.storage.partition_status_cache import (
     build_failed_and_in_progress_partition_subset,
     get_and_update_asset_status_cache_value,
+    get_failed_partitions_subset,
+    get_in_progress_partitions_subset,
     get_last_planned_storage_id,
     get_materialized_multipartitions,
+    get_materialized_partitions_subset,
     get_validated_partition_keys,
     is_cacheable_partition_type,
 )
@@ -432,21 +435,11 @@ def get_partition_subsets(
             dynamic_partitions_loader,
             loading_context,
         )
-        materialized_subset = (
-            updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)
-            if updated_cache_value
-            else partitions_def.empty_subset()
+        materialized_subset = get_materialized_partitions_subset(
+            updated_cache_value, partitions_def
         )
-        failed_subset = (
-            updated_cache_value.deserialize_failed_partition_subsets(partitions_def)
-            if updated_cache_value
-            else partitions_def.empty_subset()
-        )
-        in_progress_subset = (
-            updated_cache_value.deserialize_in_progress_partition_subsets(partitions_def)
-            if updated_cache_value
-            else partitions_def.empty_subset()
-        )
+        failed_subset = get_failed_partitions_subset(updated_cache_value, partitions_def)
+        in_progress_subset = get_in_progress_partitions_subset(updated_cache_value, partitions_def)
 
         return materialized_subset, failed_subset, in_progress_subset
 

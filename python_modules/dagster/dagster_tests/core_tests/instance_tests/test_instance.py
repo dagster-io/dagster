@@ -2,7 +2,7 @@ import os
 import re
 import tempfile
 from typing import Any, Mapping, Optional
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -21,10 +21,12 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._cli.utils import get_instance_for_cli
 from dagster._config import Field
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
+from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import (
     DagsterHomeNotSetError,
@@ -724,15 +726,22 @@ def test_configurable_class_missing_methods():
 
 
 @patch("dagster._core.storage.partition_status_cache.get_and_update_asset_status_cache_value")
-def test_get_status_by_partition(mock_get_and_update):
-    mock_cached_value = MagicMock(spec=AssetStatusCacheValue)
-    mock_cached_value.deserialize_materialized_partition_subsets.return_value = [
-        "2023-06-01",
-        "2023-06-02",
-    ]
-    mock_cached_value.deserialize_failed_partition_subsets.return_value = ["2023-06-15"]
-    mock_cached_value.deserialize_in_progress_partition_subsets.return_value = ["2023-07-01"]
-    mock_get_and_update.return_value = mock_cached_value
+def test_get_status_by_partition(mock_get_and_update) -> None:
+    key = AssetKey("a")
+    materialized_subset = SerializableEntitySubset(
+        key, DefaultPartitionsSubset({"2023-06-01", "2023-06-02"})
+    )
+    failed_subset = SerializableEntitySubset(key, DefaultPartitionsSubset({"2023-06-15"}))
+    in_progress_subset = SerializableEntitySubset(key, DefaultPartitionsSubset({"2023-07-01"}))
+    cached_value = AssetStatusCacheValue(
+        latest_storage_id=0,
+        partitions_def_id="...",
+        materialized_subset=materialized_subset,
+        failed_subset=failed_subset,
+        in_progress_subset=in_progress_subset,
+    )
+    mock_get_and_update.return_value = cached_value
+
     with instance_for_test() as instance:
         partition_status = instance.get_status_by_partition(
             AssetKey("test-asset"),

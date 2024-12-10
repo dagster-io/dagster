@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Iterable, List, NamedTuple, Optional, Sequence, Set, Tuple
+from typing import TYPE_CHECKING, Iterable, List, Optional, Sequence, Set, Tuple
 
 from dagster import (
     AssetKey,
@@ -7,8 +7,7 @@ from dagster import (
     DagsterRunStatus,
     _check as check,
 )
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
-from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -27,6 +26,7 @@ from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_dimension_from_partition_tag,
 )
+from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
@@ -70,20 +70,8 @@ def is_cacheable_partition_type(partitions_def: PartitionsDefinition) -> bool:
 
 
 @whitelist_for_serdes
-class AssetStatusCacheValue(
-    NamedTuple(
-        "_AssetPartitionsStatusCacheValue",
-        [
-            ("latest_storage_id", int),
-            ("partitions_def_id", Optional[str]),
-            ("serialized_materialized_partition_subset", Optional[str]),
-            ("serialized_failed_partition_subset", Optional[str]),
-            ("serialized_in_progress_partition_subset", Optional[str]),
-            ("earliest_in_progress_materialization_event_id", Optional[int]),
-        ],
-    ),
-    LoadableBy[Tuple[AssetKey, PartitionsDefinition]],
-):
+@record
+class AssetStatusCacheValue(LoadableBy[Tuple[AssetKey, PartitionsDefinition]]):
     """Set of asset fields that reflect partition materialization status. This is used to display
     global partition status in the asset view.
 
@@ -92,47 +80,29 @@ class AssetStatusCacheValue(
         partitions_def_id (Optional(str)): The serializable unique identifier for the partitions
             definition. When this value differs from the new partitions definition, this cache
             value needs to be recalculated. None if the asset is unpartitioned.
-        serialized_materialized_partition_subset (Optional(str)): The serialized representation of the
-            materialized partition subsets, up to the latest storage id. None if the asset is
-            unpartitioned.
-        serialized_failed_partition_subset (Optional(str)): The serialized representation of the failed
-            partition subsets, up to the latest storage id. None if the asset is unpartitioned.
-        serialized_in_progress_partition_subset (Optional(str)): The serialized representation of the
-            in progress partition subsets, up to the latest storage id. None if the asset is unpartitioned.
         earliest_in_progress_materialization_event_id (Optional(int)): The event id of the earliest
             materialization planned event for a run that is still in progress. This is used to check
             on the status of runs that are still in progress.
+        materialized_subset (Optional[SerializableEntitySubset[AssetKey]]): The subset of this asset
+            that has been materialized.
+        failed_subset (Optional[SerializableEntitySubset[AssetKey]]): The subset of this asset that
+            has failed.
+        in_progress_subset (Optional[SerializableEntitySubset[AssetKey]]): The subset of this asset that
+            is in progress.
     """
 
-    def __new__(
-        cls,
-        latest_storage_id: int,
-        partitions_def_id: Optional[str] = None,
-        serialized_materialized_partition_subset: Optional[str] = None,
-        serialized_failed_partition_subset: Optional[str] = None,
-        serialized_in_progress_partition_subset: Optional[str] = None,
-        earliest_in_progress_materialization_event_id: Optional[int] = None,
-    ):
-        check.int_param(latest_storage_id, "latest_storage_id")
-        check.opt_str_param(partitions_def_id, "partitions_def_id")
-        check.opt_str_param(
-            serialized_materialized_partition_subset, "serialized_materialized_partition_subset"
-        )
-        check.opt_str_param(
-            serialized_failed_partition_subset, "serialized_failed_partition_subset"
-        )
-        check.opt_str_param(
-            serialized_in_progress_partition_subset, "serialized_in_progress_partition_subset"
-        )
-        return super(AssetStatusCacheValue, cls).__new__(
-            cls,
-            latest_storage_id,
-            partitions_def_id,
-            serialized_materialized_partition_subset,
-            serialized_failed_partition_subset,
-            serialized_in_progress_partition_subset,
-            earliest_in_progress_materialization_event_id,
-        )
+    latest_storage_id: int
+    partitions_def_id: Optional[str] = None
+    earliest_in_progress_materialization_event_id: Optional[int] = None
+
+    materialized_subset: Optional[SerializableEntitySubset] = None
+    failed_subset: Optional[SerializableEntitySubset] = None
+    in_progress_subset: Optional[SerializableEntitySubset] = None
+
+    # backcompat, remove after this has been live for a couple of releases
+    serialized_materialized_partition_subset: Optional[str] = None
+    serialized_failed_partition_subset: Optional[str] = None
+    serialized_in_progress_partition_subset: Optional[str] = None
 
     @staticmethod
     def from_db_string(db_string: str) -> Optional["AssetStatusCacheValue"]:
@@ -152,62 +122,55 @@ class AssetStatusCacheValue(
     ) -> Iterable[Optional["AssetStatusCacheValue"]]:
         return context.instance.event_log_storage.get_asset_status_cache_values(keys, context)
 
-    def deserialize_materialized_partition_subsets(
-        self, partitions_def: PartitionsDefinition
-    ) -> PartitionsSubset:
-        if not self.serialized_materialized_partition_subset:
-            return partitions_def.empty_subset()
 
-        return partitions_def.deserialize_subset(self.serialized_materialized_partition_subset)
+def _get_partitions_subset(
+    partitions_def: PartitionsDefinition,
+    entity_subset: Optional[SerializableEntitySubset[AssetKey]],
+    serialized_partitions_subset: Optional[str],
+) -> PartitionsSubset:
+    if entity_subset:
+        return entity_subset.subset_value
+    elif serialized_partitions_subset:
+        # backcompat
+        return partitions_def.deserialize_subset(serialized_partitions_subset)
+    else:
+        return partitions_def.empty_subset()
 
-    def deserialize_failed_partition_subsets(
-        self, partitions_def: PartitionsDefinition
-    ) -> PartitionsSubset:
-        if not self.serialized_failed_partition_subset:
-            return partitions_def.empty_subset()
 
-        return partitions_def.deserialize_subset(self.serialized_failed_partition_subset)
+def get_materialized_partitions_subset(
+    cache_value: Optional[AssetStatusCacheValue], partitions_def: PartitionsDefinition
+) -> PartitionsSubset:
+    if not cache_value:
+        return partitions_def.empty_subset()
+    return _get_partitions_subset(
+        partitions_def,
+        cache_value.materialized_subset,
+        cache_value.serialized_materialized_partition_subset,
+    )
 
-    def deserialize_in_progress_partition_subsets(
-        self, partitions_def: PartitionsDefinition
-    ) -> PartitionsSubset:
-        if not self.serialized_in_progress_partition_subset:
-            return partitions_def.empty_subset()
 
-        return partitions_def.deserialize_subset(self.serialized_in_progress_partition_subset)
+def get_in_progress_partitions_subset(
+    cache_value: Optional[AssetStatusCacheValue], partitions_def: PartitionsDefinition
+) -> PartitionsSubset:
+    if not cache_value:
+        return partitions_def.empty_subset()
+    return _get_partitions_subset(
+        partitions_def,
+        cache_value.in_progress_subset,
+        cache_value.serialized_in_progress_partition_subset,
+    )
 
-    def get_materialized_subset(
-        self,
-        asset_graph_view: AssetGraphView,
-        asset_key: AssetKey,
-        partitions_def: PartitionsDefinition,
-    ) -> EntitySubset[AssetKey]:
-        value = self.deserialize_materialized_partition_subsets(partitions_def)
-        return EntitySubset(
-            asset_graph_view, key=asset_key, value=_ValidatedEntitySubsetValue(value)
-        )
 
-    def get_failed_subset(
-        self,
-        asset_graph_view: AssetGraphView,
-        asset_key: AssetKey,
-        partitions_def: PartitionsDefinition,
-    ) -> EntitySubset[AssetKey]:
-        value = self.deserialize_failed_partition_subsets(partitions_def)
-        return EntitySubset(
-            asset_graph_view, key=asset_key, value=_ValidatedEntitySubsetValue(value)
-        )
-
-    def get_in_progress_subset(
-        self,
-        asset_graph_view: AssetGraphView,
-        asset_key: AssetKey,
-        partitions_def: PartitionsDefinition,
-    ) -> EntitySubset[AssetKey]:
-        value = self.deserialize_in_progress_partition_subsets(partitions_def)
-        return EntitySubset(
-            asset_graph_view, key=asset_key, value=_ValidatedEntitySubsetValue(value)
-        )
+def get_failed_partitions_subset(
+    cache_value: Optional[AssetStatusCacheValue], partitions_def: PartitionsDefinition
+) -> PartitionsSubset:
+    if not cache_value:
+        return partitions_def.empty_subset()
+    return _get_partitions_subset(
+        partitions_def,
+        cache_value.failed_subset,
+        cache_value.serialized_failed_partition_subset,
+    )
 
 
 def get_materialized_multipartitions(
@@ -312,8 +275,12 @@ def _build_status_cache(
         return AssetStatusCacheValue(latest_storage_id=latest_storage_id)
 
     failed_subset = (
-        partitions_def.deserialize_subset(stored_cache_value.serialized_failed_partition_subset)
-        if stored_cache_value and stored_cache_value.serialized_failed_partition_subset
+        get_failed_partitions_subset(stored_cache_value, partitions_def)
+        if stored_cache_value
+        and (
+            stored_cache_value.failed_subset
+            or stored_cache_value.serialized_failed_partition_subset
+        )
         else None
     )
 
@@ -343,13 +310,7 @@ def _build_status_cache(
                 ),
             )
 
-        materialized_subset: PartitionsSubset = (
-            partitions_def.deserialize_subset(
-                stored_cache_value.serialized_materialized_partition_subset
-            )
-            if stored_cache_value.serialized_materialized_partition_subset
-            else partitions_def.empty_subset()
-        )
+        materialized_subset = get_materialized_partitions_subset(stored_cache_value, partitions_def)
 
         if new_partitions:
             materialized_subset = materialized_subset.with_partition_keys(new_partitions)
@@ -387,9 +348,9 @@ def _build_status_cache(
         partitions_def_id=partitions_def.get_serializable_unique_identifier(
             dynamic_partitions_store=dynamic_partitions_store
         ),
-        serialized_materialized_partition_subset=materialized_subset.serialize(),
-        serialized_failed_partition_subset=failed_subset.serialize(),
-        serialized_in_progress_partition_subset=in_progress_subset.serialize(),
+        materialized_subset=SerializableEntitySubset(key=asset_key, value=materialized_subset),
+        failed_subset=SerializableEntitySubset(key=asset_key, value=failed_subset),
+        in_progress_subset=SerializableEntitySubset(key=asset_key, value=in_progress_subset),
         earliest_in_progress_materialization_event_id=earliest_in_progress_materialization_event_id,
     )
 
