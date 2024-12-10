@@ -39,9 +39,10 @@ def generate_code_location(path: str, editable_dagster_root: Optional[str] = Non
     editable_dagster_uv_sources = textwrap.dedent(f"""
     [tool.uv.sources]
     dagster = {{ path = "{editable_dagster_root}/python_modules/dagster", editable = true }}
-    dagster-components = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-components", editable = true }}
+    dagster-graphql = {{ path = "{editable_dagster_root}/python_modules/dagster-graphql", editable = true }}
     dagster-pipes = {{ path = "{editable_dagster_root}/python_modules/dagster-pipes", editable = true }}
     dagster-webserver = {{ path = "{editable_dagster_root}/python_modules/dagster-webserver", editable = true }}
+    dagster-components = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-components", editable = true }}
     dagster-embedded-elt = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-embedded-elt", editable = true }}
     dagster-dbt = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-dbt", editable = true }}
     """)
