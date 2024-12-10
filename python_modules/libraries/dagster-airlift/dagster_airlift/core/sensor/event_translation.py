@@ -99,11 +99,14 @@ def get_timestamp_from_materialization(event: AssetEvent) -> float:
 
 
 def synthetic_mats_for_peered_dag_asset_keys(
-    dag_run: DagRun, airflow_data: AirflowDefinitionsData
+    dag_run: DagRun,
+    airflow_data: AirflowDefinitionsData,
+    peered_dags_already_materialized: AbstractSet[AssetKey],
 ) -> Sequence[AssetMaterialization]:
     return [
         dag_synthetic_mat(dag_run, airflow_data, asset_key)
         for asset_key in airflow_data.peered_dag_asset_keys_by_dag_handle[DagHandle(dag_run.dag_id)]
+        if asset_key not in peered_dags_already_materialized
     ]
 
 
@@ -120,7 +123,9 @@ def dag_synthetic_mat(
     dag_run: DagRun, airflow_data: AirflowDefinitionsData, asset_key: AssetKey
 ) -> AssetMaterialization:
     return AssetMaterialization(
-        asset_key=asset_key, description=dag_run.note, metadata=get_dag_run_metadata(dag_run)
+        asset_key=asset_key,
+        description=dag_run.note,
+        metadata=get_dag_run_metadata(dag_run),
     )
 
 
