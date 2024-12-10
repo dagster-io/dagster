@@ -1,6 +1,5 @@
 ---
 title: "Multi-tenancy"
-unlisted: true
 sidebar_position: 500
 ---
 
