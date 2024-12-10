@@ -976,7 +976,7 @@ def backfill_is_complete(
         if run.is_complete_and_waiting_to_retry
     ]
     if len(runs_waiting_to_retry) > 0:
-        num_runs_to_log = 50
+        num_runs_to_log = 20
         formatted_runs = "\n".join(runs_waiting_to_retry[:num_runs_to_log])
         if len(runs_waiting_to_retry) > num_runs_to_log:
             formatted_runs += f"\n... {len(runs_waiting_to_retry) - num_runs_to_log} more"
