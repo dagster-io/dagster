@@ -1088,6 +1088,7 @@ def load_airbyte_cloud_asset_specs(
         Loading the asset specs for a given Airbyte Cloud workspace:
 
         .. code-block:: python
+        
             from dagster_airbyte import AirbyteCloudWorkspace, load_airbyte_cloud_asset_specs
 
             import dagster as dg
