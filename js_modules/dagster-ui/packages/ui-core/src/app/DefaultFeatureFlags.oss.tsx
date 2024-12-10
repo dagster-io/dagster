@@ -5,6 +5,12 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
  */
 export const DEFAULT_FEATURE_FLAG_VALUES: Partial<Record<FeatureFlag, boolean>> = {
   [FeatureFlag.flagAssetSelectionWorker]: true,
+  [FeatureFlag.flagAssetSelectionSyntax]: (() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    return new URLSearchParams(window.location.search).has('new-asset-selection-syntax');
+  })(),
 
   // Flags for tests
   [FeatureFlag.__TestFlagDefaultTrue]: true,
