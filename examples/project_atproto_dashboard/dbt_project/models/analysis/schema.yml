@@ -2,4 +2,6 @@ version: 2
 
 models:
   - name: all_profiles
-    description: "table showing data for all the profiles posts are collected from"
+    description: "table showing data for all the profiles posts are collected from and some high level statistics"
+  - name: latest_feed
+    description: the latest feed of posts 

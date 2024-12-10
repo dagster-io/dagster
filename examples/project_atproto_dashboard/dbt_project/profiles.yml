@@ -15,7 +15,7 @@ bluesky_data:
         - type: r2
           key_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
           secret: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"
-          account_Id: "{{ env_var('AWS_ACCOUNT_ID') }}"
+          account_id: "{{ env_var('AWS_ACCOUNT_ID') }}"
           endpoint: "{{ env_var('AWS_ENDPOINT_URL') | replace('https://', '') }}"
     prod:
       type: duckdb
@@ -28,5 +28,5 @@ bluesky_data:
         - type: r2
           key_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
           secret: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"
-          account_Id: "{{ env_var('AWS_ACCOUNT_ID') }}"
+          account_id: "{{ env_var('AWS_ACCOUNT_ID') }}"
           endpoint: "{{ env_var('AWS_ENDPOINT_URL') | replace('https://', '') }}"
