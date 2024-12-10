@@ -5,10 +5,10 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
-import {GraphData, buildGraphData, tokenForAssetKey} from './Utils';
+import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from './Utils';
 import {gql} from '../apollo-client';
 import {computeGraphData as computeGraphDataImpl} from './ComputeGraphData';
-import {ComputeGraphDataMessageType} from './ComputeGraphData.types';
+import {BuildGraphDataMessageType, ComputeGraphDataMessageType} from './ComputeGraphData.types';
 import {throttleLatest} from './throttleLatest';
 import {featureEnabled} from '../app/Flags';
 import {
@@ -61,12 +61,33 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
   });
 
   const nodes = fetchResult.data?.assetNodes;
-  const queryItems = useMemo(() => (nodes ? buildGraphQueryItems(nodes) : []), [nodes]);
-
-  const fullAssetGraphData = useMemo(
-    () => (queryItems ? buildGraphData(queryItems.map((n) => n.node)) : null),
-    [queryItems],
+  const queryItems = useMemo(
+    () => (nodes ? buildGraphQueryItems(nodes) : []).map(({node}) => node),
+    [nodes],
   );
+
+  const [fullAssetGraphData, setFullAssetGraphData] = useState<GraphData | null>(null);
+  useBlockTraceUntilTrue('FullAssetGraphData', !!fullAssetGraphData);
+
+  const lastProcessedRequestRef = useRef(0);
+  const currentRequestRef = useRef(0);
+
+  useEffect(() => {
+    if (options.loading) {
+      return;
+    }
+    const requestId = ++currentRequestRef.current;
+    buildGraphData({
+      nodes: queryItems,
+      flagAssetSelectionSyntax: featureEnabled(FeatureFlag.flagAssetSelectionSyntax),
+    })?.then((data) => {
+      if (lastProcessedRequestRef.current < requestId) {
+        lastProcessedRequestRef.current = requestId;
+        setFullAssetGraphData(data);
+      }
+    });
+  }, [options.loading, queryItems]);
+
   return fullAssetGraphData;
 }
 
@@ -317,14 +338,16 @@ const computeGraphData = throttleLatest(
   2000,
 );
 
-const getWorker = memoize(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url)));
+const getWorker = memoize(
+  (_key: string = '') => new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
+);
 
 let _id = 0;
 async function computeGraphDataWrapper(
   props: Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
 ): Promise<GraphDataState> {
   if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
-    const worker = getWorker();
+    const worker = getWorker('computeGraphWorker');
     return new Promise<GraphDataState>((resolve) => {
       const id = ++_id;
       const callback = (event: MessageEvent) => {
@@ -344,4 +367,40 @@ async function computeGraphDataWrapper(
     });
   }
   return computeGraphDataImpl(props);
+}
+
+const buildGraphData = throttleLatest(
+  indexedDBAsyncMemoize<BuildGraphDataMessageType, GraphData, typeof buildGraphDataWrapper>(
+    buildGraphDataWrapper,
+    (props) => {
+      return JSON.stringify(props);
+    },
+  ),
+  2000,
+);
+
+async function buildGraphDataWrapper(
+  props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,
+): Promise<GraphData> {
+  if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
+    const worker = getWorker('buildGraphWorker');
+    return new Promise<GraphData>((resolve) => {
+      const id = ++_id;
+      const callback = (event: MessageEvent) => {
+        const data = event.data as GraphData & {id: number};
+        if (data.id === id) {
+          resolve(data);
+          worker.removeEventListener('message', callback);
+        }
+      };
+      worker.addEventListener('message', callback);
+      const message: BuildGraphDataMessageType = {
+        type: 'buildGraphData',
+        id,
+        ...props,
+      };
+      worker.postMessage(message);
+    });
+  }
+  return buildGraphDataImpl(props.nodes);
 }
