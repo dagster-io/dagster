@@ -42,7 +42,7 @@ final as (
 		user_aggregates.likes_percentile,
 		user_aggregates.replies_percentile,
 		user_aggregates.posts_percentile,
-		ntile(100) OVER (ORDER BY user_aggregates.avg_score)
+		user_aggregates.avg_score
 	FROM profiles
 	LEFT JOIN user_aggregates
 		on user_aggregates.author_handle = profiles.handle_subject
