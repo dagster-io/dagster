@@ -2,7 +2,7 @@ from pathlib import Path
 
 import dagster as dg
 from dagster_components import ComponentRegistry, build_defs_from_toplevel_components_folder
-from dagster_components.impls.pipes_subprocess_script_collection import (
+from dagster_components.lib.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollection,
 )
 

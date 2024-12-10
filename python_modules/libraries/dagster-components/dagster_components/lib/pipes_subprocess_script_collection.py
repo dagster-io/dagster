@@ -11,7 +11,12 @@ from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster._utils.warnings import suppress_dagster_warnings
 from pydantic import BaseModel, TypeAdapter
 
-from dagster_components.core.component import Component, ComponentDeclNode, ComponentLoadContext
+from dagster_components.core.component import (
+    Component,
+    ComponentDeclNode,
+    ComponentLoadContext,
+    component,
+)
 from dagster_components.core.component_decl_builder import YamlComponentDecl
 
 if TYPE_CHECKING:
@@ -48,6 +53,7 @@ class PipesSubprocessScriptCollectionParams(BaseModel):
     scripts: Sequence[PipesSubprocessScriptParams]
 
 
+@component(name="pipes_subprocess_script_collection")
 class PipesSubprocessScriptCollection(Component):
     params_schema = PipesSubprocessScriptCollectionParams
 

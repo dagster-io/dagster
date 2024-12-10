@@ -13,7 +13,7 @@ from dagster_components.core.component import (
     ComponentLoadContext,
     ComponentRegistry,
     get_component_name,
-    is_component,
+    is_registered_component,
 )
 from dagster_components.core.component_decl_builder import (
     ComponentFolder,
@@ -69,7 +69,10 @@ def component_type_from_yaml_decl(
 
             for _name, obj in inspect.getmembers(module, inspect.isclass):
                 assert isinstance(obj, Type)
-                if is_component(obj) and get_component_name(obj) == component_registry_key:
+                if (
+                    is_registered_component(obj)
+                    and get_component_name(obj) == component_registry_key
+                ):
                     return obj
 
         raise Exception(
@@ -127,10 +130,8 @@ def build_defs_from_toplevel_components_folder(
     """Build a Definitions object from an entire component hierarchy."""
     from dagster._core.definitions.definitions_class import Definitions
 
-    from dagster_components import __component_registry__
-
     context = CodeLocationProjectContext.from_path(
-        path, registry or ComponentRegistry(__component_registry__)
+        path, registry or ComponentRegistry.from_entry_point_discovery()
     )
 
     all_defs: List[Definitions] = []

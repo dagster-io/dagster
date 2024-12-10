@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Iterator, Optional, Union
+from typing import Any, Iterator, Optional, Union
 
 import yaml
 from dagster._core.definitions.definitions_class import Definitions
@@ -55,7 +55,7 @@ class SlingReplicationComponent(Component):
         return Definitions(assets=[_fn], resources={"sling": self.resource})
 
     @classmethod
-    def generate_files(cls) -> None:
+    def generate_files(cls, params: Any) -> None:
         replication_path = Path(os.getcwd()) / "replication.yaml"
         with open(replication_path, "w") as f:
             yaml.dump(

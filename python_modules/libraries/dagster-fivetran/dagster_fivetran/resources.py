@@ -874,7 +874,6 @@ class FivetranWorkspace(ConfigurableResource):
         self,
     ) -> FivetranWorkspaceData:
         """Retrieves all Fivetran content from the workspace and returns it as a FivetranWorkspaceData object.
-        Future work will cache this data to avoid repeated calls to the Fivetran API.
 
         Returns:
             FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
@@ -1082,6 +1081,7 @@ def load_fivetran_asset_specs(
         Loading the asset specs for a given Fivetran workspace:
 
         .. code-block:: python
+
             from dagster_fivetran import FivetranWorkspace, load_fivetran_asset_specs
 
             import dagster as dg

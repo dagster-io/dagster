@@ -757,6 +757,7 @@ def build_fivetran_assets_definitions(
         Sync the tables of a Fivetran connector:
 
         .. code-block:: python
+
             from dagster_fivetran import FivetranWorkspace, build_fivetran_assets_definitions
 
             import dagster as dg
@@ -777,6 +778,7 @@ def build_fivetran_assets_definitions(
         Sync the tables of a Fivetran connector with a custom translator:
 
         .. code-block:: python
+
             from dagster_fivetran import (
                 DagsterFivetranTranslator,
                 FivetranConnectorTableProps,

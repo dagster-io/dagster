@@ -6,6 +6,7 @@ from dagster_embedded_elt.dlt import (
     DagsterDltTranslator,
     dlt_assets,
 )
+from dlt.extract.resource import DltResource
 
 from dagster import AssetExecutionContext, AssetKey
 
@@ -18,11 +19,11 @@ def example_dlt_source():
 
 
 class CustomDagsterDltTranslator(DagsterDltTranslator):
-    def get_asset_key(self, resource: DagsterDltResource) -> AssetKey:
+    def get_asset_key(self, resource: DltResource) -> AssetKey:
         """Overrides asset key to be the dlt resource name."""
         return AssetKey(f"{resource.name}")
 
-    def get_deps_asset_keys(self, resource: DagsterDltResource) -> Iterable[AssetKey]:
+    def get_deps_asset_keys(self, resource: DltResource) -> Iterable[AssetKey]:
         """Overrides upstream asset key to be a single source asset."""
         return [AssetKey("common_upstream_dlt_dependency")]
 

@@ -118,7 +118,11 @@ class DbtProjectComponent(Component):
     def generate_files(cls, params: DbtGenerateParams) -> Mapping[str, Any]:
         cwd = os.getcwd()
         if params.project_path:
-            relative_path = os.path.relpath(params.project_path, start=cwd)
+            # NOTE: CWD is not set "correctly" above so we prepend "../../.." as a temporary hack to
+            # make sure the path is right.
+            relative_path = os.path.join(
+                "../../../", os.path.relpath(params.project_path, start=cwd)
+            )
         elif params.init:
             dbtRunner().invoke(["init"])
             subpaths = [

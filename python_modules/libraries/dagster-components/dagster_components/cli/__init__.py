@@ -2,11 +2,13 @@ import click
 from dagster.version import __version__
 
 from dagster_components.cli.generate import generate_cli
+from dagster_components.cli.list import list_cli
 
 
 def create_dagster_components_cli():
     commands = {
         "generate": generate_cli,
+        "list": list_cli,
     }
 
     @click.group(

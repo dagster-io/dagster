@@ -1,15 +1,15 @@
 import keyBy from 'lodash/keyBy';
 import memoize from 'lodash/memoize';
 import reject from 'lodash/reject';
-import throttle from 'lodash/throttle';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
-import {GraphData, buildGraphData, tokenForAssetKey} from './Utils';
+import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from './Utils';
 import {gql} from '../apollo-client';
 import {computeGraphData as computeGraphDataImpl} from './ComputeGraphData';
-import {ComputeGraphDataMessageType} from './ComputeGraphData.types';
+import {BuildGraphDataMessageType, ComputeGraphDataMessageType} from './ComputeGraphData.types';
+import {throttleLatest} from './throttleLatest';
 import {featureEnabled} from '../app/Flags';
 import {
   AssetGraphQuery,
@@ -61,12 +61,33 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
   });
 
   const nodes = fetchResult.data?.assetNodes;
-  const queryItems = useMemo(() => (nodes ? buildGraphQueryItems(nodes) : []), [nodes]);
-
-  const fullAssetGraphData = useMemo(
-    () => (queryItems ? buildGraphData(queryItems.map((n) => n.node)) : null),
-    [queryItems],
+  const queryItems = useMemo(
+    () => (nodes ? buildGraphQueryItems(nodes) : []).map(({node}) => node),
+    [nodes],
   );
+
+  const [fullAssetGraphData, setFullAssetGraphData] = useState<GraphData | null>(null);
+  useBlockTraceUntilTrue('FullAssetGraphData', !!fullAssetGraphData);
+
+  const lastProcessedRequestRef = useRef(0);
+  const currentRequestRef = useRef(0);
+
+  useEffect(() => {
+    if (options.loading) {
+      return;
+    }
+    const requestId = ++currentRequestRef.current;
+    buildGraphData({
+      nodes: queryItems,
+      flagAssetSelectionSyntax: featureEnabled(FeatureFlag.flagAssetSelectionSyntax),
+    })?.then((data) => {
+      if (lastProcessedRequestRef.current < requestId) {
+        lastProcessedRequestRef.current = requestId;
+        setFullAssetGraphData(data);
+      }
+    });
+  }, [options.loading, queryItems]);
+
   return fullAssetGraphData;
 }
 
@@ -147,15 +168,22 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       kinds,
       hideEdgesToNodesOutsideQuery,
       flagAssetSelectionSyntax: featureEnabled(FeatureFlag.flagAssetSelectionSyntax),
-    })?.then((data) => {
-      if (lastProcessedRequestRef.current < requestId) {
-        lastProcessedRequestRef.current = requestId;
-        setState(data);
+    })
+      ?.then((data) => {
+        if (lastProcessedRequestRef.current < requestId) {
+          lastProcessedRequestRef.current = requestId;
+          setState(data);
+          if (requestId === currentRequestRef.current) {
+            setGraphDataLoading(false);
+          }
+        }
+      })
+      .catch((e) => {
+        console.error(e);
         if (requestId === currentRequestRef.current) {
           setGraphDataLoading(false);
         }
-      }
-    });
+      });
   }, [
     repoFilteredNodes,
     graphQueryItems,
@@ -299,35 +327,80 @@ export const ASSET_GRAPH_QUERY = gql`
   ${ASSET_NODE_FRAGMENT}
 `;
 
-const computeGraphData = throttle(
+const computeGraphData = throttleLatest(
   indexedDBAsyncMemoize<
-    ComputeGraphDataMessageType,
+    Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
     GraphDataState,
     typeof computeGraphDataWrapper
   >(computeGraphDataWrapper, (props) => {
     return JSON.stringify(props);
   }),
   2000,
-  {leading: true},
 );
 
-const getWorker = memoize(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url)));
+const getWorker = memoize(
+  (_key: string = '') => new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
+);
 
+let _id = 0;
 async function computeGraphDataWrapper(
-  props: Omit<ComputeGraphDataMessageType, 'type'>,
+  props: Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
 ): Promise<GraphDataState> {
   if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
-    const worker = getWorker();
+    const worker = getWorker('computeGraphWorker');
     return new Promise<GraphDataState>((resolve) => {
-      worker.addEventListener('message', (event) => {
-        resolve(event.data as GraphDataState);
-      });
+      const id = ++_id;
+      const callback = (event: MessageEvent) => {
+        const data = event.data as GraphDataState & {id: number};
+        if (data.id === id) {
+          resolve(data);
+          worker.removeEventListener('message', callback);
+        }
+      };
+      worker.addEventListener('message', callback);
       const message: ComputeGraphDataMessageType = {
         type: 'computeGraphData',
+        id,
         ...props,
       };
       worker.postMessage(message);
     });
   }
   return computeGraphDataImpl(props);
+}
+
+const buildGraphData = throttleLatest(
+  indexedDBAsyncMemoize<BuildGraphDataMessageType, GraphData, typeof buildGraphDataWrapper>(
+    buildGraphDataWrapper,
+    (props) => {
+      return JSON.stringify(props);
+    },
+  ),
+  2000,
+);
+
+async function buildGraphDataWrapper(
+  props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,
+): Promise<GraphData> {
+  if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
+    const worker = getWorker('buildGraphWorker');
+    return new Promise<GraphData>((resolve) => {
+      const id = ++_id;
+      const callback = (event: MessageEvent) => {
+        const data = event.data as GraphData & {id: number};
+        if (data.id === id) {
+          resolve(data);
+          worker.removeEventListener('message', callback);
+        }
+      };
+      worker.addEventListener('message', callback);
+      const message: BuildGraphDataMessageType = {
+        type: 'buildGraphData',
+        id,
+        ...props,
+      };
+      worker.postMessage(message);
+    });
+  }
+  return buildGraphDataImpl(props.nodes);
 }
