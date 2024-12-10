@@ -45,5 +45,11 @@ the_task = BlankSessionAssetsOperator(
     # Test both string syntax and list of strings syntax.
     task_id="some_task",
     dag=dag,
-    asset_key_paths=["some_asset", ["other_asset"], ["nested", "asset"]],
+    asset_key_paths=[
+        "some_asset",
+        ["other_asset"],
+        ["nested", "asset"],
+        "string/interpretation",
+        r"backslash\/interpretation",
+    ],
 )
