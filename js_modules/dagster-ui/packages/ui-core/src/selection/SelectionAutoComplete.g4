@@ -19,7 +19,6 @@ expr:
 	| expr andToken postLogicalOperatorWhitespace				# IncompleteAndExpression
 	| expr orToken postLogicalOperatorWhitespace				# IncompleteOrExpression
 	| notToken postNotOperatorWhitespace						# IncompleteNotExpression
-	| expr value postLogicalOperatorWhitespace					# UnmatchedExpressionContinuation
 	| STAR postExpressionWhitespace								# AllExpression
 	| value postExpressionWhitespace							# UnmatchedValue;
 

@@ -2,7 +2,7 @@ import {ParserRuleContext} from 'antlr4ts';
 
 export const removeQuotesFromString = (value: string) => {
   if (value.length > 1 && value[0] === '"' && value[value.length - 1] === '"') {
-    return value.slice(1, value.length - 1);
+    return value.slice(1, -1);
   }
   return value;
 };

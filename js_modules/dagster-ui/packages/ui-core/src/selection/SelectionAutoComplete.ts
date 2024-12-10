@@ -124,7 +124,6 @@ export class SelectionAutoCompleteVisitor
         this.startReplacementIndex = this.cursorIndex;
         this.stopReplacementIndex = this.cursorIndex;
       }
-      console.log('NOT VISITING', tree.constructor.name);
       return;
     }
     return super.visit(tree);
@@ -344,9 +343,11 @@ export class SelectionAutoCompleteVisitor
 
   visitAttributeValue(ctx: AttributeValueContext) {
     const stopIndex = ctx.stop!.stopIndex;
-    console.log(stopIndex, this.cursorIndex, this.line[this.cursorIndex]);
-    if (this.cursorIndex >= stopIndex && this.line[this.cursorIndex - 1] === '"') {
-      console.log('after');
+    if (
+      this.cursorIndex >= stopIndex &&
+      this.line[this.cursorIndex - 1] === '"' &&
+      this.line[this.cursorIndex] !== '"'
+    ) {
       this.addAfterExpressionResults(ctx);
       return;
     }
@@ -354,7 +355,6 @@ export class SelectionAutoCompleteVisitor
     this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
     const parentChildren = ctx.parent?.children ?? [];
     if (parentChildren[0]?.constructor.name === 'AttributeNameContext') {
-      console.log('attribute name context', parentChildren[0].text, getValue(ctx.value()));
       this.addAttributeValueResults(parentChildren[0].text, getValue(ctx.value()));
     }
   }
@@ -496,7 +496,6 @@ export class SelectionAutoCompleteVisitor
   visitPostAttributeValueWhitespace(ctx: PostAttributeValueWhitespaceContext) {
     const attributeValue = ctx.parent!.getChild(2) as any;
     if (this.cursorIndex === attributeValue?.stop?.stopIndex + 1) {
-      console.log('force visiting');
       this.forceVisit(attributeValue);
     } else {
       this.visitPostExpressionWhitespace(ctx);

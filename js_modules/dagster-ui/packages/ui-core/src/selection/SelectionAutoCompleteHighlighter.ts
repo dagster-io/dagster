@@ -14,6 +14,7 @@ import {
   IncompleteAttributeExpressionMissingKeyContext,
   IncompleteAttributeExpressionMissingValueContext,
   ParenthesizedExpressionContext,
+  PostAttributeValueWhitespaceContext,
   QuotedStringValueContext,
   StartContext,
   UnquotedStringValueContext,
@@ -43,6 +44,12 @@ export class SyntaxHighlightingVisitor
     this.cm.markText(from, to, {className: klass});
   }
 
+  private addClassPos(fromIndex: number, toIndex: number, klass: string) {
+    const from = this.cm.posFromIndex(this.startOffset + fromIndex);
+    const to = this.cm.posFromIndex(this.startOffset + toIndex + 1);
+    this.cm.markText(from, to, {className: klass});
+  }
+
   private addActiveClass(ctx: ParserRuleContext, klass: string = 'active') {
     if (ctx.start.startIndex < this.cursorIndex && (ctx.stop?.stopIndex ?? 0) < this.cursorIndex) {
       this.addClass(ctx, klass);
@@ -63,12 +70,22 @@ export class SyntaxHighlightingVisitor
   visitIncompleteAttributeExpressionMissingKey(
     ctx: IncompleteAttributeExpressionMissingKeyContext,
   ) {
-    this.addClass(ctx, 'expression attribute-expression');
+    const start = ctx.start.startIndex;
+    let end = ctx.stop!.stopIndex;
+    if (ctx.postExpressionWhitespace()) {
+      end = ctx.postExpressionWhitespace().start.startIndex;
+    }
+    this.addClassPos(start, end, 'expression attribute-expression');
     this.visitChildren(ctx);
   }
 
   visitAttributeExpression(ctx: AttributeExpressionContext) {
-    this.addClass(ctx, 'expression attribute-expression');
+    const start = ctx.start.startIndex;
+    let end = ctx.stop!.stopIndex;
+    if (ctx.postAttributeValueWhitespace()) {
+      end = ctx.postAttributeValueWhitespace().start.startIndex;
+    }
+    this.addClassPos(start, end, 'expression attribute-expression');
     this.visitChildren(ctx);
   }
 
@@ -153,6 +170,9 @@ export class SyntaxHighlightingVisitor
     this.addActiveClass(ctx, 'active-parenthesis');
     this.visitChildren(ctx);
   }
+  visitPostAttributeValueWhitespace(ctx: PostAttributeValueWhitespaceContext) {
+    this.addClass(ctx, 'attribute-value-ws');
+  }
 }
 
 export function applyStaticSyntaxHighlighting(cm: CodeMirror.Editor): void {
@@ -169,12 +189,18 @@ export function applyStaticSyntaxHighlighting(cm: CodeMirror.Editor): void {
   const cursorIndex = cm.getCursor().ch;
   const {parseTrees} = parseInput(value);
   let start = 0;
-  for (const {tree, line} of parseTrees) {
+
+  for (const {tree} of parseTrees) {
     const visitor = new SyntaxHighlightingVisitor(cm, start, cursorIndex - start);
     visitor.visit(tree);
-    start += line.length;
+    start += tree.text.length;
   }
   cm.markText(cm.posFromIndex(0), cm.posFromIndex(value.length), {className: 'selection'});
+
+  requestAnimationFrame(() => {
+    // Force CodeMirror to re-measure widths after applying CSS changes
+    cm.refresh();
+  });
 }
 
 const lastElementInTokenStyle = css`
@@ -246,10 +272,11 @@ export const SelectionAutoCompleteInputCSS = css`
     padding-left: 4px;
   }
 
-  .attribute-expression {
+  .attribute-expression:not(.attribute-value-ws) {
     background: ${Colors.backgroundYellow()};
   }
 
+  .attribute-expression:has(+ .attribute-value-ws),
   .attribute-expression:not(:has(+ .attribute-expression)) {
     ${lastElementInTokenStyle}
   }

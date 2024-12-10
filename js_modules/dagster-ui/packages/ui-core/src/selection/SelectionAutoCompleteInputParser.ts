@@ -55,7 +55,7 @@ export const parseInput = memoize((input: string): ParseResult => {
     try {
       // Parse using the 'expr' rule instead of 'start' to allow partial parsing
       tree = parser.expr();
-      parseTrees.push({tree, line: substring});
+      parseTrees.push({tree, line: tree.text});
 
       // Advance currentPosition to the end of the parsed input
       const lastToken = tokenStream.get(tokenStream.index - 1);

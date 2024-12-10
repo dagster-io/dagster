@@ -90,6 +90,16 @@ describe('createAssetSelectionHint', () => {
       from: 4, // cursor location
       to: 4, // cursor location
     });
+
+    expect(testAutocomplete('tag:"|"')).toEqual({
+      list: [
+        {text: '"tag1"', displayText: 'tag1'},
+        {text: '"tag2"', displayText: 'tag2'},
+        {text: '"tag3"', displayText: 'tag3'},
+      ],
+      from: 4, // cursor location
+      to: 6, // cursor location
+    });
   });
 
   it('should suggest logical operators after an expression', () => {
@@ -773,6 +783,39 @@ describe('createAssetSelectionHint', () => {
         {text: '"tag3"', displayText: 'tag3'},
       ],
       to: 9,
+    });
+  });
+
+  it('handles malformed input in the middle of the selection', () => {
+    expect(
+      testAutocomplete(
+        'owner:"marco@dagsterlabs.com" or aiufhaifuhaguihaiugh k|ey:"column_schema_asset_2"',
+      ),
+    ).toEqual({
+      from: 54,
+      list: [
+        {
+          displayText: 'key_substring:',
+          text: 'key_substring:',
+        },
+        {
+          displayText: 'key:',
+          text: 'key:',
+        },
+      ],
+      to: 58,
+    });
+
+    expect(
+      testAutocomplete('owner:"marco@dagsterlabs.com" or aiufhaifuhaguihaiugh key:"|"'),
+    ).toEqual({
+      from: 58,
+      list: [
+        {text: '"asset1"', displayText: 'asset1'},
+        {text: '"asset2"', displayText: 'asset2'},
+        {text: '"asset3"', displayText: 'asset3'},
+      ],
+      to: 60,
     });
   });
 });

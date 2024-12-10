@@ -56,7 +56,6 @@ import {
   UnclosedExpressionlessParenthesizedExpressionContext,
   UnclosedFunctionExpressionContext,
   UnclosedParenthesizedExpressionContext,
-  UnmatchedExpressionContinuationContext,
   UnmatchedValueContext,
   UnquotedStringValueContext,
   UpAndDownTraversalExpressionContext,
@@ -203,14 +202,6 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
    * @return the visitor result
    */
   visitIncompleteNotExpression?: (ctx: IncompleteNotExpressionContext) => Result;
-
-  /**
-   * Visit a parse tree produced by the `UnmatchedExpressionContinuation`
-   * labeled alternative in `SelectionAutoCompleteParser.expr`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitUnmatchedExpressionContinuation?: (ctx: UnmatchedExpressionContinuationContext) => Result;
 
   /**
    * Visit a parse tree produced by the `AllExpression`

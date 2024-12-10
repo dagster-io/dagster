@@ -56,7 +56,6 @@ import {
   UnclosedExpressionlessParenthesizedExpressionContext,
   UnclosedFunctionExpressionContext,
   UnclosedParenthesizedExpressionContext,
-  UnmatchedExpressionContinuationContext,
   UnmatchedValueContext,
   UnquotedStringValueContext,
   UpAndDownTraversalExpressionContext,
@@ -282,19 +281,6 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitIncompleteNotExpression?: (ctx: IncompleteNotExpressionContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `UnmatchedExpressionContinuation`
-   * labeled alternative in `SelectionAutoCompleteParser.expr`.
-   * @param ctx the parse tree
-   */
-  enterUnmatchedExpressionContinuation?: (ctx: UnmatchedExpressionContinuationContext) => void;
-  /**
-   * Exit a parse tree produced by the `UnmatchedExpressionContinuation`
-   * labeled alternative in `SelectionAutoCompleteParser.expr`.
-   * @param ctx the parse tree
-   */
-  exitUnmatchedExpressionContinuation?: (ctx: UnmatchedExpressionContinuationContext) => void;
 
   /**
    * Enter a parse tree produced by the `AllExpression`
