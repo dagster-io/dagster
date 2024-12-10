@@ -1,0 +1,5 @@
+version: 2
+
+models:
+  - name: all_profiles
+    description: "table showing data for all the profiles posts are collected from"

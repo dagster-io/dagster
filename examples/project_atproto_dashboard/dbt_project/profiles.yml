@@ -4,15 +4,19 @@ bluesky_data:
     dev:
       type: duckdb
       schema: dev_bluesky
-      path: "md:my_db?MOTHERDUCK_TOKEN={{ env_var('MOTHERDUCK_TOKEN') }}"
+      path: "local.duckdb"
       threads: 16
       extensions: 
         - httpfs
       secrets:
+        # https://github.com/duckdb/dbt-duckdb/issues/420
+        # https://github.com/duckdb/dbt-duckdb/issues/466
+        # https://github.com/duckdb/dbt-duckdb/issues/249#issuecomment-2487260655
         - type: r2
           key_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
           secret: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"
           account_Id: "{{ env_var('AWS_ACCOUNT_ID') }}"
+          endpoint: "{{ env_var('AWS_ENDPOINT_URL') | replace('https://', '') }}"
     prod:
       type: duckdb
       schema: prod_bluesky
@@ -25,3 +29,4 @@ bluesky_data:
           key_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
           secret: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"
           account_Id: "{{ env_var('AWS_ACCOUNT_ID') }}"
+          endpoint: "{{ env_var('AWS_ENDPOINT_URL') | replace('https://', '') }}"

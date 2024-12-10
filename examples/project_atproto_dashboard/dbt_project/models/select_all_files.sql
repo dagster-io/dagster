@@ -1,1 +1,0 @@
-select * from 'r2://dagster-demo/atproto_starter_pack_snapshot/*.json';
