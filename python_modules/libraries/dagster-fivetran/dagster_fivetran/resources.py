@@ -17,11 +17,11 @@ from dagster import (
     MaterializeResult,
     MetadataValue,
     OpExecutionContext,
+    Output,
     __version__,
     _check as check,
     get_dagster_logger,
     resource,
-    Output
 )
 from dagster._annotations import experimental
 from dagster._config.pythonic_config import ConfigurableResource
@@ -29,7 +29,6 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.errors import DagsterStepOutputNotFoundError
-from dagster._core.utils import imap
 from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
@@ -1076,18 +1075,18 @@ class FivetranWorkspace(ConfigurableResource):
 
         unmaterialized_asset_keys = context.selected_asset_keys - materialized_asset_keys
         if infer_missing_tables:
-                for asset_key in unmaterialized_asset_keys:
-                    yield Output(value=None, output_name=asset_key.to_python_identifier())
-            else:
-                if unmaterialized_asset_keys:
-                    asset_key = next(iter(unmaterialized_asset_keys))
-                    output_name = "_".join(asset_key.path)
-                    raise DagsterStepOutputNotFoundError(
-                        f"Core compute for {context.op_def.name} did not return an output for"
-                        f' non-optional output "{output_name}".',
-                        step_key=context.get_step_execution_context().step.key,
-                        output_name=output_name,
-                    )
+            for asset_key in unmaterialized_asset_keys:
+                yield Output(value=None, output_name=asset_key.to_python_identifier())
+        else:
+            if unmaterialized_asset_keys:
+                asset_key = next(iter(unmaterialized_asset_keys))
+                output_name = "_".join(asset_key.path)
+                raise DagsterStepOutputNotFoundError(
+                    f"Core compute for {context.op_def.name} did not return an output for"
+                    f' non-optional output "{output_name}".',
+                    step_key=context.get_step_execution_context().step.key,
+                    output_name=output_name,
+                )
 
 
 @experimental
