@@ -118,8 +118,14 @@ class DagsterSigmaTranslator:
                 ),
                 "dagster_sigma/properties": MetadataValue.json(data.properties),
                 "dagster_sigma/lineage": MetadataValue.json(data.lineage),
-                "dagster_sigma/materialization_schedules": MetadataValue.json(
-                    data.materialization_schedules or []
+                **(
+                    {
+                        "dagster_sigma/materialization_schedules": MetadataValue.json(
+                            data.materialization_schedules
+                        )
+                    }
+                    if data.materialization_schedules
+                    else {}
                 ),
                 "dagster_sigma/workbook_id": data.properties["workbookId"],
             }
