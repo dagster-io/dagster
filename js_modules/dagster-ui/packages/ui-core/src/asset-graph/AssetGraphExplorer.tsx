@@ -76,7 +76,7 @@ import {
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
-import {Loading} from '../ui/Loading';
+import {Loading, LoadingSpinner} from '../ui/Loading';
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 
@@ -152,6 +152,9 @@ export const AssetGraphExplorer = (props: Props) => {
   return (
     <Loading allowStaleData queryResult={fetchResult}>
       {() => {
+        if (graphDataLoading || filteredAssetsLoading) {
+          return <LoadingSpinner purpose="page" />;
+        }
         if (!assetGraphData || !allAssetKeys || !fullAssetGraphData) {
           return <NonIdealState icon="error" title="Query Error" />;
         }

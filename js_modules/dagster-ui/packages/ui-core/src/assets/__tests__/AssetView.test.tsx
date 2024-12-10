@@ -35,13 +35,12 @@ import '../../../jest/mocks/ComputeGraphData.worker';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
-jest.mock(
-  'lodash/throttle',
-  () =>
-    (fn: (...args: any[]) => any) =>
+jest.mock('../../asset-graph/throttleLatest', () => ({
+  throttleLatest:
+    (fn: any) =>
     (...args: any[]) =>
       fn(...args),
-);
+}));
 
 // These files must be mocked because useVirtualizer tries to create a ResizeObserver,
 // and the component tree fails to mount.
