@@ -1,14 +1,12 @@
 import click
-from dagster.version import __version__
 
-from dagster_components.cli.generate import generate_cli
-from dagster_components.cli.list import list_cli
+from dg_cli.cli.generate import generate_cli
+from dg_cli.version import __version__
 
 
-def create_dagster_components_cli():
+def create_dg_cli():
     commands = {
         "generate": generate_cli,
-        "list": list_cli,
     }
 
     @click.group(
@@ -23,7 +21,7 @@ def create_dagster_components_cli():
 
 
 ENV_PREFIX = "DG_CLI"
-cli = create_dagster_components_cli()
+cli = create_dg_cli()
 
 
 def main():
