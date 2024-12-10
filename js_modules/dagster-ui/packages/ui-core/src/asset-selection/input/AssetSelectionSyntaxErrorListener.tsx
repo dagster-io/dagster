@@ -6,7 +6,7 @@ interface SyntaxError {
   column: number;
 }
 
-export class SyntaxErrorListener implements ANTLRErrorListener<any> {
+export class AssetSelectionSyntaxErrorListener implements ANTLRErrorListener<any> {
   public errors: SyntaxError[] = [];
 
   syntaxError<T>(
@@ -15,7 +15,7 @@ export class SyntaxErrorListener implements ANTLRErrorListener<any> {
     line: number,
     charPositionInLine: number,
     msg: string,
-    e: RecognitionException | undefined,
+    _e: RecognitionException | undefined,
   ): void {
     this.errors.push({
       message: msg,
