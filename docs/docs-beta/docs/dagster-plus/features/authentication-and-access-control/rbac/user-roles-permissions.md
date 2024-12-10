@@ -207,5 +207,5 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 
 - Learn more about how to manage users in Dagster+ in [Understanding User Management in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/users)
 - Learn more about how to manage teams in Dagster+ in [Understanding Team Management in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/teams)
-- Learn more about SCIM provisioning in [Understanding SCIM Provisioning](/dagster-plus/features/authentication-and-access-control/scim/index.mdx)
+- Learn more about SCIM provisioning in [Understanding SCIM Provisioning](/dagster-plus/features/authentication-and-access-control/scim/index.md)
 - Learn more about authentication in [Understanding Authentication](/dagster-plus/features/authentication-and-access-control/sso/authentication)
