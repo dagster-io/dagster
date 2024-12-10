@@ -18,6 +18,7 @@ TEST_ACCESS_TOKEN = "some_access_token"
 
 # Taken from the examples in the Airbyte REST API documentation
 TEST_DESTINATION_ID = "18dccc91-0ab1-4f72-9ed7-0b8fc27c5826"
+TEST_DESTINATION_TYPE = "postgres"
 TEST_DESTINATION_DATABASE = "test_database"
 TEST_DESTINATION_SCHEMA = "test_schema"
 TEST_CONNECTION_ID = "9924bcd0-99be-453d-ba47-c2c9766f7da5"
@@ -31,9 +32,10 @@ TEST_AIRBYTE_CONNECTION_TABLE_PROPS = AirbyteConnectionTableProps(
     table_name=f"{TEST_STREAM_PREFIX}{TEST_STREAM_NAME}",
     stream_prefix=TEST_STREAM_PREFIX,
     stream_name=TEST_STREAM_NAME,
+    json_schema=TEST_JSON_SCHEMA,
     connection_id=TEST_CONNECTION_ID,
     connection_name=TEST_CONNECTION_NAME,
-    json_schema=TEST_JSON_SCHEMA,
+    destination_type=TEST_DESTINATION_TYPE,
     database=TEST_DESTINATION_DATABASE,
     schema=TEST_DESTINATION_SCHEMA,
 )
@@ -147,7 +149,7 @@ SAMPLE_CONNECTION_DETAILS = {
 SAMPLE_DESTINATION_DETAILS = {
     "destinationId": TEST_DESTINATION_ID,
     "name": "My Destination",
-    "sourceType": "postgres",
+    "destinationType": TEST_DESTINATION_TYPE,
     "workspaceId": "744cc0ed-7f05-4949-9e60-2a814f90c035",
     "configuration": {
         "conversion_window_days": 14,
