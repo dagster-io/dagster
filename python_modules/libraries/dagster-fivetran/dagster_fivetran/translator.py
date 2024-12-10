@@ -153,7 +153,7 @@ class FivetranTable:
 
     enabled: bool
     name_in_destination: str
-    # We keep the raw data for columns to add it as `column_info in the metadata.
+    # We keep the raw data for columns to add it as `column_info` in the metadata.
     columns: Optional[Mapping[str, Any]]
 
     @classmethod
@@ -259,7 +259,7 @@ class FivetranMetadataSet(NamespacedMetadataSet):
 
 class DagsterFivetranTranslator:
     """Translator class which converts a `FivetranConnectorTableProps` object into AssetSpecs.
-    Subclass this class to implement custom logic for each type of Fivetran content.
+    Subclass this class to implement custom logic on how to translate Fivetran content into asset spec.
     """
 
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:

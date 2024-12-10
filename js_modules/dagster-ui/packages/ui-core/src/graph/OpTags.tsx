@@ -73,6 +73,7 @@ import hightouch from './kindtag-images/tool-hightouch-color.svg';
 import hudi from './kindtag-images/tool-hudi-color.svg';
 import huggingface from './kindtag-images/tool-huggingface-color.svg';
 import iceberg from './kindtag-images/tool-iceberg-color.svg';
+import icechunk from './kindtag-images/tool-icechunk-color.svg';
 import impala from './kindtag-images/tool-impala-color.svg';
 import instagram from './kindtag-images/tool-instagram-color.svg';
 import java from './kindtag-images/tool-java-color.svg';
@@ -311,6 +312,7 @@ export type KnownTagType =
   | 'hashicorp'
   | 'hudi'
   | 'iceberg'
+  | 'icechunk'
   | 'instagram'
   | 'lakefs'
   | 'linkedin'
@@ -840,6 +842,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   iceberg: {
     icon: iceberg,
     content: 'Iceberg',
+  },
+  icechunk: {
+    icon: icechunk,
+    content: 'Icechunk',
   },
   instagram: {
     icon: instagram,

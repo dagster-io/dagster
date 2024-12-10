@@ -5,19 +5,21 @@ import {
   ButtonLink,
   Checkbox,
   Colors,
-  ConfigEditorHandle,
-  ConfigEditorHelp,
-  ConfigEditorHelpContext,
   Dialog,
   DialogFooter,
   Group,
   Icon,
-  NewConfigEditor,
   SplitPanelContainer,
   SplitPanelContainerHandle,
   TextInput,
-  isHelpContextEqual,
 } from '@dagster-io/ui-components';
+import {
+  ConfigEditorHandle,
+  ConfigEditorHelp,
+  ConfigEditorHelpContext,
+  NewConfigEditor,
+  isHelpContextEqual,
+} from '@dagster-io/ui-components/editor';
 import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
 import {LaunchRootExecutionButton} from 'shared/launchpad/LaunchRootExecutionButton.oss';

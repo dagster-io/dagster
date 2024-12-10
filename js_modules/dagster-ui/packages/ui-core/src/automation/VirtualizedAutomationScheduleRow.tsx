@@ -138,22 +138,30 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
             </Tooltip>
           </RowCell>
           <RowCell>
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
-              {scheduleData ? (
-                <Box flex={{direction: 'column', gap: 4}}>
-                  {/* Keyed so that a new switch is always rendered, otherwise it's reused and animates on/off */}
-                  <ScheduleSwitch key={name} repoAddress={repoAddress} schedule={scheduleData} />
-                  {errorDisplay(
-                    scheduleData.scheduleState.status,
-                    scheduleData.scheduleState.runningCount,
-                  )}
-                </Box>
-              ) : (
-                <div style={{width: 30}} />
-              )}
-              <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>
-                <MiddleTruncate text={name} />
-              </Link>
+            <Box
+              flex={{
+                direction: 'row',
+                gap: 8,
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+              }}
+            >
+              <Box flex={{grow: 1, gap: 8}}>
+                {scheduleData ? (
+                  <>
+                    <ScheduleSwitch key={name} repoAddress={repoAddress} schedule={scheduleData} />
+                    {errorDisplay(
+                      scheduleData.scheduleState.status,
+                      scheduleData.scheduleState.runningCount,
+                    )}
+                  </>
+                ) : (
+                  <div style={{width: 30}} />
+                )}
+                <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>
+                  <MiddleTruncate text={name} />
+                </Link>
+              </Box>
             </Box>
           </RowCell>
           <RowCell>

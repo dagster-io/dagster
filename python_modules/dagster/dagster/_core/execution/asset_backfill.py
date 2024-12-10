@@ -51,18 +51,13 @@ from dagster._core.errors import (
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.execution.submit_asset_runs import submit_asset_run
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
-from dagster._core.storage.dagster_run import (
-    CANCELABLE_RUN_STATUSES,
-    IN_PROGRESS_RUN_STATUSES,
-    NOT_FINISHED_STATUSES,
-    DagsterRunStatus,
-    RunsFilter,
-)
+from dagster._core.storage.dagster_run import NOT_FINISHED_STATUSES, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
+    WILL_RETRY_TAG,
 )
 from dagster._core.utils import make_new_run_id, toposort
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
@@ -79,8 +74,6 @@ def get_asset_backfill_run_chunk_size():
 
 
 MATERIALIZATION_CHUNK_SIZE = 1000
-
-MAX_RUNS_CANCELED_PER_ITERATION = 50
 
 
 class AssetBackfillStatus(Enum):
@@ -972,19 +965,23 @@ def backfill_is_complete(
         logger.info("Backfill has in progress runs. Backfill is still in progress.")
         return False
     # Condition 3 - if there are runs that will be retried, but have not yet been retried, the backfill is not complete
-    if any(
-        [
-            run.is_complete_and_waiting_to_retry
-            for run in instance.get_runs(
-                filters=RunsFilter(
-                    tags={BACKFILL_ID_TAG: backfill_id},
-                    statuses=[DagsterRunStatus.FAILURE],
-                )
+    runs_waiting_to_retry = [
+        run.run_id
+        for run in instance.get_runs(
+            filters=RunsFilter(
+                tags={BACKFILL_ID_TAG: backfill_id, WILL_RETRY_TAG: "true"},
+                statuses=[DagsterRunStatus.FAILURE],
             )
-        ]
-    ):
+        )
+        if run.is_complete_and_waiting_to_retry
+    ]
+    if len(runs_waiting_to_retry) > 0:
+        num_runs_to_log = 20
+        formatted_runs = "\n".join(runs_waiting_to_retry[:num_runs_to_log])
+        if len(runs_waiting_to_retry) > num_runs_to_log:
+            formatted_runs += f"\n... {len(runs_waiting_to_retry) - num_runs_to_log} more"
         logger.info(
-            "Some runs for the backfill will be retried, but have not been launched. Backfill is still in progress."
+            f"The following runs for the backfill will be retried, but retries have not been launched. Backfill is still in progress:\n{formatted_runs}"
         )
         return False
     return True
@@ -1161,44 +1158,17 @@ def execute_asset_backfill_iteration(
         )
 
     elif backfill.status == BulkActionStatus.CANCELING:
-        if not instance.run_coordinator:
-            check.failed("The instance must have a run coordinator in order to cancel runs")
+        from dagster._core.execution.backfill import cancel_backfill_runs_and_cancellation_complete
 
-        # Query for cancelable runs, enforcing a limit on the number of runs to cancel in an iteration
-        # as canceling runs incurs cost
-        runs_to_cancel_in_iteration = instance.run_storage.get_run_ids(
-            filters=RunsFilter(
-                statuses=CANCELABLE_RUN_STATUSES,
-                tags={
-                    BACKFILL_ID_TAG: backfill.backfill_id,
-                },
-            ),
-            limit=MAX_RUNS_CANCELED_PER_ITERATION,
-        )
+        for all_runs_canceled in cancel_backfill_runs_and_cancellation_complete(
+            instance=instance, backfill_id=backfill.backfill_id
+        ):
+            yield None
 
-        yield None
-
-        waiting_for_runs_to_finish_after_cancelation = False
-        if runs_to_cancel_in_iteration:
-            for run_id in runs_to_cancel_in_iteration:
-                instance.run_coordinator.cancel_run(run_id)
-                yield None
-        else:
-            # Check at the beginning of the tick whether there are any runs that we are still
-            # waiting to move into a terminal state. If there are none and the backfill data is
-            # still missing partitions at the end of the tick, that indicates a framework problem.
-            # (It's important that we check for these runs before updating the backfill data -
-            # if we did them in the reverse order, a run that finishes between the two checks
-            # might not be incorporated into the backfill data, causing us to incorrectly decide
-            # there was a framework error.
-            run_waiting_to_cancel = instance.get_run_ids(
-                RunsFilter(
-                    tags={BACKFILL_ID_TAG: backfill.backfill_id},
-                    statuses=IN_PROGRESS_RUN_STATUSES,
-                ),
-                limit=1,
+        if not isinstance(all_runs_canceled, bool):
+            check.failed(
+                "Expected cancel_backfill_runs_and_cancellation_complete to return a boolean"
             )
-            waiting_for_runs_to_finish_after_cancelation = len(run_waiting_to_cancel) > 0
 
         # Update the asset backfill data to contain the newly materialized/failed partitions.
         updated_asset_backfill_data = None
@@ -1235,11 +1205,7 @@ def execute_asset_backfill_iteration(
 
         instance.update_backfill(updated_backfill)
 
-        if (
-            len(runs_to_cancel_in_iteration) == 0
-            and not all_partitions_marked_completed
-            and not waiting_for_runs_to_finish_after_cancelation
-        ):
+        if all_runs_canceled and not all_partitions_marked_completed:
             check.failed(
                 "All runs have completed, but not all requested partitions have been marked as materialized or failed. "
                 "This is likely a system error. Please report this issue to the Dagster team."
