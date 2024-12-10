@@ -2,7 +2,7 @@
 title: 'Dagster+ code requirements'
 displayed_sidebar: 'dagsterPlus'
 sidebar_label: "Code requirements"
-sidebar_position: 100
+sidebar_position: 10
 ---
 
 Your Dagster project must meet a few requirements to run in Dagster+.
