@@ -15,6 +15,9 @@ dev = [
     "dagster-webserver",
 ]
 
+[project.entry-points]
+"dagster.components" = { {{ project_name }} = "{{ project_name }}.lib"}
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"

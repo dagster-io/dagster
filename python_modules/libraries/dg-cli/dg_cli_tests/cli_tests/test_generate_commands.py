@@ -217,7 +217,7 @@ def test_generate_component_type_success(in_deployment: bool) -> None:
         assert result.exit_code == 0
         assert Path("bar/lib/baz.py").exists()
         context = CodeLocationProjectContext.from_path(Path.cwd())
-        assert context.has_component_type("baz")
+        assert context.has_component_type("bar.baz")
 
 
 def test_generate_component_type_outside_code_location_fails() -> None:
@@ -243,7 +243,7 @@ def test_generate_component_type_already_exists_fails(in_deployment: bool) -> No
 def test_generate_component_success(in_deployment: bool) -> None:
     runner = CliRunner()
     with isolated_example_code_location_bar_with_component_type_baz(runner, in_deployment):
-        result = runner.invoke(generate_component_command, ["baz", "qux"])
+        result = runner.invoke(generate_component_command, ["bar.baz", "qux"])
         assert result.exit_code == 0
         assert Path("bar/components/qux").exists()
         assert Path("bar/components/qux/sample.py").exists()
@@ -252,7 +252,7 @@ def test_generate_component_success(in_deployment: bool) -> None:
 def test_generate_component_outside_code_location_fails() -> None:
     runner = CliRunner()
     with isolated_example_deployment_foo(runner):
-        result = runner.invoke(generate_component_command, ["baz", "qux"])
+        result = runner.invoke(generate_component_command, ["bar.baz", "qux"])
         assert result.exit_code != 0
         assert "must be run inside a Dagster code location project" in result.output
 
@@ -261,9 +261,9 @@ def test_generate_component_outside_code_location_fails() -> None:
 def test_generate_component_already_exists_fails(in_deployment: bool) -> None:
     runner = CliRunner()
     with isolated_example_code_location_bar_with_component_type_baz(runner, in_deployment):
-        result = runner.invoke(generate_component_command, ["baz", "qux"])
+        result = runner.invoke(generate_component_command, ["bar.baz", "qux"])
         assert result.exit_code == 0
-        result = runner.invoke(generate_component_command, ["baz", "qux"])
+        result = runner.invoke(generate_component_command, ["bar.baz", "qux"])
         assert result.exit_code != 0
         assert "already exists" in result.output
 
@@ -271,7 +271,9 @@ def test_generate_component_already_exists_fails(in_deployment: bool) -> None:
 def test_generate_sling_replication_instance() -> None:
     runner = CliRunner()
     with isolated_example_code_location_bar(runner):
-        result = runner.invoke(generate_component_command, ["sling_replication", "file_ingest"])
+        result = runner.invoke(
+            generate_component_command, ["dagster_components.sling_replication", "file_ingest"]
+        )
         assert result.exit_code == 0
         assert Path("bar/components/file_ingest").exists()
 
@@ -297,7 +299,9 @@ dbt_project_path = "../stub_code_locations/dbt_project_location/components/jaffl
 def test_generate_dbt_project_instance(params) -> None:
     runner = CliRunner()
     with isolated_example_code_location_bar(runner):
-        result = runner.invoke(generate_component_command, ["dbt_project", "my_project", *params])
+        result = runner.invoke(
+            generate_component_command, ["dagster_components.dbt_project", "my_project", *params]
+        )
         assert result.exit_code == 0
         assert Path("bar/components/my_project").exists()
 
