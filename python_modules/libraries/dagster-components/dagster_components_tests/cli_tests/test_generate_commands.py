@@ -137,6 +137,7 @@ def test_generate_code_location_success() -> None:
         assert Path("code_locations/bar/bar/components").exists()
         assert Path("code_locations/bar/bar_tests").exists()
         assert Path("code_locations/bar/pyproject.toml").exists()
+        assert Path("code_locations/bar/.venv").exists()
 
         with open("code_locations/bar/pyproject.toml") as f:
             toml = tomli.loads(f.read())
