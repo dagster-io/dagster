@@ -362,6 +362,7 @@ defs = dg.Definitions(
         joined_data,
         monthly_sales_performance,
         product_performance,
+        adhoc_request,
     ],
     asset_checks=[missing_dimension_check],
     schedules=[weekly_update_schedule],
