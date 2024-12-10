@@ -46,7 +46,6 @@ AVAILABLE_EXAMPLES = [
     "quickstart_snowflake",
     "tutorial",
     "tutorial_notebook_assets",
-    "with_airflow",
     "with_great_expectations",
     "with_openai",
     "with_pyspark",
