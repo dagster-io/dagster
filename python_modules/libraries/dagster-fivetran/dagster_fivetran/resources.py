@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from functools import partial
 from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, Tuple, Union
@@ -30,7 +29,6 @@ from dagster._core.definitions.definitions_load_context import StateBackedDefini
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._core.utils import imap
 from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
