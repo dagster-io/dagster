@@ -50,4 +50,4 @@ If you notice an issue with newly deployed code, or your code fails to deploy su
 ## Next steps
 
 - Learn more about [Code Locations](/dagster-plus/features/code-locations)
-- Learn how to [Alert when a code location fails to load](/dagster-plus/features/alerts#alerting-when-a-code-location-fails-to-load)
+- Learn how to [Alert when a code location fails to load](/dagster-plus/features/alerts/creating-alerts#alerting-when-a-code-location-fails-to-load)
