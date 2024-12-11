@@ -8,7 +8,7 @@ If you're a GitHub or GitLab user, you can use our predefined workflows to seaml
 <Tabs groupId="method">
 <TabItem value="GitHub" label="With GitHub">
 
-If you're a GitHub user, with a single click our GitHub app with GitHub Actions can set up a repo containing skeleton code and configuration for you consistent with Dagster+'s best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/features/ci-cd/branch-deployments/index.mdx) that you can view in the Dagster+ UI for previewing and testing.
+If you're a GitHub user, with a single click our GitHub app with GitHub Actions can set up a repo containing skeleton code and configuration for you consistent with Dagster+'s best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/features/ci-cd/branch-deployments/index.md) that you can view in the Dagster+ UI for previewing and testing.
 
 :::note
 **If you are importing a Dagster project that's in an existing GitHub repo:**
@@ -25,7 +25,7 @@ If you're a GitHub user, with a single click our GitHub app with GitHub Actions 
 
 <TabItem value="GitLab" label="With GitLab">
 
-If you're a GitLab user, with a single click our GitLab app can set up a repo containing skeleton code and CI/CD configuration for you consistent with Dagster+'s best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/features/ci-cd/branch-deployments/index.mdx) that you can view in the Dagster+ UI for previewing and testing.
+If you're a GitLab user, with a single click our GitLab app can set up a repo containing skeleton code and CI/CD configuration for you consistent with Dagster+'s best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/features/ci-cd/branch-deployments/index.md) that you can view in the Dagster+ UI for previewing and testing.
 
 </TabItem>
 

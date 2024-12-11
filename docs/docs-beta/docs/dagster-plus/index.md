@@ -21,7 +21,7 @@ In addition to managed infrastructure, Dagster+ also adds core capabilities on t
 - [Alerts](/dagster-plus/features/alerts) to a variety of services like Slack, PagerDuty, and email to notify your team of failed runs, data quality issues, and violated SLAs.
 - Authentication, [Role Based Access Control](/dagster-plus/features/authentication-and-access-control/rbac), and [Audit Logs](/dagster-plus/features/authentication-and-access-control/rbac/audit-logs) which help teams implement data mesh strategies while remaining compliant.
 - [Data Catalog](/dagster-plus/features/data-catalog), a powerful search-first experience that builds off of Dagster's best-in-class lineage graph to include searching for assets, metadata, column lineage, and more.
-- [Branch Deployments](/dagster-plus/features/ci-cd/branch-deployments/index.mdx)
+- [Branch Deployments](/dagster-plus/features/ci-cd/branch-deployments/index.md)
 
 Ready to [get started](/dagster-plus/getting-started)?
 

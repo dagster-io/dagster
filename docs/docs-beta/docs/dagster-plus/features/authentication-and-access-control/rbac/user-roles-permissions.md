@@ -42,7 +42,7 @@ Dagster+ Pro users can create teams of users and assign default permission sets.
 
 With the exception of the **Organization Admin** role, user and team roles are set on a per-deployment basis.
 
-Organization Admins have access to the entire organization, including all [deployments](/todo), [code locations](/dagster-plus/features/code-locations), and [Branch Deployments](dagster-plus/features/ci-cd/branch-deployments/index.mdx).
+Organization Admins have access to the entire organization, including all [deployments](/todo), [code locations](/dagster-plus/features/code-locations), and [Branch Deployments](dagster-plus/features/ci-cd/branch-deployments/index.md).
 
 | Level              | Plan      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -130,7 +130,7 @@ Deployment settings are accessed in the UI by navigating to **user menu (your ic
 | View [environment variable](/dagster-plus/deployment/management/environment-variables)  values          | ❌     | ❌         | ✅      | ✅     | ✅                             |
 | Export [environment variables](/dagster-plus/deployment/management/environment-variables)               | ❌     | ❌         | ✅      | ✅     | ✅                             |
 | Create and delete [deployments](/todo)                              | ❌     | ❌         | ❌      | ❌     | ✅                             |
-| Create [Branch Deployments](dagster-plus/features/ci-cd/branch-deployments/index.mdx)                     | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| Create [Branch Deployments](dagster-plus/features/ci-cd/branch-deployments/index.md)                     | ❌     | ❌         | ✅      | ✅     | ✅                             |
 
 ### Code locations
 
