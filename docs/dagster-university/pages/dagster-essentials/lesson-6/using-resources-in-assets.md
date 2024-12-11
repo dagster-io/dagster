@@ -48,7 +48,14 @@ def taxi_trips() -> None:
         );
     """
 
-    conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
+    conn = backoff(
+        fn=duckdb.connect,
+        retry_on=(RuntimeError, duckdb.IOException),
+        kwargs={
+            "database": os.getenv("DUCKDB_DATABASE"),
+        },
+        max_retries=10,
+    )
     conn.execute(sql_query)
 ```
 
@@ -100,7 +107,14 @@ To refactor `taxi_trips` to use the `database` resource, we had to:
 3. Replace the lines that connect to DuckDB and execute a query:
 
    ```python
-   conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
+   conn = backoff(
+       fn=duckdb.connect,
+       retry_on=(RuntimeError, duckdb.IOException),
+       kwargs={
+           "database": os.getenv("DUCKDB_DATABASE"),
+       },
+       max_retries=10,
+   )
    conn.execute(query)
    ```
 
@@ -110,6 +124,8 @@ To refactor `taxi_trips` to use the `database` resource, we had to:
    with database.get_connection() as conn:
        conn.execute(query)
    ```
+
+   Notice that we no longer need to use the `backoff` function. The Dagster `DuckDBResource` handles this functionality for us.
 
 ---
 
