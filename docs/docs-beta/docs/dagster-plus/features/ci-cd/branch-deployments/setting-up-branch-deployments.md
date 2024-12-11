@@ -444,5 +444,5 @@ dagster-cloud deployment add-location \
 
 ## Next steps
 
-- Learn more about [Branch Deployments](/dagster-plus/features/branch-deployments/index.mdx)
-- Learn how to [Track changes on a Branch Deployment](/dagster-plus/features/branch-deployments/change-tracking)
+- Learn more about [Branch Deployments](/dagster-plus/features/ci-cd/branch-deployments/index.mdx)
+- Learn how to [Track changes on a Branch Deployment](/dagster-plus/features/ci-cd/branch-deployments/change-tracking)
