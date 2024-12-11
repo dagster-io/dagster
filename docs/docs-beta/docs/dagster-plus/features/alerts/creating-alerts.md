@@ -3,7 +3,7 @@ title: Creating alerts in Dagster+
 sidebar_position: 200
 ---
 
-You can create alerts in the Dagster+ UI or using the [`dagster-cloud` CLI](/dagster-plus/deployment/dagster-cloud-cli).
+You can create alerts in the Dagster+ UI or using the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli).
 
 {/* TODO link to dagster-cloud CLI tool doc */}
 

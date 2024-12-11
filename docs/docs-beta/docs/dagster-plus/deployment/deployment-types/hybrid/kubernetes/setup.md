@@ -24,7 +24,7 @@ kubectl create namespace dagster-cloud
 
 ### Step 2: Create an agent token secret
 
-[Generate an agent token](/dagster-plus/deployment/hybrid/tokens) and set it as a Kubernetes secret:
+[Generate an agent token](/dagster-plus/deployment/management/tokens) and set it as a Kubernetes secret:
 
 ```shell
 kubectl --namespace dagster-cloud create secret generic dagster-cloud-agent-token --from-literal=DAGSTER_CLOUD_AGENT_TOKEN=<token>
@@ -219,7 +219,7 @@ helm --namespace dagster-cloud upgrade agent \
 
 ### Make secrets available to your code
 
-You can make secrets available [through the Dagster+ web interface](/dagster-plus/deployment/environment-variables) or through Kubernetes. Configuring secrets through Kubernetes has the benefit that Dagster+ never stores or accesses the secrets, and they can be managed as code. First, create the Kubernetes secret:
+You can make secrets available [through the Dagster+ web interface](/dagster-plus/deployment/management/environment-variables) or through Kubernetes. Configuring secrets through Kubernetes has the benefit that Dagster+ never stores or accesses the secrets, and they can be managed as code. First, create the Kubernetes secret:
 
 ```bash
 kubectl create secret generic database-password-kubernetes-secret \

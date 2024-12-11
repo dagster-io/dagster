@@ -52,9 +52,9 @@ The **Filter** button near the top left of the page can be used to filter the li
 | Create agent token             | A user creates a new agent token                                                                              |                                                                           |
 | Revoke agent token             | A user revokes an existing agent token                                                                        |                                                                           |
 | Update agent token permissions | A user alters [permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) for an agent token              | The permission grant and targeted deployment                              |
-| Create secret                  | A user creates a new [environment variable](/dagster-plus/deployment/environment-variables/dagster-ui)        | The created variable name                                                 |
-| Update secret                  | A user modifies an existing [environment variable](/dagster-plus/deployment/environment-variables/dagster-ui) | The previous and current variable names and whether the value was changed |
-| Delete secret                  | A user removes an [environment variable](/dagster-plus/deployment/environment-variables/dagster-ui)           | The deleted variable name                                                 |
+| Create secret                  | A user creates a new [environment variable](/dagster-plus/deployment/management/environment-variables/dagster-ui)        | The created variable name                                                 |
+| Update secret                  | A user modifies an existing [environment variable](/dagster-plus/deployment/management/environment-variables/dagster-ui) | The previous and current variable names and whether the value was changed |
+| Delete secret                  | A user removes an [environment variable](/dagster-plus/deployment/management/environment-variables/dagster-ui)           | The deleted variable name                                                 |
 | Update subscription            | A user modifies the selected Dagster+ subscription for the organization                                       | The previous and current plan types                                       |
 
 ## Programmatic access to audit logs
