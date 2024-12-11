@@ -1,9 +1,9 @@
 ---
-title: Setting up alerts in Dagster+
-sidebar_label: "Dagster+ Alerts"
+title: Alerts
+sidebar_label: "Alerts"
 sidebar_position: 30
 ---
 
-Dagster+ allows you to configure alerts to fire in response to a range of events. These alerts can be sent to a variety of different services, depending on your organization's needs.
+import DocCardList from '@theme/DocCardList';
 
-{/* TODO this needs content on the value prop of alerts -- save money, etc */}
+<DocCardList />

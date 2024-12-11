@@ -3,6 +3,10 @@ title: Configuring an alert notification service
 sidebar_position: 100
 ---
 
+Dagster+ allows you to configure alerts to fire in response to a range of events. These alerts can be sent to a variety of different services, depending on your organization's needs.
+
+{/* TODO this needs content on the value prop of alerts -- save money, etc */}
+
 :::note
 You must have **Organization**, **Admin**, or **Editor** permissions on Dagster+ to configure an alert notification service.
 :::

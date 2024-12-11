@@ -2,8 +2,9 @@
 title: Creating alerts in Dagster+
 ---
 
+You can create alerts in the Dagster+ UI or using the [`dagster-cloud` CLI](/dagster-plus/deployment/dagster-cloud-cli).
+
 {/* TODO link to dagster-cloud CLI tool doc */}
-You can create alerts in the Dagster+ UI or using the `dagster-cloud` CLI tool.
 
 :::note
 Before you create alerts, you must [configure an alert notification service](configuring-an-alert-notification-service).
@@ -13,7 +14,7 @@ Before you create alerts, you must [configure an alert notification service](con
 You can set up alerts to notify you when a run fails.
 
 By default, these alerts will target all runs in the deployment, but they can be scoped to runs with a specific tag.
-<Tabs groupId="ui_or_code">
+<Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
 2. Click the **Alerts** tab.
@@ -25,7 +26,7 @@ By default, these alerts will target all runs in the deployment, but they can be
 If desired, add **tags** in the format `{key}:{value}` to filter the runs that will be considered.
 
   </TabItem>
-  <TabItem value='code' label='In code'>
+  <TabItem value='CLI' label='Using the CLI'>
     Execute the following command to sync the configured alert policy to your Dagster+ deployment.
 
   ```bash
@@ -53,7 +54,7 @@ If desired, add **tags** in the format `{key}:{value}` to filter the runs that w
 You can set up alerts to notify you whenever a run takes more than some threshold amount of time.
 
         By default, these alerts will target all runs in the deployment, but they can be scoped to runs with a specific tag.
-<Tabs groupId="ui_or_code">
+<Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
 2. Click the **Alerts** tab.
@@ -65,7 +66,7 @@ You can set up alerts to notify you whenever a run takes more than some threshol
 If desired, add **tags** in the format `{key}:{value}` to filter the runs that will be considered.
 
   </TabItem>
-  <TabItem value='code' label='In code'>
+  <TabItem value='cli' label='Using the CLI'>
     Execute the following command to sync the configured alert policy to your Dagster+ deployment.
 
   ```bash
@@ -93,7 +94,7 @@ If desired, add **tags** in the format `{key}:{value}` to filter the runs that w
 You can set up alerts to notify you when an asset materialization attempt fails.
 
 By default, these alerts will target all assets in the deployment, but they can be scoped to a specific asset or group of assets.
-<Tabs groupId="ui_or_code">
+<Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
 2. Click the **Alerts** tab.
@@ -105,7 +106,7 @@ By default, these alerts will target all assets in the deployment, but they can 
 If desired, select a **target** from the dropdown menu to scope this alert to a specific asset or group.
 
   </TabItem>
-  <TabItem value='code' label='In code'>
+  <TabItem value='cli' label='Using the CLI'>
     Execute the following command to sync the configured alert policy to your Dagster+ deployment.
 
   ```bash
@@ -133,7 +134,7 @@ If desired, select a **target** from the dropdown menu to scope this alert to a 
 You can set up alerts to notify you when an asset check on an asset fails.
 
 By default, these alerts will target all assets in the deployment, but they can be scoped to checks on a specific asset or group of assets.
-<Tabs groupId="ui_or_code">
+<Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
 2. Click the **Alerts** tab.
@@ -145,7 +146,7 @@ By default, these alerts will target all assets in the deployment, but they can 
 If desired, select a **target** from the dropdown menu to scope this alert to a specific asset or group.
 
   </TabItem>
-  <TabItem value='code' label='In code'>
+  <TabItem value='cli' label='Using the CLI'>
     Execute the following command to sync the configured alert policy to your Dagster+ deployment.
 
   ```bash
@@ -173,14 +174,14 @@ If desired, select a **target** from the dropdown menu to scope this alert to a 
 You can set up alerts to fire when any schedule or sensor tick across your entire deployment fails.
 
 Alerts are sent only when a schedule/sensor transitions from **success** to **failure**, so only the initial failure will trigger the alert.
-<Tabs groupId="ui_or_code">
+<Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
 2. Click the **Alerts** tab.
 3. Click **Add alert policy**.
 4. Select **Schedule/Sensor alert** from the dropdown.
   </TabItem>
-  <TabItem value='code' label='In code'>
+  <TabItem value='cli' label='Using the CLI'>
     Execute the following command to sync the configured alert policy to your Dagster+ deployment.
 
   ```bash
@@ -206,14 +207,14 @@ Alerts are sent only when a schedule/sensor transitions from **success** to **fa
 
 ## Alerting when a code location fails to load
 You can set up alerts to fire when any code location fails to load due to an error.
-<Tabs groupId="ui_or_code">
+<Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
 2. Click the **Alerts** tab.
 3. Click **Add alert policy**.
 4. Select **Code location error alert** from the dropdown.
   </TabItem>
-  <TabItem value='code' label='In code'>
+  <TabItem value='cli' label='Using the CLI'>
     Execute the following command to sync the configured alert policy to your Dagster+ deployment.
 
   ```bash
@@ -243,14 +244,14 @@ This is only available for [Hybrid](/todo) deployments.
 :::
 
 You can set up alerts to fire if your Hybrid agent hasn't sent a heartbeat in the last 5 minutes.
-<Tabs groupId="ui_or_code">
+<Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
 2. Click the **Alerts** tab.
 3. Click **Add alert policy**.
 4. Select **Code location error alert** from the dropdown.
   </TabItem>
-  <TabItem value='code' label='In code'>
+  <TabItem value='cli' label='Using the CLI'>
     Execute the following command to sync the configured alert policy to your Dagster+ deployment.
 
   ```bash
