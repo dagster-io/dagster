@@ -167,6 +167,10 @@ def execute_backfill_jobs(
                             "backfill_futures dict must be passed with threadpool_executor"
                         )
 
+                    # only allow one backfill per backfill job to be in flight
+                    if backfill_id in backfill_futures and not backfill_futures[backfill_id].done():
+                        continue
+
                     if backfill.is_asset_backfill:
                         future = threadpool_executor.submit(
                             execute_asset_backfill_iteration,
