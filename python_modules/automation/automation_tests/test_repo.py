@@ -4,7 +4,7 @@ from pathlib import Path
 
 # Some libraries are excluded because they lack a Dagster dependency, which is a prerequisite for
 # registering in the DagsterLibraryRegistry.
-EXCLUDE_LIBRARIES = ["dg-cli"]
+EXCLUDE_LIBRARIES = ["dagster-dg"]
 
 
 def test_all_libraries_register() -> None:

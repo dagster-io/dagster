@@ -1,8 +1,8 @@
 import click
 
-from dg_cli.cli.generate import generate_cli
-from dg_cli.cli.list import list_cli
-from dg_cli.version import __version__
+from dagster_dg.cli.generate import generate_cli
+from dagster_dg.cli.list import list_cli
+from dagster_dg.version import __version__
 
 
 def create_dg_cli():
@@ -22,7 +22,7 @@ def create_dg_cli():
     return group
 
 
-ENV_PREFIX = "DG_CLI"
+ENV_PREFIX = "DAGSTER_DG"
 cli = create_dg_cli()
 
 

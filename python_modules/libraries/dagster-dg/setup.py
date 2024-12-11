@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 
 def get_version() -> str:
     version: Dict[str, str] = {}
-    with open(Path(__file__).parent / "dg_cli/version.py", encoding="utf8") as fp:
+    with open(Path(__file__).parent / "dagster_dg/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
     return version["__version__"]
@@ -22,7 +22,7 @@ setup(
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="",  # TODO - fill out description
-    url=("https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dg-cli"),
+    url=("https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dg"),
     classifiers=[
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -31,7 +31,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages(exclude=["dg_cli_tests*"]),
+    packages=find_packages(exclude=["dagster_dg_tests*"]),
     install_requires=[
         "Jinja2",
         "tomli",
@@ -42,7 +42,7 @@ setup(
     zip_safe=False,
     entry_points={
         "console_scripts": [
-            "dg = dg_cli.cli:main",
+            "dg = dagster_dg.cli:main",
         ]
     },
     extras_require={

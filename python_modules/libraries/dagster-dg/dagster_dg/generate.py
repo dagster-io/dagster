@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 
 import click
 
-from dg_cli.utils import (
+from dagster_dg.utils import (
     camelcase,
     discover_git_root,
     execute_code_location_command,

@@ -2,24 +2,26 @@ import sys
 from pathlib import Path
 
 from click.testing import CliRunner
-from dg_cli import __file__ as dg_cli_init_py
-from dg_cli.cli.generate import generate_code_location_command, generate_component_command
-from dg_cli.cli.list import (
+from dagster_dg import __file__ as dagster_dg_init_py
+from dagster_dg.cli.generate import generate_code_location_command, generate_component_command
+from dagster_dg.cli.list import (
     list_code_locations_command,
     list_component_types_command,
     list_components_command,
 )
 
 
-def ensure_dg_cli_tests_import() -> None:
-    dg_cli_package_root = (Path(dg_cli_init_py) / ".." / "..").resolve()
-    assert (dg_cli_package_root / "dg_cli_tests").exists(), "Could not find dg_cli where expected"
-    sys.path.append(dg_cli_package_root.as_posix())
+def ensure_dagster_dg_tests_import() -> None:
+    dagster_dg_package_root = (Path(dagster_dg_init_py) / ".." / "..").resolve()
+    assert (
+        dagster_dg_package_root / "dagster_dg_tests"
+    ).exists(), "Could not find dagster_dg_tests where expected"
+    sys.path.append(dagster_dg_package_root.as_posix())
 
 
-ensure_dg_cli_tests_import()
+ensure_dagster_dg_tests_import()
 
-from dg_cli_tests.cli_tests.test_generate_commands import (
+from dagster_dg_tests.cli_tests.test_generate_commands import (
     isolated_example_code_location_bar,
     isolated_example_code_location_bar_with_component_type_baz,
     isolated_example_deployment_foo,
