@@ -103,7 +103,7 @@ def generate_component_instance(
         "component",
         component_type,
         name,
-        *([f"--json-params={json_params}"] if json_params else []),
+        *(["--json-params", json_params] if json_params else []),
         *(["--", *extra_args] if extra_args else []),
     )
     execute_code_location_command(Path(component_instance_root_path), code_location_command)

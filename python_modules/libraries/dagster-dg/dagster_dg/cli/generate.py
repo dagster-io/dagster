@@ -153,6 +153,8 @@ def generate_component_command(
 
     When key-value pairs are used, the value type will be inferred from the
     underlying component generation schema.
+
+    It is an error to pass both --json-params and EXTRA_ARGS.
     """
     if not is_inside_code_location_project(Path.cwd()):
         click.echo(
@@ -171,6 +173,16 @@ def generate_component_command(
     elif context.has_component_instance(component_name):
         click.echo(
             click.style(f"A component instance named `{component_name}` already exists.", fg="red")
+        )
+        sys.exit(1)
+
+    if json_params is not None and extra_args:
+        click.echo(
+            click.style(
+                "Detected both --json-params and EXTRA_ARGS. These are mutually exclusive means of passing"
+                " component generation parameters. Use only one.",
+                fg="red",
+            )
         )
         sys.exit(1)
 
