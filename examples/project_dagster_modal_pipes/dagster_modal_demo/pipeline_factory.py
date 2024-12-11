@@ -159,7 +159,7 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
             to=recipient,
             subject=f"Podcast Summary: {context.partition_key}",
             contents=f"""
-               <h1>Podcaset Summary</h1>
+               <h1>Podcast Summary</h1>
                <h2>{context.partition_key}</h2>
                <div>{summary}</div>
             """,

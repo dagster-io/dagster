@@ -13,7 +13,6 @@ microphones).
 
 ![Architecture Diagram](_static/architecture-diagram.png)
 
-
 ### Example Asset Lineage
 
 ![Screenshot Dagster Lineage](_static/screenshot_dagster_lineage.png)
@@ -36,23 +35,26 @@ Open http://localhost:3000 in your browser.
 
 ## References
 
-
 Modal
+
 - [Modal Docs](https://modal.com/docs)
 - [Modal Docs: Parallel podcast transcription using Whisper](https://modal.com/docs/examples/whisper-transcriber#example-parallel-podcast-transcription-using-whisper)
 - [Modal Docs: Mounting Cloudflare R2 Buckets](https://modal.com/docs/guide/cloud-bucket-mounts#mounting-cloudflare-r2-buckets)
 
 Dagster
+
 - [Dagster Docs](https://docs.dagster.io/)
 - [Dagster Docs: Pipes Subprocess Reference](https://docs.dagster.io/concepts/dagster-pipes/subprocess/reference)
 - [Dagster Docs: OpenAI Integration](https://docs.dagster.io/integrations/openai)
 - [Dagster Docs: AWS Integration](https://docs.dagster.io/_apidocs/libraries/dagster-aws#s3)
 
 OpenAI
+
 - [OpenAI Whisper](https://github.com/openai/whisper)
 - [OpenAI Cookbook: Summarizing Long Documents](https://cookbook.openai.com/examples/summarizing_long_documents)
 
 Miscellaneous
+
 - [`yagmail` for Sending Email from Python](https://github.com/kootenpv/yagmail)
 
 ## More Screenshots
@@ -76,7 +78,7 @@ Miscellaneous
 Podcasts are sourced from RSS feeds as; a table containing a sample of feeds is below:
 
 | Title                                             | RSS Feed                                                          |
-|---------------------------------------------------|-------------------------------------------------------------------|
+| ------------------------------------------------- | ----------------------------------------------------------------- |
 | Practical AI: Machine Learning, Data Science, LLM | [RSS Feed](https://changelog.com/practicalai/feed)                |
 | The Data Exchange with Ben Lorica                 | [RSS Feed](https://feeds.buzzsprout.com/682433.rss)               |
 | Hub & Spoken: Data                                | [RSS Feed](https://cynozure.libsyn.com/rss)                       |
