@@ -179,6 +179,10 @@
               {
                 "title": "Customizing automation conditions",
                 "path": "/concepts/automation/declarative-automation/customizing-automation-conditions"
+              },
+              {
+                "title": "Automation conditions explained (Advanced)",
+                "path": "/concepts/automation/declarative-automation/automation-conditions-explained"
               }
             ]
           },
