@@ -157,8 +157,8 @@ def transcribe_segment(
     import time
 
     import ffmpeg
-    import torch
-    import whisper
+    import torch  # type: ignore
+    import whisper  # type: ignore
 
     t0 = time.time()
     with tempfile.NamedTemporaryFile(suffix=".mp3") as f:

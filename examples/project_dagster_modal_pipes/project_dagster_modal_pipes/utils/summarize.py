@@ -49,7 +49,7 @@ def combine_chunks_with_no_minimum(
     chunk_delimiter="\n\n",
     header: Optional[str] = None,
     add_ellipsis_for_overflow=False,
-) -> Tuple[List[str], List[int]]:
+) -> Tuple[List[str], List[int], int]:
     dropped_chunk_count = 0
     output = []
     output_indices = []
@@ -87,7 +87,7 @@ def summarize(
     detail: float = 0,
     model: str = "gpt-4-turbo",
     additional_instructions: Optional[str] = None,
-    minimum_chunk_size: Optional[int] = 500,
+    minimum_chunk_size: int = 500,
     chunk_delimiter: str = ".",
     summarize_recursively=False,
     verbose=False,
