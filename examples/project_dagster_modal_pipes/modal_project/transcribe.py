@@ -96,7 +96,7 @@ def split_silences(
     """
     import re
 
-    import ffmpeg
+    import ffmpeg  # type: ignore
 
     silence_end_re = re.compile(
         r" silence_end: (?P<end>[0-9]+(\.?[0-9]*)) \| silence_duration: (?P<dur>[0-9]+(\.?[0-9]*))"
@@ -156,7 +156,7 @@ def transcribe_segment(
     import tempfile
     import time
 
-    import ffmpeg
+    import ffmpeg  # type: ignore
     import torch  # type: ignore
     import whisper  # type: ignore
 

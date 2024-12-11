@@ -73,7 +73,7 @@ dbt-duckdb==1.9.1
 dbt-extractor==0.5.1
 dbt-semantic-interfaces==0.5.1
 dbt-snowflake==1.9.0
-debugpy==1.8.10
+debugpy==1.8.9
 decopatch==1.4.10
 decorator==5.1.1
 deepdiff==7.0.1
