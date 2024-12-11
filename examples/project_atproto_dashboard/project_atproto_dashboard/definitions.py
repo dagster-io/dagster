@@ -12,22 +12,17 @@ References:
     https://docs.bsky.app/docs/tutorials/viewing-feeds
 
 """
-from pathlib import Path
+
 import os
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, List, Tuple, Mapping, Any, Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Tuple
 
 import dagster as dg
 from atproto import Client
 from dagster_aws.s3 import S3Resource
-from dagster_dbt import (
-    DagsterDbtTranslator, 
-    DbtCliResource, 
-    DbtProject, 
-    dbt_assets
-)
-
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
 
 if TYPE_CHECKING:
     from atproto_client import models
@@ -138,6 +133,7 @@ dbt_project = DbtProject(
 dbt_resource = DbtCliResource(project_dir=dbt_project)
 # dbt translator
 
+
 class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
         asset_path = dbt_resource_props["fqn"][1:-1]
@@ -146,19 +142,19 @@ class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         return "default"
 
 
-
 @dbt_assets(
     manifest=dbt_project.manifest_path,
     dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
 )
 def dbt_bluesky(context: dg.AssetExecutionContext, dbt: DbtCliResource):
-    yield from (
-        dbt.cli(["build"], context=context)
-        .stream()
-        .fetch_row_counts()
-    )
+    yield from (dbt.cli(["build"], context=context).stream().fetch_row_counts())
+
 
 defs = dg.Definitions(
     assets=[actor_feed_snapshot, dbt_bluesky],
-    resources={"atproto_resource": atproto_resource, "s3_resource": s3_resource, "dbt": dbt_resource},
+    resources={
+        "atproto_resource": atproto_resource,
+        "s3_resource": s3_resource,
+        "dbt": dbt_resource,
+    },
 )
