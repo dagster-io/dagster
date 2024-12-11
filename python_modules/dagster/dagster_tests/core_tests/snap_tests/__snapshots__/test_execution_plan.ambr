@@ -24,6 +24,7 @@
     "steps": [
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [],
         "key": "op_one",
         "kind": {
@@ -53,7 +54,6 @@
           }
         ],
         "solid_handle_id": "op_one",
-        "step_concurrency_key": null,
         "step_handle": {
           "__class__": "StepHandle",
           "key": "op_one",
@@ -67,6 +67,7 @@
       },
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [
           {
             "__class__": "ExecutionStepInputSnap",
@@ -126,7 +127,6 @@
           }
         ],
         "solid_handle_id": "op_two",
-        "step_concurrency_key": null,
         "step_handle": {
           "__class__": "StepHandle",
           "key": "op_two",
@@ -166,6 +166,7 @@
     "steps": [
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [],
         "key": "noop_op",
         "kind": {
@@ -195,7 +196,6 @@
           }
         ],
         "solid_handle_id": "noop_op",
-        "step_concurrency_key": null,
         "step_handle": {
           "__class__": "StepHandle",
           "key": "noop_op",
@@ -235,6 +235,7 @@
     "steps": [
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [],
         "key": "noop_op",
         "kind": {
@@ -275,7 +276,6 @@
           }
         ],
         "solid_handle_id": "noop_op",
-        "step_concurrency_key": null,
         "step_handle": {
           "__class__": "StepHandle",
           "key": "noop_op",
@@ -322,6 +322,7 @@
     "steps": [
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [
           {
             "__class__": "ExecutionStepInputSnap",
@@ -410,7 +411,6 @@
           }
         ],
         "solid_handle_id": "add",
-        "step_concurrency_key": null,
         "step_handle": {
           "__class__": "StepHandle",
           "key": "add",
@@ -424,6 +424,7 @@
       },
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [
           {
             "__class__": "ExecutionStepInputSnap",
@@ -487,7 +488,6 @@
           }
         ],
         "solid_handle_id": "comp_1.add_one",
-        "step_concurrency_key": null,
         "step_handle": {
           "__class__": "StepHandle",
           "key": "comp_1.add_one",
@@ -505,6 +505,7 @@
       },
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [],
         "key": "comp_1.return_one",
         "kind": {
@@ -538,7 +539,6 @@
           }
         ],
         "solid_handle_id": "comp_1.return_one",
-        "step_concurrency_key": null,
         "step_handle": {
           "__class__": "StepHandle",
           "key": "comp_1.return_one",
@@ -556,6 +556,7 @@
       },
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [
           {
             "__class__": "ExecutionStepInputSnap",
@@ -619,7 +620,6 @@
           }
         ],
         "solid_handle_id": "comp_2.add_one",
-        "step_concurrency_key": null,
         "step_handle": {
           "__class__": "StepHandle",
           "key": "comp_2.add_one",
@@ -637,6 +637,7 @@
       },
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [],
         "key": "comp_2.return_one",
         "kind": {
@@ -670,7 +671,6 @@
           }
         ],
         "solid_handle_id": "comp_2.return_one",
-        "step_concurrency_key": null,
         "step_handle": {
           "__class__": "StepHandle",
           "key": "comp_2.return_one",

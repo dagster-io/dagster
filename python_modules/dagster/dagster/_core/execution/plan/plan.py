@@ -302,7 +302,7 @@ class _PlanBuilder:
                         ),
                         step_outputs=step_outputs,
                         tags=node.tags,
-                        concurrency_key=node.definition.concurrency_key,
+                        concurrency_group=node.definition.concurrency_group,
                     )
                 elif has_pending_input:
                     new_step = UnresolvedCollectExecutionStep(
@@ -313,7 +313,7 @@ class _PlanBuilder:
                         ),
                         step_outputs=step_outputs,
                         tags=node.tags,
-                        concurrency_key=node.definition.concurrency_key,
+                        concurrency_group=node.definition.concurrency_group,
                     )
                 else:
                     new_step = ExecutionStep(
@@ -322,7 +322,7 @@ class _PlanBuilder:
                         step_inputs=cast(list[StepInput], step_inputs),
                         step_outputs=step_outputs,
                         tags=node.tags,
-                        concurrency_key=node.definition.concurrency_key,
+                        concurrency_group=node.definition.concurrency_group,
                     )
 
                 self.add_step(new_step)
@@ -1017,7 +1017,7 @@ class ExecutionPlan(
                     step_inputs,  # type: ignore  # (plain StepInput only)
                     step_outputs,
                     step_snap.tags,
-                    step_snap.concurrency_key,
+                    step_snap.concurrency_group,
                 )
             elif step_snap.kind == StepKind.UNRESOLVED_MAPPED:
                 step = UnresolvedMappedExecutionStep(
@@ -1029,7 +1029,7 @@ class ExecutionPlan(
                     step_inputs,  # type: ignore  # (StepInput or UnresolvedMappedStepInput only)
                     step_outputs,
                     step_snap.tags,
-                    step_snap.concurrency_key,
+                    step_snap.concurrency_group,
                 )
             elif step_snap.kind == StepKind.UNRESOLVED_COLLECT:
                 step = UnresolvedCollectExecutionStep(
@@ -1038,7 +1038,7 @@ class ExecutionPlan(
                     step_inputs,  # type: ignore  # (StepInput or UnresolvedCollectStepInput only)
                     step_outputs,
                     step_snap.tags,
-                    step_snap.concurrency_key,
+                    step_snap.concurrency_group,
                 )
             else:
                 raise Exception(f"Unexpected step kind {step_snap.kind}")

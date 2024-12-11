@@ -18,12 +18,12 @@ from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor im
 )
 
 
-@op(concurrency_key="foo")
+@op(concurrency_group="foo")
 def should_never_execute(_x):
     assert False  # this should never execute
 
 
-@op(concurrency_key="foo")
+@op(concurrency_group="foo")
 def throw_error():
     raise Exception("bad programmer")
 
@@ -33,14 +33,14 @@ def error_graph():
     should_never_execute(throw_error())
 
 
-@op(concurrency_key="foo")
+@op(concurrency_group="foo")
 def simple_op(context):
     time.sleep(0.1)
     foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
     return {"active": foo_info.active_slot_count, "pending": foo_info.pending_step_count}
 
 
-@op(concurrency_key="foo")
+@op(concurrency_group="foo")
 def second_op(context, _):
     time.sleep(0.1)
     foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
@@ -66,7 +66,7 @@ def two_tier_graph():
     second_op(simple_op())
 
 
-@op(concurrency_key="foo", retry_policy=RetryPolicy(max_retries=1))
+@op(concurrency_group="foo", retry_policy=RetryPolicy(max_retries=1))
 def retry_op():
     raise Failure("I fail")
 
