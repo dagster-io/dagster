@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.dagster]
+module_name = "dagster_modal_demo.definitions"
+code_location_name = "dagster_modal_demo"
+
+[tool.ruff.lint]
+
+# By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.
+# Here we append to the defaults.
+select = [
+  # (isort) detect improperly sorted imports
+  "I001",
+
+  # ban relative imports
+  "TID252",
+]
+
