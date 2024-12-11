@@ -230,7 +230,11 @@ def get_log_events_delay_generator() -> Iterator[float]:
         i += random.uniform(0, 1)
 
 
-def get_log_events(client: "CloudWatchLogsClient", max_retries: Optional[int] = None, **log_params):
+def get_log_events(
+    client: "CloudWatchLogsClient",
+    max_retries: Optional[int] = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
+    **log_params,
+):
     max_retries = max_retries or DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES
 
     return backoff(
@@ -268,7 +272,7 @@ def tail_cloudwatch_events(
 
         params["nextToken"] = response["nextForwardToken"]
 
-        response = get_log_events(client=client, **params)
+        response = get_log_events(client=client, max_retries=max_retries, **params)
 
 
 @experimental
