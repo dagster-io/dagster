@@ -222,7 +222,7 @@ class DbIOManager(IOManager):
                     )
 
                 if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
-                                        # This default behavior only works is the input has a single mapped partition to
+                    # This default behavior only works is the input has a single mapped partition to
                     # the output, which excludes the MultiToSinglePartitionMapping
                     if len(context.asset_partition_keys) == 1:
                         multi_partition_key_mapping = cast(
@@ -258,7 +258,7 @@ class DbIOManager(IOManager):
                             MultiPartitionKey, context.asset_partition_keys[0]
                         ).keys_by_dimension
                         second_partition_key_mapping: Mapping[str, str] = cast(
-                            MultiPartitionKey, context.asset_partition_keys[0]
+                            MultiPartitionKey, context.asset_partition_keys[1]
                         ).keys_by_dimension
                         for key in first_partition_key_mapping:
                             if first_partition_key_mapping[key] == second_partition_key_mapping[key]:

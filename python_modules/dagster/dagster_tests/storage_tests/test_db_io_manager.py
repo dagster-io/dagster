@@ -4,6 +4,7 @@ import pytest
 from dagster import AssetKey, InputContext, OutputContext, asset, build_output_context
 from dagster._check import CheckError
 from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition, MultiPartitionKey
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import (
@@ -311,6 +312,66 @@ def test_asset_out_multiple_static_partitions():
         output_context, table_slice, connect_mock().__enter__()
     )
 
+    assert len(handler.handle_input_calls) == 1
+    assert handler.handle_input_calls[0][1] == table_slice
+
+
+def test_multi_to_single_partition_mapping_compatibility():
+    handler = IntHandler()
+    connect_mock = MagicMock()
+    db_client = MagicMock(
+        spec=DbClient,
+        get_select_statement=MagicMock(return_value=""),
+        connect=connect_mock,
+        get_table_name=mock_table_name,
+    )
+    manager = build_db_io_manager(type_handlers=[handler], db_client=db_client, resource_config_override={"database": "database_color"})
+    asset_key = AssetKey(["schema1", "table1"])
+    partition_keys = [
+        MultiPartitionKey(
+            {
+                "color": "red",
+                "theme": "light"
+            }
+        ),
+        MultiPartitionKey(
+            {
+                "color": "yellow",
+                "theme": "light"
+            }
+        )
+
+    ]
+    partitions_def = MultiPartitionsDefinition({"color": StaticPartitionsDefinition(["red", "yellow", "blue"]), "theme": StaticPartitionsDefinition(["light", "dark"])})
+    output_context = MagicMock(
+        asset_key=asset_key,
+        resource_config=resource_config,
+        asset_partition_keys=partition_keys,
+        definition_metadata={"partition_expr": {"color": "color", "theme": "theme"}},
+        asset_partitions_def=partitions_def,
+    )
+    manager.handle_output(output_context, 5)
+    input_context = MagicMock(
+        asset_key=asset_key,
+        upstream_output=output_context,
+        resource_config=resource_config,
+        dagster_type=resolve_dagster_type(int),
+        asset_partition_keys=partition_keys,
+        definition_metadata=None,
+        asset_partitions_def=partitions_def,
+    )
+    assert manager.load_input(input_context) == 7
+    table_slice = TableSlice(
+        database="database_color",
+        schema="schema1",
+        table="table1",
+        partition_dimensions=[
+            TablePartitionDimension(
+                partitions=["light"],
+                partition_expr="theme",
+            )
+        ],
+    )
     assert len(handler.handle_input_calls) == 1
     assert handler.handle_input_calls[0][1] == table_slice
 
