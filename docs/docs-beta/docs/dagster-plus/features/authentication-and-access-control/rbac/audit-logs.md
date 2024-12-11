@@ -1,10 +1,7 @@
 ---
 title: "Audit logs"
-displayed_sidebar: "dagsterPlus"
 sidebar_position: 300
 ---
-
-# Audit logs
 
 The Dagster+ audit log enables Dagster+ Pro organizations to track and attribute changes to their Dagster deployment.
 

@@ -1,10 +1,7 @@
 ---
 title: "Authentication and access control"
-displayed_sidebar: "dagsterPlus"
-sidebar_position: 40
+sidebar_position: 10
 ---
-
-# Authentication and access control
 
 import DocCardList from '@theme/DocCardList';
 

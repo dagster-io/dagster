@@ -1,10 +1,8 @@
 ---
-title: 'User roles & permissions'
-displayed_sidebar: 'dagsterPlus'
+title: User roles & permissions in Dagster+
+sidebar_label: 'User roles & permissions'
 sidebar_position: 200
 ---
-
-# Understanding user roles & permissions in Dagster+
 
 Role-based access control (RBAC) enables you to grant specific permissions to users in your organization, ensuring that Dagster users have access to what they require in Dagster+, and no more.
 
@@ -44,12 +42,12 @@ Dagster+ Pro users can create teams of users and assign default permission sets.
 
 With the exception of the **Organization Admin** role, user and team roles are set on a per-deployment basis.
 
-Organization Admins have access to the entire organization, including all [deployments](/todo), [code locations](/dagster-plus/deployment/code-locations), and [Branch Deployments](dagster-plus/features/branch-deployments/index.mdx).
+Organization Admins have access to the entire organization, including all [deployments](/todo), [code locations](/dagster-plus/features/code-locations), and [Branch Deployments](dagster-plus/features/ci-cd/branch-deployments/index.mdx).
 
 | Level              | Plan      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Deployment         | All plans | Defines the level of access for a given deployment. Roles set at this level will be the default role for the user or team for all code locations in the deployment. <br/><br/> <strong>Note</strong>: Granting access to a deployment grants a minimum of <strong>Viewer</strong> access to all code locations. Preventing access for specific code locations isn't currently supported. Additionally, having access to a deployment doesn't grant access to Branch Deployments - those permissions must be granted separately.                      |
-| Code location      | Pro       | Defines the level of access for a given code location in a deployment. <br/><br/> Dagster+ Pro users can [override the default deployment-level role for individual code locations](/dagster-plus/deployment/code-locations). For example, if the <strong>Deployment</strong> role is <strong>Launcher</strong>, you could override this role with a more permissive role, such as <strong>Editor</strong> or <strong>Admin</strong>. <br/><br/> For non-Pro users, users will have the same level of access for all code locations in a deployment. |
+| Code location      | Pro       | Defines the level of access for a given code location in a deployment. <br/><br/> Dagster+ Pro users can [override the default deployment-level role for individual code locations](/dagster-plus/features/code-locations). For example, if the <strong>Deployment</strong> role is <strong>Launcher</strong>, you could override this role with a more permissive role, such as <strong>Editor</strong> or <strong>Admin</strong>. <br/><br/> For non-Pro users, users will have the same level of access for all code locations in a deployment. |
 | Branch deployments | All plans | Defines the level of access for all Branch Deployments in the code locations the user or team has access to.                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 ### Applying role overrides
@@ -128,11 +126,11 @@ Deployment settings are accessed in the UI by navigating to **user menu (your ic
 |----------------------------------------------------------------------------------------------|-------|-----------|--------|-------|-------------------------------|
 | View [deployments](/todo)                                           | ✅     | ✅         | ✅      | ✅     | ✅                             |
 | Modify [deployment](/todo) settings                                 | ❌     | ❌         | ✅      | ✅     | ✅                             |
-| Create, edit, delete [environment variables](/dagster-plus/deployment/environment-variables) | ❌     | ❌         | ✅      | ✅     | ✅                             |
-| View [environment variable](/dagster-plus/deployment/environment-variables)  values          | ❌     | ❌         | ✅      | ✅     | ✅                             |
-| Export [environment variables](/dagster-plus/deployment/environment-variables)               | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| Create, edit, delete [environment variables](/dagster-plus/deployment/management/environment-variables) | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| View [environment variable](/dagster-plus/deployment/management/environment-variables)  values          | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| Export [environment variables](/dagster-plus/deployment/management/environment-variables)               | ❌     | ❌         | ✅      | ✅     | ✅                             |
 | Create and delete [deployments](/todo)                              | ❌     | ❌         | ❌      | ❌     | ✅                             |
-| Create [Branch Deployments](dagster-plus/features/branch-deployments/index.mdx)                     | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| Create [Branch Deployments](dagster-plus/features/ci-cd/branch-deployments/index.mdx)                     | ❌     | ❌         | ✅      | ✅     | ✅                             |
 
 ### Code locations
 
@@ -140,9 +138,9 @@ Code locations are accessed in the UI by navigating to **Deployment > Code locat
 
 |                                                                                 | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| View [code locations](/dagster-plus/deployment/code-locations)                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
-| Create and remove [code locations](/dagster-plus/deployment/code-locations)     | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Reload [code locations](/dagster-plus/deployment/code-locations) and workspaces | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| View [code locations](/dagster-plus/features/code-locations)                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| Create and remove [code locations](/dagster-plus/features/code-locations)     | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Reload [code locations](/dagster-plus/features/code-locations) and workspaces | ❌     | ❌       | ✅     | ✅    | ✅                       |
 
 ### Agent tokens
 
@@ -150,7 +148,7 @@ Agent tokens are accessed in the UI by navigating to **user menu (your icon) > O
 
 |                                                             | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ----------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| View [agent tokens](/dagster-plus/deployment/hybrid/tokens) | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| View [agent tokens](/dagster-plus/deployment/management/tokens/agent-tokens) | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Create agent tokens                                         | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Edit agent tokens                                           | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Revoke agent tokens                                         | ❌     | ❌       | ❌     | ❌    | ✅                       |

@@ -1,6 +1,5 @@
 ---
 title: 'Azure Active Directory'
-displayed_sidebar: 'dagsterPlus'
 sidebar_position: 300
 ---
 
