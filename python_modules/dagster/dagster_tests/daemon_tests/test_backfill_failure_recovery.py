@@ -30,9 +30,12 @@ def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
     )
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with freeze_time(execution_datetime), create_test_daemon_workspace_context(
-                workspace_load_target=workspace_load_target(), instance=instance
-            ) as workspace_context:
+            with (
+                freeze_time(execution_datetime),
+                create_test_daemon_workspace_context(
+                    workspace_load_target=workspace_load_target(), instance=instance
+                ) as workspace_context,
+            ):
                 list(
                     execute_backfill_iteration(
                         workspace_context,

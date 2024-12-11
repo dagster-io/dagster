@@ -138,7 +138,7 @@ const PartitionNameButton = styled.button`
   align-items: center;
   gap: 8px;
 
-  :focus {
+  &:focus {
     outline: none;
   }
 `;

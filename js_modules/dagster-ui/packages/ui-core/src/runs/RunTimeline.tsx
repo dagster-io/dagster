@@ -530,7 +530,7 @@ const DividerLabels = styled.div`
   width: 100%;
   overflow: hidden;
 
-  :first-child {
+  &:first-child {
     box-shadow:
       inset 1px 0 0 ${Colors.keylineDefault()},
       inset -1px 0 0 ${Colors.keylineDefault()};
@@ -542,7 +542,7 @@ const DateLabel = styled.div`
   padding: 8px 0;
   white-space: nowrap;
 
-  :not(:first-child) {
+  &:not(:first-child) {
     box-shadow: inset 1px 0 0 ${Colors.keylineDefault()};
   }
 `;
@@ -740,7 +740,7 @@ export const TimelineRowContainer = styled.div.attrs<RowProps>(({$height, $start
   overflow: hidden;
   transition: background-color 100ms linear;
 
-  :hover {
+  &:hover {
     background-color: ${Colors.backgroundDefaultHover()};
   }
 `;
@@ -784,7 +784,7 @@ export const RunChunk = styled.div<ChunkProps>`
     opacity 200ms linear,
     width 200ms ease-in-out;
 
-  :hover {
+  &:hover {
     opacity: 0.7;
   }
   .chunk-popover-target {

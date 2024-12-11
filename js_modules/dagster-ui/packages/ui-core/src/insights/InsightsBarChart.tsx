@@ -21,6 +21,7 @@ import {RenderTooltipFn, renderInsightsChartTooltip} from './renderInsightsChart
 import {BarDatapoint, BarValue, DatapointType, ReportingUnitType} from './types';
 import {TimeContext} from '../app/time/TimeContext';
 import {useRGBColorsForTheme} from '../app/useRGBColorsForTheme';
+import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Filler);
@@ -55,6 +56,7 @@ export const InsightsBarChart = (props: Props) => {
 
   const rgbColors = useRGBColorsForTheme();
   const [canShowSpinner, setCanShowSpinner] = React.useState(false);
+  const openInNewTab = useOpenInNewTab();
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -103,12 +105,12 @@ export const InsightsBarChart = (props: Props) => {
       if (element) {
         const whichBar = values[element.index];
         if (whichBar?.href) {
-          window.open(whichBar.href);
+          openInNewTab(whichBar.href);
         }
         return;
       }
     },
-    [values],
+    [values, openInNewTab],
   );
 
   const renderTooltipFn: RenderTooltipFn = useCallback(

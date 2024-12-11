@@ -1,6 +1,6 @@
 ## Airlift Tutorial Code
 
-This repo is the code that the Airlift tutorial is based off of. Follow along on the main docs site [here](https://docs.dagster.io/integrations/airlift/tutorial/overview)
+This repo is the code that the Airlift tutorial is based off of. Follow along on the main docs site [here](https://docs.dagster.io/integrations/airlift/tutorial/overview).
 This example demonstrates how to migrate an Airflow DAG to Dagster using the `dagster-airlift` package. It contains code examples of how to peer, observe, and migrate assets from an Airflow DAG to Dagster.
 
 ## Example Structure

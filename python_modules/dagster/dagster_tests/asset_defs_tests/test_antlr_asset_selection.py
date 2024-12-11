@@ -2,6 +2,9 @@ import pytest
 from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
     AntlrAssetSelectionParser,
 )
+from dagster._core.definitions.antlr_asset_selection.generated.AssetSelectionParser import (
+    AssetSelectionParser,
+)
 from dagster._core.definitions.asset_selection import AssetSelection, CodeLocationAssetSelection
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.storage.tags import KIND_PREFIX
@@ -11,69 +14,85 @@ from dagster._core.storage.tags import KIND_PREFIX
     "selection_str, expected_tree_str",
     [
         ("*", "(start (expr *) <EOF>)"),
+        ("key:a", "(start (expr (traversalAllowedExpr (attributeExpr key : (value a)))) <EOF>)"),
         (
-            "***+++",
-            "(start (expr (expr (traversal *) (expr (traversal *) (expr *))) (traversal + + +)) <EOF>)",
+            "key_substring:a",
+            "(start (expr (traversalAllowedExpr (attributeExpr key_substring : (value a)))) <EOF>)",
         ),
-        ("key:a", "(start (expr (attributeExpr key : (value a))) <EOF>)"),
-        ("key_substring:a", "(start (expr (attributeExpr key_substring : (value a))) <EOF>)"),
-        ('key:"*/a+"', '(start (expr (attributeExpr key : (value "*/a+"))) <EOF>)'),
+        (
+            'key:"*/a+"',
+            '(start (expr (traversalAllowedExpr (attributeExpr key : (value "*/a+")))) <EOF>)',
+        ),
         (
             'key_substring:"*/a+"',
-            '(start (expr (attributeExpr key_substring : (value "*/a+"))) <EOF>)',
+            '(start (expr (traversalAllowedExpr (attributeExpr key_substring : (value "*/a+")))) <EOF>)',
         ),
         (
             "sinks(key:a)",
-            "(start (expr (functionName sinks) ( (expr (attributeExpr key : (value a))) )) <EOF>)",
+            "(start (expr (traversalAllowedExpr (functionName sinks) ( (expr (traversalAllowedExpr (attributeExpr key : (value a)))) ))) <EOF>)",
         ),
         (
             "roots(key:a)",
-            "(start (expr (functionName roots) ( (expr (attributeExpr key : (value a))) )) <EOF>)",
+            "(start (expr (traversalAllowedExpr (functionName roots) ( (expr (traversalAllowedExpr (attributeExpr key : (value a)))) ))) <EOF>)",
         ),
-        ("tag:foo=bar", "(start (expr (attributeExpr tag : (value foo) = (value bar))) <EOF>)"),
+        (
+            "tag:foo=bar",
+            "(start (expr (traversalAllowedExpr (attributeExpr tag : (value foo) = (value bar)))) <EOF>)",
+        ),
         (
             'owner:"owner@owner.com"',
-            '(start (expr (attributeExpr owner : (value "owner@owner.com"))) <EOF>)',
+            '(start (expr (traversalAllowedExpr (attributeExpr owner : (value "owner@owner.com")))) <EOF>)',
         ),
         (
             'group:"my_group"',
-            '(start (expr (attributeExpr group : (value "my_group"))) <EOF>)',
+            '(start (expr (traversalAllowedExpr (attributeExpr group : (value "my_group")))) <EOF>)',
         ),
-        ("kind:my_kind", "(start (expr (attributeExpr kind : (value my_kind))) <EOF>)"),
+        (
+            "kind:my_kind",
+            "(start (expr (traversalAllowedExpr (attributeExpr kind : (value my_kind)))) <EOF>)",
+        ),
         (
             "code_location:my_location",
-            "(start (expr (attributeExpr code_location : (value my_location))) <EOF>)",
+            "(start (expr (traversalAllowedExpr (attributeExpr code_location : (value my_location)))) <EOF>)",
         ),
         (
             "(((key:a)))",
-            "(start (expr ( (expr ( (expr ( (expr (attributeExpr key : (value a))) )) )) )) <EOF>)",
+            "(start (expr (traversalAllowedExpr ( (expr (traversalAllowedExpr ( (expr (traversalAllowedExpr ( (expr (traversalAllowedExpr (attributeExpr key : (value a)))) ))) ))) ))) <EOF>)",
         ),
         (
-            'not not key:"not"',
-            '(start (expr not (expr not (expr (attributeExpr key : (value "not"))))) <EOF>)',
+            "not key:a",
+            "(start (expr not (expr (traversalAllowedExpr (attributeExpr key : (value a))))) <EOF>)",
         ),
         (
-            "(roots(key:a) and owner:billing)*",
-            "(start (expr (expr ( (expr (expr (functionName roots) ( (expr (attributeExpr key : (value a))) )) and (expr (attributeExpr owner : (value billing)))) )) (traversal *)) <EOF>)",
+            "key:a and key:b",
+            "(start (expr (expr (traversalAllowedExpr (attributeExpr key : (value a)))) and (expr (traversalAllowedExpr (attributeExpr key : (value b))))) <EOF>)",
         ),
         (
-            "++(key:a+)",
-            "(start (expr (traversal + +) (expr ( (expr (expr (attributeExpr key : (value a))) (traversal +)) ))) <EOF>)",
-        ),
-        (
-            "key:a* and *key:b",
-            "(start (expr (expr (expr (attributeExpr key : (value a))) (traversal *)) and (expr (traversal *) (expr (attributeExpr key : (value b))))) <EOF>)",
+            "key:a or key:b",
+            "(start (expr (expr (traversalAllowedExpr (attributeExpr key : (value a)))) or (expr (traversalAllowedExpr (attributeExpr key : (value b))))) <EOF>)",
         ),
     ],
 )
-def test_antlr_tree(selection_str, expected_tree_str):
+def test_antlr_tree(selection_str, expected_tree_str) -> None:
     asset_selection = AntlrAssetSelectionParser(selection_str, include_sources=True)
     assert asset_selection.tree_str == expected_tree_str
+
+    generated_selection = asset_selection.asset_selection
+
+    # Ensure the generated selection can be converted back to a selection string, and then back to the same selection
+    regenerated_selection = AntlrAssetSelectionParser(
+        generated_selection.to_selection_str(),
+        include_sources=True,
+    ).asset_selection
+    assert regenerated_selection == generated_selection
 
 
 @pytest.mark.parametrize(
     "selection_str",
     [
+        "+",
+        "*+",
+        "**key:a",
         "not",
         "key:a key:b",
         "key:a and and",
@@ -104,8 +123,24 @@ def test_antlr_tree_invalid(selection_str):
         ("key:a+", AssetSelection.assets("a").downstream(1)),
         ("key:a++", AssetSelection.assets("a").downstream(2)),
         (
+            "+key:a+",
+            AssetSelection.assets("a").upstream(1) | AssetSelection.assets("a").downstream(1),
+        ),
+        ("*key:a", AssetSelection.assets("a").upstream()),
+        ("key:a*", AssetSelection.assets("a").downstream()),
+        (
+            "*key:a*",
+            AssetSelection.assets("a").downstream() | AssetSelection.assets("a").upstream(),
+        ),
+        (
             "key:a* and *key:b",
             AssetSelection.assets("a").downstream() & AssetSelection.assets("b").upstream(),
+        ),
+        (
+            "*key:a and key:b* and *key:c*",
+            AssetSelection.assets("a").upstream()
+            & AssetSelection.assets("b").downstream()
+            & (AssetSelection.assets("c").upstream() | AssetSelection.assets("c").downstream()),
         ),
         ("sinks(key:a)", AssetSelection.assets("a").sinks()),
         ("roots(key:c)", AssetSelection.assets("c").roots()),
@@ -120,7 +155,7 @@ def test_antlr_tree_invalid(selection_str):
         ),
     ],
 )
-def test_antlr_visit_basic(selection_str, expected_assets):
+def test_antlr_visit_basic(selection_str, expected_assets) -> None:
     # a -> b -> c
     @asset(tags={"foo": "bar"}, owners=["team:billing"])
     def a(): ...
@@ -134,7 +169,34 @@ def test_antlr_visit_basic(selection_str, expected_assets):
     )
     def c(): ...
 
-    assert (
-        AntlrAssetSelectionParser(selection_str, include_sources=True).asset_selection
-        == expected_assets
-    )
+    generated_selection = AntlrAssetSelectionParser(
+        selection_str, include_sources=True
+    ).asset_selection
+    assert generated_selection == expected_assets
+
+    # Ensure the generated selection can be converted back to a selection string, and then back to the same selection
+    regenerated_selection = AntlrAssetSelectionParser(
+        generated_selection.to_selection_str(),
+        include_sources=True,
+    ).asset_selection
+    assert regenerated_selection == expected_assets
+
+
+def test_full_test_coverage() -> None:
+    # Ensures that every Antlr literal is tested in test_antlr_visit_basic
+    # by extension, also ensures that the to_selection_str method is tested
+    # for all Antlr literals
+    names = AssetSelectionParser.literalNames
+
+    all_selection_strings_we_are_testing = [
+        selection_str for selection_str, _ in test_antlr_visit_basic.pytestmark[0].args[1]
+    ]
+
+    for name in names:
+        if name in ("<INVALID>", "','"):
+            continue
+
+        name_substr = name.strip("'")
+        assert any(
+            name_substr in selection_str for selection_str in all_selection_strings_we_are_testing
+        ), f"Antlr literal {name_substr} is not under test in test_antlr_asset_selection.py:test_antlr_visit_basic"

@@ -198,7 +198,7 @@ const ReloadButton = styled.button`
   padding: 8px;
   margin: -8px;
 
-  :focus:not(:focus-visible) {
+  &:focus:not(:focus-visible) {
     outline: none;
   }
 
@@ -206,7 +206,7 @@ const ReloadButton = styled.button`
     transition: color 0.1s ease-in-out;
   }
 
-  :hover ${IconWrapper} {
+  &:hover ${IconWrapper} {
     color: ${Colors.accentBlue()};
   }
 `;

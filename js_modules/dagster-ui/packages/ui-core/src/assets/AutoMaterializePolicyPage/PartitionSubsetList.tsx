@@ -195,7 +195,7 @@ const PartitionStatusDot = styled.div<{$color: string; $hoverColor: string}>`
   border-radius: 50%;
   transition: background-color 100ms linear;
 
-  :hover {
+  &:hover {
     background-color: ${({$hoverColor}) => $hoverColor};
   }
 `;

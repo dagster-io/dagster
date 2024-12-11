@@ -1233,6 +1233,14 @@
                 'handleID': 'hanging_graph.hanging_op',
               }),
             }),
+            dict({
+              'pipeline': dict({
+                'name': 'hanging_partitioned_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'hanging_op',
+              }),
+            }),
           ]),
         }),
         dict({
@@ -1587,6 +1595,14 @@
             }),
             dict({
               'pipeline': dict({
+                'name': 'hanging_partitioned_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'my_op',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
                 'name': 'static_partitioned_job',
               }),
               'solidHandle': dict({
@@ -1751,6 +1767,22 @@
               }),
               'solidHandle': dict({
                 'handleID': 'simple_graph.noop_op',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'not_included_asset',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'not_included_asset',
               }),
             }),
           ]),

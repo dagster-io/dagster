@@ -177,7 +177,7 @@ isolated_agents:
   enabled: <true|false>
 agent_queues:
   include_default_queue: <true|false>
-  queues:
+  additional_queues:
     - <queue name>
     - <additional queue name>
 ```
@@ -335,7 +335,7 @@ These settings specify the queue(s) the agent will obtain requests from. See [Ro
   <ReferenceTableItem propertyName="agent_queues.include_default_queue">
     This agent process requests from the default queue if set to true.
   </ReferenceTableItem>
-  <ReferenceTableItem propertyName="agent_queues.queues">
+  <ReferenceTableItem propertyName="agent_queues.additional_queues">
     A list of additional queues to include in the agent's processing.
   </ReferenceTableItem>
 </ReferenceTable>

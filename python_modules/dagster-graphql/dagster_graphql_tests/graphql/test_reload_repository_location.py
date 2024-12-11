@@ -9,7 +9,7 @@ from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load import location_origins_from_yaml_paths
 from dagster._grpc.types import ListRepositoriesResponse
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, main_repo_location_name
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
@@ -252,7 +252,9 @@ class TestReloadWorkspace(MultiLocationTestSuite):
 class TestReloadRepositoriesReadOnly(ReadonlyGraphQLContextTestMatrix):
     def test_reload_repository_permission_failure(self, graphql_context):
         result = execute_dagster_graphql(
-            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"}
+            graphql_context,
+            RELOAD_REPOSITORY_LOCATION_QUERY,
+            {"repositoryLocationName": main_repo_location_name()},
         )
 
         assert result
@@ -264,14 +266,16 @@ class TestReloadRepositoriesReadOnly(ReadonlyGraphQLContextTestMatrix):
 class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
     def test_out_of_process_reload_location(self, graphql_context):
         result = execute_dagster_graphql(
-            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"}
+            graphql_context,
+            RELOAD_REPOSITORY_LOCATION_QUERY,
+            {"repositoryLocationName": main_repo_location_name()},
         )
 
         assert result
         assert result.data
         assert result.data["reloadRepositoryLocation"]
         assert result.data["reloadRepositoryLocation"]["__typename"] == "WorkspaceLocationEntry"
-        assert result.data["reloadRepositoryLocation"]["name"] == "test"
+        assert result.data["reloadRepositoryLocation"]["name"] == main_repo_location_name()
         repositories = result.data["reloadRepositoryLocation"]["locationOrLoadError"][
             "repositories"
         ]
@@ -315,7 +319,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
                 result = execute_dagster_graphql(
                     graphql_context,
                     RELOAD_REPOSITORY_LOCATION_QUERY,
-                    {"repositoryLocationName": "test"},
+                    {"repositoryLocationName": main_repo_location_name()},
                 )
 
                 assert cli_command_mock.call_count == 1
@@ -329,7 +333,9 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
 
     def test_reload_failure(self, graphql_context):
         result = execute_dagster_graphql(
-            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"}
+            graphql_context,
+            RELOAD_REPOSITORY_LOCATION_QUERY,
+            {"repositoryLocationName": main_repo_location_name()},
         )
 
         assert result
@@ -339,7 +345,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
             result.data["reloadRepositoryLocation"]["locationOrLoadError"]["__typename"]
             == "RepositoryLocation"
         )
-        assert result.data["reloadRepositoryLocation"]["name"] == "test"
+        assert result.data["reloadRepositoryLocation"]["name"] == main_repo_location_name()
         repositories = result.data["reloadRepositoryLocation"]["locationOrLoadError"][
             "repositories"
         ]
@@ -361,7 +367,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
             result = execute_dagster_graphql(
                 graphql_context,
                 RELOAD_REPOSITORY_LOCATION_QUERY,
-                {"repositoryLocationName": "test"},
+                {"repositoryLocationName": main_repo_location_name()},
             )
 
             assert result
@@ -371,7 +377,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
                 result.data["reloadRepositoryLocation"]["locationOrLoadError"]["__typename"]
                 == "PythonError"
             )
-            assert result.data["reloadRepositoryLocation"]["name"] == "test"
+            assert result.data["reloadRepositoryLocation"]["name"] == main_repo_location_name()
             assert (
                 "Mocked repository load failure"
                 in result.data["reloadRepositoryLocation"]["locationOrLoadError"]["message"]
@@ -381,7 +387,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
             result = execute_dagster_graphql(
                 graphql_context,
                 RELOAD_REPOSITORY_LOCATION_QUERY,
-                {"repositoryLocationName": "test"},
+                {"repositoryLocationName": main_repo_location_name()},
             )
 
             assert result
@@ -391,7 +397,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
                 result.data["reloadRepositoryLocation"]["locationOrLoadError"]["__typename"]
                 == "PythonError"
             )
-            assert result.data["reloadRepositoryLocation"]["name"] == "test"
+            assert result.data["reloadRepositoryLocation"]["name"] == main_repo_location_name()
             assert (
                 "Mocked repository load failure"
                 in result.data["reloadRepositoryLocation"]["locationOrLoadError"]["message"]
@@ -401,7 +407,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
         result = execute_dagster_graphql(
             graphql_context,
             RELOAD_REPOSITORY_LOCATION_QUERY,
-            {"repositoryLocationName": "test"},
+            {"repositoryLocationName": main_repo_location_name()},
         )
 
         assert result
@@ -411,7 +417,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
             result.data["reloadRepositoryLocation"]["locationOrLoadError"]["__typename"]
             == "RepositoryLocation"
         )
-        assert result.data["reloadRepositoryLocation"]["name"] == "test"
+        assert result.data["reloadRepositoryLocation"]["name"] == main_repo_location_name()
         assert result.data["reloadRepositoryLocation"]["loadStatus"] == "LOADED"
         repositories = result.data["reloadRepositoryLocation"]["locationOrLoadError"][
             "repositories"
@@ -427,7 +433,9 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
 class TestReloadRepositoriesManagedGrpc(ManagedTestSuite):
     def test_managed_grpc_reload_location(self, graphql_context):
         result = execute_dagster_graphql(
-            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"}
+            graphql_context,
+            RELOAD_REPOSITORY_LOCATION_QUERY,
+            {"repositoryLocationName": main_repo_location_name()},
         )
 
         assert result
@@ -437,7 +445,7 @@ class TestReloadRepositoriesManagedGrpc(ManagedTestSuite):
             result.data["reloadRepositoryLocation"]["locationOrLoadError"]["__typename"]
             == "RepositoryLocation"
         )
-        assert result.data["reloadRepositoryLocation"]["name"] == "test"
+        assert result.data["reloadRepositoryLocation"]["name"] == main_repo_location_name()
         assert result.data["reloadRepositoryLocation"]["loadStatus"] == "LOADED"
 
         repositories = result.data["reloadRepositoryLocation"]["locationOrLoadError"][
@@ -465,12 +473,12 @@ class TestReloadLocationCodeServerCliGrpc(CodeServerCliTestSuite):
     def test_code_server_cli_reload_location(self, graphql_context):
         # server_id before
 
-        old_server_id = graphql_context.get_code_location("test").server_id
+        old_server_id = graphql_context.get_code_location(main_repo_location_name()).server_id
 
         result = execute_dagster_graphql(
             graphql_context,
             RELOAD_REPOSITORY_LOCATION_QUERY,
-            {"repositoryLocationName": "test"},
+            {"repositoryLocationName": main_repo_location_name()},
         )
 
         assert result
@@ -480,12 +488,12 @@ class TestReloadLocationCodeServerCliGrpc(CodeServerCliTestSuite):
             result.data["reloadRepositoryLocation"]["locationOrLoadError"]["__typename"]
             == "RepositoryLocation"
         )
-        assert result.data["reloadRepositoryLocation"]["name"] == "test"
+        assert result.data["reloadRepositoryLocation"]["name"] == main_repo_location_name()
         assert result.data["reloadRepositoryLocation"]["loadStatus"] == "LOADED"
 
         new_location = (
             graphql_context.process_context.get_workspace_snapshot()
-            .code_location_entries["test"]
+            .code_location_entries[main_repo_location_name()]
             .code_location
         )
 

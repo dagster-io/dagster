@@ -161,6 +161,12 @@ In your CI/CD workflows for your Dagster and dbt project:
 
 ## Leveraging dbt defer with branch deployments
 
+<Note>
+  This feature requires the `DAGSTER_BUILD_STATEDIR` environment variable to be
+  set in your CI/CD. Learn more about required environment variables in CI/CD
+  for Dagster+ <a href="/dagster-plus/getting-started">here</a>.
+</Note>
+
 It is possible to leverage [dbt defer](https://docs.getdbt.com/reference/node-selection/defer) by passing a `state_path` to <PyObject object="DbtProject" module="dagster_dbt" />. This is useful for testing recent changes made in development against the state of the dbt project in production. Using `dbt defer`, you can run a subset of models or tests, those that have been changed between development and production, without having to build their upstream parents first.
 
 In practice, this is most useful when combined with branch deployments in Dagster+, to test changes made in your branches. This can be done by updating your CI/CD files and your Dagster code.

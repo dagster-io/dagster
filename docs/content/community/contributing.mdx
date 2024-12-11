@@ -9,28 +9,20 @@ We love to see our community members get involved! If you are planning to contri
 
 ## Environment setup
 
-1. Install a version of Python that Dagster supports. <DagsterVersion />
-
-2. Create and activate a virtualenv, using the tool of your choice. On macOS you can install `pyenv` with Homebrew:
+1. [Install uv](https://docs.astral.sh/uv/getting-started/installation/). On macOS, you can use `curl` to download the script and execute it with `sh`:
 
    ```bash
-   brew install pyenv pyenv-virtualenv
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-   Then add the following commands to your shell profile:
+2. Create and activate a virtual environment using uv with a Python version that Dagster supports:
 
    ```bash
-   eval "$(pyenv init -)"
-   eval "$(pyenv virtualenv-init -)"
+   uv venv --python 3.12
+   source .venv/bin/activate
    ```
 
-   and finally create and activate the virtualenev:
-
-   ```bash
-   pyenv install 3.10.14
-   pyenv virtualenv 3.10.14 dagster310
-   pyenv activate dagster310
-   ```
+   <DagsterVersion />
 
 3. Ensure that you have node installed by running `node -v`, and that you have [yarn](https://yarnpkg.com/lang/en/) installed. If you are on macOS, you can install yarn with Homebrew:
 
@@ -44,7 +36,7 @@ We love to see our community members get involved! If you are planning to contri
    git clone git@github.com:dagster-io/dagster.git
    ```
 
-5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. This will take a few minutes. Note that certain sections of the makefile (sanity_check, which is part of `rebuild_ui`) require POSIX compliant shells and will fail on CMD and powershell -- if developing on windows, using something like WSL or git-bash is recommended. Note also that if this command fails while installing python packages, the problem might be resolved by ensuring you are running an up-to-date version of `pip` (upgrade with `pip install -U pip`).
+5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. This will take a few minutes. Note that certain sections of the makefile (`sanity_check`, which is part of `rebuild_ui`) require POSIX-compliant shells and will fail on CMD and powershell—if developing on windows, using something like WSL or git-bash is recommended.
 
    ```bash
    make dev_install
@@ -132,7 +124,7 @@ make mdx-format
 
 You can find more information about developing documentation in `docs/README.md`.
 
-## Picking a Github Issue
+## Picking a GitHub Issue
 
 We encourage you to start with an issue labeled with the tag [`good first issue`](https://github.com/dagster-io/dagster/issues?q=is%3Aopen+is%3Aissue+label%3A%22type%3A+good+first+issue%22) on the [Github issue board](https://github.com/dagster-io/dagster/issues), to get familiar with our codebase as a first-time contributor.
 
@@ -144,6 +136,6 @@ To submit your code, [fork the Dagster repository](https://help.github.com/en/ar
 
 In the PR template, please describe the change, including the motivation/context, test coverage, and any other relevant information. Please note if the PR is a breaking change or if it is related to an open GitHub issue.
 
-A Core reviewer will review your PR in around one business day and provide feedback on any changes it requires to be approved. Once approved and all the tests (including Buildkite!) pass, the reviewer will click the Squash and merge button in Github 🥳.
+A Core reviewer will review your PR in around one business day and provide feedback on any changes it requires to be approved. Once approved and all the tests (including Buildkite!) pass, the reviewer will click the Squash and merge button in GitHub 🥳.
 
 Your PR is now merged into Dagster! We’ll shout out your contribution in the weekly release notes.

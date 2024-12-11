@@ -1,6 +1,7 @@
 import pytest
 import responses
 from dagster import AssetKey, job, op
+from dagster._core.test_utils import instance_for_test
 from dagster_fivetran import FivetranOutput, fivetran_resource, fivetran_resync_op, fivetran_sync_op
 from dagster_fivetran.resources import (
     FIVETRAN_API_BASE,
@@ -18,7 +19,7 @@ from dagster_fivetran_tests.utils import (
 )
 
 
-def test_fivetran_sync_op():
+def test_fivetran_sync_op() -> None:
     ft_resource = fivetran_resource.configured({"api_key": "foo", "api_secret": "bar"})
     final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
     api_prefix = f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION_PATH}{FIVETRAN_CONNECTOR_PATH}{DEFAULT_CONNECTOR_ID}"
@@ -70,9 +71,7 @@ def test_fivetran_sync_op():
             if event.event_type_value == "ASSET_MATERIALIZATION"
         ]
         assert len(asset_materializations) == 3
-        asset_keys = set(
-            mat.event_specific_data.materialization.asset_key for mat in asset_materializations
-        )
+        asset_keys = set(mat.materialization.asset_key for mat in asset_materializations)
         assert asset_keys == set(
             [
                 AssetKey(["fivetran", "xyz1", "abc1"]),
@@ -101,7 +100,7 @@ def test_fivetran_sync_op():
         ),
     ],
 )
-def test_fivetran_resync_op(resync_params, endpoint, expected_assets):
+def test_fivetran_resync_op(resync_params, endpoint, expected_assets) -> None:
     ft_resource = fivetran_resource.configured({"api_key": "foo", "api_secret": "bar"})
     final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
     api_prefix = f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION_PATH}{FIVETRAN_CONNECTOR_PATH}{DEFAULT_CONNECTOR_ID}"
@@ -125,7 +124,7 @@ def test_fivetran_resync_op(resync_params, endpoint, expected_assets):
             }
         },
     )
-    def fivetran_resync_job():
+    def fivetran_resync_job() -> None:
         fivetran_resync_op(start_after=foo_op())
 
     with responses.RequestsMock() as rsps:
@@ -143,18 +142,17 @@ def test_fivetran_resync_op(resync_params, endpoint, expected_assets):
         # final state will be updated
         rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
 
-        result = fivetran_resync_job.execute_in_process()
-        assert result.output_for_node("fivetran_resync_op") == FivetranOutput(
-            connector_details=get_sample_connector_response(data=final_data)["data"],
-            schema_config=get_complex_sample_connector_schema_config()["data"],
-        )
-        asset_materializations = [
-            event
-            for event in result.events_for_node("fivetran_resync_op")
-            if event.event_type_value == "ASSET_MATERIALIZATION"
-        ]
-        assert len(asset_materializations) == len(expected_assets)
-        asset_keys = set(
-            mat.event_specific_data.materialization.asset_key for mat in asset_materializations
-        )
-        assert asset_keys == set(expected_assets)
+        with instance_for_test() as instance:
+            result = fivetran_resync_job.execute_in_process(instance=instance)
+            assert result.output_for_node("fivetran_resync_op") == FivetranOutput(
+                connector_details=get_sample_connector_response(data=final_data)["data"],
+                schema_config=get_complex_sample_connector_schema_config()["data"],
+            )
+            asset_materializations = [
+                event
+                for event in result.events_for_node("fivetran_resync_op")
+                if event.event_type_value == "ASSET_MATERIALIZATION"
+            ]
+            assert len(asset_materializations) == len(expected_assets)
+            asset_keys = set(mat.materialization.asset_key for mat in asset_materializations)
+            assert asset_keys == set(expected_assets)

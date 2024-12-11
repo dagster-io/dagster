@@ -1,5 +1,6 @@
 import {
   Box,
+  ButtonLink,
   Caption,
   Colors,
   HeaderCell,
@@ -24,7 +25,7 @@ import {
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetLink} from '../assets/AssetLink';
 import {AssetKeysDialogEmptyState} from '../assets/AutoMaterializePolicyPage/AssetKeysDialog';
-import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {EvaluationDetailDialog} from '../assets/AutoMaterializePolicyPage/EvaluationDetailDialog';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {AssetKeyInput} from '../graphql/types';
 import {Container, HeaderRow} from '../ui/VirtualizedTable';
@@ -151,6 +152,7 @@ const AssetDetailRow = ({
   partitionKeys?: string[];
   evaluationId: string;
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
   const numMaterializations = partitionKeys?.length || 1;
   const queryResult = useQuery<AssetGroupAndLocationQuery, AssetGroupAndLocationQueryVariables>(
     ASSET_GROUP_QUERY,
@@ -168,6 +170,7 @@ const AssetDetailRow = ({
   const repoAddress = definition
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
+
   return (
     <Row $start={$start} $height={$height}>
       <RowGrid border="bottom">
@@ -193,14 +196,20 @@ const AssetDetailRow = ({
           )}
         </RowCell>
         <RowCell>
-          <Link
-            to={assetDetailsPathForKey(assetKey, {
-              view: 'automation',
-              evaluation: `${evaluationId}`,
-            })}
-          >
-            {numMaterializations} materialization{numMaterializations === 1 ? '' : 's'} requested
-          </Link>
+          {definition ? (
+            <>
+              <ButtonLink onClick={() => setIsOpen(true)}>
+                {numMaterializations} materialization{numMaterializations === 1 ? '' : 's'}{' '}
+                requested
+              </ButtonLink>
+              <EvaluationDetailDialog
+                isOpen={isOpen}
+                setIsOpen={setIsOpen}
+                evaluationID={evaluationId}
+                assetKeyPath={assetKey.path}
+              />
+            </>
+          ) : null}
         </RowCell>
       </RowGrid>
     </Row>

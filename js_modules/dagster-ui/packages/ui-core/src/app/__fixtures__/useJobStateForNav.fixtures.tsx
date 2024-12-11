@@ -27,6 +27,16 @@ export const workspaceWithJob = buildWorkspaceMocks([
   }),
 ]);
 
+export const workspaceWithNoRepos = buildWorkspaceMocks([
+  buildWorkspaceLocationEntry({
+    name: 'some_workspace',
+    locationOrLoadError: buildRepositoryLocation({
+      name: 'location_without_job',
+      repositories: [],
+    }),
+  }),
+]);
+
 export const workspaceWithNoJobs = buildWorkspaceMocks([
   buildWorkspaceLocationEntry({
     name: 'some_workspace',
@@ -46,11 +56,16 @@ export const workspaceWithDunderJob = buildWorkspaceMocks([
   buildWorkspaceLocationEntry({
     name: 'some_workspace',
     locationOrLoadError: buildRepositoryLocation({
-      name: 'location_without_job',
+      name: 'location_with_dunder_job',
       repositories: [
         buildRepository({
-          name: `${__ANONYMOUS_ASSET_JOB_PREFIX}_pseudo_job`,
-          pipelines: [],
+          name: `repo_with_pseudo_job`,
+          pipelines: [
+            buildPipeline({
+              name: `${__ANONYMOUS_ASSET_JOB_PREFIX}_pseudo_job`,
+              isJob: true,
+            }),
+          ],
         }),
       ],
     }),

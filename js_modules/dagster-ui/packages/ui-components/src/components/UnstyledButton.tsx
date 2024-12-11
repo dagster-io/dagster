@@ -26,7 +26,7 @@ export const UnstyledButton = styled.button<Props>`
           padding: ${$expandedClickPx}px;
           margin: -${$expandedClickPx}px;
         `
-      : null}
+      : ''}
 
   &:disabled {
     color: inherit;

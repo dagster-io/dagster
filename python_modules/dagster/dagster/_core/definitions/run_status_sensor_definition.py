@@ -31,11 +31,11 @@ from dagster._core.definitions.scoped_resources_builder import Resources, Scoped
 from dagster._core.definitions.sensor_definition import (
     DagsterRunReaction,
     DefaultSensorStatus,
-    RawSensorEvaluationFunctionReturn,
     RunRequest,
     SensorDefinition,
     SensorEvaluationContext,
     SensorResult,
+    SensorReturnTypesUnion,
     SensorType,
     SkipReason,
     get_context_param_name,
@@ -71,12 +71,12 @@ if TYPE_CHECKING:
     )
 
 RunStatusSensorEvaluationFunction: TypeAlias = Union[
-    Callable[..., RawSensorEvaluationFunctionReturn],
-    Callable[..., RawSensorEvaluationFunctionReturn],
+    Callable[..., SensorReturnTypesUnion],
+    Callable[..., SensorReturnTypesUnion],
 ]
 RunFailureSensorEvaluationFn: TypeAlias = Union[
-    Callable[..., RawSensorEvaluationFunctionReturn],
-    Callable[..., RawSensorEvaluationFunctionReturn],
+    Callable[..., SensorReturnTypesUnion],
+    Callable[..., SensorReturnTypesUnion],
 ]
 
 
@@ -895,18 +895,21 @@ class RunStatusSensorDefinition(SensorDefinition):
                 )
 
                 try:
-                    with RunStatusSensorContext(
-                        sensor_name=name,
-                        dagster_run=dagster_run,
-                        dagster_event=event_log_entry.dagster_event,
-                        instance=context.instance,
-                        resource_defs=context.resource_defs,
-                        logger=context.log,
-                        partition_key=dagster_run.tags.get("dagster/partition"),
-                        repository_def=context.repository_def,
-                    ) as sensor_context, user_code_error_boundary(
-                        RunStatusSensorExecutionError,
-                        lambda: f'Error occurred during the execution sensor "{name}".',
+                    with (
+                        RunStatusSensorContext(
+                            sensor_name=name,
+                            dagster_run=dagster_run,
+                            dagster_event=event_log_entry.dagster_event,
+                            instance=context.instance,
+                            resource_defs=context.resource_defs,
+                            logger=context.log,
+                            partition_key=dagster_run.tags.get("dagster/partition"),
+                            repository_def=context.repository_def,
+                        ) as sensor_context,
+                        user_code_error_boundary(
+                            RunStatusSensorExecutionError,
+                            lambda: f'Error occurred during the execution sensor "{name}".',
+                        ),
                     ):
                         context_param_name = get_context_param_name(run_status_sensor_fn)
                         context_param = (
@@ -977,7 +980,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             metadata=metadata,
         )
 
-    def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
+    def __call__(self, *args, **kwargs) -> SensorReturnTypesUnion:
         context_param_name = get_context_param_name(self._run_status_sensor_fn)
         context = get_or_create_sensor_context(
             self._run_status_sensor_fn,
@@ -1102,7 +1105,7 @@ def run_status_sensor(
         )
 
         if jobs and monitor_all:
-            DagsterInvalidDefinitionError(
+            raise DagsterInvalidDefinitionError(
                 f"Cannot specify both {'monitor_all_code_locations' if monitor_all_code_locations else 'monitor_all_repositories'} and"
                 f" {'monitored_jobs' if monitored_jobs else 'job_selection'}."
             )

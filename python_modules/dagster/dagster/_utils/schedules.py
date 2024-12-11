@@ -53,11 +53,20 @@ def _is_simple_cron(
 def is_valid_cron_string(cron_string: str) -> bool:
     if not CroniterShim.is_valid(cron_string):
         return False
+
     # Croniter < 1.4 returns 2 items
     # Croniter >= 1.4 returns 3 items
     expanded, *_ = CroniterShim.expand(cron_string)
+
     # dagster only recognizes cron strings that resolve to 5 parts (e.g. not seconds resolution)
-    return len(expanded) == 5
+    if len(expanded) != 5:
+        return False
+
+    if len(expanded[3]) == 1 and expanded[3][0] == 2:  # February
+        if len(expanded[2]) == 1 and expanded[2][0] in {30, 31}:  # 30th or 31st of February
+            return False
+
+    return True
 
 
 def is_valid_cron_schedule(cron_schedule: Union[str, Sequence[str]]) -> bool:

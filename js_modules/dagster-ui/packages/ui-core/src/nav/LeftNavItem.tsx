@@ -221,9 +221,9 @@ const SensorScheduleDialogButton = styled.button`
   border: 0;
   cursor: pointer;
 
-  :focus,
-  :active,
-  :hover {
+  &:focus,
+  &:active,
+  &:hover {
     outline: none;
   }
 `;

@@ -62,12 +62,11 @@ def test_subset_traversal_static_partitions() -> None:
     # from full up to down
     up_subset = asset_graph_view_t0.get_full_subset(key=up_numbers.key)
     assert up_subset.expensively_compute_partition_keys() == {"1", "2", "3"}
-    assert (
-        up_subset.compute_child_subset(down_letters.key).expensively_compute_partition_keys()
-        == set()
-    )
+    assert up_subset.compute_child_subset(
+        down_letters.key
+    ).expensively_compute_partition_keys() == {"a", "b", "c"}
 
-    # from full up to down
+    # from full down to up
     down_subset = asset_graph_view_t0.get_full_subset(key=down_letters.key)
     assert down_subset.expensively_compute_partition_keys() == {"a", "b", "c"}
     assert down_subset.compute_parent_subset(
@@ -98,12 +97,9 @@ def test_subset_traversal_static_partitions() -> None:
     )
 
     # subset of up to subset of down
-    assert (
-        up_subset.compute_intersection_with_partition_keys({"2"})
-        .compute_child_subset(down_letters.key)
-        .expensively_compute_partition_keys()
-        == set()
-    )
+    assert up_subset.compute_intersection_with_partition_keys({"2"}).compute_child_subset(
+        down_letters.key
+    ).expensively_compute_partition_keys() == {"b"}
 
     # subset of down to subset of up
     assert down_subset.compute_intersection_with_partition_keys({"b"}).compute_parent_subset(

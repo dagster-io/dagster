@@ -65,15 +65,7 @@ export const AssetNodeFragmentBasic: AssetNodeFragment = buildAssetNode({
   jobNames: ['job1'],
   opNames: ['asset1'],
   opVersion: '1',
-  changedReasons: [
-    ChangeReason.NEW,
-    ChangeReason.CODE_VERSION,
-    ChangeReason.DEPENDENCIES,
-    ChangeReason.PARTITIONS_DEFINITION,
-    ChangeReason.TAGS,
-    ChangeReason.METADATA,
-    ChangeReason.REMOVED,
-  ],
+  changedReasons: [],
 });
 
 export const AssetNodeFragmentSource = buildAssetNode({
@@ -88,11 +80,26 @@ export const AssetNodeFragmentSource = buildAssetNode({
 });
 
 export const AssetNodeFragmentSourceOverdue = buildAssetNode({
+  ...AssetNodeFragmentBasic,
   isMaterializable: false,
   isObservable: false,
   freshnessInfo: buildAssetFreshnessInfo({
     currentMinutesLate: 12,
   }),
+});
+
+export const AssetNodeFragmentChangedInBranch = buildAssetNode({
+  ...AssetNodeFragmentBasic,
+  kinds: ['sql'],
+  changedReasons: [
+    ChangeReason.NEW,
+    ChangeReason.CODE_VERSION,
+    ChangeReason.DEPENDENCIES,
+    ChangeReason.PARTITIONS_DEFINITION,
+    ChangeReason.TAGS,
+    ChangeReason.METADATA,
+    ChangeReason.REMOVED,
+  ],
 });
 
 export const AssetNodeFragmentPartitioned: AssetNodeFragment = buildAssetNode({
@@ -789,6 +796,24 @@ export const AssetNodeScenariosBase = [
     definition: AssetNodeFragmentBasic,
     expectedText: ['Materialized', 'Checks'],
   },
+  {
+    title: 'Changed in Branch',
+    liveData: LiveDataForNodeMaterializedWithChecks,
+    definition: AssetNodeFragmentChangedInBranch,
+    expectedText: ['New in branch'],
+  },
+  {
+    title: 'Very long key',
+    liveData: {
+      ...LiveDataForNodeMaterialized,
+      stepKey: 'very_long_asset_which_was_totally_reasonable_at_the_time',
+    },
+    definition: {
+      ...AssetNodeFragmentBasic,
+      assetKey: buildAssetKey({path: ['very_long_asset_which_was_totally_reasonable_at_the_time']}),
+    },
+    expectedText: [],
+  },
 ];
 
 export const AssetNodeScenariosSource = [
@@ -801,10 +826,11 @@ export const AssetNodeScenariosSource = [
 
   {
     title: 'Source Asset - Not Observable',
-    liveData: undefined,
+    liveData: LiveDataForNodeNeverMaterialized,
     definition: {
       ...AssetNodeFragmentSource,
       isObservable: false,
+      isExecutable: false,
       id: '["source_asset_no"]',
       assetKey: buildAssetKey({path: ['source_asset_no']}),
     },
@@ -813,10 +839,11 @@ export const AssetNodeScenariosSource = [
 
   {
     title: 'Source Asset - Not Observable, No Description',
-    liveData: undefined,
+    liveData: LiveDataForNodeNeverMaterialized,
     definition: {
       ...AssetNodeFragmentSource,
       isObservable: false,
+      isExecutable: false,
       description: null,
       id: '["source_asset_nono"]',
       assetKey: buildAssetKey({path: ['source_asset_nono']}),
@@ -903,11 +930,26 @@ export const AssetNodeScenariosPartitioned = [
   },
 
   {
+    title: 'Partitioned Asset - Checks and Tags',
+    liveData: {
+      ...LiveDataForNodePartitionedFresh,
+      assetChecks: LiveDataForNodeMaterializedWithChecks.assetChecks,
+    },
+    definition: {
+      ...AssetNodeFragmentPartitioned,
+      changedReasons: [ChangeReason.NEW],
+      kinds: ['ipynb'],
+    },
+    expectedText: ['1,500 partitions', 'All', 'Checks'],
+  },
+
+  {
     title: 'Partitioned Asset - Last Run Failed',
     liveData: LiveDataForNodePartitionedLatestRunFailed,
     definition: AssetNodeFragmentPartitioned,
     expectedText: ['4', '999+', '1,500 partitions'],
   },
+
   {
     title: 'Partitioned Asset - Live Data Loading',
     liveData: undefined,

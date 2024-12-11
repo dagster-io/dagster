@@ -1,7 +1,7 @@
 ---
 title: "Setting environment variables with the Dagster+ UI"
 displayed_sidebar: "dagsterPlus"
-sidebar_position: 1
+sidebar_position: 200
 sidebar_label: "Set with Dagster+ UI"
 ---
 

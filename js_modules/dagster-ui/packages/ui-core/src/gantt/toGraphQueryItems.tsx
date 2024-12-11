@@ -5,6 +5,10 @@ import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {StepKind} from '../graphql/types';
 import {IStepMetadata, IStepState} from '../runs/RunMetadataProvider';
 
+export type RunGraphQueryItem = GraphQueryItem & {
+  metadata?: IStepMetadata;
+};
+
 /**
  * Converts a Run execution plan into a tree of `GraphQueryItem` items that
  * can be used as the input to the "solid query" filtering algorithm or rendered
@@ -18,7 +22,7 @@ import {IStepMetadata, IStepState} from '../runs/RunMetadataProvider';
 export const toGraphQueryItems = (
   plan: ExecutionPlanToGraphFragment,
   runtimeStepMetadata: {[key: string]: IStepMetadata},
-) => {
+): RunGraphQueryItem[] => {
   // Step 1: Find unresolved steps in the initial plan and build a mapping
   // of their unresolved names to their resolved step keys, eg:
   // "multiply_input[*]" => ["multiply_input[1]", "multiply_input[2]"]
@@ -47,7 +51,7 @@ export const toGraphQueryItems = (
   }
 
   // Step 2: Create a graph node for each resolved step without any inputs or outputs.
-  const nodeTable: {[key: string]: GraphQueryItem} = {};
+  const nodeTable: {[key: string]: RunGraphQueryItem} = {};
   for (const step of plan.steps) {
     const stepRuntimeKeys = keyExpansionMap[step.key] || [step.key];
     for (const key of stepRuntimeKeys) {
@@ -55,6 +59,7 @@ export const toGraphQueryItems = (
         name: key,
         inputs: [],
         outputs: [],
+        metadata: runtimeStepMetadata[key],
       };
     }
   }

@@ -1,7 +1,9 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
+from dagster_fivetran.asset_decorator import fivetran_assets as fivetran_assets
 from dagster_fivetran.asset_defs import (
     build_fivetran_assets as build_fivetran_assets,
+    build_fivetran_assets_definitions as build_fivetran_assets_definitions,
     load_assets_from_fivetran_instance as load_assets_from_fivetran_instance,
 )
 from dagster_fivetran.ops import (
@@ -14,7 +16,10 @@ from dagster_fivetran.resources import (
     fivetran_resource as fivetran_resource,
     load_fivetran_asset_specs as load_fivetran_asset_specs,
 )
-from dagster_fivetran.translator import DagsterFivetranTranslator as DagsterFivetranTranslator
+from dagster_fivetran.translator import (
+    DagsterFivetranTranslator as DagsterFivetranTranslator,
+    FivetranConnectorTableProps as FivetranConnectorTableProps,
+)
 from dagster_fivetran.types import FivetranOutput as FivetranOutput
 from dagster_fivetran.version import __version__ as __version__
 

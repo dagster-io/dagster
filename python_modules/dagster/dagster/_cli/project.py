@@ -63,7 +63,7 @@ def check_if_pypi_package_conflict_exists(project_name: str) -> PackageConflictC
     """
     if any(keyword in project_name for keyword in FLAGGED_PACKAGE_KEYWORDS):
         try:
-            res = requests.get(f"https://pypi.org/pypi/{project_name}")
+            res = requests.get(f"https://pypi.org/pypi/{project_name}/json")
             if res.status_code == 200:
                 return PackageConflictCheckResult(request_error_msg=None, conflict_exists=True)
         except Exception as e:

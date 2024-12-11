@@ -177,18 +177,18 @@ export const TopNavLink = styled(NavLink)`
   padding: 24px 0;
   text-decoration: none;
 
-  :hover {
+  &:hover {
     color: ${Colors.navTextHover()};
     text-decoration: none;
   }
 
-  :active,
+  &:active,
   &.active {
     color: ${Colors.navTextSelected()};
     text-decoration: none;
   }
 
-  :focus {
+  &:focus {
     outline: none !important;
     color: ${Colors.navTextSelected()};
   }
@@ -234,15 +234,15 @@ const NavButton = styled.button`
     transition: background 100ms linear;
   }
 
-  :hover ${IconWrapper} {
+  &:hover ${IconWrapper} {
     background: ${Colors.navTextHover()};
   }
 
-  :active ${IconWrapper} {
+  &:active ${IconWrapper} {
     background: ${Colors.navTextHover()};
   }
 
-  :focus {
+  &:focus {
     background: ${Colors.navButton()};
   }
 `;

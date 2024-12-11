@@ -129,7 +129,7 @@ const CopyButton = styled.button`
   padding: 3px;
   margin-top: 2px;
 
-  :focus {
+  &:focus {
     outline: none;
   }
 
@@ -137,7 +137,7 @@ const CopyButton = styled.button`
     transition: background-color 100ms linear;
   }
 
-  :hover ${IconWrapper} {
+  &:hover ${IconWrapper} {
     background-color: ${Colors.accentGrayHover()};
   }
 `;
@@ -168,14 +168,21 @@ const BreadcrumbsWithSlashes = styled(Breadcrumbs)<{$numHeaderBreadcrumbs: numbe
     width: 8px;
     line-height: 16px;
   }
+  /**
+   * Blueprint breadcrumbs annoyingly have a built-in height.
+   */
+  .bp5-breadcrumbs {
+    height: auto;
+    min-height: 30px;
+  }
 `;
 
 const BreadcrumbLink = styled(Link)`
   color: ${Colors.textLight()};
   white-space: nowrap;
 
-  :hover,
-  :active {
+  &:hover,
+  &:active {
     color: ${Colors.textLight()};
   }
 `;

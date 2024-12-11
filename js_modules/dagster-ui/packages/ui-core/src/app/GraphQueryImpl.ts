@@ -20,7 +20,7 @@ export interface GraphQueryItem {
 
 type TraverseStepFunction<T> = (item: T, callback: (nextItem: T) => void) => void;
 
-class GraphTraverser<T extends GraphQueryItem> {
+export class GraphTraverser<T extends GraphQueryItem> {
   itemNameMap: {[name: string]: T} = {};
 
   // TODO: One reason doing DFS on the client side is sub optimal.

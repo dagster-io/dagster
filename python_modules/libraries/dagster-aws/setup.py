@@ -52,6 +52,7 @@ setup(
             "moto[s3,server,glue,emrserverless,logs]>=2.2.8,<5.0",
             "requests-mock",
             "xmltodict==0.12.0",  # pinned until moto>=3.1.9 (https://github.com/spulec/moto/issues/5112)
+            "flaky",
         ],
     },
     zip_safe=False,

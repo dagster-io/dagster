@@ -96,7 +96,9 @@ WHITELISTED_TRANSIENT_K8S_STATUS_CODES = [
 class PatchedApiClient(ApiClient):
     # Forked from ApiClient implementation to pass configuration object down into created model
     # objects, avoiding lock contention issues. See https://github.com/kubernetes-client/python/issues/2284
-    def __deserialize_model(self, data, klass):
+    # Intentionally circumventing private name mangling
+    # (https://docs.python.org/3/reference/expressions.html#private-name-mangling) of the __deserialize_model method on ApiClient
+    def _ApiClient__deserialize_model(self, data, klass):
         """Deserializes list or dict to model.
 
         :param data: dict, list.
@@ -115,14 +117,14 @@ class PatchedApiClient(ApiClient):
             for attr, attr_type in six.iteritems(klass.openapi_types):
                 if klass.attribute_map[attr] in data:
                     value = data[klass.attribute_map[attr]]
-                    kwargs[attr] = self.__deserialize(value, attr_type)
+                    kwargs[attr] = self._ApiClient__deserialize(value, attr_type)
 
         instance = klass(**kwargs)
 
         if hasattr(instance, "get_real_child_model"):
             klass_name = instance.get_real_child_model(data)
             if klass_name:
-                instance = self.__deserialize(data, klass_name)
+                instance = self._ApiClient__deserialize(data, klass_name)
         return instance
 
 

@@ -1,6 +1,6 @@
 import tempfile
 from contextlib import contextmanager
-from typing import IO, Generator, Optional, Sequence
+from typing import IO, Generator, Optional, Sequence, Tuple
 
 import dagster._check as check
 from dagster import job, op
@@ -9,7 +9,6 @@ from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.compute_log_manager import (
     CapturedLogContext,
-    CapturedLogData,
     CapturedLogMetadata,
     CapturedLogSubscription,
     ComputeIOType,
@@ -45,13 +44,14 @@ class BrokenComputeLogManager(ComputeLogManager):
     def is_capture_complete(self, log_key: Sequence[str]) -> bool:
         return True
 
-    def get_log_data(
+    def get_log_data_for_type(
         self,
         log_key: Sequence[str],
-        cursor: Optional[str] = None,
-        max_bytes: Optional[int] = None,
-    ) -> CapturedLogData:
-        return CapturedLogData(log_key=log_key)
+        io_type: ComputeIOType,
+        offset: int,
+        max_bytes: Optional[int],
+    ) -> Tuple[Optional[bytes], int]:
+        return None, 0
 
     def get_log_metadata(self, log_key: Sequence[str]) -> CapturedLogMetadata:
         return CapturedLogMetadata()

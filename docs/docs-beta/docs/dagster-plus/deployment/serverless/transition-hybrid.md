@@ -1,7 +1,7 @@
 ---
 title: "Transitioning to Hybrid"
 displayed_sidebar: "dagsterPlus"
-sidebar_position: 50
+sidebar_position: 600
 ---
 
 After utilizing a Dagster+ [Serverless](/dagster-plus/deployment/serverless) deployment, you may decide to leverage your own infrastructure to execute your code. Transitioning to a Hybrid deployment requires only a few steps and can be done without any loss of execution history or metadata, allowing you to maintain continuity and control over your operations.
