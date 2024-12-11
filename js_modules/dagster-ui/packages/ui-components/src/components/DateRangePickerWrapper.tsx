@@ -67,7 +67,7 @@ const DatePickerContainer = styled.div`
     background-color: ${Colors.backgroundLight()};
     border-color: ${Colors.borderDefault()};
 
-    :hover {
+    &:hover {
       border-color: ${Colors.borderHover()};
     }
   }
@@ -95,7 +95,7 @@ const DatePickerContainer = styled.div`
     border-color: ${Colors.keylineDefault()};
     color: ${Colors.textLight()};
 
-    :hover {
+    &:hover {
       background-color: ${Colors.backgroundBlue()};
       border-color: ${Colors.keylineDefault()};
     }
@@ -104,8 +104,8 @@ const DatePickerContainer = styled.div`
   .CalendarDay__selected {
     background-color: ${Colors.backgroundBlueHover()};
 
-    :active,
-    :hover {
+    &:active,
+    &:hover {
       border-color: ${Colors.keylineDefault()};
     }
   }

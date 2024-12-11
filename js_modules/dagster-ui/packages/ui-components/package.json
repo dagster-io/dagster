@@ -1,6 +1,6 @@
 {
   "name": "@dagster-io/ui-components",
-  "version": "1.1.4",
+  "version": "1.2.1",
   "description": "Dagster UI Component Library",
   "license": "Apache-2.0",
   "main": "lib/index.js",
@@ -30,7 +30,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-is": "^18.3.1",
-    "styled-components": "^5.3.3"
+    "styled-components": "^6",
+    "stylis": "^4"
   },
   "dependencies": {
     "@react-hook/resize-observer": "^1.2.6",
@@ -77,9 +78,8 @@
     "@types/mdx-js__react": "^1",
     "@types/react": "^18.3.9",
     "@types/react-dates": "^21.8.0",
-    "@types/react-dom": "^18.3.0",
+    "@types/react-dom": "^18.3.1",
     "@types/react-is": "^18.3.0",
-    "@types/styled-components": "^5.1.26",
     "@types/testing-library__jest-dom": "^5.14.2",
     "babel-jest": "^27.4.6",
     "babel-loader": "^9.1.2",

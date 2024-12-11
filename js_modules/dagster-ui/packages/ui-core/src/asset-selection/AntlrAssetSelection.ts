@@ -14,7 +14,7 @@ import {AssetSelectionParser} from './generated/AssetSelectionParser';
 import {featureEnabled} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';
 
-class AntlrInputErrorListener implements ANTLRErrorListener<any> {
+export class AntlrInputErrorListener implements ANTLRErrorListener<any> {
   syntaxError(
     recognizer: Recognizer<any, any>,
     offendingSymbol: any,

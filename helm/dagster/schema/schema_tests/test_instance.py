@@ -694,7 +694,7 @@ def test_noop_compute_log_manager(template: HelmTemplate):
 def test_azure_blob_compute_log_manager(template: HelmTemplate):
     storage_account = "account"
     container = "container"
-    secret_key = "secret_key"
+    secret_credential = {"client_id": "id", "client_secret": "secret", "tenant_id": "tenant"}
     default_azure_credential = {"exclude_cli_credential": True}
     local_dir = "/dir"
     prefix = "prefix"
@@ -706,7 +706,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
                 azureBlobComputeLogManager=AzureBlobComputeLogManagerModel(
                     storageAccount=storage_account,
                     container=container,
-                    secretKey=secret_key,
+                    secretCredential=secret_credential,
                     defaultAzureCredential=default_azure_credential,
                     localDir=local_dir,
                     prefix=prefix,
@@ -726,7 +726,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
     assert compute_logs_config["config"] == {
         "storage_account": storage_account,
         "container": container,
-        "secret_key": secret_key,
+        "secret_credential": secret_credential,
         "default_azure_credential": default_azure_credential,
         "local_dir": local_dir,
         "prefix": prefix,

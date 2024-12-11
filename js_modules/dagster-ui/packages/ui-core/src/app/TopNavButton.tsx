@@ -11,12 +11,12 @@ export const TopNavButton = styled(UnstyledButton)`
   align-items: center;
   justify-content: center;
 
-  :hover,
-  :focus {
+  &:hover,
+  &:focus {
     background-color: ${Colors.navButtonHover()};
   }
 
-  :focus:not(:active) {
+  &:focus:not(:active) {
     outline: ${Colors.focusRing()} auto 1px;
   }
 
@@ -25,7 +25,7 @@ export const TopNavButton = styled(UnstyledButton)`
     transition: background-color 100ms linear;
   }
 
-  :focus ${IconWrapper}, :hover ${IconWrapper} {
+  &:focus ${IconWrapper}, &:hover ${IconWrapper} {
     background-color: ${Colors.navTextHover()};
   }
 `;

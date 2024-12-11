@@ -1,11 +1,16 @@
-import groupBy from 'lodash/groupBy';
 import keyBy from 'lodash/keyBy';
+import memoize from 'lodash/memoize';
 import reject from 'lodash/reject';
-import {useMemo} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
-import {GraphData, buildGraphData, toGraphId, tokenForAssetKey} from './Utils';
+import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from './Utils';
 import {gql} from '../apollo-client';
+import {computeGraphData as computeGraphDataImpl} from './ComputeGraphData';
+import {BuildGraphDataMessageType, ComputeGraphDataMessageType} from './ComputeGraphData.types';
+import {throttleLatest} from './throttleLatest';
+import {featureEnabled} from '../app/Flags';
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,
@@ -14,11 +19,11 @@ import {
 } from './types/useAssetGraphData.types';
 import {usePrefixedCacheKey} from '../app/AppProvider';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
-import {filterAssetSelectionByQuery} from '../asset-selection/AntlrAssetSelection';
+import {indexedDBAsyncMemoize} from '../app/Util';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
-import {doesFilterArrayMatchValueArray} from '../ui/Filters/useDefinitionTagFilter';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
@@ -26,6 +31,10 @@ export interface AssetGraphFetchScope {
   pipelineSelector?: PipelineSelector;
   groupSelector?: AssetGroupSelector;
   kinds?: string[];
+
+  // This is used to indicate we shouldn't start handling any input.
+  // This is used by pages where `hideNodesMatching` is only available asynchronously.
+  loading?: boolean;
 }
 
 export type AssetGraphQueryItem = GraphQueryItem & {
@@ -52,14 +61,51 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
   });
 
   const nodes = fetchResult.data?.assetNodes;
-  const queryItems = useMemo(() => (nodes ? buildGraphQueryItems(nodes) : []), [nodes]);
-
-  const fullAssetGraphData = useMemo(
-    () => (queryItems ? buildGraphData(queryItems.map((n) => n.node)) : null),
-    [queryItems],
+  const queryItems = useMemo(
+    () => (nodes ? buildGraphQueryItems(nodes) : []).map(({node}) => node),
+    [nodes],
   );
+
+  const [fullAssetGraphData, setFullAssetGraphData] = useState<GraphData | null>(null);
+  useBlockTraceUntilTrue('FullAssetGraphData', !!fullAssetGraphData);
+
+  const lastProcessedRequestRef = useRef(0);
+  const currentRequestRef = useRef(0);
+
+  useEffect(() => {
+    if (options.loading) {
+      return;
+    }
+    const requestId = ++currentRequestRef.current;
+    buildGraphData({
+      nodes: queryItems,
+      flagAssetSelectionSyntax: featureEnabled(FeatureFlag.flagAssetSelectionSyntax),
+    })
+      ?.then((data) => {
+        if (lastProcessedRequestRef.current < requestId) {
+          lastProcessedRequestRef.current = requestId;
+          setFullAssetGraphData(data);
+        }
+      })
+      .catch((e) => {
+        // buildGraphData is throttled and rejects promises when another call is made before the throttle delay.
+        console.warn(e);
+      });
+  }, [options.loading, queryItems]);
+
   return fullAssetGraphData;
 }
+
+export type GraphDataState = {
+  graphAssetKeys: AssetKey[];
+  allAssetKeys: AssetKey[];
+  assetGraphData: GraphData | null;
+};
+const INITIAL_STATE: GraphDataState = {
+  graphAssetKeys: [],
+  allAssetKeys: [],
+  assetGraphData: null,
+};
 
 /** Fetches data for rendering an asset graph:
  *
@@ -105,58 +151,63 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     [repoFilteredNodes],
   );
 
-  const {assetGraphData, graphAssetKeys, allAssetKeys} = useMemo(() => {
-    if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
-      return {
-        graphAssetKeys: [],
-        graphQueryItems: [],
-        assetGraphData: null,
-      };
+  const [state, setState] = useState<GraphDataState>(INITIAL_STATE);
+
+  const {kinds, hideEdgesToNodesOutsideQuery} = options;
+
+  const [graphDataLoading, setGraphDataLoading] = useState(true);
+
+  const lastProcessedRequestRef = useRef(0);
+  const currentRequestRef = useRef(0);
+
+  useEffect(() => {
+    if (options.loading) {
+      return;
     }
-
-    // Filter the set of all AssetNodes down to those matching the `opsQuery`.
-    // In the future it might be ideal to move this server-side, but we currently
-    // get to leverage the useQuery cache almost 100% of the time above, making this
-    // super fast after the first load vs a network fetch on every page view.
-    const {all: allFilteredByOpQuery} = filterAssetSelectionByQuery(graphQueryItems, opsQuery);
-    const kinds = options.kinds?.map((c) => c.toLowerCase());
-    const all = kinds?.length
-      ? allFilteredByOpQuery.filter(
-          ({node}) =>
-            node.kinds &&
-            doesFilterArrayMatchValueArray(
-              kinds,
-              node.kinds.map((k) => k.toLowerCase()),
-            ),
-        )
-      : allFilteredByOpQuery;
-
-    // Assemble the response into the data structure used for layout, traversal, etc.
-    const assetGraphData = buildGraphData(all.map((n) => n.node));
-    if (options.hideEdgesToNodesOutsideQuery) {
-      removeEdgesToHiddenAssets(assetGraphData, repoFilteredNodes);
-    }
-
-    return {
-      allAssetKeys: repoFilteredNodes.map((n) => n.assetKey),
-      graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
-      assetGraphData,
+    const requestId = ++currentRequestRef.current;
+    setGraphDataLoading(true);
+    computeGraphData({
+      repoFilteredNodes,
       graphQueryItems,
-    };
+      opsQuery,
+      kinds,
+      hideEdgesToNodesOutsideQuery,
+      flagAssetSelectionSyntax: featureEnabled(FeatureFlag.flagAssetSelectionSyntax),
+    })
+      ?.then((data) => {
+        if (lastProcessedRequestRef.current < requestId) {
+          lastProcessedRequestRef.current = requestId;
+          setState(data);
+          if (requestId === currentRequestRef.current) {
+            setGraphDataLoading(false);
+          }
+        }
+      })
+      .catch((e) => {
+        // computeGraphData is throttled and rejects promises when another call is made before the throttle delay.
+        console.warn(e);
+        if (requestId === currentRequestRef.current) {
+          setGraphDataLoading(false);
+        }
+      });
   }, [
     repoFilteredNodes,
     graphQueryItems,
     opsQuery,
-    options.kinds,
-    options.hideEdgesToNodesOutsideQuery,
+    kinds,
+    hideEdgesToNodesOutsideQuery,
+    options.loading,
   ]);
 
+  const loading = fetchResult.loading || graphDataLoading;
+  useBlockTraceUntilTrue('useAssetGraphData', !loading);
   return {
+    loading,
     fetchResult,
-    assetGraphData,
+    assetGraphData: state.assetGraphData,
     graphQueryItems,
-    graphAssetKeys,
-    allAssetKeys,
+    graphAssetKeys: state.graphAssetKeys,
+    allAssetKeys: state.allAssetKeys,
   };
 }
 
@@ -179,29 +230,6 @@ const buildGraphQueryItems = (nodes: AssetNode[]) => {
     };
   }
   return Object.values(items);
-};
-
-const removeEdgesToHiddenAssets = (graphData: GraphData, allNodes: AssetNode[]) => {
-  const allNodesById = groupBy(allNodes, (n) => toGraphId(n.assetKey));
-  const notSourceAsset = (id: string) => !!allNodesById[id];
-
-  for (const node of Object.keys(graphData.upstream)) {
-    for (const edge of Object.keys(graphData.upstream[node]!)) {
-      if (!graphData.nodes[edge] && notSourceAsset(node)) {
-        delete graphData.upstream[node]![edge];
-        delete graphData.downstream[edge]![node];
-      }
-    }
-  }
-
-  for (const node of Object.keys(graphData.downstream)) {
-    for (const edge of Object.keys(graphData.downstream[node]!)) {
-      if (!graphData.nodes[edge] && notSourceAsset(node)) {
-        delete graphData.upstream[edge]![node];
-        delete graphData.downstream[node]![edge];
-      }
-    }
-  }
 };
 
 export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: AssetKey) => {
@@ -304,3 +332,81 @@ export const ASSET_GRAPH_QUERY = gql`
 
   ${ASSET_NODE_FRAGMENT}
 `;
+
+const computeGraphData = throttleLatest(
+  indexedDBAsyncMemoize<
+    Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
+    GraphDataState,
+    typeof computeGraphDataWrapper
+  >(computeGraphDataWrapper, (props) => {
+    return JSON.stringify(props);
+  }),
+  2000,
+);
+
+const getWorker = memoize(
+  (_key: string = '') => new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
+);
+
+let _id = 0;
+async function computeGraphDataWrapper(
+  props: Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
+): Promise<GraphDataState> {
+  if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
+    const worker = getWorker('computeGraphWorker');
+    return new Promise<GraphDataState>((resolve) => {
+      const id = ++_id;
+      const callback = (event: MessageEvent) => {
+        const data = event.data as GraphDataState & {id: number};
+        if (data.id === id) {
+          resolve(data);
+          worker.removeEventListener('message', callback);
+        }
+      };
+      worker.addEventListener('message', callback);
+      const message: ComputeGraphDataMessageType = {
+        type: 'computeGraphData',
+        id,
+        ...props,
+      };
+      worker.postMessage(message);
+    });
+  }
+  return computeGraphDataImpl(props);
+}
+
+const buildGraphData = throttleLatest(
+  indexedDBAsyncMemoize<BuildGraphDataMessageType, GraphData, typeof buildGraphDataWrapper>(
+    buildGraphDataWrapper,
+    (props) => {
+      return JSON.stringify(props);
+    },
+  ),
+  2000,
+);
+
+async function buildGraphDataWrapper(
+  props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,
+): Promise<GraphData> {
+  if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
+    const worker = getWorker('buildGraphWorker');
+    return new Promise<GraphData>((resolve) => {
+      const id = ++_id;
+      const callback = (event: MessageEvent) => {
+        const data = event.data as GraphData & {id: number};
+        if (data.id === id) {
+          resolve(data);
+          worker.removeEventListener('message', callback);
+        }
+      };
+      worker.addEventListener('message', callback);
+      const message: BuildGraphDataMessageType = {
+        type: 'buildGraphData',
+        id,
+        ...props,
+      };
+      worker.postMessage(message);
+    });
+  }
+  return buildGraphDataImpl(props.nodes);
+}

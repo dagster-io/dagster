@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.9.4 (core) / 0.25.4 (libraries)
+
+### New
+
+- Global op concurrency is now enabled on the default SQLite storage. Deployments that have not been migrated since `1.6.0` may need to run `dagster instance migrate` to enable.
+- Introduced `map_asset_specs` to enable modifying `AssetSpec`s and `AssetsDefinition`s in bulk.
+- Introduced `AssetSpec.replace_attributes` and `AssetSpec.merge_attributes` to easily alter properties of an asset spec.
+- [ui] Add a "View logs" button to open tick logs in the sensor tick history table.
+- [ui] Add Spanner kind icon.
+- [ui] The asset catalog now supports filtering using the asset selection syntax.
+- [dagster-pipes, dagster-aws] `PipesS3MessageReader` now has a new parameter `include_stdio_in_messages` which enables log forwarding to Dagster via Pipes messages.
+- [dagster-pipes] Experimental: A new Dagster Pipes message type `log_external_stream` has been added. It can be used to forward external logs to Dagster via Pipes messages.
+- [dagster-powerbi] Opts in to using admin scan APIs to pull data from a Power BI instance. This can be disabled by passing `load_powerbi_asset_specs(..., use_workspace_scan=False)`.
+- [dagster-sigma] Introduced an experimental `dagster-sigma snapshot` command, allowing Sigma workspaces to be captured to a file for faster subsequent loading.
+
+### Bugfixes
+
+- Fixed a bug that caused `DagsterExecutionStepNotFoundError` errors when trying to execute an asset check step of a run launched by a backfill.
+- Fixed an issue where invalid cron strings like "0 0 30 2 \*" that represented invalid dates in February were still allowed as Dagster cron strings, but then failed during schedule execution. Now, these invalid cronstrings will raise an exception when they are first loaded.
+- Fixed a bug where `owners` added to `AssetOut`s when defining a `@graph_multi_asset` were not added to the underlying `AssetsDefinition`.
+- Fixed a bug where using the `&` or `|` operators on `AutomationCondition`s with labels would cause that label to be erased.
+- [ui] Launching partitioned asset jobs from the launchpad now warns if no partition is selected.
+- [ui] Fixed unnecessary middle truncation occurring in dialogs.
+- [ui] Fixed timestamp labels and "Now" line rendering bugs on the sensor tick timeline.
+- [ui] Opening Dagster's UI with a single job defined takes you to the Overview page rather than the Job page.
+- [ui] Fix stretched tags in backfill table view for non-partitioned assets.
+- [ui] Open automation sensor evaluation details in a dialog instead of navigating away.
+- [ui] Fix scrollbars in dark mode.
+- [dagster-sigma] Workbooks filtered using a `SigmaFilter` no longer fetch lineage information.
+- [dagster-powerbi] Fixed an issue where reports without an upstream dataset dependency would fail to translate to an asset spec.
+
+### Deprecations
+
+- [dagster-powerbi] `DagsterPowerBITranslator.get_asset_key` is deprecated in favor of `DagsterPowerBITranslator.get_asset_spec().key`
+- [dagster-looker] `DagsterLookerApiTranslator.get_asset_key` is deprecated in favor of `DagsterLookerApiTranslator.get_asset_spec().key`
+- [dagster-sigma] `DagsterSigmaTranslator.get_asset_key` is deprecated in favor of `DagsterSigmaTranslator.get_asset_spec().key`
+- [dagster-tableau] `DagsterTableauTranslator.get_asset_key` is deprecated in favor of `DagsterTableauTranslator.get_asset_spec().key`
+
 ## 1.9.3 (core) / 0.25.3 (libraries)
 
 ### New

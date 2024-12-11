@@ -126,7 +126,7 @@ const SummaryContainer = styled.div`
   white-space: nowrap;
   padding: 4px 8px 8px;
 
-  :empty {
+  &:empty {
     display: none;
   }
 `;

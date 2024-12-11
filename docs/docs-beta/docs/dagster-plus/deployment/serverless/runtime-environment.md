@@ -2,7 +2,7 @@
 title: 'Serverless runtime environment'
 displayed_sidebar: 'dagsterPlus'
 sidebar_label: 'Runtime environment'
-sidebar_position: 30
+sidebar_position: 100
 ---
 
 By default, Dagster+ Serverless will package your code as PEX files and deploys them on Docker images. Using PEX files significantly reduces the time to deploy since it does not require building a new Docker image and provisioning a new container for every code change. However you are able to customize the Serverless runtime environment in various ways:
@@ -203,7 +203,7 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
 
 ## Use private Python packages \{#private-packages}
 
-If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the following steps can install a package from a private GitHub repository, eg. `my-org/private-repo`, as a dependency:
+If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the following steps can install a package from a private GitHub repository, e.g. `my-org/private-repo`, as a dependency:
 
 1.  In your `deploy.yml` file, add the following to the top of `steps:` section in the `dagster-cloud-default-deploy` job.
 

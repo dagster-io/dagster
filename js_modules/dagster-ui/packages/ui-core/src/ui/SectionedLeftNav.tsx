@@ -507,22 +507,22 @@ const SectionHeader = styled.button<{
 
   box-shadow: inset 0px 1px 0 ${Colors.keylineDefault()}, inset 0px -1px 0 ${Colors.keylineDefault()};
 
-  :disabled {
+  &:disabled {
     cursor: default;
   }
 
-  :hover,
-  :active {
+  &:hover,
+  &:active {
     background-color: ${Colors.backgroundLightHover()};
   }
 
-  :disabled:hover,
-  :disabled:active {
+  &:disabled:hover,
+  &:disabled:active {
     background-color: ${Colors.backgroundDisabled()};
   }
 
-  :focus,
-  :active {
+  &:focus,
+  &:active {
     outline: none;
   }
 
@@ -531,7 +531,7 @@ const SectionHeader = styled.button<{
     ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
   }
 
-  :disabled ${IconWrapper} {
+  &:disabled ${IconWrapper} {
     background-color: ${Colors.textDisabled()};
   }
 
@@ -540,11 +540,11 @@ const SectionHeader = styled.button<{
     margin-left: 6px;
   }
 
-  :not(:disabled) ${StyledTag} {
+  &:not(:disabled) ${StyledTag} {
     cursor: pointer;
   }
 
-  :disabled ${StyledTag} {
+  &:disabled ${StyledTag} {
     color: ${Colors.textDisabled()};
   }
 }`;

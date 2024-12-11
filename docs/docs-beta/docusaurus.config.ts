@@ -90,19 +90,13 @@ const config: Config = {
         {
           label: 'Dagster+',
           type: 'doc',
-          docId: 'dagster-plus',
+          docId: 'dagster-plus/index',
           position: 'left',
         },
         {
-          label: 'API Docs',
+          label: 'API reference',
           type: 'doc',
           docId: 'api/index',
-          position: 'left',
-        },
-        {
-          label: 'Reference',
-          type: 'doc',
-          docId: 'reference/index',
           position: 'left',
         },
         //{

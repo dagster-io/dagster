@@ -7,9 +7,9 @@ import {
   Heading,
   PageHeader,
   Spinner,
-  StyledRawCodeMirror,
   Subheading,
 } from '@dagster-io/ui-components';
+import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import CodeMirror from 'codemirror';
 import {memo, useContext, useMemo} from 'react';
 import {createGlobalStyle} from 'styled-components';

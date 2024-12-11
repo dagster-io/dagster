@@ -129,7 +129,7 @@ const CopyButton = styled.button`
   padding: 3px;
   margin-top: 2px;
 
-  :focus {
+  &:focus {
     outline: none;
   }
 
@@ -137,7 +137,7 @@ const CopyButton = styled.button`
     transition: background-color 100ms linear;
   }
 
-  :hover ${IconWrapper} {
+  &:hover ${IconWrapper} {
     background-color: ${Colors.accentGrayHover()};
   }
 `;
@@ -181,8 +181,8 @@ const BreadcrumbLink = styled(Link)`
   color: ${Colors.textLight()};
   white-space: nowrap;
 
-  :hover,
-  :active {
+  &:hover,
+  &:active {
     color: ${Colors.textLight()};
   }
 `;

@@ -3,7 +3,7 @@ title: "Getting started with Dagster+"
 displayed_sidebar: "dagsterPlus"
 ---
 
-# Get started with Dagster+
+# Getting started with Dagster+
 
 First [create a Dagster+ organization](https://dagster.plus/signup). Note: you can sign up with:
 - a Google email address
@@ -58,4 +58,4 @@ Refer to the guide for [adding a code location](/dagster-plus/deployment/code-lo
 
 ## Next steps
 
-Your Dagster+ account is automatically enrolled in a trial. You can [pick your plan type and enter your billing information](/dagster-plus/settings), or [contact the Dagster team](https://dagster.io/contact) if you need support or want to evaluate the Dagster+ Pro plan.
+Your Dagster+ account is automatically enrolled in a trial. You can [pick your plan type and enter your billing information](/dagster-plus/deployment/dagster-plus-settings), or [contact the Dagster team](https://dagster.io/contact) if you need support or want to evaluate the Dagster+ Pro plan.

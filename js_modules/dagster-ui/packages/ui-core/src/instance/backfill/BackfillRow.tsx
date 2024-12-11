@@ -238,7 +238,7 @@ const BackfillRequestedRange = ({
 }) => {
   const {partitionNames, numPartitions} = backfill;
 
-  if (numPartitions === null) {
+  if (numPartitions === null || numPartitions === 0) {
     return <span />;
   }
 
@@ -283,7 +283,7 @@ const TagButton = styled.button`
   padding: 0;
   margin: 0;
 
-  :focus {
+  &:focus {
     outline: none;
   }
 `;

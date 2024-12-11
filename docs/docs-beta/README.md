@@ -15,8 +15,6 @@ To install dependencies:
 yarn install
 ```
 
-**Note**: The yarn binary is checked in, so you do not need to install yarn yourself.
-
 It also uses [Vale](https://vale.sh/) to check for issues in the documentation.
 
 Install Vale with:
@@ -44,7 +42,6 @@ The docs are broken down into the following sections:
 
 - [Tutorials](./docs/tutorials/)
 - [Guides](./docs/guides/)
-- [Concepts](./docs/concepts/)
 
 `sidebar.ts` and `docusaurus.config.ts` are the main configuration files for the documentation.
 
@@ -116,7 +113,7 @@ To build the site for production:
 yarn build
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service. This also checks for any broken links in the documentation.
+This command generates static content into the `build` directory and can be served using any static contents hosting service. This also checks for any broken links in the documentation. Note that you will need to store Algolia credentials in local environment variables to build the site for production.
 
 ## Deployment
 
@@ -130,7 +127,7 @@ API documentation is built in Vercel by overriding the _Build Command_ to the fo
 yarn sync-api-docs && yarn build
 ```
 
-This runs the `scripts/vercel-sync-api-docs.sh` script which builds the MDX files using the custom `sphinx-mdx-builder`, and copies the resulting MDX files to `docs/api`.
+This runs the `scripts/vercel-sync-api-docs.sh` script which builds the MDX files using the custom `sphinx-mdx-builder`, and copies the resulting MDX files to `docs/api/python-api`.
 
 ## Search
 

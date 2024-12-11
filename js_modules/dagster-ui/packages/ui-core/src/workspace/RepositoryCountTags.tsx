@@ -60,8 +60,8 @@ export const RepositoryCountTags = ({
 };
 
 const CountLink = styled(Link)`
-  :hover,
-  :active {
+  &:hover,
+  &:active {
     outline: none;
     text-decoration: none;
   }
