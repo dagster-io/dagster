@@ -23,9 +23,7 @@ jest.mock('react-router-dom', () => ({
 
 // Mocking useTrackEvent
 jest.mock('../../app/analytics', () => ({
-  useTrackEvent: jest.fn(() => {
-    jest.fn();
-  }),
+  useTrackEvent: jest.fn(() => jest.fn()),
 }));
 
 const onCloseMock = jest.fn();
