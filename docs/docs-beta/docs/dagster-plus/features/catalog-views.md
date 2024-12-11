@@ -1,10 +1,7 @@
 ---
-title: "Saving asset filters as catalog views"
-displayed_sidebar: "dagsterPlus"
+title: "Catalog views"
 sidebar_position: 100
 ---
-
-# Saving asset filters as catalog views
 
 Catalog views enable you to filter down your view of the Dagster Asset catalog in Dagster+, allowing you to toggle between sets of assets that you care about most.
 
@@ -27,7 +24,7 @@ In this guide, you'll learn how to create, access, and share catalog views with 
 
 
 
-## Create catalog views
+## Creating catalog views
 
 To view the Dagster+ Asset catalog, use the **Catalog** button on the top navigation.
 
@@ -39,7 +36,7 @@ To create a new catalog view, you have two options:
 1. Create a new catalog view from scratch, from the catalog view menu.
 2. Create a new catalog view from your current set of filters.
 
-### Create a new catalog view from scratch
+### Creating a new catalog view from scratch
 
 1. Click the catalog view button to open the catalog view menu. From here, click the **New** button.
 2. Give the view a name and optionally, a description and icon.
@@ -51,7 +48,7 @@ To create a new catalog view, you have two options:
 
 Give your view a name and optionally a description and icon. Next, you can select one or more filters to apply to your view by clicking the "Add filters" button. Filters can select a subset of assets based on their metadata, tags, kinds, owners, asset groups, or other properties.
 
-### Create a new catalog view from your current set of filters
+### Creating a new catalog view from your current set of filters
 
 When viewing the global asset lineage or asset list, you can create a new catalog view from your current set of filters.
 
@@ -61,7 +58,7 @@ When viewing the global asset lineage or asset list, you can create a new catalo
 4. To make the view shareable, toggle the **Public view** switch.
 5. Click **Create view** to create the view.
 
-## Edit, duplicate, or delete catalog views
+## Editing, duplicating, or deleting catalog views
 
 1. Click the catalog view button to open the catalog view menu.
 2. Search for the view you want to edit, duplicate, or delete.
