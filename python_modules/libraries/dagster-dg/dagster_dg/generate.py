@@ -61,6 +61,9 @@ def generate_code_location(path: str, editable_dagster_root: Optional[str] = Non
         uv_sources=uv_sources,
     )
 
+    # Build the venv
+    execute_code_location_command(Path(path), ("uv", "sync"))
+
 
 def generate_component_type(root_path: str, name: str) -> None:
     click.echo(f"Creating a Dagster component type at {root_path}/{name}.py.")
