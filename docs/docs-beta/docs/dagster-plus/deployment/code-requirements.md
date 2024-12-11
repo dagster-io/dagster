@@ -1,6 +1,5 @@
 ---
 title: 'Dagster+ code requirements'
-displayed_sidebar: 'dagsterPlus'
 sidebar_label: "Code requirements"
 sidebar_position: 10
 ---
