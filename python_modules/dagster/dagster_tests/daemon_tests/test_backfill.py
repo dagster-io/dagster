@@ -4,6 +4,7 @@ import random
 import string
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from unittest import mock
 
 import dagster._check as check
@@ -85,6 +86,7 @@ from dagster._core.test_utils import (
     step_did_not_run,
     step_failed,
     step_succeeded,
+    wait_for_futures,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -580,10 +582,12 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
             break
 
 
+@pytest.mark.parametrize("parallel", [True, False])
 def test_simple_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
     remote_repo: RemoteRepository,
+    parallel: bool,
 ):
     partition_set = remote_repo.get_partition_set("the_job_partition_set")
     instance.add_backfill(
@@ -600,7 +604,25 @@ def test_simple_backfill(
     )
     assert instance.get_runs_count() == 0
 
-    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    if parallel:
+        backfill_daemon_futures = {}
+        list(
+            execute_backfill_iteration(
+                workspace_context,
+                get_default_daemon_logger("BackfillDaemon"),
+                threadpool_executor=ThreadPoolExecutor(2),
+                backfill_futures=backfill_daemon_futures,
+            )
+        )
+
+        wait_for_futures(backfill_daemon_futures)
+        [list(future.result()) for future in backfill_daemon_futures.values()]
+    else:
+        list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
 
     assert instance.get_runs_count() == 3
     runs = instance.get_runs()
@@ -648,10 +670,12 @@ def test_canceled_backfill(
     assert instance.get_runs_count() == 1
 
 
+@pytest.mark.parametrize("parallel", [True, False])
 def test_failure_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
     remote_repo: RemoteRepository,
+    parallel: bool,
 ):
     output_file = _failure_flag_file()
     partition_set = remote_repo.get_partition_set("conditional_failure_job_partition_set")
@@ -671,11 +695,26 @@ def test_failure_backfill(
 
     try:
         touch_file(output_file)
-        list(
-            execute_backfill_iteration(
-                workspace_context, get_default_daemon_logger("BackfillDaemon")
+        if parallel:
+            backfill_daemon_futures = {}
+            list(
+                execute_backfill_iteration(
+                    workspace_context,
+                    get_default_daemon_logger("BackfillDaemon"),
+                    threadpool_executor=ThreadPoolExecutor(2),
+                    backfill_futures=backfill_daemon_futures,
+                )
             )
-        )
+
+            wait_for_futures(backfill_daemon_futures)
+            [list(future.result()) for future in backfill_daemon_futures.values()]
+        else:
+            list(
+                execute_backfill_iteration(
+                    workspace_context, get_default_daemon_logger("BackfillDaemon")
+                )
+            )
+
         wait_for_all_runs_to_start(instance)
     finally:
         os.remove(output_file)
@@ -718,7 +757,26 @@ def test_failure_backfill(
     )
 
     assert not os.path.isfile(_failure_flag_file())
-    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    if parallel:
+        backfill_daemon_futures = {}
+        list(
+            execute_backfill_iteration(
+                workspace_context,
+                get_default_daemon_logger("BackfillDaemon"),
+                threadpool_executor=ThreadPoolExecutor(2),
+                backfill_futures=backfill_daemon_futures,
+            )
+        )
+
+        wait_for_futures(backfill_daemon_futures)
+        [list(future.result()) for future in backfill_daemon_futures.values()]
+    else:
+        list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+
     wait_for_all_runs_to_start(instance)
 
     assert instance.get_runs_count() == 6
