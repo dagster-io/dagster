@@ -25,7 +25,7 @@ def create_compute_log_file_key():
 @contextmanager
 def redirect_to_file(stream, filepath):
     with open(filepath, "a+", buffering=1, encoding="utf8") as file_stream:
-        with redirect_stream(file_stream, stream):
+        with redirect_stream(file_stream, stream):  # pyright: ignore[reportArgumentType]
             yield
 
 
@@ -62,7 +62,7 @@ def redirect_stream(to_stream=os.devnull, from_stream=sys.stdout):
     with os.fdopen(os.dup(from_fd), "wb") as copied:
         from_stream.flush()
         try:
-            os.dup2(_fileno(to_stream), from_fd)
+            os.dup2(_fileno(to_stream), from_fd)  # pyright: ignore[reportArgumentType]
         except ValueError:
             with open(to_stream, "wb") as to_file:
                 os.dup2(to_file.fileno(), from_fd)
@@ -70,7 +70,7 @@ def redirect_stream(to_stream=os.devnull, from_stream=sys.stdout):
             yield from_stream
         finally:
             from_stream.flush()
-            to_stream.flush()
+            to_stream.flush()  # pyright: ignore[reportAttributeAccessIssue]
             os.dup2(copied.fileno(), from_fd)
 
 

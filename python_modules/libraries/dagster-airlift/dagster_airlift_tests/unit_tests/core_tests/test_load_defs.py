@@ -60,12 +60,12 @@ from dagster_airlift_tests.unit_tests.conftest import (
 )
 
 
-@executor
+@executor  # pyright: ignore[reportCallIssue,reportArgumentType]
 def nonstandard_executor(init_context):
     pass
 
 
-@logger
+@logger  # pyright: ignore[reportCallIssue,reportArgumentType]
 def nonstandard_logger(init_context):
     pass
 
@@ -88,7 +88,7 @@ def a():
 b_spec = AssetSpec(key="b")
 
 
-@asset_check(asset=a)
+@asset_check(asset=a)  # pyright: ignore[reportArgumentType]
 def a_check():
     pass
 
@@ -112,8 +112,8 @@ def test_defs_passthrough() -> None:
             jobs=[the_job],
             sensors=[some_sensor],
             schedules=[some_schedule],
-            loggers={"the_logger": nonstandard_logger},
-            executor=nonstandard_executor,
+            loggers={"the_logger": nonstandard_logger},  # pyright: ignore[reportArgumentType]
+            executor=nonstandard_executor,  # pyright: ignore[reportArgumentType]
         ),
     )
     assert defs.executor == nonstandard_executor

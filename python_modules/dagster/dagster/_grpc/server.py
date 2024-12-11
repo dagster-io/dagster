@@ -1284,7 +1284,7 @@ class DagsterGrpcServer:
         try:
             self.server.wait_for_termination()
         finally:
-            self._api_servicer.cleanup()
+            self._api_servicer.cleanup()  # pyright: ignore[reportAttributeAccessIssue]
             server_termination_thread.join()
 
 

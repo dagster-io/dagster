@@ -469,7 +469,8 @@ class ConfigurableResourceFactory(
         return self.from_resource_context(
             build_init_resource_context(
                 config=post_process_config(
-                    self._config_schema.config_type, self._convert_to_config_dictionary()
+                    self._config_schema.config_type,  # pyright: ignore[reportArgumentType]
+                    self._convert_to_config_dictionary(),  # pyright: ignore[reportArgumentType]
                 ).value,
             ),
             nested_resources=self.nested_resources,
@@ -485,7 +486,8 @@ class ConfigurableResourceFactory(
         with self.from_resource_context_cm(
             build_init_resource_context(
                 config=post_process_config(
-                    self._config_schema.config_type, self._convert_to_config_dictionary()
+                    self._config_schema.config_type,  # pyright: ignore[reportArgumentType]
+                    self._convert_to_config_dictionary(),  # pyright: ignore[reportArgumentType]
                 ).value
             ),
             nested_resources=self.nested_resources,

@@ -193,7 +193,7 @@ def test_materialize_asset_specs_conflicting_key():
 @ignore_warning("Parameter `io_manager_def` .* is experimental")
 @ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_materialize_source_asset_conflicts():
-    @io_manager(required_resource_keys={"foo"})
+    @io_manager(required_resource_keys={"foo"})  # pyright: ignore[reportArgumentType]
     def the_manager():
         pass
 

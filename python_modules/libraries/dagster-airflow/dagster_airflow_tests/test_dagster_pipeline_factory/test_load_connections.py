@@ -58,7 +58,7 @@ class TestConnectionsAirflow2(unittest.TestCase):
                 host="prod",
                 password="test_token",
                 description="test-org",
-                port="test-port",
+                port="test-port",  # pyright: ignore[reportArgumentType]
                 schema="test-port",
                 extra={"foo": "bar"},
             )
@@ -120,7 +120,7 @@ class TestConnectionsAirflow1(unittest.TestCase):
                 conn_type="dagster",
                 host="prod",
                 password="test_token",
-                port="test-port",
+                port="test-port",  # pyright: ignore[reportArgumentType]
                 schema="test-port",
                 extra=json.dumps({"foo": "bar"}),
             )

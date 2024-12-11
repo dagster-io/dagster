@@ -212,7 +212,7 @@ class TestScheduleStorage:
 
         new_schedule = schedule.with_status(InstigatorStatus.RUNNING).with_data(
             ScheduleInstigatorData(
-                cron_schedule=schedule.instigator_data.cron_schedule,
+                cron_schedule=schedule.instigator_data.cron_schedule,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 start_timestamp=now_time,
             )
         )

@@ -68,7 +68,7 @@ def celery_mock():
                         "execute_step_args_packed",
                     )
                 )
-                args = execute_step_args.get_command_args()
+                args = execute_step_args.get_command_args()  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 result = subprocess.run(args, check=True, capture_output=True)
                 raw_logs = result.stdout
 

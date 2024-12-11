@@ -10,7 +10,10 @@ def test_sling_resource_env_with_source_target():
         name="duckdb_source", type="duckdb", connection_string="duckdb://localhost:5000"
     )
     target = SlingConnectionResource(
-        name="postgres_target", type="postgres", host="abchost.com", port="420"
+        name="postgres_target",
+        type="postgres",
+        host="abchost.com",  # pyright: ignore[reportCallIssue]
+        port="420",  # pyright: ignore[reportCallIssue]
     )
 
     sling_resource = SlingResource(connections=[source, target])
@@ -34,17 +37,17 @@ def test_sling_resource_env_with_connection_resources():
         SlingConnectionResource(
             name="CLOUD_PRODUCTION",
             type="postgres",
-            host="CLOUD_PROD_READ_REPLICA_POSTGRES_HOST",
-            user="CLOUD_PROD_POSTGRES_USER",
-            database="dagster",
+            host="CLOUD_PROD_READ_REPLICA_POSTGRES_HOST",  # pyright: ignore[reportCallIssue]
+            user="CLOUD_PROD_POSTGRES_USER",  # pyright: ignore[reportCallIssue]
+            database="dagster",  # pyright: ignore[reportCallIssue]
         ),
         SlingConnectionResource(
             name="SLING_DB",
             type="snowflake",
-            host="SNOWFLAKE_ACCOUNT",
-            user="SNOWFLAKE_SLING_USER",
-            password=EnvVar("SNOWFLAKE_SLING_PASSWORD"),
-            database="sling",
+            host="SNOWFLAKE_ACCOUNT",  # pyright: ignore[reportCallIssue]
+            user="SNOWFLAKE_SLING_USER",  # pyright: ignore[reportCallIssue]
+            password=EnvVar("SNOWFLAKE_SLING_PASSWORD"),  # pyright: ignore[reportCallIssue]
+            database="sling",  # pyright: ignore[reportCallIssue]
         ),
     ]
 

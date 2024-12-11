@@ -333,11 +333,11 @@ def _derive_state_of_past_run(
             continue
 
         for output in step_snap.outputs:
-            if output.properties.is_dynamic:
+            if output.properties.is_dynamic:  # pyright: ignore[reportOptionalMemberAccess]
                 if step_key in dynamic_outputs and output.name in dynamic_outputs[step_key]:
                     continue
                 elif step_key in successful_steps_in_parent_run_logs:
-                    if output.properties.is_required:
+                    if output.properties.is_required:  # pyright: ignore[reportOptionalMemberAccess]
                         dynamic_outputs[step_key][output.name] = []
                     else:
                         dynamic_outputs[step_key][output.name] = None

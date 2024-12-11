@@ -273,14 +273,6 @@ postgres_extra_cmds = [
 # special-case those here
 EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
-        "examples/with_airflow",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_10,
-            AvailablePythonVersion.V3_11,
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
         "examples/assets_smoke_test",
     ),
     PackageSpec(

@@ -1,8 +1,36 @@
 from datetime import datetime
+from unittest import mock
 
 from dagster import TimeWindow
-from dagster._core.storage.db_io_manager import TablePartitionDimension, TableSlice
-from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, _get_cleanup_statement
+from dagster._core.definitions import materialize
+from dagster._core.definitions.decorators import asset
+from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
+from dagster_snowflake.snowflake_io_manager import (
+    SnowflakeDbClient,
+    SnowflakeIOManager,
+    _get_cleanup_statement,
+)
+
+
+class PassTypeHandler(DbTypeHandler[int]):
+    def handle_output(self, *args, **kwargs):
+        return None
+
+    def load_input(self, *args, **kwargs):
+        return None
+
+    @property
+    def supported_types(self):
+        return [int]
+
+
+class TestSnowflakeIOManager(SnowflakeIOManager):
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
+    def type_handlers(self):
+        return [PassTypeHandler()]
 
 
 def test_get_select_statement():
@@ -173,3 +201,26 @@ def test_get_cleanup_statement_multi_partitioned():
         " AND\nmy_timestamp_col >= '2020-01-02 00:00:00' AND my_timestamp_col < '2020-02-03"
         " 00:00:00'"
     )
+
+
+def test_io_manager_snowflake_additional_snowflake_connection_args():
+    """Tests that args passed to additional_snowflake_connection_args are correctly forwarded to
+    snowflake.connector.connect.
+    """
+    with mock.patch("snowflake.connector.connect") as snowflake_conn_mock:
+        io_mgr = TestSnowflakeIOManager(
+            account="account",
+            user="user",
+            password="password",
+            database="TESTDB",
+            schema="TESTSCHEMA",
+            additional_snowflake_connection_args={"foo": "bar"},
+        )
+
+        @asset
+        def return_one():
+            return 1
+
+        materialize([return_one], resources={"io_manager": io_mgr})
+        assert snowflake_conn_mock.call_count == 1
+        assert snowflake_conn_mock.call_args[1]["foo"] == "bar"

@@ -138,7 +138,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         if GRPC_INFO_TAG not in tags:
             return None
 
-        grpc_info = seven.json.loads(tags.get(GRPC_INFO_TAG))
+        grpc_info = seven.json.loads(tags.get(GRPC_INFO_TAG))  # pyright: ignore[reportArgumentType]
 
         return DagsterGrpcClient(
             port=grpc_info.get("port"),
@@ -194,7 +194,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 for run_id in self._run_ids
                 if (
                     self._instance.get_run_by_id(run_id)
-                    and not self._instance.get_run_by_id(run_id).is_finished
+                    and not self._instance.get_run_by_id(run_id).is_finished  # pyright: ignore[reportOptionalMemberAccess]
                 )
             ]
 

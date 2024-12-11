@@ -180,7 +180,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         fields = self._asdict()
         for k in fields.keys():
             if k in kwargs:
-                fields[k] = kwargs[k]
+                fields[k] = kwargs[k]  # pyright: ignore[reportIndexIssue]
         return RunRequest(**fields)
 
     def with_resolved_tags_and_config(

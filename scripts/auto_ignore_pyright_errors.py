@@ -53,8 +53,8 @@ def main():
                 rule = match.group("rules").strip()
                 # Only append if it's a valid rule
                 if rule and "pyright:" not in rule:
-                    file_path = error_pattern.match(previous_line).group("file_name")
-                    line_number = int(error_pattern.match(previous_line).group("line_number"))
+                    file_path = error_pattern.match(previous_line).group("file_name")  # pyright: ignore[reportOptionalMemberAccess]
+                    line_number = int(error_pattern.match(previous_line).group("line_number"))  # pyright: ignore[reportOptionalMemberAccess]
                     errors[file_path][line_number].append(rule)
 
             # Reset for the next error message

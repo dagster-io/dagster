@@ -354,7 +354,7 @@ def test_logs_in_start_execution_predefined():
             # assert that the watching run storage captured the run correctly from the other process
             run = instance.get_run_by_id(run_id)
 
-            assert run.status == DagsterRunStatus.SUCCESS
+            assert run.status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def _is_done(instance, run_id):

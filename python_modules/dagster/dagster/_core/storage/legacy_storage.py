@@ -385,7 +385,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage._instance  # noqa: SLF001
 
     def index_connection(self):
-        return self._storage.event_log_storage.index_connection()
+        return self._storage.event_log_storage.index_connection()  # pyright: ignore[reportAttributeAccessIssue]
 
     def register_instance(self, instance: "DagsterInstance") -> None:
         if not self._storage.has_instance:

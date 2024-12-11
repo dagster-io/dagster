@@ -35,7 +35,7 @@ def test_op_def():
 
     @op(
         ins={"input_one": In(String)},
-        out=Out(Any),
+        out=Out(Any),  # pyright: ignore[reportArgumentType]
         config_schema={"another_field": Int},
     )
     def op_one(_context, input_one):
@@ -123,7 +123,7 @@ def test_job_types():
 
     @op(
         ins={"input_one": In(String)},
-        out=Out(Any),
+        out=Out(Any),  # pyright: ignore[reportArgumentType]
         config_schema={"another_field": Int},
     )
     def op_one(_context, input_one):

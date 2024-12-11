@@ -49,7 +49,7 @@ class AirflowDatabase:
             raise DagsterInvariantViolationError(
                 f'Date "{execution_date_str}" exceeds the largest valid C integer on the system.'
             )
-        return execution_date
+        return execution_date  # pyright: ignore[reportReturnType]
 
     def _parse_execution_date_for_asset(
         self, dag: DAG, run_tags: Mapping[str, str]
@@ -58,7 +58,7 @@ class AirflowDatabase:
         if not execution_date_str:
             raise DagsterInvariantViolationError("dagster/partition is not set")
         execution_date = pendulum.parse(execution_date_str, tz=pendulum.timezone(dag.timezone.name))
-        return execution_date
+        return execution_date  # pyright: ignore[reportReturnType]
 
     def get_dagrun(self, dag: DAG) -> DagRun:
         run_tags = self.dagster_run.tags if self.dagster_run else {}

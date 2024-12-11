@@ -203,7 +203,7 @@ def test_more_than_one_job():
             match=re.escape("Must provide --job as there is more than one job in bar"),
         ):
             execute_execute_command(
-                kwargs={
+                kwargs={  # pyright: ignore[reportArgumentType]
                     "repository_yaml": None,
                     "job_name": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
@@ -218,7 +218,7 @@ def test_more_than_one_job():
             match=re.escape("Must provide --job as there is more than one job in bar. "),
         ):
             execute_execute_command(
-                kwargs={
+                kwargs={  # pyright: ignore[reportArgumentType]
                     "repository_yaml": None,
                     "job_name": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
@@ -274,7 +274,7 @@ def test_attribute_not_found():
             match=re.escape("nope not found at module scope in file"),
         ):
             execute_execute_command(
-                kwargs={
+                kwargs={  # pyright: ignore[reportArgumentType]
                     "repository_yaml": None,
                     "job_name": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
@@ -295,7 +295,7 @@ def test_attribute_is_wrong_thing():
             ),
         ):
             execute_execute_command(
-                kwargs={
+                kwargs={  # pyright: ignore[reportArgumentType]
                     "repository_yaml": None,
                     "job_name": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
@@ -316,7 +316,7 @@ def test_attribute_fn_returns_wrong_thing():
             ),
         ):
             execute_execute_command(
-                kwargs={
+                kwargs={  # pyright: ignore[reportArgumentType]
                     "repository_yaml": None,
                     "job_name": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),

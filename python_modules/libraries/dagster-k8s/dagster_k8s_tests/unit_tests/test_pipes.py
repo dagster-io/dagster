@@ -450,7 +450,7 @@ def test_namespace_autodetect_from_kubeconfig_active_context(kubeconfig_with_nam
 def test_pipes_client_namespace_autodetection_from_secret(tmpdir, kubeconfig_dummy):
     namespace_secret_path = Path(tmpdir) / "namespace_secret"
     namespace_secret_path.write_text("my-namespace-from-secret")
-    got = _detect_current_namespace(kubeconfig_with_namespace, namespace_secret_path)
+    got = _detect_current_namespace(kubeconfig_with_namespace, namespace_secret_path)  # pyright: ignore[reportArgumentType]
     assert got == "my-namespace-from-secret"
 
 

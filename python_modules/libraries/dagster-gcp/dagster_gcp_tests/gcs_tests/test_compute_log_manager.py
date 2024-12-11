@@ -74,9 +74,9 @@ def test_compute_log_manager(gcs_bucket):
 
             # Capture API
             log_data = manager.get_log_data(log_key)
-            stdout = log_data.stdout.decode("utf-8")
+            stdout = log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             assert stdout == HELLO_WORLD + SEPARATOR
-            stderr = log_data.stderr.decode("utf-8")
+            stderr = log_data.stderr.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
@@ -99,9 +99,9 @@ def test_compute_log_manager(gcs_bucket):
 
             # Capture API
             log_data = manager.get_log_data(log_key)
-            stdout = log_data.stdout.decode("utf-8")
+            stdout = log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             assert stdout == HELLO_WORLD + SEPARATOR
-            stderr = log_data.stderr.decode("utf-8")
+            stderr = log_data.stderr.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
@@ -118,7 +118,7 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
 
         easy()
 
-    with open(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"), encoding="utf8") as f:
+    with open(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"), encoding="utf8") as f:  # pyright: ignore[reportArgumentType]
         with tempfile.TemporaryDirectory() as temp_dir:
             with environ({"ENV_VAR": f.read(), "DAGSTER_HOME": temp_dir}):
                 run_store = SqliteRunStorage.from_local(temp_dir)
@@ -153,7 +153,7 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
 
                 # capture API
                 log_data = manager.get_log_data(log_key)
-                stdout = log_data.stdout.decode("utf-8")
+                stdout = log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
                 assert stdout == HELLO_WORLD + SEPARATOR
 
                 # Check GCS directly
@@ -175,7 +175,7 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
 
                 # capture API
                 log_data = manager.get_log_data(log_key)
-                stdout = log_data.stdout.decode("utf-8")
+                stdout = log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
                 assert stdout == HELLO_WORLD + SEPARATOR
 
 
@@ -238,8 +238,8 @@ def test_external_compute_log_manager(gcs_bucket):
         )
         assert len(captured_log_entries) == 1
         entry = captured_log_entries[0]
-        assert entry.dagster_event.logs_captured_data.external_stdout_url
-        assert entry.dagster_event.logs_captured_data.external_stderr_url
+        assert entry.dagster_event.logs_captured_data.external_stdout_url  # pyright: ignore[reportOptionalMemberAccess]
+        assert entry.dagster_event.logs_captured_data.external_stderr_url  # pyright: ignore[reportOptionalMemberAccess]
 
 
 @pytest.mark.integration
@@ -251,7 +251,7 @@ def test_prefix_filter(gcs_bucket):
         time_str = get_current_datetime().strftime("%Y_%m_%d__%H_%M_%S")
         log_key = ["arbitrary", "log", "key", time_str]
         with manager.open_log_stream(log_key, ComputeIOType.STDERR) as write_stream:
-            write_stream.write("hello hello")
+            write_stream.write("hello hello")  # pyright: ignore[reportOptionalMemberAccess]
 
         logs = (
             storage.Client()
@@ -275,7 +275,7 @@ def test_get_log_keys_for_log_key_prefix(gcs_bucket):
         def write_log_file(file_id: int, io_type: ComputeIOType):
             full_log_key = [*log_key_prefix, f"{file_id}"]
             with manager.open_log_stream(full_log_key, io_type) as f:
-                f.write("foo")
+                f.write("foo")  # pyright: ignore[reportOptionalMemberAccess]
 
     log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
     assert len(log_keys) == 0
@@ -284,7 +284,7 @@ def test_get_log_keys_for_log_key_prefix(gcs_bucket):
         write_log_file(i, ComputeIOType.STDERR)
 
     log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
-    assert sorted(log_keys) == [
+    assert sorted(log_keys) == [  # pyright: ignore[reportArgumentType]
         [*log_key_prefix, "0"],
         [*log_key_prefix, "1"],
         [*log_key_prefix, "2"],
@@ -296,11 +296,11 @@ def test_get_log_keys_for_log_key_prefix(gcs_bucket):
 
     log_key = [*log_key_prefix, "4"]
     with manager.local_manager.open_log_stream(log_key, ComputeIOType.STDOUT) as f:
-        f.write("foo")
+        f.write("foo")  # pyright: ignore[reportOptionalMemberAccess]
     manager.upload_to_cloud_storage(log_key, ComputeIOType.STDOUT)
 
     log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
-    assert sorted(log_keys) == [
+    assert sorted(log_keys) == [  # pyright: ignore[reportArgumentType]
         [*log_key_prefix, "0"],
         [*log_key_prefix, "1"],
         [*log_key_prefix, "2"],
@@ -326,13 +326,15 @@ def test_storage_download_url_fallback(gcs_bucket):
             blob_fn.side_effect = _return_mocked_blob
 
             with manager.open_log_stream(log_key, ComputeIOType.STDERR) as write_stream:
-                write_stream.write("hello hello")
+                write_stream.write("hello hello")  # pyright: ignore[reportOptionalMemberAccess]
 
             # can read bytes
-            log_data, _ = manager.log_data_for_type(log_key, ComputeIOType.STDERR, 0, None)
+            log_data, _ = manager.get_log_data_for_type(log_key, ComputeIOType.STDERR, 0, None)
+            assert log_data
             assert log_data.decode("utf-8") == "hello hello"
 
             url = manager.download_url_for_type(log_key, ComputeIOType.STDERR)
+            assert url
             assert url.startswith("/logs")  # falls back to local storage url
 
 

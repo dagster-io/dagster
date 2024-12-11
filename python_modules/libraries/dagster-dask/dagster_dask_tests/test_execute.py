@@ -160,7 +160,7 @@ def sleepy_dask_job() -> JobDefinition:
     """
     Fails because 'DagsterExecutionInterruptedError' is not actually raised-- there's a timeout
     instead. It's not clear that the test ever was working-- prior to conversion to op/job/graph
-    APIs, it appears to have been mistakenly not using the dask executor. 
+    APIs, it appears to have been mistakenly not using the dask executor.
     """
 )
 def test_dask_terminate():
@@ -184,8 +184,8 @@ def test_dask_terminate():
             run_config=run_config,
         )
 
-        for event in execute_run_iterator(
-            i_job=reconstructable(sleepy_dask_job),
+        for event in execute_run_iterator(  # pyright: ignore[reportCallIssue]
+            i_job=reconstructable(sleepy_dask_job),  # pyright: ignore[reportCallIssue]
             dagster_run=dagster_run,
             instance=instance,
         ):

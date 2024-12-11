@@ -48,10 +48,10 @@ def test_repository_snap_all_props():
     repo_snap = RepositorySnap.from_def(noop_repo)
 
     assert repo_snap.name == "noop_repo"
-    assert len(repo_snap.job_datas) == 1
-    assert isinstance(repo_snap.job_datas[0], JobDataSnap)
+    assert len(repo_snap.job_datas) == 1  # pyright: ignore[reportArgumentType]
+    assert isinstance(repo_snap.job_datas[0], JobDataSnap)  # pyright: ignore[reportOptionalSubscript]
 
-    job_snapshot = repo_snap.job_datas[0].job
+    job_snapshot = repo_snap.job_datas[0].job  # pyright: ignore[reportOptionalSubscript]
     assert isinstance(job_snapshot, JobSnap)
     assert job_snapshot.name == "noop_job"
     assert job_snapshot.description is None
@@ -71,11 +71,11 @@ def test_repository_snap_definitions_resources_basic():
     repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
 
-    assert len(repo_snap.resources) == 1
-    assert repo_snap.resources[0].name == "foo"
-    assert repo_snap.resources[0].resource_snapshot.name == "foo"
-    assert repo_snap.resources[0].resource_snapshot.description is None
-    assert repo_snap.resources[0].configured_values == {}
+    assert len(repo_snap.resources) == 1  # pyright: ignore[reportArgumentType]
+    assert repo_snap.resources[0].name == "foo"  # pyright: ignore[reportOptionalSubscript]
+    assert repo_snap.resources[0].resource_snapshot.name == "foo"  # pyright: ignore[reportOptionalSubscript]
+    assert repo_snap.resources[0].resource_snapshot.description is None  # pyright: ignore[reportOptionalSubscript]
+    assert repo_snap.resources[0].configured_values == {}  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_repository_snap_definitions_resources_nested() -> None:
@@ -260,20 +260,20 @@ def test_repository_snap_definitions_resources_complex():
     repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
 
-    assert len(repo_snap.resources) == 1
-    assert repo_snap.resources[0].name == "foo"
-    assert repo_snap.resources[0].resource_snapshot.name == "foo"
-    assert repo_snap.resources[0].resource_snapshot.description == "My description."
+    assert len(repo_snap.resources) == 1  # pyright: ignore[reportArgumentType]
+    assert repo_snap.resources[0].name == "foo"  # pyright: ignore[reportOptionalSubscript]
+    assert repo_snap.resources[0].resource_snapshot.name == "foo"  # pyright: ignore[reportOptionalSubscript]
+    assert repo_snap.resources[0].resource_snapshot.description == "My description."  # pyright: ignore[reportOptionalSubscript]
 
     # Ensure we get config snaps for the resource's fields
-    assert len(repo_snap.resources[0].config_field_snaps) == 1
-    snap = repo_snap.resources[0].config_field_snaps[0]
+    assert len(repo_snap.resources[0].config_field_snaps) == 1  # pyright: ignore[reportOptionalSubscript]
+    snap = repo_snap.resources[0].config_field_snaps[0]  # pyright: ignore[reportOptionalSubscript]
     assert snap.name == "my_string"
     assert not snap.is_required
     assert snap.default_value_as_json_str == '"bar"'
 
     # Ensure we get the configured values for the resource
-    assert repo_snap.resources[0].configured_values == {
+    assert repo_snap.resources[0].configured_values == {  # pyright: ignore[reportOptionalSubscript]
         "my_string": '"baz"',
     }
 
@@ -285,8 +285,8 @@ def test_repository_snap_empty():
 
     repo_snap = RepositorySnap.from_def(empty_repo)
     assert repo_snap.name == "empty_repo"
-    assert len(repo_snap.job_datas) == 0
-    assert len(repo_snap.resources) == 0
+    assert len(repo_snap.job_datas) == 0  # pyright: ignore[reportArgumentType]
+    assert len(repo_snap.resources) == 0  # pyright: ignore[reportArgumentType]
 
 
 def test_repository_snap_definitions_env_vars() -> None:
@@ -587,10 +587,10 @@ def test_asset_check():
     def my_asset():
         pass
 
-    @asset_check(asset=my_asset)
+    @asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
     def my_asset_check(): ...
 
-    @asset_check(asset=my_asset)
+    @asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
     def my_asset_check_2(): ...
 
     defs = Definitions(
@@ -601,9 +601,9 @@ def test_asset_check():
     repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
 
-    assert len(repo_snap.asset_check_nodes) == 2
-    assert repo_snap.asset_check_nodes[0].name == "my_asset_check"
-    assert repo_snap.asset_check_nodes[1].name == "my_asset_check_2"
+    assert len(repo_snap.asset_check_nodes) == 2  # pyright: ignore[reportArgumentType]
+    assert repo_snap.asset_check_nodes[0].name == "my_asset_check"  # pyright: ignore[reportOptionalSubscript]
+    assert repo_snap.asset_check_nodes[1].name == "my_asset_check_2"  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_asset_check_in_asset_op():
@@ -616,7 +616,7 @@ def test_asset_check_in_asset_op():
     def my_asset():
         pass
 
-    @asset_check(asset=my_asset)
+    @asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
     def my_asset_check(): ...
 
     defs = Definitions(
@@ -627,10 +627,10 @@ def test_asset_check_in_asset_op():
     repo = defs.get_repository_def()
     repo_snap = RepositorySnap.from_def(repo)
 
-    assert len(repo_snap.asset_check_nodes) == 3
-    assert repo_snap.asset_check_nodes[0].name == "my_asset_check"
-    assert repo_snap.asset_check_nodes[1].name == "my_other_asset_check"
-    assert repo_snap.asset_check_nodes[2].name == "my_other_asset_check_2"
+    assert len(repo_snap.asset_check_nodes) == 3  # pyright: ignore[reportArgumentType]
+    assert repo_snap.asset_check_nodes[0].name == "my_asset_check"  # pyright: ignore[reportOptionalSubscript]
+    assert repo_snap.asset_check_nodes[1].name == "my_other_asset_check"  # pyright: ignore[reportOptionalSubscript]
+    assert repo_snap.asset_check_nodes[2].name == "my_other_asset_check_2"  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_asset_check_multiple_jobs():
@@ -642,7 +642,7 @@ def test_asset_check_multiple_jobs():
     def my_asset():
         pass
 
-    @asset_check(asset=my_asset)
+    @asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
     def my_asset_check(): ...
 
     my_job = define_asset_job("my_job", [my_asset])

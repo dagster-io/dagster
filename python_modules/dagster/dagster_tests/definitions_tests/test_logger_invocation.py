@@ -133,7 +133,7 @@ def sample_graph():
 
 
 def test_logger_job_def():
-    @logger
+    @logger  # pyright: ignore[reportCallIssue,reportArgumentType]
     def job_logger(init_context):
         assert init_context.job_def.name == "sample_job"
 

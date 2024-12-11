@@ -227,7 +227,7 @@ def test_pythonic_fs_io_manager_runtime_config() -> None:
 
 def test_config_schemas() -> None:
     # Decorator-based IO manager definition
-    @io_manager(
+    @io_manager(  # pyright: ignore[reportArgumentType]
         config_schema={"base_dir": StringSource},
         output_config_schema={"path": StringSource},
         input_config_schema={"format": StringSource},

@@ -32,8 +32,8 @@ def test_external_schedule_execution_data_api_grpc():
                 None,
             )
             assert isinstance(execution_data, ScheduleExecutionData)
-            assert len(execution_data.run_requests) == 1
-            to_launch = execution_data.run_requests[0]
+            assert len(execution_data.run_requests) == 1  # pyright: ignore[reportArgumentType]
+            to_launch = execution_data.run_requests[0]  # pyright: ignore[reportOptionalSubscript]
             assert to_launch.run_config == {"fizz": "buzz"}
             assert to_launch.tags == {"dagster/schedule_name": "foo_schedule"}
 
@@ -76,8 +76,8 @@ def test_external_schedule_execution_data_api_grpc_fallback_to_streaming():
                             None,
                         )
                         assert isinstance(execution_data, ScheduleExecutionData)
-                        assert len(execution_data.run_requests) == 1
-                        to_launch = execution_data.run_requests[0]
+                        assert len(execution_data.run_requests) == 1  # pyright: ignore[reportArgumentType]
+                        to_launch = execution_data.run_requests[0]  # pyright: ignore[reportOptionalSubscript]
                         assert to_launch.run_config == {"fizz": "buzz"}
                         assert to_launch.tags == {"dagster/schedule_name": "foo_schedule"}
 
@@ -93,7 +93,7 @@ def test_external_schedule_execution_data_api_never_execute_grpc():
                 None,
             )
             assert isinstance(execution_data, ScheduleExecutionData)
-            assert len(execution_data.run_requests) == 0
+            assert len(execution_data.run_requests) == 0  # pyright: ignore[reportArgumentType]
 
 
 def test_external_schedule_execution_deserialize_error():
@@ -130,8 +130,8 @@ def test_include_execution_time_grpc():
             )
 
             assert isinstance(execution_data, ScheduleExecutionData)
-            assert len(execution_data.run_requests) == 1
-            to_launch = execution_data.run_requests[0]
+            assert len(execution_data.run_requests) == 1  # pyright: ignore[reportArgumentType]
+            to_launch = execution_data.run_requests[0]  # pyright: ignore[reportOptionalSubscript]
             assert to_launch.run_config == {"passed_in_time": execution_time.isoformat()}
             assert to_launch.tags == {"dagster/schedule_name": "foo_schedule_echo_time"}
 
@@ -148,7 +148,7 @@ def test_run_request_partition_key_schedule_grpc():
             )
 
             assert isinstance(execution_data, ScheduleExecutionData)
-            assert len(execution_data.run_requests) == 1
-            to_launch = execution_data.run_requests[0]
+            assert len(execution_data.run_requests) == 1  # pyright: ignore[reportArgumentType]
+            to_launch = execution_data.run_requests[0]  # pyright: ignore[reportOptionalSubscript]
             assert to_launch.tags["dagster/schedule_name"] == "partitioned_run_request_schedule"
             assert to_launch.tags["dagster/partition"] == "a"

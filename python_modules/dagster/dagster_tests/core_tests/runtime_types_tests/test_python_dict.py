@@ -77,7 +77,7 @@ def test_dagster_dictionary_output():
 
 
 def test_basic_dagster_dictionary_input():
-    @op(ins={"data": In(Dict)}, out=Out(str))
+    @op(ins={"data": In(Dict)}, out=Out(str))  # pyright: ignore[reportArgumentType]
     def input_dict(data):
         return data["key"]
 
@@ -129,8 +129,8 @@ def test_basic_closed_typing_dictionary_output():
 
     assert wrap_op_in_graph_and_execute(emit_dict).output_value() == {"key": "value"}
     assert emit_dict.output_defs[0].dagster_type.key == "TypedPythonDict.String.String"
-    assert emit_dict.output_defs[0].dagster_type.key_type.unique_name == "String"
-    assert emit_dict.output_defs[0].dagster_type.value_type.unique_name == "String"
+    assert emit_dict.output_defs[0].dagster_type.key_type.unique_name == "String"  # pyright: ignore[reportAttributeAccessIssue]
+    assert emit_dict.output_defs[0].dagster_type.value_type.unique_name == "String"  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_basic_closed_typing_dictionary_input():

@@ -36,7 +36,9 @@ export function useLaunchMultipleRunsWithTelemetry() {
           jobNames.includes(undefined) ||
           jobNames.includes(null)
         ) {
-          throw new Error('Invalid job names');
+          throw new Error(
+            'Error: Invalid job names. Each RunRequest must specify a job name to launch all runs',
+          );
         }
 
         const metadata: {[key: string]: string | string[] | null | undefined} = {

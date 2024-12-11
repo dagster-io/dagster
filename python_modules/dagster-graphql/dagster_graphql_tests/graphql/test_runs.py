@@ -862,7 +862,7 @@ def test_run_group():
                 tags={PARENT_RUN_ID_TAG: root_run_id, ROOT_RUN_ID_TAG: root_run_id},
             )
             execute_run(InMemoryJob(foo_job), run, instance)
-            runs.append(run)
+            runs.append(run)  # pyright: ignore[reportArgumentType]
 
         with define_out_of_process_context(
             __file__, "get_repo_at_time_1", instance
@@ -937,7 +937,7 @@ def test_asset_batching():
             assert len(materializations) == 3
 
             counter = traced_counter.get()
-            counts = counter.counts()
+            counts = counter.counts()  # pyright: ignore[reportOptionalMemberAccess]
             assert counts
             assert counts.get("DagsterInstance.get_run_records") == 1
 

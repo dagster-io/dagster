@@ -60,7 +60,7 @@ def create_single_node_job(name, called):
 def test_repo_lazy_definition():
     called = defaultdict(int)
 
-    @repository
+    @repository  # pyright: ignore[reportArgumentType]
     def lazy_repo():
         return {
             "jobs": {
@@ -107,7 +107,7 @@ def test_dupe_op_repo_definition():
     def noop2():
         pass
 
-    @repository
+    @repository  # pyright: ignore[reportArgumentType]
     def error_repo():
         return {
             "jobs": {
@@ -159,7 +159,7 @@ def test_conflict():
 def test_key_mismatch():
     called = defaultdict(int)
 
-    @repository
+    @repository  # pyright: ignore[reportArgumentType]
     def some_repo():
         return {"jobs": {"foo": lambda: create_single_node_job("bar", called)}}
 
@@ -170,7 +170,7 @@ def test_key_mismatch():
 def test_non_job_in_jobs():
     with pytest.raises(DagsterInvalidDefinitionError, match="all elements of list must be of type"):
 
-        @repository
+        @repository  # pyright: ignore[reportArgumentType]
         def _some_repo():
             return ["not-a-job"]
 
@@ -195,7 +195,7 @@ def test_bad_schedule():
 
 
 def test_bad_sensor():
-    @sensor(
+    @sensor(  # pyright: ignore[reportArgumentType]
         job_name="foo",
     )
     def foo_sensor(_):
@@ -258,7 +258,7 @@ def test_direct_sensor_target():
     def wonder():
         wow()
 
-    @sensor(job=wonder)
+    @sensor(job=wonder)  # pyright: ignore[reportArgumentType]
     def direct_sensor(_):
         return {}
 
@@ -276,7 +276,7 @@ def test_direct_sensor_unresolved_target():
     def foo():
         return None
 
-    @sensor(job=unresolved_job)
+    @sensor(job=unresolved_job)  # pyright: ignore[reportArgumentType]
     def direct_sensor(_):
         return {}
 
@@ -298,7 +298,7 @@ def test_target_dupe_job():
 
     w_job = wonder.to_job()
 
-    @sensor(job=w_job)
+    @sensor(job=w_job)  # pyright: ignore[reportArgumentType]
     def direct_sensor(_):
         return {}
 
@@ -316,7 +316,7 @@ def test_target_dupe_unresolved():
     def foo():
         return None
 
-    @sensor(job=unresolved_job)
+    @sensor(job=unresolved_job)  # pyright: ignore[reportArgumentType]
     def direct_sensor(_):
         return {}
 
@@ -519,7 +519,7 @@ def test_job_validation():
         match="Object mapped to my_job is not an instance of JobDefinition or GraphDefinition.",
     ):
 
-        @repository
+        @repository  # pyright: ignore[reportArgumentType]
         def _my_repo():
             return {"jobs": {"my_job": "blah"}}
 
@@ -577,7 +577,7 @@ def test_lazy_graph():
     def my_graph():
         pass
 
-    @repository
+    @repository  # pyright: ignore[reportArgumentType]
     def jobs():
         return {
             "jobs": {
@@ -625,7 +625,7 @@ def test_bad_coerce():
         match="resource with key 'x' required by op 'foo' was not provided",
     ):
 
-        @repository
+        @repository  # pyright: ignore[reportArgumentType]
         def _fails():
             return {
                 "jobs": {"bar": bar},
@@ -635,7 +635,7 @@ def test_bad_coerce():
 def test_bad_resolve():
     with pytest.raises(DagsterInvalidSubsetError, match=r"AssetKey\(s\) \['foo'\] were selected"):
 
-        @repository
+        @repository  # pyright: ignore[reportArgumentType]
         def _fails():
             return {"jobs": {"tbd": define_asset_job(name="tbd", selection="foo")}}
 
@@ -656,7 +656,7 @@ def test_source_assets():
 def test_assets_checks():
     foo = SourceAsset(key=AssetKey("foo"))
 
-    @asset_check(asset=foo)
+    @asset_check(asset=foo)  # pyright: ignore[reportArgumentType]
     def foo_check():
         return True
 
@@ -668,7 +668,7 @@ def test_assets_checks():
 
 
 def test_direct_assets():
-    @io_manager(required_resource_keys={"foo"})
+    @io_manager(required_resource_keys={"foo"})  # pyright: ignore[reportArgumentType]
     def the_manager():
         pass
 
@@ -750,7 +750,7 @@ def test_direct_asset_unsatified_resource_transitive():
 
 
 def test_source_asset_unsatisfied_resource():
-    @io_manager(required_resource_keys={"foo"})
+    @io_manager(required_resource_keys={"foo"})  # pyright: ignore[reportArgumentType]
     def the_manager():
         pass
 
@@ -769,7 +769,7 @@ def test_source_asset_unsatisfied_resource():
 
 
 def test_source_asset_unsatisfied_resource_transitive():
-    @io_manager(required_resource_keys={"foo"})
+    @io_manager(required_resource_keys={"foo"})  # pyright: ignore[reportArgumentType]
     def the_manager():
         pass
 
@@ -819,7 +819,7 @@ def test_source_asset_resource_conflicts():
     def the_asset():
         pass
 
-    @io_manager(required_resource_keys={"foo"})
+    @io_manager(required_resource_keys={"foo"})  # pyright: ignore[reportArgumentType]
     def the_manager():
         pass
 
@@ -1135,15 +1135,15 @@ def test_default_executor_jobs():
 
     unresolved_job = define_asset_job("asset_job", selection="*")
 
-    @executor
+    @executor  # pyright: ignore[reportCallIssue,reportArgumentType]
     def custom_executor(_):
         pass
 
-    @executor
+    @executor  # pyright: ignore[reportCallIssue,reportArgumentType]
     def other_custom_executor(_):
         pass
 
-    @job(executor_def=custom_executor)
+    @job(executor_def=custom_executor)  # pyright: ignore[reportArgumentType]
     def op_job_with_executor():
         pass
 
@@ -1159,7 +1159,7 @@ def test_default_executor_jobs():
     def the_job():
         pass
 
-    @repository(default_executor_def=other_custom_executor)
+    @repository(default_executor_def=other_custom_executor)  # pyright: ignore[reportArgumentType]
     def the_repo():
         return [
             the_asset,
@@ -1192,9 +1192,9 @@ def test_list_load():
 
     source = SourceAsset(key=AssetKey("a_source_asset"))
 
-    all_assets: Sequence[AssetsDefinition, SourceAsset] = [asset1, asset2, source]
+    all_assets: Sequence[AssetsDefinition, SourceAsset] = [asset1, asset2, source]  # pyright: ignore[reportInvalidTypeArguments,reportAssignmentType]
 
-    @repository
+    @repository  # pyright: ignore[reportArgumentType]
     def assets_repo():
         return [all_assets]
 
@@ -1222,7 +1222,7 @@ def test_list_load():
 
     job_list = [job1, job2]
 
-    @repository
+    @repository  # pyright: ignore[reportArgumentType]
     def job_repo():
         return [job_list]
 
@@ -1242,7 +1242,7 @@ def test_list_load():
 
     combo_list = [asset3, job3]
 
-    @repository
+    @repository  # pyright: ignore[reportArgumentType]
     def combo_repo():
         return [combo_list]
 
@@ -1263,12 +1263,12 @@ def test_multi_nested_list():
 
     source = SourceAsset(key=AssetKey("a_source_asset"))
 
-    layer_1: Sequence[AssetsDefinition, SourceAsset] = [asset2, source]
+    layer_1: Sequence[AssetsDefinition, SourceAsset] = [asset2, source]  # pyright: ignore[reportInvalidTypeArguments,reportAssignmentType]
     layer_2 = [layer_1, asset1]
 
     with pytest.raises(DagsterInvalidDefinitionError, match="Bad return value from repository"):
 
-        @repository
+        @repository  # pyright: ignore[reportArgumentType]
         def assets_repo():
             return [layer_2]
 
@@ -1311,11 +1311,11 @@ def test_scheduled_partitioned_asset_job():
 
 
 def test_default_loggers_repo():
-    @logger
+    @logger  # pyright: ignore[reportCallIssue,reportArgumentType]
     def basic():
         pass
 
-    @repository(default_logger_defs={"foo": basic})
+    @repository(default_logger_defs={"foo": basic})  # pyright: ignore[reportArgumentType]
     def the_repo():
         return []
 
@@ -1329,11 +1329,11 @@ def test_default_loggers_assets_repo():
     def the_asset():
         pass
 
-    @logger
+    @logger  # pyright: ignore[reportCallIssue,reportArgumentType]
     def basic():
         pass
 
-    @repository(default_logger_defs={"foo": basic})
+    @repository(default_logger_defs={"foo": basic})  # pyright: ignore[reportArgumentType]
     def the_repo():
         return [no_logger_provided, the_asset]
 
@@ -1349,15 +1349,15 @@ def test_default_loggers_for_jobs():
 
     unresolved_job = define_asset_job("asset_job", selection="*")
 
-    @logger
+    @logger  # pyright: ignore[reportCallIssue,reportArgumentType]
     def custom_logger(_):
         pass
 
-    @logger
+    @logger  # pyright: ignore[reportCallIssue,reportArgumentType]
     def other_custom_logger(_):
         pass
 
-    @job(logger_defs={"bar": custom_logger})
+    @job(logger_defs={"bar": custom_logger})  # pyright: ignore[reportArgumentType]
     def job_with_loggers():
         pass
 
@@ -1369,7 +1369,7 @@ def test_default_loggers_for_jobs():
     def job_explicitly_specifies_default_loggers():
         pass
 
-    @repository(default_logger_defs={"foo": other_custom_logger})
+    @repository(default_logger_defs={"foo": other_custom_logger})  # pyright: ignore[reportArgumentType]
     def the_repo():
         return [
             the_asset,
@@ -1389,19 +1389,19 @@ def test_default_loggers_for_jobs():
 
 
 def test_default_loggers_keys_conflict():
-    @logger
+    @logger  # pyright: ignore[reportCallIssue,reportArgumentType]
     def some_logger():
         pass
 
-    @logger
+    @logger  # pyright: ignore[reportCallIssue,reportArgumentType]
     def other_logger():
         pass
 
-    @job(logger_defs={"foo": some_logger})
+    @job(logger_defs={"foo": some_logger})  # pyright: ignore[reportArgumentType]
     def the_job():
         pass
 
-    @repository(default_logger_defs={"foo": other_logger})
+    @repository(default_logger_defs={"foo": other_logger})  # pyright: ignore[reportArgumentType]
     def the_repo():
         return [the_job]
 

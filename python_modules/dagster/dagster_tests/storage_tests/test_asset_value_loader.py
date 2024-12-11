@@ -30,16 +30,16 @@ def test_single_asset():
 
         def load_input(self, context):
             assert context.asset_key == AssetKey("asset1")
-            assert context.upstream_output.asset_key == AssetKey("asset1")
-            assert context.upstream_output.definition_metadata["a"] == "b"
-            assert context.upstream_output.op_def == asset1.op
-            assert context.upstream_output.name == "result"
+            assert context.upstream_output.asset_key == AssetKey("asset1")  # pyright: ignore[reportOptionalMemberAccess]
+            assert context.upstream_output.definition_metadata["a"] == "b"  # pyright: ignore[reportOptionalMemberAccess]
+            assert context.upstream_output.op_def == asset1.op  # pyright: ignore[reportOptionalMemberAccess]
+            assert context.upstream_output.name == "result"  # pyright: ignore[reportOptionalMemberAccess]
             assert context.dagster_type.typing_type == int
             return 5
 
     happenings = set()
 
-    @io_manager
+    @io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
     @contextmanager
     def my_io_manager():
         try:
@@ -74,14 +74,14 @@ def test_source_asset():
 
         def load_input(self, context):
             assert context.asset_key == AssetKey("asset1")
-            assert context.upstream_output.asset_key == AssetKey("asset1")
-            assert context.upstream_output.definition_metadata["a"] == "b"
+            assert context.upstream_output.asset_key == AssetKey("asset1")  # pyright: ignore[reportOptionalMemberAccess]
+            assert context.upstream_output.definition_metadata["a"] == "b"  # pyright: ignore[reportOptionalMemberAccess]
             assert context.dagster_type.typing_type == int
             return 5
 
     happenings = set()
 
-    @io_manager
+    @io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
     @contextmanager
     def my_io_manager():
         try:
@@ -114,7 +114,7 @@ def test_resource_dependencies_and_config():
 
         def load_input(self, context):
             assert context.resources.other_resource == "apple"
-            assert context.resource_config["config_key"] == "config_val"
+            assert context.resource_config["config_key"] == "config_val"  # pyright: ignore[reportOptionalSubscript]
             return 5
 
     @io_manager(required_resource_keys={"other_resource"}, config_schema={"config_key": str})

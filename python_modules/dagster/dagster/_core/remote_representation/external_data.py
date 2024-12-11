@@ -835,21 +835,21 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
         if self.cron_schedule is not None:
             return TimeWindowPartitionsDefinition(
                 cron_schedule=self.cron_schedule,
-                start=datetime_from_timestamp(self.start, tz=self.timezone),
+                start=datetime_from_timestamp(self.start, tz=self.timezone),  # pyright: ignore[reportArgumentType]
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
-                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),
+                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),  # pyright: ignore[reportArgumentType]
             )
         else:
             # backcompat case
             return TimeWindowPartitionsDefinition(
                 schedule_type=self.schedule_type,
-                start=datetime_from_timestamp(self.start, tz=self.timezone),
+                start=datetime_from_timestamp(self.start, tz=self.timezone),  # pyright: ignore[reportArgumentType]
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
-                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),
+                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),  # pyright: ignore[reportArgumentType]
                 minute_offset=self.minute_offset,
                 hour_offset=self.hour_offset,
                 day_offset=self.day_offset,

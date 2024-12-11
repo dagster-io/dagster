@@ -215,6 +215,6 @@ def bar_repo():
     }
 
 
-@repository
+@repository  # pyright: ignore[reportArgumentType]
 def other_repo():
     return {"jobs": {"other_foo": define_other_foo_job}}

@@ -38,8 +38,8 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
 
     Args:
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
-        env (Optional[Mapping[str,str]]: An optional dict of environment variables to pass to the
-            databricks job.
+        env (Optional[Mapping[str,str]]: An optional dict of environment
+            variables to pass to the databricks job.
         context_injector (Optional[PipesContextInjector]): A context injector to use to inject
             context into the k8s container process. Defaults to :py:class:`PipesDbfsContextInjector`.
         message_reader (Optional[PipesMessageReader]): A message reader to use to read messages

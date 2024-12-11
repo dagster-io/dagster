@@ -233,7 +233,7 @@ def _pandera_errors_to_type_check(
 
 
 def _pandera_schema_to_table_schema(schema: DagsterPanderaSchema) -> TableSchema:
-    df_constraints = _pandera_schema_wide_checks_to_table_constraints(schema.checks)
+    df_constraints = _pandera_schema_wide_checks_to_table_constraints(schema.checks)  # pyright: ignore[reportArgumentType]
     columns = [_pandera_column_to_table_column(col) for k, col in schema.columns.items()]
     return TableSchema(columns=columns, constraints=df_constraints)
 

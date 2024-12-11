@@ -107,7 +107,7 @@ def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selec
             for log in instance.all_logs(run.run_id):
                 print(log)  # noqa: T201
 
-            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
+            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
 
 
 @pytest.mark.integration
@@ -180,7 +180,7 @@ def test_container_context_on_job(aws_env):
             for log in instance.all_logs(run.run_id):
                 print(log)  # noqa: T201
 
-            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
+            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
 
 
 @pytest.mark.integration
@@ -202,7 +202,7 @@ def test_recovery(aws_env):
         find_local_test_image(docker_image)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "ops": {
                 "multiply_the_word_slow": {
@@ -245,19 +245,19 @@ def test_recovery(aws_env):
             start_time = time.time()
             while time.time() - start_time < 60:
                 run = instance.get_run_by_id(run.run_id)
-                if run.status == DagsterRunStatus.STARTED:
+                if run.status == DagsterRunStatus.STARTED:  # pyright: ignore[reportOptionalMemberAccess]
                     break
-                assert run.status == DagsterRunStatus.STARTING
+                assert run.status == DagsterRunStatus.STARTING  # pyright: ignore[reportOptionalMemberAccess]
                 time.sleep(1)
 
             time.sleep(3)
 
-            instance.run_launcher._get_container(  # noqa: SLF001
-                instance.get_run_by_id(run.run_id)
+            instance.run_launcher._get_container(  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+                instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
             ).stop()
-            instance.resume_run(run.run_id, workspace, attempt_number=1)
-            poll_for_finished_run(instance, run.run_id, timeout=60)
+            instance.resume_run(run.run_id, workspace, attempt_number=1)  # pyright: ignore[reportOptionalMemberAccess]
+            poll_for_finished_run(instance, run.run_id, timeout=60)  # pyright: ignore[reportOptionalMemberAccess]
 
-            for log in instance.all_logs(run.run_id):
+            for log in instance.all_logs(run.run_id):  # pyright: ignore[reportOptionalMemberAccess]
                 print(str(log) + "\n")  # noqa: T201
-            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
+            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]

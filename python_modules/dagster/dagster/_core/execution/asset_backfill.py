@@ -57,6 +57,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
+    WILL_RETRY_TAG,
 )
 from dagster._core.utils import make_new_run_id, toposort
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
@@ -964,19 +965,23 @@ def backfill_is_complete(
         logger.info("Backfill has in progress runs. Backfill is still in progress.")
         return False
     # Condition 3 - if there are runs that will be retried, but have not yet been retried, the backfill is not complete
-    if any(
-        [
-            run.is_complete_and_waiting_to_retry
-            for run in instance.get_runs(
-                filters=RunsFilter(
-                    tags={BACKFILL_ID_TAG: backfill_id},
-                    statuses=[DagsterRunStatus.FAILURE],
-                )
+    runs_waiting_to_retry = [
+        run.run_id
+        for run in instance.get_runs(
+            filters=RunsFilter(
+                tags={BACKFILL_ID_TAG: backfill_id, WILL_RETRY_TAG: "true"},
+                statuses=[DagsterRunStatus.FAILURE],
             )
-        ]
-    ):
+        )
+        if run.is_complete_and_waiting_to_retry
+    ]
+    if len(runs_waiting_to_retry) > 0:
+        num_runs_to_log = 20
+        formatted_runs = "\n".join(runs_waiting_to_retry[:num_runs_to_log])
+        if len(runs_waiting_to_retry) > num_runs_to_log:
+            formatted_runs += f"\n... {len(runs_waiting_to_retry) - num_runs_to_log} more"
         logger.info(
-            "Some runs for the backfill will be retried, but have not been launched. Backfill is still in progress."
+            f"The following runs for the backfill will be retried, but retries have not been launched. Backfill is still in progress:\n{formatted_runs}"
         )
         return False
     return True

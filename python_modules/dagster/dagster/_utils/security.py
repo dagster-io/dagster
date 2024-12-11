@@ -9,4 +9,4 @@ def non_secure_md5_hash_str(s: Union[bytes, bytearray, memoryview]) -> str:
     if sys.version_info[0] <= 3 and sys.version_info[1] <= 8:
         return hashlib.md5(s).hexdigest()
     else:
-        return hashlib.md5(s, usedforsecurity=False).hexdigest()  # type: ignore
+        return hashlib.md5(s, usedforsecurity=False).hexdigest()

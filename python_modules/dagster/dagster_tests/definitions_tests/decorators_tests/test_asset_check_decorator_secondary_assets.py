@@ -66,7 +66,7 @@ def test_additional_deps_overlap():
         ),
     ):
 
-        @asset_check(asset=asset1, additional_deps=[asset1])
+        @asset_check(asset=asset1, additional_deps=[asset1])  # pyright: ignore[reportArgumentType]
         def check1(asset_1):
             pass
 
@@ -78,7 +78,7 @@ def test_additional_deps_overlap():
         ),
     ):
 
-        @asset_check(asset=asset1, additional_deps=[asset1])
+        @asset_check(asset=asset1, additional_deps=[asset1])  # pyright: ignore[reportArgumentType]
         def check2():
             pass
 
@@ -92,7 +92,7 @@ def test_additional_ins_overlap():
         ),
     ):
 
-        @asset_check(asset=asset1, additional_ins={"asset_1": AssetIn("asset1")})
+        @asset_check(asset=asset1, additional_ins={"asset_1": AssetIn("asset1")})  # pyright: ignore[reportArgumentType]
         def check1(asset_1):
             pass
 
@@ -103,8 +103,10 @@ def test_additional_ins_and_deps_overlap():
         match=re.escape("deps value AssetKey(['asset2']) also declared as input/AssetIn"),
     ):
 
-        @asset_check(
-            asset=asset1, additional_ins={"asset_2": AssetIn("asset2")}, additional_deps=[asset2]
+        @asset_check(  # pyright: ignore[reportArgumentType]
+            asset=asset1,
+            additional_ins={"asset_2": AssetIn("asset2")},
+            additional_deps=[asset2],
         )
         def check1(asset_2):
             pass
