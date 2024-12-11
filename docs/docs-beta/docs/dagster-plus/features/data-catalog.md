@@ -4,4 +4,3 @@ sidebar_position: 200
 unlisted: true
 ---
 
-# Dagster+ data catalog

@@ -3,8 +3,6 @@ title: "Code locations"
 sidebar_position: 20
 ---
 
-# Code locations
-
 Separate code locations allow you to deploy different projects that still roll up into a single Dagster+ deployment with one global lineage graph.
 
 This guide will cover three options for adding a new code location:

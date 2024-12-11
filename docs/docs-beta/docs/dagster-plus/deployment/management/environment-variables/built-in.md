@@ -1,10 +1,8 @@
 ---
 title: "Built-in environment variables"
-displayed_sidebar: "dagsterPlus"
 sidebar_position: 100
 sidebar_label: "Built-in variables"
 ---
-
 
 [Dagster+](/todo) provides a set of built-in, automatically populated environment variables, such as the name of a deployment or details about a branch deployment commit, that can be used to modify behavior based on environment.
 
