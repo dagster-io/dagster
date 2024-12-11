@@ -21,7 +21,7 @@ def retry_connect(conn_string: str, num_retries: int = 5, pool_recycle=-1):
 
 
 def test_pool_recycle_greater_than_wait_timeout(conn_string):
-    with pytest.raises(db.exc.OperationalError):
+    with pytest.raises(db.exc.OperationalError):  # pyright: ignore[reportAttributeAccessIssue]
         retry_connect(conn_string)
 
 

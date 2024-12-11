@@ -247,7 +247,7 @@ def status_command(
 def worker_list_command(config_yaml=None):
     app = get_app(config_yaml)
 
-    print(app.control.inspect(timeout=1).active())  # noqa: T201
+    print(app.control.inspect(timeout=1).active())  # noqa: T201  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @click.command(
@@ -279,9 +279,9 @@ def worker_terminate_command(name="dagster", config_yaml=None, all_=False):
     app = get_app(config_yaml)
 
     if all_:
-        app.control.broadcast("shutdown")
+        app.control.broadcast("shutdown")  # pyright: ignore[reportAttributeAccessIssue]
     else:
-        app.control.broadcast(
+        app.control.broadcast(  # pyright: ignore[reportAttributeAccessIssue]
             "shutdown", destination=[host_format(default_nodename(get_worker_name(name)))]
         )
 

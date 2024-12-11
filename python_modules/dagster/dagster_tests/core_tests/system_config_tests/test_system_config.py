@@ -26,14 +26,14 @@ from dagster._loggers import default_loggers
 
 
 def create_creation_data(job_def):
-    return RunConfigSchemaCreationData(
+    return RunConfigSchemaCreationData(  # pyright: ignore[reportCallIssue]
         job_def.name,
         job_def.nodes,
         job_def.dependency_structure,
         logger_defs=default_loggers(),
         ignored_nodes=[],
         required_resources=set(),
-        direct_inputs=job_def._input_values,  # noqa: SLF001
+        direct_inputs=job_def._input_values,  # noqa [SLF001]
         asset_layer=job_def.asset_layer,
     )
 
@@ -64,7 +64,7 @@ def test_all_types_provided():
     matching_types = [
         tt
         for tt in all_types
-        if tt.kind == ConfigTypeKind.STRICT_SHAPE and "with_default_int" in tt.fields.keys()
+        if tt.kind == ConfigTypeKind.STRICT_SHAPE and "with_default_int" in tt.fields.keys()  # pyright: ignore[reportAttributeAccessIssue]
     ]
     assert len(matching_types) == 1
 
@@ -93,7 +93,7 @@ def test_provided_default_on_resources_config():
         some_op()
 
     env_type = create_run_config_schema_type(job_def)
-    some_resource_field = env_type.fields["resources"].config_type.fields["some_resource"]
+    some_resource_field = env_type.fields["resources"].config_type.fields["some_resource"]  # pyright: ignore[reportAttributeAccessIssue]
     assert some_resource_field.is_required is False
 
     some_resource_config_field = some_resource_field.config_type.fields["config"]
@@ -123,7 +123,7 @@ def test_default_environment():
 def test_op_config():
     solid_config_type = Shape({"config": Field(Int)})
     solid_inst = process_config(solid_config_type, {"config": 1})
-    assert solid_inst.value["config"] == 1
+    assert solid_inst.value["config"] == 1  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_op_dictionary_type():
@@ -182,7 +182,7 @@ def assert_has_fields(dtype, *fields):
 def test_op_configs_defaults():
     env_type = create_run_config_schema_type(define_test_solids_config_pipeline())
 
-    solids_field = env_type.fields["ops"]
+    solids_field = env_type.fields["ops"]  # pyright: ignore[reportAttributeAccessIssue]
 
     assert_has_fields(solids_field.config_type, "int_config_op", "string_config_op")
 
@@ -245,7 +245,7 @@ def test_whole_environment():
         ],
     ).to_job(
         resource_defs={
-            "test_resource": ResourceDefinition(resource_fn=lambda _: None, config_schema=Any)
+            "test_resource": ResourceDefinition(resource_fn=lambda _: None, config_schema=Any)  # pyright: ignore[reportArgumentType]
         },
     )
 
@@ -284,9 +284,9 @@ def test_op_config_error():
 
     res = process_config(int_solid_config_type, {"notconfig": 1})
     assert not res.success
-    assert re.match('Received unexpected config entry "notconfig"', res.errors[0].message)
+    assert re.match('Received unexpected config entry "notconfig"', res.errors[0].message)  # pyright: ignore[reportOptionalSubscript]
 
-    res = process_config(int_solid_config_type, 1)
+    res = process_config(int_solid_config_type, 1)  # pyright: ignore[reportArgumentType]
     assert not res.success
 
 
@@ -335,9 +335,9 @@ def test_optional_op_with_optional_scalar_config():
 
     env_type = create_run_config_schema_type(job_def)
 
-    assert env_type.fields["ops"].is_required is False
+    assert env_type.fields["ops"].is_required is False  # pyright: ignore[reportAttributeAccessIssue]
 
-    solids_type = env_type.fields["ops"].config_type
+    solids_type = env_type.fields["ops"].config_type  # pyright: ignore[reportAttributeAccessIssue]
 
     assert solids_type.fields["int_config_op"].is_required is False
 
@@ -365,9 +365,9 @@ def test_optional_op_with_required_scalar_config():
 
     env_type = create_run_config_schema_type(job_def)
 
-    assert env_type.fields["ops"].is_required is True
+    assert env_type.fields["ops"].is_required is True  # pyright: ignore[reportAttributeAccessIssue]
 
-    solids_type = env_type.fields["ops"].config_type
+    solids_type = env_type.fields["ops"].config_type  # pyright: ignore[reportAttributeAccessIssue]
 
     assert solids_type.fields["int_config_op"].is_required is True
 
@@ -398,22 +398,22 @@ def test_required_op_with_required_subfield():
 
     env_type = create_run_config_schema_type(job_def)
 
-    assert env_type.fields["ops"].is_required is True
-    assert env_type.fields["ops"].config_type
+    assert env_type.fields["ops"].is_required is True  # pyright: ignore[reportAttributeAccessIssue]
+    assert env_type.fields["ops"].config_type  # pyright: ignore[reportAttributeAccessIssue]
 
-    solids_type = env_type.fields["ops"].config_type
+    solids_type = env_type.fields["ops"].config_type  # pyright: ignore[reportAttributeAccessIssue]
     assert solids_type.fields["int_config_op"].is_required is True
     int_config_solid_type = solids_type.fields["int_config_op"].config_type
     assert int_config_solid_type.fields["config"].is_required is True
 
-    assert env_type.fields["execution"].is_required is False
+    assert env_type.fields["execution"].is_required is False  # pyright: ignore[reportAttributeAccessIssue]
 
     env_obj = ResolvedRunConfig.build(
         job_def,
         {"ops": {"int_config_op": {"config": {"required_field": "foobar"}}}},
     )
 
-    assert env_obj.ops["int_config_op"].config["required_field"] == "foobar"
+    assert env_obj.ops["int_config_op"].config["required_field"] == "foobar"  # pyright: ignore[reportIndexIssue]
 
     res = process_config(env_type, {"ops": {}})
     assert not res.success
@@ -440,8 +440,8 @@ def test_optional_op_with_optional_subfield():
     ).to_job()
 
     env_type = create_run_config_schema_type(job_def)
-    assert env_type.fields["ops"].is_required is False
-    assert env_type.fields["execution"].is_required is False
+    assert env_type.fields["ops"].is_required is False  # pyright: ignore[reportAttributeAccessIssue]
+    assert env_type.fields["execution"].is_required is False  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def nested_field(config_type, *field_names):
@@ -473,9 +473,9 @@ def test_required_resource_with_required_subfield():
     )
 
     env_type = create_run_config_schema_type(job_def)
-    assert env_type.fields["ops"].is_required is False
-    assert env_type.fields["execution"].is_required is False
-    assert env_type.fields["resources"].is_required
+    assert env_type.fields["ops"].is_required is False  # pyright: ignore[reportAttributeAccessIssue]
+    assert env_type.fields["execution"].is_required is False  # pyright: ignore[reportAttributeAccessIssue]
+    assert env_type.fields["resources"].is_required  # pyright: ignore[reportAttributeAccessIssue]
     assert nested_field(env_type, "resources", "with_required").is_required
     assert nested_field(env_type, "resources", "with_required", "config").is_required
     assert nested_field(
@@ -497,9 +497,9 @@ def test_all_optional_field_on_single_resource():
     )
 
     env_type = create_run_config_schema_type(job_def)
-    assert env_type.fields["ops"].is_required is False
-    assert env_type.fields["execution"].is_required is False
-    assert env_type.fields["resources"].is_required is False
+    assert env_type.fields["ops"].is_required is False  # pyright: ignore[reportAttributeAccessIssue]
+    assert env_type.fields["execution"].is_required is False  # pyright: ignore[reportAttributeAccessIssue]
+    assert env_type.fields["resources"].is_required is False  # pyright: ignore[reportAttributeAccessIssue]
     assert nested_field(env_type, "resources", "with_optional").is_required is False
     assert nested_field(env_type, "resources", "with_optional", "config").is_required is False
     assert (
@@ -530,9 +530,9 @@ def test_optional_and_required_context():
     )
 
     env_type = create_run_config_schema_type(job_def)
-    assert env_type.fields["ops"].is_required is False
+    assert env_type.fields["ops"].is_required is False  # pyright: ignore[reportAttributeAccessIssue]
 
-    assert env_type.fields["execution"].is_required is False
+    assert env_type.fields["execution"].is_required is False  # pyright: ignore[reportAttributeAccessIssue]
 
     assert nested_field(env_type, "resources").is_required
     assert nested_field(env_type, "resources", "optional_resource").is_required is False
@@ -577,7 +577,7 @@ def test_required_inputs():
 
     env_type = create_run_config_schema_type(job_def)
 
-    solids_type = env_type.fields["ops"].config_type
+    solids_type = env_type.fields["ops"].config_type  # pyright: ignore[reportAttributeAccessIssue]
 
     first_add_fields = solids_type.fields["first_add"].config_type.fields
 
@@ -612,7 +612,7 @@ def test_mix_required_inputs():
     ).to_job()
 
     env_type = create_run_config_schema_type(job_def)
-    solids_type = env_type.fields["ops"].config_type
+    solids_type = env_type.fields["ops"].config_type  # pyright: ignore[reportAttributeAccessIssue]
     add_numbers_type = solids_type.fields["add_numbers"].config_type
     inputs_fields_dict = add_numbers_type.fields["inputs"].config_type.fields
 

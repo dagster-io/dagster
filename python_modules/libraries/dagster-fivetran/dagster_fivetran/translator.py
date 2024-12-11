@@ -83,7 +83,7 @@ class FivetranConnector:
         succeeded_at = parser.parse(self.succeeded_at or MIN_TIME_STR)
         failed_at = parser.parse(self.failed_at or MIN_TIME_STR)
 
-        return max(succeeded_at, failed_at)
+        return max(succeeded_at, failed_at)  # pyright: ignore[reportReturnType]
 
     @property
     def is_last_sync_successful(self) -> bool:
@@ -96,7 +96,7 @@ class FivetranConnector:
         succeeded_at = parser.parse(self.succeeded_at or MIN_TIME_STR)
         failed_at = parser.parse(self.failed_at or MIN_TIME_STR)
 
-        return succeeded_at > failed_at
+        return succeeded_at > failed_at  # pyright: ignore[reportOperatorIssue]
 
     def validate_syncable(self) -> bool:
         """Confirms that the connector can be sync. Will raise a Failure in the event that

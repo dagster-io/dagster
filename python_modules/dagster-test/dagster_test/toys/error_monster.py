@@ -37,7 +37,7 @@ class ErrorableIOManager(IOManager):
         if self._throw_input:
             raise ExampleException("throwing up trying to load input")
 
-        keys = tuple(context.upstream_output.get_identifier())
+        keys = tuple(context.upstream_output.get_identifier())  # pyright: ignore[reportOptionalMemberAccess]
         return self._values[keys]
 
 

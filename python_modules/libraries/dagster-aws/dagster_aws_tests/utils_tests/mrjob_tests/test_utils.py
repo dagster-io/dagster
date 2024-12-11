@@ -20,33 +20,33 @@ EPS = 10.0
 
 def test_client_error_code():
     code = "Timeout"
-    ex = botocore.exceptions.ClientError({"Error": {"Code": code}}, "foo")
+    ex = botocore.exceptions.ClientError({"Error": {"Code": code}}, "foo")  # pyright: ignore[reportAttributeAccessIssue]
     assert _client_error_code(ex) == code
 
-    empty_ex = botocore.exceptions.ClientError({}, "foo")
+    empty_ex = botocore.exceptions.ClientError({}, "foo")  # pyright: ignore[reportAttributeAccessIssue]
     assert _client_error_code(empty_ex) == ""
 
 
 def test_client_error_status():
     code = 403
-    ex = botocore.exceptions.ClientError({"Error": {"HTTPStatusCode": code}}, "foo")
+    ex = botocore.exceptions.ClientError({"Error": {"HTTPStatusCode": code}}, "foo")  # pyright: ignore[reportAttributeAccessIssue]
     assert _client_error_status(ex) == code
 
-    empty_ex = botocore.exceptions.ClientError({}, "foo")
+    empty_ex = botocore.exceptions.ClientError({}, "foo")  # pyright: ignore[reportAttributeAccessIssue]
     assert _client_error_status(empty_ex) is None
 
 
 def test_is_retriable_client_error():
-    ex = botocore.exceptions.ClientError({"Error": {"Code": "Timeout"}}, "foo")
+    ex = botocore.exceptions.ClientError({"Error": {"Code": "Timeout"}}, "foo")  # pyright: ignore[reportAttributeAccessIssue]
     assert _is_retriable_client_error(ex)
 
-    ex = botocore.exceptions.ClientError({"Error": {"Code": "Not retryable"}}, "foo")
+    ex = botocore.exceptions.ClientError({"Error": {"Code": "Not retryable"}}, "foo")  # pyright: ignore[reportAttributeAccessIssue]
     assert not _is_retriable_client_error(ex)
 
-    ex = botocore.exceptions.ClientError({"Error": {"HTTPStatusCode": 505}}, "foo")
+    ex = botocore.exceptions.ClientError({"Error": {"HTTPStatusCode": 505}}, "foo")  # pyright: ignore[reportAttributeAccessIssue]
     assert _is_retriable_client_error(ex)
 
-    ex = botocore.exceptions.ClientError({"Error": {"HTTPStatusCode": 403}}, "foo")
+    ex = botocore.exceptions.ClientError({"Error": {"HTTPStatusCode": 403}}, "foo")  # pyright: ignore[reportAttributeAccessIssue]
     assert not _is_retriable_client_error(ex)
 
     assert _is_retriable_client_error(ssl.SSLError("The read operation timed out"))
@@ -59,8 +59,8 @@ def test_is_retriable_client_error():
 def test_wrap_aws_client(mock_s3_resource):
     client = _wrap_aws_client(mock_s3_resource.meta.client, min_backoff=1000)
     res = client.list_buckets()
-    assert res["ResponseMetadata"]["HTTPStatusCode"] == 200
-    assert res["Buckets"] == []
+    assert res["ResponseMetadata"]["HTTPStatusCode"] == 200  # pyright: ignore[reportOptionalSubscript]
+    assert res["Buckets"] == []  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_boto3_now():

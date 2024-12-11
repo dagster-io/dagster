@@ -50,7 +50,7 @@ class DagsterDltResource(ConfigurableResource):
         """
         try:
             # zoneinfo is python >= 3.9
-            from zoneinfo import ZoneInfo  # type: ignore
+            from zoneinfo import ZoneInfo
 
             casted_instance_types = (datetime, timezone, ZoneInfo)
         except:

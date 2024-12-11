@@ -179,7 +179,7 @@ def test_load_assets_from_modules_with_group_name():
 
 def test_respect_existing_groups():
     assets = load_assets_from_current_module()
-    assert assets[0].group_names_by_key.get(AssetKey("asset_in_current_module")) == "my_group"
+    assert assets[0].group_names_by_key.get(AssetKey("asset_in_current_module")) == "my_group"  # pyright: ignore[reportAttributeAccessIssue]
 
     with pytest.raises(DagsterInvalidDefinitionError):
         load_assets_from_current_module(group_name="yay")
@@ -229,10 +229,10 @@ def test_prefix(prefix):
     from dagster_tests.asset_defs_tests.asset_package import module_with_assets
 
     assets = load_assets_from_modules([asset_package, module_with_assets], key_prefix=prefix)
-    assert_assets_have_prefix(prefix, assets)
+    assert_assets_have_prefix(prefix, assets)  # pyright: ignore[reportArgumentType]
 
     assets = load_assets_from_package_module(asset_package, key_prefix=prefix)
-    assert_assets_have_prefix(prefix, assets)
+    assert_assets_have_prefix(prefix, assets)  # pyright: ignore[reportArgumentType]
 
 
 def _load_assets_from_module_with_assets(**kwargs):

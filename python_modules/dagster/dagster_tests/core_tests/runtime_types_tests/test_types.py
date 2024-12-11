@@ -184,8 +184,8 @@ def test_output_types_succeed_in_job():
         event for event in events_for_node if event.event_type == DagsterEventType.STEP_OUTPUT
     ].pop()
 
-    type_check_data = output_event.event_specific_data.type_check_data
-    assert type_check_data.success
+    type_check_data = output_event.event_specific_data.type_check_data  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert type_check_data.success  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_input_types_fail_in_job():
@@ -219,7 +219,7 @@ def test_input_types_fail_in_job():
         for event in result.events_for_node("take_string")
         if event.event_type == DagsterEventType.STEP_FAILURE
     ].pop()
-    assert failure_event.step_failure_data.error.cls_name == "DagsterTypeCheckDidNotPass"
+    assert failure_event.step_failure_data.error.cls_name == "DagsterTypeCheckDidNotPass"  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_output_types_fail_in_job():
@@ -243,9 +243,9 @@ def test_output_types_fail_in_job():
         event for event in events_for_node if event.event_type == DagsterEventType.STEP_OUTPUT
     ].pop()
 
-    type_check_data = output_event.event_specific_data.type_check_data
-    assert not type_check_data.success
-    assert type_check_data.description == 'Value "1" of python type "int" must be a string.'
+    type_check_data = output_event.event_specific_data.type_check_data  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert not type_check_data.success  # pyright: ignore[reportOptionalMemberAccess]
+    assert type_check_data.description == 'Value "1" of python type "int" must be a string.'  # pyright: ignore[reportOptionalMemberAccess]
 
     failure_event = [
         event
@@ -253,7 +253,7 @@ def test_output_types_fail_in_job():
         if event.event_type == DagsterEventType.STEP_FAILURE
     ].pop()
 
-    assert failure_event.step_failure_data.error.cls_name == "DagsterTypeCheckDidNotPass"
+    assert failure_event.step_failure_data.error.cls_name == "DagsterTypeCheckDidNotPass"  # pyright: ignore[reportOptionalMemberAccess]
 
 
 # TODO add more step output use cases
@@ -278,7 +278,7 @@ def _return_bad_value(_, _value):
     return "foo"
 
 
-BadType = DagsterType(name="BadType", type_check_fn=_return_bad_value)
+BadType = DagsterType(name="BadType", type_check_fn=_return_bad_value)  # pyright: ignore[reportArgumentType]
 
 
 def test_input_type_returns_wrong_thing():
@@ -314,7 +314,7 @@ def test_input_type_returns_wrong_thing():
         if event.event_type == DagsterEventType.STEP_FAILURE
     ].pop()
 
-    assert failure_event.step_failure_data.error.cls_name == "DagsterInvariantViolationError"
+    assert failure_event.step_failure_data.error.cls_name == "DagsterInvariantViolationError"  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_output_type_returns_wrong_thing():
@@ -337,7 +337,7 @@ def test_output_type_returns_wrong_thing():
         for event in result.events_for_node("return_one_bad_thing")
         if event.event_type == DagsterEventType.STEP_FAILURE
     ].pop()
-    assert failure_event.step_failure_data.error.cls_name == "DagsterInvariantViolationError"
+    assert failure_event.step_failure_data.error.cls_name == "DagsterInvariantViolationError"  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_input_type_throw_arbitrary_exception():
@@ -363,7 +363,7 @@ def test_input_type_throw_arbitrary_exception():
         for event in result.events_for_node("take_throws")
         if event.event_type == DagsterEventType.STEP_FAILURE
     ].pop()
-    assert failure_event.step_failure_data.error.cause.cls_name == "AlwaysFailsException"
+    assert failure_event.step_failure_data.error.cause.cls_name == "AlwaysFailsException"  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_output_type_throw_arbitrary_exception():
@@ -385,8 +385,8 @@ def test_output_type_throw_arbitrary_exception():
         for event in result.events_for_node("return_one_throws")
         if event.event_type == DagsterEventType.STEP_FAILURE
     ].pop()
-    assert failure_event.step_failure_data.error.cause.cls_name == "AlwaysFailsException"
-    assert "kdjfkjd" in failure_event.step_failure_data.error.cause.message
+    assert failure_event.step_failure_data.error.cause.cls_name == "AlwaysFailsException"  # pyright: ignore[reportOptionalMemberAccess]
+    assert "kdjfkjd" in failure_event.step_failure_data.error.cause.message  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def define_custom_dict(name, permitted_key_names):
@@ -401,7 +401,7 @@ def define_custom_dict(name, permitted_key_names):
                 return TypeCheck(
                     False,
                     description=(
-                        f"Key {value.name} is not a permitted value, values can only be of: {permitted_key_names}"
+                        f"Key {value.name} is not a permitted value, values can only be of: {permitted_key_names}"  # pyright: ignore[reportAttributeAccessIssue]
                     ),
                 )
         return TypeCheck(
@@ -477,7 +477,7 @@ def test_raise_on_error_type_check_returns_false():
     ]
     for event in result.all_node_events:
         if event.event_type_value == DagsterEventType.STEP_FAILURE.value:
-            assert event.event_specific_data.error.cls_name == "DagsterTypeCheckDidNotPass"
+            assert event.event_specific_data.error.cls_name == "DagsterTypeCheckDidNotPass"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_raise_on_error_true_type_check_returns_unsuccessful_type_check():
@@ -509,7 +509,7 @@ def test_raise_on_error_true_type_check_returns_unsuccessful_type_check():
     ]
     for event in result.all_node_events:
         if event.event_type_value == DagsterEventType.STEP_FAILURE.value:
-            assert event.event_specific_data.error.cls_name == "DagsterTypeCheckDidNotPass"
+            assert event.event_specific_data.error.cls_name == "DagsterTypeCheckDidNotPass"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_raise_on_error_true_type_check_raises_exception():
@@ -537,7 +537,7 @@ def test_raise_on_error_true_type_check_raises_exception():
     ]
     for event in result.all_node_events:
         if event.event_type_value == DagsterEventType.STEP_FAILURE.value:
-            assert event.event_specific_data.error.cause.cls_name == "Failure"
+            assert event.event_specific_data.error.cause.cls_name == "Failure"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_raise_on_error_true_type_check_returns_true():
@@ -584,8 +584,8 @@ def test_raise_on_error_true_type_check_returns_successful_type_check():
     assert result.success
     for event in result.all_node_events:
         if event.event_type_value == DagsterEventType.STEP_OUTPUT.value:
-            assert event.event_specific_data.type_check_data
-            assert event.event_specific_data.type_check_data.metadata["bar"].text == "foo"
+            assert event.event_specific_data.type_check_data  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            assert event.event_specific_data.type_check_data.metadata["bar"].text == "foo"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
     result = foo_job.execute_in_process(raise_on_error=False)
     assert result.success

@@ -19,7 +19,7 @@ from assets_yaml_dsl.domain_specific_dsl.stocks_dsl import assets_defs_from_stoc
 from dagster import AssetKey
 from dagster._core.definitions import materialize
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from examples.experimental.assets_yaml_dsl.assets_yaml_dsl.domain_specific_dsl.stocks_dsl import (
+from examples.experimental.assets_yaml_dsl.assets_yaml_dsl.domain_specific_dsl.stocks_dsl import (  # type: ignore
     build_stock_assets_object,
 )
 

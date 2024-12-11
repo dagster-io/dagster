@@ -425,3 +425,20 @@ def test_resources_snowflake_sqlalchemy_connection():
             assert end_time > freshness_for_table > start_time
         finally:
             conn.cursor().execute(f"drop table if exists {table_name}")
+
+
+def test_resources_snowflake_additional_snowflake_connection_args():
+    """Tests that args passed to additional_snowflake_connection_args are correctly forwarded to
+    snowflake.connector.connect.
+    """
+    with mock.patch("snowflake.connector.connect") as snowflake_conn_mock:
+        with SnowflakeResource(
+            account="account",
+            user="user",
+            password="password",
+            database="TESTDB",
+            schema="TESTSCHEMA",
+            additional_snowflake_connection_args={"foo": "bar"},
+        ).get_connection():
+            assert snowflake_conn_mock.call_count == 1
+            assert snowflake_conn_mock.call_args[1]["foo"] == "bar"

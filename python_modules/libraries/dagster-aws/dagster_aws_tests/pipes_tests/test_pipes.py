@@ -910,8 +910,8 @@ def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
                     resources={"pipes_ecs_client": pipes_ecs_client},
                 )
         finally:
-            assert len(pipes_ecs_client._client._task_runs) > 0  # noqa
-            task_arn = next(iter(pipes_ecs_client._client._task_runs.keys()))  # noqa
+            assert len(pipes_ecs_client._client._task_runs) > 0  # noqa  # pyright: ignore[reportAttributeAccessIssue]
+            task_arn = next(iter(pipes_ecs_client._client._task_runs.keys()))  # noqa  # pyright: ignore[reportAttributeAccessIssue]
             return_dict[0] = pipes_ecs_client._client.describe_tasks(  # noqa
                 cluster="test-cluster", tasks=[task_arn]
             )

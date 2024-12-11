@@ -85,7 +85,7 @@ export const RunRow = ({
       </td>
       <td style={{position: 'relative'}}>
         <Box flex={{direction: 'column', gap: 5}}>
-          <RunTargetLink isJob={isJob} run={run} repoAddress={repoAddressGuess} />
+          <RunTargetLink isJob={isJob} run={run} repoAddress={repoAddressGuess} useTags={false} />
           <Box
             flex={{direction: 'row', alignItems: 'center', wrap: 'wrap'}}
             style={{gap: '4px 8px'}}

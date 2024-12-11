@@ -97,7 +97,7 @@ def _build_column_header(column_name, constraints):
     for constraint in constraints:
         if isinstance(constraint, ColumnDTypeInSetConstraint):
             dtypes_tuple = tuple(constraint.expected_dtype_set)
-            return header + f": `{dtypes_tuple if len(dtypes_tuple) > 1 else dtypes_tuple[0]}`"
+            return header + f": `{dtypes_tuple if len(dtypes_tuple) > 1 else dtypes_tuple[0]}`"  # pyright: ignore[reportGeneralTypeIssues]
         elif isinstance(constraint, ColumnDTypeFnConstraint):
             return header + f": Validator `{constraint.type_fn.__name__}`"
     return header
@@ -189,7 +189,7 @@ def create_dagster_pandas_dataframe_type(
 
         return TypeCheck(
             success=True,
-            metadata=_execute_summary_stats(name, value, metadata_fn) if metadata_fn else None,
+            metadata=_execute_summary_stats(name, value, metadata_fn) if metadata_fn else None,  # pyright: ignore[reportArgumentType]
         )
 
     return DagsterType(

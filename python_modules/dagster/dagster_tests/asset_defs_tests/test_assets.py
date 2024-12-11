@@ -575,7 +575,7 @@ def test_asset_with_io_manager_key_only():
 
 
 def test_asset_both_io_manager_args_provided():
-    @io_manager
+    @io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
     def the_io_manager():
         pass
 
@@ -810,7 +810,7 @@ def test_graph_backed_asset_io_manager():
             events.append(f"entered handle_output for {context.step_key}")
 
         def load_input(self, context):
-            events.append(f"entered handle_input for {context.upstream_output.step_key}")
+            events.append(f"entered handle_input for {context.upstream_output.step_key}")  # pyright: ignore[reportOptionalMemberAccess]
 
     asset_provided_resources = AssetsDefinition.from_graph(
         graph_def=basic,
@@ -1310,7 +1310,7 @@ def test_graph_backed_asset_subset_two_routes():
     result = materialize([assets], selection=["asset2"])
     assert result.success
     materialized_assets = [
-        event.event_specific_data.materialization.asset_key
+        event.event_specific_data.materialization.asset_key  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         for event in result.get_asset_materialization_events()
     ]
     assert materialized_assets == [AssetKey("asset2")]
@@ -1339,7 +1339,7 @@ def test_graph_backed_asset_subset_two_routes_yield_only_selected():
     result = materialize([assets], selection=["asset2"])
     assert result.success
     materialized_assets = [
-        event.event_specific_data.materialization.asset_key
+        event.event_specific_data.materialization.asset_key  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         for event in result.get_asset_materialization_events()
     ]
     assert materialized_assets == [AssetKey("asset2")]
@@ -1468,8 +1468,8 @@ def test_nested_graph_subset_context(
 
     @graph(out={"a": GraphOut(), "b": GraphOut(), "c": GraphOut(), "d": GraphOut()})
     def nested_graph():
-        a, b = two_outputs_graph()
-        c, d = downstream_graph(b)
+        a, b = two_outputs_graph()  # pyright: ignore[reportGeneralTypeIssues]
+        c, d = downstream_graph(b)  # pyright: ignore[reportGeneralTypeIssues]
         return {"a": a, "b": b, "c": c, "d": d}
 
     with instance_for_test() as instance:
@@ -1667,7 +1667,7 @@ def test_asset_key_with_prefix():
     )
 
     with pytest.raises(CheckError):
-        AssetKey("foo").with_prefix(1)
+        AssetKey("foo").with_prefix(1)  # pyright: ignore[reportArgumentType]
 
 
 def _exec_asset(asset_def, selection=None):
@@ -2231,8 +2231,8 @@ def test_replace_asset_keys_for_asset_with_owners():
 def test_asset_spec_with_code_versions():
     @multi_asset(specs=[AssetSpec(key="a", code_version="1"), AssetSpec(key="b", code_version="2")])
     def multi_asset_with_versions():
-        yield MaterializeResult("a")
-        yield MaterializeResult("b")
+        yield MaterializeResult("a")  # pyright: ignore[reportCallIssue]
+        yield MaterializeResult("b")  # pyright: ignore[reportCallIssue]
 
     code_versions_by_key = {spec.key: spec.code_version for spec in multi_asset_with_versions.specs}
     assert code_versions_by_key == {AssetKey(["a"]): "1", AssetKey(["b"]): "2"}
@@ -2243,8 +2243,8 @@ def test_asset_spec_with_metadata():
         specs=[AssetSpec(key="a", metadata={"foo": "1"}), AssetSpec(key="b", metadata={"bar": "2"})]
     )
     def multi_asset_with_metadata():
-        yield MaterializeResult("a")
-        yield MaterializeResult("b")
+        yield MaterializeResult("a")  # pyright: ignore[reportCallIssue]
+        yield MaterializeResult("b")  # pyright: ignore[reportCallIssue]
 
     metadata_by_key = {spec.key: spec.metadata for spec in multi_asset_with_metadata.specs}
     assert metadata_by_key == {AssetKey(["a"]): {"foo": "1"}, AssetKey(["b"]): {"bar": "2"}}

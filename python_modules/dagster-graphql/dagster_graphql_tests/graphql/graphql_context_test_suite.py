@@ -288,7 +288,7 @@ class EnvironmentManagers:
                     )
                     if loadable_target_origin.python_file
                     else ModuleTarget(
-                        module_name=loadable_target_origin.module_name,
+                        module_name=loadable_target_origin.module_name,  # pyright: ignore[reportArgumentType]
                         attribute=loadable_target_origin.attribute,
                         working_directory=loadable_target_origin.working_directory,
                         location_name=location_name,
@@ -321,7 +321,7 @@ class EnvironmentManagers:
                     GrpcServerTarget(
                         port=api_client.port,
                         socket=api_client.socket,
-                        host=api_client.host,
+                        host=api_client.host,  # pyright: ignore[reportArgumentType]
                         location_name=location_name,
                     ),
                     version="",
@@ -341,7 +341,7 @@ class EnvironmentManagers:
         def _mgr_fn(instance, read_only):
             loadable_target_origin = target or get_main_loadable_target_origin()
             with safe_tempfile_path() as socket:
-                subprocess_args = [
+                subprocess_args = [  # pyright: ignore[reportOperatorIssue]
                     "dagster",
                     "code-server",
                     "start",

@@ -67,10 +67,10 @@ def test_yes_output_notebook_yes_io_manager():
 
         output_path = (
             materializations[0]
-            .event_specific_data.materialization.metadata["Executed notebook"]
+            .event_specific_data.materialization.metadata["Executed notebook"]  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
             .path
         )
-        assert os.path.exists(output_path)
+        assert os.path.exists(output_path)  # pyright: ignore[reportArgumentType]
 
-        with open(output_path, "rb") as f:
+        with open(output_path, "rb") as f:  # pyright: ignore[reportCallIssue,reportArgumentType]
             assert f.read() == result.output_for_node("load_notebook")

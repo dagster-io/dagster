@@ -203,8 +203,8 @@ class FivetranResource(ConfigurableResource):
         failed_at = parser.parse(connector_details["failed_at"] or min_time_str)
 
         return (
-            max(succeeded_at, failed_at),
-            succeeded_at > failed_at,
+            max(succeeded_at, failed_at),  # pyright: ignore[reportReturnType]
+            succeeded_at > failed_at,  # pyright: ignore[reportOperatorIssue]
             connector_details["status"]["sync_state"],
         )
 

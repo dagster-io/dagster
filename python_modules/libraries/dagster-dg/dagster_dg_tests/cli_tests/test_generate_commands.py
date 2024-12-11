@@ -11,14 +11,14 @@ from typing import Iterator
 import pytest
 import tomli
 from click.testing import CliRunner
-from dg_cli.cli.generate import (
+from dagster_dg.cli.generate import (
     generate_code_location_command,
     generate_component_command,
     generate_component_type_command,
     generate_deployment_command,
 )
-from dg_cli.context import CodeLocationProjectContext
-from dg_cli.utils import pushd
+from dagster_dg.context import CodeLocationProjectContext
+from dagster_dg.utils import pushd
 
 
 def _ensure_cwd_on_sys_path():
@@ -142,6 +142,10 @@ def test_generate_code_location_inside_deployment_success() -> None:
         assert Path("code_locations/bar/bar_tests").exists()
         assert Path("code_locations/bar/pyproject.toml").exists()
 
+        # Check venv created
+        assert Path("code_locations/bar/.venv").exists()
+        assert Path("code_locations/bar/uv.lock").exists()
+
         # Commented out because we are always adding sources right now
         # with open("code_locations/bar/pyproject.toml") as f:
         #     toml = tomli.loads(f.read())
@@ -161,6 +165,10 @@ def test_generate_code_location_outside_deployment_success() -> None:
         assert Path("bar/bar/components").exists()
         assert Path("bar/bar_tests").exists()
         assert Path("bar/pyproject.toml").exists()
+
+        # Check venv created
+        assert Path("bar/.venv").exists()
+        assert Path("bar/uv.lock").exists()
 
 
 def _find_git_root():

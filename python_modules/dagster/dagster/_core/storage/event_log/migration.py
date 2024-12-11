@@ -26,12 +26,12 @@ def migrate_event_log_data(instance=None):
     """
     from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 
-    event_log_storage = instance._event_storage  # noqa: SLF001
+    event_log_storage = instance._event_storage  # noqa: SLF001  # pyright: ignore[reportOptionalMemberAccess]
 
     if not isinstance(event_log_storage, SqlEventLogStorage):
         return
 
-    for run in instance.get_runs():
+    for run in instance.get_runs():  # pyright: ignore[reportOptionalMemberAccess]
         for record in event_log_storage.get_records_for_run(run.run_id).records:
             event_log_storage.update_event_log_record(record.storage_id, record.event_log_entry)
 
@@ -64,10 +64,10 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
             try:
                 conn.execute(
                     AssetKeyTable.insert().values(
-                        asset_key=AssetKey.from_db_string(asset_key).to_string()
+                        asset_key=AssetKey.from_db_string(asset_key).to_string()  # pyright: ignore[reportOptionalMemberAccess]
                     )
                 )
-            except db.exc.IntegrityError:
+            except db.exc.IntegrityError:  # pyright: ignore[reportAttributeAccessIssue]
                 # asset key already present
                 pass
 
@@ -119,14 +119,14 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                 materialization_query = (
                     db_select([SqlEventLogStorageTable.c.event])
                     .where(
-                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
+                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),  # pyright: ignore[reportOptionalMemberAccess]
                     )
                     .order_by(SqlEventLogStorageTable.c.timestamp.desc())
                     .limit(1)
                 )
                 materialization_row = conn.execute(materialization_query).fetchone()
                 if materialization_row:
-                    event = deserialize_value(materialization_row[0], NamedTuple)
+                    event = deserialize_value(materialization_row[0], NamedTuple)  # pyright: ignore[reportCallIssue,reportArgumentType]
 
             if not event:
                 # this must be a wiped asset
@@ -140,7 +140,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                         ),
                     )
                     .where(
-                        AssetKeyTable.c.asset_key == asset_key.to_string(),
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),  # pyright: ignore[reportOptionalMemberAccess]
                     )
                 )
             else:
@@ -154,7 +154,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                         ),
                     )
                     .where(
-                        AssetKeyTable.c.asset_key == asset_key.to_string(),
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),  # pyright: ignore[reportOptionalMemberAccess]
                     )
                 )
 

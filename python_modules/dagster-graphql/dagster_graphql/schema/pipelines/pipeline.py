@@ -1018,7 +1018,7 @@ class GrapheneJob(GraphenePipeline):
 
     # doesn't inherit from base class
     def __init__(self, remote_job):
-        super().__init__()
+        super().__init__()  # pyright: ignore[reportCallIssue]
         self._remote_job = check.inst_param(remote_job, "remote_job", RemoteJob)
 
 

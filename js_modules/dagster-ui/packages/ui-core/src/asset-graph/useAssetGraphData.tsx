@@ -80,12 +80,17 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
     buildGraphData({
       nodes: queryItems,
       flagAssetSelectionSyntax: featureEnabled(FeatureFlag.flagAssetSelectionSyntax),
-    })?.then((data) => {
-      if (lastProcessedRequestRef.current < requestId) {
-        lastProcessedRequestRef.current = requestId;
-        setFullAssetGraphData(data);
-      }
-    });
+    })
+      ?.then((data) => {
+        if (lastProcessedRequestRef.current < requestId) {
+          lastProcessedRequestRef.current = requestId;
+          setFullAssetGraphData(data);
+        }
+      })
+      .catch((e) => {
+        // buildGraphData is throttled and rejects promises when another call is made before the throttle delay.
+        console.warn(e);
+      });
   }, [options.loading, queryItems]);
 
   return fullAssetGraphData;
@@ -179,7 +184,8 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
         }
       })
       .catch((e) => {
-        console.error(e);
+        // computeGraphData is throttled and rejects promises when another call is made before the throttle delay.
+        console.warn(e);
         if (requestId === currentRequestRef.current) {
           setGraphDataLoading(false);
         }

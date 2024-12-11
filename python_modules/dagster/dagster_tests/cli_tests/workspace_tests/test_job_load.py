@@ -15,7 +15,7 @@ def load_pipeline_via_cli_runner(cli_args):
     @job_target_argument
     def command(**kwargs):
         with get_remote_job_from_kwargs(DagsterInstance.get(), "", kwargs) as remote_job:
-            capture_result["external_pipeline"] = remote_job
+            capture_result["external_pipeline"] = remote_job  # pyright: ignore[reportArgumentType]
 
     with instance_for_test():
         runner = CliRunner()

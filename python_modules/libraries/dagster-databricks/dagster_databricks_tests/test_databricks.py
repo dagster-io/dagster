@@ -326,8 +326,8 @@ class TestDatabricksClientHasCredentials:
                 client_id="test-client-id", client_secret="test-client-secret"
             ),
         )
-        assert client.oauth_credentials.client_id == "test-client-id"
-        assert client.oauth_credentials.client_secret == "test-client-secret"
+        assert client.oauth_credentials.client_id == "test-client-id"  # pyright: ignore[reportOptionalMemberAccess]
+        assert client.oauth_credentials.client_secret == "test-client-secret"  # pyright: ignore[reportOptionalMemberAccess]
         assert client.token is None
         assert client.azure_credentials is None
 
@@ -340,8 +340,8 @@ class TestDatabricksClientHasCredentials:
                 azure_tenant_id="test-tenant-id",
             ),
         )
-        assert client.azure_credentials.azure_client_id == "test-client-id"
-        assert client.azure_credentials.azure_client_secret == "test-client-secret"
-        assert client.azure_credentials.azure_tenant_id == "test-tenant-id"
+        assert client.azure_credentials.azure_client_id == "test-client-id"  # pyright: ignore[reportOptionalMemberAccess]
+        assert client.azure_credentials.azure_client_secret == "test-client-secret"  # pyright: ignore[reportOptionalMemberAccess]
+        assert client.azure_credentials.azure_tenant_id == "test-tenant-id"  # pyright: ignore[reportOptionalMemberAccess]
         assert client.token is None
         assert client.oauth_credentials is None

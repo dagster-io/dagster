@@ -368,6 +368,6 @@ def test_load_from_instance_with_downstream_asset_errors():
         match='Param "asset" is not one of ',
     ):
 
-        @asset(deps=[ab_cacheable_assets])
+        @asset(deps=[ab_cacheable_assets])  # pyright: ignore[reportArgumentType]
         def downstream_of_ab():
             return None

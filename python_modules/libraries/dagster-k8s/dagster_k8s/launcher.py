@@ -400,7 +400,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         else:
-            job_debug_info = self._api_client.get_job_debug_info(job_name, namespace=namespace)
+            job_debug_info = self._api_client.get_job_debug_info(job_name, namespace=namespace)  # pyright: ignore[reportArgumentType]
             full_msg = (
                 full_msg
                 + "\n\n"
@@ -419,7 +419,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
         try:
             status = self._api_client.get_job_status(
-                namespace=container_context.namespace,
+                namespace=container_context.namespace,  # pyright: ignore[reportArgumentType]
                 job_name=job_name,
             )
         except Exception:

@@ -83,7 +83,7 @@ def test_assets(schema_prefix, auto_materialize_policy, monkeypatch):
     )
 
     materializations = [
-        event.event_specific_data.materialization
+        event.event_specific_data.materialization  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         for event in res.events_for_node(ab_assets_name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
@@ -185,7 +185,7 @@ def test_assets_with_normalization(
     )
 
     materializations = [
-        event.event_specific_data.materialization
+        event.event_specific_data.materialization  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         for event in res.events_for_node(ab_assets_name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
@@ -288,9 +288,9 @@ def test_built_airbyte_asset_with_downstream_asset_via_definition():
     def downstream_of_ab():
         return None
 
-    assert len(downstream_of_ab.input_names) == 2
-    assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.is_nothing
-    assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.is_nothing
+    assert len(downstream_of_ab.input_names) == 2  # pyright: ignore[reportArgumentType]
+    assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_built_airbyte_asset_with_downstream_asset():
@@ -305,9 +305,9 @@ def test_built_airbyte_asset_with_downstream_asset():
     def downstream_of_ab():
         return None
 
-    assert len(downstream_of_ab.input_names) == 2
-    assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.is_nothing
-    assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.is_nothing
+    assert len(downstream_of_ab.input_names) == 2  # pyright: ignore[reportArgumentType]
+    assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_built_airbyte_asset_table_name():

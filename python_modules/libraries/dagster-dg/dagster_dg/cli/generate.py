@@ -5,13 +5,13 @@ from typing import Optional, Tuple
 
 import click
 
-from dg_cli.context import (
+from dagster_dg.context import (
     CodeLocationProjectContext,
     DeploymentProjectContext,
     is_inside_code_location_project,
     is_inside_deployment_project,
 )
-from dg_cli.generate import (
+from dagster_dg.generate import (
     generate_code_location,
     generate_component_instance,
     generate_component_type,

@@ -619,7 +619,7 @@ class OptionalType(DagsterType):
 
     @property
     def inner_types(self):
-        return [self.inner_type] + self.inner_type.inner_types
+        return [self.inner_type] + self.inner_type.inner_types  # pyright: ignore[reportOperatorIssue]
 
     @property
     def type_param_keys(self):
@@ -688,7 +688,7 @@ class ListType(DagsterType):
 
     @property
     def inner_types(self):
-        return [self.inner_type] + self.inner_type.inner_types
+        return [self.inner_type] + self.inner_type.inner_types  # pyright: ignore[reportOperatorIssue]
 
     @property
     def type_param_keys(self):

@@ -218,7 +218,7 @@ def test_file_message_reader(tmp_path_factory, capsys):
     mat = mats[0]
     assert mat.asset_key == AssetKey(["my_asset"])
     assert mat.materialization.metadata["foo"].value == "bar"
-    assert mat.materialization.tags[DATA_VERSION_TAG] == "alpha"
+    assert mat.materialization.tags[DATA_VERSION_TAG] == "alpha"  # pyright: ignore[reportOptionalSubscript]
 
     captured = capsys.readouterr()
 

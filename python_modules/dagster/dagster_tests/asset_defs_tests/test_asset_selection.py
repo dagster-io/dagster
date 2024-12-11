@@ -509,47 +509,47 @@ def test_asset_selection_type_checking():
     invalid_argument = "invalid_argument"
 
     with pytest.raises(CheckError):
-        AssetChecksForAssetKeysSelection(selected_asset_keys=invalid_argument)
+        AssetChecksForAssetKeysSelection(selected_asset_keys=invalid_argument)  # pyright: ignore[reportArgumentType]
     test = AssetChecksForAssetKeysSelection(selected_asset_keys=valid_asset_key_sequence)
     assert isinstance(test, AssetChecksForAssetKeysSelection)
 
     with pytest.raises(CheckError):
-        AssetCheckKeysSelection(selected_asset_check_keys=invalid_argument)
+        AssetCheckKeysSelection(selected_asset_check_keys=invalid_argument)  # pyright: ignore[reportArgumentType]
     test = AssetCheckKeysSelection(selected_asset_check_keys=valid_asset_check_key_sequence)
     assert isinstance(test, AssetCheckKeysSelection)
 
     with pytest.raises(CheckError):
-        AndAssetSelection(operands=invalid_argument)
+        AndAssetSelection(operands=invalid_argument)  # pyright: ignore[reportArgumentType]
     test = AndAssetSelection(operands=valid_asset_selection_sequence)
     assert isinstance(test, AndAssetSelection)
 
     with pytest.raises(CheckError):
-        OrAssetSelection(operands=invalid_argument)
+        OrAssetSelection(operands=invalid_argument)  # pyright: ignore[reportArgumentType]
     test = OrAssetSelection(operands=valid_asset_selection_sequence)
     assert isinstance(test, OrAssetSelection)
 
     with pytest.raises(CheckError):
-        SubtractAssetSelection(left=invalid_argument, right=invalid_argument)
+        SubtractAssetSelection(left=invalid_argument, right=invalid_argument)  # pyright: ignore[reportArgumentType]
     test = SubtractAssetSelection(left=valid_asset_selection, right=valid_asset_selection)
     assert isinstance(test, SubtractAssetSelection)
 
     with pytest.raises(CheckError):
-        SinksAssetSelection(child=invalid_argument)
+        SinksAssetSelection(child=invalid_argument)  # pyright: ignore[reportArgumentType]
     test = SinksAssetSelection(child=valid_asset_selection)
     assert isinstance(test, SinksAssetSelection)
 
     with pytest.raises(CheckError):
-        RequiredNeighborsAssetSelection(child=invalid_argument)
+        RequiredNeighborsAssetSelection(child=invalid_argument)  # pyright: ignore[reportArgumentType]
     test = RequiredNeighborsAssetSelection(child=valid_asset_selection)
     assert isinstance(test, RequiredNeighborsAssetSelection)
 
     with pytest.raises(CheckError):
-        RootsAssetSelection(child=invalid_argument)
+        RootsAssetSelection(child=invalid_argument)  # pyright: ignore[reportArgumentType]
     test = RootsAssetSelection(child=valid_asset_selection)
     assert isinstance(test, RootsAssetSelection)
 
     with pytest.raises(CheckError):
-        DownstreamAssetSelection(child=invalid_argument, depth=0, include_self=False)
+        DownstreamAssetSelection(child=invalid_argument, depth=0, include_self=False)  # pyright: ignore[reportArgumentType]
     test = DownstreamAssetSelection(child=valid_asset_selection, depth=0, include_self=False)
     assert isinstance(test, DownstreamAssetSelection)
 
@@ -557,7 +557,7 @@ def test_asset_selection_type_checking():
     assert isinstance(test, GroupsAssetSelection)
 
     with pytest.raises(CheckError):
-        KeysAssetSelection(selected_keys=invalid_argument)
+        KeysAssetSelection(selected_keys=invalid_argument)  # pyright: ignore[reportArgumentType]
     test = KeysAssetSelection(selected_keys=valid_asset_key_sequence)
     assert isinstance(test, KeysAssetSelection)
 
@@ -573,12 +573,12 @@ def test_asset_selection_type_checking():
     assert isinstance(test, KeyPrefixesAssetSelection)
 
     with pytest.raises(CheckError):
-        UpstreamAssetSelection(child=invalid_argument, depth=0, include_self=False)
+        UpstreamAssetSelection(child=invalid_argument, depth=0, include_self=False)  # pyright: ignore[reportArgumentType]
     test = UpstreamAssetSelection(child=valid_asset_selection, depth=0, include_self=False)
     assert isinstance(test, UpstreamAssetSelection)
 
     with pytest.raises(CheckError):
-        ParentSourcesAssetSelection(child=invalid_argument)
+        ParentSourcesAssetSelection(child=invalid_argument)  # pyright: ignore[reportArgumentType]
     test = ParentSourcesAssetSelection(child=valid_asset_selection)
     assert isinstance(test, ParentSourcesAssetSelection)
 
@@ -616,7 +616,7 @@ def test_to_serializable_asset_selection():
     @asset
     def asset2(): ...
 
-    @asset_check(asset=asset1)
+    @asset_check(asset=asset1)  # pyright: ignore[reportArgumentType]
     def check1(): ...
 
     asset_graph = AssetGraph.from_assets([asset1, asset2, check1])

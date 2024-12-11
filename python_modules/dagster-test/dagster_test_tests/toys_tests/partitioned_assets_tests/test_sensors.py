@@ -20,8 +20,8 @@ def test_ints_sensors():
         ) as context:
             for ints_sensor in ints_sensors:
                 result = ints_sensor(context)
-                assert len(result.run_requests) == 1
-                assert len(result.dynamic_partitions_requests) == 3
+                assert len(result.run_requests) == 1  # pyright: ignore[reportOptionalMemberAccess,reportArgumentType,reportAttributeAccessIssue]
+                assert len(result.dynamic_partitions_requests) == 3  # pyright: ignore[reportOptionalMemberAccess,reportArgumentType,reportAttributeAccessIssue]
 
 
 def test_daily_partitioned_sensor():
@@ -29,4 +29,4 @@ def test_daily_partitioned_sensor():
         repository_def=partitioned_assets_repository,
     ) as context:
         result = upstream_daily_partitioned_asset_sensor.evaluate_tick(context)
-        assert len(result.run_requests) == 2
+        assert len(result.run_requests) == 2  # pyright: ignore[reportArgumentType]

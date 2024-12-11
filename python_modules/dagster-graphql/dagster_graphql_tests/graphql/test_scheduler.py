@@ -874,7 +874,7 @@ def test_repository_batching(graphql_context):
     assert "repositoryOrError" in result.data
     assert "schedules" in result.data["repositoryOrError"]
     counter = traced_counter.get()
-    counts = counter.counts()
+    counts = counter.counts()  # pyright: ignore[reportOptionalMemberAccess]
     assert counts
     assert len(counts) == 3
 

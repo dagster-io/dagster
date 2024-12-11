@@ -7,7 +7,7 @@ def test_config_any():
     assert validate_config(any_inst, 1).success
     assert validate_config(any_inst, None).success
     assert validate_config(any_inst, "r").success
-    assert any_inst.kind == ConfigTypeKind.ANY
+    assert any_inst.kind == ConfigTypeKind.ANY  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_config_int():

@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 
 import click
 
-from dg_cli.utils import (
+from dagster_dg.utils import (
     camelcase,
     discover_git_root,
     execute_code_location_command,
@@ -60,6 +60,9 @@ def generate_code_location(path: str, editable_dagster_root: Optional[str] = Non
         ),
         uv_sources=uv_sources,
     )
+
+    # Build the venv
+    execute_code_location_command(Path(path), ("uv", "sync"))
 
 
 def generate_component_type(root_path: str, name: str) -> None:
