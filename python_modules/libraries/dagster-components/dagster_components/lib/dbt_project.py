@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Mapping, Optional
+from typing import Any, Iterator, Mapping, Optional
 
 import click
 import dagster._check as check
@@ -109,10 +109,10 @@ class DbtProjectComponent(Component):
             op_tags=self.op_spec.tags if self.op_spec else None,
             dagster_dbt_translator=self.dbt_translator,
         )
-        def _fn(context: AssetExecutionContext, dbt: DbtCliResource):
-            yield from dbt.cli(["build"], context=context).stream()
+        def _fn(context: AssetExecutionContext):
+            yield from self.execute(context=context, dbt=self.dbt_resource)
 
-        return Definitions(assets=[_fn], resources={"dbt": self.dbt_resource})
+        return Definitions(assets=[_fn])
 
     @classmethod
     def generate_files(cls, params: DbtGenerateParams) -> Mapping[str, Any]:
@@ -135,3 +135,6 @@ class DbtProjectComponent(Component):
             relative_path = None
 
         return {"dbt": {"project_dir": relative_path}}
+
+    def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
+        yield from dbt.cli(["build"], context=context).stream()
