@@ -1,4 +1,11 @@
-import {Box, ButtonLink, Tag, TokenizingFieldValue, tokenToString} from '@dagster-io/ui-components';
+import {
+  Box,
+  ButtonLink,
+  Checkbox,
+  Tag,
+  TokenizingFieldValue,
+  tokenToString,
+} from '@dagster-io/ui-components';
 import {useCallback, useMemo} from 'react';
 import {useParams} from 'react-router-dom';
 
@@ -11,11 +18,11 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {RunsFilter} from '../graphql/types';
+import {RunsFeedView, RunsFilter} from '../graphql/types';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterTag} from '../runs/RunTag';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {RunsFeedError} from '../runs/RunsFeedError';
-import {useIncludeRunsFromBackfillsOption} from '../runs/RunsFeedRoot';
 import {RunsFeedTable} from '../runs/RunsFeedTable';
 import {
   RunFilterToken,
@@ -59,7 +66,10 @@ export const PipelineRunsFeedRoot = (props: {repoAddress?: RepoAddress}) => {
     ].filter(Boolean) as TokenizingFieldValue[];
   }, [isJob, pipelineName, snapshotId]);
 
-  const includeRunsFromBackfills = useIncludeRunsFromBackfillsOption();
+  const [view, setView] = useQueryPersistedState<RunsFeedView>({
+    queryKey: 'view',
+    defaults: {view: RunsFeedView.ROOTS},
+  });
 
   const runsFilter: RunsFilter = useMemo(() => {
     const allTokens = [...filterTokens, ...permanentTokens];
@@ -83,11 +93,7 @@ export const PipelineRunsFeedRoot = (props: {repoAddress?: RepoAddress}) => {
     [filterTokens, setFilterTokens],
   );
 
-  const {entries, paginationProps, queryResult} = useRunsFeedEntries(
-    runsFilter,
-    'all',
-    includeRunsFromBackfills.value,
-  );
+  const {entries, paginationProps, queryResult} = useRunsFeedEntries(runsFilter, 'all', view);
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
@@ -105,7 +111,13 @@ export const PipelineRunsFeedRoot = (props: {repoAddress?: RepoAddress}) => {
       padding={{right: 16}}
     >
       {button}
-      {includeRunsFromBackfills.element}
+      <Checkbox
+        label={<span>Show runs within backfills</span>}
+        checked={view === RunsFeedView.RUNS}
+        onChange={() => {
+          setView(view === RunsFeedView.RUNS ? RunsFeedView.ROOTS : RunsFeedView.RUNS);
+        }}
+      />
       <div style={{flex: 1}} />
       <QueryRefreshCountdown refreshState={refreshState} />
     </Box>

@@ -21,7 +21,7 @@ import {
 } from './types/RunsFilterInput.types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
-import {RunStatus, RunsFilter} from '../graphql/types';
+import {RunStatus, RunsFeedView, RunsFilter} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/BaseFilters';
@@ -124,10 +124,10 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
 export function runsPathWithFilters(
   filterTokens: RunFilterToken[],
   basePath: string = '/runs',
-  includeRunsFromBackfills: boolean | undefined = undefined,
+  view: RunsFeedView = RunsFeedView.ROOTS,
 ) {
   return `${basePath}?${qs.stringify(
-    {q: tokensAsStringArray(filterTokens), show_runs_within_backfills: includeRunsFromBackfills},
+    {q: tokensAsStringArray(filterTokens), view},
     {arrayFormat: 'brackets'},
   )}`;
 }
