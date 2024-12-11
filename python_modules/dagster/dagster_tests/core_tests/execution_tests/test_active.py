@@ -168,11 +168,11 @@ def define_concurrency_job(use_tags):
         tags = None
         concurrency_kwarg = "foo"
 
-    @op(tags=tags, concurrency_key=concurrency_kwarg)
+    @op(tags=tags, concurrency_group=concurrency_kwarg)
     def foo_op():
         pass
 
-    @op(tags=tags, concurrency_key=concurrency_kwarg)
+    @op(tags=tags, concurrency_group=concurrency_kwarg)
     def bar_op():
         pass
 
@@ -273,7 +273,7 @@ def define_concurrency_retry_job(use_tags):
         tags = None
         concurrency_kwarg = "foo"
 
-    @op(tags=tags, concurrency_key=concurrency_kwarg)
+    @op(tags=tags, concurrency_group=concurrency_kwarg)
     def foo_op():
         pass
 
