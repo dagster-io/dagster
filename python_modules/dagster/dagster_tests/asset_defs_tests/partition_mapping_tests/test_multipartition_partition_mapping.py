@@ -694,6 +694,12 @@ def test_multipartitions_required_but_invalid_upstream_partitions():
     assert result.partitions_subset.get_partition_keys() == set(
         [MultiPartitionKey({"time": "2023-06-01", "123": "1"})]
     )
+    assert result.required_but_nonexistent_subset.get_partition_keys() == {"2023-05-01"}
+    assert (
+        str(result.required_but_nonexistent_subset)
+        == "DefaultPartitionsSubset(subset={'2023-05-01'})"
+    )
+
     assert result.required_but_nonexistent_partition_keys == ["2023-05-01"]
 
 

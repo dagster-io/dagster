@@ -106,9 +106,9 @@ def test_time_window_partitions_subset_serialization_deserialization(
     )
     subset = cast(
         TimeWindowPartitionsSubset,
-        TimeWindowPartitionsSubset.empty_subset(time_window_partitions_def).with_partition_keys(
-            ["2023-01-01"]
-        ),
+        TimeWindowPartitionsSubset.create_empty_subset(
+            time_window_partitions_def
+        ).with_partition_keys(["2023-01-01"]),
     )
 
     deserialized = deserialize_value(
@@ -208,4 +208,4 @@ def test_partitions_set_short_circuiting() -> None:
     assert and_result is default_ps
 
     # Test short-circuiting of -. Returns an empty DefaultPartitionsSubset
-    assert (default_ps - all_ps) == DefaultPartitionsSubset.empty_subset()
+    assert (default_ps - all_ps) == DefaultPartitionsSubset.create_empty_subset()
