@@ -1,7 +1,7 @@
 ---
 title: 'Insights'
 description: 'Visiblity into historical usage, cost, and metadata.'
-sidebar_position: 10
+sidebar_position: 50
 ---
 
 # Dagster+ Insights
