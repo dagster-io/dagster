@@ -13,7 +13,7 @@ from dagster_dg.utils import (
 )
 
 
-def generate_deployment(path: str) -> None:
+def generate_deployment(path: Path) -> None:
     click.echo(f"Creating a Dagster deployment at {path}.")
 
     generate_subtree(
@@ -25,7 +25,7 @@ def generate_deployment(path: str) -> None:
     )
 
 
-def generate_code_location(path: str, editable_dagster_root: Optional[str] = None) -> None:
+def generate_code_location(path: Path, editable_dagster_root: Optional[str] = None) -> None:
     click.echo(f"Creating a Dagster code location at {path}.")
 
     # Temporarily we always set an editable dagster root. This is needed while the packages are not
@@ -65,7 +65,7 @@ def generate_code_location(path: str, editable_dagster_root: Optional[str] = Non
     execute_code_location_command(Path(path), ("uv", "sync"))
 
 
-def generate_component_type(root_path: str, name: str) -> None:
+def generate_component_type(root_path: Path, name: str) -> None:
     click.echo(f"Creating a Dagster component type at {root_path}/{name}.py.")
 
     generate_subtree(
@@ -79,7 +79,7 @@ def generate_component_type(root_path: str, name: str) -> None:
 
 
 def generate_component_instance(
-    root_path: str,
+    root_path: Path,
     name: str,
     component_type: str,
     json_params: Optional[str],
@@ -87,7 +87,7 @@ def generate_component_instance(
 ) -> None:
     click.echo(f"Creating a Dagster component instance at {root_path}/{name}.py.")
 
-    component_instance_root_path = os.path.join(root_path, name)
+    component_instance_root_path = root_path / name
     generate_subtree(
         path=component_instance_root_path,
         name_placeholder="COMPONENT_INSTANCE_NAME_PLACEHOLDER",
