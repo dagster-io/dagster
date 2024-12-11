@@ -29,7 +29,7 @@ def list_component_types_command() -> None:
         sys.exit(1)
 
     context = CodeLocationProjectContext.from_path(
-        Path.cwd(), ComponentRegistry.from_entry_point_discovery()
+        Path.cwd(), ComponentRegistry.from_python_environment()
     )
     output: Dict[str, Any] = {}
     for component_type in context.list_component_types():

@@ -12,7 +12,7 @@ from dagster_components.core.component_defs_builder import (
     build_components_from_component_folder,
     defs_from_components,
 )
-from dagster_components.lib.dbt_project import DbtProjectComponent
+from dagster_components.lib.__extras__.dbt.dbt_project import DbtProjectComponent
 from dagster_dbt import DbtProject
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context

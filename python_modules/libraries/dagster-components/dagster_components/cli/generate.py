@@ -38,7 +38,7 @@ def generate_component_command(
         sys.exit(1)
 
     context = CodeLocationProjectContext.from_path(
-        Path.cwd(), ComponentRegistry.from_entry_point_discovery()
+        Path.cwd(), ComponentRegistry.from_python_environment()
     )
     if not context.has_component_type(component_type):
         click.echo(

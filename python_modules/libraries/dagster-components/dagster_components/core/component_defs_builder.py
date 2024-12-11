@@ -131,7 +131,7 @@ def build_defs_from_toplevel_components_folder(
     from dagster._core.definitions.definitions_class import Definitions
 
     context = CodeLocationProjectContext.from_path(
-        path, registry or ComponentRegistry.from_entry_point_discovery()
+        path, registry or ComponentRegistry.from_python_environment()
     )
 
     all_defs: List[Definitions] = []

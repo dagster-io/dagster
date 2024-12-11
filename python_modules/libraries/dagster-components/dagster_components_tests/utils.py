@@ -3,7 +3,7 @@ from dagster_components.core.component import Component, ComponentLoadContext, C
 
 
 def registry() -> ComponentRegistry:
-    return ComponentRegistry.from_entry_point_discovery()
+    return ComponentRegistry.from_python_environment()
 
 
 def script_load_context() -> ComponentLoadContext:

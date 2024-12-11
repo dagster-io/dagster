@@ -11,12 +11,13 @@ from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.env import environ
+from dagster_components.core.component import component
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
     build_components_from_component_folder,
 )
-from dagster_components.lib.sling_replication import SlingReplicationComponent, component
+from dagster_components.lib.__extras__.sling.sling_replication import SlingReplicationComponent
 from dagster_embedded_elt.sling import SlingResource
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
