@@ -6,7 +6,7 @@ With final as(
         SUM(likes) as total_likes,
         SUM(replies) as total_comments,
         SUM(quotes) as total_quotes
-    FROM {{ref("latest_feed")}}  lf 
+    FROM {{ref("latest_feed")}} 
     GROUP BY date_trunc('day', created_at)
     ORDER BY date_trunc('day', created_at) DESC
 )
