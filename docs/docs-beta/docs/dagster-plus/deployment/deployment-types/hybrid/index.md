@@ -22,7 +22,7 @@ The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for
 
 See the following guides for setting up an agent:
  - [Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes)
- - [AWS ECS](/dagster-plus/deployment/deployment-types/hybrid/new-vpc)
+ - [AWS ECS](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/new-vpc)
  - [Docker](/dagster-plus/deployment/deployment-types/hybrid/docker)
  - [Locally](/dagster-plus/deployment/deployment-types/hybrid/local)
 

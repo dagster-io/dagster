@@ -82,7 +82,7 @@ While you can use your existing production agent, we recommend creating a dedica
 <Tabs>
   <TabItem value="ecs" label="Amazon ECS">
 
-  1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/dagster-plus/deployment/deployment-types/hybrid/new-vpc) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/dagster-plus/deployment/deployment-types/hybrid/existing-vpc) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
+  1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/new-vpc) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/existing-vpc) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
 
   2. **Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories).** Refer to the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html) for instructions.
 
