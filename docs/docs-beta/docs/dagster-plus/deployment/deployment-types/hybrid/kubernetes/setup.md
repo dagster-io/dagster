@@ -3,8 +3,6 @@ title: Kubernetes agent setup
 sidebar_position: 100
 ---
 
-# Kubernetes agent setup
-
 This page provides instructions for running the [Dagster+ agent](/todo) on a [Kubernetes](https://kubernetes.io) cluster.
 
 ## Installation
@@ -93,7 +91,7 @@ An exhaustive list of settings is available [here](/dagster-plus/deployment/hybr
 
 ### Configure your agents to serve branch deployments
 
-[Branch deployments](/dagster-plus/features/branch-deployments/index.mdx) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
+[Branch deployments](/dagster-plus/features/ci-cd/branch-deployments/index.mdx) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
 
 ```yaml
 # values.yaml

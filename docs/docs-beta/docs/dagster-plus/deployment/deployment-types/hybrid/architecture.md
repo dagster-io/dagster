@@ -1,10 +1,7 @@
 ---
 title: 'Dagster+ Hybrid architecture'
-displayed_sidebar: 'dagsterPlus'
-sidebar_position: 100
+sidebar_position: 10
 ---
-
-# Dagster+ Hybrid architecture
 
 The Hybrid architecture is the most flexible and secure way to deploy Dagster+. It allows you to run your user code in your environment while leveraging Dagster+'s infrastructure for orchestration and metadata management
 

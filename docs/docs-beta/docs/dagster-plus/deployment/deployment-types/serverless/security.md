@@ -1,10 +1,8 @@
 ---
-title: 'Security & data protection'
-displayed_sidebar: 'dagsterPlus'
+title: Serverless security & data protection
+sidebar_label: 'Security & data protection'
 sidebar_position: 500
 ---
-
-# Serverless security & data protection
 
 Unlike [Hybrid deployments](/dagster-plus/deployment/hybrid), Serverless deployments on Dagster+ require direct access to your data, secrets and source code.
 

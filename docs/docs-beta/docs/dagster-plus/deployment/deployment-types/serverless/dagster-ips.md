@@ -1,10 +1,8 @@
 ---
-title: 'IP addresses'
-displayed_sidebar: 'dagsterPlus'
+title: Dagster+ Serverless IP addresses
+sidebar_label: IP addresses
 sidebar_position: 400
 ---
-
-# Dagster+ Serverless IP addresses
 
 Serverless code will make requests from one of the following IP addresses. You may need to whitelist / allowlist them for services your code interacts with.
 

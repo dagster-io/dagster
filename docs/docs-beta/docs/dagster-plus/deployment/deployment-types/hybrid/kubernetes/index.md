@@ -1,9 +1,7 @@
 ---
-title: Amazon ECS agent
+title: Kubernetes agent
 sidebar_position: 40
 ---
-
-# Amazon ECS
 
 import DocCardList from '@theme/DocCardList';
 

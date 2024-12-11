@@ -1,6 +1,6 @@
 ---
 title: 'Serverless deployment'
-displayed_sidebar: 'dagsterPlus'
+sidebar_label: Serverless
 sidebar_position: 10
 ---
 

@@ -1,6 +1,6 @@
 ---
-title: Kubernetes agent
-sidebar_position: 30
+title: Deployment types
+sidebar_position: 20
 ---
 
 import DocCardList from '@theme/DocCardList';
