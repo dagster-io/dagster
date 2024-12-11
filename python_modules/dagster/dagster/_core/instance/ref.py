@@ -451,6 +451,7 @@ class InstanceRef(
             "run_retries",
             "code_servers",
             "retention",
+            "backfills",
             "sensors",
             "schedules",
             "nux",
