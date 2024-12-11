@@ -3,8 +3,11 @@ from unittest.mock import MagicMock
 import pytest
 from dagster import AssetKey, InputContext, OutputContext, asset, build_output_context
 from dagster._check import CheckError
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+)
 from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition, MultiPartitionKey
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import (
@@ -325,24 +328,22 @@ def test_multi_to_single_partition_mapping_compatibility():
         connect=connect_mock,
         get_table_name=mock_table_name,
     )
-    manager = build_db_io_manager(type_handlers=[handler], db_client=db_client, resource_config_override={"database": "database_color"})
+    manager = build_db_io_manager(
+        type_handlers=[handler],
+        db_client=db_client,
+        resource_config_override={"database": "database_color"},
+    )
     asset_key = AssetKey(["schema1", "table1"])
     partition_keys = [
-        MultiPartitionKey(
-            {
-                "color": "red",
-                "theme": "light"
-            }
-        ),
-        MultiPartitionKey(
-            {
-                "color": "yellow",
-                "theme": "light"
-            }
-        )
-
+        MultiPartitionKey({"color": "red", "theme": "light"}),
+        MultiPartitionKey({"color": "yellow", "theme": "light"}),
     ]
-    partitions_def = MultiPartitionsDefinition({"color": StaticPartitionsDefinition(["red", "yellow", "blue"]), "theme": StaticPartitionsDefinition(["light", "dark"])})
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+            "theme": StaticPartitionsDefinition(["light", "dark"]),
+        }
+    )
     output_context = MagicMock(
         asset_key=asset_key,
         resource_config=resource_config,

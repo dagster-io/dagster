@@ -237,7 +237,9 @@ class DbIOManager(IOManager):
                             else:
                                 partitions = [partition_key]
 
-                            partition_expr_str = cast(Mapping[str, str], partition_expr).get(part.name)
+                            partition_expr_str = cast(Mapping[str, str], partition_expr).get(
+                                part.name
+                            )
                             if partition_expr is None:
                                 raise ValueError(
                                     f"Asset '{context.asset_key}' has partition {part.name}, but the"
@@ -248,7 +250,8 @@ class DbIOManager(IOManager):
                                 )
                             partition_dimensions.append(
                                 TablePartitionDimension(
-                                    partition_expr=cast(str, partition_expr_str), partitions=partitions
+                                    partition_expr=cast(str, partition_expr_str),
+                                    partitions=partitions,
                                 )
                             )
                     # MultiToSinglePartitionMapping
@@ -261,34 +264,40 @@ class DbIOManager(IOManager):
                             MultiPartitionKey, context.asset_partition_keys[1]
                         ).keys_by_dimension
                         for key in first_partition_key_mapping:
-                            if first_partition_key_mapping[key] == second_partition_key_mapping[key]:
+                            if (
+                                first_partition_key_mapping[key]
+                                == second_partition_key_mapping[key]
+                            ):
                                 partition_dimension_name: str = key
                                 break
-                        
+
                         # create a single table slice for the given dimension
                         for part in context.asset_partitions_def.partitions_defs:
-                            if part.name == partition_dimension_name:                            
+                            if part.name == partition_dimension_name:
                                 partition_key = first_partition_key_mapping[part.name]
                                 if isinstance(part.partitions_def, TimeWindowPartitionsDefinition):
                                     partitions = part.partitions_def.time_window_for_partition_key(
-                                    partition_key
+                                        partition_key
                                     )
                                 else:
                                     partitions = [partition_key]
-                                partition_expr_str = cast(Mapping[str, str], partition_expr).get(part.name)
+                                partition_expr_str = cast(Mapping[str, str], partition_expr).get(
+                                    part.name
+                                )
                                 if partition_expr is None:
                                     raise ValueError(
-                                f"Asset '{context.asset_key}' has partition {part.name}, but the"
-                                f" 'partition_expr' metadata does not contain a {part.name} entry,"
-                                " so we don't know what column to filter it on. Specify which"
-                                " column of the database contains data for the"
-                                f" {part.name} partition."
-                            )
+                                        f"Asset '{context.asset_key}' has partition {part.name}, but the"
+                                        f" 'partition_expr' metadata does not contain a {part.name} entry,"
+                                        " so we don't know what column to filter it on. Specify which"
+                                        " column of the database contains data for the"
+                                        f" {part.name} partition."
+                                    )
                                 partition_dimensions.append(
-                            TablePartitionDimension(
-                                partition_expr=cast(str, partition_expr_str), partitions=partitions
-                            )
-                        )
+                                    TablePartitionDimension(
+                                        partition_expr=cast(str, partition_expr_str),
+                                        partitions=partitions,
+                                    )
+                                )
                 elif isinstance(context.asset_partitions_def, TimeWindowPartitionsDefinition):
                     partition_dimensions.append(
                         TablePartitionDimension(
