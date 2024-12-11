@@ -1,12 +1,8 @@
-"""
+"""Simple script to verify Modal cloud mount.
 
-USAGE
+Example Usage
 
     modal run modal_project.verify_cloud_mount
-
-REFERENCES
-
-    https://modal.com/docs/reference/modal.CloudBucketMount#modalcloudbucketmount
 
 """
 

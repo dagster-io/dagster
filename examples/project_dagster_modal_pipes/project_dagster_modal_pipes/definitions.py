@@ -20,8 +20,8 @@ USAGE
 
 import dagster as dg
 
-from dagster_modal_demo.pipeline_factory import RSSFeedDefinition, rss_pipeline_factory
-from dagster_modal_demo.resources import modal_resource, openai_resource, s3_resource
+from project_dagster_modal_pipes.pipeline_factory import RSSFeedDefinition, rss_pipeline_factory
+from project_dagster_modal_pipes.resources import modal_resource, openai_resource, s3_resource
 
 feeds = [
     RSSFeedDefinition(

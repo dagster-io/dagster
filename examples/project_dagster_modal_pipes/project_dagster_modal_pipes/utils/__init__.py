@@ -5,7 +5,7 @@ from typing import Optional
 
 from botocore.exceptions import ClientError
 
-from dagster_modal_demo.constants import BROWSER_USER_AGENT, DATA_PATH
+from project_dagster_modal_pipes.constants import BROWSER_USER_AGENT, DATA_PATH
 
 
 def download_transcript_if_exists(entry) -> Optional[str]:
@@ -25,7 +25,7 @@ def download_transcript_if_exists(entry) -> Optional[str]:
 
 
 def download_bytes(url: str) -> bytes:
-    """Downloads bytes from provided url
+    """Downloads bytes from provided url.
 
     Args:
         url (str): url pointing to download location of bytes
@@ -42,7 +42,7 @@ def download_bytes(url: str) -> bytes:
 
 
 def store_bytes(bs: bytes, destination: str) -> None:
-    """Stores bytes object to target file destination
+    """Stores bytes object to target file destination.
 
     Args:
         bs (bytes): object to store to file-system
@@ -71,7 +71,7 @@ def sanitize(text: str, lower: bool = True) -> str:
 
 
 def file_size(len_bytes, suffix="B") -> str:
-    """Human-readable bytes size
+    """Human-readable bytes size.
 
     Args:
         len_bytes (int): number of bytes
@@ -98,9 +98,7 @@ def get_entry_audio_url(entry) -> str:
         URL of audio file
 
     """
-    audio_hrefs = [
-        link.get("href") for link in entry.links if link.get("type") == "audio/mpeg"
-    ]
+    audio_hrefs = [link.get("href") for link in entry.links if link.get("type") == "audio/mpeg"]
     if audio_hrefs:
         return audio_hrefs[0]
     else:

@@ -1,9 +1,10 @@
-"""
-USAGE
+"""Simple demonstration of using Dagster from Modal.
 
-    modal run modal/hello_world.py
+modal run modal/hello_world.py
 
 """
+
+import logging
 
 import modal
 
@@ -12,7 +13,7 @@ app = modal.App("example-hello-world")
 
 @app.function()
 def f(identifier):
-    print(identifier)
+    logging.info(identifier)
 
 
 @app.local_entrypoint()

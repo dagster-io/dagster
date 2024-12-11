@@ -8,12 +8,9 @@ import yagmail
 from dagster_aws.s3 import S3Resource
 from dagster_openai import OpenAIResource
 
-from dagster_modal_demo.constants import (
-    DEFAULT_POLLING_INTERVAL,
-    R2_BUCKET_NAME,
-)
-from dagster_modal_demo.dagster_modal.resources import ModalClient
-from dagster_modal_demo.utils import (
+from project_dagster_modal_pipes.constants import DEFAULT_POLLING_INTERVAL, R2_BUCKET_NAME
+from project_dagster_modal_pipes.dagster_modal.resources import ModalClient
+from project_dagster_modal_pipes.utils import (
     download_bytes,
     file_size,
     get_destination,
@@ -21,7 +18,7 @@ from dagster_modal_demo.utils import (
     object_exists,
     sanitize,
 )
-from dagster_modal_demo.utils.summarize import summarize
+from project_dagster_modal_pipes.utils.summarize import summarize
 
 
 @dataclass
@@ -32,9 +29,7 @@ class RSSFeedDefinition:
 
 
 def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
-    rss_entry_partition = dg.DynamicPartitionsDefinition(
-        name=f"{feed_definition.name}_entry"
-    )
+    rss_entry_partition = dg.DynamicPartitionsDefinition(name=f"{feed_definition.name}_entry")
 
     class AudioRunConfig(dg.Config):
         audio_file_url: str
@@ -46,9 +41,7 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
         partitions_def=rss_entry_partition,
         compute_kind="python",
     )
-    def _podcast_audio(
-        context: dg.AssetExecutionContext, config: AudioRunConfig, s3: S3Resource
-    ):
+    def _podcast_audio(context: dg.AssetExecutionContext, config: AudioRunConfig, s3: S3Resource):
         """Podcast audio file download from RSS feed and uploaded to R2."""
         context.log.info("downloading audio file %s", config.audio_file_url)
         audio_key = get_destination(context.partition_key)
@@ -60,10 +53,10 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
             metadata["status"] = "cached"
             metadata["key"] = audio_key
         else:
-            bytes = download_bytes(config.audio_file_url)
-            s3.get_client().put_object(Body=bytes, Bucket=R2_BUCKET_NAME, Key=audio_key)
+            audio_bytes = download_bytes(config.audio_file_url)
+            s3.get_client().put_object(Body=audio_bytes, Bucket=R2_BUCKET_NAME, Key=audio_key)
             metadata["status"] = "uploaded"
-            metadata["size"] = file_size(len(bytes))
+            metadata["size"] = file_size(len(audio_bytes))
 
         return dg.MaterializeResult(metadata=metadata)
 
@@ -84,12 +77,12 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
         if object_exists(s3.get_client(), bucket=R2_BUCKET_NAME, key=transcription_key):
             return dg.MaterializeResult(metadata={"status": "cached"})
 
-        vars = [
+        included_env_vars = [
             "CLOUDFLARE_R2_API",
             "CLOUDFLARE_R2_ACCESS_KEY_ID",
             "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
         ]
-        env = {k: v for k, v in os.environ.items() if k in vars}
+        env = {k: v for k, v in os.environ.items() if k in included_env_vars}
 
         return modal.run(
             func_ref="modal_project.transcribe",
@@ -112,13 +105,9 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
         summary_key = audio_key.replace(".mp3", "-summary.txt")
 
         if object_exists(s3.get_client(), bucket=R2_BUCKET_NAME, key=summary_key):
-            return dg.MaterializeResult(
-                metadata={"summary": "cached", "summary_key": summary_key}
-            )
+            return dg.MaterializeResult(metadata={"summary": "cached", "summary_key": summary_key})
 
-        response = s3.get_client().get_object(
-            Bucket=R2_BUCKET_NAME, Key=transcription_key
-        )
+        response = s3.get_client().get_object(Bucket=R2_BUCKET_NAME, Key=transcription_key)
 
         data = json.loads(response.get("Body").read())
 
@@ -128,9 +117,7 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
         s3.get_client().put_object(
             Body=summary.encode("utf-8"), Bucket=R2_BUCKET_NAME, Key=summary_key
         )
-        return dg.MaterializeResult(
-            metadata={"summary": summary, "summary_key": summary_key}
-        )
+        return dg.MaterializeResult(metadata={"summary": summary, "summary_key": summary_key})
 
     @dg.asset(
         name=f"{feed_definition.name}_email",
@@ -138,9 +125,7 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
         deps=[_podcast_summary],
         compute_kind="python",
     )
-    def _podcast_email(
-        context: dg.AssetExecutionContext, s3: S3Resource
-    ) -> dg.MaterializeResult:
+    def _podcast_email(context: dg.AssetExecutionContext, s3: S3Resource) -> dg.MaterializeResult:
         audio_key = get_destination(context.partition_key)
         summary_key = audio_key.replace(".mp3", "-summary.txt")
 
@@ -149,9 +134,7 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
         summary = response.get("Body").read().decode("utf-8")
 
         # Expects an application password (see: https://myaccount.google.com/apppasswords)
-        yag = yagmail.SMTP(
-            os.environ.get("GMAIL_USER"), os.environ.get("GMAIL_APP_PASSWORD")
-        )
+        yag = yagmail.SMTP(os.environ.get("GMAIL_USER"), os.environ.get("GMAIL_APP_PASSWORD"))
 
         recipient = os.environ.get("SUMMARY_RECIPIENT_EMAIL")
 
@@ -197,9 +180,7 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
         context.log.info("total number of entries: %s", num_entries)
 
         if num_entries > feed_definition.max_backfill_size:
-            context.log.info(
-                "truncating entries to %s", feed_definition.max_backfill_size
-            )
+            context.log.info("truncating entries to %s", feed_definition.max_backfill_size)
             entries = feed.entries[: feed_definition.max_backfill_size]
         else:
             entries = feed.entries
@@ -213,11 +194,7 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
                 dg.RunRequest(
                     partition_key=partition_key,
                     run_config=dg.RunConfig(
-                        ops={
-                            audio_asset_name: AudioRunConfig(
-                                audio_file_url=audio_file_url
-                            )
-                        }
+                        ops={audio_asset_name: AudioRunConfig(audio_file_url=audio_file_url)}
                     ),
                 )
                 for (partition_key, audio_file_url) in partition_key_audio_files

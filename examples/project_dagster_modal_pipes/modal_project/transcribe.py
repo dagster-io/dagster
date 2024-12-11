@@ -1,12 +1,8 @@
-"""Transcribe podcasts using OpenAI's Whisper model on Modal
+"""Transcribe podcasts using OpenAI's Whisper model on Modal.
 
-USAGE
+Example Usage
 
     modal run modal_project.transcribe
-
-REFERENCES
-
-    https://modal.com/docs/examples/whisper-transcriber#example-parallel-podcast-transcription-using-whisper
 
 """
 
@@ -98,7 +94,6 @@ def split_silences(
         Generator of tuples (start, end) of each chunk in seconds.
 
     """
-
     import re
 
     import ffmpeg
@@ -177,9 +172,7 @@ def transcribe_segment(
 
         use_gpu = torch.cuda.is_available()
         device = "cuda" if use_gpu else "cpu"
-        model = whisper.load_model(
-            model.name, device=device, download_root=config.MODEL_DIR
-        )
+        model = whisper.load_model(model.name, device=device, download_root=config.MODEL_DIR)
         result = model.transcribe(f.name, language="en", fp16=use_gpu)  # type: ignore
 
     logger.info(

@@ -11,6 +11,7 @@ summarizing movie subtitles:
 
 """
 
+import logging
 from typing import List, Optional, Tuple
 
 import tiktoken
@@ -37,7 +38,7 @@ def chunk_on_delimiter(input_string: str, max_tokens: int, delimiter: str) -> Li
         chunks, max_tokens, chunk_delimiter=delimiter, add_ellipsis_for_overflow=True
     )
     if dropped_chunk_count > 0:
-        print(f"warning: {dropped_chunk_count} chunks were dropped due to overflow")
+        logging.info(f"warning: {dropped_chunk_count} chunks were dropped due to overflow")
     combined_chunks = [f"{chunk}{delimiter}" for chunk in combined_chunks]
     return combined_chunks
 
@@ -57,18 +58,15 @@ def combine_chunks_with_no_minimum(
     for chunk_i, chunk in enumerate(chunks):
         chunk_with_header = [chunk] if header is None else [header, chunk]
         if len(tokenize(chunk_delimiter.join(chunk_with_header))) > max_tokens:
-            print(f"warning: chunk overflow")
+            logging.info("warning: chunk overflow")
             if (
                 add_ellipsis_for_overflow
-                and len(tokenize(chunk_delimiter.join(candidate + ["..."])))
-                <= max_tokens
+                and len(tokenize(chunk_delimiter.join(candidate + ["..."]))) <= max_tokens
             ):
                 candidate.append("...")
                 dropped_chunk_count += 1
             continue
-        extended_candidate_token_count = len(
-            tokenize(chunk_delimiter.join(candidate + [chunk]))
-        )
+        extended_candidate_token_count = len(tokenize(chunk_delimiter.join(candidate + [chunk])))
         if extended_candidate_token_count > max_tokens:
             output.append(chunk_delimiter.join(candidate))
             output_indices.append(candidate_indices)
@@ -77,9 +75,7 @@ def combine_chunks_with_no_minimum(
         else:
             candidate.append(chunk)
             candidate_indices.append(chunk_i)
-    if (header is not None and len(candidate) > 1) or (
-        header is None and len(candidate) > 0
-    ):
+    if (header is not None and len(candidate) > 1) or (header is None and len(candidate) > 0):
         output.append(chunk_delimiter.join(candidate))
         output_indices.append(candidate_indices)
     return output, output_indices, dropped_chunk_count
@@ -107,13 +103,12 @@ def summarize(
         minimum_chunk_size (Optional[int], optional): The minimum size for text chunks. Defaults to 500.
         chunk_delimiter (str, optional): The delimiter used to split the text into chunks. Defaults to ".".
         summarize_recursively (bool, optional): If True, summaries are generated recursively, using previous summaries for context.
-        verbose (bool, optional): If True, prints detailed information about the chunking process.
+        verbose (bool, optional): If True, logging.infos detailed information about the chunking process.
 
     Returns:
         The final compiled summary of the text.
 
     """
-
     assert 0 <= detail <= 1
 
     max_chunks = len(chunk_on_delimiter(text, minimum_chunk_size, chunk_delimiter))
@@ -124,8 +119,8 @@ def summarize(
     chunk_size = max(minimum_chunk_size, document_length // num_chunks)
     text_chunks = chunk_on_delimiter(text, chunk_size, chunk_delimiter)
     if verbose:
-        print(f"Splitting the text into {len(text_chunks)} chunks to be summarized.")
-        print(f"Chunk lengths are {[len(tokenize(x)) for x in text_chunks]}")
+        logging.info(f"Splitting the text into {len(text_chunks)} chunks to be summarized.")
+        logging.info(f"Chunk lengths are {[len(tokenize(x)) for x in text_chunks]}")
 
     system_message_content = "Rewrite this text in summarized form."
     if additional_instructions is not None:
