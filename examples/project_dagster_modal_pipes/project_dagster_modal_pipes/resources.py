@@ -2,9 +2,8 @@ from pathlib import Path
 
 import dagster as dg
 from dagster_aws.s3 import S3Resource
+from dagster_contrib_modal import ModalClient
 from dagster_openai import OpenAIResource
-
-from project_dagster_modal_pipes.dagster_modal.resources import ModalClient
 
 modal_resource = ModalClient(project_directory=Path(__file__).parent.parent)
 

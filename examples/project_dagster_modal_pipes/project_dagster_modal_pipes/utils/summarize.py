@@ -29,7 +29,7 @@ def get_chat_completion(client, messages, model="gpt-4-turbo"):
 
 def tokenize(text: str) -> List[str]:
     encoding = tiktoken.encoding_for_model("gpt-4-turbo")
-    return encoding.encode(text)
+    return encoding.encode(text)  # type: ignore
 
 
 def chunk_on_delimiter(input_string: str, max_tokens: int, delimiter: str) -> List[str]:
