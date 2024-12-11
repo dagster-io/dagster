@@ -1,7 +1,6 @@
 ---
 title: Alerts
-sidebar_label: "Alerts"
-sidebar_position: 30
+sidebar_position: 40
 ---
 
 import DocCardList from '@theme/DocCardList';
