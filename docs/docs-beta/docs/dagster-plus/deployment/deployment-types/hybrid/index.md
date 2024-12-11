@@ -14,24 +14,24 @@ To get started with a Hybrid deployment you'll need to:
 
 1. Create a [Dagster+ organization](https://dagster.cloud/signup)
 2. Install a Dagster+ Hybrid Agent
-3. [Add a code location](/dagster-plus/deployment/code-locations), typically using a Git repository and CI/CD
+3. [Add a code location](/dagster-plus/features/code-locations), typically using a Git repository and CI/CD
 
 ## Dagster+ Hybrid agents
 
 The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for new work.
 
 See the following guides for setting up an agent:
- - [Kubernetes](/dagster-plus/deployment/hybrid/agents/kubernetes)
- - [AWS ECS](/dagster-plus/deployment/hybrid/agents/amazon-ecs-new-vpc)
- - [Docker](/dagster-plus/deployment/hybrid/agents/docker)
- - [Locally](/dagster-plus/deployment/hybrid/agents/local)
+ - [Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes)
+ - [AWS ECS](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs-new-vpc)
+ - [Docker](/dagster-plus/deployment/deployment-types/hybrid/docker)
+ - [Locally](/dagster-plus/deployment/deployment-types/hybrid/local)
 
 
 ## What you'll see in your environment
 
 ### Code location servers
 
-Dagster+ runs your Dagster projects through code locations. To get started, follow this guide for [adding a code location](/dagster-plus/deployment/code-locations).
+Dagster+ runs your Dagster projects through code locations. To get started, follow this guide for [adding a code location](/dagster-plus/features/code-locations).
 
 When you inform Dagster+ about a new code location, we enqueue instructions for your agent to launch a new code server. The agent uses your container image to launch a code server that interacts with your Dagster definitions. The agent will run one long-standing code server for each code location. Once the code server is running, the agent will send Dagster+ metadata about your Dagster definitions that Dagster+ uses to make orchestration decisions.
 

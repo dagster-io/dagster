@@ -74,7 +74,7 @@ Keep the token somewhere handy - you'll need it to complete the setup.
 ## Step 3: Create and configure an agent
 
 :::note
-If using [Serverless deployment](/dagster-plus/deployment/serverless), this step can be skipped.
+If using [Serverless deployment](/dagster-plus/deployment/deployment-types/serverless), this step can be skipped.
 :::
 
 While you can use your existing production agent, we recommend creating a dedicated branch deployment agent. This ensures that your production instance isn't negatively impacted by the workload associated with branch deployments.
@@ -82,7 +82,7 @@ While you can use your existing production agent, we recommend creating a dedica
 <Tabs>
   <TabItem value="ecs" label="Amazon ECS">
 
-  1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/dagster-plus/deployment/hybrid/agents/amazon-ecs-new-vpc) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/dagster-plus/deployment/hybrid/agents/amazon-ecs-existing-vpc) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
+  1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs-new-vpc) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs-existing-vpc) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
 
   2. **Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories).** Refer to the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html) for instructions.
 
@@ -106,7 +106,7 @@ While you can use your existing production agent, we recommend creating a dedica
   </TabItem>
   <TabItem value="docker" label="Docker">
 
-  1. Set up a new Docker agent. Refer to the [Docker agent setup guide](/dagster-plus/deployment/hybrid/agents/docker) for instructions.
+  1. Set up a new Docker agent. Refer to the [Docker agent setup guide](/dagster-plus/deployment/deployment-types/hybrid/docker) for instructions.
   2. After the agent is set up, modify the `dagster.yaml` file as follows:
 
      - Set the `dagster_cloud_api.branch_deployments` field to `true`
@@ -119,7 +119,7 @@ While you can use your existing production agent, we recommend creating a dedica
   </TabItem>
   <TabItem value="k8s" label="Kubernetes" default>
 
-  1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/dagster-plus/deployment/hybrid/agents/kubernetes) for instructions.
+  1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/dagster-plus/deployment/deployment-types/hybrid/kubernetes) for instructions.
 
   2. After the agent is set up, modify your Helm values file to include the following:
 

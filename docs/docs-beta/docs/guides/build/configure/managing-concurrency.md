@@ -144,7 +144,7 @@ The possible causes for runs remaining in `QUEUED` status depend on whether you'
 <Tabs>
   <TabItem value="Dagster+" label="Dagster+">
     If runs aren't being dequeued in Dagster+, the root causes could be:
-    * **If using a [hybrid deployment](/dagster-plus/deployment/hybrid)**, the agent serving the deployment may be down. In this situation, runs will be paused.
+    * **If using a [hybrid deployment](/dagster-plus/deployment/deployment-types/hybrid)**, the agent serving the deployment may be down. In this situation, runs will be paused.
     * **Dagster+ is experiencing downtime**. Check the [status page](https://dagstercloud.statuspage.io/) for the latest on potential outages.
 
   </TabItem>

@@ -4,7 +4,7 @@ sidebar_position: 20
 sidebar_label: Local agent
 ---
 
-Local agents are a good way to experiment with Dagster+ before deploying a more scalable Hybrid agent like [Kubernetes](/dagster-plus/deployment/hybrid/agents/kubernetes) or [Amazon ECS](/todo).
+Local agents are a good way to experiment with Dagster+ before deploying a more scalable Hybrid agent like [Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes) or [Amazon ECS](/todo).
 
 :::note
 Local agents aren't well suited for most production use cases. If you're running the local agent in production, make sure that:

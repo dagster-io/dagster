@@ -14,7 +14,7 @@ Dagster+ Serverless is a fully managed version of Dagster+ and is the easiest wa
 
 Serverless works best with workloads that primarily orchestrate other services or perform light computation. Most workloads fit into this category, especially those that orchestrate third-party SaaS products like cloud data warehouses and ETL tools.
 
-If any of the following are applicable, you should select [Hybrid deployment](/dagster-plus/deployment/hybrid):
+If any of the following are applicable, you should select [Hybrid deployment](/dagster-plus/deployment/deployment-types/hybrid):
 
 - You require substantial computational resources. For example, training a large machine learning (ML) model in-process
 - Your dataset is too large to fit in memory. For example, training a large ML model in-process on a terabyte of data

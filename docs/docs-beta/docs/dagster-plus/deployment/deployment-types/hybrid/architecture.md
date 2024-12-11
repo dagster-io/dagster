@@ -80,7 +80,7 @@ Runs are launched by calling the `dagster api` CLI command in a separate process
 
 When runs are launched, the user code process/container streams structured metadata (containing everything that's viewable in the integrated logs viewer in the Dagster+ UI) back to Dagster+ over a well-defined GraphQL interface. Structured metadata is stored in Amazon RDS, encrypted at rest.
 
-By default, the run worker also uploads the compute logs (raw `stdout` and `stderr` from runs) to Dagster+. If you don't want to upload logs, you can disable this feature in the [agent settings](/dagster-plus/deployment/hybrid/agents/settings).
+By default, the run worker also uploads the compute logs (raw `stdout` and `stderr` from runs) to Dagster+. If you don't want to upload logs, you can disable this feature in the [agent settings](/dagster-plus/deployment/management/settings/hybrid-agent-settings).
 
 ### Ingress
 

@@ -9,9 +9,9 @@ First [create a Dagster+ organization](https://dagster.plus/signup). Note: you c
 
 Next, pick your deployment type. Not sure?
 
-- [Dagster+ Serverless](/dagster-plus/deployment/serverless) is the easiest way to get started and is great for teams with limited DevOps support. In Dagster+ Serverless, your Dagster code is executed in Dagster+. You will need to be okay [giving Dagster+ the credentials](/dagster-plus/deployment/environment-variables) to connect to the tools you want to orchestrate.
+- [Dagster+ Serverless](/dagster-plus/deployment/deployment-types/serverless) is the easiest way to get started and is great for teams with limited DevOps support. In Dagster+ Serverless, your Dagster code is executed in Dagster+. You will need to be okay [giving Dagster+ the credentials](/dagster-plus/deployment/environment-variables) to connect to the tools you want to orchestrate.
 
-- [Dagster+ Hybrid](/dagster-plus/deployment/hybrid) is great for teams who want to orchestrate tools without giving Dagster+ direct access to your systems. Dagster+ Hybrid requires more DevOps support.
+- [Dagster+ Hybrid](/dagster-plus/deployment/deployment-types/hybrid) is great for teams who want to orchestrate tools without giving Dagster+ direct access to your systems. Dagster+ Hybrid requires more DevOps support.
 
 The remaining steps depend on your deployment type.
 
@@ -30,14 +30,14 @@ The Dagster+ on-boarding will guide you through:
 If you don't have any Dagster code yet, you will have the option to select an example quickstart project or import an existing dbt project
 :::
 
-See the guide on [adding code locations](/dagster-plus/deployment/code-locations) for details.
+See the guide on [adding code locations](/dagster-plus/features/code-locations) for details.
 </TabItem>
 
 <TabItem value="hybrid" label="Dagster+ Hybrid">
 
 ## Install a Dagster+ Hybrid agent
 
-Follow [these guides](/dagster-plus/deployment/hybrid) for installing a Dagster+ Hybrid agent. Not sure which agent to pick? We recommend using the Dagster+ Kubernetes agent in most cases.
+Follow [these guides](/dagster-plus/deployment/deployment-types/hybrid) for installing a Dagster+ Hybrid agent. Not sure which agent to pick? We recommend using the Dagster+ Kubernetes agent in most cases.
 
 
 ## Setup CI/CD
@@ -47,7 +47,7 @@ In most cases, your CI/CD process will be responsible for:
 - pushing your Docker image to a container registry you manage
 - notifying Dagster+ of the new or updated code
 
-Refer to the guide for [adding a code location](/dagster-plus/deployment/code-locations) for more detail.
+Refer to the guide for [adding a code location](/dagster-plus/features/code-locations) for more detail.
 
 </TabItem>
 </Tabs>
