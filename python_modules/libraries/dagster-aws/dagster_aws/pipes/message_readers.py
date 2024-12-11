@@ -220,15 +220,18 @@ class PipesLambdaLogsMessageReader(PipesMessageReader):
 # Number of retries to attempt getting cloudwatch logs when faced with a throttling exception.
 DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES = 10
 
+
+# Custom backoff delay_generator for get_log_events which adds some jitter
+def get_log_events_delay_generator() -> Iterator[float]:
+    i = 0.5
+    while True:
+        yield i
+        i *= 2
+        i += random.uniform(0, 1)
+
+
 def get_log_events(client: "CloudWatchLogsClient", max_retries: Optional[int] = None, **log_params):
     max_retries = max_retries or DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES
-
-    def get_log_events_delay_generator() -> Iterator[float]:
-        i = 0.5
-        while True:
-            yield i
-            i *= 2
-            i += random.uniform(0, 1)
 
     return backoff(
         fn=client.get_log_events,
