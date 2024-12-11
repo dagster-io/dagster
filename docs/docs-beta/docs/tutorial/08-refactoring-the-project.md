@@ -1,9 +1,53 @@
-import json
-import os
+---
+title: Refactoring the Project
+description: Refactor the completed project into a structure that is more organized and scalable. 
+last_update:
+  author: Alex Noonan
+---
 
+# Refactoring code
+
+Many engineers generally leave something alone once its working as expected. But the first time you do something is rarely the best implementation of a use case and all projects benefit from incremental improvements.
+
+## Splitting up project structure
+
+Right now the project is contained within one definitions file. This has gotten kinda unwieldy and if we were to add more to the project it would only get more disorganized. So we're going to create separate files for all the different Dagster core concepts: 
+
+- Assets
+- schedules
+- sensors
+- partitions
+
+The final project structure should look like this:
+```
+dagster-etl-tutorial/
+├── data/
+│   └── products.csv
+│   └── sales_data.csv
+│   └── sales_reps.csv
+│   └── sample_request/
+│       └── request.json
+├── etl_tutorial/
+│   └── assets.py
+│   └── definitions.py
+│   └── partitions.py
+│   └── schedules.py
+│   └── sensors.py
+├── pyproject.toml
+├── setup.cfg
+├── setup.py
+```
+
+### Assets
+
+Assets make up a majority of our project and this will be our largest file. 
+
+```python
 from dagster_duckdb import DuckDBResource
 
 import dagster as dg
+
+from .partitions import monthly_partition, product_category_partition
 
 
 @dg.asset(
@@ -31,8 +75,7 @@ def products(duckdb: DuckDBResource) -> dg.MaterializeResult:
                 "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
             }
         )
-
-
+    
 @dg.asset(
     compute_kind="duckdb",
     group_name="ingestion",
@@ -58,8 +101,7 @@ def sales_reps(duckdb: DuckDBResource) -> dg.MaterializeResult:
                 "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
             }
         )
-
-
+    
 @dg.asset(
     compute_kind="duckdb",
     group_name="ingestion",
@@ -85,8 +127,6 @@ def sales_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
             }
         )
 
-
-# step 1: adding dependencies
 @dg.asset(
     compute_kind="duckdb",
     group_name="joins",
@@ -130,8 +170,6 @@ def joined_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
             }
         )
 
-
-# asset checks
 @dg.asset_check(asset=joined_data)
 def missing_dimension_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
     with duckdb.get_connection() as conn:
@@ -145,12 +183,9 @@ def missing_dimension_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
 
         count = query_result[0] if query_result else 0
         return dg.AssetCheckResult(
-            passed=count > 0, metadata={"missing dimensions": count}
+            passed=count == 0, metadata={"missing dimensions": count}
         )
 
-
-# datetime partitions
-monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
 
 
 @dg.asset(
@@ -158,7 +193,7 @@ monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
     compute_kind="duckdb",
     group_name="analysis",
     deps=[joined_data],
-    automation_condition=dg.AutomationCondition.eager(),
+    automation_condition=dg.AutomationCondition.eager(), 
 )
 def monthly_sales_performance(
     context: dg.AssetExecutionContext, duckdb: DuckDBResource
@@ -208,18 +243,12 @@ def monthly_sales_performance(
     )
 
 
-# defined partitions
-product_category_partition = dg.StaticPartitionsDefinition(
-    ["Electronics", "Books", "Home and Garden", "Clothing"]
-)
-
-
 @dg.asset(
     deps=[joined_data],
     partitions_def=product_category_partition,
     group_name="analysis",
     compute_kind="duckdb",
-    automation_condition=dg.AutomationCondition.eager(),
+    automation_condition=dg.AutomationCondition.eager(), 
 )
 def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
     product_category_str = context.partition_key
@@ -266,13 +295,6 @@ def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
     )
 
 
-weekly_update_schedule = dg.ScheduleDefinition(
-    name="analysis_update_job",
-    target=dg.AssetSelection.keys("joined_data").upstream(),
-    cron_schedule="0 0 * * 1",  # every Monday at midnight
-)
-
-
 class AdhocRequestConfig(dg.Config):
     department: str
     product: str
@@ -311,12 +333,51 @@ def adhoc_request(
         metadata={"preview": dg.MetadataValue.md(preview_df.to_markdown(index=False))}
     )
 
+```
+
+### Partitions
+
+The partitions file is relatively simple and will include the `monthly_partition` and `product_category_partition`
+
+```python 
+import dagster as dg
+
+monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
+
+product_category_partition = dg.StaticPartitionsDefinition(
+    ["Electronics", "Books", "Home and Garden", "Clothing"]
+)
+```
+
+### Schedules
+
+The schedules file will only contain the `weekly_update_schedule`.
+
+```python
+import dagster as dg
+
+weekly_update_schedule = dg.ScheduleDefinition(
+    name="analysis_update_job",
+    target=dg.AssetSelection.keys("joined_data").upstream(),
+    cron_schedule="0 0 * * 1",  # every Monday at midnight
+)
+```
+
+### Sensors
+
+The sensor file will contain the `adhoc_request_job` and the `adhoc_request_sensor`.
+
+```python
+import os
+import json
+
+import dagster as dg
+
 
 adhoc_request_job = dg.define_asset_job(
     name="adhoc_request_job",
     selection=dg.AssetSelection.assets("adhoc_request"),
 )
-
 
 @dg.sensor(job=adhoc_request_job)
 def adhoc_request_sensor(context: dg.SensorEvaluationContext):
@@ -353,21 +414,54 @@ def adhoc_request_sensor(context: dg.SensorEvaluationContext):
     return dg.SensorResult(
         run_requests=runs_to_request, cursor=json.dumps(current_state)
     )
+```
 
+## Adjusting definitions object
+
+Now that we have separate files we need to adjust how the different elements are adding to definitions since they are in separate files 
+
+1. Imports
+
+The Dagster project runs from the root directory so whenever you are doing file references you need to have that as the starting point. 
+
+Additionally, Dagster has functions to load all the assets `load_assets_from_modules` and asset checks `load_asset_checks_from_modules` from a module. 
+
+2. Definitions
+
+To bring our project together copy the following code into your `definitions.py` file:
+
+```python
+from dagster_duckdb import DuckDBResource
+
+import dagster as dg
+
+from .schedules import weekly_update_schedule
+from .sensors import adhoc_request_sensor, adhoc_request_job
+from . import assets 
+
+tutorial_assets = dg.load_assets_from_modules([assets])
+tutorial_asset_checks = dg.load_asset_checks_from_modules([assets])
 
 defs = dg.Definitions(
-    assets=[
-        products,
-        sales_reps,
-        sales_data,
-        joined_data,
-        monthly_sales_performance,
-        product_performance,
-        adhoc_request,
-    ],
-    asset_checks=[missing_dimension_check],
+    assets=tutorial_assets,
+    asset_checks=tutorial_asset_checks,
     schedules=[weekly_update_schedule],
     jobs=[adhoc_request_job],
     sensors=[adhoc_request_sensor],
     resources={"duckdb": DuckDBResource(database="data/mydb.duckdb")},
 )
+```
+
+## Quick Validation
+
+If you want to validate that your definitions file loads and validates you can run the `dagster definitions validate` in the same directory that you would run `dagster dev`. This command is useful for CI/CD pipelines and allows you to check that your project loads correctly without starting the webserver. 
+
+## Thats it!
+
+Congratulations! You have completed your first project with Dagster and have an example of how to use the building blocks to build your own data pipelines. 
+
+## Recommended next steps
+
+- Join our [Slack community](https://dagster.io/slack).
+- Continue learning with [Dagster University](https://courses.dagster.io/) courses.
+- Start a [free trial of Dagster+](https://dagster.cloud/signup) for your own project.
