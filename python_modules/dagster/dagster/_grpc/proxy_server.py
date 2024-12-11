@@ -347,5 +347,5 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
         client = self._client
 
-        self._run_clients[run_id] = client
-        return client._get_response("StartRun", request)  # noqa
+        self._run_clients[run_id] = client  # pyright: ignore[reportArgumentType]
+        return client._get_response("StartRun", request)  # noqa  # pyright: ignore[reportOptionalMemberAccess]

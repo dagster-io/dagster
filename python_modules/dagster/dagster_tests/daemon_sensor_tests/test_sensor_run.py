@@ -2600,7 +2600,7 @@ def test_status_in_code_sensor(executor, instance):
     ) as workspace_context:
         remote_repo = next(
             iter(workspace_context.create_request_context().get_code_location_entries().values())
-        ).code_location.get_repository("the_status_in_code_repo")
+        ).code_location.get_repository("the_status_in_code_repo")  # pyright: ignore[reportOptionalMemberAccess]
 
         with freeze_time(freeze_datetime):
             running_sensor = remote_repo.get_sensor("always_running_sensor")
@@ -2858,11 +2858,11 @@ def test_repository_namespacing(executor):
                 full_workspace_context.create_request_context().get_code_location_entries().values()
             )
         ).code_location
-        repo = full_location.get_repository("the_repo")
-        other_repo = full_location.get_repository("the_other_repo")
+        repo = full_location.get_repository("the_repo")  # pyright: ignore[reportOptionalMemberAccess]
+        other_repo = full_location.get_repository("the_other_repo")  # pyright: ignore[reportOptionalMemberAccess]
 
         # stop always on sensor
-        status_in_code_repo = full_location.get_repository("the_status_in_code_repo")
+        status_in_code_repo = full_location.get_repository("the_status_in_code_repo")  # pyright: ignore[reportOptionalMemberAccess]
         running_sensor = status_in_code_repo.get_sensor("always_running_sensor")
         instance.stop_sensor(
             running_sensor.get_remote_origin_id(), running_sensor.selector_id, running_sensor

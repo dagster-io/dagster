@@ -36,7 +36,7 @@ def solid_a_b_list():
 
 def test_create_job_with_bad_ops_list():
     with pytest.raises(ParameterCheckError, match=r'Param "node_defs" is not a Sequence'):
-        GraphDefinition(name="a_pipeline", node_defs=create_stub_op("stub", [{"a key": "a value"}]))
+        GraphDefinition(name="a_pipeline", node_defs=create_stub_op("stub", [{"a key": "a value"}]))  # pyright: ignore[reportArgumentType]
 
 
 def test_circular_dep():
@@ -103,7 +103,7 @@ def test_invalid_item_in_op_list():
         DagsterInvalidDefinitionError, match="Invalid item in node list: 'not_a_op'"
     ):
         GraphDefinition(
-            node_defs=["not_a_op"],
+            node_defs=["not_a_op"],  # pyright: ignore[reportArgumentType]
             name="test",
         )
 
@@ -116,7 +116,7 @@ def test_one_layer_off_dependencies():
         GraphDefinition(
             node_defs=solid_a_b_list(),
             name="test",
-            dependencies={"B": DependencyDefinition("A")},
+            dependencies={"B": DependencyDefinition("A")},  # pyright: ignore[reportArgumentType]
         )
 
 
@@ -128,7 +128,7 @@ def test_malformed_dependencies():
         GraphDefinition(
             node_defs=solid_a_b_list(),
             name="test",
-            dependencies={"B": {"b_input": {"b_input": DependencyDefinition("A")}}},
+            dependencies={"B": {"b_input": {"b_input": DependencyDefinition("A")}}},  # pyright: ignore[reportArgumentType]
         )
 
 
@@ -137,7 +137,7 @@ def test_list_dependencies():
         DagsterInvalidDefinitionError,
         match=r'The expected type for "dependencies" is Union\[Mapping\[',
     ):
-        GraphDefinition(node_defs=solid_a_b_list(), name="test", dependencies=[])
+        GraphDefinition(node_defs=solid_a_b_list(), name="test", dependencies=[])  # pyright: ignore[reportArgumentType]
 
 
 def test_pass_unrelated_type_to_field_error_op_definition():
@@ -193,7 +193,7 @@ def test_bad_out():
             "got foo."
         ),
     ):
-        _output = Out("foo")
+        _output = Out("foo")  # pyright: ignore[reportArgumentType]
 
     # Test the case where the object is not hashable
     with pytest.raises(
@@ -204,7 +204,7 @@ def test_bad_out():
             "Did you pass an instance of a type instead of the type?"
         ),
     ):
-        _output = Out({"foo": "bar"})
+        _output = Out({"foo": "bar"})  # pyright: ignore[reportArgumentType]
 
     # Test the case where the object throws in __nonzero__, e.g. pandas.DataFrame
     class Exotic:
@@ -215,7 +215,7 @@ def test_bad_out():
         DagsterInvalidDefinitionError,
         match="Invalid type: dagster_type must be an instance of DagsterType or a Python type",
     ):
-        _output = Out(Exotic())
+        _output = Out(Exotic())  # pyright: ignore[reportArgumentType]
 
 
 def test_op_tags():

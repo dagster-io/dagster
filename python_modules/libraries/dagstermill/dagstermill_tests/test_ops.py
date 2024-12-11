@@ -39,8 +39,8 @@ def cleanup_result_notebook(result):
     ]
     for materialization_event in materialization_events:
         result_path = get_path(materialization_event)
-        if os.path.exists(result_path):
-            os.unlink(result_path)
+        if os.path.exists(result_path):  # pyright: ignore[reportArgumentType]
+            os.unlink(result_path)  # pyright: ignore[reportArgumentType]
 
 
 @contextmanager
@@ -167,12 +167,12 @@ def test_reexecute_result_notebook():
         for materialization_event in materialization_events:
             result_path = get_path(materialization_event)
 
-        if result_path.endswith(".ipynb"):
-            with open(result_path, encoding="utf8") as fd:
+        if result_path.endswith(".ipynb"):  # pyright: ignore[reportOptionalMemberAccess]
+            with open(result_path, encoding="utf8") as fd:  # pyright: ignore[reportArgumentType]
                 nb = nbformat.read(fd, as_version=4)
             ep = ExecutePreprocessor()
             ep.preprocess(nb)
-            with open(result_path, encoding="utf8") as fd:
+            with open(result_path, encoding="utf8") as fd:  # pyright: ignore[reportArgumentType]
                 expected = _strip_execution_metadata(nb)
                 actual = _strip_execution_metadata(nbformat.read(fd, as_version=4))
                 assert actual == expected
@@ -406,7 +406,7 @@ def test_resources_notebook_with_exception():
             assert not result.success
             assert result.all_events[8].event_type.value == "STEP_FAILURE"
             assert (
-                "raise Exception()" in result.all_events[8].event_specific_data.error.cause.message
+                "raise Exception()" in result.all_events[8].event_specific_data.error.cause.message  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
             )
 
             # Expect something like:
@@ -519,7 +519,7 @@ def test_reserved_tags_not_overridden():
 
 def test_default_description():
     test_op = define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH)
-    assert test_op.description.startswith("This op is backed by the notebook at ")
+    assert test_op.description.startswith("This op is backed by the notebook at ")  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_custom_description():
@@ -551,7 +551,7 @@ def test_failure(capsys):
         "failure_job", {"execution": {"config": {"in_process": {}}}}, raise_on_error=False
     ) as result:
         assert (
-            result.failure_data_for_node("yield_failure").user_failure_data.description
+            result.failure_data_for_node("yield_failure").user_failure_data.description  # pyright: ignore[reportOptionalMemberAccess]
             == "bad bad notebook"
         )
 

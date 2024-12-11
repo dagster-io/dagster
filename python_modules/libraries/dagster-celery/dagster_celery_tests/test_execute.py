@@ -71,7 +71,7 @@ def test_execute_fails_job_on_celery(dagster_celery_worker):
     with execute_job_on_celery("test_fails") as result:
         assert len(result.get_step_failure_events()) == 1
         assert result.is_node_failed("fails")
-        assert "Exception: argjhgjh\n" in result.failure_data_for_node("fails").error.cause.message
+        assert "Exception: argjhgjh\n" in result.failure_data_for_node("fails").error.cause.message  # pyright: ignore[reportOptionalMemberAccess]
         assert result.is_node_untouched("should_never_execute")
 
 
@@ -207,7 +207,7 @@ def test_execute_eagerly_fails_job_on_celery():
     with execute_eagerly_on_celery("test_fails") as result:
         assert len(result.get_step_failure_events()) == 1
         assert result.is_node_failed("fails")
-        assert "Exception: argjhgjh\n" in result.failure_data_for_node("fails").error.cause.message
+        assert "Exception: argjhgjh\n" in result.failure_data_for_node("fails").error.cause.message  # pyright: ignore[reportOptionalMemberAccess]
         assert result.is_node_untouched("should_never_execute")
 
 

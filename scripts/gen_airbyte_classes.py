@@ -568,9 +568,9 @@ from dagster._annotations import public
                                 spec = importlib.util.spec_from_file_location(
                                     "module.name", out_file
                                 )
-                                foo = importlib.util.module_from_spec(spec)
+                                foo = importlib.util.module_from_spec(spec)  # pyright: ignore[reportArgumentType]
                                 sys.modules["module.name"] = foo
-                                spec.loader.exec_module(foo)
+                                spec.loader.exec_module(foo)  # pyright: ignore[reportOptionalMemberAccess]
 
                                 out = new_out
                                 successes += 1

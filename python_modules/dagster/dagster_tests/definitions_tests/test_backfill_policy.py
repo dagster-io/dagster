@@ -7,4 +7,4 @@ def test_type():
     assert BackfillPolicy.single_run().policy_type == BackfillPolicyType.SINGLE_RUN
     assert BackfillPolicy.multi_run().policy_type == BackfillPolicyType.MULTI_RUN
     with pytest.raises(ParameterCheckError):
-        BackfillPolicy.multi_run(max_partitions_per_run=None)
+        BackfillPolicy.multi_run(max_partitions_per_run=None)  # pyright: ignore[reportArgumentType]

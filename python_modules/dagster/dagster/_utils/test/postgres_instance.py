@@ -75,15 +75,15 @@ class TestPostgresInstance:
         from dagster_postgres.utils import get_conn_string
 
         return get_conn_string(
-            **dict(
-                dict(
-                    username="test",
-                    password="test",
-                    hostname=TestPostgresInstance.get_hostname(env_name=env_name),
-                    db_name="test",
-                ),
-                **kwargs,
-            )
+            **dict(  # pyright: ignore[reportArgumentType]
+                dict(  # pyright: ignore[reportArgumentType]
+                    username="test",  # pyright: ignore[reportArgumentType]
+                    password="test",  # pyright: ignore[reportArgumentType]
+                    hostname=TestPostgresInstance.get_hostname(env_name=env_name),  # pyright: ignore[reportArgumentType]
+                    db_name="test",  # pyright: ignore[reportArgumentType]
+                ),  # pyright: ignore[reportArgumentType]
+                **kwargs,  # pyright: ignore[reportArgumentType]
+            )  # pyright: ignore[reportArgumentType]
         )
 
     @staticmethod

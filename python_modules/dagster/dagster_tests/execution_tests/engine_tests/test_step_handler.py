@@ -20,7 +20,7 @@ def foo_pipline():
 
 
 def _get_executor(instance, pipeline, executor_config=None):
-    return test_step_delegating_executor.executor_creation_fn(
+    return test_step_delegating_executor.executor_creation_fn(  # pyright: ignore[reportOptionalCall]
         InitExecutorContext(
             job=pipeline,
             executor_def=test_step_delegating_executor,
@@ -64,7 +64,7 @@ def test_step_handler_context():
         ctx = StepHandlerContext(
             instance=instance,
             plan_context=plan_context,
-            steps=execution_plan.steps,
+            steps=execution_plan.steps,  # pyright: ignore[reportArgumentType]
             execute_step_args=args,
             dagster_run=run,
         )

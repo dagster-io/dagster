@@ -219,7 +219,7 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
         == 'not key:"auto_materialize_asset" or key:"auto_observe_asset"'
     )
 
-    assert default_sensor.asset_selection.resolve(asset_graph) == {
+    assert default_sensor.asset_selection.resolve(asset_graph) == {  # pyright: ignore[reportOptionalMemberAccess]
         AssetKey(["other_auto_materialize_asset"]),
         AssetKey(["other_auto_observe_asset"]),
         AssetKey(["boring_asset"]),
@@ -228,7 +228,7 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
 
     custom_sensor = remote_repo.get_sensor("my_custom_policy_sensor")
 
-    assert custom_sensor.asset_selection.resolve(asset_graph) == {
+    assert custom_sensor.asset_selection.resolve(asset_graph) == {  # pyright: ignore[reportOptionalMemberAccess]
         AssetKey(["auto_materialize_asset"]),
         AssetKey(["auto_observe_asset"]),
     }
@@ -282,7 +282,7 @@ def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
     # Custom sensor covered all the valid assets
     custom_sensor = remote_repo.get_sensor("my_custom_policy_sensor")
 
-    assert custom_sensor.asset_selection.resolve(asset_graph) == {
+    assert custom_sensor.asset_selection.resolve(asset_graph) == {  # pyright: ignore[reportOptionalMemberAccess]
         AssetKey(["auto_materialize_asset"]),
         AssetKey(["auto_observe_asset"]),
         AssetKey(["other_auto_materialize_asset"]),

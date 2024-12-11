@@ -366,7 +366,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
             updated_run = instance.get_run_by_id(run.run_id)
-            assert updated_run.tags[DOCKER_IMAGE_TAG] == expected_image
+            assert updated_run.tags[DOCKER_IMAGE_TAG] == expected_image  # pyright: ignore[reportOptionalMemberAccess]
 
             # Check that user defined k8s config was passed down to the k8s job.
             mock_method_calls = mock_k8s_client_batch_api.method_calls
@@ -391,7 +391,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             assert (
                 args
                 == ExecuteRunArgs(
-                    job_origin=run.job_code_origin,
+                    job_origin=run.job_code_origin,  # pyright: ignore[reportArgumentType]
                     run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                     set_exit_code_on_failure=None,
@@ -455,7 +455,7 @@ def test_raise_on_error(kubeconfig_file):
             assert (
                 args
                 == ExecuteRunArgs(
-                    job_origin=run.job_code_origin,
+                    job_origin=run.job_code_origin,  # pyright: ignore[reportArgumentType]
                     run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                     set_exit_code_on_failure=True,
@@ -496,7 +496,7 @@ def test_k8s_executor_config_override(kubeconfig_file):
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
             updated_run = instance.get_run_by_id(run.run_id)
-            assert updated_run.tags[DOCKER_IMAGE_TAG] == "my_image:tag"
+            assert updated_run.tags[DOCKER_IMAGE_TAG] == "my_image:tag"  # pyright: ignore[reportOptionalMemberAccess]
 
             # Launch with custom job_image
             run = create_run_for_test(
@@ -511,7 +511,7 @@ def test_k8s_executor_config_override(kubeconfig_file):
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
             updated_run = instance.get_run_by_id(run.run_id)
-            assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake-image-name"
+            assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake-image-name"  # pyright: ignore[reportOptionalMemberAccess]
 
         # Check that user defined k8s config was passed down to the k8s job.
         mock_method_calls = mock_k8s_client_batch_api.method_calls

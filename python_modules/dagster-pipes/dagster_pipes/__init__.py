@@ -778,7 +778,7 @@ class ExcThread(threading.Thread):
 
         while not self.exceptions.empty():
             exc_info = self.exceptions.get()
-            sys.stderr.write(traceback.format_exception(*exc_info))
+            sys.stderr.write(traceback.format_exception(*exc_info))  # pyright: ignore[reportCallIssue,reportArgumentType]
 
 
 # log writers can potentially capture other type sof logs (for example, from Spark workers)

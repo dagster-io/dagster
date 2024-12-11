@@ -55,11 +55,11 @@ def define_test_all_scalars_job():
     def produce_bool():
         return True
 
-    @op(ins={"any_value": In(Any)})
+    @op(ins={"any_value": In(Any)})  # pyright: ignore[reportArgumentType]
     def take_any(any_value):
         return any_value
 
-    @op(out=Out(Any))
+    @op(out=Out(Any))  # pyright: ignore[reportArgumentType]
     def produce_any():
         return True
 

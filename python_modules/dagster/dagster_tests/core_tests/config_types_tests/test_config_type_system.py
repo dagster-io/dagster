@@ -139,7 +139,7 @@ def _multiple_required_fields_config_permissive_dict():
 
 def _validate(config_field, value):
     res = process_config(config_field.config_type, value)
-    assert res.success, res.errors[0].message
+    assert res.success, res.errors[0].message  # pyright: ignore[reportOptionalSubscript]
     return res.value
 
 
@@ -670,8 +670,8 @@ def test_build_optionality():
         }
     ).config_type
 
-    assert optional_test_type.fields["required"].is_required
-    assert optional_test_type.fields["optional"].is_required is False
+    assert optional_test_type.fields["required"].is_required  # pyright: ignore[reportAttributeAccessIssue]
+    assert optional_test_type.fields["optional"].is_required is False  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_wrong_op_name():
@@ -927,7 +927,7 @@ def test_list_in_config_error():
 
     with pytest.raises(DagsterInvalidDefinitionError, match=re.escape(error_msg)):
 
-        @op(config_schema=List[int])
+        @op(config_schema=List[int])  # pyright: ignore[reportArgumentType]
         def _no_runtime_list_in_config(_):
             pass
 
@@ -935,7 +935,7 @@ def test_list_in_config_error():
 def test_working_map_path():
     called = {}
 
-    @op(config_schema={str: int})
+    @op(config_schema={str: int})  # pyright: ignore[reportArgumentType]
     def required_map_int_op(context):
         assert context.op_config == {"foo": 1, "bar": 2}
         called["yup"] = True
@@ -955,7 +955,7 @@ def test_working_map_path():
 def test_item_error_map_path():
     called = {}
 
-    @op(config_schema={str: int})
+    @op(config_schema={str: int})  # pyright: ignore[reportArgumentType]
     def required_map_int_op(context):
         assert context.op_config == {"foo": 1, "bar": 2}
         called["yup"] = True
@@ -1146,7 +1146,7 @@ def test_no_set_in_config_system():
 
     with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
 
-        @op(config_schema=Set)
+        @op(config_schema=Set)  # pyright: ignore[reportArgumentType]
         def _bare_open_set(_):
             pass
 
@@ -1158,7 +1158,7 @@ def test_no_set_in_config_system():
 
     with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
 
-        @op(config_schema=Set[int])
+        @op(config_schema=Set[int])  # pyright: ignore[reportArgumentType]
         def _bare_closed_set(_):
             pass
 

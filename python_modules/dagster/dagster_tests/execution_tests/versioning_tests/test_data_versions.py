@@ -928,9 +928,9 @@ def test_legacy_data_version_tags():
         # This will create materializations with the legacy tags
         with mock.patch.dict("dagster._core.execution.plan.execute_step.__dict__", legacy_tags):
             mats = materialize_assets([foo, bar], instance)
-            assert mats["bar"].tags["dagster/logical_version"]
-            assert mats["bar"].tags["dagster/input_logical_version/foo"]
-            assert mats["bar"].tags["dagster/input_event_pointer/foo"]
+            assert mats["bar"].tags["dagster/logical_version"]  # pyright: ignore[reportOptionalSubscript]
+            assert mats["bar"].tags["dagster/input_logical_version/foo"]  # pyright: ignore[reportOptionalSubscript]
+            assert mats["bar"].tags["dagster/input_event_pointer/foo"]  # pyright: ignore[reportOptionalSubscript]
 
         # We're now outside the mock context
         record = instance.get_latest_data_version_record(bar.key)
@@ -995,14 +995,14 @@ def test_materialize_result_overwrite_provenance_tag():
 
     @asset(deps=["asset0"])
     def asset1():
-        return MaterializeResult(tags={"dagster/input_event_pointer/asset0": 500})
+        return MaterializeResult(tags={"dagster/input_event_pointer/asset0": 500})  # pyright: ignore[reportArgumentType]
 
     with instance_for_test() as instance:
         materialize([asset0], instance=instance)
         materialize([asset1], instance=instance)
 
         record = instance.get_latest_data_version_record(asset1.key)
-        assert extract_data_provenance_from_entry(record.event_log_entry).input_storage_ids == {
+        assert extract_data_provenance_from_entry(record.event_log_entry).input_storage_ids == {  # pyright: ignore[reportOptionalMemberAccess]
             AssetKey(["asset0"]): 500
         }
 
@@ -1013,14 +1013,14 @@ def test_output_overwrite_provenance_tag():
 
     @asset(deps=["asset0"])
     def asset1():
-        return Output(value=None, tags={"dagster/input_event_pointer/asset0": 500})
+        return Output(value=None, tags={"dagster/input_event_pointer/asset0": 500})  # pyright: ignore[reportArgumentType]
 
     with instance_for_test() as instance:
         materialize([asset0], instance=instance)
         materialize([asset1], instance=instance)
 
         record = instance.get_latest_data_version_record(asset1.key)
-        assert extract_data_provenance_from_entry(record.event_log_entry).input_storage_ids == {
+        assert extract_data_provenance_from_entry(record.event_log_entry).input_storage_ids == {  # pyright: ignore[reportOptionalMemberAccess]
             AssetKey(["asset0"]): 500
         }
 
@@ -1050,7 +1050,7 @@ def test_fan_in():
     traced_counter.set(counter)
     materialize_assets(all_assets, instance)[downstream_asset.key]
     assert (
-        traced_counter.get().counts()
+        traced_counter.get().counts()  # pyright: ignore[reportOptionalMemberAccess]
         == {
             "DagsterInstance.get_asset_records": 1,
             "DagsterInstance.get_run_record_by_id": 3,  # get_run_record_by_id called when handling events for the run

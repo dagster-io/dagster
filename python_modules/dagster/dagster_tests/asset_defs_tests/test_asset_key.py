@@ -51,7 +51,7 @@ source_asset = SourceAsset(key=["key0"])
 
 
 def test_forward_slashes_allowed():
-    keys1 = [a.key for a in load_assets_from_current_module(key_prefix="foo/bar")]
+    keys1 = [a.key for a in load_assets_from_current_module(key_prefix="foo/bar")]  # pyright: ignore[reportAttributeAccessIssue]
     assert AssetKey(["foo/bar", "baz"]) in keys1
     assert AssetKey(["foo/bar", "baz", "quix"]) in keys1
 

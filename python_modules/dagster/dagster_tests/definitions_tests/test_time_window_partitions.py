@@ -1506,7 +1506,7 @@ def test_time_window_partitions_def_serialization(partitions_def):
     )
     deserialized = deserialize_value(serialize_value(time_window_partitions_def))
     assert deserialized == time_window_partitions_def
-    assert deserialized.start.tzinfo == time_window_partitions_def.start.tzinfo
+    assert deserialized.start.tzinfo == time_window_partitions_def.start.tzinfo  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_pickle_time_window_partitions_def():

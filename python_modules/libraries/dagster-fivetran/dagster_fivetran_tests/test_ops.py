@@ -62,7 +62,7 @@ def test_fivetran_sync_op() -> None:
 
         result = fivetran_sync_job.execute_in_process()
         assert result.output_for_node("fivetran_sync_op") == FivetranOutput(
-            connector_details=get_sample_connector_response(data=final_data)["data"],
+            connector_details=get_sample_connector_response(data=final_data)["data"],  # pyright: ignore[reportArgumentType]
             schema_config=get_complex_sample_connector_schema_config()["data"],
         )
         asset_materializations = [
@@ -145,7 +145,7 @@ def test_fivetran_resync_op(resync_params, endpoint, expected_assets) -> None:
         with instance_for_test() as instance:
             result = fivetran_resync_job.execute_in_process(instance=instance)
             assert result.output_for_node("fivetran_resync_op") == FivetranOutput(
-                connector_details=get_sample_connector_response(data=final_data)["data"],
+                connector_details=get_sample_connector_response(data=final_data)["data"],  # pyright: ignore[reportArgumentType]
                 schema_config=get_complex_sample_connector_schema_config()["data"],
             )
             asset_materializations = [

@@ -108,7 +108,7 @@ def empty_repository():
 def test_invalid_repository():
     with pytest.raises(CheckError):
 
-        @repository
+        @repository  # pyright: ignore[reportArgumentType]
         def invalid_repository(_invalid_arg: str):
             return []
 

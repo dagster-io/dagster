@@ -232,7 +232,7 @@ class PackageSpec:
     @property
     def requirements(self):
         # First try to infer requirements from the python package
-        package = PythonPackages.get(self.name)
+        package = PythonPackages.get(self.name)  # pyright: ignore[reportArgumentType]
         if package:
             return set.union(package.install_requires, *package.extras_require.values())
 

@@ -273,7 +273,7 @@ class MultiprocessExecutor(Executor):
                                 step_context,
                                 get_run_crash_explanation(
                                     prefix=f"Multiprocess executor: child process for step {key}",
-                                    exit_code=crash.exit_code,
+                                    exit_code=crash.exit_code,  # pyright: ignore[reportArgumentType]
                                 ),
                                 EngineEventData.engine_error(serializable_error),
                             )

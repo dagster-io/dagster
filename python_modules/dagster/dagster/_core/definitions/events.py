@@ -712,7 +712,7 @@ class ObjectStoreOperation(
     def serializable(cls, inst, **kwargs):
         return cls(
             **dict(
-                {
+                {  # pyright: ignore[reportArgumentType]
                     "op": inst.op.value,
                     "key": inst.key,
                     "dest_key": inst.dest_key,

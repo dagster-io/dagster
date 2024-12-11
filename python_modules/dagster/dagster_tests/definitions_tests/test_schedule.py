@@ -164,13 +164,13 @@ def test_tag_transfer_to_run_request():
 
     # If no defined execution function, tags should be transferred to the run request (backcompat)
     assert (
-        tags_and_no_exec_fn_schedule.evaluate_tick(context_with_time).run_requests[0].tags["foo"]
+        tags_and_no_exec_fn_schedule.evaluate_tick(context_with_time).run_requests[0].tags["foo"]  # pyright: ignore[reportOptionalSubscript]
         == "bar"
     )
 
     # If an execution function is defined, tags should not be transferred to the run request
     assert (
-        "foo" not in tags_and_exec_fn_schedule.evaluate_tick(context_with_time).run_requests[0].tags
+        "foo" not in tags_and_exec_fn_schedule.evaluate_tick(context_with_time).run_requests[0].tags  # pyright: ignore[reportOptionalSubscript]
     )
 
 

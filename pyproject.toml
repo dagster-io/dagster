@@ -42,10 +42,6 @@ exclude = [
 venv = ".venv"
 venvPath = "pyright/master"
 
-# Set to false to help us during the transition from mypy to pyright. Mypy does
-# not analyze unannotated functions by default, and so as of 2023-02 the codebase contains a large
-# number of type errors in unannotated functions. Eventually we can turn off this setting.
-analyzeUnannotatedFunctions = false
 
 # Minimum version of Python on which code must run. This determines the standard library stubs used by
 # pyright.
@@ -70,6 +66,13 @@ reportPrivateImportUsage = false
 # Since we only use pyright, there is no need to suppress type errors that pyright does not
 # recognize.
 reportUnnecessaryTypeIgnoreComment = "warning"
+
+# Skip analyzing unannotated code in examples to facilitate terse code.
+executionEnvironments = [
+  { root = "examples", analyzeUnannotatedFunctions=false },
+  { root = "python_modules" },
+  { root = "integration_tests" }
+]
 
 # ########################
 # ##### PYTEST

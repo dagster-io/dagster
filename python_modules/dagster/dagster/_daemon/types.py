@@ -12,7 +12,7 @@ class DaemonHeartbeatSerializer(NamedTupleSerializer["DaemonHeartbeat"]):
         # just extract the name, which is the string we want.
         if isinstance(unpacked_dict.get("daemon_type"), UnknownSerdesValue):
             unknown = unpacked_dict["daemon_type"]
-            unpacked_dict["daemon_type"] = unknown.value["__enum__"].split(".")[-1]
+            unpacked_dict["daemon_type"] = unknown.value["__enum__"].split(".")[-1]  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
             context.clear_ignored_unknown_values(unknown)
         if unpacked_dict.get("error"):
             unpacked_dict["errors"] = [unpacked_dict["error"]]

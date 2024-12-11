@@ -226,7 +226,7 @@ def _get_schedule_evaluation_fn(
             ]
         else:
             check.invariant(isinstance(partitions_def, MultiPartitionsDefinition))
-            time_window_dimension = partitions_def.time_window_dimension
+            time_window_dimension = partitions_def.time_window_dimension  # pyright: ignore[reportAttributeAccessIssue]
             partition_key = time_window_dimension.partitions_def.get_last_partition_key(
                 context.scheduled_execution_time
             )
@@ -241,14 +241,14 @@ def _get_schedule_evaluation_fn(
                     current_time=context.scheduled_execution_time,
                     dynamic_partitions_store=context.instance if context.instance_ref else None,
                 )
-                for key in partitions_def.get_multipartition_keys_with_dimension_value(
+                for key in partitions_def.get_multipartition_keys_with_dimension_value(  # pyright: ignore[reportAttributeAccessIssue]
                     time_window_dimension.name,
                     partition_key,
                     dynamic_partitions_store=context.instance if context.instance_ref else None,
                 )
             ]
 
-    return schedule_fn
+    return schedule_fn  # pyright: ignore[reportReturnType]
 
 
 def _check_valid_schedule_partitions_def(

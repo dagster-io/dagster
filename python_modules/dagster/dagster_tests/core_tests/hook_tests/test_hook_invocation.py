@@ -114,12 +114,12 @@ def test_context_hook_invocation(hook_decorator):
         DagsterInvalidInvocationError,
         match="Decorated function expects one parameter, _, but 0 were provided.",
     ):
-        my_hook()
+        my_hook()  # pyright: ignore[reportCallIssue]
 
     with pytest.raises(
         DagsterInvalidInvocationError, match="Could not find expected argument '_'."
     ):
-        my_hook(foo=None)
+        my_hook(foo=None)  # pyright: ignore[reportCallIssue]
 
 
 @pytest.mark.parametrize(
@@ -137,7 +137,7 @@ def test_success_hook_with_resources(hook_decorator, is_event_list_hook):
         hook = decorator(my_hook_reqs_resources)
     else:
 
-        def my_hook_reqs_resources(context):  # type: ignore  # (test rename)
+        def my_hook_reqs_resources(context):
             assert context.resources.foo == "foo"
             assert context.resources.bar == "bar"
 

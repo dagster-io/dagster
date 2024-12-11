@@ -36,7 +36,7 @@ def test_json_dumps():
 
 
 def test_tempdir():
-    assert not _seven.temp_dir.get_system_temp_directory().startswith("/var")
+    assert not _seven.temp_dir.get_system_temp_directory().startswith("/var")  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_get_arg_names():
@@ -79,7 +79,7 @@ def test_is_fn_or_decor_inst():
 
     def quux_decor(fn):
         q = Quux()
-        return update_wrapper(q, fn)
+        return update_wrapper(q, fn)  # pyright: ignore[reportArgumentType]
 
     @quux_decor
     def yoodles():
@@ -111,7 +111,7 @@ def test_is_subclass():
 
     # type that aren't classes can be passed into is_subclass
     assert not inspect.isclass(2)
-    assert not is_subclass(2, DagsterType)
+    assert not is_subclass(2, DagsterType)  # pyright: ignore[reportArgumentType]
 
 
 @pytest.mark.skipif(

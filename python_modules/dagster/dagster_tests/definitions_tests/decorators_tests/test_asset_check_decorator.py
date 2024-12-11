@@ -82,7 +82,7 @@ def test_asset_check_decorator_name() -> None:
 
 
 def test_asset_check_decorator_docstring_description() -> None:
-    @asset_check(asset="asset1")
+    @asset_check(asset="asset1")  # pyright: ignore[reportArgumentType]
     def check1():
         """Docstring."""
         pass
@@ -94,7 +94,7 @@ def test_asset_check_decorator_docstring_description() -> None:
 
 
 def test_asset_check_decorator_parameter_description() -> None:
-    @asset_check(asset="asset1", description="parameter")
+    @asset_check(asset="asset1", description="parameter")  # pyright: ignore[reportArgumentType]
     def check1():
         """Docstring."""
 

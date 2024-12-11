@@ -82,7 +82,7 @@ def giant_job():
         do_something()
 
 
-@repository
+@repository  # pyright: ignore[reportArgumentType]
 def giant_repo():
     return {
         "jobs": {

@@ -87,7 +87,7 @@ def test_old_tick_not_resumed(daemon_not_paused_instance):
 
     debug_crash_flags = {"RUN_CREATED": Exception("OOPS")}
 
-    with freeze_time(execution_time):
+    with freeze_time(execution_time):  # pyright: ignore[reportArgumentType]
         error_asset_scenario.do_daemon_scenario(
             instance,
             scenario_name="auto_materialize_policy_max_materializations_not_exceeded",
@@ -102,10 +102,10 @@ def test_old_tick_not_resumed(daemon_not_paused_instance):
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.FAILURE
         assert ticks[0].automation_condition_evaluation_id == 1
-        assert ticks[0].timestamp == execution_time.timestamp()
+        assert ticks[0].timestamp == execution_time.timestamp()  # pyright: ignore[reportOptionalMemberAccess]
 
     # advancing past MAX_TIME_TO_RESUME_TICK_SECONDS gives up and advances to a new evaluation
-    execution_time = execution_time + datetime.timedelta(
+    execution_time = execution_time + datetime.timedelta(  # pyright: ignore[reportOptionalOperand]
         seconds=MAX_TIME_TO_RESUME_TICK_SECONDS + 1
     )
 
@@ -163,7 +163,7 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
     error_asset_scenario = error_asset_scenario._replace(current_time=None)
 
     for trial_num in range(3):
-        test_time = execution_time + datetime.timedelta(seconds=15 * trial_num)
+        test_time = execution_time + datetime.timedelta(seconds=15 * trial_num)  # pyright: ignore[reportOptionalOperand]
         with freeze_time(test_time):
             debug_crash_flags = {crash_location: Exception(f"Oops {trial_num}")}
 
@@ -201,7 +201,7 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
             assert not cursor.evaluation_id
 
     test_time = test_time + datetime.timedelta(seconds=45)
-    with freeze_time(test_time):
+    with freeze_time(test_time):  # pyright: ignore[reportArgumentType]
         # Next successful tick recovers
         error_asset_scenario.do_daemon_scenario(
             instance,
@@ -215,8 +215,8 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
 
     assert len(ticks) == 4
     assert ticks[0].status == TickStatus.SUCCESS
-    assert ticks[0].timestamp == test_time.timestamp()
-    assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
+    assert ticks[0].timestamp == test_time.timestamp()  # pyright: ignore[reportAttributeAccessIssue]
+    assert ticks[0].tick_data.end_timestamp == test_time.timestamp()  # pyright: ignore[reportAttributeAccessIssue]
     assert ticks[0].automation_condition_evaluation_id == 1  # finally finishes
 
     runs = instance.get_runs()
@@ -245,7 +245,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
     last_cursor = None
 
     # User code error retries but does not increment the retry count
-    test_time = execution_time + datetime.timedelta(seconds=15)
+    test_time = execution_time + datetime.timedelta(seconds=15)  # pyright: ignore[reportOptionalOperand]
     with freeze_time(test_time):
         debug_crash_flags = {crash_location: DagsterUserCodeUnreachableError("WHERE IS THE CODE")}
 
@@ -435,13 +435,13 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
     assert len(ticks) == 1
     assert ticks[0]
     assert ticks[0].status == TickStatus.STARTED
-    assert ticks[0].timestamp == scenario.current_time.timestamp()
-    assert not ticks[0].tick_data.end_timestamp == scenario.current_time.timestamp()
+    assert ticks[0].timestamp == scenario.current_time.timestamp()  # pyright: ignore[reportOptionalMemberAccess]
+    assert not ticks[0].tick_data.end_timestamp == scenario.current_time.timestamp()  # pyright: ignore[reportOptionalMemberAccess]
 
     assert not len(ticks[0].tick_data.run_ids)
     assert ticks[0].automation_condition_evaluation_id == 1
 
-    freeze_datetime = scenario.current_time + datetime.timedelta(seconds=1)
+    freeze_datetime = scenario.current_time + datetime.timedelta(seconds=1)  # pyright: ignore[reportOptionalOperand]
 
     # Run another tick with no crash, daemon continues on and succeeds
     asset_daemon_process = spawn_ctx.Process(
@@ -474,7 +474,7 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
     assert ticks[0]
     assert ticks[0].status == TickStatus.SUCCESS
     assert (
-        ticks[0].timestamp == scenario.current_time.timestamp()
+        ticks[0].timestamp == scenario.current_time.timestamp()  # pyright: ignore[reportOptionalMemberAccess]
         if cursor_written
         else freeze_datetime.timestamp()
     )
@@ -494,7 +494,7 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
     def sort_run_key_fn(run):
         return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
 
-    sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
+    sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)  # pyright: ignore[reportArgumentType]
 
     evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
         key=AssetKey("hourly"), limit=100
@@ -545,8 +545,8 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     assert len(ticks) == 1
     assert ticks[0]
     assert ticks[0].status == TickStatus.FAILURE
-    assert ticks[0].timestamp == scenario.current_time.timestamp()
-    assert ticks[0].tick_data.end_timestamp == scenario.current_time.timestamp()
+    assert ticks[0].timestamp == scenario.current_time.timestamp()  # pyright: ignore[reportOptionalMemberAccess]
+    assert ticks[0].tick_data.end_timestamp == scenario.current_time.timestamp()  # pyright: ignore[reportOptionalMemberAccess]
 
     assert ticks[0].automation_condition_evaluation_id == 1
 
@@ -566,7 +566,7 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
     assert (cursor.evaluation_id > 0) == cursor_written
 
-    freeze_datetime = scenario.current_time + datetime.timedelta(seconds=1)
+    freeze_datetime = scenario.current_time + datetime.timedelta(seconds=1)  # pyright: ignore[reportOptionalOperand]
 
     # Run another tick with no failure, daemon continues on and succeeds
     asset_daemon_process = spawn_ctx.Process(
@@ -603,7 +603,7 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     def sort_run_key_fn(run):
         return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
 
-    sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
+    sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)  # pyright: ignore[reportArgumentType]
 
     evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
         key=AssetKey("hourly"), limit=100

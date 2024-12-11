@@ -39,7 +39,7 @@ def _execute(
             with freeze_time(evaluation_time):
                 _execute_ticks(
                     context,
-                    executor,
+                    executor,  # pyright: ignore[reportArgumentType]
                     submit_executor,
                     {
                         crash_location: get_terminate_signal() if terminate else Exception("Oops!"),

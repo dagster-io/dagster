@@ -131,10 +131,10 @@ def test_non_record_param():
     assert MyModel2(some_class=SomeClass())
 
     with pytest.raises(check.CheckError):
-        MyModel2(some_class=OtherClass())  # wrong class
+        MyModel2(some_class=OtherClass())  # wrong class  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(check.CheckError):
-        MyModel2(some_class=SomeClass)  # forgot ()
+        MyModel2(some_class=SomeClass)  # forgot ()  # pyright: ignore[reportArgumentType]
 
 
 def test_cached_method() -> None:
@@ -194,8 +194,8 @@ def test_forward_ref_with_new() -> None:
         def __new__(cls, partner=None, child=None):
             return super().__new__(
                 cls,
-                partner=partner,
-                child=child,
+                partner=partner,  # pyright: ignore[reportCallIssue]
+                child=child,  # pyright: ignore[reportCallIssue]
             )
 
     class Child: ...
@@ -469,7 +469,7 @@ def test_lazy_import():
     with pytest.raises(
         check.CheckError, match="Expected <class 'dagster._core.test_utils.TestType'>"
     ):
-        AnnotatedModel(foos=[1, 2, 3])
+        AnnotatedModel(foos=[1, 2, 3])  # pyright: ignore[reportArgumentType]
 
     def _out_of_scope():
         from dagster._core.test_utils import TestType
@@ -533,7 +533,7 @@ def test_make_hashable():
         stuff: Sequence[Any]
 
         def __hash__(self):
-            return hash_collection(self)
+            return hash_collection(self)  # pyright: ignore[reportArgumentType]
 
     y = Yep(stuff=[1, 2, 3])
     assert hash(y)

@@ -190,8 +190,10 @@ class ScenarioSpec:
                     )
         for check_spec in self.check_specs:
 
-            @asset_check(
-                asset=check_spec.asset_key, name=check_spec.key.name, blocking=check_spec.blocking
+            @asset_check(  # pyright: ignore[reportArgumentType]
+                asset=check_spec.asset_key,
+                name=check_spec.key.name,
+                blocking=check_spec.blocking,
             )
             def _check(): ...
 

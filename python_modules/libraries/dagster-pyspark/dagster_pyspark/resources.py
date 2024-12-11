@@ -15,9 +15,9 @@ def spark_session_from_config(spark_conf=None):
     builder = SparkSession.builder
     flat = flatten_dict(spark_conf)
     for key, value in flat:
-        builder = builder.config(key, value)
+        builder = builder.config(key, value)  # pyright: ignore[reportAttributeAccessIssue]
 
-    return builder.getOrCreate()
+    return builder.getOrCreate()  # pyright: ignore[reportAttributeAccessIssue]
 
 
 class PySparkResource(ConfigurableResource):

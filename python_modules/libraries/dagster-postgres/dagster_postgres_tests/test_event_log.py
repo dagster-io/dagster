@@ -136,4 +136,4 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
             with instance_for_test(overrides=yaml.safe_load(explicit_cfg)) as explicit_instance:
                 from_explicit = explicit_instance._event_storage  # noqa: SLF001
 
-                assert from_url.postgres_url == from_explicit.postgres_url
+                assert from_url.postgres_url == from_explicit.postgres_url  # pyright: ignore[reportAttributeAccessIssue]

@@ -371,7 +371,10 @@ def execute_k8s_job(
             watch = kubernetes.watch.Watch()  # consider moving in to api_client
 
             api_client.wait_for_pod(
-                pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time
+                pod_to_watch,
+                namespace,  # pyright: ignore[reportArgumentType]
+                wait_timeout=timeout,
+                start_time=start_time,  # pyright: ignore[reportArgumentType]
             )
 
             log_stream = watch.stream(

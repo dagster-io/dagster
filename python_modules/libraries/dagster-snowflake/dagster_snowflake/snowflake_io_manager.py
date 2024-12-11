@@ -347,7 +347,7 @@ class SnowflakeDbClient(DbClient):
             if context.resource_config
             else {}
         )
-        with SnowflakeResource(schema=table_slice.schema, **no_schema_config).get_connection(
+        with SnowflakeResource(schema=table_slice.schema, **no_schema_config).get_connection(  # pyright: ignore[reportArgumentType]
             raw_conn=False
         ) as conn:
             yield conn
