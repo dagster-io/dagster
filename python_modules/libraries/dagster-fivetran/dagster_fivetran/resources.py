@@ -4,7 +4,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from functools import partial
-from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
 from urllib.parse import urljoin
 
 import requests
@@ -59,8 +59,6 @@ FIVETRAN_API_VERSION = "v1"
 FIVETRAN_CONNECTOR_ENDPOINT = "connectors"
 FIVETRAN_API_VERSION_PATH = f"{FIVETRAN_API_VERSION}/"
 FIVETRAN_CONNECTOR_PATH = f"{FIVETRAN_CONNECTOR_ENDPOINT}/"
-
-DEFAULT_MAX_THREADPOOL_WORKERS = 10
 
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
@@ -970,11 +968,11 @@ class FivetranWorkspace(ConfigurableResource):
             schema_config_details=fivetran_output.schema_config
         )
 
-        for schema_source_name, schema in schema_config.schemas.items():
+        for schema in schema_config.schemas.values():
             if not schema.enabled:
                 continue
 
-            for table_source_name, table in schema.tables.items():
+            for table in schema.tables.values():
                 if not table.enabled:
                     continue
 
@@ -1007,14 +1005,17 @@ class FivetranWorkspace(ConfigurableResource):
                             schema=schema.name_in_destination,
                             table=table.name_in_destination,
                         ),
-                        "schema_source_name": schema_source_name,
-                        "table_source_name": table_source_name,
+                        **FivetranMetadataSet(
+                            connector_id=connector.id,
+                            destination_schema_name=schema.name_in_destination,
+                            destination_table_name=table.name_in_destination,
+                        ),
                     },
                 )
 
     def sync_and_poll(
         self, context: Union[OpExecutionContext, AssetExecutionContext]
-    ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+    ) -> FivetranEventIterator[Union[AssetMaterialization, MaterializeResult]]:
         """Executes a sync and poll process to materialize Fivetran assets.
 
         Args:

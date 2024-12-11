@@ -20,6 +20,8 @@ TEST_ANOTHER_ACCOUNT_ID = "test_another_account_id"
 
 TEST_SCHEMA_NAME = "schema_name_in_destination_1"
 TEST_TABLE_NAME = "table_name_in_destination_1"
+TEST_SECOND_SCHEMA_NAME = "schema_name_in_destination_2"
+TEST_SECOND_TABLE_NAME = "table_name_in_destination_2"
 TEST_ANOTHER_TABLE_NAME = "another_table_name_in_destination_1"
 
 # Taken from Fivetran API documentation
@@ -343,7 +345,7 @@ def get_sample_schema_config_for_connector(table_name: str) -> Mapping[str, Any]
                                     "is_primary_key": True,
                                 },
                                 "property2": {
-                                    "name_in_destination": "column_name_in_destination_1",
+                                    "name_in_destination": "column_name_in_destination_2",
                                     "enabled": True,
                                     "hashed": False,
                                     "enabled_patch_settings": {
