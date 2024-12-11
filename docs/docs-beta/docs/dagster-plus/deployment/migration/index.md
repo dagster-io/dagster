@@ -1,10 +1,7 @@
 ---
 title: Migration
-displayed_sidebar: "dagsterPlus"
-sidebar_position: 30
+sidebar_position: 50
 ---
-
-# Migration
 
 import DocCardList from '@theme/DocCardList';
 
