@@ -1,5 +1,5 @@
 ---
-title: Running a Docker agent
+title: Docker agent setup
 sidebar_position: 100
 ---
 

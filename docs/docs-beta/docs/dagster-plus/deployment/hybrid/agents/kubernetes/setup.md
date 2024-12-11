@@ -1,9 +1,9 @@
 ---
-title: Running a Kubernetes agents on a Kubernetes cluster
+title: Kubernetes agent setup
 sidebar_position: 100
 ---
 
-# Running Dagster+ agents on Kubernetes
+# Kubernetes agent setup
 
 This page provides instructions for running the [Dagster+ agent](/todo) on a [Kubernetes](https://kubernetes.io) cluster.
 
