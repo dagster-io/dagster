@@ -256,7 +256,7 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     specs: Sequence[AssetSpec]
     upstream_asset_deps: Optional[Iterable[AssetDep]]
     execution_type: Optional[AssetExecutionType]
-    concurrency_key: Optional[str]
+    concurrency_group: Optional[str]
 
     @property
     def check_specs(self) -> Sequence[AssetCheckSpec]:
