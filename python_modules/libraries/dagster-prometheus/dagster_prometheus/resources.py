@@ -46,7 +46,7 @@ class PrometheusResource(ConfigurableResource):
         default=30,
         description="is how long delete will attempt to connect before giving up. Defaults to 30s.",
     )
-    _registry: prometheus_client.CollectorRegistry = PrivateAttr(default=None)
+    _registry: prometheus_client.CollectorRegistry = PrivateAttr(default=None)  # type: ignore
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:

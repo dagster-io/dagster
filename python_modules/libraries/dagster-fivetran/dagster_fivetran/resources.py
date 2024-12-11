@@ -30,7 +30,7 @@ from dagster._core.definitions.resource_definition import dagster_maintained_res
 from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
-from pydantic import Field, PrivateAttr
+from pydantic import Field
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
@@ -857,8 +857,6 @@ class FivetranWorkspace(ConfigurableResource):
             "Defaults to True."
         ),
     )
-
-    _client: FivetranClient = PrivateAttr(default=None)
 
     @cached_method
     def get_client(self) -> FivetranClient:

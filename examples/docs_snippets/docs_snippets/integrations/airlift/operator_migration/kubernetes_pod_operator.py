@@ -1,3 +1,4 @@
+# type: ignore
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 
 k8s_hello_world = KubernetesPodOperator(
