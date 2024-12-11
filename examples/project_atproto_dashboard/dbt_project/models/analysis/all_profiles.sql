@@ -1,13 +1,23 @@
-With profiles as (
+With max_profile_data as (
+	SELECT
+		json_extract_string(json, '$.subject.did') as profile_did,
+		max(strptime(regexp_extract(filename, 'dagster-demo/atproto_starter_pack_snapshot/(\d{4}-\d{2}-\d{2}/\d{2}/\d{2})', 1), '%Y-%m-%d/%H/%M')) as max_extracted_timestamp
+	FROM {{ref("stg_profiles")}}
+	GROUP BY
+		json_extract_string(json, '$.subject.did')
+),
+profiles as (
 	SELECT 
-		CAST(json_extract_string(json, '$.subject.handle') as varchar) as handle_subject,
+		json_extract_string(json, '$.subject.handle') as handle_subject,
 		json_extract_string(json, '$.subject.did') as profile_did,
 		json_extract_string(json, '$.subject.avatar') as profile_avatar,
 		json_extract_string(json, '$.subject.display_name') as profile_display_name,
 		json_extract_string(json, '$.subject.created_at') as profile_created_date,
 		json_extract_string(json, '$.subject.description') as profile_description
-	FROM {{ref("stg_profiles")}}
-	GROUP BY ALL
+	FROM {{ref("stg_profiles")}} stg_prof
+	JOIN max_profile_data
+		ON json_extract_string(stg_prof.json, '$.subject.did') = max_profile_data.profile_did
+		AND strptime(regexp_extract(stg_prof.filename, 'dagster-demo/atproto_starter_pack_snapshot/(\d{4}-\d{2}-\d{2}/\d{2}/\d{2})', 1), '%Y-%m-%d/%H/%M') = max_profile_data.max_extracted_timestamp
 ),
 user_aggregates as (
 	SELECT 
@@ -22,8 +32,8 @@ user_aggregates as (
 	    ntile(100) OVER (ORDER BY SUM(cast(lf.replies as int))) as replies_percentile,
 		ntile(100) OVER (ORDER BY count(*))	as posts_percentile,
 		(ntile(100) OVER (ORDER BY SUM(cast(lf.likes as int))) + ntile(100) OVER (ORDER BY SUM(cast(lf.replies as int))) + ntile(100) OVER (ORDER BY count(*))) / 3.0 as avg_score
-	FROM {{ref("latest_feed")}}lf
-	group by REPLACE(author_handle, '"', '') 
+	FROM {{ref("latest_feed")}} lf
+	GROUP BY REPLACE(author_handle, '"', '') 
 ),
 final as (
 	SELECT DISTINCT 
@@ -45,7 +55,6 @@ final as (
 		user_aggregates.avg_score
 	FROM profiles
 	LEFT JOIN user_aggregates
-		on user_aggregates.author_handle = profiles.handle_subject
+		ON user_aggregates.author_handle = profiles.handle_subject
 )
-
 SELECT * FROM final

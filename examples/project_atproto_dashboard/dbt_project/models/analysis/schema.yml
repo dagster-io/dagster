@@ -9,4 +9,10 @@ models:
           - unique
           - not_null
   - name: latest_feed
-    description: the latest feed of posts 
+    description: "the latest feed of posts"
+  - name: activity_over_time
+    description: "daily activity of posts overtime"
+  - name: top_daily_posts
+    description: "top posts ranked for a given day"
+  - name: top_external_links
+    description: "top external content grouped by type shared in the community"
