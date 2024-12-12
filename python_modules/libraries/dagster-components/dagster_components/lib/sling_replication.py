@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Iterator, Optional, Union
+from typing import Any, Iterator, Optional, Sequence, Union
 
 import yaml
 from dagster._core.definitions.definitions_class import Definitions
@@ -14,22 +14,30 @@ from typing_extensions import Self
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import component
 from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
-from dagster_components.core.dsl_schema import OpSpecBaseModel
+from dagster_components.core.dsl_schema import DefsTransformUnion, OpSpecBaseModel
 
 
 class SlingReplicationParams(BaseModel):
     sling: Optional[SlingResource] = None
     op: Optional[OpSpecBaseModel] = None
+    transforms: Optional[Sequence[DefsTransformUnion]] = None
 
 
 @component(name="sling_replication")
 class SlingReplicationComponent(Component):
     params_schema = SlingReplicationParams
 
-    def __init__(self, dirpath: Path, resource: SlingResource, op_spec: Optional[OpSpecBaseModel]):
+    def __init__(
+        self,
+        dirpath: Path,
+        resource: SlingResource,
+        op_spec: Optional[OpSpecBaseModel],
+        transforms: Sequence[DefsTransformUnion],
+    ):
         self.dirpath = dirpath
         self.resource = resource
         self.op_spec = op_spec
+        self.transforms = transforms
 
     @classmethod
     def from_decl_node(cls, context: ComponentLoadContext, decl_node: ComponentDeclNode) -> Self:
@@ -41,6 +49,7 @@ class SlingReplicationComponent(Component):
             dirpath=decl_node.path,
             resource=loaded_params.sling or SlingResource(),
             op_spec=loaded_params.op,
+            transforms=loaded_params.transforms or [],
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -52,7 +61,10 @@ class SlingReplicationComponent(Component):
         def _fn(context: AssetExecutionContext, sling: SlingResource):
             yield from self.execute(context=context, sling=sling)
 
-        return Definitions(assets=[_fn], resources={"sling": self.resource})
+        defs = Definitions(assets=[_fn], resources={"sling": self.resource})
+        for transform in self.transforms:
+            defs = transform.transform(defs)
+        return defs
 
     @classmethod
     def generate_files(cls, params: Any) -> None:

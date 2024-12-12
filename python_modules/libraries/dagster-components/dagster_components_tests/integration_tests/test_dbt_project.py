@@ -79,3 +79,7 @@ def test_load_from_path(dbt_path: Path) -> None:
     )
 
     assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
+
+    for asset_node in defs.get_asset_graph().asset_nodes:
+        assert asset_node.tags["foo"] == "bar"
+        assert asset_node.metadata["something"] == 1

@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Iterator, Mapping, Optional
+from typing import Any, Iterator, Mapping, Optional, Sequence
 
 import click
 import dagster._check as check
@@ -17,7 +17,7 @@ from typing_extensions import Self
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import component
 from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
-from dagster_components.core.dsl_schema import OpSpecBaseModel
+from dagster_components.core.dsl_schema import DefsTransformUnion, OpSpecBaseModel
 
 
 class DbtNodeTranslatorParams(BaseModel):
@@ -29,6 +29,7 @@ class DbtProjectParams(BaseModel):
     dbt: DbtCliResource
     op: Optional[OpSpecBaseModel] = None
     translator: Optional[DbtNodeTranslatorParams] = None
+    transforms: Optional[Sequence[DefsTransformUnion]] = None
 
 
 class DbtGenerateParams(BaseModel):
@@ -76,10 +77,12 @@ class DbtProjectComponent(Component):
         dbt_resource: DbtCliResource,
         op_spec: Optional[OpSpecBaseModel],
         dbt_translator: Optional[DagsterDbtTranslator],
+        transforms: Sequence[DefsTransformUnion],
     ):
         self.dbt_resource = dbt_resource
         self.op_spec = op_spec
         self.dbt_translator = dbt_translator
+        self.transforms = transforms
 
     @classmethod
     def from_decl_node(cls, context: ComponentLoadContext, decl_node: ComponentDeclNode) -> Self:
@@ -96,6 +99,7 @@ class DbtProjectComponent(Component):
             dbt_translator=DbtProjectComponentTranslator(
                 translator_params=loaded_params.translator
             ),
+            transforms=loaded_params.transforms or [],
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -112,7 +116,10 @@ class DbtProjectComponent(Component):
         def _fn(context: AssetExecutionContext):
             yield from self.execute(context=context, dbt=self.dbt_resource)
 
-        return Definitions(assets=[_fn])
+        defs = Definitions(assets=[_fn])
+        for transform in self.transforms:
+            defs = transform.transform(defs)
+        return defs
 
     @classmethod
     def generate_files(cls, params: DbtGenerateParams) -> Mapping[str, Any]:
