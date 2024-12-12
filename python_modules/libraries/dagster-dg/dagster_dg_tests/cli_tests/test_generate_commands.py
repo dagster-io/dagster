@@ -1,4 +1,3 @@
-import importlib
 import inspect
 import json
 import os
@@ -17,18 +16,8 @@ from dagster_dg.cli.generate import (
     generate_component_type_command,
     generate_deployment_command,
 )
-from dagster_dg.context import CodeLocationProjectContext
-from dagster_dg.utils import pushd
-
-
-def _ensure_cwd_on_sys_path():
-    if sys.path[0] != "":
-        sys.path.insert(0, "")
-
-
-def _assert_module_imports(module_name: str):
-    _ensure_cwd_on_sys_path()
-    assert importlib.import_module(module_name)
+from dagster_dg.context import CodeLocationDirectoryContext
+from dagster_dg.utils import discover_git_root, pushd
 
 
 # This is a holder for code that is intended to be written to a file
@@ -184,19 +173,10 @@ def test_generate_code_location_outside_deployment_success() -> None:
         assert Path("bar/uv.lock").exists()
 
 
-def _find_git_root():
-    current = Path.cwd()
-    while current != current.parent:
-        if (current / ".git").exists():
-            return current
-        current = current.parent
-    raise Exception("Could not find git root")
-
-
 def test_generate_code_location_editable_dagster_success(monkeypatch) -> None:
     runner = CliRunner()
-    dagster_git_repo_dir = _find_git_root()
-    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", dagster_git_repo_dir)
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with isolated_example_deployment_foo(runner):
         result = runner.invoke(generate_code_location_command, ["--use-editable-dagster", "bar"])
         assert result.exit_code == 0
@@ -239,7 +219,7 @@ def test_generate_component_type_success(in_deployment: bool) -> None:
         result = runner.invoke(generate_component_type_command, ["baz"])
         assert result.exit_code == 0
         assert Path("bar/lib/baz.py").exists()
-        context = CodeLocationProjectContext.from_path(Path.cwd())
+        context = CodeLocationDirectoryContext.from_path(Path.cwd())
         assert context.has_component_type("bar.baz")
 
 

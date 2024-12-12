@@ -19,6 +19,7 @@ from dagster._core.definitions.sensor_definition import (
     SensorEvaluationContext,
 )
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from dagster._core.storage.tags import SENSOR_NAME_TAG
 from dagster._time import get_current_datetime, get_current_timestamp
 
 DEFAULT_FRESHNESS_SENSOR_NAME = "freshness_checks_sensor"
@@ -162,42 +163,105 @@ def freshness_checks_get_evaluations_iter(
             yield check_key, True
             continue
 
-        # Case 2: The check is currently evaluating. We shouldn't kick off another evaluation until it's done.
-        if (
-            summary_record.last_check_execution_record.status
-            == AssetCheckExecutionRecordStatus.PLANNED
-        ):
+        # Case 2: The check is currently evaluating and has never previously evaluated. We shouldn't kick off another evaluation until it's done.
+        if summary_record.last_completed_check_execution_record is None:
+            check.invariant(
+                summary_record.last_check_execution_record.status
+                == AssetCheckExecutionRecordStatus.PLANNED,
+                f"Unexpected status for check {check_key.to_user_string()}. The summary record indicates that the check has never completed, but the last check execution record is in terminal state {summary_record.last_check_execution_record.status}. This is likely a framework error, please report this to the Dagster maintainers.",
+            )
+
             context.log.info(
-                f"Freshness check on asset {check_key.asset_key.to_user_string()} is in the planned state, indicating it is currently evaluating. Skipping..."
+                f"Freshness check on asset {check_key.asset_key.to_user_string()} is currently evaluating for the first time. Skipping..."
             )
             yield check_key, False
             continue
 
-        evaluation = check.not_none(
-            summary_record.last_check_execution_record.event
-        ).asset_check_evaluation
-        # Case 3: The check previously failed. We shouldn't kick off another evaluation until the asset has been updated.
-        if not evaluation or not evaluation.passed:
-            context.log.info(
-                f"Freshness check {check_key.to_user_string()} failed its last evaluation. Waiting "
-                "to re-evaluate until the asset has received an update."
+        latest_completed_record = check.not_none(
+            summary_record.last_completed_check_execution_record
+        )
+        latest_record_any_status = check.not_none(summary_record.last_check_execution_record)
+        latest_completed_evaluation = check.not_none(
+            check.not_none(latest_completed_record.event).asset_check_evaluation
+        )
+        # Case 3: The check is currently evaluating and the previous evaluation passed.
+        # - If the check is overdue and the current evaluation was not kicked off by the sensor, we should kick off another evaluation.
+        # - If the check previously failed, we'll wait for the current evaluation to complete to avoid over-evaluation.
+        if (
+            latest_record_any_status.status == AssetCheckExecutionRecordStatus.PLANNED
+            and latest_completed_evaluation.passed
+        ):
+            run_record = context.instance.get_run_record_by_id(latest_record_any_status.run_id)
+            # Previous run was kicked off by the sensor, wait for it to complete before kicking off another run.
+            if (
+                run_record
+                and run_record.dagster_run.tags.get(SENSOR_NAME_TAG) == context.sensor_name
+            ):
+                context.log.info(
+                    f"Freshness check {check_key.to_user_string()} is currently evaluating, and was kicked off by this sensor. Skipping..."
+                )
+                yield check_key, False
+                continue
+            # Previous run was not kicked off by the sensor, check if it's overdue.
+            next_deadline = cast(
+                float, latest_completed_evaluation.metadata[FRESH_UNTIL_METADATA_KEY].value
             )
-            yield check_key, False
-            continue
-        # Case 4: The check previously passed. We should re-evaluate if it's possible for the check to be overdue again.
-        next_deadline = cast(float, evaluation.metadata[FRESH_UNTIL_METADATA_KEY].value)
-        if next_deadline < start_time.timestamp():
-            context.log.info(
-                f"Freshness check {check_key.to_user_string()} previously passed, but "
-                "enough time has passed that it can be overdue again. Adding to run request."
+            if next_deadline < start_time.timestamp():
+                context.log.info(
+                    f"Freshness check {check_key.to_user_string()} is currently evaluating, but "
+                    "enough time has passed that it can be overdue again. Adding to run request."
+                )
+                yield check_key, True
+                continue
+            else:
+                how_long_until_next_deadline = next_deadline - start_time.timestamp()
+                context.log.info(
+                    f"Freshness check {check_key.to_user_string()} is currently evaluating, but "
+                    f"cannot be overdue again until {seconds_in_words(how_long_until_next_deadline)} from now. Skipping..."
+                )
+                yield check_key, False
+                continue
+        # Case 4: The previous completed evaluation failed. We should kick off another only if the asset has been updated since it's last evaluation.
+        elif not latest_completed_evaluation.passed:
+            latest_materialization = context.instance.get_latest_materialization_event(
+                check_key.asset_key
             )
-            yield check_key, True
-            continue
+            # If the asset has been updated since the last evaluation, we should re-evaluate the check.
+            if (
+                latest_materialization
+                and latest_materialization.timestamp
+                > check.not_none(latest_completed_record.event).timestamp
+            ):
+                context.log.info(
+                    f"Freshness check {check_key.to_user_string()} previously failed, but "
+                    "the asset has been updated since the last evaluation. Adding to run request."
+                )
+                yield check_key, True
+                continue
+            else:
+                context.log.info(
+                    f"Freshness check {check_key.to_user_string()} previously failed, but "
+                    "the asset has not been updated since the last evaluation. Skipping..."
+                )
+                yield check_key, False
+                continue
+        # Case 5: The previous evaluation passed and there is no in progress evaluation. We should kick off another evaluation only if the check is overdue.
         else:
-            how_long_until_next_deadline = next_deadline - start_time.timestamp()
-            context.log.info(
-                f"Freshness check {check_key.to_user_string()} previously passed, but "
-                f"cannot be overdue again until {seconds_in_words(how_long_until_next_deadline)} from now. Skipping..."
+            next_deadline = cast(
+                float, latest_completed_evaluation.metadata[FRESH_UNTIL_METADATA_KEY].value
             )
-            yield check_key, False
-            continue
+            if next_deadline < start_time.timestamp():
+                context.log.info(
+                    f"Freshness check {check_key.to_user_string()} previously passed, but "
+                    "enough time has passed that it can be overdue again. Adding to run request."
+                )
+                yield check_key, True
+                continue
+            else:
+                how_long_until_next_deadline = next_deadline - start_time.timestamp()
+                context.log.info(
+                    f"Freshness check {check_key.to_user_string()} previously passed, but "
+                    f"cannot be overdue again until {seconds_in_words(how_long_until_next_deadline)} from now. Skipping..."
+                )
+                yield check_key, False
+                continue

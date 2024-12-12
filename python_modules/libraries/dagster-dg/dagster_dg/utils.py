@@ -4,7 +4,7 @@ import posixpath
 import re
 import subprocess
 from pathlib import Path
-from typing import Any, Final, Iterator, List, Optional, Sequence, Union
+from typing import Any, Final, Iterator, List, Mapping, Optional, Sequence, Union
 
 import click
 import jinja2
@@ -14,19 +14,28 @@ from dagster_dg.version import __version__ as dagster_version
 _CODE_LOCATION_COMMAND_PREFIX: Final = ["uv", "run", "dagster-components"]
 
 
-def discover_git_root(path: Path) -> str:
-    while path != path.parent:
-        if (path / ".git").exists():
-            return str(path)
-        path = path.parent
-    raise ValueError("Could not find git root")
-
-
 def execute_code_location_command(path: Path, cmd: Sequence[str]) -> str:
     with pushd(path):
         full_cmd = [*_CODE_LOCATION_COMMAND_PREFIX, *cmd]
-        result = subprocess.run(full_cmd, stdout=subprocess.PIPE, check=False)
+        result = subprocess.run(
+            full_cmd, stdout=subprocess.PIPE, env=get_uv_command_env(), check=True
+        )
         return result.stdout.decode("utf-8")
+
+
+# uv commands should be executed in an environment with no pre-existing VIRTUAL_ENV set. If this
+# variable is set (common during development) and does not match the venv resolved by uv, it prints
+# undesireable warnings.
+def get_uv_command_env() -> Mapping[str, str]:
+    return {k: v for k, v in os.environ.items() if not k == "VIRTUAL_ENV"}
+
+
+def discover_git_root(path: Path) -> Path:
+    while path != path.parent:
+        if (path / ".git").exists():
+            return path
+        path = path.parent
+    raise ValueError("Could not find git root")
 
 
 @contextlib.contextmanager
@@ -39,7 +48,6 @@ def pushd(path: Union[str, Path]) -> Iterator[None]:
         os.chdir(old_cwd)
 
 
-# Adapted from https://github.com/okunishinishi/python-stringcase/blob/master/stringcase.py
 def camelcase(string: str) -> str:
     string = re.sub(r"^[\-_\.]", "", str(string))
     if not string:
@@ -57,7 +65,7 @@ def snakecase(string: str) -> str:
     return string
 
 
-DEFAULT_EXCLUDES: List[str] = [
+_DEFAULT_EXCLUDES: List[str] = [
     "__pycache__",
     ".pytest_cache",
     "*.egg-info",
@@ -80,7 +88,7 @@ def generate_subtree(
     **other_template_vars: Any,
 ):
     """Renders templates for Dagster project."""
-    excludes = DEFAULT_EXCLUDES if not excludes else DEFAULT_EXCLUDES + excludes
+    excludes = _DEFAULT_EXCLUDES if not excludes else _DEFAULT_EXCLUDES + excludes
 
     normalized_path = os.path.normpath(path)
     project_name = project_name or os.path.basename(normalized_path).replace("-", "_")
@@ -88,10 +96,8 @@ def generate_subtree(
         os.mkdir(normalized_path)
 
     project_template_path = os.path.join(os.path.dirname(__file__), "templates", templates_path)
-    loader: jinja2.loaders.FileSystemLoader = jinja2.FileSystemLoader(
-        searchpath=project_template_path
-    )
-    env: jinja2.environment.Environment = jinja2.Environment(loader=loader)
+    loader = jinja2.FileSystemLoader(searchpath=project_template_path)
+    env = jinja2.Environment(loader=loader)
 
     # merge custom skip_files with the default list
     for root, dirs, files in os.walk(project_template_path):
@@ -146,7 +152,7 @@ def generate_subtree(
     click.echo(f"Generated files for Dagster project in {path}.")
 
 
-def _should_skip_file(path: str, excludes: List[str] = DEFAULT_EXCLUDES):
+def _should_skip_file(path: str, excludes: List[str] = _DEFAULT_EXCLUDES):
     """Given a file path `path` in a source template, returns whether or not the file should be skipped
     when generating destination files.
 
