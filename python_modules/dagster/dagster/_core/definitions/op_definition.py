@@ -367,12 +367,14 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     ) -> "OpDefinition":
         return OpDefinition.dagster_internal_init(
             name=name,
-            ins=ins
-            or {input_def.name: In.from_definition(input_def) for input_def in self.input_defs},
-            outs=outs
-            or {
+            ins={input_def.name: In.from_definition(input_def) for input_def in self.input_defs}
+            if ins is None
+            else ins,
+            outs={
                 output_def.name: Out.from_definition(output_def) for output_def in self.output_defs
-            },
+            }
+            if outs is None
+            else outs,
             compute_fn=self.compute_fn,
             config_schema=config_schema or self.config_schema,
             description=description or self.description,
