@@ -16,7 +16,7 @@ export function throttleLatest<T extends (...args: any[]) => Promise<any>>(
     return new Promise((resolve, reject) => {
       // If a call is already active, reject its promise
       if (activeReject) {
-        activeReject(new Error('Throttled: A new call has been made.'));
+        activeReject('Throttled: A new call has been made.');
         activeReject = null;
       }
 

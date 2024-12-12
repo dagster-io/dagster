@@ -25,7 +25,7 @@ describe('throttleLatest', () => {
     const promise1 = throttledFunction(1);
     const promise2 = throttledFunction(2);
 
-    await expect(promise1).rejects.toThrow('Throttled: A new call has been made.');
+    await expect(promise1).rejects.toEqual('Throttled: A new call has been made.');
 
     expect(mockFunction).toHaveBeenCalledTimes(1);
 
@@ -41,7 +41,7 @@ describe('throttleLatest', () => {
 
     const promise2 = throttledFunction(2);
 
-    await expect(promise1).rejects.toThrow('Throttled: A new call has been made.');
+    await expect(promise1).rejects.toEqual('Throttled: A new call has been made.');
 
     jest.advanceTimersByTime(1000);
 
@@ -89,7 +89,7 @@ describe('throttleLatest', () => {
     const promise2 = throttledFunction(2);
 
     // The first promise should be rejected
-    await expect(promise1).rejects.toThrow('Throttled: A new call has been made.');
+    await expect(promise1).rejects.toEqual('Throttled: A new call has been made.');
 
     // The second promise is scheduled to execute after the remaining time (2000 - 100 = 1900ms)
     jest.advanceTimersByTime(1900);
