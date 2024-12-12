@@ -1,12 +1,20 @@
 """The Bluesky servers impose rate limiting of the following specification."""
 
+from pathlib import Path
 import os
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Any, Mapping
 
 import dagster as dg
 from atproto import Client
 from dagster_aws.s3 import S3Resource
+from dagster_dbt import(
+    dbt_assets,
+    DbtCliResource,
+    DagsterDbtTranslator,
+    DbtProject
+)
+
 
 if TYPE_CHECKING:
     from atproto_client import models
@@ -212,7 +220,29 @@ s3_resource = S3Resource(
 )
 
 
+dbt_project = DbtProject(
+    project_dir=Path(__file__).joinpath("..", "..", "dbt_project").resolve(),
+    target=os.getenv("DBT_TARGET"),
+)
+dbt_resource = DbtCliResource(project_dir=dbt_project)
+
+class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
+    def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+        asset_path = dbt_resource_props["fqn"][1:-1]
+        if asset_path:
+            return "_".join(asset_path)
+        return "default"
+
+
+@dbt_assets(
+    manifest=dbt_project.manifest_path,
+    dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
+)
+def dbt_bluesky(context: dg.AssetExecutionContext, dbt: DbtCliResource):
+    yield from (dbt.cli(["build"], context=context).stream().fetch_row_counts())
+
+
 defs = dg.Definitions(
-    assets=[starter_pack_snapshot, actor_feed_snapshot],
-    resources={"atproto_resource": atproto_resource, "s3_resource": s3_resource},
+    assets=[starter_pack_snapshot, actor_feed_snapshot, dbt_bluesky],
+    resources={"atproto_resource": atproto_resource, "s3_resource": s3_resource, "dbt": dbt_resource},
 )
