@@ -79,6 +79,7 @@ def build_named_ins(
     fn: Callable[..., Any],
     asset_ins: Mapping[str, AssetIn],
     deps: Optional[AbstractSet[AssetKey]],
+    allow_ins_and_deps_coexistence: bool = False,
 ) -> Mapping[AssetKey, "NamedIn"]:
     """Creates a mapping from AssetKey to (name of input, In object)."""
     deps = check.opt_set_param(deps, "deps", AssetKey)
@@ -126,16 +127,17 @@ def build_named_ins(
             In(metadata=metadata, input_manager_key=input_manager_key, dagster_type=dagster_type),
         )
 
-    for asset_key in deps:
-        if asset_key in named_ins_by_asset_key:
-            raise DagsterInvalidDefinitionError(
-                f"deps value {asset_key} also declared as input/AssetIn"
+    if not allow_ins_and_deps_coexistence:
+        for asset_key in deps:
+            if asset_key in named_ins_by_asset_key:
+                raise DagsterInvalidDefinitionError(
+                    f"deps value {asset_key} also declared as input/AssetIn"
+                )
+                # mypy doesn't realize that Nothing is a valid type here
+            named_ins_by_asset_key[asset_key] = NamedIn(
+                stringify_asset_key_to_input_name(asset_key),
+                In(cast(type, Nothing)),
             )
-            # mypy doesn't realize that Nothing is a valid type here
-        named_ins_by_asset_key[asset_key] = NamedIn(
-            stringify_asset_key_to_input_name(asset_key),
-            In(cast(type, Nothing)),
-        )
 
     return named_ins_by_asset_key
 

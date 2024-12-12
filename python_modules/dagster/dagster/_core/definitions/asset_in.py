@@ -77,3 +77,10 @@ class AssetIn(
                 else resolve_dagster_type(dagster_type)
             ),
         )
+
+    @classmethod
+    def from_coercible(cls, coercible: "CoercibleToAssetIn") -> "AssetIn":
+        return coercible if isinstance(coercible, AssetIn) else AssetIn(key=coercible)
+
+
+CoercibleToAssetIn = Union[AssetIn, CoercibleToAssetKey]
