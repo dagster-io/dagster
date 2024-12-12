@@ -1,4 +1,3 @@
-from collections import abc
 from typing import TYPE_CHECKING, Generic, Iterator, Union
 
 from dagster import AssetMaterialization, MaterializeResult
@@ -12,7 +11,7 @@ FivetranEventType = Union[AssetMaterialization, MaterializeResult]
 T = TypeVar("T", bound=FivetranEventType)
 
 
-class FivetranEventIterator(Generic[T], abc.Iterator):
+class FivetranEventIterator(Generic[T], Iterator):
     """A wrapper around an iterator of Fivetran events which contains additional methods for
     post-processing the events, such as fetching column metadata.
     """
