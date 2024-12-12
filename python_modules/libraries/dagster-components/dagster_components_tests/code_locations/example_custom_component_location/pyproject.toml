@@ -1,0 +1,44 @@
+[project]
+name = "example_custom_component_location"
+requires-python = ">=3.9,<3.13"
+version = "0.1.0"
+dependencies = [
+    "dagster",
+    "dagster-graphql",
+    "dagster-pipes",
+    "dagster-webserver",
+    "dagster-components[sling,dbt]",
+    "dagster-embedded-elt",
+    "dagster-dbt",
+    "sling-mac-arm64",
+]
+
+[project.optional-dependencies]
+dev = [
+    "dagster-webserver",
+]
+
+[project.entry-points]
+"dagster.components" = { example_custom_component_location = "example_custom_component_location.lib"}
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.dagster]
+module_name = "example_custom_component_location.definitions"
+project_name = "example_custom_component_location"
+
+[tool.setuptools.packages.find]
+exclude=["example_custom_component_location_tests"]
+
+
+[tool.uv.sources]
+dagster = { path = "/Users/schrockn/code/dagster/python_modules/dagster", editable = true }
+dagster-graphql = { path = "/Users/schrockn/code/dagster/python_modules/dagster-graphql", editable = true }
+dagster-pipes = { path = "/Users/schrockn/code/dagster/python_modules/dagster-pipes", editable = true }
+dagster-webserver = { path = "/Users/schrockn/code/dagster/python_modules/dagster-webserver", editable = true }
+dagster-components = { path = "/Users/schrockn/code/dagster/python_modules/libraries/dagster-components", editable = true }
+dagster-embedded-elt = { path = "/Users/schrockn/code/dagster/python_modules/libraries/dagster-embedded-elt", editable = true }
+dagster-dbt = { path = "/Users/schrockn/code/dagster/python_modules/libraries/dagster-dbt", editable = true }
+
