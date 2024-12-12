@@ -96,7 +96,7 @@ export const RunGroupPanel = ({
   });
 
   return (
-    <SidebarSection title={runs[0] ? `Retries (${runs.length - 1})` : ''}>
+    <SidebarSection title={runs[0] ? `Re-executions (${runs.length - 1})` : ''}>
       <>
         {runs.map((g, idx) =>
           g ? (
