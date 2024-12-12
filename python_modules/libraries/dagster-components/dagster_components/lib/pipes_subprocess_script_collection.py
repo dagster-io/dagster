@@ -5,6 +5,9 @@ from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
@@ -23,6 +26,14 @@ if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 
+class AutomationConditionModel(BaseModel):
+    type: str
+    params: Mapping[str, Any] = {}
+
+    def to_automation_condition(self) -> AutomationCondition:
+        return getattr(AutomationCondition, self.type)(**self.params)
+
+
 class AssetSpecModel(BaseModel):
     key: str
     deps: Sequence[str] = []
@@ -33,6 +44,7 @@ class AssetSpecModel(BaseModel):
     code_version: Optional[str] = None
     owners: Sequence[str] = []
     tags: Mapping[str, str] = {}
+    automation_condition: Optional[AutomationConditionModel] = None
 
     @suppress_dagster_warnings
     def to_asset_spec(self) -> AssetSpec:
@@ -40,6 +52,9 @@ class AssetSpecModel(BaseModel):
             **{
                 **self.__dict__,
                 "key": AssetKey.from_user_string(self.key),
+                "automation_condition": self.automation_condition.to_automation_condition()
+                if self.automation_condition
+                else None,
             },
         )
 
