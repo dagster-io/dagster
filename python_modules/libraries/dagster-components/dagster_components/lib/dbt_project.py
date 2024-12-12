@@ -15,9 +15,10 @@ from pydantic import BaseModel, Field, TypeAdapter
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component import component
+from dagster_components.core.component import ComponentGenerateRequest, component
 from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
 from dagster_components.core.dsl_schema import AssetSpecProcessorModel, OpSpecBaseModel
+from dagster_components.generate import generate_component_yaml
 
 
 class DbtNodeTranslatorParams(BaseModel):
@@ -122,7 +123,7 @@ class DbtProjectComponent(Component):
         return defs
 
     @classmethod
-    def generate_files(cls, params: DbtGenerateParams) -> Mapping[str, Any]:
+    def generate_files(cls, request: ComponentGenerateRequest, params: DbtGenerateParams) -> None:
         cwd = os.getcwd()
         if params.project_path:
             # NOTE: CWD is not set "correctly" above so we prepend "../../.." as a temporary hack to
@@ -141,7 +142,7 @@ class DbtProjectComponent(Component):
         else:
             relative_path = None
 
-        return {"dbt": {"project_dir": relative_path}}
+        generate_component_yaml(request, {"dbt": {"project_dir": relative_path}})
 
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
         yield from dbt.cli(["build"], context=context).stream()

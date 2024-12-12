@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
-from typing import Any, Type
+from typing import Any, Mapping, Optional, Type
 
 import click
 import yaml
-from dagster._utils import mkdir_p, pushd
+from dagster._utils import mkdir_p
 
-from dagster_components.core.component import Component
+from dagster_components.core.component import Component, ComponentGenerateRequest
 
 
 class ComponentDumper(yaml.Dumper):
@@ -17,6 +17,16 @@ class ComponentDumper(yaml.Dumper):
         super().write_line_break()
 
 
+def generate_component_yaml(
+    request: ComponentGenerateRequest, component_params: Optional[Mapping[str, Any]]
+) -> None:
+    with open(request.component_instance_root_path / "component.yaml", "w") as f:
+        component_data = {"type": request.component_type_name, "params": component_params or {}}
+        yaml.dump(
+            component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
+        )
+
+
 def generate_component_instance(
     root_path: str,
     name: str,
@@ -24,13 +34,20 @@ def generate_component_instance(
     component_type_name: str,
     generate_params: Any,
 ) -> None:
-    component_instance_root_path = os.path.join(root_path, name)
+    component_instance_root_path = Path(os.path.join(root_path, name))
     click.echo(f"Creating a Dagster component instance folder at {component_instance_root_path}.")
-    mkdir_p(component_instance_root_path)
-    with pushd(component_instance_root_path):
-        component_params = component_type.generate_files(generate_params)
-        component_data = {"type": component_type_name, "params": component_params or {}}
-    with open(Path(component_instance_root_path) / "component.yaml", "w") as f:
-        yaml.dump(
-            component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
+    mkdir_p(str(component_instance_root_path))
+    component_type.generate_files(
+        ComponentGenerateRequest(
+            component_type_name=component_type_name,
+            component_instance_root_path=component_instance_root_path,
+        ),
+        generate_params,
+    )
+
+    component_yaml_path = component_instance_root_path / "component.yaml"
+
+    if not component_yaml_path.exists():
+        raise Exception(
+            f"Currently all components require a component.yaml file. Please ensure your implementation of generate_files writes this file at {component_yaml_path}."
         )

@@ -4,6 +4,7 @@ import importlib.metadata
 import inspect
 import sys
 from abc import ABC, abstractmethod
+from pathlib import Path
 from types import ModuleType
 from typing import (
     TYPE_CHECKING,
@@ -20,6 +21,7 @@ from typing import (
 
 from dagster import _check as check
 from dagster._core.errors import DagsterError
+from dagster._record import record
 from dagster._utils import snakecase
 from typing_extensions import Self
 
@@ -30,13 +32,19 @@ if TYPE_CHECKING:
 class ComponentDeclNode: ...
 
 
+@record
+class ComponentGenerateRequest:
+    component_type_name: str
+    component_instance_root_path: Path
+
+
 class Component(ABC):
     name: ClassVar[Optional[str]] = None
     component_params_schema: ClassVar = None
     generate_params_schema: ClassVar = None
 
     @classmethod
-    def generate_files(cls, params: Any) -> Optional[Mapping[str, Any]]: ...
+    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None: ...
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions": ...
