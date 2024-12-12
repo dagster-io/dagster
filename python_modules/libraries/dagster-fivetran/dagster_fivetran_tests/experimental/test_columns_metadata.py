@@ -135,6 +135,9 @@ def test_column_schema(
             assert table_schema_by_asset_key == expected_table_schema_by_asset_key
 
         captured = capsys.readouterr()
+        # If an exception occurs in fetch_column_metadata,
+        # a message is logged as a warning and the exception is not raised.
+        # We test that this message is not in the logs.
         assert not re.search(
             r"dagster - WARNING - (?s:.)+ - An error occurred while fetching column metadata for table",
             captured.err,

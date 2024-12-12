@@ -1,3 +1,4 @@
+import os
 from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, Union
 
@@ -133,7 +134,12 @@ class FivetranEventIterator(Iterator[T]):
             )
 
             with ThreadPoolExecutor(
-                max_workers=DEFAULT_MAX_THREADPOOL_WORKERS,
+                max_workers=int(
+                    os.getenv(
+                        "FIVETRAN_POSTPROCESSING_THREADPOOL_WORKERS",
+                        default=DEFAULT_MAX_THREADPOOL_WORKERS,
+                    )
+                ),
                 thread_name_prefix=f"fivetran_{connector_id}",
             ) as executor:
                 yield from imap(
