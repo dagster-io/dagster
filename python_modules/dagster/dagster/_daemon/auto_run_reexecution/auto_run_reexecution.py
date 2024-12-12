@@ -25,12 +25,18 @@ DEFAULT_REEXECUTION_POLICY = ReexecutionStrategy.FROM_FAILURE
 
 
 def should_retry(run: DagsterRun, instance: DagsterInstance) -> bool:
+    """A more robust method of determining is a run should be retried by the daemon than just looking
+    at the WILL_RETRY_TAG. We account for the case where the code version is old and doesn't set the
+    WILL_RETRY_TAG. If the tag wasn't set for a run failure, we set it so that other daemons can use the
+    WILL_RETRY_TAG to determine if the run should be retried.
+    """
     will_retry_tag_value = run.tags.get(WILL_RETRY_TAG)
+    is_step_failure = run.tags.get(RUN_FAILURE_REASON_TAG) == RunFailureReason.STEP_FAILURE.value
     if will_retry_tag_value is None:
         # If the run doesn't have the WILL_RETRY_TAG, and the run is failed, we
         # recalculate if the run should be retried to ensure backward compatibilty
         if run.status == DagsterRunStatus.FAILURE:
-            should_retry_run = auto_reexecution_should_retry_run(instance, run)
+            should_retry_run = auto_reexecution_should_retry_run(instance, run, is_step_failure)
             # add the tag to the run so that it can be used in other parts of the system
             instance.add_run_tags(run.run_id, {WILL_RETRY_TAG: str(should_retry_run).lower()})
         else:
@@ -42,14 +48,14 @@ def should_retry(run: DagsterRun, instance: DagsterInstance) -> bool:
     if should_retry_run:
         return should_retry_run
     else:
+        # one of the reasons we may not retry a run is if it is a step failure and system is
+        # set to not retry on op/asset failures. In this case, we log
+        # an engine event
         retry_on_asset_or_op_failure = get_boolean_tag_value(
             run.tags.get(RETRY_ON_ASSET_OR_OP_FAILURE_TAG),
             default_value=instance.run_retries_retry_on_asset_or_op_failure,
         )
-        if (
-            run.tags.get(RUN_FAILURE_REASON_TAG) == RunFailureReason.STEP_FAILURE.value
-            and not retry_on_asset_or_op_failure
-        ):
+        if is_step_failure and not retry_on_asset_or_op_failure:
             instance.report_engine_event(
                 "Not retrying run since it failed due to an asset or op failure and run retries "
                 "are configured with retry_on_asset_or_op_failure set to false.",
