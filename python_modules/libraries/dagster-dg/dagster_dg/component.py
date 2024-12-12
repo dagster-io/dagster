@@ -10,7 +10,6 @@ class RemoteComponentType:
     @property
     def key(self) -> str:
         return self.name
-        # return f"{self.package}.{self.name}"
 
 
 class RemoteComponentRegistry:
