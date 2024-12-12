@@ -4,8 +4,6 @@ sidebar_position: 70
 sidebar_class_name: hidden
 ---
 
-# Deploying Dagster
-
 This section is about self-hosting Dagster.
 
 :::info

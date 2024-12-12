@@ -1,5 +1,6 @@
 ---
-title: "Deploy to Kubernetes"
+title: "Deploying to Kubernetes"
+sidebar_label: Kubernetes
 sidebar_position: 300
 ---
 

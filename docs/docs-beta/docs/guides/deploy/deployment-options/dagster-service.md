@@ -1,5 +1,6 @@
 ---
-title: 'Deploy Dagster as a service'
+title: 'Deploying Dagster as a service'
+sidebar_label: Dagster as a service
 description: 'Learn how to deploy Dagster as a service on a single machine'
 sidebar_position: 200
 ---
@@ -13,8 +14,6 @@ To follow the steps in this guide, you'll need:
 - Working knowledge of containerization and managing services
 
 </details>
-
-# Deploy Dagster as a service
 
 This guide will walk you through deploying Dagster as a service on a single machine. It includes instructions for setting up the Dagster webserver and daemon. This approach is suitable for small-scale deployments or for testing purposes. For production environments, consider using containerized deployments or cloud-based solutions
 
