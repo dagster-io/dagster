@@ -1,5 +1,4 @@
 import re
-from collections import abc
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterator, Optional, Sequence, Union, cast
 
 from dagster import (
@@ -168,7 +167,7 @@ def fetch_column_metadata(
     return {}
 
 
-class SlingEventIterator(Generic[T], abc.Iterator):
+class SlingEventIterator(Generic[T], Iterator):
     """A wrapper around an iterator of Sling events which contains additional methods for
     post-processing the events, such as fetching column metadata.
     """
