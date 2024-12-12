@@ -86,7 +86,6 @@ const sidebars: SidebarsConfig = {
     },
   ],
   integrations: [
-    'integrations/index',
     {
       type: 'category',
       label: 'Guides',
