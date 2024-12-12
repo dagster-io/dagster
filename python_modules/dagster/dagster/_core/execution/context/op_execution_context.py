@@ -126,12 +126,12 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @property
     def op_config(self) -> Any:
         """Any: The parsed config specific to this op."""
-        return self._step_execution_context.op_config
+        return self.get_step_execution_context().op_config
 
     @property
     def dagster_run(self) -> DagsterRun:
         """DagsterRun: The current run."""
-        return self._step_execution_context.dagster_run
+        return self.get_step_execution_context().dagster_run
 
     @public
     @property
@@ -143,7 +143,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @property
     def instance(self) -> DagsterInstance:
         """DagsterInstance: The current Dagster instance."""
-        return self._step_execution_context.instance
+        return self.get_step_execution_context().instance
 
     @public
     @property
@@ -166,47 +166,47 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @property
     def resources(self) -> Any:
         """Resources: The currently available resources."""
-        return self._step_execution_context.resources
+        return self.get_step_execution_context().resources
 
     @property
     def step_launcher(self) -> Optional[StepLauncher]:
         """Optional[StepLauncher]: The current step launcher, if any."""
-        return self._step_execution_context.step_launcher
+        return self.get_step_execution_context().step_launcher
 
     @public
     @property
     def run_id(self) -> str:
         """str: The id of the current execution's run."""
-        return self._step_execution_context.run_id
+        return self.get_step_execution_context().run_id
 
     @public
     @property
     def run_config(self) -> Mapping[str, object]:
         """dict: The run config for the current execution."""
-        return self._step_execution_context.run_config
+        return self.get_step_execution_context().run_config
 
     @public
     @property
     def job_def(self) -> JobDefinition:
         """JobDefinition: The currently executing job."""
-        return self._step_execution_context.job_def
+        return self.get_step_execution_context().job_def
 
     @property
     def repository_def(self) -> RepositoryDefinition:
         """RepositoryDefinition: The Dagster repository for the currently executing job."""
-        return self._step_execution_context.repository_def
+        return self.get_step_execution_context().repository_def
 
     @public
     @property
     def job_name(self) -> str:
         """str: The name of the currently executing pipeline."""
-        return self._step_execution_context.job_name
+        return self.get_step_execution_context().job_name
 
     @public
     @property
     def log(self) -> DagsterLogManager:
         """DagsterLogManager: The log manager available in the execution context."""
-        return self._step_execution_context.log
+        return self.get_step_execution_context().log
 
     @property
     def node_handle(self) -> NodeHandle:
@@ -214,7 +214,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         :meta private:
         """
-        return self._step_execution_context.node_handle
+        return self.get_step_execution_context().node_handle
 
     @property
     def op_handle(self) -> NodeHandle:
@@ -231,7 +231,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         :meta private:
 
         """
-        return self._step_execution_context.job_def.get_node(self.node_handle)
+        return self.get_step_execution_context().job_def.get_node(self.node_handle)
 
     @public
     @property
@@ -243,7 +243,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @property
     def has_partition_key(self) -> bool:
         """Whether the current run is a partitioned run."""
-        return self._step_execution_context.has_partition_key
+        return self.get_step_execution_context().has_partition_key
 
     @public
     @property
@@ -267,7 +267,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 # materializing the 2023-08-21 partition of this asset will log:
                 #   "2023-08-21"
         """
-        return self._step_execution_context.partition_key
+        return self.get_step_execution_context().partition_key
 
     @public
     @property
@@ -318,7 +318,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @property
     def has_partition_key_range(self) -> bool:
         """Whether the current run is a partitioned run."""
-        return self._step_execution_context.has_partition_key_range
+        return self.get_step_execution_context().has_partition_key_range
 
     @public
     @property
@@ -342,7 +342,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
                 #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
         """
-        return self._step_execution_context.partition_key_range
+        return self.get_step_execution_context().partition_key_range
 
     @public
     @property
@@ -366,7 +366,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 # materializing the 2023-08-21 partition of this asset will log:
                 #   TimeWindow("2023-08-21", "2023-08-22")
         """
-        return self._step_execution_context.partition_time_window
+        return self.get_step_execution_context().partition_time_window
 
     @public
     def has_tag(self, key: str) -> bool:
@@ -483,14 +483,14 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         output_name = check.opt_str_param(output_name, "output_name")
         mapping_key = check.opt_str_param(mapping_key, "mapping_key")
 
-        self._step_execution_context.add_output_metadata(
+        self.get_step_execution_context().add_output_metadata(
             metadata=metadata, output_name=output_name, mapping_key=mapping_key
         )
 
     def get_output_metadata(
         self, output_name: str, mapping_key: Optional[str] = None
     ) -> Optional[Mapping[str, Any]]:
-        return self._step_execution_context.get_output_metadata(
+        return self.get_step_execution_context().get_output_metadata(
             output_name=output_name, mapping_key=mapping_key
         )
 
@@ -509,15 +509,15 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @property
     def retry_number(self) -> int:
         """Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc."""
-        return self._step_execution_context.previous_attempt_count
+        return self.get_step_execution_context().previous_attempt_count
 
     def describe_op(self) -> str:
-        return self._step_execution_context.describe_op()
+        return self.get_step_execution_context().describe_op()
 
     @public
     def get_mapping_key(self) -> Optional[str]:
         """Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None."""
-        return self._step_execution_context.step.get_mapping_key()
+        return self.get_step_execution_context().step.get_mapping_key()
 
     #############################################################################################
     # asset related methods
@@ -579,7 +579,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @property
     def selected_output_names(self) -> AbstractSet[str]:
         """Get the output names that correspond to the current selection of assets this execution is expected to materialize."""
-        return self._step_execution_context.selected_output_names
+        return self.get_step_execution_context().selected_output_names
 
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
@@ -668,7 +668,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 #   "2023-08-21"
 
         """
-        return self._step_execution_context.asset_partition_key_for_output(output_name)
+        return self.get_step_execution_context().asset_partition_key_for_output(output_name)
 
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_time_window` instead.")
     @public
@@ -744,7 +744,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 #   TimeWindow("2023-08-21", "2023-08-26")
 
         """
-        return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
+        return self.get_step_execution_context().asset_partitions_time_window_for_output(output_name)
 
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
@@ -808,7 +808,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
 
         """
-        return self._step_execution_context.asset_partition_key_range_for_output(output_name)
+        return self.get_step_execution_context().asset_partition_key_range_for_output(output_name)
 
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
@@ -871,7 +871,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
 
         """
-        return self._step_execution_context.asset_partition_key_range_for_input(input_name)
+        return self.get_step_execution_context().asset_partition_key_range_for_input(input_name)
 
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
@@ -914,7 +914,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 #   "2023-08-20"
 
         """
-        return self._step_execution_context.asset_partition_key_for_input(input_name)
+        return self.get_step_execution_context().asset_partition_key_for_input(input_name)
 
     @public
     def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
@@ -957,7 +957,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         """
         asset_key = self.asset_key_for_output(output_name)
-        result = self._step_execution_context.job_def.asset_layer.get(asset_key).partitions_def
+        result = self.get_step_execution_context().job_def.asset_layer.get(asset_key).partitions_def
         if result is None:
             raise DagsterInvariantViolationError(
                 f"Attempting to access partitions def for asset {asset_key}, but it is not"
@@ -995,7 +995,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         """
         asset_key = self.asset_key_for_input(input_name)
-        result = self._step_execution_context.job_def.asset_layer.get(asset_key).partitions_def
+        result = self.get_step_execution_context().job_def.asset_layer.get(asset_key).partitions_def
         if result is None:
             raise DagsterInvariantViolationError(
                 f"Attempting to access partitions def for asset {asset_key}, but it is not"
@@ -1064,7 +1064,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
         """
         return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
-            self._step_execution_context.asset_partition_key_range_for_output(output_name),
+            self.get_step_execution_context().asset_partition_key_range_for_output(output_name),
             dynamic_partitions_store=self.instance,
         )
 
@@ -1128,7 +1128,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 #   ["2023-08-20", "2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24"]
         """
         return list(
-            self._step_execution_context.asset_partitions_subset_for_input(
+            self.get_step_execution_context().asset_partitions_subset_for_input(
                 input_name
             ).get_partition_keys()
         )
@@ -1207,7 +1207,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 #   TimeWindow("2023-08-20", "2023-08-25")
 
         """
-        return self._step_execution_context.asset_partitions_time_window_for_input(input_name)
+        return self.get_step_execution_context().asset_partitions_time_window_for_input(input_name)
 
     @public
     @experimental
@@ -1237,20 +1237,20 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             asset_key (AssetKey): Key of the asset for which to set the data version.
             data_version (DataVersion): The data version to set.
         """
-        self._step_execution_context.set_data_version(asset_key, data_version)
+        self.get_step_execution_context().set_data_version(asset_key, data_version)
 
     # In this mode no conversion is done on returned values and missing but expected outputs are not
     # allowed.
     @property
     def requires_typed_event_stream(self) -> bool:
-        return self._step_execution_context.requires_typed_event_stream
+        return self.get_step_execution_context().requires_typed_event_stream
 
     @property
     def typed_event_stream_error_message(self) -> Optional[str]:
-        return self._step_execution_context.typed_event_stream_error_message
+        return self.get_step_execution_context().typed_event_stream_error_message
 
     def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None) -> None:
-        self._step_execution_context.set_requires_typed_event_stream(error_message=error_message)
+        self.get_step_execution_context().set_requires_typed_event_stream(error_message=error_message)
 
     @staticmethod
     def get() -> "OpExecutionContext":
