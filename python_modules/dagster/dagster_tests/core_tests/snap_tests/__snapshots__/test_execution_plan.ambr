@@ -24,6 +24,7 @@
     "steps": [
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [],
         "key": "op_one",
         "kind": {
@@ -66,6 +67,7 @@
       },
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [
           {
             "__class__": "ExecutionStepInputSnap",
@@ -164,6 +166,7 @@
     "steps": [
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [],
         "key": "noop_op",
         "kind": {
@@ -232,6 +235,7 @@
     "steps": [
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [],
         "key": "noop_op",
         "kind": {
@@ -318,6 +322,7 @@
     "steps": [
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [
           {
             "__class__": "ExecutionStepInputSnap",
@@ -419,6 +424,7 @@
       },
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [
           {
             "__class__": "ExecutionStepInputSnap",
@@ -499,6 +505,7 @@
       },
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [],
         "key": "comp_1.return_one",
         "kind": {
@@ -549,6 +556,7 @@
       },
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [
           {
             "__class__": "ExecutionStepInputSnap",
@@ -629,6 +637,7 @@
       },
       {
         "__class__": "ExecutionStepSnap",
+        "concurrency_group": null,
         "inputs": [],
         "key": "comp_2.return_one",
         "kind": {
