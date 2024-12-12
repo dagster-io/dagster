@@ -1,10 +1,8 @@
 ---
-title: 'User roles & permissions'
-displayed_sidebar: 'dagsterPlus'
+title: User roles & permissions in Dagster+
+sidebar_label: 'User roles & permissions'
 sidebar_position: 200
 ---
-
-# Understanding user roles & permissions in Dagster+
 
 Role-based access control (RBAC) enables you to grant specific permissions to users in your organization, ensuring that Dagster users have access to what they require in Dagster+, and no more.
 
@@ -44,7 +42,7 @@ Dagster+ Pro users can create teams of users and assign default permission sets.
 
 With the exception of the **Organization Admin** role, user and team roles are set on a per-deployment basis.
 
-Organization Admins have access to the entire organization, including all [deployments](/todo), [code locations](/dagster-plus/deployment/code-locations), and [Branch Deployments](dagster-plus/features/branch-deployments/index.mdx).
+Organization Admins have access to the entire organization, including all [deployments](/todo), [code locations](/dagster-plus/deployment/code-locations), and [Branch Deployments](dagster-plus/features/ci-cd/branch-deployments/index.md).
 
 | Level              | Plan      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -128,11 +126,11 @@ Deployment settings are accessed in the UI by navigating to **user menu (your ic
 |----------------------------------------------------------------------------------------------|-------|-----------|--------|-------|-------------------------------|
 | View [deployments](/todo)                                           | ✅     | ✅         | ✅      | ✅     | ✅                             |
 | Modify [deployment](/todo) settings                                 | ❌     | ❌         | ✅      | ✅     | ✅                             |
-| Create, edit, delete [environment variables](/dagster-plus/deployment/environment-variables) | ❌     | ❌         | ✅      | ✅     | ✅                             |
-| View [environment variable](/dagster-plus/deployment/environment-variables)  values          | ❌     | ❌         | ✅      | ✅     | ✅                             |
-| Export [environment variables](/dagster-plus/deployment/environment-variables)               | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| Create, edit, delete [environment variables](/dagster-plus/deployment/management/environment-variables) | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| View [environment variable](/dagster-plus/deployment/management/environment-variables)  values          | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| Export [environment variables](/dagster-plus/deployment/management/environment-variables)               | ❌     | ❌         | ✅      | ✅     | ✅                             |
 | Create and delete [deployments](/todo)                              | ❌     | ❌         | ❌      | ❌     | ✅                             |
-| Create [Branch Deployments](dagster-plus/features/branch-deployments/index.mdx)                     | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| Create [Branch Deployments](dagster-plus/features/ci-cd/branch-deployments/index.md)                     | ❌     | ❌         | ✅      | ✅     | ✅                             |
 
 ### Code locations
 
@@ -150,7 +148,7 @@ Agent tokens are accessed in the UI by navigating to **user menu (your icon) > O
 
 |                                                             | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ----------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| View [agent tokens](/dagster-plus/deployment/hybrid/tokens) | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| View [agent tokens](/dagster-plus/deployment/management/tokens/agent-tokens) | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Create agent tokens                                         | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Edit agent tokens                                           | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Revoke agent tokens                                         | ❌     | ❌       | ❌     | ❌    | ✅                       |
@@ -207,5 +205,5 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 
 - Learn more about how to manage users in Dagster+ in [Understanding User Management in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/users)
 - Learn more about how to manage teams in Dagster+ in [Understanding Team Management in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/teams)
-- Learn more about SCIM provisioning in [Understanding SCIM Provisioning](/dagster-plus/features/authentication-and-access-control/scim/index.mdx)
+- Learn more about SCIM provisioning in [Understanding SCIM Provisioning](/dagster-plus/features/authentication-and-access-control/scim/index.md)
 - Learn more about authentication in [Understanding Authentication](/dagster-plus/features/authentication-and-access-control/sso/authentication)
