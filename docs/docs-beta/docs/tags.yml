@@ -33,4 +33,4 @@ alerting:
 metadata:
   label: 'metadata'
   permalink: '/integrations/metadata'
-  description: 'Metadata integrations'
+  description: 'Metadata integrations.'
