@@ -1423,3 +1423,27 @@ def get_storage_name(klass: Type, *, whitelist_map: WhitelistMap = _WHITELIST_MA
         check.failed(f"{klass.__name__} is not a known serializable object type.")
     ser = whitelist_map.object_serializers[klass.__name__]
     return ser.get_storage_name()
+
+
+def get_storage_fields(klass: Type, whitelist_map: WhitelistMap = _WHITELIST_MAP):
+    if klass.__name__ not in whitelist_map.object_serializers:
+        check.failed(f"{klass.__name__} is not a known serializable object type.")
+    ser = whitelist_map.object_serializers[klass.__name__]
+    # get the current fields
+    current_fields = ser.constructor_param_names
+    # remap defined storage field names
+    stored_fields = [ser.storage_field_names.get(f, f) for f in current_fields]
+    # insert old fields
+    stored_fields.extend(ser.old_fields.keys())
+    # we sort_keys=True in json dump
+    return sorted(stored_fields)
+
+
+_OBJECT_START = '{"__class__":'
+
+
+def get_prefix_for_a_serialized(klass: Type, *, whitelist_map=_WHITELIST_MAP):
+    """Returns the expected start of the string for a serdes serialized object
+    of the passed type.
+    """
+    return f'{_OBJECT_START} "{get_storage_name(klass, whitelist_map=whitelist_map)}"'
