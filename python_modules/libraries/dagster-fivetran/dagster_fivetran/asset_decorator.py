@@ -76,7 +76,7 @@ def fivetran_assets(
                 def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
                     default_spec = super().get_asset_spec(props)
                     return default_spec.replace_attributes(
-                        key=asset_spec.key.with_prefix("my_prefix"),
+                        key=default_spec.key.with_prefix("my_prefix"),
                     )
 
 
