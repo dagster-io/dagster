@@ -235,7 +235,7 @@ def test_generate_component_type_outside_code_location_fails() -> None:
     with isolated_example_deployment_foo(runner):
         result = runner.invoke(generate_component_type_command, ["baz"])
         assert result.exit_code != 0
-        assert "must be run inside a Dagster code location project" in result.output
+        assert "must be run inside a Dagster code location directory" in result.output
 
 
 @pytest.mark.parametrize("in_deployment", [True, False])
@@ -267,7 +267,7 @@ def test_generate_component_outside_code_location_fails() -> None:
     with isolated_example_deployment_foo(runner):
         result = runner.invoke(generate_component_command, ["bar.baz", "qux"])
         assert result.exit_code != 0
-        assert "must be run inside a Dagster code location project" in result.output
+        assert "must be run inside a Dagster code location directory" in result.output
 
 
 @pytest.mark.parametrize("in_deployment", [True, False])

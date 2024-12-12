@@ -25,9 +25,13 @@ def generate_cli() -> None:
 
 
 @generate_cli.command(name="deployment")
-@click.argument("path", type=str)
-def generate_deployment_command(path: str) -> None:
-    """Generate a Dagster deployment instance."""
+@click.argument("path", type=Path)
+def generate_deployment_command(path: Path) -> None:
+    """Generate a Dagster deployment file structure.
+
+    The deployment file structure includes a directory for code locations and configuration files
+    for deploying to Dagster Plus.
+    """
     dir_abspath = os.path.abspath(path)
     if os.path.exists(dir_abspath):
         click.echo(
@@ -42,15 +46,37 @@ def generate_deployment_command(path: str) -> None:
 @click.argument("name", type=str)
 @click.option("--use-editable-dagster", is_flag=True, default=False)
 def generate_code_location_command(name: str, use_editable_dagster: bool) -> None:
-    """Generate a Dagster code location inside a component."""
+    """Generate a Dagster code location file structure and a uv-managed virtual environment scoped
+    to the code location.
+
+    This command can be run inside or outside of a deployment directory. If run inside a deployment,
+    the code location will be created within the deployment directory's code location directory.
+
+    The code location file structure defines a Python package with some pre-existing internal
+    structure:
+
+    ├── <name>
+    │   ├── __init__.py
+    │   ├── components
+    │   ├── definitions.py
+    │   └── lib
+    │       └── __init__.py
+    ├── <name>_tests
+    │   └── __init__.py
+    └── pyproject.toml
+
+    The `<name>.components` directory holds components (which can be created with `dg generate
+    component`).  The `<name>.lib` directory holds custom component types scoped to the code
+    location (which can be created with `dg generate component-type`).
+    """
     if is_inside_deployment_project(Path.cwd()):
         context = DeploymentProjectContext.from_path(Path.cwd())
         if context.has_code_location(name):
             click.echo(click.style(f"A code location named {name} already exists.", fg="red"))
             sys.exit(1)
-        code_location_path = os.path.join(context.code_location_root_path, name)
+        code_location_path = context.code_location_root_path / name
     else:
-        code_location_path = os.path.join(Path.cwd(), name)
+        code_location_path = Path.cwd() / name
 
     if use_editable_dagster:
         if "DAGSTER_GIT_REPO_DIR" not in os.environ:
@@ -71,11 +97,15 @@ def generate_code_location_command(name: str, use_editable_dagster: bool) -> Non
 @generate_cli.command(name="component-type")
 @click.argument("name", type=str)
 def generate_component_type_command(name: str) -> None:
-    """Generate a Dagster component instance."""
+    """Generate a scaffold of a custom Dagster component type.
+
+    This command must be run inside a Dagster code location directory. The component type scaffold
+    will be generated in submodule `<code_location_name>.lib.<name>`.
+    """
     if not is_inside_code_location_project(Path.cwd()):
         click.echo(
             click.style(
-                "This command must be run inside a Dagster code location project.", fg="red"
+                "This command must be run inside a Dagster code location directory.", fg="red"
             )
         )
         sys.exit(1)
@@ -85,13 +115,16 @@ def generate_component_type_command(name: str) -> None:
         click.echo(click.style(f"A component type named `{name}` already exists.", fg="red"))
         sys.exit(1)
 
-    generate_component_type(context.component_types_root_path, name)
+    generate_component_type(Path(context.component_types_root_path), name)
 
 
 @generate_cli.command(name="component")
-@click.argument("component_type", type=str)
+@click.argument(
+    "component_type",
+    type=str,
+)
 @click.argument("component_name", type=str)
-@click.option("--json-params", type=str, default=None)
+@click.option("--json-params", type=str, default=None, help="JSON string of component parameters.")
 @click.argument("extra_args", nargs=-1, type=str)
 def generate_component_command(
     component_type: str,
@@ -99,10 +132,32 @@ def generate_component_command(
     json_params: Optional[str],
     extra_args: Tuple[str, ...],
 ) -> None:
+    """Generate a scaffold of a Dagster component.
+
+    This command must be run inside a Dagster code location directory. The component scaffold will be
+    generated in submodule `<code_location_name>.components.<name>`.
+
+    The COMPONENT_TYPE must be a registered component type in the code location environment.
+    You can view all registered component types with `dg list component-types`. The COMPONENT_NAME
+    will be used to name the submodule created under <code_location_name>.components.
+
+    Components can optionally be passed generate parameters. There are two ways to do this:
+
+    - Passing --json-params with a JSON string of parameters. For example:
+
+        dg generate component foo.bar my_component --json-params '{"param1": "value", "param2": "value"}'`.
+
+    - Passing key-value pairs as space-separated EXTRA_ARGS after `--`. For example:
+
+        dg generate component foo.bar my_component -- param1=value param2=value
+
+    When key-value pairs are used, the value type will be inferred from the
+    underlying component generation schema.
+    """
     if not is_inside_code_location_project(Path.cwd()):
         click.echo(
             click.style(
-                "This command must be run inside a Dagster code location project.", fg="red"
+                "This command must be run inside a Dagster code location directory.", fg="red"
             )
         )
         sys.exit(1)
@@ -120,7 +175,7 @@ def generate_component_command(
         sys.exit(1)
 
     generate_component_instance(
-        context.component_instances_root_path,
+        Path(context.component_instances_root_path),
         component_name,
         component_type,
         json_params,
