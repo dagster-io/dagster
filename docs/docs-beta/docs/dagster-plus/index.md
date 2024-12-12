@@ -1,16 +1,13 @@
 ---
 title: "About Dagster+"
-displayed_sidebar: 'dagsterPlus'
 sidebar_position: 1
 ---
-
-# About Dagster+
 
 Dagster+ is a managed orchestration platform built on top of Dagster's open source engine.
 
 Dagster+ is built to be the most performant, reliable, and cost effective way for data engineering teams to run Dagster in production. Dagster+ is also great for students, researchers, or individuals who want to explore Dagster with minimal overhead.
 
-Dagster+ comes in two flavors: a fully [Serverless](/dagster-plus/deployment/serverless) offering and a [Hybrid](/dagster-plus/deployment/hybrid) offering. In both cases, Dagster+ does the hard work of managing your data orchestration control plane. Compared to a [Dagster open source deployment](/guides/), Dagster+ manages:
+Dagster+ comes in two flavors: a fully [Serverless](/dagster-plus/deployment/deployment-types/serverless) offering and a [Hybrid](/dagster-plus/deployment/deployment-types/hybrid) offering. In both cases, Dagster+ does the hard work of managing your data orchestration control plane. Compared to a [Dagster open source deployment](/guides/), Dagster+ manages:
 
 - Dagster's web UI at https://dagster.plus
 - Metadata stores for data cataloging and cost insights
@@ -24,7 +21,7 @@ In addition to managed infrastructure, Dagster+ also adds core capabilities on t
 - [Alerts](/dagster-plus/features/alerts) to a variety of services like Slack, PagerDuty, and email to notify your team of failed runs, data quality issues, and violated SLAs.
 - Authentication, [Role Based Access Control](/dagster-plus/features/authentication-and-access-control/rbac), and [Audit Logs](/dagster-plus/features/authentication-and-access-control/rbac/audit-logs) which help teams implement data mesh strategies while remaining compliant.
 - [Data Catalog](/dagster-plus/features/data-catalog), a powerful search-first experience that builds off of Dagster's best-in-class lineage graph to include searching for assets, metadata, column lineage, and more.
-- [Branch Deployments](/dagster-plus/features/branch-deployments/index.mdx)
+- [Branch Deployments](/dagster-plus/features/ci-cd/branch-deployments/index.md)
 
 Ready to [get started](/dagster-plus/getting-started)?
 

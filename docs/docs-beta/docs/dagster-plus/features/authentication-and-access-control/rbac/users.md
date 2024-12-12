@@ -1,6 +1,5 @@
 ---
 title: "Managing users in Dagster+"
-displayed_sidebar: "dagsterPlus"
 sidebar_label: "User management"
 sidebar_position: 400
 ---

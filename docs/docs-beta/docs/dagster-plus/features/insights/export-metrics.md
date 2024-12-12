@@ -5,4 +5,3 @@ sidebar_position: 200
 unlisted: true
 ---
 
-# Export metrics from Dagster+ Insights

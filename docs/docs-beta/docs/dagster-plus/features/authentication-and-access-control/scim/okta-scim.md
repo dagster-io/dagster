@@ -1,8 +1,7 @@
 ---
 title: 'Okta SCIM provisioning'
-displayed_sidebar: 'dagsterPlus'
+sidebar_position: 200
 unlisted: true
-sidebar_position: 100
 ---
 
-# Okta SCIM provisioning
+{/* TODO copy from https://docs.dagster.io/dagster-plus/account/authentication/okta/scim-provisioning */}
