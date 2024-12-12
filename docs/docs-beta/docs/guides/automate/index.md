@@ -1,7 +1,6 @@
 ---
 title: "Automating pipelines"
 description: Learn how to automate your data pipelines.
-sidebar_position: 40
 sidebar_class_name: hidden
 ---
 
