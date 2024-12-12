@@ -22,6 +22,7 @@ from dagster._serdes.serdes import (
     WhitelistMap,
     _whitelist_for_serdes,
     deserialize_value,
+    get_prefix_for_a_serialized,
     get_storage_name,
     pack_value,
     serialize_value,
@@ -445,6 +446,7 @@ def test_named_tuple() -> None:
 
     val = Foo("red")
     serialized = serialize_value(val, whitelist_map=test_map)
+    assert serialized.startswith(get_prefix_for_a_serialized(Foo, whitelist_map=test_map))
     deserialized = deserialize_value(serialized, whitelist_map=test_map)
     assert deserialized == val
 
@@ -465,12 +467,14 @@ def test_named_tuple_storage_name() -> None:
     val = Foo("red")
     serialized = serialize_value(val, whitelist_map=test_env)
     assert serialized == '{"__class__": "Bar", "color": "red"}'
+    assert serialized.startswith(get_prefix_for_a_serialized(Foo, whitelist_map=test_env))
     deserialized = deserialize_value(serialized, whitelist_map=test_env)
     assert deserialized == val
 
     val = Bar("square")
     serialized = serialize_value(val, whitelist_map=test_env)
     assert serialized == '{"__class__": "Foo", "shape": "square"}'
+    assert serialized.startswith(get_prefix_for_a_serialized(Bar, whitelist_map=test_env))
     deserialized = deserialize_value(serialized, whitelist_map=test_env)
     assert deserialized == val
 
