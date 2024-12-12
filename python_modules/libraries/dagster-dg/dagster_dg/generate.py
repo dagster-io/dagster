@@ -85,19 +85,9 @@ def generate_component_instance(
     json_params: Optional[str],
     extra_args: Tuple[str, ...],
 ) -> None:
-    click.echo(f"Creating a Dagster component instance at {root_path}/{name}.py.")
-
     component_instance_root_path = root_path / name
-    generate_subtree(
-        path=component_instance_root_path,
-        name_placeholder="COMPONENT_INSTANCE_NAME_PLACEHOLDER",
-        templates_path=os.path.join(
-            os.path.dirname(__file__), "templates", "COMPONENT_INSTANCE_NAME_PLACEHOLDER"
-        ),
-        project_name=name,
-        component_type=component_type,
-    )
-
+    click.echo(f"Creating a Dagster component instance folder at {component_instance_root_path}.")
+    os.makedirs(component_instance_root_path, exist_ok=True)
     code_location_command = (
         "generate",
         "component",
