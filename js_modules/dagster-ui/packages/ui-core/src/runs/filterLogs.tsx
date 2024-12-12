@@ -1,11 +1,12 @@
 import {LogFilter, LogsProviderLogs} from './LogsProvider';
+import {flattenNodeChunks} from './flattenNodeChunks';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
 import {logNodeLevel} from './logNodeLevel';
 import {LogNode} from './types';
 import {weakmapMemoize} from '../app/Util';
 
 export function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: string[]) {
-  const filteredNodes = logs.allNodes.filter((node) => {
+  const filteredNodes = flattenNodeChunks(logs.allNodeChunks).filter((node) => {
     // These events are used to determine which assets a run will materialize and are not intended
     // to be displayed in the Dagster UI. Pagination is offset based, so we remove these logs client-side.
     if (
