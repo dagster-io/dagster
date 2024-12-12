@@ -297,11 +297,10 @@ class DagsterDaemonController(AbstractContextManager):
                 if not hasattr(self, '_log_grpc_skip_message_logged') or not self._log_grpc_skip_message_logged:
                     self._logger.info("Not clearing GRPC endpoints. GRPC server is managed externally.")
                     self._log_grpc_skip_message_logged = True
-                else:
-                    # Log for clearing GRPC endpoints (only once)
-                    if self._grpc_server_registry and not hasattr(self, '_log_grpc_clear_message_logged'):
-                        self._logger.info("Clearing GRPC endpoints due to workspace refresh.")
-                        self._log_grpc_clear_message_logged = True
+            else:
+                if self._grpc_server_registry and not hasattr(self, '_log_grpc_clear_message_logged'):
+                    self._logger.info("Clearing GRPC endpoints due to workspace refresh.")
+                    self._log_grpc_clear_message_logged = True
 
                 self._workspace_process_context.refresh_workspace()
                 return get_current_timestamp()
