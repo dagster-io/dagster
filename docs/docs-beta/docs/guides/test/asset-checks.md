@@ -1,5 +1,5 @@
 ---
-title: "Testing assets with Asset checks"
+title: "Testing assets with asset checks"
 sidebar_position: 100
 sidebar_label: "Asset checks"
 ---
