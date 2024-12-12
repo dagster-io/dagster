@@ -1018,7 +1018,7 @@ class AirbyteCloudWorkspace(ConfigurableResource):
         description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
     )
 
-    _client: AirbyteCloudClient = PrivateAttr(default=None)
+    _client: AirbyteCloudClient = PrivateAttr(default=None)  # type: ignore
 
     @cached_method
     def get_client(self) -> AirbyteCloudClient:

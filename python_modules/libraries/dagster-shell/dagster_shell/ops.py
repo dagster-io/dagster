@@ -36,7 +36,7 @@ class ShellOpConfig(Config):
         description="An optional dict of environment variables to pass to the subprocess.",
     )
     output_logging: OutputType = Field(
-        default=OutputType.BUFFER.value,
+        default=OutputType.BUFFER.value,  # type: ignore
     )
     cwd: Optional[str] = Field(
         default=None, description="Working directory in which to execute shell script"

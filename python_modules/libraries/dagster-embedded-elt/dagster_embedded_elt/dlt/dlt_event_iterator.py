@@ -1,4 +1,3 @@
-from collections import abc
 from typing import Generic, Iterator, Optional, Union
 
 from dagster import AssetMaterialization, MaterializeResult
@@ -58,7 +57,7 @@ def fetch_row_count_metadata(
         return TableMetadataSet(row_count=None)
 
 
-class DltEventIterator(Generic[T], abc.Iterator):
+class DltEventIterator(Generic[T], Iterator):
     """A wrapper around an iterator of Dlt events which contains additional methods for
     post-processing the events, such as fetching column metadata.
     """

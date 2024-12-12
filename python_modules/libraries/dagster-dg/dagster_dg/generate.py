@@ -5,6 +5,7 @@ from typing import Optional, Tuple
 
 import click
 
+from dagster_dg.context import CodeLocationProjectContext
 from dagster_dg.utils import (
     camelcase,
     discover_git_root,
@@ -13,7 +14,7 @@ from dagster_dg.utils import (
 )
 
 
-def generate_deployment(path: str) -> None:
+def generate_deployment(path: Path) -> None:
     click.echo(f"Creating a Dagster deployment at {path}.")
 
     generate_subtree(
@@ -25,7 +26,7 @@ def generate_deployment(path: str) -> None:
     )
 
 
-def generate_code_location(path: str, editable_dagster_root: Optional[str] = None) -> None:
+def generate_code_location(path: Path, editable_dagster_root: Optional[str] = None) -> None:
     click.echo(f"Creating a Dagster code location at {path}.")
 
     # Temporarily we always set an editable dagster root. This is needed while the packages are not
@@ -65,7 +66,8 @@ def generate_code_location(path: str, editable_dagster_root: Optional[str] = Non
     execute_code_location_command(Path(path), ("uv", "sync"))
 
 
-def generate_component_type(root_path: str, name: str) -> None:
+def generate_component_type(context: CodeLocationProjectContext, name: str) -> None:
+    root_path = Path(context.component_types_root_path)
     click.echo(f"Creating a Dagster component type at {root_path}/{name}.py.")
 
     generate_subtree(
@@ -77,33 +79,26 @@ def generate_component_type(root_path: str, name: str) -> None:
         component_type=name,
     )
 
+    with open(root_path / "__init__.py", "a") as f:
+        f.write(f"from {context.component_types_root_module}.{name} import {camelcase(name)}\n")
+
 
 def generate_component_instance(
-    root_path: str,
+    root_path: Path,
     name: str,
     component_type: str,
     json_params: Optional[str],
     extra_args: Tuple[str, ...],
 ) -> None:
-    click.echo(f"Creating a Dagster component instance at {root_path}/{name}.py.")
-
-    component_instance_root_path = os.path.join(root_path, name)
-    generate_subtree(
-        path=component_instance_root_path,
-        name_placeholder="COMPONENT_INSTANCE_NAME_PLACEHOLDER",
-        templates_path=os.path.join(
-            os.path.dirname(__file__), "templates", "COMPONENT_INSTANCE_NAME_PLACEHOLDER"
-        ),
-        project_name=name,
-        component_type=component_type,
-    )
-
+    component_instance_root_path = root_path / name
+    click.echo(f"Creating a Dagster component instance folder at {component_instance_root_path}.")
+    os.makedirs(component_instance_root_path, exist_ok=True)
     code_location_command = (
         "generate",
         "component",
         component_type,
         name,
-        *([f"--json-params={json_params}"] if json_params else []),
+        *(["--json-params", json_params] if json_params else []),
         *(["--", *extra_args] if extra_args else []),
     )
     execute_code_location_command(Path(component_instance_root_path), code_location_command)

@@ -43,7 +43,7 @@ def test_list_code_locations_outside_deployment_fails() -> None:
     with runner.isolated_filesystem():
         result = runner.invoke(list_code_locations_command)
         assert result.exit_code != 0
-        assert "must be run inside a Dagster deployment project" in result.output
+        assert "must be run inside a Dagster deployment directory" in result.output
 
 
 def test_list_component_types_success():
@@ -69,7 +69,7 @@ def test_list_component_types_outside_code_location_fails() -> None:
     with runner.isolated_filesystem():
         result = runner.invoke(list_component_types_command)
         assert result.exit_code != 0
-        assert "must be run inside a Dagster code location project" in result.output
+        assert "must be run inside a Dagster code location directory" in result.output
 
 
 def test_list_components_succeeds():
@@ -87,4 +87,4 @@ def test_list_components_command_outside_code_location_fails() -> None:
     with runner.isolated_filesystem():
         result = runner.invoke(list_components_command)
         assert result.exit_code != 0
-        assert "must be run inside a Dagster code location project" in result.output
+        assert "must be run inside a Dagster code location directory" in result.output

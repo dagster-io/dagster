@@ -72,7 +72,7 @@ PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
 
 # Copied from dagster._generate.generate
 def generate_subtree(
-    path: str,
+    path: Path,
     excludes: Optional[List[str]] = None,
     name_placeholder: str = PROJECT_NAME_PLACEHOLDER,
     templates_path: str = PROJECT_NAME_PLACEHOLDER,
@@ -87,9 +87,7 @@ def generate_subtree(
     if not os.path.exists(normalized_path):
         os.mkdir(normalized_path)
 
-    project_template_path: str = os.path.join(
-        os.path.dirname(__file__), "templates", templates_path
-    )
+    project_template_path = os.path.join(os.path.dirname(__file__), "templates", templates_path)
     loader: jinja2.loaders.FileSystemLoader = jinja2.FileSystemLoader(
         searchpath=project_template_path
     )
@@ -99,17 +97,17 @@ def generate_subtree(
     for root, dirs, files in os.walk(project_template_path):
         # For each subdirectory in the source template, create a subdirectory in the destination.
         for dirname in dirs:
-            src_dir_path: str = os.path.join(root, dirname)
+            src_dir_path = os.path.join(root, dirname)
             if _should_skip_file(src_dir_path, excludes):
                 continue
 
-            src_relative_dir_path: str = os.path.relpath(src_dir_path, project_template_path)
-            dst_relative_dir_path: str = src_relative_dir_path.replace(
+            src_relative_dir_path = os.path.relpath(src_dir_path, project_template_path)
+            dst_relative_dir_path = src_relative_dir_path.replace(
                 name_placeholder,
                 project_name,
                 1,
             )
-            dst_dir_path: str = os.path.join(normalized_path, dst_relative_dir_path)
+            dst_dir_path = os.path.join(normalized_path, dst_relative_dir_path)
 
             os.mkdir(dst_dir_path)
 
@@ -119,20 +117,20 @@ def generate_subtree(
             if _should_skip_file(src_file_path, excludes):
                 continue
 
-            src_relative_file_path: str = os.path.relpath(src_file_path, project_template_path)
-            dst_relative_file_path: str = src_relative_file_path.replace(
+            src_relative_file_path = os.path.relpath(src_file_path, project_template_path)
+            dst_relative_file_path = src_relative_file_path.replace(
                 name_placeholder,
                 project_name,
                 1,
             )
-            dst_file_path: str = os.path.join(normalized_path, dst_relative_file_path)
+            dst_file_path = os.path.join(normalized_path, dst_relative_file_path)
 
             if dst_file_path.endswith(".jinja"):
                 dst_file_path = dst_file_path[: -len(".jinja")]
 
             with open(dst_file_path, "w", encoding="utf8") as f:
                 # Jinja template names must use the POSIX path separator "/".
-                template_name: str = src_relative_file_path.replace(os.sep, posixpath.sep)
+                template_name = src_relative_file_path.replace(os.sep, posixpath.sep)
                 template: jinja2.environment.Template = env.get_template(name=template_name)
                 f.write(
                     template.render(
