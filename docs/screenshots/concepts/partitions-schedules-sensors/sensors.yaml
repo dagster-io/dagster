@@ -6,20 +6,20 @@
   workspace: python_modules/dagster-test/dagster_test/toys/workspace.yaml
   steps:
     - navigate to the page for math_sensor
-    - take a screenshot of the top right corner of the page, making sure to include the "Test sensor" button
+    - take a screenshot of the top right corner of the page, making sure to include the "Preview tick result" button
   vetted: false
 - id: provide-cursor-page.png
   workspace: python_modules/dagster-test/dagster_test/toys/workspace.yaml
   steps:
     - navigate to the page for math_sensor
     - change the cursor value to 0
-    - click the test sensor button, screenshot the window that pops up
+    - click the Preview tick result button, screenshot the window that pops up
   vetted: false
 - id: eval-result-page.png
   workspace: python_modules/dagster-test/dagster_test/toys/workspace.yaml
   steps:
     - navigate to the page for math_sensor
     - change the cursor value to 0
-    - click the test sensor button, then the evaluate button
+    - click the Preview tick result button, then the evaluate button
     - screenshot the window that pops up
   vetted: false
