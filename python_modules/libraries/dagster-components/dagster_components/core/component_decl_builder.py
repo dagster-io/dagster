@@ -43,6 +43,9 @@ def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
 
     subs = []
     for subpath in path.iterdir():
+        if subpath.name.startswith("."):
+            continue
+
         component = path_to_decl_node(subpath)
         if component:
             subs.append(component)

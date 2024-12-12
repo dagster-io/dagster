@@ -20,8 +20,18 @@ class ComponentDumper(yaml.Dumper):
 def generate_component_yaml(
     request: ComponentGenerateRequest, component_params: Optional[Mapping[str, Any]]
 ) -> None:
-    with open(request.component_instance_root_path / "component.yaml", "w") as f:
-        component_data = {"type": request.component_type_name, "params": component_params or {}}
+    generate_custom_component_yaml(
+        request.component_instance_root_path, request.component_type_name, component_params
+    )
+
+
+def generate_custom_component_yaml(
+    component_instance_root_path: Path,
+    component_type_name: str,
+    component_params: Optional[Mapping[str, Any]],
+) -> None:
+    with open(component_instance_root_path / "component.yaml", "w") as f:
+        component_data = {"type": component_type_name, "params": component_params or {}}
         yaml.dump(
             component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
         )
