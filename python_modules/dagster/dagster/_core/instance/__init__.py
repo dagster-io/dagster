@@ -38,7 +38,13 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluationPlanned,
 )
 from dagster._core.definitions.data_version import extract_data_provenance_from_entry
-from dagster._core.definitions.events import AssetKey, AssetObservation
+from dagster._core.definitions.events import (
+    AssetKey,
+    AssetObservation,
+    AssetWipeWorkItem,
+    BackgroundWorkStatus,
+    BackgroundWorkToken,
+)
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterHomeNotSetError,
@@ -3303,6 +3309,17 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def backfill_log_storage_enabled(self) -> bool:
         return False
+
+    def background_asset_wipe(
+        self,
+        work_item: AssetWipeWorkItem,
+    ) -> BackgroundWorkToken:
+        raise NotImplementedError()
+
+    def get_background_asset_wipe_status(
+        self, work_token: BackgroundWorkToken
+    ) -> BackgroundWorkStatus:
+        raise NotImplementedError()
 
     def da_request_backfills(self) -> bool:
         return False
