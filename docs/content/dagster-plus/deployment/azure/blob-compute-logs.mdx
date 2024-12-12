@@ -25,14 +25,19 @@ First, we'll enable the cluster to use workload identity. This will allow the AK
 az aks update --resource-group <resource-group> --name <cluster-name> --enable-workload-identity
 ```
 
-Then, we'll create a new managed identity for the AKS agent, and a new service account in our AKS cluster.
+Then, we'll create a new managed identity for the AKS agent.
 
 ```bash
 az identity create --resource-group <resource-group> --name agent-identity
-kubectl create serviceaccount dagster-agent-service-account --namespace dagster-agent
 ```
 
-Now we need to federate the managed identity with the service account.
+We will need to find the name of the service account used by the Dagster+ Agent. If you used the [Dagster+ Helm chart](/dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent), it should be `user-cloud-dagster-cloud-agent`. You can confirm by using this command:
+
+```bash
+kubectl get serviceaccount -n <dagster-agent-namespace>
+```
+
+Now we need to federate the managed identity with the service account used by the Dagster+ Agent.
 
 ```bash
 az identity federated-credential create \
@@ -40,51 +45,63 @@ az identity federated-credential create \
   --identity-name agent-identity \
   --resource-group <resource-group> \
   --issuer $(az aks show -g <resource-group> -n <aks-cluster-name> --query "oidcIssuerProfile.issuerUrl" -otsv) \
-  --subject system:serviceaccount:dagster-agent:dagster-agent-service-account
+  --subject system:serviceaccount:<dagster-agent-namespace>:<dagster-agent-service-account>
 ```
 
-Finally, we'll edit our AKS agent deployment to use the new service account.
+You will need to obtain the client id of this identity for the next few operations. Make sure to save this value:
 
 ```bash
-kubectl edit deployment <your-user-cloud-deployment> -n dagster-agent
+az identity show -g <resource-group> -n agent-identity --query 'clientId' -otsv
 ```
 
-In the deployment manifest, add the following lines:
+We need to grant access to the storage account.
+
+```bash
+az role assignment create \
+  --assignee <managed-identity-client-id> \
+  --role "Storage Blob Data Contributor" \
+  --scope $(az storage account show -g <resource-group> -n <storage-account> --query 'id' -otsv)
+```
+
+You will need to add new annotations and labels in Kubernetes to enable the use of workload identities. If you're using the Dagster+ Helm Chart, modify your values.yaml to add the following lines:
 
 ```yaml
-metadata:
-  ...
+serviceAccount:
+  annotations:
+    azure.workload.identity/client-id: "<managed-identity-client-id>"
+
+dagsterCloudAgent:
   labels:
-    ...
     azure.workload.identity/use: "true"
-spec:
-  ...
-  template:
-    ...
-    spec:
-      ...
-      serviceAccountName: dagster-agent-sa
+
+workspace:
+  labels:
+    azure.workload.identity/use: "true"
+```
+
+<Note>
+  If you need to retrieve the values used by your Helm deployment, you
+  can run: `helm get values user-cloud > values.yaml`.
+</Note>
+
+Finally, update your Helm release with the new values:
+
+```bash
+helm upgrade user-cloud dagster-cloud/dagster-cloud-agent -n <dagster-agent-namespace> -f values.yaml
 ```
 
 If everything is set up correctly, you should be able to run the following command and see an access token returned:
 
 ```bash
-kubectl exec -n dagster-agent -it <pod-in-cluster> -- bash
+kubectl exec -n <dagster-agent-namespace> -it <pod-in-cluster> -- bash
 # in the pod
-curl -H "Metadata:true" "http://169.254.169.254/metadata/identity/oauth2/token?resource=https://storage.azure.com/"
+apt update && apt install -y curl # install curl if missing, may vary depending on the base image
+curl -H "Metadata:true" "http://169.254.169.254/metadata/identity/oauth2/token?resource=https://storage.azure.com/&api-version=2018-02-01"
 ```
 
 ## Step 2: Configure Dagster to use Azure Blob Storage
 
-Now, you need to update the helm values to use Azure Blob Storage for logs. You can do this by editing the `values.yaml` file for your user-cloud deployment.
-
-Pull down the current values for your deployment:
-
-```bash
-helm get values user-cloud > current-values.yaml
-```
-
-Then, edit the `current-values.yaml` file to include the following lines:
+Once again, you need to update the Helm values to use Azure Blob Storage for logs. You can do this by editing the `values.yaml` file for your user-cloud deployment to include the following lines:
 
 ```yaml
 computeLogs:
@@ -97,7 +114,7 @@ computeLogs:
       container: mycontainer
       default_azure_credential:
         exclude_environment_credential: false
-      prefix: dagster-logs-
+      prefix: dagster-logs
       local_dir: "/tmp/cool"
       upload_interval: 30
 ```
@@ -105,10 +122,14 @@ computeLogs:
 Finally, update your deployment with the new values:
 
 ```bash
-helm upgrade user-cloud dagster-cloud/dagster-cloud-agent -n dagster-agent -f current-values.yaml
+helm upgrade user-cloud dagster-cloud/dagster-cloud-agent -n <dagster-agent-namespace> -f values.yaml
 ```
 
-## Step 3: Verify logs are being written to Azure Blob Storage
+## Step 3: Update your code location to enable the use of the AzureBlobComputeLogManager
+
+- Add `dagster-azure` to your `setup.py` file. This will allow you to import the `AzureBlobComputeLogManager` class.
+
+## Step 4: Verify logs are being written to Azure Blob Storage
 
 It's time to kick off a run in Dagster to test your new configuration. If following along with the quickstart repo, you should be able to kick off a run of the `all_assets_job`, which will generate logs for you to test against. Otherwise, use any job that emits logs. When you go to the stdout/stderr window of the run page, you should see a log file that directs you to the Azure Blob Storage container.
 
