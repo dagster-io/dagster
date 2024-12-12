@@ -30,7 +30,7 @@ The Dagster+ on-boarding will guide you through:
 If you don't have any Dagster code yet, you will have the option to select an example quickstart project or import an existing dbt project
 :::
 
-See the guide on [adding code locations](/dagster-plus/features/code-locations) for details.
+See the guide on [adding code locations](/dagster-plus/deployment/code-locations) for details.
 </TabItem>
 
 <TabItem value="hybrid" label="Dagster+ Hybrid">
@@ -47,7 +47,7 @@ In most cases, your CI/CD process will be responsible for:
 - pushing your Docker image to a container registry you manage
 - notifying Dagster+ of the new or updated code
 
-Refer to the guide for [adding a code location](/dagster-plus/features/code-locations) for more detail.
+Refer to the guide for [adding a code location](/dagster-plus/deployment/code-locations) for more detail.
 
 </TabItem>
 </Tabs>
