@@ -707,7 +707,7 @@ def test_structured_run_config_optional() -> None:
     class ANewConfigOpConfig(Config):
         a_string: Optional[str]
         an_int: Optional[int] = None
-        a_float: float = PyField(None)
+        a_float: float = PyField(None)  # type: ignore
 
     executed = {}
 
@@ -805,7 +805,7 @@ def test_structured_run_config_assets():
 
 def test_structured_run_config_assets_optional() -> None:
     class AnAssetConfig(Config):
-        a_string: str = PyField(None)
+        a_string: str = PyField(None)  # type: ignore
         an_int: Optional[int] = None
 
     executed = {}

@@ -1,6 +1,5 @@
-from collections import abc
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Iterator, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, Optional, Union, cast
 
 from dagster import (
     AssetCheckResult,
@@ -186,7 +185,7 @@ def _fetch_row_count_metadata(
         return None
 
 
-class DbtEventIterator(Generic[T], abc.Iterator):
+class DbtEventIterator(Iterator[T]):
     """A wrapper around an iterator of dbt events which contains additional methods for
     post-processing the events, such as fetching row counts for materialized tables.
     """

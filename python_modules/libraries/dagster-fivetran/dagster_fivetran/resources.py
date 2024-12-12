@@ -30,10 +30,11 @@ from dagster._core.definitions.resource_definition import dagster_maintained_res
 from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
-from pydantic import Field, PrivateAttr
+from pydantic import Field
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
+from dagster_fivetran.fivetran_event_iterator import FivetranEventIterator
 from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnector,
@@ -858,8 +859,6 @@ class FivetranWorkspace(ConfigurableResource):
         ),
     )
 
-    _client: FivetranClient = PrivateAttr(default=None)
-
     @cached_method
     def get_client(self) -> FivetranClient:
         return FivetranClient(
@@ -1025,9 +1024,13 @@ class FivetranWorkspace(ConfigurableResource):
             Iterator[Union[AssetMaterialization, MaterializeResult]]: An iterator of MaterializeResult
                 or AssetMaterialization.
         """
+        return FivetranEventIterator(
+            events=self._sync_and_poll(context=context), fivetran_workspace=self
+        )
+
+    def _sync_and_poll(self, context: Union[OpExecutionContext, AssetExecutionContext]):
         assets_def = context.assets_def
         dagster_fivetran_translator = get_translator_from_fivetran_assets(assets_def)
-
         connector_id = next(
             check.not_none(FivetranMetadataSet.extract(spec.metadata).connector_id)
             for spec in assets_def.specs

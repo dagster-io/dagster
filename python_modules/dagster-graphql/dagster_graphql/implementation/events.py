@@ -232,6 +232,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         GrapheneExecutionStepStartEvent,
         GrapheneExecutionStepSuccessEvent,
         GrapheneExecutionStepUpForRetryEvent,
+        GrapheneExpectationResult,
         GrapheneHandledOutputEvent,
         GrapheneHookCompletedEvent,
         GrapheneHookErroredEvent,
@@ -306,7 +307,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
     elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
         data = cast(StepExpectationResultData, dagster_event.event_specific_data)
         return GrapheneStepExpectationResultEvent(
-            expectation_result=data.expectation_result, **basic_params
+            expectation_result=GrapheneExpectationResult(data.expectation_result), **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
         data = dagster_event.step_failure_data

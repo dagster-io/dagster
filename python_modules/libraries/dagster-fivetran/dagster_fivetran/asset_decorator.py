@@ -74,10 +74,9 @@ def fivetran_assets(
 
             class CustomDagsterFivetranTranslator(DagsterFivetranTranslator):
                 def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
-                    asset_spec = super().get_asset_spec(props)
-                    return replace_attributes(
-                        asset_spec,
-                        key=asset_spec.key.with_prefix("my_prefix"),
+                    default_spec = super().get_asset_spec(props)
+                    return default_spec.replace_attributes(
+                        key=default_spec.key.with_prefix("my_prefix"),
                     )
 
 

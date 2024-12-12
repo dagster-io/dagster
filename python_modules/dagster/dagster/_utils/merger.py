@@ -59,3 +59,13 @@ def merge_dicts(*args: Mapping[Any, Any]) -> Dict[Any, Any]:
     for arg in args:
         result.update(arg)
     return result
+
+
+def reverse_dict(d: Mapping[V, K]) -> Dict[K, V]:
+    """Returns a new dictionary with the keys and values of the input dictionary swapped.
+
+    If the input dictionary has duplicate values, the returned dictionary will have the value from
+    the last key that maps to it.
+    """
+    check.dict_param(d, "d")
+    return {v: k for k, v in d.items()}

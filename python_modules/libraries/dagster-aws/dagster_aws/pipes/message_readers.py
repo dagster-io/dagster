@@ -37,6 +37,7 @@ from dagster._core.pipes.utils import (
     extract_message_or_forward_to_stdout,
     forward_only_logs_to_file,
 )
+from dagster._utils.backoff import backoff
 from dagster_pipes import PipesBlobStoreMessageWriter, PipesDefaultMessageWriter
 
 if TYPE_CHECKING:
@@ -216,11 +217,41 @@ class PipesLambdaLogsMessageReader(PipesMessageReader):
         )
 
 
+# Number of retries to attempt getting cloudwatch logs when faced with a throttling exception.
+DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES = 10
+
+
+# Custom backoff delay_generator for get_log_events which adds some jitter
+def get_log_events_delay_generator() -> Iterator[float]:
+    i = 0.5
+    while True:
+        yield i
+        i *= 2
+        i += random.uniform(0, 1)
+
+
+def get_log_events(
+    client: "CloudWatchLogsClient",
+    max_retries: Optional[int] = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
+    **log_params,
+):
+    max_retries = max_retries or DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES
+
+    return backoff(
+        fn=client.get_log_events,
+        kwargs=log_params,
+        retry_on=(client.exceptions.ThrottlingException,),
+        max_retries=max_retries,
+        delay_generator=get_log_events_delay_generator(),
+    )
+
+
 def tail_cloudwatch_events(
     client: "CloudWatchLogsClient",
     log_group: str,
     log_stream: str,
     start_time: Optional[int] = None,
+    max_retries: Optional[int] = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
 ) -> Generator[List["OutputLogEventTypeDef"], None, None]:
     """Yields events from a CloudWatch log stream."""
     params: Dict[str, Any] = {
@@ -231,7 +262,7 @@ def tail_cloudwatch_events(
     if start_time is not None:
         params["startTime"] = start_time
 
-    response = client.get_log_events(**params)
+    response = get_log_events(client=client, max_retries=max_retries, **params)
 
     while True:
         events = response.get("events")
@@ -241,7 +272,7 @@ def tail_cloudwatch_events(
 
         params["nextToken"] = response["nextForwardToken"]
 
-        response = client.get_log_events(**params)
+        response = get_log_events(client=client, max_retries=max_retries, **params)
 
 
 @experimental
@@ -254,6 +285,7 @@ class PipesCloudWatchLogReader(PipesLogReader):
         target_stream: Optional[IO[str]] = None,
         start_time: Optional[int] = None,
         debug_info: Optional[str] = None,
+        max_retries: Optional[int] = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
     ):
         self.client = client or boto3.client("logs")
         self.log_group = log_group
@@ -262,6 +294,7 @@ class PipesCloudWatchLogReader(PipesLogReader):
         self.thread = None
         self.start_time = start_time
         self._debug_info = debug_info
+        self.max_retries = max_retries
 
     @property
     def debug_info(self) -> Optional[str]:
@@ -274,11 +307,15 @@ class PipesCloudWatchLogReader(PipesLogReader):
         if log_group is not None and log_stream is not None:
             # check if the stream actually exists
             try:
-                self.client.describe_log_streams(
+                resp = self.client.describe_log_streams(
                     logGroupName=log_group,
                     logStreamNamePrefix=log_stream,
                 )
-                return True
+
+                if resp.get("logStreams", []):
+                    return True
+                else:
+                    return False
             except self.client.exceptions.ResourceNotFoundException:
                 return False
         else:
@@ -301,7 +338,7 @@ class PipesCloudWatchLogReader(PipesLogReader):
         start_time = cast(int, self.start_time or params.get("start_time"))
 
         for events in tail_cloudwatch_events(
-            self.client, log_group, log_stream, start_time=start_time
+            self.client, log_group, log_stream, start_time=start_time, max_retries=self.max_retries
         ):
             for event in events:
                 for line in event.get("message", "").splitlines():
@@ -328,6 +365,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         log_group: Optional[str] = None,
         log_stream: Optional[str] = None,
         log_readers: Optional[Sequence[PipesLogReader]] = None,
+        max_retries: Optional[int] = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
     ):
         """Args:
         client (boto3.client): boto3 CloudWatch client.
@@ -335,6 +373,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         self.client: "CloudWatchLogsClient" = client or boto3.client("logs")
         self.log_group = log_group
         self.log_stream = log_stream
+        self.max_retries = max_retries
 
         self.start_time = datetime.now()
 
@@ -357,11 +396,15 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         if self.log_group is not None and self.log_stream is not None:
             # check if the stream actually exists
             try:
-                self.client.describe_log_streams(
+                resp = self.client.describe_log_streams(
                     logGroupName=self.log_group,
                     logStreamNamePrefix=self.log_stream,
                 )
-                return True
+
+                if resp.get("logStreams", []):
+                    return True
+                else:
+                    return False
             except self.client.exceptions.ResourceNotFoundException:
                 return False
         else:
@@ -379,7 +422,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         if cursor is not None:
             params["nextToken"] = cursor
 
-        response = self.client.get_log_events(**params)
+        response = get_log_events(client=self.client, max_retries=self.max_retries, **params)
 
         events = response.get("events")
 
