@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Union
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Union
 
 from typing_extensions import TypeAlias
 
@@ -8,7 +8,7 @@ from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_dep import CoercibleToAssetDep
+from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.definitions.assets import AssetsDefinition
@@ -20,7 +20,7 @@ from dagster._core.definitions.decorators.decorator_assets_definition_builder im
     DecoratorAssetsDefinitionBuilder,
     DecoratorAssetsDefinitionBuilderArgs,
     NamedIn,
-    build_named_ins,
+    build_and_validate_named_ins,
     compute_required_resource_keys,
     get_function_params_without_context_or_config_or_resources,
 )
@@ -44,7 +44,7 @@ def _build_asset_check_named_ins(
     asset_key: AssetKey,
     fn: Callable[..., Any],
     additional_ins: Mapping[str, AssetIn],
-    additional_deps: Optional[AbstractSet[AssetKey]],
+    additional_deps: Mapping[AssetKey, AssetDep],
 ) -> Mapping[AssetKey, NamedIn]:
     fn_params = get_function_params_without_context_or_config_or_resources(fn)
 
@@ -68,7 +68,7 @@ def _build_asset_check_named_ins(
 
     # if all the fn_params are in additional_ins, then we add the prmary asset as a dep
     if len(fn_params) == len(additional_ins):
-        all_deps = {*(additional_deps if additional_deps else set()), asset_key}
+        all_deps = {**additional_deps, **{asset_key: AssetDep(asset_key)}}
         all_ins = additional_ins
     # otherwise there should be one extra fn_param, which is the primary asset. Add that as an input
     elif len(fn_params) == len(additional_ins) + 1:
@@ -87,10 +87,10 @@ def _build_asset_check_named_ins(
             " the target asset or be specified in 'additional_ins'."
         )
 
-    return build_named_ins(
+    return build_and_validate_named_ins(
         fn=fn,
         asset_ins=all_ins,
-        deps=all_deps,
+        deps=all_deps.values(),
     )
 
 
@@ -189,7 +189,11 @@ def asset_check(
         resolved_name = name or fn.__name__
         asset_key = AssetKey.from_coercible_or_definition(asset)
 
-        additional_dep_keys = set([dep.asset_key for dep in make_asset_deps(additional_deps) or []])
+        additional_dep_keys = (
+            {dep.asset_key: dep for dep in make_asset_deps(additional_deps) or []}
+            if additional_deps
+            else {}
+        )
         named_in_by_asset_key = _build_asset_check_named_ins(
             resolved_name,
             asset_key,
@@ -345,11 +349,13 @@ def multi_asset_check(
         outs = {
             spec.get_python_identifier(): Out(None, is_required=not can_subset) for spec in specs
         }
-        named_ins_by_asset_key = build_named_ins(
+        named_ins_by_asset_key = build_and_validate_named_ins(
             fn=fn,
             asset_ins={},
-            deps={spec.asset_key for spec in specs}
-            | {dep.asset_key for spec in specs for dep in spec.additional_deps or []},
+            deps={
+                **{spec.asset_key: AssetDep(spec.asset_key) for spec in specs},
+                **{dep.asset_key: dep for spec in specs for dep in (spec.additional_deps or [])},
+            }.values(),
         )
 
         with disable_dagster_warnings():
