@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 from io import BytesIO, StringIO
 
@@ -46,12 +47,12 @@ def hackernews_topstories(
     API Docs: https://github.com/HackerNews/API#items
     """
     # read the top 500 story ids from an S3 bucket
-    hackernews_topstory_ids = s3.get_client().get_object(
+    hackernews_topstory_ids = json.loads(s3.get_client().get_object(
         Bucket=S3_BUCKET, Key=HACKERNEWS_TOPSTORY_IDS_CSV
-    )
+    )["Body"].read())
 
     results = []
-    for item_id in hackernews_topstory_ids["item_ids"]:
+    for item_id in hackernews_topstory_ids:
         item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
         results.append(item)
         if len(results) % 20 == 0:
