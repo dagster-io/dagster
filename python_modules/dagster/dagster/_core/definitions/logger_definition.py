@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
     from dagster._core.definitions import JobDefinition
     from dagster._core.execution.context.logger import InitLoggerContext, UnboundInitLoggerContext
+    from dagster._core.instance import DagsterInstance
 
     InitLoggerFunction = Callable[[InitLoggerContext], logging.Logger]
 
@@ -67,7 +68,7 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
                 args[0],
                 context_param_name,
                 UnboundInitLoggerContext,
-                default=UnboundInitLoggerContext(logger_config=None, job_def=None),
+                default=UnboundInitLoggerContext(logger_config=None, job_def=None, instance=None),
             )
             return logger_invocation_result(self, context)
         else:
@@ -79,7 +80,11 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
                 kwargs[context_param_name],
                 context_param_name,
                 UnboundInitLoggerContext,
-                default=UnboundInitLoggerContext(logger_config=None, job_def=None),
+                default=UnboundInitLoggerContext(
+                    logger_config=None,
+                    job_def=None,
+                    instance=None,
+                ),
             )
 
             return logger_invocation_result(self, context)
@@ -161,6 +166,7 @@ def logger(
 def build_init_logger_context(
     logger_config: Any = None,
     job_def: Optional["JobDefinition"] = None,
+    instance: Optional["DagsterInstance"] = None,
 ) -> "UnboundInitLoggerContext":
     """Builds logger initialization context from provided parameters.
 
@@ -184,4 +190,4 @@ def build_init_logger_context(
 
     check.opt_inst_param(job_def, "job_def", JobDefinition)
 
-    return UnboundInitLoggerContext(logger_config=logger_config, job_def=job_def)
+    return UnboundInitLoggerContext(logger_config=logger_config, job_def=job_def, instance=instance)
