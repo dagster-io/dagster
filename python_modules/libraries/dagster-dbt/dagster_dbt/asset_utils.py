@@ -573,7 +573,7 @@ def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sq
         or f"dbt {dbt_resource_props['resource_type']} {dbt_resource_props['name']}",
     ]
     if display_raw_sql:
-        description_sections.append(f"#### Raw SQL:\n```\n{code_block}\n```")
+        description_sections.append(f"#### Raw SQL:\n```sql\n{code_block}\n```")
     return "\n\n".join(filter(None, description_sections))
 
 
