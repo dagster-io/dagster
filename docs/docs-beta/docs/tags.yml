@@ -7,7 +7,7 @@ dagster-supported:
   permalink: '/integrations/dagster-supported'
   description: 'Dagster-supported integrations.'
 etl:
-  label: 'etl'
+  label: 'ETL'
   permalink: '/integrations/etl'
   description: 'ETL integrations.'
 storage:
