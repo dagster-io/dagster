@@ -380,19 +380,22 @@ class DecoratorAssetsDefinitionBuilder:
                     upstream_deps[dep.asset_key] = dep
 
         # get which asset keys have inputs set
-        loaded_upstreams = build_and_validate_named_ins(fn, asset_in_map, deps=set())
-        unexpected_upstreams = {key for key in loaded_upstreams.keys() if key not in upstream_deps}
-        if unexpected_upstreams:
-            raise DagsterInvalidDefinitionError(
-                f"Asset inputs {unexpected_upstreams} do not have dependencies on the passed"
-                " AssetSpec(s). Set the deps on the appropriate AssetSpec(s)."
-            )
-        remaining_upstream_deps = [
-            dep for key, dep in upstream_deps.items() if key not in loaded_upstreams
-        ]
         named_ins_by_asset_key = build_and_validate_named_ins(
-            fn, asset_in_map, deps=remaining_upstream_deps
+            fn, asset_in_map, deps=upstream_deps.values()
         )
+        # We expect that asset_ins are a subset of asset_deps. The reason we do not check this in
+        # `build_and_validate_named_ins` is because in other decorator pathways, we allow for argument-based
+        # dependencies which are not specified in deps (such as the asset decorator).
+        asset_in_keys = set(named_ins_by_asset_key.keys())
+        if asset_in_keys - set(upstream_deps.keys()):
+            input_names_not_in_deps = [
+                named_ins_by_asset_key[key].input_name
+                for key in asset_in_keys - set(upstream_deps.keys())
+            ]
+            raise DagsterInvalidDefinitionError(
+                f"Asset inputs {input_names_not_in_deps} specified as AssetIns, but are not specified as dependencies via AssetDep on any constituent AssetSpec objects."
+                "In a multi-asset decorated function, any input arguments must be associated with a dependency on one of the constituent asset specs."
+            )
 
         internal_deps = {
             spec.key: {dep.asset_key for dep in spec.deps}

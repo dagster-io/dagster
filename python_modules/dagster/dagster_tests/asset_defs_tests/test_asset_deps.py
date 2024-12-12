@@ -595,6 +595,58 @@ def test_dep_via_deps_and_fn():
     assert res.success
 
 
+def test_multi_asset_specs_deps_and_fn():
+    @asset
+    def the_upstream_asset():
+        return 1
+
+    # When deps and ins are both set, expect that deps is only used for the asset key and potentially input name.
+    for param_dict in [
+        {"partition_mapping": IdentityPartitionMapping()},
+        {"metadata": {"foo": "bar"}},
+        {"key_prefix": "prefix"},
+        {"dagster_type": Nothing},
+    ]:
+        with pytest.raises(DagsterInvalidDefinitionError):
+
+            @multi_asset(
+                specs=[AssetSpec("the_asset", deps=[AssetDep(the_upstream_asset)])],
+                ins={"the_upstream_asset": AssetIn(**param_dict)},
+            )
+            def _(the_upstream_asset):
+                return None
+
+    # We allow the asset key to be set via deps and ins as long as no additional information is set.
+    @multi_asset(specs=[AssetSpec("the_asset", deps=[the_upstream_asset])])
+    def depends_on_upstream_asset_implicit_remap(the_upstream_asset):
+        assert the_upstream_asset == 1
+
+    @multi_asset(
+        specs=[AssetSpec("other_asset", deps=[AssetDep(the_upstream_asset)])],
+        ins={"remapped": AssetIn(key=the_upstream_asset.key)},
+    )
+    def depends_on_upstream_asset_explicit_remap(remapped):
+        assert remapped == 1
+
+    res = materialize(
+        [
+            the_upstream_asset,
+            depends_on_upstream_asset_implicit_remap,
+            depends_on_upstream_asset_explicit_remap,
+        ],
+    )
+    assert res.success
+
+    # We do not allow you to set a dependency purely via input if you're opting in to the spec pattern.
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @multi_asset(
+            specs=[AssetSpec("the_asset")],
+        )
+        def _(the_upstream_asset):
+            return None
+
+
 def test_allow_remapping_io_manager_key() -> None:
     @asset
     def the_upstream_asset():
