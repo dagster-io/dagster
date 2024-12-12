@@ -4,7 +4,7 @@ import posixpath
 import re
 import subprocess
 from pathlib import Path
-from typing import Any, Final, Iterator, List, Optional, Sequence, Union
+from typing import Any, Final, Iterator, List, Mapping, Optional, Sequence, Union
 
 import click
 import jinja2
@@ -17,8 +17,17 @@ _CODE_LOCATION_COMMAND_PREFIX: Final = ["uv", "run", "dagster-components"]
 def execute_code_location_command(path: Path, cmd: Sequence[str]) -> str:
     with pushd(path):
         full_cmd = [*_CODE_LOCATION_COMMAND_PREFIX, *cmd]
-        result = subprocess.run(full_cmd, stdout=subprocess.PIPE, check=False)
+        result = subprocess.run(
+            full_cmd, stdout=subprocess.PIPE, env=get_uv_command_env(), check=True
+        )
         return result.stdout.decode("utf-8")
+
+
+# uv commands should be executed in an environment with no pre-existing VIRTUAL_ENV set. If this
+# variable is set (common during development) and does not match the venv resolved by uv, it prints
+# undesireable warnings.
+def get_uv_command_env() -> Mapping[str, str]:
+    return {k: v for k, v in os.environ.items() if not k == "VIRTUAL_ENV"}
 
 
 def discover_git_root(path: Path) -> Path:

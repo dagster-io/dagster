@@ -1,4 +1,5 @@
 import os
+import subprocess
 import textwrap
 from pathlib import Path
 from typing import Optional, Tuple
@@ -11,6 +12,8 @@ from dagster_dg.utils import (
     discover_git_root,
     execute_code_location_command,
     generate_subtree,
+    get_uv_command_env,
+    pushd,
 )
 
 
@@ -63,7 +66,8 @@ def generate_code_location(path: Path, editable_dagster_root: Optional[str] = No
     )
 
     # Build the venv
-    execute_code_location_command(Path(path), ("uv", "sync"))
+    with pushd(path):
+        subprocess.run(["uv", "sync"], check=True, env=get_uv_command_env())
 
 
 def generate_component_type(context: CodeLocationDirectoryContext, name: str) -> None:
