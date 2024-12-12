@@ -1,7 +1,6 @@
 ---
 title: Glossary
 sidebar_position: 30
-sidebar_label: Glossary
 unlisted: true
 ---
 

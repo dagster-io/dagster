@@ -1,15 +1,14 @@
 ---
 title: Running Dagster locally
+sidebar_label: Local deployment
 description: How to run Dagster on your local machine.
 sidebar_position: 100
 ---
 
-# Running Dagster locally
-
 In this guide, we'll walk you through how to run Dagster on your local machine using the `dagster dev` command.  The `dagster dev` command launches the Dagster UI and the Dagster daemon, allowing you to start a full deployment of Dagster from the command line.
 
 :::warning
-`dagster dev` is intended for local development _only_. If you want to run Dagster for production use cases, see our other [deployment guides](/guides/deploy/deployment-options/index.mdx).
+`dagster dev` is intended for local development _only_. If you want to run Dagster for production use cases, see our other [deployment guides](/guides/deploy/deployment-options/index.md).
 :::
 
 ## Locating your code

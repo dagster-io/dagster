@@ -1,8 +1,7 @@
 ---
 title: "workspace.yaml reference"
+sidebar_position: 200
 ---
-
-# Workspace file reference
 
 :::info
     This reference is only applicable to Dagster OSS. For Dagster Cloud see [the Dagster Cloud Code Locations guide](/dagster-plus/features/code-locations)

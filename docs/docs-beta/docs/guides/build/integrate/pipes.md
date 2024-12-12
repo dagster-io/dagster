@@ -4,8 +4,6 @@ sidebar_position: 500
 sidebar_label: "External execution with Pipes"
 ---
 
-# Executing code outside of Dagster with Pipes
-
 Dagster Pipes provides a powerful mechanism for invoking code outside of Dagster, while providing all the benefits of scheduling, reporting, and observability of native Dagster pipelines.
 
 In this guide, we'll walk you through how to invoke non-Dagster code through Pipes.
