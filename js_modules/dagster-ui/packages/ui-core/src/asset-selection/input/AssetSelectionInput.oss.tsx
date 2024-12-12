@@ -2,12 +2,14 @@ import {Icons} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import styled from 'styled-components';
 
-import {lintAssetSelection} from './AssetSelectionLinter';
 import {assertUnreachable} from '../../app/Util';
 import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
 import {SelectionAutoCompleteInput, iconStyle} from '../../selection/SelectionAutoCompleteInput';
+import {createSelectionLinter} from '../../selection/createSelectionLinter';
 import {placeholderTextForItems} from '../../ui/GraphQueryInput';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
+import {AssetSelectionLexer} from '../generated/AssetSelectionLexer';
+import {AssetSelectionParser} from '../generated/AssetSelectionParser';
 
 import 'codemirror/addon/edit/closebrackets';
 import 'codemirror/lib/codemirror.css';
@@ -84,6 +86,11 @@ export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInp
       code_location: codeLocations,
     };
   }, [assets]);
+
+  const linter = useMemo(
+    () => createSelectionLinter({Lexer: AssetSelectionLexer, Parser: AssetSelectionParser}),
+    [],
+  );
   return (
     <WrapperDiv>
       <SelectionAutoCompleteInput
@@ -91,7 +98,7 @@ export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInp
         attributesMap={attributesMap}
         placeholder={placeholderTextForItems('Type an asset subset…', assets)}
         functions={FUNCTIONS}
-        linter={lintAssetSelection}
+        linter={linter}
         value={value}
         onChange={onChange}
       />

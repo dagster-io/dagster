@@ -122,10 +122,12 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
       });
     }
 
-    const editor = editorRef.current;
     return () => {
-      if (editor) {
-        editor.remove();
+      const cm = cmInstance.current;
+      if (cm) {
+        // Clean up the instance...
+        cm.closeHint();
+        cm.getWrapperElement()?.parentNode?.removeChild(cm.getWrapperElement());
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -173,7 +175,7 @@ export const iconStyle = (img: string) => css`
   }
 `;
 
-const InputDiv = styled.div`
+export const InputDiv = styled.div`
   ${SelectionAutoCompleteInputCSS}
 `;
 
