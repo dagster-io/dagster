@@ -5,8 +5,6 @@ sidebar_position: 20
 sidebar_label: Installation
 ---
 
-# Installing Dagster
-
 To follow the steps in this guide, you'll need:
 
 - To install Python 3.9 or higher. **Python 3.12 is recommended**.

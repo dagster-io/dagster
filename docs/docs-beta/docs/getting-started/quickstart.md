@@ -1,11 +1,9 @@
 ---
-title: "Dagster quickstart"
+title: Build your first Dagster project
 description: Learn how to quickly get up and running with Dagster
 sidebar_position: 30
 sidebar_label: "Quickstart"
 ---
-
-# Build your first Dagster project
 
 Welcome to Dagster! In this guide, you'll use Dagster to create a basic pipeline that:
 
