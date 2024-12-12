@@ -14,7 +14,14 @@ Throughout this module, you’ve used DuckDB to store and transform your data. E
 )
 def taxi_trips() -> None:
     ...
-    conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
+    conn = backoff(
+        fn=duckdb.connect,
+        retry_on=(RuntimeError, duckdb.IOException),
+        kwargs={
+            "database": os.getenv("DUCKDB_DATABASE"),
+        },
+        max_retries=10,
+    )
     ...
 ```
 

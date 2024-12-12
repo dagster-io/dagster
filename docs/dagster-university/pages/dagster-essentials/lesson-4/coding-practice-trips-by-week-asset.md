@@ -62,12 +62,20 @@ from datetime import datetime, timedelta
 from . import constants
 
 import pandas as pd
+from dagster._utils.backoff import backoff
 
 @asset(
     deps=["taxi_trips"]
 )
 def trips_by_week() -> None:
-    conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
+    conn = backoff(
+        fn=duckdb.connect,
+        retry_on=(RuntimeError, duckdb.IOException),
+        kwargs={
+            "database": os.getenv("DUCKDB_DATABASE"),
+        },
+        max_retries=10,
+    )
 
     current_date = datetime.strptime("2023-03-01", constants.DATE_FORMAT)
     end_date = datetime.strptime("2023-04-01", constants.DATE_FORMAT)
