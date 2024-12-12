@@ -1008,6 +1008,9 @@ class AirbyteCloudClient(DagsterModel):
             method="GET", endpoint=f"jobs/{job_id}", base_url=self.rest_api_base_url
         )
 
+    def cancel_job(self, job_id: int) -> Mapping[str, Any]:
+        return self.make_request(method="DELETE", endpoint=f"jobs/{job_id}")
+
 
 @experimental
 class AirbyteCloudWorkspace(ConfigurableResource):
