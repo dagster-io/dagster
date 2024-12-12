@@ -9,12 +9,15 @@ import click
 from dagster_dg.context import CodeLocationDirectoryContext
 from dagster_dg.utils import (
     camelcase,
-    discover_git_root,
     execute_code_location_command,
     generate_subtree,
     get_uv_command_env,
     pushd,
 )
+
+# ########################
+# ##### DEPLOYMENT
+# ########################
 
 
 def generate_deployment(path: Path) -> None:
@@ -29,32 +32,74 @@ def generate_deployment(path: Path) -> None:
     )
 
 
+# ########################
+# ##### CODE LOCATION
+# ########################
+
+# Despite the fact that editable dependencies are resolved through tool.uv.sources, we need to set
+# the dependencies themselves differently depending on whether we are using editable dagster or
+# not. This is because `tool.uv.sources` only semems to apply to direct dependencies of the package,
+# so any 2+-order Dagster dependency of our package needs to be listed as a direct dependency in the
+# editable case.
+EDITABLE_DAGSTER_DEPENDENCIES = (
+    "dagster",
+    "dagster-graphql",
+    "dagster-pipes",
+    "dagster-webserver",
+    "dagster-components",
+)
+PYPI_DAGSTER_DEPENDENCIES = ("dagster-components",)
+PYPI_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver",)
+
+
+def get_pyproject_toml_dependencies(use_editable_dagster: bool) -> str:
+    deps = EDITABLE_DAGSTER_DEPENDENCIES if use_editable_dagster else PYPI_DAGSTER_DEPENDENCIES
+    return "\n".join(
+        [
+            "dependencies = [",
+            *[f'    "{dep}",' for dep in deps],
+            "]",
+        ]
+    )
+
+
+def get_pyproject_toml_dev_dependencies(use_editable_dagster: bool) -> str:
+    if use_editable_dagster:
+        return ""
+    else:
+        return "\n".join(
+            [
+                "dev = [",
+                *[f'    "{dep}",' for dep in PYPI_DAGSTER_DEV_DEPENDENCIES],
+                "]",
+            ]
+        )
+
+
+def get_pyproject_toml_uv_sources(editable_dagster_root: str) -> str:
+    return textwrap.dedent(f"""
+        [tool.uv.sources]
+        dagster = {{ path = "{editable_dagster_root}/python_modules/dagster", editable = true }}
+        dagster-graphql = {{ path = "{editable_dagster_root}/python_modules/dagster-graphql", editable = true }}
+        dagster-pipes = {{ path = "{editable_dagster_root}/python_modules/dagster-pipes", editable = true }}
+        dagster-webserver = {{ path = "{editable_dagster_root}/python_modules/dagster-webserver", editable = true }}
+        dagster-components = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-components", editable = true }}
+        dagster-embedded-elt = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-embedded-elt", editable = true }}
+        dagster-dbt = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-dbt", editable = true }}
+    """)
+
+
 def generate_code_location(path: Path, editable_dagster_root: Optional[str] = None) -> None:
     click.echo(f"Creating a Dagster code location at {path}.")
 
-    # Temporarily we always set an editable dagster root. This is needed while the packages are not
-    # published.
-    editable_dagster_root = (
-        editable_dagster_root
-        or os.environ.get("DAGSTER_GIT_REPO_DIR")
-        or str(discover_git_root(Path(__file__)))
-    )
-
-    editable_dagster_uv_sources = textwrap.dedent(f"""
-    [tool.uv.sources]
-    dagster = {{ path = "{editable_dagster_root}/python_modules/dagster", editable = true }}
-    dagster-graphql = {{ path = "{editable_dagster_root}/python_modules/dagster-graphql", editable = true }}
-    dagster-pipes = {{ path = "{editable_dagster_root}/python_modules/dagster-pipes", editable = true }}
-    dagster-webserver = {{ path = "{editable_dagster_root}/python_modules/dagster-webserver", editable = true }}
-    dagster-components = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-components", editable = true }}
-    dagster-embedded-elt = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-embedded-elt", editable = true }}
-    dagster-dbt = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-dbt", editable = true }}
-    """)
-
     if editable_dagster_root:
-        uv_sources = editable_dagster_uv_sources
+        dependencies = get_pyproject_toml_dependencies(use_editable_dagster=True)
+        dev_dependencies = get_pyproject_toml_dev_dependencies(use_editable_dagster=True)
+        uv_sources = get_pyproject_toml_uv_sources(editable_dagster_root)
     else:
-        uv_sources = editable_dagster_uv_sources
+        dependencies = get_pyproject_toml_dependencies(use_editable_dagster=False)
+        dev_dependencies = get_pyproject_toml_dev_dependencies(use_editable_dagster=False)
+        uv_sources = ""
 
     generate_subtree(
         path=path,
@@ -62,12 +107,19 @@ def generate_code_location(path: Path, editable_dagster_root: Optional[str] = No
         templates_path=os.path.join(
             os.path.dirname(__file__), "templates", "CODE_LOCATION_NAME_PLACEHOLDER"
         ),
+        dependencies=dependencies,
+        dev_dependencies=dev_dependencies,
         uv_sources=uv_sources,
     )
 
     # Build the venv
     with pushd(path):
         subprocess.run(["uv", "sync"], check=True, env=get_uv_command_env())
+
+
+# ########################
+# ##### COMPONENT TYPE
+# ########################
 
 
 def generate_component_type(context: CodeLocationDirectoryContext, name: str) -> None:
@@ -87,6 +139,11 @@ def generate_component_type(context: CodeLocationDirectoryContext, name: str) ->
         f.write(
             f"from {context.local_component_types_root_module_name}.{name} import {camelcase(name)}\n"
         )
+
+
+# ########################
+# ##### COMPONENT INSTANCE
+# ########################
 
 
 def generate_component_instance(

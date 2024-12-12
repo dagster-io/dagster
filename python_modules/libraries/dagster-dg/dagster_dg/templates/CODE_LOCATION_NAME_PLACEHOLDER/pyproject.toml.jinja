@@ -2,21 +2,10 @@
 name = "{{ project_name }}"
 requires-python = ">=3.9,<3.13"
 version = "0.1.0"
-dependencies = [
-    "dagster",
-    "dagster-graphql",
-    "dagster-pipes",
-    "dagster-webserver",
-    "dagster-components[sling,dbt]",
-    "dagster-embedded-elt",
-    "dagster-dbt",
-    "sling-mac-arm64",
-]
+{{ dependencies }}
 
 [project.optional-dependencies]
-dev = [
-    "dagster-webserver",
-]
+{{ dev_dependencies }}
 
 [project.entry-points]
 "dagster.components" = { {{ project_name }} = "{{ project_name }}.lib"}
