@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.pipelines.pipeline import GrapheneEventConnection, GrapheneRun
     from dagster_graphql.schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
     from dagster_graphql.schema.runs import GrapheneRunGroup, GrapheneRunTagKeys, GrapheneRunTags
-    from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnection
+    from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnection, GrapheneRunsFeedView
     from dagster_graphql.schema.util import ResolveInfo
 
 
@@ -539,7 +539,7 @@ def get_runs_feed_entries(
     graphene_info: "ResolveInfo",
     limit: int,
     filters: Optional[RunsFilter],
-    include_runs_from_backfills: bool,
+    view: "GrapheneRunsFeedView",
     cursor: Optional[str] = None,
 ) -> "GrapheneRunsFeedConnection":
     """Returns a GrapheneRunsFeedConnection, which contains a merged list of backfills and
@@ -551,11 +551,11 @@ def get_runs_feed_entries(
         cursor (Optional[str]): String that can be deserialized into a RunsFeedCursor. If None, indicates
             that querying should start at the beginning of the table for both runs and backfills.
         filters (Optional[RunsFilter]): Filters to apply to the runs. If None, no filters are applied.
-        include_runs_from_backfills (bool): If True, include runs that are part of a backfill in the results and exclude backfill objects
+        view (RunsFeedView): If True, include runs that are part of a backfill in the results and exclude backfill objects
     """
     from dagster_graphql.schema.backfill import GraphenePartitionBackfill
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
-    from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnection
+    from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnection, GrapheneRunsFeedView
 
     check.opt_str_param(cursor, "cursor")
     check.int_param(limit, "limit")
@@ -566,7 +566,7 @@ def get_runs_feed_entries(
     # the UI is oriented toward showing runs that are part of a backfill, but the backend
     # is oriented toward excluding runs that are part of a backfill, so negate include_runs_from_backfills
     # to get the value to pass to the backend
-    exclude_subruns = not include_runs_from_backfills
+    exclude_subruns = view == GrapheneRunsFeedView.ROOTS
 
     # if using limit, fetch limit+1 of each type to know if there are more than limit remaining
     fetch_limit = limit + 1
@@ -576,9 +576,9 @@ def get_runs_feed_entries(
         datetime_from_timestamp(runs_feed_cursor.timestamp) if runs_feed_cursor.timestamp else None
     )
 
-    should_fetch_backfills = exclude_subruns and (
-        _filters_apply_to_backfills(filters) if filters else True
-    )
+    should_fetch_backfills = (
+        view == GrapheneRunsFeedView.ROOTS or view == GrapheneRunsFeedView.BACKFILLS
+    ) and (_filters_apply_to_backfills(filters) if filters else True)
     if filters:
         check.invariant(
             filters.exclude_subruns is None,
@@ -611,7 +611,9 @@ def get_runs_feed_entries(
 
     # if we are not showing runs within backfills and the backfill_id filter is set, we know
     # there will be no results, so we can skip fetching runs
-    should_fetch_runs = not (exclude_subruns and run_filters.tags.get(BACKFILL_ID_TAG) is not None)
+    should_fetch_runs = (
+        view == GrapheneRunsFeedView.ROOTS or view == GrapheneRunsFeedView.RUNS
+    ) and not (exclude_subruns and run_filters.tags.get(BACKFILL_ID_TAG) is not None)
     if should_fetch_runs:
         runs = [
             GrapheneRun(run)
@@ -645,13 +647,13 @@ def get_runs_feed_entries(
 
     new_run_cursor = None
     new_backfill_cursor = None
-    for run in reversed(to_return):
+    for entry in reversed(to_return):
         if new_run_cursor is not None and new_backfill_cursor is not None:
             break
-        if new_backfill_cursor is None and isinstance(run, GraphenePartitionBackfill):
-            new_backfill_cursor = run.id
-        if new_run_cursor is None and isinstance(run, GrapheneRun):
-            new_run_cursor = run.runId
+        if new_backfill_cursor is None and isinstance(entry, GraphenePartitionBackfill):
+            new_backfill_cursor = entry.id
+        if new_run_cursor is None and isinstance(entry, GrapheneRun):
+            new_run_cursor = entry.runId
 
     new_timestamp = to_return[-1].creation_timestamp if to_return else None
 
@@ -671,15 +673,18 @@ def get_runs_feed_entries(
 
 
 def get_runs_feed_count(
-    graphene_info: "ResolveInfo", filters: Optional[RunsFilter], include_runs_from_backfills: bool
+    graphene_info: "ResolveInfo", filters: Optional[RunsFilter], view: "GrapheneRunsFeedView"
 ) -> int:
+    from dagster_graphql.schema.runs_feed import GrapheneRunsFeedView
+
     # the UI is oriented toward showing runs that are part of a backfill, but the backend
     # is oriented toward excluding runs that are part of a backfill, so negate include_runs_in_backfills
     # to get the value to pass to the backend
-    exclude_subruns = not include_runs_from_backfills
-    should_fetch_backfills = exclude_subruns and (
-        _filters_apply_to_backfills(filters) if filters else True
-    )
+    exclude_subruns = view == GrapheneRunsFeedView.ROOTS
+    should_fetch_runs = view == GrapheneRunsFeedView.RUNS or view == GrapheneRunsFeedView.ROOTS
+    should_fetch_backfills = (
+        view == GrapheneRunsFeedView.BACKFILLS or view == GrapheneRunsFeedView.ROOTS
+    ) and (_filters_apply_to_backfills(filters) if filters else True)
     with disable_dagster_warnings():
         run_filters = (
             copy(filters, exclude_subruns=exclude_subruns)
@@ -692,4 +697,9 @@ def get_runs_feed_count(
     else:
         backfills_count = 0
 
-    return graphene_info.context.instance.get_runs_count(run_filters) + backfills_count
+    if should_fetch_runs:
+        runs_count = graphene_info.context.instance.get_runs_count(run_filters)
+    else:
+        runs_count = 0
+
+    return runs_count + backfills_count

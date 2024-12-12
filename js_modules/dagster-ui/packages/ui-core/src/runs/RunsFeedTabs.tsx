@@ -8,7 +8,7 @@ import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses'
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
 import {gql, useQuery} from '../apollo-client';
 import {RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables} from './types/RunsFeedTabs.types';
-import {RunStatus, RunsFilter} from '../graphql/types';
+import {RunStatus, RunsFeedView, RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {AnchorButton} from '../ui/AnchorButton';
 import {TabLink} from '../ui/TabLink';
@@ -17,6 +17,8 @@ const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsFeedTab>) =
   switch (selected) {
     case 'all':
       return 'Runs | All';
+    case 'backfills':
+      return 'Runs | All Backfills';
     case 'failed':
       return 'Runs | Failed';
     case 'in-progress':
@@ -30,14 +32,14 @@ const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsFeedTab>) =
   }
 };
 
-export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfills: boolean) => {
+export const useRunsFeedTabs = (filter: RunsFilter = {}, view: RunsFeedView) => {
   const queryResult = useQuery<RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables>(
     RUN_FEED_TABS_COUNT_QUERY,
     {
       variables: {
         queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
         inProgressFilter: {...filter, statuses: Array.from(inProgressStatuses)},
-        includeRunsFromBackfills,
+        view,
       },
     },
   );
@@ -55,23 +57,21 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfill
   }, [countData]);
 
   const [filterTokens] = useQueryPersistedRunFilters();
-  const selectedTab = useSelectedRunsFeedTab(filterTokens);
+  const selectedTab = useSelectedRunsFeedTab(filterTokens, view);
 
   useDocumentTitle(getDocumentTitle(selectedTab));
 
-  const urlForStatus = (statuses: RunStatus[]) => {
+  const urlForStatus = (statuses: RunStatus[], nextView?: RunsFeedView) => {
+    nextView ||= view === RunsFeedView.RUNS ? RunsFeedView.RUNS : RunsFeedView.ROOTS;
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status' as const, value: status}));
-    return runsPathWithFilters(
-      [...statusTokens, ...tokensMinusStatus],
-      '/runs/',
-      includeRunsFromBackfills,
-    );
+    return runsPathWithFilters([...statusTokens, ...tokensMinusStatus], '/runs', nextView);
   };
 
   const tabs = (
     <Tabs selectedTabId={selectedTab}>
-      <TabLink id="all" title="Runs" to={urlForStatus([])} />
+      <TabLink id="all" title="All" to={urlForStatus([])} />
+      <TabLink id="backfills" title="Backfills" to={urlForStatus([], RunsFeedView.BACKFILLS)} />
       <TabLink
         id="queued"
         title={queuedCount !== null ? `Queued (${queuedCount})` : `Queued`}
@@ -86,7 +86,7 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfill
       <TabLink
         id="scheduled"
         title="Scheduled"
-        to={`/runs/scheduled?${includeRunsFromBackfills ? 'show_runs_within_backfills=true' : ''}`}
+        to={`/runs/scheduled?${view === RunsFeedView.RUNS ? 'view=RUNS' : ''}`}
       />
     </Tabs>
   );
@@ -117,10 +117,16 @@ export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
         `}
 `;
 
-export const useSelectedRunsFeedTab = (filterTokens: TokenizingFieldValue[]) => {
+export const useSelectedRunsFeedTab = (
+  filterTokens: TokenizingFieldValue[],
+  view: RunsFeedView,
+) => {
   const {pathname} = useLocation();
   if (pathname === '/runs/scheduled') {
     return 'scheduled';
+  }
+  if (view === RunsFeedView.BACKFILLS) {
+    return 'backfills';
   }
   const statusTokens = new Set(
     filterTokens.filter((token) => token.token === 'status').map((token) => token.value),
@@ -141,20 +147,14 @@ export const RUN_FEED_TABS_COUNT_QUERY = gql`
   query RunFeedTabsCountQuery(
     $queuedFilter: RunsFilter!
     $inProgressFilter: RunsFilter!
-    $includeRunsFromBackfills: Boolean!
+    $view: RunsFeedView!
   ) {
-    queuedCount: runsFeedCountOrError(
-      filter: $queuedFilter
-      includeRunsFromBackfills: $includeRunsFromBackfills
-    ) {
+    queuedCount: runsFeedCountOrError(filter: $queuedFilter, view: $view) {
       ... on RunsFeedCount {
         count
       }
     }
-    inProgressCount: runsFeedCountOrError(
-      filter: $inProgressFilter
-      includeRunsFromBackfills: $includeRunsFromBackfills
-    ) {
+    inProgressCount: runsFeedCountOrError(filter: $inProgressFilter, view: $view) {
       ... on RunsFeedCount {
         count
       }
