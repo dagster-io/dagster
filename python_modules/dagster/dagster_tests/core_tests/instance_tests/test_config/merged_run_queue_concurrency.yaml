@@ -1,6 +1,6 @@
 concurrency:
   pools:
-    granularity: op
+    granularity: run
     op_run_buffer: 1
   runs:
     max_concurrent_runs: 5

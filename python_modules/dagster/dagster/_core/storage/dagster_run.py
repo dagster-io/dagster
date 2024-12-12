@@ -162,6 +162,7 @@ class RunOpConcurrency(
         [
             ("root_key_counts", Mapping[str, int]),
             ("has_unconstrained_root_nodes", bool),
+            ("all_pools", Optional[set[str]]),
         ],
     )
 ):
@@ -173,6 +174,7 @@ class RunOpConcurrency(
         cls,
         root_key_counts: Mapping[str, int],
         has_unconstrained_root_nodes: bool,
+        all_pools: Optional[set[str]] = None,
     ):
         return super().__new__(
             cls,
@@ -182,6 +184,7 @@ class RunOpConcurrency(
             has_unconstrained_root_nodes=check.bool_param(
                 has_unconstrained_root_nodes, "has_unconstrained_root_nodes"
             ),
+            all_pools=check.opt_set_param(all_pools, "all_pools", of_type=str),
         )
 
 
