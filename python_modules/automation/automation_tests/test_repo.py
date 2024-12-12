@@ -2,9 +2,10 @@ import os
 import subprocess
 from pathlib import Path
 
-# Some libraries are excluded because they lack a Dagster dependency, which is a prerequisite for
-# registering in the DagsterLibraryRegistry.
-EXCLUDE_LIBRARIES = ["dagster-dg"]
+# Some libraries are excluded because they either:
+# - lack a Dagster dependency, which is a prerequisite for registering in the DagsterLibraryRegistry.
+# - are temporary or on a separate release schedule from the rest of the libraries.
+EXCLUDE_LIBRARIES = ["dagster-components", "dagster-dg"]
 
 
 def test_all_libraries_register() -> None:
