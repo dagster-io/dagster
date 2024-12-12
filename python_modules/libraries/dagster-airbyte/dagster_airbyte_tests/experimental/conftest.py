@@ -27,6 +27,7 @@ TEST_STREAM_PREFIX = "test_prefix_"
 TEST_STREAM_NAME = "test_stream"
 TEST_SELECTED = True
 TEST_JSON_SCHEMA = {}
+TEST_JOB_ID = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
 
 TEST_AIRBYTE_CONNECTION_TABLE_PROPS = AirbyteConnectionTableProps(
     table_name=f"{TEST_STREAM_PREFIX}{TEST_STREAM_NAME}",
@@ -165,7 +166,7 @@ SAMPLE_DESTINATION_DETAILS = {
 # Taken from Airbyte REST API documentation
 # https://reference.airbyte.com/reference/getjob
 SAMPLE_JOB_RESPONSE = {
-    "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "jobId": TEST_JOB_ID,
     "status": "running",
     "jobType": "sync",
     "startTime": "2023-03-25T01:30:50Z",
@@ -223,6 +224,12 @@ def all_api_mocks_fixture(
     fetch_workspace_data_api_mocks.add(
         method=responses.POST,
         url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs",
+        json=SAMPLE_JOB_RESPONSE,
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs/{TEST_JOB_ID}",
         json=SAMPLE_JOB_RESPONSE,
         status=200,
     )
