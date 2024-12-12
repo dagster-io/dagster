@@ -93,7 +93,7 @@ def create_databricks_run_now_op(
             default=_poll_interval_seconds,
             description="Check whether the Databricks Job is done at this interval, in seconds.",
         )
-        max_wait_time_seconds: int = Field(
+        max_wait_time_seconds: float = Field(
             default=_max_wait_time_seconds,
             description=(
                 "If the Databricks Job is not complete after this length of time, in seconds,"
@@ -205,7 +205,7 @@ def create_databricks_submit_run_op(
             default=_poll_interval_seconds,
             description="Check whether the Databricks Job is done at this interval, in seconds.",
         )
-        max_wait_time_seconds: int = Field(
+        max_wait_time_seconds: float = Field(
             default=_max_wait_time_seconds,
             description=(
                 "If the Databricks Job is not complete after this length of time, in seconds,"
