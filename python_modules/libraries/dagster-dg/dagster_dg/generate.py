@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 
 import click
 
-from dagster_dg.context import CodeLocationProjectContext
+from dagster_dg.context import CodeLocationDirectoryContext
 from dagster_dg.utils import (
     camelcase,
     discover_git_root,
@@ -34,7 +34,7 @@ def generate_code_location(path: Path, editable_dagster_root: Optional[str] = No
     editable_dagster_root = (
         editable_dagster_root
         or os.environ.get("DAGSTER_GIT_REPO_DIR")
-        or discover_git_root(Path(__file__))
+        or str(discover_git_root(Path(__file__)))
     )
 
     editable_dagster_uv_sources = textwrap.dedent(f"""
@@ -66,8 +66,8 @@ def generate_code_location(path: Path, editable_dagster_root: Optional[str] = No
     execute_code_location_command(Path(path), ("uv", "sync"))
 
 
-def generate_component_type(context: CodeLocationProjectContext, name: str) -> None:
-    root_path = Path(context.component_types_root_path)
+def generate_component_type(context: CodeLocationDirectoryContext, name: str) -> None:
+    root_path = Path(context.local_component_types_root_path)
     click.echo(f"Creating a Dagster component type at {root_path}/{name}.py.")
 
     generate_subtree(
@@ -80,7 +80,9 @@ def generate_component_type(context: CodeLocationProjectContext, name: str) -> N
     )
 
     with open(root_path / "__init__.py", "a") as f:
-        f.write(f"from {context.component_types_root_module}.{name} import {camelcase(name)}\n")
+        f.write(
+            f"from {context.local_component_types_root_module_name}.{name} import {camelcase(name)}\n"
+        )
 
 
 def generate_component_instance(

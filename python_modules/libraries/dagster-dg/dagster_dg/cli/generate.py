@@ -6,10 +6,10 @@ from typing import Optional, Tuple
 import click
 
 from dagster_dg.context import (
-    CodeLocationProjectContext,
-    DeploymentProjectContext,
-    is_inside_code_location_project,
-    is_inside_deployment_project,
+    CodeLocationDirectoryContext,
+    DeploymentDirectoryContext,
+    is_inside_code_location_directory,
+    is_inside_deployment_directory,
 )
 from dagster_dg.generate import (
     generate_code_location,
@@ -69,8 +69,8 @@ def generate_code_location_command(name: str, use_editable_dagster: bool) -> Non
     component`).  The `<name>.lib` directory holds custom component types scoped to the code
     location (which can be created with `dg generate component-type`).
     """
-    if is_inside_deployment_project(Path.cwd()):
-        context = DeploymentProjectContext.from_path(Path.cwd())
+    if is_inside_deployment_directory(Path.cwd()):
+        context = DeploymentDirectoryContext.from_path(Path.cwd())
         if context.has_code_location(name):
             click.echo(click.style(f"A code location named {name} already exists.", fg="red"))
             sys.exit(1)
@@ -102,14 +102,14 @@ def generate_component_type_command(name: str) -> None:
     This command must be run inside a Dagster code location directory. The component type scaffold
     will be generated in submodule `<code_location_name>.lib.<name>`.
     """
-    if not is_inside_code_location_project(Path.cwd()):
+    if not is_inside_code_location_directory(Path.cwd()):
         click.echo(
             click.style(
                 "This command must be run inside a Dagster code location directory.", fg="red"
             )
         )
         sys.exit(1)
-    context = CodeLocationProjectContext.from_path(Path.cwd())
+    context = CodeLocationDirectoryContext.from_path(Path.cwd())
     full_component_name = f"{context.name}.{name}"
     if context.has_component_type(full_component_name):
         click.echo(click.style(f"A component type named `{name}` already exists.", fg="red"))
@@ -156,7 +156,7 @@ def generate_component_command(
 
     It is an error to pass both --json-params and EXTRA_ARGS.
     """
-    if not is_inside_code_location_project(Path.cwd()):
+    if not is_inside_code_location_directory(Path.cwd()):
         click.echo(
             click.style(
                 "This command must be run inside a Dagster code location directory.", fg="red"
@@ -164,7 +164,7 @@ def generate_component_command(
         )
         sys.exit(1)
 
-    context = CodeLocationProjectContext.from_path(Path.cwd())
+    context = CodeLocationDirectoryContext.from_path(Path.cwd())
     if not context.has_component_type(component_type):
         click.echo(
             click.style(f"No component type `{component_type}` could be resolved.", fg="red")
