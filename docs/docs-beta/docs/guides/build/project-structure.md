@@ -3,8 +3,6 @@ title: "How to structure your Dagster project"
 sidebar_position: 200
 ---
 
-# How to structure your Dagster project
-
 :::note
 Refer to the project scaffolding tutorial to learn how to create a new Dagster project.
 :::
