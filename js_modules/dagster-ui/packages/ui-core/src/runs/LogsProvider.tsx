@@ -39,7 +39,7 @@ export interface LogFilter {
 }
 
 export interface LogsProviderLogs {
-  allNodes: LogNode[];
+  allNodeChunks: LogNode[][];
   counts: LogLevelCounts;
   loading: boolean;
 }
@@ -72,7 +72,7 @@ const BATCH_INTERVAL = 100;
 const QUERY_LOG_LIMIT = 1000;
 
 type State = {
-  nodes: LogNode[];
+  nodeChunks: LogNode[][];
   cursor: string | null;
   counts: LogLevelCounts;
   loading: boolean;
@@ -99,25 +99,29 @@ const reducer = (state: State, action: Action) => {
         ...node,
         clientsideKey: `csk${node.timestamp}-${ii}`,
       }));
-      const nodes = [...state.nodes, ...queuedNodes];
+
+      const copy = state.nodeChunks.slice();
+      copy.push(queuedNodes);
+
       const counts = {...state.counts};
       queuedNodes.forEach((node) => {
         const level = logNodeLevel(node);
         counts[level]++;
       });
-      return {nodes, counts, loading: action.hasMore, cursor: action.cursor};
+
+      return {nodeChunks: copy, counts, loading: action.hasMore, cursor: action.cursor};
     }
     case 'set-cursor':
       return {...state, cursor: action.cursor};
     case 'reset':
-      return {nodes: [], counts: emptyCounts, cursor: null, loading: true};
+      return {nodeChunks: [], counts: emptyCounts, cursor: null, loading: true};
     default:
       return state;
   }
 };
 
 const initialState: State = {
-  nodes: [],
+  nodeChunks: [] as LogNode[][],
   counts: emptyCounts,
   cursor: null,
   loading: true,
@@ -184,7 +188,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
     }, BATCH_INTERVAL);
   }, [syncPipelineStatusToApolloCache]);
 
-  const {nodes, counts, cursor, loading} = state;
+  const {nodeChunks, counts, cursor, loading} = state;
 
   const {availability, disabled, status} = React.useContext(WebSocketContext);
   const lostWebsocket = !disabled && availability === 'available' && status === WebSocket.CLOSED;
@@ -227,10 +231,10 @@ const useLogsProviderWithSubscription = (runId: string) => {
 
   return React.useMemo(
     () =>
-      nodes !== null
-        ? {allNodes: nodes, counts, loading, subscriptionComponent}
-        : {allNodes: [], counts, loading, subscriptionComponent},
-    [counts, loading, nodes, subscriptionComponent],
+      nodeChunks !== null
+        ? {allNodeChunks: nodeChunks, counts, loading, subscriptionComponent}
+        : {allNodeChunks: [], counts, loading, subscriptionComponent},
+    [counts, loading, nodeChunks, subscriptionComponent],
   );
 };
 
@@ -285,7 +289,7 @@ const POLL_INTERVAL = 5000;
 const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
   const {children, runId} = props;
   const [state, dispatch] = React.useReducer(reducer, initialState);
-  const {counts, cursor, nodes} = state;
+  const {counts, cursor, nodeChunks} = state;
 
   const dependency = useTraceDependency('RunLogsQuery');
 
@@ -332,9 +336,9 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
   return (
     <>
       {children(
-        nodes !== null && nodes.length > 0
-          ? {allNodes: nodes, counts, loading: false}
-          : {allNodes: [], counts, loading: true},
+        nodeChunks !== null && nodeChunks.length > 0
+          ? {allNodeChunks: nodeChunks, counts, loading: false}
+          : {allNodeChunks: [], counts, loading: true},
       )}
     </>
   );
@@ -350,7 +354,7 @@ export const LogsProvider = (props: LogsProviderProps) => {
   }
 
   if (availability === 'attempting-to-connect') {
-    return <>{children({allNodes: [], counts: emptyCounts, loading: true})}</>;
+    return <>{children({allNodeChunks: [], counts: emptyCounts, loading: true})}</>;
   }
 
   return <LogsProviderWithSubscription runId={runId}>{children}</LogsProviderWithSubscription>;

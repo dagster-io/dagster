@@ -8,7 +8,7 @@ import {
   Mono,
   Spinner,
 } from '@dagster-io/ui-components';
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -20,6 +20,7 @@ import {LogsScrollingTable} from './LogsScrollingTable';
 import {LogType, LogsToolbar} from './LogsToolbar';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {titleForRun} from './RunUtils';
+import {flattenNodeChunks} from './flattenNodeChunks';
 import {useComputeLogFileKeyForSelection} from './useComputeLogFileKeyForSelection';
 import {DagsterEventType} from '../graphql/types';
 
@@ -113,9 +114,12 @@ export const StepLogsModalContent = ({
   const [logType, setComputeLogType] = useState<LogType>(LogType.structured);
   const [computeLogUrl, setComputeLogUrl] = React.useState<string | null>(null);
 
-  const firstLogForStep = logs.allNodes.find(
+  const flatLogs = useMemo(() => flattenNodeChunks(logs.allNodeChunks), [logs]);
+
+  const firstLogForStep = flatLogs.find(
     (l) => l.eventType === DagsterEventType.STEP_START && l.stepKey && stepKeys.includes(l.stepKey),
   );
+
   const firstLogForStepTime = firstLogForStep ? Number(firstLogForStep.timestamp) : 0;
 
   const [filter, setFilter] = useState<LogFilter>({
