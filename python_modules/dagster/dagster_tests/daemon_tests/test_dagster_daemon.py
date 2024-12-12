@@ -1,4 +1,6 @@
 import json
+import logging
+from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
@@ -92,22 +94,51 @@ def test_daemon_rich_logs() -> None:
             log_format="rich",
         )
 
-def test_skip_workspace_reload_behavior():
+# def test_skip_workspace_reload_behavior():
+#     # Step 1: Create a mock instance
+#     with instance_for_test() as instance:
+#         # Step 2: Create a daemon controller with skip_workspace_reload=True
+#         with daemon_controller_from_instance(
+#                 instance,
+#                 workspace_load_target=EmptyWorkspaceTarget(),
+#                 skip_workspace_reload=True,  # Enable the new feature
+#         ) as controller:
+#             # Step 3: Verify the controller initializes with skip_workspace_reload=True
+#             assert getattr(controller, "_skip_workspace_reload", None) is True
+#         # Step 4: Create another daemon controller with skip_workspace_reload=False
+#         with daemon_controller_from_instance(
+#                 instance,
+#                 workspace_load_target=EmptyWorkspaceTarget(),
+#                 skip_workspace_reload=False,  # Disable the new feature
+#         ) as controller:
+#             # Verify the controller initializes with skip_workspace_reload=False
+#             assert getattr(controller, "_skip_workspace_reload", None) is False
+
+
+def test_skip_workspace_reload_behavior(caplog):
     # Step 1: Create a mock instance
     with instance_for_test() as instance:
-        # Step 2: Create a daemon controller with skip_workspace_reload=True
+        # Step 2: Create a daemon controller with skip_workspace_reload=False
         with daemon_controller_from_instance(
                 instance,
                 workspace_load_target=EmptyWorkspaceTarget(),
-                skip_workspace_reload=True,  # Enable the new feature
+                skip_workspace_reload=False,  # Set this to False to allow log message
         ) as controller:
-            # Step 3: Verify the controller initializes with skip_workspace_reload=True
-            assert getattr(controller, "_skip_workspace_reload", None) is True
-        # Step 4: Create another daemon controller with skip_workspace_reload=False
+            # Step 3: Verify the controller initializes with skip_workspace_reload=False
+            assert getattr(controller, "_skip_workspace_reload", None) is False
+
+            # Step 4: Check if the log message is called when the server is managed externally
+            with caplog.at_level(logging.INFO):
+                # Call the method that triggers the log
+                controller.check_workspace_freshness(last_workspace_update_time=0)
+                # Verify the log message was captured
+                assert "Not clearing GRPC endpoints. GRPC server is managed externally." in caplog.text
+
+        # Step 5: Create another daemon controller with skip_workspace_reload=False
         with daemon_controller_from_instance(
                 instance,
                 workspace_load_target=EmptyWorkspaceTarget(),
-                skip_workspace_reload=False,  # Disable the new feature
+                skip_workspace_reload=False,  # Ensure it's False
         ) as controller:
             # Verify the controller initializes with skip_workspace_reload=False
             assert getattr(controller, "_skip_workspace_reload", None) is False

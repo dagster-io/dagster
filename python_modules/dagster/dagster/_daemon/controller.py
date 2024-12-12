@@ -7,7 +7,8 @@ import uuid
 from contextlib import AbstractContextManager, ExitStack, contextmanager
 from types import TracebackType
 from typing import Callable, Dict, Iterable, Iterator, Mapping, Optional, Sequence, Type
-
+import os
+from dagster._core.instance.config import Field
 from typing_extensions import Self
 
 import dagster._check as check
@@ -112,7 +113,7 @@ def daemon_controller_from_instance(
                 grpc_server_registry=grpc_server_registry,
             )
         )
-
+        check.inst(grpc_server_registry, GrpcServerRegistry)
         configure_loggers(handler="default", formatter=log_format, log_level=log_level.upper())
 
         controller = stack.enter_context(
@@ -143,6 +144,8 @@ class DagsterDaemonController(AbstractContextManager):
     _logger: logging.Logger
     _last_healthy_heartbeat_times: Dict[str, float]
     _start_time: datetime.datetime
+    _skip_workspace_reload: bool
+    _daemon_reload_local_code_servers: bool
 
     def __init__(
         self,
@@ -153,7 +156,13 @@ class DagsterDaemonController(AbstractContextManager):
         heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
         skip_workspace_reload: bool = False,
+
     ):
+        self._daemon_reload_local_code_servers = os.getenv(
+            "DAGSTER_DAEMON_SKIP_RELOAD_LOCAL_CODE_SERVERS", "false"
+        ).lower() == "true"
+
+        self._log_skip_message_logged = False
         self._skip_workspace_reload = skip_workspace_reload
         self._daemon_uuid = str(uuid.uuid4())
 
@@ -277,13 +286,23 @@ class DagsterDaemonController(AbstractContextManager):
 
     def check_workspace_freshness(self, last_workspace_update_time: float) -> float:
         if self._skip_workspace_reload:
-            self._logger.info("Skipping workspace reload due to debugging mode.")
+            # Log the message only once
+            if not self._log_skip_message_logged:
+                self._logger.info("Skipping workspace reload due to debugging mode.")
+                self._log_skip_message_logged = True
             return last_workspace_update_time
         nowish = get_current_timestamp()
         try:
-            if (nowish - last_workspace_update_time) > RELOAD_WORKSPACE_INTERVAL:
-                if self._grpc_server_registry:
-                    self._grpc_server_registry.clear_all_grpc_endpoints()
+            if self._grpc_server_registry and not self._daemon_reload_local_code_servers:
+                if not hasattr(self, '_log_grpc_skip_message_logged') or not self._log_grpc_skip_message_logged:
+                    self._logger.info("Not clearing GRPC endpoints. GRPC server is managed externally.")
+                    self._log_grpc_skip_message_logged = True
+                else:
+                    # Log for clearing GRPC endpoints (only once)
+                    if self._grpc_server_registry and not hasattr(self, '_log_grpc_clear_message_logged'):
+                        self._logger.info("Clearing GRPC endpoints due to workspace refresh.")
+                        self._log_grpc_clear_message_logged = True
+
                 self._workspace_process_context.refresh_workspace()
                 return get_current_timestamp()
         except Exception:
