@@ -14,13 +14,13 @@ from typing_extensions import Self
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import component
 from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
-from dagster_components.core.dsl_schema import DefsTransformUnion, OpSpecBaseModel
+from dagster_components.core.dsl_schema import AssetSpecProcessorModel, OpSpecBaseModel
 
 
 class SlingReplicationParams(BaseModel):
     sling: Optional[SlingResource] = None
     op: Optional[OpSpecBaseModel] = None
-    transforms: Optional[Sequence[DefsTransformUnion]] = None
+    asset_attributes: Optional[Sequence[AssetSpecProcessorModel]] = None
 
 
 @component(name="sling_replication")
@@ -32,12 +32,12 @@ class SlingReplicationComponent(Component):
         dirpath: Path,
         resource: SlingResource,
         op_spec: Optional[OpSpecBaseModel],
-        transforms: Sequence[DefsTransformUnion],
+        asset_transforms: Sequence[AssetSpecProcessorModel],
     ):
         self.dirpath = dirpath
         self.resource = resource
         self.op_spec = op_spec
-        self.transforms = transforms
+        self.asset_transforms = asset_transforms
 
     @classmethod
     def from_decl_node(cls, context: ComponentLoadContext, decl_node: ComponentDeclNode) -> Self:
@@ -49,7 +49,7 @@ class SlingReplicationComponent(Component):
             dirpath=decl_node.path,
             resource=loaded_params.sling or SlingResource(),
             op_spec=loaded_params.op,
-            transforms=loaded_params.transforms or [],
+            asset_transforms=loaded_params.asset_attributes or [],
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -62,7 +62,7 @@ class SlingReplicationComponent(Component):
             yield from self.execute(context=context, sling=sling)
 
         defs = Definitions(assets=[_fn], resources={"sling": self.resource})
-        for transform in self.transforms:
+        for transform in self.asset_transforms:
             defs = transform.transform(defs)
         return defs
 
