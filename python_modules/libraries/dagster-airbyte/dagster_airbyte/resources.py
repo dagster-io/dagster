@@ -1004,7 +1004,9 @@ class AirbyteCloudClient(DagsterModel):
         )
 
     def get_job_details(self, job_id: int) -> Mapping[str, Any]:
-        return self._make_request(method="GET", endpoint=f"jobs/{job_id}", base_url=self.rest_api_base_url)
+        return self._make_request(
+            method="GET", endpoint=f"jobs/{job_id}", base_url=self.rest_api_base_url
+        )
 
 
 @experimental
