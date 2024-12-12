@@ -10,8 +10,8 @@ An asset is an object in persistent storage that captures some understanding of 
 
 - **A database table or view**, such as those in a Google BigQuery data warehouse
 - **A file**, such as a file in your local machine or blob storage like Amazon S3
-- **A machine learning model**
-- **An asset from an integration,** like a dbt model or a Fivetran connector
+- **A machine learning model**, such as TensorFlow or PyTorch
+- **An asset from an integration,** such as a dbt model or a Fivetran connector
 
 Assets aren’t limited to just the objects listed above - these are just some common examples.
 

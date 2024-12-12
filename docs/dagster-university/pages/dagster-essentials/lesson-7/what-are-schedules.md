@@ -92,7 +92,7 @@ Despite many schedulers and orchestrators replacing the cron program since then,
 
 Consider the following example:
 
-```python
+```
 15 5 * * 1-5
 ```
 
