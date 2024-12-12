@@ -446,7 +446,7 @@ Another option is to launch a pod for each asset by telling Dagster to use the K
 
 <TabItem value="pipes" label="Resources if using kubernetes pipes">
 
-Dagster can launch and manage existing Docker images as Kubernetes jobs using the [Dagster kubernetes pipes integration](/integrations/libraries/dagster-supported/kubernetes). To request resources for these jobs by supplying the appropriate Kubernetes pod spec.
+Dagster can launch and manage existing Docker images as Kubernetes jobs using the [Dagster kubernetes pipes integration](/integrations/libaries/kubernetes). To request resources for these jobs by supplying the appropriate Kubernetes pod spec.
 
 <CodeExample filePath="dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_pipes.py" language="python" title="Request resources for a k8s pipes asset" />
 
