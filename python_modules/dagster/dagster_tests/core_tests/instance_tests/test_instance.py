@@ -37,6 +37,7 @@ from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIME
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster._core.snap import create_execution_plan_snapshot_id, snapshot_from_execution_plan
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.partition_status_cache import AssetPartitionStatus, AssetStatusCacheValue
 from dagster._core.storage.sqlite_storage import (
     _event_logs_directory,
@@ -742,7 +743,7 @@ def test_get_status_by_partition(mock_get_and_update):
         assert partition_status == {"2023-07-01": AssetPartitionStatus.IN_PROGRESS}
 
 
-def test_report_runless_asset_event():
+def test_report_runless_asset_event() -> None:
     with instance_for_test() as instance:
         my_asset_key = AssetKey("my_asset")
 
@@ -768,6 +769,22 @@ def test_report_runless_asset_event():
             limit=1,
         )
         assert len(records) == 1
+        assert records[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+
+        instance.report_runless_asset_event(
+            AssetCheckEvaluation(
+                asset_key=my_asset_key,
+                check_name=my_check,
+                passed=False,
+                metadata={},
+            )
+        )
+        records = instance.event_log_storage.get_asset_check_execution_history(
+            check_key=AssetCheckKey(asset_key=my_asset_key, name=my_check),
+            limit=1,
+        )
+        assert len(records) == 1
+        assert records[0].status == AssetCheckExecutionRecordStatus.FAILED
 
 
 def test_invalid_run_id():
