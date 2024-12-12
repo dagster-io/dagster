@@ -26,8 +26,8 @@ def test_python_native() -> None:
 
 def test_python_params() -> None:
     component = PipesSubprocessScriptCollection.from_decl_node(
-        load_context=script_load_context(),
-        component_decl=YamlComponentDecl(
+        context=script_load_context(),
+        decl_node=YamlComponentDecl(
             path=LOCATION_PATH / "components" / "scripts",
             component_file_model=ComponentFileModel(
                 type="pipes_subprocess_script_collection",

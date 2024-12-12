@@ -1,0 +1,12 @@
+type: dagster_components.dlt_pipeline_collection
+
+params:
+  pipeline_runs:
+    - pipeline:
+        pipeline_name: csv_to_duckdb
+        dataset_name: csv
+        destination: duckdb
+      source:
+        source_reference: dagster_components_tests.dlt_sources.filesystem.csv_source
+        params:
+          bucket_url: file://../../../input.csv
