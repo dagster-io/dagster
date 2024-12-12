@@ -2886,10 +2886,12 @@ def test_asset_backfill_logs(
         assert record_dict.get("msg")
 
 
+@pytest.mark.parametrize("parallel", [True, False])
 def test_asset_backfill_from_asset_graph_subset(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
     remote_repo: RemoteRepository,
+    parallel: bool,
 ):
     del remote_repo
 
@@ -2918,7 +2920,25 @@ def test_asset_backfill_from_asset_graph_subset(
     assert backfill
     assert backfill.status == BulkActionStatus.REQUESTED
 
-    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    if parallel:
+        backfill_daemon_futures = {}
+        list(
+            execute_backfill_iteration(
+                workspace_context,
+                get_default_daemon_logger("BackfillDaemon"),
+                threadpool_executor=ThreadPoolExecutor(2),
+                backfill_futures=backfill_daemon_futures,
+            )
+        )
+
+        wait_for_futures(backfill_daemon_futures)
+        [list(future.result()) for future in backfill_daemon_futures.values()]
+    else:
+        list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
     assert instance.get_runs_count() == 3
     wait_for_all_runs_to_start(instance, timeout=30)
     assert instance.get_runs_count() == 3
@@ -2933,7 +2953,25 @@ def test_asset_backfill_from_asset_graph_subset(
         assert step_succeeded(instance, run, "reusable")
         assert step_succeeded(instance, run, "bar")
 
-    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    if parallel:
+        backfill_daemon_futures = {}
+        list(
+            execute_backfill_iteration(
+                workspace_context,
+                get_default_daemon_logger("BackfillDaemon"),
+                threadpool_executor=ThreadPoolExecutor(2),
+                backfill_futures=backfill_daemon_futures,
+            )
+        )
+
+        wait_for_futures(backfill_daemon_futures)
+        [list(future.result()) for future in backfill_daemon_futures.values()]
+    else:
+        list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
     backfill = instance.get_backfill("backfill_from_asset_graph_subset")
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
