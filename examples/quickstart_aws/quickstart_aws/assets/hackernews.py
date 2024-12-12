@@ -49,7 +49,7 @@ def hackernews_topstories(
     # read the top 500 story ids from an S3 bucket
     hackernews_topstory_ids = json.loads(s3.get_client().get_object(
         Bucket=S3_BUCKET, Key=HACKERNEWS_TOPSTORY_IDS_CSV
-    )["Body"].read())
+    )["Body"].read().decode("utf-8"))
 
     results = []
     for item_id in hackernews_topstory_ids:
@@ -95,7 +95,7 @@ def most_frequent_words(
         StringIO(
             s3.get_client()
             .get_object(Bucket=S3_BUCKET, Key=HACKERNEWS_TOPSTORIES_CSV)["Body"]
-            .read()
+            .read().decode("utf-8")
         )
     )
 
