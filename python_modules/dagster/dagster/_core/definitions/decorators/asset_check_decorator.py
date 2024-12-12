@@ -9,7 +9,7 @@ from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_dep import CoercibleToAssetDep
-from dagster._core.definitions.asset_in import AssetIn
+from dagster._core.definitions.asset_in import AssetIn, CoercibleToAssetIn
 from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -283,6 +283,7 @@ def multi_asset_check(
     required_resource_keys: Optional[Set[str]] = None,
     retry_policy: Optional[RetryPolicy] = None,
     config_schema: Optional[UserConfigSchema] = None,
+    ins: Optional[Mapping[str, CoercibleToAssetIn]] = None,
 ) -> Callable[[Callable[..., Any]], AssetChecksDefinition]:
     """Defines a set of asset checks that can be executed together with the same op.
 
@@ -306,6 +307,8 @@ def multi_asset_check(
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that executes the checks.
         can_subset (bool): Whether the op can emit results for a subset of the asset checks
             keys, based on the context.selected_asset_check_keys argument. Defaults to False.
+        ins (Optional[Mapping[str, AssetKey]]): A mapping from input name to AssetKey depended upon by
+            a given asset check.
 
 
     Examples:
@@ -347,9 +350,13 @@ def multi_asset_check(
         }
         named_ins_by_asset_key = build_named_ins(
             fn=fn,
-            asset_ins={},
+            asset_ins={
+                input_name: AssetIn.from_coercible(coercible_in)
+                for input_name, coercible_in in (ins or {}).items()
+            },
             deps={spec.asset_key for spec in specs}
             | {dep.asset_key for spec in specs for dep in spec.additional_deps or []},
+            allow_ins_and_deps_coexistence=True,
         )
 
         with disable_dagster_warnings():

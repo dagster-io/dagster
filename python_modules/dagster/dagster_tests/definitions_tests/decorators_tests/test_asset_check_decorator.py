@@ -28,6 +28,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidSubsetError,
@@ -881,3 +882,136 @@ def test_multi_check_direct_invocation() -> None:
     assert results[0].passed
     assert not results[1].passed
     assert results[2].passed
+
+
+def test_multi_check_asset_with_inferred_inputs() -> None:
+    """Test automatic inference of asset inputs in a multi-check."""
+
+    @asset
+    def asset1() -> int:
+        return 4
+
+    @asset
+    def asset2() -> int:
+        return 5
+
+    @multi_asset_check(
+        specs=[
+            AssetCheckSpec("check1", asset=asset1),
+            AssetCheckSpec("check2", asset=asset2),
+        ]
+    )
+    def multi_check(asset1: int, asset2: int) -> Iterable[AssetCheckResult]:
+        yield AssetCheckResult(passed=asset1 == 4, asset_key="asset1", check_name="check1")
+        yield AssetCheckResult(passed=asset2 == 5, asset_key="asset2", check_name="check2")
+
+    result = execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[multi_check])
+    assert result.success
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 2
+    assert all(check_eval.passed for check_eval in check_evals)
+
+
+def test_multi_check_input_remapping() -> None:
+    """Test remapping an asset input to a different name in a multi-check."""
+
+    @asset
+    def asset1() -> int:
+        return 4
+
+    @asset
+    def asset2() -> int:
+        return 5
+
+    @multi_asset_check(
+        specs=[
+            AssetCheckSpec("check1", asset=asset1),
+            AssetCheckSpec("check2", asset=asset2),
+        ],
+        ins={"remapped": asset1.key},
+    )
+    def multi_check(remapped: int, asset2: int) -> Iterable[AssetCheckResult]:
+        yield AssetCheckResult(passed=remapped == 4, asset_key="asset1", check_name="check1")
+        yield AssetCheckResult(passed=asset2 == 5, asset_key="asset2", check_name="check2")
+
+    result = execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[multi_check])
+    assert result.success
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 2
+    assert all(check_eval.passed for check_eval in check_evals)
+
+
+def test_multi_check_input_remapping_with_context() -> None:
+    """Test remapping an asset input to a different name in a multi-check."""
+
+    @asset
+    def asset1() -> int:
+        return 4
+
+    @asset
+    def asset2() -> int:
+        return 5
+
+    @multi_asset_check(
+        specs=[
+            AssetCheckSpec("check1", asset=asset1),
+            AssetCheckSpec("check2", asset=asset2),
+        ],
+        ins={"remapped": asset1.key},
+    )
+    def multi_check(context, remapped: int, asset2: int) -> Iterable[AssetCheckResult]:
+        assert isinstance(context, AssetCheckExecutionContext)
+        yield AssetCheckResult(passed=remapped == 4, asset_key="asset1", check_name="check1")
+        yield AssetCheckResult(passed=asset2 == 5, asset_key="asset2", check_name="check2")
+
+    result = execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[multi_check])
+    assert result.success
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 2
+    assert all(check_eval.passed for check_eval in check_evals)
+
+
+def test_input_manager_overrides_multi_asset_check_decorator() -> None:
+    """Test overriding input manager key for a particular asset in a multi-check, ensure that it is correctly mapped."""
+
+    @asset
+    def asset1() -> int:
+        return 4
+
+    @asset
+    def asset2() -> int:
+        return 5
+
+    @multi_asset_check(
+        specs=[
+            AssetCheckSpec("check1", asset=asset1),
+            AssetCheckSpec("check2", asset=asset2),
+        ],
+        ins={"asset1": AssetIn(key="asset1", input_manager_key="override_manager")},
+    )
+    def my_check(asset1: int, asset2: int) -> Iterable[AssetCheckResult]:
+        yield AssetCheckResult(passed=asset1 == 4, asset_key="asset1", check_name="check1")
+        yield AssetCheckResult(passed=asset2 == 5, asset_key="asset2", check_name="check2")
+
+    called = []
+
+    class MyIOManager(IOManager):
+        def load_input(self, context) -> int:
+            called.append(context.asset_key)
+            return 4
+
+        def handle_output(self, context, obj) -> None:
+            raise NotImplementedError()
+
+    result = execute_assets_and_checks(
+        assets=[asset1, asset2],
+        asset_checks=[my_check],
+        resources={"override_manager": MyIOManager()},
+    )
+
+    assert result.success
+    assert called == [AssetKey("asset1")]
+    assert all(check_eval.passed for check_eval in result.get_asset_check_evaluations())
