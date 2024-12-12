@@ -61,15 +61,7 @@ def metadata_for_table(
     table_name = None
     if table_data.get("columns"):
         columns = check.dict_elem(table_data, "columns")
-        table_columns = sorted(
-            [
-                TableColumn(name=col["name_in_destination"], type="")
-                for col in columns.values()
-                if "name_in_destination" in col and col.get("enabled")
-            ],
-            key=lambda col: col.name,
-        )
-        column_schema = TableSchema(columns=table_columns)
+        column_schema = get_column_schema_for_columns(columns=columns)
 
         if include_column_info:
             metadata["column_info"] = MetadataValue.json(columns)
@@ -82,6 +74,18 @@ def metadata_for_table(
     }
 
     return metadata
+
+
+def get_column_schema_for_columns(columns: Mapping[str, Any]):
+    table_columns = sorted(
+        [
+            TableColumn(name=col["name_in_destination"], type="")
+            for col in columns.values()
+            if "name_in_destination" in col and col.get("enabled")
+        ],
+        key=lambda col: col.name,
+    )
+    return TableSchema(columns=table_columns)
 
 
 def _table_data_to_materialization(
