@@ -6,9 +6,9 @@ import click
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils import pushd
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-from dagster_embedded_elt.sling.resources import AssetExecutionContext
 from dbt.cli.main import dbtRunner
 from jinja2 import Template
 from pydantic import BaseModel, Field, TypeAdapter
