@@ -224,6 +224,7 @@ dbt_project = DbtProject(
     project_dir=Path(__file__).joinpath("..", "..", "dbt_project").resolve(),
     target=os.getenv("DBT_TARGET"),
 )
+dbt_project.prepare_if_dev()
 dbt_resource = DbtCliResource(project_dir=dbt_project)
 
 class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
@@ -232,6 +233,14 @@ class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         if asset_path:
             return "_".join(asset_path)
         return "default"
+    
+    def get_asset_key(self, dbt_resource_props):
+        resource_type = dbt_resource_props["resource_type"]
+        name = dbt_resource_props["name"]
+        if resource_type == "source":
+            return dg.AssetKey(name)
+        else:
+            return super().get_asset_key(dbt_resource_props)
 
 
 @dbt_assets(
