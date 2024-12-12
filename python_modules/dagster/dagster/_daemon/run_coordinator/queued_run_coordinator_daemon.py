@@ -269,6 +269,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         batch,
                         in_progress_run_records,
                         run_queue_config.op_concurrency_slot_buffer,
+                        run_queue_config.concurrency_group_granularity,
                     )
                 except:
                     self._logger.exception("Failed to initialize op concurrency counter")

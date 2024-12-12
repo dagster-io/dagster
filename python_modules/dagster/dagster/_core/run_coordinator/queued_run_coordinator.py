@@ -1,4 +1,5 @@
 import logging
+from enum import Enum
 from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
 from typing_extensions import Self
@@ -19,6 +20,11 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 
+class ConcurrencyGranularity(Enum):
+    OP = "op"
+    RUN = "run"
+
+
 class RunQueueConfig(
     NamedTuple(
         "_RunQueueConfig",
@@ -29,6 +35,7 @@ class RunQueueConfig(
             ("user_code_failure_retry_delay", int),
             ("should_block_op_concurrency_limited_runs", bool),
             ("op_concurrency_slot_buffer", int),
+            ("concurrency_group_granularity", ConcurrencyGranularity),
         ],
     )
 ):
@@ -40,6 +47,7 @@ class RunQueueConfig(
         user_code_failure_retry_delay: int = 60,
         should_block_op_concurrency_limited_runs: bool = False,
         op_concurrency_slot_buffer: int = 0,
+        concurrency_group_granularity: ConcurrencyGranularity = ConcurrencyGranularity.OP,
     ):
         return super(RunQueueConfig, cls).__new__(
             cls,
@@ -51,6 +59,11 @@ class RunQueueConfig(
                 should_block_op_concurrency_limited_runs, "should_block_op_concurrency_limited_runs"
             ),
             check.int_param(op_concurrency_slot_buffer, "op_concurrency_slot_buffer"),
+            check.inst_param(
+                concurrency_group_granularity,
+                "concurrency_group_granularity",
+                ConcurrencyGranularity,
+            ),
         )
 
 
