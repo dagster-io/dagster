@@ -94,6 +94,7 @@ class Daemon(BaseModel, extra="forbid"):
     podSecurityContext: kubernetes.PodSecurityContext
     securityContext: kubernetes.SecurityContext
     resources: kubernetes.Resources
+    checkDbReadyInitContainer: Optional[bool] = None
     livenessProbe: kubernetes.LivenessProbe
     readinessProbe: kubernetes.ReadinessProbe
     startupProbe: kubernetes.StartupProbe

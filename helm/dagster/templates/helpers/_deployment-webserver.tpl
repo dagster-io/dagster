@@ -47,6 +47,7 @@ spec:
       securityContext:
         {{- toYaml $_.Values.dagsterWebserver.podSecurityContext | nindent 8 }}
       initContainers:
+        {{- if .Values.dagsterWebserver.checkDbReadyInitContainer }}
         - name: check-db-ready
           image: {{ include "dagster.externalImage.name" .Values.postgresql.image | quote }}
           imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
@@ -57,6 +58,7 @@ spec:
           resources:
             {{- toYaml $_.Values.dagsterWebserver.initContainerResources | nindent 12 }}
           {{- end }}
+        {{- end }}
         {{- if (and $userDeployments.enabled $userDeployments.enableSubchart) }}
         {{- range $deployment := $userDeployments.deployments }}
         - name: "init-user-deployment-{{- $deployment.name -}}"
