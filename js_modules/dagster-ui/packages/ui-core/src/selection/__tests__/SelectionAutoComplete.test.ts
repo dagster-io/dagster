@@ -3,9 +3,9 @@ import {Hint, Hints, Position} from 'codemirror';
 import {createSelectionHint} from '../SelectionAutoComplete';
 
 describe('createAssetSelectionHint', () => {
-  const selectionHint = createSelectionHint(
-    'key',
-    {
+  const selectionHint = createSelectionHint({
+    nameBase: 'key',
+    attributesMap: {
       key: ['asset1', 'asset2', 'asset3'],
       tag: ['tag1', 'tag2', 'tag3'],
       owner: ['marco@dagsterlabs.com', 'team:frontend'],
@@ -13,8 +13,8 @@ describe('createAssetSelectionHint', () => {
       kind: ['kind1', 'kind2'],
       code_location: ['repo1@location1', 'repo2@location2'],
     },
-    ['sinks', 'roots'],
-  );
+    functions: ['sinks', 'roots'],
+  });
 
   type HintsModified = Omit<Hints, 'list'> & {
     list: Array<Hint>;
@@ -816,6 +816,67 @@ describe('createAssetSelectionHint', () => {
         {text: '"asset3"', displayText: 'asset3'},
       ],
       to: 60,
+    });
+  });
+
+  it('handles complex ands/ors', () => {
+    expect(testAutocomplete('key:"value"* or tag:"value"+ and owner:"owner" and |')).toEqual({
+      from: 51,
+      list: [
+        {
+          displayText: 'key_substring:',
+          text: 'key_substring:',
+        },
+        {
+          displayText: 'key:',
+          text: 'key:',
+        },
+        {
+          displayText: 'tag:',
+          text: 'tag:',
+        },
+        {
+          displayText: 'owner:',
+          text: 'owner:',
+        },
+        {
+          displayText: 'group:',
+          text: 'group:',
+        },
+        {
+          displayText: 'kind:',
+          text: 'kind:',
+        },
+        {
+          displayText: 'code_location:',
+          text: 'code_location:',
+        },
+        {
+          displayText: 'sinks()',
+          text: 'sinks()',
+        },
+        {
+          displayText: 'roots()',
+          text: 'roots()',
+        },
+        {
+          displayText: 'not',
+          text: 'not ',
+        },
+        {
+          displayText: '*',
+          text: '*',
+        },
+        {
+          displayText: '+',
+          text: '+',
+        },
+        {
+          displayText: '(',
+          text: '()',
+        },
+      ],
+      to: 51,
     });
   });
 });
