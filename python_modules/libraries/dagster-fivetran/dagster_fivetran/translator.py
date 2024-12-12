@@ -251,6 +251,8 @@ class FivetranWorkspaceData:
 
 class FivetranMetadataSet(NamespacedMetadataSet):
     connector_id: Optional[str] = None
+    destination_schema_name: Optional[str] = None
+    destination_table_name: Optional[str] = None
 
     @classmethod
     def namespace(cls) -> str:
@@ -284,7 +286,14 @@ class DagsterFivetranTranslator:
             table=table_name,
         )
 
-        augmented_metadata = {**metadata, **FivetranMetadataSet(connector_id=props.connector_id)}
+        augmented_metadata = {
+            **metadata,
+            **FivetranMetadataSet(
+                connector_id=props.connector_id,
+                destination_schema_name=schema_name,
+                destination_table_name=table_name,
+            ),
+        }
 
         return AssetSpec(
             key=AssetKey(props.table.split(".")),
