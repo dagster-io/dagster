@@ -100,6 +100,8 @@ def isolated_example_code_location_bar_with_component_type_baz(
     runner: CliRunner, in_deployment: bool = True
 ) -> Iterator[None]:
     with isolated_example_code_location_bar(runner, in_deployment):
+        with open("bar/lib/__init__.py", "a") as f:
+            f.write("from bar.lib.baz import Baz\n")
         with open("bar/lib/baz.py", "w") as f:
             component_type_source = textwrap.dedent(
                 inspect.getsource(_example_component_type_baz).split("\n", 1)[1]

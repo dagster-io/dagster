@@ -115,7 +115,7 @@ def generate_component_type_command(name: str) -> None:
         click.echo(click.style(f"A component type named `{name}` already exists.", fg="red"))
         sys.exit(1)
 
-    generate_component_type(Path(context.component_types_root_path), name)
+    generate_component_type(context, name)
 
 
 @generate_cli.command(name="component")
