@@ -2642,19 +2642,28 @@ def test_old_dynamic_partitions_job_backfill(
     assert instance.get_runs_count() == 4
 
 
-def test_asset_backfill_logs(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    remote_repo: RemoteRepository,
-):
-    # need to override this method on the instance since it defaults ot False in OSS. When we enable this
-    # feature in OSS we can remove this override
+@pytest.fixture
+def instance_with_backfill_log_storage_enabled(instance):
     def override_backfill_storage_setting(self):
         return True
 
-    instance.backfill_log_storage_enabled = override_backfill_storage_setting.__get__(
-        instance, DagsterInstance
-    )
+    orig_backfill_storage_setting = instance.backfill_log_storage_enabled
+
+    try:
+        instance.backfill_log_storage_enabled = override_backfill_storage_setting.__get__(
+            instance, DagsterInstance
+        )
+        yield instance
+    finally:
+        instance.backfill_log_storage_enabled = orig_backfill_storage_setting
+
+
+def test_asset_backfill_logs(
+    instance_with_backfill_log_storage_enabled: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    instance = instance_with_backfill_log_storage_enabled
 
     partition_keys = static_partitions.get_partition_keys()
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
