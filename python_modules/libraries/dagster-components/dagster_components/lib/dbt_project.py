@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field, TypeAdapter
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component import component
+from dagster_components.core.component import GenerateComponentRequest, component
 from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
 from dagster_components.core.dsl_schema import OpSpecBaseModel
 
@@ -115,7 +115,9 @@ class DbtProjectComponent(Component):
         return Definitions(assets=[_fn])
 
     @classmethod
-    def generate_files(cls, params: DbtGenerateParams) -> Mapping[str, Any]:
+    def generate_files(
+        cls, request: GenerateComponentRequest, params: DbtGenerateParams
+    ) -> Mapping[str, Any]:
         cwd = os.getcwd()
         if params.project_path:
             # NOTE: CWD is not set "correctly" above so we prepend "../../.." as a temporary hack to

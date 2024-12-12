@@ -4,6 +4,7 @@ from dagster_components.core.component import (
     Component as Component,
     ComponentLoadContext as ComponentLoadContext,
     ComponentRegistry as ComponentRegistry,
+    GenerateComponentRequest as GenerateComponentRequest,
     component as component,
 )
 from dagster_components.core.component_defs_builder import (
