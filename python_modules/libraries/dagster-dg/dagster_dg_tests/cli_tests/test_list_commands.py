@@ -55,9 +55,7 @@ def test_list_component_types_success():
             result.output
             == "\n".join(
                 [
-                    "dagster_components.dbt_project",
                     "dagster_components.pipes_subprocess_script_collection",
-                    "dagster_components.sling_replication",
                 ]
             )
             + "\n"

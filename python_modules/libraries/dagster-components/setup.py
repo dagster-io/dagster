@@ -36,7 +36,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_components_tests*", "examples*"]),
     install_requires=[
-        f"dagster{pin}",
+        "dagster>=1.9.5",
         "tomli",
     ],
     zip_safe=False,
