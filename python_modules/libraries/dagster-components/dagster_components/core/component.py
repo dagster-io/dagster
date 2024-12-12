@@ -88,16 +88,12 @@ class ComponentRegistry:
         return f"<ComponentRegistry {list(self._components.keys())}>"
 
 
-def get_registered_components_in_module(root_module: ModuleType) -> Iterable[Type[Component]]:
-    from dagster._core.definitions.load_assets_from_modules import (
-        find_modules_in_package,
-        find_subclasses_in_module,
-    )
+def get_registered_components_in_module(module: ModuleType) -> Iterable[Type[Component]]:
+    from dagster._core.definitions.load_assets_from_modules import find_subclasses_in_module
 
-    for module in find_modules_in_package(root_module):
-        for component in find_subclasses_in_module(module, (Component,)):
-            if is_registered_component(component):
-                yield component
+    for component in find_subclasses_in_module(module, (Component,)):
+        if is_registered_component(component):
+            yield component
 
 
 class ComponentLoadContext:
