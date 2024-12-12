@@ -3,6 +3,7 @@ import * as React from 'react';
 import {LogsProviderLogs} from './LogsProvider';
 import {RunContext} from './RunContext';
 import {gql} from '../apollo-client';
+import {flattenOneLevel} from '../util/flattenOneLevel';
 import {RunFragment} from './types/RunFragments.types';
 import {RunMetadataProviderMessageFragment} from './types/RunMetadataProvider.types';
 import {StepEventStatus} from '../graphql/types';
@@ -371,7 +372,8 @@ export const RunMetadataProvider = ({logs, children}: IRunMetadataProviderProps)
   const run = React.useContext(RunContext);
   const runMetadata = React.useMemo(() => extractMetadataFromRun(run), [run]);
   const metadata = React.useMemo(
-    () => (logs.loading ? runMetadata : extractMetadataFromLogs(logs.allNodes)),
+    () =>
+      logs.loading ? runMetadata : extractMetadataFromLogs(flattenOneLevel(logs.allNodeChunks)),
     [logs, runMetadata],
   );
   return <>{children(metadata)}</>;
