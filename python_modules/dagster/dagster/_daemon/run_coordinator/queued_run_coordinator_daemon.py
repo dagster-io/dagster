@@ -5,7 +5,7 @@ import time
 from collections.abc import Iterable, Iterator, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
-from typing import Optional
+from typing import Optional, cast
 
 from dagster import (
     DagsterEvent,
@@ -78,11 +78,17 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         workspace_process_context: IWorkspaceProcessContext,
         fixed_iteration_time: Optional[float] = None,  # used for tests
     ) -> DaemonIterator:
-        run_coordinator = workspace_process_context.instance.run_coordinator
-        run_queue_config = workspace_process_context.instance.get_run_queue_config()
-        if not isinstance(run_coordinator, QueuedRunCoordinator):
-            check.failed(f"Expected QueuedRunCoordinator, got {run_coordinator}")
-
+        if not isinstance(workspace_process_context.instance.run_coordinator, QueuedRunCoordinator):
+            check.failed(
+                f"Expected QueuedRunCoordinator, got {workspace_process_context.instance.run_coordinator}"
+            )
+        run_coordinator = cast(
+            QueuedRunCoordinator, workspace_process_context.instance.run_coordinator
+        )
+        run_queue_config = (
+            workspace_process_context.instance.get_run_queue_config()
+            or run_coordinator.get_run_queue_config()
+        )
         if not run_queue_config:
             check.failed("Got invalid run queue config")
 
@@ -272,6 +278,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         batch,
                         in_progress_run_records,
                         run_queue_config.op_concurrency_slot_buffer,
+                        run_queue_config.pool_granularity,
                     )
                 except:
                     self._logger.exception("Failed to initialize op concurrency counter")
