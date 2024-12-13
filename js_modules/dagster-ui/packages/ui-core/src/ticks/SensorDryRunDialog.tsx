@@ -32,6 +32,7 @@ import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
+import {useTrackEvent} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {SensorSelector} from '../graphql/types';
 import {useLaunchMultipleRunsWithTelemetry} from '../launchpad/useLaunchMultipleRunsWithTelemetry';
@@ -74,6 +75,8 @@ export const SensorDryRunDialog = (props: Props) => {
 };
 
 const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Props) => {
+  const trackEvent = useTrackEvent();
+
   const [sensorDryRun] = useMutation<SensorDryRunMutation, SensorDryRunMutationVariables>(
     EVALUATE_SENSOR_MUTATION,
   );
@@ -187,6 +190,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     if (!canLaunchAll) {
       return;
     }
+
+    trackEvent('launch-all-sensor');
     setLaunching(true);
 
     try {
@@ -206,6 +211,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     launchMultipleRunsWithTelemetry,
     onClose,
     onCommitTickResult,
+    trackEvent,
   ]);
 
   const leftButtons = useMemo(() => {
