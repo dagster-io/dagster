@@ -239,16 +239,3 @@ To make environment variables to a full deployment with a Kubernetes agent, you'
 
 </TabItem>
 </Tabs>
-
-## Related
-
-<!--<ArticleList>-->
-<!--  <ArticleListItem-->
-<!--    title="Dagster+ environment variables and secrets"-->
-<!--    href="/dagster-plus/managing-deployments/environment-variables-and-secrets"-->
-<!--  ></ArticleListItem>-->
-<!--  <ArticleListItem-->
-<!--    title="Using environment variables and secrets in Dagster code"-->
-<!--    href="/guides/dagster/using-environment-variables-and-secrets"-->
-<!--  ></ArticleListItem>-->
-<!--</ArticleList>-->
