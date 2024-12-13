@@ -48,7 +48,7 @@ def find_subclasses_in_module(
 
 
 def assets_from_modules(
-    modules: Iterable[ModuleType], extra_source_assets: Optional[Sequence[SourceAsset]] = None
+    modules: Iterable[ModuleType],
 ) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
     """Constructs three lists, a list of assets, a list of source assets, and a list of cacheable
     assets from the given modules.
@@ -65,9 +65,7 @@ def assets_from_modules(
     """
     asset_ids: Set[int] = set()
     asset_keys: Dict[AssetKey, ModuleType] = dict()
-    source_assets: List[SourceAsset] = list(
-        check.opt_sequence_param(extra_source_assets, "extra_source_assets", of_type=SourceAsset)
-    )
+    source_assets: List[SourceAsset] = []
     cacheable_assets: List[CacheableAssetsDefinition] = []
     assets: Dict[AssetKey, AssetsDefinition] = {}
     for module in modules:
@@ -220,7 +218,6 @@ def load_assets_from_current_module(
 
 def assets_from_package_module(
     package_module: ModuleType,
-    extra_source_assets: Optional[Sequence[SourceAsset]] = None,
 ) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
     """Constructs three lists, a list of assets, a list of source assets, and a list of cacheable assets
     from the given package module.
@@ -235,9 +232,7 @@ def assets_from_package_module(
             A tuple containing a list of assets, a list of source assets, and a list of cacheable assets
             defined in the given modules.
     """
-    return assets_from_modules(
-        find_modules_in_package(package_module), extra_source_assets=extra_source_assets
-    )
+    return assets_from_modules(find_modules_in_package(package_module))
 
 
 def load_assets_from_package_module(
