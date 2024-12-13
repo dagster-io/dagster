@@ -94,3 +94,7 @@ Before:
 After:
 
 _There is not a replacement at this point in time..._
+
+### Whitespace via `{" "}`
+
+Forcing empty space using the `{" "}` interpolation is not supported, and must be removed.
