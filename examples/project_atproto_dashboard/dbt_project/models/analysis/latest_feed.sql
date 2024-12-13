@@ -1,28 +1,52 @@
-WITH max_update as (
-	SELECT 
-		max(strptime(regexp_extract(filename, 'dagster-demo/atproto_actor_feed_snapshot/(\d{4}-\d{2}-\d{2}/\d{2}/\d{2})', 1), '%Y-%m-%d/%H/%M')) as max_extracted_timestamp,
-	    regexp_extract(filename, 'did:(.*?)\.json') as profile_id
-	FROM {{ref("stg_feed_snapshots")}}
-	GROUP BY
-		regexp_extract(filename, 'did:(.*?)\.json')
+WITH max_update AS (
+    SELECT
+        max(
+            strptime(
+                regexp_extract(
+                    filename,
+                    'dagster-demo/atproto_actor_feed_snapshot/(\d{4}-\d{2}-\d{2}/\d{2}/\d{2})',
+                    1
+                ),
+                '%Y-%m-%d/%H/%M'
+            )
+        ) AS max_extracted_timestamp,
+        regexp_extract(filename, 'did:(.*?)\.json') AS profile_id
+    FROM {{ ref("stg_feed_snapshots") }}
+    GROUP BY
+        regexp_extract(filename, 'did:(.*?)\.json')
 ),
-final as (
-    SELECT 
-        json_extract_string(sfs.json, '$.post.author.handle') as author_handle,
-        CAST(sfs.json.post.like_count as int) as likes,
-        CAST(sfs.json.post.quote_count as int) as quotes,
-        CAST(sfs.json.post.reply_count as int) as replies,
-        sfs.json.post.record.text as post_text,
+
+final AS (
+    SELECT
+        json_extract_string(sfs.json, '$.post.author.handle') AS author_handle,
+        cast(sfs.json.post.like_count AS int) AS likes,
+        cast(sfs.json.post.quote_count AS int) AS quotes,
+        cast(sfs.json.post.reply_count AS int) AS replies,
+        sfs.json.post.record.text AS post_text,
         sfs.json.post.record.embed,
-        json_extract_string(sfs.json, '$.post.record.embed.external.description') as external_embed_description,
-        json_extract_string(sfs.json, '$.post.record.embed.external.uri') as external_embed_link,
-        sfs.json.post.record.embed.external.thumb as external_embed_thumbnail,
-        cast(sfs.json.post.record.created_at as timestamp) as created_at,
+        json_extract_string(
+            sfs.json, '$.post.record.embed.external.description'
+        ) AS external_embed_description,
+        json_extract_string(sfs.json, '$.post.record.embed.external.uri')
+            AS external_embed_link,
+        sfs.json.post.record.embed.external.thumb AS external_embed_thumbnail,
+        cast(sfs.json.post.record.created_at AS timestamp) AS created_at,
         max_update.max_extracted_timestamp,
         max_update.profile_id
-    FROM {{ref("stg_feed_snapshots")}} sfs
+    FROM {{ ref("stg_feed_snapshots") }} sfs
     JOIN max_update
-        ON max_update.profile_id = regexp_extract(sfs.filename, 'did:(.*?)\.json')
-        AND max_update.max_extracted_timestamp = strptime(regexp_extract(sfs.filename, 'dagster-demo/atproto_actor_feed_snapshot/(\d{4}-\d{2}-\d{2}/\d{2}/\d{2})', 1), '%Y-%m-%d/%H/%M')
+        ON
+            max_update.profile_id
+            = regexp_extract(sfs.filename, 'did:(.*?)\.json')
+            AND max_update.max_extracted_timestamp
+            = strptime(
+                regexp_extract(
+                    sfs.filename,
+                    'dagster-demo/atproto_actor_feed_snapshot/(\d{4}-\d{2}-\d{2}/\d{2}/\d{2})',
+                    1
+                ),
+                '%Y-%m-%d/%H/%M'
+            )
 )
+
 SELECT * FROM final
