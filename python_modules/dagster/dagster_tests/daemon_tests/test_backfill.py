@@ -682,14 +682,6 @@ def test_two_backfills_at_the_same_time(
                 backfill_futures=backfill_daemon_futures,
             )
         )
-        list(
-            execute_backfill_iteration(
-                workspace_context,
-                get_default_daemon_logger("BackfillDaemon"),
-                threadpool_executor=threadpool_executor,
-                backfill_futures=backfill_daemon_futures,
-            )
-        )
 
         time.sleep(0.5)
         wait_for_futures(backfill_daemon_futures)
