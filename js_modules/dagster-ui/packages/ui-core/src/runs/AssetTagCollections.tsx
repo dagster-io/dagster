@@ -24,6 +24,14 @@ import {TagActionsPopover} from '../ui/TagActions';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../ui/formatters';
 
+const sortItemAssetKey = (a: AssetKey, b: AssetKey) => {
+  return displayNameForAssetKey(a).localeCompare(displayNameForAssetKey(b));
+};
+
+const sortItemAssetCheck = (a: Check, b: Check) => {
+  return labelForAssetCheck(a).localeCompare(labelForAssetCheck(b));
+};
+
 const renderItemAssetKey = (assetKey: AssetKey) => (
   <Link to={assetDetailsPathForKey(assetKey)} style={{display: 'block', width: '100%'}}>
     <MiddleTruncate text={displayNameForAssetKey(assetKey)} />
@@ -44,11 +52,18 @@ function useShowMoreDialog<T>(
   dialogTitle: string,
   items: T[] | null,
   renderItem: (item: T) => React.ReactNode,
+  sortFn?: (a: T, b: T) => number,
 ) {
   const [showMore, setShowMore] = React.useState(false);
 
+  let itemsToRender = items;
+
+  if (sortFn && items) {
+    itemsToRender = [...items].sort(sortFn);
+  }
+
   const dialog =
-    !!items && items.length > 1 ? (
+    !!itemsToRender && itemsToRender.length > 1 ? (
       <Dialog
         title={dialogTitle}
         onClose={() => setShowMore(false)}
@@ -56,7 +71,7 @@ function useShowMoreDialog<T>(
         isOpen={showMore}
       >
         <div style={{height: '500px', overflow: 'hidden'}}>
-          <VirtualizedItemListForDialog items={items} renderItem={renderItem} />
+          <VirtualizedItemListForDialog items={itemsToRender} renderItem={renderItem} />
         </div>
         <DialogFooter topBorder>
           <Button intent="primary" autoFocus onClick={() => setShowMore(false)}>
@@ -149,7 +164,12 @@ export function useAdjustChildVisibilityToFill(moreLabelFn: (count: number) => s
 
 export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionProps) => {
   const {assetKeys, useTags, maxRows, dialogTitle = 'Assets in run'} = props;
-  const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, assetKeys, renderItemAssetKey);
+  const {setShowMore, dialog} = useShowMoreDialog(
+    dialogTitle,
+    assetKeys,
+    renderItemAssetKey,
+    sortItemAssetKey,
+  );
 
   const count = assetKeys?.length ?? 0;
   const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
@@ -263,7 +283,12 @@ interface AssetCheckTagCollectionProps {
 
 export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectionProps) => {
   const {assetChecks, maxRows, useTags, dialogTitle = 'Asset checks in run'} = props;
-  const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, assetChecks, renderItemAssetCheck);
+  const {setShowMore, dialog} = useShowMoreDialog(
+    dialogTitle,
+    assetChecks,
+    renderItemAssetCheck,
+    sortItemAssetCheck,
+  );
 
   const count = assetChecks?.length ?? 0;
   const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
