@@ -44,8 +44,19 @@ def generate_deployment_command(path: Path) -> None:
 
 @generate_cli.command(name="code-location")
 @click.argument("name", type=str)
-@click.option("--use-editable-dagster", is_flag=True, default=False)
-def generate_code_location_command(name: str, use_editable_dagster: bool) -> None:
+@click.option(
+    "--use-editable-dagster",
+    type=str,
+    flag_value="TRUE",
+    is_flag=False,
+    default=None,
+    help=(
+        "Install Dagster package dependencies from a local Dagster clone. Accepts a path to local Dagster clone root or"
+        " may be set as a flag (no value is passed). If set as a flag,"
+        " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
+    ),
+)
+def generate_code_location_command(name: str, use_editable_dagster: Optional[str]) -> None:
     """Generate a Dagster code location file structure and a uv-managed virtual environment scoped
     to the code location.
 
@@ -78,8 +89,8 @@ def generate_code_location_command(name: str, use_editable_dagster: bool) -> Non
     else:
         code_location_path = Path.cwd() / name
 
-    if use_editable_dagster:
-        if "DAGSTER_GIT_REPO_DIR" not in os.environ:
+    if use_editable_dagster == "TRUE":
+        if not os.environ.get("DAGSTER_GIT_REPO_DIR"):
             click.echo(
                 click.style(
                     "The `--use-editable-dagster` flag requires the `DAGSTER_GIT_REPO_DIR` environment variable to be set.",
@@ -88,6 +99,8 @@ def generate_code_location_command(name: str, use_editable_dagster: bool) -> Non
             )
             sys.exit(1)
         editable_dagster_root = os.environ["DAGSTER_GIT_REPO_DIR"]
+    elif use_editable_dagster:  # a string value was passed
+        editable_dagster_root = use_editable_dagster
     else:
         editable_dagster_root = None
 

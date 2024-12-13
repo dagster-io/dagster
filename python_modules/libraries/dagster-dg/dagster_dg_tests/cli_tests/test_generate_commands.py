@@ -1,6 +1,7 @@
 import inspect
 import json
 import os
+import subprocess
 import sys
 import textwrap
 from contextlib import contextmanager
@@ -72,14 +73,21 @@ def isolated_example_deployment_foo(runner: CliRunner) -> Iterator[None]:
 def isolated_example_code_location_bar(
     runner: CliRunner, in_deployment: bool = True
 ) -> Iterator[None]:
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     if in_deployment:
         with isolated_example_deployment_foo(runner), clean_module_cache("bar"):
-            runner.invoke(generate_code_location_command, ["bar"])
+            runner.invoke(
+                generate_code_location_command,
+                ["--use-editable-dagster", dagster_git_repo_dir, "bar"],
+            )
             with pushd("code_locations/bar"):
                 yield
     else:
         with runner.isolated_filesystem(), clean_module_cache("bar"):
-            runner.invoke(generate_code_location_command, ["bar"])
+            runner.invoke(
+                generate_code_location_command,
+                ["--use-editable-dagster", dagster_git_repo_dir, "bar"],
+            )
             with pushd("bar"):
                 yield
 
@@ -148,12 +156,11 @@ def test_generate_code_location_inside_deployment_success() -> None:
         assert Path("code_locations/bar/.venv").exists()
         assert Path("code_locations/bar/uv.lock").exists()
 
-        # Commented out because we are always adding sources right now
-        # with open("code_locations/bar/pyproject.toml") as f:
-        #     toml = tomli.loads(f.read())
-        #
-        #     # No tool.uv.sources added without --use-editable-dagster
-        #     assert "uv" not in toml["tool"]
+        with open("code_locations/bar/pyproject.toml") as f:
+            toml = tomli.loads(f.read())
+
+            # No tool.uv.sources added without --use-editable-dagster
+            assert "uv" not in toml["tool"]
 
 
 def test_generate_code_location_outside_deployment_success() -> None:
@@ -173,12 +180,17 @@ def test_generate_code_location_outside_deployment_success() -> None:
         assert Path("bar/uv.lock").exists()
 
 
-def test_generate_code_location_editable_dagster_success(monkeypatch) -> None:
+@pytest.mark.parametrize("mode", ["env_var", "arg"])
+def test_generate_code_location_editable_dagster_success(mode: str, monkeypatch) -> None:
     runner = CliRunner()
     dagster_git_repo_dir = discover_git_root(Path(__file__))
-    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
+    if mode == "env_var":
+        monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
+        editable_args = ["--use-editable-dagster", "--"]
+    else:
+        editable_args = ["--use-editable-dagster", str(dagster_git_repo_dir)]
     with isolated_example_deployment_foo(runner):
-        result = runner.invoke(generate_code_location_command, ["--use-editable-dagster", "bar"])
+        result = runner.invoke(generate_code_location_command, [*editable_args, "bar"])
         assert result.exit_code == 0
         assert Path("code_locations/bar").exists()
         assert Path("code_locations/bar/pyproject.toml").exists()
@@ -200,6 +212,17 @@ def test_generate_code_location_editable_dagster_success(monkeypatch) -> None:
                 "path": f"{dagster_git_repo_dir}/python_modules/libraries/dagster-components",
                 "editable": True,
             }
+
+
+def test_generate_code_location_editable_dagster_no_env_var_no_value_fails(monkeypatch) -> None:
+    runner = CliRunner()
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", "")
+    with isolated_example_deployment_foo(runner):
+        result = runner.invoke(
+            generate_code_location_command, ["--use-editable-dagster", "--", "bar"]
+        )
+        assert result.exit_code != 0
+        assert "requires the `DAGSTER_GIT_REPO_DIR`" in result.output
 
 
 def test_generate_code_location_already_exists_fails() -> None:
@@ -326,6 +349,11 @@ def test_generate_component_already_exists_fails(in_deployment: bool) -> None:
 def test_generate_sling_replication_instance() -> None:
     runner = CliRunner()
     with isolated_example_code_location_bar(runner):
+        # We need to add dagster-embedded-elt also because we are using editable installs. Only
+        # direct dependencies will be resolved by uv.tool.sources.
+        subprocess.run(
+            ["uv", "add", "dagster-components[sling]", "dagster-embedded-elt"], check=True
+        )
         result = runner.invoke(
             generate_component_command, ["dagster_components.sling_replication", "file_ingest"]
         )
@@ -354,6 +382,9 @@ dbt_project_path = "../stub_code_locations/dbt_project_location/components/jaffl
 def test_generate_dbt_project_instance(params) -> None:
     runner = CliRunner()
     with isolated_example_code_location_bar(runner):
+        # We need to add dagster-dbt also because we are using editable installs. Only
+        # direct dependencies will be resolved by uv.tool.sources.
+        subprocess.run(["uv", "add", "dagster-components[dbt]", "dagster-dbt"], check=True)
         result = runner.invoke(
             generate_component_command, ["dagster_components.dbt_project", "my_project", *params]
         )
