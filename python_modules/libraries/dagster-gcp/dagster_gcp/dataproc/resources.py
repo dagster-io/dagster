@@ -172,7 +172,14 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         )
     )
     region: str = Field(description="The GCP region.")
+    cluster_name: str = Field(
+        description=(
+            "Required. The cluster name. Cluster names within a project must be unique. Names of"
+            " deleted clusters can be reused."
+        )
+    )
     labels: Optional[dict[str, str]] = Field(
+        default=None,
         description=(
             "Optional. The labels to associate withthis cluster. Label keys must"
             " contain 1 to 63 characters, and must conform to RFC 1035"
@@ -181,12 +188,6 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             " (https://www.ietf.org/rfc/rfc1035.txt). No more than 32 labels can be associated"
             " with a cluster."
         ),
-    )
-    cluster_name: str = Field(
-        description=(
-            "Required. The cluster name. Cluster names within a project must be unique. Names of"
-            " deleted clusters can be reused."
-        )
     )
     cluster_config_yaml_path: Optional[str] = Field(
         default=None,
