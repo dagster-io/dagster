@@ -20,7 +20,7 @@ from dagster_components.core.component import (
     component,
 )
 from dagster_components.core.component_rendering import RenderingScope
-from dagster_components.core.dsl_schema import AssetSpecProcessorModel, OpSpecBaseModel
+from dagster_components.core.dsl_schema import AssetAttributes, AssetSpecProcessor, OpSpecBaseModel
 from dagster_components.generate import generate_component_yaml
 
 
@@ -35,7 +35,7 @@ class DbtProjectParams(BaseModel):
     translator: Optional[DbtNodeTranslatorParams] = RenderingScope(
         Field(default=None), required_scope={"node"}
     )
-    asset_attributes: Optional[Sequence[AssetSpecProcessorModel]] = None
+    asset_attributes: Optional[AssetAttributes] = None
 
 
 class DbtGenerateParams(BaseModel):
@@ -89,12 +89,12 @@ class DbtProjectComponent(Component):
         dbt_resource: DbtCliResource,
         op_spec: Optional[OpSpecBaseModel],
         dbt_translator: Optional[DagsterDbtTranslator],
-        asset_transforms: Sequence[AssetSpecProcessorModel],
+        asset_processors: Sequence[AssetSpecProcessor],
     ):
         self.dbt_resource = dbt_resource
         self.op_spec = op_spec
         self.dbt_translator = dbt_translator
-        self.asset_transforms = asset_transforms
+        self.asset_processors = asset_processors
 
     @classmethod
     def load(cls, context: ComponentLoadContext) -> Self:
@@ -109,7 +109,7 @@ class DbtProjectComponent(Component):
                 translator_params=loaded_params.translator,
                 value_resolver=context.templated_value_resolver,
             ),
-            asset_transforms=loaded_params.asset_attributes or [],
+            asset_processors=loaded_params.asset_attributes or [],
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -127,8 +127,8 @@ class DbtProjectComponent(Component):
             yield from self.execute(context=context, dbt=self.dbt_resource)
 
         defs = Definitions(assets=[_fn])
-        for transform in self.asset_transforms:
-            defs = transform.transform(defs)
+        for transform in self.asset_processors:
+            defs = transform.apply(defs)
         return defs
 
     @classmethod

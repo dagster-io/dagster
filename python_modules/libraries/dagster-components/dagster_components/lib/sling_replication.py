@@ -13,14 +13,14 @@ from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import ComponentGenerateRequest, component
-from dagster_components.core.dsl_schema import AssetSpecProcessorModel, OpSpecBaseModel
+from dagster_components.core.dsl_schema import AssetAttributes, AssetSpecProcessor, OpSpecBaseModel
 from dagster_components.generate import generate_component_yaml
 
 
 class SlingReplicationParams(BaseModel):
     sling: Optional[SlingResource] = None
     op: Optional[OpSpecBaseModel] = None
-    asset_attributes: Optional[Sequence[AssetSpecProcessorModel]] = None
+    asset_attributes: Optional[AssetAttributes] = None
 
 
 @component(name="sling_replication")
@@ -32,12 +32,12 @@ class SlingReplicationComponent(Component):
         dirpath: Path,
         resource: SlingResource,
         op_spec: Optional[OpSpecBaseModel],
-        asset_transforms: Sequence[AssetSpecProcessorModel],
+        asset_processors: Sequence[AssetSpecProcessor],
     ):
         self.dirpath = dirpath
         self.resource = resource
         self.op_spec = op_spec
-        self.asset_transforms = asset_transforms
+        self.asset_processors = asset_processors
 
     @classmethod
     def load(cls, context: ComponentLoadContext) -> Self:
@@ -46,7 +46,7 @@ class SlingReplicationComponent(Component):
             dirpath=context.path,
             resource=loaded_params.sling or SlingResource(),
             op_spec=loaded_params.op,
-            asset_transforms=loaded_params.asset_attributes or [],
+            asset_processors=loaded_params.asset_attributes or [],
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -59,8 +59,8 @@ class SlingReplicationComponent(Component):
             yield from self.execute(context=context, sling=sling)
 
         defs = Definitions(assets=[_fn], resources={"sling": self.resource})
-        for transform in self.asset_transforms:
-            defs = transform.transform(defs)
+        for transform in self.asset_processors:
+            defs = transform.apply(defs)
         return defs
 
     @classmethod
