@@ -3,6 +3,8 @@
 This is the home of the new Dagster documentation. It is currently in beta and incomplete.
 The documentation site is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
 
+---
+
 ## Overview of the docs
 
 - `./src` contains custom components, styles, themes, and layouts.
@@ -20,6 +22,8 @@ The docs are broken down into the following sections:
 `sidebar.ts` and `docusaurus.config.ts` are the main configuration files for the documentation.
 
 For formatting guidelines, see the [CONTRIBUTING](CONTRIBUTING.md) guide.
+
+---
 
 ## Installation
 
@@ -44,6 +48,8 @@ or
 ```bash
 pip install vale
 ```
+
+---
 
 ## Local Development
 
@@ -70,6 +76,8 @@ yarn vale /path/to/file      ## check individual file
 yarn vale --no-wrap          ## remove wrapping from output
 ```
 
+---
+
 ## Build
 
 To build the site for production:
@@ -79,6 +87,8 @@ yarn build
 ```
 
 This command generates static content into the `build` directory and can be served using any static contents hosting service. This also checks for any broken links in the documentation. Note that you will need to store Algolia credentials in local environment variables to build the site for production.
+
+---
 
 ## Deployment
 
@@ -93,6 +103,8 @@ yarn sync-api-docs && yarn build
 ```
 
 This runs the `scripts/vercel-sync-api-docs.sh` script which builds the MDX files using the custom `sphinx-mdx-builder`, and copies the resulting MDX files to `docs/api/python-api`.
+
+---
 
 ## Search
 
