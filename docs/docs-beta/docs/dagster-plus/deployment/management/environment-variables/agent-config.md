@@ -22,7 +22,7 @@ There are two ways to set environment variables:
 To complete the steps in this guide, you'll need:
 
 - A Dagster+ account using [Hybrid deployment](/dagster-plus/deployment/deployment-types/hybrid/)
-- An existing [Hybrid agent](http://localhost:3050/dagster-plus/deployment/deployment-types/hybrid/#dagster-hybrid-agents)
+- An existing [Hybrid agent](/dagster-plus/deployment/deployment-types/hybrid/#dagster-hybrid-agents)
 - **Editor**, **Admin**, or **Organization Admin** permissions in Dagster+
 
 ## Setting environment variables for a code location
@@ -218,7 +218,7 @@ In `env_vars`, specify the environment variables as keys (`SNOWFLAKE_PASSWORD`) 
 
 ### Kubernetes agents
 
-To make environment variables to a full deployment with a Kubernetes agent, you'll need to modify and upgrade the Helm chart's `values.yaml`.
+To make environment variables available to a full deployment to a full deployment with a Kubernetes agent, you'll need to modify and upgrade the Helm chart's `values.yaml`.
 
 1. In `values.yaml`, add or locate the `workspace` value.
 
