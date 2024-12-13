@@ -174,7 +174,8 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
         )
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
-        self._concurrency_group = _validate_concurrency_group(concurrency_group, tags)
+        self._concurrency_group = concurrency_group
+        concurrency_group = _validate_concurrency_group(concurrency_group, tags)
 
         positional_inputs = (
             self._compute_fn.positional_inputs()
@@ -306,7 +307,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
     @property
     def concurrency_group(self) -> Optional[str]:
-        """Optional[str]: The concurrency key for this op."""
+        """Optional[str]: The concurrency group for this op."""
         return self._concurrency_group
 
     def is_from_decorator(self) -> bool:
