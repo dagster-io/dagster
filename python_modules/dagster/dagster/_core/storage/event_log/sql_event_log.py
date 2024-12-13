@@ -53,11 +53,15 @@ from dagster._core.events import (
     ASSET_CHECK_EVENTS,
     ASSET_EVENTS,
     EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
-    MARKER_EVENTS,
     DagsterEventType,
 )
 from dagster._core.events.log import EventLogEntry
-from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
+from dagster._core.execution.stats import (
+    RUN_STATS_EVENT_TYPES,
+    STEP_STATS_EVENT_TYPES,
+    RunStepKeyStatsSnapshot,
+    build_run_step_stats_from_events,
+)
 from dagster._core.storage.asset_check_execution_record import (
     COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES,
     AssetCheckExecutionRecord,
@@ -574,7 +578,9 @@ class SqlEventLogStorage(EventLogStorage):
             .where(
                 db.and_(
                     SqlEventLogStorageTable.c.run_id == run_id,
-                    SqlEventLogStorageTable.c.dagster_event_type != None,  # noqa: E711
+                    SqlEventLogStorageTable.c.dagster_event_type.in_(
+                        [event_type.value for event_type in RUN_STATS_EVENT_TYPES]
+                    ),
                 )
             )
             .group_by("dagster_event_type")
@@ -647,18 +653,7 @@ class SqlEventLogStorage(EventLogStorage):
             .where(SqlEventLogStorageTable.c.step_key != None)  # noqa: E711
             .where(
                 SqlEventLogStorageTable.c.dagster_event_type.in_(
-                    [
-                        DagsterEventType.STEP_START.value,
-                        DagsterEventType.STEP_SUCCESS.value,
-                        DagsterEventType.STEP_SKIPPED.value,
-                        DagsterEventType.STEP_FAILURE.value,
-                        DagsterEventType.STEP_RESTARTED.value,
-                        DagsterEventType.ASSET_MATERIALIZATION.value,
-                        DagsterEventType.STEP_EXPECTATION_RESULT.value,
-                        DagsterEventType.STEP_RESTARTED.value,
-                        DagsterEventType.STEP_UP_FOR_RETRY.value,
-                    ]
-                    + [marker_event.value for marker_event in MARKER_EVENTS]
+                    [event_type.value for event_type in STEP_STATS_EVENT_TYPES]
                 )
             )
             .order_by(SqlEventLogStorageTable.c.id.asc())
