@@ -206,7 +206,6 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
 1.  Build you base image
 2.  Specify this base image tag in your GitHub workflow, or using the `dagster-cloud` CLI:
 
-
     <Tabs groupId="method">
 
       <TabItem value="GitHub" label="GitHub">
@@ -217,9 +216,9 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
       <TabItem value="CLI" label="CLI">
       You can specify the base image when you deploy your code with the `dagster-cloud serverless deploy` command:
 
-      ```bash
-      dagster-cloud serverless deploy --base-image=my_base_image:latest --location-name=my_location
-      ```
+    ```bash
+    dagster-cloud serverless deploy --base-image=my_base_image:latest --location-name=my_location
+    ```
 
       </TabItem>
     </Tabs>
