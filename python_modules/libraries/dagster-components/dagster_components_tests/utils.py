@@ -19,7 +19,7 @@ def registry() -> ComponentRegistry:
 
 
 def script_load_context(decl_node: Optional[ComponentDeclNode] = None) -> ComponentLoadContext:
-    return ComponentLoadContext(registry=registry(), resources={}, decl_node=decl_node)
+    return ComponentLoadContext.for_test(registry=registry(), decl_node=decl_node)
 
 
 def get_asset_keys(component: Component) -> AbstractSet[AssetKey]:
