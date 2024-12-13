@@ -1179,6 +1179,60 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         assert set(self.get_run_ids(instance.run_launcher.queue())) == {run_id_1}
         caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1  # pyright: ignore[reportUnusedExpression]
 
+    @pytest.mark.parametrize(
+        "run_coordinator_config",
+        [
+            {
+                "block_op_concurrency_limited_runs": {
+                    "enabled": True,
+                },
+                "concurrency_group_granularity": "run",
+            },
+        ],
+    )
+    def test_concurrency_run_granularity(
+        self,
+        concurrency_limited_workspace_context,
+        daemon,
+        instance,
+    ):
+        run_id_1, run_id_2 = [make_new_run_id() for _ in range(2)]
+        workspace = concurrency_limited_workspace_context.create_request_context()
+        # concurrency_limited_asset_job
+        remote_job = self.get_concurrency_job(workspace)
+        foo_key = AssetKey(["prefix", "foo_limited_asset"])
+        bar_key = AssetKey(["prefix", "bar_limited_asset"])
+        baz_key = AssetKey(["prefix", "baz_limited_asset"])
+        downstream_baz_key = AssetKey(["prefix", "baz_limited_asset_depends_on_foo"])
+
+        # first submit a run that occupies the baz slot
+        self.submit_run(
+            instance, remote_job, workspace, run_id=run_id_1, asset_selection=set([baz_key])
+        )
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
+
+        # submit a run that has 2 root nodes, respectively with foo, bar concurrency groups
+        # also with a downstream extra baz concurrency group asset
+        self.submit_run(
+            instance,
+            remote_job,
+            workspace,
+            run_id=run_id_2,
+            asset_selection=set([foo_key, bar_key, downstream_baz_key]),
+        )
+
+        # even though the root nodes have slots available, the second run is not launched
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
+
+        instance.event_log_storage.set_concurrency_slots("baz", 2)
+
+        # all group slots available, run launched, even though there is only one slot open for baz
+        # and the run has two baz-grouped nodes
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1, run_id_2])
+
 
 class TestQueuedRunCoordinatorDaemon(QueuedRunCoordinatorDaemonTests):
     @pytest.fixture
