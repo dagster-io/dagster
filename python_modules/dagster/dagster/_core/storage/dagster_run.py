@@ -13,6 +13,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     Union,
 )
 
@@ -173,6 +174,7 @@ class RunOpConcurrency(
         [
             ("root_key_counts", Mapping[str, int]),
             ("has_unconstrained_root_nodes", bool),
+            ("all_keys", Optional[Set[str]]),
         ],
     )
 ):
@@ -184,6 +186,7 @@ class RunOpConcurrency(
         cls,
         root_key_counts: Mapping[str, int],
         has_unconstrained_root_nodes: bool,
+        all_keys: Optional[Set[str]] = None,
     ):
         return super(RunOpConcurrency, cls).__new__(
             cls,
@@ -193,6 +196,7 @@ class RunOpConcurrency(
             has_unconstrained_root_nodes=check.bool_param(
                 has_unconstrained_root_nodes, "has_unconstrained_root_nodes"
             ),
+            all_keys=check.opt_set_param(all_keys, "all_keys", of_type=str),
         )
 
 

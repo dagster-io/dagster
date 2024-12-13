@@ -1,4 +1,5 @@
 import logging
+from enum import Enum
 from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
 from typing_extensions import Self
@@ -19,6 +20,11 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 
+class ConcurrencyGranularity(Enum):
+    OP = "op"
+    RUN = "run"
+
+
 class RunQueueConfig(
     NamedTuple(
         "_RunQueueConfig",
@@ -29,6 +35,7 @@ class RunQueueConfig(
             ("user_code_failure_retry_delay", int),
             ("should_block_op_concurrency_limited_runs", bool),
             ("op_concurrency_slot_buffer", int),
+            ("concurrency_group_granularity", ConcurrencyGranularity),
         ],
     )
 ):
@@ -40,6 +47,7 @@ class RunQueueConfig(
         user_code_failure_retry_delay: int = 60,
         should_block_op_concurrency_limited_runs: bool = False,
         op_concurrency_slot_buffer: int = 0,
+        concurrency_group_granularity: ConcurrencyGranularity = ConcurrencyGranularity.OP,
     ):
         return super(RunQueueConfig, cls).__new__(
             cls,
@@ -51,6 +59,11 @@ class RunQueueConfig(
                 should_block_op_concurrency_limited_runs, "should_block_op_concurrency_limited_runs"
             ),
             check.int_param(op_concurrency_slot_buffer, "op_concurrency_slot_buffer"),
+            check.inst_param(
+                concurrency_group_granularity,
+                "concurrency_group_granularity",
+                ConcurrencyGranularity,
+            ),
         )
 
 
@@ -69,6 +82,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         max_user_code_failure_retries: Optional[int] = None,
         user_code_failure_retry_delay: Optional[int] = None,
         block_op_concurrency_limited_runs: Optional[Mapping[str, Any]] = None,
+        concurrency_group_granularity: str = "op",
         inst_data: Optional[ConfigurableClassData] = None,
     ):
         self._inst_data: Optional[ConfigurableClassData] = check.opt_inst_param(
@@ -115,7 +129,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
                 "op_concurrency_slot_buffer can only be set if block_op_concurrency_limited_runs "
                 "is enabled",
             )
-
+        self._concurrency_group_granularity = ConcurrencyGranularity(concurrency_group_granularity)
         self._logger = logging.getLogger("dagster.run_coordinator.queued_run_coordinator")
         super().__init__()
 
@@ -131,6 +145,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
             user_code_failure_retry_delay=self._user_code_failure_retry_delay,
             should_block_op_concurrency_limited_runs=self._should_block_op_concurrency_limited_runs,
             op_concurrency_slot_buffer=self._op_concurrency_slot_buffer,
+            concurrency_group_granularity=self._concurrency_group_granularity,
         )
 
     @property
@@ -251,6 +266,17 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
                     ),
                 }
             ),
+            "concurrency_group_granularity": Field(
+                str,
+                is_required=False,
+                default_value="op",
+                description=(
+                    "Determines the granularity at which concurrency limits are applied. If set to "
+                    "'op', dequeues runs as long as any op in the run can make progress.  If set to "
+                    "'run', dequeues runs as long as all of the concurrency groups assigned to the run "
+                    "have free slots available."
+                ),
+            ),
         }
 
     @classmethod
@@ -267,6 +293,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
             max_user_code_failure_retries=config_value.get("max_user_code_failure_retries"),
             user_code_failure_retry_delay=config_value.get("user_code_failure_retry_delay"),
             block_op_concurrency_limited_runs=config_value.get("block_op_concurrency_limited_runs"),
+            concurrency_group_granularity=config_value.get("concurrency_group_granularity", "op"),
         )
 
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:
