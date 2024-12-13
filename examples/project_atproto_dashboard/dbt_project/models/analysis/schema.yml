@@ -5,7 +5,7 @@ models:
     description: "table showing data for all the profiles posts are collected from and some high level statistics"
     columns:
       - name: profile_handle
-        tests:
+        data_tests:
           - unique
           - not_null
   - name: latest_feed

@@ -1,32 +1,27 @@
-bluesky_data:
+bluesky:
   target: dev
   outputs:
     dev:
       type: duckdb
-      schema: dev_bluesky
+      schema: bluesky_dev
       path: "local.duckdb"
       threads: 16
       extensions: 
         - httpfs
-      secrets:
-        # https://github.com/duckdb/dbt-duckdb/issues/420
-        # https://github.com/duckdb/dbt-duckdb/issues/466
-        # https://github.com/duckdb/dbt-duckdb/issues/249#issuecomment-2487260655
-        - type: r2
-          key_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
-          secret: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"
-          account_id: "{{ env_var('AWS_ACCOUNT_ID') }}"
-          endpoint: "{{ env_var('AWS_ENDPOINT_URL') | replace('https://', '') }}"
+      settings:
+        s3_region: "auto"
+        s3_access_key_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
+        s3_secret_access_key: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"
+        s3_endpoint: "{{ env_var('AWS_ENDPOINT_URL') | replace('https://', '') }}"
     prod:
       type: duckdb
-      schema: prod_bluesky
-      path: "md:my_db?MOTHERDUCK_TOKEN={{ env_var('MOTHERDUCK_TOKEN') }}"
+      schema: bluesky
+      path: "md:bluesky?MOTHERDUCK_TOKEN={{ env_var('MOTHERDUCK_TOKEN') }}"
       threads: 16
       extensions: 
         - httpfs
-      secrets:
-        - type: r2
-          key_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
-          secret: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"
-          account_id: "{{ env_var('AWS_ACCOUNT_ID') }}"
-          endpoint: "{{ env_var('AWS_ENDPOINT_URL') | replace('https://', '') }}"
+      settings:
+        s3_region: "auto"
+        s3_access_key_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
+        s3_secret_access_key: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"
+        s3_endpoint: "{{ env_var('AWS_ENDPOINT_URL') | replace('https://', '') }}"

@@ -2,12 +2,7 @@ name: "dbt_project"
 version: "1.0.0"
 config-version: 2
 
-profile: "bluesky_data"
-
-analysis-paths: ["analyses"]
-test-paths: ["tests"]
-macro-paths: ["macros"]
-snapshot-paths: ["snapshots"]
+profile: "bluesky"
 
 target-path: "target"
 clean-targets:
