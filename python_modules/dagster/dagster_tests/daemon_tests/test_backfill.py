@@ -691,6 +691,7 @@ def test_two_backfills(
             )
         )
 
+        time.sleep(0.5)
         wait_for_futures(backfill_daemon_futures)
         [list(future.result()) for future in backfill_daemon_futures.values()]
     else:
