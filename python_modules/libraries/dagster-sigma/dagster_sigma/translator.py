@@ -3,7 +3,12 @@ from typing import AbstractSet, Any, Dict, List, Optional, Union
 
 from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema
 from dagster._annotations import deprecated
-from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
+from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
+from dagster._core.definitions.metadata.metadata_value import (
+    JsonMetadataValue,
+    TimestampMetadataValue,
+    UrlMetadataValue,
+)
 from dagster._core.definitions.metadata.table import TableColumn
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -26,6 +31,20 @@ def _inode_from_url(url: str) -> str:
     return f'inode-{url.split("/")[-1]}'
 
 
+class SigmaWorkbookMetadataSet(NamespacedMetadataSet):
+    web_url: Optional[UrlMetadataValue]
+    version: Optional[int]
+    created_at: Optional[TimestampMetadataValue]
+    properties: Optional[JsonMetadataValue]
+    lineage: Optional[JsonMetadataValue]
+    materialization_schedules: Optional[JsonMetadataValue] = None
+    workbook_id: str
+
+    @classmethod
+    def namespace(cls) -> str:
+        return "dagster_sigma"
+
+
 @whitelist_for_serdes
 @record
 class SigmaWorkbook:
@@ -40,6 +59,7 @@ class SigmaWorkbook:
     datasets: AbstractSet[str]
     direct_table_deps: AbstractSet[str]
     owner_email: Optional[str]
+    materialization_schedules: Optional[List[Dict[str, Any]]]
 
 
 @whitelist_for_serdes
@@ -110,13 +130,23 @@ class DagsterSigmaTranslator:
         """Get the AssetSpec for a Sigma object, such as a workbook or dataset."""
         if isinstance(data, SigmaWorkbook):
             metadata = {
-                "dagster_sigma/web_url": MetadataValue.url(data.properties["url"]),
-                "dagster_sigma/version": data.properties["latestVersion"],
-                "dagster_sigma/created_at": MetadataValue.timestamp(
-                    isoparse(data.properties["createdAt"])
+                **SigmaWorkbookMetadataSet(
+                    web_url=MetadataValue.url(data.properties["url"]),
+                    version=data.properties["latestVersion"],
+                    created_at=MetadataValue.timestamp(isoparse(data.properties["createdAt"])),
+                    properties=MetadataValue.json(data.properties),
+                    lineage=MetadataValue.json(data.lineage),
+                    workbook_id=data.properties["workbookId"],
+                    **(
+                        {
+                            "materialization_schedules": MetadataValue.json(
+                                data.materialization_schedules
+                            )
+                        }
+                        if data.materialization_schedules
+                        else {}
+                    ),
                 ),
-                "dagster_sigma/properties": MetadataValue.json(data.properties),
-                "dagster_sigma/lineage": MetadataValue.json(data.lineage),
             }
             datasets = [self._context.get_datasets_by_inode()[inode] for inode in data.datasets]
             tables = [
