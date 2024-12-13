@@ -14,6 +14,7 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:
+    from dagster._core.events import RunFailureReason
     from dagster._core.instance import DagsterInstance
 
 
@@ -79,7 +80,7 @@ class RetryState:
 
 
 def auto_reexecution_should_retry_run(
-    instance: "DagsterInstance", run: DagsterRun, is_step_failure: bool
+    instance: "DagsterInstance", run: DagsterRun, run_failure_reason: Optional["RunFailureReason"]
 ):
     """Determines if a run will be retried by the automatic reexcution system.
     A run will retry if:
@@ -113,6 +114,8 @@ def auto_reexecution_should_retry_run(
     We think this is an acceptable tradeoff to make since the automatic reexecution system won't launch more than max_retries
     run itself, just that max_retries + 1 runs could be launched in total if a manual retry is timed to cause this condition (unlikely).
     """
+    from dagster._core.events import RunFailureReason
+
     if run.status != DagsterRunStatus.FAILURE:
         return False
 
@@ -120,7 +123,7 @@ def auto_reexecution_should_retry_run(
         run.tags.get(RETRY_ON_ASSET_OR_OP_FAILURE_TAG),
         default_value=instance.run_retries_retry_on_asset_or_op_failure,
     )
-    if is_step_failure and not retry_on_asset_or_op_failure:
+    if run_failure_reason == RunFailureReason.STEP_FAILURE and not retry_on_asset_or_op_failure:
         return False
 
     raw_max_retries_tag = run.tags.get(MAX_RETRIES_TAG)

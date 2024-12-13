@@ -31,12 +31,16 @@ def should_retry(run: DagsterRun, instance: DagsterInstance) -> bool:
     WILL_RETRY_TAG to determine if the run should be retried.
     """
     will_retry_tag_value = run.tags.get(WILL_RETRY_TAG)
-    is_step_failure = run.tags.get(RUN_FAILURE_REASON_TAG) == RunFailureReason.STEP_FAILURE.value
+    run_failure_reason = (
+        RunFailureReason(run.tags.get(RUN_FAILURE_REASON_TAG))
+        if run.tags.get(RUN_FAILURE_REASON_TAG)
+        else None
+    )
     if will_retry_tag_value is None:
         # If the run doesn't have the WILL_RETRY_TAG, and the run is failed, we
         # recalculate if the run should be retried to ensure backward compatibilty
         if run.status == DagsterRunStatus.FAILURE:
-            should_retry_run = auto_reexecution_should_retry_run(instance, run, is_step_failure)
+            should_retry_run = auto_reexecution_should_retry_run(instance, run, run_failure_reason)
             # add the tag to the run so that it can be used in other parts of the system
             instance.add_run_tags(run.run_id, {WILL_RETRY_TAG: str(should_retry_run).lower()})
         else:
@@ -55,7 +59,7 @@ def should_retry(run: DagsterRun, instance: DagsterInstance) -> bool:
             run.tags.get(RETRY_ON_ASSET_OR_OP_FAILURE_TAG),
             default_value=instance.run_retries_retry_on_asset_or_op_failure,
         )
-        if is_step_failure and not retry_on_asset_or_op_failure:
+        if run_failure_reason == RunFailureReason.STEP_FAILURE and not retry_on_asset_or_op_failure:
             instance.report_engine_event(
                 "Not retrying run since it failed due to an asset or op failure and run retries "
                 "are configured with retry_on_asset_or_op_failure set to false.",

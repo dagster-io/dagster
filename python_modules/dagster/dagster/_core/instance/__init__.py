@@ -2487,14 +2487,16 @@ class DagsterInstance(DynamicPartitionsStore):
                 if run and event.get_dagster_event().is_run_failure and self.run_retries_enabled:
                     # Note that this tag is only applied to runs that fail. Successful runs will not
                     # have a WILL_RETRY_TAG tag.
-                    is_step_failure = (
-                        run.tags.get(RUN_FAILURE_REASON_TAG) == RunFailureReason.STEP_FAILURE.value
+                    run_failure_reason = (
+                        RunFailureReason(run.tags.get(RUN_FAILURE_REASON_TAG))
+                        if run.tags.get(RUN_FAILURE_REASON_TAG)
+                        else None
                     )
                     self.add_run_tags(
                         run_id,
                         {
                             WILL_RETRY_TAG: str(
-                                auto_reexecution_should_retry_run(self, run, is_step_failure)
+                                auto_reexecution_should_retry_run(self, run, run_failure_reason)
                             ).lower()
                         },
                     )
