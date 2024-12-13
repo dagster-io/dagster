@@ -11,7 +11,7 @@ An alternative to polling with sensors is to push events to Dagster using the [D
 :::
 
 <details>
-<summary>Prerequisites</summary>
+  <summary>Prerequisites</summary>
 
 To follow the steps in this guide, you'll need:
 

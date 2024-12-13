@@ -18,8 +18,6 @@ enables:
 tags: [community-supported, etl]
 ---
 
-
-
 SDF can integrate seamlessly with your existing Dagster projects, providing the best-in-class transformation layer while enabling you to schedule, orchestrate, and monitor your dags in Dagster.
 
 When it comes time to materialize your Dagster assets, you can be confident that SDF has successfully compiled your workspace, making it safe to execute locally or against your cloud data warehouse.

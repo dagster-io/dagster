@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, alerting]
 ---
 
-
-
 This library provides an integration between Dagster and PagerDuty to support creating alerts from your Dagster code.
 
 ### Installation

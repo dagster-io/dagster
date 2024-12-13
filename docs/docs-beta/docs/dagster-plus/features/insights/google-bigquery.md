@@ -1,6 +1,6 @@
 ---
-title: "Track Google BigQuery usage with Dagster+ Insights"
-sidebar_label: "Google BigQuery"
+title: 'Track Google BigQuery usage with Dagster+ Insights'
+sidebar_label: 'Google BigQuery'
 sidebar_position: 400
 ---
 
@@ -40,10 +40,16 @@ To enable this behavior, replace usage of `BigQueryResource` with `InsightsBigQu
 
 <Tabs>
   <TabItem value="before" label="Before">
-    <CodeExample filePath="dagster-plus/insights/google-bigquery/bigquery-resource.py" language="python" />
+    <CodeExample
+      filePath="dagster-plus/insights/google-bigquery/bigquery-resource.py"
+      language="python"
+    />
   </TabItem>
   <TabItem value="after" label="After" default>
-    <CodeExample filePath="dagster-plus/insights/google-bigquery/bigquery-resource-insights.py" language="python" />
+    <CodeExample
+      filePath="dagster-plus/insights/google-bigquery/bigquery-resource-insights.py"
+      language="python"
+    />
   </TabItem>
 </Tabs>
 
@@ -55,10 +61,16 @@ First, add a `.with_insights()` call to your `dbt.cli()` command(s).
 
 <Tabs>
   <TabItem value="before" label="Before">
-    <CodeExample filePath="dagster-plus/insights/google-bigquery/bigquery-dbt-asset.py" language="python" />
+    <CodeExample
+      filePath="dagster-plus/insights/google-bigquery/bigquery-dbt-asset.py"
+      language="python"
+    />
   </TabItem>
   <TabItem value="after" label="After" default>
-    <CodeExample filePath="dagster-plus/insights/google-bigquery/bigquery-dbt-asset-insights.py" language="python" />
+    <CodeExample
+      filePath="dagster-plus/insights/google-bigquery/bigquery-dbt-asset-insights.py"
+      language="python"
+    />
   </TabItem>
 </Tabs>
 
@@ -66,10 +78,16 @@ Then, add the following to your `dbt_project.yml`:
 
 <Tabs>
   <TabItem value="before" label="Before">
-    <CodeExample filePath="dagster-plus/insights/google-bigquery/dbt_project.yml" language="python" />
+    <CodeExample
+      filePath="dagster-plus/insights/google-bigquery/dbt_project.yml"
+      language="python"
+    />
   </TabItem>
   <TabItem value="after" label="After" default>
-    <CodeExample filePath="dagster-plus/insights/google-bigquery/dbt_project_insights.yml" language="python" />
+    <CodeExample
+      filePath="dagster-plus/insights/google-bigquery/dbt_project_insights.yml"
+      language="python"
+    />
   </TabItem>
 </Tabs>
 

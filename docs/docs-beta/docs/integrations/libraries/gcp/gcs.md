@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, storage]
 ---
 
-
-
 This integration allows you to interact with Google Cloud Storage (GCS) using Dagster. It provides resources, I/O Managers, and utilities to manage and store data in GCS, making it easier to integrate GCS into your data pipelines.
 
 ### Installation

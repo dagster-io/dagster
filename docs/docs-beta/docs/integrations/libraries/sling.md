@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, etl]
 ---
 
-
-
 This integration allows you to use [Sling](https://slingdata.io/) to extract and load data from popular data sources to destinations with high performance and ease.
 
 ### Installation

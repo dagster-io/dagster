@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, compute]
 ---
 
-
-
 The `dagster-k8s` integration library provides the `PipesK8sClient` resource, enabling you to launch Kubernetes pods and execute external code directly from Dagster assets and ops. This integration allows you to pass parameters to Kubernetes pods while Dagster receives real-time events, such as logs, asset checks, and asset materializations, from the initiated jobs. With minimal code changes required on the job side, this integration is both efficient and easy to implement.
 
 ### Installation

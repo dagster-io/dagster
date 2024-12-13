@@ -17,8 +17,6 @@ enables:
 tags: [community-supported, etl]
 ---
 
-
-
 With the `dagster-census` integration you can execute a Census sync and poll until that sync completes, raising an error if it's unsuccessful.
 
 ### Installation

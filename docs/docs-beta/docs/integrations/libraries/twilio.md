@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, alerting]
 ---
 
-
-
 Use your Twilio `Account SID` and `Auth Token` to build Twilio tasks right into your Dagster pipeline.
 
 ### Installation

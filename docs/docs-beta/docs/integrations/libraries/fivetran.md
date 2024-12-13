@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, etl]
 ---
 
-
-
 The Dagster-Fivetran integration enables you to orchestrate data ingestion as part of a larger pipeline. Programmatically interact with the Fivetran REST API to initiate syncs and monitor their progress.
 
 ### Installation

@@ -18,8 +18,6 @@ enables:
 tags: [community-supported, metadata]
 ---
 
-
-
 Connect Dagster to Secoda and see metadata related to your Dagster assets, asset groups and jobs right in Secoda. Simplify your team's access, and remove the need to switch between tools.
 
 When you connect Dagster to Secoda, you can use Secoda's tools to add further context to your Dagster assets and jobs. Help your team understand metadata from Dagster by adding context in Secoda, like creating Documents, defining Metrics, and adding Tags.

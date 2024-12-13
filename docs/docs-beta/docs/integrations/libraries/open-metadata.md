@@ -18,8 +18,6 @@ enables:
 tags: [community-supported, metadata]
 ---
 
-
-
 With this integration you can create a Open Metadata service to ingest metadata produced by the Dagster application. View the Ingestion Pipeline running from the Open Metadata Service Page.
 
 ### About Open Metadata

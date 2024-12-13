@@ -56,7 +56,9 @@ In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
     - `Email` - `user.userprincipalname`
 
     Add these attribute mappings to the SAML assertion.
+
 8.  On the **Set up single sign-on with SAML** page:
+
     1. Locate the **SAML Signing Certificate** section.
     2. Next to **Federation Metadata XML**, click **Download**:
 

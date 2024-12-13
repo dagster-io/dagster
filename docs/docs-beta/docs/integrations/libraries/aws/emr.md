@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, compute]
 ---
 
-
-
 The `dagster-aws` integration provides ways orchestrating data pipelines that leverage AWS services, including AWS EMR (Elastic MapReduce). This integration allows you to run and scale big data workloads using open source tools such as Apache Spark, Hive, Presto, and more.
 
 Using this integration, you can:

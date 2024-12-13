@@ -1,6 +1,6 @@
 ---
 title: 'Dagster+ code requirements'
-sidebar_label: "Code requirements"
+sidebar_label: 'Code requirements'
 sidebar_position: 10
 ---
 
@@ -12,6 +12,7 @@ Your Dagster project must meet a few requirements to run in Dagster+.
 To follow the steps in this guide, you'll need:
 
 - A basic understanding of Python project structure and Docker
+
 </details>
 
 ## General requirements
@@ -42,4 +43,3 @@ If you're using [Hybrid Deployment](/dagster-plus/deployment/deployment-types/hy
 - **If using a local agent**, your code must be in a Python environment that can be accessed on the same machine as your agent.
 
 Additionally, your code doesn't need to use the same version of Dagster as your agent.
-

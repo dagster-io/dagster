@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, compute]
 ---
 
-
-
 Using this integration, you can leverage AWS Lambda to execute external code as part of your Dagster pipelines. This is particularly useful for running serverless functions that can scale automatically and handle various workloads without the need for managing infrastructure. The `PipesLambdaClient` class allows you to invoke AWS Lambda functions and stream logs and structured metadata back to Dagster's UI and tools.
 
 ### Installation

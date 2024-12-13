@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, storage]
 ---
 
-
-
 This library provides an integration with the Snowflake data warehouse. Connect to Snowflake as a resource, then use the integration-provided functions to construct an op to establish connections and execute Snowflake queries. Read and write natively to Snowflake from Dagster assets.
 
 ### Installation

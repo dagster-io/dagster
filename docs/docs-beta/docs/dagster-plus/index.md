@@ -1,5 +1,5 @@
 ---
-title: "About Dagster+"
+title: 'About Dagster+'
 sidebar_position: 1
 ---
 

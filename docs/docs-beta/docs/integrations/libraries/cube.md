@@ -17,8 +17,6 @@ enables:
 tags: [community-supported]
 ---
 
-
-
 With the `dagster_cube` integration you can setup Cube and Dagster to work together so that Dagster can push changes from upstream data sources to Cube using its integration API.
 
 ### Installation

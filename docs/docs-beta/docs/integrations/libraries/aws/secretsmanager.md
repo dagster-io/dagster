@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported]
 ---
 
-
-
 This integration allows you to manage, retrieve, and rotate credentials, API keys, and other secrets using [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/).
 
 ### Installation

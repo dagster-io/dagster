@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported]
 ---
 
-
-
 This integration allows you to connect to AWS Elastic Container Registry (ECR). It provides resources to interact with AWS ECR, enabling you to manage your container images.
 
 Using this integration, you can seamlessly integrate AWS ECR into your Dagster pipelines, making it easier to manage and deploy containerized applications.

@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, etl]
 ---
 
-
-
 Using this integration, you can trigger Airbyte syncs and orchestrate your Airbyte connections from within Dagster, making it easy to chain an Airbyte sync with upstream or downstream steps in your workflow.
 
 ### Installation

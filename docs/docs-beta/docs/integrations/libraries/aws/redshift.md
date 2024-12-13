@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, storage]
 ---
 
-
-
 Using this integration, you can connect to an AWS Redshift cluster and issue queries against it directly from your Dagster assets. This allows you to seamlessly integrate Redshift into your data pipelines, leveraging the power of Redshift's data warehousing capabilities within your Dagster workflows.
 
 ### Installation

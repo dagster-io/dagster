@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported]
 ---
 
-
-
 This integration provides a resource for SSH remote execution using [Paramiko](https://github.com/paramiko/paramiko). It allows you to establish secure connections to networked resources and execute commands remotely. The integration also provides an SFTP client for secure file transfers between the local and remote systems.
 
 ### Installation

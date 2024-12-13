@@ -1,6 +1,6 @@
 ---
-title: "Track Snowflake usage with Dagster+ Insights"
-sidebar_label: "Snowflake"
+title: 'Track Snowflake usage with Dagster+ Insights'
+sidebar_label: 'Snowflake'
 sidebar_position: 300
 ---
 
@@ -42,10 +42,16 @@ Only use `create_snowflake_insights_asset_and_schedule` in a single code locatio
 
 <Tabs>
   <TabItem value="before" label="Before">
-    <CodeExample filePath="dagster-plus/insights/snowflake/snowflake-resource.py" language="python" />
+    <CodeExample
+      filePath="dagster-plus/insights/snowflake/snowflake-resource.py"
+      language="python"
+    />
   </TabItem>
   <TabItem value="after" label="After" default>
-    <CodeExample filePath="dagster-plus/insights/snowflake/snowflake-resource-insights.py" language="python" />
+    <CodeExample
+      filePath="dagster-plus/insights/snowflake/snowflake-resource-insights.py"
+      language="python"
+    />
   </TabItem>
 </Tabs>
 
@@ -63,10 +69,16 @@ Only use `create_snowflake_insights_asset_and_schedule` in a single code locatio
 
 <Tabs>
   <TabItem value="before" label="Before">
-    <CodeExample filePath="dagster-plus/insights/snowflake/snowflake-dbt-asset.py" language="python" />
+    <CodeExample
+      filePath="dagster-plus/insights/snowflake/snowflake-dbt-asset.py"
+      language="python"
+    />
   </TabItem>
   <TabItem value="after" label="After" default>
-    <CodeExample filePath="dagster-plus/insights/snowflake/snowflake-dbt-asset-insights.py" language="python" />
+    <CodeExample
+      filePath="dagster-plus/insights/snowflake/snowflake-dbt-asset-insights.py"
+      language="python"
+    />
   </TabItem>
 </Tabs>
 

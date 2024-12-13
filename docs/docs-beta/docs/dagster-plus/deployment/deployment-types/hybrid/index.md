@@ -1,5 +1,5 @@
 ---
-title: "Hybrid deployment"
+title: 'Hybrid deployment'
 sidebar_label: Hybrid
 sidebar_position: 20
 ---
@@ -21,11 +21,11 @@ To get started with a Hybrid deployment you'll need to:
 The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for new work.
 
 See the following guides for setting up an agent:
- - [Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes)
- - [AWS ECS](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/new-vpc)
- - [Docker](/dagster-plus/deployment/deployment-types/hybrid/docker)
- - [Locally](/dagster-plus/deployment/deployment-types/hybrid/local)
 
+- [Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes)
+- [AWS ECS](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/new-vpc)
+- [Docker](/dagster-plus/deployment/deployment-types/hybrid/docker)
+- [Locally](/dagster-plus/deployment/deployment-types/hybrid/local)
 
 ## What you'll see in your environment
 
@@ -34,7 +34,6 @@ See the following guides for setting up an agent:
 Dagster+ runs your Dagster projects through code locations. To get started, follow this guide for [adding a code location](/dagster-plus/deployment/code-locations).
 
 When you inform Dagster+ about a new code location, we enqueue instructions for your agent to launch a new code server. The agent uses your container image to launch a code server that interacts with your Dagster definitions. The agent will run one long-standing code server for each code location. Once the code server is running, the agent will send Dagster+ metadata about your Dagster definitions that Dagster+ uses to make orchestration decisions.
-
 
 ### Runs
 
@@ -49,15 +48,18 @@ Your agent will send Dagster+ metadata letting us know the run has been launched
 Dagster+ hybrid relies on a shared security model.
 
 The Dagster+ control plane is SOC 2 Type II certified and follows best practices such as:
+
 - encrypting data at rest (AES 256) and in transit (TLS 1.2+)
 - highly available, with disaster recovery and backup strategies
 - only manages metadata such as pipeline names, execution status, and run duration
 
 The execution environment is managed by the customer:
+
 - your code never leaves your environment
 - all connections to databases, file systems, and other resources are made from your environment
 - the execution environment only requires egress access to Dagster+
 
 Common security considerations in Dagster+ hybrid include:
+
 - [disabling log forwarding](/todo)
 - [managing tokens](/todo)

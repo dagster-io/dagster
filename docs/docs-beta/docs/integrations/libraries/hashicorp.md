@@ -18,8 +18,6 @@ enables:
 tags: [community-supported]
 ---
 
-
-
 Package for integrating HashiCorp Vault into Dagster so that you can securely manage tokens and passwords.
 
 ### Installation

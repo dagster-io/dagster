@@ -1,11 +1,11 @@
 ---
-title: "workspace.yaml reference"
+title: 'workspace.yaml reference'
 ---
 
 # Workspace file reference
 
 :::info
-    This reference is only applicable to Dagster OSS. For Dagster Cloud see [the Dagster Cloud Code Locations guide](/dagster-plus/deployment/code-locations)
+This reference is only applicable to Dagster OSS. For Dagster Cloud see [the Dagster Cloud Code Locations guide](/dagster-plus/deployment/code-locations)
 :::
 
 The `workspace.yaml` file is used to configure code locations in Dagster. It tells Dagster where to find your code and how to load it.
@@ -26,16 +26,14 @@ The `workspace.yaml` file uses the following structure:
 
 ```yaml
 load_from:
-  - <loading_method>:
-      <configuration_options>
+  - <loading_method>: <configuration_options>
 ```
 
 Where `<loading_method>` can be one of:
+
 - `python_file`
 - `python_module`
 - `grpc_server`
-
-
 
 ## Loading methods
 
@@ -46,22 +44,24 @@ We recommend using `python_module` for most use cases.
 Loads a code location from a Python module.
 
 **Options:**
+
 - `module_name`: Name of the Python module to load.
 - Other options are the same as `python_file`.
 
 **Example:**
+
 ```yaml
 load_from:
   - python_module:
       module_name: hello_world_module.definitions
 ```
 
-
 ### Python file
 
 Loads a code location from a Python file.
 
 **Options:**
+
 - `relative_path`: Path to the Python file, relative to the `workspace.yaml` location.
 - `attribute` (optional): Name of a specific repository or function returning a `RepositoryDefinition`.
 - `working_directory` (optional): Custom working directory for relative imports.
@@ -69,6 +69,7 @@ Loads a code location from a Python file.
 - `location_name` (optional): Custom name for the code location.
 
 **Example:**
+
 ```yaml
 load_from:
   - python_file:
@@ -84,17 +85,19 @@ load_from:
 Configures a gRPC server as a code location.
 
 **Options:**
+
 - `host`: The host address of the gRPC server.
 - `port`: The port number of the gRPC server.
 - `location_name`: Custom name for the code location.
 
 **Example:**
+
 ```yaml
 load_from:
   - grpc_server:
       host: localhost
       port: 4266
-      location_name: "my_grpc_server"
+      location_name: 'my_grpc_server'
 ```
 
 ## Multiple code locations

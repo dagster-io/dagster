@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, storage]
 ---
 
-
-
 This library provides an integration with the DuckDB database, and allows for an out-of-the-box [I/O Manager](https://docs.dagster.io/concepts/io-management/io-managers) so that you can make DuckDB your storage of choice.
 
 ### Installation

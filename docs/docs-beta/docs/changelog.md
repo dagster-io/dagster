@@ -1,5 +1,5 @@
 ---
-title: "Changelog"
+title: 'Changelog'
 unlisted: true
 ---
 

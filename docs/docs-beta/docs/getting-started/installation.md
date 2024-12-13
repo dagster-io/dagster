@@ -19,18 +19,12 @@ After installing Python, it's recommended that you set up a virtual environment.
 There are many ways to do this, but this guide will use `venv` as it doesn't require additional dependencies.
 
 <Tabs>
-<TabItem value="macos" label="MacOS">
-```bash
-python -m venv venv
-source venv/bin/activate
-```
-</TabItem>
-<TabItem value="windows" label="Windows">
-```bash
-python -m venv venv
-source venv\Scripts\activate
-```
-</TabItem>
+  <TabItem value="macos" label="MacOS">
+    ```bash python -m venv venv source venv/bin/activate ```
+  </TabItem>
+  <TabItem value="windows" label="Windows">
+    ```bash python -m venv venv source venv\Scripts\activate ```
+  </TabItem>
 </Tabs>
 
 :::tip

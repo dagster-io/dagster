@@ -108,29 +108,29 @@ TODO: add picture previously at "/images/dagster-cloud/user-token-management/cod
 
 ### General
 
-|                                                                          | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
-| ------------------------------------------------------------------------ | ------ | -------- | ------ | ----- | ------------------------ |
-| View runs of [jobs](/guides/build/ops-jobs)                                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
-| Launch, re-execute, terminate, and delete runs of jobs                   | ❌     | ✅       | ✅     | ✅    | ✅                       |
-| Start and stop [schedules](/guides/automate/schedules)                          | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Start and stop [schedules](/guides/automate/sensors)                            | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Wipe assets                                                              | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Launch and cancel [schedules](/guides/build/backfill) | ❌     | ✅       | ✅     | ✅    | ✅                       |
-| Add dynamic partitions                                                   | ❌     | ❌       | ✅     | ✅    | ✅                       |
+|                                                        | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
+| ------------------------------------------------------ | ------ | -------- | ------ | ----- | ------------------------ |
+| View runs of [jobs](/guides/build/ops-jobs)            | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| Launch, re-execute, terminate, and delete runs of jobs | ❌     | ✅       | ✅     | ✅    | ✅                       |
+| Start and stop [schedules](/guides/automate/schedules) | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Start and stop [schedules](/guides/automate/sensors)   | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Wipe assets                                            | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Launch and cancel [schedules](/guides/build/backfill)  | ❌     | ✅       | ✅     | ✅    | ✅                       |
+| Add dynamic partitions                                 | ❌     | ❌       | ✅     | ✅    | ✅                       |
 
 ### Deployments
 
 Deployment settings are accessed in the UI by navigating to **user menu (your icon) > Organization Settings > Deployments**.
 
-|                                                                                              | Viewer | Launcher  | Editor | Admin | Organization <br/> admin     |
-|----------------------------------------------------------------------------------------------|-------|-----------|--------|-------|-------------------------------|
-| View [deployments](/todo)                                           | ✅     | ✅         | ✅      | ✅     | ✅                             |
-| Modify [deployment](/todo) settings                                 | ❌     | ❌         | ✅      | ✅     | ✅                             |
-| Create, edit, delete [environment variables](/dagster-plus/deployment/management/environment-variables) | ❌     | ❌         | ✅      | ✅     | ✅                             |
-| View [environment variable](/dagster-plus/deployment/management/environment-variables)  values          | ❌     | ❌         | ✅      | ✅     | ✅                             |
-| Export [environment variables](/dagster-plus/deployment/management/environment-variables)               | ❌     | ❌         | ✅      | ✅     | ✅                             |
-| Create and delete [deployments](/todo)                              | ❌     | ❌         | ❌      | ❌     | ✅                             |
-| Create [Branch Deployments](dagster-plus/features/ci-cd/branch-deployments/index.md)                     | ❌     | ❌         | ✅      | ✅     | ✅                             |
+|                                                                                                         | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
+| ------------------------------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
+| View [deployments](/todo)                                                                               | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| Modify [deployment](/todo) settings                                                                     | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Create, edit, delete [environment variables](/dagster-plus/deployment/management/environment-variables) | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| View [environment variable](/dagster-plus/deployment/management/environment-variables) values           | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Export [environment variables](/dagster-plus/deployment/management/environment-variables)               | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Create and delete [deployments](/todo)                                                                  | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Create [Branch Deployments](dagster-plus/features/ci-cd/branch-deployments/index.md)                    | ❌     | ❌       | ✅     | ✅    | ✅                       |
 
 ### Code locations
 
@@ -146,12 +146,12 @@ Code locations are accessed in the UI by navigating to **Deployment > Code locat
 
 Agent tokens are accessed in the UI by navigating to **user menu (your icon) > Organization Settings > Tokens**.
 
-|                                                             | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
-| ----------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
+|                                                                              | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
+| ---------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
 | View [agent tokens](/dagster-plus/deployment/management/tokens/agent-tokens) | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Create agent tokens                                         | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Edit agent tokens                                           | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Revoke agent tokens                                         | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Create agent tokens                                                          | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Edit agent tokens                                                            | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Revoke agent tokens                                                          | ❌     | ❌       | ❌     | ❌    | ✅                       |
 
 ### User tokens
 
@@ -167,12 +167,12 @@ User tokens are accessed in the UI by navigating to **user menu (your icon) > Or
 
 User management is accessed in the UI by navigating to **user menu (your icon) > Organization Settings > Users**.
 
-|                                               | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
-| --------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
+|                                                                                   | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
+| --------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
 | [View users](/dagster-plus/features/authentication-and-access-control/rbac/users) | ✅     | ✅       | ✅     | ✅    | ✅                       |
-| Add users                                     | ❌     | ❌       | ❌     | ✅    | ✅                       |
-| Edit user roles                               | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Remove users                                  | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Add users                                                                         | ❌     | ❌       | ❌     | ✅    | ✅                       |
+| Edit user roles                                                                   | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Remove users                                                                      | ❌     | ❌       | ❌     | ❌    | ✅                       |
 
 ### Teams
 
@@ -180,26 +180,26 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 
 **Note**: Admin users can modify teams only in deployments where they're an Admin.
 
-|                                               | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
-| --------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
+|                                                                                   | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
+| --------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
 | [View teams](/dagster-plus/features/authentication-and-access-control/rbac/teams) | ✅     | ✅       | ✅     | ✅    | ✅                       |
-| Modify team permissions                       | ❌     | ❌       | ❌     | ✅    | ✅                       |
-| Create teams                                  | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Re-name teams                                 | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Add/remove team members                       | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Remove teams                                  | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Modify team permissions                                                           | ❌     | ❌       | ❌     | ✅    | ✅                       |
+| Create teams                                                                      | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Re-name teams                                                                     | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Add/remove team members                                                           | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Remove teams                                                                      | ❌     | ❌       | ❌     | ❌    | ✅                       |
 
 ### Workspace administration
 
-|                                                        | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
-| ------------------------------------------------------ | ------ | -------- | ------ | ----- | ------------------------ |
-| Manage [alerts](/dagster-plus/features/alerts)       | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Edit workspace                                         | ❌     | ❌       | ✅     | ✅    | ✅                       |
+|                                                                                                | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
+| ---------------------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
+| Manage [alerts](/dagster-plus/features/alerts)                                                 | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Edit workspace                                                                                 | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | [Administer SAML](/dagster-plus/features/authentication-and-access-control/sso/authentication) | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| [Manage SCIM](/todo)                                   | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| View usage                                             | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Manage billing                                         | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| View audit logs                                        | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| [Manage SCIM](/todo)                                                                           | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| View usage                                                                                     | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Manage billing                                                                                 | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| View audit logs                                                                                | ❌     | ❌       | ❌     | ❌    | ✅                       |
 
 ## Next steps
 

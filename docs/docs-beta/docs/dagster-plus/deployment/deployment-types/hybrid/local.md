@@ -11,7 +11,7 @@ Local agents aren't well suited for most production use cases. If you're running
 
 - You've set up a supervisor to automatically restart the agent process if it crashes
 - You're alerted if the VM or container dies, or to automatically restart it
-:::
+  :::
 
 <details>
   <summary>Prerequisites</summary>
@@ -21,9 +21,10 @@ To follow the steps in this guide, you'll need:
 - **Organization Admin** permissions in your Dagster+ account
 - **To install the `dagster-cloud` CLI** in the same environment where the agent will run. We recommend using a Python virtual environment for your Dagster application code and its dependencies.
 
-    ```bash
-    pip install dagster-cloud
-    ```
+```bash
+pip install dagster-cloud
+```
+
 </details>
 
 ## Step 1: Generate an agent token
@@ -41,10 +42,14 @@ Your local agent will need a token to authenticate with your Dagster+ account. T
 
 1. Create a directory to act as your Dagster home. This guide uses `~/dagster_home`, but the directory can be located wherever you want.
 2. In the new directory, create a `dagster.yaml` file with the following:
-    <CodeExample filePath="dagster-plus/deployment/hybrid/agents/local_dagster.yaml" language="yaml" title="dagster.yaml" />
+   <CodeExample
+     filePath="dagster-plus/deployment/hybrid/agents/local_dagster.yaml"
+     language="yaml"
+     title="dagster.yaml"
+   />
 3. In the file, fill in the following:
-    - `agent_token.env` - The name of the environment variable storing the agent token you created in Step 1.
-    - `deployment` - The name of the deployment associated with this instance of the agent. In the preceding example, `prod` was used as the deployment.
+   - `agent_token.env` - The name of the environment variable storing the agent token you created in Step 1.
+   - `deployment` - The name of the deployment associated with this instance of the agent. In the preceding example, `prod` was used as the deployment.
 4. Save the file.
 
 For more information about `dagster.yaml` configuration options, check out the [`dagster.yaml` reference](/todo).

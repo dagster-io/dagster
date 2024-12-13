@@ -7,7 +7,6 @@ This page provides instructions for running the [Dagster+ agent](/todo) on a [Ku
 
 ## Installation
 
-
 ### Prerequisites
 
 You'll need a Kubernetes cluster. This can be a self-hosted Kubernetes cluster or a managed offering like [Amazon EKS](https://aws.amazon.com/eks/), [Azure AKS](https://azure.microsoft.com/en-us/products/kubernetes-service), or [Google GKE](https://cloud.google.com/kubernetes-engine).
@@ -54,8 +53,8 @@ We recommend upgrading your Dagster+ agent every 6 months. The version of your a
 ```yaml
 # values.yaml
 dagsterCloudAgent:
-    image:
-        tag: latest
+  image:
+    tag: latest
 ```
 
 ```shell
@@ -76,10 +75,10 @@ You can see basic health information about your agent in the Dagster+ UI:
 kubectl --namespace dagster-cloud logs -l deployment=agent
 ```
 
-
 ## Common configurations
 
 There are three places to customize how Dagster interacts with Kubernetes:
+
 - **Per Deployment** by configuring the Dagster+ agent using [Helm values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
 - **Per Project** by configuring the `dagster_cloud.yaml` file for your [code location](/dagster-plus/deployment/code-locations)
 - **Per Asset or Job** by adding tags to the [asset](/todo), [job](/todo), or [customizing the Kubernetes pipes invocation](/todo)
@@ -88,7 +87,6 @@ Changes apply in a hierarchy, for example, a customization for an asset will ove
 
 An exhaustive list of settings is available [here](/dagster-plus/deployment/management/settings/hybrid-agent-settings), but common options are presented below.
 
-
 ### Configure your agents to serve branch deployments
 
 [Branch deployments](/dagster-plus/features/ci-cd/branch-deployments/index.md) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
@@ -96,7 +94,7 @@ An exhaustive list of settings is available [here](/dagster-plus/deployment/mana
 ```yaml
 # values.yaml
 dagsterCloud:
-    branchDeployment: true
+  branchDeployment: true
 ```
 
 ```shell
@@ -112,7 +110,7 @@ You can configure your Dagster+ agent to run with multiple replicas. Work will b
 ```yaml
 # values.yaml
 dagsterCloudAgent:
-    replicas: 2
+  replicas: 2
 ```
 
 ```shell
@@ -138,11 +136,9 @@ helm --namespace dagster-cloud upgrade agent \
 
 The agent is responsible for managing the lifecycle of your code locations and will typically need to pull images after your CI/CD process builds them and pushes them to your registry. You can specify a secret the agent will use to authenticate to your image registry.
 
-
 :::tip
 For cloud-based Kubernetes deployments such as AWS EKS, AKS, or GCP, you don't need an image pull secret. The role used by Kubernetes will have permission to access the registry, so you can skip this configuration.
 :::
-
 
 First create the secret. This step will vary based on the registry you use, but for DockerHub:
 
@@ -213,7 +209,6 @@ helm --namespace dagster-cloud upgrade agent \
     --values ./values.yaml
 ```
 
-
 </TabItem>
 </Tabs>
 
@@ -226,7 +221,6 @@ kubectl create secret generic database-password-kubernetes-secret \
     --from-literal=DATABASE_PASSWORD=your_password \
     --namespace dagster-plus
 ```
-
 
 Next, determine if the secret should be available to all code locations or a single code location.
 
@@ -268,14 +262,12 @@ location:
 
 `env_secrets` will make the secret available in an environment variable, see the Kubernetes docs on [`envFrom` for details](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables). In this example the environment variable `DATABASE_PASSWORD` would have the value `your_password`.
 
-
 </TabItem>
 </Tabs>
 
 :::note
-If you need to request secrets from a secret manager like AWS Secrets Manager or HashiCorp Vault, follow one of the prior methods to give your code access to vault credentials. Then, inside your Dagster code, use those  credentials to authenticate a Python client that requests secrets from the secret manager.
+If you need to request secrets from a secret manager like AWS Secrets Manager or HashiCorp Vault, follow one of the prior methods to give your code access to vault credentials. Then, inside your Dagster code, use those credentials to authenticate a Python client that requests secrets from the secret manager.
 :::
-
 
 ### Use a different service account for a specific code location
 
@@ -320,18 +312,22 @@ You may wish to run data pipelines from project A in Kubernetes cluster A, and p
 
 - Deploy an agent into each environment and use the `agentQueue` configuration:
   Specify an agent queue for the on-prem agent:
+
   ```yaml file=values.yaml
   dagsterCloud:
     agentQueues:
       additionalQueues:
         - on-prem-agent-queue
   ```
+
   Deploy onto the on-prem Kubernetes cluster:
+
   ```shell
   helm --namespace dagster-cloud upgrade agent \
     dagster-cloud/dagster-cloud-agent \
     --values ./values.yaml
   ```
+
   Specify an agent queue for the agent on AWS:
 
   ```yaml file=values.yaml
@@ -340,12 +336,15 @@ You may wish to run data pipelines from project A in Kubernetes cluster A, and p
       additionalQueues:
         - aws-agent-queue
   ```
+
   Deploy onto the AWS Kubernetes cluster:
+
   ```shell
   helm --namespace dagster-cloud upgrade agent \
     dagster-cloud/dagster-cloud-agent \
     --values ./values.yaml
   ```
+
 - Create separate code locations for each project
 - Update the `dagster_cloud.yaml` file for each code location
   ```yaml file=dagster_cloud.yaml
@@ -366,6 +365,7 @@ dagsterCloud:
   agentQueues:
     includeDefaultQueue: true
 ```
+
 :::
 
 </TabItem>
@@ -432,11 +432,19 @@ The units for CPU and memory resources are described [in this document](https://
 
 The default behavior in Dagster+ is to create one pod for a run. Each asset targeted by that run is executed in subprocess within the pod. Use a job tag to request resources for this pod, which in turn makes those resources available to the targeted assets.
 
-<CodeExample filePath="dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_job.py" language="python" title="Request resources for a job" />
+<CodeExample
+  filePath="dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_job.py"
+  language="python"
+  title="Request resources for a job"
+/>
 
 Another option is to launch a pod for each asset by telling Dagster to use the Kubernetes job executor. In this case, you can specify resources for each individual asset.
 
-<CodeExample filePath="dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_asset.py" language="python" title="Request resources for an asset" />
+<CodeExample
+  filePath="dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_asset.py"
+  language="python"
+  title="Request resources for an asset"
+/>
 
 </TabItem>
 
@@ -444,10 +452,11 @@ Another option is to launch a pod for each asset by telling Dagster to use the K
 
 Dagster can launch and manage existing Docker images as Kubernetes jobs using the [Dagster kubernetes pipes integration](/integrations/libraries/kubernetes). To request resources for these jobs by supplying the appropriate Kubernetes pod spec.
 
-<CodeExample filePath="dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_pipes.py" language="python" title="Request resources for a k8s pipes asset" />
-
-
+<CodeExample
+  filePath="dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_pipes.py"
+  language="python"
+  title="Request resources for a k8s pipes asset"
+/>
 
 </TabItem>
 </Tabs>
-

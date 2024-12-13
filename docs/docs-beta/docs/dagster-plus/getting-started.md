@@ -1,8 +1,9 @@
 ---
-title: "Getting started with Dagster+"
+title: 'Getting started with Dagster+'
 ---
 
 First [create a Dagster+ organization](https://dagster.plus/signup). Note: you can sign up with:
+
 - a Google email address
 - a GitHub account
 - a one-time email link, great if you are using a corporate email. You can setup SSO after completing these steps.
@@ -23,6 +24,7 @@ We recommend following the steps in Dagster+ to add a new project.
 ![Screenshot of Dagster+ serverless NUX](/img/placeholder.svg)
 
 The Dagster+ on-boarding will guide you through:
+
 - creating a Git repository containing your Dagster code
 - setting up the necessary CI/CD actions to deploy that repository to Dagster+
 
@@ -31,6 +33,7 @@ If you don't have any Dagster code yet, you will have the option to select an ex
 :::
 
 See the guide on [adding code locations](/dagster-plus/deployment/code-locations) for details.
+
 </TabItem>
 
 <TabItem value="hybrid" label="Dagster+ Hybrid">
@@ -39,10 +42,10 @@ See the guide on [adding code locations](/dagster-plus/deployment/code-locations
 
 Follow [these guides](/dagster-plus/deployment/deployment-types/hybrid) for installing a Dagster+ Hybrid agent. Not sure which agent to pick? We recommend using the Dagster+ Kubernetes agent in most cases.
 
-
 ## Setup CI/CD
 
 In most cases, your CI/CD process will be responsible for:
+
 - building your Dagster code into a Docker image
 - pushing your Docker image to a container registry you manage
 - notifying Dagster+ of the new or updated code
@@ -51,7 +54,6 @@ Refer to the guide for [adding a code location](/dagster-plus/deployment/code-lo
 
 </TabItem>
 </Tabs>
-
 
 ## Next steps
 

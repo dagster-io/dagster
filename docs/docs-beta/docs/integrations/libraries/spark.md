@@ -18,8 +18,6 @@ enables:
 tags: [dagster-supported, compute]
 ---
 
-
-
 Spark jobs typically execute on infrastructure that's specialized for Spark. Spark applications are typically not containerized or executed on Kubernetes.
 
 Running Spark code often requires submitting code to a Databricks or EMR cluster. `dagster-pyspark` provides a Spark class with methods for configuration and constructing the `spark-submit` command for a Spark job.

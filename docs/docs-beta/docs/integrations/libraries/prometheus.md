@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, monitoring]
 ---
 
-
-
 This integration allows you to push metrics to the Prometheus gateway from within a Dagster pipeline.
 
 ### Installation

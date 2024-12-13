@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, alerting]
 ---
 
-
-
 This library provides an integration with Slack to support posting messages in your company's Slack workspace.
 
 ### Installation

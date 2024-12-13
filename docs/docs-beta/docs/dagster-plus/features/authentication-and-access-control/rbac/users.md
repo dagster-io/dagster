@@ -1,6 +1,6 @@
 ---
-title: "Managing users in Dagster+"
-sidebar_label: "User management"
+title: 'Managing users in Dagster+'
+sidebar_label: 'User management'
 sidebar_position: 400
 ---
 
@@ -13,8 +13,8 @@ In this guide, you'll learn how to manage users and their permissions using the 
 
 - A Dagster+ account
 - The required [Dagster+ permissions](/todo):
-   - **Organization Admins** can add, manage, and remove users
-   - **Admins** can add users
+  - **Organization Admins** can add, manage, and remove users
+  - **Admins** can add users
 
 </details>
 

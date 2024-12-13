@@ -1,5 +1,5 @@
 ---
-title: "Catalog views"
+title: 'Catalog views'
 sidebar_position: 100
 ---
 
@@ -21,9 +21,6 @@ In this guide, you'll learn how to create, access, and share catalog views with 
 
 </details>
 
-
-
-
 ## Creating catalog views
 
 To view the Dagster+ Asset catalog, use the **Catalog** button on the top navigation.
@@ -33,6 +30,7 @@ In any Dagster+ catalog page, you can access the current catalog view, or create
 ![Screenshot of the catalog view dropdown](/img/placeholder.svg)
 
 To create a new catalog view, you have two options:
+
 1. Create a new catalog view from scratch, from the catalog view menu.
 2. Create a new catalog view from your current set of filters.
 

@@ -1,6 +1,6 @@
 ---
-title: "Schedule cron-based pipelines"
-sidebar_label: "Schedules"
+title: 'Schedule cron-based pipelines'
+sidebar_label: 'Schedules'
 sidebar_position: 100
 ---
 
@@ -13,6 +13,7 @@ To follow the steps in this guide, you'll need:
 
 - Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
 - Familiarity with [Ops and Jobs](/guides/build/ops-jobs/index.md)
+
 </details>
 
 ## Basic schedule

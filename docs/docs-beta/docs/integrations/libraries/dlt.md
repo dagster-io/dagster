@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, etl]
 ---
 
-
-
 This integration allows you to use [dlt](https://dlthub.com/) to easily ingest and replicate data between systems through Dagster.
 
 ### Installation

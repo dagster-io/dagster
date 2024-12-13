@@ -1,5 +1,5 @@
 ---
-title: "Managing code locations with Definitions"
+title: 'Managing code locations with Definitions'
 unlisted: true
 ---
 

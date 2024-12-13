@@ -1,5 +1,5 @@
 ---
-title: "Automating pipelines"
+title: 'Automating pipelines'
 description: Learn how to automate your data pipelines.
 sidebar_position: 40
 sidebar_class_name: hidden
@@ -92,8 +92,7 @@ For more examples of how to create asset sensors, see the [How-To Use Asset Sens
 
 ## Declarative Automation
 
-{/* TODO: add content */}
-
+{/** TODO: add content **/}
 
 ## GraphQL Endpoint
 
@@ -230,8 +229,8 @@ response = requests.post(
 
 ## Next steps
 
-- Learn more about [advanced scheduling patterns] - {/* TODO ADD LINK */}
-- Explore [complex sensor examples] - {/* TODO ADD LINK */}
-- Dive into [Declarative Automation best practices] - {/* TODO ADD LINK */}
+- Learn more about [advanced scheduling patterns] - {/** TODO ADD LINK **/}
+- Explore [complex sensor examples] - {/** TODO ADD LINK **/}
+- Dive into [Declarative Automation best practices] - {/** TODO ADD LINK **/}
 
 By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints.

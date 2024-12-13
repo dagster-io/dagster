@@ -1,5 +1,5 @@
 ---
-title: "Authentication and access control"
+title: 'Authentication and access control'
 sidebar_position: 10
 ---
 

@@ -18,8 +18,6 @@ enables:
 tags: [community-supported]
 ---
 
-
-
 Use Dagster and Weights & Biases (W&B) to orchestrate your MLOps pipelines and maintain ML assets. The integration with W&B makes it easy within Dagster to:
 
 - use and create W&B Artifacts

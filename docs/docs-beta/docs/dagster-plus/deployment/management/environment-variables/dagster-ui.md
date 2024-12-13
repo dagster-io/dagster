@@ -1,7 +1,7 @@
 ---
-title: "Setting environment variables with the Dagster+ UI"
+title: 'Setting environment variables with the Dagster+ UI'
 sidebar_position: 200
-sidebar_label: "Set with Dagster+ UI"
+sidebar_label: 'Set with Dagster+ UI'
 ---
 
 Environment variable are key-value pairs that are set outside of your source code. Using environment variables lets you dynamically change the behavior of your application without modifying source code and securely set up secrets.
@@ -24,16 +24,15 @@ Before you begin, use the deployment switcher to select the right deployment.
 
 1. Click the **+ Add environment variable** button.
 2. In the modal that displays, fill in the following:
-    - **Name** - Enter a name for the environment variable. This is how the variable will be referenced in your code.
-    - **Value** - Enter a value for the environment variable.
-    - **Deployment Scope** - select the deployment(s) where the variable should be accessible:
-        - **Full deployment** - The variable will be available to selected code locations in the full deployment.
-        - **Branch deployments** - The variable will be available to selected code locations in Branch Deployments.
-        - **Local** - If selected, the variable will be included when [exporting environment variables to a local `.env` file](#export).
-    - **Code Location Scope** - select the code location(s) where the variable should be accessible. At least one code location is required.
+   - **Name** - Enter a name for the environment variable. This is how the variable will be referenced in your code.
+   - **Value** - Enter a value for the environment variable.
+   - **Deployment Scope** - select the deployment(s) where the variable should be accessible:
+     - **Full deployment** - The variable will be available to selected code locations in the full deployment.
+     - **Branch deployments** - The variable will be available to selected code locations in Branch Deployments.
+     - **Local** - If selected, the variable will be included when [exporting environment variables to a local `.env` file](#export).
+   - **Code Location Scope** - select the code location(s) where the variable should be accessible. At least one code location is required.
 
-
-{/* TODO replace placeholder image */}
+{/** TODO replace placeholder image **/}
 
 ![Screenshot of adding environment variables](/img/placeholder.svg)
 
@@ -78,11 +77,11 @@ When you [add an environment variable](#add), you can select the deployment scop
 For example, if you wanted to provide different Snowflake passwords for your production and branch deployments, you would make two environment variables with the same key:
 
 - For the **production** environment variable:
-   - Set the value as the production password, and
-   - Check only the **Full deployment** box
+  - Set the value as the production password, and
+  - Check only the **Full deployment** box
 - For the **branch deployment** environment variable:
-   - Set the value as the branch deployment password, and
-   - Check only the **Branch deployments** box
+  - Set the value as the branch deployment password, and
+  - Check only the **Branch deployments** box
 
 ![Screenshot of environment variables](/img/placeholder.svg)
 

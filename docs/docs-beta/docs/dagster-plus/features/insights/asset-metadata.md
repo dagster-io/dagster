@@ -1,6 +1,6 @@
 ---
-title: "Integrate asset metadata into Dagster+ Insights"
-sidebar_label: "Integrate asset metadata"
+title: 'Integrate asset metadata into Dagster+ Insights'
+sidebar_label: 'Integrate asset metadata'
 sidebar_position: 100
 ---
 
@@ -31,12 +31,12 @@ Once your assets are emitting numeric metadata values, you'll be able to enable 
 To add your metadata key to the list of metrics shown in Insights, click **Edit** in the sidebar next to the **User provided metrics** header:
 
 ![Viewing the Insights tab in the Dagster+ UI](/img/placeholder.svg)
-{/* <Image
+{/** <Image
 alt="Viewing the Insights tab in the Dagster UI"
 src="/images/dagster-cloud/insights/insights-tab.png"
 width={2640}
 height={1516}
-*/}
+**/}
 
 In the dialog that appears, use the eye indicator to show or hide metrics in Insights. Selected metrics will be visible in both the Insights sidebar and on individual asset pages.
 

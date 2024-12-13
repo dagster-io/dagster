@@ -20,7 +20,6 @@ To complete the steps in this guide, you'll need:
 
 </details>
 
-
 ## Step 1: Add the Dagster+ app in Okta \{#dagster-app}
 
 1. Sign in to your Okta Admin Dashboard.
@@ -29,19 +28,17 @@ To complete the steps in this guide, you'll need:
 4. On the **Browse App Integration Catalog** page, search for `Dagster Cloud`.
 5. Add and save the application.
 
-
 ## Step 2: Configure SSO in Okta \{#configure-sso}
 
 1. In Okta, open the Dagster Cloud application and navigate to its **Sign On Settings**.
 2. Scroll down to the **Advanced Sign-on settings** section.
 3. In the **Organization** field, enter your Dagster+ organization name. This is used to route the SAML response to the correct Dagster+ subdomain.
 
-  For example, your organization name is `hooli` and your Dagster+ domain is `https://hooli.dagster.cloud`. To configure this correctly, you'd enter `hooli` into the **Organization** field:
+For example, your organization name is `hooli` and your Dagster+ domain is `https://hooli.dagster.cloud`. To configure this correctly, you'd enter `hooli` into the **Organization** field:
 
-   ![Okta Subdomain Configuration](/img/placeholder.svg)
+![Okta Subdomain Configuration](/img/placeholder.svg)
 
 4. When finished, click **Done**.
-
 
 ## Step 3: Upload the SAML metadata to Dagster+ \{#upload-saml}
 
@@ -72,7 +69,6 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
       --api-token=<user_token> \
       --url https://<organization_name>.dagster.cloud
    ```
-
 
 ## Step 4: Grant access to users \{#grant-access}
 

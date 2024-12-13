@@ -17,8 +17,6 @@ enables:
 tags: [dagster-supported, metadata]
 ---
 
-
-
 Perform data validation, emit summary statistics, and enable reliable DataFrame serialization/deserialization. The dagster_pandas library provides you with the utilities for implementing validation on Pandas DataFrames. The Dagster type system generates documentation of your DataFrame constraints and makes it accessible in the Dagster UI.
 
 ### Installation

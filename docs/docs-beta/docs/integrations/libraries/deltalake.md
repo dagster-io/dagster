@@ -18,8 +18,6 @@ enables:
 tags: [community-supported, storage]
 ---
 
-
-
 Delta Lake is a great storage format for Dagster workflows. With this integration, you can use the Delta Lake I/O Manager to read and write your Dagster assets.
 
 Here are some of the benefits that Delta Lake provides Dagster users:

@@ -1,5 +1,5 @@
 ---
-title: "Monitoring pipelines"
+title: 'Monitoring pipelines'
 sidebar_position: 50
 sidebar_class_name: hidden
 ---

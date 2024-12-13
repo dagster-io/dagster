@@ -5,7 +5,6 @@ sidebar_position: 500
 
 In this guide, you'll configure OneLogin to use single sign-on (SSO) with your Dagster+ organization.
 
-
 <details>
   <summary>Prerequisites</summary>
 
@@ -22,7 +21,6 @@ To follow the steps in this guide, you'll need:
 
 </details>
 
-
 ## Step 1: Add the Dagster+ app in OneLogin \{#dagster-app}
 
 1. Sign into your OneLogin portal.
@@ -34,17 +32,14 @@ To follow the steps in this guide, you'll need:
 
 5. Add and save the application.
 
-
-
 ## Step 2: Configure SSO in OneLogin \{#configure-sso}
 
 1. In OneLogin, open the application and navigate to its **Configuration**.
 2. In the **Dagster+ organisation name** field, enter your Dagster+ organization name. This is used to route the SAML response to the correct Dagster+ subdomain.
 
    For example, your organization name is `hooli` and your Dagster+ domain is `https://hooli.dagster.cloud`. To configure this correctly, you'd enter `hooli` into the **Subdomain** field.
+
 3. When finished, click **Done**.
-
-
 
 ## Step 3: Upload the SAML metadata to Dagster+ \{#upload-saml}
 
@@ -61,7 +56,6 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
      --url https://<organization_name>.dagster.cloud
    ```
 
-
 ## Step 4: Grant access to users \{#grant-access}
 
 Next, you'll assign users to the Dagster+ application in OneLogin. This will allow them to log in using their OneLogin credentials with the sign in flow is initiated.
@@ -76,7 +70,6 @@ Next, you'll assign users to the Dagster+ application in OneLogin. This will all
 5. Click **Continue**.
 6. Click **Save User.**
 7. Repeat steps 2-6 for every user you want to access Dagster+.
-
 
 import TestSSO from '../../../../partials/\_TestSSO.md';
 

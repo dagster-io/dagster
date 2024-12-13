@@ -15,4 +15,4 @@ Lastly, you'll test your SSO configuration:
 
 ### Testing an identity provider-initiated login \{#test-identity-login}
 
-{/* Copy for this section is in individual guides */}
+{/** Copy for this section is in individual guides **/}
