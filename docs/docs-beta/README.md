@@ -3,7 +3,21 @@
 This is the home of the new Dagster documentation. It is currently in beta and incomplete.
 The documentation site is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
 
----
+## Overview of the docs
+
+- `./src` contains custom components, styles, themes, and layouts.
+- `./content-templates` contains the templates for the documentation pages.
+- `./docs/` is the source of truth for the documentation.
+- `/examples/docs_beta_snippets/docs_beta_snippets/` contains all code examples for the documentation.
+
+The docs are broken down into the following sections:
+
+- Docs - includes content from [getting-started](./docs/getting-started/) and [guides](./docs/guides/)
+- [Integrations](./docs/integrations/)
+- [Dagster+](./docs/dagster-plus/)
+- [API reference](./docs/api/)
+
+`sidebar.ts` and `docusaurus.config.ts` are the main configuration files for the documentation.
 
 ## Installation
 
@@ -28,24 +42,6 @@ or
 ```bash
 pip install vale
 ```
-
----
-
-## Overview of the docs
-
-- `./src` contains custom components, styles, themes, and layouts.
-- `./content-templates` contains the templates for the documentation pages.
-- `./docs/` is the source of truth for the documentation.
-- `/examples/docs_beta_snippets/docs_beta_snippets/` contains all code examples for the documentation.
-
-The docs are broken down into the following sections:
-
-- [Tutorials](./docs/tutorials/)
-- [Guides](./docs/guides/)
-
-`sidebar.ts` and `docusaurus.config.ts` are the main configuration files for the documentation.
-
----
 
 ## Local Development
 
