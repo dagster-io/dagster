@@ -11,8 +11,6 @@ class ATProtoResource(dg.ConfigurableResource):
 
     def _login(self, client):
         """Create a re-usable session to be used across resource instances; we are rate limited to 30/5 minutes or 300/day session."""
-        # TODO - purge cache if file was created outside of TTL
-        # TODO - write cache to S3 (can we use S3 resource here?)
         if os.path.exists(self.session_cache_path):
             with open(self.session_cache_path, "r") as f:
                 session_string = f.read()

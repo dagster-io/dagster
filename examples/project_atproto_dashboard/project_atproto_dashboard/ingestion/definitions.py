@@ -10,7 +10,6 @@ from project_atproto_dashboard.ingestion.utils.atproto import (
     get_all_starter_pack_members,
 )
 
-PREFERRED_LANGUAGE = os.environ.get("BSKY_PREFERRED_LANGUAGE", "en")
 AWS_BUCKET_NAME = os.environ.get("AWS_BUCKET_NAME", "dagster-demo")
 
 
