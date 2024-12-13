@@ -373,7 +373,7 @@ class GrapheneISolidDefinition(graphene.Interface):
     metadata = non_null_list(GrapheneMetadataItemDefinition)
     input_definitions = non_null_list(GrapheneInputDefinition)
     output_definitions = non_null_list(GrapheneOutputDefinition)
-    asset_nodes = non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
+    assetNodes = non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
     class Meta:
         name = "ISolidDefinition"
@@ -424,10 +424,7 @@ class ISolidDefinitionMixin:
             for output_def_snap in self._solid_def_snap.output_def_snaps
         ]
 
-    def resolve_asset_nodes(self, graphene_info: ResolveInfo) -> Sequence["GrapheneAssetNode"]:
-        # NOTE: This is a temporary hack. We really should prob be resolving solids against the repo
-        # rather than pipeline, that way we would not have to refetch the repo here here in order to
-        # access the asset nodes.
+    def resolve_assetNodes(self, graphene_info: ResolveInfo) -> Sequence["GrapheneAssetNode"]:
         from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
         # This is a workaround for the fact that asset info is not persisted in pipeline snapshots.
@@ -435,13 +432,12 @@ class ISolidDefinitionMixin:
             return []
         else:
             assert isinstance(self._represented_pipeline, RemoteJob)
-            repo_handle = self._represented_pipeline.repository_handle
-            origin = repo_handle.code_location_origin
-            location = graphene_info.context.get_code_location(origin.location_name)
-            ext_repo = location.get_repository(repo_handle.repository_name)
+            job_asset_nodes = graphene_info.context.get_assets_in_job(
+                self._represented_pipeline.handle.to_selector()
+            )
             remote_nodes = [
                 remote_node
-                for remote_node in ext_repo.asset_graph.asset_nodes
+                for remote_node in job_asset_nodes
                 if (
                     (remote_node.asset_node_snap.node_definition_name == self.solid_def_name)
                     or (
@@ -450,21 +446,20 @@ class ISolidDefinitionMixin:
                     )
                 )
             ]
-
+            differ = None
             base_deployment_context = graphene_info.context.get_base_deployment_context()
+            if base_deployment_context:
+                differ = AssetGraphDiffer.from_remote_repositories(
+                    code_location_name=self._represented_pipeline.handle.location_name,
+                    repository_name=self._represented_pipeline.handle.repository_name,
+                    branch_workspace=graphene_info.context,
+                    base_workspace=base_deployment_context,
+                )
 
             return [
                 GrapheneAssetNode(
                     remote_node=remote_node,
-                    # base_deployment_context will be None if we are not in a branch deployment
-                    asset_graph_differ=AssetGraphDiffer.from_remote_repositories(
-                        code_location_name=location.name,
-                        repository_name=ext_repo.name,
-                        branch_workspace=graphene_info.context,
-                        base_workspace=base_deployment_context,
-                    )
-                    if base_deployment_context is not None
-                    else None,
+                    asset_graph_differ=differ,
                 )
                 for remote_node in remote_nodes
             ]
