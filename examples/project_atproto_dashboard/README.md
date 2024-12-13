@@ -13,11 +13,14 @@ End-to-end project that demonstrates:
 
 ### Environment Setup
 
-Ensure the following environments have been populated in your `.env` file:
+Ensure the following environments have been populated in your `.env` file. Start by copying the
+template.
 
-    BSKY_LOGIN
-    BSKY_APP_PASSWORD
-    BSKY_PREFERRED_LANGUAGE
+```
+cp .env.example .env
+```
+
+And then populate the fields.
 
 ### Development
 
