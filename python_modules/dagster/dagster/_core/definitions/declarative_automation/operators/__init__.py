@@ -11,8 +11,11 @@ from dagster._core.definitions.declarative_automation.operators.check_operators 
     AnyChecksCondition as AnyChecksCondition,
 )
 from dagster._core.definitions.declarative_automation.operators.dep_operators import (
+    AllAssetSelectionCondition as AllAssetSelectionCondition,
     AllDepsCondition as AllDepsCondition,
+    AnyAssetSelectionCondition as AnyAssetSelectionCondition,
     AnyDepsCondition as AnyDepsCondition,
+    AssetSelectionCondition as AssetSelectionCondition,
     EntityMatchesCondition as EntityMatchesCondition,
 )
 from dagster._core.definitions.declarative_automation.operators.newly_true_operator import (

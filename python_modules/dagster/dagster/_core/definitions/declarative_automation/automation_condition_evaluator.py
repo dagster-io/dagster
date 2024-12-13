@@ -10,10 +10,8 @@ from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
-    AutomationResult,
-)
+from dagster._core.definitions.declarative_automation import AssetSelectionCondition
+from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.events import AssetKey
 from dagster._core.instance import DagsterInstance
@@ -32,7 +30,7 @@ class AutomationConditionEvaluator:
         asset_graph: BaseAssetGraph,
         cursor: AssetDaemonCursor,
         emit_backfills: bool,
-        default_condition: Optional[AutomationCondition] = None,
+        global_condition: Optional[AssetSelectionCondition] = None,
         evaluation_time: Optional[datetime.datetime] = None,
         logger: logging.Logger = logging.getLogger("dagster.automation"),
     ):
@@ -47,7 +45,7 @@ class AutomationConditionEvaluator:
         )
         self.logger = logger
         self.cursor = cursor
-        self.default_condition = default_condition
+        self.global_condition = global_condition
 
         self.current_results_by_key: Dict[EntityKey, AutomationResult] = {}
         self.condition_cursors = []
@@ -137,14 +135,18 @@ class AutomationConditionEvaluator:
                 f"({format(result.end_timestamp - result.start_timestamp, '.3f')} seconds)"
             )
 
-        for topo_level in self.asset_graph.toposorted_entity_keys_by_level:
-            coroutines = [
-                _evaluate_entity_async(entity_key, offset)
-                for offset, entity_key in enumerate(topo_level)
-                if entity_key in self.entity_keys
-            ]
-            await asyncio.gather(*coroutines)
-            num_evaluated += len(coroutines)
+        if self.global_condition:
+            # just choose a representative entity to evaluate the global condition
+            await _evaluate_entity_async(sorted(self.entity_keys)[0], 0)
+        else:
+            for topo_level in self.asset_graph.toposorted_entity_keys_by_level:
+                coroutines = [
+                    _evaluate_entity_async(entity_key, offset)
+                    for offset, entity_key in enumerate(topo_level)
+                    if entity_key in self.entity_keys
+                ]
+                await asyncio.gather(*coroutines)
+                num_evaluated += len(coroutines)
 
         return list(self.current_results_by_key.values()), [
             v for v in self.request_subsets_by_key.values() if not v.is_empty
@@ -176,7 +178,11 @@ class AutomationConditionEvaluator:
         # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
         # materialize all of them
         asset_key = result.key
-        execution_set_keys = self.asset_graph.get(asset_key).execution_set_entity_keys
+        execution_set_keys = (
+            self.asset_graph.get(asset_key).execution_set_entity_keys
+            if not self.global_condition
+            else self.entity_keys
+        )
 
         if len(execution_set_keys) > 1 and result.true_subset.size > 0:
             for neighbor_key in execution_set_keys:

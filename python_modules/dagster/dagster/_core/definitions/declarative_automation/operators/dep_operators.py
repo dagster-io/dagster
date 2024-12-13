@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional
+from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional, Type, Union
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import U_EntityKey
@@ -11,6 +11,10 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._core.definitions.declarative_automation.operators.boolean_operators import (
+    AndAutomationCondition,
+    OrAutomationCondition,
+)
 from dagster._record import copy, record
 from dagster._serdes.serdes import whitelist_for_serdes
 
@@ -56,6 +60,51 @@ class EntityMatchesCondition(
             context.key, direction=directions[1]
         )
         return AutomationResult(context=context, true_subset=true_subset, child_results=[to_result])
+
+
+class AssetSelectionCondition(BuiltinAutomationCondition):
+    selection: Any
+    operand: AutomationCondition[AssetKey]
+
+    @property
+    @abstractmethod
+    def inner_condition(
+        self,
+    ) -> Union[Type[AndAutomationCondition], Type[OrAutomationCondition]]: ...
+
+    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
+        condition = self.inner_condition(
+            operands=[
+                EntityMatchesCondition(key=key, operand=self.operand)
+                for key in self.selection.resolve(context.asset_graph)
+            ]
+        )
+        result = await context.for_child_condition(
+            child_condition=condition, child_index=0, candidate_subset=context.candidate_subset
+        ).evaluate_async()
+        return AutomationResult(context, true_subset=result.true_subset, child_results=[result])
+
+
+@whitelist_for_serdes
+@record
+class AllAssetSelectionCondition(AssetSelectionCondition):
+    selection: Any
+    operand: AutomationCondition[AssetKey]
+
+    @property
+    def inner_condition(self) -> Type[AndAutomationCondition]:
+        return AndAutomationCondition
+
+
+@whitelist_for_serdes
+@record
+class AnyAssetSelectionCondition(AssetSelectionCondition):
+    selection: Any
+    operand: AutomationCondition[AssetKey]
+
+    @property
+    def inner_condition(self) -> Type[OrAutomationCondition]:
+        return OrAutomationCondition
 
 
 @record
