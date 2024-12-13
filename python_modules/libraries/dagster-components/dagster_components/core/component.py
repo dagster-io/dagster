@@ -22,6 +22,7 @@ from typing import (
     TypeVar,
 )
 
+import click
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
@@ -85,6 +86,16 @@ def _clean_docstring(docstring: str) -> str:
     else:
         rest = textwrap.dedent("\n".join(lines[1:]))
         return f"{first_line}\n{rest}"
+
+
+def _get_click_cli_help(command: click.Command) -> str:
+    with click.Context(command) as ctx:
+        formatter = click.formatting.HelpFormatter()
+        param_records = [
+            p.get_help_record(ctx) for p in command.get_params(ctx) if p.name != "help"
+        ]
+        formatter.write_dl([pr for pr in param_records if pr])
+        return formatter.getvalue()
 
 
 class ComponentInternalMetadata(TypedDict):

@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Optional, Sequence
 
-import click
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
@@ -41,13 +40,6 @@ class DbtProjectParams(BaseModel):
 class DbtGenerateParams(BaseModel):
     init: bool = Field(default=False)
     project_path: Optional[str] = None
-
-    @staticmethod
-    @click.command
-    @click.option("--project-path", "-p", type=click.Path(resolve_path=True), default=None)
-    @click.option("--init", "-i", is_flag=True, default=False)
-    def cli(project_path: Optional[str], init: bool) -> "DbtGenerateParams":
-        return DbtGenerateParams(project_path=project_path, init=init)
 
 
 class DbtProjectComponentTranslator(DagsterDbtTranslator):

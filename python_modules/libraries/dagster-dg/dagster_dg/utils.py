@@ -1,4 +1,5 @@
 import contextlib
+import json
 import os
 import posixpath
 import re
@@ -329,3 +330,47 @@ class DgClickCommand(DgClickHelpMixin, click.Command):
 
 class DgClickGroup(DgClickHelpMixin, click.Group):
     pass
+
+
+# ########################
+# ##### JSON SCHEMA
+# ########################
+
+_JSON_SCHEMA_TYPE_TO_CLICK_TYPE = {"string": str, "integer": int, "number": float, "boolean": bool}
+
+
+def json_schema_property_to_click_option(
+    key: str, field_info: Mapping[str, Any], required: bool
+) -> click.Option:
+    field_type = field_info.get("type", "string")
+    option_name = f"--{key.replace('_', '-')}"
+
+    # Handle object type fields as JSON strings
+    if field_type == "object":
+        option_type = str  # JSON string input
+        help_text = f"{key} (JSON string)"
+        callback = parse_json_option
+
+    # Handle other basic types
+    else:
+        option_type = _JSON_SCHEMA_TYPE_TO_CLICK_TYPE[field_type]
+        help_text = key
+        callback = None
+
+    return click.Option(
+        [option_name],
+        type=option_type,
+        required=required,
+        help=help_text,
+        callback=callback,
+    )
+
+
+def parse_json_option(context: click.Context, param: click.Option, value: str):
+    """Callback to parse JSON string options into Python objects."""
+    if value:
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            raise click.BadParameter(f"Invalid JSON string for '{param.name}'.")
+    return value

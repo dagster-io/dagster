@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import textwrap
 from pathlib import Path
 
 import pytest
@@ -153,6 +154,21 @@ def test_generate_component_type_already_exists_fails(in_deployment: bool) -> No
         assert "already exists" in result.output
 
 
+def test_generate_component_dynamic_subcommand_generation() -> None:
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
+        result = runner.invoke("generate", "component", "--help")
+        assert_runner_result(result)
+        assert (
+            textwrap.dedent("""
+            Commands:
+              dagster_components.test.all_metadata_empty_asset
+              dagster_components.test.simple_asset
+              dagster_components.test.simple_pipes_script_asset
+        """).strip()
+            in result.output
+        )
+
+
 @pytest.mark.parametrize("in_deployment", [True, False])
 def test_generate_component_no_params_success(in_deployment: bool) -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
@@ -195,14 +211,13 @@ def test_generate_component_json_params_success(in_deployment: bool) -> None:
 
 
 @pytest.mark.parametrize("in_deployment", [True, False])
-def test_generate_component_extra_args_success(in_deployment: bool) -> None:
+def test_generate_component_key_value_params_success(in_deployment: bool) -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
         result = runner.invoke(
             "generate",
             "component",
             "dagster_components.test.simple_pipes_script_asset",
             "qux",
-            "--",
             "--asset-key=foo",
             "--filename=hello.py",
         )
@@ -217,7 +232,7 @@ def test_generate_component_extra_args_success(in_deployment: bool) -> None:
         )
 
 
-def test_generate_component_json_params_and_extra_args_fails() -> None:
+def test_generate_component_json_params_and_key_value_params_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke(
             "generate",
@@ -226,11 +241,12 @@ def test_generate_component_json_params_and_extra_args_fails() -> None:
             "qux",
             "--json-params",
             '{"filename": "hello.py"}',
-            "--",
             "--filename=hello.py",
         )
         assert_runner_result(result, exit_0=False)
-        assert "Detected both --json-params and EXTRA_ARGS" in result.output
+        assert (
+            "Detected params passed as both --json-params and individual options" in result.output
+        )
 
 
 def test_generate_component_outside_code_location_fails() -> None:
@@ -297,7 +313,7 @@ dbt_project_path = "../stub_code_locations/dbt_project_location/components/jaffl
     "params",
     [
         ["--json-params", json.dumps({"project_path": str(dbt_project_path)})],
-        ["--", "--project-path", dbt_project_path],
+        ["--project-path", dbt_project_path],
     ],
 )
 def test_generate_dbt_project_instance(params) -> None:
