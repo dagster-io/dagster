@@ -1049,6 +1049,58 @@ def test_large_backfill(
     assert instance.get_runs_count() == 3
 
 
+def test_backfill_is_processed_only_once(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    partition_set = remote_repo.get_partition_set("config_job_partition_set")
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="simple",
+            partition_set_origin=partition_set.get_remote_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=get_current_timestamp(),
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    threadpool_executor = ThreadPoolExecutor(2)
+
+    backfill_daemon_futures = {}
+    list(
+        execute_backfill_iteration(
+            workspace_context,
+            get_default_daemon_logger("BackfillDaemon"),
+            threadpool_executor=threadpool_executor,
+            backfill_futures=backfill_daemon_futures,
+        )
+    )
+
+    assert instance.get_runs_count() == 0
+
+    other_backfill_daemon_futures = {}
+    list(
+        execute_backfill_iteration(
+            workspace_context,
+            get_default_daemon_logger("BackfillDaemon"),
+            threadpool_executor=threadpool_executor,
+            backfill_futures=other_backfill_daemon_futures,
+        )
+    )
+
+    [result] = [list(future.result()) for future in backfill_daemon_futures.values()]
+    [other_result] = [list(future.result()) for future in other_backfill_daemon_futures.values()]
+
+    assert instance.get_runs_count() == 3
+    assert result
+    assert not other_result
+
+
 def test_unloadable_backfill(instance, workspace_context):
     unloadable_origin = _unloadable_partition_set_origin()
     instance.add_backfill(
