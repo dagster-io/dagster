@@ -561,6 +561,7 @@ class DecoratorAssetsDefinitionBuilder:
             config_schema=self.args.config_schema,
             retry_policy=self.args.retry_policy,
             code_version=self.args.code_version,
+            concurrency_group=self.args.concurrency_group,
         )(self.fn)
 
     def create_assets_definition(self) -> AssetsDefinition:
