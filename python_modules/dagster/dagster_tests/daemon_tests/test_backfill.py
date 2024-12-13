@@ -636,7 +636,7 @@ def test_simple_backfill(
 
 
 @pytest.mark.parametrize("parallel", [True, False])
-def test_two_backfills(
+def test_two_backfills_at_the_same_time(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
     remote_repo: RemoteRepository,
@@ -702,6 +702,17 @@ def test_two_backfills(
         )
 
     assert instance.get_runs_count() == 6
+
+    *runs, one, two, three = reversed(list(instance.get_runs()))
+    assert one.tags[BACKFILL_ID_TAG] == "simple"
+    assert one.tags[PARTITION_NAME_TAG] == "one"
+    assert two.tags[BACKFILL_ID_TAG] == "simple"
+    assert two.tags[PARTITION_NAME_TAG] == "two"
+    assert three.tags[BACKFILL_ID_TAG] == "simple"
+    assert three.tags[PARTITION_NAME_TAG] == "three"
+    for idx, run in enumerate(runs):
+        assert run.tags[BACKFILL_ID_TAG] == "partition_schedule_from_job"
+        assert run.tags[PARTITION_NAME_TAG] == second_partition_keys[idx]
 
 
 def test_canceled_backfill(
