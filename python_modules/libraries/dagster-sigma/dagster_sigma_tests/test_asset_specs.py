@@ -4,6 +4,8 @@ from tempfile import TemporaryDirectory
 import responses
 from click.testing import CliRunner
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions import materialize
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.reconstruct import (
     initialize_repository_def_from_pointer,
     reconstruct_repository_def_from_pointer,
@@ -77,6 +79,27 @@ def test_load_assets_organization_data(sigma_auth_token: str, sigma_sample_data:
         assert len(recon_repository_def.assets_defs_by_key) == 2 + 1
 
         assert len(responses.calls) == calls
+
+
+@responses.activate
+def test_materialize_workbook(
+    sigma_auth_token: str, sigma_sample_data: None, sigma_materialization: None
+) -> None:
+    with instance_for_test() as _instance:
+        # first, we resolve the repository to generate our cached metadata
+        repository_def = initialize_repository_def_from_pointer(
+            CodePointer.from_python_file(
+                str(Path(__file__).parent / "materialize_workbook.py"), "defs", None
+            ),
+        )
+
+        workbook_asset = repository_def.assets_defs_by_key[AssetKey(["Sample_Workbook"])]
+        assert workbook_asset.is_materializable
+
+        # materialize the workbook
+        with environ({"SIGMA_CLIENT_ID": "fake", "SIGMA_CLIENT_SECRET": "fake"}):
+            result = materialize([workbook_asset], raise_on_error=False)
+            assert result.success
 
 
 @responses.activate

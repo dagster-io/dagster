@@ -38,7 +38,7 @@ type TextCallback = (value: string) => string;
 const DEFAULT_TEXT_CALLBACK = (value: string) => value;
 
 // set to true for useful debug output.
-const DEBUG = true;
+const DEBUG = false;
 
 export class SelectionAutoCompleteVisitor
   extends AbstractParseTreeVisitor<void>
@@ -507,11 +507,15 @@ export class SelectionAutoCompleteVisitor
   }
 }
 
-export function createSelectionHint<T extends Record<string, string[]>, N extends keyof T>(
-  _nameBase: N,
-  attributesMap: T,
-  functions: string[],
-): CodeMirror.HintFunction {
+export function createSelectionHint<T extends Record<string, string[]>, N extends keyof T>({
+  nameBase: _nameBase,
+  attributesMap,
+  functions,
+}: {
+  nameBase: N;
+  attributesMap: T;
+  functions: string[];
+}): CodeMirror.HintFunction {
   const nameBase = _nameBase as string;
 
   return function (cm: CodeMirror.Editor, _options: CodeMirror.ShowHintOptions): any {

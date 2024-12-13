@@ -18,6 +18,7 @@ from dagster_components.core.component import (
     component,
 )
 from dagster_components.core.component_decl_builder import YamlComponentDecl
+from dagster_components.core.dsl_schema import AutomationConditionModel
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -33,6 +34,7 @@ class AssetSpecModel(BaseModel):
     code_version: Optional[str] = None
     owners: Sequence[str] = []
     tags: Mapping[str, str] = {}
+    automation_condition: Optional[AutomationConditionModel] = None
 
     @suppress_dagster_warnings
     def to_asset_spec(self) -> AssetSpec:
@@ -40,6 +42,9 @@ class AssetSpecModel(BaseModel):
             **{
                 **self.__dict__,
                 "key": AssetKey.from_user_string(self.key),
+                "automation_condition": self.automation_condition.to_automation_condition()
+                if self.automation_condition
+                else None,
             },
         )
 
