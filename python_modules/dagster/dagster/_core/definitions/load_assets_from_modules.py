@@ -10,6 +10,7 @@ from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
+from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
@@ -19,7 +20,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.utils import resolve_automation_condition
+from dagster._core.definitions.utils import DEFAULT_GROUP_NAME, resolve_automation_condition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
@@ -49,7 +50,11 @@ def find_subclasses_in_module(
 
 def assets_from_modules(
     modules: Iterable[ModuleType], extra_source_assets: Optional[Sequence[SourceAsset]] = None
-) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
+) -> Tuple[
+    Sequence[Union[AssetsDefinition, AssetSpec]],
+    Sequence[SourceAsset],
+    Sequence[CacheableAssetsDefinition],
+]:
     """Constructs three lists, a list of assets, a list of source assets, and a list of cacheable
     assets from the given modules.
 
@@ -65,48 +70,94 @@ def assets_from_modules(
     """
     asset_ids: Set[int] = set()
     asset_keys: Dict[AssetKey, ModuleType] = dict()
-    source_assets: List[SourceAsset] = list(
-        check.opt_sequence_param(extra_source_assets, "extra_source_assets", of_type=SourceAsset)
-    )
+    source_assets_by_key: Dict[AssetKey, SourceAsset] = {
+        source_asset.key: source_asset
+        for source_asset in check.opt_sequence_param(
+            extra_source_assets, "extra_source_assets", of_type=SourceAsset
+        )
+    }
     cacheable_assets: List[CacheableAssetsDefinition] = []
-    assets: Dict[AssetKey, AssetsDefinition] = {}
+    fully_resolved_assets_definitions: Dict[AssetKey, AssetsDefinition] = {}
+    standalone_asset_specs: Dict[AssetKey, AssetSpec] = {}
     for module in modules:
         for asset in find_objects_in_module_of_types(
-            module, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
+            module, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec)
         ):
-            asset = cast(Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition], asset)
+            asset = cast(
+                Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec], asset
+            )
             if id(asset) not in asset_ids:
                 asset_ids.add(id(asset))
                 if isinstance(asset, CacheableAssetsDefinition):
                     cacheable_assets.append(asset)
-                else:
-                    keys = asset.keys if isinstance(asset, AssetsDefinition) else [asset.key]
-                    for key in keys:
-                        if key in asset_keys:
-                            modules_str = ", ".join(
-                                set([asset_keys[key].__name__, module.__name__])
+                    continue
+                elif isinstance(asset, AssetSpec):
+                    if asset.key in asset_keys:
+                        # This spec has already been defined. There are certain cases where we allow this behavior.
+                        # First, find the object that we are conflicting with.
+                        if asset.key in source_assets_by_key:
+                            raise DagsterInvalidDefinitionError(
+                                f"Asset key {asset.key} is defined multiple times, as both a source asset and an asset spec."
+                                " Source assets and asset specs cannot share the same key."
                             )
-                            error_str = (
-                                f"Asset key {key} is defined multiple times. Definitions found in"
-                                f" modules: {modules_str}. "
+                        elif asset.key in fully_resolved_assets_definitions:
+                            conflicting_spec = check.not_none(
+                                fully_resolved_assets_definitions[asset.key].get_asset_spec(
+                                    asset.key
+                                )
                             )
-
-                            if key in assets and isinstance(asset, AssetsDefinition):
-                                if assets[key].node_def == asset.node_def:
-                                    error_str += (
-                                        "One possible cause of this bug is a call to with_resources"
-                                        " outside of a repository definition, causing a duplicate"
-                                        " asset definition."
-                                    )
-
-                            raise DagsterInvalidDefinitionError(error_str)
+                            if conflicting_spec != asset:
+                                raise DagsterInvalidDefinitionError(
+                                    f"Asset key {asset.key} is defined in both a spec at module scope, and in an asset definition. "
+                                    "The corresponding spec on the assets definition and the spec at module scope are different. "
+                                    "This means that either two separate assets were defined with the same key, which is not allowed, "
+                                    "or a spec was defined at module scope, passed to an asset definition, and then the asset definition was further modified. "
+                                    "Because we cannot determine which spec is the correct one to use, this is not allowed. Please remove the conflicting spec from module scope."
+                                )
+                            else:
+                                # This is the same spec, so we can ignore it.
+                                continue
                         else:
-                            asset_keys[key] = module
-                            if isinstance(asset, AssetsDefinition):
-                                assets[key] = asset
-                    if isinstance(asset, SourceAsset):
-                        source_assets.append(asset)
-    return list(set(assets.values())), source_assets, cacheable_assets
+                            other_standalone_spec = standalone_asset_specs[asset.key]
+                            if other_standalone_spec != asset:
+                                raise DagsterInvalidDefinitionError(
+                                    f"The same asset key {asset.key} is defined in multiple conflicting asset specs. Please only have one module-scope AssetSpec per asset key."
+                                )
+                    else:
+                        standalone_asset_specs[asset.key] = asset
+                    continue
+                keys = asset.keys if isinstance(asset, AssetsDefinition) else [asset.key]
+                for key in keys:
+                    if key in asset_keys:
+                        modules_str = ", ".join(set([asset_keys[key].__name__, module.__name__]))
+                        error_str = (
+                            f"Asset key {key} is defined multiple times. Definitions found in"
+                            f" modules: {modules_str}. "
+                        )
+
+                        if key in fully_resolved_assets_definitions and isinstance(
+                            asset, AssetsDefinition
+                        ):
+                            if fully_resolved_assets_definitions[key].node_def == asset.node_def:
+                                error_str += (
+                                    "One possible cause of this bug is a call to with_resources"
+                                    " outside of a repository definition, causing a duplicate"
+                                    " asset definition."
+                                )
+
+                        raise DagsterInvalidDefinitionError(error_str)
+                    else:
+                        asset_keys[key] = module
+                        if isinstance(asset, AssetsDefinition):
+                            fully_resolved_assets_definitions[key] = asset
+                if isinstance(asset, SourceAsset):
+                    source_assets_by_key[asset.key] = asset
+    return (
+        list(set(fully_resolved_assets_definitions.values()))
+        + list(standalone_asset_specs.values()),
+        list(source_assets_by_key.values()),
+        cacheable_assets,
+    )
 
 
 def load_assets_from_modules(
@@ -477,20 +528,31 @@ def assets_with_attributes(
             cached_asset.with_prefix_for_all(key_prefix) for cached_asset in cacheable_assets
         ]
 
+    assets = []
     if group_name or freshness_policy or automation_condition or backfill_policy:
-        assets_defs = [
-            asset.with_attributes(
-                group_names_by_key=(
-                    {asset_key: group_name for asset_key in asset.keys}
-                    if group_name is not None
-                    else {}
-                ),
-                freshness_policy=freshness_policy,
-                automation_condition=automation_condition,
-                backfill_policy=backfill_policy,
+        for asset in assets_defs:
+            updated_asset = asset
+            if backfill_policy and isinstance(asset, AssetsDefinition):
+                updated_asset = asset.with_attributes(backfill_policy=backfill_policy)
+            assets.extend(
+                map_asset_specs(
+                    # In replace_attributes, we use ellipsis to indicate no change to the attribute.
+                    lambda spec: spec.replace_attributes(
+                        group_name=group_name
+                        if (spec.group_name is None or spec.group_name == DEFAULT_GROUP_NAME)
+                        and group_name
+                        else ...,
+                        automation_condition=automation_condition
+                        if automation_condition is None and automation_condition
+                        else ...,
+                        freshness_policy=freshness_policy
+                        if freshness_policy is None and freshness_policy
+                        else ...,
+                    ),
+                    [updated_asset],
+                )
             )
-            for asset in assets_defs
-        ]
+
         if group_name:
             source_assets = [
                 source_asset.with_attributes(group_name=group_name)
@@ -508,4 +570,4 @@ def assets_with_attributes(
             for cached_asset in cacheable_assets
         ]
 
-    return [*assets_defs, *source_assets, *cacheable_assets]
+    return [*(assets or assets_defs), *source_assets, *cacheable_assets]

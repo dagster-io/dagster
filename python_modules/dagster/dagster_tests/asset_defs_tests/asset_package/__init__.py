@@ -1,4 +1,4 @@
-from dagster import AssetKey, SourceAsset, asset
+from dagster import AssetKey, AssetSpec, SourceAsset, asset
 
 
 @asset
@@ -29,4 +29,12 @@ def make_list_of_source_assets():
     return [buddy_holly, jerry_lee_lewis]
 
 
-list_of_assets_and_source_assets = [*make_list_of_assets(), *make_list_of_source_assets()]
+def make_list_of_specs():
+    return [AssetSpec(key="isley_brothers"), AssetSpec(key="the_crickets")]
+
+
+list_of_assets_and_source_assets = [
+    *make_list_of_assets(),
+    *make_list_of_source_assets(),
+    *make_list_of_specs(),
+]

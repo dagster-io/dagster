@@ -90,12 +90,12 @@ def test_load_assets_from_package_name():
     from dagster_tests.asset_defs_tests import asset_package
 
     assets_defs = load_assets_from_package_name(asset_package.__name__)
-    assert len(assets_defs) == 11
+    assert len(assets_defs) == 13
 
     assets_1 = [get_unique_asset_identifier(asset) for asset in assets_defs]
 
     assets_defs_2 = load_assets_from_package_name(asset_package.__name__)
-    assert len(assets_defs_2) == 11
+    assert len(assets_defs_2) == 13
 
     assets_2 = [get_unique_asset_identifier(asset) for asset in assets_defs]
 
@@ -106,12 +106,12 @@ def test_load_assets_from_package_module():
     from dagster_tests.asset_defs_tests import asset_package
 
     assets_1 = load_assets_from_package_module(asset_package)
-    assert len(assets_1) == 11
+    assert len(assets_1) == 13
 
     assets_1 = [get_unique_asset_identifier(asset) for asset in assets_1]
 
     assets_2 = load_assets_from_package_module(asset_package)
-    assert len(assets_2) == 11
+    assert len(assets_2) == 13
 
     assets_2 = [get_unique_asset_identifier(asset) for asset in assets_2]
 
