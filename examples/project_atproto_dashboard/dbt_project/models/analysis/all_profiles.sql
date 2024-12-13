@@ -1,6 +1,6 @@
-With max_profile_data As (
-    Select
-        json_extract_string(json, '$.subject.did') As profile_did,
+WITH max_profile_data AS (
+    SELECT
+        json_extract_string(json, '$.subject.did') AS profile_did,
         max(
             strptime(
                 regexp_extract(
@@ -10,29 +10,29 @@ With max_profile_data As (
                 ),
                 '%Y-%m-%d/%H/%M'
             )
-        ) As max_extracted_timestamp
-    From {{ ref("stg_profiles") }}
-    Group By
+        ) AS max_extracted_timestamp
+    FROM {{ ref("stg_profiles") }}
+    GROUP BY
         json_extract_string(json, '$.subject.did')
 ),
 
-profiles As (
-    Select
-        json_extract_string(json, '$.subject.handle') As handle_subject,
-        json_extract_string(json, '$.subject.did') As profile_did,
-        json_extract_string(json, '$.subject.avatar') As profile_avatar,
+profiles AS (
+    SELECT
+        json_extract_string(json, '$.subject.handle') AS handle_subject,
+        json_extract_string(json, '$.subject.did') AS profile_did,
+        json_extract_string(json, '$.subject.avatar') AS profile_avatar,
         json_extract_string(json, '$.subject.display_name')
-            As profile_display_name,
+            AS profile_display_name,
         json_extract_string(json, '$.subject.created_at')
-            As profile_created_date,
+            AS profile_created_date,
         json_extract_string(json, '$.subject.description')
-            As profile_description
-    From {{ ref("stg_profiles") }} stg_prof
-    Join max_profile_data
-        On
+            AS profile_description
+    FROM {{ ref("stg_profiles") }} stg_prof
+    JOIN max_profile_data
+        ON
             json_extract_string(stg_prof.json, '$.subject.did')
             = max_profile_data.profile_did
-            And strptime(
+            AND strptime(
                 regexp_extract(
                     stg_prof.filename,
                     'dagster-demo/atproto_starter_pack_snapshot/(\d{4}-\d{2}-\d{2}/\d{2}/\d{2})',
@@ -43,45 +43,45 @@ profiles As (
             = max_profile_data.max_extracted_timestamp
 ),
 
-user_aggregates As (
-    Select
-        replace(author_handle, '"', '') As author_handle,
-        count(*) As num_posts,
-        avg(cast(lf.likes As int)) As average_likes,
-        sum(cast(lf.likes As int)) As total_likes,
-        sum(cast(lf.replies As int)) As total_replies,
-        sum(cast(lf.likes As int)) / count(*) As total_likes_by_num_of_posts,
+user_aggregates AS (
+    SELECT
+        replace(author_handle, '"', '') AS author_handle,
+        count(*) AS num_posts,
+        avg(cast(lf.likes AS int)) AS average_likes,
+        sum(cast(lf.likes AS int)) AS total_likes,
+        sum(cast(lf.replies AS int)) AS total_replies,
+        sum(cast(lf.likes AS int)) / count(*) AS total_likes_by_num_of_posts,
         round(
             count(*)
-            / count(Distinct date_trunc('day', cast(created_at As timestamp))),
+            / count(DISTINCT date_trunc('day', cast(created_at AS timestamp))),
             2
-        ) As avg_posts_per_day,
+        ) AS avg_posts_per_day,
         ntile(100)
-            Over (
-                Order By sum(cast(lf.likes As int))
+            OVER (
+                ORDER BY sum(cast(lf.likes AS int))
             )
-            As likes_percentile,
+            AS likes_percentile,
         ntile(100)
-            Over (
-                Order By sum(cast(lf.replies As int))
+            OVER (
+                ORDER BY sum(cast(lf.replies AS int))
             )
-            As replies_percentile,
-        ntile(100) Over (
-            Order By count(*)
-        ) As posts_percentile,
-        (ntile(100) Over (
-            Order By sum(cast(lf.likes As int))) + ntile(100) Over (
-            Order By sum(cast(lf.replies As int))) + ntile(100) Over (
-            Order By count(*)
+            AS replies_percentile,
+        ntile(100) OVER (
+            ORDER BY count(*)
+        ) AS posts_percentile,
+        (ntile(100) OVER (
+            ORDER BY sum(cast(lf.likes AS int))) + ntile(100) OVER (
+            ORDER BY sum(cast(lf.replies AS int))) + ntile(100) OVER (
+            ORDER BY count(*)
         ))
-        / 3.0 As avg_score
-    From {{ ref("latest_feed") }} lf
-    Group By replace(author_handle, '"', '')
+        / 3.0 AS avg_score
+    FROM {{ ref("latest_feed") }} lf
+    GROUP BY replace(author_handle, '"', '')
 ),
 
-final As (
-    Select Distinct
-        profiles.handle_subject As profile_handle,
+final AS (
+    SELECT DISTINCT
+        profiles.handle_subject AS profile_handle,
         profiles.profile_did,
         profiles.profile_display_name,
         profiles.profile_avatar,
@@ -97,9 +97,9 @@ final As (
         user_aggregates.replies_percentile,
         user_aggregates.posts_percentile,
         user_aggregates.avg_score
-    From profiles
-    Left Join user_aggregates
-        On user_aggregates.author_handle = profiles.handle_subject
+    FROM profiles
+    LEFT JOIN user_aggregates
+        ON user_aggregates.author_handle = profiles.handle_subject
 )
 
-Select * From final
+SELECT * FROM final

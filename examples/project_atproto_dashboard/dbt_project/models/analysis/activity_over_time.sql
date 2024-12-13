@@ -1,14 +1,14 @@
-With final As (
-    Select
-        date_trunc('day', created_at) As post_date,
-        count(Distinct post_text) As unique_posts,
-        count(Distinct author_handle) As active_authors,
-        sum(likes) As total_likes,
-        sum(replies) As total_comments,
-        sum(quotes) As total_quotes
-    From {{ ref("latest_feed") }}
-    Group By date_trunc('day', created_at)
-    Order By date_trunc('day', created_at) Desc
+WITH final AS (
+    SELECT
+        date_trunc('day', created_at) AS post_date,
+        count(DISTINCT post_text) AS unique_posts,
+        count(DISTINCT author_handle) AS active_authors,
+        sum(likes) AS total_likes,
+        sum(replies) AS total_comments,
+        sum(quotes) AS total_quotes
+    FROM {{ ref("latest_feed") }}
+    GROUP BY date_trunc('day', created_at)
+    ORDER BY date_trunc('day', created_at) DESC
 )
 
-Select * From final
+SELECT * FROM final

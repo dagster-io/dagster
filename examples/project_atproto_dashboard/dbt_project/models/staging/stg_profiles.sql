@@ -1,5 +1,5 @@
-with raw as (
-    select * from {{ source('r2_bucket', 'starter_pack_snapshot') }}
+WITH raw AS (
+    SELECT * FROM {{ source('r2_bucket', 'starter_pack_snapshot') }}
 )
 
-select * from raw
+SELECT * FROM raw

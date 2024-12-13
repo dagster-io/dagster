@@ -1,5 +1,5 @@
-with raw as (
-    select * from {{ source('r2_bucket', 'actor_feed_snapshot') }}
+WITH raw AS (
+    SELECT * FROM {{ source('r2_bucket', 'actor_feed_snapshot') }}
 )
 
-select * from raw
+SELECT * FROM raw
