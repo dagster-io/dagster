@@ -86,7 +86,6 @@ from dagster._core.test_utils import (
     step_did_not_run,
     step_failed,
     step_succeeded,
-    wait_for_futures,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -615,7 +614,6 @@ def test_simple_backfill(
             )
         )
 
-        wait_for_futures(backfill_daemon_futures)
         [list(future.result()) for future in backfill_daemon_futures.values()]
     else:
         list(
@@ -683,8 +681,6 @@ def test_two_backfills_at_the_same_time(
             )
         )
 
-        time.sleep(0.5)
-        wait_for_futures(backfill_daemon_futures)
         [list(future.result()) for future in backfill_daemon_futures.values()]
     else:
         list(
@@ -778,7 +774,6 @@ def test_failure_backfill(
                 )
             )
 
-            wait_for_futures(backfill_daemon_futures)
             [list(future.result()) for future in backfill_daemon_futures.values()]
         else:
             list(
@@ -840,7 +835,6 @@ def test_failure_backfill(
             )
         )
 
-        wait_for_futures(backfill_daemon_futures)
         [list(future.result()) for future in backfill_daemon_futures.values()]
     else:
         list(
@@ -3003,7 +2997,6 @@ def test_asset_backfill_from_asset_graph_subset(
             )
         )
 
-        wait_for_futures(backfill_daemon_futures)
         [list(future.result()) for future in backfill_daemon_futures.values()]
     else:
         list(
@@ -3036,7 +3029,6 @@ def test_asset_backfill_from_asset_graph_subset(
             )
         )
 
-        wait_for_futures(backfill_daemon_futures)
         [list(future.result()) for future in backfill_daemon_futures.values()]
     else:
         list(
