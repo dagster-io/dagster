@@ -13,6 +13,7 @@ Now that you have a query that produces an asset, let’s use Dagster to manage 
    ```python
    import duckdb
    import os
+   from dagster._utils.backoff import backoff
    ```
 
 2. Copy and paste the code below into the bottom of the `trips.py` file. Note how this code looks similar to the asset definition code for the `taxi_trips_file` and the `taxi_zones` assets:
@@ -42,7 +43,14 @@ Now that you have a query that produces an asset, let’s use Dagster to manage 
            );
        """
 
-       conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
+       conn = backoff(
+           fn=duckdb.connect,
+           retry_on=(RuntimeError, duckdb.IOException),
+           kwargs={
+               "database": os.getenv("DUCKDB_DATABASE"),
+           },
+           max_retries=10,
+       )
        conn.execute(query)
    ```
 
@@ -54,7 +62,7 @@ Now that you have a query that produces an asset, let’s use Dagster to manage 
 
    3. Next, a variable named `query` is created. This variable contains a SQL query that creates a table named `trips`, which sources its data from the `data/raw/taxi_trips_2023-03.parquet` file. This is the file created by the `taxi_trips_file` asset.
 
-   4. A variable named `conn` is created, which defines the connection to the DuckDB database in the project. To do this, it uses the `.connect` method from the `duckdb` library, passing in the `DUCKDB_DATABASE` environment variable to tell DuckDB where the database is located.
+   4. A variable named `conn` is created, which defines the connection to the DuckDB database in the project. To do this, we first wrap everything with the Dagster utility function `backoff`. Using the backoff function ensures that multiple assets can use DuckDB safely without locking resources. The backoff function takes in the function we want to call (in this case the `.connect` method from the `duckdb` library), any errors to retry on (`RuntimeError` and `duckdb.IOException`), the max number of retries, and finally, the arguments to supply to the `.connect` DuckDB method. Here we are passing in the `DUCKDB_DATABASE` environment variable to tell DuckDB where the database is located.
 
       The `DUCKDB_DATABASE` environment variable, sourced from your project’s `.env` file, resolves to `data/staging/data.duckdb`. **Note**: We set up this file in Lesson 2 - refer to this lesson if you need a refresher. If this file isn’t set up correctly, the materialization will result in an error.
 

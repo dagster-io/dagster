@@ -41,6 +41,13 @@ def taxi_zones() -> None:
         );
     """
 
-    conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
+    conn = backoff(
+        fn=duckdb.connect,
+        retry_on=(RuntimeError, duckdb.IOException),
+        kwargs={
+            "database": os.getenv("DUCKDB_DATABASE"),
+        },
+        max_retries=10,
+    )
     conn.execute(query)
 ```
