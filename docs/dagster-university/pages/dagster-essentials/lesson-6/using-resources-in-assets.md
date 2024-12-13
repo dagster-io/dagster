@@ -31,7 +31,7 @@ from dagster import asset
     deps=["taxi_trips_file"],
 )
 def taxi_trips() -> None:
-    sql_query = """
+    query = """
         create or replace table taxi_trips as (
           select
             VendorID as vendor_id,
@@ -56,7 +56,7 @@ def taxi_trips() -> None:
         },
         max_retries=10,
     )
-    conn.execute(sql_query)
+    conn.execute(query)
 ```
 
 ---
@@ -79,7 +79,7 @@ from dagster import asset
     deps=["taxi_trips_file"],
 )
 def taxi_trips(database: DuckDBResource) -> None:
-    sql_query = """
+    query = """
         create or replace table taxi_trips as (
           select
             VendorID as vendor_id,
@@ -97,7 +97,7 @@ def taxi_trips(database: DuckDBResource) -> None:
     """
 
     with database.get_connection() as conn:
-        conn.execute(sql_query)
+        conn.execute(query)
 ```
 
 To refactor `taxi_trips` to use the `database` resource, we had to:

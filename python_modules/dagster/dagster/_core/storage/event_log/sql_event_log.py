@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     ContextManager,
     Dict,
@@ -58,6 +59,7 @@ from dagster._core.events import (
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
 from dagster._core.storage.asset_check_execution_record import (
+    COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES,
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
 )
@@ -1327,11 +1329,29 @@ class SqlEventLogStorage(EventLogStorage):
     ) -> Mapping[AssetCheckKey, AssetCheckSummaryRecord]:
         states = {}
         for asset_check_key in asset_check_keys:
-            execution_record = self.get_asset_check_execution_history(asset_check_key, limit=1)
+            last_execution_record = self.get_asset_check_execution_history(asset_check_key, limit=1)
+            last_completed_execution_record = (
+                last_execution_record
+                # If the check has never been executed or the latest record is a completed record,
+                # Avoid refetching the last completed record
+                if (
+                    not last_execution_record
+                    or last_execution_record[0].status
+                    in COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES
+                )
+                else self.get_asset_check_execution_history(
+                    asset_check_key, limit=1, status=COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES
+                )
+            )
             states[asset_check_key] = AssetCheckSummaryRecord(
                 asset_check_key=asset_check_key,
-                last_check_execution_record=execution_record[0] if execution_record else None,
-                last_run_id=execution_record[0].run_id if execution_record else None,
+                last_check_execution_record=last_execution_record[0]
+                if last_execution_record
+                else None,
+                last_run_id=last_execution_record[0].run_id if last_execution_record else None,
+                last_completed_check_execution_record=last_completed_execution_record[0]
+                if last_completed_execution_record
+                else None,
             )
         return states
 
@@ -2888,6 +2908,7 @@ class SqlEventLogStorage(EventLogStorage):
         check_key: AssetCheckKey,
         limit: int,
         cursor: Optional[int] = None,
+        status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         check.inst_param(check_key, "key", AssetCheckKey)
         check.int_param(limit, "limit")
@@ -2914,6 +2935,11 @@ class SqlEventLogStorage(EventLogStorage):
 
         if cursor:
             query = query.where(AssetCheckExecutionsTable.c.id < cursor)
+
+        if status:
+            query = query.where(
+                AssetCheckExecutionsTable.c.execution_status.in_([s.value for s in status])
+            )
 
         with self.index_connection() as conn:
             rows = db_fetch_mappings(conn, query)

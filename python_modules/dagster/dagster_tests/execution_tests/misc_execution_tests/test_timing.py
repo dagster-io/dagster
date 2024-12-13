@@ -18,7 +18,7 @@ def test_event_timing_before_yield():
     result = job_def.execute_in_process()
     success_event = result.get_step_success_events()[0]
 
-    assert success_event.event_specific_data.duration_ms >= 10.0
+    assert success_event.event_specific_data.duration_ms >= 10.0  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 @pytest.mark.skipif(
@@ -33,7 +33,7 @@ def test_event_timing_after_yield():
     job_def = GraphDefinition(node_defs=[after_yield_op], name="test").to_job()
     result = job_def.execute_in_process()
     success_event = result.get_step_success_events()[0]
-    assert success_event.event_specific_data.duration_ms >= 10.0
+    assert success_event.event_specific_data.duration_ms >= 10.0  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 @pytest.mark.skipif(
@@ -48,7 +48,7 @@ def test_event_timing_direct_return():
     job_def = GraphDefinition(node_defs=[direct_return_op], name="test").to_job()
     result = job_def.execute_in_process()
     success_event = result.get_step_success_events()[0]
-    assert success_event.event_specific_data.duration_ms >= 10.0
+    assert success_event.event_specific_data.duration_ms >= 10.0  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 @pytest.mark.skipif(
@@ -69,4 +69,4 @@ def test_event_timing_include_input_loading():
     )
     result = job_def.execute_in_process()
     success_event = result.get_step_success_events()[0]
-    assert success_event.event_specific_data.duration_ms >= 10.0
+    assert success_event.event_specific_data.duration_ms >= 10.0  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]

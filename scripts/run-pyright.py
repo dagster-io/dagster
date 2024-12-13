@@ -40,12 +40,6 @@ parser.add_argument(
     ),
 )
 
-parser.add_argument(
-    "--unannotated",
-    action="store_true",
-    default=False,
-    help="Analyze unannotated functions. This is not currently used in CI.",
-)
 
 parser.add_argument(
     "--diff",
@@ -124,7 +118,6 @@ parser.add_argument(
 
 
 class Params(TypedDict):
-    unannotated: bool
     mode: Literal["env", "path"]
     targets: Sequence[str]
     json: bool
@@ -240,7 +233,6 @@ def get_params(args: argparse.Namespace) -> Params:
         update_pins=args.update_pins,
         json=args.json,
         rebuild=args.rebuild,
-        unannotated=args.unannotated,
         no_cache=args.no_cache,
         venv_python=venv_python,
         skip_typecheck=args.skip_typecheck,
@@ -413,11 +405,10 @@ def run_pyright(
     env: str,
     paths: Optional[Sequence[str]],
     rebuild: bool,
-    unannotated: bool,
     pinned_deps: bool,
     venv_python: str,
 ) -> RunResult:
-    with temp_pyright_config_file(env, unannotated) as config_path:
+    with temp_pyright_config_file(env) as config_path:
         base_pyright_cmd = " ".join(
             [
                 "pyright",
@@ -443,7 +434,7 @@ def run_pyright(
 
 
 @contextmanager
-def temp_pyright_config_file(env: str, unannotated: bool) -> Iterator[str]:
+def temp_pyright_config_file(env: str) -> Iterator[str]:
     with open("pyproject.toml", "r", encoding="utf-8") as f:
         toml = tomli.loads(f.read())
     config = toml["tool"]["pyright"]
@@ -453,7 +444,6 @@ def temp_pyright_config_file(env: str, unannotated: bool) -> Iterator[str]:
     config["include"] = load_path_file(include_path)
     if os.path.exists(exclude_path):
         config["exclude"] += load_path_file(exclude_path)
-    config["analyzeUnannotatedFunctions"] = unannotated
     temp_config_path = f"pyrightconfig-{env}.json"
     print("Creating temporary pyright config file at", temp_config_path)
     try:
@@ -587,7 +577,6 @@ if __name__ == "__main__":
                 env,
                 paths=env_path_map[env],
                 rebuild=params["rebuild"],
-                unannotated=params["unannotated"],
                 pinned_deps=params["update_pins"],
                 venv_python=params["venv_python"],
             )

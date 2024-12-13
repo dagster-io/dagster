@@ -8,4 +8,4 @@ def test_backcompat():
         ' "AssetCheckSeverity.ERROR"}, "success": true, "target_materialization_data": null}'
     )
     v = deserialize_value(old_value)
-    assert v.passed
+    assert v.passed  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]

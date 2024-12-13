@@ -173,8 +173,8 @@ class TestRunStorage:
         assert run.tags.get("foo") == "bar"
         assert storage.has_run(run_id)
         fetched_run = _get_run_by_id(storage, run_id)
-        assert fetched_run.run_id == run_id
-        assert fetched_run.job_name == "some_pipeline"
+        assert fetched_run.run_id == run_id  # pyright: ignore[reportOptionalMemberAccess]
+        assert fetched_run.job_name == "some_pipeline"  # pyright: ignore[reportOptionalMemberAccess]
 
     def test_clear(self, storage):
         if not self.can_delete_runs():
@@ -767,7 +767,7 @@ class TestRunStorage:
         )
 
         run = _get_run_by_id(storage, one)
-        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.RUN_EXCEPTION.value
+        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.RUN_EXCEPTION.value  # pyright: ignore[reportOptionalMemberAccess]
 
     def _get_run_event_entry(self, dagster_event: DagsterEvent, run_id: str):
         return EventLogEntry(
@@ -1760,7 +1760,7 @@ class TestRunStorage:
 
         instance.handle_new_event(self._get_run_event_entry(dagster_job_start_event, run_id))
 
-        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED
+        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED  # pyright: ignore[reportOptionalMemberAccess]
 
         instance.handle_new_event(
             self._get_run_event_entry(
@@ -1777,7 +1777,7 @@ class TestRunStorage:
             )
         )
 
-        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED
+        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED  # pyright: ignore[reportOptionalMemberAccess]
 
         instance.handle_new_event(
             self._get_run_event_entry(
@@ -1794,7 +1794,7 @@ class TestRunStorage:
             )
         )
 
-        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.SUCCESS
+        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
 
     def test_debug_snapshot_import(self, storage):
         from dagster._core.execution.api import create_execution_plan

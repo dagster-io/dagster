@@ -11,7 +11,7 @@ from pyspark.sql.functions import (
 
 
 def create_spark_session():
-    return SparkSession.builder.getOrCreate()
+    return SparkSession.builder.getOrCreate()  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def df_from_csv(path):

@@ -71,7 +71,7 @@ def test_load_asset_checks_from_modules_prefix():
     assert result.get_asset_check_evaluations()[1].check_name == "asset_check_1"
 
 
-@asset_check(asset=AssetKey("asset_1"))
+@asset_check(asset=AssetKey("asset_1"))  # pyright: ignore[reportArgumentType]
 def check_in_current_module():
     pass
 

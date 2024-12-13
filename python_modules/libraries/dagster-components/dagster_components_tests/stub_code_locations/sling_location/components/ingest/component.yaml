@@ -1,0 +1,8 @@
+type: dagster_components.sling_replication
+
+params:
+  sling:
+    connections:
+      - name: DUCKDB
+        type: duckdb
+        instance: <PLACEHOLDER>

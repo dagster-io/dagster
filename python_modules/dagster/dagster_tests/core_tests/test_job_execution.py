@@ -624,7 +624,7 @@ def test_job_init_failure():
     event = result.all_events[-1]
     assert event.event_type_value == "PIPELINE_FAILURE"
     assert event.job_failure_data
-    assert mem_instance.get_run_by_id(result.run_id).is_failure_or_canceled
+    assert mem_instance.get_run_by_id(result.run_id).is_failure_or_canceled  # pyright: ignore[reportOptionalMemberAccess]
 
     with instance_for_test() as fs_instance:
         result = failing_init_job.execute_in_process(
@@ -636,7 +636,7 @@ def test_job_init_failure():
         event = result.all_events[-1]
         assert event.event_type_value == "PIPELINE_FAILURE"
         assert event.job_failure_data
-        assert fs_instance.get_run_by_id(result.run_id).is_failure_or_canceled
+        assert fs_instance.get_run_by_id(result.run_id).is_failure_or_canceled  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def get_retry_job() -> JobDefinition:
@@ -926,7 +926,7 @@ def test_selector_with_subset_for_execution():
         def_one()
         def_two()
 
-    assert pipe.get_subset(op_selection=["def_two"]).op_selection_data.resolved_op_selection == {
+    assert pipe.get_subset(op_selection=["def_two"]).op_selection_data.resolved_op_selection == {  # pyright: ignore[reportOptionalMemberAccess]
         "def_two"
     }
 

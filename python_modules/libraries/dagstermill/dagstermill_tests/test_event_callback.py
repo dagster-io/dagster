@@ -14,7 +14,7 @@ def test_event_callback_logging():
     def _event_callback(record, _cursor):
         assert isinstance(record, EventLogEntry)
         if record.is_dagster_event:
-            events[record.dagster_event.event_type].append(record)
+            events[record.dagster_event.event_type].append(record)  # pyright: ignore[reportOptionalMemberAccess]
 
     recon_job = ReconstructableJob.for_module(
         "dagstermill.examples.repository",

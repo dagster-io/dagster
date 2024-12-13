@@ -1,0 +1,19 @@
+[project]
+name = "custom_sling_location"
+requires-python = ">=3.9,<3.13"
+version = "0.1.0"
+dependencies = []
+
+[project.optional-dependencies]
+dev = []
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.dagster]
+module_name = "custom_sling_location.definitions"
+project_name = "custom_sling_location"
+
+[tool.setuptools.packages.find]
+exclude=["custom_sling_location_tests"]

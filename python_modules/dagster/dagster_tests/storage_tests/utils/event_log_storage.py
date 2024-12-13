@@ -1259,7 +1259,9 @@ class TestEventLogStorage:
             )
 
         materializations = [
-            e for e in events if e.dagster_event.event_type == "ASSET_MATERIALIZATION"
+            e
+            for e in events
+            if e.dagster_event.event_type == "ASSET_MATERIALIZATION"  # pyright: ignore[reportOptionalMemberAccess]
         ]
         storage.store_event_batch(materializations)
 
@@ -1303,7 +1305,7 @@ class TestEventLogStorage:
         def _get_counts(result):
             assert isinstance(result, EventRecordsResult)
             return [
-                record.asset_materialization.metadata.get("count").value
+                record.asset_materialization.metadata.get("count").value  # pyright: ignore[reportOptionalMemberAccess]
                 for record in result.records
             ]
 
@@ -1458,7 +1460,8 @@ class TestEventLogStorage:
         def _get_counts(result):
             assert isinstance(result, EventRecordsResult)
             return [
-                record.asset_observation.metadata.get("count").value for record in result.records
+                record.asset_observation.metadata.get("count").value  # pyright: ignore[reportOptionalMemberAccess]
+                for record in result.records
             ]
 
         # results come in descending order, by default
@@ -1579,7 +1582,7 @@ class TestEventLogStorage:
 
     def test_asset_materialization_null_key_fails(self):
         with pytest.raises(check.CheckError):
-            AssetMaterialization(asset_key=None)
+            AssetMaterialization(asset_key=None)  # pyright: ignore[reportArgumentType]
 
     def test_asset_events_error_parsing(self, storage, instance):
         if not isinstance(storage, SqlEventLogStorage):
@@ -5217,6 +5220,19 @@ class TestEventLogStorage:
         assert checks[0].run_id == run_id_1
         assert checks[0].event
         assert checks[0].event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED
+        checks_filtered = storage.get_asset_check_execution_history(
+            check_key_1, limit=10, status={AssetCheckExecutionRecordStatus.PLANNED}
+        )
+        assert len(checks_filtered) == 1
+        checks_filtered_2 = storage.get_asset_check_execution_history(
+            check_key_1,
+            limit=10,
+            status={
+                AssetCheckExecutionRecordStatus.SUCCEEDED,
+                AssetCheckExecutionRecordStatus.FAILED,
+            },
+        )
+        assert len(checks_filtered_2) == 0
 
         latest_checks = storage.get_latest_asset_check_execution_by_key([check_key_1, check_key_2])
         assert len(latest_checks) == 1
@@ -5256,6 +5272,19 @@ class TestEventLogStorage:
         check_data = checks[0].event.dagster_event.asset_check_evaluation_data
         assert check_data.target_materialization_data
         assert check_data.target_materialization_data.storage_id == 42
+        filtered_checks = storage.get_asset_check_execution_history(
+            check_key_1, limit=10, status={AssetCheckExecutionRecordStatus.SUCCEEDED}
+        )
+        assert len(filtered_checks) == 1
+        filtered_checks_2 = storage.get_asset_check_execution_history(
+            check_key_1,
+            limit=10,
+            status={
+                AssetCheckExecutionRecordStatus.FAILED,
+                AssetCheckExecutionRecordStatus.PLANNED,
+            },
+        )
+        assert len(filtered_checks_2) == 0
 
         latest_checks = storage.get_latest_asset_check_execution_by_key([check_key_1, check_key_2])
         assert len(latest_checks) == 1
@@ -5553,6 +5582,11 @@ class TestEventLogStorage:
                 == AssetCheckExecutionRecordStatus.SUCCEEDED
             )
             assert check_1_summary_record.last_check_execution_record.run_id == run_id_0
+            assert (
+                check_1_summary_record.last_completed_check_execution_record
+                == check_1_summary_record.last_check_execution_record
+            )
+            assert check_1_summary_record.last_completed_run_id == run_id_0
 
             check_2_summary_record = summary_records[check_key_2]
             assert check_2_summary_record.last_check_execution_record
@@ -5620,6 +5654,7 @@ class TestEventLogStorage:
             )
 
             # Check that the summary record for check_key_1 has been updated
+            old_check_1_summary_record = check_1_summary_record
             records = storage.get_asset_check_summary_records(asset_check_keys=[check_key_1])
             assert len(records) == 1
             check_1_summary_record = records[check_key_1]
@@ -5629,6 +5664,12 @@ class TestEventLogStorage:
                 == AssetCheckExecutionRecordStatus.PLANNED
             )
             assert check_1_summary_record.last_check_execution_record.run_id == run_id_1
+            # The latest completed data should not be updated.
+            assert (
+                check_1_summary_record.last_completed_check_execution_record
+                == old_check_1_summary_record.last_check_execution_record
+            )
+            assert check_1_summary_record.last_completed_run_id == run_id_0
 
     def test_large_asset_metadata(
         self,

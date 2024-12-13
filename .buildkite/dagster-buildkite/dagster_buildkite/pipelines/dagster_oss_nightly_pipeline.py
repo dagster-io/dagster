@@ -2,6 +2,7 @@ from typing import List
 
 from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.step_builder import BuildkiteQueue
 from dagster_buildkite.steps.packages import (
     build_steps_from_package_specs,
     gcp_creds_extra_cmds,
@@ -28,6 +29,7 @@ def build_dagster_oss_nightly_steps() -> List[BuildkiteStep]:
                 unsupported_python_versions=[
                     AvailablePythonVersion.V3_12,
                 ],
+                always_run_if=lambda: True,
             ),
             PackageSpec(
                 "python_modules/libraries/dagster-k8s",
@@ -41,6 +43,7 @@ def build_dagster_oss_nightly_steps() -> List[BuildkiteStep]:
                     "nightly",
                 ],
                 pytest_extra_cmds=k8s_extra_cmds,
+                always_run_if=lambda: True,
             ),
             PackageSpec(
                 "examples/experimental/dagster-dlift/kitchen-sink",
@@ -52,6 +55,7 @@ def build_dagster_oss_nightly_steps() -> List[BuildkiteStep]:
                     "KS_DBT_CLOUD_ACCESS_URL",
                     "KS_DBT_CLOUD_DISCOVERY_API_URL",
                 ],
+                always_run_if=lambda: True,
             ),
             PackageSpec(
                 "examples/starlift-demo",
@@ -63,6 +67,20 @@ def build_dagster_oss_nightly_steps() -> List[BuildkiteStep]:
                     "KS_DBT_CLOUD_ACCESS_URL",
                     "KS_DBT_CLOUD_DISCOVERY_API_URL",
                 ],
+                queue=BuildkiteQueue.DOCKER,
+                always_run_if=lambda: True,
+            ),
+            PackageSpec(
+                "integration_tests/test_suites/dagster-azure-live-tests",
+                name="azure-live-tests",
+                env_vars=[
+                    "TEST_AZURE_TENANT_ID",
+                    "TEST_AZURE_CLIENT_ID",
+                    "TEST_AZURE_CLIENT_SECRET",
+                    "TEST_AZURE_STORAGE_ACCOUNT_ID",
+                    "TEST_AZURE_CONTAINER_ID",
+                ],
+                always_run_if=lambda: True,
             ),
         ]
     )

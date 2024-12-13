@@ -68,7 +68,7 @@ def test_launch_docker_no_network(aws_env):
             )
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
-                run_config=run_config,
+                run_config=run_config,  # pyright: ignore[reportArgumentType]
                 remote_job_origin=remote_job.get_remote_origin(),
                 job_code_origin=remote_job.get_python_origin(),
             )
@@ -77,14 +77,14 @@ def test_launch_docker_no_network(aws_env):
             # Container launches, but run is stuck in STARTING state
             # due to not being able to access the network
             run = instance.get_run_by_id(run.run_id)
-            assert run.tags[DOCKER_IMAGE_TAG] == docker_image
+            assert run.tags[DOCKER_IMAGE_TAG] == docker_image  # pyright: ignore[reportOptionalMemberAccess]
 
-            container_id = run.tags[DOCKER_CONTAINER_ID_TAG]
+            container_id = run.tags[DOCKER_CONTAINER_ID_TAG]  # pyright: ignore[reportOptionalMemberAccess]
 
-            run = instance.get_run_by_id(run.run_id)
+            run = instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
 
-            assert run.status == DagsterRunStatus.STARTING
-            assert run.tags[DOCKER_IMAGE_TAG] == docker_image
+            assert run.status == DagsterRunStatus.STARTING  # pyright: ignore[reportOptionalMemberAccess]
+            assert run.tags[DOCKER_IMAGE_TAG] == docker_image  # pyright: ignore[reportOptionalMemberAccess]
             client = docker.client.from_env()
 
             container = None
@@ -153,7 +153,7 @@ def test_launch_docker_image_on_job_config(aws_env):
                 )
                 run = instance.create_run_for_job(
                     job_def=recon_job.get_definition(),
-                    run_config=run_config,
+                    run_config=run_config,  # pyright: ignore[reportArgumentType]
                     remote_job_origin=remote_job.get_remote_origin(),
                     job_code_origin=remote_job.get_python_origin(),
                 )
@@ -163,15 +163,15 @@ def test_launch_docker_image_on_job_config(aws_env):
 
                 run = instance.get_run_by_id(run.run_id)
 
-                assert run.status == DagsterRunStatus.SUCCESS
+                assert run.status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
 
-                assert run.tags[DOCKER_IMAGE_TAG] == docker_image
+                assert run.tags[DOCKER_IMAGE_TAG] == docker_image  # pyright: ignore[reportOptionalMemberAccess]
 
-                container_obj = instance.run_launcher._get_container(run)  # noqa
+                container_obj = instance.run_launcher._get_container(run)  # noqa  # pyright: ignore[reportAttributeAccessIssue]
                 assert container_obj.labels["foo"] == "baz"
                 assert container_obj.labels["bar"] == ""
-                assert container_obj.labels["dagster/run_id"] == run.run_id
-                assert container_obj.labels["dagster/job_name"] == run.job_name
+                assert container_obj.labels["dagster/run_id"] == run.run_id  # pyright: ignore[reportOptionalMemberAccess]
+                assert container_obj.labels["dagster/job_name"] == run.job_name  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def check_event_log_contains(event_log, expected_type_and_message):
@@ -229,7 +229,7 @@ def test_terminate_launched_docker_run(aws_env):
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
-                run_config=run_config,
+                run_config=run_config,  # pyright: ignore[reportArgumentType]
                 remote_job_origin=remote_job.get_remote_origin(),
                 job_code_origin=remote_job.get_python_origin(),
             )
@@ -244,7 +244,7 @@ def test_terminate_launched_docker_run(aws_env):
 
             terminated_run = poll_for_finished_run(instance, run_id, timeout=30)
             terminated_run = instance.get_run_by_id(run_id)
-            assert terminated_run.status == DagsterRunStatus.CANCELED
+            assert terminated_run.status == DagsterRunStatus.CANCELED  # pyright: ignore[reportOptionalMemberAccess]
 
             run_logs = instance.all_logs(run_id)
 
@@ -296,7 +296,7 @@ def test_launch_docker_invalid_image(aws_env):
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
-                run_config=run_config,
+                run_config=run_config,  # pyright: ignore[reportArgumentType]
                 remote_job_origin=remote_job.get_remote_origin(),
                 job_code_origin=remote_job.get_python_origin(),
             )
@@ -492,7 +492,7 @@ def _test_launch(
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
-                run_config=run_config,
+                run_config=run_config,  # pyright: ignore[reportArgumentType]
                 remote_job_origin=remote_job.get_remote_origin(),
                 job_code_origin=recon_job.get_python_origin(),
             )
@@ -502,7 +502,7 @@ def _test_launch(
             if not terminate:
                 poll_for_finished_run(instance, run.run_id, timeout=60)
 
-                assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
+                assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
             else:
                 start_time = time.time()
 
@@ -526,7 +526,7 @@ def _test_launch(
                 assert launcher.terminate(run.run_id)
 
                 poll_for_finished_run(instance, run.run_id, timeout=60)
-                assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.CANCELED
+                assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.CANCELED  # pyright: ignore[reportOptionalMemberAccess]
 
                 # termination is a no-op once run is finished
                 assert not launcher.terminate(run.run_id)

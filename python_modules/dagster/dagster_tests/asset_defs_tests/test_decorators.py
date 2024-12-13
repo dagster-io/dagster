@@ -298,7 +298,7 @@ def test_multi_asset_internal_asset_deps_invalid():
 
 
 def test_asset_with_dagster_type():
-    @asset(dagster_type=String)
+    @asset(dagster_type=String)  # pyright: ignore[reportArgumentType]
     def my_asset(arg1):
         return arg1
 
@@ -485,8 +485,8 @@ def test_infer_output_dagster_type():
     def my_asset() -> str:
         return "foo"
 
-    assert my_asset.op.outs["result"].dagster_type.display_name == "String"
-    assert my_asset.op.outs["result"].dagster_type.typing_type == str
+    assert my_asset.op.outs["result"].dagster_type.display_name == "String"  # pyright: ignore[reportAttributeAccessIssue]
+    assert my_asset.op.outs["result"].dagster_type.typing_type == str  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_infer_output_dagster_type_none():
@@ -494,8 +494,8 @@ def test_infer_output_dagster_type_none():
     def my_asset() -> None:
         pass
 
-    assert my_asset.op.outs["result"].dagster_type.typing_type == type(None)
-    assert my_asset.op.outs["result"].dagster_type.display_name == "Nothing"
+    assert my_asset.op.outs["result"].dagster_type.typing_type == type(None)  # pyright: ignore[reportAttributeAccessIssue]
+    assert my_asset.op.outs["result"].dagster_type.display_name == "Nothing"  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_infer_output_dagster_type_empty():
@@ -503,8 +503,8 @@ def test_infer_output_dagster_type_empty():
     def my_asset():
         pass
 
-    assert my_asset.op.outs["result"].dagster_type.typing_type is Any
-    assert my_asset.op.outs["result"].dagster_type.display_name == "Any"
+    assert my_asset.op.outs["result"].dagster_type.typing_type is Any  # pyright: ignore[reportAttributeAccessIssue]
+    assert my_asset.op.outs["result"].dagster_type.display_name == "Any"  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_asset_with_docstring_description():
@@ -686,11 +686,11 @@ def test_multi_asset_resource_defs():
     def baz_resource():
         pass
 
-    @io_manager(required_resource_keys={"baz"})
+    @io_manager(required_resource_keys={"baz"})  # pyright: ignore[reportArgumentType]
     def foo_manager():
         pass
 
-    @io_manager
+    @io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
     def bar_manager():
         pass
 
@@ -717,11 +717,11 @@ def test_multi_asset_resource_defs_specs() -> None:
     def baz_resource():
         pass
 
-    @io_manager(required_resource_keys={"baz"})
+    @io_manager(required_resource_keys={"baz"})  # pyright: ignore[reportArgumentType]
     def foo_manager():
         pass
 
-    @io_manager
+    @io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
     def bar_manager():
         pass
 
@@ -761,7 +761,7 @@ def test_multi_asset_code_versions():
 @ignore_warning("Parameter `io_manager_def` .* is experimental")
 @ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_asset_io_manager_def():
-    @io_manager
+    @io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
     def the_manager():
         pass
 
@@ -771,7 +771,7 @@ def test_asset_io_manager_def():
 
     # If IO manager def is passed directly, then it doesn't appear as a
     # required resource key on the underlying op.
-    assert set(the_asset.node_def.required_resource_keys) == set()
+    assert set(the_asset.node_def.required_resource_keys) == set()  # pyright: ignore[reportAttributeAccessIssue]
 
     @asset(io_manager_key="blah", resource_defs={"blah": the_manager})
     def other_asset():
@@ -779,7 +779,7 @@ def test_asset_io_manager_def():
 
     # If IO manager def is provided as a resource def, it appears in required
     # resource keys on the underlying op.
-    assert set(other_asset.node_def.required_resource_keys) == {"blah"}
+    assert set(other_asset.node_def.required_resource_keys) == {"blah"}  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_asset_retry_policy():
@@ -1507,6 +1507,8 @@ def test_graph_inputs_error():
         def _(): ...
 
     except DagsterInvalidDefinitionError as err:
+        assert "'_' decorated function does not have argument(s) 'start'" in str(err)
+        # Ensure that dagster type code path doesn't throw since we're using Nothing type.
         assert "except for Ins that have the Nothing dagster_type" not in str(err)
 
     try:
@@ -1515,4 +1517,6 @@ def test_graph_inputs_error():
         def _(): ...
 
     except DagsterInvalidDefinitionError as err:
+        assert "'_' decorated function does not have argument(s) 'start'" in str(err)
+        # Ensure that dagster type code path doesn't throw since we're using Nothing type.
         assert "except for Ins that have the Nothing dagster_type" not in str(err)

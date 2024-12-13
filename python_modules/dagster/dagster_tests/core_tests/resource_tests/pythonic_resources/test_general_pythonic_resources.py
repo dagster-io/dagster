@@ -192,7 +192,7 @@ def test_abc_resource():
 
     # Can't instantiate abstract class
     with pytest.raises(TypeError):
-        Writer()
+        Writer()  # pyright: ignore[reportAbstractUsage]
 
     @job(resource_defs={"writer": PrefixedWriterResource(prefix="greeting: ")})
     def prefixed_job():
@@ -517,7 +517,7 @@ def test_resources_which_return():
     assert completed["yes"]
 
     str_resource_partial = StringResource.configure_at_launch()
-    my_resource = MyResource(string_from_resource=str_resource_partial)
+    my_resource = MyResource(string_from_resource=str_resource_partial)  # pyright: ignore[reportArgumentType]
 
     defs = Definitions(
         assets=[my_asset],

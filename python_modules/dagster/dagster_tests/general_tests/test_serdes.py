@@ -22,6 +22,7 @@ from dagster._serdes.serdes import (
     WhitelistMap,
     _whitelist_for_serdes,
     deserialize_value,
+    get_prefix_for_a_serialized,
     get_storage_name,
     pack_value,
     serialize_value,
@@ -296,7 +297,7 @@ def test_wrong_first_arg():
         @serdes_test_class
         class NotCls(namedtuple("NotCls", "field_one field_two")):
             def __new__(not_cls, field_two, field_one):  # type: ignore
-                return super(NotCls, not_cls).__new__(field_one, field_two)
+                return super(NotCls, not_cls).__new__(field_one, field_two)  # pyright: ignore[reportCallIssue]
 
     assert str(exc_info.value) == 'For NotCls: First parameter must be _cls or cls. Got "not_cls".'
 
@@ -307,7 +308,7 @@ def test_incorrect_order():
         @serdes_test_class
         class WrongOrder(namedtuple("WrongOrder", "field_one field_two")):
             def __new__(cls, field_two, field_one):
-                return super(WrongOrder, cls).__new__(field_one, field_two)
+                return super(WrongOrder, cls).__new__(field_one, field_two)  # pyright: ignore[reportCallIssue]
 
     assert (
         str(exc_info.value) == "For WrongOrder: "
@@ -323,7 +324,7 @@ def test_missing_one_parameter():
         @serdes_test_class
         class MissingFieldInNew(namedtuple("MissingFieldInNew", "field_one field_two field_three")):
             def __new__(cls, field_one, field_two):
-                return super(MissingFieldInNew, cls).__new__(field_one, field_two, None)
+                return super(MissingFieldInNew, cls).__new__(field_one, field_two, None)  # pyright: ignore[reportCallIssue]
 
     assert (
         str(exc_info.value) == "For MissingFieldInNew: "
@@ -343,7 +344,7 @@ def test_missing_many_parameters():
             namedtuple("MissingFieldsInNew", "field_one field_two field_three, field_four")
         ):
             def __new__(cls, field_one, field_two):
-                return super(MissingFieldsInNew, cls).__new__(field_one, field_two, None, None)
+                return super(MissingFieldsInNew, cls).__new__(field_one, field_two, None, None)  # pyright: ignore[reportCallIssue]
 
     assert (
         str(exc_info.value) == "For MissingFieldsInNew: "
@@ -371,7 +372,7 @@ def test_extra_parameters_must_have_defaults():
                 field_one,
                 field_two,
             ):
-                return super(OldFieldsWithoutDefaults, cls).__new__(field_three, field_four)
+                return super(OldFieldsWithoutDefaults, cls).__new__(field_three, field_four)  # pyright: ignore[reportCallIssue]
 
     assert (
         str(exc_info.value) == "For OldFieldsWithoutDefaults: "
@@ -400,7 +401,7 @@ def test_extra_parameters_have_working_defaults():
             another_falsey_field="",
             value_field="klsjkfjd",
         ):
-            return super(OldFieldsWithDefaults, cls).__new__(field_three, field_four)
+            return super(OldFieldsWithDefaults, cls).__new__(field_three, field_four)  # pyright: ignore[reportCallIssue]
 
 
 def test_set():
@@ -445,6 +446,7 @@ def test_named_tuple() -> None:
 
     val = Foo("red")
     serialized = serialize_value(val, whitelist_map=test_map)
+    assert serialized.startswith(get_prefix_for_a_serialized(Foo, whitelist_map=test_map))
     deserialized = deserialize_value(serialized, whitelist_map=test_map)
     assert deserialized == val
 
@@ -465,12 +467,14 @@ def test_named_tuple_storage_name() -> None:
     val = Foo("red")
     serialized = serialize_value(val, whitelist_map=test_env)
     assert serialized == '{"__class__": "Bar", "color": "red"}'
+    assert serialized.startswith(get_prefix_for_a_serialized(Foo, whitelist_map=test_env))
     deserialized = deserialize_value(serialized, whitelist_map=test_env)
     assert deserialized == val
 
     val = Bar("square")
     serialized = serialize_value(val, whitelist_map=test_env)
     assert serialized == '{"__class__": "Foo", "shape": "square"}'
+    assert serialized.startswith(get_prefix_for_a_serialized(Bar, whitelist_map=test_env))
     deserialized = deserialize_value(serialized, whitelist_map=test_env)
     assert deserialized == val
 
@@ -789,7 +793,7 @@ def test_long_int():
     x = NumHolder(98765432109876543210)
     ser_x = serialize_value(x, test_map)
     roundtrip_x = deserialize_value(ser_x, whitelist_map=test_map)
-    assert x.num == roundtrip_x.num
+    assert x.num == roundtrip_x.num  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_enum_storage_name() -> None:
@@ -860,7 +864,7 @@ def test_serialize_non_scalar_key_mapping():
 
     non_scalar_key_mapping = SerializableNonScalarKeyMapping({Bar("red"): 1})
 
-    serialized = serialize_value(non_scalar_key_mapping, whitelist_map=test_env)
+    serialized = serialize_value(non_scalar_key_mapping, whitelist_map=test_env)  # pyright: ignore[reportArgumentType]
     assert serialized == """{"__mapping_items__": [[{"__class__": "Bar", "color": "red"}, 1]]}"""
     assert non_scalar_key_mapping == deserialize_value(serialized, whitelist_map=test_env)
 
@@ -879,7 +883,7 @@ def test_serializable_non_scalar_key_mapping():
     assert list(iter(non_scalar_key_mapping)) == list(iter([Bar("red")]))
 
     with pytest.raises(NotImplementedError, match="SerializableNonScalarKeyMapping is immutable"):
-        non_scalar_key_mapping["foo"] = None
+        non_scalar_key_mapping["foo"] = None  # pyright: ignore[reportArgumentType]
 
 
 def test_serializable_non_scalar_key_mapping_in_named_tuple():
@@ -961,7 +965,7 @@ def test_object_migration():
         age: int
         children: List["MyEnt"]
 
-    nt_ent = MyEnt("dad", 40, [MyEnt("sis", 4, [])])
+    nt_ent = MyEnt("dad", 40, [MyEnt("sis", 4, [])])  # pyright: ignore[reportArgumentType]
     ser_nt_ent = serialize_value(nt_ent, whitelist_map=nt_env)
     assert deserialize_value(ser_nt_ent, whitelist_map=nt_env) == nt_ent
 
@@ -1136,19 +1140,19 @@ def test_record_kwargs():
         def __new__(cls, **kwargs):
             return super().__new__(
                 cls,
-                name=kwargs.get("name", ""),
-                stuff=kwargs.get("stuff", []),
+                name=kwargs.get("name", ""),  # pyright: ignore[reportCallIssue]
+                stuff=kwargs.get("stuff", []),  # pyright: ignore[reportCallIssue]
             )
 
     r = MyRecord()
     assert r
     assert (
-        deserialize_value(serialize_value(r, whitelist_map=test_env), whitelist_map=test_env) == r
+        deserialize_value(serialize_value(r, whitelist_map=test_env), whitelist_map=test_env) == r  # pyright: ignore[reportArgumentType]
     )
     r = MyRecord(name="CUSTOM", stuff=[1, 2, 3, 4, 5, 6])
     assert r
     assert (
-        deserialize_value(serialize_value(r, whitelist_map=test_env), whitelist_map=test_env) == r
+        deserialize_value(serialize_value(r, whitelist_map=test_env), whitelist_map=test_env) == r  # pyright: ignore[reportArgumentType]
     )
 
 

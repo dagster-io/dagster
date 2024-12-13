@@ -307,7 +307,7 @@ def grpc_server_bar_kwargs(instance, job_name: Optional[str] = None):
         if job_name:
             args["job_name"] = "foo"
         if client.port:
-            args["grpc_port"] = client.port
+            args["grpc_port"] = client.port  # pyright: ignore[reportArgumentType]
         if client.socket:
             args["grpc_socket"] = client.socket
         yield args

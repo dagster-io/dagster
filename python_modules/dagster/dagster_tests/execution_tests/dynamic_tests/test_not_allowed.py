@@ -77,7 +77,7 @@ def test_multi_composite_out():
         @job
         def _should_fail():
             def _complex(item):
-                composed_echo().map(lambda y: add(y, item))
+                composed_echo().map(lambda y: add(y, item))  # pyright: ignore[reportAttributeAccessIssue]
 
             dynamic_op().map(_complex)
 

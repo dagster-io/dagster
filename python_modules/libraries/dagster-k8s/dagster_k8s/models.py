@@ -69,7 +69,7 @@ def _k8s_parse_value(data: Any, classname: str, attr_name: str) -> Any:
     elif klass == object:
         return data
     elif klass == datetime.date:
-        return parse(data).date()
+        return parse(data).date()  # pyright: ignore[reportAttributeAccessIssue]
     elif klass == datetime.datetime:
         return parse(data)
     else:

@@ -17,12 +17,12 @@ def test_coerce_to_asset_selection():
     @sensor(asset_selection=["asset1", "asset2"])
     def sensor1(): ...
 
-    assert sensor1.asset_selection.resolve(assets) == {AssetKey("asset1"), AssetKey("asset2")}
+    assert sensor1.asset_selection.resolve(assets) == {AssetKey("asset1"), AssetKey("asset2")}  # pyright: ignore[reportOptionalMemberAccess]
 
     @sensor(asset_selection=[asset1, asset2])
     def sensor2(): ...
 
-    assert sensor2.asset_selection.resolve(assets) == {AssetKey("asset1"), AssetKey("asset2")}
+    assert sensor2.asset_selection.resolve(assets) == {AssetKey("asset1"), AssetKey("asset2")}  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_jobless_sensor_uses_eval_fn_name():

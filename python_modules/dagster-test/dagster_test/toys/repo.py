@@ -153,7 +153,7 @@ def partitioned_assets_repository():
     ]
 
 
-@repository
+@repository  # pyright: ignore[reportArgumentType]
 def column_schema_repository():
     from dagster_test.toys import column_schema
 
@@ -174,7 +174,7 @@ def long_asset_keys_repository():
     return load_assets_from_modules([long_asset_keys])
 
 
-@repository
+@repository  # pyright: ignore[reportArgumentType]
 def big_honkin_assets_repository():
     return [load_assets_from_modules([big_honkin_asset_graph_module])]
 

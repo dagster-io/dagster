@@ -1,5 +1,6 @@
 # ruff: isort: skip_file
 # ruff: noqa: T201,D415
+# type: ignore # problematic imports in example code
 
 
 def scope_simple_airflow_task():

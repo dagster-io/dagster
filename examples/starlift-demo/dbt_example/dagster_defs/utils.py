@@ -2,9 +2,7 @@ from typing import Mapping, Sequence
 
 from dagster import AssetsDefinition, AssetSpec, AutomationCondition, Definitions, Nothing
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
-    stringify_asset_key_to_input_name,
-)
+from dagster._core.definitions.assets import stringify_asset_key_to_input_name
 from dagster._core.definitions.input import In
 
 

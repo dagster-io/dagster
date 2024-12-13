@@ -174,7 +174,7 @@ export class LiveDataThreadManager<T> {
   private pause() {
     this.isPaused = true;
     Object.values(this.threads).forEach((thread) => {
-      thread.stopFetchLoop();
+      thread.stopFetchLoop(true);
     });
   }
 

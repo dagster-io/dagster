@@ -7,7 +7,7 @@ import {
   Subtitle2,
   Table,
 } from '@dagster-io/ui-components';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
 import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
@@ -47,6 +47,7 @@ export const GlobalAutomaterializationContent = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
   const [timeRange, setTimerange] = useState<undefined | [number, number]>(undefined);
+
   const getVariables = useCallback(
     (now = Date.now()) => {
       if (timeRange || statuses) {
@@ -71,6 +72,11 @@ export const GlobalAutomaterializationContent = () => {
     async () => await fetch({variables: getVariables()}),
     [fetch, getVariables],
   );
+
+  // When the variables have changed (e.g. due to pagination), refresh.
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   useRefreshAtInterval({
     refresh,

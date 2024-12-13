@@ -91,7 +91,7 @@ def test_connection_leak(conn_string):
 
     # This includes a number of internal connections, so just ensure it did not scale
     # with number of instances
-    assert row[0] < num_instances
+    assert row[0] < num_instances  # pyright: ignore[reportOperatorIssue,reportOptionalSubscript]
 
     for copy in copies:
         copy.dispose()
@@ -113,7 +113,7 @@ def test_load_instance(conn_string):
         file_relative_path(__file__, "../dagster_mysql/__init__.py")
     )
     with engine.connect() as conn:
-        stamp_alembic_rev(alembic_config, conn, rev=None)
+        stamp_alembic_rev(alembic_config, conn, rev=None)  # pyright: ignore[reportArgumentType]
 
     # Now load from scratch, verify it loads without errors
     with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname, port))):
@@ -136,14 +136,14 @@ def test_statement_timeouts(conn_string):
         # ensure migration error is not raised by being up to date
         instance.upgrade()
 
-        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._run_storage.connect() as conn:  # noqa: SLF001
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):  # pyright: ignore[reportAttributeAccessIssue]
+            with instance._run_storage.connect() as conn:  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
                 conn.execute(db.text("select sleep(1)")).fetchone()
 
-        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._event_storage.connect() as conn:  # noqa: SLF001
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):  # pyright: ignore[reportAttributeAccessIssue]
+            with instance._event_storage.connect() as conn:  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
                 conn.execute(db.text("select sleep(1)")).fetchone()
 
-        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._schedule_storage.connect() as conn:  # noqa: SLF001
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):  # pyright: ignore[reportAttributeAccessIssue]
+            with instance._schedule_storage.connect() as conn:  # noqa: SLF001  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 conn.execute(db.text("select sleep(1)")).fetchone()

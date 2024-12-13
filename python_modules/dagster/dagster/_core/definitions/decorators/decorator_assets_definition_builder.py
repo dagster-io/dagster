@@ -34,6 +34,7 @@ from dagster._core.definitions.assets import (
     ASSET_SUBSET_INPUT_PREFIX,
     AssetsDefinition,
     get_partition_mappings_from_deps,
+    stringify_asset_key_to_input_name,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.decorators.op_decorator import _Op
@@ -53,10 +54,6 @@ from dagster._core.types.dagster_type import (
     DagsterType,
     Nothing,
 )
-
-
-def stringify_asset_key_to_input_name(asset_key: AssetKey) -> str:
-    return "_".join(asset_key.path).replace("-", "_")
 
 
 def get_function_params_without_context_or_config_or_resources(

@@ -5,6 +5,7 @@ from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
 from dagster import Failure
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
 from dagster._record import as_dict, record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
@@ -82,7 +83,7 @@ class FivetranConnector:
         succeeded_at = parser.parse(self.succeeded_at or MIN_TIME_STR)
         failed_at = parser.parse(self.failed_at or MIN_TIME_STR)
 
-        return max(succeeded_at, failed_at)
+        return max(succeeded_at, failed_at)  # pyright: ignore[reportReturnType]
 
     @property
     def is_last_sync_successful(self) -> bool:
@@ -95,7 +96,7 @@ class FivetranConnector:
         succeeded_at = parser.parse(self.succeeded_at or MIN_TIME_STR)
         failed_at = parser.parse(self.failed_at or MIN_TIME_STR)
 
-        return succeeded_at > failed_at
+        return succeeded_at > failed_at  # pyright: ignore[reportOperatorIssue]
 
     def validate_syncable(self) -> bool:
         """Confirms that the connector can be sync. Will raise a Failure in the event that
@@ -152,7 +153,7 @@ class FivetranTable:
 
     enabled: bool
     name_in_destination: str
-    # We keep the raw data for columns to add it as `column_info in the metadata.
+    # We keep the raw data for columns to add it as `column_info` in the metadata.
     columns: Optional[Mapping[str, Any]]
 
     @classmethod
@@ -248,9 +249,19 @@ class FivetranWorkspaceData:
         return data
 
 
+class FivetranMetadataSet(NamespacedMetadataSet):
+    connector_id: Optional[str] = None
+    destination_schema_name: Optional[str] = None
+    destination_table_name: Optional[str] = None
+
+    @classmethod
+    def namespace(cls) -> str:
+        return "dagster-fivetran"
+
+
 class DagsterFivetranTranslator:
     """Translator class which converts a `FivetranConnectorTableProps` object into AssetSpecs.
-    Subclass this class to implement custom logic for each type of Fivetran content.
+    Subclass this class to implement custom logic on how to translate Fivetran content into asset spec.
     """
 
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
@@ -275,8 +286,17 @@ class DagsterFivetranTranslator:
             table=table_name,
         )
 
+        augmented_metadata = {
+            **metadata,
+            **FivetranMetadataSet(
+                connector_id=props.connector_id,
+                destination_schema_name=schema_name,
+                destination_table_name=table_name,
+            ),
+        }
+
         return AssetSpec(
             key=AssetKey(props.table.split(".")),
-            metadata=metadata,
+            metadata=augmented_metadata,
             kinds={"fivetran", *({props.service} if props.service else set())},
         )

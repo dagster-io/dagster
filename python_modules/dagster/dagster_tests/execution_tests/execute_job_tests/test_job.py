@@ -127,7 +127,7 @@ def test_job_post_process_config():
     def basic():
         the_op()
 
-    with environ({"SOME_ENV_VAR": None}):
+    with environ({"SOME_ENV_VAR": None}):  # pyright: ignore[reportArgumentType]
         # Ensure that the env var not existing will not throw an error, since resolution happens in post-processing.
         the_job = basic.to_job(
             config={"ops": {"the_op": {"config": {"foo": {"env": "SOME_ENV_VAR"}}}}}

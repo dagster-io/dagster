@@ -57,16 +57,16 @@ load_from:
                 assert code_locations.get(default_location_name)
                 local_port = code_locations.get(default_location_name)
 
-                assert local_port.socket == first_socket
-                assert local_port.host == "localhost"
-                assert local_port.port is None
+                assert local_port.socket == first_socket  # pyright: ignore[reportOptionalMemberAccess]
+                assert local_port.host == "localhost"  # pyright: ignore[reportOptionalMemberAccess]
+                assert local_port.port is None  # pyright: ignore[reportOptionalMemberAccess]
 
                 assert code_locations.get("local_port_default_host")
                 local_port_default_host = code_locations.get("local_port_default_host")
 
-                assert local_port_default_host.socket == second_socket
-                assert local_port_default_host.host == "localhost"
-                assert local_port_default_host.port is None
+                assert local_port_default_host.socket == second_socket  # pyright: ignore[reportOptionalMemberAccess]
+                assert local_port_default_host.host == "localhost"  # pyright: ignore[reportOptionalMemberAccess]
+                assert local_port_default_host.port is None  # pyright: ignore[reportOptionalMemberAccess]
 
                 assert all(map(lambda x: x.name, code_locations.values()))
 
@@ -105,14 +105,14 @@ def test_grpc_server_env_vars():
         port_origin = origins["my_grpc_server_port"]
         assert isinstance(origins["my_grpc_server_port"], GrpcServerCodeLocationOrigin)
 
-        assert port_origin.port == 1234
-        assert port_origin.host == "barhost"
+        assert port_origin.port == 1234  # pyright: ignore[reportAttributeAccessIssue]
+        assert port_origin.host == "barhost"  # pyright: ignore[reportAttributeAccessIssue]
 
         socket_origin = origins["my_grpc_server_socket"]
         assert isinstance(origins["my_grpc_server_socket"], GrpcServerCodeLocationOrigin)
 
-        assert socket_origin.socket == "barsocket"
-        assert socket_origin.host == "barhost"
+        assert socket_origin.socket == "barsocket"  # pyright: ignore[reportAttributeAccessIssue]
+        assert socket_origin.host == "barhost"  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_ssl_grpc_server_workspace(instance):
@@ -136,7 +136,7 @@ load_from:
             file_relative_path(__file__, "not_a_real.yaml"),
         )
         origin = next(iter(origins.values()))
-        assert origin.use_ssl
+        assert origin.use_ssl  # pyright: ignore[reportAttributeAccessIssue]
 
         # Actually connecting to the server will fail since it's expecting SSL
         # and we didn't set up the server with SSL
@@ -185,16 +185,16 @@ load_from:
                 assert code_locations.get(default_location_name)
                 local_port = code_locations.get(default_location_name)
 
-                assert local_port.port == first_port
-                assert local_port.host == "localhost"
-                assert local_port.socket is None
+                assert local_port.port == first_port  # pyright: ignore[reportOptionalMemberAccess]
+                assert local_port.host == "localhost"  # pyright: ignore[reportOptionalMemberAccess]
+                assert local_port.socket is None  # pyright: ignore[reportOptionalMemberAccess]
 
                 assert code_locations.get("local_port_default_host")
                 local_port_default_host = code_locations.get("local_port_default_host")
 
-                assert local_port_default_host.port == second_port
-                assert local_port_default_host.host == "localhost"
-                assert local_port_default_host.socket is None
+                assert local_port_default_host.port == second_port  # pyright: ignore[reportOptionalMemberAccess]
+                assert local_port_default_host.host == "localhost"  # pyright: ignore[reportOptionalMemberAccess]
+                assert local_port_default_host.socket is None  # pyright: ignore[reportOptionalMemberAccess]
 
                 assert all(map(lambda x: x.name, code_locations.values()))
 

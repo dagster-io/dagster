@@ -621,7 +621,7 @@ def test_incorrect_resource_init_error():
         ),
     ):
 
-        @resource
+        @resource  # pyright: ignore[reportCallIssue,reportArgumentType]
         def _incorrect_resource_2(_a, _b, _c, _d=4):
             pass
 
@@ -855,7 +855,7 @@ def test_resource_teardown_failure():
     error_events = [
         event
         for event in result.all_events
-        if event.event_type == DagsterEventType.ENGINE_EVENT and event.event_specific_data.error
+        if event.event_type == DagsterEventType.ENGINE_EVENT and event.event_specific_data.error  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     ]
     assert len(error_events) == 1
     assert called == ["A", "B"]
@@ -905,7 +905,7 @@ def test_multiprocessing_resource_teardown_failure():
         error_events = [
             event
             for event in result.all_events
-            if event.event_type == DagsterEventType.ENGINE_EVENT and event.event_specific_data.error
+            if event.event_type == DagsterEventType.ENGINE_EVENT and event.event_specific_data.error  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         ]
         assert len(error_events) == 1
 

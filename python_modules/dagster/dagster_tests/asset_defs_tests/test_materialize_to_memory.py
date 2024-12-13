@@ -278,7 +278,7 @@ def test_materialize_to_memory_partition_key_and_run_config():
 
 
 def test_materialize_to_memory_provided_io_manager_instance():
-    @io_manager
+    @io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
     def the_manager():
         pass
 
