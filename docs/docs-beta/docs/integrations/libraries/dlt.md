@@ -24,7 +24,7 @@ This integration allows you to use [dlt](https://dlthub.com/) to easily ingest a
 ### Installation
 
 ```bash
-pip install dagster-embedded-elt
+pip install dagster-embedded-elt[dlt]
 ```
 
 ### Example

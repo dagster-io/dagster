@@ -49,7 +49,7 @@ setup(
         ],
     },
     extras_require={
-        "sling": ["dagster-embedded-elt"],
+        "sling": ["dagster-embedded-elt[sling]"],
         "dbt": ["dagster-dbt"],
         "test": ["dbt-duckdb"],
     },
