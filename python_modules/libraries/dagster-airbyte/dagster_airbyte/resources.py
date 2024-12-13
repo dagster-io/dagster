@@ -1009,7 +1009,9 @@ class AirbyteCloudClient(DagsterModel):
         )
 
     def cancel_job(self, job_id: int) -> Mapping[str, Any]:
-        return self.make_request(method="DELETE", endpoint=f"jobs/{job_id}")
+        return self._make_request(
+            method="DELETE", endpoint=f"jobs/{job_id}", base_url=self.rest_api_base_url
+        )
 
 
 @experimental

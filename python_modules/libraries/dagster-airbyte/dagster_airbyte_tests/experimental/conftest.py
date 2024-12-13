@@ -233,4 +233,10 @@ def all_api_mocks_fixture(
         json=SAMPLE_JOB_RESPONSE,
         status=200,
     )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.DELETE,
+        url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs/{TEST_JOB_ID}",
+        json=SAMPLE_JOB_RESPONSE,
+        status=200,
+    )
     yield fetch_workspace_data_api_mocks
