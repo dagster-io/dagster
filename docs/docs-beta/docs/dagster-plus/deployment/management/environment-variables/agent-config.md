@@ -53,7 +53,55 @@ How `container_context` is configured depends on the agent type. Click the tab f
 
 ### Amazon ECS agents
 
-<!--<AmazonEcsEnvVarsConfiguration />-->
+Using the `container_context.ecs.env_vars` and `container_context.ecs.secrets` properties, you can configure environment variables and secrets for a specific code location.
+
+```yaml
+# dagster_cloud.yaml
+
+locations:
+  - location_name: cloud-examples
+    image: dagster/dagster-cloud-examples:latest
+    code_source:
+      package_name: dagster_cloud_examples
+    container_context:
+      ecs:
+        env_vars:
+          - DATABASE_NAME=testing
+          - DATABASE_PASSWORD
+        secrets:
+          - name: "MY_API_TOKEN"
+            valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::"
+          - name: "MY_PASSWORD"
+            valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::"
+        secrets_tags:
+          - "my_tag_name"
+```
+
+<!--<ReferenceTable>-->
+<!--  <ReferenceTableItem propertyName="container_context.ecs.env_vars">-->
+<!--    A list of keys or key-value pairs to include in the task. If a value is not-->
+<!--    specified, the value will be pulled from the agent task.-->
+<!--    <br />-->
+<!--    In the example above, <code>FOO_ENV_VAR</code> will be set to{" "}-->
+<!--    <code>foo_value</code> and <code>BAR_ENV_VAR</code> will be set to whatever-->
+<!--    value it has in the agent task.-->
+<!--  </ReferenceTableItem>-->
+<!--  <ReferenceTableItem propertyName="container_context.ecs.secrets">-->
+<!--    Individual secrets specified using the{" "}-->
+<!--    <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html">-->
+<!--      same structure as the ECS API-->
+<!--    </a>-->
+<!--    .-->
+<!--  </ReferenceTableItem>-->
+<!--  <ReferenceTableItem propertyName="container_context.ecs.secrets_tags">-->
+<!--    A list of tag names. Each secret tagged with any of those tag names in AWS-->
+<!--    Secrets Manager will be included in the launched tasks as environment-->
+<!--    variables. The name of the environment variable will be the name of the-->
+<!--    secret, and the value of the environment variable will be the value of the-->
+<!--    secret.-->
+<!--  </ReferenceTableItem>-->
+<!--</ReferenceTable>-->
+
 
 After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
@@ -72,7 +120,23 @@ After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagste
 
 ### Docker agents
 
-<!--<DockerEnvVarsConfiguration />-->
+Using the `container_context.docker.env_vars` property, you can include environment variables and secrets in the Docker container associated with a specific code location. For example:
+
+```yaml
+# dagster_cloud.yaml
+locations:
+  - location_name: cloud-examples
+    image: dagster/dagster-cloud-examples:latest
+    code_source:
+      package_name: dagster_cloud_examples
+    container_context:
+      docker:
+        env_vars:
+          - DATABASE_NAME
+          - DATABASE_USERNAME=hooli_testing
+```
+
+The `container_context.docker.env_vars` property is a list, where each item can be either `KEY` or `KEY=VALUE`. If only `KEY` is specified, the value will be pulled from the local environment.
 
 After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
@@ -90,7 +154,40 @@ After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagste
 
 ### Kubernetes agents
 
-<!--<K8sEnvVarsConfiguration />-->
+Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secrets` properties, you can specify environment variables and secrets for a specific code location. For example:
+
+```yaml
+# dagster_cloud.yaml
+
+locations:
+  - location_name: cloud-examples
+    image: dagster/dagster-cloud-examples:latest
+    code_source:
+      package_name: dagster_cloud_examples
+    container_context:
+      k8s:
+        env_vars:
+          - database_name        # value pulled from agent's environment
+          - database_username=hooli_testing
+        env_secrets:
+          - database_password
+```
+
+<!--<ReferenceTable>-->
+<!--  <ReferenceTableItem propertyName="env_vars">-->
+<!--    A list of environment variable names to inject into the job, formatted as{" "}-->
+<!--    <code>KEY</code> or <code>KEY=VALUE</code>. If only <code>KEY</code> is-->
+<!--    specified, the value will be pulled from the current process.-->
+<!--  </ReferenceTableItem>-->
+<!--  <ReferenceTableItem propertyName="env_secrets">-->
+<!--    A list of secret names, from which environment variables for a job are drawn-->
+<!--    using <code>envFrom</code>. Refer to the{" "}-->
+<!--    <a href="https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables">-->
+<!--      Kubernetes documentation-->
+<!--    </a>{" "}-->
+<!--    for more info.-->
+<!--  </ReferenceTableItem>-->
+<!--</ReferenceTable>-->
 
 After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
