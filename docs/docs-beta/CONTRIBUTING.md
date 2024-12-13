@@ -99,6 +99,8 @@ _There is not a replacement at this point in time..._
 
 Forcing empty space using the `{" "}` interpolation is not supported, and must be removed.
 
+---
+
 ## Diagrams
 
 You can use [Mermaid.js](https://mermaid.js.org/syntax/flowchart.html) to create diagrams. For example:
@@ -109,6 +111,8 @@ flowchart LR
 ```
 
 Refer to the [Mermaid.js documentation](https://mermaid.js.org/) for more info.
+
+---
 
 ## Code examples
 
