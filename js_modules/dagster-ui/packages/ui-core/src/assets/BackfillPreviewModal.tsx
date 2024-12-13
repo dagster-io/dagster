@@ -57,7 +57,7 @@ export const BackfillPreviewModal = ({
       skip: !isOpen,
     },
   );
-  const {data} = queryResult;
+  const {data, loading} = queryResult;
 
   const partitionsByAssetToken = useMemo(() => {
     return Object.fromEntries(
@@ -107,8 +107,10 @@ export const BackfillPreviewModal = ({
                   <RowCell style={{color: Colors.textDefault(), alignItems: 'flex-start'}}>
                     {partitions ? (
                       <TargetPartitionsDisplay targetPartitions={partitions} />
-                    ) : (
+                    ) : loading ? (
                       <Spinner purpose="body-text" />
+                    ) : (
+                      'No partitions available to materialize'
                     )}
                   </RowCell>
                 </RowGrid>
