@@ -10,12 +10,16 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._utils import pushd
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
 from dbt.cli.main import dbtRunner
-from jinja2 import Template
 from pydantic import BaseModel, Field
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component import ComponentGenerateRequest, component
+from dagster_components.core.component import (
+    ComponentGenerateRequest,
+    TemplatedValueResolver,
+    component,
+)
+from dagster_components.core.component_rendering import add_required_rendering_context
 from dagster_components.core.dsl_schema import AssetSpecProcessorModel, OpSpecBaseModel
 from dagster_components.generate import generate_component_yaml
 
@@ -28,7 +32,9 @@ class DbtNodeTranslatorParams(BaseModel):
 class DbtProjectParams(BaseModel):
     dbt: DbtCliResource
     op: Optional[OpSpecBaseModel] = None
-    translator: Optional[DbtNodeTranslatorParams] = None
+    translator: Optional[DbtNodeTranslatorParams] = add_required_rendering_context(
+        Field(default=None), {"node"}
+    )
     asset_attributes: Optional[Sequence[AssetSpecProcessorModel]] = None
 
 
@@ -48,8 +54,10 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
     def __init__(
         self,
         *,
+        value_resolver: TemplatedValueResolver,
         translator_params: Optional[DbtNodeTranslatorParams] = None,
     ):
+        self.value_resolver = value_resolver
         self.translator_params = translator_params
 
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
@@ -57,14 +65,18 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
             return super().get_asset_key(dbt_resource_props)
 
         return AssetKey.from_user_string(
-            Template(self.translator_params.key).render(node=dbt_resource_props)
+            self.value_resolver.with_context(node=dbt_resource_props).resolve(
+                self.translator_params.key
+            )
         )
 
     def get_group_name(self, dbt_resource_props) -> Optional[str]:
         if not self.translator_params or not self.translator_params.group:
             return super().get_group_name(dbt_resource_props)
 
-        return Template(self.translator_params.group).render(node=dbt_resource_props)
+        return self.value_resolver.with_context(node=dbt_resource_props).resolve(
+            self.translator_params.group
+        )
 
 
 @component(name="dbt_project")
@@ -89,11 +101,13 @@ class DbtProjectComponent(Component):
         # all paths should be resolved relative to the directory we're in
         with pushd(str(context.path)):
             loaded_params = context.load_params(cls.params_schema)
+
         return cls(
             dbt_resource=loaded_params.dbt,
             op_spec=loaded_params.op,
             dbt_translator=DbtProjectComponentTranslator(
-                translator_params=loaded_params.translator
+                translator_params=loaded_params.translator,
+                value_resolver=context.templated_value_resolver,
             ),
             asset_transforms=loaded_params.asset_attributes or [],
         )
