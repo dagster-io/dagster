@@ -35,7 +35,17 @@ def test_python_params() -> None:
                     "scripts": [
                         {
                             "path": "script_one.py",
-                            "assets": [{"key": "a"}, {"key": "b", "deps": ["up1", "up2"]}],
+                            "assets": [
+                                {"key": "a", "automation_condition": {"type": "eager"}},
+                                {
+                                    "key": "b",
+                                    "automation_condition": {
+                                        "type": "on_cron",
+                                        "params": {"cron_schedule": "@daily"},
+                                    },
+                                    "deps": ["up1", "up2"],
+                                },
+                            ],
                         },
                         {"path": "subdir/script_three.py", "assets": [{"key": "key_override"}]},
                     ]
