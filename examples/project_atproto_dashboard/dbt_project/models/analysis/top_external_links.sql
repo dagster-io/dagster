@@ -28,7 +28,6 @@ WITH distinct_posts AS (
             WHEN external_embed_link LIKE '%washingtonpost%' THEN 'News'
             WHEN external_embed_link LIKE '%newrepublic%' THEN 'News'
             WHEN external_embed_link LIKE '%huffpost%' THEN 'News'
-            WHEN external_embed_link LIKE '%huffpost%' THEN 'News'
             WHEN external_embed_link LIKE '%wired%' THEN 'News'
             WHEN external_embed_link LIKE '%medium%' THEN 'Medium'
             WHEN external_embed_link LIKE '%reddit%' THEN 'Reddit'
