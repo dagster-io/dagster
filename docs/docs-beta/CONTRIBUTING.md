@@ -98,3 +98,34 @@ _There is not a replacement at this point in time..._
 ### Whitespace via `{" "}`
 
 Forcing empty space using the `{" "}` interpolation is not supported, and must be removed.
+
+## Diagrams
+
+You can use [Mermaid.js](https://mermaid.js.org/syntax/flowchart.html) to create diagrams. For example:
+
+```mermaid
+flowchart LR
+    Start --> Stop
+```
+
+Refer to the [Mermaid.js documentation](https://mermaid.js.org/) for more info.
+
+## Code examples
+
+To include code snippets, use the following format:
+
+```
+<CodeExample filePath="path/to/file.py" />
+```
+
+The `filePath` is relative to the `./examples/docs_beta_snippets/docs_beta_snippets/` directory.
+
+At minimum, all `.py` files in the `docs_beta_snippets` directory are tested by attempting to load the Python files.
+You can write additional tests for them in the `docs_beta_snippets_test` folder. See the folder for more information.
+
+To type-check the code snippets during development, run the following command from the Dagster root folder.
+This will run `pyright` on all new/changed files relative to the master branch.
+
+```
+make quick_pyright
+```
