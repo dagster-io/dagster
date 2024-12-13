@@ -1,4 +1,4 @@
-node_modules
 .docusaurus
+.yarn/
 build/
-docs/
+node_modules

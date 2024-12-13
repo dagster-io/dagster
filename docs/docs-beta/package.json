@@ -16,7 +16,9 @@
     "vale": "vale ./docs --ext=.md,.mdx",
     "lint": "eslint . --ext=.tsx,.ts,.js,.md,.mdx --fix",
     "lint-and-vale": "yarn run lint && yarn run vale",
-    "sync-api-docs": "/bin/sh scripts/vercel-sync-api-docs.sh"
+    "sync-api-docs": "/bin/sh scripts/vercel-sync-api-docs.sh",
+    "format": "prettier --write .",
+    "format:diff": "prettier --list-different ."
   },
   "dependencies": {
     "@docusaurus/core": "3.5.2",
