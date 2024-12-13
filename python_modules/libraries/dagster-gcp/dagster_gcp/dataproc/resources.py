@@ -181,7 +181,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     labels: Optional[dict[str, str]] = Field(
         default=None,
         description=(
-            "Optional. The labels to associate withthis cluster. Label keys must"
+            "Optional. The labels to associate with this cluster. Label keys must"
             " contain 1 to 63 characters, and must conform to RFC 1035"
             " (https://www.ietf.org/rfc/rfc1035.txt). Label values may be empty, but, if"
             " present, must contain 1 to 63 characters, and must conform to RFC 1035"
