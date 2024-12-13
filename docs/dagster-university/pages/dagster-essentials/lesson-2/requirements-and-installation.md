@@ -9,7 +9,7 @@ lesson: '2'
 To install Dagster, you’ll need:
 
 - **To install Python**. Dagster supports Python 3.9 through 3.12.
-- **A package manager like pip, poetry or uv**. If you need to install a package manager, refer to the following installation guides:
+- **A package manager like pip, Poetry, or uv**. If you need to install a package manager, refer to the following installation guides:
   - [pip](https://pip.pypa.io/en/stable/installation/)
   - [Poetry](https://python-poetry.org/docs/)
   - [uv](https://docs.astral.sh/uv/getting-started/installation/)
