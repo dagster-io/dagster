@@ -57,7 +57,7 @@ You can use Dagster to sync Fivetran connectors and materialize Fivetran connect
 
 ### Customize the materialization of Fivetran assets
 
-If you want to customize the sync of your connectors, you can use the <PyObject module="dagster_fivetran" method="fivetran_assets" /> decorator to do so. This allows you to execute custom code before and after the call to the fivetran sync.
+If you want to customize the sync of your connectors, you can use the <PyObject module="dagster_fivetran" method="fivetran_assets" /> decorator to do so. This allows you to execute custom code before and after the call to the Fivetran sync.
 
 <CodeExample filePath="integrations/fivetran/customize_fivetran_asset_defs.py" language="python" />
 
