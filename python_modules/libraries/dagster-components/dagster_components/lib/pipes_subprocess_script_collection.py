@@ -55,6 +55,8 @@ class PipesSubprocessScriptCollectionParams(BaseModel):
 
 @component(name="pipes_subprocess_script_collection")
 class PipesSubprocessScriptCollection(Component):
+    """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
+
     params_schema = PipesSubprocessScriptCollectionParams
 
     def __init__(self, dirpath: Path, path_specs: Mapping[Path, Sequence[AssetSpec]]):

@@ -1,6 +1,7 @@
 import click
 
 from dagster_dg.cli.generate import generate_cli
+from dagster_dg.cli.info import info_cli
 from dagster_dg.cli.list import list_cli
 from dagster_dg.version import __version__
 
@@ -8,6 +9,7 @@ from dagster_dg.version import __version__
 def create_dg_cli():
     commands = {
         "generate": generate_cli,
+        "info": info_cli,
         "list": list_cli,
     }
 

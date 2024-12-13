@@ -1,10 +1,22 @@
 import copy
 import importlib
 import importlib.metadata
+import inspect
 import sys
 from abc import ABC, abstractmethod
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Iterable, Mapping, Optional, Sequence, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    TypedDict,
+)
 
 from dagster import _check as check
 from dagster._core.errors import DagsterError
@@ -34,6 +46,36 @@ class Component(ABC):
     def from_decl_node(
         cls, context: "ComponentLoadContext", decl_node: "ComponentDeclNode"
     ) -> Self: ...
+
+    @classmethod
+    def get_metadata(cls) -> "ComponentInternalMetadata":
+        docstring = cls.__doc__
+        return {
+            "summary": docstring.split("\n\n")[0] if docstring else None,
+            "description": docstring,
+            "generate_params_schema": cls.generate_params_schema.schema()
+            if cls.generate_params_schema
+            else None,
+            "component_params_schema": cls.component_params_schema.schema()
+            if cls.component_params_schema
+            else None,
+        }
+
+    @classmethod
+    def get_description(cls) -> Optional[str]:
+        return inspect.getdoc(cls)
+
+
+class ComponentInternalMetadata(TypedDict):
+    summary: Optional[str]
+    description: Optional[str]
+    generate_params_schema: Optional[Any]  # json schema
+    component_params_schema: Optional[Any]  # json schema
+
+
+class ComponentMetadata(ComponentInternalMetadata):
+    name: str
+    package: str
 
 
 def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.metadata.EntryPoint]:

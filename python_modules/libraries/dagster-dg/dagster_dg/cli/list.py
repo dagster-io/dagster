@@ -42,8 +42,10 @@ def list_component_types_command() -> None:
         sys.exit(1)
 
     context = CodeLocationDirectoryContext.from_path(Path.cwd())
-    for component_type in context.get_component_type_names():
-        click.echo(component_type)
+    for key, component_type in context.iter_component_types():
+        click.echo(key)
+        if component_type.summary:
+            click.echo(f"    {component_type.summary}")
 
 
 @list_cli.command(name="components")

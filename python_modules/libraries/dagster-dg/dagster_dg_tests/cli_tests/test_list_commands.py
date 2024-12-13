@@ -1,23 +1,13 @@
-import sys
-from pathlib import Path
+import re
 
 from click.testing import CliRunner
-from dagster_dg import __file__ as dagster_dg_init_py
 from dagster_dg.cli.generate import generate_code_location_command, generate_component_command
 from dagster_dg.cli.list import (
     list_code_locations_command,
     list_component_types_command,
     list_components_command,
 )
-
-
-def ensure_dagster_dg_tests_import() -> None:
-    dagster_dg_package_root = (Path(dagster_dg_init_py) / ".." / "..").resolve()
-    assert (
-        dagster_dg_package_root / "dagster_dg_tests"
-    ).exists(), "Could not find dagster_dg_tests where expected"
-    sys.path.append(dagster_dg_package_root.as_posix())
-
+from dagster_dg.utils import ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
 
@@ -51,15 +41,10 @@ def test_list_component_types_success():
     with isolated_example_code_location_bar(runner):
         result = runner.invoke(list_component_types_command)
         assert result.exit_code == 0
-        assert (
-            result.output
-            == "\n".join(
-                [
-                    "dagster_components.pipes_subprocess_script_collection",
-                ]
-            )
-            + "\n"
-        )
+        lines = result.output.strip().split("\n")
+        assert len(lines) == 2
+        assert lines[0] == "dagster_components.pipes_subprocess_script_collection"
+        assert re.match(r"    Assets that wrap.*", lines[1])
 
 
 def test_list_component_types_outside_code_location_fails() -> None:

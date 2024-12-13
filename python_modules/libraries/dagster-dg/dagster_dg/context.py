@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Final, Iterable, Mapping, Optional
+from typing import Final, Iterable, Mapping, Optional, Tuple
 
 import tomli
 from typing_extensions import Self
@@ -140,8 +140,9 @@ class CodeLocationDirectoryContext:
     def local_component_types_root_module_name(self) -> str:
         return f"{self._name}.{_CODE_LOCATION_CUSTOM_COMPONENTS_DIR}"
 
-    def get_component_type_names(self) -> Iterable[str]:
-        return sorted(self._component_registry.keys())
+    def iter_component_types(self) -> Iterable[Tuple[str, RemoteComponentType]]:
+        for key in sorted(self._component_registry.keys()):
+            yield key, self._component_registry.get(key)
 
     def has_component_type(self, name: str) -> bool:
         return self._component_registry.has(name)
