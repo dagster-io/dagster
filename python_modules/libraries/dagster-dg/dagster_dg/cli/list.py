@@ -9,6 +9,7 @@ from dagster_dg.context import (
     is_inside_code_location_directory,
     is_inside_deployment_directory,
 )
+from dagster_dg.utils import CLI_BUILTIN_COMPONENT_LIB_KEY
 
 
 @click.group(name="list")
@@ -31,8 +32,10 @@ def list_code_locations_command() -> None:
 
 
 @list_cli.command(name="component-types")
-def list_component_types_command() -> None:
+@click.pass_context
+def list_component_types_command(context: click.Context) -> None:
     """List registered Dagster components in the current code location environment."""
+    builtin_component_lib = context.obj.get(CLI_BUILTIN_COMPONENT_LIB_KEY, False)
     if not is_inside_code_location_directory(Path.cwd()):
         click.echo(
             click.style(
@@ -41,8 +44,10 @@ def list_component_types_command() -> None:
         )
         sys.exit(1)
 
-    context = CodeLocationDirectoryContext.from_path(Path.cwd())
-    for key, component_type in context.iter_component_types():
+    dg_context = CodeLocationDirectoryContext.from_path(
+        Path.cwd(), builtin_component_lib=builtin_component_lib
+    )
+    for key, component_type in dg_context.iter_component_types():
         click.echo(key)
         if component_type.summary:
             click.echo(f"    {component_type.summary}")

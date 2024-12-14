@@ -3,6 +3,7 @@ import importlib
 import importlib.metadata
 import inspect
 import sys
+import textwrap
 from abc import ABC, abstractmethod
 from pathlib import Path
 from types import ModuleType
@@ -25,6 +26,8 @@ from dagster._record import record
 from dagster._utils import snakecase
 from typing_extensions import Self
 
+from dagster_components.utils import ensure_dagster_components_tests_import
+
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
@@ -40,7 +43,7 @@ class ComponentGenerateRequest:
 
 class Component(ABC):
     name: ClassVar[Optional[str]] = None
-    component_params_schema: ClassVar = None
+    params_schema: ClassVar = None
     generate_params_schema: ClassVar = None
 
     @classmethod
@@ -58,20 +61,30 @@ class Component(ABC):
     @classmethod
     def get_metadata(cls) -> "ComponentInternalMetadata":
         docstring = cls.__doc__
+        clean_docstring = _clean_docstring(docstring) if docstring else None
+
         return {
-            "summary": docstring.split("\n\n")[0] if docstring else None,
-            "description": docstring,
+            "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
+            "description": clean_docstring if clean_docstring else None,
             "generate_params_schema": cls.generate_params_schema.schema()
             if cls.generate_params_schema
             else None,
-            "component_params_schema": cls.component_params_schema.schema()
-            if cls.component_params_schema
-            else None,
+            "component_params_schema": cls.params_schema.schema() if cls.params_schema else None,
         }
 
     @classmethod
     def get_description(cls) -> Optional[str]:
         return inspect.getdoc(cls)
+
+
+def _clean_docstring(docstring: str) -> str:
+    lines = docstring.strip().splitlines()
+    first_line = lines[0]
+    if len(lines) == 1:
+        return first_line
+    else:
+        rest = textwrap.dedent("\n".join(lines[1:]))
+        return f"{first_line}\n{rest}"
 
 
 class ComponentInternalMetadata(TypedDict):
@@ -94,13 +107,43 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
 
 
 COMPONENTS_ENTRY_POINT_GROUP = "dagster.components"
+BUILTIN_COMPONENTS_ENTRY_POINT_BASE = "dagster_components"
+BUILTIN_PUBLISHED_COMPONENT_ENTRY_POINT = BUILTIN_COMPONENTS_ENTRY_POINT_BASE
+BUILTIN_TEST_COMPONENT_ENTRY_POINT = ".".join([BUILTIN_COMPONENTS_ENTRY_POINT_BASE, "test"])
 
 
 class ComponentRegistry:
     @classmethod
-    def from_entry_point_discovery(cls) -> "ComponentRegistry":
+    def from_entry_point_discovery(
+        cls, builtin_component_lib: str = BUILTIN_PUBLISHED_COMPONENT_ENTRY_POINT
+    ) -> "ComponentRegistry":
+        """Discover components registered in the Python environment via the `dagster_components` entry point group.
+
+        `dagster-components` itself registers multiple component entry points. We call these
+        "builtin" component libraries. The `dagster_components` entry point resolves to published
+        components and is loaded by default. Other entry points resolve to various sets of test
+        components. This method will only ever load one builtin component library.
+
+        Args:
+            builtin-component-lib (str): Specifies the builtin components library to load. Builtin
+            copmonents libraries are defined under entry points with names matching the pattern
+            `dagster_components*`. Only one builtin component library can be loaded at a time.
+            Defaults to `dagster_components`, the standard set of published components.
+        """
         components: Dict[str, Type[Component]] = {}
         for entry_point in get_entry_points_from_python_environment(COMPONENTS_ENTRY_POINT_GROUP):
+            # Skip builtin entry points that are not the specified builtin component library.
+            if (
+                entry_point.name.startswith(BUILTIN_COMPONENTS_ENTRY_POINT_BASE)
+                and not entry_point.name == builtin_component_lib
+            ):
+                continue
+            elif entry_point.name == BUILTIN_TEST_COMPONENT_ENTRY_POINT:
+                if builtin_component_lib:
+                    ensure_dagster_components_tests_import()
+                else:
+                    continue
+
             root_module = entry_point.load()
             if not isinstance(root_module, ModuleType):
                 raise DagsterError(

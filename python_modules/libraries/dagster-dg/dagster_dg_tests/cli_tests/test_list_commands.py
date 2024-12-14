@@ -1,73 +1,89 @@
-import re
+import textwrap
 
-from click.testing import CliRunner
-from dagster_dg.cli.generate import generate_code_location_command, generate_component_command
-from dagster_dg.cli.list import (
-    list_code_locations_command,
-    list_component_types_command,
-    list_components_command,
-)
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
 
-from dagster_dg_tests.cli_tests.test_generate_commands import (
+from dagster_dg_tests.utils import (
+    ProxyRunner,
+    assert_runner_result,
     isolated_example_code_location_bar,
-    isolated_example_code_location_bar_with_component_type_baz,
     isolated_example_deployment_foo,
 )
 
 
 def test_list_code_locations_success():
-    runner = CliRunner()
+    runner = ProxyRunner.test()
     with isolated_example_deployment_foo(runner):
-        runner.invoke(generate_code_location_command, ["foo"])
-        runner.invoke(generate_code_location_command, ["bar"])
-        result = runner.invoke(list_code_locations_command)
-        assert result.exit_code == 0
-        assert result.output == "bar\nfoo\n"
+        runner.invoke("generate", "code-location", "foo")
+        runner.invoke("generate", "code-location", "bar")
+        result = runner.invoke("list", "code-locations")
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+            bar
+            foo
+        """).strip()
+        )
 
 
 def test_list_code_locations_outside_deployment_fails() -> None:
-    runner = CliRunner()
+    runner = ProxyRunner.test()
     with runner.isolated_filesystem():
-        result = runner.invoke(list_code_locations_command)
-        assert result.exit_code != 0
+        result = runner.invoke("list", "code-locations")
+        assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster deployment directory" in result.output
 
 
 def test_list_component_types_success():
-    runner = CliRunner()
+    runner = ProxyRunner.test()
     with isolated_example_code_location_bar(runner):
-        result = runner.invoke(list_component_types_command)
-        assert result.exit_code == 0
-        lines = result.output.strip().split("\n")
-        assert len(lines) == 2
-        assert lines[0] == "dagster_components.pipes_subprocess_script_collection"
-        assert re.match(r"    Assets that wrap.*", lines[1])
+        result = runner.invoke("list", "component-types")
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+            dagster_components.test.all_metadata_empty_asset
+            dagster_components.test.simple_asset
+                A simple asset that returns a constant string value.
+            dagster_components.test.simple_pipes_script_asset
+                A simple asset that runs a Python script with the Pipes subprocess client.
+        """).strip()
+        )
 
 
 def test_list_component_types_outside_code_location_fails() -> None:
-    runner = CliRunner()
+    runner = ProxyRunner.test()
     with runner.isolated_filesystem():
-        result = runner.invoke(list_component_types_command)
-        assert result.exit_code != 0
+        result = runner.invoke("list", "component-types")
+        assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster code location directory" in result.output
 
 
 def test_list_components_succeeds():
-    runner = CliRunner()
-    # with isolated_example_code_location_bar(runner):
-    with isolated_example_code_location_bar_with_component_type_baz(runner):
-        result = runner.invoke(list_components_command)
-        runner.invoke(generate_component_command, ["bar.baz", "qux"])
-        result = runner.invoke(list_components_command)
-        assert result.output == "qux\n"
+    runner = ProxyRunner.test()
+    with isolated_example_code_location_bar(runner):
+        result = runner.invoke(
+            "generate",
+            "component",
+            "dagster_components.test.all_metadata_empty_asset",
+            "qux",
+        )
+        assert_runner_result(result)
+        result = runner.invoke("list", "components")
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+            qux
+        """).strip()
+        )
 
 
 def test_list_components_command_outside_code_location_fails() -> None:
-    runner = CliRunner()
+    runner = ProxyRunner.test()
     with runner.isolated_filesystem():
-        result = runner.invoke(list_components_command)
-        assert result.exit_code != 0
+        result = runner.invoke("list", "components")
+        assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster code location directory" in result.output

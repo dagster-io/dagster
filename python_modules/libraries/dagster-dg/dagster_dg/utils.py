@@ -12,12 +12,22 @@ import jinja2
 
 from dagster_dg.version import __version__ as dagster_version
 
+CLI_BUILTIN_COMPONENT_LIB_KEY = "builtin_component_lib"
+DEFAULT_BUILTIN_COMPONENT_LIB: Final = "dagster_components"
+
+
 _CODE_LOCATION_COMMAND_PREFIX: Final = ["uv", "run", "dagster-components"]
 
 
-def execute_code_location_command(path: Path, cmd: Sequence[str]) -> str:
+def execute_code_location_command(
+    path: Path, cmd: Sequence[str], builtin_component_lib: Optional[str] = None
+) -> str:
+    full_cmd = [
+        *_CODE_LOCATION_COMMAND_PREFIX,
+        *(["--builtin-component-lib", builtin_component_lib] if builtin_component_lib else []),
+        *cmd,
+    ]
     with pushd(path):
-        full_cmd = [*_CODE_LOCATION_COMMAND_PREFIX, *cmd]
         result = subprocess.run(
             full_cmd, stdout=subprocess.PIPE, env=get_uv_command_env(), check=True
         )
