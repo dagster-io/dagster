@@ -13,8 +13,7 @@ from dagster_dg_tests.utils import (
 
 
 def test_list_code_locations_success():
-    runner = ProxyRunner.test()
-    with isolated_example_deployment_foo(runner):
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         runner.invoke("generate", "code-location", "foo")
         runner.invoke("generate", "code-location", "bar")
         result = runner.invoke("list", "code-locations")
@@ -29,16 +28,14 @@ def test_list_code_locations_success():
 
 
 def test_list_code_locations_outside_deployment_fails() -> None:
-    runner = ProxyRunner.test()
-    with runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("list", "code-locations")
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster deployment directory" in result.output
 
 
 def test_list_component_types_success():
-    runner = ProxyRunner.test()
-    with isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke("list", "component-types")
         assert_runner_result(result)
         assert (
@@ -54,16 +51,14 @@ def test_list_component_types_success():
 
 
 def test_list_component_types_outside_code_location_fails() -> None:
-    runner = ProxyRunner.test()
-    with runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("list", "component-types")
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster code location directory" in result.output
 
 
 def test_list_components_succeeds():
-    runner = ProxyRunner.test()
-    with isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke(
             "generate",
             "component",
@@ -82,8 +77,7 @@ def test_list_components_succeeds():
 
 
 def test_list_components_command_outside_code_location_fails() -> None:
-    runner = ProxyRunner.test()
-    with runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("list", "components")
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster code location directory" in result.output

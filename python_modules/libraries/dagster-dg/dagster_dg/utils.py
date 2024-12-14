@@ -4,13 +4,19 @@ import posixpath
 import re
 import subprocess
 import sys
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Iterator, List, Mapping, Optional, Sequence, Union
 
 import click
 import jinja2
+from typing_extensions import TypeAlias
 
 from dagster_dg.version import __version__ as dagster_version
+
+# There is some weirdness concerning the availabilty of hashlib.HASH between different Python
+# versions, so for nowe we avoid trying to import it and just alias the type to Any.
+Hash: TypeAlias = Any
 
 if TYPE_CHECKING:
     from dagster_dg.context import DgContext
@@ -84,6 +90,7 @@ _DEFAULT_EXCLUDES: List[str] = [
     "__pycache__",
     ".pytest_cache",
     "*.egg-info",
+    "*.cpython-*",
     ".DS_Store",
     ".ruff_cache",
     "tox.ini",
@@ -188,3 +195,19 @@ def ensure_dagster_dg_tests_import() -> None:
         dagster_dg_package_root / "dagster_dg_tests"
     ).exists(), "Could not find dagster_dg_tests where expected"
     sys.path.append(dagster_dg_package_root.as_posix())
+
+
+def hash_directory_metadata(hasher: Hash, path: Union[str, Path]) -> None:
+    for root, dirs, files in os.walk(path):
+        for name in dirs + files:
+            if any(fnmatch(name, pattern) for pattern in _DEFAULT_EXCLUDES):
+                continue
+            filepath = os.path.join(root, name)
+            hash_file_metadata(hasher, filepath)
+
+
+def hash_file_metadata(hasher: Hash, path: Union[str, Path]) -> None:
+    stat = os.stat(path=path)
+    hasher.update(str(path).encode())
+    hasher.update(str(stat.st_mtime).encode())  # Last modified time
+    hasher.update(str(stat.st_size).encode())  # File size
