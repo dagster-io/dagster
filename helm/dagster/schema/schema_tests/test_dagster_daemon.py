@@ -701,9 +701,7 @@ def test_check_db_container_toggle(template: HelmTemplate):
     ]
 
     # Default test
-    helm_values = DagsterHelmValues.construct(
-        dagsterDaemon=Daemon.construct()
-    )
+    helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
     [daemon_deployment] = template.render(helm_values)
     assert "check-db-ready" in [
         container.name for container in daemon_deployment.spec.template.spec.init_containers

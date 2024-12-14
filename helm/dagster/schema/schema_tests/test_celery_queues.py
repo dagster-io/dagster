@@ -346,9 +346,7 @@ def test_check_db_container_toggle(deployment_template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(
         runLauncher=RunLauncher(
             type=RunLauncherType.CELERY,
-            config=RunLauncherConfig(
-                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct()
-            ),
+            config=RunLauncherConfig(celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct()),
         )
     )
     [daemon_deployment] = deployment_template.render(helm_values)
