@@ -310,6 +310,7 @@ def test_scheduler_name(deployment_template: HelmTemplate):
 
 
 def test_check_db_container_toggle(deployment_template: HelmTemplate):
+    # Off test
     helm_values = DagsterHelmValues.construct(
         runLauncher=RunLauncher(
             type=RunLauncherType.CELERY,
@@ -325,6 +326,7 @@ def test_check_db_container_toggle(deployment_template: HelmTemplate):
         container.name for container in daemon_deployment.spec.template.spec.init_containers
     ]
 
+    # On test
     helm_values = DagsterHelmValues.construct(
         runLauncher=RunLauncher(
             type=RunLauncherType.CELERY,
@@ -332,6 +334,20 @@ def test_check_db_container_toggle(deployment_template: HelmTemplate):
                 celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct(
                     checkDbReadyInitContainer=True
                 )
+            ),
+        )
+    )
+    [daemon_deployment] = deployment_template.render(helm_values)
+    assert "check-db-ready" in [
+        container.name for container in daemon_deployment.spec.template.spec.init_containers
+    ]
+
+    # Default test
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher(
+            type=RunLauncherType.CELERY,
+            config=RunLauncherConfig(
+                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct()
             ),
         )
     )
