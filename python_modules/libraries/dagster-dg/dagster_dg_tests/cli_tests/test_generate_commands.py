@@ -25,7 +25,13 @@ from dagster_dg.utils import discover_git_root, pushd
 def _example_component_type_baz():
     import click
     from dagster import AssetExecutionContext, Definitions, PipesSubprocessClient, asset
-    from dagster_components import Component, ComponentLoadContext, component
+    from dagster_components import (
+        Component,
+        ComponentGenerateRequest,
+        ComponentLoadContext,
+        component,
+    )
+    from dagster_components.generate import generate_component_yaml
     from pydantic import BaseModel
 
     _SAMPLE_PIPES_SCRIPT = """
@@ -49,7 +55,8 @@ def _example_component_type_baz():
         generate_params_schema = BazGenerateParams
 
         @classmethod
-        def generate_files(cls, params: BazGenerateParams):
+        def generate_files(cls, request: ComponentGenerateRequest, params: BazGenerateParams):
+            generate_component_yaml(request, {})
             with open(params.filename, "w") as f:
                 f.write(_SAMPLE_PIPES_SCRIPT)
 

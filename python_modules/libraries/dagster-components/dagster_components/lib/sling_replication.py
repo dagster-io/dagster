@@ -12,9 +12,10 @@ from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component import component
+from dagster_components.core.component import ComponentGenerateRequest, component
 from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
 from dagster_components.core.dsl_schema import AssetSpecProcessorModel, OpSpecBaseModel
+from dagster_components.generate import generate_component_yaml
 
 
 class SlingReplicationParams(BaseModel):
@@ -67,7 +68,8 @@ class SlingReplicationComponent(Component):
         return defs
 
     @classmethod
-    def generate_files(cls, params: Any) -> None:
+    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None:
+        generate_component_yaml(request, params)
         replication_path = Path(os.getcwd()) / "replication.yaml"
         with open(replication_path, "w") as f:
             yaml.dump(
