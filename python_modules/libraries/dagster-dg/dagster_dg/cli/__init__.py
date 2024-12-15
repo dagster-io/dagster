@@ -3,7 +3,7 @@ import click
 from dagster_dg.cli.generate import generate_cli
 from dagster_dg.cli.info import info_cli
 from dagster_dg.cli.list import list_cli
-from dagster_dg.utils import CLI_BUILTIN_COMPONENT_LIB_KEY, DEFAULT_BUILTIN_COMPONENT_LIB
+from dagster_dg.config import DgConfig, set_config_on_cli_context
 from dagster_dg.version import __version__
 
 
@@ -22,14 +22,19 @@ def create_dg_cli():
     @click.option(
         "--builtin-component-lib",
         type=str,
-        default=DEFAULT_BUILTIN_COMPONENT_LIB,
+        default=DgConfig.builtin_component_lib,
         help="Specify a builitin component library to use.",
     )
     @click.pass_context
-    def group(context: click.Context, builtin_component_lib: bool):
+    def group(context: click.Context, builtin_component_lib: str):
         """CLI tools for working with Dagster components."""
         context.ensure_object(dict)
-        context.obj[CLI_BUILTIN_COMPONENT_LIB_KEY] = builtin_component_lib
+        set_config_on_cli_context(
+            context,
+            DgConfig(
+                builtin_component_lib=builtin_component_lib,
+            ),
+        )
 
     return group
 
