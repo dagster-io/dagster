@@ -10,19 +10,22 @@ In this guide, we'll walk you through configuring [Okta SCIM provisioning](https
 
 ## About this feature
 
-<TabGroup>
-<TabItem name="Supported features">
+<Tabs>
+<TabItem value="Supported features">
 
 ### Supported features
 
 With Dagster+'s Okta SCIM provisioning feature, you can:
 
-<ScimSupportedFeatures />
+- **Create users**. Users that are assigned to the Dagster+ application in the IdP will be automatically added to your Dagster+ organization.
+- **Update user attributes.** Updating a user’s name or email address in the IdP will automatically sync the change to your user list in Dagster+.
+- **Remove users.** Deactivating or unassigning a user from the Dagster+ application in the IdP will remove them from the Dagster+ organization
+- **Push user groups.** Groups and their members in the IdP can be pushed to Dagster+ as [Teams](/dagster-plus/account/managing-users/managing-teams).
 
 Refer to [Okta's SCIM documentation](https://developer.okta.com/docs/concepts/scim/) for more information about Okta's SCIM offering.
 
 </TabItem>
-<TabItem name="Limitations">
+<TabItem value="Limitations">
 
 ### Limitations
 
@@ -34,7 +37,7 @@ Dagster+ currently supports the following attributes for SCIM syncing:
 - `user.displayName`
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
 ## Prerequisites
 
