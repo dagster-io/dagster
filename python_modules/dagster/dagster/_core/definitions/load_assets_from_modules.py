@@ -9,16 +9,17 @@ from typing import (
     Dict,
     Iterable,
     Iterator,
-    List,
     Mapping,
     Optional,
     Sequence,
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 import dagster._check as check
+from dagster._core.definitions.asset_checks import AssetChecksDefinition, has_only_asset_checks
 from dagster._core.definitions.asset_key import (
     AssetKey,
     CoercibleToAssetKeyPrefix,
@@ -178,10 +179,14 @@ def key_iterator(
 ) -> Iterator[AssetKey]:
     return (
         iter(
-            *[asset.keys],
-            *[check_key.asset_key for check_key in asset.check_keys]
-            if included_targeted_keys
-            else [],
+            [
+                *asset.keys,
+                *(
+                    [check_key.asset_key for check_key in asset.check_keys]
+                    if included_targeted_keys
+                    else []
+                ),
+            ]
         )
         if isinstance(asset, AssetsDefinition)
         else iter([asset.key])
@@ -240,7 +245,7 @@ def load_assets_from_modules(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
         )
-        .loaded_objects
+        .assets_only
     )
 
 
@@ -408,10 +413,11 @@ def replace_keys_in_asset(
     asset: Union[AssetsDefinition, SourceAsset],
     key_replacements: Mapping[AssetKey, AssetKey],
 ) -> Union[AssetsDefinition, SourceAsset]:
-    return (
+    updated_object = (
         asset.with_attributes(
             output_asset_key_replacements={
-                key: key_replacements.get(key, key) for key in asset.keys
+                key: key_replacements.get(key, key)
+                for key in key_iterator(asset, included_targeted_keys=True)
             },
             input_asset_key_replacements={
                 key: key_replacements.get(key, key) for key in asset.keys_by_input_name.values()
@@ -420,6 +426,16 @@ def replace_keys_in_asset(
         if isinstance(asset, AssetsDefinition)
         else asset.with_attributes(key=key_replacements.get(asset.key, asset.key))
     )
+    if isinstance(asset, AssetChecksDefinition):
+        updated_object = cast(AssetsDefinition, updated_object)
+        updated_object = AssetChecksDefinition.create(
+            keys_by_input_name=updated_object.keys_by_input_name,
+            node_def=updated_object.op,
+            check_specs_by_output_name=updated_object.check_specs_by_output_name,
+            resource_defs=updated_object.resource_defs,
+            can_subset=updated_object.can_subset,
+        )
+    return updated_object
 
 
 class ResolvedAssetObjectList:
@@ -438,8 +454,30 @@ class ResolvedAssetObjectList:
         ]
 
     @cached_property
+    def checks_defs(self) -> Sequence[AssetChecksDefinition]:
+        return [
+            cast(AssetChecksDefinition, asset)
+            for asset in self.loaded_objects
+            if isinstance(asset, AssetsDefinition) and has_only_asset_checks(asset)
+        ]
+
+    @cached_property
+    def assets_and_checks_defs(self) -> Sequence[Union[AssetsDefinition, AssetChecksDefinition]]:
+        return [*self.assets_defs, *self.checks_defs]
+
+    @cached_property
     def source_assets(self) -> Sequence[SourceAsset]:
         return [asset for asset in self.loaded_objects if isinstance(asset, SourceAsset)]
+
+    @cached_property
+    def cacheable_assets(self) -> Sequence[CacheableAssetsDefinition]:
+        return [
+            asset for asset in self.loaded_objects if isinstance(asset, CacheableAssetsDefinition)
+        ]
+
+    @cached_property
+    def assets_only(self) -> Sequence[LoadableAssetTypes]:
+        return [*self.source_assets, *self.assets_defs, *self.cacheable_assets]
 
     def assets_with_loadable_prefix(
         self, key_prefix: CoercibleToAssetKeyPrefix
@@ -451,7 +489,7 @@ class ResolvedAssetObjectList:
         result_list = []
         all_asset_keys = {
             key
-            for asset_object in self.assets_defs
+            for asset_object in self.assets_and_checks_defs
             for key in key_iterator(asset_object, included_targeted_keys=True)
         }
         key_replacements = {key: key.with_prefix(key_prefix) for key in all_asset_keys}
@@ -498,13 +536,20 @@ class ResolvedAssetObjectList:
         return_list = []
         for asset in assets_list.loaded_objects:
             if isinstance(asset, AssetsDefinition):
-                return_list.append(
-                    asset.map_asset_specs(
-                        _spec_mapper_disallow_group_override(group_name, automation_condition)
-                    ).with_attributes(
-                        backfill_policy=backfill_policy, freshness_policy=freshness_policy
-                    )
+                new_asset = asset.map_asset_specs(
+                    _spec_mapper_disallow_group_override(group_name, automation_condition)
+                ).with_attributes(
+                    backfill_policy=backfill_policy, freshness_policy=freshness_policy
                 )
+                if isinstance(asset, AssetChecksDefinition):
+                    new_asset = AssetChecksDefinition.create(
+                        keys_by_input_name=new_asset.keys_by_input_name,
+                        node_def=new_asset.op,
+                        check_specs_by_output_name=new_asset.check_specs_by_output_name,
+                        resource_defs=new_asset.resource_defs,
+                        can_subset=new_asset.can_subset,
+                    )
+                return_list.append(new_asset)
             elif isinstance(asset, SourceAsset):
                 return_list.append(
                     asset.with_attributes(group_name=group_name if group_name else asset.group_name)
@@ -521,95 +566,3 @@ class ResolvedAssetObjectList:
                     )
                 )
         return ResolvedAssetObjectList(return_list)
-
-
-# No longer used in load_assets_from_modules, next PR will fix for load_asset_checks_from_modules
-def prefix_assets(
-    assets_defs: Sequence[AssetsDefinition],
-    key_prefix: CoercibleToAssetKeyPrefix,
-    source_assets: Sequence[SourceAsset],
-    source_key_prefix: Optional[CoercibleToAssetKeyPrefix],
-) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset]]:
-    """Given a list of assets, prefix the input and output asset keys and check specs with key_prefix.
-    The prefix is not added to source assets.
-
-    Input asset keys that reference other assets within assets_defs are "brought along" -
-    i.e. prefixed as well.
-
-    Example with a single asset:
-
-        .. code-block:: python
-
-            @asset
-            def asset1():
-                ...
-
-            result = prefixed_asset_key_replacements([asset_1], "my_prefix")
-            assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset1"])
-
-    Example with dependencies within the list of assets:
-
-        .. code-block:: python
-
-            @asset
-            def asset1():
-                ...
-
-            @asset
-            def asset2(asset1):
-                ...
-
-            result = prefixed_asset_key_replacements([asset1, asset2], "my_prefix")
-            assert result.assets[0].asset_key == AssetKey(["my_prefix", "asset1"])
-            assert result.assets[1].asset_key == AssetKey(["my_prefix", "asset2"])
-            assert result.assets[1].dependency_keys == {AssetKey(["my_prefix", "asset1"])}
-
-    """
-    asset_keys = {asset_key for assets_def in assets_defs for asset_key in assets_def.keys}
-    check_target_keys = {
-        key.asset_key for assets_def in assets_defs for key in assets_def.check_keys
-    }
-    source_asset_keys = {source_asset.key for source_asset in source_assets}
-
-    if isinstance(key_prefix, str):
-        key_prefix = [key_prefix]
-    key_prefix = check.is_list(key_prefix, of_type=str)
-
-    if isinstance(source_key_prefix, str):
-        source_key_prefix = [source_key_prefix]
-
-    result_assets: List[AssetsDefinition] = []
-    for assets_def in assets_defs:
-        output_asset_key_replacements = {
-            asset_key: AssetKey([*key_prefix, *asset_key.path])
-            for asset_key in (
-                assets_def.keys | {check_key.asset_key for check_key in assets_def.check_keys}
-            )
-        }
-        input_asset_key_replacements = {}
-        for dep_asset_key in assets_def.keys_by_input_name.values():
-            if dep_asset_key in asset_keys or dep_asset_key in check_target_keys:
-                input_asset_key_replacements[dep_asset_key] = AssetKey(
-                    [*key_prefix, *dep_asset_key.path]
-                )
-            elif source_key_prefix and dep_asset_key in source_asset_keys:
-                input_asset_key_replacements[dep_asset_key] = AssetKey(
-                    [*source_key_prefix, *dep_asset_key.path]
-                )
-
-        result_assets.append(
-            assets_def.with_attributes(
-                output_asset_key_replacements=output_asset_key_replacements,
-                input_asset_key_replacements=input_asset_key_replacements,
-            )
-        )
-
-    if source_key_prefix:
-        result_source_assets = [
-            source_asset.with_attributes(key=AssetKey([*source_key_prefix, *source_asset.key.path]))
-            for source_asset in source_assets
-        ]
-    else:
-        result_source_assets = source_assets
-
-    return result_assets, result_source_assets
