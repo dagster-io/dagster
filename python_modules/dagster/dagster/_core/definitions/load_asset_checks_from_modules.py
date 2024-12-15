@@ -1,51 +1,18 @@
 import inspect
 from importlib import import_module
 from types import ModuleType
-from typing import Iterable, Optional, Sequence, Set, cast
+from typing import Iterable, Optional, Sequence
 
 import dagster._check as check
-from dagster._core.definitions.asset_checks import AssetChecksDefinition, has_only_asset_checks
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.load_assets_from_modules import (
+    LoadedAssetsList,
     find_modules_in_package,
-    find_objects_in_module_of_types,
-    prefix_assets,
 )
-
-
-def _checks_from_modules(modules: Iterable[ModuleType]) -> Sequence[AssetChecksDefinition]:
-    checks = []
-    ids: Set[int] = set()
-    for module in modules:
-        for c in find_objects_in_module_of_types(module, AssetsDefinition):
-            if has_only_asset_checks(c) and id(c) not in ids:
-                checks.append(cast(AssetChecksDefinition, c))
-                ids.add(id(c))
-    return checks
-
-
-def _checks_with_attributes(
-    checks_defs: Sequence[AssetChecksDefinition],
-    asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> Sequence[AssetChecksDefinition]:
-    if asset_key_prefix:
-        modified_checks, _ = prefix_assets(checks_defs, asset_key_prefix, [], None)
-        return [
-            AssetChecksDefinition.create(
-                keys_by_input_name=c.keys_by_input_name,
-                node_def=c.op,
-                check_specs_by_output_name=c.check_specs_by_output_name,
-                resource_defs=c.resource_defs,
-                can_subset=c.can_subset,
-            )
-            for c in modified_checks
-        ]
-    else:
-        return checks_defs
 
 
 def load_asset_checks_from_modules(
@@ -68,7 +35,19 @@ def load_asset_checks_from_modules(
     asset_key_prefix = check_opt_coercible_to_asset_key_prefix_param(
         asset_key_prefix, "asset_key_prefix"
     )
-    return _checks_with_attributes(_checks_from_modules(modules), asset_key_prefix=asset_key_prefix)
+    return (
+        LoadedAssetsList.from_modules(modules)
+        .to_post_load()
+        .with_attributes(
+            key_prefix=asset_key_prefix,
+            source_key_prefix=None,
+            group_name=None,
+            freshness_policy=None,
+            automation_condition=None,
+            backfill_policy=None,
+        )
+        .checks_defs
+    )
 
 
 def load_asset_checks_from_current_module(
@@ -95,9 +74,7 @@ def load_asset_checks_from_current_module(
         asset_key_prefix, "asset_key_prefix"
     )
 
-    return _checks_with_attributes(
-        _checks_from_modules([module]), asset_key_prefix=asset_key_prefix
-    )
+    return load_asset_checks_from_modules([module], asset_key_prefix=asset_key_prefix)
 
 
 def load_asset_checks_from_package_module(
@@ -120,9 +97,8 @@ def load_asset_checks_from_package_module(
         asset_key_prefix, "asset_key_prefix"
     )
 
-    return _checks_with_attributes(
-        _checks_from_modules(find_modules_in_package(package_module)),
-        asset_key_prefix=asset_key_prefix,
+    return load_asset_checks_from_modules(
+        find_modules_in_package(package_module), asset_key_prefix=asset_key_prefix
     )
 
 
@@ -147,7 +123,6 @@ def load_asset_checks_from_package_name(
     )
 
     package_module = import_module(package_name)
-    return _checks_with_attributes(
-        _checks_from_modules(find_modules_in_package(package_module)),
-        asset_key_prefix=asset_key_prefix,
+    return load_asset_checks_from_modules(
+        find_modules_in_package(package_module), asset_key_prefix=asset_key_prefix
     )
