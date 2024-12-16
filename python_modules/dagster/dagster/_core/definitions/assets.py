@@ -80,6 +80,7 @@ from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import ExperimentalWarning, disable_dagster_warnings
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_checks import AssetChecksDefinition
     from dagster._core.definitions.graph_definition import GraphDefinition
 
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
@@ -1179,6 +1180,30 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
         output_name = self.get_output_name_for_asset_key(key)
         return self.node_def.resolve_output_to_origin_op_def(output_name)
+
+    def coerce_to_checks_def(self) -> "AssetChecksDefinition":
+        from dagster._core.definitions.asset_checks import (
+            AssetChecksDefinition,
+            has_only_asset_checks,
+        )
+
+        if not has_only_asset_checks(self):
+            raise DagsterInvalidDefinitionError(
+                "Cannot coerce an AssetsDefinition to an AssetChecksDefinition if it contains "
+                "non-check assets."
+            )
+        if len(self.check_keys) == 0:
+            raise DagsterInvalidDefinitionError(
+                "Cannot coerce an AssetsDefinition to an AssetChecksDefinition if it contains no "
+                "checks."
+            )
+        return AssetChecksDefinition.create(
+            keys_by_input_name=self.keys_by_input_name,
+            node_def=self.op,
+            check_specs_by_output_name=self.check_specs_by_output_name,
+            resource_defs=self.resource_defs,
+            can_subset=self.can_subset,
+        )
 
     def with_attributes(
         self,
