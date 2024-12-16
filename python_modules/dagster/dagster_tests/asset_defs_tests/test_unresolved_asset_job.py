@@ -25,7 +25,6 @@ from dagster import (
 from dagster._core.definitions import asset, multi_asset
 from dagster._core.definitions.decorators.hook_decorator import failure_hook, success_hook
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
     static_partitioned_config,
@@ -354,7 +353,17 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
     prefixed_assets = _get_assets_defs(use_multi=use_multi, allow_subset=use_multi)
     # apply prefixes
     for prefix in reversed(prefixes or []):
-        prefixed_assets, _ = prefix_assets(prefixed_assets, prefix, [], None)
+        prefixed_assets = [
+            assets_def.with_attributes(
+                input_asset_key_replacements={
+                    key: key.with_prefix(prefix) for key in assets_def.keys_by_input_name.values()
+                },
+                output_asset_key_replacements={
+                    key: key.with_prefix(prefix) for key in assets_def.keys
+                },
+            )
+            for assets_def in prefixed_assets
+        ]
 
     final_assets = with_resources(
         prefixed_assets,
