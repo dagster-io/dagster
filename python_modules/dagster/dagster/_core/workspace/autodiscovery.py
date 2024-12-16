@@ -114,9 +114,9 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
             )
         )
 
-    module_assets, module_source_assets, _ = load_assets_from_modules([module])
-    if len(module_assets) > 0 or len(module_source_assets) > 0:
-        return [LoadableTarget(LOAD_ALL_ASSETS, [*module_assets, *module_source_assets])]
+    assets = load_assets_from_modules([module])
+    if len(assets) > 0:
+        return [LoadableTarget(LOAD_ALL_ASSETS, assets)]
 
     raise DagsterInvariantViolationError(
         "No Definitions, RepositoryDefinition, Job, Pipeline, Graph, or AssetsDefinition found in "
