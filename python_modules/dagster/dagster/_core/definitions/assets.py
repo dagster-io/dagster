@@ -1208,8 +1208,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     def with_attributes(
         self,
         *,
-        output_asset_key_replacements: Mapping[AssetKey, AssetKey] = {},
-        input_asset_key_replacements: Mapping[AssetKey, AssetKey] = {},
+        asset_key_replacements: Mapping[AssetKey, AssetKey] = {},
         group_names_by_key: Mapping[AssetKey, str] = {},
         tags_by_key: Mapping[AssetKey, Mapping[str, str]] = {},
         freshness_policy: Optional[
@@ -1254,16 +1253,13 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 default_value=DEFAULT_GROUP_NAME,
             )
 
-            if key in output_asset_key_replacements:
-                replace_dict["key"] = output_asset_key_replacements[key]
+            if key in asset_key_replacements:
+                replace_dict["key"] = asset_key_replacements[key]
 
-            if input_asset_key_replacements or output_asset_key_replacements:
+            if asset_key_replacements:
                 new_deps = []
                 for dep in spec.deps:
-                    replacement_key = input_asset_key_replacements.get(
-                        dep.asset_key,
-                        output_asset_key_replacements.get(dep.asset_key),
-                    )
+                    replacement_key = asset_key_replacements.get(dep.asset_key, dep.asset_key)
                     if replacement_key is not None:
                         new_deps.append(dep._replace(asset_key=replacement_key))
                     else:
@@ -1280,33 +1276,31 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             )
 
         check_specs_by_output_name = {
-            output_name: check_spec._replace(
-                asset_key=output_asset_key_replacements.get(
-                    check_spec.asset_key, check_spec.asset_key
+            output_name: check_spec.replace_key(
+                key=check_spec.key.replace_asset_key(
+                    asset_key_replacements.get(check_spec.asset_key, check_spec.asset_key)
                 )
             )
             for output_name, check_spec in self.node_check_specs_by_output_name.items()
         }
 
         selected_asset_check_keys = {
-            check_key._replace(
-                asset_key=output_asset_key_replacements.get(
-                    check_key.asset_key, check_key.asset_key
-                )
+            check_key.replace_asset_key(
+                asset_key_replacements.get(check_key.asset_key, check_key.asset_key)
             )
             for check_key in self.check_keys
         }
 
         replaced_attributes = dict(
             keys_by_input_name={
-                input_name: input_asset_key_replacements.get(key, key)
+                input_name: asset_key_replacements.get(key, key)
                 for input_name, key in self.node_keys_by_input_name.items()
             },
             keys_by_output_name={
-                output_name: output_asset_key_replacements.get(key, key)
+                output_name: asset_key_replacements.get(key, key)
                 for output_name, key in self.node_keys_by_output_name.items()
             },
-            selected_asset_keys={output_asset_key_replacements.get(key, key) for key in self.keys},
+            selected_asset_keys={asset_key_replacements.get(key, key) for key in self.keys},
             backfill_policy=backfill_policy if backfill_policy else self.backfill_policy,
             is_subset=self.is_subset,
             check_specs_by_output_name=check_specs_by_output_name,
