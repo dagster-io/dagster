@@ -134,13 +134,18 @@ class PipesFileMessageReader(PipesMessageReader):
     Args:
         path (str): The path of the file to which messages will be written. The file will be deleted
             on close of the pipes session.
+        include_stdio_in_messages (bool): Whether to include stdout/stderr logs in the messages produced by the message writer in the external process.
+        cleanup_file (bool): Whether to delete the file on close of the pipes session.
     """
 
-    def __init__(self, path: str, include_stdio_in_messages: bool = False):
+    def __init__(
+        self, path: str, include_stdio_in_messages: bool = False, cleanup_file: bool = True
+    ):
         self._path = check.str_param(path, "path")
         self._include_stdio_in_messages = check.bool_param(
             include_stdio_in_messages, "include_stdio_in_messages"
         )
+        self._cleanup_file = cleanup_file
 
     def on_launched(self, params: PipesLaunchedData) -> None:
         self.launched_payload = params
@@ -178,7 +183,7 @@ class PipesFileMessageReader(PipesMessageReader):
             is_session_closed.set()
             if thread:
                 thread.join()
-            if os.path.exists(self._path):
+            if os.path.exists(self._path) and self._cleanup_file:
                 os.remove(self._path)
 
     def _reader_thread(self, handler: "PipesMessageHandler", is_resource_complete: Event) -> None:
