@@ -38,7 +38,7 @@ colorama==0.4.6
     # via
     #   dbt-core
     #   sqlfluff
-configobj==5.0.8
+configobj==5.0.9
     # via
     #   cli-helpers
     #   duckcli
@@ -171,7 +171,6 @@ rpds-py==0.18.0
     #   referencing
 six==1.16.0
     # via
-    #   configobj
     #   isodate
     #   minimal-snowplow-tracker
     #   python-dateutil
