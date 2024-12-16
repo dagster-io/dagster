@@ -29,7 +29,9 @@ export function useLaunchMultipleRunsWithTelemetry() {
         const executionParamsList = Array.isArray(variables.executionParamsList)
           ? variables.executionParamsList
           : [variables.executionParamsList];
-        const jobNames = executionParamsList.map((params) => params.selector?.jobName);
+        const jobNames = executionParamsList.map(
+          (params) => params.selector.jobName || params.selector.pipelineName,
+        );
 
         if (
           jobNames.length !== executionParamsList.length ||
