@@ -34,7 +34,8 @@ class DataprocClient:
         self.config = config
 
         (self.project_id, self.region, self.cluster_name, self.cluster_config, self.labels) = (
-            self.config.get(k) for k in ("projectId", "region", "clusterName", "cluster_config", "labels")
+            self.config.get(k)
+            for k in ("projectId", "region", "clusterName", "cluster_config", "labels")
         )
 
     @property
