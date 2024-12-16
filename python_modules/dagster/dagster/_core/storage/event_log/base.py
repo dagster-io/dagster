@@ -29,6 +29,7 @@ from dagster._core.event_api import (
 )
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.stats import (
+    RUN_STATS_EVENT_TYPES,
     STEP_STATS_EVENT_TYPES,
     RunStepKeyStatsSnapshot,
     build_run_stats_from_events,
@@ -255,7 +256,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     def get_stats_for_run(self, run_id: str) -> DagsterRunStatsSnapshot:
         """Get a summary of events that have ocurred in a run."""
-        return build_run_stats_from_events(run_id, self.get_logs_for_run(run_id))
+        return build_run_stats_from_events(
+            run_id, self.get_logs_for_run(run_id, of_type=RUN_STATS_EVENT_TYPES)
+        )
 
     def get_step_stats_for_run(
         self, run_id: str, step_keys: Optional[Sequence[str]] = None
