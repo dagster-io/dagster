@@ -9,6 +9,9 @@ from dagster._config.field_utils import compute_fields_hash
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import RawMetadataMapping
@@ -158,12 +161,20 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
         ] = None,
+        group_name: Optional[str] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
+        automation_condition: Optional[AutomationCondition] = None,
     ) -> "CacheableAssetsDefinition":
         return PrefixOrGroupWrappedCacheableAssetsDefinition(
             self,
             asset_key_replacements=asset_key_replacements,
             group_names_by_key=group_names_by_key,
             freshness_policy=freshness_policy,
+            group_name_for_all_assets=group_name,
+            auto_materialize_policy=automation_condition.as_auto_materialize_policy()
+            if automation_condition
+            else None,
+            backfill_policy=backfill_policy,
         )
 
     def with_prefix_for_all(self, prefix: CoercibleToAssetKeyPrefix) -> "CacheableAssetsDefinition":
@@ -175,25 +186,6 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
             prefix = [prefix]
         prefix = check.is_list(prefix, of_type=str)
         return PrefixOrGroupWrappedCacheableAssetsDefinition(self, prefix_for_all_assets=prefix)
-
-    def with_attributes_for_all(
-        self,
-        group_name: Optional[str],
-        freshness_policy: Optional[FreshnessPolicy],
-        auto_materialize_policy: Optional[AutoMaterializePolicy],
-        backfill_policy: Optional[BackfillPolicy],
-    ) -> "CacheableAssetsDefinition":
-        """Utility method which allows setting attributes for all assets in this
-        CacheableAssetsDefinition, since the keys may not be known at the time of
-        construction.
-        """
-        return PrefixOrGroupWrappedCacheableAssetsDefinition(
-            self,
-            group_name_for_all_assets=group_name,
-            freshness_policy=freshness_policy,
-            auto_materialize_policy=auto_materialize_policy,
-            backfill_policy=backfill_policy,
-        )
 
 
 class WrappedCacheableAssetsDefinition(CacheableAssetsDefinition):

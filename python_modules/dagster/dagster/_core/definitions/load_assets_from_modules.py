@@ -36,7 +36,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.utils import DEFAULT_GROUP_NAME, resolve_automation_condition
+from dagster._core.definitions.utils import resolve_automation_condition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
@@ -152,28 +152,6 @@ class LoadedAssetsList:
 
     def to_post_load(self) -> "ResolvedAssetObjectList":
         return ResolvedAssetObjectList(self.deduped_objects)
-
-
-def _spec_mapper_disallow_group_override(
-    group_name: Optional[str],
-    automation_condition: Optional[AutomationCondition],
-) -> Callable[[AssetSpec], AssetSpec]:
-    def _inner(spec: AssetSpec) -> AssetSpec:
-        if (
-            group_name is not None
-            and spec.group_name is not None
-            and group_name != spec.group_name
-            and spec.group_name != DEFAULT_GROUP_NAME
-        ):
-            raise DagsterInvalidDefinitionError(
-                f"Asset spec {spec.key.to_user_string()} has group name {spec.group_name}, which conflicts with the group name {group_name} provided in load_assets_from_modules."
-            )
-        return spec.replace_attributes(
-            group_name=group_name if group_name else ...,
-            automation_condition=automation_condition if automation_condition else ...,
-        )
-
-    return _inner
 
 
 def key_iterator(
@@ -565,34 +543,16 @@ class ResolvedAssetObjectList:
         )
         return_list = []
         for asset in assets_list.loaded_objects:
-            if isinstance(asset, AssetsDefinition):
-                new_asset = asset.map_asset_specs(
-                    _spec_mapper_disallow_group_override(group_name, automation_condition)
-                ).with_attributes(
-                    backfill_policy=backfill_policy, freshness_policy=freshness_policy
-                )
-                return_list.append(
-                    new_asset.coerce_to_checks_def()
-                    if has_only_asset_checks(new_asset)
-                    else new_asset
-                )
-            elif isinstance(asset, SourceAsset):
-                return_list.append(
-                    asset.with_attributes(group_name=group_name if group_name else asset.group_name)
-                )
-            elif isinstance(asset, AssetSpec):
-                return_list.append(
-                    _spec_mapper_disallow_group_override(group_name, automation_condition)(asset)
-                )
-            else:
-                return_list.append(
-                    asset.with_attributes_for_all(
-                        group_name,
-                        freshness_policy=freshness_policy,
-                        auto_materialize_policy=automation_condition.as_auto_materialize_policy()
-                        if automation_condition
-                        else None,
-                        backfill_policy=backfill_policy,
-                    )
-                )
+            updated_object = asset.with_attributes(
+                group_name=group_name,
+                freshness_policy=freshness_policy,
+                automation_condition=automation_condition,
+                backfill_policy=backfill_policy,
+            )
+            return_list.append(
+                updated_object.coerce_to_checks_def()
+                if isinstance(updated_object, AssetsDefinition)
+                and has_only_asset_checks(updated_object)
+                else updated_object
+            )
         return ResolvedAssetObjectList(return_list)

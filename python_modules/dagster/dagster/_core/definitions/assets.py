@@ -1218,7 +1218,14 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             Union[AutomationCondition, Mapping[AssetKey, AutomationCondition]]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
+        group_name: Optional[str] = None,
     ) -> "AssetsDefinition":
+        check.invariant(
+            not (group_name and group_names_by_key),
+            "Cannot use both group_name, which specifies the group for every contained asset, and group_names_by_key, which specifies group on a per-asset basis.",
+        )
+        if group_name:
+            group_names_by_key = {key: group_name for key in self.keys}
         conflicts_by_attr_name: Dict[str, Set[AssetKey]] = defaultdict(set)
         replaced_specs = []
 

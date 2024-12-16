@@ -330,7 +330,9 @@ class AssetSpec(
                 skippable=skippable if skippable is not ... else self.skippable,
                 group_name=group_name if group_name is not ... else self.group_name,
                 code_version=code_version if code_version is not ... else self.code_version,
-                freshness_policy=self.freshness_policy,
+                freshness_policy=freshness_policy
+                if freshness_policy is not ...
+                else self.freshness_policy,
                 automation_condition=automation_condition
                 if automation_condition is not ...
                 else self.automation_condition,
@@ -339,6 +341,17 @@ class AssetSpec(
                 kinds=kinds if kinds is not ... else self.kinds,
                 partitions_def=partitions_def if partitions_def is not ... else self.partitions_def,
             )
+
+    def with_attributes(
+        self,
+        group_name: Optional[str] = ...,
+        automation_condition: Optional[AutomationCondition] = ...,
+        **kwargs,
+    ) -> "AssetSpec":
+        """Returns a new AssetSpec with the specified attributes replaced."""
+        return self.replace_attributes(
+            group_name=group_name, automation_condition=automation_condition
+        )
 
     @public
     def merge_attributes(

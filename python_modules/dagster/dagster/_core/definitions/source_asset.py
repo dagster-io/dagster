@@ -458,7 +458,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
             )
 
     def with_attributes(
-        self, group_name: Optional[str] = None, key: Optional[AssetKey] = None
+        self, group_name: Optional[str] = None, key: Optional[AssetKey] = None, **_kwargs
     ) -> "SourceAsset":
         if group_name is not None and self.group_name != DEFAULT_GROUP_NAME:
             raise DagsterInvalidDefinitionError(
