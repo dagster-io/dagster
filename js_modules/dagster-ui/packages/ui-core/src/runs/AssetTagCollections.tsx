@@ -158,15 +158,19 @@ export function useAdjustChildVisibilityToFill(moreLabelFn: (count: number) => s
 export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionProps) => {
   const {assetKeys, useTags, maxRows, dialogTitle = 'Assets in run'} = props;
 
-  const sortedAssetKeys = React.useMemo(
-    () => assetKeys?.slice().sort(sortItemAssetKey) ?? null,
-    [assetKeys],
-  );
+  const count = assetKeys?.length ?? 0;
+  const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
+
+  const {sortedAssetKeys, slicedSortedAssetKeys} = React.useMemo(() => {
+    const sortedAssetKeys = assetKeys?.slice().sort(sortItemAssetKey) ?? null;
+    return {
+      sortedAssetKeys,
+      slicedSortedAssetKeys: sortedAssetKeys?.slice(0, rendered) ?? [],
+    };
+  }, [assetKeys, rendered]);
 
   const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, sortedAssetKeys, renderItemAssetKey);
 
-  const count = sortedAssetKeys?.length ?? 0;
-  const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
   const moreLabelFn = React.useCallback(
     (displayed: number) =>
       displayed === 0
@@ -194,7 +198,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
         overflow: 'hidden',
       }}
     >
-      {sortedAssetKeys.slice(0, rendered).map((assetKey) => (
+      {slicedSortedAssetKeys.map((assetKey) => (
         // Outer span ensures the popover target is in the right place if the
         // parent is a flexbox.
         <TagActionsPopover
@@ -278,10 +282,16 @@ interface AssetCheckTagCollectionProps {
 export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectionProps) => {
   const {assetChecks, maxRows, useTags, dialogTitle = 'Asset checks in run'} = props;
 
-  const sortedAssetChecks = React.useMemo(
-    () => assetChecks?.slice().sort(sortItemAssetCheck) ?? null,
-    [assetChecks],
-  );
+  const count = assetChecks?.length ?? 0;
+  const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
+
+  const {sortedAssetChecks, slicedSortedAssetChecks} = React.useMemo(() => {
+    const sortedAssetChecks = assetChecks?.slice().sort(sortItemAssetCheck) ?? null;
+    return {
+      sortedAssetChecks,
+      slicedSortedAssetChecks: sortedAssetChecks?.slice(0, rendered) ?? [],
+    };
+  }, [assetChecks, rendered]);
 
   const {setShowMore, dialog} = useShowMoreDialog(
     dialogTitle,
@@ -289,8 +299,6 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
     renderItemAssetCheck,
   );
 
-  const count = sortedAssetChecks?.length ?? 0;
-  const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
   const moreLabelFn = React.useCallback(
     (displayed: number) =>
       displayed === 0
@@ -318,7 +326,7 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
         overflow: 'hidden',
       }}
     >
-      {sortedAssetChecks.slice(0, rendered).map((check) => (
+      {slicedSortedAssetChecks.map((check) => (
         <TagActionsPopover
           key={`${check.name}-${tokenForAssetKey(check.assetKey)}`}
           data={{key: '', value: ''}}
