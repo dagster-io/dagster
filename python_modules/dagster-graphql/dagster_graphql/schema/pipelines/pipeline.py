@@ -687,9 +687,6 @@ class GrapheneIPipelineSnapshotMixin:
     def resolve_pipeline_snapshot_id(self, _graphene_info: ResolveInfo):
         return self.get_represented_job().identifying_job_snapshot_id
 
-    def resolve_id(self, _graphene_info: ResolveInfo):
-        return self.get_represented_job().identifying_job_snapshot_id
-
     def resolve_name(self, _graphene_info: ResolveInfo):
         return self.get_represented_job().name
 
