@@ -17,7 +17,6 @@ from dagster._core.definitions.module_loaders.utils import (
     KeyScopedAssetObjects,
     LoadableAssetTypes,
     find_objects_in_module_of_types,
-    key_iterator,
     replace_keys_in_asset,
 )
 from dagster._core.definitions.source_asset import SourceAsset
@@ -77,12 +76,14 @@ class LoadedAssetsList:
         }
 
     @cached_property
-    def objects_by_key(self) -> Mapping[AssetKey, Sequence[Union[SourceAsset, AssetsDefinition]]]:
+    def objects_by_key(
+        self,
+    ) -> Mapping[AssetKey, Sequence[Union[SourceAsset, AssetSpec, AssetsDefinition]]]:
         objects_by_key = defaultdict(list)
         for asset_object in self.flat_object_list:
             if not isinstance(asset_object, KeyScopedAssetObjects):
                 continue
-            for key in key_iterator(asset_object):
+            for key in asset_object.key_iterator:
                 objects_by_key[key].append(asset_object)
         return objects_by_key
 
@@ -163,7 +164,7 @@ class ResolvedAssetObjectList:
         all_asset_keys = {
             key
             for asset_object in self.assets_defs_specs_and_checks_defs
-            for key in key_iterator(asset_object, included_targeted_keys=True)
+            for key in asset_object.key_iterator
         }
         all_check_keys = {
             check_key for asset_object in self.assets_defs for check_key in asset_object.check_keys

@@ -37,25 +37,6 @@ def find_subclasses_in_module(
             yield value
 
 
-def key_iterator(
-    asset: Union[AssetsDefinition, SourceAsset, AssetSpec], included_targeted_keys: bool = False
-) -> Iterator[AssetKey]:
-    return (
-        iter(
-            [
-                *asset.keys,
-                *(
-                    [check_key.asset_key for check_key in asset.check_keys]
-                    if included_targeted_keys
-                    else []
-                ),
-            ]
-        )
-        if isinstance(asset, AssetsDefinition)
-        else iter([asset.key])
-    )
-
-
 def find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
     yield package_module
     if package_module.__file__:

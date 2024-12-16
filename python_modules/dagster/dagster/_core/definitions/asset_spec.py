@@ -281,6 +281,10 @@ class AssetSpec(
     def kinds(self) -> Set[str]:
         return {tag[len(KIND_PREFIX) :] for tag in self.tags if tag.startswith(KIND_PREFIX)}
 
+    @property
+    def key_iterator(self) -> Iterable[AssetKey]:
+        return [self.key]
+
     @public
     def with_io_manager_key(self, io_manager_key: str) -> "AssetSpec":
         """Returns a copy of this AssetSpec with an extra metadata value that dictates which I/O

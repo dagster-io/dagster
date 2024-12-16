@@ -911,6 +911,10 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             return self._specs_by_key.keys()
 
     @property
+    def key_iterator(self) -> Iterable[AssetKey]:
+        return self.keys
+
+    @property
     def has_keys(self) -> bool:
         return len(self.keys) > 0
 

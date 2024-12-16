@@ -4,6 +4,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     Mapping,
     Optional,
@@ -510,3 +511,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
                 and self.resource_defs == other.resource_defs
                 and self.observe_fn == other.observe_fn
             )
+
+    @property
+    def key_iterator(self) -> Iterable[AssetKey]:
+        return [self.key]
