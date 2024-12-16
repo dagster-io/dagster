@@ -1,6 +1,7 @@
+from enum import Enum
 from typing import Any, List, Mapping, Optional, Sequence
 
-from dagster._annotations import experimental
+from dagster._annotations import deprecated, experimental
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
@@ -9,6 +10,27 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 
 from dagster_airbyte.utils import generate_table_schema, get_airbyte_connection_table_name
+
+
+class AirbyteJobStatusType(str, Enum):
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    CANCELLED = "cancelled"
+    PENDING = "pending"
+    FAILED = "failed"
+    ERROR = "error"
+    INCOMPLETE = "incomplete"
+
+
+@deprecated(breaking_version="1.10", additional_warn_text="Use `AirbyteJobStatusType` instead.")
+class AirbyteState:
+    RUNNING = AirbyteJobStatusType.RUNNING
+    SUCCEEDED = AirbyteJobStatusType.SUCCEEDED
+    CANCELLED = AirbyteJobStatusType.CANCELLED
+    PENDING = AirbyteJobStatusType.PENDING
+    FAILED = AirbyteJobStatusType.FAILED
+    ERROR = AirbyteJobStatusType.ERROR
+    INCOMPLETE = AirbyteJobStatusType.INCOMPLETE
 
 
 @record
@@ -105,6 +127,25 @@ class AirbyteStream:
             name=stream_details["stream"]["name"],
             selected=stream_details["config"].get("selected", False),
             json_schema=stream_details["stream"].get("jsonSchema", {}),
+        )
+
+
+@whitelist_for_serdes
+@record
+class AirbyteJob:
+    """Represents an Airbyte job, based on data as returned from the API."""
+
+    id: str
+    status: str
+
+    @classmethod
+    def from_job_details(
+        cls,
+        job_details: Mapping[str, Any],
+    ) -> "AirbyteStream":
+        return cls(
+            id=job_details["id"],
+            status=job_details["status"],
         )
 
 

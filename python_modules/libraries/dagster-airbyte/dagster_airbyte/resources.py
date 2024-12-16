@@ -33,6 +33,8 @@ from requests.exceptions import RequestException
 from dagster_airbyte.translator import (
     AirbyteConnection,
     AirbyteDestination,
+    AirbyteJob,
+    AirbyteJobStatusType,
     AirbyteWorkspaceData,
     DagsterAirbyteTranslator,
 )
@@ -51,16 +53,6 @@ DEFAULT_POLL_INTERVAL_SECONDS = 10
 AIRBYTE_CLOUD_REFRESH_TIMEDELTA_SECONDS = 150
 
 AIRBYTE_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-airbyte/reconstruction_metadata"
-
-
-class AirbyteState:
-    RUNNING = "running"
-    SUCCEEDED = "succeeded"
-    CANCELLED = "cancelled"
-    PENDING = "pending"
-    FAILED = "failed"
-    ERROR = "error"
-    INCOMPLETE = "incomplete"
 
 
 class AirbyteResourceState:
@@ -252,13 +244,17 @@ class BaseAirbyteResource(ConfigurableResource):
                 job_info = cast(Dict[str, object], job_details.get("job", {}))
                 state = job_info.get("status")
 
-                if state in (AirbyteState.RUNNING, AirbyteState.PENDING, AirbyteState.INCOMPLETE):
+                if state in (
+                    AirbyteJobStatusType.RUNNING,
+                    AirbyteJobStatusType.PENDING,
+                    AirbyteJobStatusType.INCOMPLETE,
+                ):
                     continue
-                elif state == AirbyteState.SUCCEEDED:
+                elif state == AirbyteJobStatusType.SUCCEEDED:
                     break
-                elif state == AirbyteState.ERROR:
+                elif state == AirbyteJobStatusType.ERROR:
                     raise Failure(f"Job failed: {job_id}")
-                elif state == AirbyteState.CANCELLED:
+                elif state == AirbyteJobStatusType.CANCELLED:
                     raise Failure(f"Job was cancelled: {job_id}")
                 else:
                     raise Failure(f"Encountered unexpected state `{state}` for job_id {job_id}")
@@ -266,7 +262,12 @@ class BaseAirbyteResource(ConfigurableResource):
             # if Airbyte sync has not completed, make sure to cancel it so that it doesn't outlive
             # the python process
             if (
-                state not in (AirbyteState.SUCCEEDED, AirbyteState.ERROR, AirbyteState.CANCELLED)
+                state
+                not in (
+                    AirbyteJobStatusType.SUCCEEDED,
+                    AirbyteJobStatusType.ERROR,
+                    AirbyteJobStatusType.CANCELLED,
+                )
                 and self.cancel_sync_on_run_termination
             ):
                 self.cancel_job(job_id)
@@ -742,13 +743,17 @@ class AirbyteResource(BaseAirbyteResource):
                 job_info = cast(Dict[str, object], job_details.get("job", {}))
                 state = job_info.get("status")
 
-                if state in (AirbyteState.RUNNING, AirbyteState.PENDING, AirbyteState.INCOMPLETE):
+                if state in (
+                    AirbyteJobStatusType.RUNNING,
+                    AirbyteJobStatusType.PENDING,
+                    AirbyteJobStatusType.INCOMPLETE,
+                ):
                     continue
-                elif state == AirbyteState.SUCCEEDED:
+                elif state == AirbyteJobStatusType.SUCCEEDED:
                     break
-                elif state == AirbyteState.ERROR:
+                elif state == AirbyteJobStatusType.ERROR:
                     raise Failure(f"Job failed: {job_id}")
-                elif state == AirbyteState.CANCELLED:
+                elif state == AirbyteJobStatusType.CANCELLED:
                     raise Failure(f"Job was cancelled: {job_id}")
                 else:
                     raise Failure(f"Encountered unexpected state `{state}` for job_id {job_id}")
@@ -756,7 +761,12 @@ class AirbyteResource(BaseAirbyteResource):
             # if Airbyte sync has not completed, make sure to cancel it so that it doesn't outlive
             # the python process
             if (
-                state not in (AirbyteState.SUCCEEDED, AirbyteState.ERROR, AirbyteState.CANCELLED)
+                state
+                not in (
+                    AirbyteJobStatusType.SUCCEEDED,
+                    AirbyteJobStatusType.ERROR,
+                    AirbyteJobStatusType.CANCELLED,
+                )
                 and self.cancel_sync_on_run_termination
             ):
                 self.cancel_job(job_id)
@@ -1018,6 +1028,7 @@ class AirbyteCloudClient(DagsterModel):
         connection_id: str,
         poll_interval: Optional[float] = None,
         poll_timeout: Optional[float] = None,
+        cancel_on_termination: bool = True,
     ) -> AirbyteOutput:
         """Initializes a sync operation for the given connection, and polls until it completes.
 
@@ -1027,69 +1038,58 @@ class AirbyteCloudClient(DagsterModel):
             poll_interval (float): The time (in seconds) that will be waited between successive polls.
             poll_timeout (float): The maximum time that will wait before this operation is timed
                 out. By default, this will never time out.
+            cancel_on_termination (bool): Whether to cancel a sync in Airbyte if the Dagster runner is terminated.
+                This may be useful to disable if using Airbyte sources that cannot be cancelled and
+                resumed easily, or if your Dagster deployment may experience runner interruptions
+                that do not impact your Airbyte deployment.
 
         Returns:
             :py:class:`~AirbyteOutput`:
                 Details of the sync job.
         """
         connection_details = self.get_connection_details(connection_id)
-        job_details = self.start_sync(connection_id)
-        # TODO: Use AirbyteJob class
-        job_id = job_details["id"]
+        start_job_details = self.start_sync(connection_id)
+        job = AirbyteJob.from_job_details(job_details=start_job_details)
 
-        self._log.info(f"Job {job_id} initialized for connection_id={connection_id}.")
+        self._log.info(f"Job {job.id} initialized for connection_id={connection_id}.")
         start = time.monotonic()
-        logged_attempts = 0
-        logged_lines = 0
-        state = None
-
         try:
             while True:
                 if poll_timeout and start + poll_timeout < time.monotonic():
                     raise Failure(
-                        f"Timeout: Airbyte job {job_id} is not ready after the timeout"
+                        f"Timeout: Airbyte job {job.id} is not ready after the timeout"
                         f" {poll_timeout} seconds"
                     )
                 time.sleep(poll_interval or self.poll_interval)
-                job_details = self.get_job_status(connection_id, job_id)
-                attempts = cast(List, job_details.get("attempts", []))
-                cur_attempt = len(attempts)
-                # spit out the available Airbyte log info
-                if cur_attempt:
-                    if self._should_forward_logs:
-                        log_lines = attempts[logged_attempts].get("logs", {}).get("logLines", [])
-
-                        for line in log_lines[logged_lines:]:
-                            sys.stdout.write(line + "\n")
-                            sys.stdout.flush()
-                        logged_lines = len(log_lines)
-
-                    # if there's a next attempt, this one will have no more log messages
-                    if logged_attempts < cur_attempt - 1:
-                        logged_lines = 0
-                        logged_attempts += 1
-
-                state = job_details["status"]
-                if state in (AirbyteState.RUNNING, AirbyteState.PENDING, AirbyteState.INCOMPLETE):
+                poll_job_details = self.get_job_status(connection_id, job.id)
+                job = AirbyteJob.from_job_details(job_details=poll_job_details)
+                if job.status in (
+                    AirbyteJobStatusType.RUNNING,
+                    AirbyteJobStatusType.PENDING,
+                    AirbyteJobStatusType.INCOMPLETE,
+                ):
                     continue
-                elif state == AirbyteState.SUCCEEDED:
+                elif job.status == AirbyteJobStatusType.SUCCEEDED:
                     break
-                elif state == AirbyteState.ERROR:
-                    raise Failure(f"Job failed: {job_id}")
-                elif state == AirbyteState.CANCELLED:
-                    raise Failure(f"Job was cancelled: {job_id}")
+                elif job.status == AirbyteJobStatusType.ERROR:
+                    raise Failure(f"Job failed: {job.id}")
+                elif job.status == AirbyteJobStatusType.CANCELLED:
+                    raise Failure(f"Job was cancelled: {job.id}")
                 else:
-                    raise Failure(f"Encountered unexpected state `{state}` for job_id {job_id}")
+                    raise Failure(
+                        f"Encountered unexpected state `{job.status}` for job_id {job.id}"
+                    )
         finally:
             # if Airbyte sync has not completed, make sure to cancel it so that it doesn't outlive
             # the python process
-            if (
-                state not in (AirbyteState.SUCCEEDED, AirbyteState.ERROR, AirbyteState.CANCELLED)
-                and self.cancel_sync_on_run_termination
+            if cancel_on_termination and job.status not in (
+                AirbyteJobStatusType.SUCCEEDED,
+                AirbyteJobStatusType.ERROR,
+                AirbyteJobStatusType.CANCELLED,
             ):
-                self.cancel_job(job_id)
+                self.cancel_job(job.id)
 
-        return AirbyteOutput(job_details=job_details, connection_details=connection_details)
+        return AirbyteOutput(job_details=poll_job_details, connection_details=connection_details)
 
 
 @experimental
