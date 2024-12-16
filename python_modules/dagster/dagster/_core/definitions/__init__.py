@@ -148,15 +148,15 @@ from dagster._core.definitions.decorators import (
 )
 from dagster._core.definitions.graph_definition import GraphDefinition as GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition as JobDefinition
-from dagster._core.definitions.load_assets_from_modules import (
+from dagster._core.definitions.materialize import (
+    materialize as materialize,
+    materialize_to_memory as materialize_to_memory,
+)
+from dagster._core.definitions.module_loaders.load_assets_from_modules import (
     load_assets_from_current_module as load_assets_from_current_module,
     load_assets_from_modules as load_assets_from_modules,
     load_assets_from_package_module as load_assets_from_package_module,
     load_assets_from_package_name as load_assets_from_package_name,
-)
-from dagster._core.definitions.materialize import (
-    materialize as materialize,
-    materialize_to_memory as materialize_to_memory,
 )
 from dagster._core.definitions.op_definition import OpDefinition as OpDefinition
 from dagster._core.definitions.partition import (
