@@ -86,6 +86,7 @@ from dagster._core.test_utils import (
     step_did_not_run,
     step_failed,
     step_succeeded,
+    wait_for_futures,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -614,7 +615,7 @@ def test_simple_backfill(
             )
         )
 
-        [list(future.result()) for future in backfill_daemon_futures.values()]
+        wait_for_futures(backfill_daemon_futures)
     else:
         list(
             execute_backfill_iteration(
@@ -681,7 +682,7 @@ def test_two_backfills_at_the_same_time(
             )
         )
 
-        [list(future.result()) for future in backfill_daemon_futures.values()]
+        wait_for_futures(backfill_daemon_futures)
     else:
         list(
             execute_backfill_iteration(
@@ -774,7 +775,7 @@ def test_failure_backfill(
                 )
             )
 
-            [list(future.result()) for future in backfill_daemon_futures.values()]
+            wait_for_futures(backfill_daemon_futures)
         else:
             list(
                 execute_backfill_iteration(
@@ -835,7 +836,7 @@ def test_failure_backfill(
             )
         )
 
-        [list(future.result()) for future in backfill_daemon_futures.values()]
+        wait_for_futures(backfill_daemon_futures)
     else:
         list(
             execute_backfill_iteration(
@@ -1054,10 +1055,11 @@ def test_backfill_is_processed_only_once(
     workspace_context: WorkspaceProcessContext,
     remote_repo: RemoteRepository,
 ):
+    backfill_id = "simple"
     partition_set = remote_repo.get_partition_set("config_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
-            backfill_id="simple",
+            backfill_id=backfill_id,
             partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
@@ -1070,7 +1072,6 @@ def test_backfill_is_processed_only_once(
     assert instance.get_runs_count() == 0
 
     threadpool_executor = ThreadPoolExecutor(2)
-
     backfill_daemon_futures = {}
     list(
         execute_backfill_iteration(
@@ -1082,23 +1083,23 @@ def test_backfill_is_processed_only_once(
     )
 
     assert instance.get_runs_count() == 0
+    future = backfill_daemon_futures[backfill_id]
 
-    other_backfill_daemon_futures = {}
     list(
         execute_backfill_iteration(
             workspace_context,
             get_default_daemon_logger("BackfillDaemon"),
             threadpool_executor=threadpool_executor,
-            backfill_futures=other_backfill_daemon_futures,
+            backfill_futures=backfill_daemon_futures,
         )
     )
 
-    [result] = [list(future.result()) for future in backfill_daemon_futures.values()]
-    [other_result] = [list(future.result()) for future in other_backfill_daemon_futures.values()]
+    assert instance.get_runs_count() == 0
+    assert backfill_daemon_futures[backfill_id] is future
+
+    wait_for_futures(backfill_daemon_futures)
 
     assert instance.get_runs_count() == 3
-    assert result
-    assert not other_result
 
 
 def test_unloadable_backfill(instance, workspace_context):
@@ -3049,7 +3050,7 @@ def test_asset_backfill_from_asset_graph_subset(
             )
         )
 
-        [list(future.result()) for future in backfill_daemon_futures.values()]
+        wait_for_futures(backfill_daemon_futures)
     else:
         list(
             execute_backfill_iteration(
@@ -3081,7 +3082,7 @@ def test_asset_backfill_from_asset_graph_subset(
             )
         )
 
-        [list(future.result()) for future in backfill_daemon_futures.values()]
+        wait_for_futures(backfill_daemon_futures)
     else:
         list(
             execute_backfill_iteration(
