@@ -313,6 +313,7 @@ class AssetSpec(
         tags: Optional[Mapping[str, str]] = ...,
         kinds: Optional[Set[str]] = ...,
         partitions_def: Optional[PartitionsDefinition] = ...,
+        freshness_policy: Optional[FreshnessPolicy] = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes replaced."""
         current_tags_without_kinds = {
@@ -329,7 +330,9 @@ class AssetSpec(
                 skippable=skippable if skippable is not ... else self.skippable,
                 group_name=group_name if group_name is not ... else self.group_name,
                 code_version=code_version if code_version is not ... else self.code_version,
-                freshness_policy=self.freshness_policy,
+                freshness_policy=freshness_policy
+                if freshness_policy is not ...
+                else self.freshness_policy,
                 automation_condition=automation_condition
                 if automation_condition is not ...
                 else self.automation_condition,
