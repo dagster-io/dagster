@@ -38,6 +38,14 @@ This guide provides instructions for using Dagster with Fivetran using the `dags
 
 </details>
 
+## Set up your environment
+
+To get started, you'll need to install the `dagster` and `dagster-fivetran` Python packages:
+
+```bash
+pip install dagster dagster-fivetran
+```
+
 ## Represent Fivetran assets in the asset graph
 
 To load Fivetran assets into the Dagster asset graph, you must first construct a <PyObject module="dagster_fivetran" object="FivetranWorkspace" /> resource, which allows Dagster to communicate with your Fivetran workspace. You'll need to supply your account ID, API key and API secret. See [Getting Started](https://fivetran.com/docs/rest-api/getting-started) in the Fivetran REST API documentation for more information on how to create your API key and API secret.
