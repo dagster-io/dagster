@@ -19,7 +19,11 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/sdf.py",
     f"{snippets_folder}/airbyte.py",
     f"{snippets_folder}/dlt.py",
-    f"{snippets_folder}/fivetran.py",
+    f"{snippets_folder}/fivetran/customize_fivetran_asset_defs.py",
+    f"{snippets_folder}/fivetran/customize_fivetran_translator_asset_spec.py",
+    f"{snippets_folder}/fivetran/multiple_fivetran_workspaces.py",
+    f"{snippets_folder}/fivetran/representing_fivetran_assets.py",
+    f"{snippets_folder}/fivetran/sync_and_materialize_fivetran_assets.py",
     # FIXME: this breaks on py3.8 and seems related to the non-dagster dependencies
     f"{snippets_folder}/pandera.py",
 }
