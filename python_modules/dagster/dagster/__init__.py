@@ -250,18 +250,6 @@ from dagster._core.definitions.input import (
     InputMapping as InputMapping,
 )
 from dagster._core.definitions.job_definition import JobDefinition as JobDefinition
-from dagster._core.definitions.load_asset_checks_from_modules import (
-    load_asset_checks_from_current_module as load_asset_checks_from_current_module,
-    load_asset_checks_from_modules as load_asset_checks_from_modules,
-    load_asset_checks_from_package_module as load_asset_checks_from_package_module,
-    load_asset_checks_from_package_name as load_asset_checks_from_package_name,
-)
-from dagster._core.definitions.load_assets_from_modules import (
-    load_assets_from_current_module as load_assets_from_current_module,
-    load_assets_from_modules as load_assets_from_modules,
-    load_assets_from_package_module as load_assets_from_package_module,
-    load_assets_from_package_name as load_assets_from_package_name,
-)
 from dagster._core.definitions.logger_definition import (
     LoggerDefinition as LoggerDefinition,
     build_init_logger_context as build_init_logger_context,
@@ -308,6 +296,18 @@ from dagster._core.definitions.metadata.table import (
     TableConstraints as TableConstraints,
     TableRecord as TableRecord,
     TableSchema as TableSchema,
+)
+from dagster._core.definitions.module_loaders.load_asset_checks_from_modules import (
+    load_asset_checks_from_current_module as load_asset_checks_from_current_module,
+    load_asset_checks_from_modules as load_asset_checks_from_modules,
+    load_asset_checks_from_package_module as load_asset_checks_from_package_module,
+    load_asset_checks_from_package_name as load_asset_checks_from_package_name,
+)
+from dagster._core.definitions.module_loaders.load_assets_from_modules import (
+    load_assets_from_current_module as load_assets_from_current_module,
+    load_assets_from_modules as load_assets_from_modules,
+    load_assets_from_package_module as load_assets_from_package_module,
+    load_assets_from_package_name as load_assets_from_package_name,
 )
 from dagster._core.definitions.multi_asset_sensor_definition import (
     MultiAssetSensorDefinition as MultiAssetSensorDefinition,
