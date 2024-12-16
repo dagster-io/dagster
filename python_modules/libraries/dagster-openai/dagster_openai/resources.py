@@ -3,7 +3,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from enum import Enum
 from functools import wraps
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 from weakref import WeakKeyDictionary
 
 from dagster import (
@@ -38,7 +38,10 @@ context_to_counters = WeakKeyDictionary()
 
 
 def _add_to_asset_metadata(
-    context: AssetExecutionContext, usage_metadata: dict, output_name: Optional[str]
+    context: AssetExecutionContext,
+    usage_metadata: Dict[str, int],
+    model_metadata: Dict[str, str],
+    output_name: Optional[str],
 ):
     if context not in context_to_counters:
         context_to_counters[context] = defaultdict(lambda: 0)
@@ -46,7 +49,7 @@ def _add_to_asset_metadata(
 
     for metadata_key, delta in usage_metadata.items():
         counters[metadata_key] += delta
-    context.add_output_metadata(dict(counters), output_name)
+    context.add_output_metadata({**dict(counters), **model_metadata}, output_name)
 
 
 @public
@@ -136,7 +139,8 @@ def with_usage_metadata(
         }
         if hasattr(usage, "completion_tokens"):
             usage_metadata["openai.completion_tokens"] = usage.completion_tokens
-        _add_to_asset_metadata(context, usage_metadata, output_name)
+        model_metadata = {"openai.model": response.model}
+        _add_to_asset_metadata(context, usage_metadata, model_metadata, output_name)
 
         return response
 
