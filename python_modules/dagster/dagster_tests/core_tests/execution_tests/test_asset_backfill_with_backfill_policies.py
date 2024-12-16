@@ -15,12 +15,12 @@ from dagster import (
     asset,
 )
 from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
+    PARTITION_NAME_TAG,
 )
 from dagster._core.test_utils import freeze_time
 from dagster._time import (
@@ -38,8 +38,8 @@ from dagster_tests.core_tests.execution_tests.test_asset_backfill import (
 
 
 def test_asset_backfill_not_all_asset_have_backfill_policy():
-    @asset(backfill_policy=None)
-    def unpartitioned_upstream_of_partitioned():
+    @asset(partitions_def=DailyPartitionsDefinition("2023-01-01"), backfill_policy=None)
+    def partitioned_no_backfill_policy():
         return 1
 
     @asset(
@@ -51,37 +51,46 @@ def test_asset_backfill_not_all_asset_have_backfill_policy():
 
     assets_by_repo_name = {
         "repo": [
-            unpartitioned_upstream_of_partitioned,
+            partitioned_no_backfill_policy,
             upstream_daily_partitioned_asset,
         ]
     }
     asset_graph = get_asset_graph(assets_by_repo_name)
 
     backfill_data = AssetBackfillData.from_asset_partitions(
-        partition_names=None,
+        partition_names=[
+            "2023-03-01",
+            "2023-03-02",
+            "2023-03-03",
+        ],
         asset_graph=asset_graph,
         asset_selection=[
-            unpartitioned_upstream_of_partitioned.key,
+            partitioned_no_backfill_policy.key,
             upstream_daily_partitioned_asset.key,
         ],
+        all_partitions=False,
         dynamic_partitions_store=MagicMock(),
-        all_partitions=True,
         backfill_start_timestamp=get_current_timestamp(),
     )
 
-    with pytest.raises(
-        DagsterBackfillFailedError,
-        match=(
-            "Either all assets must have backfill policies or none of them must have backfill"
-            " policies"
-        ),
-    ):
-        execute_asset_backfill_iteration_consume_generator(
-            backfill_id="test_backfill_id",
-            asset_backfill_data=backfill_data,
-            asset_graph=asset_graph,
-            instance=DagsterInstance.ephemeral(),
-        )
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_id",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=DagsterInstance.ephemeral(),
+    )
+
+    assert result.backfill_data != backfill_data
+    assert len(result.run_requests) == 4
+    for run_request in result.run_requests:
+        if run_request.asset_selection == [upstream_daily_partitioned_asset.key]:
+            assert run_request.tags == {
+                ASSET_PARTITION_RANGE_START_TAG: "2023-03-01",
+                ASSET_PARTITION_RANGE_END_TAG: "2023-03-03",
+            }
+        else:
+            assert run_request.asset_selection == [partitioned_no_backfill_policy.key]
+            assert run_request.tags.get(PARTITION_NAME_TAG) is not None
 
 
 def test_asset_backfill_parent_and_children_have_different_backfill_policy():
