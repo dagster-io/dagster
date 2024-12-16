@@ -66,7 +66,12 @@ from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._time import get_current_datetime, get_current_timestamp
-from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
+from dagster._utils import (
+    DebugCrashFlags,
+    SingleInstigatorDebugCrashFlags,
+    check_for_debug_crash,
+    materialize,
+)
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
@@ -452,30 +457,6 @@ def execute_sensor_iteration(
             )
 
 
-def _process_tick(
-    workspace_process_context: IWorkspaceProcessContext,
-    logger: logging.Logger,
-    remote_sensor: RemoteSensor,
-    sensor_state: InstigatorState,
-    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
-    tick_retention_settings,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor],
-):
-    # evaluate the tick immediately, but from within a thread.  The main thread should be able to
-    # heartbeat to keep the daemon alive
-    return list(
-        _process_tick_generator(
-            workspace_process_context,
-            logger,
-            remote_sensor,
-            sensor_state,
-            sensor_debug_crash_flags,
-            tick_retention_settings,
-            submit_threadpool_executor,
-        )
-    )
-
-
 def _get_evaluation_tick(
     instance: DagsterInstance,
     sensor: RemoteSensor,
@@ -627,6 +608,11 @@ def _process_tick_generator(
         )
 
     yield error_info
+
+
+# evaluate the tick immediately, but from within a thread.  The main thread should be able to
+# heartbeat to keep the daemon alive
+_process_tick = materialize(_process_tick_generator)
 
 
 def _sensor_instigator_data(state: InstigatorState) -> Optional[SensorInstigatorData]:
