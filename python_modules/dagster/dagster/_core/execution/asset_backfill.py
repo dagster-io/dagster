@@ -1540,10 +1540,10 @@ def execute_asset_backfill_iteration_inner(
             asset_partition.asset_key for asset_partition in asset_partitions_to_request
         }
     ]
-    all_assets_have_backfill_policies = all(
+    any_assets_have_backfill_policies = any(
         backfill_policy is not None for backfill_policy in asset_backfill_policies
     )
-    if all_assets_have_backfill_policies:
+    if any_assets_have_backfill_policies:
         run_requests = build_run_requests_with_backfill_policies(
             asset_partitions=asset_partitions_to_request,
             asset_graph=asset_graph,
@@ -1552,11 +1552,7 @@ def execute_asset_backfill_iteration_inner(
     else:
         if not all(backfill_policy is None for backfill_policy in asset_backfill_policies):
             # if some assets have backfill policies, but not all of them, raise error
-            raise DagsterBackfillFailedError(
-                "Either all assets must have backfill policies or none of them must have backfill"
-                " policies. To backfill these assets together, either add backfill policies to all"
-                " assets, or remove backfill policies from all assets."
-            )
+            raise DagsterBackfillFailedError("System error")
         # When any of the assets do not have backfill policies, we fall back to the default behavior of
         # backfilling them partition by partition.
         run_requests = build_run_requests_from_asset_partitions(

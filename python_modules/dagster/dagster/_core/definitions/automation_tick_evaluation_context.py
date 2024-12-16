@@ -373,8 +373,9 @@ def build_run_requests_with_backfill_policies(
     asset_graph: BaseAssetGraph,
     dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Sequence[RunRequest]:
-    """If all assets have backfill policies, we should respect them and materialize them according
-    to their backfill policies.
+    """If any assets have backfill policies, we should respect them and materialize them according
+    to their backfill policies. For assets with backfill_policy set to None, we use BackfillPolicy.multi_run(1)
+    which will make one run per partition, which is the expected behavior for assets without a backfill policy.
     """
     run_requests = []
 
@@ -395,7 +396,9 @@ def build_run_requests_with_backfill_policies(
         assets_to_reconcile_by_partitions_def_partition_keys_backfill_policy[
             asset_graph.get(asset_key).partitions_def,
             frozenset(partition_keys) if partition_keys else None,
-            asset_graph.get(asset_key).backfill_policy,
+            asset_graph.get(asset_key).backfill_policy
+            if asset_graph.get(asset_key).backfill_policy
+            else BackfillPolicy.multi_run(1),
         ].add(asset_key)
 
     for (
