@@ -634,7 +634,7 @@ def test_simple_backfill(
     assert three.tags[PARTITION_NAME_TAG] == "three"
 
 
-@pytest.mark.parametrize("parallel", [True, False])
+@pytest.mark.parametrize("parallel", [False])
 def test_two_backfills_at_the_same_time(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,

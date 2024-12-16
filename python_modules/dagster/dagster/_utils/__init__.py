@@ -853,4 +853,4 @@ def materialize(func: Callable[..., Generator[T, Any, None]]) -> Callable[..., L
     def inner(*args, **kwargs):
         return list(func(*args, **kwargs))
 
-    return inner
+    return cast(Callable[..., List[T]], inner)
