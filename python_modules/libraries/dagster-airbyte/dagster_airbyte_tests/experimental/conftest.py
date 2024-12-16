@@ -167,7 +167,7 @@ SAMPLE_JOB_RESPONSE = {
     "status": "running",
     "jobType": "sync",
     "startTime": "2023-03-25T01:30:50Z",
-    "connectionId": TEST_CONNECTION_ID
+    "connectionId": TEST_CONNECTION_ID,
 }
 
 
