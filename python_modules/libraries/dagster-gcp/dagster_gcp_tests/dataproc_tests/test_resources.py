@@ -22,7 +22,7 @@ DATAPROC_BASE_URI = f"https://dataproc.googleapis.com/v1/projects/{PROJECT_ID}/r
 DATAPROC_CLUSTERS_URI = f"{DATAPROC_BASE_URI}/clusters"
 DATAPROC_JOBS_URI = f"{DATAPROC_BASE_URI}/jobs"
 DATAPROC_SCHEMA_URI = "https://www.googleapis.com/discovery/v1/apis/dataproc/v1/rest"
-DATAPROC_LABELS = {"test": "true"}
+DATAPROC_LABELS = {"first_label": "true", "second_label": "true"}
 
 EXPECTED_RESULTS = [
     # OAuth authorize credentials
