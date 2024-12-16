@@ -63,8 +63,8 @@ def find_subclasses_in_module(
             yield value
 
 
-LoadableAssetTypes = Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]
-KeyScopedAssetObjects = (AssetsDefinition, SourceAsset)
+LoadableAssetTypes = Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]
+KeyScopedAssetObjects = (AssetsDefinition, AssetSpec, SourceAsset)
 
 
 class LoadedAssetsList:
@@ -81,7 +81,8 @@ class LoadedAssetsList:
             {
                 module.__name__: list(
                     find_objects_in_module_of_types(
-                        module, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
+                        module,
+                        (AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec),
                     )
                 )
                 for module in modules
@@ -175,7 +176,7 @@ def _spec_mapper_disallow_group_override(
 
 
 def key_iterator(
-    asset: Union[AssetsDefinition, SourceAsset], included_targeted_keys: bool = False
+    asset: Union[AssetsDefinition, SourceAsset, AssetSpec], included_targeted_keys: bool = False
 ) -> Iterator[AssetKey]:
     return (
         iter(
@@ -203,7 +204,8 @@ def load_assets_from_modules(
     automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+    include_specs: bool = False,
+) -> Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets and source assets from the given modules.
 
     Args:
@@ -226,6 +228,15 @@ def load_assets_from_modules(
         Sequence[Union[AssetsDefinition, SourceAsset]]:
             A list containing assets and source assets defined in the given modules.
     """
+
+    def _asset_filter(asset: LoadableAssetTypes) -> bool:
+        if isinstance(asset, AssetsDefinition):
+            # We don't load asset checks with asset module loaders.
+            return not has_only_asset_checks(asset)
+        if isinstance(asset, AssetSpec):
+            return include_specs
+        return True
+
     return (
         LoadedAssetsList.from_modules(modules)
         .to_post_load()
@@ -245,7 +256,7 @@ def load_assets_from_modules(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
         )
-        .assets_only
+        .get_objects(_asset_filter)
     )
 
 
@@ -258,7 +269,8 @@ def load_assets_from_current_module(
     automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+    include_specs: bool = False,
+) -> Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets, source assets, and cacheable assets from the module where
     this function is called.
 
@@ -296,6 +308,7 @@ def load_assets_from_current_module(
         ),
         backfill_policy=backfill_policy,
         source_key_prefix=source_key_prefix,
+        include_specs=include_specs,
     )
 
 
@@ -309,6 +322,7 @@ def load_assets_from_package_module(
     automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    include_specs: bool = False,
 ) -> Sequence[LoadableAssetTypes]:
     """Constructs a list of assets and source assets that includes all asset
     definitions, source assets, and cacheable assets in all sub-modules of the given package module.
@@ -344,6 +358,7 @@ def load_assets_from_package_module(
         automation_condition=automation_condition,
         backfill_policy=backfill_policy,
         source_key_prefix=source_key_prefix,
+        include_specs=include_specs,
     )
 
 
@@ -356,7 +371,8 @@ def load_assets_from_package_name(
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+    include_specs: bool = False,
+) -> Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets, source assets, and cacheable assets that includes all asset
     definitions and source assets in all sub-modules of the given package.
 
@@ -389,6 +405,7 @@ def load_assets_from_package_name(
         auto_materialize_policy=auto_materialize_policy,
         backfill_policy=backfill_policy,
         source_key_prefix=source_key_prefix,
+        include_specs=include_specs,
     )
 
 
@@ -410,11 +427,17 @@ def find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
 
 
 def replace_keys_in_asset(
-    asset: Union[AssetsDefinition, SourceAsset],
+    asset: Union[AssetsDefinition, AssetSpec, SourceAsset],
     key_replacements: Mapping[AssetKey, AssetKey],
-) -> Union[AssetsDefinition, SourceAsset]:
-    updated_object = (
-        asset.with_attributes(
+) -> Union[AssetsDefinition, AssetSpec, SourceAsset]:
+    if isinstance(asset, SourceAsset):
+        return asset.with_attributes(key=key_replacements.get(asset.key, asset.key))
+    if isinstance(asset, AssetSpec):
+        return asset.replace_attributes(
+            key=key_replacements.get(asset.key, asset.key),
+        )
+    else:
+        updated_object = asset.with_attributes(
             output_asset_key_replacements={
                 key: key_replacements.get(key, key)
                 for key in key_iterator(asset, included_targeted_keys=True)
@@ -423,34 +446,31 @@ def replace_keys_in_asset(
                 key: key_replacements.get(key, key) for key in asset.keys_by_input_name.values()
             },
         )
-        if isinstance(asset, AssetsDefinition)
-        else asset.with_attributes(key=key_replacements.get(asset.key, asset.key))
-    )
-    if isinstance(asset, AssetChecksDefinition):
-        updated_object = cast(AssetsDefinition, updated_object)
-        updated_object = AssetChecksDefinition.create(
-            keys_by_input_name=updated_object.keys_by_input_name,
-            node_def=updated_object.op,
-            check_specs_by_output_name=updated_object.check_specs_by_output_name,
-            resource_defs=updated_object.resource_defs,
-            can_subset=updated_object.can_subset,
-        )
-    return updated_object
+        if isinstance(asset, AssetsDefinition) and has_only_asset_checks(asset):
+            updated_object = AssetChecksDefinition.create(
+                keys_by_input_name=updated_object.keys_by_input_name,
+                node_def=updated_object.op,
+                check_specs_by_output_name=updated_object.check_specs_by_output_name,
+                resource_defs=updated_object.resource_defs,
+                can_subset=updated_object.can_subset,
+            )
+        return updated_object
 
 
 class ResolvedAssetObjectList:
     def __init__(
         self,
-        loaded_objects: Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]],
+        loaded_objects: Sequence[LoadableAssetTypes],
     ):
         self.loaded_objects = loaded_objects
 
     @cached_property
-    def assets_defs(self) -> Sequence[AssetsDefinition]:
+    def assets_defs_and_specs(self) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
         return [
             dagster_object
             for dagster_object in self.loaded_objects
-            if isinstance(dagster_object, AssetsDefinition) and dagster_object.keys
+            if (isinstance(dagster_object, AssetsDefinition) and dagster_object.keys)
+            or isinstance(dagster_object, AssetSpec)
         ]
 
     @cached_property
@@ -462,8 +482,10 @@ class ResolvedAssetObjectList:
         ]
 
     @cached_property
-    def assets_and_checks_defs(self) -> Sequence[Union[AssetsDefinition, AssetChecksDefinition]]:
-        return [*self.assets_defs, *self.checks_defs]
+    def assets_defs_specs_and_checks_defs(
+        self,
+    ) -> Sequence[Union[AssetsDefinition, AssetSpec, AssetChecksDefinition]]:
+        return [*self.assets_defs_and_specs, *self.checks_defs]
 
     @cached_property
     def source_assets(self) -> Sequence[SourceAsset]:
@@ -475,9 +497,10 @@ class ResolvedAssetObjectList:
             asset for asset in self.loaded_objects if isinstance(asset, CacheableAssetsDefinition)
         ]
 
-    @cached_property
-    def assets_only(self) -> Sequence[LoadableAssetTypes]:
-        return [*self.source_assets, *self.assets_defs, *self.cacheable_assets]
+    def get_objects(
+        self, filter_fn: Callable[[LoadableAssetTypes], bool]
+    ) -> Sequence[LoadableAssetTypes]:
+        return [asset for asset in self.loaded_objects if filter_fn(asset)]
 
     def assets_with_loadable_prefix(
         self, key_prefix: CoercibleToAssetKeyPrefix
@@ -489,7 +512,7 @@ class ResolvedAssetObjectList:
         result_list = []
         all_asset_keys = {
             key
-            for asset_object in self.assets_and_checks_defs
+            for asset_object in self.assets_defs_specs_and_checks_defs
             for key in key_iterator(asset_object, included_targeted_keys=True)
         }
         key_replacements = {key: key.with_prefix(key_prefix) for key in all_asset_keys}
@@ -553,6 +576,10 @@ class ResolvedAssetObjectList:
             elif isinstance(asset, SourceAsset):
                 return_list.append(
                     asset.with_attributes(group_name=group_name if group_name else asset.group_name)
+                )
+            elif isinstance(asset, AssetSpec):
+                return_list.append(
+                    _spec_mapper_disallow_group_override(group_name, automation_condition)(asset)
                 )
             else:
                 return_list.append(
