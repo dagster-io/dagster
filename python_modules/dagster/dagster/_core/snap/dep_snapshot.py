@@ -1,4 +1,5 @@
 from collections import defaultdict
+from functools import cached_property
 from typing import DefaultDict, Dict, List, Mapping, NamedTuple, Sequence
 
 import dagster._check as check
@@ -140,11 +141,7 @@ class DependencyStructureIndex:
         check.str_param(node_name, "node_name")
         check.str_param(input_name, "input_name")
 
-        for input_dep_snap in self.get_invocation(node_name).input_dep_snaps:
-            if input_dep_snap.input_name == input_name:
-                return input_dep_snap.upstream_output_snaps
-
-        check.failed(f"Input {input_name} not found for node {node_name}")
+        return self.get_invocation(node_name).input_dep_snap(input_name).upstream_output_snaps
 
     def get_upstream_output(self, node_name: str, input_name: str) -> "OutputHandleSnap":
         check.str_param(node_name, "node_name")
@@ -235,9 +232,13 @@ class NodeInvocationSnap(
             is_dynamic_mapped=check.bool_param(is_dynamic_mapped, "is_dynamic_mapped"),
         )
 
-    def input_dep_snap(self, input_name: str) -> InputDependencySnap:
-        for inp_snap in self.input_dep_snaps:
-            if inp_snap.input_name == input_name:
-                return inp_snap
+    @cached_property
+    def input_dep_map(self) -> Mapping[str, InputDependencySnap]:
+        return {inp_snap.input_name: inp_snap for inp_snap in self.input_dep_snaps}
 
-        check.failed(f"No input found named {input_name}")
+    def input_dep_snap(self, input_name: str) -> InputDependencySnap:
+        inp_snap = self.input_dep_map.get(input_name)
+        if inp_snap:
+            return inp_snap
+
+        check.failed(f"Input {input_name} not found for node {self.node_name}")
