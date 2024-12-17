@@ -27,7 +27,7 @@ If release name contains chart name it will be used as a full name.
 
 # Image utils
 {{- define "dagster.externalImage.name" }}
-{{- .repository -}}:{{- .tag -}}
+{{- .registry}}/{{- .repository -}}:{{- .tag -}}
 {{- end }}
 
 {{- define "dagster.dagsterImage.name" }}
