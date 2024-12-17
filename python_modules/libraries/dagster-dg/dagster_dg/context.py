@@ -1,14 +1,14 @@
 import json
 import os
 from pathlib import Path
-from typing import Final, Iterable, Mapping, Optional, Tuple
+from typing import Final, Iterable, Optional, Tuple
 
 import tomli
 from typing_extensions import Self
 
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.error import DgError
-from dagster_dg.utils import execute_code_location_command
+from dagster_dg.utils import DEFAULT_BUILTIN_COMPONENT_LIB, execute_code_location_command
 
 
 def is_inside_deployment_directory(path: Path) -> bool:
@@ -89,13 +89,23 @@ class DeploymentDirectoryContext:
 
 
 class CodeLocationDirectoryContext:
-    _components_registry: Mapping[str, RemoteComponentType] = {}
+    """Class encapsulating contextual information about a components code location directory.
+
+    Args:
+        root_path (Path): The absolute path to the root of the code location directory.
+        name (str): The name of the code location python package.
+        component_registry (ComponentRegistry): The component registry for the code location.
+        deployment_context (Optional[DeploymentDirectoryContext]): The deployment context containing
+            the code location directory. Defaults to None.
+    """
 
     @classmethod
-    def from_path(cls, path: Path) -> Self:
+    def from_path(
+        cls, path: Path, builtin_component_lib: str = DEFAULT_BUILTIN_COMPONENT_LIB
+    ) -> Self:
         root_path = _resolve_code_location_root_directory(path)
         component_registry_data = execute_code_location_command(
-            root_path, ["list", "component-types"]
+            root_path, ["list", "component-types"], builtin_component_lib=builtin_component_lib
         )
         component_registry = RemoteComponentRegistry.from_dict(json.loads(component_registry_data))
 

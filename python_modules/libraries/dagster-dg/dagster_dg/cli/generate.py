@@ -17,6 +17,7 @@ from dagster_dg.generate import (
     generate_component_type,
     generate_deployment,
 )
+from dagster_dg.utils import CLI_BUILTIN_COMPONENT_LIB_KEY
 
 
 @click.group(name="generate")
@@ -139,7 +140,9 @@ def generate_component_type_command(name: str) -> None:
 @click.argument("component_name", type=str)
 @click.option("--json-params", type=str, default=None, help="JSON string of component parameters.")
 @click.argument("extra_args", nargs=-1, type=str)
+@click.pass_context
 def generate_component_command(
+    context: click.Context,
     component_type: str,
     component_name: str,
     json_params: Optional[str],
@@ -169,6 +172,7 @@ def generate_component_command(
 
     It is an error to pass both --json-params and EXTRA_ARGS.
     """
+    builtin_component_lib = context.obj.get(CLI_BUILTIN_COMPONENT_LIB_KEY, False)
     if not is_inside_code_location_directory(Path.cwd()):
         click.echo(
             click.style(
@@ -177,13 +181,13 @@ def generate_component_command(
         )
         sys.exit(1)
 
-    context = CodeLocationDirectoryContext.from_path(Path.cwd())
-    if not context.has_component_type(component_type):
+    dg_context = CodeLocationDirectoryContext.from_path(Path.cwd(), builtin_component_lib)
+    if not dg_context.has_component_type(component_type):
         click.echo(
             click.style(f"No component type `{component_type}` could be resolved.", fg="red")
         )
         sys.exit(1)
-    elif context.has_component_instance(component_name):
+    elif dg_context.has_component_instance(component_name):
         click.echo(
             click.style(f"A component instance named `{component_name}` already exists.", fg="red")
         )
@@ -200,9 +204,10 @@ def generate_component_command(
         sys.exit(1)
 
     generate_component_instance(
-        Path(context.component_instances_root_path),
+        Path(dg_context.component_instances_root_path),
         component_name,
         component_type,
         json_params,
         extra_args,
+        builtin_component_lib=builtin_component_lib,
     )

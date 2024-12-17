@@ -8,6 +8,7 @@ import click
 
 from dagster_dg.context import CodeLocationDirectoryContext
 from dagster_dg.utils import (
+    DEFAULT_BUILTIN_COMPONENT_LIB,
     camelcase,
     execute_code_location_command,
     generate_subtree,
@@ -150,6 +151,7 @@ def generate_component_instance(
     component_type: str,
     json_params: Optional[str],
     extra_args: Tuple[str, ...],
+    builtin_component_lib: str = DEFAULT_BUILTIN_COMPONENT_LIB,
 ) -> None:
     component_instance_root_path = root_path / name
     click.echo(f"Creating a Dagster component instance folder at {component_instance_root_path}.")
@@ -162,4 +164,8 @@ def generate_component_instance(
         *(["--json-params", json_params] if json_params else []),
         *(["--", *extra_args] if extra_args else []),
     )
-    execute_code_location_command(Path(component_instance_root_path), code_location_command)
+    execute_code_location_command(
+        Path(component_instance_root_path),
+        code_location_command,
+        builtin_component_lib=builtin_component_lib,
+    )
