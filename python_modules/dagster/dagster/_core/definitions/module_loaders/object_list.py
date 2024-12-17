@@ -14,13 +14,19 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.module_loaders.utils import (
+    JobDefinitionObject,
     LoadableDagsterObject,
     RuntimeAssetObjectTypes,
+    RuntimeDagsterObjectTypes,
+    RuntimeJobObjectTypes,
     RuntimeKeyScopedAssetObjectTypes,
+    RuntimeScheduleObjectTypes,
+    ScheduleDefinitionObject,
     find_objects_in_module_of_types,
     key_iterator,
     replace_keys_in_asset,
 )
+from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -41,7 +47,7 @@ class ModuleScopedDagsterObjects:
                 module.__name__: list(
                     find_objects_in_module_of_types(
                         module,
-                        (AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec),
+                        RuntimeDagsterObjectTypes,
                     )
                 )
                 for module in modules
@@ -71,6 +77,20 @@ class ModuleScopedDagsterObjects:
         return [asset for asset in self.deduped_objects if isinstance(asset, SourceAsset)]
 
     @cached_property
+    def schedule_defs(self) -> Sequence[ScheduleDefinitionObject]:
+        return [
+            asset for asset in self.deduped_objects if isinstance(asset, RuntimeScheduleObjectTypes)
+        ]
+
+    @cached_property
+    def job_objects(self) -> Sequence[JobDefinitionObject]:
+        return [asset for asset in self.deduped_objects if isinstance(asset, RuntimeJobObjectTypes)]
+
+    @cached_property
+    def sensor_defs(self) -> Sequence[SensorDefinition]:
+        return [asset for asset in self.deduped_objects if isinstance(asset, SensorDefinition)]
+
+    @cached_property
     def module_name_by_id(self) -> Dict[int, str]:
         return {
             id(asset_object): module_name
@@ -91,6 +111,7 @@ class ModuleScopedDagsterObjects:
         return objects_by_key
 
     def _do_collision_detection(self) -> None:
+        # Collision detection on module-scoped asset objects. This does not include CacheableAssetsDefinitions, which don't have their keys defined until runtime.
         for key, asset_objects in self.asset_objects_by_key.items():
             # If there is more than one asset_object in the list for a given key, and the objects do not refer to the same asset_object in memory, we have a collision.
             num_distinct_objects_for_key = len(
@@ -102,6 +123,44 @@ class ModuleScopedDagsterObjects:
                 )
                 raise DagsterInvalidDefinitionError(
                     f"Asset key {key.to_user_string()} is defined multiple times. Definitions found in modules: {asset_objects_str}."
+                )
+        # Collision detection on ScheduleDefinitions.
+        schedule_defs_by_name = defaultdict(list)
+        for schedule_def in self.schedule_defs:
+            schedule_defs_by_name[schedule_def.name].append(schedule_def)
+        for name, schedule_defs in schedule_defs_by_name.items():
+            if len(schedule_defs) > 1:
+                schedule_defs_str = ", ".join(
+                    set(self.module_name_by_id[id(schedule_def)] for schedule_def in schedule_defs)
+                )
+                raise DagsterInvalidDefinitionError(
+                    f"Schedule name {name} is defined multiple times. Definitions found in modules: {schedule_defs_str}."
+                )
+
+        # Collision detection on SensorDefinitions.
+        sensor_defs_by_name = defaultdict(list)
+        for sensor_def in self.sensor_defs:
+            sensor_defs_by_name[sensor_def.name].append(sensor_def)
+        for name, sensor_defs in sensor_defs_by_name.items():
+            if len(sensor_defs) > 1:
+                sensor_defs_str = ", ".join(
+                    set(self.module_name_by_id[id(sensor_def)] for sensor_def in sensor_defs)
+                )
+                raise DagsterInvalidDefinitionError(
+                    f"Sensor name {name} is defined multiple times. Definitions found in modules: {sensor_defs_str}."
+                )
+
+        # Collision detection on JobDefinitionObjects.
+        job_objects_by_name = defaultdict(list)
+        for job_object in self.job_objects:
+            job_objects_by_name[job_object.name].append(job_object)
+        for name, job_objects in job_objects_by_name.items():
+            if len(job_objects) > 1:
+                job_objects_str = ", ".join(
+                    set(self.module_name_by_id[id(job_object)] for job_object in job_objects)
+                )
+                raise DagsterInvalidDefinitionError(
+                    f"Job name {name} is defined multiple times. Definitions found in modules: {job_objects_str}."
                 )
 
     def get_object_list(self) -> "DagsterObjectsList":
@@ -231,7 +290,9 @@ class DagsterObjectsList:
         )
         return_list = []
         for asset in dagster_object_list.loaded_objects:
-            if isinstance(asset, AssetsDefinition):
+            if not isinstance(asset, RuntimeAssetObjectTypes):
+                return_list.append(asset)
+            elif isinstance(asset, AssetsDefinition):
                 new_asset = asset.map_asset_specs(
                     _spec_mapper_disallow_group_override(group_name, automation_condition)
                 ).with_attributes(
