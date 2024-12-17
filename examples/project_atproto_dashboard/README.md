@@ -1,6 +1,10 @@
 # project_atproto_dashboard
 
-End-to-end project that demonstrates:
+An end-to-end demonstration of ingestion data from the ATProto API, modeling it with dbt, and presenting it with Power BI.
+
+![Project asset lineage](./lineage.svg)
+
+## Features used
 
 1. Ingestion of data-related Bluesky posts
    - Dynamic partitions
