@@ -12,8 +12,7 @@ from dagster_dg_tests.utils import (
 
 
 def test_info_component_type_all_metadata_success():
-    runner = ProxyRunner.test()
-    with isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke(
             "info",
             "component-type",
@@ -77,8 +76,7 @@ def test_info_component_type_all_metadata_success():
 
 
 def test_info_component_type_all_metadata_empty_success():
-    runner = ProxyRunner.test()
-    with isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke(
             "info",
             "component-type",
@@ -94,8 +92,7 @@ def test_info_component_type_all_metadata_empty_success():
 
 
 def test_info_component_type_flag_fields_success():
-    runner = ProxyRunner.test()
-    with isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke(
             "info",
             "component-type",
@@ -176,8 +173,7 @@ def test_info_component_type_flag_fields_success():
 
 
 def test_info_component_type_outside_code_location_fails() -> None:
-    runner = ProxyRunner.test()
-    with runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(
             "info",
             "component-type",
@@ -189,8 +185,7 @@ def test_info_component_type_outside_code_location_fails() -> None:
 
 
 def test_info_component_type_multiple_flags_fails() -> None:
-    runner = ProxyRunner.test()
-    with isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke(
             "info",
             "component-type",

@@ -2,12 +2,14 @@ import traceback
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Iterator, Optional, Sequence, Tuple, Type, Union
 
 from click.testing import CliRunner, Result
 from dagster_dg.cli import cli as dg_cli
 from dagster_dg.utils import discover_git_root, pushd
+from typing_extensions import Self
 
 
 @contextmanager
@@ -55,8 +57,23 @@ class ProxyRunner:
     prepend_args: Optional[Sequence[str]] = None
 
     @classmethod
-    def test(cls):
-        return cls(CliRunner(), ["--builtin-component-lib", "dagster_components.test"])
+    @contextmanager
+    def test(
+        cls, use_test_component_lib: bool = True, verbose: bool = False, disable_cache: bool = False
+    ) -> Iterator[Self]:
+        with TemporaryDirectory() as cache_dir:
+            prepend_args = [
+                *(
+                    ["--builtin-component-lib", "dagster_components.test"]
+                    if use_test_component_lib
+                    else []
+                ),
+                "--cache-dir",
+                str(cache_dir),
+                *(["--verbose"] if verbose else []),
+                *(["--disable-cache"] if disable_cache else []),
+            ]
+            yield cls(CliRunner(), prepend_args=prepend_args)
 
     def invoke(self, *args: str):
         all_args = [*(self.prepend_args or []), *args]

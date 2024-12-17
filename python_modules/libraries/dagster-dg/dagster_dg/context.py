@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 from dataclasses import dataclass
@@ -8,10 +9,15 @@ import click
 import tomli
 from typing_extensions import Self
 
+from dagster_dg.cache import CachableDataType, DgCache
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.config import DgConfig
 from dagster_dg.error import DgError
-from dagster_dg.utils import execute_code_location_command
+from dagster_dg.utils import (
+    execute_code_location_command,
+    hash_directory_metadata,
+    hash_file_metadata,
+)
 
 
 def is_inside_deployment_directory(path: Path) -> bool:
@@ -64,13 +70,14 @@ def _is_code_location_root_directory(path: Path) -> bool:
 _DEPLOYMENT_CODE_LOCATIONS_DIR: Final = "code_locations"
 
 # Code location
-_CODE_LOCATION_CUSTOM_COMPONENTS_DIR: Final = "lib"
+_CODE_LOCATION_COMPONENTS_LIB_DIR: Final = "lib"
 _CODE_LOCATION_COMPONENT_INSTANCES_DIR: Final = "components"
 
 
 @dataclass
 class DgContext:
     config: DgConfig
+    cache: Optional[DgCache] = None
 
     @classmethod
     def from_cli_context(cls, cli_context: click.Context) -> Self:
@@ -78,7 +85,8 @@ class DgContext:
 
     @classmethod
     def from_config(cls, config: DgConfig) -> Self:
-        return cls(config=config)
+        cache = None if config.disable_cache else DgCache.from_config(config)
+        return cls(config=config, cache=cache)
 
     @classmethod
     def default(cls) -> Self:
@@ -105,6 +113,27 @@ class DeploymentDirectoryContext:
         return [loc.name for loc in sorted((self.root_path / "code_locations").iterdir())]
 
 
+def get_code_location_env_hash(code_location_root_path: Path) -> str:
+    uv_lock_path = code_location_root_path / "uv.lock"
+    if not uv_lock_path.exists():
+        raise DgError(f"uv.lock file not found in {code_location_root_path}")
+    local_components_path = (
+        code_location_root_path / code_location_root_path.name / _CODE_LOCATION_COMPONENTS_LIB_DIR
+    )
+    if not local_components_path.exists():
+        raise DgError(f"Local components directory not found in {code_location_root_path}")
+    hasher = hashlib.md5()
+    hash_file_metadata(hasher, uv_lock_path)
+    hash_directory_metadata(hasher, local_components_path)
+    return hasher.hexdigest()
+
+
+def make_cache_key(code_location_path: Path, data_type: CachableDataType) -> Tuple[str, str, str]:
+    path_parts = [str(part) for part in code_location_path.parts if part != "/"]
+    env_hash = get_code_location_env_hash(code_location_path)
+    return ("_".join(path_parts), env_hash, data_type)
+
+
 @dataclass
 class CodeLocationDirectoryContext:
     """Class encapsulating contextual information about a components code location directory.
@@ -127,10 +156,21 @@ class CodeLocationDirectoryContext:
     @classmethod
     def from_path(cls, path: Path, dg_context: DgContext) -> Self:
         root_path = _resolve_code_location_root_directory(path)
-        component_registry_data = execute_code_location_command(
-            root_path, ["list", "component-types"], dg_context
-        )
-        component_registry = RemoteComponentRegistry.from_dict(json.loads(component_registry_data))
+
+        cache = dg_context.cache
+        if cache:
+            cache_key = make_cache_key(root_path, "component_registry_data")
+
+        raw_registry_data = cache.get(cache_key) if cache else None
+        if not raw_registry_data:
+            raw_registry_data = execute_code_location_command(
+                root_path, ["list", "component-types"], dg_context
+            )
+            if cache:
+                cache.set(cache_key, raw_registry_data)
+
+        registry_data = json.loads(raw_registry_data)
+        component_registry = RemoteComponentRegistry.from_dict(registry_data)
 
         return cls(
             root_path=root_path,
@@ -148,11 +188,11 @@ class CodeLocationDirectoryContext:
 
     @property
     def local_component_types_root_path(self) -> str:
-        return os.path.join(self.root_path, self.name, _CODE_LOCATION_CUSTOM_COMPONENTS_DIR)
+        return os.path.join(self.root_path, self.name, _CODE_LOCATION_COMPONENTS_LIB_DIR)
 
     @property
     def local_component_types_root_module_name(self) -> str:
-        return f"{self.name}.{_CODE_LOCATION_CUSTOM_COMPONENTS_DIR}"
+        return f"{self.name}.{_CODE_LOCATION_COMPONENTS_LIB_DIR}"
 
     def iter_component_types(self) -> Iterable[Tuple[str, RemoteComponentType]]:
         for key in sorted(self.component_registry.keys()):

@@ -5,8 +5,6 @@ from pathlib import Path
 
 import pytest
 import tomli
-from click.testing import CliRunner
-from dagster_dg.cli import cli as dg_cli
 from dagster_dg.context import CodeLocationDirectoryContext, DgContext
 from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import
 
@@ -21,8 +19,7 @@ from dagster_dg_tests.utils import (
 
 
 def test_generate_deployment_command_success() -> None:
-    runner = ProxyRunner.test()
-    with runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("generate", "deployment", "foo")
         assert_runner_result(result)
         assert Path("foo").exists()
@@ -34,8 +31,7 @@ def test_generate_deployment_command_success() -> None:
 
 
 def test_generate_deployment_command_already_exists_fails() -> None:
-    runner = ProxyRunner.test()
-    with runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         os.mkdir("foo")
         result = runner.invoke("generate", "deployment", "foo")
         assert_runner_result(result, exit_0=False)
@@ -43,8 +39,7 @@ def test_generate_deployment_command_already_exists_fails() -> None:
 
 
 def test_generate_code_location_inside_deployment_success() -> None:
-    runner = ProxyRunner.test()
-    with isolated_example_deployment_foo(runner):
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         result = runner.invoke("generate", "code-location", "bar")
         assert_runner_result(result)
         assert Path("code_locations/bar").exists()
@@ -66,8 +61,7 @@ def test_generate_code_location_inside_deployment_success() -> None:
 
 
 def test_generate_code_location_outside_deployment_success() -> None:
-    runner = ProxyRunner.test()
-    with runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("generate", "code-location", "bar")
         assert_runner_result(result)
         assert Path("bar").exists()
@@ -84,14 +78,13 @@ def test_generate_code_location_outside_deployment_success() -> None:
 
 @pytest.mark.parametrize("mode", ["env_var", "arg"])
 def test_generate_code_location_editable_dagster_success(mode: str, monkeypatch) -> None:
-    runner = ProxyRunner.test()
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     if mode == "env_var":
         monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
         editable_args = ["--use-editable-dagster", "--"]
     else:
         editable_args = ["--use-editable-dagster", str(dagster_git_repo_dir)]
-    with isolated_example_deployment_foo(runner):
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         result = runner.invoke("generate", "code-location", *editable_args, "bar")
         assert_runner_result(result)
         assert Path("code_locations/bar").exists()
@@ -117,17 +110,15 @@ def test_generate_code_location_editable_dagster_success(mode: str, monkeypatch)
 
 
 def test_generate_code_location_editable_dagster_no_env_var_no_value_fails(monkeypatch) -> None:
-    runner = ProxyRunner.test()
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", "")
-    with isolated_example_deployment_foo(runner):
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         result = runner.invoke("generate", "code-location", "--use-editable-dagster", "--", "bar")
         assert_runner_result(result, exit_0=False)
         assert "requires the `DAGSTER_GIT_REPO_DIR`" in result.output
 
 
 def test_generate_code_location_already_exists_fails() -> None:
-    runner = ProxyRunner.test()
-    with isolated_example_deployment_foo(runner):
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         result = runner.invoke("generate", "code-location", "bar")
         assert_runner_result(result)
         result = runner.invoke("generate", "code-location", "bar")
@@ -137,8 +128,7 @@ def test_generate_code_location_already_exists_fails() -> None:
 
 @pytest.mark.parametrize("in_deployment", [True, False])
 def test_generate_component_type_success(in_deployment: bool) -> None:
-    runner = ProxyRunner.test()
-    with isolated_example_code_location_bar(runner, in_deployment):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
         result = runner.invoke("generate", "component-type", "baz")
         assert_runner_result(result)
         assert Path("bar/lib/baz.py").exists()
@@ -147,8 +137,7 @@ def test_generate_component_type_success(in_deployment: bool) -> None:
 
 
 def test_generate_component_type_outside_code_location_fails() -> None:
-    runner = ProxyRunner.test()
-    with isolated_example_deployment_foo(runner):
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         result = runner.invoke("generate", "component-type", "baz")
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster code location directory" in result.output
@@ -156,8 +145,7 @@ def test_generate_component_type_outside_code_location_fails() -> None:
 
 @pytest.mark.parametrize("in_deployment", [True, False])
 def test_generate_component_type_already_exists_fails(in_deployment: bool) -> None:
-    runner = ProxyRunner.test()
-    with isolated_example_code_location_bar(runner, in_deployment):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
         result = runner.invoke("generate", "component-type", "baz")
         assert_runner_result(result)
         result = runner.invoke("generate", "component-type", "baz")
@@ -167,8 +155,7 @@ def test_generate_component_type_already_exists_fails(in_deployment: bool) -> No
 
 @pytest.mark.parametrize("in_deployment", [True, False])
 def test_generate_component_no_params_success(in_deployment: bool) -> None:
-    runner = ProxyRunner.test()
-    with isolated_example_code_location_bar(runner, in_deployment):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
         result = runner.invoke(
             "generate",
             "component",
@@ -187,8 +174,7 @@ def test_generate_component_no_params_success(in_deployment: bool) -> None:
 
 @pytest.mark.parametrize("in_deployment", [True, False])
 def test_generate_component_json_params_success(in_deployment: bool) -> None:
-    runner = ProxyRunner.test()
-    with isolated_example_code_location_bar(runner, in_deployment):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
         result = runner.invoke(
             "generate",
             "component",
@@ -210,8 +196,7 @@ def test_generate_component_json_params_success(in_deployment: bool) -> None:
 
 @pytest.mark.parametrize("in_deployment", [True, False])
 def test_generate_component_extra_args_success(in_deployment: bool) -> None:
-    runner = ProxyRunner.test()
-    with isolated_example_code_location_bar(runner, in_deployment):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
         result = runner.invoke(
             "generate",
             "component",
@@ -233,8 +218,7 @@ def test_generate_component_extra_args_success(in_deployment: bool) -> None:
 
 
 def test_generate_component_json_params_and_extra_args_fails() -> None:
-    runner = ProxyRunner.test()
-    with isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke(
             "generate",
             "component",
@@ -250,8 +234,7 @@ def test_generate_component_json_params_and_extra_args_fails() -> None:
 
 
 def test_generate_component_outside_code_location_fails() -> None:
-    runner = ProxyRunner.test()
-    with isolated_example_deployment_foo(runner):
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         result = runner.invoke("generate", "component", "bar.baz", "qux")
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster code location directory" in result.output
@@ -259,8 +242,7 @@ def test_generate_component_outside_code_location_fails() -> None:
 
 @pytest.mark.parametrize("in_deployment", [True, False])
 def test_generate_component_already_exists_fails(in_deployment: bool) -> None:
-    runner = ProxyRunner.test()
-    with isolated_example_code_location_bar(runner, in_deployment):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
         result = runner.invoke(
             "generate",
             "component",
@@ -284,15 +266,17 @@ def test_generate_component_already_exists_fails(in_deployment: bool) -> None:
 
 
 def test_generate_sling_replication_instance() -> None:
-    runner = CliRunner()
-    with isolated_example_code_location_bar(runner):
+    with (
+        ProxyRunner.test(use_test_component_lib=False) as runner,
+        isolated_example_code_location_bar(runner),
+    ):
         # We need to add dagster-embedded-elt also because we are using editable installs. Only
         # direct dependencies will be resolved by uv.tool.sources.
         subprocess.run(
             ["uv", "add", "dagster-components[sling]", "dagster-embedded-elt"], check=True
         )
         result = runner.invoke(
-            dg_cli, ["generate", "component", "dagster_components.sling_replication", "file_ingest"]
+            "generate", "component", "dagster_components.sling_replication", "file_ingest"
         )
         assert_runner_result(result)
         assert Path("bar/components/file_ingest").exists()
@@ -317,14 +301,19 @@ dbt_project_path = "../stub_code_locations/dbt_project_location/components/jaffl
     ],
 )
 def test_generate_dbt_project_instance(params) -> None:
-    runner = CliRunner()
-    with isolated_example_code_location_bar(runner):
+    with (
+        ProxyRunner.test(use_test_component_lib=False) as runner,
+        isolated_example_code_location_bar(runner),
+    ):
         # We need to add dagster-dbt also because we are using editable installs. Only
         # direct dependencies will be resolved by uv.tool.sources.
         subprocess.run(["uv", "add", "dagster-components[dbt]", "dagster-dbt"], check=True)
         result = runner.invoke(
-            dg_cli,
-            ["generate", "component", "dagster_components.dbt_project", "my_project", *params],
+            "generate",
+            "component",
+            "dagster_components.dbt_project",
+            "my_project",
+            *params,
         )
         assert_runner_result(result)
         assert Path("bar/components/my_project").exists()
