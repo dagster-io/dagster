@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional
 from dagster import AssetsDefinition, multi_asset
 from dagster._annotations import experimental
 
-from dagster_airbyte.resources import AirbyteCloudResource
+from dagster_airbyte.resources import AirbyteCloudWorkspace
 from dagster_airbyte.translator import AirbyteMetadataSet, DagsterAirbyteTranslator
 
 
@@ -11,7 +11,7 @@ from dagster_airbyte.translator import AirbyteMetadataSet, DagsterAirbyteTransla
 def airbyte_assets(
     *,
     connection_id: str,
-    workspace: AirbyteCloudResource,
+    workspace: AirbyteCloudWorkspace,
     name: Optional[str] = None,
     group_name: Optional[str] = None,
     dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,

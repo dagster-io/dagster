@@ -6,14 +6,16 @@ import time
 from abc import abstractmethod
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union, cast
 
 import requests
 from dagster import (
+    AssetExecutionContext,
     ConfigurableResource,
     Definitions,
     Failure,
     InitResourceContext,
+    OpExecutionContext,
     _check as check,
     get_dagster_logger,
     resource,
@@ -1171,6 +1173,49 @@ class AirbyteCloudWorkspace(ConfigurableResource):
             connections_by_id=connections_by_id,
             destinations_by_id=destinations_by_id,
         )
+
+    @cached_method
+    def load_asset_specs(
+        self,
+        dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
+    ) -> Sequence[AssetSpec]:
+        """Returns a list of AssetSpecs representing the Airbyte content in the workspace.
+
+        Args:
+            dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
+                to convert Airbyte content into :py:class:`dagster.AssetSpec`.
+                Defaults to :py:class:`DagsterAirbyteTranslator`.
+
+        Returns:
+            List[AssetSpec]: The set of assets representing the Airbyte content in the workspace.
+
+        Examples:
+            Loading the asset specs for a given Airbyte workspace:
+            .. code-block:: python
+
+                from dagster_airbyte import AirbyteCloudWorkspace
+
+                import dagster as dg
+
+                airbyte_workspace = AirbyteCloudWorkspace(
+                    workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+                    client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+                    client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+                )
+
+                airbyte_specs = airbyte_workspace.load_asset_specs()
+                defs = dg.Definitions(assets=airbyte_specs, resources={"airbyte": airbyte_workspace}
+        """
+        dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
+
+        return load_airbyte_cloud_asset_specs(
+            workspace=self, dagster_airbyte_translator=dagster_airbyte_translator
+        )
+
+    def sync_and_poll(
+        self, context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None
+    ):
+        raise NotImplementedError()
 
 
 @experimental
