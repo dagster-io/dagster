@@ -162,7 +162,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
   const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
 
   const {sortedAssetKeys, slicedSortedAssetKeys} = React.useMemo(() => {
-    const sortedAssetKeys = assetKeys?.slice().sort(sortItemAssetKey) ?? null;
+    const sortedAssetKeys = assetKeys?.slice().sort(sortItemAssetKey) ?? [];
     return {
       sortedAssetKeys,
       slicedSortedAssetKeys: sortedAssetKeys?.slice(0, rendered) ?? [],
@@ -183,7 +183,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
 
   const {containerRef, moreLabelRef} = useAdjustChildVisibilityToFill(moreLabelFn);
 
-  if (!assetKeys || !count) {
+  if (!count) {
     return null;
   }
 
@@ -286,7 +286,7 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
   const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
 
   const {sortedAssetChecks, slicedSortedAssetChecks} = React.useMemo(() => {
-    const sortedAssetChecks = assetChecks?.slice().sort(sortItemAssetCheck) ?? null;
+    const sortedAssetChecks = assetChecks?.slice().sort(sortItemAssetCheck) ?? [];
     return {
       sortedAssetChecks,
       slicedSortedAssetChecks: sortedAssetChecks?.slice(0, rendered) ?? [],
@@ -311,7 +311,7 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
 
   const {containerRef, moreLabelRef} = useAdjustChildVisibilityToFill(moreLabelFn);
 
-  if (!assetChecks || !count) {
+  if (!count) {
     return null;
   }
 
