@@ -846,11 +846,11 @@ def run_with_concurrent_update_guard(
         return
 
 
-def materialize(func: Callable[..., Generator[T, Any, None]]) -> Callable[..., List[T]]:
-    """A decorator that materializes the result from a function call."""
+def materialize(func: Callable[..., Iterable[T]]) -> Callable[..., List[T]]:
+    """A decorator that returns a list from the output of a function."""
 
     @functools.wraps(func)
     def inner(*args, **kwargs):
         return list(func(*args, **kwargs))
 
-    return cast(Callable[..., List[T]], inner)
+    return inner
