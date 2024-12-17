@@ -163,7 +163,7 @@ SAMPLE_DESTINATION_DETAILS = {
 
 
 SAMPLE_JOB_RESPONSE = {
-    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     "status": "running",
     "jobType": "sync",
     "startTime": "2023-03-25T01:30:50Z",
