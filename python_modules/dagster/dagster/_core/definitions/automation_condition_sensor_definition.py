@@ -4,8 +4,8 @@ from typing import Any, Mapping, Optional, cast
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
-from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
+from dagster._core.definitions.declarative_automation.operators.dep_operators import (
+    AssetSelectionCondition,
 )
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import (
@@ -48,7 +48,7 @@ def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: Sensor
         auto_observe_asset_keys=set(),
         asset_selection=sensor_def.asset_selection,
         emit_backfills=sensor_def.emit_backfills,
-        default_condition=sensor_def.default_condition,
+        global_condition=sensor_def.global_condition,
         logger=context.log,
     )
     if evaluation_context.total_keys > MAX_ENTITIES:
@@ -151,18 +151,18 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         metadata: Optional[Mapping[str, object]] = None,
         emit_backfills: bool = True,
         use_user_code_server: bool = False,
-        default_condition: Optional[AutomationCondition] = None,
+        global_condition: Optional[AssetSelectionCondition] = None,
     ):
         self._use_user_code_server = use_user_code_server
         check.bool_param(emit_backfills, "allow_backfills")
 
-        self._default_condition = check.opt_inst_param(
-            default_condition, "default_condition", AutomationCondition
+        self._global_condition = check.opt_inst_param(
+            global_condition, "global_condition", AssetSelectionCondition
         )
         check.param_invariant(
-            not (self._default_condition and not self._use_user_code_server),
-            "default_condition",
-            "Setting a `default_condition` for a non-user-code AutomationConditionSensorDefinition is not supported.",
+            not (self._global_condition and not self._use_user_code_server),
+            "global_condition",
+            "Setting a `global_condition` for a non-user-code AutomationConditionSensorDefinition is not supported.",
         )
 
         self._run_tags = normalize_tags(run_tags)
@@ -199,8 +199,8 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         return EMIT_BACKFILLS_METADATA_KEY in self.metadata
 
     @property
-    def default_condition(self) -> Optional[AutomationCondition]:
-        return self._default_condition
+    def global_condition(self) -> Optional[AssetSelectionCondition]:
+        return self._global_condition
 
     @property
     def sensor_type(self) -> SensorType:

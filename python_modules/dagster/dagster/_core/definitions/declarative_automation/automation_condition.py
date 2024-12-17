@@ -33,11 +33,15 @@ from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_selection import AssetSelection
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
     from dagster._core.definitions.declarative_automation.automation_context import (
         AutomationContext,
     )
-    from dagster._core.definitions.declarative_automation.operators import AndAutomationCondition
+    from dagster._core.definitions.declarative_automation.operators import (
+        AndAutomationCondition,
+        AssetSelectionCondition,
+    )
     from dagster._core.definitions.declarative_automation.operators.dep_operators import (
         DepsAutomationCondition,
     )
@@ -264,6 +268,32 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
         asset_key = AssetKey.from_coercible(key)
         return EntityMatchesCondition(key=asset_key, operand=condition)
+
+    @staticmethod
+    def any_assets_match(
+        condition: "AutomationCondition[AssetKey]", selection: "AssetSelection"
+    ) -> "AssetSelectionCondition":
+        """Returns an AutomationCondition that is true if this condition is true for any asset in the
+        given selection.
+        """
+        from dagster._core.definitions.declarative_automation.operators import (
+            AnyAssetSelectionCondition,
+        )
+
+        return AnyAssetSelectionCondition(operand=condition, selection=selection)
+
+    @staticmethod
+    def all_assets_match(
+        condition: "AutomationCondition[AssetKey]", selection: "AssetSelection"
+    ) -> "AssetSelectionCondition":
+        """Returns an AutomationCondition that is true if this condition is true for all assets in the
+        given selection.
+        """
+        from dagster._core.definitions.declarative_automation.operators import (
+            AllAssetSelectionCondition,
+        )
+
+        return AllAssetSelectionCondition(operand=condition, selection=selection)
 
     @public
     @staticmethod

@@ -66,7 +66,7 @@ class AutomationContext(Generic[T_EntityKey]):
     def create(key: EntityKey, evaluator: "AutomationConditionEvaluator") -> "AutomationContext":
         asset_graph_view = evaluator.asset_graph_view
         condition = check.not_none(
-            evaluator.asset_graph.get(key).automation_condition or evaluator.default_condition
+            evaluator.asset_graph.get(key).automation_condition or evaluator.global_condition
         )
         condition_unqiue_id = condition.get_node_unique_id(parent_unique_id=None, index=None)
 
