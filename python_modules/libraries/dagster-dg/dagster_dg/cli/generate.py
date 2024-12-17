@@ -8,6 +8,7 @@ import click
 from dagster_dg.context import (
     CodeLocationDirectoryContext,
     DeploymentDirectoryContext,
+    DgContext,
     is_inside_code_location_directory,
     is_inside_deployment_directory,
 )
@@ -56,7 +57,10 @@ def generate_deployment_command(path: Path) -> None:
         " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
     ),
 )
-def generate_code_location_command(name: str, use_editable_dagster: Optional[str]) -> None:
+@click.pass_context
+def generate_code_location_command(
+    cli_context: click.Context, name: str, use_editable_dagster: Optional[str]
+) -> None:
     """Generate a Dagster code location file structure and a uv-managed virtual environment scoped
     to the code location.
 
@@ -80,8 +84,9 @@ def generate_code_location_command(name: str, use_editable_dagster: Optional[str
     component`).  The `<name>.lib` directory holds custom component types scoped to the code
     location (which can be created with `dg generate component-type`).
     """
+    dg_context = DgContext.from_cli_context(cli_context)
     if is_inside_deployment_directory(Path.cwd()):
-        context = DeploymentDirectoryContext.from_path(Path.cwd())
+        context = DeploymentDirectoryContext.from_path(Path.cwd(), dg_context)
         if context.has_code_location(name):
             click.echo(click.style(f"A code location named {name} already exists.", fg="red"))
             sys.exit(1)
@@ -109,12 +114,14 @@ def generate_code_location_command(name: str, use_editable_dagster: Optional[str
 
 @generate_cli.command(name="component-type")
 @click.argument("name", type=str)
-def generate_component_type_command(name: str) -> None:
+@click.pass_context
+def generate_component_type_command(cli_context: click.Context, name: str) -> None:
     """Generate a scaffold of a custom Dagster component type.
 
     This command must be run inside a Dagster code location directory. The component type scaffold
     will be generated in submodule `<code_location_name>.lib.<name>`.
     """
+    dg_context = DgContext.from_cli_context(cli_context)
     if not is_inside_code_location_directory(Path.cwd()):
         click.echo(
             click.style(
@@ -122,7 +129,7 @@ def generate_component_type_command(name: str) -> None:
             )
         )
         sys.exit(1)
-    context = CodeLocationDirectoryContext.from_path(Path.cwd())
+    context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
     full_component_name = f"{context.name}.{name}"
     if context.has_component_type(full_component_name):
         click.echo(click.style(f"A component type named `{name}` already exists.", fg="red"))
@@ -139,7 +146,9 @@ def generate_component_type_command(name: str) -> None:
 @click.argument("component_name", type=str)
 @click.option("--json-params", type=str, default=None, help="JSON string of component parameters.")
 @click.argument("extra_args", nargs=-1, type=str)
+@click.pass_context
 def generate_component_command(
+    cli_context: click.Context,
     component_type: str,
     component_name: str,
     json_params: Optional[str],
@@ -169,6 +178,7 @@ def generate_component_command(
 
     It is an error to pass both --json-params and EXTRA_ARGS.
     """
+    dg_context = DgContext.from_cli_context(cli_context)
     if not is_inside_code_location_directory(Path.cwd()):
         click.echo(
             click.style(
@@ -177,7 +187,7 @@ def generate_component_command(
         )
         sys.exit(1)
 
-    context = CodeLocationDirectoryContext.from_path(Path.cwd())
+    context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
     if not context.has_component_type(component_type):
         click.echo(
             click.style(f"No component type `{component_type}` could be resolved.", fg="red")
@@ -205,4 +215,5 @@ def generate_component_command(
         component_type,
         json_params,
         extra_args,
+        dg_context,
     )

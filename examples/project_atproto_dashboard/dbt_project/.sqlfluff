@@ -1,0 +1,2 @@
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper

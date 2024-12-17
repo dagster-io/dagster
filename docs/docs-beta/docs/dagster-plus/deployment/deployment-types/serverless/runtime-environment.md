@@ -7,13 +7,13 @@ sidebar_position: 100
 By default, Dagster+ Serverless will package your code as PEX files and deploys them on Docker images. Using PEX files significantly reduces the time to deploy since it does not require building a new Docker image and provisioning a new container for every code change. However you are able to customize the Serverless runtime environment in various ways:
 
 - [Add dependencies](#add-dependencies)
-- [Use a different Python version](#python-version)
-- [Use a different base image](#base-image)
-- [Include data files](#data-files)
-- [Disable PEX deploys](#disable-pex)
-- [Use private Python packages](#private-packages)
+- [Use a different Python version](#use-a-different-python-version)
+- [Use a different base image](#use-a-different-base-image)
+- [Include data files](#include-data-files)
+- [Disable PEX deploys](#disable-pex-deploys)
+- [Use private Python packages](#use-private-python-packages)
 
-## Add dependencies \{#add-dependencies}
+## Add dependencies
 
 You can add dependencies by including the corresponding Python libraries in your Dagster project's `setup.py` file. These should follow [PEP 508](https://peps.python.org/pep-0508/).
 
@@ -39,9 +39,9 @@ setup(
 )
 ```
 
-To add a package from a private GitHub repository, see: [Use private Python packages](#private-packages)
+To add a package from a private GitHub repository, see [Use private Python packages](#use-private-python-packages)
 
-## Use a different Python version \{#python-version}
+## Use a different Python version
 
 The default Python version for Dagster+ Serverless is Python 3.9. Python versions 3.10 through 3.12 are also supported. You can specify the Python version you want to use in your GitHub or GitLab workflow, or by using the `dagster-cloud` CLI.
 
@@ -70,7 +70,7 @@ dagster-cloud serverless deploy-python-executable --python-version=3.11 --locati
 </TabItem>
 </Tabs>
 
-## Use a different base image \{#base-image}
+## Use a different base image
 
 Dagster+ runs your code on a Docker image that we build as follows:
 
@@ -117,7 +117,7 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
     </TabItem>
     </Tabs>
 
-## Include data files \{#data-files}
+## Include data files
 
 To add data files to your deployment, use the [Data Files Support](https://setuptools.pypa.io/en/latest/userguide/datafiles.html) built into Python's `setup.py`. This requires adding a `package_data` or `include_package_data` keyword in the call to `setup()` in `setup.py`. For example, given this directory structure:
 
@@ -134,7 +134,7 @@ To add data files to your deployment, use the [Data Files Support](https://setup
 If you want to include the data folder, modify your `setup.py` to add the `package_data` line:
 <CodeExample filePath="dagster-plus/deployment/deployment-types/serverless/runtime-environment/data_files_setup.py" language="Python" title="Loading data files in setup.py" />
 
-## Disable PEX deploys \{#disable-pex}
+## Disable PEX deploys
 
 You have the option to disable PEX-based deploys and deploy using a Docker image instead of PEX. You can disable PEX in your GitHub or GitLab workflow, or by using the `dagster-cloud` CLI.
 
@@ -200,7 +200,7 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
 </TabItem>
 </Tabs>
 
-## Use private Python packages \{#private-packages}
+## Use private Python packages
 
 If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the following steps can install a package from a private GitHub repository, e.g. `my-org/private-repo`, as a dependency:
 

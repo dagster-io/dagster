@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 
 import click
 
-from dagster_dg.context import CodeLocationDirectoryContext
+from dagster_dg.context import CodeLocationDirectoryContext, DgContext
 from dagster_dg.utils import (
     camelcase,
     execute_code_location_command,
@@ -150,6 +150,7 @@ def generate_component_instance(
     component_type: str,
     json_params: Optional[str],
     extra_args: Tuple[str, ...],
+    dg_context: "DgContext",
 ) -> None:
     component_instance_root_path = root_path / name
     click.echo(f"Creating a Dagster component instance folder at {component_instance_root_path}.")
@@ -162,4 +163,8 @@ def generate_component_instance(
         *(["--json-params", json_params] if json_params else []),
         *(["--", *extra_args] if extra_args else []),
     )
-    execute_code_location_command(Path(component_instance_root_path), code_location_command)
+    execute_code_location_command(
+        Path(component_instance_root_path),
+        code_location_command,
+        dg_context,
+    )

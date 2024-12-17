@@ -10,6 +10,7 @@ from dagster_components.core.deployment import (
     CodeLocationProjectContext,
     is_inside_code_location_project,
 )
+from dagster_components.utils import CLI_BUILTIN_COMPONENT_LIB_KEY
 
 
 @click.group(name="generate")
@@ -18,8 +19,10 @@ def list_cli():
 
 
 @list_cli.command(name="component-types")
-def list_component_types_command() -> None:
+@click.pass_context
+def list_component_types_command(ctx: click.Context) -> None:
     """List registered Dagster components."""
+    builtin_component_lib = ctx.obj.get(CLI_BUILTIN_COMPONENT_LIB_KEY, False)
     if not is_inside_code_location_project(Path.cwd()):
         click.echo(
             click.style(
@@ -29,7 +32,8 @@ def list_component_types_command() -> None:
         sys.exit(1)
 
     context = CodeLocationProjectContext.from_path(
-        Path.cwd(), ComponentRegistry.from_entry_point_discovery()
+        Path.cwd(),
+        ComponentRegistry.from_entry_point_discovery(builtin_component_lib=builtin_component_lib),
     )
     output: Dict[str, Any] = {}
     for key, component_type in context.list_component_types():

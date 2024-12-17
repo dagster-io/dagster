@@ -5,7 +5,11 @@ from typing import Any, Mapping
 
 import click
 
-from dagster_dg.context import CodeLocationDirectoryContext, is_inside_code_location_directory
+from dagster_dg.context import (
+    CodeLocationDirectoryContext,
+    DgContext,
+    is_inside_code_location_directory,
+)
 
 
 @click.group(name="info")
@@ -22,13 +26,16 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
 @click.option("--description", is_flag=True, default=False)
 @click.option("--generate-params-schema", is_flag=True, default=False)
 @click.option("--component-params-schema", is_flag=True, default=False)
+@click.pass_context
 def info_component_type_command(
+    cli_context: click.Context,
     component_type: str,
     description: bool,
     generate_params_schema: bool,
     component_params_schema: bool,
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
+    dg_context = DgContext.from_cli_context(cli_context)
     if not is_inside_code_location_directory(Path.cwd()):
         click.echo(
             click.style(
@@ -37,7 +44,7 @@ def info_component_type_command(
         )
         sys.exit(1)
 
-    context = CodeLocationDirectoryContext.from_path(Path.cwd())
+    context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
     if not context.has_component_type(component_type):
         click.echo(
             click.style(f"No component type `{component_type}` could be resolved.", fg="red")
@@ -53,7 +60,6 @@ def info_component_type_command(
         )
         sys.exit(1)
 
-    context = CodeLocationDirectoryContext.from_path(Path.cwd())
     component_type_metadata = context.get_component_type(component_type)
 
     if description:
@@ -63,14 +69,15 @@ def info_component_type_command(
             click.echo("No description available.")
     elif generate_params_schema:
         if component_type_metadata.generate_params_schema:
-            click.echo(component_type_metadata.generate_params_schema)
+            click.echo(_serialize_json_schema(component_type_metadata.generate_params_schema))
         else:
             click.echo("No generate params schema defined.")
     elif component_params_schema:
         if component_type_metadata.component_params_schema:
-            click.echo(component_type_metadata.component_params_schema)
+            click.echo(_serialize_json_schema(component_type_metadata.component_params_schema))
         else:
             click.echo("No component params schema defined.")
+
     # print all available metadata
     else:
         click.echo(component_type)

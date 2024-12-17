@@ -1,91 +1,199 @@
 import textwrap
 
-from click.testing import CliRunner
-from dagster_dg.cli.info import info_component_type_command
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
 
-from dagster_dg_tests.cli_tests.test_generate_commands import isolated_example_code_location_bar
+from dagster_dg_tests.utils import (
+    ProxyRunner,
+    assert_runner_result,
+    isolated_example_code_location_bar,
+)
 
 
 def test_info_component_type_all_metadata_success():
-    runner = CliRunner()
-    with isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke(
-            info_component_type_command, ["dagster_components.pipes_subprocess_script_collection"]
+            "info",
+            "component-type",
+            "dagster_components.test.simple_pipes_script_asset",
         )
-        assert result.exit_code == 0
-        assert result.output.startswith(
-            textwrap.dedent("""
-                dagster_components.pipes_subprocess_script_collection
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+            dagster_components.test.simple_pipes_script_asset
 
-                Description:
+            Description:
 
-                Assets that wrap Python scripts
+            A simple asset that runs a Python script with the Pipes subprocess client.
+
+            Because it is a pipes asset, no value is returned.
+
+            Generate params schema:
+
+            {
+                "properties": {
+                    "asset_key": {
+                        "title": "Asset Key",
+                        "type": "string"
+                    },
+                    "filename": {
+                        "title": "Filename",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "asset_key",
+                    "filename"
+                ],
+                "title": "SimplePipesScriptAssetParams",
+                "type": "object"
+            }
+
+            Component params schema:
+
+            {
+                "properties": {
+                    "asset_key": {
+                        "title": "Asset Key",
+                        "type": "string"
+                    },
+                    "filename": {
+                        "title": "Filename",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "asset_key",
+                    "filename"
+                ],
+                "title": "SimplePipesScriptAssetParams",
+                "type": "object"
+            }
+        """).strip()
+        )
+
+
+def test_info_component_type_all_metadata_empty_success():
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
+        result = runner.invoke(
+            "info",
+            "component-type",
+            "dagster_components.test.all_metadata_empty_asset",
+        )
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+            dagster_components.test.all_metadata_empty_asset
         """).strip()
         )
 
 
 def test_info_component_type_flag_fields_success():
-    runner = CliRunner()
-    with isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke(
-            info_component_type_command,
-            ["dagster_components.pipes_subprocess_script_collection", "--description"],
+            "info",
+            "component-type",
+            "dagster_components.test.simple_pipes_script_asset",
+            "--description",
         )
-        assert result.exit_code == 0
-        assert result.output.startswith(
-            textwrap.dedent("""
-                Assets that wrap Python scripts
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+            A simple asset that runs a Python script with the Pipes subprocess client.
+
+            Because it is a pipes asset, no value is returned.
         """).strip()
         )
 
         result = runner.invoke(
-            info_component_type_command,
-            ["dagster_components.pipes_subprocess_script_collection", "--generate-params-schema"],
+            "info",
+            "component-type",
+            "dagster_components.test.simple_pipes_script_asset",
+            "--generate-params-schema",
         )
-        assert result.exit_code == 0
-        assert result.output.startswith(
-            textwrap.dedent("""
-                No generate params schema defined.
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+            {
+                "properties": {
+                    "asset_key": {
+                        "title": "Asset Key",
+                        "type": "string"
+                    },
+                    "filename": {
+                        "title": "Filename",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "asset_key",
+                    "filename"
+                ],
+                "title": "SimplePipesScriptAssetParams",
+                "type": "object"
+            }
         """).strip()
         )
 
         result = runner.invoke(
-            info_component_type_command,
-            ["dagster_components.pipes_subprocess_script_collection", "--component-params-schema"],
+            "info",
+            "component-type",
+            "dagster_components.test.simple_pipes_script_asset",
+            "--component-params-schema",
         )
-        assert result.exit_code == 0
-        assert result.output.startswith(
-            textwrap.dedent("""
-                No component params schema defined.
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+            {
+                "properties": {
+                    "asset_key": {
+                        "title": "Asset Key",
+                        "type": "string"
+                    },
+                    "filename": {
+                        "title": "Filename",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "asset_key",
+                    "filename"
+                ],
+                "title": "SimplePipesScriptAssetParams",
+                "type": "object"
+            }
         """).strip()
         )
 
 
 def test_info_component_type_outside_code_location_fails() -> None:
-    runner = CliRunner()
-    with runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(
-            info_component_type_command, ["dagster_components.pipes_subprocess_script_collection"]
+            "info",
+            "component-type",
+            "dagster_components.test.simple_pipes_script_asset",
+            "--component-params-schema",
         )
-        assert result.exit_code != 0
+        assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster code location directory" in result.output
 
 
 def test_info_component_type_multiple_flags_fails() -> None:
-    runner = CliRunner()
-    with isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke(
-            info_component_type_command,
-            [
-                "dagster_components.pipes_subprocess_script_collection",
-                "--description",
-                "--generate-params-schema",
-            ],
+            "info",
+            "component-type",
+            "dagster_components.test.simple_pipes_script_asset",
+            "--description",
+            "--generate-params-schema",
         )
-        assert result.exit_code != 0
+        assert_runner_result(result, exit_0=False)
         assert (
             "Only one of --description, --generate-params-schema, and --component-params-schema can be specified."
             in result.output

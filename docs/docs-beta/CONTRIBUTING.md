@@ -80,20 +80,27 @@ Before:
 
 ```
 <ReferenceTable>
-  <ReferenceTableItem propertyName="container_context.ecs.env_vars">
-    A list of keys or key-value pairs to include in the task. If a value is not
-    specified, the value will be pulled from the agent task.
-    <br />
-    In the example above, <code>FOO_ENV_VAR</code> will be set to{" "}
-    <code>foo_value</code> and <code>BAR_ENV_VAR</code> will be set to whatever
-    value it has in the agent task.
+  <ReferenceTableItem propertyName="DAGSTER_CLOUD_DEPLOYMENT_NAME">
+    The name of the Dagster+ deployment. For example, <code>prod</code>.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT">
+    If <code>1</code>, the deployment is a{" "}
+    <a href="/dagster-plus/managing-deployments/branch-deployments">
+      branch deployment
+    </a>
+    . Refer to the <a href="#reserved-branch-deployment-variables">
+      Branch Deployment variables section
+    </a> for a list of variables available in branch deployments.
   </ReferenceTableItem>
 </ReferenceTable>
 ```
 
 After:
 
-_There is not a replacement at this point in time..._
+| Key | Value |
+|---|---|
+| `DAGSTER_CLOUD_DEPLOYMENT_NAME` | The name of the Dagster+ deployment. <br/><br/>  **Example:** `prod`. |
+| `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` | `1` if the deployment is a [branch deployment](/dagster-plus/features/ci-cd/branch-deployments/index.md). |
 
 ### Whitespace via `{" "}`
 
