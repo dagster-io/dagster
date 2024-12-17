@@ -15,8 +15,6 @@ To follow the steps in this guide, you'll need:
 - An understanding of [Dagster+ deployment settings](/dagster-plus/deployment/management/settings/deployment-settings)
 </details>
 
----
-
 ## Differences between isolated and non-isolated runs
 
 - [**Isolated runs**](#isolated-runs-default) execute in their own container. They're the default and are intended for production and compute-heavy use cases.
