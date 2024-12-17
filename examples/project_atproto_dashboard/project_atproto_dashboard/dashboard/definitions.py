@@ -27,7 +27,7 @@ def _construct_semantic_model_url(model_id: str) -> str:
     return f"https://app.powerbi.com/groups/{workspace_id}/datasets/{model_id}/details"
 
 
-class MyCustomPowerBITranslator(DagsterPowerBITranslator):
+class CustomDagsterPowerBITranslator(DagsterPowerBITranslator):
     def get_report_spec(self, data: PowerBIContentData) -> dg.AssetSpec:
         return (
             super()
@@ -54,7 +54,8 @@ class MyCustomPowerBITranslator(DagsterPowerBITranslator):
 
 
 power_bi_specs = load_powerbi_asset_specs(
-    power_bi_workspace, dagster_powerbi_translator=MyCustomPowerBITranslator
+    power_bi_workspace,
+    dagster_powerbi_translator=CustomDagsterPowerBITranslator,
 )
 
 defs = dg.Definitions(assets=[*power_bi_specs], resources={"power_bi": power_bi_workspace})
