@@ -634,7 +634,7 @@ def test_simple_backfill(
     assert three.tags[PARTITION_NAME_TAG] == "three"
 
 
-@pytest.mark.parametrize("parallel", [False])
+@pytest.mark.parametrize("parallel", [True, False])
 def test_two_backfills_at_the_same_time(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
@@ -692,16 +692,11 @@ def test_two_backfills_at_the_same_time(
 
     assert instance.get_runs_count() == 6
 
-    *runs, one, two, three = reversed(list(instance.get_runs()))
-    assert one.tags[BACKFILL_ID_TAG] == "simple"
-    assert one.tags[PARTITION_NAME_TAG] == "one"
-    assert two.tags[BACKFILL_ID_TAG] == "simple"
-    assert two.tags[PARTITION_NAME_TAG] == "two"
-    assert three.tags[BACKFILL_ID_TAG] == "simple"
-    assert three.tags[PARTITION_NAME_TAG] == "three"
-    for idx, run in enumerate(runs):
-        assert run.tags[BACKFILL_ID_TAG] == "partition_schedule_from_job"
-        assert run.tags[PARTITION_NAME_TAG] == second_partition_keys[idx]
+    runs = list(instance.get_runs())
+    backfill_ids = sorted(run.tags[BACKFILL_ID_TAG] for run in runs)
+    partition_names = {run.tags[PARTITION_NAME_TAG] for run in runs}
+    assert backfill_ids == ["partition_schedule_from_job"] * 3 + ["simple"] * 3
+    assert partition_names == {"one", "two", "three", *second_partition_keys[:3]}
 
 
 def test_canceled_backfill(
