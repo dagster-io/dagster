@@ -14,8 +14,9 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.module_loaders.utils import (
-    KeyScopedAssetObjects,
-    LoadableAssetTypes,
+    LoadableDagsterObject,
+    RuntimeAssetObjectTypes,
+    RuntimeKeyScopedAssetObjectTypes,
     find_objects_in_module_of_types,
     key_iterator,
     replace_keys_in_asset,
@@ -25,16 +26,16 @@ from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
-class LoadedAssetsList:
+class ModuleScopedDagsterObjects:
     def __init__(
         self,
-        assets_per_module: Mapping[str, Sequence[LoadableAssetTypes]],
+        objects_per_module: Mapping[str, Sequence[LoadableDagsterObject]],
     ):
-        self.assets_per_module = assets_per_module
+        self.objects_per_module = objects_per_module
         self._do_collision_detection()
 
     @classmethod
-    def from_modules(cls, modules: Iterable[ModuleType]) -> "LoadedAssetsList":
+    def from_modules(cls, modules: Iterable[ModuleType]) -> "ModuleScopedDagsterObjects":
         return cls(
             {
                 module.__name__: list(
@@ -48,17 +49,17 @@ class LoadedAssetsList:
         )
 
     @cached_property
-    def flat_object_list(self) -> Sequence[LoadableAssetTypes]:
+    def flat_object_list(self) -> Sequence[LoadableDagsterObject]:
         return [
-            asset_object for objects in self.assets_per_module.values() for asset_object in objects
+            asset_object for objects in self.objects_per_module.values() for asset_object in objects
         ]
 
     @cached_property
-    def objects_by_id(self) -> Dict[int, LoadableAssetTypes]:
+    def objects_by_id(self) -> Dict[int, LoadableDagsterObject]:
         return {id(asset_object): asset_object for asset_object in self.flat_object_list}
 
     @cached_property
-    def deduped_objects(self) -> Sequence[LoadableAssetTypes]:
+    def deduped_objects(self) -> Sequence[LoadableDagsterObject]:
         return list(self.objects_by_id.values())
 
     @cached_property
@@ -73,22 +74,24 @@ class LoadedAssetsList:
     def module_name_by_id(self) -> Dict[int, str]:
         return {
             id(asset_object): module_name
-            for module_name, objects in self.assets_per_module.items()
+            for module_name, objects in self.objects_per_module.items()
             for asset_object in objects
         }
 
     @cached_property
-    def objects_by_key(self) -> Mapping[AssetKey, Sequence[Union[SourceAsset, AssetsDefinition]]]:
+    def asset_objects_by_key(
+        self,
+    ) -> Mapping[AssetKey, Sequence[Union[SourceAsset, AssetSpec, AssetsDefinition]]]:
         objects_by_key = defaultdict(list)
         for asset_object in self.flat_object_list:
-            if not isinstance(asset_object, KeyScopedAssetObjects):
+            if not isinstance(asset_object, RuntimeKeyScopedAssetObjectTypes):
                 continue
             for key in key_iterator(asset_object):
                 objects_by_key[key].append(asset_object)
         return objects_by_key
 
     def _do_collision_detection(self) -> None:
-        for key, asset_objects in self.objects_by_key.items():
+        for key, asset_objects in self.asset_objects_by_key.items():
             # If there is more than one asset_object in the list for a given key, and the objects do not refer to the same asset_object in memory, we have a collision.
             num_distinct_objects_for_key = len(
                 set(id(asset_object) for asset_object in asset_objects)
@@ -101,14 +104,14 @@ class LoadedAssetsList:
                     f"Asset key {key.to_user_string()} is defined multiple times. Definitions found in modules: {asset_objects_str}."
                 )
 
-    def to_post_load(self) -> "ResolvedAssetObjectList":
-        return ResolvedAssetObjectList(self.deduped_objects)
+    def get_object_list(self) -> "DagsterObjectsList":
+        return DagsterObjectsList(self.deduped_objects)
 
 
-class ResolvedAssetObjectList:
+class DagsterObjectsList:
     def __init__(
         self,
-        loaded_objects: Sequence[LoadableAssetTypes],
+        loaded_objects: Sequence[LoadableDagsterObject],
     ):
         self.loaded_objects = loaded_objects
 
@@ -149,13 +152,15 @@ class ResolvedAssetObjectList:
         ]
 
     def get_objects(
-        self, filter_fn: Callable[[LoadableAssetTypes], bool]
-    ) -> Sequence[LoadableAssetTypes]:
-        return [asset for asset in self.loaded_objects if filter_fn(asset)]
+        self, filter_fn: Callable[[LoadableDagsterObject], bool]
+    ) -> Sequence[LoadableDagsterObject]:
+        return [
+            dagster_object for dagster_object in self.loaded_objects if filter_fn(dagster_object)
+        ]
 
     def assets_with_loadable_prefix(
         self, key_prefix: CoercibleToAssetKeyPrefix
-    ) -> "ResolvedAssetObjectList":
+    ) -> "DagsterObjectsList":
         # There is a tricky edge case here where if a non-cacheable asset depends on a cacheable asset,
         # and the assets are prefixed, the non-cacheable asset's dependency will not be prefixed since
         # at prefix-time it is not known that its dependency is one of the cacheable assets.
@@ -174,34 +179,40 @@ class ResolvedAssetObjectList:
         check_key_replacements = {
             check_key: check_key.with_asset_key_prefix(key_prefix) for check_key in all_check_keys
         }
-        for asset_object in self.loaded_objects:
-            if isinstance(asset_object, CacheableAssetsDefinition):
-                result_list.append(asset_object.with_prefix_for_all(key_prefix))
-            elif isinstance(asset_object, AssetsDefinition):
+        for dagster_object in self.loaded_objects:
+            if not isinstance(dagster_object, RuntimeAssetObjectTypes):
+                result_list.append(dagster_object)
+            if isinstance(dagster_object, CacheableAssetsDefinition):
+                result_list.append(dagster_object.with_prefix_for_all(key_prefix))
+            elif isinstance(dagster_object, AssetsDefinition):
                 result_list.append(
-                    replace_keys_in_asset(asset_object, key_replacements, check_key_replacements)
+                    replace_keys_in_asset(dagster_object, key_replacements, check_key_replacements)
                 )
             else:
                 # We don't replace the key for SourceAssets.
-                result_list.append(asset_object)
-        return ResolvedAssetObjectList(result_list)
+                result_list.append(dagster_object)
+        return DagsterObjectsList(result_list)
 
     def assets_with_source_prefix(
         self, key_prefix: CoercibleToAssetKeyPrefix
-    ) -> "ResolvedAssetObjectList":
+    ) -> "DagsterObjectsList":
         result_list = []
         key_replacements = {
             source_asset.key: source_asset.key.with_prefix(key_prefix)
             for source_asset in self.source_assets
         }
-        for asset_object in self.loaded_objects:
-            if isinstance(asset_object, KeyScopedAssetObjects):
+        for dagster_object in self.loaded_objects:
+            if not isinstance(dagster_object, RuntimeAssetObjectTypes):
+                result_list.append(dagster_object)
+            if isinstance(dagster_object, RuntimeKeyScopedAssetObjectTypes):
                 result_list.append(
-                    replace_keys_in_asset(asset_object, key_replacements, check_key_replacements={})
+                    replace_keys_in_asset(
+                        dagster_object, key_replacements, check_key_replacements={}
+                    )
                 )
             else:
-                result_list.append(asset_object)
-        return ResolvedAssetObjectList(result_list)
+                result_list.append(dagster_object)
+        return DagsterObjectsList(result_list)
 
     def with_attributes(
         self,
@@ -211,15 +222,15 @@ class ResolvedAssetObjectList:
         freshness_policy: Optional[FreshnessPolicy],
         automation_condition: Optional[AutomationCondition],
         backfill_policy: Optional[BackfillPolicy],
-    ) -> "ResolvedAssetObjectList":
-        assets_list = self.assets_with_loadable_prefix(key_prefix) if key_prefix else self
-        assets_list = (
-            assets_list.assets_with_source_prefix(source_key_prefix)
+    ) -> "DagsterObjectsList":
+        dagster_object_list = self.assets_with_loadable_prefix(key_prefix) if key_prefix else self
+        dagster_object_list = (
+            dagster_object_list.assets_with_source_prefix(source_key_prefix)
             if source_key_prefix
-            else assets_list
+            else dagster_object_list
         )
         return_list = []
-        for asset in assets_list.loaded_objects:
+        for asset in dagster_object_list.loaded_objects:
             if isinstance(asset, AssetsDefinition):
                 new_asset = asset.map_asset_specs(
                     _spec_mapper_disallow_group_override(group_name, automation_condition)
@@ -250,7 +261,7 @@ class ResolvedAssetObjectList:
                         backfill_policy=backfill_policy,
                     )
                 )
-        return ResolvedAssetObjectList(return_list)
+        return DagsterObjectsList(return_list)
 
 
 def _spec_mapper_disallow_group_override(

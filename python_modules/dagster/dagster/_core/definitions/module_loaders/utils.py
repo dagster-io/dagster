@@ -9,8 +9,11 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 
-LoadableAssetTypes = Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]
-KeyScopedAssetObjects = (AssetsDefinition, AssetSpec, SourceAsset)
+LoadableAssetObject = Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]
+LoadableDagsterObject = LoadableAssetObject  # For now
+RuntimeKeyScopedAssetObjectTypes = (AssetsDefinition, AssetSpec, SourceAsset)
+RuntimeAssetObjectTypes = (AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition)
+RuntimeDagsterObjectTypes = RuntimeAssetObjectTypes  # For now
 
 
 def find_objects_in_module_of_types(
