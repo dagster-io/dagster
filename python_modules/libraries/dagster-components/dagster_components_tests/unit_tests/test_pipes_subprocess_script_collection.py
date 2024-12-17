@@ -25,34 +25,32 @@ def test_python_native() -> None:
 
 
 def test_python_params() -> None:
-    component = PipesSubprocessScriptCollection.from_decl_node(
-        load_context=script_load_context(),
-        decl_node=YamlComponentDecl(
-            path=LOCATION_PATH / "components" / "scripts",
-            component_file_model=ComponentFileModel(
-                type="pipes_subprocess_script_collection",
-                params={
-                    "scripts": [
-                        {
-                            "path": "script_one.py",
-                            "assets": [
-                                {"key": "a", "automation_condition": {"type": "eager"}},
-                                {
-                                    "key": "b",
-                                    "automation_condition": {
-                                        "type": "on_cron",
-                                        "params": {"cron_schedule": "@daily"},
-                                    },
-                                    "deps": ["up1", "up2"],
+    component_decl = YamlComponentDecl(
+        path=LOCATION_PATH / "components" / "scripts",
+        component_file_model=ComponentFileModel(
+            type="pipes_subprocess_script_collection",
+            params={
+                "scripts": [
+                    {
+                        "path": "script_one.py",
+                        "assets": [
+                            {"key": "a", "automation_condition": {"type": "eager"}},
+                            {
+                                "key": "b",
+                                "automation_condition": {
+                                    "type": "on_cron",
+                                    "params": {"cron_schedule": "@daily"},
                                 },
-                            ],
-                        },
-                        {"path": "subdir/script_three.py", "assets": [{"key": "key_override"}]},
-                    ]
-                },
-            ),
+                                "deps": ["up1", "up2"],
+                            },
+                        ],
+                    },
+                    {"path": "subdir/script_three.py", "assets": [{"key": "key_override"}]},
+                ]
+            },
         ),
     )
+    component = PipesSubprocessScriptCollection.load(context=script_load_context(component_decl))
     assert get_asset_keys(component) == {
         AssetKey("a"),
         AssetKey("b"),

@@ -11,12 +11,11 @@ from dagster._utils import pushd
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
 from dbt.cli.main import dbtRunner
 from jinja2 import Template
-from pydantic import BaseModel, Field, TypeAdapter
+from pydantic import BaseModel, Field
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import ComponentGenerateRequest, component
-from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
 from dagster_components.core.dsl_schema import AssetSpecProcessorModel, OpSpecBaseModel
 from dagster_components.generate import generate_component_yaml
 
@@ -86,14 +85,10 @@ class DbtProjectComponent(Component):
         self.asset_transforms = asset_transforms
 
     @classmethod
-    def from_decl_node(cls, context: ComponentLoadContext, decl_node: ComponentDeclNode) -> Self:
-        assert isinstance(decl_node, YamlComponentDecl)
-
+    def load(cls, context: ComponentLoadContext) -> Self:
         # all paths should be resolved relative to the directory we're in
-        with pushd(str(decl_node.path)):
-            loaded_params = TypeAdapter(cls.params_schema).validate_python(
-                decl_node.component_file_model.params
-            )
+        with pushd(str(context.path)):
+            loaded_params = context.load_params(cls.params_schema)
         return cls(
             dbt_resource=loaded_params.dbt,
             op_spec=loaded_params.op,
