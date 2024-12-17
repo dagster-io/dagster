@@ -22,6 +22,7 @@ DATAPROC_BASE_URI = f"https://dataproc.googleapis.com/v1/projects/{PROJECT_ID}/r
 DATAPROC_CLUSTERS_URI = f"{DATAPROC_BASE_URI}/clusters"
 DATAPROC_JOBS_URI = f"{DATAPROC_BASE_URI}/jobs"
 DATAPROC_SCHEMA_URI = "https://www.googleapis.com/discovery/v1/apis/dataproc/v1/rest"
+DATAPROC_LABELS = {"first_label": "true", "second_label": "true"}
 
 EXPECTED_RESULTS = [
     # OAuth authorize credentials
@@ -223,6 +224,59 @@ def test_pydantic_dataproc_resource():
                     project_id=PROJECT_ID,
                     cluster_name=CLUSTER_NAME,
                     region=REGION,
+                    cluster_config_dict={
+                        "softwareConfig": {
+                            "properties": {
+                                # Create a single-node cluster
+                                # This needs to be the string "true" when
+                                # serialized, not a boolean true
+                                "dataproc:dataproc.allow.zero.workers": "true"
+                            }
+                        }
+                    },
+                )
+            },
+        )
+        assert result.success
+
+
+@pytest.mark.integration
+def test_dataproc_resource_labels():
+    """Tests pydantic dataproc cluster creation/deletion. Requests are captured by the responses library, so
+    no actual HTTP requests are made here.
+
+    Note that inspecting the HTTP requests can be useful for debugging, which can be done by adding:
+
+    import httplib2
+    httplib2.debuglevel = 4
+    """
+    with mock.patch("httplib2.Http", new=HttpSnooper):
+
+        @job
+        def test_dataproc():
+            configurable_dataproc_op()
+
+        result = test_dataproc.execute_in_process(
+            run_config=RunConfig(
+                ops={
+                    "configurable_dataproc_op": DataprocOpConfig(
+                        job_scoped_cluster=True,
+                        project_id=PROJECT_ID,
+                        region=REGION,
+                        job_config={
+                            "reference": {"projectId": PROJECT_ID},
+                            "placement": {"clusterName": CLUSTER_NAME},
+                            "hiveJob": {"queryList": {"queries": ["SHOW DATABASES"]}},
+                        },
+                    )
+                },
+            ),
+            resources={
+                "dataproc": DataprocResource(
+                    project_id=PROJECT_ID,
+                    cluster_name=CLUSTER_NAME,
+                    region=REGION,
+                    labels=DATAPROC_LABELS,
                     cluster_config_dict={
                         "softwareConfig": {
                             "properties": {
