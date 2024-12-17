@@ -11,6 +11,7 @@ dependencies = [
     "dagster-cloud",
     "dagster-dbt",
     "dagster-duckdb",
+    "dagster-powerbi"
     "dbt-duckdb",
     "tenacity",
 ]

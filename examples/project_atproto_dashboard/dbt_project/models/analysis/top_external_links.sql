@@ -6,6 +6,7 @@ WITH distinct_posts AS (
         quotes,
         replies,
         created_at,
+        image_url,
         embed,
         external_embed_link,
         external_embed_thumbnail,

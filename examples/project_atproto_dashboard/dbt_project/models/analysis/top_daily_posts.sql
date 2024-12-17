@@ -5,6 +5,10 @@ WITH distinct_posts AS (
         likes,
         quotes,
         replies,
+        image_url,
+        external_embed_link,
+        external_embed_thumbnail,
+        external_embed_description,
         created_at
     FROM {{ ref("latest_feed") }}
 ),
@@ -29,6 +33,10 @@ final AS (
         likes,
         quotes,
         replies,
+        image_url,
+        external_embed_link,
+        external_embed_thumbnail,
+        external_embed_description,
         round(engagement_score, 2) AS engagement_score,
         daily_rank
     FROM scored_posts
