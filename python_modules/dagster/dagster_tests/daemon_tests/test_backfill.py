@@ -1085,14 +1085,17 @@ def test_backfill_is_processed_only_once(
     assert instance.get_runs_count() == 0
     future = backfill_daemon_futures[backfill_id]
 
-    list(
-        execute_backfill_iteration(
-            workspace_context,
-            get_default_daemon_logger("BackfillDaemon"),
-            threadpool_executor=threadpool_executor,
-            backfill_futures=backfill_daemon_futures,
+    with mock.patch.object(
+        threadpool_executor, "submit", side_effect=AssertionError("Should not be called")
+    ):
+        list(
+            execute_backfill_iteration(
+                workspace_context,
+                get_default_daemon_logger("BackfillDaemon"),
+                threadpool_executor=threadpool_executor,
+                backfill_futures=backfill_daemon_futures,
+            )
         )
-    )
 
     assert instance.get_runs_count() == 0
     assert backfill_daemon_futures[backfill_id] is future
