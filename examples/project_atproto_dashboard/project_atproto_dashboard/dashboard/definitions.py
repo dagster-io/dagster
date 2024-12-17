@@ -17,16 +17,6 @@ power_bi_workspace = PowerBIWorkspace(
 )
 
 
-def _construct_report_url(report_id: str) -> str:
-    workspace_id = dg.EnvVar("AZURE_POWERBI_WORKSPACE_ID").get_value()
-    return f"https://app.powerbi.com/groups/{workspace_id}/reports/{report_id}"
-
-
-def _construct_semantic_model_url(model_id: str) -> str:
-    workspace_id = dg.EnvVar("AZURE_POWERBI_WORKSPACE_ID").get_value()
-    return f"https://app.powerbi.com/groups/{workspace_id}/datasets/{model_id}/details"
-
-
 class CustomDagsterPowerBITranslator(DagsterPowerBITranslator):
     def get_report_spec(self, data: PowerBIContentData) -> dg.AssetSpec:
         return (
@@ -34,7 +24,6 @@ class CustomDagsterPowerBITranslator(DagsterPowerBITranslator):
             .get_report_spec(data)
             .replace_attributes(
                 group_name="reporting",
-                description=f"Report URL: {_construct_report_url(data.properties['id'])}",
             )
         )
 
@@ -47,7 +36,6 @@ class CustomDagsterPowerBITranslator(DagsterPowerBITranslator):
             .get_semantic_model_spec(data)
             .replace_attributes(
                 group_name="reporting",
-                description=f"Semantic model URL: {_construct_semantic_model_url(data.properties['id'])}",
                 deps=upsteam_table_deps,
             )
         )
