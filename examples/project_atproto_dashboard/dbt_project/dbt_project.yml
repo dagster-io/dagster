@@ -1,0 +1,13 @@
+name: "dbt_project"
+version: "1.0.0"
+config-version: 2
+
+profile: "bluesky"
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  +materialized: table

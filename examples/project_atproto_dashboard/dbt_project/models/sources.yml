@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: r2_bucket
+    tables:
+      - name: actor_feed_snapshot
+        description: "external r2 bucket with json files of actor feeds"
+        meta:
+          external_location: "read_ndjson_objects('r2://dagster-demo/atproto_actor_feed_snapshot/**/*.json', filename=true)"
+      - name: starter_pack_snapshot
+        description: "external r2 bucket with json files for feed snapshots"
+        meta:
+          external_location: "read_ndjson_objects('r2://dagster-demo/atproto_starter_pack_snapshot/**/*.json', filename=true)"
+
