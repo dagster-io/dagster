@@ -761,10 +761,11 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
         else datetime.datetime.fromtimestamp(new_now, datetime.timezone.utc)
     )
 
-    with unittest.mock.patch(
-        "dagster._time._mockable_get_current_datetime", return_value=new_dt
-    ), unittest.mock.patch(
-        "dagster._time._mockable_get_current_timestamp", return_value=new_dt.timestamp()
+    with (
+        unittest.mock.patch("dagster._time._mockable_get_current_datetime", return_value=new_dt),
+        unittest.mock.patch(
+            "dagster._time._mockable_get_current_timestamp", return_value=new_dt.timestamp()
+        ),
     ):
         yield
 

@@ -12,6 +12,14 @@ description: "dagster-airlift is a toolkit for observing and migrating Airflow D
 - [Dealing with changing Airflow](#dealing-with-changing-airflow)
 - [Automating changes to code locations](#automating-changes-to-code-locations)
 
+### Migration best practices
+
+When migrating Airflow DAGs to Dagster, we recommend a few best practices:
+
+- **Create separate packages for the Airflow and Dagster deployments.** Airflow has complex dependencies and can be difficult to install in the same environment as Dagster.
+- **Create user acceptance tests in Dagster before migrating.** This will help you catch issues easily during migration.
+- **Understand the rollback procedure for your migration.** When proxying execution to Dagster from Airflow, you can always rollback with a single line-of-code change in the Airflow DAG.
+
 ### Supporting custom authorization
 
 If your Dagster deployment lives behind a custom auth backend, you can customize the Airflow-to-Dagster proxying behavior to authenticate to your backend. `proxying_to_dagster` can take a parameter `dagster_operator_klass`, which allows you to define a custom `BaseProxyTasktoDagsterOperator` class. This allows you to override how a session is created. Let's say for example, your Dagster installation requires an access key to be set whenever a request is made, and that access key is set in an Airflow `Variable` called `my_api_key`. We can create a custom `BaseProxyTasktoDagsterOperator` subclass which will retrieve that variable value and set it on the session, so that any requests to Dagster's graphql API will be made using that api key.

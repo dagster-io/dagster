@@ -53,7 +53,7 @@ const Container = styled.div`
   .bp5-popover-target {
     max-width: 100%;
 
-    :focus {
+    &:focus {
       outline: none;
     }
   }

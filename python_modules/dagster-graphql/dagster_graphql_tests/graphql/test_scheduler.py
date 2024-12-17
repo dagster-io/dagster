@@ -417,7 +417,10 @@ def test_jobless_asset_selection(graphql_context):
 
     assert result.data
     assert result.data["scheduleOrError"]["__typename"] == "Schedule"
-    assert result.data["scheduleOrError"]["assetSelection"]["assetSelectionString"] == "asset_one"
+    assert (
+        result.data["scheduleOrError"]["assetSelection"]["assetSelectionString"]
+        == 'key:"asset_one"'
+    )
     assert result.data["scheduleOrError"]["assetSelection"]["assetKeys"] == [
         {"path": ["asset_one"]}
     ]
@@ -871,7 +874,7 @@ def test_repository_batching(graphql_context):
     assert "repositoryOrError" in result.data
     assert "schedules" in result.data["repositoryOrError"]
     counter = traced_counter.get()
-    counts = counter.counts()
+    counts = counter.counts()  # pyright: ignore[reportOptionalMemberAccess]
     assert counts
     assert len(counts) == 3
 

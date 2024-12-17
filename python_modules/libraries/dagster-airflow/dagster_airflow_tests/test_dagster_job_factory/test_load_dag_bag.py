@@ -155,7 +155,7 @@ def test_retry_conversion():
         dag_bag = DagBag(dag_folder=tmpdir_path)
         retry_dag = dag_bag.get_dag(dag_id="retry_dag")
 
-        job = make_dagster_job_from_airflow_dag(dag=retry_dag)
+        job = make_dagster_job_from_airflow_dag(dag=retry_dag)  # pyright: ignore[reportArgumentType]
         result = job.execute_in_process()
         assert result.success
         for event in result.all_events:

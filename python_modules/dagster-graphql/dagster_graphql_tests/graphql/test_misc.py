@@ -139,8 +139,8 @@ def define_circular_dependency_job():
             node_defs=[
                 OpDefinition(
                     name="csolid",
-                    ins={"num": In("num", PoorMansDataFrame)},
-                    outs={"result": OutputDefinition(PoorMansDataFrame)},
+                    ins={"num": In("num", PoorMansDataFrame)},  # pyright: ignore[reportArgumentType]
+                    outs={"result": OutputDefinition(PoorMansDataFrame)},  # pyright: ignore[reportArgumentType]
                     compute_fn=lambda *_args: None,
                 )
             ],
@@ -149,7 +149,7 @@ def define_circular_dependency_job():
     )
 
 
-@repository
+@repository  # pyright: ignore[reportArgumentType]
 def test_repository():
     return {"jobs": {"circular_dependency_job": define_circular_dependency_job}}
 

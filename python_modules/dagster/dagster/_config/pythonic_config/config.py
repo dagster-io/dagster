@@ -312,7 +312,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         This is useful when interacting with legacy code that expects a dictionary of fields but you
         want the source of truth to be a config class.
         """
-        return cast(Shape, cls.to_config_schema().as_field().config_type).fields
+        return cast(Shape, cls.to_config_schema().as_field().config_type).fields  # pyright: ignore[reportReturnType]
 
 
 def _discriminated_union_config_dict_to_selector_config_dict(

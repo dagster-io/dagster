@@ -23,6 +23,7 @@ import {AssetGraphViewType} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext/util';
@@ -36,6 +37,7 @@ export const PipelineExplorerSnapshotRoot = () => {
   const {pipelineName, snapshotId} = explorerPath;
   const history = useHistory();
 
+  const openInNewTab = useOpenInNewTab();
   useDocumentTitle(`Snapshot: ${pipelineName}${snapshotId ? `@${snapshotId.slice(0, 8)}` : ''}`);
 
   return (
@@ -47,7 +49,7 @@ export const PipelineExplorerSnapshotRoot = () => {
       onNavigateToSourceAssetNode={(e, {assetKey}) => {
         const path = assetDetailsPathForKey(assetKey);
         if (e.metaKey) {
-          window.open(path, '_blank');
+          openInNewTab(path);
         } else {
           history.push(assetDetailsPathForKey(assetKey));
         }

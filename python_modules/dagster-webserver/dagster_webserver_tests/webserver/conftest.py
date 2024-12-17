@@ -16,7 +16,7 @@ def test_client(instance):
         instance=instance,
         version=__version__,
         read_only=False,
-        kwargs={"empty_workspace": True},
+        kwargs={"empty_workspace": True},  # pyright: ignore[reportArgumentType]
     )
     app = DagsterWebserver(process_context).create_asgi_app(debug=True)
     return TestClient(app)

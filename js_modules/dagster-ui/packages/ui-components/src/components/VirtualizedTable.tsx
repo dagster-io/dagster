@@ -25,11 +25,11 @@ export const RowCell = ({children}: {children?: React.ReactNode}) => (
 );
 
 const CellBox = styled(Box)`
-  :first-child {
+  &:first-child {
     padding-left: 24px;
   }
 
-  :last-child {
+  &:last-child {
     padding-right: 24px;
   }
 `;

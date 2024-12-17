@@ -12,7 +12,7 @@ from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_backfill_id
 from dagster._time import get_current_timestamp
 from dagster_graphql.implementation.fetch_runs import RunsFeedCursor
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, main_repo_location_name
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -951,7 +951,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
     def test_get_runs_feed_filter_job_name(self, graphql_context):
         if not self.supports_filtering():
             return pytest.skip("storage does not support filtering backfills by job_name")
-        code_location = graphql_context.get_code_location("test")
+        code_location = graphql_context.get_code_location(main_repo_location_name())
         repository = code_location.get_repository("test_repo")
 
         partition_set_origin = RemotePartitionSetOrigin(

@@ -4,10 +4,36 @@ from typing import Any, Dict, Iterable, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._core.definitions import ExpectationResult
-from dagster._core.events import MARKER_EVENTS, DagsterEventType, StepExpectationResultData
+from dagster._core.events import (
+    MARKER_EVENTS,
+    PIPELINE_EVENTS,
+    DagsterEventType,
+    StepExpectationResultData,
+)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._serdes import whitelist_for_serdes
+
+RUN_STATS_EVENT_TYPES = {
+    *PIPELINE_EVENTS,
+    DagsterEventType.STEP_FAILURE,
+    DagsterEventType.STEP_SUCCESS,
+    DagsterEventType.ASSET_MATERIALIZATION,
+    DagsterEventType.STEP_EXPECTATION_RESULT,
+}
+
+STEP_STATS_EVENT_TYPES = {
+    DagsterEventType.STEP_START,
+    DagsterEventType.STEP_FAILURE,
+    DagsterEventType.STEP_RESTARTED,
+    DagsterEventType.STEP_SUCCESS,
+    DagsterEventType.STEP_SKIPPED,
+    DagsterEventType.ASSET_MATERIALIZATION,
+    DagsterEventType.STEP_EXPECTATION_RESULT,
+    DagsterEventType.STEP_UP_FOR_RETRY,
+    DagsterEventType.STEP_RESTARTED,
+    *MARKER_EVENTS,
+}
 
 
 def build_run_stats_from_events(
@@ -91,6 +117,9 @@ def build_run_step_stats_from_events(
 
         step_key = dagster_event.step_key
         if not step_key:
+            continue
+
+        if dagster_event.event_type not in STEP_STATS_EVENT_TYPES:
             continue
 
         if dagster_event.event_type == DagsterEventType.STEP_START:

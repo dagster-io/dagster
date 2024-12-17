@@ -463,7 +463,7 @@ class SensorEvaluationContext:
         return self._log_key
 
 
-RawSensorEvaluationFunctionReturn = Union[
+SensorReturnTypesUnion: TypeAlias = Union[
     Iterator[Union[SkipReason, RunRequest, DagsterRunReaction, SensorResult]],
     Sequence[RunRequest],
     SkipReason,
@@ -472,7 +472,7 @@ RawSensorEvaluationFunctionReturn = Union[
     SensorResult,
     None,
 ]
-RawSensorEvaluationFunction: TypeAlias = Callable[..., RawSensorEvaluationFunctionReturn]
+RawSensorEvaluationFunction: TypeAlias = Callable[..., SensorReturnTypesUnion]
 
 SensorEvaluationFunction: TypeAlias = Callable[
     ..., Sequence[Union[None, SensorResult, SkipReason, RunRequest]]
@@ -787,7 +787,7 @@ class SensorDefinition(IHasInternalInit):
             target=target,
         )
 
-    def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
+    def __call__(self, *args, **kwargs) -> SensorReturnTypesUnion:
         context_param_name_if_present = get_context_param_name(self._raw_fn)
         context = get_or_create_sensor_context(self._raw_fn, *args, **kwargs)
 

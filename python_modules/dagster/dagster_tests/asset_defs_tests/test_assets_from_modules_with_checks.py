@@ -20,13 +20,13 @@ def test_load():
     assets = load_assets_from_current_module()
 
     assert len(assets) == 1
-    assert assets[0].key == AssetKey(["my_asset"])
-    assert len(assets[0].check_specs) == 1
-    assert next(iter(assets[0].check_specs)).asset_key == AssetKey(["my_asset"])
+    assert assets[0].key == AssetKey(["my_asset"])  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(assets[0].check_specs) == 1  # pyright: ignore[reportArgumentType,reportAttributeAccessIssue]
+    assert next(iter(assets[0].check_specs)).asset_key == AssetKey(["my_asset"])  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_materialize():
-    result = materialize(load_assets_from_current_module())
+    result = materialize(load_assets_from_current_module())  # pyright: ignore[reportArgumentType]
 
     assert len(result.get_asset_materialization_events()) == 1
     assert result.get_asset_materialization_events()[0].asset_key == AssetKey(["my_asset"])
@@ -38,13 +38,13 @@ def test_prefix_load():
     assets = load_assets_from_current_module(key_prefix="foo")
 
     assert len(assets) == 1
-    assert assets[0].key == AssetKey(["foo", "my_asset"])
-    assert len(assets[0].check_specs) == 1
-    assert next(iter(assets[0].check_specs)).asset_key == AssetKey(["foo", "my_asset"])
+    assert assets[0].key == AssetKey(["foo", "my_asset"])  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(assets[0].check_specs) == 1  # pyright: ignore[reportArgumentType,reportAttributeAccessIssue]
+    assert next(iter(assets[0].check_specs)).asset_key == AssetKey(["foo", "my_asset"])  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_prefix_materialize():
-    result = materialize(load_assets_from_current_module(key_prefix="foo"))
+    result = materialize(load_assets_from_current_module(key_prefix="foo"))  # pyright: ignore[reportArgumentType]
 
     assert len(result.get_asset_materialization_events()) == 1
     assert result.get_asset_materialization_events()[0].asset_key == AssetKey(["foo", "my_asset"])

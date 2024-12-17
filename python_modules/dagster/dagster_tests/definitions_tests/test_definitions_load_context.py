@@ -119,7 +119,7 @@ def test_invalid_reconstruction_metadata():
     with pytest.raises(
         DagsterInvariantViolationError, match=r"Reconstruction metadata values must be strings"
     ):
-        Definitions().with_reconstruction_metadata({"foo": {"not": "a string"}})
+        Definitions().with_reconstruction_metadata({"foo": {"not": "a string"}})  # pyright: ignore[reportArgumentType]
 
 
 def test_default_global_context():

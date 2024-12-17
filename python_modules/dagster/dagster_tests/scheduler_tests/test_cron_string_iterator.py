@@ -6,6 +6,7 @@ from dagster._time import create_datetime, get_timezone
 from dagster._utils.schedules import (
     _croniter_string_iterator,
     cron_string_iterator,
+    is_valid_cron_string,
     reverse_cron_string_iterator,
 )
 
@@ -487,7 +488,7 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
 
             assert (
                 next_time.timestamp() == times[j].timestamp()
-            ), f"Expected ({datetime.datetime.from_timestamp(orig_start_timestamp, tz=get_timezone(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
+            ), f"Expected ({datetime.datetime.from_timestamp(orig_start_timestamp, tz=get_timezone(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"  # pyright: ignore[reportAttributeAccessIssue]
             prev_time = next_time
 
         start_timestamp = orig_start_timestamp + 1
@@ -516,7 +517,7 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
 
                 assert (
                     next_time.timestamp() == times[j].timestamp()
-                ), f"Expected ({datetime.datetime.from_timestamp(start_timestamp, tz=get_timezone(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
+                ), f"Expected ({datetime.datetime.from_timestamp(start_timestamp, tz=get_timezone(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"  # pyright: ignore[reportAttributeAccessIssue]
 
                 prev_time = next_time
 
@@ -577,7 +578,7 @@ def test_reversed_dst_transition_advances(execution_timezone, cron_string, times
 
                 assert (
                     next_time.timestamp() == times[j].timestamp()
-                ), f"Expected ({datetime.datetime.from_timestamp(start_timestamp, tz=get_timezone(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
+                ), f"Expected ({datetime.datetime.from_timestamp(start_timestamp, tz=get_timezone(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"  # pyright: ignore[reportAttributeAccessIssue]
 
                 prev_time = next_time
 
@@ -645,3 +646,21 @@ def test_weekend_cron_schedule_with_sunday_as_7():
 
         for i in range(len(expected_datetimes)):
             assert next(cron_iter) == expected_datetimes[-(i + 1)]
+
+
+def test_invalid_cron_strings():
+    assert is_valid_cron_string("0 0 27 2 *")
+    assert is_valid_cron_string("0 0 28 2 *")
+    assert is_valid_cron_string("0 0 29 2 *")
+    assert is_valid_cron_string("0 0 29 2 3")
+
+    assert not is_valid_cron_string("0 0 30 2 *")
+    assert not is_valid_cron_string("0 0 30 2 3")
+
+    assert not is_valid_cron_string("0 0 31 2 *")
+    assert not is_valid_cron_string("0 0 31 2 3")
+
+    assert not is_valid_cron_string("0 0 32 2 *")
+
+    assert is_valid_cron_string("0 0 31 1 *")
+    assert not is_valid_cron_string("0 0 32 1 *")

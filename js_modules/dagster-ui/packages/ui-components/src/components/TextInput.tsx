@@ -101,11 +101,11 @@ export const TextInputStyles = css`
   margin: 0;
   transition: box-shadow 150ms;
 
-  ::placeholder {
+  &::placeholder {
     color: ${Colors.textLighter()};
   }
 
-  :disabled {
+  &:disabled {
     box-shadow:
       ${Colors.borderDisabled()} inset 0px 0px 0px 1px,
       ${Colors.keylineDefault()} inset 2px 2px 1.5px;
@@ -113,11 +113,11 @@ export const TextInputStyles = css`
     color: ${Colors.textDisabled()};
   }
 
-  :disabled::placeholder {
+  &:disabled::placeholder {
     color: ${Colors.textDisabled()};
   }
 
-  :focus {
+  &:focus {
     box-shadow:
       ${Colors.borderDefault()} inset 0px 0px 0px 1px,
       ${Colors.keylineDefault()} inset 2px 2px 1.5px,
@@ -147,11 +147,11 @@ const StyledInput = styled.input<StyledInputProps>`
   box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderDefault()} inset 0px 0px 0px 1px;
   padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
 
-  :hover {
+  &:hover {
     box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderHover()} inset 0px 0px 0px 1px;
   }
 
-  :focus {
+  &:focus {
     box-shadow:
       ${({$strokeColor}) => $strokeColor || Colors.borderHover()} inset 0px 0px 0px 1px,
       ${Colors.focusRing()} 0 0 0 2px;
@@ -169,11 +169,11 @@ export const TextArea = styled.textarea<TextAreaProps>`
 
   box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderDefault()} inset 0px 0px 0px 1px;
 
-  :hover {
+  &:hover {
     box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderHover()} inset 0px 0px 0px 1px;
   }
 
-  :focus {
+  &:focus {
     box-shadow:
       ${({$strokeColor}) => $strokeColor || Colors.borderHover()} inset 0px 0px 0px 1px,
       ${Colors.focusRing()} 0px 0px 0px 2px;

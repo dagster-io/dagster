@@ -26,6 +26,7 @@ const GlobalStyle = createGlobalStyle`
     color-scheme: ${Colors.browserColorScheme()};
     background-color: ${Colors.backgroundDefault()};
     color: ${Colors.textDefault()};
+    scrollbar-color: ${Colors.accentGrayHover()} ${Colors.backgroundDefault()};
     width: 100vw;
     height: 100vh;
     overflow: hidden;
@@ -67,16 +68,16 @@ const GlobalStyle = createGlobalStyle`
     font-variant-ligatures: none;
   }
 
-  :focus-visible {
+  &:focus-visible {
     outline: ${Colors.focusRing()} auto 1px;
   }
 
-  :focus:not(:focus-visible) {
+  &:focus:not(:focus-visible) {
     outline: none;
   }
 
-  :not(a):focus,
-  :not(a):focus-visible {
+  &:not(a):focus,
+  &:not(a):focus-visible {
     outline-offset: 1px;
   }
 `;

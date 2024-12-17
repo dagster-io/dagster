@@ -4,7 +4,7 @@ import sys
 from collections import defaultdict
 from contextlib import contextmanager
 from pathlib import Path
-from typing import IO, Generator, Iterator, Mapping, Optional, Sequence, Tuple
+from typing import IO, Generator, Iterator, Mapping, Optional, Sequence
 
 from typing_extensions import Final
 from watchdog.events import PatternMatchingEventHandler
@@ -104,10 +104,10 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         self, log_key: Sequence[str], cursor: Optional[str] = None, max_bytes: Optional[int] = None
     ) -> CapturedLogData:
         stdout_cursor, stderr_cursor = self.parse_cursor(cursor)
-        stdout, stdout_offset = self._read_bytes(
+        stdout, stdout_offset = self.get_log_data_for_type(
             log_key, ComputeIOType.STDOUT, offset=stdout_cursor, max_bytes=max_bytes
         )
-        stderr, stderr_offset = self._read_bytes(
+        stderr, stderr_offset = self.get_log_data_for_type(
             log_key, ComputeIOType.STDERR, offset=stderr_cursor, max_bytes=max_bytes
         )
         return CapturedLogData(
@@ -155,7 +155,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         else:
             check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
 
-    def _read_bytes(
+    def get_log_data_for_type(
         self,
         log_key: Sequence[str],
         io_type: ComputeIOType,
@@ -164,21 +164,6 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     ):
         path = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
         return self.read_path(path, offset or 0, max_bytes)
-
-    def parse_cursor(self, cursor: Optional[str] = None) -> Tuple[int, int]:
-        # Translates a string cursor into a set of byte offsets for stdout, stderr
-        if not cursor:
-            return 0, 0
-
-        parts = cursor.split(":")
-        if not parts or len(parts) != 2:
-            return 0, 0
-
-        stdout, stderr = [int(_) for _ in parts]
-        return stdout, stderr
-
-    def build_cursor(self, stdout_offset: int, stderr_offset: int) -> str:
-        return f"{stdout_offset}:{stderr_offset}"
 
     def complete_artifact_path(self, log_key):
         return self.get_captured_local_path(log_key, "complete")

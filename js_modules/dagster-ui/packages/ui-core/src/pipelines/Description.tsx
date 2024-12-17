@@ -91,7 +91,7 @@ export const Description = ({maxHeight, description, fontSize}: IDescriptionProp
       )}
 
       <div ref={container} style={{overflowX: 'auto'}}>
-        <Markdown>{removeLeadingSpaces(description)}</Markdown>
+        <Markdown>{removeLeadingSpaces(description.replace('```', '```sql'))}</Markdown>
       </div>
     </Container>
   );

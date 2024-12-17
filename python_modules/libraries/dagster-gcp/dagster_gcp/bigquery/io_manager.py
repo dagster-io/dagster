@@ -137,7 +137,7 @@ def build_bigquery_io_manager(
     """
 
     @dagster_maintained_io_manager
-    @io_manager(config_schema=BigQueryIOManager.to_config_schema())
+    @io_manager(config_schema=BigQueryIOManager.to_config_schema())  # pyright: ignore[reportArgumentType]
     def bigquery_io_manager(init_context):
         """I/O Manager for storing outputs in a BigQuery database.
 

@@ -401,7 +401,7 @@ def test_multiprocess_simple_job_has_blocked_message(instance):
     threading.Thread(target=_unblock_concurrency_key, args=(instance, TIMEOUT), daemon=True).start()
 
     for event in execute_run_iterator(recon_simple_job, run, instance=instance):
-        if "blocked by concurrency limit for key foo" in event.message:
+        if "blocked by concurrency limit for key foo" in event.message:  # pyright: ignore[reportOperatorIssue]
             has_blocked_message = True
             break
         if time.time() - start > TIMEOUT:

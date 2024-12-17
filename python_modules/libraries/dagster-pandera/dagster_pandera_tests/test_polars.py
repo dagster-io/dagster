@@ -88,7 +88,7 @@ def sample_schema_model(**config_attrs):
             sum_b = df.lazyframe.select(pl.col("b")).sum().collect().item()
             return sum_a > sum_b
 
-        Config = make_schema_model_config(**config_attrs)
+        Config = make_schema_model_config(**config_attrs)  # pyright: ignore[reportAssignmentType]
 
     return SampleDataframeModel
 

@@ -13,7 +13,7 @@ from dagster._core.storage.io_manager import io_manager
 def test_all_fields():
     StaticPartitionsDefinition(["a", "b", "c", "d"])
 
-    @io_manager(required_resource_keys={"baz"})
+    @io_manager(required_resource_keys={"baz"})  # pyright: ignore[reportArgumentType]
     def foo_manager():
         pass
 
@@ -91,7 +91,7 @@ def test_key_and_name_args():
         match="Cannot specify a name or key prefix for @observable_source_asset when the key argument is provided",
     ):
 
-        @observable_source_asset(name=["peach"], key=["peach", "nectarine"])
+        @observable_source_asset(name=["peach"], key=["peach", "nectarine"])  # pyright: ignore[reportArgumentType]
         def name_and_key_specified(): ...
 
 

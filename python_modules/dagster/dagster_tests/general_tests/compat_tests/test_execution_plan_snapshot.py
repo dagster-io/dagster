@@ -193,13 +193,13 @@ def test_execution_plan_snapshot_backcompat():
                 _validate_execution_plan(new_plan)
 
                 # Create a snapshot and rebuild it, validate the rebuilt plan
-                new_plan_snapshot = snapshot_from_execution_plan(new_plan, run.job_snapshot_id)
+                new_plan_snapshot = snapshot_from_execution_plan(new_plan, run.job_snapshot_id)  # pyright: ignore[reportArgumentType]
                 rebuilt_plan = ExecutionPlan.rebuild_from_snapshot("dynamic_job", new_plan_snapshot)
                 _validate_execution_plan(rebuilt_plan)
 
                 # Then validate the plan built from the historical snapshot on the run
                 stored_snapshot = instance.get_execution_plan_snapshot(
-                    run.execution_plan_snapshot_id
+                    run.execution_plan_snapshot_id  # pyright: ignore[reportArgumentType]
                 )
 
                 rebuilt_plan = ExecutionPlan.rebuild_from_snapshot("dynamic_job", stored_snapshot)

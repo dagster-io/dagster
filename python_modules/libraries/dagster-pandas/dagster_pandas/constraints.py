@@ -189,7 +189,7 @@ class ConstraintWithMetadata:
         return DagsterType(
             name=self.name,
             description=f"A Pandas DataFrame with the following validation: {self.description}",
-            type_check_fn=lambda x: self.validate(x, *args),
+            type_check_fn=lambda x: self.validate(x, *args),  # pyright: ignore[reportArgumentType]
             **kwargs,
         )
 
@@ -524,10 +524,10 @@ class MultiColumnConstraintWithMetadata(ColumnConstraintWithMetadata):
                     result = new_validator.validate(
                         DataFrame(data[column]), column, *args, **kwargs
                     )
-                    result_val = result.success
+                    result_val = result.success  # pyright: ignore[reportOptionalMemberAccess]
                     if result_val:
                         continue
-                    result_dict = result.metadata[CONSTRAINT_METADATA_KEY].data
+                    result_dict = result.metadata[CONSTRAINT_METADATA_KEY].data  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
                     truthparam = truthparam and result_val
                     for key in result_dict.keys():
                         if "constraint" not in key:
@@ -590,7 +590,7 @@ class MultiAggregateConstraintWithMetadata(MultiColumnConstraintWithMetadata):
             fn_and_columns_dict,
             resulting_exception,
             raise_or_typecheck=raise_or_typecheck,
-            type_for_internal=ColumnAggregateConstraintWithMetadata,
+            type_for_internal=ColumnAggregateConstraintWithMetadata,  # pyright: ignore[reportArgumentType]
             name=name,
         )
 
@@ -664,7 +664,7 @@ def nonnull(func):
         nval = non_null_validation(val)
         return origval[0] and nval[0], {}
 
-    nvalidator.__doc__ += " and ensures no values are null"
+    nvalidator.__doc__ += " and ensures no values are null"  # pyright: ignore[reportOperatorIssue]
 
     return nvalidator
 

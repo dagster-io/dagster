@@ -24,7 +24,6 @@ from dagster._core.remote_representation import (
     RemoteRepositoryOrigin,
 )
 from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.snap import create_job_snapshot_id
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log import InMemoryEventLogStorage
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
@@ -174,8 +173,8 @@ class TestRunStorage:
         assert run.tags.get("foo") == "bar"
         assert storage.has_run(run_id)
         fetched_run = _get_run_by_id(storage, run_id)
-        assert fetched_run.run_id == run_id
-        assert fetched_run.job_name == "some_pipeline"
+        assert fetched_run.run_id == run_id  # pyright: ignore[reportOptionalMemberAccess]
+        assert fetched_run.job_name == "some_pipeline"  # pyright: ignore[reportOptionalMemberAccess]
 
     def test_clear(self, storage):
         if not self.can_delete_runs():
@@ -237,8 +236,8 @@ class TestRunStorage:
         job_def_b = GraphDefinition(name="some_other_pipeline", node_defs=[]).to_job()
         job_snapshot_a = job_def_a.get_job_snapshot()
         job_snapshot_b = job_def_b.get_job_snapshot()
-        job_snapshot_a_id = create_job_snapshot_id(job_snapshot_a)
-        job_snapshot_b_id = create_job_snapshot_id(job_snapshot_b)
+        job_snapshot_a_id = job_snapshot_a.snapshot_id
+        job_snapshot_b_id = job_snapshot_b.snapshot_id
 
         assert storage.add_job_snapshot(job_snapshot_a) == job_snapshot_a_id
         assert storage.add_job_snapshot(job_snapshot_b) == job_snapshot_b_id
@@ -768,7 +767,7 @@ class TestRunStorage:
         )
 
         run = _get_run_by_id(storage, one)
-        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.RUN_EXCEPTION.value
+        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.RUN_EXCEPTION.value  # pyright: ignore[reportOptionalMemberAccess]
 
     def _get_run_event_entry(self, dagster_event: DagsterEvent, run_id: str):
         return EventLogEntry(
@@ -1080,7 +1079,7 @@ class TestRunStorage:
     def test_add_get_snapshot(self, storage):
         job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
         job_snapshot = job_def.get_job_snapshot()
-        job_snapshot_id = create_job_snapshot_id(job_snapshot)
+        job_snapshot_id = job_snapshot.snapshot_id
 
         assert storage.add_job_snapshot(job_snapshot) == job_snapshot_id
         fetch_job_snapshot = storage.get_job_snapshot(job_snapshot_id)
@@ -1100,7 +1099,7 @@ class TestRunStorage:
 
         job_snapshot = job_def.get_job_snapshot()
 
-        job_snapshot_id = create_job_snapshot_id(job_snapshot)
+        job_snapshot_id = job_snapshot.snapshot_id
 
         run_with_snapshot = DagsterRun(
             run_id=run_with_snapshot_id,
@@ -1761,7 +1760,7 @@ class TestRunStorage:
 
         instance.handle_new_event(self._get_run_event_entry(dagster_job_start_event, run_id))
 
-        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED
+        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED  # pyright: ignore[reportOptionalMemberAccess]
 
         instance.handle_new_event(
             self._get_run_event_entry(
@@ -1778,7 +1777,7 @@ class TestRunStorage:
             )
         )
 
-        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED
+        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED  # pyright: ignore[reportOptionalMemberAccess]
 
         instance.handle_new_event(
             self._get_run_event_entry(
@@ -1795,7 +1794,7 @@ class TestRunStorage:
             )
         )
 
-        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.SUCCESS
+        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
 
     def test_debug_snapshot_import(self, storage):
         from dagster._core.execution.api import create_execution_plan
@@ -1811,7 +1810,7 @@ class TestRunStorage:
         job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
         job_snapshot = job_def.get_job_snapshot()
-        job_snapshot_id = create_job_snapshot_id(job_snapshot)
+        job_snapshot_id = job_snapshot.snapshot_id
         new_job_snapshot_id = f"{job_snapshot_id}-new-snapshot"
 
         storage.add_snapshot(job_snapshot, snapshot_id=new_job_snapshot_id)

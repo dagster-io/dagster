@@ -8,10 +8,9 @@ dependencies = [
     "atproto",
     "dagster",
     "dagster-aws",
-    "dagster-cloud",
     "dagster-dbt",
     "dagster-duckdb",
-    "dagster-powerbi"
+    "dagster-powerbi",
     "dbt-duckdb",
     "tenacity",
 ]

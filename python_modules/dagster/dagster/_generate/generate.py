@@ -1,6 +1,6 @@
 import os
 import posixpath
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import click
 import jinja2
@@ -14,6 +14,7 @@ DEFAULT_EXCLUDES: List[str] = [
     ".DS_Store",
     ".ruff_cache",
     "tox.ini",
+    ".gitkeep",  # dummy file that allows empty directories to be checked into git
 ]
 
 PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
@@ -40,6 +41,8 @@ def generate_project(
     excludes: Optional[List[str]] = None,
     name_placeholder: str = PROJECT_NAME_PLACEHOLDER,
     templates_path: str = PROJECT_NAME_PLACEHOLDER,
+    project_name: Optional[str] = None,
+    **other_template_vars: Any,
 ):
     """Renders templates for Dagster project."""
     excludes = DEFAULT_EXCLUDES if not excludes else DEFAULT_EXCLUDES + excludes
@@ -47,8 +50,9 @@ def generate_project(
     click.echo(f"Creating a Dagster project at {path}.")
 
     normalized_path = os.path.normpath(path)
-    project_name: str = os.path.basename(normalized_path).replace("-", "_")
-    os.mkdir(normalized_path)
+    project_name = project_name or os.path.basename(normalized_path).replace("-", "_")
+    if not os.path.exists(normalized_path):
+        os.mkdir(normalized_path)
 
     project_template_path: str = os.path.join(
         os.path.dirname(__file__), "templates", templates_path
@@ -103,6 +107,7 @@ def generate_project(
                         code_location_name=project_name,
                         dagster_version=dagster_version,
                         project_name=project_name,
+                        **other_template_vars,
                     )
                 )
                 f.write("\n")

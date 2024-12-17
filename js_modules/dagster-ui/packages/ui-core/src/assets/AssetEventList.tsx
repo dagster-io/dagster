@@ -137,9 +137,9 @@ export const AssetListRow = styled(Row)<{$focused: boolean}>`
   cursor: pointer;
   user-select: none;
 
-  :focus,
-  :active,
-  :hover {
+  &:focus,
+  &:active,
+  &:hover {
     outline: none;
     background: ${Colors.backgroundLight()};
   }
@@ -147,7 +147,7 @@ export const AssetListRow = styled(Row)<{$focused: boolean}>`
     p.$focused &&
     `background: ${Colors.backgroundBlue()};
      color: ${Colors.textBlue()};
-     :hover {
+     &:hover {
        background: ${Colors.backgroundBlue()};
      }
     `}

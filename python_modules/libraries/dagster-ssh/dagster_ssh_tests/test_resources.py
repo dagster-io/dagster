@@ -24,8 +24,8 @@ def generate_ssh_key():
 
     # get private key in PEM container format
     return key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encoding=serialization.Encoding.PEM,  # pyright: ignore[reportArgumentType]
+        format=serialization.PrivateFormat.TraditionalOpenSSL,  # pyright: ignore[reportArgumentType]
         encryption_algorithm=serialization.NoEncryption(),
     ).decode("utf-8")
 

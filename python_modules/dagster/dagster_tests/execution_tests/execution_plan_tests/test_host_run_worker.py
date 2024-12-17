@@ -68,7 +68,7 @@ class ExplodingTestPipeline(ReconstructableJob):
 
 
 def test_host_run_worker():
-    _explode_pid["pid"] = os.getpid()
+    _explode_pid["pid"] = os.getpid()  # pyright: ignore[reportArgumentType]
 
     with instance_for_test() as instance:
         run_config = {
@@ -95,7 +95,7 @@ def test_host_run_worker():
             raise_on_error=True,
         )
 
-        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.SUCCESS
+        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
 
         logs = instance.all_logs(dagster_run.run_id)
         assert any(
@@ -116,7 +116,7 @@ def test_executor(_init_context):
 
 
 def test_custom_executor_fn():
-    _explode_pid["pid"] = os.getpid()
+    _explode_pid["pid"] = os.getpid()  # pyright: ignore[reportArgumentType]
 
     with instance_for_test() as instance:
         run_config = {
@@ -143,7 +143,7 @@ def test_custom_executor_fn():
             raise_on_error=True,
         )
 
-        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.SUCCESS
+        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
 
         logs = instance.all_logs(dagster_run.run_id)
         assert any(

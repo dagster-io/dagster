@@ -39,15 +39,15 @@ def test_post_process_config():
     assert post_process_config(nullable_list_config_type, None).value == []
 
     map_config_type = resolve_to_config_type({str: int})
-    assert post_process_config(map_config_type, {"foo": 5}).value == {"foo": 5}
-    assert post_process_config(map_config_type, None).value == {}
+    assert post_process_config(map_config_type, {"foo": 5}).value == {"foo": 5}  # pyright: ignore[reportArgumentType]
+    assert post_process_config(map_config_type, None).value == {}  # pyright: ignore[reportArgumentType]
     with pytest.raises(CheckError, match="Null map member not caught"):
-        assert post_process_config(map_config_type, {"foo": None}).value == {"foo": None}
+        assert post_process_config(map_config_type, {"foo": None}).value == {"foo": None}  # pyright: ignore[reportArgumentType]
 
     nullable_map_config_type = resolve_to_config_type({str: Noneable(int)})
-    assert post_process_config(nullable_map_config_type, {"foo": 5}).value == {"foo": 5}
-    assert post_process_config(nullable_map_config_type, {"foo": None}).value == {"foo": None}
-    assert post_process_config(nullable_map_config_type, None).value == {}
+    assert post_process_config(nullable_map_config_type, {"foo": 5}).value == {"foo": 5}  # pyright: ignore[reportArgumentType]
+    assert post_process_config(nullable_map_config_type, {"foo": None}).value == {"foo": None}  # pyright: ignore[reportArgumentType]
+    assert post_process_config(nullable_map_config_type, None).value == {}  # pyright: ignore[reportArgumentType]
 
     composite_config_type = resolve_to_config_type(
         {
@@ -123,7 +123,7 @@ def test_post_process_config():
 
     any_config_type = resolve_to_config_type(Any)
 
-    assert post_process_config(any_config_type, {"foo": "bar"}).value == {"foo": "bar"}
+    assert post_process_config(any_config_type, {"foo": "bar"}).value == {"foo": "bar"}  # pyright: ignore[reportArgumentType]
 
     assert post_process_config(
         ConfigType("gargle", given_name="bargle", kind=ConfigTypeKind.ANY), 3
@@ -185,11 +185,12 @@ def test_post_process_config():
     noneable_permissive_config_type = resolve_to_config_type(
         {"args": Field(Noneable(Permissive()), is_required=False, default_value=None)}
     )
-    assert post_process_config(
-        noneable_permissive_config_type, {"args": {"foo": "wow", "mau": "mau"}}
+    assert post_process_config(  # pyright: ignore[reportOptionalSubscript]
+        noneable_permissive_config_type,
+        {"args": {"foo": "wow", "mau": "mau"}},
     ).value["args"] == {
         "foo": "wow",
         "mau": "mau",
     }
-    assert post_process_config(noneable_permissive_config_type, {"args": {}}).value["args"] == {}
-    assert post_process_config(noneable_permissive_config_type, None).value["args"] is None
+    assert post_process_config(noneable_permissive_config_type, {"args": {}}).value["args"] == {}  # pyright: ignore[reportOptionalSubscript]
+    assert post_process_config(noneable_permissive_config_type, None).value["args"] is None  # pyright: ignore[reportOptionalSubscript]

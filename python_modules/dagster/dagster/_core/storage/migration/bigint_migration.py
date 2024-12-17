@@ -94,7 +94,7 @@ def _migrate_storage(conn, tables_to_migrate, print_fn):
         # restore the foreign key on the asset event tags table if needed, even if we did not just
         # migrate the event logs table in case we hit some error and exited in a bad state
         if table == "event_logs" and "asset_event_tags" in all_table_names:
-            _restore_asset_event_tags_foreign_key(conn, print_fn)
+            _restore_asset_event_tags_foreign_key(conn, print_fn)  # pyright: ignore[reportCallIssue]
 
 
 def run_bigint_migration(instance: DagsterInstance, print_fn: Callable[..., Any] = print):

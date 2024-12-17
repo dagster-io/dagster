@@ -179,6 +179,10 @@
               {
                 "title": "Customizing automation conditions",
                 "path": "/concepts/automation/declarative-automation/customizing-automation-conditions"
+              },
+              {
+                "title": "Automation conditions explained (Advanced)",
+                "path": "/concepts/automation/declarative-automation/automation-conditions-explained"
               }
             ]
           },
@@ -548,6 +552,24 @@
               {
                 "title": "Setting environment variables",
                 "path": "/dagster-plus/managing-deployments/setting-environment-variables-agents"
+              },
+              {
+                "title": "Deploying on Azure: Full guide",
+                "path": "/dagster-plus/deployment/azure/overview",
+                "children": [
+                  {
+                    "title": "Part 1: Setting up an AKS agent.",
+                    "path": "/dagster-plus/deployment/azure/aks-agent"
+                  },
+                  {
+                    "title": "Part 2: Deploy user code using ACR.",
+                    "path": "/dagster-plus/deployment/azure/acr-user-code"
+                  },
+                  {
+                    "title": "Part 3: Storing compute logs in Azure Blob Storage / Azure Data Lake",
+                    "path": "/dagster-plus/deployment/azure/blob-compute-logs"
+                  }
+                ]
               }
             ]
           }
@@ -917,6 +939,10 @@
         "path": "/integrations/airlift",
         "children": [
           {
+            "title": "Mapping Airflow Concepts to Dagster",
+            "path": "/integrations/airlift/airflow-dagster-equivalents"
+          },
+          {
             "title": "Airflow Migration Tutorial",
             "path": "/integrations/airlift/tutorial/overview",
             "children": [
@@ -943,12 +969,56 @@
             ]
           },
           {
+            "title": "Airflow Federation Tutorial",
+            "path": "/integrations/airlift/federation-tutorial/overview",
+            "children": [
+              {
+                "title": "Part 1: Setup upstream and downstream Airflow instances",
+                "path": "/integrations/airlift/federation-tutorial/setup"
+              },
+              {
+                "title": "Part 2: Observe dag lineage in Dagster",
+                "path": "/integrations/airlift/federation-tutorial/observe"
+              },
+              {
+                "title": "Part 3: Federate across Airflow instances",
+                "path": "/integrations/airlift/federation-tutorial/federated-execution"
+              }
+            ]
+          },
+          {
             "title": "Reference",
             "path": "/integrations/airlift/reference"
           },
           {
             "title": "DAG-level migration",
             "path": "/integrations/airlift/full_dag"
+          },
+          {
+            "title": "Migration with Airflow 1",
+            "path": "/integrations/airlift/airflow-1-migration"
+          },
+          {
+            "title": "Operator Migration Reference",
+            "path": "/integrations/airlift/operator-migration/overview",
+            "children": [
+              {
+                "title": "Migrating a BashOperator for dbt",
+                "path": "/integrations/airlift/operator-migration/bash-operator-dbt"
+              },
+              {
+                "title": "Migrating a KubernetesPodOperator",
+                "path": "/integrations/airlift/operator-migration/kubernetes-pod-operator"
+              },
+              {
+                "title": "Migrating a PythonOperator",
+                "path": "/integrations/airlift/operator-migration/python-operator"
+              },
+              {
+                "title": "Migrating a BashOperator (general)",
+                "path": "/integrations/airlift/operator-migration/bash-operator-general"
+              }
+            ]
           }
         ]
       },
@@ -1058,7 +1128,13 @@
       },
       {
         "title": "Fivetran",
-        "path": "/integrations/fivetran"
+        "path": "/integrations/fivetran/fivetran",
+        "children": [
+          {
+            "title": "Fivetran (Legacy)",
+            "path": "/integrations/fivetran/fivetran-legacy"
+          }
+        ]
       },
       {
         "title": "Google BigQuery",
@@ -1265,10 +1341,6 @@
           {
             "title": "Migrating from Airflow",
             "path": "/guides/migrations/migrating-airflow-to-dagster"
-          },
-          {
-            "title": "Observe your Airflow pipelines with Dagster",
-            "path": "/guides/migrations/observe-your-airflow-pipelines-with-dagster"
           }
         ]
       },

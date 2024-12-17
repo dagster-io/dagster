@@ -107,7 +107,7 @@ class EmrJobRunner:
         """
         check.str_param(cluster_name, "cluster_name")
 
-        response = self.make_emr_client().list_clusters().get("Clusters", [])
+        response = self.make_emr_client().list_clusters().get("Clusters", [])  # pyright: ignore[reportOptionalMemberAccess]
         for cluster in response:
             if cluster["Name"] == cluster_name:
                 return cluster["Id"]
@@ -180,7 +180,7 @@ class EmrJobRunner:
             "Calling run_job_flow(%s)"
             % (", ".join("%s=%r" % (k, v) for k, v in sorted(cluster_config.items())))
         )
-        cluster_id = emr_client.run_job_flow(**cluster_config)["JobFlowId"]
+        cluster_id = emr_client.run_job_flow(**cluster_config)["JobFlowId"]  # pyright: ignore[reportOptionalSubscript]
 
         log.info("Created new cluster %s" % cluster_id)
 
@@ -244,14 +244,14 @@ class EmrJobRunner:
             "Calling add_job_flow_steps(%s)"
             % ",".join(("%s=%r" % (k, v)) for k, v in steps_kwargs.items())
         )
-        return emr_client.add_job_flow_steps(**steps_kwargs)["StepIds"]
+        return emr_client.add_job_flow_steps(**steps_kwargs)["StepIds"]  # pyright: ignore[reportOptionalSubscript]
 
     def is_emr_step_complete(self, log, cluster_id, emr_step_id):
-        step = self.describe_step(cluster_id, emr_step_id)["Step"]
+        step = self.describe_step(cluster_id, emr_step_id)["Step"]  # pyright: ignore[reportOptionalSubscript]
         step_state = EmrStepState(step["Status"]["State"])
 
         if step_state == EmrStepState.Pending:
-            cluster = self.describe_cluster(cluster_id)["Cluster"]
+            cluster = self.describe_cluster(cluster_id)["Cluster"]  # pyright: ignore[reportOptionalSubscript]
 
             reason = _get_reason(cluster)
             reason_desc = (": %s" % reason) if reason else ""
@@ -283,7 +283,7 @@ class EmrJobRunner:
 
             # print cluster status; this might give more context
             # why step didn't succeed
-            cluster = self.describe_cluster(cluster_id)["Cluster"]
+            cluster = self.describe_cluster(cluster_id)["Cluster"]  # pyright: ignore[reportOptionalSubscript]
             reason = _get_reason(cluster)
             reason_desc = (": %s" % reason) if reason else ""
             log.info(
@@ -338,7 +338,7 @@ class EmrJobRunner:
         check.str_param(cluster_id, "cluster_id")
 
         # The S3 log URI is specified per job flow (cluster)
-        log_uri = self.describe_cluster(cluster_id)["Cluster"].get("LogUri", None)
+        log_uri = self.describe_cluster(cluster_id)["Cluster"].get("LogUri", None)  # pyright: ignore[reportOptionalSubscript]
 
         # ugh, seriously boto3?! This will come back as string "None"
         if log_uri == "None" or log_uri is None:
@@ -398,7 +398,7 @@ class EmrJobRunner:
         s3 = _wrap_aws_client(boto3.client("s3"), min_backoff=self.check_cluster_every)
         waiter = s3.get_waiter("object_exists")
         try:
-            waiter.wait(
+            waiter.wait(  # pyright: ignore[reportOptionalMemberAccess]
                 Bucket=log_bucket,
                 Key=log_key,
                 WaiterConfig={"Delay": waiter_delay, "MaxAttempts": waiter_max_attempts},
@@ -406,7 +406,7 @@ class EmrJobRunner:
         except WaiterError as err:
             raise EmrError("EMR log file did not appear on S3 after waiting") from err
 
-        obj = BytesIO(s3.get_object(Bucket=log_bucket, Key=log_key)["Body"].read())
+        obj = BytesIO(s3.get_object(Bucket=log_bucket, Key=log_key)["Body"].read())  # pyright: ignore[reportOptionalSubscript]
         gzip_file = gzip.GzipFile(fileobj=obj)
         return gzip_file.read().decode("utf-8")
 

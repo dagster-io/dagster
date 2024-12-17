@@ -107,7 +107,7 @@ def test_python_environment_args():
             process = open_server_process(
                 instance.get_ref(), port, socket=None, loadable_target_origin=loadable_target_origin
             )
-            assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
+            assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]  # pyright: ignore[reportIndexIssue]
         finally:
             if process:
                 process.terminate()
@@ -169,7 +169,7 @@ def test_empty_executable_args():
             process = open_server_process(
                 instance.get_ref(), port, socket=None, loadable_target_origin=loadable_target_origin
             )
-            assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
+            assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]  # pyright: ignore[reportIndexIssue]
 
             client = DagsterGrpcClient(port=port, host="localhost")
             list_repositories_response = sync_list_repositories_grpc(client)
@@ -533,7 +533,7 @@ def test_load_timeout():
                 process,
                 DagsterGrpcClient(port=port, host="localhost"),
                 subprocess_args,
-                timeout=0.01,
+                timeout=0.01,  # pyright: ignore[reportArgumentType]
             )
             assert False, "server should have timed out"
         except Exception as e:
@@ -685,7 +685,7 @@ def test_load_with_secrets_loader_instance_ref(entrypoint):
             python_file,
         ]
 
-        with environ({"FOO": None, "FOO_INSIDE_OP": None}):
+        with environ({"FOO": None, "FOO_INSIDE_OP": None}):  # pyright: ignore[reportArgumentType]
             with instance_for_test(
                 set_dagster_home=False,
             ) as instance:
@@ -753,7 +753,7 @@ def test_load_with_secrets_loader_no_instance_ref(entrypoint):
             python_file,
         ]
 
-        with environ({"FOO": None}):
+        with environ({"FOO": None}):  # pyright: ignore[reportArgumentType]
             with instance_for_test(
                 set_dagster_home=True,
             ):
@@ -948,8 +948,8 @@ def test_load_with_error_logging(capfd):
             )
         )
 
-        assert result.error
-        assert 'Could not find a repository called "missing_repo_name"' in str(result.error)
+        assert result.error  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        assert 'Could not find a repository called "missing_repo_name"' in str(result.error)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
     finally:
         process.terminate()

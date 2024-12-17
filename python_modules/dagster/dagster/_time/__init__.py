@@ -7,7 +7,7 @@ from dagster._vendored.dateutil import parser
 
 try:
     # zoneinfo is python >= 3.9
-    from zoneinfo import ZoneInfo as _timezone_from_string  # type: ignore
+    from zoneinfo import ZoneInfo as _timezone_from_string
 except:
     from dagster._vendored.dateutil.tz import gettz as _timezone_from_string
 
@@ -115,7 +115,7 @@ def parse_time_string(datetime_str) -> datetime:
     """
     dt = parser.parse(datetime_str)
 
-    if not dt.tzinfo:
-        dt = dt.replace(tzinfo=timezone.utc)
+    if not dt.tzinfo:  # pyright: ignore[reportAttributeAccessIssue]
+        dt = dt.replace(tzinfo=timezone.utc)  # pyright: ignore[reportAttributeAccessIssue]
 
-    return dt
+    return dt  # pyright: ignore[reportReturnType]

@@ -356,7 +356,7 @@ def test_invalid_instance_run():
                             instance.launch_run(run_id=run.run_id, workspace=workspace)
 
                         failed_run = instance.get_run_by_id(run.run_id)
-                        assert failed_run.status == DagsterRunStatus.FAILURE
+                        assert failed_run.status == DagsterRunStatus.FAILURE  # pyright: ignore[reportOptionalMemberAccess]
 
 
 @pytest.mark.parametrize(

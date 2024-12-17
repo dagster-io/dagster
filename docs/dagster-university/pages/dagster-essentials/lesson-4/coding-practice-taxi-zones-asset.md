@@ -30,7 +30,7 @@ The asset you built should look similar to the following code. Click **View answ
     deps=["taxi_zones_file"]
 )
 def taxi_zones() -> None:
-    sql_query = f"""
+    query = f"""
         create or replace table zones as (
             select
                 LocationID as zone_id,
@@ -41,6 +41,13 @@ def taxi_zones() -> None:
         );
     """
 
-    conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
-    conn.execute(sql_query)
+    conn = backoff(
+        fn=duckdb.connect,
+        retry_on=(RuntimeError, duckdb.IOException),
+        kwargs={
+            "database": os.getenv("DUCKDB_DATABASE"),
+        },
+        max_retries=10,
+    )
+    conn.execute(query)
 ```

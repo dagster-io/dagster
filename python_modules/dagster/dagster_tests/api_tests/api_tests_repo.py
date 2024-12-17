@@ -17,6 +17,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.errors import DagsterError
@@ -192,6 +193,12 @@ def sensor_raises_dagster_error(_):
     raise DagsterError("Dagster error")
 
 
+@job(metadata={"pipeline_snapshot": MetadataValue.json({"pipeline_snapshot": "pipeline_snapshot"})})
+def pipeline_snapshot():
+    do_something()
+    do_fail()
+
+
 @repository(metadata={"string": "foo", "integer": 123})
 def bar_repo():
     return {
@@ -201,9 +208,10 @@ def bar_repo():
             "dynamic_job": define_asset_job(
                 "dynamic_job", [dynamic_asset], partitions_def=dynamic_partitions_def
             ).resolve(asset_graph=AssetGraph.from_assets([dynamic_asset])),
-            "fail": fail_job,
+            "fail_job": fail_job,
             "foo": foo_job,
             "forever": forever_job,
+            "pipeline_snapshot": pipeline_snapshot.get_subset(op_selection=["do_something"]),
         },
         "schedules": define_bar_schedules(),
         "sensors": {
@@ -215,6 +223,6 @@ def bar_repo():
     }
 
 
-@repository
+@repository  # pyright: ignore[reportArgumentType]
 def other_repo():
     return {"jobs": {"other_foo": define_other_foo_job}}

@@ -711,8 +711,8 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                     freeze_datetime,
                     TickStatus.SUCCESS,
                 )
-                assert len(ticks[0].origin_run_ids) == 1
-                assert ticks[0].origin_run_ids[0] == run2.run_id
+                assert len(ticks[0].origin_run_ids) == 1  # pyright: ignore[reportArgumentType]
+                assert ticks[0].origin_run_ids[0] == run2.run_id  # pyright: ignore[reportOptionalSubscript]
 
             # fail run 1
             with freeze_time(freeze_datetime):
@@ -736,8 +736,8 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                     freeze_datetime,
                     TickStatus.SUCCESS,
                 )
-                assert len(ticks[0].origin_run_ids) == 1
-                assert ticks[0].origin_run_ids[0] == run1.run_id
+                assert len(ticks[0].origin_run_ids) == 1  # pyright: ignore[reportArgumentType]
+                assert ticks[0].origin_run_ids[0] == run1.run_id  # pyright: ignore[reportOptionalSubscript]
 
 
 @pytest.mark.parametrize("storage_config_fn", [sql_event_log_storage_config_fn])

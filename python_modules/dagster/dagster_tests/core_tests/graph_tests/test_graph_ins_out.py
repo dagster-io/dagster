@@ -85,7 +85,7 @@ def test_multi_out():
 
     @graph
     def my_graph():
-        one, two = composite_return_mult()
+        one, two = composite_return_mult()  # pyright: ignore[reportGeneralTypeIssues]
         echo(one, two)
 
     result = composite_return_mult.execute_in_process()

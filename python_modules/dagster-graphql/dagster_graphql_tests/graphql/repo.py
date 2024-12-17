@@ -502,7 +502,7 @@ def scalar_output_job():
     def return_bool():
         return True
 
-    @op(out=Out(Any))
+    @op(out=Out(Any))  # pyright: ignore[reportArgumentType]
     def return_any():
         return "dkjfkdjfe"
 
@@ -620,7 +620,7 @@ def foo_logger(init_context):
     return logger_
 
 
-@logger({"log_level": Field(str), "prefix": Field(str)})
+@logger({"log_level": Field(str), "prefix": Field(str)})  # pyright: ignore[reportArgumentType]
 def bar_logger(init_context):
     class BarLogger(logging.Logger):
         def __init__(self, name, prefix, *args, **kwargs):
@@ -1400,6 +1400,15 @@ def hanging_op(context, my_op):
         time.sleep(0.1)
 
 
+@job(
+    partitions_def=integers_partitions,
+    config=integers_config,
+    resource_defs={"hanging_asset_resource": hanging_asset_resource},
+)
+def hanging_partitioned_job():
+    hanging_op(my_op())
+
+
 @op
 def never_runs_op(hanging_op):
     pass
@@ -2036,6 +2045,7 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         hard_failer,
         hello_world_with_tags,
         infinite_loop_job,
+        hanging_partitioned_job,
         integers,
         job_with_default_config,
         job_with_enum_config,

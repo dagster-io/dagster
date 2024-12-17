@@ -20,15 +20,15 @@ def test_new_config_descriptions_and_defaults():
         pass
 
     # test fields are inferred correctly
-    assert a_new_config_op.config_schema.config_type.kind == ConfigTypeKind.STRICT_SHAPE
-    assert list(a_new_config_op.config_schema.config_type.fields.keys()) == ["a_string", "nested"]
+    assert a_new_config_op.config_schema.config_type.kind == ConfigTypeKind.STRICT_SHAPE  # pyright: ignore[reportOptionalMemberAccess]
+    assert list(a_new_config_op.config_schema.config_type.fields.keys()) == ["a_string", "nested"]  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     assert a_new_config_op.config_schema.description == "Config for my new op."
-    assert a_new_config_op.config_schema.config_type.fields["a_string"].description == "A string"
+    assert a_new_config_op.config_schema.config_type.fields["a_string"].description == "A string"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     assert (
-        a_new_config_op.config_schema.config_type.fields["nested"].description == "A nested config"
+        a_new_config_op.config_schema.config_type.fields["nested"].description == "A nested config"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     )
     assert (
-        a_new_config_op.config_schema.config_type.fields["nested"]
+        a_new_config_op.config_schema.config_type.fields["nested"]  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         .config_type.fields["an_int"]
         .description
         == "An int"

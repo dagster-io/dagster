@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Iterable,
     Mapping,
     NamedTuple,
@@ -28,13 +29,18 @@ from dagster._core.event_api import (
 )
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.stats import (
+    RUN_STATS_EVENT_TYPES,
+    STEP_STATS_EVENT_TYPES,
     RunStepKeyStatsSnapshot,
     build_run_stats_from_events,
     build_run_step_stats_from_events,
 )
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.loader import LoadableBy, LoadingContext
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
+from dagster._core.storage.asset_check_execution_record import (
+    AssetCheckExecutionRecord,
+    AssetCheckExecutionRecordStatus,
+)
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._core.storage.sql import AlembicVersion
@@ -88,7 +94,9 @@ class AssetEntry(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             last_materialization_record=check.opt_inst_param(
-                last_materialization_record, "last_materialization_record", EventLogRecord
+                last_materialization_record,
+                "last_materialization_record",
+                EventLogRecord,
             ),
             last_run_id=check.opt_str_param(last_run_id, "last_run_id"),
             asset_details=check.opt_inst_param(asset_details, "asset_details", AssetDetails),
@@ -154,6 +162,7 @@ class AssetCheckSummaryRecord(
             ("asset_check_key", AssetCheckKey),
             ("last_check_execution_record", Optional[AssetCheckExecutionRecord]),
             ("last_run_id", Optional[str]),
+            ("last_completed_check_execution_record", Optional[AssetCheckExecutionRecord]),
         ],
     ),
     LoadableBy[AssetCheckKey],
@@ -166,6 +175,14 @@ class AssetCheckSummaryRecord(
             list(keys)
         )
         return [records_by_key[key] for key in keys]
+
+    @property
+    def last_completed_run_id(self) -> Optional[str]:
+        return (
+            self.last_completed_check_execution_record.run_id
+            if self.last_completed_check_execution_record
+            else None
+        )
 
 
 class PlannedMaterializationInfo(NamedTuple):
@@ -239,13 +256,15 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     def get_stats_for_run(self, run_id: str) -> DagsterRunStatsSnapshot:
         """Get a summary of events that have ocurred in a run."""
-        return build_run_stats_from_events(run_id, self.get_logs_for_run(run_id))
+        return build_run_stats_from_events(
+            run_id, self.get_logs_for_run(run_id, of_type=RUN_STATS_EVENT_TYPES)
+        )
 
     def get_step_stats_for_run(
         self, run_id: str, step_keys: Optional[Sequence[str]] = None
     ) -> Sequence[RunStepKeyStatsSnapshot]:
         """Get per-step stats for a pipeline run."""
-        logs = self.get_logs_for_run(run_id)
+        logs = self.get_logs_for_run(run_id, of_type=STEP_STATS_EVENT_TYPES)
         if step_keys:
             logs = [
                 event
@@ -556,7 +575,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def claim_concurrency_slot(
-        self, concurrency_key: str, run_id: str, step_key: str, priority: Optional[int] = None
+        self,
+        concurrency_key: str,
+        run_id: str,
+        step_key: str,
+        priority: Optional[int] = None,
     ) -> ConcurrencyClaimStatus:
         """Claim concurrency slots for step."""
         raise NotImplementedError()
@@ -593,6 +616,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         check_key: AssetCheckKey,
         limit: int,
         cursor: Optional[int] = None,
+        status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         """Get executions for one asset check, sorted by recency."""
         pass
@@ -623,6 +647,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         ascending: bool = False,
     ) -> EventRecordsResult:
         raise NotImplementedError()
+
+    @property
+    def supports_run_status_change_job_name_filter(self) -> bool:
+        return False
 
     @abstractmethod
     def fetch_run_status_changes(

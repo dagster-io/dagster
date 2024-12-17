@@ -31,7 +31,7 @@ def test_multi_location_error(instance):
         assert not request_context.has_code_location("completely_unknown_location")
 
         assert (
-            "No module named" in request_context.get_code_location_error("broken_location").message
+            "No module named" in request_context.get_code_location_error("broken_location").message  # pyright: ignore[reportOptionalMemberAccess]
         )
 
 
@@ -51,5 +51,5 @@ def test_workspace_with_only_error(instance):
         assert request_context.has_code_location_error("broken_location")
 
         assert (
-            "No module named" in request_context.get_code_location_error("broken_location").message
+            "No module named" in request_context.get_code_location_error("broken_location").message  # pyright: ignore[reportOptionalMemberAccess]
         )

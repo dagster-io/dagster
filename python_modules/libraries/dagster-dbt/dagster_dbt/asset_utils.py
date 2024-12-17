@@ -613,12 +613,12 @@ def default_asset_check_fn(
     )
 
 
-def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> str:
-    return hashlib.sha1(
-        (dbt_resource_props.get("raw_sql") or dbt_resource_props.get("raw_code", "")).encode(
-            "utf-8"
-        )
-    ).hexdigest()
+def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+    code: Optional[str] = dbt_resource_props.get("raw_sql") or dbt_resource_props.get("raw_code")
+    if code:
+        return hashlib.sha1(code.encode("utf-8")).hexdigest()
+
+    return dbt_resource_props.get("checksum", {}).get("checksum")
 
 
 def _attach_sql_model_code_reference(

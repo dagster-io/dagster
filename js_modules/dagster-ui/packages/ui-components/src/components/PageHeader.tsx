@@ -48,5 +48,6 @@ const PageHeaderContainer = styled(Box)`
    */
   .bp5-breadcrumbs {
     height: auto;
+    min-height: 30px;
   }
 `;

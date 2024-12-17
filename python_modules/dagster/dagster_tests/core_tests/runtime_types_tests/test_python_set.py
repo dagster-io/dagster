@@ -84,30 +84,30 @@ def test_open_typing_set_input_fail():
 def test_runtime_set_of_int():
     set_dagster_type = create_typed_runtime_set(int)
 
-    set_dagster_type.type_check(None, {1})
-    set_dagster_type.type_check(None, set())
+    set_dagster_type.type_check(None, {1})  # pyright: ignore[reportArgumentType]
+    set_dagster_type.type_check(None, set())  # pyright: ignore[reportArgumentType]
 
-    res = set_dagster_type.type_check(None, None)
+    res = set_dagster_type.type_check(None, None)  # pyright: ignore[reportArgumentType]
     assert not res.success
 
-    res = set_dagster_type.type_check(None, "nope")
+    res = set_dagster_type.type_check(None, "nope")  # pyright: ignore[reportArgumentType]
     assert not res.success
 
-    res = set_dagster_type.type_check(None, {"nope"})
+    res = set_dagster_type.type_check(None, {"nope"})  # pyright: ignore[reportArgumentType]
     assert not res.success
 
 
 def test_runtime_optional_set():
     set_dagster_type = resolve_dagster_type(Optional[create_typed_runtime_set(int)])
 
-    set_dagster_type.type_check(None, {1})
-    set_dagster_type.type_check(None, set())
-    set_dagster_type.type_check(None, None)
+    set_dagster_type.type_check(None, {1})  # pyright: ignore[reportArgumentType]
+    set_dagster_type.type_check(None, set())  # pyright: ignore[reportArgumentType]
+    set_dagster_type.type_check(None, None)  # pyright: ignore[reportArgumentType]
 
-    res = set_dagster_type.type_check(None, "nope")
+    res = set_dagster_type.type_check(None, "nope")  # pyright: ignore[reportArgumentType]
     assert not res.success
 
-    res = set_dagster_type.type_check(None, {"nope"})
+    res = set_dagster_type.type_check(None, {"nope"})  # pyright: ignore[reportArgumentType]
     assert not res.success
 
 

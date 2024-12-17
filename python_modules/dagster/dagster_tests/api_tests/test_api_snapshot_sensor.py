@@ -23,8 +23,8 @@ def test_remote_sensor_grpc(instance):
             instance, repository_handle, "sensor_foo", None, None, None, None
         )
         assert isinstance(result, SensorExecutionData)
-        assert len(result.run_requests) == 2
-        run_request = result.run_requests[0]
+        assert len(result.run_requests) == 2  # pyright: ignore[reportArgumentType]
+        run_request = result.run_requests[0]  # pyright: ignore[reportOptionalSubscript]
         assert run_request.run_config == {"foo": "FOO"}
         assert run_request.tags == {"foo": "foo_tag", "dagster/sensor_name": "sensor_foo"}
 
@@ -54,8 +54,8 @@ def test_remote_sensor_grpc_fallback_to_streaming(instance):
                         None,
                     )
                     assert isinstance(result, SensorExecutionData)
-                    assert len(result.run_requests) == 2
-                    run_request = result.run_requests[0]
+                    assert len(result.run_requests) == 2  # pyright: ignore[reportArgumentType]
+                    run_request = result.run_requests[0]  # pyright: ignore[reportOptionalSubscript]
                     assert run_request.run_config == {"foo": "FOO"}
                     assert run_request.tags == {
                         "foo": "foo_tag",

@@ -25,7 +25,7 @@ def test_k8s_run_monitoring_startup_fail(
     webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -70,7 +70,7 @@ def test_k8s_run_monitoring_resume(
     webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {

@@ -35,4 +35,4 @@ mdx:
 	tox -e sphinx-mdx
 
 mdx_copy:
-	cp -rf sphinx/_build/mdx/sections/api/apidocs/* docs-beta/docs/api/
+	cp -rf sphinx/_build/mdx/sections/api/apidocs/* docs-beta/docs/api/python-api/

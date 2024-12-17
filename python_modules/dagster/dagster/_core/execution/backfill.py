@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Mapping, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Iterator, Mapping, NamedTuple, Optional, Sequence, Union
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
@@ -20,11 +20,21 @@ from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.external_data import job_name_for_partition_set_snap_name
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
-from dagster._core.storage.tags import USER_TAG
+from dagster._core.storage.dagster_run import (
+    CANCELABLE_RUN_STATUSES,
+    NOT_FINISHED_STATUSES,
+    RunsFilter,
+)
+from dagster._core.storage.tags import BACKFILL_ID_TAG, USER_TAG
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
+
+if TYPE_CHECKING:
+    from dagster._core.instance import DagsterInstance
+
+MAX_RUNS_CANCELED_PER_ITERATION = 50
 
 
 @whitelist_for_serdes
@@ -508,3 +518,50 @@ class PartitionBackfill(
             title=title,
             description=description,
         )
+
+
+def cancel_backfill_runs_and_cancellation_complete(
+    instance: "DagsterInstance", backfill_id: str
+) -> Iterator[Union[None, bool]]:
+    """Cancels MAX_RUNS_CANCELED_PER_ITERATION runs associated with the backfill_id. Ensures that
+    all runs for the backfill are in a terminal state before indicating that the backfill can be marked
+    CANCELED.
+    Yields a boolean indicating the backfill can be considered canceled (ie all runs are canceled).
+    """
+    if not instance.run_coordinator:
+        check.failed("The instance must have a run coordinator in order to cancel runs")
+
+    # Query for cancelable runs, enforcing a limit on the number of runs to cancel in an iteration
+    # as canceling runs incurs cost
+    runs_to_cancel_in_iteration = instance.run_storage.get_run_ids(
+        filters=RunsFilter(
+            statuses=CANCELABLE_RUN_STATUSES,
+            tags={
+                BACKFILL_ID_TAG: backfill_id,
+            },
+        ),
+        limit=MAX_RUNS_CANCELED_PER_ITERATION,
+    )
+
+    yield None
+
+    if runs_to_cancel_in_iteration:
+        # since we are canceling some runs in this iteration, we know that there is more work to do.
+        # Either cancelling more runs, or waiting for the canceled runs to get to a terminal state
+        work_done = False
+        for run_id in runs_to_cancel_in_iteration:
+            instance.run_coordinator.cancel_run(run_id)
+            yield None
+    else:
+        # If there are no runs to cancel, check if there are any runs still in progress. If there are,
+        # then we want to wait for them to reach a terminal state before the backfill is marked CANCELED.
+        run_waiting_to_cancel = instance.get_run_ids(
+            RunsFilter(
+                tags={BACKFILL_ID_TAG: backfill_id},
+                statuses=NOT_FINISHED_STATUSES,
+            ),
+            limit=1,
+        )
+        work_done = len(run_waiting_to_cancel) == 0
+
+    yield work_done

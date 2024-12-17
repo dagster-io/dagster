@@ -199,6 +199,7 @@ class DbtProject(IHaveNew):
 
     """
 
+    name: str
     project_dir: Path
     target_path: Path
     target: Optional[str]
@@ -250,6 +251,7 @@ class DbtProject(IHaveNew):
 
         return super().__new__(
             cls,
+            name=dbt_project_yml["name"],
             project_dir=project_dir,
             target_path=target_path,
             target=target,

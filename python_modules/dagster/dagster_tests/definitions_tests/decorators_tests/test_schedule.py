@@ -172,11 +172,11 @@ def test_schedule_decorators_bad():
 def test_schedule_with_nested_tags():
     nested_tags = {"foo": {"bar": "baz"}}
 
-    @schedule(cron_schedule="* * * * *", job_name="foo_job", tags=nested_tags)
+    @schedule(cron_schedule="* * * * *", job_name="foo_job", tags=nested_tags)  # pyright: ignore[reportArgumentType]
     def my_tag_schedule():
         return {}
 
-    assert my_tag_schedule.evaluate_tick(
+    assert my_tag_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript]
         build_schedule_context(scheduled_execution_time=get_current_datetime())
     )[0][0].tags == merge_dicts(
         {key: json.dumps(val) for key, val in nested_tags.items()},
@@ -202,7 +202,7 @@ def test_invalid_tag_keys():
         )
         assert warning.filename.endswith("test_schedule.py")
 
-    assert my_tag_schedule.evaluate_tick(
+    assert my_tag_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript]
         build_schedule_context(scheduled_execution_time=get_current_datetime())
     )[0][0].tags == merge_dicts(tags, {"dagster/schedule_name": "my_tag_schedule"})
 
@@ -262,8 +262,8 @@ def test_request_based_schedule():
 
     # test direct invocation
     run_request = foo_schedule(context_without_time)
-    assert run_request.run_config == FOO_CONFIG
-    assert run_request.tags.get("foo") == "FOO"
+    assert run_request.run_config == FOO_CONFIG  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert run_request.tags.get("foo") == "FOO"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_request_based_schedule_no_context():
@@ -298,8 +298,8 @@ def test_request_based_schedule_no_context():
 
     # test direct invocation
     run_request = foo_schedule()
-    assert run_request.run_config == FOO_CONFIG
-    assert run_request.tags.get("foo") == "FOO"
+    assert run_request.run_config == FOO_CONFIG  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert run_request.tags.get("foo") == "FOO"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_config_based_schedule():

@@ -1,4 +1,4 @@
-import {useContext} from 'react';
+import {useCallback, useContext} from 'react';
 
 import {AppContext} from '../app/AppContext';
 
@@ -6,7 +6,11 @@ import {AppContext} from '../app/AppContext';
 // the link opens to the appropriate deployment.
 export const useOpenInNewTab = () => {
   const {basePath} = useContext(AppContext);
-  return (path: string) => {
-    window.open(`${basePath}${path}`, '_blank');
-  };
+  return useCallback(
+    (path: string) => {
+      // eslint-disable-next-line no-restricted-properties
+      window.open(`${basePath}${path}`, '_blank');
+    },
+    [basePath],
+  );
 };

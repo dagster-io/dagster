@@ -185,7 +185,7 @@ class ReconstructableJobSerializer(NamedTupleSerializer):
     def pack_items(self, *args, **kwargs):
         for k, v in super().pack_items(*args, **kwargs):
             if k == "op_selection":
-                new_v = json.dumps(v["__set__"]) if v else None
+                new_v = json.dumps(v["__set__"]) if v else None  # pyright: ignore[reportCallIssue,reportArgumentType,reportIndexIssue]
                 yield "solid_selection_str", new_v
             else:
                 yield k, v

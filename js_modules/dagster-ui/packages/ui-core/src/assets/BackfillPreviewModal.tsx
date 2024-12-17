@@ -57,7 +57,7 @@ export const BackfillPreviewModal = ({
       skip: !isOpen,
     },
   );
-  const {data} = queryResult;
+  const {data, loading} = queryResult;
 
   const partitionsByAssetToken = useMemo(() => {
     return Object.fromEntries(
@@ -65,16 +65,12 @@ export const BackfillPreviewModal = ({
     );
   }, [data]);
 
-  // BG Note: The transform: scale(1) below fixes a bug with MiddleTruncate where the text size
-  // is measured while the dialog is animating open and the scale is < 1, causing it to think
-  // it needs to truncate. A more general fix for this seems like it'll require a lot of testing.
-
   return (
     <Dialog
       title="Backfill preview"
       isOpen={isOpen}
       onClose={() => setOpen(false)}
-      style={{width: '90vw', maxWidth: 1100, transform: 'scale(1)'}}
+      style={{width: '90vw', maxWidth: 1100}}
     >
       <Container
         ref={parentRef}
@@ -111,8 +107,10 @@ export const BackfillPreviewModal = ({
                   <RowCell style={{color: Colors.textDefault(), alignItems: 'flex-start'}}>
                     {partitions ? (
                       <TargetPartitionsDisplay targetPartitions={partitions} />
-                    ) : (
+                    ) : loading ? (
                       <Spinner purpose="body-text" />
+                    ) : (
+                      'No partitions available to materialize'
                     )}
                   </RowCell>
                 </RowGrid>

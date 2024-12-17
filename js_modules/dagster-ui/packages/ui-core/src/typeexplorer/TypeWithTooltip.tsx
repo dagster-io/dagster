@@ -36,7 +36,7 @@ export const DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT = gql`
 `;
 
 const TypeLink = styled(Link)`
-  :hover {
+  &:hover {
     text-decoration: none;
   }
 `;

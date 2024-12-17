@@ -90,11 +90,11 @@ class TestMySQLRunStorage(TestRunStorage):
                     overrides=yaml.safe_load(explicit_cfg)
                 ) as from_explicit_instance:
                     assert (
-                        from_url_instance._run_storage.mysql_url  # noqa: SLF001
-                        == from_explicit_instance._run_storage.mysql_url  # noqa: SLF001
+                        from_url_instance._run_storage.mysql_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+                        == from_explicit_instance._run_storage.mysql_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
                     )
                 with instance_for_test(overrides=yaml.safe_load(env_cfg)) as from_env_instance:
                     assert (
-                        from_url_instance._run_storage.mysql_url  # noqa: SLF001
-                        == from_env_instance._run_storage.mysql_url  # noqa: SLF001
+                        from_url_instance._run_storage.mysql_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+                        == from_env_instance._run_storage.mysql_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
                     )

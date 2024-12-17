@@ -9,9 +9,8 @@ from dagster._core.remote_representation.external_data import (
     RepositorySnap,
     TimeWindowPartitionsSnap,
 )
-from dagster._core.snap.job_snapshot import create_job_snapshot_id
-from dagster._core.test_utils import in_process_test_workspace, instance_for_test
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.snap.job_snapshot import _create_job_snapshot_id
+from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
 from dagster._serdes import serialize_pp
 from dagster._time import get_current_datetime
 
@@ -73,44 +72,60 @@ def test_remote_job_data(snapshot):
     )
 
 
-@mock.patch("dagster._core.remote_representation.job_index.create_job_snapshot_id")
-def test_remote_repo_shared_index(snapshot_mock):
+import os
+
+from dagster._core.workspace.load_target import ModuleTarget
+
+
+def workspace_load_target():
+    return ModuleTarget(
+        module_name="dagster_tests.core_tests.snap_tests.test_active_data",
+        attribute="a_repo",
+        working_directory=os.path.join(os.path.dirname(__file__), "..", "..", ".."),
+        location_name="test_location",
+    )
+
+
+def test_remote_repo_shared_index_single_threaded():
     # ensure we don't rebuild indexes / snapshot ids repeatedly
+    with mock.patch("dagster._core.snap.job_snapshot._create_job_snapshot_id") as snapshot_mock:
+        snapshot_mock.side_effect = _create_job_snapshot_id
+        with instance_for_test() as instance:
+            with create_test_daemon_workspace_context(
+                workspace_load_target(),
+                instance,
+            ) as workspace_process_context:
+                workspace = workspace_process_context.create_request_context()
 
-    snapshot_mock.side_effect = create_job_snapshot_id
-    with instance_for_test() as instance:
-        with in_process_test_workspace(
-            instance, LoadableTargetOrigin(python_file=__file__)
-        ) as workspace:
+                def _fetch_snap_id():
+                    location = workspace.code_locations[0]
+                    ex_repo = next(iter(location.get_repositories().values()))
+                    return ex_repo.get_all_jobs()[0].identifying_job_snapshot_id
 
-            def _fetch_snap_id():
-                location = workspace.code_locations[0]
-                ex_repo = next(iter(location.get_repositories().values()))
-                return ex_repo.get_all_jobs()[0].identifying_job_snapshot_id
+                _fetch_snap_id()
+                assert snapshot_mock.call_count == 1
 
-            _fetch_snap_id()
-            assert snapshot_mock.call_count == 1
-
-            _fetch_snap_id()
-            assert snapshot_mock.call_count == 1
+                _fetch_snap_id()
+                assert snapshot_mock.call_count == 1
 
 
-@mock.patch("dagster._core.remote_representation.job_index.create_job_snapshot_id")
-def test_remote_repo_shared_index_threaded(snapshot_mock):
+def test_remote_repo_shared_index_multi_threaded():
     # ensure we don't rebuild indexes / snapshot ids repeatedly across threads
+    with mock.patch("dagster._core.snap.job_snapshot._create_job_snapshot_id") as snapshot_mock:
+        snapshot_mock.side_effect = _create_job_snapshot_id
+        with instance_for_test() as instance:
+            with create_test_daemon_workspace_context(
+                workspace_load_target(),
+                instance,
+            ) as workspace_process_context:
+                workspace = workspace_process_context.create_request_context()
 
-    snapshot_mock.side_effect = create_job_snapshot_id
-    with instance_for_test() as instance:
-        with in_process_test_workspace(
-            instance, LoadableTargetOrigin(python_file=__file__)
-        ) as workspace:
+                def _fetch_snap_id():
+                    location = workspace.code_locations[0]
+                    ex_repo = next(iter(location.get_repositories().values()))
+                    return ex_repo.get_all_jobs()[0].identifying_job_snapshot_id
 
-            def _fetch_snap_id():
-                location = workspace.code_locations[0]
-                ex_repo = next(iter(location.get_repositories().values()))
-                return ex_repo.get_all_jobs()[0].identifying_job_snapshot_id
+                with ThreadPoolExecutor() as executor:
+                    wait([executor.submit(_fetch_snap_id) for _ in range(100)])
 
-            with ThreadPoolExecutor() as executor:
-                wait([executor.submit(_fetch_snap_id) for _ in range(100)])
-
-            assert snapshot_mock.call_count == 1
+                assert snapshot_mock.call_count == 1

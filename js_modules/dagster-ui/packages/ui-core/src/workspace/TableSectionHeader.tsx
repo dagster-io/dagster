@@ -45,16 +45,16 @@ const SectionHeaderButton = styled.button<{$open: boolean}>`
   height: ${SECTION_HEADER_HEIGHT}px;
   text-align: left;
 
-  :focus,
-  :active {
+  &:focus,
+  &:active {
     outline: none;
   }
 
-  :hover {
+  &:hover {
     background-color: ${Colors.backgroundLightHover()};
   }
 
-  ${IconWrapper}[aria-label="arrow_drop_down"] {
+  ${IconWrapper}[aria-label='arrow_drop_down'] {
     transition: transform 100ms linear;
     ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
   }

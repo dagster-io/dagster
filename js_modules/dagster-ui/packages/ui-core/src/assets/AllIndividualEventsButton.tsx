@@ -389,7 +389,7 @@ const DisclosureTriangleButton = styled.button<{$open: boolean}>`
     opacity: 0.25;
   }
 
-  :focus {
+  &:focus {
     outline: none;
 
     ${IconWrapper} {

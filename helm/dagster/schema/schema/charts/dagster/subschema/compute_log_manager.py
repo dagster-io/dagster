@@ -18,7 +18,7 @@ class ComputeLogManagerType(str, Enum):
 class AzureBlobComputeLogManager(BaseModel):
     storageAccount: StringSource
     container: StringSource
-    secretKey: Optional[StringSource] = None
+    secretCredential: Optional[dict] = None
     defaultAzureCredential: Optional[dict] = None
     localDir: Optional[StringSource] = None
     prefix: Optional[StringSource] = None

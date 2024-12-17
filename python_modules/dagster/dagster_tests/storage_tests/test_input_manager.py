@@ -366,7 +366,7 @@ def test_input_manager_with_assets():
         resources={"special_io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
 
-    assert output._get_output_for_handle("downstream", "result") == 3  # noqa: SLF001
+    assert output._get_output_for_handle("downstream", "result") == 3  # noqa: SLF001  # pyright: ignore[reportArgumentType]
 
 
 def test_input_manager_with_observable_source_asset() -> None:
@@ -450,7 +450,7 @@ def test_input_manager_with_assets_and_config():
 
     class MyIOManager(IOManager):
         def load_input(self, context):
-            assert context.resource_config["foo"] == "bar"
+            assert context.resource_config["foo"] == "bar"  # pyright: ignore[reportOptionalSubscript]
             assert context.upstream_output is not None
             assert context.upstream_output.asset_key == AssetKey(["upstream"])
 
@@ -520,10 +520,10 @@ def test_input_manager_with_failure():
 
         failure_data = result.filter_events(lambda evt: evt.is_step_failure)[0].step_failure_data
 
-        assert failure_data.error.cls_name == "Failure"
+        assert failure_data.error.cls_name == "Failure"  # pyright: ignore[reportOptionalMemberAccess]
 
-        assert failure_data.user_failure_data.description == "Foolure"
-        assert failure_data.user_failure_data.metadata["label"] == MetadataValue.text("text")
+        assert failure_data.user_failure_data.description == "Foolure"  # pyright: ignore[reportOptionalMemberAccess]
+        assert failure_data.user_failure_data.metadata["label"] == MetadataValue.text("text")  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_input_manager_with_retries():
@@ -572,13 +572,13 @@ def test_input_manager_with_retries():
         step_stats_1 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_1"])
         assert len(step_stats_1) == 1
         step_stat_1 = step_stats_1[0]
-        assert step_stat_1.status.value == "SUCCESS"
+        assert step_stat_1.status.value == "SUCCESS"  # pyright: ignore[reportOptionalMemberAccess]
         assert step_stat_1.attempts == 3
 
         step_stats_2 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_2"])
         assert len(step_stats_2) == 1
         step_stat_2 = step_stats_2[0]
-        assert step_stat_2.status.value == "FAILURE"
+        assert step_stat_2.status.value == "FAILURE"  # pyright: ignore[reportOptionalMemberAccess]
         assert step_stat_2.attempts == 4
 
         step_stats_3 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_3"])

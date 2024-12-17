@@ -15,9 +15,9 @@ def spark_session_from_config(spark_conf=None):
     builder = SparkSession.builder
     flat = flatten_dict(spark_conf)
     for key, value in flat:
-        builder = builder.config(key, value)
+        builder = builder.config(key, value)  # pyright: ignore[reportAttributeAccessIssue]
 
-    return builder.getOrCreate()
+    return builder.getOrCreate()  # pyright: ignore[reportAttributeAccessIssue]
 
 
 class PySparkResource(ConfigurableResource):
@@ -132,12 +132,12 @@ class LazyPySparkResource(ConfigurableResource):
     @property
     def spark_session(self) -> Any:
         self._init_session()
-        return self._spark_session
+        return check.not_none(self._spark_session)
 
     @property
     def spark_context(self) -> Any:
         self._init_session()
-        return self._spark_session.sparkContext
+        return check.not_none(self._spark_session).sparkContext
 
 
 @dagster_maintained_resource

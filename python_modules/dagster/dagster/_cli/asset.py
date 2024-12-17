@@ -31,7 +31,7 @@ def asset_cli():
 
 @asset_cli.command(name="materialize", help="Execute a run to materialize a selection of assets")
 @python_origin_target_argument
-@click.option("--select", help="Asset selection to target", required=True)
+@click.option("--select", help="Comma-separated Asset selection to target", required=True)
 @click.option("--partition", help="Asset partition to target", required=False)
 @click.option(
     "--partition-range",
@@ -208,7 +208,7 @@ def asset_wipe_command(key, **cli_args):
             confirmation = click.prompt(prompt)
 
         if confirmation == "DELETE":
-            instance.wipe_assets(asset_keys)
+            instance.wipe_assets(asset_keys)  # pyright: ignore[reportArgumentType]
             click.echo("Removed asset indexes from event logs")
         else:
             click.echo("Exiting without removing asset indexes")
@@ -266,7 +266,7 @@ def asset_wipe_cache_command(key, **cli_args):
             confirmation = click.prompt(prompt)
 
         if confirmation == "DELETE":
-            instance.wipe_asset_cached_status(asset_keys)
+            instance.wipe_asset_cached_status(asset_keys)  # pyright: ignore[reportArgumentType]
             click.echo("Cleared the partitions status cache")
         else:
             click.echo("Exiting without wiping the partitions status cache")

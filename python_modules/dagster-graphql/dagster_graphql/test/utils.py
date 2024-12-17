@@ -165,7 +165,7 @@ def infer_repository(graphql_context: WorkspaceRequestContext) -> RemoteReposito
         assert len(repositories) == 1
         return next(iter(repositories.values()))
 
-    code_location = graphql_context.get_code_location("test")
+    code_location = graphql_context.get_code_location(main_repo_location_name())
     return code_location.get_repository("test_repo")
 
 
@@ -177,7 +177,7 @@ def infer_repository_selector(graphql_context: WorkspaceRequestContext) -> Selec
         assert len(repositories) == 1
         repository = next(iter(repositories.values()))
     else:
-        code_location = graphql_context.get_code_location("test")
+        code_location = graphql_context.get_code_location(main_repo_location_name())
         repository = code_location.get_repository("test_repo")
 
     return {

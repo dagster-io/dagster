@@ -691,6 +691,17 @@ def test_with_code_version_replacements(test_jaffle_shop_manifest: Dict[str, Any
         assert code_version == expected_code_version
 
 
+def test_all_assets_have_a_distinct_code_version(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest,
+        dagster_dbt_translator=DagsterDbtTranslator(),
+    )
+    def my_dbt_assets(): ...
+
+    code_versions = list(my_dbt_assets.code_versions_by_key.values())
+    assert len(code_versions) == len(set(code_versions))
+
+
 def test_with_freshness_policy_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     expected_freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
 

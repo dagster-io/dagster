@@ -26,8 +26,8 @@ def path_to_temp_sqlite_db(tmp_path):
 @pytest.fixture
 def sling_sqlite_resource(path_to_temp_sqlite_db):
     return SlingResource(
-        source_connection=SlingConnectionResource(name="file_source", type="file"),
-        target_connection=SlingConnectionResource(
+        source_connection=SlingConnectionResource(name="file_source", type="file"),  # pyright: ignore[reportCallIssue]
+        target_connection=SlingConnectionResource(  # pyright: ignore[reportCallIssue]
             name="sqlite_target",
             type="sqlite",
             connection_string=f"sqlite://{path_to_temp_sqlite_db}",

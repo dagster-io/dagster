@@ -305,7 +305,7 @@ export const RUN_STATUS_AND_PARTITION_KEY = gql`
 `;
 
 const TagLink = styled(Link)`
-  :focus {
+  &:focus {
     outline: none;
   }
 `;

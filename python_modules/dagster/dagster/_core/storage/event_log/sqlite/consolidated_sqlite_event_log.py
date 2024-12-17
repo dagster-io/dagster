@@ -2,6 +2,7 @@ import logging
 import os
 from collections import defaultdict
 from contextlib import contextmanager
+from functools import cached_property
 from typing import Any, Mapping, Optional
 
 import sqlalchemy as db
@@ -112,7 +113,9 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def has_table(self, table_name: str) -> bool:
         engine = create_engine(self._conn_string, poolclass=NullPool)
-        return bool(engine.dialect.has_table(engine.connect(), table_name))
+        with engine.connect() as conn:
+            has_table = bool(engine.dialect.has_table(conn, table_name))
+        return has_table
 
     def get_db_path(self):
         return os.path.join(self._base_dir, f"{SQLITE_EVENT_LOG_FILENAME}.db")
@@ -144,9 +147,9 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         self._watchers[run_id][callback] = cursor
 
-    @property
+    @cached_property
     def supports_global_concurrency_limits(self) -> bool:
-        return False
+        return self.has_table("concurrency_limits")
 
     def on_modified(self):
         keys = [

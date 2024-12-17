@@ -108,51 +108,51 @@ class TestInstanceSettings(BaseTestSuite):
         # set a limit
         _set_limits("foo", 10)
         foo = _fetch_limits("foo")
-        assert foo["concurrencyKey"] == "foo"
-        assert foo["slotCount"] == 10
-        assert foo["activeSlotCount"] == 0
-        assert foo["activeRunIds"] == []
-        assert foo["claimedSlots"] == []
-        assert foo["pendingSteps"] == []
+        assert foo["concurrencyKey"] == "foo"  # pyright: ignore[reportOptionalSubscript]
+        assert foo["slotCount"] == 10  # pyright: ignore[reportOptionalSubscript]
+        assert foo["activeSlotCount"] == 0  # pyright: ignore[reportOptionalSubscript]
+        assert foo["activeRunIds"] == []  # pyright: ignore[reportOptionalSubscript]
+        assert foo["claimedSlots"] == []  # pyright: ignore[reportOptionalSubscript]
+        assert foo["pendingSteps"] == []  # pyright: ignore[reportOptionalSubscript]
 
         # claim a slot
         run_id = make_new_run_id()
         instance.event_log_storage.claim_concurrency_slot("foo", run_id, "fake_step_key")
         foo = _fetch_limits("foo")
-        assert foo["concurrencyKey"] == "foo"
-        assert foo["slotCount"] == 10
-        assert foo["activeSlotCount"] == 1
-        assert foo["activeRunIds"] == [run_id]
-        assert foo["claimedSlots"] == [{"runId": run_id, "stepKey": "fake_step_key"}]
-        assert len(foo["pendingSteps"]) == 1
-        assert foo["pendingSteps"][0]["runId"] == run_id
-        assert foo["pendingSteps"][0]["stepKey"] == "fake_step_key"
-        assert foo["pendingSteps"][0]["assignedTimestamp"] is not None
-        assert foo["pendingSteps"][0]["priority"] == 0
+        assert foo["concurrencyKey"] == "foo"  # pyright: ignore[reportOptionalSubscript]
+        assert foo["slotCount"] == 10  # pyright: ignore[reportOptionalSubscript]
+        assert foo["activeSlotCount"] == 1  # pyright: ignore[reportOptionalSubscript]
+        assert foo["activeRunIds"] == [run_id]  # pyright: ignore[reportOptionalSubscript]
+        assert foo["claimedSlots"] == [{"runId": run_id, "stepKey": "fake_step_key"}]  # pyright: ignore[reportOptionalSubscript]
+        assert len(foo["pendingSteps"]) == 1  # pyright: ignore[reportOptionalSubscript]
+        assert foo["pendingSteps"][0]["runId"] == run_id  # pyright: ignore[reportOptionalSubscript]
+        assert foo["pendingSteps"][0]["stepKey"] == "fake_step_key"  # pyright: ignore[reportOptionalSubscript]
+        assert foo["pendingSteps"][0]["assignedTimestamp"] is not None  # pyright: ignore[reportOptionalSubscript]
+        assert foo["pendingSteps"][0]["priority"] == 0  # pyright: ignore[reportOptionalSubscript]
 
         # set a new limit
         _set_limits("foo", 5)
         foo = _fetch_limits("foo")
-        assert foo["concurrencyKey"] == "foo"
-        assert foo["slotCount"] == 5
-        assert foo["activeSlotCount"] == 1
-        assert foo["activeRunIds"] == [run_id]
-        assert foo["claimedSlots"] == [{"runId": run_id, "stepKey": "fake_step_key"}]
-        assert len(foo["pendingSteps"]) == 1
-        assert foo["pendingSteps"][0]["runId"] == run_id
-        assert foo["pendingSteps"][0]["stepKey"] == "fake_step_key"
-        assert foo["pendingSteps"][0]["assignedTimestamp"] is not None
-        assert foo["pendingSteps"][0]["priority"] == 0
+        assert foo["concurrencyKey"] == "foo"  # pyright: ignore[reportOptionalSubscript]
+        assert foo["slotCount"] == 5  # pyright: ignore[reportOptionalSubscript]
+        assert foo["activeSlotCount"] == 1  # pyright: ignore[reportOptionalSubscript]
+        assert foo["activeRunIds"] == [run_id]  # pyright: ignore[reportOptionalSubscript]
+        assert foo["claimedSlots"] == [{"runId": run_id, "stepKey": "fake_step_key"}]  # pyright: ignore[reportOptionalSubscript]
+        assert len(foo["pendingSteps"]) == 1  # pyright: ignore[reportOptionalSubscript]
+        assert foo["pendingSteps"][0]["runId"] == run_id  # pyright: ignore[reportOptionalSubscript]
+        assert foo["pendingSteps"][0]["stepKey"] == "fake_step_key"  # pyright: ignore[reportOptionalSubscript]
+        assert foo["pendingSteps"][0]["assignedTimestamp"] is not None  # pyright: ignore[reportOptionalSubscript]
+        assert foo["pendingSteps"][0]["priority"] == 0  # pyright: ignore[reportOptionalSubscript]
 
         # free a slot
         instance.event_log_storage.free_concurrency_slots_for_run(run_id)
         foo = _fetch_limits("foo")
-        assert foo["concurrencyKey"] == "foo"
-        assert foo["slotCount"] == 5
-        assert foo["activeSlotCount"] == 0
-        assert foo["activeRunIds"] == []
-        assert foo["claimedSlots"] == []
-        assert foo["pendingSteps"] == []
+        assert foo["concurrencyKey"] == "foo"  # pyright: ignore[reportOptionalSubscript]
+        assert foo["slotCount"] == 5  # pyright: ignore[reportOptionalSubscript]
+        assert foo["activeSlotCount"] == 0  # pyright: ignore[reportOptionalSubscript]
+        assert foo["activeRunIds"] == []  # pyright: ignore[reportOptionalSubscript]
+        assert foo["claimedSlots"] == []  # pyright: ignore[reportOptionalSubscript]
+        assert foo["pendingSteps"] == []  # pyright: ignore[reportOptionalSubscript]
 
     def test_concurrency_free(self, graphql_context):
         storage = graphql_context.instance.event_log_storage

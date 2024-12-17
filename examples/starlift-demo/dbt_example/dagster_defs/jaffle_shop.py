@@ -24,7 +24,7 @@ def jaffle_shop_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 
 jaffle_shop_external_assets = [
-    spec._replace(code_version=None, skippable=False) for spec in jaffle_shop_assets.specs
+    spec.replace_attributes(code_version=None, skippable=False) for spec in jaffle_shop_assets.specs
 ]
 
 jaffle_shop_with_upstream = eager_asset(with_deps(DBT_SOURCE_TO_DAG, jaffle_shop_assets))

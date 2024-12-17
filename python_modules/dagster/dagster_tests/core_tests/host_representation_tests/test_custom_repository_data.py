@@ -52,7 +52,7 @@ class TestDynamicRepositoryData(RepositoryData):
         return {}
 
 
-@repository
+@repository  # pyright: ignore[reportArgumentType]
 def bar_repo():
     return TestDynamicRepositoryData()
 

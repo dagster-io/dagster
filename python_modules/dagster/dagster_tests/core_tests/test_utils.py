@@ -22,7 +22,7 @@ def library_registry_fixture():
 
     yield
 
-    DagsterLibraryRegistry._libraries = previous_libraries  # noqa: SLF001
+    DagsterLibraryRegistry._libraries = previous_libraries  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_parse_env_var_no_equals():
@@ -106,7 +106,7 @@ def test_hash_collection():
     assert hash_collection(set(range(10))) == hash_collection(set(range(10)))
 
     with pytest.raises(AssertionError):
-        hash_collection(object())
+        hash_collection(object())  # pyright: ignore[reportArgumentType]
 
     class Foo(NamedTuple):
         a: List[int]

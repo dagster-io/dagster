@@ -33,6 +33,7 @@ const config = {
   origin: process.env.NEXT_PUBLIC_BACKEND_ORIGIN || document.location.origin,
   telemetryEnabled,
   statusPolling: new Set<DeploymentStatusType>(['code-locations', 'daemons']),
+  idempotentMutations: false,
 };
 
 const appCache = createAppCache();

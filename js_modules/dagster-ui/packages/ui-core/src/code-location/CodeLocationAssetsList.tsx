@@ -219,12 +219,12 @@ const GroupNameRow = (props: GroupNameRowProps) => {
 const ClickableRow = styled(Row)<{$open: boolean}>`
   cursor: pointer;
 
-  :focus,
-  :active {
+  &:focus,
+  &:active {
     outline: none;
   }
 
-  ${IconWrapper}[aria-label="arrow_drop_down"] {
+  ${IconWrapper}[aria-label='arrow_drop_down'] {
     transition: transform 100ms linear;
     ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
   }

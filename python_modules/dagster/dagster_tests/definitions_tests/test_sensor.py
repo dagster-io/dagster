@@ -62,12 +62,12 @@ def test_coerce_to_asset_selection():
 
     assert SensorDefinition(
         "a", asset_selection=["asset1", "asset2"], evaluation_fn=evaluation_fn
-    ).asset_selection.resolve(assets) == {AssetKey("asset1"), AssetKey("asset2")}
+    ).asset_selection.resolve(assets) == {AssetKey("asset1"), AssetKey("asset2")}  # pyright: ignore[reportOptionalMemberAccess]
 
     sensor_def = SensorDefinition(
         "a", asset_selection=[asset1, asset2], evaluation_fn=evaluation_fn
     )
-    assert sensor_def.asset_selection.resolve(assets) == {AssetKey("asset1"), AssetKey("asset2")}
+    assert sensor_def.asset_selection.resolve(assets) == {AssetKey("asset1"), AssetKey("asset2")}  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_coerce_graph_def_to_job():

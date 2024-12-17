@@ -273,14 +273,6 @@ postgres_extra_cmds = [
 # special-case those here
 EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
-        "examples/with_airflow",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_10,
-            AvailablePythonVersion.V3_11,
-            AvailablePythonVersion.V3_12,
-        ],
-    ),
-    PackageSpec(
         "examples/assets_smoke_test",
     ),
     PackageSpec(
@@ -367,9 +359,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/experimental/dagster-blueprints",
     ),
-    PackageSpec(
-        "examples/experimental/dagster-airlift",
-    ),
     # Runs against live dbt cloud instance, we only want to run on commits and on the
     # nightly build
     PackageSpec(
@@ -385,16 +374,16 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         timeout_in_minutes=30,
         queue=BuildkiteQueue.DOCKER,
     ),
+    # Federation tutorial spins up multiple airflow instances, slow to run - use docker queue to ensure
+    # beefier instance
     PackageSpec(
-        "examples/experimental/dagster-airlift/perf-harness",
-        always_run_if=has_dagster_airlift_changes,
+        "examples/airlift-federation-tutorial",
+        skip_if=skip_if_not_airlift_or_dlift_commit,
+        timeout_in_minutes=30,
+        queue=BuildkiteQueue.DOCKER,
     ),
     PackageSpec(
         "examples/airlift-migration-tutorial",
-        always_run_if=has_dagster_airlift_changes,
-    ),
-    PackageSpec(
-        "examples/experimental/dagster-airlift/kitchen-sink",
         always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
@@ -739,6 +728,14 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             # duckdb
             AvailablePythonVersion.V3_12,
         ],
+    ),
+    PackageSpec(
+        "python_modules/libraries/dagster-airlift/perf-harness",
+        always_run_if=has_dagster_airlift_changes,
+    ),
+    PackageSpec(
+        "python_modules/libraries/dagster-airlift/kitchen-sink",
+        always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
         ".buildkite/dagster-buildkite",

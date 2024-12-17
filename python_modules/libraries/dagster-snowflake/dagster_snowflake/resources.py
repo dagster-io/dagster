@@ -258,6 +258,15 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         default=None,
         description="Optional parameter to specify the authentication mechanism to use.",
     )
+    additional_snowflake_connection_args: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description=(
+            "Additional keyword arguments to pass to the snowflake.connector.connect function. For a full list of"
+            " available arguments, see the `Snowflake documentation"
+            " <https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect>`__."
+            " This config will be ignored if using the sqlalchemy connector."
+        ),
+    )
 
     @validator("paramstyle")
     def validate_paramstyle(cls, v: Optional[str]) -> Optional[str]:
@@ -338,6 +347,9 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             conn_args["private_key"] = self._snowflake_private_key(self._resolved_config_dict)
 
         conn_args["application"] = SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
+
+        if self._resolved_config_dict.get("additional_snowflake_connection_args") is not None:
+            conn_args.update(self._resolved_config_dict["additional_snowflake_connection_args"])
         return conn_args
 
     @property
@@ -757,7 +769,7 @@ def fetch_last_updated_timestamps(
     )
 
     query = f"""
-    SELECT table_name, CONVERT_TIMEZONE('UTC', last_altered) AS last_altered 
+    SELECT table_name, CONVERT_TIMEZONE('UTC', last_altered) AS last_altered
     FROM {fully_qualified_table_name}
     WHERE table_schema = '{schema}' AND table_name IN ({tables_str});
     """

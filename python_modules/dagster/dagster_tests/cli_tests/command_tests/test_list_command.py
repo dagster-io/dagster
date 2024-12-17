@@ -89,12 +89,12 @@ def test_list_command_grpc_socket():
                 no_print,
             )
 
-            result = runner.invoke(job_list_command, ["--grpc-socket", api_client.socket])
+            result = runner.invoke(job_list_command, ["--grpc-socket", api_client.socket])  # pyright: ignore[reportArgumentType]
             assert_correct_bar_repository_output(result)
 
             result = runner.invoke(
                 job_list_command,
-                ["--grpc-socket", api_client.socket, "--grpc-host", api_client.host],
+                ["--grpc-socket", api_client.socket, "--grpc-host", api_client.host],  # pyright: ignore[reportArgumentType]
             )
             assert_correct_bar_repository_output(result)
 
@@ -115,21 +115,21 @@ def test_list_command_deployed_grpc():
         ) as server_process:
             api_client = server_process.create_client()
 
-            result = runner.invoke(job_list_command, ["--grpc-port", api_client.port])
+            result = runner.invoke(job_list_command, ["--grpc-port", api_client.port])  # pyright: ignore[reportArgumentType]
             assert_correct_bar_repository_output(result)
 
             result = runner.invoke(
                 job_list_command,
-                ["--grpc-port", api_client.port, "--grpc-host", api_client.host],
+                ["--grpc-port", api_client.port, "--grpc-host", api_client.host],  # pyright: ignore[reportArgumentType]
             )
             assert_correct_bar_repository_output(result)
 
-            result = runner.invoke(job_list_command, ["--grpc-port", api_client.port])
+            result = runner.invoke(job_list_command, ["--grpc-port", api_client.port])  # pyright: ignore[reportArgumentType]
             assert_correct_bar_repository_output(result)
 
             result = runner.invoke(
                 job_list_command,
-                ["--grpc-port", api_client.port, "--grpc-socket", "foonamedsocket"],
+                ["--grpc-port", api_client.port, "--grpc-socket", "foonamedsocket"],  # pyright: ignore[reportArgumentType]
             )
             assert result.exit_code != 0
 

@@ -75,14 +75,17 @@ def dlt_assets(
         dlt_pipeline (Pipeline): The dlt Pipeline defining the destination parameters.
         name (Optional[str], optional): The name of the op.
         group_name (Optional[str], optional): The name of the asset group.
-        dagster_dlt_translator (DltDagsterTranslator, optional): Customization object for defining asset parameters from dlt resources.
+        dagster_dlt_translator (DagsterDltTranslator, optional): Customization object for defining asset parameters from dlt resources.
 
     Examples:
         Loading Hubspot data to Snowflake with an auto materialize policy using the dlt verified source:
 
         .. code-block:: python
 
-            class HubspotDltDagsterTranslator(DltDagsterTranslator):
+            from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+
+
+            class HubspotDagsterDltTranslator(DagsterDltTranslator):
                 @public
                 def get_auto_materialize_policy(self, resource: DltResource) -> Optional[AutoMaterializePolicy]:
                     return AutoMaterializePolicy.eager().with_rules(
@@ -100,14 +103,17 @@ def dlt_assets(
                 ),
                 name="hubspot",
                 group_name="hubspot",
-                dagster_dlt_translator=HubspotDltDagsterTranslator(),
+                dagster_dlt_translator=HubspotDagsterDltTranslator(),
             )
-            def hubspot_assets(context: AssetExecutionContext, dlt: DltDagsterResource):
+            def hubspot_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
                 yield from dlt.run(context=context)
 
         Loading Github issues to snowflake:
 
         .. code-block:: python
+
+            from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
+
 
             @dlt_assets(
                 dlt_source=github_reactions(
@@ -122,7 +128,7 @@ def dlt_assets(
                 name="github",
                 group_name="github",
             )
-            def github_reactions_dagster_assets(context: AssetExecutionContext, dlt: DltDagsterResource):
+            def github_reactions_dagster_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
                 yield from dlt.run(context=context)
 
     """

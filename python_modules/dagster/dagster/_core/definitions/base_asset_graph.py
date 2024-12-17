@@ -355,6 +355,15 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     @abstractmethod
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]: ...
 
+    def get_check_keys_for_assets(
+        self, asset_keys: AbstractSet[AssetKey]
+    ) -> AbstractSet[AssetCheckKey]:
+        return {
+            asset_check_key
+            for asset_check_key in self.asset_check_keys
+            if asset_check_key.asset_key in asset_keys
+        }
+
     @cached_property
     def all_partitions_defs(self) -> Sequence[PartitionsDefinition]:
         return sorted(

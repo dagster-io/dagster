@@ -1,11 +1,13 @@
 import {RetryLink} from '@apollo/client/link/retry';
 import {WebSocketLink} from '@apollo/client/link/ws';
-import {getMainDefinition} from '@apollo/client/utilities';
+import {getMainDefinition, isMutationOperation} from '@apollo/client/utilities';
 import {CustomTooltipProvider} from '@dagster-io/ui-components';
+import isPropValid from '@emotion/is-prop-valid';
 import * as React from 'react';
 import {useContext} from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {CompatRouter} from 'react-router-dom-v5-compat';
+import {StyleSheetManager, WebTarget} from 'styled-components';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {v4 as uuidv4} from 'uuid';
 
@@ -67,6 +69,7 @@ export interface AppProviderProps {
     origin: string;
     telemetryEnabled?: boolean;
     statusPolling: Set<DeploymentStatusType>;
+    idempotentMutations?: boolean;
   };
 
   // Used for localStorage/IndexedDB caching to be isolated between instances/deployments
@@ -82,6 +85,7 @@ export const AppProvider = (props: AppProviderProps) => {
     origin,
     telemetryEnabled = false,
     statusPolling,
+    idempotentMutations = true,
   } = config;
 
   // todo dish: Change `deleteExisting` to true soon. (Current: 1.4.5)
@@ -112,7 +116,10 @@ export const AppProvider = (props: AppProviderProps) => {
     return new RetryLink({
       attempts: {
         max: 3,
-        retryIf: async (error, _operation) => {
+        retryIf: async (error, operation) => {
+          if (!idempotentMutations && isMutationOperation(operation.query)) {
+            return false;
+          }
           if (error && error.statusCode && httpStatusCodesToRetry.has(error.statusCode)) {
             return true;
           }
@@ -181,31 +188,33 @@ export const AppProvider = (props: AppProviderProps) => {
         <ApolloProvider client={apolloClient}>
           <AssetLiveDataProvider>
             <PermissionsProvider>
-              <BrowserRouter basename={basePath || ''}>
-                <CompatRouter>
-                  <TimeProvider>
-                    <CodeLinkProtocolProvider>
-                      <WorkspaceProvider>
-                        <DeploymentStatusProvider include={statusPolling}>
-                          <CustomConfirmationProvider>
-                            <AnalyticsContext.Provider value={analytics}>
-                              <InstancePageContext.Provider value={instancePageValue}>
-                                <LayoutProvider>
-                                  <DagsterPlusLaunchPromotion />
-                                  {props.children}
-                                </LayoutProvider>
-                              </InstancePageContext.Provider>
-                            </AnalyticsContext.Provider>
-                          </CustomConfirmationProvider>
-                          <CustomTooltipProvider />
-                          <CustomAlertProvider />
-                          <AssetRunLogObserver />
-                        </DeploymentStatusProvider>
-                      </WorkspaceProvider>
-                    </CodeLinkProtocolProvider>
-                  </TimeProvider>
-                </CompatRouter>
-              </BrowserRouter>
+              <StyleSheetManager shouldForwardProp={shouldForwardProp}>
+                <BrowserRouter basename={basePath || ''}>
+                  <CompatRouter>
+                    <TimeProvider>
+                      <CodeLinkProtocolProvider>
+                        <WorkspaceProvider>
+                          <DeploymentStatusProvider include={statusPolling}>
+                            <CustomConfirmationProvider>
+                              <AnalyticsContext.Provider value={analytics}>
+                                <InstancePageContext.Provider value={instancePageValue}>
+                                  <LayoutProvider>
+                                    <DagsterPlusLaunchPromotion />
+                                    {props.children}
+                                  </LayoutProvider>
+                                </InstancePageContext.Provider>
+                              </AnalyticsContext.Provider>
+                            </CustomConfirmationProvider>
+                            <CustomTooltipProvider />
+                            <CustomAlertProvider />
+                            <AssetRunLogObserver />
+                          </DeploymentStatusProvider>
+                        </WorkspaceProvider>
+                      </CodeLinkProtocolProvider>
+                    </TimeProvider>
+                  </CompatRouter>
+                </BrowserRouter>
+              </StyleSheetManager>
             </PermissionsProvider>
           </AssetLiveDataProvider>
         </ApolloProvider>
@@ -213,6 +222,20 @@ export const AppProvider = (props: AppProviderProps) => {
     </AppContext.Provider>
   );
 };
+
+// This implements the default behavior from styled-components v5.
+// If we can ensure that all styled-components props are migrated to transient
+// props (myProp -> -$myProp), we can remove this function.
+// https://styled-components.com/docs/faqs#shouldforwardprop-is-no-longer-provided-by-default
+function shouldForwardProp(propName: string, target: WebTarget) {
+  if (typeof target === 'string') {
+    // For HTML elements, forward the prop if it is a valid HTML attribute
+    return isPropValid(propName);
+  }
+
+  // For other elements, forward all props
+  return true;
+}
 
 export const usePrefixedCacheKey = (key: string) => {
   const {localCacheIdPrefix} = useContext(AppContext);
