@@ -8,9 +8,7 @@ sidebar_position: 10
 
 Dagster+ Serverless is a fully managed version of Dagster+ and is the easiest way to get started with Dagster. With a Serverless deployment, you can run your Dagster jobs without spinning up any infrastructure yourself.
 
----
-
-## When to choose Serverless \{#when-to-choose-serverless}
+## Serverless vs Hybrid
 
 Serverless works best with workloads that primarily orchestrate other services or perform light computation. Most workloads fit into this category, especially those that orchestrate third-party SaaS products like cloud data warehouses and ETL tools.
 
@@ -21,9 +19,7 @@ If any of the following are applicable, you should select [Hybrid deployment](/d
 - You need to distribute computation across many nodes for a single run. Dagster+ runs currently execute on a single node with 4 CPUs
 - You don't want to add Dagster Labs as a data processor
 
----
-
-## Limitations \{#limitations}
+## Limitations
 
 Serverless is subject to the following limitations:
 
@@ -36,8 +32,6 @@ Serverless is subject to the following limitations:
 
 Dagster+ Pro customers may request a quota increase by [contacting Sales](https://dagster.io/contact).
 
----
-
 ## Next steps
 
-To start using Dagster+ Serverless, follow our [Getting started with Dagster+](/dagster-plus/getting-started) guide.
+To start using Dagster+ Serverless, follow the steps in [Getting started with Dagster+](/dagster-plus/getting-started).
