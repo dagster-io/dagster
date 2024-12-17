@@ -1,7 +1,7 @@
 from collections import defaultdict
 from functools import cached_property
 from types import ModuleType
-from typing import Callable, Dict, Iterable, Mapping, Optional, Sequence, Union, cast
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Sequence, Union, cast
 
 from dagster._core.definitions.asset_checks import AssetChecksDefinition, has_only_asset_checks
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKeyPrefix
@@ -15,6 +15,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.module_loaders.utils import (
     JobDefinitionObject,
+    LoadableAssetObject,
     LoadableDagsterObject,
     RuntimeAssetObjectTypes,
     RuntimeDagsterObjectTypes,
@@ -210,6 +211,38 @@ class DagsterObjectsList:
             asset for asset in self.loaded_objects if isinstance(asset, CacheableAssetsDefinition)
         ]
 
+    @cached_property
+    def sensors(self) -> Sequence[SensorDefinition]:
+        return [
+            dagster_object
+            for dagster_object in self.loaded_objects
+            if isinstance(dagster_object, SensorDefinition)
+        ]
+
+    @cached_property
+    def schedules(self) -> Sequence[ScheduleDefinitionObject]:
+        return [
+            dagster_object
+            for dagster_object in self.loaded_objects
+            if isinstance(dagster_object, RuntimeScheduleObjectTypes)
+        ]
+
+    @cached_property
+    def jobs(self) -> Sequence[JobDefinitionObject]:
+        return [
+            dagster_object
+            for dagster_object in self.loaded_objects
+            if isinstance(dagster_object, RuntimeJobObjectTypes)
+        ]
+
+    @cached_property
+    def assets(self) -> Sequence[LoadableAssetObject]:
+        return [
+            *self.assets_defs_and_specs,
+            *self.source_assets,
+            *self.cacheable_assets,
+        ]
+
     def get_objects(
         self, filter_fn: Callable[[LoadableDagsterObject], bool]
     ) -> Sequence[LoadableDagsterObject]:
@@ -323,6 +356,15 @@ class DagsterObjectsList:
                     )
                 )
         return DagsterObjectsList(return_list)
+
+    def to_definitions_args(self) -> Mapping[str, Any]:
+        return {
+            "assets": self.assets,
+            "asset_checks": self.checks_defs,
+            "sensors": self.sensors,
+            "schedules": self.schedules,
+            "jobs": self.jobs,
+        }
 
 
 def _spec_mapper_disallow_group_override(
