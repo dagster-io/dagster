@@ -183,7 +183,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
 
   const {containerRef, moreLabelRef} = useAdjustChildVisibilityToFill(moreLabelFn);
 
-  if (!sortedAssetKeys || !sortedAssetKeys.length) {
+  if (!assetKeys || !count) {
     return null;
   }
 
@@ -311,7 +311,7 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
 
   const {containerRef, moreLabelRef} = useAdjustChildVisibilityToFill(moreLabelFn);
 
-  if (!sortedAssetChecks || !sortedAssetChecks.length) {
+  if (!assetChecks || !count) {
     return null;
   }
 
