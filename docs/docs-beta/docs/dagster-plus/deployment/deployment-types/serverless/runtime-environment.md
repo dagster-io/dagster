@@ -39,7 +39,7 @@ setup(
 )
 ```
 
-To add a package from a private GitHub repository, see: [Use private Python packages](#private-packages)
+To add a package from a private GitHub repository, see [Use private Python packages](#use-private-python-packages)
 
 ## Use a different Python version
 
