@@ -45,20 +45,10 @@ When a run needs to be launched, Dagster+ enqueues instructions for your agent t
 
 Your agent will send Dagster+ metadata letting us know the run has been launched. Your run's container will also send Dagster+ metadata informing us of how the run is progressing. The Dagster+ backend services will monitor this stream of metadata to make additional orchestration decisions, monitor for failure, or send alerts.
 
-## Security
+## Best practices
 
-Dagster+ hybrid relies on a shared security model.
+### Security
 
-The Dagster+ control plane is SOC 2 Type II certified and follows best practices such as:
-- encrypting data at rest (AES 256) and in transit (TLS 1.2+)
-- highly available, with disaster recovery and backup strategies
-- only manages metadata such as pipeline names, execution status, and run duration
-
-The execution environment is managed by the customer:
-- your code never leaves your environment
-- all connections to databases, file systems, and other resources are made from your environment
-- the execution environment only requires egress access to Dagster+
-
-Common security considerations in Dagster+ hybrid include:
-- [disabling log forwarding](/todo)
-- [managing tokens](/todo)
+You can do the following to make your Dagster+ Hybrid deployment more secure:
+- [Disable log forwarding](/todo)
+- [Manage tokens](/todo)

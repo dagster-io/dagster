@@ -47,10 +47,6 @@ The execution environment is managed by the customer:
 
 Additionally, the Dagster+ agent is [open source and auditable](https://github.com/dagster-io/dagster-cloud)
 
-Common security considerations in Dagster+ hybrid include:
-- [disabling log forwarding](/todo)
-- [managing tokens](/todo)
-
 The following highlights are described in more detail below:
 
 - [Interactions and queries](#interactions-and-queries)
