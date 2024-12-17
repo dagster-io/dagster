@@ -5,8 +5,11 @@ from typing import Any, Mapping
 
 import click
 
-from dagster_dg.context import CodeLocationDirectoryContext, is_inside_code_location_directory
-from dagster_dg.utils import CLI_BUILTIN_COMPONENT_LIB_KEY
+from dagster_dg.context import (
+    CodeLocationDirectoryContext,
+    DgContext,
+    is_inside_code_location_directory,
+)
 
 
 @click.group(name="info")
@@ -25,14 +28,14 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
 @click.option("--component-params-schema", is_flag=True, default=False)
 @click.pass_context
 def info_component_type_command(
-    context: click.Context,
+    cli_context: click.Context,
     component_type: str,
     description: bool,
     generate_params_schema: bool,
     component_params_schema: bool,
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
-    builtin_component_lib = context.obj.get(CLI_BUILTIN_COMPONENT_LIB_KEY, False)
+    dg_context = DgContext.from_cli_context(cli_context)
     if not is_inside_code_location_directory(Path.cwd()):
         click.echo(
             click.style(
@@ -41,10 +44,8 @@ def info_component_type_command(
         )
         sys.exit(1)
 
-    dg_context = CodeLocationDirectoryContext.from_path(
-        Path.cwd(), builtin_component_lib=builtin_component_lib
-    )
-    if not dg_context.has_component_type(component_type):
+    context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
+    if not context.has_component_type(component_type):
         click.echo(
             click.style(f"No component type `{component_type}` could be resolved.", fg="red")
         )
@@ -59,7 +60,7 @@ def info_component_type_command(
         )
         sys.exit(1)
 
-    component_type_metadata = dg_context.get_component_type(component_type)
+    component_type_metadata = context.get_component_type(component_type)
 
     if description:
         if component_type_metadata.description:

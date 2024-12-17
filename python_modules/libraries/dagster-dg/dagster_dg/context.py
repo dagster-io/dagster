@@ -1,14 +1,17 @@
 import json
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Final, Iterable, Optional, Tuple
 
+import click
 import tomli
 from typing_extensions import Self
 
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
+from dagster_dg.config import DgConfig
 from dagster_dg.error import DgError
-from dagster_dg.utils import DEFAULT_BUILTIN_COMPONENT_LIB, execute_code_location_command
+from dagster_dg.utils import execute_code_location_command
 
 
 def is_inside_deployment_directory(path: Path) -> bool:
@@ -65,29 +68,44 @@ _CODE_LOCATION_CUSTOM_COMPONENTS_DIR: Final = "lib"
 _CODE_LOCATION_COMPONENT_INSTANCES_DIR: Final = "components"
 
 
-class DeploymentDirectoryContext:
+@dataclass
+class DgContext:
+    config: DgConfig
+
     @classmethod
-    def from_path(cls, path: Path) -> Self:
-        return cls(root_path=_resolve_deployment_root_directory(path))
+    def from_cli_context(cls, cli_context: click.Context) -> Self:
+        return cls.from_config(config=DgConfig.from_cli_context(cli_context))
 
-    def __init__(self, root_path: Path):
-        self._root_path = root_path
+    @classmethod
+    def from_config(cls, config: DgConfig) -> Self:
+        return cls(config=config)
 
-    @property
-    def root_path(self) -> Path:
-        return self._root_path
+    @classmethod
+    def default(cls) -> Self:
+        return cls.from_config(DgConfig.default())
+
+
+@dataclass
+class DeploymentDirectoryContext:
+    root_path: Path
+    dg_context: DgContext
+
+    @classmethod
+    def from_path(cls, path: Path, dg_context: DgContext) -> Self:
+        return cls(root_path=_resolve_deployment_root_directory(path), dg_context=dg_context)
 
     @property
     def code_location_root_path(self) -> Path:
-        return self._root_path / _DEPLOYMENT_CODE_LOCATIONS_DIR
+        return self.root_path / _DEPLOYMENT_CODE_LOCATIONS_DIR
 
     def has_code_location(self, name: str) -> bool:
-        return (self._root_path / "code_locations" / name).is_dir()
+        return (self.root_path / "code_locations" / name).is_dir()
 
     def get_code_location_names(self) -> Iterable[str]:
-        return [loc.name for loc in sorted((self._root_path / "code_locations").iterdir())]
+        return [loc.name for loc in sorted((self.root_path / "code_locations").iterdir())]
 
 
+@dataclass
 class CodeLocationDirectoryContext:
     """Class encapsulating contextual information about a components code location directory.
 
@@ -97,15 +115,20 @@ class CodeLocationDirectoryContext:
         component_registry (ComponentRegistry): The component registry for the code location.
         deployment_context (Optional[DeploymentDirectoryContext]): The deployment context containing
             the code location directory. Defaults to None.
+        dg_context (DgContext): The global application context.
     """
 
+    root_path: Path
+    name: str
+    component_registry: "RemoteComponentRegistry"
+    deployment_context: Optional[DeploymentDirectoryContext]
+    dg_context: DgContext
+
     @classmethod
-    def from_path(
-        cls, path: Path, builtin_component_lib: str = DEFAULT_BUILTIN_COMPONENT_LIB
-    ) -> Self:
+    def from_path(cls, path: Path, dg_context: DgContext) -> Self:
         root_path = _resolve_code_location_root_directory(path)
         component_registry_data = execute_code_location_command(
-            root_path, ["list", "component-types"], builtin_component_lib=builtin_component_lib
+            root_path, ["list", "component-types"], dg_context
         )
         component_registry = RemoteComponentRegistry.from_dict(json.loads(component_registry_data))
 
@@ -113,62 +136,43 @@ class CodeLocationDirectoryContext:
             root_path=root_path,
             name=path.name,
             component_registry=component_registry,
-            deployment_context=DeploymentDirectoryContext.from_path(path)
+            deployment_context=DeploymentDirectoryContext.from_path(path, dg_context)
             if is_inside_deployment_directory(path)
             else None,
+            dg_context=dg_context,
         )
 
-    def __init__(
-        self,
-        root_path: Path,
-        name: str,
-        component_registry: "RemoteComponentRegistry",
-        deployment_context: Optional[DeploymentDirectoryContext],
-    ):
-        self._deployment_context = deployment_context
-        self._root_path = root_path
-        self._name = name
-        self._component_registry = component_registry
-
     @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def deployment_context(self) -> Optional[DeploymentDirectoryContext]:
-        return self._deployment_context
-
-    @property
-    def component_registry(self) -> "RemoteComponentRegistry":
-        return self._component_registry
+    def config(self) -> DgConfig:
+        return self.dg_context.config
 
     @property
     def local_component_types_root_path(self) -> str:
-        return os.path.join(self._root_path, self._name, _CODE_LOCATION_CUSTOM_COMPONENTS_DIR)
+        return os.path.join(self.root_path, self.name, _CODE_LOCATION_CUSTOM_COMPONENTS_DIR)
 
     @property
     def local_component_types_root_module_name(self) -> str:
-        return f"{self._name}.{_CODE_LOCATION_CUSTOM_COMPONENTS_DIR}"
+        return f"{self.name}.{_CODE_LOCATION_CUSTOM_COMPONENTS_DIR}"
 
     def iter_component_types(self) -> Iterable[Tuple[str, RemoteComponentType]]:
-        for key in sorted(self._component_registry.keys()):
-            yield key, self._component_registry.get(key)
+        for key in sorted(self.component_registry.keys()):
+            yield key, self.component_registry.get(key)
 
     def has_component_type(self, name: str) -> bool:
-        return self._component_registry.has(name)
+        return self.component_registry.has(name)
 
     def get_component_type(self, name: str) -> RemoteComponentType:
         if not self.has_component_type(name):
             raise DgError(f"No component type named {name}")
-        return self._component_registry.get(name)
+        return self.component_registry.get(name)
 
     @property
     def component_instances_root_path(self) -> Path:
-        return self._root_path / self._name / _CODE_LOCATION_COMPONENT_INSTANCES_DIR
+        return self.root_path / self.name / _CODE_LOCATION_COMPONENT_INSTANCES_DIR
 
     @property
     def component_instances_root_module_name(self) -> str:
-        return f"{self._name}.{_CODE_LOCATION_COMPONENT_INSTANCES_DIR}"
+        return f"{self.name}.{_CODE_LOCATION_COMPONENT_INSTANCES_DIR}"
 
     def get_component_instance_names(self) -> Iterable[str]:
         return [

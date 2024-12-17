@@ -7,7 +7,7 @@ import pytest
 import tomli
 from click.testing import CliRunner
 from dagster_dg.cli import cli as dg_cli
-from dagster_dg.context import CodeLocationDirectoryContext
+from dagster_dg.context import CodeLocationDirectoryContext, DgContext
 from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
@@ -142,7 +142,7 @@ def test_generate_component_type_success(in_deployment: bool) -> None:
         result = runner.invoke("generate", "component-type", "baz")
         assert_runner_result(result)
         assert Path("bar/lib/baz.py").exists()
-        context = CodeLocationDirectoryContext.from_path(Path.cwd())
+        context = CodeLocationDirectoryContext.from_path(Path.cwd(), DgContext.default())
         assert context.has_component_type("bar.baz")
 
 

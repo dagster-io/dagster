@@ -5,26 +5,30 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Final, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Final, Iterator, List, Mapping, Optional, Sequence, Union
 
 import click
 import jinja2
 
 from dagster_dg.version import __version__ as dagster_version
 
-CLI_BUILTIN_COMPONENT_LIB_KEY = "builtin_component_lib"
-DEFAULT_BUILTIN_COMPONENT_LIB: Final = "dagster_components"
+if TYPE_CHECKING:
+    from dagster_dg.context import DgContext
+
+CLI_CONFIG_KEY = "config"
 
 
 _CODE_LOCATION_COMMAND_PREFIX: Final = ["uv", "run", "dagster-components"]
 
 
-def execute_code_location_command(
-    path: Path, cmd: Sequence[str], builtin_component_lib: Optional[str] = None
-) -> str:
+def execute_code_location_command(path: Path, cmd: Sequence[str], dg_context: "DgContext") -> str:
     full_cmd = [
         *_CODE_LOCATION_COMMAND_PREFIX,
-        *(["--builtin-component-lib", builtin_component_lib] if builtin_component_lib else []),
+        *(
+            ["--builtin-component-lib", dg_context.config.builtin_component_lib]
+            if dg_context.config.builtin_component_lib
+            else []
+        ),
         *cmd,
     ]
     with pushd(path):
