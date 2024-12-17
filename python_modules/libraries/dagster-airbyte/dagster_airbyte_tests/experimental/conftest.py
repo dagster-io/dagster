@@ -144,7 +144,7 @@ SAMPLE_CONNECTION_DETAILS = {
 }
 
 
-# Taken from Airbyte API documentation
+# Taken from Airbyte REST API documentation
 # https://reference.airbyte.com/reference/getdestination
 SAMPLE_DESTINATION_DETAILS = {
     "destinationId": TEST_DESTINATION_ID,
@@ -162,6 +162,8 @@ SAMPLE_DESTINATION_DETAILS = {
 }
 
 
+# Taken from Airbyte REST API documentation
+# https://reference.airbyte.com/reference/getjob
 SAMPLE_JOB_RESPONSE = {
     "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     "status": "running",
