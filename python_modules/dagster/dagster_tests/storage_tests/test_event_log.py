@@ -9,8 +9,9 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 import sqlalchemy
 import sqlalchemy as db
-from dagster import DagsterInstance
+from dagster import AssetKey, AssetMaterialization, DagsterInstance, Output, op
 from dagster._core.errors import DagsterEventLogInvalidForRun
+from dagster._core.execution.stats import build_run_stats_from_events
 from dagster._core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,
     SqlEventLogStorageMetadata,
@@ -28,7 +29,10 @@ from dagster._utils.test import ConcurrencyEnabledSqliteTestEventLogStorage
 from sqlalchemy import __version__ as sqlalchemy_version
 from sqlalchemy.engine import Connection
 
-from dagster_tests.storage_tests.utils.event_log_storage import TestEventLogStorage
+from dagster_tests.storage_tests.utils.event_log_storage import (
+    TestEventLogStorage,
+    _synthesize_events,
+)
 
 
 class TestInMemoryEventLogStorage(TestEventLogStorage):
@@ -279,3 +283,46 @@ def test_concurrency_reconcile():
             assert _get_slot_count(conn, "bar") == 3
             assert _get_limit_row_num(conn, "foo") == 5
             assert _get_limit_row_num(conn, "bar") == 3
+
+
+def test_run_stats():
+    @op
+    def op_success(_):
+        return 1
+
+    @op
+    def asset_op(_):
+        yield AssetMaterialization(asset_key=AssetKey("asset_1"))
+        yield Output(1)
+
+    @op
+    def op_failure(_):
+        raise ValueError("failing")
+
+    def _ops():
+        op_success()
+        asset_op()
+        op_failure()
+
+    events, result = _synthesize_events(_ops, check_success=False)
+
+    run_stats = build_run_stats_from_events(result.run_id, events)
+
+    assert run_stats.run_id == result.run_id
+    assert run_stats.materializations == 1
+    assert run_stats.steps_succeeded == 2
+    assert run_stats.steps_failed == 1
+    assert (
+        run_stats.start_time is not None
+        and run_stats.end_time is not None
+        and run_stats.end_time > run_stats.start_time
+    )
+
+    # build up run stats through incremental events
+    incremental_run_stats = None
+    for event in events:
+        incremental_run_stats = build_run_stats_from_events(
+            result.run_id, [event], incremental_run_stats
+        )
+
+    assert incremental_run_stats == run_stats
