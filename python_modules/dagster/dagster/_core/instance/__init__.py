@@ -2,7 +2,6 @@ import logging
 import logging.config
 import os
 import sys
-import threading
 import warnings
 import weakref
 from abc import abstractmethod
@@ -103,8 +102,6 @@ IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 # actually using this constants.
 RUNLESS_RUN_ID = ""
 RUNLESS_JOB_NAME = ""
-
-_RUN_LOCK = threading.Lock()
 
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
@@ -2692,10 +2689,9 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         try:
-            with _RUN_LOCK:
-                submitted_run = self.run_coordinator.submit_run(
-                    SubmitRunContext(run, workspace=workspace)
-                )
+            submitted_run = self.run_coordinator.submit_run(
+                SubmitRunContext(run, workspace=workspace)
+            )
         except:
             from dagster._core.events import EngineEventData
 
