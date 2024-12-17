@@ -9,15 +9,9 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster._utils.warnings import suppress_dagster_warnings
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 
-from dagster_components.core.component import (
-    Component,
-    ComponentDeclNode,
-    ComponentLoadContext,
-    component,
-)
-from dagster_components.core.component_decl_builder import YamlComponentDecl
+from dagster_components.core.component import Component, ComponentLoadContext, component
 from dagster_components.core.dsl_schema import AutomationConditionModel
 
 if TYPE_CHECKING:
@@ -76,22 +70,17 @@ class PipesSubprocessScriptCollection(Component):
         return PipesSubprocessScriptCollection(dirpath=path, path_specs=path_specs)
 
     @classmethod
-    def from_decl_node(
-        cls, load_context: ComponentLoadContext, decl_node: ComponentDeclNode
-    ) -> "PipesSubprocessScriptCollection":
-        assert isinstance(decl_node, YamlComponentDecl)
-        loaded_params = TypeAdapter(cls.params_schema).validate_python(
-            decl_node.component_file_model.params
-        )
+    def load(cls, context: ComponentLoadContext) -> "PipesSubprocessScriptCollection":
+        loaded_params = context.load_params(cls.params_schema)
 
         path_specs = {}
         for script in loaded_params.scripts:
-            script_path = decl_node.path / script.path
+            script_path = context.path / script.path
             if not script_path.exists():
                 raise FileNotFoundError(f"Script {script_path} does not exist")
             path_specs[script_path] = [spec.to_asset_spec() for spec in script.assets]
 
-        return cls(dirpath=decl_node.path, path_specs=path_specs)
+        return cls(dirpath=context.path, path_specs=path_specs)
 
     def build_defs(self, load_context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions

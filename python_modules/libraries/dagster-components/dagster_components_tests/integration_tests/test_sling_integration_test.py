@@ -66,17 +66,15 @@ def sling_path() -> Generator[Path, None, None]:
 
 
 def test_python_params(sling_path: Path) -> None:
-    context = script_load_context()
-    component = SlingReplicationComponent.from_decl_node(
-        context=context,
-        decl_node=YamlComponentDecl(
-            path=sling_path / COMPONENT_RELPATH,
-            component_file_model=ComponentFileModel(
-                type="sling_replication",
-                params={"sling": {}},
-            ),
+    decl_node = YamlComponentDecl(
+        path=sling_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="sling_replication",
+            params={"sling": {}},
         ),
     )
+    context = script_load_context(decl_node)
+    component = SlingReplicationComponent.load(context)
     assert component.op_spec is None
     assert get_asset_keys(component) == {
         AssetKey("input_csv"),
@@ -89,17 +87,15 @@ def test_python_params(sling_path: Path) -> None:
 
 
 def test_python_params_op_name(sling_path: Path) -> None:
-    context = script_load_context()
-    component = SlingReplicationComponent.from_decl_node(
-        context=context,
-        decl_node=YamlComponentDecl(
-            path=sling_path / COMPONENT_RELPATH,
-            component_file_model=ComponentFileModel(
-                type="sling_replication",
-                params={"sling": {}, "op": {"name": "my_op"}},
-            ),
+    decl_node = YamlComponentDecl(
+        path=sling_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="sling_replication",
+            params={"sling": {}, "op": {"name": "my_op"}},
         ),
     )
+    context = script_load_context(decl_node)
+    component = SlingReplicationComponent.load(context=context)
     assert component.op_spec
     assert component.op_spec.name == "my_op"
     defs = component.build_defs(context)
@@ -112,17 +108,15 @@ def test_python_params_op_name(sling_path: Path) -> None:
 
 
 def test_python_params_op_tags(sling_path: Path) -> None:
-    context = script_load_context()
-    component = SlingReplicationComponent.from_decl_node(
-        context=context,
-        decl_node=YamlComponentDecl(
-            path=sling_path / COMPONENT_RELPATH,
-            component_file_model=ComponentFileModel(
-                type="sling_replication",
-                params={"sling": {}, "op": {"tags": {"tag1": "value1"}}},
-            ),
+    decl_node = YamlComponentDecl(
+        path=sling_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="sling_replication",
+            params={"sling": {}, "op": {"tags": {"tag1": "value1"}}},
         ),
     )
+    context = script_load_context(decl_node)
+    component = SlingReplicationComponent.load(context=context)
     assert component.op_spec
     assert component.op_spec.tags == {"tag1": "value1"}
     defs = component.build_defs(context)
@@ -150,15 +144,15 @@ def test_sling_subclass() -> None:
         ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
             return sling.replicate(context=context, debug=True)
 
-    component_inst = DebugSlingReplicationComponent.from_decl_node(
-        context=script_load_context(),
-        decl_node=YamlComponentDecl(
-            path=STUB_LOCATION_PATH / COMPONENT_RELPATH,
-            component_file_model=ComponentFileModel(
-                type="debug_sling_replication",
-                params={"sling": {}},
-            ),
+    decl_node = YamlComponentDecl(
+        path=STUB_LOCATION_PATH / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="debug_sling_replication",
+            params={"sling": {}},
         ),
+    )
+    component_inst = DebugSlingReplicationComponent.load(
+        context=script_load_context(decl_node),
     )
     assert get_asset_keys(component_inst) == {
         AssetKey("input_csv"),

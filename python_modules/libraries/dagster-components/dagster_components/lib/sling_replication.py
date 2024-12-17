@@ -8,12 +8,11 @@ from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
 from dagster_embedded_elt.sling import SlingResource, sling_assets
 from dagster_embedded_elt.sling.resources import AssetExecutionContext
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import ComponentGenerateRequest, component
-from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
 from dagster_components.core.dsl_schema import AssetSpecProcessorModel, OpSpecBaseModel
 from dagster_components.generate import generate_component_yaml
 
@@ -41,13 +40,10 @@ class SlingReplicationComponent(Component):
         self.asset_transforms = asset_transforms
 
     @classmethod
-    def from_decl_node(cls, context: ComponentLoadContext, decl_node: ComponentDeclNode) -> Self:
-        assert isinstance(decl_node, YamlComponentDecl)
-        loaded_params = TypeAdapter(cls.params_schema).validate_python(
-            decl_node.component_file_model.params
-        )
+    def load(cls, context: ComponentLoadContext) -> Self:
+        loaded_params = context.load_params(cls.params_schema)
         return cls(
-            dirpath=decl_node.path,
+            dirpath=context.path,
             resource=loaded_params.sling or SlingResource(),
             op_spec=loaded_params.op,
             asset_transforms=loaded_params.asset_attributes or [],
