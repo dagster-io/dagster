@@ -7,11 +7,11 @@ sidebar_position: 100
 By default, Dagster+ Serverless will package your code as PEX files and deploys them on Docker images. Using PEX files significantly reduces the time to deploy since it does not require building a new Docker image and provisioning a new container for every code change. However you are able to customize the Serverless runtime environment in various ways:
 
 - [Add dependencies](#add-dependencies)
-- [Use a different Python version](#python-version)
-- [Use a different base image](#base-image)
-- [Include data files](#data-files)
-- [Disable PEX deploys](#disable-pex)
-- [Use private Python packages](#private-packages)
+- [Use a different Python version](#use-a-different-python-version)
+- [Use a different base image](#use-a-different-base-image)
+- [Include data files](#include-data-files)
+- [Disable PEX deploys](#disable-pex-deploys)
+- [Use private Python packages](#use-private-python-packages)
 
 ## Add dependencies
 
