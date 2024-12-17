@@ -1,10 +1,11 @@
+from datetime import datetime
 from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
 import graphene
 from dagster import AssetCheckKey
 from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, BackgroundWorkStatus
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.selector import (
@@ -175,7 +176,14 @@ from dagster_graphql.schema.resources import (
     GrapheneResourceDetailsListOrError,
     GrapheneResourceDetailsOrError,
 )
-from dagster_graphql.schema.roots.assets import GrapheneAssetOrError, GrapheneAssetsOrError
+from dagster_graphql.schema.roots.assets import (
+    GrapheneAssetOrError,
+    GrapheneAssetsOrError,
+    GrapheneBackgroundAssetWipeFailed,
+    GrapheneBackgroundAssetWipeInProgress,
+    GrapheneBackgroundAssetWipeStatus,
+    GrapheneBackgroundAssetWipeSuccess,
+)
 from dagster_graphql.schema.roots.execution_plan import GrapheneExecutionPlanOrError
 from dagster_graphql.schema.roots.pipeline import GrapheneGraphOrError, GraphenePipelineOrError
 from dagster_graphql.schema.run_config import GrapheneRunConfigSchemaOrError
@@ -510,6 +518,12 @@ class GrapheneQuery(graphene.ObjectType):
         non_null_list(GrapheneAssetPartitions),
         params=graphene.Argument(graphene.NonNull(GrapheneAssetBackfillPreviewParams)),
         description="Fetch the partitions that would be targeted by a backfill, given the root partitions targeted.",
+    )
+
+    backgroundAssetWipeStatus = graphene.Field(
+        graphene.NonNull(GrapheneBackgroundAssetWipeStatus),
+        workToken=graphene.Argument(graphene.NonNull(graphene.String)),
+        description="Retrieve the status of the given background asset wipe.",
     )
 
     partitionBackfillsOrError = graphene.Field(
@@ -1174,6 +1188,29 @@ class GrapheneQuery(graphene.ObjectType):
             limit=limit,
             filters=filters.to_selector() if filters else None,
         )
+
+    @capture_error
+    async def resolve_backgroundAssetWipeStatus(
+        self,
+        graphene_info: ResolveInfo,
+        workToken: str,
+    ):
+        instance = graphene_info.context.instance
+        status = instance.get_background_asset_wipe_status(workToken)
+        if status == BackgroundWorkStatus.SUCCESS:
+            return GrapheneBackgroundAssetWipeSuccess(
+                startedAt=datetime.now().timestamp(), completedAt=datetime.now().timestamp()
+            )
+        elif status == BackgroundWorkStatus.IN_PROGRESS:
+            return GrapheneBackgroundAssetWipeInProgress(startedAt=datetime.now().timestamp())
+        elif status == BackgroundWorkStatus.FAILED:
+            return GrapheneBackgroundAssetWipeFailed(
+                startedAt=datetime.now().timestamp(),
+                completedAt=datetime.now().timestamp(),
+                message="oh no",
+            )
+        else:
+            raise Exception(f"unexpected asset wipe status: {status}")
 
     def resolve_assetBackfillPreview(
         self, graphene_info: ResolveInfo, params: GrapheneAssetBackfillPreviewParams
