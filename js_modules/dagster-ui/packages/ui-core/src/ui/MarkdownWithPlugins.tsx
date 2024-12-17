@@ -1,12 +1,10 @@
+import {Colors} from '@dagster-io/ui-components';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeSanitize, {defaultSchema} from 'rehype-sanitize';
 import gfm from 'remark-gfm';
-
 import 'highlight.js/styles/github.css';
 import {createGlobalStyle} from 'styled-components';
-import {browserColorScheme, colorAccentBlue, colorAccentRed} from '@dagster-io/ui-components/src/theme/color';
-import {Colors} from '@dagster-io/ui-components';
 
 const sanitizeConfig = {
   ...defaultSchema,
@@ -87,7 +85,7 @@ const GlobalStyle = createGlobalStyle`
 }
 
 .hljs-code,.hljs-comment,.hljs-formula {
-    // color: ${Colors.dataVizGray()}
+    color: ${Colors.dataVizGray()}
 }
 
 .hljs-name,.hljs-quote,.hljs-selector-pseudo,.hljs-selector-tag {
