@@ -135,16 +135,16 @@ class AirbyteStream:
 class AirbyteJob:
     """Represents an Airbyte job, based on data as returned from the API."""
 
-    id: str
+    id: int
     status: str
 
     @classmethod
     def from_job_details(
         cls,
         job_details: Mapping[str, Any],
-    ) -> "AirbyteStream":
+    ) -> "AirbyteJob":
         return cls(
-            id=job_details["id"],
+            id=job_details["jobId"],
             status=job_details["status"],
         )
 

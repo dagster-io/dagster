@@ -1048,20 +1048,24 @@ class AirbyteCloudClient(DagsterModel):
                 Details of the sync job.
         """
         connection_details = self.get_connection_details(connection_id)
-        start_job_details = self.start_sync(connection_id)
+        start_job_details = self.start_sync_job(connection_id)
         job = AirbyteJob.from_job_details(job_details=start_job_details)
 
         self._log.info(f"Job {job.id} initialized for connection_id={connection_id}.")
-        start = time.monotonic()
+        poll_start = datetime.now()
+        poll_interval = (
+            poll_interval if poll_interval is not None else DEFAULT_POLL_INTERVAL_SECONDS
+        )
         try:
             while True:
-                if poll_timeout and start + poll_timeout < time.monotonic():
+                if poll_timeout and datetime.now() > poll_start + timedelta(seconds=poll_timeout):
                     raise Failure(
                         f"Timeout: Airbyte job {job.id} is not ready after the timeout"
                         f" {poll_timeout} seconds"
                     )
-                time.sleep(poll_interval or self.poll_interval)
-                poll_job_details = self.get_job_status(connection_id, job.id)
+
+                time.sleep(poll_interval)
+                poll_job_details = self.get_job_details(job.id)
                 job = AirbyteJob.from_job_details(job_details=poll_job_details)
                 if job.status in (
                     AirbyteJobStatusType.RUNNING,
@@ -1071,7 +1075,7 @@ class AirbyteCloudClient(DagsterModel):
                     continue
                 elif job.status == AirbyteJobStatusType.SUCCEEDED:
                     break
-                elif job.status == AirbyteJobStatusType.ERROR:
+                elif job.status in [AirbyteJobStatusType.ERROR, AirbyteJobStatusType.FAILED]:
                     raise Failure(f"Job failed: {job.id}")
                 elif job.status == AirbyteJobStatusType.CANCELLED:
                     raise Failure(f"Job was cancelled: {job.id}")
@@ -1086,6 +1090,7 @@ class AirbyteCloudClient(DagsterModel):
                 AirbyteJobStatusType.SUCCEEDED,
                 AirbyteJobStatusType.ERROR,
                 AirbyteJobStatusType.CANCELLED,
+                AirbyteJobStatusType.FAILED,
             ):
                 self.cancel_job(job.id)
 
