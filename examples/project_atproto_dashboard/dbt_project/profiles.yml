@@ -1,5 +1,5 @@
 bluesky:
-  target: dev
+  target: prod
   outputs:
     dev:
       type: duckdb
@@ -16,7 +16,7 @@ bluesky:
     prod:
       type: duckdb
       schema: bluesky
-      path: "md:bluesky?MOTHERDUCK_TOKEN={{ env_var('MOTHERDUCK_TOKEN') }}"
+      path: "md:prod_bluesky?MOTHERDUCK_TOKEN={{ env_var('MOTHERDUCK_TOKEN') }}"
       threads: 16
       extensions: 
         - httpfs
