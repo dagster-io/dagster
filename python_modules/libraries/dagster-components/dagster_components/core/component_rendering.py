@@ -1,4 +1,5 @@
 import json
+import os
 from typing import AbstractSet, Any, Mapping, Optional, Sequence, Type, TypeVar, Union
 
 import dagster._check as check
@@ -15,7 +16,7 @@ REF_TEMPLATE = f"{REF_BASE}{{model}}"
 CONTEXT_KEY = "required_rendering_context"
 
 
-def add_required_rendering_context(field: FieldInfo, context: AbstractSet[str]) -> Any:
+def add_required_rendering_context(field: Any, context: AbstractSet[str]) -> Any:
     return FieldInfo.merge_field_infos(
         field, FieldInfo(json_schema_extra={CONTEXT_KEY: json.dumps(list(context))})
     )
@@ -26,9 +27,20 @@ def get_required_rendering_context(subschema: Mapping[str, Any]) -> Optional[Abs
     return set(json.loads(raw)) if raw else None
 
 
+def _env(key: str) -> Optional[str]:
+    return os.environ.get(key)
+
+
 @record
 class TemplatedValueResolver:
     context: Mapping[str, Any]
+
+    @staticmethod
+    def default() -> "TemplatedValueResolver":
+        return TemplatedValueResolver(context={"env": _env})
+
+    def with_context(self, **additional_context) -> "TemplatedValueResolver":
+        return TemplatedValueResolver(context={**self.context, **additional_context})
 
     def resolve(self, val: str) -> str:
         return Template(val).render(**self.context)

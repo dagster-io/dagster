@@ -26,10 +26,11 @@ from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._record import record
-from dagster._utils import snakecase
+from dagster._utils import pushd, snakecase
 from pydantic import TypeAdapter
 from typing_extensions import Self
 
+from dagster_components.core.component_rendering import TemplatedValueResolver, preprocess_value
 from dagster_components.utils import ensure_dagster_components_tests_import
 
 
@@ -196,6 +197,7 @@ class ComponentLoadContext:
     resources: Mapping[str, object]
     registry: ComponentRegistry
     decl_node: Optional[ComponentDeclNode]
+    templated_value_resolver: TemplatedValueResolver
 
     @staticmethod
     def for_test(
@@ -208,6 +210,7 @@ class ComponentLoadContext:
             resources=resources or {},
             registry=registry or ComponentRegistry.empty(),
             decl_node=decl_node,
+            templated_value_resolver=TemplatedValueResolver.default(),
         )
 
     @property
@@ -230,7 +233,11 @@ class ComponentLoadContext:
         return self.decl_node.component_file_model.params
 
     def load_params(self, params_schema: Type[T]) -> T:
-        return TypeAdapter(params_schema).validate_python(self._raw_params())
+        with pushd(str(self.path)):
+            preprocessed_params = preprocess_value(
+                self.templated_value_resolver, self._raw_params(), params_schema
+            )
+            return TypeAdapter(params_schema).validate_python(preprocessed_params)
 
 
 COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"
