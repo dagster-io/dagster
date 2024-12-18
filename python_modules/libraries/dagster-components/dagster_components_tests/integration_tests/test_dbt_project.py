@@ -80,4 +80,5 @@ def test_load_from_path(dbt_path: Path) -> None:
 
     for asset_node in defs.get_asset_graph().asset_nodes:
         assert asset_node.tags["foo"] == "bar"
+        assert asset_node.tags["another"] == "one"
         assert asset_node.metadata["something"] == 1

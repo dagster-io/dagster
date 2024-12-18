@@ -13,3 +13,5 @@ params:
         type: on_cron
         params:
           cron_schedule: "@daily"
+    - tags:
+        another: one
