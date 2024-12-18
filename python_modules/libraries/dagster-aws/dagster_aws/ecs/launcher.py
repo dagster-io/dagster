@@ -432,8 +432,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def _get_command_args(self, run_args: ExecuteRunArgs, context: LaunchRunContext):
         return run_args.get_command_args()
 
-    @staticmethod
-    def get_image_for_run(run: DagsterRun) -> Optional[str]:
+    def get_image_for_run(self, context: LaunchRunContext) -> Optional[str]:
+        """Child classes can override this method to determine the image to use for a run. This is considered a public API."""
+        run = context.dagster_run
         return (
             run.job_code_origin.repository_origin.container_image
             if run.job_code_origin is not None
@@ -467,7 +468,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             instance_ref=self._instance.get_ref(),
         )
         command = self._get_command_args(args, context)
-        image = self.get_image_for_run(run)
+        image = self.get_image_for_run(context)
 
         run_task_kwargs = self._run_task_kwargs(run, image, container_context)
 
