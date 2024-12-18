@@ -683,6 +683,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         metadata: Mapping[str, Any],
         output_name: Optional[str] = None,
         mapping_key: Optional[str] = None,
+        asset_partition_key: Optional[str] = None,
     ) -> None:
         if output_name is None and len(self.op_def.output_defs) == 1:
             output_def = self.op_def.output_defs[0]
@@ -695,6 +696,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
         else:
             output_def = self.op_def.output_def_named(output_name)
+
+        check.invariant(
+            asset_partition_key is None or mapping_key is None,
+            "Cannot provide both asset_partition_key and mapping_key",
+        )
 
         if self.has_seen_output(output_name, mapping_key):
             output_desc = (
@@ -715,13 +721,21 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     " logging metadata for a dynamic output, it is necessary to provide a mapping key."
                 )
         self._metadata_accumulator = self._metadata_accumulator.with_additional_metadata(
-            output_name=output_name, metadata=metadata, mapping_key=mapping_key
+            output_name=output_name,
+            metadata=metadata,
+            mapping_key=mapping_key,
+            asset_partition_key=asset_partition_key,
         )
 
     def get_output_metadata(
-        self, output_name: str, mapping_key: Optional[str] = None
+        self,
+        output_name: str,
+        mapping_key: Optional[str] = None,
+        asset_partition_key: Optional[str] = None,
     ) -> Optional[Mapping[str, Any]]:
-        return self._metadata_accumulator.get_metadata(output_name, mapping_key)
+        return self._metadata_accumulator.get_metadata(
+            output_name, mapping_key, asset_partition_key
+        )
 
     def _get_source_run_id_from_logs(self, step_output_handle: StepOutputHandle) -> Optional[str]:
         # walk through event logs to find the right run_id based on the run lineage
