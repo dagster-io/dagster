@@ -210,7 +210,7 @@ class ComponentLoadContext:
             resources=resources or {},
             registry=registry or ComponentRegistry.empty(),
             decl_node=decl_node,
-            templated_value_resolver=TemplatedValueResolver(context={}),
+            templated_value_resolver=TemplatedValueResolver.default(),
         )
 
     @property
