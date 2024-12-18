@@ -1,12 +1,14 @@
 import json
+import re
 from datetime import datetime
 from typing import Optional
-from unittest import mock
+from unittest.mock import MagicMock, patch
 
 import pytest
 import responses
-from dagster import Failure
-from dagster_airbyte import AirbyteCloudWorkspace
+from dagster import AssetExecutionContext, AssetKey, EnvVar, Failure, materialize
+from dagster._core.test_utils import environ
+from dagster_airbyte import AirbyteCloudWorkspace, airbyte_assets
 from dagster_airbyte.resources import (
     AIRBYTE_CONFIGURATION_API_BASE,
     AIRBYTE_CONFIGURATION_API_VERSION,
@@ -15,15 +17,19 @@ from dagster_airbyte.resources import (
 )
 from dagster_airbyte.translator import AirbyteJobStatusType
 from dagster_airbyte.types import AirbyteOutput
+from dagster_airbyte.utils import clean_name
 
 from dagster_airbyte_tests.experimental.conftest import (
     SAMPLE_CONNECTION_DETAILS,
     TEST_ACCESS_TOKEN,
+    TEST_ANOTHER_STREAM_NAME,
     TEST_CLIENT_ID,
     TEST_CLIENT_SECRET,
     TEST_CONNECTION_ID,
     TEST_DESTINATION_ID,
     TEST_JOB_ID,
+    TEST_STREAM_PREFIX,
+    TEST_UNEXPECTED_STREAM_NAME,
     TEST_UNRECOGNIZED_AIRBYTE_JOB_STATUS_TYPE,
     TEST_WORKSPACE_ID,
     get_job_details_sample,
@@ -95,7 +101,7 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
     test_time_first_call = datetime(2024, 1, 1, 0, 0, 0)
     test_time_before_expiration = datetime(2024, 1, 1, 0, 2, 0)
     test_time_after_expiration = datetime(2024, 1, 1, 0, 3, 0)
-    with mock.patch("dagster_airbyte.resources.datetime", wraps=datetime) as dt:
+    with patch("dagster_airbyte.resources.datetime", wraps=datetime) as dt:
         # Test first call, must get the access token before calling the jobs api
         dt.now.return_value = test_time_first_call
         client._make_request(method="GET", endpoint="test", base_url=client.rest_api_base_url)  # noqa
@@ -365,3 +371,80 @@ def test_airbyte_sync_and_poll_client_cancel_on_termination(
     assert_rest_api_call(
         call=base_api_mocks.calls[-1], endpoint=test_job_endpoint, method=last_call_method
     )
+
+
+def test_fivetran_airbyte_cloud_sync_and_poll_materialization_method(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    airbyte_cloud_sync_and_poll: MagicMock,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    with environ(
+        {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
+    ):
+        workspace = AirbyteCloudWorkspace(
+            workspace_id=TEST_WORKSPACE_ID,
+            client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+            client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
+        )
+
+        cleaned_connection_id = clean_name(TEST_CONNECTION_ID)
+
+        @airbyte_assets(
+            connection_id=TEST_CONNECTION_ID, workspace=workspace, name=cleaned_connection_id
+        )
+        def my_airbyte_assets(context: AssetExecutionContext, airbyte: AirbyteCloudWorkspace):
+            yield from airbyte.sync_and_poll(context=context)
+
+        # Mocked AirbyteCloudClient.sync_and_poll returns API response where all connection tables are expected
+        result = materialize(
+            [my_airbyte_assets],
+            resources={"airbyte": workspace},
+        )
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.events_for_node(cleaned_connection_id)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 2
+        materialized_asset_keys = {
+            asset_materialization.asset_key for asset_materialization in asset_materializations
+        }
+        assert len(materialized_asset_keys) == 2
+        assert my_airbyte_assets.keys == materialized_asset_keys
+
+        # Mocked FivetranClient.sync_and_poll returns API response
+        # where one expected table is missing and an unexpected table is present
+        result = materialize(
+            [my_airbyte_assets],
+            resources={"airbyte": workspace},
+        )
+
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.events_for_node(cleaned_connection_id)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 2
+        materialized_asset_keys = {
+            asset_materialization.asset_key for asset_materialization in asset_materializations
+        }
+        assert len(materialized_asset_keys) == 2
+        assert my_airbyte_assets.keys != materialized_asset_keys
+        assert (
+            AssetKey([f"{TEST_STREAM_PREFIX}{TEST_UNEXPECTED_STREAM_NAME}"])
+            in materialized_asset_keys
+        )
+        assert (
+            AssetKey([f"{TEST_STREAM_PREFIX}{TEST_ANOTHER_STREAM_NAME}"])
+            not in materialized_asset_keys
+        )
+
+        captured = capsys.readouterr()
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - An unexpected asset was materialized", captured.err
+        )
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - Assets were not materialized", captured.err
+        )
