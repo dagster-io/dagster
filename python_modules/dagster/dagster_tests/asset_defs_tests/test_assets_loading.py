@@ -38,3 +38,32 @@ def test_input_manager_override():
             resource_defs={"my_input_manager": my_input_manager, "io_manager": my_io_manager},
         )
     ).success
+
+
+def test_asset_tags_in_io_contexts():
+    @io_manager
+    def my_io_manager():
+        class MyIOManager(IOManager):
+            def handle_output(self, context, obj):
+                assert context.asset_tags == {"foo": "bar"}
+
+            def load_input(self, context):
+                assert context.asset_tags == {"foo": "bar"}
+
+        return MyIOManager()
+
+    @asset(tags={"foo": "bar"}, io_manager_key="my_io_manager")
+    def my_asset():
+        return 1
+
+    @asset(
+        tags={"different": "tags"},
+        ins={"upstream": AssetIn(key="my_asset", input_manager_key="my_io_manager")},
+    )
+    def my_downstream(upstream):
+        return 1
+
+    result = materialize(
+        assets=[my_asset, my_downstream], resources={"my_io_manager": my_io_manager}
+    )
+    assert result.success

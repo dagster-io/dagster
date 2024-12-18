@@ -481,6 +481,17 @@ class OutputContext:
 
         return self.step_context.asset_partition_key_range_for_output(self.name)
 
+    @property
+    def asset_tags(self) -> Mapping[str, str]:
+        """Tags from the output asset."""
+        return (
+            check.not_none(
+                self._step_context, "asset_tags is not currently supported via this context."
+            )
+            .job_def.asset_layer.asset_graph.assets_def_for_key(self.asset_key)
+            .tags_by_key[self.asset_key]
+        )
+
     @public
     @property
     def asset_partition_keys(self) -> Sequence[str]:
