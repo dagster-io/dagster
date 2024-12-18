@@ -2,9 +2,9 @@ from typing import Optional, Sequence
 
 import pytest
 from dagster_components.core.component_rendering import (
+    RenderingScope,
     TemplatedValueResolver,
     _should_render,
-    add_required_rendering_context,
     preprocess_value,
 )
 from pydantic import BaseModel, Field, TypeAdapter
@@ -12,20 +12,18 @@ from pydantic import BaseModel, Field, TypeAdapter
 
 class Inner(BaseModel):
     a: Optional[str] = None
-    deferred: Optional[str] = add_required_rendering_context(
-        Field(default=None), {"foo", "bar", "baz"}
-    )
+    deferred: Optional[str] = RenderingScope(required_scope={"foo", "bar", "baz"})
 
 
 class Outer(BaseModel):
     a: str
-    deferred: str = add_required_rendering_context(Field(), {"a"})
+    deferred: str = RenderingScope(required_scope={"a"})
     inner: Sequence[Inner]
-    inner_deferred: Sequence[Inner] = add_required_rendering_context(Field(), {"b"})
+    inner_deferred: Sequence[Inner] = RenderingScope(required_scope={"b"})
 
     inner_optional: Optional[Sequence[Inner]] = None
-    inner_deferred_optional: Optional[Sequence[Inner]] = add_required_rendering_context(
-        Field(default=None), {"b"}
+    inner_deferred_optional: Optional[Sequence[Inner]] = RenderingScope(
+        Field(default=None), required_scope={"b"}
     )
 
 

@@ -5,7 +5,7 @@ from typing import AbstractSet, Any, Mapping, Optional, Sequence, Type, TypeVar,
 import dagster._check as check
 from dagster._record import record
 from jinja2 import Template
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic.fields import FieldInfo
 
 T = TypeVar("T")
@@ -13,12 +13,21 @@ T = TypeVar("T")
 REF_BASE = "#/$defs/"
 REF_TEMPLATE = f"{REF_BASE}{{model}}"
 
-CONTEXT_KEY = "required_rendering_context"
+CONTEXT_KEY = "required_rendering_scope"
 
 
-def add_required_rendering_context(field: Any, context: AbstractSet[str]) -> Any:
+def RenderingScope(field: Optional[FieldInfo] = None, *, required_scope: AbstractSet[str]) -> Any:
+    """Defines a Pydantic Field that requires a specific scope to be available before rendering.
+
+    Examples:
+    ```python
+    class Schema(BaseModel):
+        a: str = RenderingScope(required_scope={"foo", "bar"})
+        b: Optional[int] = RenderingScope(Field(default=None), required_scope={"baz"})
+    ```
+    """
     return FieldInfo.merge_field_infos(
-        field, FieldInfo(json_schema_extra={CONTEXT_KEY: json.dumps(list(context))})
+        field or Field(), Field(json_schema_extra={CONTEXT_KEY: json.dumps(list(required_scope))})
     )
 
 
