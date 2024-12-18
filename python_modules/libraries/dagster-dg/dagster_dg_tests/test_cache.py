@@ -83,6 +83,44 @@ def test_cache_clear(with_command: bool):
         assert "CACHE [miss]" in result.output
 
 
+def test_rebuild_component_registry_success():
+    with ProxyRunner.test(verbose=True) as runner, isolated_example_code_location_bar(runner):
+        result = runner.invoke("--rebuild-component-registry")
+        assert_runner_result(result)
+
+        result = runner.invoke("list", "component-types")
+        assert_runner_result(result)
+        assert "CACHE [hit]" in result.output
+
+
+def test_rebuild_component_registry_fails_outside_code_location():
+    with ProxyRunner.test(verbose=True) as runner, runner.isolated_filesystem():
+        result = runner.invoke("--rebuild-component-registry")
+        assert_runner_result(result, exit_0=False)
+        assert "This command must be run inside a Dagster code location" in result.output
+
+
+def test_rebuild_component_registry_fails_with_subcommand():
+    with ProxyRunner.test(verbose=True) as runner, isolated_example_code_location_bar(runner):
+        result = runner.invoke("--rebuild-component-registry", "list", "component-types")
+        assert_runner_result(result, exit_0=False)
+        assert "Cannot specify --rebuild-component-registry with a subcommand." in result.output
+
+
+def test_rebuild_component_registry_fails_with_clear_cache():
+    with ProxyRunner.test(verbose=True) as runner, isolated_example_code_location_bar(runner):
+        result = runner.invoke("--rebuild-component-registry", "--clear-cache")
+        assert_runner_result(result, exit_0=False)
+        assert "Cannot specify both --clear-cache and --rebuild-component-registry" in result.output
+
+
+def test_rebuild_component_registry_fails_with_disabled_cache():
+    with ProxyRunner.test(verbose=True) as runner, isolated_example_code_location_bar(runner):
+        result = runner.invoke("--rebuild-component-registry", "--clear-cache")
+        assert_runner_result(result, exit_0=False)
+        assert "Cache is disabled" in result.output
+
+
 def test_cache_disabled():
     with (
         ProxyRunner.test(verbose=True, disable_cache=True) as runner,

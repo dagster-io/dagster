@@ -117,7 +117,7 @@ def generate_code_location_command(
     else:
         editable_dagster_root = None
 
-    generate_code_location(code_location_path, editable_dagster_root)
+    generate_code_location(code_location_path, dg_context, editable_dagster_root)
 
 
 @generate_cli.command(name="component-type", cls=DgClickCommand)

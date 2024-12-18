@@ -43,13 +43,13 @@ def _is_deployment_root_directory(path: Path) -> bool:
 
 def is_inside_code_location_directory(path: Path) -> bool:
     try:
-        _resolve_code_location_root_directory(path)
+        resolve_code_location_root_directory(path)
         return True
     except DgError:
         return False
 
 
-def _resolve_code_location_root_directory(path: Path) -> Path:
+def resolve_code_location_root_directory(path: Path) -> Path:
     current_path = path.absolute()
     while not _is_code_location_root_directory(current_path):
         current_path = current_path.parent
@@ -134,6 +134,25 @@ def make_cache_key(code_location_path: Path, data_type: CachableDataType) -> Tup
     return ("_".join(path_parts), env_hash, data_type)
 
 
+def fetch_component_registry(path: Path, dg_context: DgContext) -> RemoteComponentRegistry:
+    root_path = resolve_code_location_root_directory(path)
+
+    cache = dg_context.cache
+    if cache:
+        cache_key = make_cache_key(root_path, "component_registry_data")
+
+    raw_registry_data = cache.get(cache_key) if cache else None
+    if not raw_registry_data:
+        raw_registry_data = execute_code_location_command(
+            root_path, ["list", "component-types"], dg_context
+        )
+        if cache:
+            cache.set(cache_key, raw_registry_data)
+
+    registry_data = json.loads(raw_registry_data)
+    return RemoteComponentRegistry.from_dict(registry_data)
+
+
 @dataclass
 class CodeLocationDirectoryContext:
     """Class encapsulating contextual information about a components code location directory.
@@ -155,23 +174,8 @@ class CodeLocationDirectoryContext:
 
     @classmethod
     def from_path(cls, path: Path, dg_context: DgContext) -> Self:
-        root_path = _resolve_code_location_root_directory(path)
-
-        cache = dg_context.cache
-        if cache:
-            cache_key = make_cache_key(root_path, "component_registry_data")
-
-        raw_registry_data = cache.get(cache_key) if cache else None
-        if not raw_registry_data:
-            raw_registry_data = execute_code_location_command(
-                root_path, ["list", "component-types"], dg_context
-            )
-            if cache:
-                cache.set(cache_key, raw_registry_data)
-
-        registry_data = json.loads(raw_registry_data)
-        component_registry = RemoteComponentRegistry.from_dict(registry_data)
-
+        root_path = resolve_code_location_root_directory(path)
+        component_registry = fetch_component_registry(path, dg_context)
         return cls(
             root_path=root_path,
             name=path.name,
