@@ -75,13 +75,39 @@ def get_function_params_without_context_or_config_or_resources(
     return new_input_args
 
 
-def build_named_ins(
+def validate_can_coexist(asset_in: AssetIn, asset_dep: AssetDep) -> None:
+    """Validates that the asset_in and asset_dep can coexist peacefully on the same asset key.
+    If both asset_in and asset_dep are set on the same asset key, expect that _no_ properties
+    are set on AssetIn except for the key itself.
+    """
+    if (
+        asset_in.metadata
+        or asset_in.key_prefix
+        or asset_in.dagster_type != NoValueSentinel
+        or asset_in.partition_mapping is not None
+    ):
+        raise DagsterInvalidDefinitionError(
+            f"Asset key '{asset_dep.asset_key.to_user_string()}' is used as both an input (via AssetIn) and a dependency (via AssetDep). If an asset key is used as an input and also set as a dependency, the input should only define the relationship between the asset key and the input name, or optionally set the input_manager_key. Any other properties should either not be set, or should be set on the dependency."
+        )
+
+
+def build_and_validate_named_ins(
     fn: Callable[..., Any],
     asset_ins: Mapping[str, AssetIn],
-    deps: Optional[AbstractSet[AssetKey]],
+    deps: Optional[Iterable[AssetDep]],
 ) -> Mapping[AssetKey, "NamedIn"]:
     """Creates a mapping from AssetKey to (name of input, In object)."""
-    deps = check.opt_set_param(deps, "deps", AssetKey)
+    deps_by_key = {dep.asset_key: dep for dep in deps} if deps else {}
+    ins_by_asset_key = {
+        asset_in.key if asset_in.key else AssetKey.from_coercible(input_name): asset_in
+        for input_name, asset_in in asset_ins.items()
+    }
+    shared_keys_between_ins_and_deps = set(ins_by_asset_key.keys()) & set(deps_by_key.keys())
+    if shared_keys_between_ins_and_deps:
+        for shared_key in shared_keys_between_ins_and_deps:
+            validate_can_coexist(ins_by_asset_key[shared_key], deps_by_key[shared_key])
+
+    deps = check.opt_iterable_param(deps, "deps", AssetDep)
 
     new_input_args = get_function_params_without_context_or_config_or_resources(fn)
 
@@ -126,16 +152,12 @@ def build_named_ins(
             In(metadata=metadata, input_manager_key=input_manager_key, dagster_type=dagster_type),
         )
 
-    for asset_key in deps:
-        if asset_key in named_ins_by_asset_key:
-            raise DagsterInvalidDefinitionError(
-                f"deps value {asset_key} also declared as input/AssetIn"
+    for dep in deps:
+        if dep.asset_key not in named_ins_by_asset_key:
+            named_ins_by_asset_key[dep.asset_key] = NamedIn(
+                stringify_asset_key_to_input_name(dep.asset_key),
+                In(cast(type, Nothing)),
             )
-            # mypy doesn't realize that Nothing is a valid type here
-        named_ins_by_asset_key[asset_key] = NamedIn(
-            stringify_asset_key_to_input_name(asset_key),
-            In(cast(type, Nothing)),
-        )
 
     return named_ins_by_asset_key
 
@@ -348,25 +370,29 @@ class DecoratorAssetsDefinitionBuilder:
                 ),
             )
 
-        upstream_keys = set()
+        upstream_deps = {}
         for spec in asset_specs:
             for dep in spec.deps:
                 if dep.asset_key not in named_outs_by_asset_key:
-                    upstream_keys.add(dep.asset_key)
+                    upstream_deps[dep.asset_key] = dep
                 if dep.asset_key in named_outs_by_asset_key and dep.partition_mapping is not None:
                     # self-dependent asset also needs to be considered an upstream_key
-                    upstream_keys.add(dep.asset_key)
+                    upstream_deps[dep.asset_key] = dep
 
         # get which asset keys have inputs set
-        loaded_upstreams = build_named_ins(fn, asset_in_map, deps=set())
-        unexpected_upstreams = {key for key in loaded_upstreams.keys() if key not in upstream_keys}
+        loaded_upstreams = build_and_validate_named_ins(fn, asset_in_map, deps=set())
+        unexpected_upstreams = {key for key in loaded_upstreams.keys() if key not in upstream_deps}
         if unexpected_upstreams:
             raise DagsterInvalidDefinitionError(
                 f"Asset inputs {unexpected_upstreams} do not have dependencies on the passed"
                 " AssetSpec(s). Set the deps on the appropriate AssetSpec(s)."
             )
-        remaining_upstream_keys = {key for key in upstream_keys if key not in loaded_upstreams}
-        named_ins_by_asset_key = build_named_ins(fn, asset_in_map, deps=remaining_upstream_keys)
+        remaining_upstream_deps = [
+            dep for key, dep in upstream_deps.items() if key not in loaded_upstreams
+        ]
+        named_ins_by_asset_key = build_and_validate_named_ins(
+            fn, asset_in_map, deps=remaining_upstream_deps
+        )
 
         internal_deps = {
             spec.key: {dep.asset_key for dep in spec.deps}
@@ -401,10 +427,10 @@ class DecoratorAssetsDefinitionBuilder:
         check.param_invariant(
             not passed_args.specs, "args", "This codepath for non-spec based create"
         )
-        named_ins_by_asset_key = build_named_ins(
+        named_ins_by_asset_key = build_and_validate_named_ins(
             fn,
             asset_in_map,
-            deps=({dep.asset_key for dep in upstream_asset_deps} if upstream_asset_deps else set()),
+            deps=upstream_asset_deps or set(),
         )
         named_outs_by_asset_key = build_named_outs(asset_out_map)
 

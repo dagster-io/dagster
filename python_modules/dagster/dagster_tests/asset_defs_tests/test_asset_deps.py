@@ -4,6 +4,7 @@ from dagster import (
     AssetOut,
     FilesystemIOManager,
     IOManager,
+    Nothing,
     SourceAsset,
     TimeWindowPartitionMapping,
     asset,
@@ -12,7 +13,9 @@ from dagster import (
 )
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind
 
@@ -522,18 +525,104 @@ def test_bad_types():
 
 
 def test_dep_via_deps_and_fn():
+    """Test combining deps and ins in the same @asset-decorated function."""
+
     @asset
     def the_upstream_asset():
         return 1
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=r"deps value .* also declared as input/AssetIn",
-    ):
+    # When deps and ins are both set, expect that deps is only used for the asset key and potentially input name.
+    for param_dict in [
+        {"partition_mapping": IdentityPartitionMapping()},
+        {"metadata": {"foo": "bar"}},
+        {"key_prefix": "prefix"},
+        {"dagster_type": Nothing},
+    ]:
+        with pytest.raises(DagsterInvalidDefinitionError):
 
-        @asset(deps=[the_upstream_asset])
-        def depends_on_upstream_asset(the_upstream_asset):
-            return None
+            @asset(
+                deps=[AssetDep(the_upstream_asset)],
+                ins={"the_upstream_asset": AssetIn(**param_dict)},
+            )
+            def _(the_upstream_asset):
+                return None
+
+    # We allow the asset key to be set via deps and ins as long as no additional information is set.
+    @asset(deps=[the_upstream_asset])
+    def depends_on_upstream_asset_implicit_remap(the_upstream_asset):
+        assert the_upstream_asset == 1
+
+    @asset(
+        deps=[AssetDep(the_upstream_asset)], ins={"remapped": AssetIn(key=the_upstream_asset.key)}
+    )
+    def depends_on_upstream_asset_explicit_remap(remapped):
+        assert remapped == 1
+
+    res = materialize(
+        [
+            the_upstream_asset,
+            depends_on_upstream_asset_implicit_remap,
+            depends_on_upstream_asset_explicit_remap,
+        ],
+    )
+    assert res.success
+
+    @asset
+    def upstream2():
+        return 2
+
+    # As an unfortunate consequence of the many iterations of dependency specification and the fact that they were all additive with each other,
+    # we have to support the case where deps are specified separately in both the function signature and the decorator.
+    # This is not recommended, but it is supported.
+    @asset(deps=[the_upstream_asset])
+    def some_explicit_and_implicit_deps(the_upstream_asset, upstream2):
+        assert the_upstream_asset == 1
+        assert upstream2 == 2
+
+    @asset(deps=[the_upstream_asset], ins={"remapped": AssetIn(key=upstream2.key)})
+    def deps_disjoint_between_args(the_upstream_asset, remapped):
+        assert the_upstream_asset == 1
+        assert remapped == 2
+
+    res = materialize(
+        [
+            the_upstream_asset,
+            upstream2,
+            some_explicit_and_implicit_deps,
+            deps_disjoint_between_args,
+        ],
+    )
+    assert res.success
+
+
+def test_allow_remapping_io_manager_key() -> None:
+    @asset
+    def the_upstream_asset():
+        return 1
+
+    @asset(
+        deps=[the_upstream_asset],
+        ins={"the_upstream_asset": AssetIn(input_manager_key="custom_io")},
+    )
+    def depends_on_upstream_asset(the_upstream_asset):
+        assert the_upstream_asset == 1
+
+    calls = []
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            raise Exception("Should not be called")
+
+        def load_input(self, context):
+            calls.append("load_input")
+            return 1
+
+    res = materialize(
+        [the_upstream_asset, depends_on_upstream_asset],
+        resources={"custom_io": MyIOManager()},
+    )
+    assert res.success
+    assert calls == ["load_input"]
 
 
 def test_duplicate_deps():
