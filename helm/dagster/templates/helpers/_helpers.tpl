@@ -30,6 +30,10 @@ If release name contains chart name it will be used as a full name.
 {{- .repository -}}:{{- .tag -}}
 {{- end }}
 
+{{- define "dagster.externalPostgresImage.name" }}
+{{- .registry -}}/{{- .repository -}}:{{- .tag -}}
+{{- end }}
+
 {{- define "dagster.dagsterImage.name" }}
   {{- $ := index . 0 }}
 
