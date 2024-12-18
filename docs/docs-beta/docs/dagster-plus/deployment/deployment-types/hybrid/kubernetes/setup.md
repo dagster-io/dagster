@@ -81,7 +81,7 @@ kubectl --namespace dagster-cloud logs -l deployment=agent
 
 There are three places to customize how Dagster interacts with Kubernetes:
 - **Per Deployment** by configuring the Dagster+ agent using [Helm values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
-- **Per Project** by configuring the `dagster_cloud.yaml` file for your [code location](/dagster-plus/features/code-locations)
+- **Per Project** by configuring the `dagster_cloud.yaml` file for your [code location](/dagster-plus/deployment/code-locations)
 - **Per Asset or Job** by adding tags to the [asset](/todo), [job](/todo), or [customizing the Kubernetes pipes invocation](/todo)
 
 Changes apply in a hierarchy, for example, a customization for an asset will override a default set globally in the agent configuration. Attributes that are not customized will use the global defaults.

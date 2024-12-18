@@ -10,7 +10,7 @@ Dagster+ automatically tracks metadata every time a code location is loaded. Thi
 
 Before continuing, you should be familiar with:
 
-- [Code Locations](/dagster-plus/features/code-locations)
+- [Code Locations](/dagster-plus/deployment/code-locations)
 
 </details>
 
