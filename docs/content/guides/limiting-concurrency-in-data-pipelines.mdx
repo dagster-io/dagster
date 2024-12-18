@@ -391,11 +391,6 @@ height={1638}
 
 ### Limiting op/asset concurrency across runs
 
-<Note>
-  This feature is experimental and is only supported with Postgres/MySQL
-  storages.
-</Note>
-
 #### For specific ops/assets
 
 Limits can be specified on the Dagster instance using the special op tag `dagster/concurrency_key`. If this instance limit would be exceeded by launching an op/asset, then the op/asset will be queued.
