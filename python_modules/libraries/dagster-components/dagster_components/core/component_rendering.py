@@ -30,6 +30,9 @@ def get_required_rendering_context(subschema: Mapping[str, Any]) -> Optional[Abs
 class TemplatedValueResolver:
     context: Mapping[str, Any]
 
+    def with_context(self, **additional_context) -> "TemplatedValueResolver":
+        return TemplatedValueResolver(context={**self.context, **additional_context})
+
     def resolve(self, val: str) -> str:
         return Template(val).render(**self.context)
 
