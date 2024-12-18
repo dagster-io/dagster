@@ -19,7 +19,7 @@ from dagster_components.core.component import (
     TemplatedValueResolver,
     component,
 )
-from dagster_components.core.component_rendering import add_required_rendering_context
+from dagster_components.core.component_rendering import RenderingScope
 from dagster_components.core.dsl_schema import AssetSpecProcessorModel, OpSpecBaseModel
 from dagster_components.generate import generate_component_yaml
 
@@ -32,8 +32,8 @@ class DbtNodeTranslatorParams(BaseModel):
 class DbtProjectParams(BaseModel):
     dbt: DbtCliResource
     op: Optional[OpSpecBaseModel] = None
-    translator: Optional[DbtNodeTranslatorParams] = add_required_rendering_context(
-        Field(default=None), {"node"}
+    translator: Optional[DbtNodeTranslatorParams] = RenderingScope(
+        Field(default=None), required_scope={"node"}
     )
     asset_attributes: Optional[Sequence[AssetSpecProcessorModel]] = None
 
