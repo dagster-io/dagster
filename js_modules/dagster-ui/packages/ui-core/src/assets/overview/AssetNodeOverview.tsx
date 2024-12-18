@@ -49,6 +49,7 @@ export const AssetNodeOverview = ({
   downstream,
   liveData,
   dependsOnSelf,
+  renderExtraSidebarEntries,
 }: {
   assetKey: AssetKey;
   assetNode: AssetNodeDefinitionFragment | undefined | null;
@@ -57,6 +58,10 @@ export const AssetNodeOverview = ({
   downstream: AssetNodeForGraphQueryFragment[] | null;
   liveData: LiveDataForNode | undefined;
   dependsOnSelf: boolean;
+  renderExtraSidebarEntries?: (
+    repoAddress: {name: string; location: string},
+    assetNode: AssetNodeDefinitionFragment,
+  ) => React.ReactNode;
 }) => {
   const cachedOrLiveAssetNode = assetNode ?? cachedAssetNode;
   const repoAddress = cachedOrLiveAssetNode
@@ -97,6 +102,13 @@ export const AssetNodeOverview = ({
       [downstream, upstream],
     ),
   );
+
+  const extraSidebarEntries = React.useMemo(() => {
+    if (!renderExtraSidebarEntries || !repoAddress || !assetNode) {
+      return null;
+    }
+    return renderExtraSidebarEntries(repoAddress, assetNode);
+  }, [renderExtraSidebarEntries, repoAddress, assetNode]);
 
   if (loading || !cachedOrLiveAssetNode) {
     return <AssetNodeOverviewLoading />;
@@ -261,6 +273,7 @@ export const AssetNodeOverview = ({
               <ComputeDetailsSection repoAddress={repoAddress} assetNode={assetNode} />
             </LargeCollapsibleSection>
           ) : null}
+          {extraSidebarEntries}
         </>
       }
     />
