@@ -19,7 +19,7 @@ from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._time import get_current_datetime, get_current_timestamp
-from dagster._utils import materialize
+from dagster._utils import return_as_list
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
@@ -174,7 +174,7 @@ def execute_backfill_jobs(
 
                     if backfill.is_asset_backfill:
                         future = threadpool_executor.submit(
-                            materialize(execute_asset_backfill_iteration),
+                            return_as_list(execute_asset_backfill_iteration),
                             backfill,
                             backfill_logger,
                             workspace_process_context,
@@ -182,7 +182,7 @@ def execute_backfill_jobs(
                         )
                     else:
                         future = threadpool_executor.submit(
-                            materialize(execute_job_backfill_iteration),
+                            return_as_list(execute_job_backfill_iteration),
                             backfill,
                             backfill_logger,
                             workspace_process_context,

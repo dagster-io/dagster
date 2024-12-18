@@ -70,7 +70,7 @@ from dagster._utils import (
     DebugCrashFlags,
     SingleInstigatorDebugCrashFlags,
     check_for_debug_crash,
-    materialize,
+    return_as_list,
 )
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
@@ -612,7 +612,7 @@ def _process_tick_generator(
 
 # evaluate the tick immediately, but from within a thread.  The main thread should be able to
 # heartbeat to keep the daemon alive
-_process_tick = materialize(_process_tick_generator)
+_process_tick = return_as_list(_process_tick_generator)
 
 
 def _sensor_instigator_data(state: InstigatorState) -> Optional[SensorInstigatorData]:

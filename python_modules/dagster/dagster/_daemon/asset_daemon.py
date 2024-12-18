@@ -72,7 +72,7 @@ from dagster._daemon.utils import DaemonErrorCapture
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
 from dagster._time import get_current_datetime, get_current_timestamp
-from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash, materialize
+from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash, return_as_list
 
 _LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR"
 _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR_NEW"
@@ -860,7 +860,7 @@ class AssetDaemon(DagsterDaemon):
 
         yield error_info
 
-    _process_auto_materialize_tick = materialize(_process_auto_materialize_tick_generator)
+    _process_auto_materialize_tick = return_as_list(_process_auto_materialize_tick_generator)
 
     def _evaluate_auto_materialize_tick(
         self,

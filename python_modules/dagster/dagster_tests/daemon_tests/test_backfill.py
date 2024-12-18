@@ -644,6 +644,10 @@ def test_two_backfills_at_the_same_time(
     tmp_path: Path,
     parallel: bool,
 ):
+    # In order to avoid deadlock, we need to ensure that the instance we
+    # are using will launch runs in separate subprocesses rather than in
+    # the same in-memory process. This is akin to the context created in
+    # https://github.com/dagster-io/dagster/blob/a116c44/python_modules/dagster/dagster_tests/scheduler_tests/conftest.py#L53-L71
     with instance_for_test(
         overrides={
             "event_log_storage": {

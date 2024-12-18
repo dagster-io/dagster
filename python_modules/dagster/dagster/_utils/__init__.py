@@ -846,7 +846,7 @@ def run_with_concurrent_update_guard(
         return
 
 
-def materialize(func: Callable[..., Iterable[T]]) -> Callable[..., List[T]]:
+def return_as_list(func: Callable[..., Iterable[T]]) -> Callable[..., List[T]]:
     """A decorator that returns a list from the output of a function."""
 
     @functools.wraps(func)
