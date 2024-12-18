@@ -11,6 +11,13 @@ from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import Queued
 from dagster._utils.log import get_structlog_json_formatter
 
 
+@pytest.mark.parametrize("daemon", ["backfills", "schedules", "sensors"])
+def test_settings(daemon):
+    settings = {"use_threads": True, "num_workers": 4}
+    with instance_for_test(overrides={daemon: settings}) as thread_inst:
+        assert thread_inst.get_settings(daemon) == settings
+
+
 def test_scheduler_instance():
     with instance_for_test(
         overrides={
