@@ -5,6 +5,10 @@ description: Automatically retry Dagster runs
 
 # Run Retries
 
+<notebook>
+  This feature requires a PostgreSQL or MySQL storage backend.
+</Note>
+
 If you configure run retries, a new run will be kicked off whenever a run fails for any reason. Compared to [op retries](/concepts/ops-jobs-graphs/op-retries), the maximum retry limit for run retries applies to the whole run instead of each individual op. Run retries also handle the case where the run process crashes or is unexpectedly terminated.
 
 ## Configuration
