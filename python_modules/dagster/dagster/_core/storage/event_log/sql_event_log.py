@@ -1017,9 +1017,6 @@ class SqlEventLogStorage(EventLogStorage):
 
         return event_records
 
-    def supports_event_consumer_queries(self) -> bool:
-        return True
-
     def _get_event_records_result(
         self,
         event_records_filter: EventRecordsFilter,

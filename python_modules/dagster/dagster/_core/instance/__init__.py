@@ -491,13 +491,6 @@ class DagsterInstance(DynamicPartitionsStore):
                 " run worker will be marked as failed, but will not be resumed.",
             )
 
-        if self.run_retries_enabled:
-            check.invariant(
-                self.event_log_storage.supports_event_consumer_queries(),
-                "Run retries are enabled, but the configured event log storage does not support"
-                " them. Consider switching to Postgres or Mysql.",
-            )
-
         # Used for batched event handling
         self._event_buffer: Dict[str, List[EventLogEntry]] = defaultdict(list)
 
