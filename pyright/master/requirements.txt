@@ -52,6 +52,7 @@
 -e python_modules/libraries/dagster-deltalake/
 -e python_modules/libraries/dagster-deltalake-pandas/
 -e python_modules/libraries/dagster-deltalake-polars/
+-e python_modules/libraries/dagster-dg/
 -e python_modules/libraries/dagster-docker/
 -e python_modules/libraries/dagster-duckdb/
 -e python_modules/libraries/dagster-duckdb-pandas/
@@ -141,4 +142,5 @@ types-sqlalchemy==1.4.53.34
 -e python_modules/libraries/dagster-airlift/perf-harness
 -e examples/airlift-migration-tutorial
 -e examples/use_case_repository[dev]
+-e examples/project_atproto_dashboard
 -e examples/project_dagster_modal_pipes

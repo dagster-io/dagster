@@ -679,3 +679,30 @@ def test_env_configmap(env_configmap_template):
     assert len(cm.data) == 6
     assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
     assert cm.data["TEST_ENV"] == "test_value"
+
+
+def test_check_db_container_toggle(template: HelmTemplate):
+    # Off test
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(checkDbReadyInitContainer=False)
+    )
+    [daemon_deployment] = template.render(helm_values)
+    assert daemon_deployment.spec.template.spec.init_containers is None or "check-db-ready" not in [
+        container.name for container in daemon_deployment.spec.template.spec.init_containers
+    ]
+
+    # On test
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(checkDbReadyInitContainer=True)
+    )
+    [daemon_deployment] = template.render(helm_values)
+    assert "check-db-ready" in [
+        container.name for container in daemon_deployment.spec.template.spec.init_containers
+    ]
+
+    # Default test
+    helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
+    [daemon_deployment] = template.render(helm_values)
+    assert "check-db-ready" in [
+        container.name for container in daemon_deployment.spec.template.spec.init_containers
+    ]

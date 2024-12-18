@@ -464,7 +464,7 @@ def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
 
 
 class AsyncJSONIOManager(ConfigurableIOManager, UPathIOManager):
-    base_dir: str = PydanticField(None, description="Base directory for storing files.")
+    base_dir: str = PydanticField(None, description="Base directory for storing files.")  # type: ignore
 
     _base_path: UPath = PrivateAttr()
 

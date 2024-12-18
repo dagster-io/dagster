@@ -33,8 +33,9 @@ class DataprocClient:
 
         self.config = config
 
-        (self.project_id, self.region, self.cluster_name, self.cluster_config) = (
-            self.config.get(k) for k in ("projectId", "region", "clusterName", "cluster_config")
+        (self.project_id, self.region, self.cluster_name, self.cluster_config, self.labels) = (
+            self.config.get(k)
+            for k in ("projectId", "region", "clusterName", "cluster_config", "labels")
         )
 
     @property
@@ -60,6 +61,7 @@ class DataprocClient:
                     "projectId": self.project_id,
                     "clusterName": self.cluster_name,
                     "config": self.cluster_config,
+                    "labels": self.labels,
                 },
             ).execute()
         )
@@ -177,6 +179,17 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             " deleted clusters can be reused."
         )
     )
+    labels: Optional[dict[str, str]] = Field(
+        default=None,
+        description=(
+            "Optional. The labels to associate with this cluster. Label keys must"
+            " contain 1 to 63 characters, and must conform to RFC 1035"
+            " (https://www.ietf.org/rfc/rfc1035.txt). Label values may be empty, but, if"
+            " present, must contain 1 to 63 characters, and must conform to RFC 1035"
+            " (https://www.ietf.org/rfc/rfc1035.txt). No more than 32 labels can be associated"
+            " with a cluster."
+        ),
+    )
     cluster_config_yaml_path: Optional[str] = Field(
         default=None,
         description=(
@@ -249,6 +262,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             "region": self.region,
             "clusterName": self.cluster_name,
             "cluster_config": cluster_config,
+            "labels": self.labels,
         }
 
         return DataprocClient(config=client_config_dict)

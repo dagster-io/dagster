@@ -9,15 +9,12 @@ from dagster import (
     _check as check,
 )
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.storage.tags import (
-    MAX_RETRIES_TAG,
-    RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
-    RUN_FAILURE_REASON_TAG,
-)
+from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_ON_ASSET_OR_OP_FAILURE_TAG
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:
+    from dagster._core.events import RunFailureReason
     from dagster._core.instance import DagsterInstance
 
 
@@ -82,7 +79,9 @@ class RetryState:
         return dict(self._attempts)
 
 
-def auto_reexecution_should_retry_run(instance: "DagsterInstance", run: DagsterRun):
+def auto_reexecution_should_retry_run(
+    instance: "DagsterInstance", run: DagsterRun, run_failure_reason: Optional["RunFailureReason"]
+):
     """Determines if a run will be retried by the automatic reexcution system.
     A run will retry if:
     - it is failed.
@@ -120,6 +119,13 @@ def auto_reexecution_should_retry_run(instance: "DagsterInstance", run: DagsterR
     if run.status != DagsterRunStatus.FAILURE:
         return False
 
+    retry_on_asset_or_op_failure = get_boolean_tag_value(
+        run.tags.get(RETRY_ON_ASSET_OR_OP_FAILURE_TAG),
+        default_value=instance.run_retries_retry_on_asset_or_op_failure,
+    )
+    if run_failure_reason == RunFailureReason.STEP_FAILURE and not retry_on_asset_or_op_failure:
+        return False
+
     raw_max_retries_tag = run.tags.get(MAX_RETRIES_TAG)
     if raw_max_retries_tag is None:
         max_retries = instance.run_retries_max_retries
@@ -136,15 +142,5 @@ def auto_reexecution_should_retry_run(instance: "DagsterInstance", run: DagsterR
             # since the original run is in the run group, the number of retries launched
             # so far is len(run_group_iter) - 1
             if len(list(run_group_iter)) <= max_retries:
-                retry_on_asset_or_op_failure = get_boolean_tag_value(
-                    run.tags.get(RETRY_ON_ASSET_OR_OP_FAILURE_TAG),
-                    default_value=instance.run_retries_retry_on_asset_or_op_failure,
-                )
-                if (
-                    run.tags.get(RUN_FAILURE_REASON_TAG) == RunFailureReason.STEP_FAILURE.value
-                    and not retry_on_asset_or_op_failure
-                ):
-                    return False
-                else:
-                    return True
+                return True
     return False

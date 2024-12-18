@@ -5,7 +5,7 @@ aiohappyeyeballs==2.4.4
 aiohttp==3.10.11
 aiohttp-retry==2.8.3
 aioresponses==0.7.7
-aiosignal==1.3.1
+aiosignal==1.3.2
 alabaster==1.0.0
 alembic==1.14.0
 altair==4.2.2
@@ -36,7 +36,8 @@ asn1crypto==1.5.1
 -e examples/assets_pandas_pyspark
 asttokens==3.0.0
 async-lru==2.0.4
-attrs==24.2.0
+atproto==0.0.56
+attrs==24.3.0
 autodocsumm==0.2.14
 autoflake==2.3.1
 -e python_modules/automation
@@ -57,10 +58,10 @@ billiard==4.2.1
 bleach==6.2.0
 blinker==1.9.0
 bokeh==3.6.2
-boto3==1.35.78
+boto3==1.35.82
 boto3-stubs-lite==1.35.70
-botocore==1.35.78
-botocore-stubs==1.35.78
+botocore==1.35.82
+botocore-stubs==1.35.82
 buildkite-test-collector==0.1.9
 cachecontrol==0.14.1
 cached-property==2.0.1
@@ -70,9 +71,9 @@ caio==0.9.17
 callee==0.3.1
 cattrs==23.1.2
 celery==5.4.0
-certifi==2024.8.30
+certifi==2024.12.14
 cffi==1.17.1
-cfn-lint==1.22.0
+cfn-lint==1.22.2
 chardet==5.2.0
 charset-normalizer==3.4.0
 click==8.1.7
@@ -93,8 +94,8 @@ connexion==2.14.2
 contourpy==1.3.1
 coverage==7.6.9
 cron-descriptor==1.4.5
-croniter==3.0.4
-cryptography==44.0.0
+croniter==5.0.1
+cryptography==43.0.3
 cssselect==1.2.0
 cssutils==2.11.1
 cycler==0.12.1
@@ -121,6 +122,7 @@ dagster-contrib-modal==0.0.2
 -e python_modules/libraries/dagster-deltalake
 -e python_modules/libraries/dagster-deltalake-pandas
 -e python_modules/libraries/dagster-deltalake-polars
+-e python_modules/libraries/dagster-dg
 -e examples/experimental/dagster-dlift
 -e python_modules/libraries/dagster-docker
 -e python_modules/libraries/dagster-duckdb
@@ -189,7 +191,7 @@ dbt-duckdb==1.9.1
 -e examples/starlift-demo
 dbt-extractor==0.5.1
 dbt-semantic-interfaces==0.5.1
-debugpy==1.8.9
+debugpy==1.8.11
 decopatch==1.4.10
 decorator==5.1.1
 deepdiff==7.0.1
@@ -221,7 +223,7 @@ execnet==2.1.1
 executing==2.1.0
 expandvars==0.12.0
 faiss-cpu==1.8.0
-fastapi==0.115.6
+fastapi==0.1.17
 fastavro==1.9.7
 fastjsonschema==2.21.1
 -e examples/feature_graph_backed_assets
@@ -250,8 +252,8 @@ gitdb==4.0.11
 gitpython==3.1.43
 giturlparse==0.12.0
 google-api-core==2.24.0
-google-api-python-client==2.154.0
-google-auth==2.36.0
+google-api-python-client==2.155.0
+google-auth==2.37.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.1
 google-cloud-bigquery==3.27.0
@@ -281,7 +283,7 @@ html5lib==1.1
 httpcore==1.0.7
 httplib2==0.22.0
 httptools==0.6.4
-httpx==0.28.1
+httpx==0.27.2
 httpx-sse==0.4.0
 humanfriendly==10.0
 humanize==4.11.0
@@ -321,7 +323,7 @@ jsonschema-path==0.3.3
 jsonschema-specifications==2023.12.1
 jupyter-client==7.4.9
 jupyter-core==5.7.2
-jupyter-events==0.10.0
+jupyter-events==0.11.0
 jupyter-lsp==2.2.5
 jupyter-server==2.14.2
 jupyter-server-terminals==0.5.3
@@ -333,17 +335,18 @@ keyring==25.5.0
 -e python_modules/libraries/dagster-airlift/kitchen-sink
 kiwisolver==1.4.7
 kombu==5.4.2
-kopf==1.37.3
+kopf==1.37.4
 kubernetes==31.0.0
 kubernetes-asyncio==31.1.1
 langchain==0.3.7
 langchain-community==0.3.5
-langchain-core==0.3.24
+langchain-core==0.3.25
 langchain-openai==0.2.5
-langchain-text-splitters==0.3.2
+langchain-text-splitters==0.3.3
 langsmith==0.1.147
 lazy-object-proxy==1.10.0
 leather==0.4.0
+libipld==3.0.0
 limits==3.14.1
 linkify-it-py==2.0.3
 lkml==1.3.6
@@ -361,7 +364,7 @@ marshmallow==3.23.1
 marshmallow-oneofschema==3.1.1
 marshmallow-sqlalchemy==0.26.1
 mashumaro==3.15
-matplotlib==3.9.3
+matplotlib==3.10.0
 matplotlib-inline==0.1.3
 mbstrdecoder==1.1.3
 mdit-py-plugins==0.4.2
@@ -370,7 +373,7 @@ minimal-snowplow-tracker==0.0.2
 mistune==3.0.2
 mixpanel==4.10.1
 mlflow==1.27.0
-modal==0.67.46
+modal==0.68.26
 more-itertools==10.5.0
 morefs==0.2.2
 moto==4.2.14
@@ -382,10 +385,10 @@ multidict==6.1.0
 multimethod==1.12
 mypy-boto3-ecs==1.35.77
 mypy-boto3-emr==1.35.68
-mypy-boto3-emr-serverless==1.35.25
-mypy-boto3-glue==1.35.74
-mypy-boto3-logs==1.35.72
-mypy-boto3-s3==1.35.76.post1
+mypy-boto3-emr-serverless==1.35.79
+mypy-boto3-glue==1.35.80
+mypy-boto3-logs==1.35.81
+mypy-boto3-s3==1.35.81
 mypy-extensions==1.0.0
 mypy-protobuf==3.6.0
 mysql-connector-python==9.1.0
@@ -395,7 +398,7 @@ nbconvert==7.16.4
 nbformat==5.10.4
 nest-asyncio==1.6.0
 networkx==3.4.2
-nh3==0.2.19
+nh3==0.2.20
 nodeenv==1.9.1
 notebook==7.3.1
 notebook-shim==0.2.4
@@ -406,7 +409,7 @@ objgraph==3.6.2
 onnx==1.17.0
 onnxconverter-common==1.13.0
 onnxruntime==1.20.1
-openai==1.57.2
+openai==1.57.4
 openapi-schema-validator==0.6.2
 openapi-spec-validator==0.7.1
 opentelemetry-api==1.29.0
@@ -451,6 +454,7 @@ portalocker==2.10.1
 premailer==3.10.0
 prison==0.2.1
 progressbar2==4.5.0
+-e examples/project_atproto_dashboard
 -e examples/project_dagster_modal_pipes
 prometheus-client==0.21.1
 prometheus-flask-exporter==0.23.1
@@ -471,7 +475,7 @@ pyasn1-modules==0.4.1
 pycparser==2.22
 pydantic==2.10.3
 pydantic-core==2.27.1
-pydantic-settings==2.6.1
+pydantic-settings==2.7.0
 pydata-google-auth==1.9.0
 pyflakes==3.2.0
 pygments==2.18.0
@@ -487,7 +491,7 @@ pysocks==1.7.1
 pyspark==3.5.3
 pytablereader==0.31.4
 pytest==8.3.4
-pytest-asyncio==0.24.0
+pytest-asyncio==0.25.0
 pytest-cases==3.8.6
 pytest-cov==5.0.0
 pytest-mock==3.14.0
@@ -497,9 +501,9 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 python-frontmatter==1.1.0
 python-jose==3.3.0
-python-json-logger==2.0.7
+python-json-logger==3.2.1
 python-liquid==1.12.1
-python-multipart==0.0.19
+python-multipart==0.0.20
 python-nvd3==0.16.0
 python-slugify==8.0.4
 python-utils==3.9.1
@@ -529,7 +533,7 @@ rpds-py==0.22.3
 rsa==4.9
 ruamel-yaml==0.17.40
 ruamel-yaml-clib==0.2.12
-ruff==0.8.2
+ruff==0.8.3
 s3transfer==0.10.4
 scikit-learn==1.6.0
 scipy==1.14.1
@@ -550,8 +554,8 @@ six==1.17.0
 skein==0.8.2
 skl2onnx==1.17.0
 slack-sdk==3.33.5
-sling==1.3.2
-sling-mac-arm64==1.3.2
+sling==1.3.3
+sling-mac-arm64==1.3.3
 smmap==5.0.1
 sniffio==1.3.1
 snowballstemmer==2.2.0
@@ -580,10 +584,10 @@ sqlparse==0.5.3
 sshpubkeys==3.3.1
 sshtunnel==0.4.0
 stack-data==0.6.3
-starlette==0.41.3
+starlette==0.42.0
 structlog==24.4.0
 sympy==1.13.1
-synchronicity==0.9.5
+synchronicity==0.9.6
 syrupy==4.8.0
 tableauserverclient==0.34
 tabledata==1.3.3
@@ -611,12 +615,12 @@ trio==0.27.0
 trio-websocket==0.11.1
 -e examples/airlift-migration-tutorial
 -e examples/tutorial_notebook_assets
-twilio==9.3.8
+twilio==9.4.1
 twine==6.0.1
 typeguard==4.4.1
 typepy==1.3.2
 typer==0.15.1
-types-awscrt==0.23.4
+types-awscrt==0.23.5
 types-backports==0.1.3
 types-certifi==2021.10.8.3
 types-cffi==1.16.0.20240331
@@ -645,23 +649,23 @@ tzdata==2024.2
 tzlocal==5.2
 uc-micro-py==1.0.3
 unicodecsv==0.14.1
-universal-pathlib==0.2.5
+universal-pathlib==0.2.6
 uri-template==1.3.0
 uritemplate==4.1.1
 urllib3==2.2.3
 -e examples/use_case_repository
-uvicorn==0.32.1
+uvicorn==0.34.0
 uvloop==0.21.0
 vine==5.1.0
 virtualenv==20.28.0
-wandb==0.19.0
+wandb==0.19.1
 watchdog==5.0.3
 watchfiles==1.0.3
 wcwidth==0.2.13
 webcolors==24.11.1
 webencodings==0.5.1
 websocket-client==1.8.0
-websockets==14.1
+websockets==13.1
 werkzeug==2.2.3
 wheel==0.45.1
 widgetsnbextension==4.0.13

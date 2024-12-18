@@ -32,8 +32,6 @@ To prevent this, you can use [another I/O manager](/guides/build/configure/io-ma
 You must have [boto3](https://pypi.org/project/boto3/) or `dagster-cloud[serverless]` installed as a project dependency otherwise the Dagster+ managed storage can fail and silently fall back to using the default I/O manager.
 :::
 
-## Adding environment variables and secrets \{#adding-secrets}
+## Adding environment variables and secrets
 
 Often you'll need to securely access secrets from your jobs. Dagster+ supports several methods for adding secrets—refer to the [Dagster+ environment variables documentation](/dagster-plus/deployment/management/environment-variables) for more information.
-
----

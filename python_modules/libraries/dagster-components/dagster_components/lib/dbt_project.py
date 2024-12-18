@@ -1,23 +1,27 @@
 import os
 from pathlib import Path
-from typing import Any, Iterator, Mapping, Optional
+from typing import Any, Iterator, Mapping, Optional, Sequence
 
 import click
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils import pushd
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-from dagster_embedded_elt.sling.resources import AssetExecutionContext
 from dbt.cli.main import dbtRunner
-from jinja2 import Template
-from pydantic import BaseModel, Field, TypeAdapter
+from pydantic import BaseModel, Field
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component import component
-from dagster_components.core.component_decl_builder import ComponentDeclNode, YamlComponentDecl
-from dagster_components.core.dsl_schema import OpSpecBaseModel
+from dagster_components.core.component import (
+    ComponentGenerateRequest,
+    TemplatedValueResolver,
+    component,
+)
+from dagster_components.core.component_rendering import RenderingScope
+from dagster_components.core.dsl_schema import AssetAttributes, AssetSpecProcessor, OpSpecBaseModel
+from dagster_components.generate import generate_component_yaml
 
 
 class DbtNodeTranslatorParams(BaseModel):
@@ -28,7 +32,10 @@ class DbtNodeTranslatorParams(BaseModel):
 class DbtProjectParams(BaseModel):
     dbt: DbtCliResource
     op: Optional[OpSpecBaseModel] = None
-    translator: Optional[DbtNodeTranslatorParams] = None
+    translator: Optional[DbtNodeTranslatorParams] = RenderingScope(
+        Field(default=None), required_scope={"node"}
+    )
+    asset_attributes: Optional[AssetAttributes] = None
 
 
 class DbtGenerateParams(BaseModel):
@@ -47,8 +54,10 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
     def __init__(
         self,
         *,
+        value_resolver: TemplatedValueResolver,
         translator_params: Optional[DbtNodeTranslatorParams] = None,
     ):
+        self.value_resolver = value_resolver
         self.translator_params = translator_params
 
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
@@ -56,14 +65,18 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
             return super().get_asset_key(dbt_resource_props)
 
         return AssetKey.from_user_string(
-            Template(self.translator_params.key).render(node=dbt_resource_props)
+            self.value_resolver.with_context(node=dbt_resource_props).resolve(
+                self.translator_params.key
+            )
         )
 
     def get_group_name(self, dbt_resource_props) -> Optional[str]:
         if not self.translator_params or not self.translator_params.group:
             return super().get_group_name(dbt_resource_props)
 
-        return Template(self.translator_params.group).render(node=dbt_resource_props)
+        return self.value_resolver.with_context(node=dbt_resource_props).resolve(
+            self.translator_params.group
+        )
 
 
 @component(name="dbt_project")
@@ -76,26 +89,27 @@ class DbtProjectComponent(Component):
         dbt_resource: DbtCliResource,
         op_spec: Optional[OpSpecBaseModel],
         dbt_translator: Optional[DagsterDbtTranslator],
+        asset_processors: Sequence[AssetSpecProcessor],
     ):
         self.dbt_resource = dbt_resource
         self.op_spec = op_spec
         self.dbt_translator = dbt_translator
+        self.asset_processors = asset_processors
 
     @classmethod
-    def from_decl_node(cls, context: ComponentLoadContext, decl_node: ComponentDeclNode) -> Self:
-        assert isinstance(decl_node, YamlComponentDecl)
-
+    def load(cls, context: ComponentLoadContext) -> Self:
         # all paths should be resolved relative to the directory we're in
-        with pushd(str(decl_node.path)):
-            loaded_params = TypeAdapter(cls.params_schema).validate_python(
-                decl_node.component_file_model.params
-            )
+        with pushd(str(context.path)):
+            loaded_params = context.load_params(cls.params_schema)
+
         return cls(
             dbt_resource=loaded_params.dbt,
             op_spec=loaded_params.op,
             dbt_translator=DbtProjectComponentTranslator(
-                translator_params=loaded_params.translator
+                translator_params=loaded_params.translator,
+                value_resolver=context.templated_value_resolver,
             ),
+            asset_processors=loaded_params.asset_attributes or [],
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -112,10 +126,13 @@ class DbtProjectComponent(Component):
         def _fn(context: AssetExecutionContext):
             yield from self.execute(context=context, dbt=self.dbt_resource)
 
-        return Definitions(assets=[_fn])
+        defs = Definitions(assets=[_fn])
+        for transform in self.asset_processors:
+            defs = transform.apply(defs)
+        return defs
 
     @classmethod
-    def generate_files(cls, params: DbtGenerateParams) -> Mapping[str, Any]:
+    def generate_files(cls, request: ComponentGenerateRequest, params: DbtGenerateParams) -> None:
         cwd = os.getcwd()
         if params.project_path:
             # NOTE: CWD is not set "correctly" above so we prepend "../../.." as a temporary hack to
@@ -134,7 +151,7 @@ class DbtProjectComponent(Component):
         else:
             relative_path = None
 
-        return {"dbt": {"project_dir": relative_path}}
+        generate_component_yaml(request, {"dbt": {"project_dir": relative_path}})
 
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
         yield from dbt.cli(["build"], context=context).stream()

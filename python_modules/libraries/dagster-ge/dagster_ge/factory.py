@@ -27,7 +27,7 @@ from pydantic import Field
 
 
 class GEContextResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
-    ge_root_dir: str = Field(
+    ge_root_dir: Optional[str] = Field(
         default=None,
         description="The root directory for your Great Expectations project.",
     )

@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Final, Iterable, Type
+from typing import Final, Iterable, Tuple, Type
 
 import tomli
 from dagster._core.errors import DagsterError
@@ -78,8 +78,9 @@ class CodeLocationProjectContext:
             raise DagsterError(f"No component type named {name}")
         return self._component_registry.get(name)
 
-    def list_component_types(self) -> Iterable[str]:
-        return sorted(self._component_registry.keys())
+    def list_component_types(self) -> Iterable[Tuple[str, Type[Component]]]:
+        for key in sorted(self._component_registry.keys()):
+            yield key, self._component_registry.get(key)
 
     def get_component_instance_path(self, name: str) -> str:
         if name not in self.component_instances:

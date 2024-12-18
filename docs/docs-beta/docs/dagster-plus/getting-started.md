@@ -2,12 +2,16 @@
 title: "Getting started with Dagster+"
 ---
 
-First [create a Dagster+ organization](https://dagster.plus/signup). Note: you can sign up with:
+To get started with Dagster+, you will need to create a Dagster+ organization and choose your deployment type (Serverless or Hybrid).
+
+## Create a Dagster+ organization
+
+First, [create a Dagster+ organization](https://dagster.plus/signup). You can sign up with:
 - a Google email address
 - a GitHub account
-- a one-time email link, great if you are using a corporate email. You can setup SSO after completing these steps.
+- a one-time email link (ideal if you are using a corporate email). You can set up SSO after completing these steps.
 
-Next, pick your deployment type. Not sure?
+## Choose your deployment type
 
 - [Dagster+ Serverless](/dagster-plus/deployment/deployment-types/serverless) is the easiest way to get started and is great for teams with limited DevOps support. In Dagster+ Serverless, your Dagster code is executed in Dagster+. You will need to be okay [giving Dagster+ the credentials](/dagster-plus/deployment/management/environment-variables) to connect to the tools you want to orchestrate.
 
@@ -20,14 +24,12 @@ The remaining steps depend on your deployment type.
 
 We recommend following the steps in Dagster+ to add a new project.
 
-![Screenshot of Dagster+ serverless NUX](/img/placeholder.svg)
-
-The Dagster+ on-boarding will guide you through:
+The Dagster+ onboarding will guide you through:
 - creating a Git repository containing your Dagster code
 - setting up the necessary CI/CD actions to deploy that repository to Dagster+
 
 :::tip
-If you don't have any Dagster code yet, you will have the option to select an example quickstart project or import an existing dbt project
+If you don't have any Dagster code yet, you can select an example project or import an existing dbt project.
 :::
 
 See the guide on [adding code locations](/dagster-plus/features/code-locations) for details.
@@ -35,12 +37,12 @@ See the guide on [adding code locations](/dagster-plus/features/code-locations) 
 
 <TabItem value="hybrid" label="Dagster+ Hybrid">
 
-## Install a Dagster+ Hybrid agent
+**Install a Dagster+ Hybrid agent**
 
-Follow [these guides](/dagster-plus/deployment/deployment-types/hybrid) for installing a Dagster+ Hybrid agent. Not sure which agent to pick? We recommend using the Dagster+ Kubernetes agent in most cases.
+Follow [these guides](/dagster-plus/deployment/deployment-types/hybrid) for installing a Dagster+ Hybrid agent. If you're not sure which agent to use, we recommend the [Dagster+ Kubernetes agent](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/index.md) in most cases.
 
 
-## Setup CI/CD
+**Set up CI/CD**
 
 In most cases, your CI/CD process will be responsible for:
 - building your Dagster code into a Docker image

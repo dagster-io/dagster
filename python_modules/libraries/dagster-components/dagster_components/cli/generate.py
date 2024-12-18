@@ -11,6 +11,7 @@ from dagster_components.core.deployment import (
     is_inside_code_location_project,
 )
 from dagster_components.generate import generate_component_instance
+from dagster_components.utils import CLI_BUILTIN_COMPONENT_LIB_KEY
 
 
 @click.group(name="generate")
@@ -23,12 +24,15 @@ def generate_cli() -> None:
 @click.argument("component_name", type=str)
 @click.option("--json-params", type=str, default=None)
 @click.argument("extra_args", nargs=-1, type=str)
+@click.pass_context
 def generate_component_command(
+    ctx: click.Context,
     component_type: str,
     component_name: str,
     json_params: Optional[str],
     extra_args: Tuple[str, ...],
 ) -> None:
+    builtin_component_lib = ctx.obj.get(CLI_BUILTIN_COMPONENT_LIB_KEY, False)
     if not is_inside_code_location_project(Path.cwd()):
         click.echo(
             click.style(
@@ -38,7 +42,8 @@ def generate_component_command(
         sys.exit(1)
 
     context = CodeLocationProjectContext.from_path(
-        Path.cwd(), ComponentRegistry.from_entry_point_discovery()
+        Path.cwd(),
+        ComponentRegistry.from_entry_point_discovery(builtin_component_lib=builtin_component_lib),
     )
     if not context.has_component_type(component_type):
         click.echo(

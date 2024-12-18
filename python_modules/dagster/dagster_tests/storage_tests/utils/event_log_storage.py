@@ -271,7 +271,13 @@ def _default_loggers(event_callback):
 
 # This exists to create synthetic events to test the store
 def _synthesize_events(
-    ops_fn_or_assets, run_id=None, check_success=True, instance=None, run_config=None, tags=None
+    ops_fn_or_assets,
+    run_id=None,
+    check_success=True,
+    instance=None,
+    run_config=None,
+    tags=None,
+    job_name=None,
 ) -> Tuple[List[EventLogEntry], JobExecutionResult]:
     events = []
 
@@ -290,6 +296,7 @@ def _synthesize_events(
     else:  # op_fn
 
         @job(
+            name=job_name,
             resource_defs=_default_resources(),
             logger_defs=_default_loggers(_append_event),
             executor_def=in_process_executor,
@@ -2057,6 +2064,61 @@ class TestEventLogStorage:
                 limit=100,
             )
             assert _get_storage_ids(result) == [storage_id_3, storage_id_1]
+
+    def test_fetch_run_status_monitor_filters(self, storage, instance):
+        if not storage.supports_run_status_change_job_name_filter:
+            # test sqlite in test_get_event_records_sqlite
+            pytest.skip()
+
+        @op
+        def my_op(_):
+            yield Output(1)
+
+        def _ops():
+            my_op()
+
+        def _store_run_events(run_id, job_name=None):
+            events, _ = _synthesize_events(_ops, run_id=run_id, job_name=job_name)
+            for event in events:
+                storage.store_event(event)
+
+        # store events for three runs
+        [run_id_1, run_id_2, run_id_3] = [
+            make_new_run_id(),
+            make_new_run_id(),
+            make_new_run_id(),
+        ]
+
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
+            _store_run_events(run_id_1, "job_one")
+            _store_run_events(run_id_2, "job_two")
+            _store_run_events(run_id_3, "job_three")
+
+            result = storage.fetch_run_status_changes(
+                DagsterEventType.RUN_SUCCESS,
+                limit=100,
+            )
+            assert [r.event_log_entry.run_id for r in result.records] == [
+                run_id_3,
+                run_id_2,
+                run_id_1,
+            ]
+            result = storage.fetch_run_status_changes(
+                RunStatusChangeRecordsFilter(
+                    DagsterEventType.RUN_SUCCESS,
+                    job_names=["job_one"],
+                ),
+                limit=100,
+            )
+            assert [r.event_log_entry.run_id for r in result.records] == [run_id_1]
+            result = storage.fetch_run_status_changes(
+                RunStatusChangeRecordsFilter(
+                    DagsterEventType.RUN_SUCCESS,
+                    job_names=["job_one", "job_two"],
+                ),
+                limit=100,
+            )
+            assert [r.event_log_entry.run_id for r in result.records] == [run_id_2, run_id_1]
 
     def test_get_event_records_sqlite(self, storage, instance):
         if not self.is_sqlite(storage):
@@ -5220,6 +5282,19 @@ class TestEventLogStorage:
         assert checks[0].run_id == run_id_1
         assert checks[0].event
         assert checks[0].event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED
+        checks_filtered = storage.get_asset_check_execution_history(
+            check_key_1, limit=10, status={AssetCheckExecutionRecordStatus.PLANNED}
+        )
+        assert len(checks_filtered) == 1
+        checks_filtered_2 = storage.get_asset_check_execution_history(
+            check_key_1,
+            limit=10,
+            status={
+                AssetCheckExecutionRecordStatus.SUCCEEDED,
+                AssetCheckExecutionRecordStatus.FAILED,
+            },
+        )
+        assert len(checks_filtered_2) == 0
 
         latest_checks = storage.get_latest_asset_check_execution_by_key([check_key_1, check_key_2])
         assert len(latest_checks) == 1
@@ -5259,6 +5334,19 @@ class TestEventLogStorage:
         check_data = checks[0].event.dagster_event.asset_check_evaluation_data
         assert check_data.target_materialization_data
         assert check_data.target_materialization_data.storage_id == 42
+        filtered_checks = storage.get_asset_check_execution_history(
+            check_key_1, limit=10, status={AssetCheckExecutionRecordStatus.SUCCEEDED}
+        )
+        assert len(filtered_checks) == 1
+        filtered_checks_2 = storage.get_asset_check_execution_history(
+            check_key_1,
+            limit=10,
+            status={
+                AssetCheckExecutionRecordStatus.FAILED,
+                AssetCheckExecutionRecordStatus.PLANNED,
+            },
+        )
+        assert len(filtered_checks_2) == 0
 
         latest_checks = storage.get_latest_asset_check_execution_by_key([check_key_1, check_key_2])
         assert len(latest_checks) == 1
@@ -5556,6 +5644,11 @@ class TestEventLogStorage:
                 == AssetCheckExecutionRecordStatus.SUCCEEDED
             )
             assert check_1_summary_record.last_check_execution_record.run_id == run_id_0
+            assert (
+                check_1_summary_record.last_completed_check_execution_record
+                == check_1_summary_record.last_check_execution_record
+            )
+            assert check_1_summary_record.last_completed_run_id == run_id_0
 
             check_2_summary_record = summary_records[check_key_2]
             assert check_2_summary_record.last_check_execution_record
@@ -5623,6 +5716,7 @@ class TestEventLogStorage:
             )
 
             # Check that the summary record for check_key_1 has been updated
+            old_check_1_summary_record = check_1_summary_record
             records = storage.get_asset_check_summary_records(asset_check_keys=[check_key_1])
             assert len(records) == 1
             check_1_summary_record = records[check_key_1]
@@ -5632,6 +5726,12 @@ class TestEventLogStorage:
                 == AssetCheckExecutionRecordStatus.PLANNED
             )
             assert check_1_summary_record.last_check_execution_record.run_id == run_id_1
+            # The latest completed data should not be updated.
+            assert (
+                check_1_summary_record.last_completed_check_execution_record
+                == old_check_1_summary_record.last_check_execution_record
+            )
+            assert check_1_summary_record.last_completed_run_id == run_id_0
 
     def test_large_asset_metadata(
         self,

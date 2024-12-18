@@ -6,25 +6,26 @@ sidebar_position: 20
 
 In a Dagster+ Hybrid deployment, the orchestration control plane is run by Dagster+ while your Dagster code is executed within your environment.
 
-[comment]: <> (TODO: Architecture diagram)
+:::note
+For an overview of the Hybrid design, including security considerations, see [Dagster+ Hybrid architecture](architecture.md).
+:::
 
 ## Get started
 
-To get started with a Hybrid deployment you'll need to:
+To get started with a Hybrid deployment, you'll need to:
 
 1. Create a [Dagster+ organization](https://dagster.cloud/signup)
-2. Install a Dagster+ Hybrid Agent
-3. [Add a code location](/dagster-plus/features/code-locations), typically using a Git repository and CI/CD
+2. [Install a Dagster+ Hybrid agent](#dagster-hybrid-agents)
+3. [Add a code location](/dagster-plus/deployment/code-locations), typically using a Git repository and CI/CD
 
 ## Dagster+ Hybrid agents
 
-The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for new work.
+The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for new work. Currently supported agents include:
 
-See the following guides for setting up an agent:
  - [Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes)
  - [AWS ECS](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/new-vpc)
  - [Docker](/dagster-plus/deployment/deployment-types/hybrid/docker)
- - [Locally](/dagster-plus/deployment/deployment-types/hybrid/local)
+ - [Local agent](/dagster-plus/deployment/deployment-types/hybrid/local)
 
 
 ## What you'll see in your environment
@@ -44,20 +45,10 @@ When a run needs to be launched, Dagster+ enqueues instructions for your agent t
 
 Your agent will send Dagster+ metadata letting us know the run has been launched. Your run's container will also send Dagster+ metadata informing us of how the run is progressing. The Dagster+ backend services will monitor this stream of metadata to make additional orchestration decisions, monitor for failure, or send alerts.
 
-## Security
+## Best practices
 
-Dagster+ hybrid relies on a shared security model.
+### Security
 
-The Dagster+ control plane is SOC 2 Type II certified and follows best practices such as:
-- encrypting data at rest (AES 256) and in transit (TLS 1.2+)
-- highly available, with disaster recovery and backup strategies
-- only manages metadata such as pipeline names, execution status, and run duration
-
-The execution environment is managed by the customer:
-- your code never leaves your environment
-- all connections to databases, file systems, and other resources are made from your environment
-- the execution environment only requires egress access to Dagster+
-
-Common security considerations in Dagster+ hybrid include:
-- [disabling log forwarding](/todo)
-- [managing tokens](/todo)
+You can do the following to make your Dagster+ Hybrid deployment more secure:
+- [Disable log forwarding](/dagster-plus/deployment/management/settings/customizing-agent-settings#disabling-compute-logs)
+- [Manage tokens](/dagster-plus/deployment/management/tokens/agent-tokens)

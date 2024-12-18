@@ -4,10 +4,23 @@ from typing import Any, Dict, Iterable, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._core.definitions import ExpectationResult
-from dagster._core.events import MARKER_EVENTS, DagsterEventType, StepExpectationResultData
+from dagster._core.events import (
+    MARKER_EVENTS,
+    PIPELINE_EVENTS,
+    DagsterEventType,
+    StepExpectationResultData,
+)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._serdes import whitelist_for_serdes
+
+RUN_STATS_EVENT_TYPES = {
+    *PIPELINE_EVENTS,
+    DagsterEventType.STEP_FAILURE,
+    DagsterEventType.STEP_SUCCESS,
+    DagsterEventType.ASSET_MATERIALIZATION,
+    DagsterEventType.STEP_EXPECTATION_RESULT,
+}
 
 STEP_STATS_EVENT_TYPES = {
     DagsterEventType.STEP_START,

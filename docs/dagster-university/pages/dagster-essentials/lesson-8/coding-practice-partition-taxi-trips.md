@@ -17,7 +17,7 @@ To practice what you’ve learned, partition the `taxi_trips` asset by month usi
   {% callout %}
   You’ll need to drop the existing `taxi_trips` because of the new `partition_date` column. In a Python REPL or scratch script, run the following:
 
-  ```yaml
+  ```
   import duckdb
   conn = duckdb.connect(database="data/staging/data.duckdb")
   conn.execute("drop table trips;")

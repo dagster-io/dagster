@@ -374,7 +374,7 @@ class DatabricksClient:
         logger: logging.Logger,
         databricks_run_id: int,
         poll_interval_sec: float,
-        max_wait_time_sec: int,
+        max_wait_time_sec: float,
         verbose_logs: bool = True,
     ) -> None:
         logger.info(f"Waiting for Databricks run `{databricks_run_id}` to complete...")
@@ -413,7 +413,7 @@ class DatabricksJobRunner:
         azure_client_secret: Optional[str] = None,
         azure_tenant_id: Optional[str] = None,
         poll_interval_sec: float = 5,
-        max_wait_time_sec: int = DEFAULT_RUN_MAX_WAIT_TIME_SEC,
+        max_wait_time_sec: float = DEFAULT_RUN_MAX_WAIT_TIME_SEC,
     ):
         self.host = check.opt_str_param(host, "host")
         self.token = check.opt_str_param(token, "token")

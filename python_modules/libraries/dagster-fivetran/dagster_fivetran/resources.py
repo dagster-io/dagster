@@ -4,7 +4,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from functools import partial
-from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
 from urllib.parse import urljoin
 
 import requests
@@ -30,10 +30,11 @@ from dagster._core.definitions.resource_definition import dagster_maintained_res
 from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
-from pydantic import Field, PrivateAttr
+from pydantic import Field
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
+from dagster_fivetran.fivetran_event_iterator import FivetranEventIterator
 from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnector,
@@ -858,8 +859,6 @@ class FivetranWorkspace(ConfigurableResource):
         ),
     )
 
-    _client: FivetranClient = PrivateAttr(default=None)
-
     @cached_method
     def get_client(self) -> FivetranClient:
         return FivetranClient(
@@ -969,11 +968,11 @@ class FivetranWorkspace(ConfigurableResource):
             schema_config_details=fivetran_output.schema_config
         )
 
-        for schema_source_name, schema in schema_config.schemas.items():
+        for schema in schema_config.schemas.values():
             if not schema.enabled:
                 continue
 
-            for table_source_name, table in schema.tables.items():
+            for table in schema.tables.values():
                 if not table.enabled:
                     continue
 
@@ -1006,14 +1005,17 @@ class FivetranWorkspace(ConfigurableResource):
                             schema=schema.name_in_destination,
                             table=table.name_in_destination,
                         ),
-                        "schema_source_name": schema_source_name,
-                        "table_source_name": table_source_name,
+                        **FivetranMetadataSet(
+                            connector_id=connector.id,
+                            destination_schema_name=schema.name_in_destination,
+                            destination_table_name=table.name_in_destination,
+                        ),
                     },
                 )
 
     def sync_and_poll(
         self, context: Union[OpExecutionContext, AssetExecutionContext]
-    ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+    ) -> FivetranEventIterator[Union[AssetMaterialization, MaterializeResult]]:
         """Executes a sync and poll process to materialize Fivetran assets.
 
         Args:
@@ -1025,9 +1027,13 @@ class FivetranWorkspace(ConfigurableResource):
             Iterator[Union[AssetMaterialization, MaterializeResult]]: An iterator of MaterializeResult
                 or AssetMaterialization.
         """
+        return FivetranEventIterator(
+            events=self._sync_and_poll(context=context), fivetran_workspace=self, context=context
+        )
+
+    def _sync_and_poll(self, context: Union[OpExecutionContext, AssetExecutionContext]):
         assets_def = context.assets_def
         dagster_fivetran_translator = get_translator_from_fivetran_assets(assets_def)
-
         connector_id = next(
             check.not_none(FivetranMetadataSet.extract(spec.metadata).connector_id)
             for spec in assets_def.specs

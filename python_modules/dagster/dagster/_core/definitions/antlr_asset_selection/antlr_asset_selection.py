@@ -108,7 +108,7 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
     def visitTagAttributeExpr(self, ctx: AssetSelectionParser.TagAttributeExprContext):
         key = self.visit(ctx.value(0))
         value = self.visit(ctx.value(1)) if ctx.EQUAL() else ""
-        return AssetSelection.tag(key, value)
+        return AssetSelection.tag(key, value, include_sources=self.include_sources)
 
     def visitOwnerAttributeExpr(self, ctx: AssetSelectionParser.OwnerAttributeExprContext):
         owner = self.visit(ctx.value())
@@ -116,11 +116,11 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
 
     def visitGroupAttributeExpr(self, ctx: AssetSelectionParser.GroupAttributeExprContext):
         group = self.visit(ctx.value())
-        return AssetSelection.groups(group)
+        return AssetSelection.groups(group, include_sources=self.include_sources)
 
     def visitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         kind = self.visit(ctx.value())
-        return AssetSelection.tag(f"{KIND_PREFIX}{kind}", "")
+        return AssetSelection.tag(f"{KIND_PREFIX}{kind}", "", include_sources=self.include_sources)
 
     def visitCodeLocationAttributeExpr(
         self, ctx: AssetSelectionParser.CodeLocationAttributeExprContext

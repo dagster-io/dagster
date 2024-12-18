@@ -34,6 +34,7 @@ class Webserver(BaseModel, extra="forbid"):
     tolerations: kubernetes.Tolerations
     podSecurityContext: kubernetes.PodSecurityContext
     securityContext: kubernetes.SecurityContext
+    checkDbReadyInitContainer: Optional[bool] = None
     resources: kubernetes.Resources
     readinessProbe: kubernetes.ReadinessProbe
     livenessProbe: kubernetes.LivenessProbe

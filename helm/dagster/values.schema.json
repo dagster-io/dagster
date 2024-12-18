@@ -216,6 +216,18 @@
                 "resources": {
                     "$ref": "#/$defs/Resources"
                 },
+                "checkDbReadyInitContainer": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Checkdbreadyinitcontainer"
+                },
                 "livenessProbe": {
                     "$ref": "#/$defs/LivenessProbe"
                 },
@@ -647,6 +659,18 @@
                 "resources": {
                     "$ref": "#/$defs/Resources"
                 },
+                "checkDbReadyInitContainer": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Checkdbreadyinitcontainer"
+                },
                 "livenessProbe": {
                     "$ref": "#/$defs/LivenessProbe"
                 },
@@ -836,6 +860,18 @@
                 },
                 "securityContext": {
                     "$ref": "#/$defs/SecurityContext"
+                },
+                "checkDbReadyInitContainer": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Checkdbreadyinitcontainer"
                 },
                 "resources": {
                     "$ref": "#/$defs/Resources"
@@ -3136,6 +3172,18 @@
                 },
                 "securityContext": {
                     "$ref": "#/$defs/SecurityContext"
+                },
+                "checkDbReadyInitContainer": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Checkdbreadyinitcontainer"
                 },
                 "resources": {
                     "$ref": "#/$defs/Resources"

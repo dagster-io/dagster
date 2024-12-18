@@ -132,9 +132,8 @@ class PipesMessageHandler:
             k: self._resolve_metadata_value(v["raw_value"], v["type"]) for k, v in metadata.items()
         }
 
-    def _resolve_metadata_value(
-        self, value: Any, metadata_type: PipesMetadataType
-    ) -> MetadataValue:
+    @staticmethod
+    def _resolve_metadata_value(value: Any, metadata_type: PipesMetadataType) -> MetadataValue:
         if metadata_type == PIPES_METADATA_TYPE_INFER:
             return normalize_metadata_value(value)
         elif metadata_type == "text":
