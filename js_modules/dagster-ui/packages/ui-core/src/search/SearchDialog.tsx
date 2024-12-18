@@ -90,9 +90,11 @@ export const SearchDialog = () => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, queryString, primaryResults, secondaryResults, highlight} = state;
 
-  const results = [...primaryResults, ...secondaryResults].sort(sortResultsByFuseScore);
-  const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
-  const numRenderedResults = renderedResults.length;
+  const {renderedResults, numRenderedResults} = React.useMemo(() => {
+    const results = [...primaryResults, ...secondaryResults].sort(sortResultsByFuseScore);
+    const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
+    return {renderedResults, numRenderedResults: renderedResults.length};
+  }, [primaryResults, secondaryResults]);
 
   const openSearch = React.useCallback(() => {
     trackEvent('open-global-search');
