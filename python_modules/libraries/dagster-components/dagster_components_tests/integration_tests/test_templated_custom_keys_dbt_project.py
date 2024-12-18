@@ -62,42 +62,40 @@ def dbt_path() -> Generator[Path, None, None]:
 
 
 def test_python_params_node_rename(dbt_path: Path) -> None:
-    component = DbtProjectComponent.from_decl_node(
-        context=script_load_context(),
-        decl_node=YamlComponentDecl(
-            path=dbt_path / COMPONENT_RELPATH,
-            component_file_model=ComponentFileModel(
-                type="dbt_project",
-                params={
-                    "dbt": {"project_dir": "jaffle_shop"},
-                    "translator": {
-                        "key": "some_prefix/{{ node.name }}",
-                    },
+    decl_node = YamlComponentDecl(
+        path=dbt_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="dbt_project",
+            params={
+                "dbt": {"project_dir": "jaffle_shop"},
+                "translator": {
+                    "key": "some_prefix/{{ node.name }}",
                 },
-            ),
+            },
         ),
+    )
+    component = DbtProjectComponent.load(
+        context=script_load_context(decl_node),
     )
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS_WITH_PREFIX
 
 
 def test_python_params_group(dbt_path: Path) -> None:
-    comp = DbtProjectComponent.from_decl_node(
-        context=script_load_context(),
-        decl_node=YamlComponentDecl(
-            path=dbt_path / COMPONENT_RELPATH,
-            component_file_model=ComponentFileModel(
-                type="dbt_project",
-                params={
-                    "dbt": {"project_dir": "jaffle_shop"},
-                    "translator": {
-                        "group": "some_group",
-                    },
+    decl_node = YamlComponentDecl(
+        path=dbt_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="dbt_project",
+            params={
+                "dbt": {"project_dir": "jaffle_shop"},
+                "translator": {
+                    "group": "some_group",
                 },
-            ),
+            },
         ),
     )
+    comp = DbtProjectComponent.load(context=script_load_context(decl_node))
     assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
-    defs: Definitions = comp.build_defs(script_load_context())
+    defs: Definitions = comp.build_defs(script_load_context(None))
     for key in get_asset_keys(comp):
         assert defs.get_assets_def(key).get_asset_spec(key).group_name == "some_group"
 

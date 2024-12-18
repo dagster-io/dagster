@@ -2,19 +2,24 @@ import textwrap
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import AbstractSet, Iterator
+from typing import AbstractSet, Iterator, Optional
 
 from dagster import AssetKey, DagsterInstance
 from dagster._utils import pushd
-from dagster_components.core.component import Component, ComponentLoadContext, ComponentRegistry
+from dagster_components.core.component import (
+    Component,
+    ComponentDeclNode,
+    ComponentLoadContext,
+    ComponentRegistry,
+)
 
 
 def registry() -> ComponentRegistry:
     return ComponentRegistry.from_entry_point_discovery()
 
 
-def script_load_context() -> ComponentLoadContext:
-    return ComponentLoadContext(registry=registry(), resources={})
+def script_load_context(decl_node: Optional[ComponentDeclNode] = None) -> ComponentLoadContext:
+    return ComponentLoadContext(registry=registry(), resources={}, decl_node=decl_node)
 
 
 def get_asset_keys(component: Component) -> AbstractSet[AssetKey]:

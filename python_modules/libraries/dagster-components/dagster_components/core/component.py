@@ -1,14 +1,15 @@
 import copy
+import dataclasses
 import importlib
 import importlib.metadata
 import inspect
 import sys
 import textwrap
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from typing import (
-    TYPE_CHECKING,
     Any,
     ClassVar,
     Dict,
@@ -18,18 +19,18 @@ from typing import (
     Sequence,
     Type,
     TypedDict,
+    TypeVar,
 )
 
 from dagster import _check as check
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._record import record
 from dagster._utils import snakecase
+from pydantic import TypeAdapter
 from typing_extensions import Self
 
 from dagster_components.utils import ensure_dagster_components_tests_import
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.definitions_class import Definitions
 
 
 class ComponentDeclNode: ...
@@ -50,13 +51,11 @@ class Component(ABC):
     def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None: ...
 
     @abstractmethod
-    def build_defs(self, context: "ComponentLoadContext") -> "Definitions": ...
+    def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
     @abstractmethod
-    def from_decl_node(
-        cls, context: "ComponentLoadContext", decl_node: "ComponentDeclNode"
-    ) -> Self: ...
+    def load(cls, context: "ComponentLoadContext") -> Self: ...
 
     @classmethod
     def get_metadata(cls) -> "ComponentInternalMetadata":
@@ -189,20 +188,49 @@ def get_registered_components_in_module(module: ModuleType) -> Iterable[Type[Com
             yield component
 
 
+T = TypeVar("T")
+
+
+@dataclass
 class ComponentLoadContext:
-    def __init__(self, *, resources: Mapping[str, object], registry: ComponentRegistry):
-        self.registry = registry
-        self.resources = resources
+    resources: Mapping[str, object]
+    registry: ComponentRegistry
+    decl_node: Optional[ComponentDeclNode]
 
     @staticmethod
     def for_test(
         *,
         resources: Optional[Mapping[str, object]] = None,
         registry: Optional[ComponentRegistry] = None,
+        decl_node: Optional[ComponentDeclNode] = None,
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
-            resources=resources or {}, registry=registry or ComponentRegistry.empty()
+            resources=resources or {},
+            registry=registry or ComponentRegistry.empty(),
+            decl_node=decl_node,
         )
+
+    @property
+    def path(self) -> Path:
+        from dagster_components.core.component_decl_builder import YamlComponentDecl
+
+        if not isinstance(self.decl_node, YamlComponentDecl):
+            check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
+
+        return self.decl_node.path
+
+    def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
+        return dataclasses.replace(self, decl_node=decl_node)
+
+    def _raw_params(self) -> Optional[Mapping[str, Any]]:
+        from dagster_components.core.component_decl_builder import YamlComponentDecl
+
+        if not isinstance(self.decl_node, YamlComponentDecl):
+            check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
+        return self.decl_node.component_file_model.params
+
+    def load_params(self, params_schema: Type[T]) -> T:
+        return TypeAdapter(params_schema).validate_python(self._raw_params())
 
 
 COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"

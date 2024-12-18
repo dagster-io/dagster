@@ -44,19 +44,17 @@ def dbt_path() -> Generator[Path, None, None]:
 
 
 def test_python_params(dbt_path: Path) -> None:
-    component = DbtProjectComponent.from_decl_node(
-        context=script_load_context(),
-        decl_node=YamlComponentDecl(
-            path=dbt_path / COMPONENT_RELPATH,
-            component_file_model=ComponentFileModel(
-                type="dbt_project",
-                params={
-                    "dbt": {"project_dir": "jaffle_shop"},
-                    "op": {"name": "some_op", "tags": {"tag1": "value"}},
-                },
-            ),
+    decl_node = YamlComponentDecl(
+        path=dbt_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="dbt_project",
+            params={
+                "dbt": {"project_dir": "jaffle_shop"},
+                "op": {"name": "some_op", "tags": {"tag1": "value"}},
+            },
         ),
     )
+    component = DbtProjectComponent.load(context=script_load_context(decl_node))
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
     defs = component.build_defs(script_load_context())
     assert defs.get_assets_def("stg_customers").op.name == "some_op"
