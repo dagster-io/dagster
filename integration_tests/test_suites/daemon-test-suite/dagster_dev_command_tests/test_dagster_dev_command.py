@@ -14,7 +14,7 @@ from dagster._utils import find_free_port
 from dagster_graphql import DagsterGraphQLClient
 
 
-def _wait_for_dagit_running(dagit_port):
+def _wait_for_webserver_running(dagit_port):
     start_time = time.time()
     while True:
         try:
@@ -34,7 +34,7 @@ def test_dagster_dev_command_workspace():
     with tempfile.TemporaryDirectory() as tempdir:
         with environ({"DAGSTER_HOME": ""}):
             with new_cwd(tempdir):
-                dagit_port = find_free_port()
+                webserver_port = find_free_port()
                 dev_process = subprocess.Popen(
                     [
                         "dagster",
@@ -45,14 +45,14 @@ def test_dagster_dev_command_workspace():
                             "workspace.yaml",
                         ),
                         "--dagit-port",
-                        str(dagit_port),
+                        str(webserver_port),
                         "--log-level",
                         "debug",
                     ],
                     cwd=tempdir,
                 )
                 try:
-                    _wait_for_dagit_running(dagit_port)
+                    _wait_for_webserver_running(webserver_port)
                 finally:
                     dev_process.send_signal(signal.SIGINT)
                     dev_process.communicate()
@@ -77,7 +77,7 @@ def test_dagster_dev_command_loads_toys():
                     cwd=tempdir,
                 )
                 try:
-                    _wait_for_dagit_running(dagit_port)
+                    _wait_for_webserver_running(dagit_port)
 
                     client = DagsterGraphQLClient(hostname="localhost", port_number=dagit_port)
                     locations_and_names = client._get_repo_locations_and_names_with_pipeline(  # noqa
@@ -132,7 +132,7 @@ def test_dagster_dev_command_no_dagster_home():
                     cwd=tempdir,
                 )
 
-                _wait_for_dagit_running(dagit_port)
+                _wait_for_webserver_running(dagit_port)
 
                 instance = None
 
@@ -223,7 +223,7 @@ def test_dagster_dev_command_grpc_port():
                 ],
                 cwd=tempdir,
             )
-            _wait_for_dagit_running(dagit_port)
+            _wait_for_webserver_running(dagit_port)
             client = DagsterGraphQLClient(hostname="localhost", port_number=dagit_port)
             client.submit_job_execution("foo_job")
         finally:
