@@ -5,25 +5,13 @@ sidebar_position: 10
 
 The Hybrid architecture is the most flexible and secure way to deploy Dagster+. It allows you to run your user code in your environment while leveraging Dagster+'s infrastructure for orchestration and metadata management
 
-<details>
-  <summary>Pre-requisites</summary>
-
-Before you begin, you should have:
-
-- A [Dagster+ account](/dagster-plus/getting-started)
-- [Basic familiarity with Dagster](/getting-started/quickstart)
-
-</details>
-
----
-
 ## Hybrid architecture overview
 
 A **hybrid deployment** utilizes a combination of your infrastructure and Dagster-hosted backend services.
 
-The Dagster backend services - including the web frontend, GraphQL API, metadata database, and daemons (responsible for executing schedules and sensors) - are hosted in Dagster+. You are responsible for running an [agent](/todo) in your environment.
+The Dagster backend services - including the web frontend, GraphQL API, metadata database, and daemons (responsible for executing schedules and sensors) - are hosted in Dagster+. You are responsible for running an [agent](index.md#dagster-hybrid-agents) in your environment.
 
-![Dagster+ Hybrid deployment architecture](/img/placeholder.svg)
+![Dagster+ Hybrid deployment architecture](/images/dagster-cloud/deployment/hybrid-architecture.png)
 
 Work is enqueued for your agent when:
 
@@ -35,27 +23,31 @@ The agent polls the agent API to see if any work needs to be done and launches u
 
 All user code runs within your environment, in isolation from Dagster system code.
 
----
-
 ## The agent
 
 Because the agent communicates with the Dagster+ control plane over the agent API, it's possible to support agents that operate in arbitrary compute environments.
 
 This means that over time, Dagster+'s support for different user deployment environments will expand and custom agents can take advantage of bespoke compute environments such as HPC.
 
-Refer to the [Agents documentation](/todo) for more info, including the agents that are currently supported.
-
----
+See the [setup page](index.md#dagster-hybrid-agents) for a list of agents that are currently supported.
 
 ## Security
 
-This section describes how Dagster+ interacts with user code. To summarize:
+Dagster+ Hybrid relies on a shared security model.
 
-- No ingress is required from Dagster+ to user environments
-- Dagster+ doesn't have access to user code. Metadata about the code is fetched over constrained APIs.
-- The Dagster+ agent is [open source and auditable](https://github.com/dagster-io/dagster-cloud)
+The Dagster+ control plane is SOC 2 Type II certified and follows best practices such as:
+- encrypting data at rest (AES 256) and in transit (TLS 1.2+)
+- highly available, with disaster recovery and backup strategies
+- only manages metadata such as pipeline names, execution status, and run duration
 
-These highlights are described in more detail below:
+The execution environment is managed by the customer:
+- Dagster+ doesn't have access to user code—your code never leaves your environment. Metadata about the code is fetched over constrained APIs.
+- All connections to databases, file systems, and other resources are made from your environment.
+- The execution environment only requires egress access to Dagster+. No ingress is required from Dagster+ to user environments.
+
+Additionally, the Dagster+ agent is [open source and auditable](https://github.com/dagster-io/dagster-cloud)
+
+The following highlights are described in more detail below:
 
 - [Interactions and queries](#interactions-and-queries)
 - [Runs](#runs)
