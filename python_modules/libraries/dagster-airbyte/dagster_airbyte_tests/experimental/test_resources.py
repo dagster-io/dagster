@@ -169,6 +169,13 @@ def test_basic_resource_request(
         AirbyteJobStatusType.FAILED,
         TEST_UNRECOGNIZED_AIRBYTE_JOB_STATUS_TYPE,
     ],
+    ids=[
+        "job_status_succeeded",
+        "job_status_cancelled",
+        "job_status_error",
+        "job_status_failed",
+        "job_status_unrecognized",
+    ],
 )
 def test_airbyte_sync_and_poll_client_job_status(
     status: str, base_api_mocks: responses.RequestsMock
@@ -312,6 +319,10 @@ def test_airbyte_sync_and_poll_client_poll_process(
     [
         True,
         False,
+    ],
+    ids=[
+        "cancel_on_termination_true",
+        "cancel_on_termination_false",
     ],
 )
 def test_airbyte_sync_and_poll_client_cancel_on_termination(
