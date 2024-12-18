@@ -563,9 +563,8 @@ def get_runs_feed_entries(
 
     instance = graphene_info.context.instance
     runs_feed_cursor = RunsFeedCursor.from_string(cursor)
-    # the UI is oriented toward showing runs that are part of a backfill, but the backend
-    # is oriented toward excluding runs that are part of a backfill, so negate include_runs_from_backfills
-    # to get the value to pass to the backend
+    # In the default "ROOTS" run feed, we exclude runs that are part of backfills. If
+    # the user chooses the "RUNS" view, we want to flatten backfills into their runs.
     exclude_subruns = view == GrapheneRunsFeedView.ROOTS
 
     # if using limit, fetch limit+1 of each type to know if there are more than limit remaining
@@ -677,9 +676,8 @@ def get_runs_feed_count(
 ) -> int:
     from dagster_graphql.schema.runs_feed import GrapheneRunsFeedView
 
-    # the UI is oriented toward showing runs that are part of a backfill, but the backend
-    # is oriented toward excluding runs that are part of a backfill, so negate include_runs_in_backfills
-    # to get the value to pass to the backend
+    # In the default "ROOTS" run feed, we exclude runs that are part of backfills. If
+    # the user chooses the "RUNS" view, we want to flatten backfills into their runs.
     exclude_subruns = view == GrapheneRunsFeedView.ROOTS
     should_fetch_runs = view == GrapheneRunsFeedView.RUNS or view == GrapheneRunsFeedView.ROOTS
     should_fetch_backfills = (

@@ -315,7 +315,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
 
         assert not result.data["runsFeedOrError"]["hasMore"]
 
-    def test_get_runs_feed_with_subruns(self, gql_context_with_runs_and_backfills):
+    def test_get_runs_feed_with_view_runs(self, gql_context_with_runs_and_backfills):
         result = execute_dagster_graphql(
             gql_context_with_runs_and_backfills.create_request_context(),
             GET_RUNS_FEED_QUERY,
@@ -403,6 +403,95 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             prev_run_time = res["creationTime"]
 
         assert not result.data["runsFeedOrError"]["hasMore"]
+
+    def test_get_runs_feed_with_view_backfills(self, gql_context_with_runs_and_backfills):
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 25,
+                "cursor": None,
+                "filter": None,
+                "view": "BACKFILLS",
+            },
+        )
+        _assert_results_match_count_match_expected(result, 10)
+        prev_run_time = None
+        for res in result.data["runsFeedOrError"]["results"]:
+            assert res["__typename"] == "PartitionBackfill"
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": None,
+                "view": "BACKFILLS",
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        prev_run_time = None
+        for res in result.data["runsFeedOrError"]["results"]:
+            assert res["__typename"] == "PartitionBackfill"
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 5,
+                "cursor": None,
+                "filter": None,
+                "view": "BACKFILLS",
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 5
+        prev_run_time = None
+        for res in result.data["runsFeedOrError"]["results"]:
+            assert res["__typename"] == "PartitionBackfill"
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+        assert result.data["runsFeedOrError"]["hasMore"]
+        old_cursor = result.data["runsFeedOrError"]["cursor"]
+        assert old_cursor is not None
+
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 5,
+                "cursor": old_cursor,
+                "filter": None,
+                "view": "BACKFILLS",
+            },
+        )
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 5
+        for res in result.data["runsFeedOrError"]["results"]:
+            assert res["__typename"] == "PartitionBackfill"
+            assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
 
 
 class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
