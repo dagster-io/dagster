@@ -49,7 +49,7 @@ spec:
       initContainers:
         {{- if .Values.dagsterWebserver.checkDbReadyInitContainer }}
         - name: check-db-ready
-          image: {{ include "dagster.externalPostgreImage.name" .Values.postgresql.image | quote }}
+          image: {{ include "dagster.externalPostgresImage.name" .Values.postgresql.image | quote }}
           imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
           command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" . | squote }}]
           securityContext:
