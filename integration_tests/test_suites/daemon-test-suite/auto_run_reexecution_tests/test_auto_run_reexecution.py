@@ -14,6 +14,7 @@ from dagster._core.storage.tags import (
     AUTO_RETRY_RUN_ID_TAG,
     MAX_RETRIES_TAG,
     PARENT_RUN_ID_TAG,
+    RESUME_RETRY_TAG,
     RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
     RETRY_STRATEGY_TAG,
     ROOT_RUN_ID_TAG,
@@ -395,7 +396,15 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     assert len(instance.run_coordinator.queue()) == 0
 
     # retries failure
-    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+    run = create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
+        tags={
+            MAX_RETRIES_TAG: "2",
+            RESUME_RETRY_TAG: "true",
+            RETRY_STRATEGY_TAG: "ALL_STEPS",
+        },
+    )
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
         job_name="foo",
@@ -426,6 +435,10 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     first_retry = instance.get_run_by_id(instance.run_coordinator.queue()[0].run_id)
     run = instance.get_run_by_id(run.run_id)
     assert run.tags.get(AUTO_RETRY_RUN_ID_TAG) == first_retry.run_id
+
+    # retry strategy is copied, "is_resume_retry" is not since the retry strategy is ALL_STEPS
+    assert RESUME_RETRY_TAG not in first_retry.tags
+    assert first_retry.tags.get(RETRY_STRATEGY_TAG) == "ALL_STEPS"
 
     # doesn't retry again
     list(
