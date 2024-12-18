@@ -1,0 +1,15 @@
+type: dagster_components.dbt_project
+
+params:
+  dbt:
+    project_dir: jaffle_shop
+
+  asset_attributes:
+    - tags:
+        foo: bar
+      metadata:
+        something: 1
+      automation_condition:
+        type: on_cron
+        params:
+          cron_schedule: "@daily"

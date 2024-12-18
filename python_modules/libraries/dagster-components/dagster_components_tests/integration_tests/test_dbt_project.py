@@ -17,7 +17,7 @@ from dagster_dbt import DbtProject
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
 
-STUB_LOCATION_PATH = Path(__file__).parent.parent / "stub_code_locations" / "dbt_project_location"
+STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "dbt_project_location"
 COMPONENT_RELPATH = "components/jaffle_shop_dbt"
 
 JAFFLE_SHOP_KEYS = {
