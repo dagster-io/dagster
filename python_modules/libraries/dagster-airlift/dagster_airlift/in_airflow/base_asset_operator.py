@@ -221,7 +221,8 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
             ),
         )
         logger.info("Waiting for dagster run completion...")
-        while status := self.get_dagster_run_status(session, dagster_url, run_id):
+        while True:
+            status = self.get_dagster_run_status(session, dagster_url, run_id)
             if status in ["SUCCESS", "FAILURE", "CANCELED"]:
                 break
             time.sleep(self.dagster_run_status_poll_interval)
