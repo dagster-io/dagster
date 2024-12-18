@@ -1,7 +1,14 @@
 import re
 from typing import Any, Iterable, Mapping, Sequence, Union
 
-from airflow.utils.context import Context
+try:
+    # Attempt to import the Context type from Airflow 2
+    from airflow.utils.context import Context
+except ImportError:
+    # Fallback for Airflow 1: Use a generic dictionary type as a substitute
+    from typing import Dict
+
+    Context = Dict[str, Any]  # Define Context as a dictionary
 
 from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator
 
