@@ -37,7 +37,9 @@ STEP_STATS_EVENT_TYPES = {
 
 
 def build_run_stats_from_events(
-    run_id: str, entries: Iterable[EventLogEntry]
+    run_id: str,
+    entries: Iterable[EventLogEntry],
+    previous_stats: Optional[DagsterRunStatsSnapshot] = None,
 ) -> DagsterRunStatsSnapshot:
     try:
         iter(entries)
@@ -48,14 +50,24 @@ def build_run_stats_from_events(
     for i, record in enumerate(entries):
         check.inst_param(record, f"records[{i}]", EventLogEntry)
 
-    steps_succeeded = 0
-    steps_failed = 0
-    materializations = 0
-    expectations = 0
-    enqueued_time = None
-    launch_time = None
-    start_time = None
-    end_time = None
+    if previous_stats:
+        steps_succeeded = previous_stats.steps_succeeded
+        steps_failed = previous_stats.steps_failed
+        materializations = previous_stats.materializations
+        expectations = previous_stats.expectations
+        enqueued_time = previous_stats.enqueued_time
+        launch_time = previous_stats.launch_time
+        start_time = previous_stats.start_time
+        end_time = previous_stats.end_time
+    else:
+        steps_succeeded = 0
+        steps_failed = 0
+        materializations = 0
+        expectations = 0
+        enqueued_time = None
+        launch_time = None
+        start_time = None
+        end_time = None
 
     for event in entries:
         if not event.is_dagster_event:
