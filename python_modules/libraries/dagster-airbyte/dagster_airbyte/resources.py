@@ -1065,6 +1065,7 @@ class AirbyteCloudClient(DagsterModel):
                     )
 
                 time.sleep(poll_interval)
+                # We return these job details in the AirbyteOutput when the job succeeds
                 poll_job_details = self.get_job_details(job.id)
                 job = AirbyteJob.from_job_details(job_details=poll_job_details)
                 if job.status in (
