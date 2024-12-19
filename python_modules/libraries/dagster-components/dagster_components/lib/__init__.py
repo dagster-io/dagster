@@ -11,6 +11,7 @@ if _has_dagster_embedded_elt:
         SlingReplicationComponent as SlingReplicationComponent,
     )
 
+from dagster_components.lib.custom_component import CustomComponent as CustomComponent
 from dagster_components.lib.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollection as PipesSubprocessScriptCollection,
 )
