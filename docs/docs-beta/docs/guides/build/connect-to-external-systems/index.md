@@ -1,6 +1,5 @@
 ---
-title: "Configure"
-description: "Configure assets, pipelines, and runs"
+title: "Connect to external systems"
 sidebar_position: 20
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: "Building pipelines"
+title: "Build pipelines"
 sidebar_class_name: hidden
 ---
 

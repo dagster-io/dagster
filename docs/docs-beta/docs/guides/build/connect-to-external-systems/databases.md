@@ -1,8 +1,6 @@
 ---
-title: Connecting to databases
-description: How to configure resources to connect to databases
+title: Connect to a database
 sidebar_position: 500
-sidebar_label: Database connections
 ---
 
 When building a data pipeline, you may need to extract data from or load data into a database. In Dagster, resources can be used to connect to a database by acting as a wrapper around a database client.

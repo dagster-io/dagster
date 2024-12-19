@@ -19,7 +19,7 @@ The asset factory pattern can solve both of these problems.
 To follow the steps in this guide, you'll need:
 
 - Familiarity with:
-  - [Assets](/guides/build/create-a-pipeline/data-assets)
+  - [Assets](/guides/build/create-asset-pipelinea/data-assets)
   - [Resources](/guides/build/configure/resources)
   - SQL, YAML and Amazon Web Services (AWS) S3
   - [Pydantic](https://docs.pydantic.dev/latest/) and [Jinja2](https://jinja.palletsprojects.com/en/3.1.x/)

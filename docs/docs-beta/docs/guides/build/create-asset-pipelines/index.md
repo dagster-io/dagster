@@ -1,5 +1,5 @@
 ---
-title: "Create a pipeline"
+title: "Create asset pipelines"
 description: "Learn how to create data pipelines using Dagster's asset-based approach"
 sidebar_position: 10
 ---

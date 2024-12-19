@@ -1,5 +1,5 @@
 ---
-title: "Integrate"
+title: "Integrate with external systems"
 sidebar_position: 30
 ---
 
