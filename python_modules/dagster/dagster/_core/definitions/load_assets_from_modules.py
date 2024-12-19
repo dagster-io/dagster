@@ -21,6 +21,7 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.asset_checks import AssetChecksDefinition, has_only_asset_checks
 from dagster._core.definitions.asset_key import (
+    AssetCheckKey,
     AssetKey,
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
@@ -429,6 +430,7 @@ def find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
 def replace_keys_in_asset(
     asset: Union[AssetsDefinition, AssetSpec, SourceAsset],
     key_replacements: Mapping[AssetKey, AssetKey],
+    check_key_replacements: Mapping[AssetCheckKey, AssetCheckKey],
 ) -> Union[AssetsDefinition, AssetSpec, SourceAsset]:
     if isinstance(asset, SourceAsset):
         return asset.with_attributes(key=key_replacements.get(asset.key, asset.key))
@@ -438,13 +440,7 @@ def replace_keys_in_asset(
         )
     else:
         updated_object = asset.with_attributes(
-            output_asset_key_replacements={
-                key: key_replacements.get(key, key)
-                for key in key_iterator(asset, included_targeted_keys=True)
-            },
-            input_asset_key_replacements={
-                key: key_replacements.get(key, key) for key in asset.keys_by_input_name.values()
-            },
+            asset_key_replacements=key_replacements,
         )
         return (
             updated_object.coerce_to_checks_def()
@@ -468,6 +464,10 @@ class ResolvedAssetObjectList:
             if (isinstance(dagster_object, AssetsDefinition) and dagster_object.keys)
             or isinstance(dagster_object, AssetSpec)
         ]
+
+    @cached_property
+    def assets_defs(self) -> Sequence[AssetsDefinition]:
+        return [asset for asset in self.loaded_objects if isinstance(asset, AssetsDefinition)]
 
     @cached_property
     def checks_defs(self) -> Sequence[AssetChecksDefinition]:
@@ -511,12 +511,21 @@ class ResolvedAssetObjectList:
             for asset_object in self.assets_defs_specs_and_checks_defs
             for key in key_iterator(asset_object, included_targeted_keys=True)
         }
+        all_check_keys = {
+            check_key for asset_object in self.assets_defs for check_key in asset_object.check_keys
+        }
+
         key_replacements = {key: key.with_prefix(key_prefix) for key in all_asset_keys}
+        check_key_replacements = {
+            check_key: check_key.with_asset_key_prefix(key_prefix) for check_key in all_check_keys
+        }
         for asset_object in self.loaded_objects:
             if isinstance(asset_object, CacheableAssetsDefinition):
                 result_list.append(asset_object.with_prefix_for_all(key_prefix))
             elif isinstance(asset_object, AssetsDefinition):
-                result_list.append(replace_keys_in_asset(asset_object, key_replacements))
+                result_list.append(
+                    replace_keys_in_asset(asset_object, key_replacements, check_key_replacements)
+                )
             else:
                 # We don't replace the key for SourceAssets.
                 result_list.append(asset_object)
@@ -532,7 +541,9 @@ class ResolvedAssetObjectList:
         }
         for asset_object in self.loaded_objects:
             if isinstance(asset_object, KeyScopedAssetObjects):
-                result_list.append(replace_keys_in_asset(asset_object, key_replacements))
+                result_list.append(
+                    replace_keys_in_asset(asset_object, key_replacements, check_key_replacements={})
+                )
             else:
                 result_list.append(asset_object)
         return ResolvedAssetObjectList(result_list)

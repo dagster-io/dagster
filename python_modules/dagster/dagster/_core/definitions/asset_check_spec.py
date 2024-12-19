@@ -116,3 +116,6 @@ class AssetCheckSpec(
     @property
     def key(self) -> AssetCheckKey:
         return AssetCheckKey(self.asset_key, self.name)
+
+    def replace_key(self, key: AssetCheckKey) -> "AssetCheckSpec":
+        return self._replace(asset_key=key.asset_key, name=key.name)
