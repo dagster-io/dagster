@@ -17,7 +17,7 @@ interface Props {
   runConfigYaml: string;
   mode: string | null;
   isJob: boolean;
-
+  jobName?: string;
   // Optionally provide tags to display them as well.
   tags?: RunTagsFragment[];
 
@@ -27,8 +27,18 @@ interface Props {
 }
 
 export const RunConfigDialog = (props: Props) => {
-  const {isOpen, onClose, copyConfig, runConfigYaml, tags, mode, isJob, request, repoAddress} =
-    props;
+  const {
+    isOpen,
+    onClose,
+    copyConfig,
+    runConfigYaml,
+    tags,
+    mode,
+    isJob,
+    jobName,
+    request,
+    repoAddress,
+  } = props;
   const hasTags = !!tags && tags.length > 0;
 
   return (
@@ -76,10 +86,12 @@ export const RunConfigDialog = (props: Props) => {
           topBorder
           left={
             request &&
-            repoAddress && (
+            repoAddress &&
+            jobName && (
               <OpenInLaunchpadButton
                 request={request}
                 mode={mode || null}
+                jobName={jobName}
                 isJob={isJob}
                 repoAddress={repoAddress}
               />

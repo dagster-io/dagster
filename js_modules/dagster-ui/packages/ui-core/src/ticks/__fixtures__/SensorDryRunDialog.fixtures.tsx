@@ -55,6 +55,19 @@ export const runRequests: RunRequest[] = [
   }),
 ];
 
+export const runRequestWithUndefinedJobName: RunRequest[] = [
+  buildRunRequest({
+    jobName: undefined, // undefined jobName
+    runKey: 'DryRunRequestTable.test.tsx:1675705668.9931223',
+    runConfigYaml:
+      'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx\n',
+    tags: [
+      buildPipelineTag({key: 'dagster2', value: 'test'}),
+      buildPipelineTag({key: 'marco2', value: 'salazar2'}),
+    ],
+  }),
+];
+
 export const SensorDryRunMutationRunRequests: MockedResponse<SensorDryRunMutation> = {
   request: {
     query: EVALUATE_SENSOR_MUTATION,
@@ -80,6 +93,33 @@ export const SensorDryRunMutationRunRequests: MockedResponse<SensorDryRunMutatio
     },
   },
 };
+
+export const SensorDryRunMutationRunRequestWithUndefinedJobName: MockedResponse<SensorDryRunMutation> =
+  {
+    request: {
+      query: EVALUATE_SENSOR_MUTATION,
+      variables: {
+        selectorData: {
+          sensorName: 'test',
+          repositoryLocationName: 'testLocation',
+          repositoryName: 'testName',
+        },
+        cursor: 'testCursortesting123',
+      },
+    },
+    result: {
+      data: {
+        __typename: 'Mutation',
+        sensorDryRun: buildDryRunInstigationTick({
+          evaluationResult: buildTickEvaluation({
+            cursor: 'a new cursor',
+            runRequests: runRequestWithUndefinedJobName,
+            error: null,
+          }),
+        }),
+      },
+    },
+  };
 
 export const SensorDryRunMutationError: MockedResponse<SensorDryRunMutation> = {
   request: {
@@ -335,3 +375,67 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
     },
   },
 };
+
+export const SensorLaunchAllMutation1JobWithUndefinedJobName: MockedResponse<LaunchMultipleRunsMutation> =
+  {
+    request: {
+      query: LAUNCH_MULTIPLE_RUNS_MUTATION,
+      variables: {
+        executionParamsList: [
+          {
+            runConfigData:
+              'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx',
+            selector: {
+              jobName: 'testJobName', // fallback
+              repositoryLocationName: 'testLocation',
+              repositoryName: 'testName',
+              assetSelection: [],
+              assetCheckSelection: [],
+              solidSelection: undefined,
+            },
+            mode: 'default',
+            executionMetadata: {
+              tags: [
+                {
+                  key: 'dagster2',
+                  value: 'test',
+                },
+                {
+                  key: 'marco2',
+                  value: 'salazar2',
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    result: {
+      data: {
+        __typename: 'Mutation',
+        launchMultipleRuns: buildLaunchMultipleRunsResult({
+          launchMultipleRunsResult: [
+            buildLaunchRunSuccess({
+              __typename: 'LaunchRunSuccess',
+              run: buildRun({
+                __typename: 'Run',
+                id: '504b3a77-d6c4-440c-a128-7f59c9d75d59',
+                pipeline: buildPipelineSnapshot({
+                  name: 'testJobName',
+                }),
+                tags: [
+                  buildPipelineTag({key: 'dagster2', value: 'test'}),
+                  buildPipelineTag({key: 'marco2', value: 'salazar2'}),
+                ],
+                status: RunStatus.QUEUED,
+                runConfigYaml:
+                  'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx\n',
+                mode: 'default',
+                resolvedOpSelection: null,
+              }),
+            }),
+          ],
+        }),
+      },
+    },
+  };
