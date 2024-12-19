@@ -5,7 +5,6 @@ from dagster._annotations import experimental
 
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import DagsterFivetranTranslator, FivetranMetadataSet
-from dagster_fivetran.utils import DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY
 
 
 @experimental
@@ -109,9 +108,7 @@ def fivetran_assets(
         group_name=group_name,
         can_subset=True,
         specs=[
-            spec.merge_attributes(
-                metadata={DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY: dagster_fivetran_translator}
-            )
+            spec
             for spec in workspace.load_asset_specs(
                 dagster_fivetran_translator=dagster_fivetran_translator
             )
