@@ -364,7 +364,7 @@ def test_sentinel():
 def test_build_args_and_assign(fields, defaults, expected):
     # tests / documents shared utility fn
     # don't hesitate to delete this upon refactor
-    assert build_args_and_assignment_strs(fields, defaults) == expected
+    assert build_args_and_assignment_strs(fields, defaults, kw_only=True) == expected
 
 
 @record
@@ -830,3 +830,58 @@ def test_replace() -> None:
 def test_defensive_checks_running():
     # make sure we have enabled defensive checks in test, ideally as broadly as possible
     assert os.getenv("DAGSTER_RECORD_DEFENSIVE_CHECKS") == "true"
+
+
+def test_allow_posargs():
+    @record(kw_only=False)
+    class Foo:
+        a: int
+
+    assert Foo(2)
+
+    @record(kw_only=False)
+    class Bar:
+        a: int
+        b: int
+        c: int = 4
+
+    assert Bar(1, 2)
+
+    with pytest.raises(CheckError):
+
+        @record(kw_only=False)
+        class Baz:
+            a: int = 4
+            b: int  # type: ignore # good job type checker
+
+
+def test_posargs_inherit():
+    @record(kw_only=False)
+    class Parent:
+        name: str
+
+    @record(kw_only=False)
+    class Child(Parent):
+        parent: Parent
+
+    p = Parent("Alex")
+    assert p
+    c = Child("Lyra", p)
+    assert c
+
+    # test kw_only not being aligned
+    with pytest.raises(CheckError):
+
+        @record
+        class Bad(Parent):
+            other: str
+
+    with pytest.raises(CheckError):
+
+        @record
+        class A:
+            a: int
+
+        @record(kw_only=False)
+        class B(A):
+            b: int

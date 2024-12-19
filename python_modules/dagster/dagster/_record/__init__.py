@@ -35,6 +35,7 @@ _INJECTED_DEFAULT_VALS_LOCAL_VAR = "__dm_defaults__"
 _NAMED_TUPLE_BASE_NEW_FIELD = "__nt_new__"
 _REMAPPING_FIELD = "__field_remap__"
 _ORIGINAL_CLASS_FIELD = "__original_class__"
+_KW_ONLY_FIELD = "__kw_only__"
 
 
 _sample_nt = namedtuple("_canary", "x")
@@ -44,10 +45,12 @@ _tuple_getter_type = type(getattr(_sample_nt, "x"))
 
 def _get_field_set_and_defaults(
     cls: Type,
+    kw_only: bool,
 ) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
     field_set = getattr(cls, "__annotations__", {})
     defaults = {}
 
+    last_defaulted_field = None
     for name in field_set.keys():
         if hasattr(cls, name):
             attr_val = getattr(cls, name)
@@ -57,11 +60,9 @@ def _get_field_set_and_defaults(
                     f"Conflicting non-abstract @property for field {name} on record {cls.__name__}."
                     "Add the the @abstractmethod decorator to make it abstract.",
                 )
-            elif isinstance(attr_val, _tuple_getter_type):
-                # When doing record inheritance, filter out tuplegetters from parents.
-                # This workaround only seems needed for py3.8
-                continue
-            else:
+            # When doing record inheritance, filter out tuplegetters from parents.
+            # This workaround only seems needed for py3.9
+            elif not isinstance(attr_val, _tuple_getter_type):
                 check.invariant(
                     not inspect.isfunction(attr_val),
                     f"Conflicting function for field {name} on record {cls.__name__}. "
@@ -69,11 +70,25 @@ def _get_field_set_and_defaults(
                     "you will have to override __new__.",
                 )
                 defaults[name] = attr_val
+                last_defaulted_field = name
+                continue
+
+        # fall through here means no default set
+        if last_defaulted_field and not kw_only:
+            check.failed(
+                "Fields without defaults cannot appear after fields with default values. "
+                f"Field {name} has no default after {last_defaulted_field} with default value."
+            )
 
     for base in cls.__bases__:
         if is_record(base):
             original_base = getattr(base, _ORIGINAL_CLASS_FIELD)
-            base_field_set, base_defaults = _get_field_set_and_defaults(original_base)
+            base_kw_only = getattr(base, _KW_ONLY_FIELD)
+            check.invariant(
+                kw_only == base_kw_only,
+                "Can not inherit from a parent @record with different kw_only setting.",
+            )
+            base_field_set, base_defaults = _get_field_set_and_defaults(original_base, kw_only)
             field_set = {**base_field_set, **field_set}
             defaults = {**base_defaults, **defaults}
 
@@ -87,13 +102,14 @@ def _namedtuple_record_transform(
     with_new: bool,
     decorator_frames: int,
     field_to_new_mapping: Optional[Mapping[str, str]],
+    kw_only: bool,
 ) -> TType:
     """Transforms the input class in to one that inherits a generated NamedTuple base class
     and:
         * bans tuple methods that don't make sense for a record object
         * creates a run time checked __new__  (optional).
     """
-    field_set, defaults = _get_field_set_and_defaults(cls)
+    field_set, defaults = _get_field_set_and_defaults(cls, kw_only)
 
     base = NamedTuple(f"_{cls.__name__}", field_set.items())
     nt_new = base.__new__
@@ -109,7 +125,8 @@ def _namedtuple_record_transform(
             field_set,
             defaults,
             eval_ctx,
-            1 if with_new else 0,
+            new_frames=1 if with_new else 0,
+            kw_only=kw_only,
         )
     elif defaults:
         # allow arbitrary ordering of default values by generating a kwarg only __new__ impl
@@ -120,7 +137,7 @@ def _namedtuple_record_transform(
             lazy_imports={},
         )
         generated_new = eval_ctx.compile_fn(
-            _build_defaults_new(field_set, defaults),
+            _build_defaults_new(field_set, defaults, kw_only),
             _DEFAULTS_NEW,
         )
 
@@ -145,6 +162,7 @@ def _namedtuple_record_transform(
         _NAMED_TUPLE_BASE_NEW_FIELD: nt_new,
         _REMAPPING_FIELD: field_to_new_mapping or {},
         _ORIGINAL_CLASS_FIELD: cls,
+        _KW_ONLY_FIELD: kw_only,
         "__reduce__": _reduce,
         # functools doesn't work, so manually update_wrapper
         "__module__": cls.__module__,
@@ -219,6 +237,7 @@ def record(
 def record(
     *,
     checked: bool = True,
+    kw_only: bool = True,
 ) -> Callable[[TType], TType]: ...  # Overload for using decorator used with args.
 
 
@@ -230,11 +249,13 @@ def record(
     cls: Optional[TType] = None,
     *,
     checked: bool = True,
+    kw_only: bool = True,
 ) -> Union[TType, Callable[[TType], TType]]:
     """A class decorator that will create an immutable record class based on the defined fields.
 
     Args:
-        checked: Whether or not to generate runtime type checked construction.
+        checked: Whether or not to generate runtime type checked construction (default True).
+        kw_only: Whether or not the generated __new__ is kwargs only (default True).
     """
     if cls:
         return _namedtuple_record_transform(
@@ -243,6 +264,7 @@ def record(
             with_new=False,
             decorator_frames=1,
             field_to_new_mapping=None,
+            kw_only=kw_only,
         )
     else:
         return partial(
@@ -251,6 +273,7 @@ def record(
             with_new=False,
             decorator_frames=0,
             field_to_new_mapping=None,
+            kw_only=kw_only,
         )
 
 
@@ -303,6 +326,7 @@ def record_custom(
             with_new=True,
             decorator_frames=1,
             field_to_new_mapping=field_to_new_mapping,
+            kw_only=True,
         )
     else:
         return partial(
@@ -311,6 +335,7 @@ def record_custom(
             with_new=True,
             decorator_frames=0,
             field_to_new_mapping=field_to_new_mapping,
+            kw_only=True,
         )
 
 
@@ -429,12 +454,14 @@ class JitCheckedNew:
         defaults: Mapping[str, Any],
         eval_ctx: EvalContext,
         new_frames: int,
+        kw_only: bool,
     ):
         self._field_set = field_set
         self._defaults = defaults
         self._eval_ctx = eval_ctx
         self._new_frames = new_frames  # how many frames of __new__ there are
         self._compiled = False
+        self._kw_only = kw_only
 
     def __call__(self, cls, *args, **kwargs):
         if _do_defensive_checks():
@@ -470,7 +497,11 @@ class JitCheckedNew:
         return compiled_fn(cls, *args, **kwargs)
 
     def _build_checked_new_str(self) -> str:
-        kw_args_str, set_calls_str = build_args_and_assignment_strs(self._field_set, self._defaults)
+        args_str, set_calls_str = build_args_and_assignment_strs(
+            self._field_set,
+            self._defaults,
+            self._kw_only,
+        )
         check_calls = []
         for name, ttype in self._field_set.items():
             call_str = build_check_call_str(
@@ -487,7 +518,7 @@ class JitCheckedNew:
         )
 
         checked_new_str = f"""
-def __checked_new__(cls{kw_args_str}):
+def __checked_new__(cls{args_str}):
     {lazy_imports_str}
     {set_calls_str}
     return cls.{_NAMED_TUPLE_BASE_NEW_FIELD}(
@@ -501,9 +532,10 @@ def __checked_new__(cls{kw_args_str}):
 def _build_defaults_new(
     field_set: Mapping[str, Type],
     defaults: Mapping[str, Any],
+    kw_only: bool,
 ) -> str:
     """Build a __new__ implementation that handles default values."""
-    kw_args_str, set_calls_str = build_args_and_assignment_strs(field_set, defaults)
+    kw_args_str, set_calls_str = build_args_and_assignment_strs(field_set, defaults, kw_only)
     assign_str = ",\n        ".join([f"{name}={name}" for name in field_set.keys()])
     return f"""
 def __defaults_new__(cls{kw_args_str}):
@@ -518,39 +550,40 @@ def __defaults_new__(cls{kw_args_str}):
 def build_args_and_assignment_strs(
     field_set: Mapping[str, Type],
     defaults: Mapping[str, Any],
+    kw_only: bool,
 ) -> Tuple[str, str]:
     """Utility funciton shared between _defaults_new and _checked_new to create the arguments to
     the function as well as any assignment calls that need to happen.
     """
-    kw_args = []
+    args = []
     set_calls = []
     for arg in field_set.keys():
         if arg in defaults:
             default = defaults[arg]
             if default is None:
-                kw_args.append(f"{arg} = None")
+                args.append(f"{arg} = None")
             # dont share class instance of default empty containers
             elif default == []:
-                kw_args.append(f"{arg} = None")
+                args.append(f"{arg} = None")
                 set_calls.append(f"{arg} = {arg} if {arg} is not None else []")
             elif default == {}:
-                kw_args.append(f"{arg} = None")
+                args.append(f"{arg} = None")
                 set_calls.append(f"{arg} = {arg} if {arg} is not None else {'{}'}")
             # fallback to direct reference if unknown
             else:
-                kw_args.append(f"{arg} = {_INJECTED_DEFAULT_VALS_LOCAL_VAR}['{arg}']")
+                args.append(f"{arg} = {_INJECTED_DEFAULT_VALS_LOCAL_VAR}['{arg}']")
         else:
-            kw_args.append(arg)
+            args.append(arg)
 
-    kw_args_str = ""
-    if kw_args:
-        kw_args_str = f", *, {', '.join(kw_args)}"
+    args_str = ""
+    if args:
+        args_str = f", {'*,' if kw_only else ''} {', '.join(args)}"
 
     set_calls_str = ""
     if set_calls:
         set_calls_str = "\n    ".join(set_calls)
 
-    return kw_args_str, set_calls_str
+    return args_str, set_calls_str
 
 
 def _banned_iter(*args, **kwargs):
