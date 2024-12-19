@@ -1,10 +1,7 @@
 ---
-title: "Using Dagster Pipes to execute non-Python languages"
-sidebar_label: "Dagster Pipes"
-sidebar_position: 300
+title: "Build pipelines in JavaScript"
+sidebar_position: 100
 ---
-
-Dagster is written in Python, but that doesn't mean it's that Python is the only language that can be used when materializing assets. With Dagster Pipes, you can run code in other languages and send information back to Dagster.
 
 This guide covers how to run JavaScript with Dagster using Pipes, however, the same principle will apply to other languages.
 
