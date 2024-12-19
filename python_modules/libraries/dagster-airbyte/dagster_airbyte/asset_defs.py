@@ -1062,6 +1062,7 @@ def build_airbyte_assets_definitions(
 
     Examples:
         Sync the tables of a Airbyte connection:
+
         .. code-block:: python
 
             from dagster_airbyte import AirbyteCloudWorkspace, build_airbyte_assets_definitions
@@ -1083,6 +1084,7 @@ def build_airbyte_assets_definitions(
             )
 
         Sync the tables of a Airbyte connection with a custom translator:
+
         .. code-block:: python
 
             from dagster_airbyte import (
