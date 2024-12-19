@@ -332,7 +332,9 @@ def get_step_stats_by_key(
 ) -> Mapping[str, RunStepKeyStatsSnapshot]:
     # When using the k8s executor, there whould only ever be one step key
     step_stats = instance.get_run_step_stats(dagster_run.run_id, step_keys=step_keys_to_execute)
-    step_stats_by_key = {step_stat.step_key: step_stat for step_stat in step_stats}
+    step_stats_by_key = {
+        step_stat.step_key: step_stat for step_stat in step_stats if step_stat.start_time
+    }
     return step_stats_by_key
 
 
