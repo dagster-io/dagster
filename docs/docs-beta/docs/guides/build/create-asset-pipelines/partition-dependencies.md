@@ -19,8 +19,8 @@ Partitioned assets in Dagster can have dependencies on other partitioned assets,
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/create-a-pipeline/data-assets)
-- Familiarity with [Partitions](/guides/build/create-a-pipeline/partitioning)
+- Familiarity with [Assets](/guides/build/create-asset-pipelines/data-assets)
+- Familiarity with [Partitions](/guides/build/create-asset-pipelines/partitioning)
 
 </details>
 

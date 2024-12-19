@@ -41,7 +41,7 @@ If using partitions and jobs, you can create a schedule using the partition with
 <Tabs>
 <TabItem value="assets" label="Assets">
 
-If you have a [partitioned asset](/guides/build/create-a-pipeline/partitioning) and job:
+If you have a [partitioned asset](/guides/build/create-asset-pipelines/partitioning) and job:
 
 <CodeExample filePath="guides/automation/schedule-with-partition.py" language="python" />
 

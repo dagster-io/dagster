@@ -19,7 +19,7 @@ Using metadata in Dagster, you can:
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/create-a-pipeline/data-assets)
+- Familiarity with [Assets](/guides/build/create-asset-pipelines/data-assets)
 </details>
 
 ## Adding owners to assets \{#owners}

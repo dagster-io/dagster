@@ -13,7 +13,7 @@ You'll often want to be able to adjust parameters when materializing assets, whi
 
 To follow the steps in this guide, you'll need familiarity with:
 
-- [Assets](/guides/build/create-a-pipeline/data-assets)
+- [Assets](/guides/build/create-asset-pipelines/data-assets)
 - [Pydantic](https://docs.pydantic.dev/latest/)
 
 </details>

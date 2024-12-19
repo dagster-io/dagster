@@ -21,7 +21,7 @@ For example, external assets could be:
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/create-a-pipeline/data-assets)
+- Familiarity with [Assets](/guides/build/create-asset-pipelines/data-assets)
 - Familiarity with [Sensors](/guides/automate/sensors)
 </details>
 

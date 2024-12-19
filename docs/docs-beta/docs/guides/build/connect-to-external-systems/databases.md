@@ -12,7 +12,7 @@ This guide demonstrates how to standardize database connections and customize th
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/create-a-pipeline/data-assets)
+- Familiarity with [Assets](/guides/build/create-asset-pipelines/data-assets)
 
 To run the examples in this guide, you'll need:
 
