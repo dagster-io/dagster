@@ -463,12 +463,12 @@ def test_with_asset_key_replacements(test_jaffle_shop_manifest: Dict[str, Any]) 
     assert len(my_dbt_assets.keys) == len(expected_specs)
     assert my_dbt_assets.keys == {spec.key for spec in expected_specs}
     assert my_dbt_assets.keys_by_input_name == {
-        "__subset_input__model_jaffle_shop_stg_customers": AssetKey(["prefix", "stg_customers"]),
-        "__subset_input__model_jaffle_shop_stg_orders": AssetKey(["prefix", "stg_orders"]),
-        "__subset_input__model_jaffle_shop_stg_payments": AssetKey(["prefix", "stg_payments"]),
-        "__subset_input__seed_jaffle_shop_raw_customers": AssetKey(["prefix", "raw_customers"]),
-        "__subset_input__seed_jaffle_shop_raw_orders": AssetKey(["prefix", "raw_orders"]),
-        "__subset_input__seed_jaffle_shop_raw_payments": AssetKey(["prefix", "raw_payments"]),
+        "__subset_input__prefix__stg_customers": AssetKey(["prefix", "stg_customers"]),
+        "__subset_input__prefix__stg_orders": AssetKey(["prefix", "stg_orders"]),
+        "__subset_input__prefix__stg_payments": AssetKey(["prefix", "stg_payments"]),
+        "__subset_input__prefix__raw_customers": AssetKey(["prefix", "raw_customers"]),
+        "__subset_input__prefix__raw_orders": AssetKey(["prefix", "raw_orders"]),
+        "__subset_input__prefix__raw_payments": AssetKey(["prefix", "raw_payments"]),
     }
     assert set(my_dbt_assets.keys_by_output_name.values()) == {
         AssetKey(["prefix", "raw_customers"]),
@@ -1072,17 +1072,15 @@ def test_dbt_with_python_interleaving(
         NodeInvocation(name="my_dbt_assets", alias="my_dbt_assets_2"): {},
         # the python augmented customers asset depends on the second invocation of my_dbt_assets
         NodeInvocation(name="dagster__python_augmented_customers"): {
-            "raw_customers": DependencyDefinition(
-                node="my_dbt_assets_2", output="seed_jaffle_shop_raw_customers"
-            )
+            "raw_customers": DependencyDefinition(node="my_dbt_assets_2", output="raw_customers")
         },
         # the second invocation of my_dbt_assets depends on the first, and the python step
         NodeInvocation(name="my_dbt_assets"): {
-            "__subset_input__model_jaffle_shop_stg_orders": DependencyDefinition(
-                node="my_dbt_assets_2", output="model_jaffle_shop_stg_orders"
+            "__subset_input__stg_orders": DependencyDefinition(
+                node="my_dbt_assets_2", output="stg_orders"
             ),
-            "__subset_input__model_jaffle_shop_stg_payments": DependencyDefinition(
-                node="my_dbt_assets_2", output="model_jaffle_shop_stg_payments"
+            "__subset_input__stg_payments": DependencyDefinition(
+                node="my_dbt_assets_2", output="stg_payments"
             ),
             "dagster_python_augmented_customers": DependencyDefinition(
                 node="dagster__python_augmented_customers", output="result"
@@ -1096,7 +1094,7 @@ def test_dbt_with_python_interleaving(
     result = global_job.execute_in_process()
     assert result.success
 
-    # now make sure that if you just select these two, we still get a valid dependency graph (where)
+    # now make sure that if you just select these two, we still get a valid dependency graph where
     # customers executes after its parent "stg_orders", even though the python step is not selected
     subset_job = global_job.get_subset(
         asset_selection={AssetKey("stg_orders"), AssetKey("customers")}
@@ -1106,8 +1104,8 @@ def test_dbt_with_python_interleaving(
         NodeInvocation(name="my_dbt_assets", alias="my_dbt_assets_2"): {},
         # the second invocation of my_dbt_assets depends on the first
         NodeInvocation(name="my_dbt_assets"): {
-            "__subset_input__model_jaffle_shop_stg_orders": DependencyDefinition(
-                node="my_dbt_assets_2", output="model_jaffle_shop_stg_orders"
+            "__subset_input__stg_orders": DependencyDefinition(
+                node="my_dbt_assets_2", output="stg_orders"
             )
         },
     }

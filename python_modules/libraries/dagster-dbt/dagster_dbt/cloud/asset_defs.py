@@ -46,13 +46,12 @@ from dagster_dbt.asset_utils import (
     default_freshness_policy_fn,
     default_group_from_dbt_resource_props,
     get_asset_deps,
-    get_deps,
+    get_upstream_unique_ids,
 )
 from dagster_dbt.cloud.resources import DbtCloudClient, DbtCloudClientResource, DbtCloudRunStatus
 from dagster_dbt.cloud.utils import result_to_events
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.errors import DagsterDbtCloudJobInvariantViolationError
-from dagster_dbt.utils import ASSET_RESOURCE_TYPES
 
 DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR = "DBT_DAGSTER_COMPILE_RUN_ID"
 
@@ -317,11 +316,11 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             )
 
         # Generate the dependency structure for the executed nodes.
-        dbt_dependencies = get_deps(
-            dbt_nodes=dbt_nodes,
-            selected_unique_ids=executed_node_ids,
-            asset_resource_types=ASSET_RESOURCE_TYPES,
-        )
+        dbt_dependencies = {
+            unique_id: frozenset(get_upstream_unique_ids(dbt_nodes, dbt_nodes[unique_id]))
+            # sort to stabilize job snapshots
+            for unique_id in sorted(executed_node_ids)
+        }
 
         return dbt_nodes, dbt_dependencies
 
