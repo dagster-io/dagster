@@ -1258,6 +1258,7 @@ class AirbyteCloudWorkspace(ConfigurableResource):
                     metadata=stream_asset_spec.metadata,
                 )
 
+    @experimental
     def sync_and_poll(self, context: AssetExecutionContext):
         """Executes a sync and poll process to materialize Airbyte Cloud assets.
             This method can only be used in the context of an asset execution.
