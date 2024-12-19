@@ -40,16 +40,16 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
   };
 
   // Initialize LRU Cache if maxEntries is specified
-  let lruCache: LRU.Cache<any, any> | null = null;
+  let lruCache: LRU<any, any> | null = null;
 
   if (maxEntries) {
     lruCache = new LRU<any, any>({
       max: maxEntries,
-      dispose: (key, value) => {
+      dispose: (key, _value) => {
         // When an entry is evicted from the LRU cache,
         // traverse the cache tree and remove the cached result
         const keyPath = key as any[];
-        let currentCache = cacheRoot;
+        let currentCache: CacheNode | undefined = cacheRoot;
 
         for (let i = 0; i < keyPath.length; i++) {
           const arg = keyPath[i];
