@@ -13,7 +13,7 @@ This guide covers the most common use cases for asset sensors, such as defining 
 
 To follow this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
+- Familiarity with [Assets](/guides/build/create-asset-pipelines/assets-concepts/index.mdx
 - Familiarity with [Ops and Jobs](/guides/build/ops-jobs)
 
 </details>

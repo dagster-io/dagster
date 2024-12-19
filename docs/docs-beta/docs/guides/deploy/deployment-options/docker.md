@@ -1,5 +1,6 @@
 ---
-title: "Deploying with Docker Compose"
+title: Deploying Dagster using Docker Compose
+sidebar_label: "Docker Compose"
 description: A guide to deploying Dagster with Docker Compose.
 sidebar_position: 400
 ---
