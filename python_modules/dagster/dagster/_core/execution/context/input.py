@@ -306,6 +306,17 @@ class InputContext:
 
         return self._step_context
 
+    @property
+    def asset_tags(self) -> Mapping[str, str]:
+        """Tags from the inputted asset."""
+        return (
+            check.not_none(
+                self._step_context, "asset_tags is not currently supported via this context."
+            )
+            .job_def.asset_layer.asset_graph.assets_def_for_key(self.asset_key)
+            .tags_by_key[self.asset_key]
+        )
+
     @public
     @property
     def has_partition_key(self) -> bool:
