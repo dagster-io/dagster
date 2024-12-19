@@ -61,7 +61,6 @@ from dagster_graphql.schema.asset_checks import (
     GrapheneAssetChecks,
     GrapheneAssetChecksOrError,
 )
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializePolicy
 from dagster_graphql.schema.automation_condition import GrapheneAutomationCondition
 from dagster_graphql.schema.backfill import GrapheneBackfillPolicy
@@ -73,6 +72,7 @@ from dagster_graphql.schema.dagster_types import (
     GrapheneRegularDagsterType,
     to_dagster_type,
 )
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
 from dagster_graphql.schema.freshness_policy import (
     GrapheneAssetFreshnessInfo,
@@ -839,7 +839,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_automationCondition(
         self, _graphene_info: ResolveInfo
-    ) -> Optional[GrapheneAutoMaterializePolicy]:
+    ) -> Optional[GrapheneAutomationCondition]:
         automation_condition = (
             self._asset_node_snap.automation_condition_snapshot
             or self._asset_node_snap.automation_condition

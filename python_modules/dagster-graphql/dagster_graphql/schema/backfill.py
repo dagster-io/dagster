@@ -33,7 +33,7 @@ from dagster_graphql.implementation.fetch_partition_sets import (
     partition_statuses_from_run_partition_data,
 )
 from dagster_graphql.implementation.utils import has_permission_for_asset_graph
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GrapheneError,
     GrapheneInvalidOutputError,
@@ -383,7 +383,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         description="Included to comply with RunsFeedEntry interface.",
     )
     assetCheckSelection = graphene.List(
-        graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
+        graphene.NonNull("dagster_graphql.schema.entity_key.GrapheneAssetCheckHandle")
     )
 
     def __init__(self, backfill_job: PartitionBackfill):

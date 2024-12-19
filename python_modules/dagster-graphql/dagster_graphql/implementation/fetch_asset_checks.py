@@ -10,10 +10,9 @@ from dagster._core.loader import LoadingContext
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.dagster_run import RunRecord
 
-from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
-
 if TYPE_CHECKING:
-    from dagster_graphql.schema.pipelines.pipeline import GrapheneAssetCheckHandle
+    from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
+    from dagster_graphql.schema.entity_key import GrapheneAssetCheckHandle
     from dagster_graphql.schema.util import ResolveInfo
 
 
@@ -32,7 +31,9 @@ def fetch_asset_check_executions(
     asset_check_key: AssetCheckKey,
     limit: int,
     cursor: Optional[str],
-) -> List[GrapheneAssetCheckExecution]:
+) -> List["GrapheneAssetCheckExecution"]:
+    from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
+
     check_records = loading_context.instance.event_log_storage.get_asset_check_execution_history(
         check_key=asset_check_key,
         limit=limit,
@@ -50,7 +51,7 @@ def fetch_asset_check_executions(
 def get_asset_checks_for_run_id(
     graphene_info: "ResolveInfo", run_id: str
 ) -> Sequence["GrapheneAssetCheckHandle"]:
-    from dagster_graphql.schema.pipelines.pipeline import GrapheneAssetCheckHandle
+    from dagster_graphql.schema.entity_key import GrapheneAssetCheckHandle
 
     check.str_param(run_id, "run_id")
 

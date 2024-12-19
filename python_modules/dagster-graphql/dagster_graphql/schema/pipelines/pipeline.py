@@ -36,14 +36,13 @@ from dagster_graphql.implementation.utils import (
     apply_cursor_limit_reverse,
     capture_error,
 )
-from dagster_graphql.schema.asset_checks import GrapheneAssetCheckHandle
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.dagster_types import (
     GrapheneDagsterType,
     GrapheneDagsterTypeOrError,
     GrapheneDagsterTypeUnion,
     to_dagster_type,
 )
+from dagster_graphql.schema.entity_key import GrapheneAssetCheckHandle, GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GrapheneDagsterTypeNotFoundError,
     GraphenePythonError,

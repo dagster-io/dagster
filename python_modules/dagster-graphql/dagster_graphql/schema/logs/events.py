@@ -11,7 +11,7 @@ from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 from dagster_graphql.implementation.events import construct_basic_params
 from dagster_graphql.implementation.fetch_runs import gen_run_by_id, get_step_stats
 from dagster_graphql.schema.asset_checks import GrapheneAssetCheckEvaluation
-from dagster_graphql.schema.asset_key import GrapheneAssetKey, GrapheneAssetLineageInfo
+from dagster_graphql.schema.entity_key import GrapheneAssetKey, GrapheneAssetLineageInfo
 from dagster_graphql.schema.errors import GraphenePythonError, GrapheneRunNotFoundError
 from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
