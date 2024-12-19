@@ -48,5 +48,5 @@ For example, imagine there's a CSV file of counties on the internet and you want
 
 ## Next steps
 
-- Transform data using [Dagster's dbt integration](/guides/build/integrate/transform-dbt)
+- Transform data using [Dagster's dbt integration](/guides/build/integrate-with-external-systems/transform-dbt)
 - Use asset checks [to test data quality](/guides/test/asset-checks) and [freshness](/guides/test/data-freshness-testing)

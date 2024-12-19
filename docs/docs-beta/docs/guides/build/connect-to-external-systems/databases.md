@@ -57,5 +57,5 @@ You can also fetch environment variables using the `os` library. Dagster treats 
 
 ## Next steps
 
-- Explore how to use resources for [Connecting to APIs](/guides/build/configure/apis)
-- Go deeper into [Understanding Resources](/guides/build/configure/resources)
+- Explore how to use resources for [Connecting to APIs](/guides/build/connect-to-external-systems/apis)
+- Go deeper into [Understanding Resources](/guides/build/connect-to-external-systems/resources)

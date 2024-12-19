@@ -11,7 +11,7 @@ When building a data pipeline, you'll likely need to connect to several external
 To follow the steps in this guide, you'll need:
 
 - Familiarity with [Assets](/guides/build/create-asset-pipelines/assets-concepts/index.mdx
-- Familiarity with [Resources](/guides/build/configure/resources)
+- Familiarity with [Resources](/guides/build/connect-to-external-systems/resources)
 - To install the `requests` library:
     ```bash
     pip install requests

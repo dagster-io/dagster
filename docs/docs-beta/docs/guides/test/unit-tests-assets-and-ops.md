@@ -108,4 +108,4 @@ If an asset or op has multiple parameters, it's recommended to use keyword argum
 
 - Learn more about assets in [Understanding Assets](/guides/build/create-asset-pipelines/assets-concepts/index.mdx
 - Learn more about ops in [Understanding Ops](/guides/build/ops-jobs)
-- Learn more about resources in [Resources](/guides/build/configure/resources)
+- Learn more about resources in [Resources](/guides/build/connect-to-external-systems/resources)
