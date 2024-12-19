@@ -9,10 +9,8 @@ from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
-from dagster._core.definitions.module_loaders.load_assets_from_modules import (
-    LoadedAssetsList,
-    find_modules_in_package,
-)
+from dagster._core.definitions.module_loaders.object_list import LoadedAssetsList
+from dagster._core.definitions.module_loaders.utils import find_modules_in_package
 
 
 def load_asset_checks_from_modules(
