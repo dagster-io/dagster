@@ -7,6 +7,7 @@ from dagster_dg.cli.generate import generate_cli
 from dagster_dg.cli.info import info_cli
 from dagster_dg.cli.list import list_cli
 from dagster_dg.config import DgConfig, set_config_on_cli_context
+from dagster_dg.utils import DgClickGroup
 from dagster_dg.version import __version__
 
 
@@ -22,6 +23,7 @@ def create_dg_cli():
         commands=commands,
         context_settings={"max_content_width": 120, "help_option_names": ["-h", "--help"]},
         invoke_without_command=True,
+        cls=DgClickGroup,
     )
     @click.option(
         "--builtin-component-lib",

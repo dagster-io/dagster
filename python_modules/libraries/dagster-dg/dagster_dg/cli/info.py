@@ -10,9 +10,10 @@ from dagster_dg.context import (
     DgContext,
     is_inside_code_location_directory,
 )
+from dagster_dg.utils import DgClickCommand, DgClickGroup
 
 
-@click.group(name="info")
+@click.group(name="info", cls=DgClickGroup)
 def info_cli():
     """Commands for listing Dagster components and related entities."""
 
@@ -21,7 +22,7 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
     return json.dumps(schema, indent=4)
 
 
-@info_cli.command(name="component-type")
+@info_cli.command(name="component-type", cls=DgClickCommand)
 @click.argument("component_type", type=str)
 @click.option("--description", is_flag=True, default=False)
 @click.option("--generate-params-schema", is_flag=True, default=False)

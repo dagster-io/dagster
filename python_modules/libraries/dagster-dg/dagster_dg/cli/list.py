@@ -10,14 +10,15 @@ from dagster_dg.context import (
     is_inside_code_location_directory,
     is_inside_deployment_directory,
 )
+from dagster_dg.utils import DgClickCommand, DgClickGroup
 
 
-@click.group(name="list")
+@click.group(name="list", cls=DgClickGroup)
 def list_cli():
     """Commands for listing Dagster components and related entities."""
 
 
-@list_cli.command(name="code-locations")
+@list_cli.command(name="code-locations", cls=DgClickCommand)
 @click.pass_context
 def list_code_locations_command(cli_context: click.Context) -> None:
     """List code locations in the current deployment."""
@@ -33,7 +34,7 @@ def list_code_locations_command(cli_context: click.Context) -> None:
         click.echo(code_location)
 
 
-@list_cli.command(name="component-types")
+@list_cli.command(name="component-types", cls=DgClickCommand)
 @click.pass_context
 def list_component_types_command(cli_context: click.Context) -> None:
     """List registered Dagster components in the current code location environment."""
@@ -53,7 +54,7 @@ def list_component_types_command(cli_context: click.Context) -> None:
             click.echo(f"    {component_type.summary}")
 
 
-@list_cli.command(name="components")
+@list_cli.command(name="components", cls=DgClickCommand)
 @click.pass_context
 def list_components_command(cli_context: click.Context) -> None:
     """List Dagster component instances defined in the current code location."""

@@ -18,14 +18,15 @@ from dagster_dg.generate import (
     generate_component_type,
     generate_deployment,
 )
+from dagster_dg.utils import DgClickCommand, DgClickGroup
 
 
-@click.group(name="generate")
+@click.group(name="generate", cls=DgClickGroup)
 def generate_cli() -> None:
     """Commands for generating Dagster components and related entities."""
 
 
-@generate_cli.command(name="deployment")
+@generate_cli.command(name="deployment", cls=DgClickCommand)
 @click.argument("path", type=Path)
 def generate_deployment_command(path: Path) -> None:
     """Generate a Dagster deployment file structure.
@@ -43,7 +44,7 @@ def generate_deployment_command(path: Path) -> None:
     generate_deployment(path)
 
 
-@generate_cli.command(name="code-location")
+@generate_cli.command(name="code-location", cls=DgClickCommand)
 @click.argument("name", type=str)
 @click.option(
     "--use-editable-dagster",
@@ -112,7 +113,7 @@ def generate_code_location_command(
     generate_code_location(code_location_path, editable_dagster_root)
 
 
-@generate_cli.command(name="component-type")
+@generate_cli.command(name="component-type", cls=DgClickCommand)
 @click.argument("name", type=str)
 @click.pass_context
 def generate_component_type_command(cli_context: click.Context, name: str) -> None:
@@ -138,7 +139,7 @@ def generate_component_type_command(cli_context: click.Context, name: str) -> No
     generate_component_type(context, name)
 
 
-@generate_cli.command(name="component")
+@generate_cli.command(name="component", cls=DgClickCommand)
 @click.argument(
     "component_type",
     type=str,
