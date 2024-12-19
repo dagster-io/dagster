@@ -446,15 +446,11 @@ def replace_keys_in_asset(
                 key: key_replacements.get(key, key) for key in asset.keys_by_input_name.values()
             },
         )
-        if isinstance(asset, AssetsDefinition) and has_only_asset_checks(asset):
-            updated_object = AssetChecksDefinition.create(
-                keys_by_input_name=updated_object.keys_by_input_name,
-                node_def=updated_object.op,
-                check_specs_by_output_name=updated_object.check_specs_by_output_name,
-                resource_defs=updated_object.resource_defs,
-                can_subset=updated_object.can_subset,
-            )
-        return updated_object
+        return (
+            updated_object.coerce_to_checks_def()
+            if has_only_asset_checks(updated_object)
+            else updated_object
+        )
 
 
 class ResolvedAssetObjectList:
@@ -564,15 +560,11 @@ class ResolvedAssetObjectList:
                 ).with_attributes(
                     backfill_policy=backfill_policy, freshness_policy=freshness_policy
                 )
-                if isinstance(asset, AssetChecksDefinition):
-                    new_asset = AssetChecksDefinition.create(
-                        keys_by_input_name=new_asset.keys_by_input_name,
-                        node_def=new_asset.op,
-                        check_specs_by_output_name=new_asset.check_specs_by_output_name,
-                        resource_defs=new_asset.resource_defs,
-                        can_subset=new_asset.can_subset,
-                    )
-                return_list.append(new_asset)
+                return_list.append(
+                    new_asset.coerce_to_checks_def()
+                    if has_only_asset_checks(new_asset)
+                    else new_asset
+                )
             elif isinstance(asset, SourceAsset):
                 return_list.append(
                     asset.with_attributes(group_name=group_name if group_name else asset.group_name)

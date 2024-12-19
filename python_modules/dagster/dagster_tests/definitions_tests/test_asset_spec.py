@@ -357,3 +357,44 @@ def test_graph_backed_asset_additional_deps() -> None:
 
     with pytest.raises(CheckError):
         dg.map_asset_specs(lambda spec: spec.merge_attributes(deps=["baz"]), [foo])
+
+
+def test_static_partition_mapping_dep() -> None:
+    @dg.asset(partitions_def=dg.StaticPartitionsDefinition(["1", "2"]))
+    def b():
+        pass
+
+    @dg.multi_asset(
+        specs=[
+            AssetSpec(
+                key="a",
+                partitions_def=dg.StaticPartitionsDefinition(["1", "2"]),
+                deps=[
+                    AssetDep("b", partition_mapping=dg.StaticPartitionMapping({"1": "1", "2": "2"}))
+                ],
+            )
+        ]
+    )
+    def my_asset():
+        pass
+
+    a_asset = next(
+        iter(
+            dg.map_asset_specs(
+                lambda spec: spec.merge_attributes(
+                    deps=[
+                        AssetDep(
+                            "c", partition_mapping=dg.StaticPartitionMapping({"1": "1", "2": "2"})
+                        )
+                    ]
+                ),
+                [my_asset],
+            )
+        )
+    )
+
+    a_spec = next(iter(a_asset.specs))
+    b_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == AssetKey("b")))
+    c_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == AssetKey("c")))
+    assert b_dep.partition_mapping == dg.StaticPartitionMapping({"1": "1", "2": "2"})
+    assert c_dep.partition_mapping == dg.StaticPartitionMapping({"1": "1", "2": "2"})
