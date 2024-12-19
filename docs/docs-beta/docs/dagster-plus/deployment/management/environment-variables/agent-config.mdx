@@ -4,8 +4,6 @@ sidebar_position: 300
 sidebar_label: "Set with agent config"
 ---
 
-import ThemedImage from '@theme/ThemedImage';
-
 :::note
 This guide is applicable to Dagster+.
 :::
@@ -73,22 +71,39 @@ locations:
           - "my_tag_name"
 ```
 
+
+
 {/*
 <ReferenceTable>
   <ReferenceTableItem propertyName="container_context.ecs.env_vars">
-    A list of keys or key-value pairs to include in the task. If a value is not
-    specified, the value will be pulled from the agent task.
+    A list of keys or key-value pairs to include in the task. If a value is not specified, the value will be pulled from the agent task.
     <br />
-    In the example above, <code>FOO_ENV_VAR</code> will be set to{" "}
-    <code>foo_value</code> and <code>BAR_ENV_VAR</code> will be set to whatever
-    value it has in the agent task.
+    In the example above, <code>FOO_ENV_VAR</code> will be set to <code>foo_value</code> and <code>BAR_ENV_VAR</code> will be set to whatever value it has in the agent task.
   </ReferenceTableItem>
   <ReferenceTableItem propertyName="container_context.ecs.secrets">
-    Individual secrets specified using the{" "}
-    <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html">
-      same structure as the ECS API
-    </a>
-    .
+    Individual secrets specified using the <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html">same structure as the ECS API</a>.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="container_context.ecs.secrets_tags">
+    A list of tag names. Each secret tagged with any of those tag names in AWS
+    Secrets Manager will be included in the launched tasks as environment
+    variables. The name of the environment variable will be the name of the
+    secret, and the value of the environment variable will be the value of the
+    secret.
+  </ReferenceTableItem>
+</ReferenceTable>
+*/}
+
+
+
+{/*
+<ReferenceTable>
+  <ReferenceTableItem propertyName="container_context.ecs.env_vars">
+    A list of keys or key-value pairs to include in the task. If a value is not specified, the value will be pulled from the agent task.
+    <br />
+    In the example above, <code>FOO_ENV_VAR</code> will be set to <code>foo_value</code> and <code>BAR_ENV_VAR</code> will be set to whatever value it has in the agent task.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="container_context.ecs.secrets">
+    Individual secrets specified using the <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html">same structure as the ECS API</a>.
   </ReferenceTableItem>
   <ReferenceTableItem propertyName="container_context.ecs.secrets_tags">
     A list of tag names. Each secret tagged with any of those tag names in AWS
@@ -103,15 +118,7 @@ locations:
 
 After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
-<ThemedImage
-  alt="Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"
-  style={{width:'100%', height: 'auto'}}
-  sources={{
-    light: '/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png',
-    dark: '/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png',
-  }}
-/>
-
+!["Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"](/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png)
 
 </TabItem>
 <TabItem value="Docker">
@@ -138,14 +145,7 @@ The `container_context.docker.env_vars` property is a list, where each item can 
 
 After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
-<ThemedImage
-  alt="Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"
-  style={{width:'100%', height: 'auto'}}
-  sources={{
-    light: '/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png',
-    dark: '/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png',
-  }}
-/>
+![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png)
 
 </TabItem>
 <TabItem value="Kubernetes">
@@ -171,34 +171,20 @@ locations:
           - database_password
 ```
 
-{/*
-<ReferenceTable>
-  <ReferenceTableItem propertyName="env_vars">
-    A list of environment variable names to inject into the job, formatted as{" "}
-    <code>KEY</code> or <code>KEY=VALUE</code>. If only <code>KEY</code> is
-    specified, the value will be pulled from the current process.
-  </ReferenceTableItem>
-  <ReferenceTableItem propertyName="env_secrets">
-    A list of secret names, from which environment variables for a job are drawn
-    using <code>envFrom</code>. Refer to the{" "}
-    <a href="https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables">
-      Kubernetes documentation
-    </a>{" "}
-    for more info.
-  </ReferenceTableItem>
-</ReferenceTable>
-*/}
+<table>
+  <tr>
+    <th>env_vars</th>
+    <th>env_secrets</th>
+  </tr>
+  <tr>
+    <td>A list of environment variable names to inject into the job, formatted as <code>KEY</code> or <code>KEY=VALUE</code>. If only <code>KEY</code> is specified, the value will be pulled from the current process.</td>
+    <td>A list of secret names, from which environment variables for a job are drawn using <code>envFrom</code>. Refer to the <a href="https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables">Kubernetes documentation</a> for more info.</td>
+  </tr>
+</table>
 
 After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
-<ThemedImage
-  alt="Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"
-  style={{width:'100%', height: 'auto'}}
-  sources={{
-    light: '/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png',
-    dark: '/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png',
-  }}
-/>
+![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png)
 
 </TabItem>
 </Tabs>
@@ -235,14 +221,7 @@ To make environment variables accessible to a full deployment with an Amazon ECS
 
 6. In the section displaying the template YAML, locate the `AgentTaskDefinition` section:
 
-    <ThemedImage
-      alt="Highlighted AgentTaskDefinition section of the AWS ECS agent CloudFormation template in the AWS Console"
-      style={{width:'100%', height: 'auto'}}
-      sources={{
-        light: '/images/dagster-cloud/developing-testing/environment-variables/aws-ecs-cloudformation-template.png',
-        dark: '/images/dagster-cloud/developing-testing/environment-variables/aws-ecs-cloudformation-template.png',
-      }}
-    />
+   ![Highlighted AgentTaskDefinition section of the AWS ECS agent CloudFormation template in the AWS Console](/images/dagster-cloud/developing-testing/environment-variables/aws-ecs-cloudformation-template.png)
 
 
 7. In the `user_code_launcher.config` portion of the `AgentTaskDefinition` section, add the environment variables as follows:
@@ -266,15 +245,7 @@ To make environment variables accessible to a full deployment with an Amazon ECS
 
 8. When finished, click the **Create Stack** button:
 
-    <ThemedImage
-      alt="Highlighted Create Stack button in the AWS Console"
-      style={{width:'100%', height: 'auto'}}
-      sources={{
-        light: '/images/dagster-cloud/developing-testing/environment-variables/aws-ecs-save-template.png',
-        dark: '/images/dagster-cloud/developing-testing/environment-variables/aws-ecs-save-template.png',
-      }}
-    />
-
+   ![Highlighted Create Stack button in the AWS Console](/images/dagster-cloud/developing-testing/environment-variables/aws-ecs-save-template.png)
 
 9. You'll be redirected back to the **Update stack** wizard, where the new template will be populated. Click **Next**.
 
