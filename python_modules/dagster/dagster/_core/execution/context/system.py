@@ -52,6 +52,7 @@ from dagster._core.execution.context.data_version_cache import (
     InputAssetVersionInfo,
 )
 from dagster._core.execution.context.input import InputContext
+from dagster._core.execution.context.metadata_logging import OutputMetadataAccumulator
 from dagster._core.execution.context.output import OutputContext, get_output_context
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -467,7 +468,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self._step_output_capture = {}
             self._step_output_metadata_capture = {}
 
-        self._output_metadata: Dict[str, Any] = {}
+        self._metadata_accumulator = OutputMetadataAccumulator.empty()
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
         self._data_version_cache = DataVersionCache(self)
@@ -706,33 +707,21 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 f" metadata for {output_desc} which has already been yielded. Metadata must be"
                 " logged before the output is yielded."
             )
-        if output_def.is_dynamic and not mapping_key:
-            raise DagsterInvariantViolationError(
-                f"In {self.op_def.node_type_str} '{self.op.name}', attempted to log metadata"
-                f" for dynamic output '{output_def.name}' without providing a mapping key. When"
-                " logging metadata for a dynamic output, it is necessary to provide a mapping key."
-            )
-
-        if mapping_key:
-            if output_name not in self._output_metadata:
-                self._output_metadata[output_name] = {}
-            if mapping_key in self._output_metadata[output_name]:
-                self._output_metadata[output_name][mapping_key].update(metadata)
-            else:
-                self._output_metadata[output_name][mapping_key] = metadata
-        else:
-            if output_name in self._output_metadata:
-                self._output_metadata[output_name].update(metadata)
-            else:
-                self._output_metadata[output_name] = metadata
+        if output_def.is_dynamic:
+            if not mapping_key:
+                raise DagsterInvariantViolationError(
+                    f"In {self.op_def.node_type_str} '{self.op.name}', attempted to log metadata"
+                    f" for dynamic output '{output_def.name}' without providing a mapping key. When"
+                    " logging metadata for a dynamic output, it is necessary to provide a mapping key."
+                )
+        self._metadata_accumulator = self._metadata_accumulator.with_additional_metadata(
+            output_name=output_name, metadata=metadata, mapping_key=mapping_key
+        )
 
     def get_output_metadata(
         self, output_name: str, mapping_key: Optional[str] = None
     ) -> Optional[Mapping[str, Any]]:
-        metadata = self._output_metadata.get(output_name)
-        if mapping_key and metadata:
-            return metadata.get(mapping_key)
-        return metadata
+        return self._metadata_accumulator.get_metadata(output_name, mapping_key)
 
     def _get_source_run_id_from_logs(self, step_output_handle: StepOutputHandle) -> Optional[str]:
         # walk through event logs to find the right run_id based on the run lineage
