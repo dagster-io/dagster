@@ -388,7 +388,11 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         try:
             instance.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=workspace))
         except Exception as e:
-            error = DaemonErrorCapture.on_exception(exc_info=sys.exc_info())
+            error = DaemonErrorCapture.on_exception(
+                exc_info=sys.exc_info(),
+                logger=self._logger,
+                log_message=f"Caught on error dequeing run {run.run_id} from the queue",
+            )
 
             run = check.not_none(instance.get_run_by_id(run.run_id))
             # Make sure we don't re-enqueue a run if it has already finished or moved into STARTED:
@@ -421,8 +425,6 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         "Run dequeue failed to reach the user code server after"
                         f" {run_queue_config.max_user_code_failure_retries} attempts, failing run"
                     )
-                    message_with_full_error = f"{message}: {error.to_string()}"
-                    self._logger.error(message_with_full_error)
                     instance.report_engine_event(
                         message,
                         run,
@@ -439,9 +441,6 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         "Run dequeue failed to reach the user code server, re-submitting the run"
                         f" into the queue ({retries_left} {retries_str} remaining)"
                     )
-                    message_with_full_error = f"{message}: {error.to_string()}"
-                    self._logger.warning(message_with_full_error)
-
                     instance.report_engine_event(
                         message,
                         run,
@@ -459,8 +458,6 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     "Caught an unrecoverable error while dequeuing the run. Marking the run as"
                     " failed and dropping it from the queue"
                 )
-                message_with_full_error = f"{message}: {error.to_string()}"
-                self._logger.error(message_with_full_error)
 
                 instance.report_engine_event(
                     message,
