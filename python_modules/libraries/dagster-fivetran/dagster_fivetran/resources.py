@@ -16,7 +16,6 @@ from dagster import (
     InitResourceContext,
     MaterializeResult,
     MetadataValue,
-    OpExecutionContext,
     __version__,
     _check as check,
     get_dagster_logger,
