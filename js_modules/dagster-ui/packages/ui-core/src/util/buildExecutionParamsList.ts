@@ -15,6 +15,7 @@ const onlyKeyAndValue = ({key, value}: {key: string; value: string}) => ({key, v
 export const buildExecutionParamsListSensor = (
   sensorExecutionData: SensorDryRunInstigationTick,
   sensorSelector: SensorSelector,
+  jobName: string,
 ) => {
   if (!sensorExecutionData) {
     return [];
@@ -36,7 +37,7 @@ export const buildExecutionParamsListSensor = (
     const executionParams: ExecutionParams = {
       runConfigData: configYamlOrEmpty,
       selector: {
-        jobName: request.jobName, // get jobName from runRequest
+        jobName: request.jobName ?? jobName, // get jobName from runRequest, fallback to jobName
         repositoryLocationName,
         repositoryName,
         assetSelection: [],
@@ -57,6 +58,7 @@ export const buildExecutionParamsListSensor = (
 export const buildExecutionParamsListSchedule = (
   scheduleExecutionData: ScheduleDryRunInstigationTick,
   scheduleSelector: ScheduleSelector,
+  jobName: string,
 ) => {
   if (!scheduleExecutionData) {
     return [];
@@ -78,7 +80,7 @@ export const buildExecutionParamsListSchedule = (
     const executionParams: ExecutionParams = {
       runConfigData: configYamlOrEmpty,
       selector: {
-        jobName: request.jobName, // get jobName from runRequest
+        jobName: request.jobName ?? jobName, // get jobName from runRequest, fallback to jobName
         repositoryLocationName,
         repositoryName,
         assetSelection: [],
