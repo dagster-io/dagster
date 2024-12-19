@@ -35,9 +35,11 @@ def assert_token_call_and_split_calls(calls: responses.CallList):
     return calls[1:]
 
 
-def assert_rest_api_call(call: responses.Call, endpoint: str):
+def assert_rest_api_call(call: responses.Call, endpoint: str, object_id: Optional[str] = None):
     rest_api_url = call.request.url.split("?")[0]
     assert rest_api_url == f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/{endpoint}"
+    if object_id:
+        assert object_id in call.request.body.decode()
     assert call.request.headers["Authorization"] == f"Bearer {TEST_ACCESS_TOKEN}"
 
 
@@ -112,7 +114,7 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
 
 
 def test_basic_resource_request(
-    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    all_api_mocks: responses.RequestsMock,
 ) -> None:
     resource = AirbyteCloudWorkspace(
         workspace_id=TEST_WORKSPACE_ID,
@@ -125,13 +127,15 @@ def test_basic_resource_request(
     client.get_connections()
     client.get_connection_details(connection_id=TEST_CONNECTION_ID)
     client.get_destination_details(destination_id=TEST_DESTINATION_ID)
+    client.start_sync_job(connection_id=TEST_CONNECTION_ID)
 
-    assert len(fetch_workspace_data_api_mocks.calls) == 4
+    assert len(all_api_mocks.calls) == 5
     # The first call is to create the access token
-    api_calls = assert_token_call_and_split_calls(calls=fetch_workspace_data_api_mocks.calls)
+    api_calls = assert_token_call_and_split_calls(calls=all_api_mocks.calls)
     # The next calls are actual API calls
     assert_rest_api_call(call=api_calls[0], endpoint="connections")
     assert_configuration_api_call(
         call=api_calls[1], endpoint="connections/get", object_id=TEST_CONNECTION_ID
     )
     assert_rest_api_call(call=api_calls[2], endpoint=f"destinations/{TEST_DESTINATION_ID}")
+    assert_rest_api_call(call=api_calls[3], endpoint="jobs", object_id=TEST_CONNECTION_ID)
