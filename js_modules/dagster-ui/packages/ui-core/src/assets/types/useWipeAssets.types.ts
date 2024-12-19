@@ -32,4 +32,43 @@ export type AssetWipeMutation = {
     | {__typename: 'UnsupportedOperationError'};
 };
 
+export type BackgroundAssetWipeMutationVariables = Types.Exact<{
+  assetPartitionRanges: Array<Types.PartitionsByAssetSelector> | Types.PartitionsByAssetSelector;
+}>;
+
+export type BackgroundAssetWipeMutation = {
+  __typename: 'Mutation';
+  backgroundWipeAssets:
+    | {__typename: 'AssetNotFoundError'}
+    | {__typename: 'AssetWipeInProgress'; workToken: string}
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
+    | {__typename: 'UnauthorizedError'}
+    | {__typename: 'UnsupportedOperationError'};
+};
+
+export type BackgroundAssetWipeStatusQueryVariables = Types.Exact<{
+  workToken: Types.Scalars['String']['input'];
+}>;
+
+export type BackgroundAssetWipeStatusQuery = {
+  __typename: 'Query';
+  backgroundAssetWipeStatus:
+    | {__typename: 'BackgroundAssetWipeFailed'; failedAt: number; message: string}
+    | {__typename: 'BackgroundAssetWipeInProgress'; startedAt: number}
+    | {__typename: 'BackgroundAssetWipeSuccess'; completedAt: number};
+};
+
 export const AssetWipeMutationVersion = 'accefb0c47b3d4a980d16965e8af565afed787a8a987a03570df876bd734dc8f';
+
+export const BackgroundAssetWipeMutationVersion = '855208bbb326949e82c0365a7c2d755b13dc7ddece9a6f22a90c6abb5647fae9';
+
+export const BackgroundAssetWipeStatusVersion = 'ed90ffb3b1984e03d7731ca9e12068b8706a2f0286ddb7037d9f1a271f58b85e';
