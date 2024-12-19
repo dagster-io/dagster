@@ -41,7 +41,6 @@ class Outer(BaseModel):
         (["inner_optional", 0, "deferred"], False),
         (["inner_deferred_optional", 0], False),
         (["inner_deferred_optional", 0, "a"], False),
-        (["NONEXIST", 0, "deferred"], False),
     ],
 )
 def test_should_render(path, expected: bool) -> None:

@@ -42,6 +42,7 @@ def load_module_from_path(module_name, path) -> ModuleType:
 def load_components_from_context(context: ComponentLoadContext) -> Sequence[Component]:
     if isinstance(context.decl_node, YamlComponentDecl):
         component_type = component_type_from_yaml_decl(context.registry, context.decl_node)
+        context = context.with_rendering_scope(component_type.get_rendering_scope())
         return [component_type.load(context)]
     elif isinstance(context.decl_node, ComponentFolder):
         components = []

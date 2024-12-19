@@ -50,6 +50,10 @@ class Component(ABC):
     generate_params_schema: ClassVar = None
 
     @classmethod
+    def get_rendering_scope(cls) -> Mapping[str, Any]:
+        return {}
+
+    @classmethod
     def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None: ...
 
     @abstractmethod
@@ -232,6 +236,12 @@ class ComponentLoadContext:
             check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
 
         return self.decl_node.path
+
+    def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
+        return dataclasses.replace(
+            self,
+            templated_value_resolver=self.templated_value_resolver.with_context(**rendering_scope),
+        )
 
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl_node)

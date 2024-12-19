@@ -1,0 +1,9 @@
+type: .custom_scope_component
+
+params:
+  attributes:
+    group_name: "{{ custom_str }}"
+    tags: "{{ custom_dict }}"
+    metadata:
+      prefixed: "prefixed_{{ custom_fn('a', custom_str) }}"
+    automation_condition: "{{ custom_automation_condition('@daily') }}"
