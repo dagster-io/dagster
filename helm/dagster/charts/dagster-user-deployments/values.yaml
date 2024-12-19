@@ -23,6 +23,7 @@ celeryConfigSecretName: "dagster-celery-config-secret"
 ####################################################################################################
 deployments:
   - name: "k8s-example-user-code-1"
+    replicas: 1
     image:
       # When a tag is not supplied, it will default as the Helm chart version.
       repository: "docker.io/dagster/user-code-example"
@@ -129,6 +130,11 @@ deployments:
     securityContext: {}
     resources: {}
     labels: {}
+
+    # Add a PodDisruptionBudget to this Deployment
+    # pdb:
+    #   maxUnavailable: 1
+    pdb: {}
 
     # Override the default K8s scheduler
     # schedulerName: ~
