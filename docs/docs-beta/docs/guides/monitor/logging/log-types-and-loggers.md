@@ -1,5 +1,5 @@
 ---
-title: About logging
+title: Log types and loggers
 sidebar_position: 100
 ---
 
