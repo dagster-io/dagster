@@ -8,7 +8,8 @@ unlisted: true
 This guide is applicable to Dagster+.
 :::
 
-This reference describes the various configuration options Dagster+ currently supports for [Kubernetes agents](/dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent).
+{/* This reference describes the various configuration options Dagster+ currently supports for [Kubernetes agents](/dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent). */}
+This reference describes the various configuration options Dagster+ currently supports for [Kubernetes agents](/todo).
 
 ## Viewing the Helm chart
 
@@ -30,9 +31,11 @@ Additionally, the [`imagePullSecrets`](https://artifacthub.io/packages/helm/dags
 
 ## Per-location configuration
 
-When [adding a code location](/dagster-plus/managing-deployments/code-locations) to Dagster+ with a Kubernetes agent, you can use the `container_context` key on the location configuration to add additional Kubernetes-specific configuration. If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file, using the same format.
+{/* When [adding a code location](/dagster-plus/managing-deployments/code-locations) to Dagster+ with a Kubernetes agent, you can use the `container_context` key on the location configuration to add additional Kubernetes-specific configuration. If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file, using the same format. */}
+When [adding a code location](/todo) to Dagster+ with a Kubernetes agent, you can use the `container_context` key on the location configuration to add additional Kubernetes-specific configuration. If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file, using the same format.
 
-The following example [`dagster_cloud.yaml`](/dagster-plus/managing-deployments/dagster-cloud-yaml) file illustrates the available fields:
+{/* The following example [`dagster_cloud.yaml`](/dagster-plus/managing-deployments/dagster-cloud-yaml) file illustrates the available fields: */}
+The following example [`dagster_cloud.yaml`](/todo) file illustrates the available fields:
 
 ```yaml
 # dagster_cloud.yaml
@@ -144,8 +147,10 @@ location:
 
 Refer to the following guides for more info about environment variables:
 
-- [Dagster+ environment variables and secrets](/dagster-plus/managing-deployments/environment-variables-and-secrets)
-- [Using environment variables and secrets in Dagster code](/guides/dagster/using-environment-variables-and-secrets)
+{/* - [Dagster+ environment variables and secrets](/dagster-plus/managing-deployments/environment-variables-and-secrets) */}
+- [Dagster+ environment variables and secrets](/todo)
+{/* - [Using environment variables and secrets in Dagster code](/guides/dagster/using-environment-variables-and-secrets) */}
+- [Using environment variables and secrets in Dagster code](/todo)
 
 ## Op isolation
 
@@ -164,7 +169,8 @@ def k8s_job():
 
 ## Per-job and per-op configuration
 
-To add configuration to specific Dagster jobs, ops, or assets, use the `dagster-k8s/config` tag. For example, to specify that a job should have certain resource limits when it runs. Refer to [Customizing your Kubernetes deployment for Dagster Open Source](/deployment/guides/kubernetes/customizing-your-deployment#per-job-kubernetes-configuration) for more info.
+{/* To add configuration to specific Dagster jobs, ops, or assets, use the `dagster-k8s/config` tag. For example, to specify that a job should have certain resource limits when it runs. Refer to [Customizing your Kubernetes deployment for Dagster Open Source](/deployment/guides/kubernetes/customizing-your-deployment#per-job-kubernetes-configuration) for more info. */}
+To add configuration to specific Dagster jobs, ops, or assets, use the `dagster-k8s/config` tag. For example, to specify that a job should have certain resource limits when it runs. Refer to [Customizing your Kubernetes deployment for Dagster Open Source](/todo) for more info.
 
 ## Running as a non-root user
 
@@ -180,7 +186,8 @@ We plan to make this user the default in a future release.
 
 ## Grant AWS permissions
 
-You can provide your Dagster pods with [permissions to assume an AWS IAM role](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) using a [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/). For example, you might do this to [configure an S3 IO Manager](/deployment/guides/aws#using-s3-for-io-management).
+{/* You can provide your Dagster pods with [permissions to assume an AWS IAM role](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) using a [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/). For example, you might do this to [configure an S3 IO Manager](/deployment/guides/aws#using-s3-for-io-management). */}
+You can provide your Dagster pods with [permissions to assume an AWS IAM role](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) using a [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/). For example, you might do this to [configure an S3 IO Manager](/todo).
 
 1. [Create an IAM OIDC provider for your EKS cluster](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)
 2. [Create an IAM role and and attach IAM policies](https://docs.aws.amazon.com/eks/latest/userguide/associate-service-account-role.html)
