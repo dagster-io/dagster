@@ -5,7 +5,6 @@ from dagster._annotations import experimental
 
 from dagster_airbyte.resources import AirbyteCloudWorkspace
 from dagster_airbyte.translator import AirbyteMetadataSet, DagsterAirbyteTranslator
-from dagster_airbyte.utils import DAGSTER_AIRBYTE_TRANSLATOR_METADATA_KEY
 
 
 @experimental
@@ -105,9 +104,7 @@ def airbyte_assets(
         group_name=group_name,
         can_subset=True,
         specs=[
-            spec.merge_attributes(
-                metadata={DAGSTER_AIRBYTE_TRANSLATOR_METADATA_KEY: dagster_airbyte_translator}
-            )
+            spec
             for spec in workspace.load_asset_specs(
                 dagster_airbyte_translator=dagster_airbyte_translator
             )

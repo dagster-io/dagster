@@ -45,6 +45,7 @@ from dagster_airbyte.translator import (
 )
 from dagster_airbyte.types import AirbyteOutput
 from dagster_airbyte.utils import (
+    DAGSTER_AIRBYTE_TRANSLATOR_METADATA_KEY,
     get_airbyte_connection_table_name,
     get_translator_from_airbyte_assets,
 )
@@ -1339,16 +1340,23 @@ def load_airbyte_cloud_asset_specs(
             airbyte_cloud_specs = load_airbyte_cloud_asset_specs(airbyte_cloud_workspace)
             defs = dg.Definitions(assets=airbyte_cloud_specs)
     """
+    dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
+
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
-        return check.is_list(
-            AirbyteCloudWorkspaceDefsLoader(
-                workspace=initialized_workspace,
-                translator=dagster_airbyte_translator or DagsterAirbyteTranslator(),
+        return [
+            spec.merge_attributes(
+                metadata={DAGSTER_AIRBYTE_TRANSLATOR_METADATA_KEY: dagster_airbyte_translator}
             )
-            .build_defs()
-            .assets,
-            AssetSpec,
-        )
+            for spec in check.is_list(
+                AirbyteCloudWorkspaceDefsLoader(
+                    workspace=initialized_workspace,
+                    translator=dagster_airbyte_translator,
+                )
+                .build_defs()
+                .assets,
+                AssetSpec,
+            )
+        ]
 
 
 @record
