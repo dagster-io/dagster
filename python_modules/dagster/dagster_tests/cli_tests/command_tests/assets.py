@@ -1,4 +1,4 @@
-from dagster import StaticPartitionsDefinition, asset
+from dagster import AssetExecutionContext, Config, StaticPartitionsDefinition, asset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 
@@ -35,6 +35,21 @@ def single_run_partitioned_asset() -> None: ...
     backfill_policy=BackfillPolicy.multi_run(),
 )
 def multi_run_partitioned_asset() -> None: ...
+
+
+class MyConfig(Config):
+    some_prop: str
+
+
+@asset
+def asset_with_config(context: AssetExecutionContext, config: MyConfig):
+    context.log.info(f"some_prop:{config.some_prop}")
+
+
+@asset
+def asset_assert_with_config(context: AssetExecutionContext, config: MyConfig):
+    assert config.some_prop == "foo"
+    context.log.info(f"some_prop:{config.some_prop}")
 
 
 @asset

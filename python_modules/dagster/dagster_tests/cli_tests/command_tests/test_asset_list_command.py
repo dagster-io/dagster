@@ -28,6 +28,8 @@ def test_no_selection():
         == "\n".join(
             [
                 "asset1",
+                "asset_assert_with_config",
+                "asset_with_config",
                 "differently_partitioned_asset",
                 "downstream_asset",
                 "fail_asset",

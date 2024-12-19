@@ -47,7 +47,10 @@ from dagster._core.workspace.load_target import (
     WorkspaceLoadTarget,
 )
 from dagster._grpc.utils import get_loadable_targets
+from dagster._seven import JSONDecodeError, json
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_repository_from_origin
+from dagster._utils.yaml_utils import load_yaml_from_glob_list
 
 if TYPE_CHECKING:
     from dagster._core.workspace.context import WorkspaceProcessContext
@@ -800,3 +803,35 @@ def get_remote_job_from_kwargs(instance: DagsterInstance, version: str, kwargs: 
 
 def _sorted_quoted(strings: Iterable[str]) -> str:
     return "[" + ", ".join([f"'{s}'" for s in sorted(list(strings))]) + "]"
+
+
+def get_run_config_from_file_list(file_list: Optional[Sequence[str]]) -> Mapping[str, object]:
+    check.opt_sequence_param(file_list, "file_list", of_type=str)
+    return cast(Mapping[str, object], load_yaml_from_glob_list(file_list) if file_list else {})
+
+
+def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
+    config = cast(Tuple[str, ...], kwargs.get("config"))  # files
+    config_json = kwargs.get("config_json")
+
+    if not config and not config_json:
+        return {}
+
+    elif config and config_json:
+        raise click.UsageError("Cannot specify both -c / --config and --config-json")
+
+    elif config:
+        config_file_list = list(check.opt_tuple_param(config, "config", of_type=str))
+        return get_run_config_from_file_list(config_file_list)
+
+    elif config_json:
+        config_json = cast(str, config_json)
+        try:
+            return json.loads(config_json)
+
+        except JSONDecodeError:
+            raise click.UsageError(
+                f"Invalid JSON-string given for `--config-json`: {config_json}\n\n{serializable_error_info_from_exc_info(sys.exc_info()).to_string()}"
+            )
+    else:
+        check.failed("Unhandled case getting config from kwargs")
