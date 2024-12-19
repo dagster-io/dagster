@@ -422,8 +422,8 @@ The concurrency key should match the name that the op/asset is tagged with. For 
 
 A default concurrency limit can be configured for the instance, for any concurrency keys that do not have an explicit limit set:
 
-- **Dagster+**: Use the deployment settings via the [Dagster+ UI or the `dagster-cloud` CLI][cloud-deployment-settings]
-- **Dagster Open Source**: Use your instance's `dagster.yaml`
+- **Dagster+**: Edit the `concurrency` config in deployment settings via the [Dagster+ UI or the `dagster-cloud` CLI][cloud-deployment-settings]
+- **Dagster Open Source**: Edit the `concurrency` config in your instance's `dagster.yaml`
 
 To enable this default value, use `concurrency.default_op_concurrency_limit`. For example, the following would set the default concurrency value for the deployment to 1:
 
