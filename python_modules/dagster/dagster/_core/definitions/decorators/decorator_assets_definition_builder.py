@@ -386,16 +386,7 @@ class DecoratorAssetsDefinitionBuilder:
         # We expect that asset_ins are a subset of asset_deps. The reason we do not check this in
         # `build_and_validate_named_ins` is because in other decorator pathways, we allow for argument-based
         # dependencies which are not specified in deps (such as the asset decorator).
-        asset_in_keys = set(named_ins_by_asset_key.keys())
-        if asset_in_keys - set(upstream_deps.keys()):
-            input_names_not_in_deps = [
-                named_ins_by_asset_key[key].input_name
-                for key in asset_in_keys - set(upstream_deps.keys())
-            ]
-            raise DagsterInvalidDefinitionError(
-                f"Asset inputs {input_names_not_in_deps} specified as AssetIns, but are not specified as dependencies via AssetDep on any constituent AssetSpec objects."
-                "In a multi-asset decorated function, any input arguments must be associated with a dependency on one of the constituent asset specs."
-            )
+        validate_named_ins_subset_of_deps(named_ins_by_asset_key, upstream_deps)
 
         internal_deps = {
             spec.key: {dep.asset_key for dep in spec.deps}
@@ -682,3 +673,22 @@ def _validate_check_specs_target_relevant_asset_keys(
                 f"Invalid asset key {spec.asset_key} in check spec {spec.name}. Must be one of"
                 f" {valid_asset_keys}"
             )
+
+
+def validate_named_ins_subset_of_deps(
+    named_ins_per_key: Mapping[AssetKey, NamedIn],
+    asset_deps_by_key: Mapping[AssetKey, AssetDep],
+) -> None:
+    """Validates that the asset_ins are a subset of the asset_deps. This is a common validation
+    that we need to do in multiple places, so we've factored it out into a helper function.
+    """
+    asset_dep_keys = set(asset_deps_by_key.keys())
+    asset_in_keys = set(named_ins_per_key.keys())
+
+    if asset_in_keys - asset_dep_keys:
+        invalid_asset_in_keys = asset_in_keys - asset_dep_keys
+        raise DagsterInvalidDefinitionError(
+            f"Invalid asset dependencies: `{invalid_asset_in_keys}` specified as AssetIns, but"
+            " are not specified as `AssetDep` objects on any constituent AssetSpec objects. Asset inputs must be associated with an"
+            " output produced by the asset."
+        )
