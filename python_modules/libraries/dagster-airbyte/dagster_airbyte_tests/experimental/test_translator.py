@@ -78,8 +78,7 @@ class MyCustomTranslator(DagsterAirbyteTranslator):
         default_spec = super().get_asset_spec(props)
         return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("test_connection"),
-            metadata={**default_spec.metadata, "custom": "metadata"},
-        )
+        ).merge_attributes(metadata={"custom": "metadata"})
 
 
 def test_custom_translator(

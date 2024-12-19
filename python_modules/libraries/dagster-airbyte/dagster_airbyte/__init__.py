@@ -14,8 +14,10 @@ try:
 except ImportError:
     pass
 
+from dagster_airbyte.asset_decorator import airbyte_assets as airbyte_assets
 from dagster_airbyte.asset_defs import (
     build_airbyte_assets as build_airbyte_assets,
+    build_airbyte_assets_definitions as build_airbyte_assets_definitions,
     load_assets_from_airbyte_instance as load_assets_from_airbyte_instance,
 )
 from dagster_airbyte.ops import airbyte_sync_op as airbyte_sync_op
@@ -28,6 +30,7 @@ from dagster_airbyte.resources import (
     load_airbyte_cloud_asset_specs as load_airbyte_cloud_asset_specs,
 )
 from dagster_airbyte.translator import (
+    AirbyteConnectionTableProps as AirbyteConnectionTableProps,
     AirbyteJobStatusType as AirbyteJobStatusType,
     AirbyteState as AirbyteState,
     DagsterAirbyteTranslator as DagsterAirbyteTranslator,
