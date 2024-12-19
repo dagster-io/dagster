@@ -270,7 +270,7 @@ locations:
 
 For Dagster+ Hybrid deployments, the Python executable that is installed globally in the image, or the default Python executable on the local system if you use the local agent, will be used. To use a different Python executable, specify it using the `executable_path` setting. It can be useful to have different Python executables for different code locations.
 
-For Dagster+ Serverless deployments, you can specify a different Python version by [following these instructions](/dagster-plus/deployment/serverless#using-a-different-python-version).
+For Dagster+ Serverless deployments, you can specify a different Python version by [following these instructions](/dagster-plus/deployment/deployment-types/serverless/runtime-environment#python-version).
 
 ```yaml
 # dagster_cloud.yaml
