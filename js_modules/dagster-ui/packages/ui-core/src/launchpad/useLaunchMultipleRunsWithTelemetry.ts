@@ -38,11 +38,10 @@ export function useLaunchMultipleRunsWithTelemetry() {
           (params) => params.selector.jobName || params.selector.pipelineName,
         );
 
-        if (
-          (executionParamsList.length === 1 && jobNames.includes(undefined)) ||
-          jobNames.includes(null)
-        ) {
+        // if only executing one job, and jobName isn't defined, fallback to jobName from sensor/schedule
+        if (executionParamsList.length === 1 && !executionParamsList[0]?.selector?.jobName) {
           jobNames = [jobName];
+          executionParamsList[0]!.selector.jobName = jobName;
         }
 
         if (
