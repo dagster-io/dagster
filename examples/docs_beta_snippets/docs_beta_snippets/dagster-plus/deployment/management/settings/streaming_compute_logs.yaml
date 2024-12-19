@@ -1,0 +1,19 @@
+# dagster.yaml
+instance_class:
+  module: dagster_cloud.instance
+  class: DagsterCloudAgentInstance
+
+dagster_cloud_api:
+  agent_token:
+    env: DAGSTER_CLOUD_AGENT_TOKEN
+  deployment: prod
+
+user_code_launcher:
+  module: dagster_cloud.workspace.docker
+  class: DockerUserCodeLauncher
+
+compute_logs:
+  module: dagster_cloud
+  class: CloudComputeLogManager
+  config:
+    upload_interval: 60
