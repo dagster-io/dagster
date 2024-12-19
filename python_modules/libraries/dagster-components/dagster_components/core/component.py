@@ -46,6 +46,7 @@ class ComponentGenerateRequest:
 class Component(ABC):
     name: ClassVar[Optional[str]] = None
     params_schema: ClassVar = None
+    rendering_scope: ClassVar = None
     generate_params_schema: ClassVar = None
 
     @classmethod
@@ -221,6 +222,12 @@ class ComponentLoadContext:
             check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
 
         return self.decl_node.path
+
+    def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
+        return dataclasses.replace(
+            self,
+            templated_value_resolver=self.templated_value_resolver.with_context(**rendering_scope),
+        )
 
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl_node)
