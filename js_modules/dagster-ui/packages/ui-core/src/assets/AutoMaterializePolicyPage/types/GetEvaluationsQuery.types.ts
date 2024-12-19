@@ -348,7 +348,7 @@ export type AssetConditionEvaluationRecordFragment = {
   startTimestamp: number | null;
   endTimestamp: number | null;
   isLegacy: boolean;
-  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
   evaluation: {
     __typename: 'AssetConditionEvaluation';
     rootUniqueId: string;
@@ -765,7 +765,7 @@ export type GetEvaluationsQuery = {
           startTimestamp: number | null;
           endTimestamp: number | null;
           isLegacy: boolean;
-          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
           evaluation: {
             __typename: 'AssetConditionEvaluation';
             rootUniqueId: string;

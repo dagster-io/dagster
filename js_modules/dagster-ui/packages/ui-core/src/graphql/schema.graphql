@@ -899,6 +899,7 @@ type AssetCheck {
   canExecuteIndividually: AssetCheckCanExecuteIndividually!
   blocking: Boolean!
   additionalAssetKeys: [AssetKey!]!
+  automationCondition: AutomationCondition
 }
 
 type AssetCheckExecution {
@@ -3365,7 +3366,8 @@ type Query {
     cursor: String
   ): AutoMaterializeAssetEvaluationRecordsOrError
   truePartitionsForAutomationConditionEvaluationNode(
-    assetKey: AssetKeyInput!
+    assetKey: AssetKeyInput
+    assetCheckKey: AssetCheckHandleInput
     evaluationId: ID!
     nodeUniqueId: String
   ): [String!]!
@@ -3373,12 +3375,14 @@ type Query {
     evaluationId: ID!
   ): AutoMaterializeAssetEvaluationRecordsOrError
   assetConditionEvaluationForPartition(
-    assetKey: AssetKeyInput!
+    assetKey: AssetKeyInput
+    assetCheckKey: AssetCheckHandleInput
     evaluationId: ID!
     partition: String!
   ): AssetConditionEvaluation
   assetConditionEvaluationRecordsOrError(
-    assetKey: AssetKeyInput!
+    assetKey: AssetKeyInput
+    assetCheckKey: AssetCheckHandleInput
     limit: Int!
     cursor: String
   ): AssetConditionEvaluationRecordsOrError
@@ -3689,7 +3693,8 @@ type AssetConditionEvaluationRecord {
   evaluationId: ID!
   runIds: [String!]!
   timestamp: Float!
-  assetKey: AssetKey!
+  assetKey: AssetKey
+  entityKey: EntityKey!
   numRequested: Int!
   startTimestamp: Float
   endTimestamp: Float
@@ -3698,6 +3703,8 @@ type AssetConditionEvaluationRecord {
   rootUniqueId: String!
   evaluationNodes: [AutomationConditionEvaluationNode!]!
 }
+
+union EntityKey = AssetKey | AssetCheckhandle
 
 type AutomationConditionEvaluationNode {
   uniqueId: String!

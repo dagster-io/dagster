@@ -33,7 +33,7 @@ from dagster_graphql.implementation.fetch_sensors import get_sensor_next_tick
 from dagster_graphql.implementation.fetch_ticks import get_instigation_ticks
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GrapheneError,
     GraphenePythonError,
