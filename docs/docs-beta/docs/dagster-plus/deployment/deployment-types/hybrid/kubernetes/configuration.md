@@ -127,23 +127,10 @@ location:
           - database_password
 ```
 
-{/*
-<ReferenceTable>
-  <ReferenceTableItem propertyName="env_vars">
-    A list of environment variable names to inject into the job, formatted as{" "}
-    <code>KEY</code> or <code>KEY=VALUE</code>. If only <code>KEY</code> is
-    specified, the value will be pulled from the current process.
-  </ReferenceTableItem>
-  <ReferenceTableItem propertyName="env_secrets">
-    A list of secret names, from which environment variables for a job are drawn
-    using <code>envFrom</code>. Refer to the{" "}
-    <a href="https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables">
-      Kubernetes documentation
-    </a>{" "}
-    for more info.
-  </ReferenceTableItem>
-</ReferenceTable>
-*/}
+ | Property      | Description                                                                                                                                                                                                                                                                                                                             |
+ |---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+ | `env_vars`    | A list of environment variable names to inject into the job, formatted as `KEY` or `KEY=VALUE`. If only `KEY` is specified, the value will be pulled from the current process.                                                                                                                                                          |
+ | `env_secrets` | A list of secret names, from which environment variables for a job are drawn using `envFrom`. Refer to the [Kubernetes documentation](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables) for more info. |
 
 Refer to the following guides for more info about environment variables:
 
