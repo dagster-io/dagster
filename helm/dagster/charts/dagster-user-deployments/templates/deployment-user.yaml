@@ -13,7 +13,7 @@ metadata:
     {{- end }}
   annotations: {{ $deployment.annotations | toYaml | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ $deployment.replicas | default 1 }}
   selector:
     matchLabels:
       {{- include "dagster.selectorLabels" $ | nindent 6 }}
