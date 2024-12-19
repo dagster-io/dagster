@@ -24,18 +24,29 @@ export function useLaunchMultipleRunsWithTelemetry() {
   const history = useHistory();
 
   return useCallback(
-    async (variables: LaunchMultipleRunsMutationVariables, behavior: LaunchBehavior) => {
+    async (
+      variables: LaunchMultipleRunsMutationVariables,
+      behavior: LaunchBehavior,
+      jobName: string,
+    ) => {
       try {
         const executionParamsList = Array.isArray(variables.executionParamsList)
           ? variables.executionParamsList
           : [variables.executionParamsList];
-        const jobNames = executionParamsList.map(
+
+        let jobNames = executionParamsList.map(
           (params) => params.selector.jobName || params.selector.pipelineName,
         );
 
         if (
-          jobNames.length !== executionParamsList.length ||
-          jobNames.includes(undefined) ||
+          (executionParamsList.length === 1 && jobNames.includes(undefined)) ||
+          jobNames.includes(null)
+        ) {
+          jobNames = [jobName];
+        }
+
+        if (
+          (jobNames.length !== executionParamsList.length && jobNames.includes(undefined)) ||
           jobNames.includes(null)
         ) {
           throw new Error(
