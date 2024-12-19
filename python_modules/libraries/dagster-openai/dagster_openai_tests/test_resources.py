@@ -21,6 +21,8 @@ from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_openai import OpenAIResource, with_usage_metadata
 
+TEST_MODEL = "test_model"
+
 
 @patch("dagster_openai.resources.Client")
 def test_openai_client(mock_client) -> None:
@@ -290,6 +292,7 @@ def test_openai_wrapper_with_asset(mock_client, mock_context, mock_wrapper):
         assert openai_resource
 
         mock_completion = MagicMock()
+        mock_completion.model = TEST_MODEL
         mock_usage = MagicMock()
         mock_usage.prompt_tokens = 1
         mock_usage.total_tokens = 1
@@ -309,6 +312,7 @@ def test_openai_wrapper_with_asset(mock_client, mock_context, mock_wrapper):
 
             mock_context.add_output_metadata.assert_called_with(
                 metadata={
+                    "openai.model": TEST_MODEL,
                     "openai.calls": 1,
                     "openai.total_tokens": 1,
                     "openai.prompt_tokens": 1,
@@ -344,6 +348,7 @@ def test_openai_wrapper_with_graph_backed_asset(mock_client, mock_context, mock_
         assert openai_resource
 
         mock_completion = MagicMock()
+        mock_completion.model = TEST_MODEL
         mock_usage = MagicMock()
         mock_usage.prompt_tokens = 1
         mock_usage.total_tokens = 1
@@ -361,6 +366,7 @@ def test_openai_wrapper_with_graph_backed_asset(mock_client, mock_context, mock_
 
             mock_context.add_output_metadata.assert_called_with(
                 metadata={
+                    "openai.model": TEST_MODEL,
                     "openai.calls": 1,
                     "openai.total_tokens": 1,
                     "openai.prompt_tokens": 1,
@@ -394,6 +400,7 @@ def test_openai_wrapper_with_multi_asset(mock_client, mock_context, mock_wrapper
         assert openai_resource
 
         mock_completion = MagicMock()
+        mock_completion.model = TEST_MODEL
         mock_usage = MagicMock()
         mock_usage.prompt_tokens = 1
         mock_usage.total_tokens = 1
@@ -415,6 +422,7 @@ def test_openai_wrapper_with_multi_asset(mock_client, mock_context, mock_wrapper
 
             mock_context.add_output_metadata.assert_called_with(
                 metadata={
+                    "openai.model": TEST_MODEL,
                     "openai.calls": 1,
                     "openai.total_tokens": 1,
                     "openai.prompt_tokens": 1,
@@ -455,6 +463,7 @@ def test_openai_wrapper_with_partitioned_asset(mock_client, mock_wrapper):
             mock_context.__class__ = AssetExecutionContext
 
             mock_completion = MagicMock()
+            mock_completion.model = TEST_MODEL
             mock_usage = MagicMock()
             mock_usage.prompt_tokens = 1
             mock_usage.total_tokens = 1
@@ -473,6 +482,7 @@ def test_openai_wrapper_with_partitioned_asset(mock_client, mock_wrapper):
                 )
                 mock_context.add_output_metadata.assert_called_with(
                     {
+                        "openai.model": TEST_MODEL,
                         "openai.calls": 1,
                         "openai.total_tokens": 1,
                         "openai.prompt_tokens": 1,
