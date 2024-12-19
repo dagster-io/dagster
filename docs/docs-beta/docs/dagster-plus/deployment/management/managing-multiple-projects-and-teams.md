@@ -136,13 +136,15 @@ Refer to the following table for more information, including the pros and cons o
 
 ### Deployment configuration
 
-Whether you use a single repository or multiple, you can use a [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/dagster-plus/getting-started#step-4-configure-cicd-for-your-project) and include only the code locations that are relevant to the repository in your CI/CD workflow.
+{/* Whether you use a single repository or multiple, you can use a [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/dagster-plus/getting-started#step-4-configure-cicd-for-your-project) and include only the code locations that are relevant to the repository in your CI/CD workflow. */}
+Whether you use a single repository or multiple, you can use a [`dagster_cloud.yaml` file](/todo) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/dagster-plus/getting-started#step-4-configure-cicd-for-your-project) and include only the code locations that are relevant to the repository in your CI/CD workflow.
 
 #### Example with GitHub CI/CD on Hybrid deployment
 
 1. **For each repository**, use the CI/CD workflow provided in [Dagster+ Hybrid quickstart repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml).
 
-2. **For each project in the repository**, configure a code location in the [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml):
+{/* 2. **For each project in the repository**, configure a code location in the [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml): */}
+2. **For each project in the repository**, configure a code location in the [`dagster_cloud.yaml` file](/todo):
 
    ```yaml
    # dagster_cloud.yml
@@ -269,7 +271,8 @@ If you have no specific requirements for isolation beyond the ability to deploy 
 Agent queues are a Dagster+ Pro feature available on hybrid deployment.
 :::
 
-Using the [agent routing feature](/dagster-plus/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents), you can effectively isolate execution environments between projects by using a separate agent for each project.
+{/* Using the [agent routing feature](/dagster-plus/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents), you can effectively isolate execution environments between projects by using a separate agent for each project. */}
+Using the [agent routing feature](/todo), you can effectively isolate execution environments between projects by using a separate agent for each project.
 
 Motivations for utilizing this approach could include:
 
@@ -381,26 +384,10 @@ Of the approaches outlined in this guide, multiple deployments are the most isol
 {/*
 ## Related
 
-<ArticleList>
-  <ArticleListItem
-    title="Dagster+ Hybrid deployments"
-    href="/dagster-plus/deployment/hybrid"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Dagster+ Hybrid agents"
-    href="/dagster-plus/deployment/agents"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Managing deployments in Dagster+"
-    href="/dagster-plus/managing-deployments"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Running multiple Dagster+ Hybrid agents"
-    href="/dagster-plus/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="dagster_cloud.yaml"
-    href="/dagster-plus/managing-deployments/dagster-cloud-yaml"
-  ></ArticleListItem>
-</ArticleList>
-*/}
+- [Dagster+ Hybrid deployments](/dagster-plus/deployment/hybrid)
+- [Dagster+ Hybrid agents](/dagster-plus/deployment/agents)
+- [Managing deployments in Dagster+](/dagster-plus/managing-deployments)
+(/* - [Running multiple Dagster+ Hybrid agents](/dagster-plus/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents) */}
+- [Running multiple Dagster+ Hybrid agents](/todo)
+{/* - [dagster_cloud.yaml](/dagster-plus/managing-deployments/dagster-cloud-yaml) */}
+- [dagster_cloud.yaml](/todo)
