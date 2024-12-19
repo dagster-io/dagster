@@ -434,9 +434,6 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         has_more = len(records) == limit
         return EventRecordsResult(records, cursor=new_cursor, has_more=has_more)
 
-    def supports_event_consumer_queries(self) -> bool:
-        return False
-
     def wipe(self) -> None:
         # should delete all the run-sharded db files and drop the contents of the index
         for filename in (

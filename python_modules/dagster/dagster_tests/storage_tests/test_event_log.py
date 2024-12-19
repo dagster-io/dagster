@@ -70,6 +70,9 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
         assert isinstance(event_log_storage, SqliteEventLogStorage)
         yield instance.event_log_storage
 
+    def supports_multiple_event_type_queries(self):
+        return False
+
     def test_filesystem_event_log_storage_run_corrupted(self, storage):
         # URL begins sqlite:///
 
@@ -185,6 +188,9 @@ class TestLegacyStorage(TestEventLogStorage):
 
     def is_sqlite(self, storage):
         return True
+
+    def supports_multiple_event_type_queries(self):
+        return False
 
     @pytest.mark.parametrize("dagster_event_type", ["dummy"])
     def test_get_latest_tags_by_partition(self, storage, instance, dagster_event_type):

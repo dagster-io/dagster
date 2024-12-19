@@ -336,9 +336,6 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     ) -> Sequence[EventLogRecord]:
         pass
 
-    def supports_event_consumer_queries(self) -> bool:
-        return False
-
     def get_logs_for_all_runs_by_log_id(
         self,
         after_cursor: int = -1,
