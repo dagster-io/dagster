@@ -9,7 +9,7 @@ from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
-from dagster._core.definitions.asset_in import AssetIn
+from dagster._core.definitions.asset_in import AssetIn, CoercibleToAssetIn
 from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -23,6 +23,7 @@ from dagster._core.definitions.decorators.decorator_assets_definition_builder im
     build_and_validate_named_ins,
     compute_required_resource_keys,
     get_function_params_without_context_or_config_or_resources,
+    validate_named_ins_subset_of_deps,
 )
 from dagster._core.definitions.decorators.op_decorator import _Op
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
@@ -66,7 +67,7 @@ def _build_asset_check_named_ins(
                 f"'{in_name}' is specified in 'additional_ins' but isn't a parameter."
             )
 
-    # if all the fn_params are in additional_ins, then we add the prmary asset as a dep
+    # if all the fn_params are in additional_ins, then we add the primary asset as a dep
     if len(fn_params) == len(additional_ins):
         all_deps = {**additional_deps, **{asset_key: AssetDep(asset_key)}}
         all_ins = additional_ins
@@ -287,6 +288,7 @@ def multi_asset_check(
     required_resource_keys: Optional[Set[str]] = None,
     retry_policy: Optional[RetryPolicy] = None,
     config_schema: Optional[UserConfigSchema] = None,
+    ins: Optional[Mapping[str, CoercibleToAssetIn]] = None,
 ) -> Callable[[Callable[..., Any]], AssetChecksDefinition]:
     """Defines a set of asset checks that can be executed together with the same op.
 
@@ -310,6 +312,8 @@ def multi_asset_check(
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that executes the checks.
         can_subset (bool): Whether the op can emit results for a subset of the asset checks
             keys, based on the context.selected_asset_check_keys argument. Defaults to False.
+        ins (Optional[Mapping[str, Union[AssetKey, AssetIn]]]): A mapping from input name to AssetIn depended upon by
+            a given asset check. If an AssetKey is provided, it will be converted to an AssetIn with the same key.
 
 
     Examples:
@@ -349,14 +353,21 @@ def multi_asset_check(
         outs = {
             spec.get_python_identifier(): Out(None, is_required=not can_subset) for spec in specs
         }
+        all_deps_by_key = {
+            **{spec.asset_key: AssetDep(spec.asset_key) for spec in specs},
+            **{dep.asset_key: dep for spec in specs for dep in (spec.additional_deps or [])},
+        }
+
         named_ins_by_asset_key = build_and_validate_named_ins(
             fn=fn,
-            asset_ins={},
-            deps={
-                **{spec.asset_key: AssetDep(spec.asset_key) for spec in specs},
-                **{dep.asset_key: dep for spec in specs for dep in (spec.additional_deps or [])},
-            }.values(),
+            asset_ins={
+                inp_name: AssetIn.from_coercible(coercible) for inp_name, coercible in ins.items()
+            }
+            if ins
+            else {},
+            deps=all_deps_by_key.values(),
         )
+        validate_named_ins_subset_of_deps(named_ins_by_asset_key, all_deps_by_key)
 
         with disable_dagster_warnings():
             op_def = _Op(

@@ -1976,7 +1976,7 @@ def test_asset_spec_deps():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="do not have dependencies on the passed AssetSpec",
+        match="specified as AssetIns",
     ):
 
         @multi_asset(specs=[table_b, table_c])
@@ -1984,7 +1984,7 @@ def test_asset_spec_deps():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="do not have dependencies on the passed AssetSpec",
+        match="specified as AssetIns",
     ):
 
         @multi_asset(specs=[table_b_no_dep, table_c_no_dep])
