@@ -2363,10 +2363,10 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
     for prefix in reversed(prefixes or []):
         all_assets = [
             assets_def.with_attributes(
-                input_asset_key_replacements={
-                    k: k.with_prefix(prefix) for k in assets_def.keys_by_input_name.values()
+                asset_key_replacements={
+                    k: k.with_prefix(prefix)
+                    for k in set(assets_def.keys_by_input_name.values()) | set(assets_def.keys)
                 },
-                output_asset_key_replacements={k: k.with_prefix(prefix) for k in assets_def.keys},
             )
             for assets_def in all_assets
         ]
