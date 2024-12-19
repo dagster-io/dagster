@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import tomli
 from dagster_dg.context import CodeLocationDirectoryContext, DgContext
-from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import
+from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import, pushd
 
 ensure_dagster_dg_tests_import()
 
@@ -40,7 +40,12 @@ def test_generate_deployment_command_already_exists_fails() -> None:
 
 
 def test_generate_code_location_inside_deployment_success() -> None:
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
+    # Don't use the test component lib because it is not present in published dagster-components,
+    # which this test is currently accessing since we are not doing an editable install.
+    with (
+        ProxyRunner.test(use_test_component_lib=False) as runner,
+        isolated_example_deployment_foo(runner),
+    ):
         result = runner.invoke("generate", "code-location", "bar")
         assert_runner_result(result)
         assert Path("code_locations/bar").exists()
@@ -60,9 +65,16 @@ def test_generate_code_location_inside_deployment_success() -> None:
             # No tool.uv.sources added without --use-editable-dagster
             assert "uv" not in toml["tool"]
 
+        # Check cache was populated
+        with pushd("code_locations/bar"):
+            result = runner.invoke("--verbose", "list", "component-types")
+            assert "CACHE [hit]" in result.output
+
 
 def test_generate_code_location_outside_deployment_success() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+    # Don't use the test component lib because it is not present in published dagster-components,
+    # which this test is currently accessing since we are not doing an editable install.
+    with ProxyRunner.test(use_test_component_lib=False) as runner, runner.isolated_filesystem():
         result = runner.invoke("generate", "code-location", "bar")
         assert_runner_result(result)
         assert Path("bar").exists()
@@ -110,6 +122,24 @@ def test_generate_code_location_editable_dagster_success(mode: str, monkeypatch)
             }
 
 
+def test_generate_code_location_skip_venv_success() -> None:
+    # Don't use the test component lib because it is not present in published dagster-components,
+    # which this test is currently accessing since we are not doing an editable install.
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke("generate", "code-location", "--skip-venv", "bar")
+        assert_runner_result(result)
+        assert Path("bar").exists()
+        assert Path("bar/bar").exists()
+        assert Path("bar/bar/lib").exists()
+        assert Path("bar/bar/components").exists()
+        assert Path("bar/bar_tests").exists()
+        assert Path("bar/pyproject.toml").exists()
+
+        # Check venv created
+        assert not Path("bar/.venv").exists()
+        assert not Path("bar/uv.lock").exists()
+
+
 def test_generate_code_location_editable_dagster_no_env_var_no_value_fails(monkeypatch) -> None:
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", "")
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
@@ -120,9 +150,9 @@ def test_generate_code_location_editable_dagster_no_env_var_no_value_fails(monke
 
 def test_generate_code_location_already_exists_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("generate", "code-location", "bar")
+        result = runner.invoke("generate", "code-location", "bar", "--skip-venv")
         assert_runner_result(result)
-        result = runner.invoke("generate", "code-location", "bar")
+        result = runner.invoke("generate", "code-location", "bar", "--skip-venv")
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
 
