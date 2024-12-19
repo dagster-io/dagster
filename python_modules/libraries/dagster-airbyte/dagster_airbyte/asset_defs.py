@@ -1102,8 +1102,8 @@ def build_airbyte_assets_definitions(
             class CustomDagsterAirbyteTranslator(DagsterAirbyteTranslator):
                 def get_asset_spec(self, props: AirbyteConnectionTableProps) -> dg.AssetSpec:
                     default_spec = super().get_asset_spec(props)
-                    return default_spec.replace_attributes(
-                        key=asset_spec.key.with_prefix("my_prefix"),
+                    return default_spec.merge_attributes(
+                        metadata={"custom": "metadata"},
                     )
 
             airbyte_workspace = AirbyteCloudWorkspace(
@@ -1129,19 +1129,22 @@ def build_airbyte_assets_definitions(
         dagster_airbyte_translator=dagster_airbyte_translator
     )
 
-    connection_ids = {
-        check.not_none(AirbyteMetadataSet.extract(spec.metadata).connection_id)
+    connections = {
+        (
+            check.not_none(AirbyteMetadataSet.extract(spec.metadata).connection_id),
+            check.not_none(AirbyteMetadataSet.extract(spec.metadata).connection_name),
+        )
         for spec in all_asset_specs
     }
 
     _asset_fns = []
-    for connection_id in connection_ids:
+    for connection_id, connection_name in connections:
 
         @airbyte_assets(
             connection_id=connection_id,
             workspace=workspace,
-            name=_clean_name(connection_id),
-            group_name=_clean_name(connection_id),
+            name=_clean_name(connection_name),
+            group_name=_clean_name(connection_name),
             dagster_airbyte_translator=dagster_airbyte_translator,
         )
         def _asset_fn(context: AssetExecutionContext, airbyte: AirbyteCloudWorkspace):

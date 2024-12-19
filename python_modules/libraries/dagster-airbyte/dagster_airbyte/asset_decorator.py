@@ -45,8 +45,6 @@ def airbyte_assets(
 
             @airbyte_assets(
                 connection_id="airbyte_connection_id",
-                name="airbyte_connection_id",
-                group_name="airbyte_connection_id",
                 workspace=airbyte_workspace,
             )
             def airbyte_connection_assets(context: dg.AssetExecutionContext, airbyte: AirbyteCloudWorkspace):
@@ -74,8 +72,8 @@ def airbyte_assets(
             class CustomDagsterAirbyteTranslator(DagsterAirbyteTranslator):
                 def get_asset_spec(self, props: AirbyteConnectionTableProps) -> dg.AssetSpec:
                     default_spec = super().get_asset_spec(props)
-                    return default_spec.replace_attributes(
-                        key=asset_spec.key.with_prefix("my_prefix"),
+                    return default_spec.merge_attributes(
+                        metadata={"custom": "metadata"},
                     )
 
             airbyte_workspace = AirbyteCloudWorkspace(
@@ -87,8 +85,6 @@ def airbyte_assets(
 
             @airbyte_assets(
                 connection_id="airbyte_connection_id",
-                name="airbyte_connection_id",
-                group_name="airbyte_connection_id",
                 workspace=airbyte_workspace,
                 dagster_airbyte_translator=CustomDagsterAirbyteTranslator()
             )
@@ -104,7 +100,7 @@ def airbyte_assets(
     return multi_asset(
         name=name,
         group_name=group_name,
-        can_subset=False,
+        can_subset=True,
         specs=[
             spec
             for spec in workspace.load_asset_specs(
