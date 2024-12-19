@@ -355,11 +355,9 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
     for prefix in reversed(prefixes or []):
         prefixed_assets = [
             assets_def.with_attributes(
-                input_asset_key_replacements={
-                    key: key.with_prefix(prefix) for key in assets_def.keys_by_input_name.values()
-                },
-                output_asset_key_replacements={
-                    key: key.with_prefix(prefix) for key in assets_def.keys
+                asset_key_replacements={
+                    key: key.with_prefix(prefix)
+                    for key in set(assets_def.keys_by_input_name.values()) | set(assets_def.keys)
                 },
             )
             for assets_def in prefixed_assets
