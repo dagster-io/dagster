@@ -47,9 +47,15 @@ class DgCache:
         self._root_path.mkdir(parents=True, exist_ok=True)
         self._logging_enabled = logging_enabled
 
-    def clear(self) -> None:
-        shutil.rmtree(self._root_path)
-        self.log(f"CACHE [clear]: {self._root_path}")
+    def clear(self, key: Optional[Tuple[str, ...]] = None) -> None:
+        if key:
+            path = self._get_path(key)
+            if path.exists():
+                path.unlink()
+                self.log(f"CACHE [clear]: {path}")
+        else:
+            shutil.rmtree(self._root_path)
+            self.log(f"CACHE [clear]: {self._root_path}")
 
     def get(self, key: Tuple[str, ...]) -> Optional[str]:
         path = self._get_path(key)

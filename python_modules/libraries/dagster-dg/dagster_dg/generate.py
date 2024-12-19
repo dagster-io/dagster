@@ -7,7 +7,7 @@ from typing import Any, Mapping, Optional
 
 import click
 
-from dagster_dg.context import CodeLocationDirectoryContext, DgContext
+from dagster_dg.context import CodeLocationDirectoryContext, DgContext, fetch_component_registry
 from dagster_dg.utils import (
     camelcase,
     execute_code_location_command,
@@ -89,7 +89,9 @@ def get_pyproject_toml_uv_sources(editable_dagster_root: str) -> str:
     """)
 
 
-def generate_code_location(path: Path, editable_dagster_root: Optional[str] = None) -> None:
+def generate_code_location(
+    path: Path, dg_context: DgContext, editable_dagster_root: Optional[str] = None
+) -> None:
     click.echo(f"Creating a Dagster code location at {path}.")
 
     dependencies = get_pyproject_toml_dependencies(use_editable_dagster=bool(editable_dagster_root))
@@ -114,6 +116,7 @@ def generate_code_location(path: Path, editable_dagster_root: Optional[str] = No
     # Build the venv
     with pushd(path):
         subprocess.run(["uv", "sync"], check=True, env=get_uv_command_env())
+        fetch_component_registry(path, dg_context)  # Populate the cache
 
 
 # ########################

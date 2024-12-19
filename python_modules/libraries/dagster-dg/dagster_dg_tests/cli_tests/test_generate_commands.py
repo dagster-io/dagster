@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import tomli
 from dagster_dg.context import CodeLocationDirectoryContext, DgContext
-from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import
+from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import, pushd
 
 ensure_dagster_dg_tests_import()
 
@@ -40,7 +40,12 @@ def test_generate_deployment_command_already_exists_fails() -> None:
 
 
 def test_generate_code_location_inside_deployment_success() -> None:
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
+    # Don't use the test component lib because it is not present in published dagster-components,
+    # which this test is currently accessing since we are not doing an editable install.
+    with (
+        ProxyRunner.test(use_test_component_lib=False) as runner,
+        isolated_example_deployment_foo(runner),
+    ):
         result = runner.invoke("generate", "code-location", "bar")
         assert_runner_result(result)
         assert Path("code_locations/bar").exists()
@@ -60,9 +65,16 @@ def test_generate_code_location_inside_deployment_success() -> None:
             # No tool.uv.sources added without --use-editable-dagster
             assert "uv" not in toml["tool"]
 
+        # Check cache was populated
+        with pushd("bar"):
+            result = runner.invoke("--verbose", "list", "component-types")
+            assert "CACHE [hit]" in result.output
+
 
 def test_generate_code_location_outside_deployment_success() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+    # Don't use the test component lib because it is not present in published dagster-components,
+    # which this test is currently accessing since we are not doing an editable install.
+    with ProxyRunner.test(use_test_component_lib=False) as runner, runner.isolated_filesystem():
         result = runner.invoke("generate", "code-location", "bar")
         assert_runner_result(result)
         assert Path("bar").exists()
