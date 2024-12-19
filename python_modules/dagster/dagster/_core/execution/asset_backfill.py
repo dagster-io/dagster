@@ -1605,6 +1605,8 @@ def can_run_with_parent(
         candidate.asset_key, parent_asset_key=parent.asset_key
     )
 
+    is_self_dependency = parent.asset_key == candidate.asset_key
+
     parent_node = asset_graph.get(parent.asset_key)
     candidate_node = asset_graph.get(candidate.asset_key)
     # checks if there is a simple partition mapping between the parent and the child
@@ -1666,8 +1668,11 @@ def can_run_with_parent(
                 or parent_node.backfill_policy.max_partitions_per_run
                 > len(asset_partitions_to_request_map[parent.asset_key])
             )
-            # all targeted parents are being requested this tick
-            and len(asset_partitions_to_request_map[parent.asset_key]) == parent_target_subset.size
+            # all targeted parents are being requested this tick, or its a self dependency
+            and (
+                len(asset_partitions_to_request_map[parent.asset_key]) == parent_target_subset.size
+                or is_self_dependency
+            )
         )
     ):
         return True, ""

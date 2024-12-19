@@ -412,7 +412,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
         event_records_filter = (
-            records_filter.to_event_records_filter(cursor, ascending)
+            records_filter.to_event_records_filter_without_job_names(cursor, ascending)
             if isinstance(records_filter, RunStatusChangeRecordsFilter)
             else EventRecordsFilter(
                 event_type, before_cursor=before_cursor, after_cursor=after_cursor
@@ -433,9 +433,6 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             new_cursor = EventLogCursor.from_storage_id(-1).to_string()
         has_more = len(records) == limit
         return EventRecordsResult(records, cursor=new_cursor, has_more=has_more)
-
-    def supports_event_consumer_queries(self) -> bool:
-        return False
 
     def wipe(self) -> None:
         # should delete all the run-sharded db files and drop the contents of the index

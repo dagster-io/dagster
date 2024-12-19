@@ -1,10 +1,7 @@
 ---
 title: "Code locations"
-displayed_sidebar: "dagsterPlus"
-sidebar_position: 50
+sidebar_position: 40
 ---
-
-# Code locations
 
 Separate code locations allow you to deploy different projects that still roll up into a single Dagster+ deployment with one global lineage graph.
 
@@ -237,4 +234,4 @@ The monorepo should have CI/CD configured to deploy your changes and add or upda
 ## Next steps
 
 - After adding a code location, you may want to setup access controls
-- You may want to add additional configuration to your code location. This configuration will vary by agent type, but see examples for [setting default resource limits for Kubernetes](/dagster-plus/deployment/hybrid/agents/kubernetes) or [changing the IAM role for ECS](/todo).
+- You may want to add additional configuration to your code location. This configuration will vary by agent type, but see examples for [setting default resource limits for Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes) or [changing the IAM role for ECS](/todo).

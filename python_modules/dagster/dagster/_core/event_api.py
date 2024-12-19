@@ -349,6 +349,7 @@ class RunStatusChangeRecordsFilter(
             ("after_storage_id", PublicAttr[Optional[int]]),
             ("before_storage_id", PublicAttr[Optional[int]]),
             ("storage_ids", PublicAttr[Optional[Sequence[int]]]),
+            ("job_names", Optional[Sequence[str]]),
         ],
     )
 ):
@@ -376,6 +377,7 @@ class RunStatusChangeRecordsFilter(
         after_storage_id: Optional[int] = None,
         before_storage_id: Optional[int] = None,
         storage_ids: Optional[Sequence[int]] = None,
+        job_names: Optional[Sequence[str]] = None,
     ):
         if event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
             check.failed("Invalid event type for run status change event filter")
@@ -388,9 +390,10 @@ class RunStatusChangeRecordsFilter(
             after_storage_id=check.opt_int_param(after_storage_id, "after_storage_id"),
             before_storage_id=check.opt_int_param(before_storage_id, "before_storage_id"),
             storage_ids=check.opt_nullable_sequence_param(storage_ids, "storage_ids", of_type=int),
+            job_names=check.opt_nullable_sequence_param(job_names, "job_names", of_type=str),
         )
 
-    def to_event_records_filter(
+    def to_event_records_filter_without_job_names(
         self, cursor: Optional[str] = None, ascending: bool = False
     ) -> EventRecordsFilter:
         before_cursor_storage_id, after_cursor_storage_id = EventRecordsFilter.get_cursor_params(

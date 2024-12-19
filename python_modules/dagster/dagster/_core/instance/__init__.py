@@ -77,6 +77,7 @@ from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     RESUME_RETRY_TAG,
     ROOT_RUN_ID_TAG,
+    RUN_FAILURE_REASON_TAG,
     TAGS_TO_MAYBE_OMIT_ON_RETRY,
     WILL_RETRY_TAG,
 )
@@ -490,13 +491,6 @@ class DagsterInstance(DynamicPartitionsStore):
                 " run worker will be marked as failed, but will not be resumed.",
             )
 
-        if self.run_retries_enabled:
-            check.invariant(
-                self.event_log_storage.supports_event_consumer_queries(),
-                "Run retries are enabled, but the configured event log storage does not support"
-                " them. Consider switching to Postgres or Mysql.",
-            )
-
         # Used for batched event handling
         self._event_buffer: Dict[str, List[EventLogEntry]] = defaultdict(list)
 
@@ -829,6 +823,9 @@ class DagsterInstance(DynamicPartitionsStore):
         if self._settings and settings_key in self._settings:
             return self._settings.get(settings_key)
         return {}
+
+    def get_backfill_settings(self) -> Mapping[str, Any]:
+        return self.get_settings("backfills")
 
     def get_scheduler_settings(self) -> Mapping[str, Any]:
         return self.get_settings("schedules")
@@ -2443,6 +2440,8 @@ class DagsterInstance(DynamicPartitionsStore):
             event (EventLogEntry): The event to handle.
             batch_metadata (Optional[DagsterEventBatchMetadata]): Metadata for batch writing.
         """
+        from dagster._core.events import RunFailureReason
+
         if batch_metadata is None or not _is_batch_writing_enabled():
             events = [event]
         else:
@@ -2484,9 +2483,18 @@ class DagsterInstance(DynamicPartitionsStore):
                 if run and event.get_dagster_event().is_run_failure and self.run_retries_enabled:
                     # Note that this tag is only applied to runs that fail. Successful runs will not
                     # have a WILL_RETRY_TAG tag.
+                    run_failure_reason = (
+                        RunFailureReason(run.tags.get(RUN_FAILURE_REASON_TAG))
+                        if run.tags.get(RUN_FAILURE_REASON_TAG)
+                        else None
+                    )
                     self.add_run_tags(
                         run_id,
-                        {WILL_RETRY_TAG: str(auto_reexecution_should_retry_run(self, run)).lower()},
+                        {
+                            WILL_RETRY_TAG: str(
+                                auto_reexecution_should_retry_run(self, run, run_failure_reason)
+                            ).lower()
+                        },
                     )
             for sub in self._subscribers[run_id]:
                 sub(event)

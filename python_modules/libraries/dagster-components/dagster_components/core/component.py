@@ -1,39 +1,102 @@
 import copy
+import dataclasses
 import importlib
 import importlib.metadata
+import inspect
 import sys
+import textwrap
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Iterable, Mapping, Optional, Sequence, Type
+from typing import (
+    Any,
+    ClassVar,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    TypedDict,
+    TypeVar,
+)
 
 from dagster import _check as check
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
-from dagster._utils import snakecase
+from dagster._record import record
+from dagster._utils import pushd, snakecase
+from pydantic import TypeAdapter
 from typing_extensions import Self
 
-if TYPE_CHECKING:
-    from dagster._core.definitions.definitions_class import Definitions
+from dagster_components.core.component_rendering import TemplatedValueResolver, preprocess_value
+from dagster_components.utils import ensure_dagster_components_tests_import
 
 
 class ComponentDeclNode: ...
 
 
+@record
+class ComponentGenerateRequest:
+    component_type_name: str
+    component_instance_root_path: Path
+
+
 class Component(ABC):
     name: ClassVar[Optional[str]] = None
-    component_params_schema: ClassVar = None
+    params_schema: ClassVar = None
     generate_params_schema: ClassVar = None
 
     @classmethod
-    def generate_files(cls, params: Any) -> Optional[Mapping[str, Any]]: ...
+    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None: ...
 
     @abstractmethod
-    def build_defs(self, context: "ComponentLoadContext") -> "Definitions": ...
+    def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
     @abstractmethod
-    def from_decl_node(
-        cls, context: "ComponentLoadContext", decl_node: "ComponentDeclNode"
-    ) -> Self: ...
+    def load(cls, context: "ComponentLoadContext") -> Self: ...
+
+    @classmethod
+    def get_metadata(cls) -> "ComponentInternalMetadata":
+        docstring = cls.__doc__
+        clean_docstring = _clean_docstring(docstring) if docstring else None
+
+        return {
+            "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
+            "description": clean_docstring if clean_docstring else None,
+            "generate_params_schema": cls.generate_params_schema.schema()
+            if cls.generate_params_schema
+            else None,
+            "component_params_schema": cls.params_schema.schema() if cls.params_schema else None,
+        }
+
+    @classmethod
+    def get_description(cls) -> Optional[str]:
+        return inspect.getdoc(cls)
+
+
+def _clean_docstring(docstring: str) -> str:
+    lines = docstring.strip().splitlines()
+    first_line = lines[0]
+    if len(lines) == 1:
+        return first_line
+    else:
+        rest = textwrap.dedent("\n".join(lines[1:]))
+        return f"{first_line}\n{rest}"
+
+
+class ComponentInternalMetadata(TypedDict):
+    summary: Optional[str]
+    description: Optional[str]
+    generate_params_schema: Optional[Any]  # json schema
+    component_params_schema: Optional[Any]  # json schema
+
+
+class ComponentMetadata(ComponentInternalMetadata):
+    name: str
+    package: str
 
 
 def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.metadata.EntryPoint]:
@@ -44,13 +107,43 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
 
 
 COMPONENTS_ENTRY_POINT_GROUP = "dagster.components"
+BUILTIN_COMPONENTS_ENTRY_POINT_BASE = "dagster_components"
+BUILTIN_PUBLISHED_COMPONENT_ENTRY_POINT = BUILTIN_COMPONENTS_ENTRY_POINT_BASE
+BUILTIN_TEST_COMPONENT_ENTRY_POINT = ".".join([BUILTIN_COMPONENTS_ENTRY_POINT_BASE, "test"])
 
 
 class ComponentRegistry:
     @classmethod
-    def from_entry_point_discovery(cls) -> "ComponentRegistry":
+    def from_entry_point_discovery(
+        cls, builtin_component_lib: str = BUILTIN_PUBLISHED_COMPONENT_ENTRY_POINT
+    ) -> "ComponentRegistry":
+        """Discover components registered in the Python environment via the `dagster_components` entry point group.
+
+        `dagster-components` itself registers multiple component entry points. We call these
+        "builtin" component libraries. The `dagster_components` entry point resolves to published
+        components and is loaded by default. Other entry points resolve to various sets of test
+        components. This method will only ever load one builtin component library.
+
+        Args:
+            builtin-component-lib (str): Specifies the builtin components library to load. Builtin
+            copmonents libraries are defined under entry points with names matching the pattern
+            `dagster_components*`. Only one builtin component library can be loaded at a time.
+            Defaults to `dagster_components`, the standard set of published components.
+        """
         components: Dict[str, Type[Component]] = {}
         for entry_point in get_entry_points_from_python_environment(COMPONENTS_ENTRY_POINT_GROUP):
+            # Skip builtin entry points that are not the specified builtin component library.
+            if (
+                entry_point.name.startswith(BUILTIN_COMPONENTS_ENTRY_POINT_BASE)
+                and not entry_point.name == builtin_component_lib
+            ):
+                continue
+            elif entry_point.name == BUILTIN_TEST_COMPONENT_ENTRY_POINT:
+                if builtin_component_lib:
+                    ensure_dagster_components_tests_import()
+                else:
+                    continue
+
             root_module = entry_point.load()
             if not isinstance(root_module, ModuleType):
                 raise DagsterError(
@@ -88,32 +181,63 @@ class ComponentRegistry:
         return f"<ComponentRegistry {list(self._components.keys())}>"
 
 
-def get_registered_components_in_module(root_module: ModuleType) -> Iterable[Type[Component]]:
-    from dagster._core.definitions.load_assets_from_modules import (
-        find_modules_in_package,
-        find_subclasses_in_module,
-    )
+def get_registered_components_in_module(module: ModuleType) -> Iterable[Type[Component]]:
+    from dagster._core.definitions.load_assets_from_modules import find_subclasses_in_module
 
-    for module in find_modules_in_package(root_module):
-        for component in find_subclasses_in_module(module, (Component,)):
-            if is_registered_component(component):
-                yield component
+    for component in find_subclasses_in_module(module, (Component,)):
+        if is_registered_component(component):
+            yield component
 
 
+T = TypeVar("T")
+
+
+@dataclass
 class ComponentLoadContext:
-    def __init__(self, *, resources: Mapping[str, object], registry: ComponentRegistry):
-        self.registry = registry
-        self.resources = resources
+    resources: Mapping[str, object]
+    registry: ComponentRegistry
+    decl_node: Optional[ComponentDeclNode]
+    templated_value_resolver: TemplatedValueResolver
 
     @staticmethod
     def for_test(
         *,
         resources: Optional[Mapping[str, object]] = None,
         registry: Optional[ComponentRegistry] = None,
+        decl_node: Optional[ComponentDeclNode] = None,
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
-            resources=resources or {}, registry=registry or ComponentRegistry.empty()
+            resources=resources or {},
+            registry=registry or ComponentRegistry.empty(),
+            decl_node=decl_node,
+            templated_value_resolver=TemplatedValueResolver.default(),
         )
+
+    @property
+    def path(self) -> Path:
+        from dagster_components.core.component_decl_builder import YamlComponentDecl
+
+        if not isinstance(self.decl_node, YamlComponentDecl):
+            check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
+
+        return self.decl_node.path
+
+    def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
+        return dataclasses.replace(self, decl_node=decl_node)
+
+    def _raw_params(self) -> Optional[Mapping[str, Any]]:
+        from dagster_components.core.component_decl_builder import YamlComponentDecl
+
+        if not isinstance(self.decl_node, YamlComponentDecl):
+            check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
+        return self.decl_node.component_file_model.params
+
+    def load_params(self, params_schema: Type[T]) -> T:
+        with pushd(str(self.path)):
+            preprocessed_params = preprocess_value(
+                self.templated_value_resolver, self._raw_params(), params_schema
+            )
+            return TypeAdapter(params_schema).validate_python(preprocessed_params)
 
 
 COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"

@@ -34,6 +34,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
+import {useTrackEvent} from '../app/analytics';
 import {TimeContext} from '../app/time/TimeContext';
 import {timestampToString} from '../app/time/timestampToString';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
@@ -77,6 +78,8 @@ export const EvaluateScheduleDialog = (props: Props) => {
 };
 
 const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
+  const trackEvent = useTrackEvent();
+
   const [selectedTimestamp, setSelectedTimestamp] = useState<{ts: number; label: string}>();
   const scheduleSelector: ScheduleSelector = useMemo(
     () => ({
@@ -181,6 +184,8 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
     if (!canLaunchAll) {
       return;
     }
+
+    trackEvent('launch-all-schedule');
     setLaunching(true);
 
     try {
@@ -193,7 +198,7 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
 
     setLaunching(false);
     onClose();
-  }, [canLaunchAll, executionParamsList, launchMultipleRunsWithTelemetry, onClose]);
+  }, [canLaunchAll, executionParamsList, launchMultipleRunsWithTelemetry, onClose, trackEvent]);
 
   const content = useMemo(() => {
     // launching all runs state

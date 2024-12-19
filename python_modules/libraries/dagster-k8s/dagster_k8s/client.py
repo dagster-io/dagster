@@ -673,7 +673,6 @@ class DagsterKubernetesClient:
             # State checks below, see:
             # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstate-v1-core
             state = container_status.state
-
             if state.running is not None:
                 if wait_for_state == WaitForPodState.Ready:
                     # ready is boolean field of container status
@@ -684,6 +683,11 @@ class DagsterKubernetesClient:
                         continue
                     else:
                         ready_containers.add(container_status.name)
+                        if container_status.name in initcontainers:
+                            self.logger(
+                                f'Init container "{container_status.name}" is ready, waiting for non-init containers...'
+                            )
+                            continue
                         if initcontainers.issubset(exited_containers | ready_containers):
                             self.logger(f'Pod "{pod_name}" is ready, done waiting')
                             break

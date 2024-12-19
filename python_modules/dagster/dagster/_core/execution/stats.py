@@ -4,10 +4,23 @@ from typing import Any, Dict, Iterable, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._core.definitions import ExpectationResult
-from dagster._core.events import MARKER_EVENTS, DagsterEventType, StepExpectationResultData
+from dagster._core.events import (
+    MARKER_EVENTS,
+    PIPELINE_EVENTS,
+    DagsterEventType,
+    StepExpectationResultData,
+)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._serdes import whitelist_for_serdes
+
+RUN_STATS_EVENT_TYPES = {
+    *PIPELINE_EVENTS,
+    DagsterEventType.STEP_FAILURE,
+    DagsterEventType.STEP_SUCCESS,
+    DagsterEventType.ASSET_MATERIALIZATION,
+    DagsterEventType.STEP_EXPECTATION_RESULT,
+}
 
 STEP_STATS_EVENT_TYPES = {
     DagsterEventType.STEP_START,
@@ -24,7 +37,9 @@ STEP_STATS_EVENT_TYPES = {
 
 
 def build_run_stats_from_events(
-    run_id: str, entries: Iterable[EventLogEntry]
+    run_id: str,
+    entries: Iterable[EventLogEntry],
+    previous_stats: Optional[DagsterRunStatsSnapshot] = None,
 ) -> DagsterRunStatsSnapshot:
     try:
         iter(entries)
@@ -35,14 +50,24 @@ def build_run_stats_from_events(
     for i, record in enumerate(entries):
         check.inst_param(record, f"records[{i}]", EventLogEntry)
 
-    steps_succeeded = 0
-    steps_failed = 0
-    materializations = 0
-    expectations = 0
-    enqueued_time = None
-    launch_time = None
-    start_time = None
-    end_time = None
+    if previous_stats:
+        steps_succeeded = previous_stats.steps_succeeded
+        steps_failed = previous_stats.steps_failed
+        materializations = previous_stats.materializations
+        expectations = previous_stats.expectations
+        enqueued_time = previous_stats.enqueued_time
+        launch_time = previous_stats.launch_time
+        start_time = previous_stats.start_time
+        end_time = previous_stats.end_time
+    else:
+        steps_succeeded = 0
+        steps_failed = 0
+        materializations = 0
+        expectations = 0
+        enqueued_time = None
+        launch_time = None
+        start_time = None
+        end_time = None
 
     for event in entries:
         if not event.is_dagster_event:

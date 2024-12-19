@@ -132,12 +132,12 @@ class LazyPySparkResource(ConfigurableResource):
     @property
     def spark_session(self) -> Any:
         self._init_session()
-        return self._spark_session
+        return check.not_none(self._spark_session)
 
     @property
     def spark_context(self) -> Any:
         self._init_session()
-        return self._spark_session.sparkContext
+        return check.not_none(self._spark_session).sparkContext
 
 
 @dagster_maintained_resource

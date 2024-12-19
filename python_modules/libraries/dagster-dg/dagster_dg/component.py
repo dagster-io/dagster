@@ -1,16 +1,20 @@
 import copy
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, Mapping
+from typing import Any, Dict, Iterable, Mapping, Optional
 
 
 @dataclass
 class RemoteComponentType:
     name: str
+    package: str
+    summary: Optional[str]
+    description: Optional[str]
+    generate_params_schema: Optional[Mapping[str, Any]]  # json schema
+    component_params_schema: Optional[Mapping[str, Any]]  # json schema
 
     @property
     def key(self) -> str:
         return self.name
-        # return f"{self.package}.{self.name}"
 
 
 class RemoteComponentRegistry:

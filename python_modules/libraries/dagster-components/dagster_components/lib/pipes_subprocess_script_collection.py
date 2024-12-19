@@ -9,15 +9,10 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster._utils.warnings import suppress_dagster_warnings
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 
-from dagster_components.core.component import (
-    Component,
-    ComponentDeclNode,
-    ComponentLoadContext,
-    component,
-)
-from dagster_components.core.component_decl_builder import YamlComponentDecl
+from dagster_components.core.component import Component, ComponentLoadContext, component
+from dagster_components.core.dsl_schema import AutomationConditionModel
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -33,6 +28,7 @@ class AssetSpecModel(BaseModel):
     code_version: Optional[str] = None
     owners: Sequence[str] = []
     tags: Mapping[str, str] = {}
+    automation_condition: Optional[AutomationConditionModel] = None
 
     @suppress_dagster_warnings
     def to_asset_spec(self) -> AssetSpec:
@@ -40,6 +36,9 @@ class AssetSpecModel(BaseModel):
             **{
                 **self.__dict__,
                 "key": AssetKey.from_user_string(self.key),
+                "automation_condition": self.automation_condition.to_automation_condition()
+                if self.automation_condition
+                else None,
             },
         )
 
@@ -55,6 +54,8 @@ class PipesSubprocessScriptCollectionParams(BaseModel):
 
 @component(name="pipes_subprocess_script_collection")
 class PipesSubprocessScriptCollection(Component):
+    """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
+
     params_schema = PipesSubprocessScriptCollectionParams
 
     def __init__(self, dirpath: Path, path_specs: Mapping[Path, Sequence[AssetSpec]]):
@@ -69,22 +70,17 @@ class PipesSubprocessScriptCollection(Component):
         return PipesSubprocessScriptCollection(dirpath=path, path_specs=path_specs)
 
     @classmethod
-    def from_decl_node(
-        cls, load_context: ComponentLoadContext, component_decl: ComponentDeclNode
-    ) -> "PipesSubprocessScriptCollection":
-        assert isinstance(component_decl, YamlComponentDecl)
-        loaded_params = TypeAdapter(cls.params_schema).validate_python(
-            component_decl.component_file_model.params
-        )
+    def load(cls, context: ComponentLoadContext) -> "PipesSubprocessScriptCollection":
+        loaded_params = context.load_params(cls.params_schema)
 
         path_specs = {}
         for script in loaded_params.scripts:
-            script_path = component_decl.path / script.path
+            script_path = context.path / script.path
             if not script_path.exists():
                 raise FileNotFoundError(f"Script {script_path} does not exist")
             path_specs[script_path] = [spec.to_asset_spec() for spec in script.assets]
 
-        return cls(dirpath=component_decl.path, path_specs=path_specs)
+        return cls(dirpath=context.path, path_specs=path_specs)
 
     def build_defs(self, load_context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions

@@ -24,6 +24,14 @@ import {TagActionsPopover} from '../ui/TagActions';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../ui/formatters';
 
+const sortItemAssetKey = (a: AssetKey, b: AssetKey) => {
+  return displayNameForAssetKey(a).localeCompare(displayNameForAssetKey(b));
+};
+
+const sortItemAssetCheck = (a: Check, b: Check) => {
+  return labelForAssetCheck(a).localeCompare(labelForAssetCheck(b));
+};
+
 const renderItemAssetKey = (assetKey: AssetKey) => (
   <Link to={assetDetailsPathForKey(assetKey)} style={{display: 'block', width: '100%'}}>
     <MiddleTruncate text={displayNameForAssetKey(assetKey)} />
@@ -149,10 +157,20 @@ export function useAdjustChildVisibilityToFill(moreLabelFn: (count: number) => s
 
 export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionProps) => {
   const {assetKeys, useTags, maxRows, dialogTitle = 'Assets in run'} = props;
-  const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, assetKeys, renderItemAssetKey);
 
   const count = assetKeys?.length ?? 0;
   const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
+
+  const {sortedAssetKeys, slicedSortedAssetKeys} = React.useMemo(() => {
+    const sortedAssetKeys = assetKeys?.slice().sort(sortItemAssetKey) ?? [];
+    return {
+      sortedAssetKeys,
+      slicedSortedAssetKeys: sortedAssetKeys?.slice(0, rendered) ?? [],
+    };
+  }, [assetKeys, rendered]);
+
+  const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, sortedAssetKeys, renderItemAssetKey);
+
   const moreLabelFn = React.useCallback(
     (displayed: number) =>
       displayed === 0
@@ -165,7 +183,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
 
   const {containerRef, moreLabelRef} = useAdjustChildVisibilityToFill(moreLabelFn);
 
-  if (!assetKeys || !assetKeys.length) {
+  if (!count) {
     return null;
   }
 
@@ -180,7 +198,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
         overflow: 'hidden',
       }}
     >
-      {assetKeys.slice(0, rendered).map((assetKey) => (
+      {slicedSortedAssetKeys.map((assetKey) => (
         // Outer span ensures the popover target is in the right place if the
         // parent is a flexbox.
         <TagActionsPopover
@@ -226,7 +244,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
               },
               {
                 label: 'View lineage',
-                to: globalAssetGraphPathForAssetsAndDescendants(assetKeys),
+                to: globalAssetGraphPathForAssetsAndDescendants(sortedAssetKeys),
               },
             ]}
           >
@@ -263,10 +281,24 @@ interface AssetCheckTagCollectionProps {
 
 export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectionProps) => {
   const {assetChecks, maxRows, useTags, dialogTitle = 'Asset checks in run'} = props;
-  const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, assetChecks, renderItemAssetCheck);
 
   const count = assetChecks?.length ?? 0;
   const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
+
+  const {sortedAssetChecks, slicedSortedAssetChecks} = React.useMemo(() => {
+    const sortedAssetChecks = assetChecks?.slice().sort(sortItemAssetCheck) ?? [];
+    return {
+      sortedAssetChecks,
+      slicedSortedAssetChecks: sortedAssetChecks?.slice(0, rendered) ?? [],
+    };
+  }, [assetChecks, rendered]);
+
+  const {setShowMore, dialog} = useShowMoreDialog(
+    dialogTitle,
+    sortedAssetChecks,
+    renderItemAssetCheck,
+  );
+
   const moreLabelFn = React.useCallback(
     (displayed: number) =>
       displayed === 0
@@ -279,7 +311,7 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
 
   const {containerRef, moreLabelRef} = useAdjustChildVisibilityToFill(moreLabelFn);
 
-  if (!assetChecks || !assetChecks.length) {
+  if (!count) {
     return null;
   }
 
@@ -294,7 +326,7 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
         overflow: 'hidden',
       }}
     >
-      {assetChecks.slice(0, rendered).map((check) => (
+      {slicedSortedAssetChecks.map((check) => (
         <TagActionsPopover
           key={`${check.name}-${tokenForAssetKey(check.assetKey)}`}
           data={{key: '', value: ''}}

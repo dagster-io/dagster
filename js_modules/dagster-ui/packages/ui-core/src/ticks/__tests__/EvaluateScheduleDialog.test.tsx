@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter, useHistory} from 'react-router-dom';
 
 import {Resolvers} from '../../apollo-client';
+import {useTrackEvent} from '../../app/analytics';
 import {EvaluateScheduleDialog} from '../EvaluateScheduleDialog';
 import {
   GetScheduleQueryMock,
@@ -24,6 +25,11 @@ jest.mock('../DryRunRequestTable', () => {
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useHistory: jest.fn(),
+}));
+
+// Mocking useTrackEvent
+jest.mock('../../app/analytics', () => ({
+  useTrackEvent: jest.fn(() => jest.fn()),
 }));
 
 const onCloseMock = jest.fn();
@@ -118,6 +124,8 @@ describe('EvaluateScheduleTest', () => {
       push: pushSpy,
       createHref: createHrefSpy,
     });
+
+    (useTrackEvent as jest.Mock).mockReturnValue(jest.fn());
 
     render(
       <MemoryRouter initialEntries={['/automation']}>

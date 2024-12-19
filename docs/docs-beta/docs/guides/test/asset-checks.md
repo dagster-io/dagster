@@ -33,7 +33,7 @@ To get started with asset checks, follow these general steps:
 ## Defining a single asset check \{#single-check}
 
 :::tip
-Dagster's dbt integration can model existing dbt tests as asset checks. Refer to the [dagster-dbt documentation](/integrations/dbt) for more information.
+Dagster's dbt integration can model existing dbt tests as asset checks. Refer to the [dagster-dbt documentation](/integrations/libraries/dbt) for more information.
 :::
 
 A asset check is defined using the `@asset_check` decorator.

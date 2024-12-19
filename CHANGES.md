@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.9.5 (core) / 0.25.5 (libraries)
+
+### New
+
+- The automatic run retry daemon has been updated so that there is a single source of truth for if a run will be retried and if the retry has been launched. Tags are now added to run at failure time indicating if the run will be retried by the automatic retry system. Once the automatic retry has been launched, the run ID of the retry is added to the original run.
+- When canceling a backfill of a job, the backfill daemon will now cancel all runs launched by that backfill before marking the backfill as canceled.
+- Dagster execution info (tags such as `dagster/run-id`, `dagster/code-location`, `dagster/user` and Dagster Cloud environment variables) typically attached to external resources are now available under `DagsterRun.dagster_execution_info`.
+- `SensorReturnTypesUnion` is now exported for typing the output of sensor functions.
+- [dagster-dbt] dbt seeds now get a valid code version (Thanks [@marijncv](https://github.com/marijncv)!).
+- Manual and automatic retries of runs launched by backfills that occur while the backfill is still in progress are now incorporated into the backfill's status.
+- Manual retries of runs launched by backfills are no longer considered part of the backfill if the backfill is complete when the retry is launched.
+- [dagster-fivetran] Fivetran assets can now be materialized using the FivetranWorkspace.sync_and_poll(…) method in the definition of a `@fivetran_assets` decorator.
+- [dagster-fivetran] `load_fivetran_asset_specs` has been updated to accept an instance of `DagsterFivetranTranslator` or custom subclass.
+- [dagster-fivetran] The `fivetran_assets` decorator was added. It can be used with the `FivetranWorkspace` resource and `DagsterFivetranTranslator` translator to load Fivetran tables for a given connector as assets in Dagster. The `build_fivetran_assets_definitions` factory can be used to create assets for all the connectors in your Fivetran workspace.
+- [dagster-aws] `ECSPipesClient.run` now waits up to 70 days for tasks completion (waiter parameters are configurable) (Thanks [@jenkoian](https://github.com/jenkoian)!)
+- [dagster-dbt] Update dagster-dbt scaffold template to be compatible with uv (Thanks [@wingyplus](https://github.com/wingyplus)!).
+- [dagster-airbyte] A `load_airbyte_cloud_asset_specs` function has
+  been added. It can be used with the `AirbyteCloudWorkspace` resource and `DagsterAirbyteTranslator` translator to load your Airbyte Cloud connection streams as external assets in Dagster.
+- [ui] Add an icon for the `icechunk` kind.
+- [ui] Improved ui for manual sensor/schedule evaluation.
+
+### Bugfixes
+
+- Fixed database locking bug for the `ConsolidatedSqliteEventLogStorage`, which is mostly used for tests.
+- [dagster-aws] Fixed a bug in the ECSRunLauncher that prevented it from accepting a user-provided task definition when DAGSTER_CURRENT_IMAGE was not set in the code location.
+- [ui] Fixed an issue that would sometimes cause the asset graph to fail to render on initial load.
+- [ui] Fix global auto-materialize tick timeline when paginating.
+
 ## 1.9.4 (core) / 0.25.4 (libraries)
 
 ### New

@@ -2908,12 +2908,6 @@ def test_repository_namespacing(executor):
             assert len(ticks) == 2
 
 
-def test_settings():
-    settings = {"use_threads": True, "num_workers": 4}
-    with instance_for_test(overrides={"sensors": settings}) as thread_inst:
-        assert thread_inst.get_settings("sensors") == settings
-
-
 @pytest.mark.parametrize("sensor_name", ["logging_sensor", "multi_asset_logging_sensor"])
 def test_sensor_logging(executor, instance, workspace_context, remote_repo, sensor_name) -> None:
     sensor = remote_repo.get_sensor(sensor_name)

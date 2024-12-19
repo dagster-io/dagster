@@ -1,55 +1,64 @@
+import hashlib
 import json
 import os
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, Iterable, Mapping, Optional, Sequence
+from typing import Final, Iterable, Optional, Tuple
 
+import click
 import tomli
 from typing_extensions import Self
 
+from dagster_dg.cache import CachableDataType, DgCache
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
+from dagster_dg.config import DgConfig
 from dagster_dg.error import DgError
-from dagster_dg.utils import execute_code_location_command
+from dagster_dg.utils import (
+    execute_code_location_command,
+    hash_directory_metadata,
+    hash_file_metadata,
+)
 
 
-def is_inside_deployment_project(path: Path) -> bool:
+def is_inside_deployment_directory(path: Path) -> bool:
     try:
-        _resolve_deployment_root_path(path)
+        _resolve_deployment_root_directory(path)
         return True
     except DgError:
         return False
 
 
-def _resolve_deployment_root_path(path: Path) -> Path:
+def _resolve_deployment_root_directory(path: Path) -> Path:
     current_path = path.absolute()
-    while not _is_deployment_root(current_path):
+    while not _is_deployment_root_directory(current_path):
         current_path = current_path.parent
         if str(current_path) == "/":
             raise DgError("Cannot find deployment root")
     return current_path
 
 
-def is_inside_code_location_project(path: Path) -> bool:
+def _is_deployment_root_directory(path: Path) -> bool:
+    return (path / "code_locations").exists()
+
+
+def is_inside_code_location_directory(path: Path) -> bool:
     try:
-        _resolve_code_location_root_path(path)
+        _resolve_code_location_root_directory(path)
         return True
     except DgError:
         return False
 
 
-def _resolve_code_location_root_path(path: Path) -> Path:
+def _resolve_code_location_root_directory(path: Path) -> Path:
     current_path = path.absolute()
-    while not _is_code_location_root(current_path):
+    while not _is_code_location_root_directory(current_path):
         current_path = current_path.parent
         if str(current_path) == "/":
             raise DgError("Cannot find code location root")
     return current_path
 
 
-def _is_deployment_root(path: Path) -> bool:
-    return (path / "code_locations").exists()
-
-
-def _is_code_location_root(path: Path) -> bool:
+def _is_code_location_root_directory(path: Path) -> bool:
     if (path / "pyproject.toml").exists():
         with open(path / "pyproject.toml") as f:
             toml = tomli.loads(f.read())
@@ -61,113 +70,160 @@ def _is_code_location_root(path: Path) -> bool:
 _DEPLOYMENT_CODE_LOCATIONS_DIR: Final = "code_locations"
 
 # Code location
-_CODE_LOCATION_CUSTOM_COMPONENTS_DIR: Final = "lib"
+_CODE_LOCATION_COMPONENTS_LIB_DIR: Final = "lib"
 _CODE_LOCATION_COMPONENT_INSTANCES_DIR: Final = "components"
 
 
-class DeploymentProjectContext:
+@dataclass
+class DgContext:
+    config: DgConfig
+    cache: Optional[DgCache] = None
+
     @classmethod
-    def from_path(cls, path: Path) -> Self:
-        return cls(root_path=_resolve_deployment_root_path(path))
+    def from_cli_context(cls, cli_context: click.Context) -> Self:
+        return cls.from_config(config=DgConfig.from_cli_context(cli_context))
 
-    def __init__(self, root_path: Path):
-        self._root_path = root_path
+    @classmethod
+    def from_config(cls, config: DgConfig) -> Self:
+        cache = None if config.disable_cache else DgCache.from_config(config)
+        return cls(config=config, cache=cache)
 
-    @property
-    def deployment_root(self) -> Path:
-        return self._root_path
+    @classmethod
+    def default(cls) -> Self:
+        return cls.from_config(DgConfig.default())
+
+
+@dataclass
+class DeploymentDirectoryContext:
+    root_path: Path
+    dg_context: DgContext
+
+    @classmethod
+    def from_path(cls, path: Path, dg_context: DgContext) -> Self:
+        return cls(root_path=_resolve_deployment_root_directory(path), dg_context=dg_context)
 
     @property
     def code_location_root_path(self) -> Path:
-        return self._root_path / _DEPLOYMENT_CODE_LOCATIONS_DIR
+        return self.root_path / _DEPLOYMENT_CODE_LOCATIONS_DIR
 
     def has_code_location(self, name: str) -> bool:
-        return os.path.exists(os.path.join(self._root_path, "code_locations", name))
+        return (self.root_path / "code_locations" / name).is_dir()
 
-    def list_code_locations(self) -> Iterable[str]:
-        return sorted(os.listdir(os.path.join(self._root_path, "code_locations")))
+    def get_code_location_names(self) -> Iterable[str]:
+        return [loc.name for loc in sorted((self.root_path / "code_locations").iterdir())]
 
 
-class CodeLocationProjectContext:
-    _components_registry: Mapping[str, RemoteComponentType] = {}
+def get_code_location_env_hash(code_location_root_path: Path) -> str:
+    uv_lock_path = code_location_root_path / "uv.lock"
+    if not uv_lock_path.exists():
+        raise DgError(f"uv.lock file not found in {code_location_root_path}")
+    local_components_path = (
+        code_location_root_path / code_location_root_path.name / _CODE_LOCATION_COMPONENTS_LIB_DIR
+    )
+    if not local_components_path.exists():
+        raise DgError(f"Local components directory not found in {code_location_root_path}")
+    hasher = hashlib.md5()
+    hash_file_metadata(hasher, uv_lock_path)
+    hash_directory_metadata(hasher, local_components_path)
+    return hasher.hexdigest()
+
+
+def make_cache_key(code_location_path: Path, data_type: CachableDataType) -> Tuple[str, str, str]:
+    path_parts = [str(part) for part in code_location_path.parts if part != "/"]
+    env_hash = get_code_location_env_hash(code_location_path)
+    return ("_".join(path_parts), env_hash, data_type)
+
+
+@dataclass
+class CodeLocationDirectoryContext:
+    """Class encapsulating contextual information about a components code location directory.
+
+    Args:
+        root_path (Path): The absolute path to the root of the code location directory.
+        name (str): The name of the code location python package.
+        component_registry (ComponentRegistry): The component registry for the code location.
+        deployment_context (Optional[DeploymentDirectoryContext]): The deployment context containing
+            the code location directory. Defaults to None.
+        dg_context (DgContext): The global application context.
+    """
+
+    root_path: Path
+    name: str
+    component_registry: "RemoteComponentRegistry"
+    deployment_context: Optional[DeploymentDirectoryContext]
+    dg_context: DgContext
 
     @classmethod
-    def from_path(cls, path: Path) -> Self:
-        root_path = _resolve_code_location_root_path(path)
-        raw_component_registry = execute_code_location_command(
-            root_path, ["list", "component-types"]
-        )
-        component_registry = RemoteComponentRegistry.from_dict(json.loads(raw_component_registry))
-        deployment_context = (
-            DeploymentProjectContext.from_path(path) if is_inside_deployment_project(path) else None
-        )
+    def from_path(cls, path: Path, dg_context: DgContext) -> Self:
+        root_path = _resolve_code_location_root_directory(path)
+
+        cache = dg_context.cache
+        if cache:
+            cache_key = make_cache_key(root_path, "component_registry_data")
+
+        raw_registry_data = cache.get(cache_key) if cache else None
+        if not raw_registry_data:
+            raw_registry_data = execute_code_location_command(
+                root_path, ["list", "component-types"], dg_context
+            )
+            if cache:
+                cache.set(cache_key, raw_registry_data)
+
+        registry_data = json.loads(raw_registry_data)
+        component_registry = RemoteComponentRegistry.from_dict(registry_data)
 
         return cls(
-            deployment_context=deployment_context,
             root_path=root_path,
             name=path.name,
             component_registry=component_registry,
+            deployment_context=DeploymentDirectoryContext.from_path(path, dg_context)
+            if is_inside_deployment_directory(path)
+            else None,
+            dg_context=dg_context,
         )
 
-    def __init__(
-        self,
-        deployment_context: Optional[DeploymentProjectContext],
-        root_path: Path,
-        name: str,
-        component_registry: "RemoteComponentRegistry",
-    ):
-        self._deployment_context = deployment_context
-        self._root_path = root_path
-        self._name = name
-        self._component_registry = component_registry
+    @property
+    def config(self) -> DgConfig:
+        return self.dg_context.config
 
     @property
-    def name(self) -> str:
-        return self._name
+    def local_component_types_root_path(self) -> str:
+        return os.path.join(self.root_path, self.name, _CODE_LOCATION_COMPONENTS_LIB_DIR)
 
     @property
-    def deployment_context(self) -> Optional[DeploymentProjectContext]:
-        return self._deployment_context
+    def local_component_types_root_module_name(self) -> str:
+        return f"{self.name}.{_CODE_LOCATION_COMPONENTS_LIB_DIR}"
 
-    @property
-    def component_types_root_path(self) -> str:
-        return os.path.join(self._root_path, self._name, _CODE_LOCATION_CUSTOM_COMPONENTS_DIR)
-
-    @property
-    def component_types_root_module(self) -> str:
-        return f"{self._name}.{_CODE_LOCATION_CUSTOM_COMPONENTS_DIR}"
-
-    @property
-    def component_registry(self) -> "RemoteComponentRegistry":
-        return self._component_registry
+    def iter_component_types(self) -> Iterable[Tuple[str, RemoteComponentType]]:
+        for key in sorted(self.component_registry.keys()):
+            yield key, self.component_registry.get(key)
 
     def has_component_type(self, name: str) -> bool:
-        return self._component_registry.has(name)
+        return self.component_registry.has(name)
 
     def get_component_type(self, name: str) -> RemoteComponentType:
         if not self.has_component_type(name):
             raise DgError(f"No component type named {name}")
-        return self._component_registry.get(name)
+        return self.component_registry.get(name)
 
-    def list_component_types(self) -> Sequence[str]:
-        return sorted(self._component_registry.keys())
+    @property
+    def component_instances_root_path(self) -> Path:
+        return self.root_path / self.name / _CODE_LOCATION_COMPONENT_INSTANCES_DIR
 
-    def get_component_instance_path(self, name: str) -> str:
-        if name not in self.component_instances:
+    @property
+    def component_instances_root_module_name(self) -> str:
+        return f"{self.name}.{_CODE_LOCATION_COMPONENT_INSTANCES_DIR}"
+
+    def get_component_instance_names(self) -> Iterable[str]:
+        return [
+            str(instance_path.name)
+            for instance_path in self.component_instances_root_path.iterdir()
+        ]
+
+    def get_component_instance_path(self, name: str) -> Path:
+        if not self.has_component_instance(name):
             raise DgError(f"No component instance named {name}")
-        return os.path.join(self.component_instances_root_path, name)
-
-    @property
-    def component_instances_root_path(self) -> str:
-        return os.path.join(self._root_path, self._name, _CODE_LOCATION_COMPONENT_INSTANCES_DIR)
-
-    @property
-    def component_instances(self) -> Iterable[str]:
-        return os.listdir(
-            os.path.join(self._root_path, self._name, _CODE_LOCATION_COMPONENT_INSTANCES_DIR)
-        )
+        return self.component_instances_root_path / name
 
     def has_component_instance(self, name: str) -> bool:
-        return os.path.exists(
-            os.path.join(self._root_path, self._name, _CODE_LOCATION_COMPONENT_INSTANCES_DIR, name)
-        )
+        return (self.component_instances_root_path / name).is_dir()
