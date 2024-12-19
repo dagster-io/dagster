@@ -1,4 +1,5 @@
 from dagster import AssetKey, SourceAsset, asset, graph_asset, op
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata import (
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
@@ -41,3 +42,6 @@ def multiply_by_two(input_num):
 @graph_asset
 def graph_backed_asset():
     return multiply_by_two(one())
+
+
+my_spec = AssetSpec("my_asset_spec")
