@@ -105,9 +105,9 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   const executionParamsList = useMemo(
     () =>
       sensorExecutionData && sensorSelector
-        ? buildExecutionParamsListSensor(sensorExecutionData, sensorSelector)
+        ? buildExecutionParamsListSensor(sensorExecutionData, sensorSelector, jobName)
         : [],
-    [sensorSelector, sensorExecutionData],
+    [sensorSelector, sensorExecutionData, jobName],
   );
 
   const submitTest = useCallback(async () => {
@@ -196,7 +196,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
 
     try {
       if (executionParamsList) {
-        await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast', jobName);
+        await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
         onCommitTickResult(); // persist tick
       }
     } catch (e) {
@@ -208,7 +208,6 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   }, [
     canLaunchAll,
     executionParamsList,
-    jobName,
     launchMultipleRunsWithTelemetry,
     onClose,
     onCommitTickResult,

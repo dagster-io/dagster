@@ -24,25 +24,15 @@ export function useLaunchMultipleRunsWithTelemetry() {
   const history = useHistory();
 
   return useCallback(
-    async (
-      variables: LaunchMultipleRunsMutationVariables,
-      behavior: LaunchBehavior,
-      jobName: string,
-    ) => {
+    async (variables: LaunchMultipleRunsMutationVariables, behavior: LaunchBehavior) => {
       try {
         const executionParamsList = Array.isArray(variables.executionParamsList)
           ? variables.executionParamsList
           : [variables.executionParamsList];
 
-        let jobNames = executionParamsList.map(
+        const jobNames = executionParamsList.map(
           (params) => params.selector.jobName || params.selector.pipelineName,
         );
-
-        // if only executing one job, and jobName isn't defined, fallback to jobName from sensor/schedule
-        if (executionParamsList.length === 1 && !executionParamsList[0]?.selector?.jobName) {
-          jobNames = [jobName];
-          executionParamsList[0]!.selector.jobName = jobName;
-        }
 
         if (
           jobNames.length !== executionParamsList.length ||

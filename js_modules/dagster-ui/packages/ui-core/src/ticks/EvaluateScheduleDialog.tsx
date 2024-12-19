@@ -170,9 +170,9 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
   const executionParamsList = useMemo(
     () =>
       scheduleExecutionData && scheduleSelector
-        ? buildExecutionParamsListSchedule(scheduleExecutionData, scheduleSelector)
+        ? buildExecutionParamsListSchedule(scheduleExecutionData, scheduleSelector, jobName)
         : [],
-    [scheduleSelector, scheduleExecutionData],
+    [scheduleSelector, scheduleExecutionData, jobName],
   );
 
   const canLaunchAll = useMemo(() => {
@@ -190,7 +190,7 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
 
     try {
       if (executionParamsList) {
-        await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast', jobName);
+        await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
       }
     } catch (e) {
       console.error(e);
@@ -198,14 +198,7 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
 
     setLaunching(false);
     onClose();
-  }, [
-    canLaunchAll,
-    executionParamsList,
-    jobName,
-    launchMultipleRunsWithTelemetry,
-    onClose,
-    trackEvent,
-  ]);
+  }, [canLaunchAll, executionParamsList, launchMultipleRunsWithTelemetry, onClose, trackEvent]);
 
   const content = useMemo(() => {
     // launching all runs state
