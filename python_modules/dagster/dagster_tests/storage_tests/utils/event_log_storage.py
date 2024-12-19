@@ -504,6 +504,9 @@ class TestEventLogStorage:
     def supports_offset_cursor_queries(self):
         return True
 
+    def supports_get_logs_for_all_runs_by_log_id(self):
+        return True
+
     def supports_multiple_event_type_queries(self):
         return True
 
@@ -4142,6 +4145,9 @@ class TestEventLogStorage:
         assert result.run_id == records[0].asset_entry.last_run_id
 
     def test_get_logs_for_all_runs_by_log_id_of_type(self, storage: EventLogStorage):
+        if not self.supports_get_logs_for_all_runs_by_log_id():
+            pytest.skip("storage does not support get_logs_for_all_runs_by_log_id")
+
         @op
         def return_one(_):
             return 1
@@ -4161,6 +4167,9 @@ class TestEventLogStorage:
         ) == [DagsterEventType.RUN_SUCCESS, DagsterEventType.RUN_SUCCESS]
 
     def test_get_logs_for_all_runs_by_log_id_by_multi_type(self, storage: EventLogStorage):
+        if not self.supports_get_logs_for_all_runs_by_log_id():
+            pytest.skip("storage does not support get_logs_for_all_runs_by_log_id")
+
         if not self.supports_multiple_event_type_queries():
             pytest.skip("storage does not support deprecated multi-event-type queries")
 
@@ -4191,6 +4200,9 @@ class TestEventLogStorage:
         ]
 
     def test_get_logs_for_all_runs_by_log_id_cursor(self, storage: EventLogStorage):
+        if not self.supports_get_logs_for_all_runs_by_log_id():
+            pytest.skip("storage does not support get_logs_for_all_runs_by_log_id")
+
         @op
         def return_one(_):
             return 1
@@ -4225,6 +4237,9 @@ class TestEventLogStorage:
         ]
 
     def test_get_logs_for_all_runs_by_log_id_cursor_multi_type(self, storage: EventLogStorage):
+        if not self.supports_get_logs_for_all_runs_by_log_id():
+            pytest.skip("storage does not support get_logs_for_all_runs_by_log_id")
+
         if not self.supports_multiple_event_type_queries():
             pytest.skip("storage does not support deprecated multi-event-type queries")
 
@@ -4269,6 +4284,9 @@ class TestEventLogStorage:
         ]
 
     def test_get_logs_for_all_runs_by_log_id_limit(self, storage: EventLogStorage):
+        if not self.supports_get_logs_for_all_runs_by_log_id():
+            pytest.skip("storage does not support get_logs_for_all_runs_by_log_id")
+
         @op
         def return_one(_):
             return 1
@@ -4299,6 +4317,9 @@ class TestEventLogStorage:
         ]
 
     def test_get_logs_for_all_runs_by_log_id_limit_multi_type(self, storage: EventLogStorage):
+        if not self.supports_get_logs_for_all_runs_by_log_id():
+            pytest.skip("storage does not support get_logs_for_all_runs_by_log_id")
+
         if not self.supports_multiple_event_type_queries():
             pytest.skip("storage does not support deprecated multi-event-type queries")
 
