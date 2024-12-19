@@ -97,9 +97,9 @@ Before:
 
 After:
 
-| Key | Value |
-|---|---|
-| `DAGSTER_CLOUD_DEPLOYMENT_NAME` | The name of the Dagster+ deployment. <br/><br/>  **Example:** `prod`. |
+| Key                                  | Value                                                                                                     |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `DAGSTER_CLOUD_DEPLOYMENT_NAME`      | The name of the Dagster+ deployment. <br/><br/> **Example:** `prod`.                                      |
 | `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` | `1` if the deployment is a [branch deployment](/dagster-plus/features/ci-cd/branch-deployments/index.md). |
 
 ### Whitespace via `{" "}`
