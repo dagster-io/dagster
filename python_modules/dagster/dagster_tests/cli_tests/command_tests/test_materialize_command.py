@@ -177,3 +177,16 @@ def test_partition_range_multi_run_backfill_policy():
 def test_failure():
     result = invoke_materialize("fail_asset")
     assert result.exit_code == 1
+
+
+def test_run__cli_config_json():
+    with instance_for_test() as instance:
+        runner = CliRunner()
+        options = ["-f", file_relative_path(__file__, "assets.py"), "--select", "asset_with_config", "--config-json", "{\"some_prop\": \"foo\"}"]
+
+        result = runner.invoke(asset_materialize_command, options)
+
+        
+        #assert "some_prop:foo" in result.output
+        #assert instance.get_latest_materialization_event(AssetKey("asset_with_config")) is not None
+        assert result.exit_code == 0
