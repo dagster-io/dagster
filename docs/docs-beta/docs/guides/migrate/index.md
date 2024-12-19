@@ -1,7 +1,6 @@
 ---
 title: "Migrate"
-description: "Migrate from other platforms to Dagster"
-sidebar_position: 60
+description: "Migrate to Dagster from other platforms"
 sidebar_class_name: hidden
 ---
 
