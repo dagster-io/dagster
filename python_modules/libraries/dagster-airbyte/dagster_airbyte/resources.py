@@ -11,10 +11,12 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 import requests
 from dagster import (
     AssetExecutionContext,
+    AssetMaterialization,
     ConfigurableResource,
     Definitions,
     Failure,
     InitResourceContext,
+    MaterializeResult,
     _check as check,
     get_dagster_logger,
     resource,
@@ -33,13 +35,20 @@ from requests.exceptions import RequestException
 
 from dagster_airbyte.translator import (
     AirbyteConnection,
+    AirbyteConnectionTableProps,
     AirbyteDestination,
     AirbyteJob,
     AirbyteJobStatusType,
+    AirbyteMetadataSet,
     AirbyteWorkspaceData,
     DagsterAirbyteTranslator,
 )
 from dagster_airbyte.types import AirbyteOutput
+from dagster_airbyte.utils import (
+    DAGSTER_AIRBYTE_TRANSLATOR_METADATA_KEY,
+    get_airbyte_connection_table_name,
+    get_translator_from_airbyte_assets,
+)
 
 AIRBYTE_REST_API_BASE = "https://api.airbyte.com"
 AIRBYTE_REST_API_VERSION = "v1"
@@ -1211,8 +1220,90 @@ class AirbyteCloudWorkspace(ConfigurableResource):
             workspace=self, dagster_airbyte_translator=dagster_airbyte_translator
         )
 
+    def _generate_materialization(
+        self,
+        airbyte_output: AirbyteOutput,
+        dagster_airbyte_translator: DagsterAirbyteTranslator,
+    ):
+        connection = AirbyteConnection.from_connection_details(
+            connection_details=airbyte_output.connection_details
+        )
+
+        for stream in connection.streams.values():
+            if stream.selected:
+                connection_table_name = get_airbyte_connection_table_name(
+                    stream_prefix=connection.stream_prefix,
+                    stream_name=stream.name,
+                )
+                stream_asset_spec = dagster_airbyte_translator.get_asset_spec(
+                    props=AirbyteConnectionTableProps(
+                        table_name=connection_table_name,
+                        stream_prefix=connection.stream_prefix,
+                        stream_name=stream.name,
+                        json_schema=stream.json_schema,
+                        connection_id=connection.id,
+                        connection_name=connection.name,
+                        destination_type=None,
+                        database=None,
+                        schema=None,
+                    )
+                )
+
+                yield AssetMaterialization(
+                    asset_key=stream_asset_spec.key,
+                    description=(
+                        f"Table generated via Airbyte Cloud sync "
+                        f"for connection {connection.name}: {connection_table_name}"
+                    ),
+                    metadata=stream_asset_spec.metadata,
+                )
+
+    @experimental
     def sync_and_poll(self, context: AssetExecutionContext):
-        raise NotImplementedError()
+        """Executes a sync and poll process to materialize Airbyte Cloud assets.
+            This method can only be used in the context of an asset execution.
+
+        Args:
+            context (AssetExecutionContext): The execution context
+                from within `@airbyte_assets`.
+
+        Returns:
+            Iterator[Union[AssetMaterialization, MaterializeResult]]: An iterator of MaterializeResult
+                or AssetMaterialization.
+        """
+        assets_def = context.assets_def
+        dagster_airbyte_translator = get_translator_from_airbyte_assets(assets_def)
+        connection_id = next(
+            check.not_none(AirbyteMetadataSet.extract(spec.metadata).connection_id)
+            for spec in assets_def.specs
+        )
+
+        client = self.get_client()
+        airbyte_output = client.sync_and_poll(
+            connection_id=connection_id,
+        )
+
+        materialized_asset_keys = set()
+        for materialization in self._generate_materialization(
+            airbyte_output=airbyte_output, dagster_airbyte_translator=dagster_airbyte_translator
+        ):
+            # Scan through all tables actually created, if it was expected then emit a MaterializeResult.
+            # Otherwise, emit a runtime AssetMaterialization.
+            if materialization.asset_key in context.selected_asset_keys:
+                yield MaterializeResult(
+                    asset_key=materialization.asset_key, metadata=materialization.metadata
+                )
+                materialized_asset_keys.add(materialization.asset_key)
+            else:
+                context.log.warning(
+                    f"An unexpected asset was materialized: {materialization.asset_key}. "
+                    f"Yielding a materialization event."
+                )
+                yield materialization
+
+        unmaterialized_asset_keys = context.selected_asset_keys - materialized_asset_keys
+        if unmaterialized_asset_keys:
+            context.log.warning(f"Assets were not materialized: {unmaterialized_asset_keys}")
 
 
 @experimental
@@ -1250,16 +1341,23 @@ def load_airbyte_cloud_asset_specs(
             airbyte_cloud_specs = load_airbyte_cloud_asset_specs(airbyte_cloud_workspace)
             defs = dg.Definitions(assets=airbyte_cloud_specs)
     """
+    dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
+
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
-        return check.is_list(
-            AirbyteCloudWorkspaceDefsLoader(
-                workspace=initialized_workspace,
-                translator=dagster_airbyte_translator or DagsterAirbyteTranslator(),
+        return [
+            spec.merge_attributes(
+                metadata={DAGSTER_AIRBYTE_TRANSLATOR_METADATA_KEY: dagster_airbyte_translator}
             )
-            .build_defs()
-            .assets,
-            AssetSpec,
-        )
+            for spec in check.is_list(
+                AirbyteCloudWorkspaceDefsLoader(
+                    workspace=initialized_workspace,
+                    translator=dagster_airbyte_translator,
+                )
+                .build_defs()
+                .assets,
+                AssetSpec,
+            )
+        ]
 
 
 @record

@@ -34,7 +34,7 @@ def test_airbyte_workspace_data_to_table_props(
     table_props_data = (
         resource.fetch_airbyte_workspace_data().to_airbyte_connection_table_props_data()
     )
-    assert len(table_props_data) == 1
+    assert len(table_props_data) == 2
     first_table_props = next(iter(table_props_data))
     assert first_table_props == TEST_AIRBYTE_CONNECTION_TABLE_PROPS
 
@@ -51,7 +51,7 @@ def test_translator_asset_spec(
     table_props_data = (
         resource.fetch_airbyte_workspace_data().to_airbyte_connection_table_props_data()
     )
-    assert len(table_props_data) == 1
+    assert len(table_props_data) == 2
     first_table_props = next(iter(table_props_data))
 
     translator = DagsterAirbyteTranslator()
@@ -93,7 +93,7 @@ def test_custom_translator(
     table_props_data = (
         resource.fetch_airbyte_workspace_data().to_airbyte_connection_table_props_data()
     )
-    assert len(table_props_data) == 1
+    assert len(table_props_data) == 2
     first_table_props = next(iter(table_props_data))
 
     translator = MyCustomTranslator()

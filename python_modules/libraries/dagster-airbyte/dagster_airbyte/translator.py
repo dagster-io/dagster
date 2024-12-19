@@ -41,7 +41,7 @@ class AirbyteConnectionTableProps:
     json_schema: Mapping[str, Any]
     connection_id: str
     connection_name: str
-    destination_type: str
+    destination_type: Optional[str]
     database: Optional[str]
     schema: Optional[str]
 
@@ -231,5 +231,5 @@ class DagsterAirbyteTranslator:
         return AssetSpec(
             key=AssetKey(props.table_name),
             metadata=metadata,
-            kinds={"airbyte", props.destination_type},
+            kinds={"airbyte", *({props.destination_type} if props.destination_type else set())},
         )

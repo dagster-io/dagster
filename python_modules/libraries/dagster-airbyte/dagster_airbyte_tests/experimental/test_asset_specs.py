@@ -54,8 +54,8 @@ def test_translator_spec(
         all_assets_keys = [asset.key for asset in all_assets]
 
         # 1 table for the connection
-        assert len(all_assets) == 1
-        assert len(all_assets_keys) == 1
+        assert len(all_assets) == 2
+        assert len(all_assets_keys) == 2
 
         # Test the asset key for the connection table
         the_asset_key = next(iter(all_assets_keys))

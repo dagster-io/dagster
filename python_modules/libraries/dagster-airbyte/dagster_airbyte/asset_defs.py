@@ -1,7 +1,6 @@
 import hashlib
 import inspect
 import os
-import re
 from abc import abstractmethod
 from functools import partial
 from itertools import chain
@@ -57,6 +56,7 @@ from dagster_airbyte.resources import (
 from dagster_airbyte.translator import AirbyteMetadataSet, DagsterAirbyteTranslator
 from dagster_airbyte.types import AirbyteTableMetadata
 from dagster_airbyte.utils import (
+    clean_name,
     generate_materializations,
     generate_table_schema,
     is_basic_normalization_operation,
@@ -469,11 +469,6 @@ def _get_normalization_tables_for_schema(
                     )
 
     return out
-
-
-def _clean_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster asset name."""
-    return re.sub(r"[^a-z0-9]+", "_", name.lower())
 
 
 class AirbyteConnectionMetadata(
@@ -917,7 +912,7 @@ def load_assets_from_airbyte_instance(
     workspace_id: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
-    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = clean_name,
     connection_meta_to_group_fn: Optional[
         Callable[[AirbyteConnectionMetadata], Optional[str]]
     ] = None,
@@ -1022,7 +1017,7 @@ def load_assets_from_airbyte_instance(
     check.invariant(
         not connection_meta_to_group_fn
         or not connection_to_group_fn
-        or connection_to_group_fn == _clean_name,
+        or connection_to_group_fn == clean_name,
         "Cannot specify both connection_meta_to_group_fn and connection_to_group_fn",
     )
 
@@ -1143,8 +1138,8 @@ def build_airbyte_assets_definitions(
         @airbyte_assets(
             connection_id=connection_id,
             workspace=workspace,
-            name=_clean_name(connection_name),
-            group_name=_clean_name(connection_name),
+            name=clean_name(connection_name),
+            group_name=clean_name(connection_name),
             dagster_airbyte_translator=dagster_airbyte_translator,
         )
         def _asset_fn(context: AssetExecutionContext, airbyte: AirbyteCloudWorkspace):

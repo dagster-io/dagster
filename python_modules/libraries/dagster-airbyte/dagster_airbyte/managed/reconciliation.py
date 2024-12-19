@@ -36,7 +36,6 @@ from dagster_managed_elements.utils import UNSET, diff_dicts
 from dagster_airbyte.asset_defs import (
     AirbyteConnectionMetadata,
     AirbyteInstanceCacheableAssetsDefinition,
-    _clean_name,
 )
 from dagster_airbyte.managed.types import (
     MANAGED_ELEMENTS_DEPRECATION_MSG,
@@ -50,7 +49,7 @@ from dagster_airbyte.managed.types import (
     InitializedAirbyteSource,
 )
 from dagster_airbyte.resources import AirbyteResource
-from dagster_airbyte.utils import is_basic_normalization_operation
+from dagster_airbyte.utils import clean_name, is_basic_normalization_operation
 
 
 def gen_configured_stream_json(
@@ -746,7 +745,7 @@ def load_assets_from_connections(
     connections: Iterable[AirbyteConnection],
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
-    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = clean_name,
     connection_meta_to_group_fn: Optional[
         Callable[[AirbyteConnectionMetadata], Optional[str]]
     ] = None,
@@ -821,7 +820,7 @@ def load_assets_from_connections(
     check.invariant(
         not connection_meta_to_group_fn
         or not connection_to_group_fn
-        or connection_to_group_fn == _clean_name,
+        or connection_to_group_fn == clean_name,
         "Cannot specify both connection_meta_to_group_fn and connection_to_group_fn",
     )
 
