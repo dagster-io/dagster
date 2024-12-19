@@ -12,14 +12,14 @@ import {RunsFeedRootQuery, RunsFeedRootQueryVariables} from './types/useRunsFeed
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {RunsFilter} from '../graphql/types';
+import {RunsFeedView, RunsFilter} from '../graphql/types';
 
 const PAGE_SIZE = 30;
 
 export function useRunsFeedEntries(
   filter: RunsFilter,
   currentTab: ReturnType<typeof useSelectedRunsFeedTab>,
-  includeRunsFromBackfills: boolean,
+  view: RunsFeedView,
 ) {
   const isScheduled = currentTab === 'scheduled';
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
@@ -29,7 +29,7 @@ export function useRunsFeedEntries(
     query: RUNS_FEED_ROOT_QUERY,
     queryKey: RUNS_FEED_CURSOR_KEY,
     pageSize: PAGE_SIZE,
-    variables: {filter, includeRunsFromBackfills},
+    variables: {filter, view},
     skip: isScheduled,
     nextCursorForResult: (data) => {
       if (data.runsFeedOrError.__typename !== 'RunsFeedConnection') {
@@ -80,14 +80,9 @@ export const RUNS_FEED_ROOT_QUERY = gql`
     $limit: Int!
     $cursor: String
     $filter: RunsFilter
-    $includeRunsFromBackfills: Boolean!
+    $view: RunsFeedView!
   ) {
-    runsFeedOrError(
-      limit: $limit
-      cursor: $cursor
-      filter: $filter
-      includeRunsFromBackfills: $includeRunsFromBackfills
-    ) {
+    runsFeedOrError(limit: $limit, cursor: $cursor, filter: $filter, view: $view) {
       ... on RunsFeedConnection {
         cursor
         hasMore

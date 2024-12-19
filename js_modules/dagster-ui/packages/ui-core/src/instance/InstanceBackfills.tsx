@@ -10,6 +10,7 @@ import {Link} from 'react-router-dom';
 
 import {gql} from '../apollo-client';
 import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from './backfill/BackfillTable';
+import {useBulkActionStatusFilter} from './useBulkActionStatusFilter';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {
@@ -29,38 +30,8 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DaemonNotRunningAlert, useIsBackfillDaemonHealthy} from '../partitions/BackfillMessaging';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {useFilters} from '../ui/BaseFilters';
-import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 
 const PAGE_SIZE = 10;
-
-const labelForBackfillStatus = (key: BulkActionStatus) => {
-  switch (key) {
-    case BulkActionStatus.CANCELED:
-      return 'Canceled';
-    case BulkActionStatus.CANCELING:
-      return 'Canceling';
-    case BulkActionStatus.COMPLETED:
-      return 'Completed';
-    case BulkActionStatus.FAILED:
-      return 'Failed';
-    case BulkActionStatus.REQUESTED:
-      return 'In progress';
-    case BulkActionStatus.COMPLETED_SUCCESS:
-      return 'Success';
-    case BulkActionStatus.COMPLETED_FAILED:
-      return 'Failed';
-  }
-};
-
-const backfillStatusValues = Object.keys(BulkActionStatus).map((key) => {
-  const status = key as BulkActionStatus;
-  const label = labelForBackfillStatus(status);
-  return {
-    label,
-    value: status,
-    match: [status, label],
-  };
-});
 
 export const InstanceBackfills = () => {
   useTrackPageView();
@@ -70,18 +41,8 @@ export const InstanceBackfills = () => {
     encode: (vals) => ({status: vals.size ? Array.from(vals).join(',') : undefined}),
     decode: (qs) => new Set((qs.status?.split(',') as BulkActionStatus[]) || []),
   });
-  const statusFilter = useStaticSetFilter<BulkActionStatus>({
-    name: 'Status',
-    icon: 'status',
-    allValues: backfillStatusValues,
-    allowMultipleSelections: false,
-    closeOnSelect: true,
-    renderLabel: ({value}) => <div>{labelForBackfillStatus(value)}</div>,
-    getStringValue: (status) => labelForBackfillStatus(status),
-    state: statusState,
-    onStateChanged: setStatusState,
-  });
 
+  const statusFilter = useBulkActionStatusFilter(statusState, setStatusState);
   const {button, activeFiltersJsx} = useFilters({filters: [statusFilter]});
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
