@@ -101,12 +101,15 @@ def _convert_pydantic_field(
     if get_origin(pydantic_field.annotation) == Literal:
         return _convert_typing_literal_field(pydantic_field)
 
-    field_type = pydantic_field.annotation
+    field_type = (
+        pydantic_field.annotation
+    )  # here by just passing the field_type is where we lose any default values
     if safe_is_subclass(field_type, Config):
         inferred_field = infer_schema_from_config_class(
             field_type,
             description=pydantic_field.description,
         )
+        # but once we have the non-default inferred field, i'm not sure how we can then apply the defaults
         return inferred_field
     else:
         if not pydantic_field.is_required() and not is_closed_python_optional_type(field_type):
