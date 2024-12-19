@@ -7,7 +7,8 @@ sidebar_position: 200
 This guide is applicable to Dagster+.
 :::
 
-This reference describes the various configuration options Dagster+ currently supports for [Docker agents](/dagster-plus/deployment/agents/docker/configuring-running-docker-agent).
+{/* This reference describes the various configuration options Dagster+ currently supports for [Docker agents](/dagster-plus/deployment/agents/docker/configuring-running-docker-agent). */}
+This reference describes the various configuration options Dagster+ currently supports for [Docker agents](/todo).
 
 ---
 
@@ -33,6 +34,8 @@ The `container_context.docker.env_vars` property is a list, where each item can 
 
 Refer to the following guides for more info about environment variables:
 
-- [Dagster+ environment variables and secrets](/dagster-plus/managing-deployments/environment-variables-and-secrets)
-- [Using environment variables and secrets in Dagster code](/guides/dagster/using-environment-variables-and-secrets)
+{/* - [Dagster+ environment variables and secrets](/dagster-plus/managing-deployments/environment-variables-and-secrets) */}
+- [Dagster+ environment variables and secrets](/todo)
+{/* - [Using environment variables and secrets in Dagster code](/guides/dagster/using-environment-variables-and-secrets) */}
+- [Using environment variables and secrets in Dagster code](/todo)
 
