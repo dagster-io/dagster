@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import List, NamedTuple, Optional, Sequence, cast
+from typing import List, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
@@ -16,23 +16,15 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import add_absolute_time
 
 
 @whitelist_for_serdes
 @experimental_param(param="allow_nonexistent_upstream_partitions")
-class TimeWindowPartitionMapping(
-    PartitionMapping,
-    NamedTuple(
-        "_TimeWindowPartitionMapping",
-        [
-            ("start_offset", PublicAttr[int]),
-            ("end_offset", PublicAttr[int]),
-            ("allow_nonexistent_upstream_partitions", PublicAttr[bool]),
-        ],
-    ),
-):
+@record
+class TimeWindowPartitionMapping(PartitionMapping):
     """The default mapping between two TimeWindowPartitionsDefinitions.
 
     A partition in the downstream partitions definition is mapped to all partitions in the upstream
@@ -95,21 +87,9 @@ class TimeWindowPartitionMapping(
                 ...
     """
 
-    def __new__(
-        cls,
-        start_offset: int = 0,
-        end_offset: int = 0,
-        allow_nonexistent_upstream_partitions: bool = False,
-    ):
-        return super(TimeWindowPartitionMapping, cls).__new__(
-            cls,
-            start_offset=check.int_param(start_offset, "start_offset"),
-            end_offset=check.int_param(end_offset, "end_offset"),
-            allow_nonexistent_upstream_partitions=check.bool_param(
-                allow_nonexistent_upstream_partitions,
-                "allow_nonexistent_upstream_partitions",
-            ),
-        )
+    start_offset: PublicAttr[int] = 0
+    end_offset: PublicAttr[int] = 0
+    allow_nonexistent_upstream_partitions: PublicAttr[bool] = False
 
     @property
     def description(self) -> str:
