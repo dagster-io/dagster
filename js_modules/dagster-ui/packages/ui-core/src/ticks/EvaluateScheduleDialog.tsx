@@ -190,7 +190,7 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
 
     try {
       if (executionParamsList) {
-        await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
+        await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast', jobName);
       }
     } catch (e) {
       console.error(e);
@@ -198,7 +198,14 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
 
     setLaunching(false);
     onClose();
-  }, [canLaunchAll, executionParamsList, launchMultipleRunsWithTelemetry, onClose, trackEvent]);
+  }, [
+    canLaunchAll,
+    executionParamsList,
+    jobName,
+    launchMultipleRunsWithTelemetry,
+    onClose,
+    trackEvent,
+  ]);
 
   const content = useMemo(() => {
     // launching all runs state

@@ -196,7 +196,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
 
     try {
       if (executionParamsList) {
-        await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
+        await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast', jobName);
         onCommitTickResult(); // persist tick
       }
     } catch (e) {
@@ -208,6 +208,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   }, [
     canLaunchAll,
     executionParamsList,
+    jobName,
     launchMultipleRunsWithTelemetry,
     onClose,
     onCommitTickResult,
