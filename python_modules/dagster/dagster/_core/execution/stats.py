@@ -116,12 +116,49 @@ class StepEventStatus(Enum):
 
 
 def build_run_step_stats_from_events(
-    run_id: str, records: Iterable[EventLogEntry]
+    run_id: str,
+    records: Iterable[EventLogEntry],
+    previous_stats: Optional[Sequence["RunStepKeyStatsSnapshot"]] = None,
 ) -> Sequence["RunStepKeyStatsSnapshot"]:
     by_step_key: Dict[str, Dict[str, Any]] = defaultdict(dict)
     attempts = defaultdict(list)
-    attempt_events = defaultdict(list)
     markers: Dict[str, Dict[str, Any]] = defaultdict(dict)
+
+    if previous_stats:
+        for step_stats in previous_stats:
+            check.invariant(step_stats.run_id == run_id)
+            by_step_key[step_stats.step_key] = {
+                "start_time": step_stats.start_time,
+                "end_time": step_stats.end_time,
+                "status": step_stats.status,
+                "materialization_events": step_stats.materialization_events,
+                "expectation_results": step_stats.expectation_results,
+                "attempts": step_stats.attempts,
+                "partial_attempt_start": step_stats.partial_attempt_start,
+            }
+            for marker in step_stats.markers:
+                assert marker.key
+                markers[step_stats.step_key][marker.key] = {
+                    "key": marker.key,
+                    "start": marker.start_time,
+                    "end": marker.end_time,
+                }
+            for attempt in step_stats.attempts_list:
+                attempts[step_stats.step_key].append(attempt)
+
+    def _open_attempt(step_key: str, event: EventLogEntry) -> None:
+        by_step_key[step_key]["attempts"] = int(by_step_key[step_key].get("attempts") or 0) + 1
+        by_step_key[step_key]["partial_attempt_start"] = event.timestamp
+
+    def _close_attempt(step_key: str, event: EventLogEntry) -> None:
+        attempts[step_key].append(
+            RunStepMarker(
+                start_time=by_step_key[step_key].get("partial_attempt_start"),
+                end_time=event.timestamp,
+            )
+        )
+        by_step_key[step_key]["partial_attempt_start"] = None
+
     for event in records:
         if not event.is_dagster_event:
             continue
@@ -135,19 +172,25 @@ def build_run_step_stats_from_events(
             continue
 
         if dagster_event.event_type == DagsterEventType.STEP_START:
+            by_step_key[step_key]["status"] = StepEventStatus.IN_PROGRESS
             by_step_key[step_key]["start_time"] = event.timestamp
-            by_step_key[step_key]["attempts"] = 1
+            _open_attempt(step_key, event)
+        if dagster_event.event_type == DagsterEventType.STEP_RESTARTED:
+            _open_attempt(step_key, event)
+        if dagster_event.event_type == DagsterEventType.STEP_UP_FOR_RETRY:
+            _close_attempt(step_key, event)
         if dagster_event.event_type == DagsterEventType.STEP_FAILURE:
             by_step_key[step_key]["end_time"] = event.timestamp
             by_step_key[step_key]["status"] = StepEventStatus.FAILURE
-        if dagster_event.event_type == DagsterEventType.STEP_RESTARTED:
-            by_step_key[step_key]["attempts"] = int(by_step_key[step_key].get("attempts") or 0) + 1
+            _close_attempt(step_key, event)
         if dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
             by_step_key[step_key]["end_time"] = event.timestamp
             by_step_key[step_key]["status"] = StepEventStatus.SUCCESS
+            _close_attempt(step_key, event)
         if dagster_event.event_type == DagsterEventType.STEP_SKIPPED:
             by_step_key[step_key]["end_time"] = event.timestamp
             by_step_key[step_key]["status"] = StepEventStatus.SKIPPED
+            _close_attempt(step_key, event)
         if dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
             materialization_events = by_step_key[step_key].get("materialization_events", [])
             materialization_events.append(event)
@@ -158,79 +201,62 @@ def build_run_step_stats_from_events(
             step_expectation_results = by_step_key[step_key].get("expectation_results", [])
             step_expectation_results.append(expectation_result)
             by_step_key[step_key]["expectation_results"] = step_expectation_results
-        if dagster_event.event_type in (
-            DagsterEventType.STEP_UP_FOR_RETRY,
-            DagsterEventType.STEP_RESTARTED,
-        ):
-            attempt_events[step_key].append(event)
+
         if dagster_event.event_type in MARKER_EVENTS:
             if dagster_event.engine_event_data.marker_start:
-                key = dagster_event.engine_event_data.marker_start
-                if key not in markers[step_key]:
-                    markers[step_key][key] = {"key": key, "start": event.timestamp}
+                marker_key = dagster_event.engine_event_data.marker_start
+                if marker_key not in markers[step_key]:
+                    markers[step_key][marker_key] = {"key": marker_key, "start": event.timestamp}
                 else:
-                    markers[step_key][key]["start"] = event.timestamp
+                    markers[step_key][marker_key]["start"] = event.timestamp
 
             if dagster_event.engine_event_data.marker_end:
-                key = dagster_event.engine_event_data.marker_end
-                if key not in markers[step_key]:
-                    markers[step_key][key] = {"key": key, "end": event.timestamp}
+                marker_key = dagster_event.engine_event_data.marker_end
+                if marker_key not in markers[step_key]:
+                    markers[step_key][marker_key] = {"key": marker_key, "end": event.timestamp}
                 else:
-                    markers[step_key][key]["end"] = event.timestamp
+                    markers[step_key][marker_key]["end"] = event.timestamp
 
-    for step_key, step_stats in by_step_key.items():
-        events = attempt_events[step_key]
-        step_attempts = []
-        attempt_start = step_stats.get("start_time")
-
-        for event in events:
-            if not event.dagster_event:
-                continue
-            if event.dagster_event.event_type == DagsterEventType.STEP_UP_FOR_RETRY:
-                step_attempts.append(
-                    RunStepMarker(start_time=attempt_start, end_time=event.timestamp)
-                )
-            elif event.dagster_event.event_type == DagsterEventType.STEP_RESTARTED:
-                attempt_start = event.timestamp
-        if step_stats.get("end_time"):
-            step_attempts.append(
-                RunStepMarker(start_time=attempt_start, end_time=step_stats["end_time"])
+    all_step_keys = set(list(by_step_key.keys()) + list(markers.keys()))
+    snapshots = []
+    for step_key in all_step_keys:
+        snapshots.append(
+            RunStepKeyStatsSnapshot(
+                run_id=run_id,
+                step_key=step_key,
+                **by_step_key[step_key],
+                markers=[
+                    RunStepMarker(
+                        start_time=marker.get("start"),
+                        end_time=marker.get("end"),
+                        key=marker.get("key"),
+                    )
+                    for marker in markers[step_key].values()
+                ],
+                attempts_list=attempts[step_key],
             )
-        else:
-            by_step_key[step_key]["status"] = StepEventStatus.IN_PROGRESS
-        attempts[step_key] = step_attempts
-
-    return [
-        RunStepKeyStatsSnapshot(
-            run_id=run_id,
-            step_key=step_key,
-            attempts_list=attempts[step_key],
-            markers=[
-                RunStepMarker(start_time=marker.get("start"), end_time=marker.get("end"))
-                for marker in markers[step_key].values()
-            ],
-            **value,
         )
-        for step_key, value in by_step_key.items()
-    ]
+    return snapshots
 
 
 @whitelist_for_serdes
 class RunStepMarker(
     NamedTuple(
         "_RunStepMarker",
-        [("start_time", Optional[float]), ("end_time", Optional[float])],
+        [("start_time", Optional[float]), ("end_time", Optional[float]), ("key", Optional[str])],
     )
 ):
     def __new__(
         cls,
         start_time: Optional[float] = None,
         end_time: Optional[float] = None,
+        key: Optional[str] = None,
     ):
         return super(RunStepMarker, cls).__new__(
             cls,
             start_time=check.opt_float_param(start_time, "start_time"),
             end_time=check.opt_float_param(end_time, "end_time"),
+            key=check.opt_str_param(key, "key"),
         )
 
 
@@ -249,6 +275,7 @@ class RunStepKeyStatsSnapshot(
             ("attempts", Optional[int]),
             ("attempts_list", Sequence[RunStepMarker]),
             ("markers", Sequence[RunStepMarker]),
+            ("partial_attempt_start", Optional[float]),
         ],
     )
 ):
@@ -264,6 +291,7 @@ class RunStepKeyStatsSnapshot(
         attempts: Optional[int] = None,
         attempts_list: Optional[Sequence[RunStepMarker]] = None,
         markers: Optional[Sequence[RunStepMarker]] = None,
+        partial_attempt_start: Optional[float] = None,
     ):
         return super(RunStepKeyStatsSnapshot, cls).__new__(
             cls,
@@ -283,4 +311,8 @@ class RunStepKeyStatsSnapshot(
             attempts=check.opt_int_param(attempts, "attempts"),
             attempts_list=check.opt_sequence_param(attempts_list, "attempts_list", RunStepMarker),
             markers=check.opt_sequence_param(markers, "markers", RunStepMarker),
+            # used to calculate incremental step stats using batches of event logs
+            partial_attempt_start=check.opt_float_param(
+                partial_attempt_start, "partial_attempt_start"
+            ),
         )
