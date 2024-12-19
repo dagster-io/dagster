@@ -11,7 +11,7 @@ Automation is key to building reliable, efficient data pipelines. This guide pro
 
 Before continuing, you should be familiar with:
 
-- [Asset definitions](/guides/build/assets-concepts/index.mdx
+- [Asset definitions](/guides/build/create-asset-pipelines/assets-concepts/index.mdx
 - [Jobs](/guides/build/ops-jobs)
 
 </details>

@@ -11,7 +11,7 @@ You often want to control the number of concurrent runs for a Dagster job, a spe
 <details>
 <summary>Prerequisites</summary>
 
-- Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
+- Familiarity with [Assets](/guides/build/create-asset-pipelines/assets-concepts/index.mdx
 - Familiarity with [Jobs and Ops](/guides/build/ops-jobs)
 </details>
 

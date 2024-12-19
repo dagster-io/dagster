@@ -9,7 +9,7 @@ In this guide, we'll walk you through how to invoke non-Dagster code through Pip
 
 :::note
 
-This documentation assumes familiarity with [Dagster assets](/guides/build/assets-concepts).
+This documentation assumes familiarity with [Dagster assets](/guides/build/create-asset-pipelines/assets-concepts).
 
 :::
 

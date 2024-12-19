@@ -25,7 +25,7 @@ as the schedule is processed.
 Schedules were one of the first types of automation in Dagster, created before the introduction of Software-Defined Assets.
 As such, you may find that many of the examples can seem foreign if you are used to only working within the asset framework.
 
-For more on how assets and ops inter-relate, read about [Assets and Ops](/guides/build/assets-concepts#assets-and-ops)
+For more on how assets and ops inter-relate, read about [Assets and Ops](/guides/build/create-asset-pipelines/assets-concepts#assets-and-ops)
 
 The `dagster-daemon` process is responsible for submitting runs by checking each schedule at a regular interval to determine
 if it's time to execute the underlying job.

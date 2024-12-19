@@ -17,7 +17,7 @@ Each asset check should test only a single asset property to keep tests uncompli
 
 To follow this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
+- Familiarity with [Assets](/guides/build/create-asset-pipelines/assets-concepts/index.mdx
 </details>
 
 ## Getting started
@@ -79,6 +79,6 @@ In the example below, two jobs are defined: one for the asset and another for th
 
 ## Next steps
 
-- Learn more about assets in [Understanding Assets](/guides/build/assets-concepts/index.mdx
+- Learn more about assets in [Understanding Assets](/guides/build/create-asset-pipelines/assets-concepts/index.mdx
 - Learn more about asset checks in [Understanding Asset Checks](/guides/test/asset-checks)
 - Learn how to use [Great Expectations with Dagster](https://dagster.io/blog/ensuring-data-quality-with-dagster-and-great-expectations)
