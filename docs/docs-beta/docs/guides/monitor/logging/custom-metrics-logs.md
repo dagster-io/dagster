@@ -1,5 +1,5 @@
 ---
-title: "Use custom metrics in logs"
-sidebar_position: 200
+title: "Using custom metrics in logs"
+sidebar_position: 300
 unlisted: true
 ---

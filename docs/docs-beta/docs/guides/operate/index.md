@@ -1,5 +1,5 @@
 ---
-title: "Testing assets"
+title: "Operating pipelines"
 sidebar_class_name: hidden
 ---
 

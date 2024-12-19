@@ -1,5 +1,6 @@
 ---
-title: "Testing assets"
+title: "Migrate"
+description: "Migrate to Dagster from other platforms"
 sidebar_class_name: hidden
 ---
 

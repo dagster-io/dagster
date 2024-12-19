@@ -1,6 +1,5 @@
 ---
-title: "Testing assets"
-sidebar_class_name: hidden
+title: 'Migrating from Airflow to Dagster'
 ---
 
 import DocCardList from '@theme/DocCardList';

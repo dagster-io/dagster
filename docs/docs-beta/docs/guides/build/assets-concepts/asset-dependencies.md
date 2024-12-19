@@ -1,7 +1,7 @@
 ---
 title: Pass data between assets
 description: Learn how to pass data between assets in Dagster
-sidebar_position: 200
+sidebar_position: 400
 ---
 
 In Dagster, assets are the building blocks of your data pipeline and it's common to want to pass data between them. This guide will help you understand how to pass data between assets.
