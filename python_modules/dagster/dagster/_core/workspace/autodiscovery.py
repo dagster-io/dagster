@@ -5,7 +5,9 @@ from typing import Callable, NamedTuple, Optional, Sequence, Tuple, Type, Union
 from dagster import DagsterInvariantViolationError, GraphDefinition, RepositoryDefinition
 from dagster._core.code_pointer import load_python_file, load_python_module
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.load_assets_from_modules import load_assets_from_modules
+from dagster._core.definitions.module_loaders.load_assets_from_modules import (
+    load_assets_from_modules,
+)
 
 LOAD_ALL_ASSETS = "<<LOAD_ALL_ASSETS>>"
 

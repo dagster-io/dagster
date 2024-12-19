@@ -7,7 +7,7 @@ from dagster._core.definitions.metadata import (
 )
 
 # importing this makes it show up twice when we collect everything
-from dagster_tests.asset_defs_tests.asset_package.asset_subpackage.another_module_with_assets import (
+from dagster_tests.definitions_tests.module_loader_tests.asset_package.asset_subpackage.another_module_with_assets import (
     miles_davis,
 )
 

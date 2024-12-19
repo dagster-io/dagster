@@ -19,8 +19,8 @@ from dagster_tests.definitions_tests.decorators_tests.test_asset_check_decorator
 
 
 def test_load_asset_checks_from_modules():
-    from dagster_tests.definitions_tests.asset_check_tests import checks_module
-    from dagster_tests.definitions_tests.asset_check_tests.checks_module import asset_check_1
+    from dagster_tests.definitions_tests.module_loader_tests import checks_module
+    from dagster_tests.definitions_tests.module_loader_tests.checks_module import asset_check_1
 
     checks = load_asset_checks_from_modules([checks_module])
     assert len(checks) == 1
@@ -47,7 +47,7 @@ def test_load_asset_checks_from_modules():
 
 
 def test_load_asset_checks_from_modules_prefix():
-    from dagster_tests.definitions_tests.asset_check_tests import checks_module
+    from dagster_tests.definitions_tests.module_loader_tests import checks_module
 
     checks = load_asset_checks_from_modules([checks_module], asset_key_prefix="foo")
     assert len(checks) == 1
@@ -98,7 +98,7 @@ def test_load_asset_checks_from_current_module():
     ],
 )
 def test_load_asset_checks_from_package(load_fns):
-    from dagster_tests.definitions_tests.asset_check_tests import checks_module
+    from dagster_tests.definitions_tests.module_loader_tests import checks_module
 
     assets_load_fn, checks_load_fn = load_fns
 
