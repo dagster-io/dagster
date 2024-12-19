@@ -10,6 +10,7 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import experimental, public
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._utils.tags import is_valid_tag_key
 
 from dagster_dbt.asset_utils import (
@@ -518,6 +519,20 @@ class DagsterDbtTranslator:
         auto_materialize_policy = self.get_auto_materialize_policy(dbt_resource_props)
         return (
             auto_materialize_policy.to_automation_condition() if auto_materialize_policy else None
+        )
+
+    def get_spec(self, dbt_resource_props: Mapping[str, Any]) -> AssetSpec:
+        return AssetSpec(
+            key=self.get_asset_key(dbt_resource_props),
+            deps=...,
+            description=self.get_description(dbt_resource_props),
+            metadata=self.get_metadata(dbt_resource_props),
+            skippable=True,
+            group_name=self.get_group_name(dbt_resource_props),
+            code_version=self.get_code_version(dbt_resource_props),
+            automation_condition=self.get_automation_condition(dbt_resource_props),
+            owners=self.get_owners(dbt_resource_props),
+            tags=self.get_tags(dbt_resource_props),
         )
 
 
