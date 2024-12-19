@@ -46,7 +46,8 @@ export function useLaunchMultipleRunsWithTelemetry() {
         }
 
         if (
-          (jobNames.length !== executionParamsList.length && jobNames.includes(undefined)) ||
+          jobNames.length !== executionParamsList.length ||
+          jobNames.includes(undefined) ||
           jobNames.includes(null)
         ) {
           throw new Error(
