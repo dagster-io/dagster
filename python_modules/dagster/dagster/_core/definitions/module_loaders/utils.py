@@ -7,13 +7,34 @@ from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.partitioned_schedule import (
+    UnresolvedPartitionedAssetScheduleDefinition,
+)
+from dagster._core.definitions.schedule_definition import ScheduleDefinition
+from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 LoadableAssetObject = Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]
-LoadableDagsterObject = LoadableAssetObject  # For now
+ScheduleDefinitionObject = Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]
+JobDefinitionObject = Union[JobDefinition, UnresolvedAssetJobDefinition]
+LoadableDagsterObject = Union[
+    LoadableAssetObject,
+    SensorDefinition,
+    ScheduleDefinitionObject,
+    JobDefinitionObject,
+]
 RuntimeKeyScopedAssetObjectTypes = (AssetsDefinition, AssetSpec, SourceAsset)
 RuntimeAssetObjectTypes = (AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition)
-RuntimeDagsterObjectTypes = RuntimeAssetObjectTypes  # For now
+RuntimeScheduleObjectTypes = (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition)
+RuntimeJobObjectTypes = (JobDefinition, UnresolvedAssetJobDefinition)
+RuntimeDagsterObjectTypes = (
+    *RuntimeAssetObjectTypes,
+    SensorDefinition,
+    *RuntimeScheduleObjectTypes,
+    *RuntimeJobObjectTypes,
+)
 
 
 def find_objects_in_module_of_types(
