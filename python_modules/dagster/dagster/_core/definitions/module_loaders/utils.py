@@ -3,38 +3,10 @@ from importlib import import_module
 from types import ModuleType
 from typing import Iterable, Iterator, Mapping, Tuple, Type, Union
 
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.partitioned_schedule import (
-    UnresolvedPartitionedAssetScheduleDefinition,
-)
-from dagster._core.definitions.schedule_definition import ScheduleDefinition
-from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-
-LoadableAssetObject = Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]
-ScheduleDefinitionObject = Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]
-JobDefinitionObject = Union[JobDefinition, UnresolvedAssetJobDefinition]
-LoadableDagsterObject = Union[
-    LoadableAssetObject,
-    SensorDefinition,
-    ScheduleDefinitionObject,
-    JobDefinitionObject,
-]
-RuntimeKeyScopedAssetObjectTypes = (AssetsDefinition, AssetSpec, SourceAsset)
-RuntimeAssetObjectTypes = (AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition)
-RuntimeScheduleObjectTypes = (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition)
-RuntimeJobObjectTypes = (JobDefinition, UnresolvedAssetJobDefinition)
-RuntimeDagsterObjectTypes = (
-    *RuntimeAssetObjectTypes,
-    SensorDefinition,
-    *RuntimeScheduleObjectTypes,
-    *RuntimeJobObjectTypes,
-)
 
 
 def find_objects_in_module_of_types(
@@ -100,7 +72,6 @@ def find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
 def replace_keys_in_asset(
     asset: Union[AssetsDefinition, AssetSpec, SourceAsset],
     key_replacements: Mapping[AssetKey, AssetKey],
-    check_key_replacements: Mapping[AssetCheckKey, AssetCheckKey],
 ) -> Union[AssetsDefinition, AssetSpec, SourceAsset]:
     if isinstance(asset, SourceAsset):
         return asset.with_attributes(key=key_replacements.get(asset.key, asset.key))

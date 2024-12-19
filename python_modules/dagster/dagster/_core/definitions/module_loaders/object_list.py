@@ -1,7 +1,7 @@
 from collections import defaultdict
 from functools import cached_property
 from types import ModuleType
-from typing import Callable, Dict, Iterable, Mapping, Optional, Sequence, Union, cast
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Sequence, Union, cast, get_args
 
 from dagster._core.definitions.asset_checks import AssetChecksDefinition, has_only_asset_checks
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKeyPrefix
@@ -13,41 +13,51 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.module_loaders.utils import (
-    JobDefinitionObject,
-    LoadableDagsterObject,
-    RuntimeAssetObjectTypes,
-    RuntimeDagsterObjectTypes,
-    RuntimeJobObjectTypes,
-    RuntimeKeyScopedAssetObjectTypes,
-    RuntimeScheduleObjectTypes,
-    ScheduleDefinitionObject,
     find_objects_in_module_of_types,
     key_iterator,
     replace_keys_in_asset,
 )
+from dagster._core.definitions.partitioned_schedule import (
+    UnresolvedPartitionedAssetScheduleDefinition,
+)
+from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 
+LoadableDagsterDef = Union[
+    AssetsDefinition,
+    SourceAsset,
+    CacheableAssetsDefinition,
+    AssetSpec,
+    SensorDefinition,
+    ScheduleDefinition,
+    JobDefinition,
+    UnresolvedAssetJobDefinition,
+    UnresolvedPartitionedAssetScheduleDefinition,
+]
 
-class ModuleScopedDagsterObjects:
+
+class ModuleScopedDagsterDefs:
     def __init__(
         self,
-        objects_per_module: Mapping[str, Sequence[LoadableDagsterObject]],
+        objects_per_module: Mapping[str, Sequence[LoadableDagsterDef]],
     ):
         self.objects_per_module = objects_per_module
         self._do_collision_detection()
 
     @classmethod
-    def from_modules(cls, modules: Iterable[ModuleType]) -> "ModuleScopedDagsterObjects":
+    def from_modules(cls, modules: Iterable[ModuleType]) -> "ModuleScopedDagsterDefs":
         return cls(
             {
                 module.__name__: list(
                     find_objects_in_module_of_types(
                         module,
-                        RuntimeDagsterObjectTypes,
+                        get_args(LoadableDagsterDef),
                     )
                 )
                 for module in modules
@@ -55,17 +65,17 @@ class ModuleScopedDagsterObjects:
         )
 
     @cached_property
-    def flat_object_list(self) -> Sequence[LoadableDagsterObject]:
+    def flat_object_list(self) -> Sequence[LoadableDagsterDef]:
         return [
             asset_object for objects in self.objects_per_module.values() for asset_object in objects
         ]
 
     @cached_property
-    def objects_by_id(self) -> Dict[int, LoadableDagsterObject]:
+    def objects_by_id(self) -> Dict[int, LoadableDagsterDef]:
         return {id(asset_object): asset_object for asset_object in self.flat_object_list}
 
     @cached_property
-    def deduped_objects(self) -> Sequence[LoadableDagsterObject]:
+    def deduped_objects(self) -> Sequence[LoadableDagsterDef]:
         return list(self.objects_by_id.values())
 
     @cached_property
@@ -77,18 +87,28 @@ class ModuleScopedDagsterObjects:
         return [asset for asset in self.deduped_objects if isinstance(asset, SourceAsset)]
 
     @cached_property
-    def schedule_defs(self) -> Sequence[ScheduleDefinitionObject]:
+    def schedule_defs(
+        self,
+    ) -> Sequence[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]:
         return [
-            asset for asset in self.deduped_objects if isinstance(asset, RuntimeScheduleObjectTypes)
+            schedule
+            for schedule in self.deduped_objects
+            if isinstance(
+                schedule, (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition)
+            )
         ]
 
     @cached_property
-    def job_objects(self) -> Sequence[JobDefinitionObject]:
-        return [asset for asset in self.deduped_objects if isinstance(asset, RuntimeJobObjectTypes)]
+    def job_objects(self) -> Sequence[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+        return [
+            job
+            for job in self.deduped_objects
+            if isinstance(job, (JobDefinition, UnresolvedAssetJobDefinition))
+        ]
 
     @cached_property
     def sensor_defs(self) -> Sequence[SensorDefinition]:
-        return [asset for asset in self.deduped_objects if isinstance(asset, SensorDefinition)]
+        return [sensor for sensor in self.deduped_objects if isinstance(sensor, SensorDefinition)]
 
     @cached_property
     def module_name_by_id(self) -> Dict[int, str]:
@@ -104,7 +124,7 @@ class ModuleScopedDagsterObjects:
     ) -> Mapping[AssetKey, Sequence[Union[SourceAsset, AssetSpec, AssetsDefinition]]]:
         objects_by_key = defaultdict(list)
         for asset_object in self.flat_object_list:
-            if not isinstance(asset_object, RuntimeKeyScopedAssetObjectTypes):
+            if not isinstance(asset_object, (SourceAsset, AssetSpec, AssetsDefinition)):
                 continue
             for key in key_iterator(asset_object):
                 objects_by_key[key].append(asset_object)
@@ -170,27 +190,27 @@ class ModuleScopedDagsterObjects:
 class DagsterObjectsList:
     def __init__(
         self,
-        loaded_objects: Sequence[LoadableDagsterObject],
+        loaded_objects: Sequence[LoadableDagsterDef],
     ):
-        self.loaded_objects = loaded_objects
+        self.loaded_defs = loaded_objects
 
     @cached_property
     def assets_defs_and_specs(self) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
         return [
             asset
-            for asset in self.loaded_objects
+            for asset in self.loaded_defs
             if (isinstance(asset, AssetsDefinition) and asset.keys) or isinstance(asset, AssetSpec)
         ]
 
     @cached_property
     def assets_defs(self) -> Sequence[AssetsDefinition]:
-        return [asset for asset in self.loaded_objects if isinstance(asset, AssetsDefinition)]
+        return [asset for asset in self.loaded_defs if isinstance(asset, AssetsDefinition)]
 
     @cached_property
     def checks_defs(self) -> Sequence[AssetChecksDefinition]:
         return [
             cast(AssetChecksDefinition, asset)
-            for asset in self.loaded_objects
+            for asset in self.loaded_defs
             if isinstance(asset, AssetsDefinition) and has_only_asset_checks(asset)
         ]
 
@@ -202,20 +222,60 @@ class DagsterObjectsList:
 
     @cached_property
     def source_assets(self) -> Sequence[SourceAsset]:
-        return [asset for asset in self.loaded_objects if isinstance(asset, SourceAsset)]
+        return [
+            dagster_def for dagster_def in self.loaded_defs if isinstance(dagster_def, SourceAsset)
+        ]
 
     @cached_property
     def cacheable_assets(self) -> Sequence[CacheableAssetsDefinition]:
         return [
-            asset for asset in self.loaded_objects if isinstance(asset, CacheableAssetsDefinition)
+            dagster_def
+            for dagster_def in self.loaded_defs
+            if isinstance(dagster_def, CacheableAssetsDefinition)
+        ]
+
+    @cached_property
+    def sensors(self) -> Sequence[SensorDefinition]:
+        return [
+            dagster_def
+            for dagster_def in self.loaded_defs
+            if isinstance(dagster_def, SensorDefinition)
+        ]
+
+    @cached_property
+    def schedules(
+        self,
+    ) -> Sequence[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]:
+        return [
+            dagster_def
+            for dagster_def in self.loaded_defs
+            if isinstance(
+                dagster_def, (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition)
+            )
+        ]
+
+    @cached_property
+    def jobs(self) -> Sequence[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+        return [
+            dagster_def
+            for dagster_def in self.loaded_defs
+            if isinstance(dagster_def, (JobDefinition, UnresolvedAssetJobDefinition))
+        ]
+
+    @cached_property
+    def assets(
+        self,
+    ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]:
+        return [
+            *self.assets_defs_and_specs,
+            *self.source_assets,
+            *self.cacheable_assets,
         ]
 
     def get_objects(
-        self, filter_fn: Callable[[LoadableDagsterObject], bool]
-    ) -> Sequence[LoadableDagsterObject]:
-        return [
-            dagster_object for dagster_object in self.loaded_objects if filter_fn(dagster_object)
-        ]
+        self, filter_fn: Callable[[LoadableDagsterDef], bool]
+    ) -> Sequence[LoadableDagsterDef]:
+        return [dagster_def for dagster_def in self.loaded_defs if filter_fn(dagster_def)]
 
     def assets_with_loadable_prefix(
         self, key_prefix: CoercibleToAssetKeyPrefix
@@ -230,26 +290,16 @@ class DagsterObjectsList:
             for asset_object in self.assets_defs_specs_and_checks_defs
             for key in key_iterator(asset_object, included_targeted_keys=True)
         }
-        all_check_keys = {
-            check_key for asset_object in self.assets_defs for check_key in asset_object.check_keys
-        }
-
         key_replacements = {key: key.with_prefix(key_prefix) for key in all_asset_keys}
-        check_key_replacements = {
-            check_key: check_key.with_asset_key_prefix(key_prefix) for check_key in all_check_keys
-        }
-        for dagster_object in self.loaded_objects:
-            if not isinstance(dagster_object, RuntimeAssetObjectTypes):
-                result_list.append(dagster_object)
-            if isinstance(dagster_object, CacheableAssetsDefinition):
-                result_list.append(dagster_object.with_prefix_for_all(key_prefix))
-            elif isinstance(dagster_object, AssetsDefinition):
-                result_list.append(
-                    replace_keys_in_asset(dagster_object, key_replacements, check_key_replacements)
-                )
+        for dagster_def in self.loaded_defs:
+            if isinstance(dagster_def, CacheableAssetsDefinition):
+                result_list.append(dagster_def.with_prefix_for_all(key_prefix))
+            elif isinstance(dagster_def, (AssetsDefinition, AssetSpec)):
+                result_list.append(replace_keys_in_asset(dagster_def, key_replacements))
             else:
-                # We don't replace the key for SourceAssets.
-                result_list.append(dagster_object)
+                # We don't replace the key for SourceAssets, or of course for non-asset objects.
+                result_list.append(dagster_def)
+
         return DagsterObjectsList(result_list)
 
     def assets_with_source_prefix(
@@ -260,17 +310,14 @@ class DagsterObjectsList:
             source_asset.key: source_asset.key.with_prefix(key_prefix)
             for source_asset in self.source_assets
         }
-        for dagster_object in self.loaded_objects:
-            if not isinstance(dagster_object, RuntimeAssetObjectTypes):
-                result_list.append(dagster_object)
-            if isinstance(dagster_object, RuntimeKeyScopedAssetObjectTypes):
-                result_list.append(
-                    replace_keys_in_asset(
-                        dagster_object, key_replacements, check_key_replacements={}
-                    )
-                )
+        for dagster_def in self.loaded_defs:
+            if isinstance(
+                dagster_def,
+                (AssetSpec, SourceAsset, AssetsDefinition),
+            ):
+                result_list.append(replace_keys_in_asset(dagster_def, key_replacements))
             else:
-                result_list.append(dagster_object)
+                result_list.append(dagster_def)
         return DagsterObjectsList(result_list)
 
     def with_attributes(
@@ -282,18 +329,16 @@ class DagsterObjectsList:
         automation_condition: Optional[AutomationCondition],
         backfill_policy: Optional[BackfillPolicy],
     ) -> "DagsterObjectsList":
-        dagster_object_list = self.assets_with_loadable_prefix(key_prefix) if key_prefix else self
-        dagster_object_list = (
-            dagster_object_list.assets_with_source_prefix(source_key_prefix)
+        dagster_def_list = self.assets_with_loadable_prefix(key_prefix) if key_prefix else self
+        dagster_def_list = (
+            dagster_def_list.assets_with_source_prefix(source_key_prefix)
             if source_key_prefix
-            else dagster_object_list
+            else dagster_def_list
         )
         return_list = []
-        for asset in dagster_object_list.loaded_objects:
-            if not isinstance(asset, RuntimeAssetObjectTypes):
-                return_list.append(asset)
-            elif isinstance(asset, AssetsDefinition):
-                new_asset = asset.map_asset_specs(
+        for dagster_def in dagster_def_list.loaded_defs:
+            if isinstance(dagster_def, AssetsDefinition):
+                new_asset = dagster_def.map_asset_specs(
                     _spec_mapper_disallow_group_override(group_name, automation_condition)
                 ).with_attributes(
                     backfill_policy=backfill_policy, freshness_policy=freshness_policy
@@ -303,17 +348,21 @@ class DagsterObjectsList:
                     if has_only_asset_checks(new_asset)
                     else new_asset
                 )
-            elif isinstance(asset, SourceAsset):
+            elif isinstance(dagster_def, SourceAsset):
                 return_list.append(
-                    asset.with_attributes(group_name=group_name if group_name else asset.group_name)
+                    dagster_def.with_attributes(
+                        group_name=group_name if group_name else dagster_def.group_name
+                    )
                 )
-            elif isinstance(asset, AssetSpec):
+            elif isinstance(dagster_def, AssetSpec):
                 return_list.append(
-                    _spec_mapper_disallow_group_override(group_name, automation_condition)(asset)
+                    _spec_mapper_disallow_group_override(group_name, automation_condition)(
+                        dagster_def
+                    )
                 )
-            else:
+            elif isinstance(dagster_def, CacheableAssetsDefinition):
                 return_list.append(
-                    asset.with_attributes_for_all(
+                    dagster_def.with_attributes_for_all(
                         group_name,
                         freshness_policy=freshness_policy,
                         auto_materialize_policy=automation_condition.as_auto_materialize_policy()
@@ -322,7 +371,18 @@ class DagsterObjectsList:
                         backfill_policy=backfill_policy,
                     )
                 )
+            else:
+                return_list.append(dagster_def)
         return DagsterObjectsList(return_list)
+
+    def to_definitions_args(self) -> Mapping[str, Any]:
+        return {
+            "assets": self.assets,
+            "asset_checks": self.checks_defs,
+            "sensors": self.sensors,
+            "schedules": self.schedules,
+            "jobs": self.jobs,
+        }
 
 
 def _spec_mapper_disallow_group_override(

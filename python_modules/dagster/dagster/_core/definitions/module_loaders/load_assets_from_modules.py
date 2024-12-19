@@ -13,17 +13,14 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.module_loaders.object_list import ModuleScopedDagsterObjects
-from dagster._core.definitions.module_loaders.utils import (
-    LoadableAssetObject,
-    LoadableDagsterObject,
-    RuntimeAssetObjectTypes,
-    find_modules_in_package,
-)
+from dagster._core.definitions.module_loaders.object_list import ModuleScopedDagsterDefs
+from dagster._core.definitions.module_loaders.utils import find_modules_in_package
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import resolve_automation_condition
 
 
@@ -62,7 +59,7 @@ def load_assets_from_modules(
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     include_specs: bool = False,
-) -> Sequence[LoadableAssetObject]:
+) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]:
     """Constructs a list of assets and source assets from the given modules.
 
     Args:
@@ -86,17 +83,19 @@ def load_assets_from_modules(
             A list containing assets and source assets defined in the given modules.
     """
 
-    def _asset_filter(dagster_object: LoadableDagsterObject) -> bool:
+    def _asset_filter(dagster_object) -> bool:
         if isinstance(dagster_object, AssetsDefinition):
             # We don't load asset checks with asset module loaders.
             return not has_only_asset_checks(dagster_object)
         if isinstance(dagster_object, AssetSpec):
             return include_specs
-        return isinstance(dagster_object, RuntimeAssetObjectTypes)
+        return isinstance(
+            dagster_object, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec)
+        )
 
     return cast(
-        Sequence[LoadableAssetObject],
-        ModuleScopedDagsterObjects.from_modules(modules)
+        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]],
+        ModuleScopedDagsterDefs.from_modules(modules)
         .get_object_list()
         .with_attributes(
             key_prefix=check_opt_coercible_to_asset_key_prefix_param(key_prefix, "key_prefix"),
@@ -128,7 +127,7 @@ def load_assets_from_current_module(
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     include_specs: bool = False,
-) -> Sequence[LoadableAssetObject]:
+) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]:
     """Constructs a list of assets, source assets, and cacheable assets from the module where
     this function is called.
 
@@ -181,7 +180,7 @@ def load_assets_from_package_module(
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     include_specs: bool = False,
-) -> Sequence[LoadableAssetObject]:
+) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]:
     """Constructs a list of assets and source assets that includes all asset
     definitions, source assets, and cacheable assets in all sub-modules of the given package module.
 
@@ -230,7 +229,7 @@ def load_assets_from_package_name(
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     include_specs: bool = False,
-) -> Sequence[LoadableAssetObject]:
+) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]:
     """Constructs a list of assets, source assets, and cacheable assets that includes all asset
     definitions and source assets in all sub-modules of the given package.
 

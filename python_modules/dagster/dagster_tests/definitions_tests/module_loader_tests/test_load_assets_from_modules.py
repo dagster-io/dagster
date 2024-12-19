@@ -219,7 +219,7 @@ def test_load_assets_from_modules_with_group_name():
 def test_respect_existing_groups():
     assets = load_assets_from_current_module()
     assets_def = next(iter(a for a in assets if isinstance(a, AssetsDefinition)))
-    assert assets_def.group_names_by_key.get(AssetKey("asset_in_current_module")) == "my_group"  # pyright: ignore[reportAttributeAccessIssue]
+    assert assets_def.group_names_by_key.get(AssetKey("asset_in_current_module")) == "my_group"
 
     with pytest.raises(DagsterInvalidDefinitionError):
         load_assets_from_current_module(group_name="yay")

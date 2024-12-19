@@ -1,10 +1,18 @@
+import logging
 from contextlib import contextmanager
 from types import ModuleType
-from typing import Any, Mapping, Sequence, Type
+from typing import Any, Mapping, Sequence, Type, cast
 
 import dagster as dg
 import pytest
-from dagster._core.definitions.module_loaders.object_list import ModuleScopedDagsterObjects
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.module_loaders.load_defs_from_module import (
+    load_definitions_from_module,
+)
+from dagster._core.definitions.module_loaders.object_list import (
+    LoadableDagsterDef,
+    ModuleScopedDagsterDefs,
+)
 from dagster._record import record
 
 
@@ -42,6 +50,16 @@ def check_with_key(key: str, name: str) -> dg.AssetChecksDefinition:
     return my_check
 
 
+def all_loadable_objects_from_defs(defs: Definitions) -> Sequence[LoadableDagsterDef]:
+    return [
+        *(defs.assets or []),
+        *(defs.sensors or []),
+        *(defs.schedules or []),
+        *(defs.asset_checks or []),
+        *(defs.jobs or []),
+    ]
+
+
 @contextmanager
 def optional_pytest_raise(error_expected: bool, exception_cls: Type[Exception]):
     if error_expected:
@@ -71,6 +89,11 @@ some_sensor = sensor_with_name("foo")
 some_asset = asset_with_key("foo")
 some_job = dg.define_asset_job(name="foo")
 some_check = check_with_key("foo_key", "some_name")
+partitioned_job = dg.define_asset_job(
+    name="foo", partitions_def=dg.DailyPartitionsDefinition(start_date="2020-01-01")
+)
+some_partitioned_schedule = dg.build_schedule_from_partitioned_job(partitioned_job, "0 0 * * *")
+other_partitioned_schedule = dg.build_schedule_from_partitioned_job(partitioned_job, "0 0 * * *")
 
 
 MODULE_TEST_SPECS = [
@@ -144,6 +167,29 @@ MODULE_TEST_SPECS = [
         error_expected=False,
         id_="check multiple variables",
     ),
+    ModuleScopeTestSpec(
+        objects={"foo": some_partitioned_schedule, "job": partitioned_job},
+        error_expected=False,
+        id_="single partitioned schedule",
+    ),
+    ModuleScopeTestSpec(
+        objects={
+            "foo": some_partitioned_schedule,
+            "bar": other_partitioned_schedule,
+            "job": partitioned_job,
+        },
+        error_expected=True,
+        id_="conflicting partitioned schedules",
+    ),
+    ModuleScopeTestSpec(
+        objects={
+            "foo": some_partitioned_schedule,
+            "bar": some_partitioned_schedule,
+            "job": partitioned_job,
+        },
+        error_expected=False,
+        id_="partitioned schedules multiple variables",
+    ),
 ]
 
 
@@ -153,6 +199,57 @@ def test_collision_detection(objects: Mapping[str, Any], error_expected: bool) -
     with optional_pytest_raise(
         error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
     ):
-        obj_list = ModuleScopedDagsterObjects.from_modules([module_fake]).get_object_list()
+        obj_list = ModuleScopedDagsterDefs.from_modules([module_fake]).get_object_list()
         obj_ids = {id(obj) for obj in objects.values()}
-        assert len(obj_list.loaded_objects) == len(obj_ids)
+        assert len(obj_list.loaded_defs) == len(obj_ids)
+
+
+@pytest.mark.parametrize(**ModuleScopeTestSpec.as_parametrize_kwargs(MODULE_TEST_SPECS))
+def test_load_from_definitions(objects: Mapping[str, Any], error_expected: bool) -> None:
+    module_fake = build_module_fake("fake", objects)
+    with optional_pytest_raise(
+        error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
+    ):
+        defs = load_definitions_from_module(module_fake)
+        obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
+        expected_obj_ids = {id(obj) for obj in objects.values()}
+        assert len(obj_ids) == len(expected_obj_ids)
+
+
+def test_load_with_resources() -> None:
+    @dg.resource
+    def my_resource(): ...
+
+    module_fake = build_module_fake("foo", {"my_resource": my_resource})
+    defs = load_definitions_from_module(module_fake)
+    assert len(all_loadable_objects_from_defs(defs)) == 0
+    assert len(defs.resources or {}) == 0
+    defs = load_definitions_from_module(module_fake, resources={"foo": my_resource})
+    assert len(defs.resources or {}) == 1
+
+
+def test_load_with_logger_defs() -> None:
+    @dg.logger(config_schema={})
+    def my_logger(init_context) -> logging.Logger: ...
+
+    module_fake = build_module_fake("foo", {"my_logger": my_logger})
+    defs = load_definitions_from_module(module_fake)
+    assert len(all_loadable_objects_from_defs(defs)) == 0
+    assert len(defs.resources or {}) == 0
+    defs = load_definitions_from_module(module_fake, resources={"foo": my_logger})
+    assert len(defs.resources or {}) == 1
+
+
+def test_load_with_executor() -> None:
+    @dg.executor(name="my_executor")
+    def my_executor(init_context) -> dg.Executor: ...
+
+    module_fake = build_module_fake("foo", {"my_executor": my_executor})
+    defs = load_definitions_from_module(module_fake)
+    assert len(all_loadable_objects_from_defs(defs)) == 0
+    assert defs.executor is None
+    defs = load_definitions_from_module(module_fake, executor=my_executor)
+    assert (
+        defs.executor is not None
+        and cast(dg.ExecutorDefinition, defs.executor).name == "my_executor"
+    )
