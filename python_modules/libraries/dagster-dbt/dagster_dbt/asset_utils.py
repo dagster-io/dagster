@@ -53,6 +53,7 @@ from dagster._core.definitions.metadata.source_code import (
 from dagster._core.definitions.tags import build_kind_tag
 from dagster._utils.merger import merge_dicts
 
+from dagster_dbt.asset_specs import AssetSpec
 from dagster_dbt.metadata_set import DbtMetadataSet
 from dagster_dbt.utils import (
     ASSET_RESOURCE_TYPES,
@@ -807,12 +808,9 @@ def build_dbt_multi_asset_args(
                 project=project,
             )
 
-        outs[output_name] = AssetOut(
+        spec = AssetSpec(
             key=asset_key,
-            dagster_type=Nothing,
-            io_manager_key=io_manager_key,
             description=dagster_dbt_translator.get_description(dbt_resource_props),
-            is_required=False,
             metadata=metadata,
             owners=dagster_dbt_translator.get_owners(
                 {
@@ -831,6 +829,14 @@ def build_dbt_multi_asset_args(
             automation_condition=dagster_dbt_translator.get_automation_condition(
                 dbt_resource_props
             ),
+        )
+        if io_manager_key:
+            spec = spec.with_io_manager_key(io_manager_key)
+
+        outs[output_name] = AssetOut.from_spec(
+            spec=spec,
+            dagster_type=Nothing,
+            is_required=False,
         )
 
         test_unique_ids = [
