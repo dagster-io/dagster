@@ -3,8 +3,6 @@ title: dagster-cloud CLI reference
 sidebar_position: 200
 ---
 
-# dagster-cloud CLI reference
-
 ## Custom configuration file path
 
 Point the CLI at an alternate config location by specifying the `DAGSTER_CLOUD_CLI_CONFIG` environment variable.
