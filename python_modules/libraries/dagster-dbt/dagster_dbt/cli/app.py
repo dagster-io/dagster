@@ -7,7 +7,9 @@ import typer
 import yaml
 from dagster._cli.project import check_if_pypi_package_conflict_exists
 from dagster._core.code_pointer import load_python_file
-from dagster._core.definitions.load_assets_from_modules import find_objects_in_module_of_types
+from dagster._core.definitions.module_loaders.load_assets_from_modules import (
+    find_objects_in_module_of_types,
+)
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.syntax import Syntax
