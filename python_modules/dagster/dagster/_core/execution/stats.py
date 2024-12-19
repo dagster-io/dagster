@@ -1,6 +1,6 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, Iterable, NamedTuple, Optional, Sequence, cast
+from typing import Any, Dict, Iterable, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._core.definitions import ExpectationResult
@@ -12,6 +12,7 @@ from dagster._core.events import (
 )
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
+from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
 
 RUN_STATS_EVENT_TYPES = {
@@ -47,8 +48,8 @@ def build_run_stats_from_events(
         raise check.ParameterCheckError(
             "Invariant violation for parameter 'records'. Description: Expected iterable."
         ) from exc
-    for i, record in enumerate(entries):
-        check.inst_param(record, f"records[{i}]", EventLogEntry)
+    for i, entry in enumerate(entries):
+        check.inst_param(entry, f"entries[{i}]", EventLogEntry)
 
     if previous_stats:
         steps_succeeded = previous_stats.steps_succeeded
@@ -115,17 +116,108 @@ class StepEventStatus(Enum):
     IN_PROGRESS = "IN_PROGRESS"
 
 
+@whitelist_for_serdes
+@record_custom
+class RunStepMarker(IHaveNew):
+    start_time: Optional[float]
+    end_time: Optional[float]
+    key: Optional[str]
+
+    def __new__(
+        cls,
+        start_time: Optional[float] = None,
+        end_time: Optional[float] = None,
+        key: Optional[str] = None,
+    ):
+        return super().__new__(
+            cls,
+            start_time=check.opt_float_param(start_time, "start_time"),
+            end_time=check.opt_float_param(end_time, "end_time"),
+            key=check.opt_str_param(key, "key"),
+        )
+
+
+@whitelist_for_serdes
+@record_custom
+class RunStepKeyStatsSnapshot(IHaveNew):
+    run_id: str
+    step_key: str
+    status: Optional[StepEventStatus]
+    start_time: Optional[float]
+    end_time: Optional[float]
+    materialization_events: Sequence[EventLogEntry]
+    expectation_results: Sequence[ExpectationResult]
+    attempts: Optional[int]
+    attempts_list: Sequence[RunStepMarker]
+    markers: Sequence[RunStepMarker]
+    partial_attempt_start: Optional[float]
+
+    def __new__(
+        cls,
+        run_id: str,
+        step_key: str,
+        status: Optional[StepEventStatus] = None,
+        start_time: Optional[float] = None,
+        end_time: Optional[float] = None,
+        materialization_events: Optional[Sequence[EventLogEntry]] = None,
+        expectation_results: Optional[Sequence[ExpectationResult]] = None,
+        attempts: Optional[int] = None,
+        attempts_list: Optional[Sequence[RunStepMarker]] = None,
+        markers: Optional[Sequence[RunStepMarker]] = None,
+        partial_attempt_start: Optional[float] = None,
+    ):
+        return super().__new__(
+            cls,
+            run_id=check.str_param(run_id, "run_id"),
+            step_key=check.str_param(step_key, "step_key"),
+            status=check.opt_inst_param(status, "status", StepEventStatus),
+            start_time=check.opt_float_param(start_time, "start_time"),
+            end_time=check.opt_float_param(end_time, "end_time"),
+            materialization_events=check.opt_sequence_param(
+                materialization_events,
+                "materialization_events",
+                EventLogEntry,
+            ),
+            expectation_results=check.opt_sequence_param(
+                expectation_results, "expectation_results", ExpectationResult
+            ),
+            attempts=check.opt_int_param(attempts, "attempts"),
+            attempts_list=check.opt_sequence_param(attempts_list, "attempts_list", RunStepMarker),
+            markers=check.opt_sequence_param(markers, "markers", RunStepMarker),
+            # used to calculate incremental step stats using batches of event logs
+            partial_attempt_start=check.opt_float_param(
+                partial_attempt_start, "partial_attempt_start"
+            ),
+        )
+
+
+@whitelist_for_serdes
+@record
+class RunStepStatsSnapshot:
+    run_id: str
+    step_key_stats: Sequence[RunStepKeyStatsSnapshot]
+    partial_markers: Optional[Mapping[str, Sequence[RunStepMarker]]]
+
+
 def build_run_step_stats_from_events(
     run_id: str,
-    records: Iterable[EventLogEntry],
-    previous_stats: Optional[Sequence["RunStepKeyStatsSnapshot"]] = None,
-) -> Sequence["RunStepKeyStatsSnapshot"]:
+    entries: Iterable[EventLogEntry],
+) -> Sequence[RunStepKeyStatsSnapshot]:
+    snapshot = build_run_step_stats_snapshot_from_events(run_id, entries)
+    return snapshot.step_key_stats
+
+
+def build_run_step_stats_snapshot_from_events(
+    run_id: str,
+    entries: Iterable[EventLogEntry],
+    previous_snapshot: Optional["RunStepStatsSnapshot"] = None,
+) -> "RunStepStatsSnapshot":
     by_step_key: Dict[str, Dict[str, Any]] = defaultdict(dict)
     attempts = defaultdict(list)
     markers: Dict[str, Dict[str, Any]] = defaultdict(dict)
 
-    if previous_stats:
-        for step_stats in previous_stats:
+    if previous_snapshot:
+        for step_stats in previous_snapshot.step_key_stats:
             check.invariant(step_stats.run_id == run_id)
             by_step_key[step_stats.step_key] = {
                 "start_time": step_stats.start_time,
@@ -136,6 +228,9 @@ def build_run_step_stats_from_events(
                 "attempts": step_stats.attempts,
                 "partial_attempt_start": step_stats.partial_attempt_start,
             }
+            for attempt in step_stats.attempts_list:
+                attempts[step_stats.step_key].append(attempt)
+
             for marker in step_stats.markers:
                 assert marker.key
                 markers[step_stats.step_key][marker.key] = {
@@ -143,8 +238,17 @@ def build_run_step_stats_from_events(
                     "start": marker.start_time,
                     "end": marker.end_time,
                 }
-            for attempt in step_stats.attempts_list:
-                attempts[step_stats.step_key].append(attempt)
+
+        # handle the partial markers
+        if previous_snapshot.partial_markers:
+            for step_key, partial_markers in previous_snapshot.partial_markers.items():
+                for marker in partial_markers:
+                    assert marker.key
+                    markers[step_key][marker.key] = {
+                        "key": marker.key,
+                        "start": marker.start_time,
+                        "end": marker.end_time,
+                    }
 
     def _open_attempt(step_key: str, event: EventLogEntry) -> None:
         by_step_key[step_key]["attempts"] = int(by_step_key[step_key].get("attempts") or 0) + 1
@@ -159,7 +263,7 @@ def build_run_step_stats_from_events(
         )
         by_step_key[step_key]["partial_attempt_start"] = None
 
-    for event in records:
+    for event in entries:
         if not event.is_dagster_event:
             continue
         dagster_event = event.get_dagster_event()
@@ -217,14 +321,13 @@ def build_run_step_stats_from_events(
                 else:
                     markers[step_key][marker_key]["end"] = event.timestamp
 
-    all_step_keys = set(list(by_step_key.keys()) + list(markers.keys()))
     snapshots = []
-    for step_key in all_step_keys:
+    for step_key, step_stats in by_step_key.items():
         snapshots.append(
             RunStepKeyStatsSnapshot(
                 run_id=run_id,
                 step_key=step_key,
-                **by_step_key[step_key],
+                **step_stats,
                 markers=[
                     RunStepMarker(
                         start_time=marker.get("start"),
@@ -236,83 +339,16 @@ def build_run_step_stats_from_events(
                 attempts_list=attempts[step_key],
             )
         )
-    return snapshots
 
-
-@whitelist_for_serdes
-class RunStepMarker(
-    NamedTuple(
-        "_RunStepMarker",
-        [("start_time", Optional[float]), ("end_time", Optional[float]), ("key", Optional[str])],
+    return RunStepStatsSnapshot(
+        run_id=run_id,
+        step_key_stats=snapshots,
+        partial_markers={
+            step_key: [
+                RunStepMarker(start_time=marker.get("start"), end_time=marker.get("end"), key=key)
+                for key, marker in markers.items()
+            ]
+            for step_key, markers in markers.items()
+            if step_key not in by_step_key
+        },
     )
-):
-    def __new__(
-        cls,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None,
-        key: Optional[str] = None,
-    ):
-        return super(RunStepMarker, cls).__new__(
-            cls,
-            start_time=check.opt_float_param(start_time, "start_time"),
-            end_time=check.opt_float_param(end_time, "end_time"),
-            key=check.opt_str_param(key, "key"),
-        )
-
-
-@whitelist_for_serdes
-class RunStepKeyStatsSnapshot(
-    NamedTuple(
-        "_RunStepKeyStatsSnapshot",
-        [
-            ("run_id", str),
-            ("step_key", str),
-            ("status", Optional[StepEventStatus]),
-            ("start_time", Optional[float]),
-            ("end_time", Optional[float]),
-            ("materialization_events", Sequence[EventLogEntry]),
-            ("expectation_results", Sequence[ExpectationResult]),
-            ("attempts", Optional[int]),
-            ("attempts_list", Sequence[RunStepMarker]),
-            ("markers", Sequence[RunStepMarker]),
-            ("partial_attempt_start", Optional[float]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        run_id: str,
-        step_key: str,
-        status: Optional[StepEventStatus] = None,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None,
-        materialization_events: Optional[Sequence[EventLogEntry]] = None,
-        expectation_results: Optional[Sequence[ExpectationResult]] = None,
-        attempts: Optional[int] = None,
-        attempts_list: Optional[Sequence[RunStepMarker]] = None,
-        markers: Optional[Sequence[RunStepMarker]] = None,
-        partial_attempt_start: Optional[float] = None,
-    ):
-        return super(RunStepKeyStatsSnapshot, cls).__new__(
-            cls,
-            run_id=check.str_param(run_id, "run_id"),
-            step_key=check.str_param(step_key, "step_key"),
-            status=check.opt_inst_param(status, "status", StepEventStatus),
-            start_time=check.opt_float_param(start_time, "start_time"),
-            end_time=check.opt_float_param(end_time, "end_time"),
-            materialization_events=check.opt_sequence_param(
-                materialization_events,
-                "materialization_events",
-                EventLogEntry,
-            ),
-            expectation_results=check.opt_sequence_param(
-                expectation_results, "expectation_results", ExpectationResult
-            ),
-            attempts=check.opt_int_param(attempts, "attempts"),
-            attempts_list=check.opt_sequence_param(attempts_list, "attempts_list", RunStepMarker),
-            markers=check.opt_sequence_param(markers, "markers", RunStepMarker),
-            # used to calculate incremental step stats using batches of event logs
-            partial_attempt_start=check.opt_float_param(
-                partial_attempt_start, "partial_attempt_start"
-            ),
-        )

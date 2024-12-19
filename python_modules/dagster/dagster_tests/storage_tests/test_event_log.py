@@ -15,6 +15,7 @@ from dagster._core.execution.stats import (
     StepEventStatus,
     build_run_stats_from_events,
     build_run_step_stats_from_events,
+    build_run_step_stats_snapshot_from_events,
 )
 from dagster._core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,
@@ -374,10 +375,11 @@ def test_step_stats():
     assert len(op_failure_stats.attempts_list) == 4
 
     # build up run stats through incremental events
-    incremental_step_stats = None
+    incremental_snapshot = None
     for event in events:
-        incremental_step_stats = build_run_step_stats_from_events(
-            result.run_id, [event], incremental_step_stats
+        incremental_snapshot = build_run_step_stats_snapshot_from_events(
+            result.run_id, [event], incremental_snapshot
         )
 
-    assert incremental_step_stats == step_stats
+    assert incremental_snapshot
+    assert incremental_snapshot.step_key_stats == step_stats
