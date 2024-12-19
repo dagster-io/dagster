@@ -1259,11 +1259,11 @@ class AirbyteCloudWorkspace(ConfigurableResource):
 
     def sync_and_poll(self, context: AssetExecutionContext):
         """Executes a sync and poll process to materialize Airbyte Cloud assets.
+            This method can only be used in the context of an asset execution.
 
         Args:
             context (AssetExecutionContext): The execution context
-                from within `@airbyte_assets`. If an AssetExecutionContext is passed,
-                its underlying OpExecutionContext will be used.
+                from within `@airbyte_assets`.
 
         Returns:
             Iterator[Union[AssetMaterialization, MaterializeResult]]: An iterator of MaterializeResult
