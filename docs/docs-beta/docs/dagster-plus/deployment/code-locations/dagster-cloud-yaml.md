@@ -156,19 +156,9 @@ locations:
       package_name: quickstart_etl
 ```
 
-{/* TODO
-<ReferenceTable>
-  <ReferenceTableItem propertyName="location_name">
-    The name of your code location that will appear in the Dagster UI Code
-    locations page
-    <ul>
-      <li>
-        <strong>Format</strong> - <code>string</code>
-      </li>
-    </ul>
-  </ReferenceTableItem>
-</ReferenceTable>
-*/}
+| Property        | Description                                                                            | Format   |
+|-----------------|----------------------------------------------------------------------------------------|----------|
+| `location_name` | The name of your code location that will appear in the Dagster UI Code locations page. | `string` |
 
 ### Code source
 
@@ -206,36 +196,11 @@ locations:
 </TabItem>
 </Tabs>
 
-{/* TODO
-<ReferenceTable>
-  <ReferenceTableItem propertyName="code_source.package_name">
-    The name of a package containing Dagster code
-    <ul>
-      <li>
-        <strong>Format</strong> - <code>string</code>(folder name)
-      </li>
-    </ul>
-  </ReferenceTableItem>
-  <ReferenceTableItem propertyName="code_source.python_file">
-    The name of a Python file containing Dagster code, for example:
-    <code>analytics_pipeline.py</code>
-    <ul>
-      <li>
-        <strong>Format</strong> - <code>string</code>(.py file name)
-      </li>
-    </ul>
-  </ReferenceTableItem>
-  <ReferenceTableItem propertyName="code_source.module_name">
-    The name of a Python module containing Dagster code, for example:
-    <code>analytics_etl</code>
-    <ul>
-      <li>
-        <strong>Format</strong> - <code>string</code>(module name)
-      </li>
-    </ul>
-  </ReferenceTableItem>
-</ReferenceTable>
-*/}
+| Property                   | Description                                                                       | Format                   |
+|----------------------------|-----------------------------------------------------------------------------------|--------------------------|
+| `code_source.package_name` | The name of a package containing Dagster code                                     | `string` (folder name)   |
+| `code_source.python_file`  | The name of a Python file containing Dagster code (e.g. `analytics_pipeline.py` ) | `string` (.py file name) |
+| `code_source.module_name`  | The name of a Python module containing Dagster code (e.g. `analytics_etl`)        | `string` (module name)   |
 
 ### Working directory
 
@@ -269,18 +234,9 @@ locations:
     working_directory: ./project_directory
 ```
 
-{/* TODO
-<ReferenceTable>
-  <ReferenceTableItem propertyName="working_directory">
-    The path of the directory that Dagster should load the code source from
-    <ul>
-      <li>
-        <strong>Format</strong> - <code>string</code>(path)
-      </li>
-    </ul>
-  </ReferenceTableItem>
-</ReferenceTable>
-*/}
+| Property            | Description                                                             | Format          |
+|---------------------|-------------------------------------------------------------------------|-----------------|
+| `working_directory` | The path of the directory that Dagster should load the code source from | `string` (path) |
 
 ### Build
 
@@ -303,32 +259,12 @@ locations:
       registry: your-docker-image-registry/image-name # e.g. localhost:5000/myimage
 ```
 
-{/* TODO
-<ReferenceTable>
-  <ReferenceTableItem propertyName="build.directory">
-    The path to the directory in your project that you want to deploy. If there
-    are subdirectories, you can specify the path to only deploy a specific
-    project directory.
-    <ul>
-      <li>
-        <strong>Format</strong> - <code>string</code>(path)
-      </li>
-      <li>
-        <strong>Default</strong> - <code>.</code>
-      </li>
-    </ul>
-  </ReferenceTableItem>
-  <ReferenceTableItem propertyName="build.registry">
-    <strong>Applicable to Hybrid deployments.</strong> The Docker registry to
-    push your code location to
-    <ul>
-      <li>
-        <strong>Format</strong> - <code>string</code>(docker registry)
-      </li>
-    </ul>
-  </ReferenceTableItem>
-</ReferenceTable>
-*/}
+
+| Property          | Description                                                                                                                                                           | Format                     | Default |
+|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------|---------|
+| `build.directory` | The path to the directory in your project that you want to deploy. If there are subdirectories, you can specify the path to only deploy a specific project directory. | `string` (path)            | `.`     |
+| `build.registry`  | **Applicable to Hybrid deployments.** The Docker registry to push your code location to                                                                               | `string` (docker registry) |         |
+
 
 ### Python executable
 
@@ -350,18 +286,9 @@ locations:
     executable_path: venvs/path/to/ml_tensorflow/bin/python
 ```
 
-{/* TODO
-<ReferenceTable>
-  <ReferenceTableItem propertyName="executable_path">
-    The file path of the Python executable to use
-    <ul>
-      <li>
-        <strong>Format</strong> - <code>string</code>(path)
-      </li>
-    </ul>
-  </ReferenceTableItem>
-</ReferenceTable>
-*/}
+| Property          | Description                                   | Format          |
+|-------------------|-----------------------------------------------|-----------------|
+| `executable_path` | The file path of the Python executable to use | `string` (path) |
 
 ### Container context
 
