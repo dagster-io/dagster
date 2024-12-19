@@ -119,7 +119,13 @@ def defs_from_components(
     from dagster._core.definitions.definitions_class import Definitions
 
     return Definitions.merge(
-        *[*[c.build_defs(context) for c in components], Definitions(resources=resources)]
+        *[
+            *[
+                c.build_defs(context.with_rendering_scope(c.get_rendering_scope()))
+                for c in components
+            ],
+            Definitions(resources=resources),
+        ]
     )
 
 
