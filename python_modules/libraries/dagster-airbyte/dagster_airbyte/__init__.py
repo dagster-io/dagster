@@ -23,12 +23,15 @@ from dagster_airbyte.resources import (
     AirbyteCloudResource as AirbyteCloudResource,
     AirbyteCloudWorkspace as AirbyteCloudWorkspace,
     AirbyteResource as AirbyteResource,
-    AirbyteState as AirbyteState,
     airbyte_cloud_resource as airbyte_cloud_resource,
     airbyte_resource as airbyte_resource,
     load_airbyte_cloud_asset_specs as load_airbyte_cloud_asset_specs,
 )
-from dagster_airbyte.translator import DagsterAirbyteTranslator as DagsterAirbyteTranslator
+from dagster_airbyte.translator import (
+    AirbyteJobStatusType as AirbyteJobStatusType,
+    AirbyteState as AirbyteState,
+    DagsterAirbyteTranslator as DagsterAirbyteTranslator,
+)
 from dagster_airbyte.types import AirbyteOutput as AirbyteOutput
 from dagster_airbyte.version import __version__ as __version__
 

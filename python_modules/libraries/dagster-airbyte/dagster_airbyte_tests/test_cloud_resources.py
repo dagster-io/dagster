@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 import responses
 from dagster import Failure
-from dagster_airbyte import AirbyteCloudResource, AirbyteOutput, AirbyteState
+from dagster_airbyte import AirbyteCloudResource, AirbyteJobStatusType, AirbyteOutput
 
 
 @responses.activate
@@ -50,7 +50,12 @@ def test_trigger_connection_fail() -> None:
 @responses.activate
 @pytest.mark.parametrize(
     "state",
-    [AirbyteState.SUCCEEDED, AirbyteState.CANCELLED, AirbyteState.ERROR, "unrecognized"],
+    [
+        AirbyteJobStatusType.SUCCEEDED,
+        AirbyteJobStatusType.CANCELLED,
+        AirbyteJobStatusType.ERROR,
+        "unrecognized",
+    ],
 )
 def test_sync_and_poll(state) -> None:
     ab_resource = AirbyteCloudResource(
@@ -83,11 +88,11 @@ def test_sync_and_poll(state) -> None:
             json={"jobId": 1, "status": "cancelled", "jobType": "sync"},
         )
 
-    if state == AirbyteState.ERROR:
+    if state == AirbyteJobStatusType.ERROR:
         with pytest.raises(Failure, match="Job failed"):
             ab_resource.sync_and_poll("some_connection", 0)
 
-    elif state == AirbyteState.CANCELLED:
+    elif state == AirbyteJobStatusType.CANCELLED:
         with pytest.raises(Failure, match="Job was cancelled"):
             ab_resource.sync_and_poll("some_connection", 0)
 
