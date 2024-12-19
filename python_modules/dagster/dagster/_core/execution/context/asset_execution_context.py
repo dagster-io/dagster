@@ -457,17 +457,26 @@ class AssetExecutionContext:
         metadata: Mapping[str, Any],
         output_name: Optional[str] = None,
         mapping_key: Optional[str] = None,
+        partition_key: Optional[str] = None,
     ) -> None:
-        return self.op_execution_context.add_output_metadata(
-            metadata=metadata, output_name=output_name, mapping_key=mapping_key
+        return self._step_execution_context.add_output_metadata(
+            metadata=metadata,
+            output_name=output_name,
+            mapping_key=mapping_key,
+            asset_partition_key=partition_key,
         )
 
     @_copy_docs_from_op_execution_context
     def get_output_metadata(
-        self, output_name: str, mapping_key: Optional[str] = None
+        self,
+        output_name: str,
+        mapping_key: Optional[str] = None,
+        asset_partition_key: Optional[str] = None,
     ) -> Optional[Mapping[str, Any]]:
-        return self.op_execution_context.get_output_metadata(
-            output_name=output_name, mapping_key=mapping_key
+        return self._step_execution_context.get_output_metadata(
+            output_name=output_name,
+            mapping_key=mapping_key,
+            asset_partition_key=asset_partition_key,
         )
 
     #### asset check related

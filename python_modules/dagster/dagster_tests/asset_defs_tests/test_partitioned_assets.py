@@ -35,6 +35,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.materialize import materialize_to_memory
+from dagster._core.definitions.metadata.metadata_value import IntMetadataValue, TextMetadataValue
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
@@ -600,11 +601,11 @@ def test_mismatched_job_partitioned_config_with_asset_partitions():
         )
 
 
-def test_partition_range_single_run():
+def test_partition_range_single_run() -> None:
     partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
 
     @asset(partitions_def=partitions_def)
-    def upstream_asset(context) -> None:
+    def upstream_asset(context: AssetExecutionContext) -> None:
         key_range = PartitionKeyRange(start="2020-01-01", end="2020-01-03")
         assert context.has_partition_key_range
         assert context.partition_key_range == key_range
@@ -613,6 +614,9 @@ def test_partition_range_single_run():
             partitions_def.time_window_for_partition_key(key_range.end).end,
         )
         assert context.partition_keys == partitions_def.get_partition_keys_in_range(key_range)
+        context.add_output_metadata(metadata={"unscoped": "yay"})
+        for i, key in enumerate(context.partition_keys):
+            context.add_output_metadata(partition_key=key, metadata={"index": i})
 
     @asset(partitions_def=partitions_def, deps=["upstream_asset"])
     def downstream_asset(context: AssetExecutionContext) -> None:
@@ -622,6 +626,7 @@ def test_partition_range_single_run():
         assert context.partition_key_range == PartitionKeyRange(
             start="2020-01-01", end="2020-01-03"
         )
+        context.add_output_metadata(metadata={"unscoped": "yay"})
 
     the_job = define_asset_job("job").resolve(
         asset_graph=AssetGraph.from_assets([upstream_asset, downstream_asset])
@@ -634,14 +639,23 @@ def test_partition_range_single_run():
         }
     )
 
-    assert {
-        materialization.partition
-        for materialization in result.asset_materializations_for_node("upstream_asset")
-    } == {"2020-01-01", "2020-01-02", "2020-01-03"}
-    assert {
-        materialization.partition
-        for materialization in result.asset_materializations_for_node("downstream_asset")
-    } == {"2020-01-01", "2020-01-02", "2020-01-03"}
+    upstream_assets = result.asset_materializations_for_node("upstream_asset")
+    downstream_assets = result.asset_materializations_for_node("downstream_asset")
+    assert {materialization.partition for materialization in upstream_assets} == {
+        "2020-01-01",
+        "2020-01-02",
+        "2020-01-03",
+    }
+    assert {materialization.partition for materialization in downstream_assets} == {
+        "2020-01-01",
+        "2020-01-02",
+        "2020-01-03",
+    }
+
+    for i, mat in enumerate(upstream_assets):
+        assert mat.metadata == {"unscoped": TextMetadataValue("yay"), "index": IntMetadataValue(i)}
+    for mat in downstream_assets:
+        assert mat.metadata == {"unscoped": TextMetadataValue("yay")}
 
 
 def test_multipartition_range_single_run():
