@@ -16,7 +16,7 @@ Using Pandera with Dagster allows you to:
 
 ## Limitations
 
-Currently, `dagster-pandera` only supports Pandas dataframes, despite Pandera supporting validation on dataframes from a variety of Pandas alternatives.
+Currently, `dagster-pandera` only supports pandas and Polars dataframes, despite Pandera supporting validation on other dataframe backends.
 
 ---
 
@@ -79,7 +79,7 @@ def stocks_job():
     apple_stock_prices_dirty()
 ```
 
-In the above example, we defined a toy job (`stocks_job`) with a single asset, `apple_stock_prices_dirty`. This asset returns a Pandas `DataFrame` containing the opening and closing prices of Apple stock (AAPL) for a random week. The `_dirty` suffix is included because we've corrupted the data with a few random nulls.
+In the above example, we defined a toy job (`stocks_job`) with a single asset, `apple_stock_prices_dirty`. This asset returns a pandas `DataFrame` containing the opening and closing prices of Apple stock (AAPL) for a random week. The `_dirty` suffix is included because we've corrupted the data with a few random nulls.
 
 Let's look at this job in the UI:
 
