@@ -6,7 +6,7 @@ import time
 from abc import abstractmethod
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Union, cast
+from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 
 import requests
 from dagster import (
@@ -15,7 +15,6 @@ from dagster import (
     Definitions,
     Failure,
     InitResourceContext,
-    OpExecutionContext,
     _check as check,
     get_dagster_logger,
     resource,
@@ -1212,9 +1211,7 @@ class AirbyteCloudWorkspace(ConfigurableResource):
             workspace=self, dagster_airbyte_translator=dagster_airbyte_translator
         )
 
-    def sync_and_poll(
-        self, context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None
-    ):
+    def sync_and_poll(self, context: AssetExecutionContext):
         raise NotImplementedError()
 
 
