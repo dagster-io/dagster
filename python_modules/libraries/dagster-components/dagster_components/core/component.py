@@ -197,7 +197,9 @@ class ComponentRegistry:
 
 
 def get_registered_components_in_module(module: ModuleType) -> Iterable[Type[Component]]:
-    from dagster._core.definitions.load_assets_from_modules import find_subclasses_in_module
+    from dagster._core.definitions.module_loaders.load_assets_from_modules import (
+        find_subclasses_in_module,
+    )
 
     for component in find_subclasses_in_module(module, (Component,)):
         if is_registered_component(component):

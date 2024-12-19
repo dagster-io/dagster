@@ -66,11 +66,9 @@ def test_with_replaced_asset_keys():
         assert input2
 
     replaced = asset1.with_attributes(
-        output_asset_key_replacements={
-            AssetKey(["asset1"]): AssetKey(["prefix1", "asset1_changed"])
-        },
-        input_asset_key_replacements={
-            AssetKey(["something_else", "input2"]): AssetKey(["apple", "banana"])
+        asset_key_replacements={
+            AssetKey(["asset1"]): AssetKey(["prefix1", "asset1_changed"]),
+            AssetKey(["something_else", "input2"]): AssetKey(["apple", "banana"]),
         },
     )
 
@@ -166,9 +164,7 @@ def test_retain_group():
     def bar():
         pass
 
-    replaced = bar.with_attributes(
-        output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
-    )
+    replaced = bar.with_attributes(asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])})
     assert replaced.specs_by_key[AssetKey("baz")].group_name == "foo"
 
 
@@ -179,9 +175,7 @@ def test_retain_freshness_policy():
     def bar():
         pass
 
-    replaced = bar.with_attributes(
-        output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
-    )
+    replaced = bar.with_attributes(asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])})
     assert (
         replaced.specs_by_key[AssetKey(["baz"])].freshness_policy
         == bar.specs_by_key[AssetKey(["bar"])].freshness_policy
@@ -216,7 +210,7 @@ def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
     )
 
     replaced = my_graph_asset.with_attributes(
-        output_asset_key_replacements={
+        asset_key_replacements={
             AssetKey("a"): AssetKey("aa"),
             AssetKey("b"): AssetKey("bb"),
             AssetKey("c"): AssetKey("cc"),
@@ -245,7 +239,7 @@ def test_retain_metadata_graph():
     original = AssetsDefinition.from_graph(bar, metadata_by_output_name={"result": md})
 
     replaced = original.with_attributes(
-        output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
+        asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
     )
     assert (
         replaced.specs_by_key[AssetKey(["baz"])].metadata
@@ -281,7 +275,7 @@ def test_retain_partition_mappings():
     assert isinstance(bar_.get_partition_mapping(AssetKey(["input_last"])), LastPartitionMapping)
 
     replaced = bar_.with_attributes(
-        input_asset_key_replacements={
+        asset_key_replacements={
             AssetKey(["input_last"]): AssetKey(["input_last2"]),
         }
     )
@@ -305,8 +299,10 @@ def test_chain_replace_and_subset_for():
         pass
 
     replaced_1 = abc_.with_attributes(
-        output_asset_key_replacements={AssetKey(["a"]): AssetKey(["foo", "foo_a"])},
-        input_asset_key_replacements={AssetKey(["in1"]): AssetKey(["foo", "bar_in1"])},
+        asset_key_replacements={
+            AssetKey(["a"]): AssetKey(["foo", "foo_a"]),
+            AssetKey(["in1"]): AssetKey(["foo", "bar_in1"]),
+        },
     )
 
     assert replaced_1.keys == {AssetKey(["foo", "foo_a"]), AssetKey("b"), AssetKey("c")}
@@ -328,11 +324,9 @@ def test_chain_replace_and_subset_for():
     assert subbed_1.keys == {AssetKey(["foo", "foo_a"]), AssetKey("b")}
 
     replaced_2 = subbed_1.with_attributes(
-        output_asset_key_replacements={
+        asset_key_replacements={
             AssetKey(["foo", "foo_a"]): AssetKey(["again", "foo", "foo_a"]),
             AssetKey(["b"]): AssetKey(["something", "bar_b"]),
-        },
-        input_asset_key_replacements={
             AssetKey(["foo", "bar_in1"]): AssetKey(["again", "foo", "bar_in1"]),
             AssetKey(["in2"]): AssetKey(["foo", "in2"]),
             AssetKey(["in3"]): AssetKey(["foo", "in3"]),
@@ -2220,7 +2214,7 @@ def test_replace_asset_keys_for_asset_with_owners():
     assert my_multi_asset.specs_by_key[AssetKey("out2")].owners == ["user@dagsterlabs.com"]
 
     prefixed_asset = my_multi_asset.with_attributes(
-        output_asset_key_replacements={AssetKey(["out1"]): AssetKey(["prefix", "out1"])}
+        asset_key_replacements={AssetKey(["out1"]): AssetKey(["prefix", "out1"])}
     )
     assert prefixed_asset.specs_by_key[AssetKey(["prefix", "out1"])].owners == [
         "user@dagsterlabs.com"

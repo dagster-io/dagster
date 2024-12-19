@@ -43,7 +43,6 @@ from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_run_iterator
 from dagster._core.snap import DependencyStructureIndex
@@ -2362,7 +2361,15 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
     all_assets = _get_assets_defs(use_multi=use_multi, allow_subset=use_multi)
     # apply prefixes
     for prefix in reversed(prefixes or []):
-        all_assets, _ = prefix_assets(all_assets, prefix, [], None)
+        all_assets = [
+            assets_def.with_attributes(
+                asset_key_replacements={
+                    k: k.with_prefix(prefix)
+                    for k in set(assets_def.keys_by_input_name.values()) | set(assets_def.keys)
+                },
+            )
+            for assets_def in all_assets
+        ]
 
     defs = Definitions(
         # for these, if we have multi assets, we'll always allow them to be subset
