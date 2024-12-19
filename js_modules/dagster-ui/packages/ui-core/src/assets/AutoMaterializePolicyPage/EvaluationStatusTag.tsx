@@ -1,17 +1,23 @@
 import {Box, Colors, Icon, Popover, Tag} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
+import {AssetKey} from '../types';
 import {PartitionSubsetList} from './PartitionSubsetList';
 import {AssetConditionEvaluationRecordFragment} from './types/GetEvaluationsQuery.types';
-import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 interface Props {
-  definition: AssetViewDefinitionNodeFragment;
+  assetKey: AssetKey;
+  isPartitioned: boolean;
   selectedEvaluation: AssetConditionEvaluationRecordFragment;
   selectPartition: (partitionKey: string | null) => void;
 }
 
-export const EvaluationStatusTag = ({definition, selectedEvaluation, selectPartition}: Props) => {
+export const EvaluationStatusTag = ({
+  assetKey,
+  isPartitioned,
+  selectedEvaluation,
+  selectPartition,
+}: Props) => {
   const evaluation = selectedEvaluation?.evaluation;
   const rootEvaluationNode = useMemo(
     () => evaluation?.evaluationNodes.find((node) => node.uniqueId === evaluation.rootUniqueId),
@@ -19,8 +25,7 @@ export const EvaluationStatusTag = ({definition, selectedEvaluation, selectParti
   );
   const rootUniqueId = evaluation?.rootUniqueId;
 
-  const partitionDefinition = definition?.partitionDefinition;
-  const assetKeyPath = definition?.assetKey.path || [];
+  const assetKeyPath = assetKey.path || [];
   const numRequested = selectedEvaluation?.numRequested;
 
   const numTrue =
@@ -29,7 +34,7 @@ export const EvaluationStatusTag = ({definition, selectedEvaluation, selectParti
       : null;
 
   if (numRequested) {
-    if (partitionDefinition && rootUniqueId && numTrue) {
+    if (isPartitioned && rootUniqueId && numTrue) {
       return (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
           <Popover

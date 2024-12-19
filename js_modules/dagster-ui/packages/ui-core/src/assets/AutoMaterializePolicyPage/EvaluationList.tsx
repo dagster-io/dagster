@@ -1,15 +1,16 @@
 import {Table} from '@dagster-io/ui-components';
 
+import {AssetKey} from '../types';
 import {EvaluationListRow} from './EvaluationListRow';
 import {AssetConditionEvaluationRecordFragment} from './types/GetEvaluationsQuery.types';
-import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 interface Props {
-  definition: AssetViewDefinitionNodeFragment;
+  assetKey: AssetKey;
+  isPartitioned: boolean;
   evaluations: AssetConditionEvaluationRecordFragment[];
 }
 
-export const EvaluationList = ({definition, evaluations}: Props) => {
+export const EvaluationList = ({assetKey, isPartitioned, evaluations}: Props) => {
   return (
     <Table>
       <thead>
@@ -25,7 +26,8 @@ export const EvaluationList = ({definition, evaluations}: Props) => {
             <EvaluationListRow
               key={evaluation.id}
               evaluation={evaluation}
-              definition={definition}
+              assetKey={assetKey}
+              isPartitioned={isPartitioned}
             />
           );
         })}

@@ -10,20 +10,21 @@ import {
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
 
+import {AssetKey} from '../types';
 import {EvaluationDetailDialog} from './EvaluationDetailDialog';
 import {EvaluationStatusTag} from './EvaluationStatusTag';
 import {AssetConditionEvaluationRecordFragment} from './types/GetEvaluationsQuery.types';
 import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
 import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 interface Props {
-  definition: AssetViewDefinitionNodeFragment;
+  assetKey: AssetKey;
+  isPartitioned: boolean;
   evaluation: AssetConditionEvaluationRecordFragment;
 }
 
-export const EvaluationListRow = ({evaluation, definition}: Props) => {
+export const EvaluationListRow = ({evaluation, assetKey, isPartitioned}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -39,27 +40,32 @@ export const EvaluationListRow = ({evaluation, definition}: Props) => {
         </td>
         <td style={{verticalAlign: 'middle'}}>
           <EvaluationStatusTag
-            definition={definition}
+            assetKey={assetKey}
+            isPartitioned={isPartitioned}
             selectedEvaluation={evaluation}
             selectPartition={() => {}}
           />
         </td>
         <td style={{verticalAlign: 'middle'}}>
-          <EvaluationRunInfo evaluation={evaluation} />
+          <EvaluationRunInfo runIds={evaluation.runIds} timestamp={evaluation.timestamp} />
         </td>
       </tr>
       <EvaluationDetailDialog
         isOpen={isOpen}
         setIsOpen={setIsOpen}
         evaluationID={evaluation.id}
-        assetKeyPath={definition.assetKey.path}
+        assetKeyPath={assetKey.path}
       />
     </>
   );
 };
 
-const EvaluationRunInfo = ({evaluation}: {evaluation: AssetConditionEvaluationRecordFragment}) => {
-  const {runIds} = evaluation;
+interface EvaluationRunInfoProps {
+  runIds: string[];
+  timestamp: number;
+}
+
+const EvaluationRunInfo = ({runIds, timestamp}: EvaluationRunInfoProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   if (runIds.length === 0) {
@@ -95,7 +101,7 @@ const EvaluationRunInfo = ({evaluation}: {evaluation: AssetConditionEvaluationRe
               <>
                 Runs at{' '}
                 <TimestampDisplay
-                  timestamp={evaluation.timestamp}
+                  timestamp={timestamp}
                   timeFormat={{...DEFAULT_TIME_FORMAT, showSeconds: true}}
                 />
               </>
