@@ -18,6 +18,7 @@ from dagster_airbyte_tests.experimental.conftest import (
     TEST_CLIENT_SECRET,
     TEST_CONNECTION_ID,
     TEST_DESTINATION_ID,
+    TEST_JOB_ID,
     TEST_WORKSPACE_ID,
 )
 
@@ -128,8 +129,9 @@ def test_basic_resource_request(
     client.get_connection_details(connection_id=TEST_CONNECTION_ID)
     client.get_destination_details(destination_id=TEST_DESTINATION_ID)
     client.start_sync_job(connection_id=TEST_CONNECTION_ID)
+    client.get_job_details(job_id=TEST_JOB_ID)
 
-    assert len(all_api_mocks.calls) == 5
+    assert len(all_api_mocks.calls) == 6
     # The first call is to create the access token
     api_calls = assert_token_call_and_split_calls(calls=all_api_mocks.calls)
     # The next calls are actual API calls
@@ -139,3 +141,4 @@ def test_basic_resource_request(
     )
     assert_rest_api_call(call=api_calls[2], endpoint=f"destinations/{TEST_DESTINATION_ID}")
     assert_rest_api_call(call=api_calls[3], endpoint="jobs", object_id=TEST_CONNECTION_ID)
+    assert_rest_api_call(call=api_calls[4], endpoint=f"jobs/{TEST_JOB_ID}")
