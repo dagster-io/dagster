@@ -5,17 +5,21 @@ sidebar_position: 200
 unlisted: true
 ---
 
-Using a GraphQL API endpoint, you can export [Dagster+ Insights](/dagster-plus/insights) metrics from your Dagster+ instance.
+{/* Using a GraphQL API endpoint, you can export [Dagster+ Insights](/dagster-plus/insights) metrics from your Dagster+ instance. */}
+Using a GraphQL API endpoint, you can export [Dagster+ Insights](/todo) metrics from your Dagster+ instance.
 
-Refer to the [Available Insights metrics](/dagster-plus/insights#available-metrics) for a list of available metrics.
+{/* Refer to the [Available Insights metrics](/dagster-plus/insights#available-metrics) for a list of available metrics. */}
+Refer to the [Available Insights metrics](/todo) for a list of available metrics.
 
 ## Prerequisites
 
 To complete the steps in this guide, you'll need:
 
 - A Dagster+ account
-- Access to the [Dagster+ Insights feature](/dagster-plus/insights)
-- A Dagster+ [user token](/dagster-plus/account/managing-user-agent-tokens#managing-user-tokens)
+{/* - Access to the [Dagster+ Insights feature](/dagster-plus/insights) */}
+- Access to the [Dagster+ Insights feature](/todo)
+{/* - A Dagster+ [user token](/dagster-plus/account/managing-user-agent-tokens#managing-user-tokens) */}
+- A Dagster+ [user token](/todo)
 - Your deployment-scoped Dagster+ deployment URL. For example: `dagster-university.dagster.cloud/prod`
 
 ## Before you start
@@ -27,7 +31,8 @@ Before you start, note that:
 
 ## Using the API
 
-In this example, we're using the [GraphQL Python Client](/concepts/webserver/graphql-client) to export the Dagster credits metric for all assets for September 2023:
+{/* In this example, we're using the [GraphQL Python Client](/concepts/webserver/graphql-client) to export the Dagster credits metric for all assets for September 2023: */}
+In this example, we're using the [GraphQL Python Client](/todo) to export the Dagster credits metric for all assets for September 2023:
 
 ```python
 from datetime import datetime
