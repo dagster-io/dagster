@@ -9,9 +9,14 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 import sqlalchemy
 import sqlalchemy as db
-from dagster import AssetKey, AssetMaterialization, DagsterInstance, Output, op
+from dagster import AssetKey, AssetMaterialization, DagsterInstance, Out, Output, RetryRequested, op
 from dagster._core.errors import DagsterEventLogInvalidForRun
-from dagster._core.execution.stats import build_run_stats_from_events
+from dagster._core.execution.stats import (
+    StepEventStatus,
+    build_run_stats_from_events,
+    build_run_step_stats_from_events,
+    build_run_step_stats_snapshot_from_events,
+)
 from dagster._core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,
     SqlEventLogStorageMetadata,
@@ -332,3 +337,49 @@ def test_run_stats():
         )
 
     assert incremental_run_stats == run_stats
+
+
+def test_step_stats():
+    @op
+    def op_success(_):
+        return 1
+
+    @op
+    def asset_op(_):
+        yield AssetMaterialization(asset_key=AssetKey("asset_1"))
+        yield Output(1)
+
+    @op(out=Out(str))
+    def op_failure(_):
+        time.sleep(0.001)
+        raise RetryRequested(max_retries=3)
+
+    def _ops():
+        op_success()
+        asset_op()
+        op_failure()
+
+    events, result = _synthesize_events(_ops, check_success=False)
+
+    step_stats = build_run_step_stats_from_events(result.run_id, events)
+    assert len(step_stats) == 3
+    assert len([step for step in step_stats if step.status == StepEventStatus.SUCCESS]) == 2
+    assert len([step for step in step_stats if step.status == StepEventStatus.FAILURE]) == 1
+    assert all([step.run_id == result.run_id for step in step_stats])
+
+    op_failure_stats = next(
+        iter([step for step in step_stats if step.step_key == "op_failure"]), None
+    )
+    assert op_failure_stats
+    assert op_failure_stats.attempts == 4
+    assert len(op_failure_stats.attempts_list) == 4
+
+    # build up run stats through incremental events
+    incremental_snapshot = None
+    for event in events:
+        incremental_snapshot = build_run_step_stats_snapshot_from_events(
+            result.run_id, [event], incremental_snapshot
+        )
+
+    assert incremental_snapshot
+    assert incremental_snapshot.step_key_stats == step_stats
