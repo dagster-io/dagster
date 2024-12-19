@@ -92,7 +92,7 @@ def test_components_from_dagster():
         component_types = _get_component_types_in_python_environment(python_executable)
         assert "dagster_components.pipes_subprocess_script_collection" in component_types
         assert "dagster_components.dbt_project" not in component_types
-        assert "dagster_components.sling_replication" not in component_types
+        assert "dagster_components.sling_replication_collection" not in component_types
 
     with _temp_venv(
         [*common_deps, "-e", f"{components_root}[dbt]", "-e", dbt_root]
@@ -100,7 +100,7 @@ def test_components_from_dagster():
         component_types = _get_component_types_in_python_environment(python_executable)
         assert "dagster_components.pipes_subprocess_script_collection" in component_types
         assert "dagster_components.dbt_project" in component_types
-        assert "dagster_components.sling_replication" not in component_types
+        assert "dagster_components.sling_replication_collection" not in component_types
 
     with _temp_venv(
         [*common_deps, "-e", f"{components_root}[sling]", "-e", embedded_elt_root]
@@ -108,7 +108,7 @@ def test_components_from_dagster():
         component_types = _get_component_types_in_python_environment(python_executable)
         assert "dagster_components.pipes_subprocess_script_collection" in component_types
         assert "dagster_components.dbt_project" not in component_types
-        assert "dagster_components.sling_replication" in component_types
+        assert "dagster_components.sling_replication_collection" in component_types
 
 
 # Our pyproject.toml installs local dagster components
