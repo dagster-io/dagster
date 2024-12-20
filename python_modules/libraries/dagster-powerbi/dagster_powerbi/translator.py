@@ -180,9 +180,9 @@ class DagsterPowerBITranslator:
             private_param = f"_{param}"
             if param not in _vars and private_param not in _vars:
                 raise KeyError(
-                    f"Could not find __init__ param {param} or it's private counterpart {private_param} "
+                    f"Could not find `__init__` param {param} or it's private counterpart {private_param} "
                     f"in the attributes {_vars} of translator {self}. "
-                    f"Make sure that your __init__ parameters matches the attributes of your translator."
+                    f"Make sure that your `__init__` parameters matches the attributes of your translator."
                 )
             kwargs[param] = _vars.get(param) or _vars.get(private_param)
         return kwargs
