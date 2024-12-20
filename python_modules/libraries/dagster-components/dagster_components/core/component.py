@@ -32,7 +32,6 @@ from pydantic import TypeAdapter
 from typing_extensions import Self
 
 from dagster_components.core.component_rendering import TemplatedValueResolver, preprocess_value
-from dagster_components.utils import ensure_dagster_components_tests_import
 
 
 class ComponentDeclNode: ...
@@ -54,7 +53,10 @@ class Component(ABC):
         return {}
 
     @classmethod
-    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None: ...
+    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None:
+        from dagster_components.generate import generate_component_yaml
+
+        generate_component_yaml(request, {})
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
@@ -123,14 +125,14 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
 
 COMPONENTS_ENTRY_POINT_GROUP = "dagster.components"
 BUILTIN_COMPONENTS_ENTRY_POINT_BASE = "dagster_components"
-BUILTIN_PUBLISHED_COMPONENT_ENTRY_POINT = BUILTIN_COMPONENTS_ENTRY_POINT_BASE
+BUILTIN_MAIN_COMPONENT_ENTRY_POINT = BUILTIN_COMPONENTS_ENTRY_POINT_BASE
 BUILTIN_TEST_COMPONENT_ENTRY_POINT = ".".join([BUILTIN_COMPONENTS_ENTRY_POINT_BASE, "test"])
 
 
 class ComponentRegistry:
     @classmethod
     def from_entry_point_discovery(
-        cls, builtin_component_lib: str = BUILTIN_PUBLISHED_COMPONENT_ENTRY_POINT
+        cls, builtin_component_lib: str = BUILTIN_MAIN_COMPONENT_ENTRY_POINT
     ) -> "ComponentRegistry":
         """Discover components registered in the Python environment via the `dagster_components` entry point group.
 
@@ -153,11 +155,6 @@ class ComponentRegistry:
                 and not entry_point.name == builtin_component_lib
             ):
                 continue
-            elif entry_point.name == BUILTIN_TEST_COMPONENT_ENTRY_POINT:
-                if builtin_component_lib:
-                    ensure_dagster_components_tests_import()
-                else:
-                    continue
 
             root_module = entry_point.load()
             if not isinstance(root_module, ModuleType):

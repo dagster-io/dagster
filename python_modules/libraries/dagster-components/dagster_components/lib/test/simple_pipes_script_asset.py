@@ -8,12 +8,13 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
+from pydantic import BaseModel, TypeAdapter
+from typing_extensions import Self
+
 from dagster_components import Component, ComponentLoadContext, component
 from dagster_components.core.component import ComponentGenerateRequest
 from dagster_components.core.component_decl_builder import YamlComponentDecl
 from dagster_components.generate import generate_component_yaml
-from pydantic import BaseModel, TypeAdapter
-from typing_extensions import Self
 
 if TYPE_CHECKING:
     from dagster_components.core.component import ComponentDeclNode

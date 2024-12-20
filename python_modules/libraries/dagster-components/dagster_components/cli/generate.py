@@ -8,6 +8,7 @@ from pydantic import TypeAdapter
 from dagster_components import ComponentRegistry
 from dagster_components.core.deployment import (
     CodeLocationProjectContext,
+    find_enclosing_code_location_root_path,
     is_inside_code_location_project,
 )
 from dagster_components.generate import generate_component_instance
@@ -39,8 +40,8 @@ def generate_component_command(
         )
         sys.exit(1)
 
-    context = CodeLocationProjectContext.from_path(
-        Path.cwd(),
+    context = CodeLocationProjectContext.from_code_location_path(
+        find_enclosing_code_location_root_path(Path.cwd()),
         ComponentRegistry.from_entry_point_discovery(builtin_component_lib=builtin_component_lib),
     )
     if not context.has_component_type(component_type):

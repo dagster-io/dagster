@@ -285,9 +285,6 @@ export const OverviewSensors = () => {
   };
 
   const showSearchSpinner = queryLoading && !data;
-  const sensorDaemonStatus = data?.instance.daemonHealth.allDaemonStatuses.find(
-    (status) => status.daemonType === 'SENSOR',
-  );
 
   return (
     <>
@@ -344,7 +341,7 @@ export const OverviewSensors = () => {
       ) : (
         <>
           <SensorInfo
-            sensorDaemonStatus={sensorDaemonStatus}
+            daemonHealth={data?.instance.daemonHealth}
             padding={{vertical: 16, horizontal: 24}}
             border="top"
           />
