@@ -1,5 +1,5 @@
 ---
-title: Create a multi-asset integration
+title: Creating a multi-asset integration
 description: Create a decorator based multi-asset integration
 ---
 
