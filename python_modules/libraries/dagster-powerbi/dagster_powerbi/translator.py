@@ -201,9 +201,7 @@ class DagsterPowerBITranslator:
 
     @property
     def _has_context_param_in_init_function(self) -> bool:
-        return "context" in set(
-            inspect.getfullargspec(type(self).__init__).args
-        )
+        return "context" in set(inspect.getfullargspec(type(self).__init__).args)
 
     @property
     def workspace_data(self) -> PowerBIWorkspaceData:
