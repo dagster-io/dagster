@@ -16,7 +16,6 @@ from dagster import (
     InitResourceContext,
     MaterializeResult,
     MetadataValue,
-    OpExecutionContext,
     __version__,
     _check as check,
     get_dagster_logger,
@@ -1014,14 +1013,14 @@ class FivetranWorkspace(ConfigurableResource):
                 )
 
     def sync_and_poll(
-        self, context: Union[OpExecutionContext, AssetExecutionContext]
+        self, context: AssetExecutionContext
     ) -> FivetranEventIterator[Union[AssetMaterialization, MaterializeResult]]:
         """Executes a sync and poll process to materialize Fivetran assets.
+            This method can only be used in the context of an asset execution.
 
         Args:
-            context (Union[OpExecutionContext, AssetExecutionContext]): The execution context
-                from within `@fivetran_assets`. If an AssetExecutionContext is passed,
-                its underlying OpExecutionContext will be used.
+            context (AssetExecutionContext): The execution context
+                from within `@fivetran_assets`.
 
         Returns:
             Iterator[Union[AssetMaterialization, MaterializeResult]]: An iterator of MaterializeResult
@@ -1031,7 +1030,7 @@ class FivetranWorkspace(ConfigurableResource):
             events=self._sync_and_poll(context=context), fivetran_workspace=self, context=context
         )
 
-    def _sync_and_poll(self, context: Union[OpExecutionContext, AssetExecutionContext]):
+    def _sync_and_poll(self, context: AssetExecutionContext):
         assets_def = context.assets_def
         dagster_fivetran_translator = get_translator_from_fivetran_assets(assets_def)
         connector_id = next(
