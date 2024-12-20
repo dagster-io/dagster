@@ -111,13 +111,17 @@ export const AutomaterializeMiddlePanelWithData = ({
 
   const {partitions: allPartitions} = usePartitionsForAssetKey(definition?.assetKey.path || []);
 
+  // DA will either request a list of runs or a single backfill. When DA requests a backfill
+  // we want to show a row for that backfill in the table, so we need to construct the RunsFilter
+  // differently. Backfill IDs are 8 characters long, so we can use that to determine if a
+  // backfill was requested. If DA is updated to request multiple backfills in a single evaluation,
+  // or emit a combination of runs and backfills in a single evaluation, this logic will need to
+  // be updated.
   const runsFilter: RunsFilter | null = useMemo(
     () =>
       selectedEvaluation?.runIds.length
-        ? selectedEvaluation.runIds.length === 1
-          ? selectedEvaluation.runIds[0]?.length === 8
-            ? {tag: `dagster/backfill=${selectedEvaluation.runIds[0]}`}
-            : {runIds: selectedEvaluation.runIds}
+        ? selectedEvaluation.runIds.length === 1 && selectedEvaluation.runIds[0]?.length === 8
+          ? {tags: [{key: 'dagster/backfill', value: selectedEvaluation.runIds[0]}]}
           : {runIds: selectedEvaluation.runIds}
         : null,
     [selectedEvaluation],
@@ -170,7 +174,7 @@ export const AutomaterializeMiddlePanelWithData = ({
           {flagLegacyRunsPage ? (
             <AutomaterializeRunsTable runIds={selectedEvaluation.runIds} />
           ) : runsFilter ? (
-            <RunsFeedTableWithFilters filter={runsFilter} />
+            <RunsFeedTableWithFilters filter={runsFilter} includeRunsFromBackfills={false}/>
           ) : (
             <Box padding={{vertical: 12}}>
               <NonIdealState

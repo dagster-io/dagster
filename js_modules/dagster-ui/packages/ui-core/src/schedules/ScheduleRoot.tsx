@@ -133,7 +133,7 @@ export const ScheduleRoot = (props: Props) => {
                 tabs={tabs}
               />
             ) : (
-              <RunsFeedTableWithFilters filter={runsFilter} actionBarComponents={tabs} />
+              <RunsFeedTableWithFilters filter={runsFilter} actionBarComponents={tabs} includeRunsFromBackfills={true}/>
             )}
           </Page>
         );
