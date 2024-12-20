@@ -46,6 +46,7 @@ from dagster_fivetran.translator import (
 )
 from dagster_fivetran.types import FivetranOutput
 from dagster_fivetran.utils import (
+    DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY,
     get_fivetran_connector_table_name,
     get_fivetran_connector_url,
     get_fivetran_logs_url,
@@ -1100,16 +1101,23 @@ def load_fivetran_asset_specs(
             fivetran_specs = load_fivetran_asset_specs(fivetran_workspace)
             defs = dg.Definitions(assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
     """
+    dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
+
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
-        return check.is_list(
-            FivetranWorkspaceDefsLoader(
-                workspace=initialized_workspace,
-                translator=dagster_fivetran_translator or DagsterFivetranTranslator(),
+        return [
+            spec.merge_attributes(
+                metadata={DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY: dagster_fivetran_translator}
             )
-            .build_defs()
-            .assets,
-            AssetSpec,
-        )
+            for spec in check.is_list(
+                FivetranWorkspaceDefsLoader(
+                    workspace=initialized_workspace,
+                    translator=dagster_fivetran_translator,
+                )
+                .build_defs()
+                .assets,
+                AssetSpec,
+            )
+        ]
 
 
 @record
