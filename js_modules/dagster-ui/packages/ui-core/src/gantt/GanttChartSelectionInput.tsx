@@ -2,11 +2,10 @@ import {useMemo} from 'react';
 import styled from 'styled-components';
 
 import {RunGraphQueryItem} from './toGraphQueryItems';
-import {SelectionAutoCompleteInput} from '../../../../../../../internal/dagster-cloud/js_modules/app-cloud/dagster/js_modules/dagster-ui/packages/ui-core/src/selection/SelectionAutoCompleteInput';
 import {NO_STATE} from '../run-selection/AntlrRunSelectionVisitor';
 import {RunSelectionLexer} from '../run-selection/generated/RunSelectionLexer';
 import {RunSelectionParser} from '../run-selection/generated/RunSelectionParser';
-import {InputDiv} from '../selection/SelectionAutoCompleteInput';
+import {InputDiv, SelectionAutoCompleteInput} from '../selection/SelectionAutoCompleteInput';
 import {createSelectionLinter} from '../selection/createSelectionLinter';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 
