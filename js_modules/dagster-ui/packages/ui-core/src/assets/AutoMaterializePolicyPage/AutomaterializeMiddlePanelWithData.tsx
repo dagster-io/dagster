@@ -112,7 +112,14 @@ export const AutomaterializeMiddlePanelWithData = ({
   const {partitions: allPartitions} = usePartitionsForAssetKey(definition?.assetKey.path || []);
 
   const runsFilter: RunsFilter | null = useMemo(
-    () => (selectedEvaluation?.runIds.length ? {runIds: selectedEvaluation.runIds} : null),
+    () =>
+      selectedEvaluation?.runIds.length
+        ? selectedEvaluation.runIds.length === 1
+          ? selectedEvaluation.runIds[0]?.length === 8
+            ? {tag: `dagster/backfill=${selectedEvaluation.runIds[0]}`}
+            : {runIds: selectedEvaluation.runIds}
+          : {runIds: selectedEvaluation.runIds}
+        : null,
     [selectedEvaluation],
   );
 
