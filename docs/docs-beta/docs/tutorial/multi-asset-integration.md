@@ -269,7 +269,6 @@ class ReplicationResource(ConfigurableResource):
                 )
 ```
 
----
 
 ## Conclusion
 
