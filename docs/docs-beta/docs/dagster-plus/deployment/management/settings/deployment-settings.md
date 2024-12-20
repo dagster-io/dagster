@@ -10,9 +10,11 @@ unlisted: true
 This guide is applicable to Dagster+.
 :::
 
-This reference describes the settings that can be configured for full deployments in [Dagster+](/dagster-plus).
+{/* /dagster-plus */}
+This reference describes the settings that can be configured for full deployments in [Dagster+](/todo.md).
 
-Refer to the [Managing deployments in Dagster+ guide](/dagster-plus/managing-deployments/managing-deployments#configuring-deployment-settings) for info about configuring settings in the Dagster+ interface or using the `dagster-cloud` CLI.
+{/* /dagster-plus/managing-deployments/managing-deployments#configuring-deployment-settings */}
+Refer to the [Managing deployments in Dagster+ guide](/todo.md) for info about configuring settings in the Dagster+ interface or using the `dagster-cloud` CLI.
 
 ## Settings schema
 
@@ -62,7 +64,7 @@ run_queue:
 
 | Property | Descripton |
 | --- | --- |
-| run_queue.max_concurrent_runs | The maximum number of runs that are allowed to be in progress at once. Set to 0 to stop any runs from launching. Negative values aren't permitted. <ul><li>**Default** - `10` (20 minutes)</li><li>**Maximum** - `500` (Hybrid)[/dagster-plus/deployment/hybrid], `50` (Serverless)[/dagster-plus/deployment/serverless]</li></ul> |
+| run_queue.max_concurrent_runs | The maximum number of runs that are allowed to be in progress at once. Set to 0 to stop any runs from launching. Negative values aren't permitted. <ul><li>**Default** - `10` (20 minutes)</li><li>**Maximum** - `500` <a href="/todo.md">(Hybrid)</a>, `50` <a href="/todo.md">(Serverless)</a></li></ul> |
 | run_queue.tag_concurrency_limits | A list of limits applied to runs with particular tags. <ul><li>**Defaults** - `[]`</li></ul> Each list item may have the following properties: <ul><li>`key`</li><li>`value`</li><ul><li>If defined, the `limit` is applied only to the `key-value` pair.</li><li>If set to a dict with applyLimitPerUniqueValue: true, the `limit` is applied to the number of unique values for the `key`.</li><li>If set to a dict with `applyLimitPerUniqueValue: true`, the limit is applied to the number of unique values for the `key`.</li></ul><li>`limit`</li></ul> |
 
 ### Run monitoring (run_monitoring)
@@ -98,7 +100,8 @@ run_retries:
 
 ### SSO default role
 
-The `sso_default_role` setting lets you configure the default role on the deployment which is granted to new users that log in via SSO. For more information on available roles, see the [Dagster+ permissions reference](/dagster-plus/account/managing-users/managing-user-roles-permissions#user-permissions-reference).
+{/* dagster-plus/account/managing-users/managing-user-roles-permissions#user-permissions-reference */}
+The `sso_default_role` setting lets you configure the default role on the deployment which is granted to new users that log in via SSO. For more information on available roles, see the [Dagster+ permissions reference](/todo.md).
 
 ```yaml
 sso_default_role: EDITOR
@@ -110,7 +113,8 @@ sso_default_role: EDITOR
 
 ### Non-isolated runs
 
-Configure [non-isolated runs](/dagster-plus/deployment/serverless) on your deployment.
+{/* /dagster-plus/deployment/serverless */}
+Configure [non-isolated runs](/todo.md) on your deployment.
 
 ```yaml
 non_isolated_runs:
