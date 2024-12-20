@@ -18,7 +18,7 @@ For [Kubernetes agents](/todo.md) deployed with the Dagster+ Helm chart, you'll 
 
 ## Enabling user code server TTL
 
-User code servers support a configurable time-to-live (TTL). The agent will spin down any user code servers that haven’t served requests recently and will spin them back up the next time they’re needed. Configuring TTL can save compute cost because user code servers will spend less time sitting idle.
+User code servers support a configurable time-to-live (TTL). The agent will spin down any user code servers that haven't served requests recently and will spin them back up the next time they're needed. Configuring TTL can save compute cost because user code servers will spend less time sitting idle.
 
 To configure TTL:
 ```yaml
