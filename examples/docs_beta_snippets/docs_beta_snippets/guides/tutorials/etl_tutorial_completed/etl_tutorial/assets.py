@@ -1,8 +1,7 @@
 from dagster_duckdb import DuckDBResource
+from etl_tutorial.partitions import monthly_partition, product_category_partition
 
 import dagster as dg
-
-from .partitions import monthly_partition, product_category_partition
 
 
 @dg.asset(
