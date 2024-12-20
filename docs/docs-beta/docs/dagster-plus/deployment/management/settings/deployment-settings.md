@@ -78,7 +78,7 @@ run_monitoring:
   max_runtime_seconds: 7200
 ```
 
-| Property | Descripton |
+| Property | Description |
 | --- | --- |
 | run_monitoring.start_timeout_seconds | The number of seconds that Dagster+ will wait after a run is launched for the process or container to start executing. After the timeout, the run will fail. This prevents runs from hanging in `STARTING` indefinitely when the process or container doesn't start. <ul><li>**Default** - `1200` (20 minutes)</li></ul> |
 | run_monitoring.cancel_timeout_seconds | The number of seconds that Dagster+ will wait after a run termination is initiated for the process or container to terminate. After the timeout, the run will move into a `CANCELED` state. This prevents runs from hanging in `CANCELING` indefinitely when the process or container doesn't terminate cleanly. <ul><li>**Default** - `1200` (20 minutes)</li></ul> |
