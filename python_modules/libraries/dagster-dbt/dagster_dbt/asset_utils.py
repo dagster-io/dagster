@@ -829,14 +829,14 @@ def build_dbt_multi_asset_args(
             automation_condition=dagster_dbt_translator.get_automation_condition(
                 dbt_resource_props
             ),
+            partitions_def=dagster_dbt_translator.get_partitions_def(dbt_resource_props),
         )
-        if io_manager_key:
-            spec = spec.with_io_manager_key(io_manager_key)
 
         outs[output_name] = AssetOut.from_spec(
             spec=spec,
             dagster_type=Nothing,
             is_required=False,
+            io_manager_key=io_manager_key,
         )
 
         test_unique_ids = [
