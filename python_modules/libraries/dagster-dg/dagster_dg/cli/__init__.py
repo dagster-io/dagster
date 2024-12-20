@@ -4,9 +4,10 @@ from pathlib import Path
 import click
 
 from dagster_dg.cache import DgCache
-from dagster_dg.cli.generate import generate_cli
-from dagster_dg.cli.info import info_cli
-from dagster_dg.cli.list import list_cli
+from dagster_dg.cli.code_location import code_location_group
+from dagster_dg.cli.component import component_group
+from dagster_dg.cli.component_type import component_type_group
+from dagster_dg.cli.deployment import deployment_group
 from dagster_dg.config import DgConfig, set_config_on_cli_context
 from dagster_dg.context import (
     DgContext,
@@ -22,9 +23,10 @@ from dagster_dg.version import __version__
 
 def create_dg_cli():
     commands = {
-        "generate": generate_cli,
-        "info": info_cli,
-        "list": list_cli,
+        "code-location": code_location_group,
+        "deployment": deployment_group,
+        "component": component_group,
+        "component-type": component_type_group,
     }
 
     # Defaults are defined on the DgConfig object.

@@ -10,25 +10,58 @@ from dagster_dg.context import (
     DgContext,
     is_inside_code_location_directory,
 )
+from dagster_dg.generate import generate_component_type
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 
 
-@click.group(name="info", cls=DgClickGroup)
-def info_cli():
-    """Commands for listing Dagster components and related entities."""
+@click.group(name="component-type", cls=DgClickGroup)
+def component_type_group():
+    """Commands for operating on components types."""
 
 
-def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
-    return json.dumps(schema, indent=4)
+# ########################
+# ##### GENERATE
+# ########################
 
 
-@info_cli.command(name="component-type", cls=DgClickCommand)
+@component_type_group.command(name="generate", cls=DgClickCommand)
+@click.argument("name", type=str)
+@click.pass_context
+def component_type_generate_command(cli_context: click.Context, name: str) -> None:
+    """Generate a scaffold of a custom Dagster component type.
+
+    This command must be run inside a Dagster code location directory. The component type scaffold
+    will be generated in submodule `<code_location_name>.lib.<name>`.
+    """
+    dg_context = DgContext.from_cli_context(cli_context)
+    if not is_inside_code_location_directory(Path.cwd()):
+        click.echo(
+            click.style(
+                "This command must be run inside a Dagster code location directory.", fg="red"
+            )
+        )
+        sys.exit(1)
+    context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
+    full_component_name = f"{context.name}.{name}"
+    if context.has_component_type(full_component_name):
+        click.echo(click.style(f"A component type named `{name}` already exists.", fg="red"))
+        sys.exit(1)
+
+    generate_component_type(context, name)
+
+
+# ########################
+# ##### INFO
+# ########################
+
+
+@component_type_group.command(name="info", cls=DgClickCommand)
 @click.argument("component_type", type=str)
 @click.option("--description", is_flag=True, default=False)
 @click.option("--generate-params-schema", is_flag=True, default=False)
 @click.option("--component-params-schema", is_flag=True, default=False)
 @click.pass_context
-def info_component_type_command(
+def component_type_info_command(
     cli_context: click.Context,
     component_type: str,
     description: bool,
@@ -91,3 +124,32 @@ def info_component_type_command(
         if component_type_metadata.component_params_schema:
             click.echo("\nComponent params schema:\n")
             click.echo(_serialize_json_schema(component_type_metadata.component_params_schema))
+
+
+def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
+    return json.dumps(schema, indent=4)
+
+
+# ########################
+# ##### LIST
+# ########################
+
+
+@component_type_group.command(name="list", cls=DgClickCommand)
+@click.pass_context
+def component_type_list(cli_context: click.Context) -> None:
+    """List registered Dagster components in the current code location environment."""
+    dg_context = DgContext.from_cli_context(cli_context)
+    if not is_inside_code_location_directory(Path.cwd()):
+        click.echo(
+            click.style(
+                "This command must be run inside a Dagster code location directory.", fg="red"
+            )
+        )
+        sys.exit(1)
+
+    context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
+    for key, component_type in context.iter_component_types():
+        click.echo(key)
+        if component_type.summary:
+            click.echo(f"    {component_type.summary}")
