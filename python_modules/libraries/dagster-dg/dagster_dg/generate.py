@@ -1,19 +1,17 @@
+import json
 import os
-import subprocess
-import textwrap
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Mapping, Optional, Sequence
 
 import click
 
-from dagster_dg.context import CodeLocationDirectoryContext, DgContext
-from dagster_dg.utils import (
-    camelcase,
-    execute_code_location_command,
-    generate_subtree,
-    get_uv_command_env,
-    pushd,
+from dagster_dg.context import (
+    CodeLocationDirectoryContext,
+    DgContext,
+    ensure_uv_lock,
+    fetch_component_registry,
 )
+from dagster_dg.utils import camelcase, execute_code_location_command, generate_subtree
 
 # ########################
 # ##### DEPLOYMENT
@@ -75,20 +73,35 @@ def get_pyproject_toml_dev_dependencies(use_editable_dagster: bool) -> str:
     )
 
 
-def get_pyproject_toml_uv_sources(editable_dagster_root: str) -> str:
-    return textwrap.dedent(f"""
-        [tool.uv.sources]
-        dagster = {{ path = "{editable_dagster_root}/python_modules/dagster", editable = true }}
-        dagster-graphql = {{ path = "{editable_dagster_root}/python_modules/dagster-graphql", editable = true }}
-        dagster-pipes = {{ path = "{editable_dagster_root}/python_modules/dagster-pipes", editable = true }}
-        dagster-webserver = {{ path = "{editable_dagster_root}/python_modules/dagster-webserver", editable = true }}
-        dagster-components = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-components", editable = true }}
-        dagster-embedded-elt = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-embedded-elt", editable = true }}
-        dagster-dbt = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-dbt", editable = true }}
-    """)
+def get_pyproject_toml_uv_sources(editable_dagster_root: Path) -> str:
+    lib_lines = [
+        f'{path.name} = {{ path = "{path}", editable = true }}'
+        for path in _gather_dagster_packages(editable_dagster_root)
+    ]
+    return "\n".join(
+        [
+            "[tool.uv.sources]",
+            *lib_lines,
+        ]
+    )
 
 
-def generate_code_location(path: Path, editable_dagster_root: Optional[str] = None) -> None:
+def _gather_dagster_packages(editable_dagster_root: Path) -> Sequence[Path]:
+    return [
+        p.parent
+        for p in (
+            *editable_dagster_root.glob("python_modules/dagster*/setup.py"),
+            *editable_dagster_root.glob("python_modules/libraries/dagster*/setup.py"),
+        )
+    ]
+
+
+def generate_code_location(
+    path: Path,
+    dg_context: DgContext,
+    editable_dagster_root: Optional[str] = None,
+    skip_venv: bool = False,
+) -> None:
     click.echo(f"Creating a Dagster code location at {path}.")
 
     dependencies = get_pyproject_toml_dependencies(use_editable_dagster=bool(editable_dagster_root))
@@ -96,7 +109,7 @@ def generate_code_location(path: Path, editable_dagster_root: Optional[str] = No
         use_editable_dagster=bool(editable_dagster_root)
     )
     uv_sources = (
-        get_pyproject_toml_uv_sources(editable_dagster_root) if editable_dagster_root else ""
+        get_pyproject_toml_uv_sources(Path(editable_dagster_root)) if editable_dagster_root else ""
     )
 
     generate_subtree(
@@ -111,8 +124,9 @@ def generate_code_location(path: Path, editable_dagster_root: Optional[str] = No
     )
 
     # Build the venv
-    with pushd(path):
-        subprocess.run(["uv", "sync"], check=True, env=get_uv_command_env())
+    if not skip_venv:
+        ensure_uv_lock(path)
+        fetch_component_registry(path, dg_context)  # Populate the cache
 
 
 # ########################
@@ -148,8 +162,7 @@ def generate_component_instance(
     root_path: Path,
     name: str,
     component_type: str,
-    json_params: Optional[str],
-    extra_args: Tuple[str, ...],
+    generate_params: Optional[Mapping[str, Any]],
     dg_context: "DgContext",
 ) -> None:
     component_instance_root_path = root_path / name
@@ -160,8 +173,7 @@ def generate_component_instance(
         "component",
         component_type,
         name,
-        *(["--json-params", json_params] if json_params else []),
-        *(["--", *extra_args] if extra_args else []),
+        *(["--json-params", json.dumps(generate_params)] if generate_params else []),
     )
     execute_code_location_command(
         Path(component_instance_root_path),

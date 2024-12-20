@@ -1,9 +1,5 @@
 from pathlib import Path
 
-from dagster_components.core.component_defs_builder import (
-    build_defs_from_toplevel_components_folder,
-)
+from dagster_components import build_component_defs
 
-defs = build_defs_from_toplevel_components_folder(
-    path=Path(__file__).parent,
-)
+defs = build_component_defs(code_location_root=Path(__file__).parent.parent)

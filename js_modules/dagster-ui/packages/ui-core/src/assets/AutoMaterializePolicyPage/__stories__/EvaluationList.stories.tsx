@@ -23,7 +23,11 @@ export const Default = () => {
 
   return (
     <MockedProvider>
-      <EvaluationList definition={definition} evaluations={evaluations} />
+      <EvaluationList
+        assetKey={definition.assetKey}
+        isPartitioned={false}
+        evaluations={evaluations}
+      />
     </MockedProvider>
   );
 };

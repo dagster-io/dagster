@@ -89,4 +89,5 @@ Removing a user removes them from the organization. **Note**: If using a SAML-ba
 - Learn more about role-based access control (RBAC) in [Understanding User Roles & Permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions)
 - Learn more about how to manage teams in Dagster+ in [Understanding Team Management in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/teams)
 - Learn more about SCIM provisioning in [SCIM Provisioning](/dagster-plus/features/authentication-and-access-control/scim)
-- Learn more about authentication in [Understanding Authentication](/dagster-plus/features/authentication-and-access-control/sso/authentication)
+{/* - Learn more about authentication in [Understanding Authentication](/dagster-plus/features/authentication-and-access-control/sso/authentication) */}
+- Learn more about authentication in [Understanding Authentication](/todo)

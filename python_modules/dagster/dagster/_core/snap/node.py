@@ -208,7 +208,7 @@ class OpDefSnap:
     },
 )
 @record
-class NodeDefsSnapshot(IHaveNew):
+class NodeDefsSnapshot:
     op_def_snaps: Sequence[OpDefSnap]
     graph_def_snaps: Sequence[GraphDefSnap]
 

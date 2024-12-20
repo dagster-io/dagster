@@ -16,24 +16,25 @@ from typing_extensions import Self
 def isolated_example_deployment_foo(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     with runner.isolated_filesystem():
-        runner.invoke("generate", "deployment", "foo")
+        runner.invoke("deployment", "generate", "foo")
         with pushd("foo"):
             yield
 
 
 @contextmanager
 def isolated_example_code_location_bar(
-    runner: Union[CliRunner, "ProxyRunner"], in_deployment: bool = True
+    runner: Union[CliRunner, "ProxyRunner"], in_deployment: bool = True, skip_venv: bool = False
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     if in_deployment:
         with isolated_example_deployment_foo(runner):
             runner.invoke(
-                "generate",
                 "code-location",
+                "generate",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
+                *(["--skip-venv"] if skip_venv else []),
                 "bar",
             )
             with pushd("code_locations/bar"):
@@ -41,10 +42,11 @@ def isolated_example_code_location_bar(
     else:
         with runner.isolated_filesystem():
             runner.invoke(
-                "generate",
                 "code-location",
+                "generate",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
+                *(["--skip-venv"] if skip_venv else []),
                 "bar",
             )
             with pushd("bar"):

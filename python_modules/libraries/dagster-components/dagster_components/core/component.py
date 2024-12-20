@@ -22,6 +22,7 @@ from typing import (
     TypeVar,
 )
 
+import click
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
@@ -31,7 +32,6 @@ from pydantic import TypeAdapter
 from typing_extensions import Self
 
 from dagster_components.core.component_rendering import TemplatedValueResolver, preprocess_value
-from dagster_components.utils import ensure_dagster_components_tests_import
 
 
 class ComponentDeclNode: ...
@@ -49,7 +49,14 @@ class Component(ABC):
     generate_params_schema: ClassVar = None
 
     @classmethod
-    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None: ...
+    def get_rendering_scope(cls) -> Mapping[str, Any]:
+        return {}
+
+    @classmethod
+    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None:
+        from dagster_components.generate import generate_component_yaml
+
+        generate_component_yaml(request, {})
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
@@ -87,6 +94,16 @@ def _clean_docstring(docstring: str) -> str:
         return f"{first_line}\n{rest}"
 
 
+def _get_click_cli_help(command: click.Command) -> str:
+    with click.Context(command) as ctx:
+        formatter = click.formatting.HelpFormatter()
+        param_records = [
+            p.get_help_record(ctx) for p in command.get_params(ctx) if p.name != "help"
+        ]
+        formatter.write_dl([pr for pr in param_records if pr])
+        return formatter.getvalue()
+
+
 class ComponentInternalMetadata(TypedDict):
     summary: Optional[str]
     description: Optional[str]
@@ -108,14 +125,14 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
 
 COMPONENTS_ENTRY_POINT_GROUP = "dagster.components"
 BUILTIN_COMPONENTS_ENTRY_POINT_BASE = "dagster_components"
-BUILTIN_PUBLISHED_COMPONENT_ENTRY_POINT = BUILTIN_COMPONENTS_ENTRY_POINT_BASE
+BUILTIN_MAIN_COMPONENT_ENTRY_POINT = BUILTIN_COMPONENTS_ENTRY_POINT_BASE
 BUILTIN_TEST_COMPONENT_ENTRY_POINT = ".".join([BUILTIN_COMPONENTS_ENTRY_POINT_BASE, "test"])
 
 
 class ComponentRegistry:
     @classmethod
     def from_entry_point_discovery(
-        cls, builtin_component_lib: str = BUILTIN_PUBLISHED_COMPONENT_ENTRY_POINT
+        cls, builtin_component_lib: str = BUILTIN_MAIN_COMPONENT_ENTRY_POINT
     ) -> "ComponentRegistry":
         """Discover components registered in the Python environment via the `dagster_components` entry point group.
 
@@ -138,11 +155,6 @@ class ComponentRegistry:
                 and not entry_point.name == builtin_component_lib
             ):
                 continue
-            elif entry_point.name == BUILTIN_TEST_COMPONENT_ENTRY_POINT:
-                if builtin_component_lib:
-                    ensure_dagster_components_tests_import()
-                else:
-                    continue
 
             root_module = entry_point.load()
             if not isinstance(root_module, ModuleType):
@@ -182,7 +194,9 @@ class ComponentRegistry:
 
 
 def get_registered_components_in_module(module: ModuleType) -> Iterable[Type[Component]]:
-    from dagster._core.definitions.load_assets_from_modules import find_subclasses_in_module
+    from dagster._core.definitions.module_loaders.load_assets_from_modules import (
+        find_subclasses_in_module,
+    )
 
     for component in find_subclasses_in_module(module, (Component,)):
         if is_registered_component(component):
@@ -221,6 +235,12 @@ class ComponentLoadContext:
             check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
 
         return self.decl_node.path
+
+    def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
+        return dataclasses.replace(
+            self,
+            templated_value_resolver=self.templated_value_resolver.with_context(**rendering_scope),
+        )
 
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl_node)

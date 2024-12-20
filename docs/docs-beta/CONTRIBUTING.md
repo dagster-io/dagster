@@ -6,6 +6,12 @@ There are some features in the previous docs that require changes to be made to 
 
 ### Images
 
+#### Location
+
+Old images are in the [/docs/next/public/images](https://github.com/dagster-io/dagster/tree/master/docs/next/public/images) directory. You will need to copy them to [/docs/docs-beta/static/images](https://github.com/dagster-io/dagster/tree/master/docs/docs-beta/static/images).
+
+#### Formatting
+
 Before:
 
 ```
@@ -20,14 +26,7 @@ Before:
 After:
 
 ```
-<ThemedImage
-  alt="Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"
-  style={{width:'100%', height: 'auto'}}
-  sources={{
-    light: '/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png',
-    dark: '/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png',
-  }}
-/>
+![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png)
 ```
 
 ### Notes
@@ -101,6 +100,10 @@ After:
 |---|---|
 | `DAGSTER_CLOUD_DEPLOYMENT_NAME` | The name of the Dagster+ deployment. <br/><br/>  **Example:** `prod`. |
 | `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` | `1` if the deployment is a [branch deployment](/dagster-plus/features/ci-cd/branch-deployments/index.md). |
+
+#### Line breaks and lists in tables
+
+[Use HTML](https://www.markdownguide.org/hacks/#table-formatting) to add line breaks and lists to tables.
 
 ### Whitespace via `{" "}`
 

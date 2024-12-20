@@ -4,7 +4,7 @@ from typing import AbstractSet, Any, Mapping, Optional, Sequence, Type, TypeVar,
 
 import dagster._check as check
 from dagster._record import record
-from jinja2 import Template
+from jinja2.nativetypes import NativeTemplate
 from pydantic import BaseModel, Field
 from pydantic.fields import FieldInfo
 
@@ -51,8 +51,8 @@ class TemplatedValueResolver:
     def with_context(self, **additional_context) -> "TemplatedValueResolver":
         return TemplatedValueResolver(context={**self.context, **additional_context})
 
-    def resolve(self, val: str) -> str:
-        return Template(val).render(**self.context)
+    def resolve(self, val: Any) -> Any:
+        return NativeTemplate(val).render(**self.context) if isinstance(val, str) else val
 
 
 def _should_render(
@@ -70,7 +70,7 @@ def _should_render(
 
     # Optional[ComplexType] (e.g.) will contain multiple schemas in the "anyOf" field
     if "anyOf" in subschema:
-        return any(_should_render(valpath, json_schema, inner) for inner in subschema["anyOf"])
+        return all(_should_render(valpath, json_schema, inner) for inner in subschema["anyOf"])
 
     el = valpath[0]
     if isinstance(el, str):
@@ -84,9 +84,9 @@ def _should_render(
     else:
         check.failed(f"Unexpected valpath element: {el}")
 
-    # the path wasn't valid
+    # the path wasn't valid, or unspecified
     if not inner:
-        return False
+        return subschema.get("additionalProperties", True)
 
     _, *rest = valpath
     return _should_render(rest, json_schema, inner)

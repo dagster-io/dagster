@@ -42,6 +42,7 @@ def load_module_from_path(module_name, path) -> ModuleType:
 def load_components_from_context(context: ComponentLoadContext) -> Sequence[Component]:
     if isinstance(context.decl_node, YamlComponentDecl):
         component_type = component_type_from_yaml_decl(context.registry, context.decl_node)
+        context = context.with_rendering_scope(component_type.get_rendering_scope())
         return [component_type.load(context)]
     elif isinstance(context.decl_node, ComponentFolder):
         components = []
@@ -124,16 +125,24 @@ def defs_from_components(
 
 # Public method so optional Nones are fine
 @suppress_dagster_warnings
-def build_defs_from_toplevel_components_folder(
-    path: Path,
+def build_component_defs(
+    code_location_root: Path,
     resources: Optional[Mapping[str, object]] = None,
     registry: Optional["ComponentRegistry"] = None,
+    components_folder: Optional[Path] = None,
 ) -> "Definitions":
-    """Build a Definitions object from an entire component hierarchy."""
+    """Build a Definitions object for all the component instances in a given code location.
+
+    Args:
+        code_location_root (Path): The path to the code location root.
+            The path must be a code location directory that has a pyproject.toml with a [dagster] section.
+    """
     from dagster._core.definitions.definitions_class import Definitions
 
-    context = CodeLocationProjectContext.from_path(
-        path, registry or ComponentRegistry.from_entry_point_discovery()
+    context = CodeLocationProjectContext.from_code_location_path(
+        code_location_root,
+        registry or ComponentRegistry.from_entry_point_discovery(),
+        components_folder=components_folder,
     )
 
     all_defs: List[Definitions] = []

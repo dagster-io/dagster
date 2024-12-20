@@ -22,6 +22,7 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.utils import resolve_automation_condition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType
@@ -217,12 +218,17 @@ class AssetOut:
         )
 
     def to_spec(
-        self, key: AssetKey, deps: Sequence[AssetDep], additional_tags: Mapping[str, str] = {}
+        self,
+        key: AssetKey,
+        deps: Sequence[AssetDep],
+        additional_tags: Mapping[str, str] = {},
+        partitions_def: Optional[PartitionsDefinition] = ...,
     ) -> AssetSpec:
         return self._spec.replace_attributes(
             key=key,
             tags={**additional_tags, **self.tags} if self.tags else additional_tags,
             deps=[*self._spec.deps, *deps],
+            partitions_def=partitions_def if partitions_def is not None else ...,
         )
 
     @public

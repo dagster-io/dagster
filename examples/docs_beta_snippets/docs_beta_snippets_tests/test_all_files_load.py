@@ -17,6 +17,9 @@ EXCLUDED_FILES = {
     # setup() expects. So omit files that call setup() since they cannot be loaded without errors.
     f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/data_files_setup.py",
     f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/example_setup.py",
+    # these files are part of a completed project and the import references are failing the tests
+    f"{snippets_folder}/guides/tutorials/etl_tutorial_completed/etl_tutorial/assets.py",
+    f"{snippets_folder}/guides/tutorials/etl_tutorial_completed/etl_tutorial/definitions.py",
 }
 
 EXCLUDED_DIRS = {

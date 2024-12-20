@@ -11,7 +11,7 @@ from dagster._core.remote_representation.origin import (
     RegisteredCodeLocationOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._record import IHaveNew, record, record_custom
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
@@ -84,18 +84,10 @@ class RepositoryHandle:
         )
 
 
-@record_custom
-class JobHandle(IHaveNew):
+@record(kw_only=False)
+class JobHandle:
     job_name: str
     repository_handle: RepositoryHandle
-
-    # allow posargs
-    def __new__(cls, job_name: str, repository_handle: RepositoryHandle):
-        return super().__new__(
-            cls,
-            job_name=job_name,
-            repository_handle=repository_handle,
-        )
 
     def to_string(self):
         return f"{self.location_name}.{self.repository_name}.{self.job_name}"
@@ -123,18 +115,10 @@ class JobHandle(IHaveNew):
         )
 
 
-@record_custom
-class InstigatorHandle(IHaveNew):
+@record(kw_only=False)
+class InstigatorHandle:
     instigator_name: str
     repository_handle: RepositoryHandle
-
-    # allow posargs
-    def __new__(cls, instigator_name: str, repository_handle: RepositoryHandle):
-        return super().__new__(
-            cls,
-            instigator_name=instigator_name,
-            repository_handle=repository_handle,
-        )
 
     @property
     def repository_name(self) -> str:

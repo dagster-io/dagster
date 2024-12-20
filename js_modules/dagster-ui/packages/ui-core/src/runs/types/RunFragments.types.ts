@@ -49,15 +49,6 @@ export type RunFragment = {
       }>;
     }>;
   } | null;
-  stepStats: Array<{
-    __typename: 'RunStepStats';
-    stepKey: string;
-    status: Types.StepEventStatus | null;
-    startTime: number | null;
-    endTime: number | null;
-    attempts: Array<{__typename: 'RunMarker'; startTime: number | null; endTime: number | null}>;
-    markers: Array<{__typename: 'RunMarker'; startTime: number | null; endTime: number | null}>;
-  }>;
 };
 
 export type RunDagsterRunEventFragment_AlertFailureEvent = {
@@ -3186,13 +3177,4 @@ export type RunPageFragment = {
       }>;
     }>;
   } | null;
-  stepStats: Array<{
-    __typename: 'RunStepStats';
-    stepKey: string;
-    status: Types.StepEventStatus | null;
-    startTime: number | null;
-    endTime: number | null;
-    attempts: Array<{__typename: 'RunMarker'; startTime: number | null; endTime: number | null}>;
-    markers: Array<{__typename: 'RunMarker'; startTime: number | null; endTime: number | null}>;
-  }>;
 };

@@ -46,20 +46,6 @@ export const RUN_FRAGMENT = gql`
     }
     stepKeysToExecute
     updateTime
-    stepStats {
-      stepKey
-      status
-      startTime
-      endTime
-      attempts {
-        startTime
-        endTime
-      }
-      markers {
-        startTime
-        endTime
-      }
-    }
     ...RunTimingFragment
   }
 

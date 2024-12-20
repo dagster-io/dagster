@@ -6,6 +6,6 @@ from dagster_components.core.component import (
     component as component,
 )
 from dagster_components.core.component_defs_builder import (
-    build_defs_from_toplevel_components_folder as build_defs_from_toplevel_components_folder,
+    build_component_defs as build_component_defs,
 )
 from dagster_components.version import __version__ as __version__

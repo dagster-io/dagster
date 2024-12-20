@@ -265,13 +265,11 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self._partitions_def_by_asset_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
         asset_graph = self._repository_def.asset_graph
         for asset_key in self._monitored_asset_keys:
-            assets_def = (
-                asset_graph.get(asset_key).assets_def if asset_graph.has(asset_key) else None
-            )
-            self._assets_by_key[asset_key] = assets_def
+            asset_node = asset_graph.get(asset_key) if asset_graph.has(asset_key) else None
+            self._assets_by_key[asset_key] = asset_node.assets_def if asset_node else None
 
             self._partitions_def_by_asset_key[asset_key] = (
-                assets_def.partitions_def if assets_def else None
+                asset_node.partitions_def if asset_node else None
             )
 
         # Cursor object with utility methods for updating and retrieving cursor information.
@@ -744,24 +742,25 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         to_asset = self._get_asset(to_asset_key, fn_name="get_downstream_partition_keys")
         from_asset = self._get_asset(from_asset_key, fn_name="get_downstream_partition_keys")
 
-        to_partitions_def = to_asset.partitions_def
+        to_partitions_def = to_asset.specs_by_key[to_asset_key].partitions_def
+        from_partitions_def = from_asset.specs_by_key[from_asset_key].partitions_def
 
         if not isinstance(to_partitions_def, PartitionsDefinition):
             raise DagsterInvalidInvocationError(
                 f"Asset key {to_asset_key} is not partitioned. Cannot get partition keys."
             )
-        if not isinstance(from_asset.partitions_def, PartitionsDefinition):
+        if not isinstance(from_partitions_def, PartitionsDefinition):
             raise DagsterInvalidInvocationError(
                 f"Asset key {from_asset_key} is not partitioned. Cannot get partition keys."
             )
 
         partition_mapping = to_asset.infer_partition_mapping(
-            from_asset_key, from_asset.partitions_def
+            to_asset_key, from_asset_key, from_partitions_def
         )
         downstream_partition_key_subset = (
             partition_mapping.get_downstream_partitions_for_partitions(
-                from_asset.partitions_def.empty_subset().with_partition_keys([partition_key]),
-                from_asset.partitions_def,
+                from_partitions_def.empty_subset().with_partition_keys([partition_key]),
+                from_partitions_def,
                 downstream_partitions_def=to_partitions_def,
                 dynamic_partitions_store=self.instance,
             )
