@@ -1,8 +1,9 @@
 ---
 title: About Automation
-sidebar_position: 100
 unlisted: true
 ---
+
+{/* TODO combine with index page and delete this page */}
 
 There are several ways to automate the execution of your data pipelines with Dagster.
 
