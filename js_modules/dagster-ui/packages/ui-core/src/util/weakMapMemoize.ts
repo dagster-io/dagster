@@ -58,12 +58,6 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
           } else {
             parent.map.delete(parentKey);
           }
-
-          // Remove references to help garbage collection
-          delete cacheNode.parent;
-          delete cacheNode.parentKey;
-          delete cacheNode.result;
-          delete cacheNode.lruKey;
         }
       },
       noDisposeOnSet: false, // Ensure dispose is called on eviction
