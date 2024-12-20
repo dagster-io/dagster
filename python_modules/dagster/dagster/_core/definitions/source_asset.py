@@ -460,9 +460,13 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     def with_attributes(
         self, group_name: Optional[str] = None, key: Optional[AssetKey] = None
     ) -> "SourceAsset":
-        if group_name is not None and self.group_name != DEFAULT_GROUP_NAME:
+        if (
+            group_name is not None
+            and self.group_name != DEFAULT_GROUP_NAME
+            and self.group_name != group_name
+        ):
             raise DagsterInvalidDefinitionError(
-                "A group name has already been provided to source asset"
+                f"Attempted to override group name to {group_name} for SourceAsset {self.key.to_user_string()}, which already has group name {self.group_name}."
                 f" {self.key.to_user_string()}"
             )
 
