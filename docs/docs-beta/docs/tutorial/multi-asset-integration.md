@@ -3,22 +3,15 @@ title: Creating a multi-asset integration
 description: Create a decorator based multi-asset integration
 ---
 
-
 When working in the Dagster ecosystem, you may have noticed that decorators are frequently used. For example, assets, jobs, and ops use decorators. If you have a service that produces many assets, it's possible to define it as a multi-asset decorator-offering a consistent and intuitive developer experience to existing Dagster APIs.
 
 In the context of Dagster, decorators are helpful because they often wrap some form of processing. For example, when writing an asset, you define your processing code and then annotate the function with the `asset` decorator /> decorator. Then, the internal Dagster code can register the asset, assign metadata, pass in context data, or perform any other variety of operations that are required to integrate your asset code with the Dagster platform.
 
 In this guide, you'll learn how to develop a multi-asset integration for a hypothetical replication tool.
 
-
-## Prerequisites
-
-To follow the steps in this guide, you'll need:
-
-- Familiarity with Dagster
-- An understanding of Python decorators—[Real Python's Primer on Python Decorators](https://realpython.com/primer-on-python-decorators/) is a fantastic introduction
-
----
+:::note
+This guide assumes basic familiarity with Dagster and Python decorators.
+:::
 
 ## Step 1: Input
 
@@ -59,8 +52,6 @@ def replicate(replication_configuration_yaml: Path) -> Iterator[Mapping[str, Any
         # < perform replication here, and get status >
         yield {"table": table.get("name"), "status": "success"}
 ```
-
----
 
 ## Step 2: Implementation
 
@@ -141,7 +132,6 @@ There are a few limitations to this approach:
 
 For the first limitation, we can resolve this by refactoring the code in the body of our asset function into a Dagster resource.
 
-
 ## Step 3: Moving the replication logic into a resource
 
 Refactoring the replication logic into a resource enables us to support better configuration and re-use of our logic.
@@ -178,7 +168,6 @@ Now, we can refactor our `custom_replication_assets` instance to use this resour
 def my_assets(replication_resource: ReplicationProject):
     replication_resource.run(replication_project)
 ```
-
 
 ## Step 4: Using translators
 
@@ -268,7 +257,6 @@ class ReplicationResource(ConfigurableResource):
                     asset_key=translator.get_asset_key(table), metadata=table
                 )
 ```
-
 
 ## Conclusion
 
