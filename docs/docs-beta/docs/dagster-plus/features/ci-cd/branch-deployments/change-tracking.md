@@ -16,7 +16,8 @@ Branch Deployments compare asset definitions in the branch deployment against th
 
 You can also apply filters to show only new and changed assets in the UI. This makes it easy to understand which assets will be impacted by the changes in the pull request associated with the branch deployment.
 
-**Note:** The default main deployment is `prod`. To configure a different deployment as the main deployment, [create a branch deployment using the dagster-cloud CLI](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments) and specify it using the optional `--base-deployment-name` parameter.
+{/* **Note:** The default main deployment is `prod`. To configure a different deployment as the main deployment, [create a branch deployment using the dagster-cloud CLI](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments) and specify it using the optional `--base-deployment-name` parameter. */}
+**Note:** The default main deployment is `prod`. To configure a different deployment as the main deployment, [create a branch deployment using the dagster-cloud CLI](/todo) and specify it using the optional `--base-deployment-name` parameter.
 
 ## Supported change types
 
@@ -39,7 +40,8 @@ If an asset is new in the branch deployment, the asset will have a **New in bran
 
 If using the `code_version` argument on the asset decorator, Change Tracking can detect when this value changes.
 
-Some Dagster integrations, like `dagster-dbt`, automatically compute code versions for you. For more information on code versions, refer to the [Code versioning guide](/guides/dagster/asset-versioning-and-caching).
+{/* Some Dagster integrations, like `dagster-dbt`, automatically compute code versions for you. For more information on code versions, refer to the [Code versioning guide](/guides/dagster/asset-versioning-and-caching). */}
+Some Dagster integrations, like `dagster-dbt`, automatically compute code versions for you. For more information on code versions, refer to the [Code versioning guide](/todo).
 
 <Tabs>
 <TabItem value="Asset in the Dagster UI">
@@ -128,7 +130,8 @@ def weekly_orders(): ...
 
 ### Tags
 
-Change Tracking can detect when an [asset's tags](/concepts/metadata-tags/tags) have changed, whether they've been added, modified, or removed.
+{/* Change Tracking can detect when an [asset's tags](/concepts/metadata-tags/tags) have changed, whether they've been added, modified, or removed. */}
+Change Tracking can detect when an [asset's tags](/todo) have changed, whether they've been added, modified, or removed.
 
 <Tabs>
 <TabItem value="Asset in the Dagster UI">
@@ -161,7 +164,8 @@ def fruits_in_stock(): ...
 
 ### Metadata
 
-Change Tracking can detect when an [asset's definition metadata](/concepts/metadata-tags/asset-metadata#attaching-definition-metadata) has changed, whether it's been added, modified, or removed.
+{/* Change Tracking can detect when an [asset's definition metadata](/concepts/metadata-tags/asset-metadata#attaching-definition-metadata) has changed, whether it's been added, modified, or removed. */}
+Change Tracking can detect when an [asset's definition metadata](/todo) has changed, whether it's been added, modified, or removed.
 
 <Tabs>
 <TabItem value="Asset in the Dagster UI">

@@ -17,12 +17,18 @@ With these tools, we can merge changes with confidence in the impact on our data
 
 Here’s an overview of the main concepts we’ll be using:
 
-- [Assets](/concepts/assets/software-defined-assets) - We'll define three assets that each persist a table to Snowflake.
-- [Ops](/concepts/ops-jobs-graphs/ops) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
-- [Graphs](/concepts/ops-jobs-graphs/graphs) - We'll build graphs that define the order our ops should run.
-- [Jobs](/concepts/assets/asset-jobs) - We'll define jobs by binding our graphs to resources.
-- [Resources](/concepts/resources) - We'll use the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> to swap in different Snowflake connections to our jobs depending on environment.
-- [I/O managers](/concepts/io-management/io-managers) - We'll use a Snowflake I/O manager to persist asset outputs to Snowflake.
+{/* - [Assets](/concepts/assets/software-defined-assets) - We'll define three assets that each persist a table to Snowflake. */}
+- [Assets](/todo) - We'll define three assets that each persist a table to Snowflake.
+{/* - [Ops](/concepts/ops-jobs-graphs/ops) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones. */}
+- [Ops](/todo) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
+{/* - [Graphs](/concepts/ops-jobs-graphs/graphs) - We'll build graphs that define the order our ops should run. */}
+- [Graphs](/todo) - We'll build graphs that define the order our ops should run.
+{/* - [Jobs](/concepts/assets/asset-jobs) - We'll define jobs by binding our graphs to resources. */}
+- [Jobs](/todo) - We'll define jobs by binding our graphs to resources.
+{/* - [Resources](/concepts/resources) - We'll use the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> to swap in different Snowflake connections to our jobs depending on environment. */}
+- [Resources](/todo) - We'll use the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> to swap in different Snowflake connections to our jobs depending on environment.
+{/* - [I/O managers](/concepts/io-management/io-managers) - We'll use a Snowflake I/O manager to persist asset outputs to Snowflake. */}
+- [I/O managers](/todo) - We'll use a Snowflake I/O manager to persist asset outputs to Snowflake.
 
 ---
 
@@ -40,10 +46,12 @@ Here’s an overview of the main concepts we’ll be using:
 To complete the steps in this guide, you'll need:
 
 - A Dagster+ account
-- An existing Branch Deployments setup that uses [GitHub actions](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github) or [Gitlab CI/CD](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab). Your setup should contain a Dagster project set up for branch deployments containing:
+{/* - An existing Branch Deployments setup that uses [GitHub actions](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github) or [Gitlab CI/CD](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab). Your setup should contain a Dagster project set up for branch deployments containing: */}
+- An existing Branch Deployments setup that uses [GitHub actions](/todo) or [Gitlab CI/CD](/todo). Your setup should contain a Dagster project set up for branch deployments containing:
   - Either a GitHub actions workflow file (e.g. `.github/workflows/branch-deployments.yaml`) or a Gitlab CI/CD file (e.g. `.gitlab-ci.yml`)
   - Dockerfile that installs your Dagster project
-- User permissions in Dagster+ that allow you to [access Branch Deployments](/dagster-plus/account/managing-users/managing-user-roles-permissions)
+{/* - User permissions in Dagster+ that allow you to [access Branch Deployments](/dagster-plus/account/managing-users/managing-user-roles-permissions) */}
+- User permissions in Dagster+ that allow you to [access Branch Deployments](/todo)
 
 ---
 
@@ -57,7 +65,8 @@ We have a `PRODUCTION` Snowflake database with a schema named `HACKER_NEWS`. In 
 
 To set up a branch deployment workflow to construct and test these tables, we will:
 
-1. Define these tables as [assets](/concepts/assets/software-defined-assets).
+{/* 1. Define these tables as [assets](/concepts/assets/software-defined-assets). */}
+1. Define these tables as [assets](/todo).
 2. Configure our assets to write to Snowflake using a different connection (credentials and database name) for two environments: production and branch deployment.
 3. Write a job that will clone the production database upon each branch deployment launch. Each clone will be named `PRODUCTION_CLONE_<ID>`, where `<ID>` is the pull request ID of the branch. Then we'll create a branch deployment and test our Hacker News assets against our newly cloned database.
 4. Write a job that will delete the corresponding database clone upon closing the feature branch.
@@ -66,7 +75,8 @@ To set up a branch deployment workflow to construct and test these tables, we wi
 
 ## Step 1: Create our assets
 
-In production, we want to write three tables to Snowflake: `ITEMS`, `COMMENTS`, and `STORIES`. We can define these tables as [assets](/concepts/assets/software-defined-assets) as follows:
+{/* In production, we want to write three tables to Snowflake: `ITEMS`, `COMMENTS`, and `STORIES`. We can define these tables as [assets](/concepts/assets/software-defined-assets) as follows: */}
+In production, we want to write three tables to Snowflake: `ITEMS`, `COMMENTS`, and `STORIES`. We can define these tables as [assets](/todo) as follows:
 
 ```python file=/guides/dagster/development_to_production/assets.py startafter=start_assets endbefore=end_assets
 # assets.py
@@ -116,7 +126,8 @@ def stories(items: pd.DataFrame) -> pd.DataFrame:
     return items[items["type"] == "story"]
 ```
 
-As you can see, our assets use an [I/O manager](/concepts/io-management/io-managers) named `snowflake_io_manager`. Using I/O managers and other resources allow us to swap out implementations per environment without modifying our business logic.
+{/* As you can see, our assets use an [I/O manager](/concepts/io-management/io-managers) named `snowflake_io_manager`. Using I/O managers and other resources allow us to swap out implementations per environment without modifying our business logic. */}
+As you can see, our assets use an [I/O manager](/todo) named `snowflake_io_manager`. Using I/O managers and other resources allow us to swap out implementations per environment without modifying our business logic.
 
 ---
 
@@ -126,7 +137,8 @@ At runtime, we’d like to determine which environment our code is running in: b
 
 To ensure we can't accidentally write to production from within our branch deployment, we’ll use a different set of credentials from production and write to our database clone.
 
-Dagster automatically sets certain [environment variables](/dagster-plus/managing-deployments/reserved-environment-variables) containing deployment metadata, allowing us to read these environment variables to discern between deployments. We can access the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable to determine the currently executing environment.
+{/* Dagster automatically sets certain [environment variables](/dagster-plus/managing-deployments/reserved-environment-variables) containing deployment metadata, allowing us to read these environment variables to discern between deployments. We can access the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable to determine the currently executing environment. */}
+Dagster automatically sets certain [environment variables](/todo) containing deployment metadata, allowing us to read these environment variables to discern between deployments. We can access the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable to determine the currently executing environment.
 
 Because we want to configure our assets to write to Snowflake using a different set of credentials and database in each environment, we’ll configure a separate I/O manager for each environment:
 
@@ -170,7 +182,8 @@ defs = Definitions(
 )
 ```
 
-Refer to the [Dagster+ environment variables documentation](/dagster-plus/managing-deployments/environment-variables-and-secrets) for more info about available environment variables.
+{/* Refer to the [Dagster+ environment variables documentation](/dagster-plus/managing-deployments/environment-variables-and-secrets) for more info about available environment variables. */}
+Refer to the [Dagster+ environment variables documentation](/todo) for more info about available environment variables.
 
 ---
 

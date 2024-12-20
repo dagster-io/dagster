@@ -74,7 +74,8 @@ When prompted, you can specify a default deployment. If specified, a deployment 
 <details>
 <summary><strong>TOKEN AUTHENTICATION</strong></summary>
 
-Alternatively, you may authenticate using a user token. Refer to the [Managing user and agent tokens guide](/dagster-plus/account/managing-user-agent-tokens) for more info.
+{/* Alternatively, you may authenticate using a user token. Refer to the [Managing user and agent tokens guide](/dagster-plus/account/managing-user-agent-tokens) for more info. */}
+Alternatively, you may authenticate using a user token. Refer to the [Managing user and agent tokens guide](/todo) for more info.
 
 ```shell
 $ dagster-cloud config setup
