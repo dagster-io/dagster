@@ -166,7 +166,7 @@ class DagsterPowerBITranslator:
             )
         self._context = context
 
-    def get_init_kwargs_from_instance(self):
+    def _get_init_kwargs_from_instance(self):
         _vars = vars(self)
         _params = set(inspect.getfullargspec(self.__init__).args)
 
@@ -186,7 +186,7 @@ class DagsterPowerBITranslator:
         return kwargs
 
     def copy_with_context(self, context: PowerBIWorkspaceData):
-        kwargs = self.get_init_kwargs_from_instance()
+        kwargs = self._get_init_kwargs_from_instance()
         if kwargs["context"]:
             raise DagsterInvariantViolationError(
                 f"The context already exist on this translator instance {self}. "
