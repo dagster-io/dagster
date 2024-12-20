@@ -437,7 +437,7 @@ class PowerBIWorkspaceDefsLoader(StateBackedDefinitionsLoader[PowerBIWorkspaceDa
             )
 
     def defs_from_state(self, state: PowerBIWorkspaceData) -> Definitions:
-        translator = self.translator_cls(context=state)
+        translator = self.translator_cls().copy_with_context(context=state)
 
         all_external_data = [
             *state.dashboards_by_id.values(),

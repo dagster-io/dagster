@@ -1,9 +1,11 @@
+import inspect
 import re
 import urllib.parse
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, Sequence
 
 from dagster import (
+    DagsterInvariantViolationError,
     UrlMetadataValue,
     _check as check,
 )
@@ -155,8 +157,45 @@ class DagsterPowerBITranslator:
     Subclass this class to implement custom logic for each type of PowerBI content.
     """
 
-    def __init__(self, context: PowerBIWorkspaceData):
+    def __init__(self, context: Optional[PowerBIWorkspaceData] = None):
+        if type(self).__init__ is not DagsterPowerBITranslator.__init__ and "context" not in set(
+            inspect.getfullargspec(type(self).__init__).args
+        ):
+            raise DagsterInvariantViolationError(
+                f"Invalid custom `__init__` function in custom translator class {type(self)}. "
+                f"The custom `__init__` function must include "
+                f"the parameter `context` of type `Optional[PowerBIWorkspaceData]` with default `None`."
+            )
         self._context = context
+
+    def get_init_kwargs_from_instance(self):
+        _vars = vars(self)
+        _params = set(inspect.getfullargspec(self.__init__).args)
+
+        # self.__init__ will always include self as a parameter
+        _params.remove("self")
+
+        kwargs = {}
+        for param in _params:
+            private_param = f"_{param}"
+            if param not in _vars and private_param not in _vars:
+                raise KeyError(
+                    f"Could not find __init__ param {param} or it's private counterpart {private_param} "
+                    f"in the attributes {_vars} of translator {self}. "
+                    f"Make sure that your __init__ parameters matches the attributes of your translator."
+                )
+            kwargs[param] = _vars.get(param) or _vars.get(private_param)
+        return kwargs
+
+    def copy_with_context(self, context: PowerBIWorkspaceData):
+        kwargs = self.get_init_kwargs_from_instance()
+        if kwargs.get("context"):
+            raise DagsterInvariantViolationError(
+                f"The context already exist on this translator instance {self}. "
+                "Cannot create a new translator instance with new context."
+            )
+        kwargs["context"] = context
+        return self.__class__(**kwargs)
 
     @property
     def workspace_data(self) -> PowerBIWorkspaceData:

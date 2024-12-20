@@ -1,8 +1,12 @@
+from typing import Optional
+
+import pytest
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags import build_kind_tag
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster_powerbi import DagsterPowerBITranslator
 from dagster_powerbi.translator import PowerBIContentData, PowerBIContentType, PowerBIWorkspaceData
 
@@ -134,6 +138,72 @@ def test_translator_custom_metadata(workspace_data: PowerBIWorkspaceData) -> Non
     assert "custom" in asset_spec.metadata
     assert asset_spec.metadata["custom"] == "metadata"
     assert asset_spec.key.path == ["prefix", "dashboard", "Sales_Returns_Sample_v201912"]
+
+
+class MyCustomTranslatorWithInitParam(DagsterPowerBITranslator):
+    def __init__(self, my_param: str, context: Optional[PowerBIWorkspaceData] = None):
+        self.my_param = my_param
+        super().__init__(context=context)
+
+    def get_asset_spec(self, data: PowerBIContentData) -> AssetSpec:
+        default_spec = super().get_asset_spec(data)
+        return default_spec.replace_attributes(
+            key=default_spec.key.with_prefix("prefix"),
+            metadata={**default_spec.metadata, "custom": self.my_param},
+        )
+
+
+def test_custom_translator_with_init_param(workspace_data: PowerBIWorkspaceData) -> None:
+    dashboard = next(iter(workspace_data.dashboards_by_id.values()))
+
+    test_param = "test"
+    translator = MyCustomTranslatorWithInitParam(my_param=test_param).copy_with_context(
+        context=workspace_data
+    )
+    asset_spec = translator.get_asset_spec(dashboard)
+
+    assert "custom" in asset_spec.metadata
+    assert asset_spec.metadata["custom"] == test_param
+    assert asset_spec.key.path == ["prefix", "dashboard", "Sales_Returns_Sample_v201912"]
+
+
+def test_custom_translator_with_existing_context(workspace_data: PowerBIWorkspaceData) -> None:
+    translator = MyCustomTranslatorWithInitParam(my_param="test", context=workspace_data)
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="The context already exist on this translator instance",
+    ):
+        translator.copy_with_context(context=workspace_data)
+
+
+class MyCustomTranslatorWithInvalidInitParam(DagsterPowerBITranslator):
+    def __init__(self, my_param: str):
+        self.my_param = my_param
+        super().__init__()
+
+
+def test_custom_translator_with_invalid_init_param(workspace_data: PowerBIWorkspaceData) -> None:
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Invalid custom `__init__` function in custom translator class",
+    ):
+        MyCustomTranslatorWithInvalidInitParam(my_param="test")
+
+
+class MyCustomTranslatorWithInvalidAttribute(DagsterPowerBITranslator):
+    def __init__(self, my_param: str, context: Optional[PowerBIWorkspaceData] = None):
+        self.another_param_name = my_param
+        super().__init__(context=context)
+
+
+def test_custom_translator_with_invalid_attribute(workspace_data: PowerBIWorkspaceData) -> None:
+    with pytest.raises(
+        KeyError,
+        match="Could not find __init__ param",
+    ):
+        MyCustomTranslatorWithInvalidAttribute(my_param="test").copy_with_context(
+            context=workspace_data
+        )
 
 
 def test_translator_report_spec_no_dataset(workspace_data: PowerBIWorkspaceData) -> None:
