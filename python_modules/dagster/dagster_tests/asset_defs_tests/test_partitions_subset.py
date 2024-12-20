@@ -209,3 +209,41 @@ def test_partitions_set_short_circuiting() -> None:
 
     # Test short-circuiting of -. Returns an empty DefaultPartitionsSubset
     assert (default_ps - all_ps) == DefaultPartitionsSubset.empty_subset()
+
+
+def test_multi_partition_subset_computed_the_same():
+    date_partition = DailyPartitionsDefinition(start_date="2024-12-01")
+    color_partition = StaticPartitionsDefinition(["red", "yellow", "blue"])
+    multi_partitions_def = MultiPartitionsDefinition(
+        {
+            "date": date_partition,
+            "z_color": color_partition,  # the name of this dimension must be alphabetically after "date" in order to create the test scenario
+        }
+    )
+
+    num_partitions = 4
+    # ['2024-12-01|red', '2024-12-01|yellow', '2024-12-01|blue', '2024-12-02|red']
+    target_partitions = multi_partitions_def.get_partition_keys()[0:num_partitions]
+
+    partition_subset = multi_partitions_def.subset_with_partition_keys(target_partitions)
+    # [PartitionKeyRange(start='2024-12-01|red', end='2024-12-02|red')]
+    partition_key_ranges = partition_subset.get_partition_key_ranges(multi_partitions_def)
+
+    # old version of the method works
+    prev_implementation_keys_from_ranges = []
+    for partition_key_range in partition_key_ranges:
+        prev_implementation_keys_from_ranges.extend(
+            multi_partitions_def.old_get_partition_keys_in_range(partition_key_range)
+        )
+
+    assert prev_implementation_keys_from_ranges == target_partitions
+
+    partition_keys_from_ranges = []
+    for partition_key_range in partition_key_ranges:
+        partition_keys_from_ranges.extend(
+            multi_partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
+
+    # this will fail because the partition_keys_from_ranges is not the same as target_partitions
+    # partition_keys_from_ranges = ['2024-12-01|red', '2024-12-02|red']
+    assert partition_keys_from_ranges == target_partitions

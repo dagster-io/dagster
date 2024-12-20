@@ -24,6 +24,7 @@ from dagster import (
     DailyPartitionsDefinition,
     Field,
     In,
+    MultiPartitionsDefinition,
     Nothing,
     Out,
     Output,
@@ -408,6 +409,26 @@ def daily_2(daily_1):
     return 1
 
 
+multi_partitions_def = MultiPartitionsDefinition(
+    {"day": daily_partitions_def, "name": static_partitions}
+)
+
+
+@asset(
+    partitions_def=multi_partitions_def,
+    backfill_policy=BackfillPolicy.single_run(),
+)
+def multi_partitioned_asset_with_single_run_bp() -> None:
+    return
+
+
+@asset(
+    partitions_def=multi_partitions_def,
+)
+def multi_partitioned_asset() -> None:
+    return
+
+
 @asset(
     partitions_def=daily_partitions_def,
     backfill_policy=BackfillPolicy.single_run(),
@@ -517,6 +538,8 @@ def the_repo():
         asset_e,
         asset_f,
         asset_g,
+        multi_partitioned_asset_with_single_run_bp,
+        multi_partitioned_asset,
         fails_once_asset_a,
         downstream_of_fails_once_asset_b,
         downstream_of_fails_once_asset_c,
@@ -3604,3 +3627,98 @@ def test_run_retry_not_part_of_completed_backfill(
     assert retried_run.run_id not in [
         r.run_id for r in instance.get_runs(filters=RunsFilter.for_backfill(backfill_id))
     ]
+
+
+def test_multi_partitioned_asset_backfill(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    del remote_repo
+
+    num_partitions = 4
+    target_partitions = multi_partitions_def.get_partition_keys()[0:num_partitions]
+    asset_selection = [AssetKey("multi_partitioned_asset")]
+    backfill_id = "backfill_multi_partitions"
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=workspace_context.create_request_context().asset_graph,
+            backfill_id=backfill_id,
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=asset_selection,
+            partition_names=target_partitions,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    assert instance.get_runs_count() == num_partitions
+    wait_for_all_runs_to_start(instance, timeout=30)
+    assert instance.get_runs_count() == num_partitions
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    assert instance.get_runs_count() == num_partitions
+    runs = reversed(list(instance.get_runs()))
+    for run in runs:
+        assert run.tags[BACKFILL_ID_TAG] == backfill_id
+        assert run.tags["custom_tag_key"] == "custom_tag_value"
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+
+
+def test_multi_partitioned_asset_with_single_run_bp_backfill(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    del remote_repo
+
+    num_partitions = 4
+    target_partitions = multi_partitions_def.get_partition_keys()[0:num_partitions]
+    asset_selection = [AssetKey("multi_partitioned_asset_with_single_run_bp")]
+    backfill_id = "backfill_multi_partitions"
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=workspace_context.create_request_context().asset_graph,
+            backfill_id=backfill_id,
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=asset_selection,
+            partition_names=target_partitions,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    assert instance.get_runs_count() == 1
+    wait_for_all_runs_to_start(instance, timeout=30)
+    assert instance.get_runs_count() == 1
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    assert instance.get_runs_count() == 1
+    runs = reversed(list(instance.get_runs()))
+    for run in runs:
+        assert run.tags[BACKFILL_ID_TAG] == backfill_id
+        assert run.tags["custom_tag_key"] == "custom_tag_value"
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    wait_for_all_runs_to_start(instance, timeout=30)
+    wait_for_all_runs_to_finish(instance, timeout=30)
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS

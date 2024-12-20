@@ -24,6 +24,7 @@ from dagster._core.definitions.partition import (
     PartitionsDefinition,
     PartitionsSubset,
     StaticPartitionsDefinition,
+    T_str,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import (
@@ -245,6 +246,39 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                 {self._partitions_defs[i].name: key for i, key in enumerate(partition_key_tuple)}
             )
             for partition_key_tuple in itertools.product(*partition_key_sequences)
+        ]
+
+    def old_get_partition_keys_in_range(
+        self,
+        partition_key_range: PartitionKeyRange,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Sequence[T_str]:
+        keys_exist = {
+            partition_key_range.start: self.has_partition_key(
+                partition_key_range.start, dynamic_partitions_store=dynamic_partitions_store
+            ),
+            partition_key_range.end: self.has_partition_key(
+                partition_key_range.end, dynamic_partitions_store=dynamic_partitions_store
+            ),
+        }
+        if not all(keys_exist.values()):
+            raise DagsterInvalidInvocationError(
+                f"""Partition range {partition_key_range.start} to {partition_key_range.end} is
+                not a valid range. Nonexistent partition keys:
+                {list(key for key in keys_exist if keys_exist[key] is False)}"""
+            )
+
+        # in the simple case, simply return the single key in the range
+        if partition_key_range.start == partition_key_range.end:
+            return [cast(T_str, partition_key_range.start)]
+
+        # defer this call as it is potentially expensive
+        partition_keys = self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
+        return partition_keys[
+            partition_keys.index(partition_key_range.start) : partition_keys.index(
+                partition_key_range.end
+            )
+            + 1
         ]
 
     def get_serializable_unique_identifier(
