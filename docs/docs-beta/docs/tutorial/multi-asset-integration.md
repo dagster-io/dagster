@@ -141,7 +141,6 @@ There are a few limitations to this approach:
 
 For the first limitation, we can resolve this by refactoring the code in the body of our asset function into a Dagster resource.
 
----
 
 ## Step 3: Moving the replication logic into a resource
 
