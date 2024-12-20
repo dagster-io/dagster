@@ -6,6 +6,12 @@ There are some features in the previous docs that require changes to be made to 
 
 ### Images
 
+#### Location
+
+Old images are in the [/docs/next/public/images](https://github.com/dagster-io/dagster/tree/master/docs/next/public/images) directory. You will need to copy them to [/docs/docs-beta/static/images](https://github.com/dagster-io/dagster/tree/master/docs/docs-beta/static/images).
+
+#### Formatting
+
 Before:
 
 ```
