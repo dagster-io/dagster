@@ -179,7 +179,6 @@ def my_assets(replication_resource: ReplicationProject):
     replication_resource.run(replication_project)
 ```
 
----
 
 ## Step 4: Using translators
 
