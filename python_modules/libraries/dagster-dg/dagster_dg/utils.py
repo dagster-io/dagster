@@ -242,12 +242,8 @@ def not_none(value: Optional[T]) -> T:
 # ########################
 
 # Here we subclass click.Command and click.Group to customize the help output. We do this in order
-# to show the options for each parent group in the help output of a subcommand. The form of the
-# output can be seen in dagster_dg_tests.test_custom_help_format.
-
-# When rendering options for parent groups, exclude these options since they are not used when
-# executing a subcommand.
-_EXCLUDE_PARENT_OPTIONS = ["help", "version"]
+# to visually separate global from command-specific options. The form of the output can be seen in
+# dagster_dg_tests.test_custom_help_format.
 
 
 class DgClickHelpMixin:
@@ -265,71 +261,43 @@ class DgClickHelpMixin:
             self.format_commands(context, formatter)
         self.format_options(context, formatter)
 
-        # Add section for each parent option group
-        for ctx, cmd in self._walk_parents(context):
-            cmd.format_options(ctx, formatter, as_parent=True)
-
-    def format_options(
-        self, ctx: click.Context, formatter: HelpFormatter, as_parent: bool = False
-    ) -> None:
-        """Writes all the options into the formatter if they exist.
-
-        If `as_parent` is True, the header will include the command path and the `--help` option
-        will be excluded.
-        """
-        if not isinstance(self, click.Command):
-            raise ValueError("This mixin is only intended for use with click.Command instances.")
-
-        params = [
-            p
-            for p in self.get_params(ctx)
-            if p.name and not (as_parent and p.name in _EXCLUDE_PARENT_OPTIONS)
-        ]
-        opts = [rv for p in params if (rv := p.get_help_record(ctx)) is not None]
-        if as_parent:
-            opts = [opt for opt in opts if not opt[0].startswith("--help")]
-        if opts:
-            header = f"Options ({ctx.command_path})" if as_parent else "Options"
-            with formatter.section(header):
-                formatter.write_dl(opts)
-
-    def format_usage(self, context: click.Context, formatter: HelpFormatter) -> None:
-        if not isinstance(self, click.Command):
-            raise ValueError("This mixin is only intended for use with click.Command instances.")
-        arg_pieces = self.collect_usage_pieces(context)
-
-        path_parts: List[str] = [not_none(context.info_name)]
-        for ctx, cmd in self._walk_parents(context):
-            if cmd.has_visible_options_as_parent(ctx):
-                path_parts.append("[OPTIONS]")
-            path_parts.append(not_none(ctx.info_name))
-        path_parts.reverse()
-        return formatter.write_usage(" ".join(path_parts), " ".join(arg_pieces))
-
-    def has_visible_options_as_parent(self, ctx: click.Context) -> bool:
-        """Returns True if the command has options that are not help-related."""
-        if not isinstance(self, click.Command):
-            raise ValueError("This mixin is only intended for use with click.Command instances.")
-        return any(
-            p for p in self.get_params(ctx) if (p.name and p.name not in _EXCLUDE_PARENT_OPTIONS)
-        )
-
-    def _walk_parents(
+    def get_partitioned_opts(
         self, ctx: click.Context
-    ) -> Iterator[Tuple[click.Context, "DgClickHelpMixin"]]:
-        while ctx.parent:
-            if not isinstance(ctx.parent.command, DgClickHelpMixin):
-                raise DgError("Parent command must be an instance of DgClickHelpMixin.")
-            yield ctx.parent, ctx.parent.command
-            ctx = ctx.parent
+    ) -> Tuple[Sequence[click.Parameter], Sequence[click.Parameter]]:
+        from dagster_dg.cli.global_options import GLOBAL_OPTIONS
+
+        if not isinstance(self, click.Command):
+            raise ValueError("This mixin is only intended for use with click.Command instances.")
+
+        # Filter out arguments
+        opts = [p for p in self.get_params(ctx) if p.get_help_record(ctx) is not None]
+        command_opts = [opt for opt in opts if opt.name not in GLOBAL_OPTIONS]
+        global_opts = [opt for opt in self.get_params(ctx) if opt.name in GLOBAL_OPTIONS]
+        return command_opts, global_opts
+
+    def format_options(self, ctx: click.Context, formatter: HelpFormatter) -> None:
+        """Writes all the options into the formatter if they exist."""
+        if not isinstance(self, click.Command):
+            raise ValueError("This mixin is only intended for use with click.Command instances.")
+
+        # Filter out arguments
+        command_opts, global_opts = self.get_partitioned_opts(ctx)
+
+        if command_opts:
+            records = [not_none(p.get_help_record(ctx)) for p in command_opts]
+            with formatter.section("Options"):
+                formatter.write_dl(records)
+
+        if global_opts:
+            with formatter.section("Global options"):
+                records = [not_none(p.get_help_record(ctx)) for p in global_opts]
+                formatter.write_dl(records)
 
 
-class DgClickCommand(DgClickHelpMixin, click.Command):
-    pass
+class DgClickCommand(DgClickHelpMixin, click.Command): ...
 
 
-class DgClickGroup(DgClickHelpMixin, click.Group):
-    pass
+class DgClickGroup(DgClickHelpMixin, click.Group): ...
 
 
 # ########################
