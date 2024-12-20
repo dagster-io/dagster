@@ -31,8 +31,8 @@ To manage tokens for another user, select the user from the **Manage tokens for*
 <ThemedImage
   style={{width:'100%', height: 'auto'}}
   sources={{
-    light: '/images/dagster-cloud/user-token-management/manage-user-tokens-for.png',
-    dark: '/images/dagster-cloud/user-token-management/manage-user-tokens-for.png',
+    light: '/images/dagster-plus/user-token-management/manage-user-tokens-for.png',
+    dark: '/images/dagster-plus/user-token-management/manage-user-tokens-for.png',
   }}
 />
 
