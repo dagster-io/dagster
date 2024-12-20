@@ -1,4 +1,5 @@
 from dagster import AssetKey, SourceAsset, asset, graph_asset, op
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata import (
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
@@ -6,7 +7,7 @@ from dagster._core.definitions.metadata import (
 )
 
 # importing this makes it show up twice when we collect everything
-from dagster_tests.asset_defs_tests.asset_package.asset_subpackage.another_module_with_assets import (
+from dagster_tests.definitions_tests.module_loader_tests.asset_package.asset_subpackage.another_module_with_assets import (
     miles_davis,
 )
 
@@ -41,3 +42,6 @@ def multiply_by_two(input_num):
 @graph_asset
 def graph_backed_asset():
     return multiply_by_two(one())
+
+
+my_spec = AssetSpec("my_asset_spec")

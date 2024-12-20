@@ -1,4 +1,5 @@
 from dagster import AssetKey, SourceAsset, asset
+from dagster._core.definitions.asset_spec import AssetSpec
 
 
 @asset
@@ -27,6 +28,9 @@ def make_list_of_source_assets():
     jerry_lee_lewis = SourceAsset(key=AssetKey("jerry_lee_lewis"))
 
     return [buddy_holly, jerry_lee_lewis]
+
+
+top_level_spec = AssetSpec("top_level_spec")
 
 
 list_of_assets_and_source_assets = [*make_list_of_assets(), *make_list_of_source_assets()]
