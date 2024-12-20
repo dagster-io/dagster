@@ -15,13 +15,19 @@ _CODE_LOCATION_COMPONENT_INSTANCES_DIR: Final = "components"
 
 def is_inside_code_location_project(path: Path) -> bool:
     try:
-        _resolve_code_location_root_path(path)
+        find_enclosing_code_location_root_path(path)
         return True
     except DagsterError:
         return False
 
 
-def _resolve_code_location_root_path(path: Path) -> Path:
+def find_enclosing_code_location_root_path(path: Path) -> Path:
+    """Given a path, locate the code location root directory that contains it. It
+    determines this by finding a pyproject.toml with a [tool.dagster] section.
+
+    Searches parent directory recursively until it finds it. It if navigates
+    to the root directory, it throws an error.
+    """
     current_path = path.absolute()
     while not _is_code_location_root(current_path):
         current_path = current_path.parent
@@ -40,11 +46,15 @@ def _is_code_location_root(path: Path) -> bool:
 
 class CodeLocationProjectContext:
     @classmethod
-    def from_path(cls, path: Path, component_registry: "ComponentRegistry") -> Self:
-        root_path = _resolve_code_location_root_path(path)
+    def from_code_location_path(cls, path: Path, component_registry: "ComponentRegistry") -> Self:
+        if not _is_code_location_root(path):
+            raise DagsterError(
+                f"Path {path} is not a code location root. Must have a pyproject.toml with a [tool.dagster] section."
+            )
+
         return cls(
-            root_path=str(root_path),
-            name=os.path.basename(root_path),
+            root_path=str(path),
+            name=os.path.basename(path),
             component_registry=component_registry,
         )
 
