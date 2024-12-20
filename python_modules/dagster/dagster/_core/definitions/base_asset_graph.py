@@ -535,7 +535,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
                 required_but_nonexistent_parent_partitions.update(
                     {
                         AssetKeyPartitionKey(parent_asset_key, invalid_partition)
-                        for invalid_partition in mapped_partitions_result.required_but_nonexistent_partition_keys
+                        for invalid_partition in mapped_partitions_result.required_but_nonexistent_subset.get_partition_keys()
                     }
                 )
             else:

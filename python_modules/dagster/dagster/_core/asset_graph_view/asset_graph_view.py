@@ -9,7 +9,6 @@ from typing import (
     Literal,
     NamedTuple,
     Optional,
-    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -230,9 +229,9 @@ class AssetGraphView(LoadingContext):
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
-    def compute_parent_subset_and_required_but_nonexistent_partition_keys(
+    def compute_parent_subset_and_required_but_nonexistent_subset(
         self, parent_key, subset: EntitySubset[T_EntityKey]
-    ) -> Tuple[EntitySubset[AssetKey], Sequence[str]]:
+    ) -> Tuple[EntitySubset[AssetKey], EntitySubset[AssetKey]]:
         check.invariant(
             parent_key in self.asset_graph.get(subset.key).parent_entity_keys,
         )
@@ -240,9 +239,9 @@ class AssetGraphView(LoadingContext):
         to_partitions_def = self.asset_graph.get(to_key).partitions_def
 
         if subset.is_empty:
-            return self.get_empty_subset(key=parent_key), []
+            return self.get_empty_subset(key=parent_key), self.get_empty_subset(key=parent_key)
         elif to_partitions_def is None:
-            return self.get_full_subset(key=to_key), []
+            return self.get_full_subset(key=to_key), self.get_empty_subset(key=parent_key)
 
         upstream_partition_result = self._compute_upstream_partitions_result(to_key, subset)
 
@@ -252,7 +251,15 @@ class AssetGraphView(LoadingContext):
             value=_ValidatedEntitySubsetValue(upstream_partition_result.partitions_subset),
         )
 
-        return parent_subset, upstream_partition_result.required_but_nonexistent_partition_keys
+        required_but_nonexistent_subset = EntitySubset(
+            self,
+            key=to_key,
+            value=_ValidatedEntitySubsetValue(
+                upstream_partition_result.required_but_nonexistent_subset
+            ),
+        )
+
+        return parent_subset, required_but_nonexistent_subset
 
     def compute_parent_subset(
         self, parent_key: AssetKey, subset: EntitySubset[T_EntityKey]

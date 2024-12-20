@@ -74,11 +74,11 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
 
             partition_keys = list(downstream_partitions_subset.get_partition_keys())
             return UpstreamPartitionsResult(
-                upstream_partitions_def.empty_subset().with_partition_key_range(
+                partitions_subset=upstream_partitions_def.empty_subset().with_partition_key_range(
                     upstream_partitions_def,
                     PartitionKeyRange(str(max(1, int(partition_keys[0]) - 1)), partition_keys[-1]),
                 ),
-                [],
+                required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
             )
 
         def get_downstream_partitions_for_partitions(
@@ -561,7 +561,11 @@ def test_identity_partition_mapping():
         zx.empty_subset().with_partition_keys(["z", "x"]), zx, xy
     )
     assert result.partitions_subset.get_partition_keys() == set(["x"])
+    assert result.required_but_nonexistent_subset.get_partition_keys() == {"z"}
     assert result.required_but_nonexistent_partition_keys == ["z"]
+
+    # Make sure repr() still can output the subset
+    assert str(result.required_but_nonexistent_subset) == "DefaultPartitionsSubset(subset={'z'})"
 
     result = IdentityPartitionMapping().get_downstream_partitions_for_partitions(
         zx.empty_subset().with_partition_keys(["z", "x"]), zx, xy
