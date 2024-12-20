@@ -201,12 +201,14 @@ const GlobalHintStyles = createGlobalStyle`
 function showHint(instance: Editor, hint: HintFunction) {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      instance.showHint({
-        hint,
-        completeSingle: false,
-        moveOnOverlap: true,
-        updateOnCursorActivity: true,
-      });
+      if (instance.getWrapperElement().contains(document.activeElement)) {
+        instance.showHint({
+          hint,
+          completeSingle: false,
+          moveOnOverlap: true,
+          updateOnCursorActivity: true,
+        });
+      }
     });
   });
 }

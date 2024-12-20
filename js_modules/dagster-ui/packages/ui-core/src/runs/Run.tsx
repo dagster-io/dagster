@@ -10,7 +10,8 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {memo} from 'react';
+import {memo, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled from 'styled-components';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
@@ -27,7 +28,7 @@ import {
 } from './useComputeLogFileKeyForSelection';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {filterByQuery} from '../app/GraphQueryImpl';
+import {featureEnabled} from '../app/Flags';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {GanttChart, GanttChartLoadingState, GanttChartMode, QueuedState} from '../gantt/GanttChart';
@@ -37,6 +38,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {CompletionType, useTraceDependency} from '../performance/TraceContext';
+import {filterRunSelectionByQuery} from '../run-selection/AntlrRunSelection';
 
 interface RunProps {
   runId: string;
@@ -127,7 +129,7 @@ export const Run = memo((props: RunProps) => {
 });
 
 const OnLogsLoaded = ({dependency}: {dependency: ReturnType<typeof useTraceDependency>}) => {
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     dependency.completeDependency(CompletionType.SUCCESS);
   }, [dependency]);
   return null;
@@ -179,6 +181,8 @@ const RunWithData = ({
   onSetLogsFilter,
   onSetSelectionQuery,
 }: RunWithDataProps) => {
+  const newRunSelectionSyntax = featureEnabled(FeatureFlag.flagRunSelectionSyntax);
+
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
     defaults: {logType: LogType.structured},
@@ -186,18 +190,26 @@ const RunWithData = ({
 
   const logType = logTypeFromQuery(queryLogType);
   const setLogType = (lt: LogType) => setQueryLogType(LogType[lt]);
-  const [computeLogUrl, setComputeLogUrl] = React.useState<string | null>(null);
+  const [computeLogUrl, setComputeLogUrl] = useState<string | null>(null);
 
   const stepKeysJSON = JSON.stringify(Object.keys(metadata.steps).sort());
-  const stepKeys = React.useMemo(() => JSON.parse(stepKeysJSON), [stepKeysJSON]);
+  const stepKeys = useMemo(() => JSON.parse(stepKeysJSON), [stepKeysJSON]);
 
   const runtimeGraph = run?.executionPlan && toGraphQueryItems(run?.executionPlan, metadata.steps);
 
-  const selectionStepKeys = React.useMemo(() => {
+  const selectionStepKeys = useMemo(() => {
     return runtimeGraph && selectionQuery && selectionQuery !== '*'
-      ? filterByQuery(runtimeGraph, selectionQuery).all.map((n) => n.name)
+      ? filterRunSelectionByQuery(runtimeGraph, selectionQuery).all.map((n) => n.name)
       : [];
   }, [runtimeGraph, selectionQuery]);
+
+  const selection = useMemo(
+    () => ({
+      query: selectionQuery,
+      keys: selectionStepKeys,
+    }),
+    [selectionStepKeys, selectionQuery],
+  );
 
   const {logCaptureInfo, computeLogFileKey, setComputeLogFileKey} =
     useComputeLogFileKeyForSelection({
@@ -207,19 +219,26 @@ const RunWithData = ({
       defaultToFirstStep: false,
     });
 
-  const logsFilterStepKeys = runtimeGraph
-    ? logsFilter.logQuery
-        .filter((v) => v.token && v.token === 'query')
-        .reduce((accum, v) => {
-          accum.push(...filterByQuery(runtimeGraph, v.value).all.map((n) => n.name));
-          return accum;
-        }, [] as string[])
-    : [];
+  const logsFilterStepKeys = useMemo(
+    () =>
+      runtimeGraph
+        ? logsFilter.logQuery
+            .filter((v) => v.token && v.token === 'query')
+            .reduce((accum, v) => {
+              accum.push(
+                ...filterRunSelectionByQuery(runtimeGraph, v.value).all.map((n) => n.name),
+              );
+              return accum;
+            }, [] as string[])
+        : [],
+    [logsFilter.logQuery, runtimeGraph],
+  );
 
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {
     const index = selectionStepKeys.indexOf(stepKey);
-    let newSelected: string[];
+    let newSelected: string[] = [];
     const filterForExactStep = `"${stepKey}"`;
+    let nextSelectionQuery = selectionQuery;
     if (evt.shiftKey) {
       // shift-click to multi select steps, preserving quotations if present
       newSelected = [
@@ -228,18 +247,34 @@ const RunWithData = ({
 
       if (index !== -1) {
         // deselect the step if already selected
-        newSelected.splice(index, 1);
+        if (newRunSelectionSyntax) {
+          nextSelectionQuery = removeStepFromSelection(nextSelectionQuery, stepKey);
+        } else {
+          newSelected.splice(index, 1);
+        }
       } else {
         // select the step otherwise
-        newSelected.push(filterForExactStep);
+        if (newRunSelectionSyntax) {
+          nextSelectionQuery = addStepToSelection(nextSelectionQuery, stepKey);
+        } else {
+          newSelected.push(filterForExactStep);
+        }
       }
     } else {
+      // deselect the step if already selected
       if (selectionStepKeys.length === 1 && index !== -1) {
-        // deselect the step if already selected
-        newSelected = [];
+        if (newRunSelectionSyntax) {
+          nextSelectionQuery = '';
+        } else {
+          newSelected = [];
+        }
       } else {
         // select the step otherwise
-        newSelected = [filterForExactStep];
+        if (newRunSelectionSyntax) {
+          nextSelectionQuery = `name:"${stepKey}"`;
+        } else {
+          newSelected = [filterForExactStep];
+        }
 
         // When only one step is selected, set the compute log key as well.
         const matchingLogKey = matchingComputeLogKeyFromStepKey(metadata.logCaptureSteps, stepKey);
@@ -249,13 +284,17 @@ const RunWithData = ({
       }
     }
 
-    onSetSelectionQuery(newSelected.join(', ') || '*');
+    if (newRunSelectionSyntax) {
+      onSetSelectionQuery(nextSelectionQuery);
+    } else {
+      onSetSelectionQuery(newSelected.join(', ') || '*');
+    }
   };
 
-  const [expandedPanel, setExpandedPanel] = React.useState<null | 'top' | 'bottom'>(null);
-  const containerRef = React.useRef<SplitPanelContainerHandle>(null);
+  const [expandedPanel, setExpandedPanel] = useState<null | 'top' | 'bottom'>(null);
+  const containerRef = useRef<SplitPanelContainerHandle>(null);
 
-  React.useEffect(() => {
+  useLayoutEffect(() => {
     if (containerRef.current) {
       const size = containerRef.current.getSize();
       if (size === 100) {
@@ -310,14 +349,14 @@ const RunWithData = ({
                   run={run}
                   graph={runtimeGraph}
                   metadata={metadata}
-                  selection={{query: selectionQuery, keys: selectionStepKeys}}
+                  selection={selection}
                 />
               </Box>
             }
             runId={runId}
             graph={runtimeGraph}
             metadata={metadata}
-            selection={{query: selectionQuery, keys: selectionStepKeys}}
+            selection={selection}
             onClickStep={onClickStep}
             onSetSelection={onSetSelectionQuery}
             focusedTime={logsFilter.focusedTime}
@@ -409,3 +448,11 @@ const NoStepSelectionState = ({type}: {type: LogType}) => {
     </Box>
   );
 };
+
+function removeStepFromSelection(selectionQuery: string, stepKey: string) {
+  return `(${selectionQuery}) and not name:"${stepKey}"`;
+}
+
+function addStepToSelection(selectionQuery: string, stepKey: string) {
+  return `(${selectionQuery}) or name:"${stepKey}"`;
+}
