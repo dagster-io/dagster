@@ -33,7 +33,9 @@ def container_client(credentials: ClientSecretCredential) -> Generator[Container
 
 
 @pytest.mark.parametrize(
-    "dagster_yaml", ["secret-credential.yaml", "default-credential.yaml"], indirect=True
+    "dagster_yaml",
+    ["secret-credential.yaml", "default-credential.yaml", "access-key-credential.yaml"],
+    indirect=True,
 )
 def test_compute_log_manager(
     dagster_dev: subprocess.Popen,
