@@ -5,6 +5,7 @@ from typing import Optional
 
 import click
 
+from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.context import DeploymentDirectoryContext, DgContext, is_inside_deployment_directory
 from dagster_dg.generate import generate_code_location
 from dagster_dg.utils import DgClickCommand, DgClickGroup
@@ -40,9 +41,12 @@ def code_location_group():
     default=False,
     help="Do not create a virtual environment for the code location.",
 )
-@click.pass_context
+@dg_global_options
 def code_location_generate_command(
-    cli_context: click.Context, name: str, use_editable_dagster: Optional[str], skip_venv: bool
+    name: str,
+    use_editable_dagster: Optional[str],
+    skip_venv: bool,
+    **global_options: object,
 ) -> None:
     """Generate a Dagster code location file structure and a uv-managed virtual environment scoped
     to the code location.
@@ -53,6 +57,7 @@ def code_location_generate_command(
     The code location file structure defines a Python package with some pre-existing internal
     structure:
 
+    \b
     ├── <name>
     │   ├── __init__.py
     │   ├── components
@@ -66,8 +71,8 @@ def code_location_generate_command(
     The `<name>.components` directory holds components (which can be created with `dg generate
     component`).  The `<name>.lib` directory holds custom component types scoped to the code
     location (which can be created with `dg component-type generate`).
-    """
-    dg_context = DgContext.from_cli_context(cli_context)
+    """  # noqa: D301
+    dg_context = DgContext.from_cli_global_options(global_options)
     if is_inside_deployment_directory(Path.cwd()):
         context = DeploymentDirectoryContext.from_path(Path.cwd(), dg_context)
         if context.has_code_location(name):
@@ -101,10 +106,10 @@ def code_location_generate_command(
 
 
 @code_location_group.command(name="list", cls=DgClickCommand)
-@click.pass_context
-def code_location_list_command(cli_context: click.Context) -> None:
+@dg_global_options
+def code_location_list_command(**global_options: object) -> None:
     """List code locations in the current deployment."""
-    dg_context = DgContext.from_cli_context(cli_context)
+    dg_context = DgContext.from_cli_global_options(global_options)
     if not is_inside_deployment_directory(Path.cwd()):
         click.echo(
             click.style("This command must be run inside a Dagster deployment directory.", fg="red")

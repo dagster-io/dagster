@@ -2,8 +2,6 @@ import subprocess
 from functools import partial
 from pathlib import Path
 
-import pytest
-
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
@@ -69,22 +67,17 @@ def test_cache_no_invalidation_modified_pkg():
         assert "CACHE [hit]" in result.output
 
 
-@pytest.mark.parametrize("with_command", [True, False])
-def test_cache_clear(with_command: bool):
+def test_clear_cache():
     with ProxyRunner.test(verbose=True) as runner, example_code_location(runner):
         result = runner.invoke("component-type", "list")
         assert_runner_result(result)
         assert "CACHE [miss]" in result.output
         assert "CACHE [write]" in result.output
 
-        if with_command:
-            result = runner.invoke("--clear-cache", "component-type", "list")
-            assert "CACHE [clear-all]" in result.output
-        else:
-            result = runner.invoke("--clear-cache")
-            assert_runner_result(result)
-            assert "CACHE [clear-all]" in result.output
-            result = runner.invoke("component-type", "list")
+        result = runner.invoke("--clear-cache")
+        assert_runner_result(result)
+        assert "CACHE [clear-all]" in result.output
+        result = runner.invoke("component-type", "list")
 
         assert_runner_result(result)
         assert "CACHE [miss]" in result.output

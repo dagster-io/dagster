@@ -46,7 +46,7 @@ def test_code_location_generate_inside_deployment_success() -> None:
 
         # Check cache was populated
         with pushd("code_locations/bar"):
-            result = runner.invoke("--verbose", "component-type", "list")
+            result = runner.invoke("component-type", "list", "--verbose")
             assert "CACHE [hit]" in result.output
 
 
