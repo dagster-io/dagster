@@ -62,7 +62,7 @@ Using definition metadata to describe assets can make it easy to provide context
 
 <CodeExample filePath="guides/data-modeling/metadata/definition-metadata.py" language="python" />
 
-To learn more about the different types of metadata you can attach, see the [`MetadataValue`](/todo) API docs.
+To learn more about the different types of metadata you can attach, see the [`MetadataValue`](/api/python-api/metadata#class dagster.MetadataValue) API docs.
 
 Some metadata keys will be given special treatment in the Dagster UI. See the [Standard metadata types](#standard-metadata-types) section for more information.
 
@@ -134,7 +134,7 @@ Dagster can automatically attach code references to assets during local developm
 
 ### Customizing code references \{#custom-references}
 
-If you want to customize how code references are attached - such as when you are building [domain-specific languages with asset factories](/guides/build/connect-to-external-systems/asset-factories) - you can manually add the `dagster/code_references` metadata to asset definitions:
+If you want to customize how code references are attached - such as when you are building [domain-specific languages with asset factories](/guides/build/connect-to-external-systems/assets-concepts/asset-factories) - you can manually add the `dagster/code_references` metadata to asset definitions:
 
 <CodeExample filePath="guides/data-modeling/metadata/custom-local-references.py" language="python" />
 

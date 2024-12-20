@@ -10,11 +10,11 @@ Additionally, you may be serving stakeholders who aren't familiar with Python or
 
 Using an asset factory reduces complexity and creates a pluggable entry point to define additional assets.
 
-<details>
-  <summary>Prerequisites</summary>
+:::note
 
-This guide builds upon the concepts in the [asset factories](/guides/build/connect-to-external-systems/asset-factories) tutorial.
-</details>
+This guide builds on the concepts in the [asset factories](asset-factories) documentation.
+
+:::
 
 ---
 
