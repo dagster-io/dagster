@@ -53,7 +53,10 @@ class Component(ABC):
         return {}
 
     @classmethod
-    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None: ...
+    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None:
+        from dagster_components.generate import generate_component_yaml
+
+        generate_component_yaml(request, {})
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...

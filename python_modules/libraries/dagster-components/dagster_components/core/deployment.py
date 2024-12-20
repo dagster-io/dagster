@@ -64,7 +64,7 @@ class CodeLocationProjectContext:
             name=name,
             component_registry=component_registry,
             components_folder=components_folder
-            or path / name / _CODE_LOCATION_CUSTOM_COMPONENTS_DIR,
+            or path / name / _CODE_LOCATION_COMPONENT_INSTANCES_DIR,
         )
 
     def __init__(
