@@ -23,7 +23,7 @@ def isolated_example_deployment_foo(runner: Union[CliRunner, "ProxyRunner"]) -> 
 
 @contextmanager
 def isolated_example_code_location_bar(
-    runner: Union[CliRunner, "ProxyRunner"], in_deployment: bool = True
+    runner: Union[CliRunner, "ProxyRunner"], in_deployment: bool = True, skip_venv: bool = False
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
@@ -34,6 +34,7 @@ def isolated_example_code_location_bar(
                 "code-location",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
+                *(["--skip-venv"] if skip_venv else []),
                 "bar",
             )
             with pushd("code_locations/bar"):
@@ -45,6 +46,7 @@ def isolated_example_code_location_bar(
                 "code-location",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
+                *(["--skip-venv"] if skip_venv else []),
                 "bar",
             )
             with pushd("bar"):
