@@ -158,9 +158,7 @@ class DagsterPowerBITranslator:
     """
 
     def __init__(self, context: Optional[PowerBIWorkspaceData] = None):
-        if type(self).__init__ is not DagsterPowerBITranslator.__init__ and "context" not in set(
-            inspect.getfullargspec(type(self).__init__).args
-        ):
+        if self._has_custom_init_function and not self._has_context_param_in_init_function:
             raise DagsterInvariantViolationError(
                 f"Invalid custom `__init__` function in custom translator class {type(self)}. "
                 f"The custom `__init__` function must include "
@@ -196,6 +194,16 @@ class DagsterPowerBITranslator:
             )
         kwargs["context"] = context
         return self.__class__(**kwargs)
+
+    @property
+    def _has_custom_init_function(self) -> bool:
+        return type(self).__init__ is not DagsterPowerBITranslator.__init__
+
+    @property
+    def _has_context_param_in_init_function(self) -> bool:
+        return "context" in set(
+            inspect.getfullargspec(type(self).__init__).args
+        )
 
     @property
     def workspace_data(self) -> PowerBIWorkspaceData:
