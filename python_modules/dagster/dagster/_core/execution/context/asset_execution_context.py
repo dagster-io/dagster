@@ -6,7 +6,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
 from dagster._core.definitions.dependency import Node, NodeHandle
-from dagster._core.definitions.events import AssetKey, UserEvent
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey, UserEvent
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -458,16 +458,42 @@ class AssetExecutionContext:
         output_name: Optional[str] = None,
         mapping_key: Optional[str] = None,
     ) -> None:
-        return self.op_execution_context.add_output_metadata(
-            metadata=metadata, output_name=output_name, mapping_key=mapping_key
+        return self._step_execution_context.add_output_metadata(
+            metadata=metadata,
+            output_name=output_name,
+            mapping_key=mapping_key,
+        )
+
+    @public
+    def add_asset_metadata(
+        self,
+        metadata: Mapping[str, Any],
+        asset_key: Optional[CoercibleToAssetKey] = None,
+        partition_key: Optional[str] = None,
+    ) -> None:
+        """Add metadata to an asset materialization event. This metadata will be available in the
+        Dagster UI and can be used to filter and search for assets.
+
+        Args:
+            metadata (Mapping[str, Any]): The metadata to add to the asset materialization event.
+            asset_key (Optional[CoercibleToAssetKey]): The asset key to add metadata to. Does not need to be provided if only one asset is currently being materialized.
+            partition_key (Optional[str]): The partition key to add metadata to, if applicable. Should not be provided on non-partitioned assets. If not provided on a partitioned asset, the metadata will be added to all partitions of the asset currently being materialized.
+        """
+        self._step_execution_context.add_asset_metadata(
+            metadata=metadata,
+            asset_key=asset_key,
+            partition_key=partition_key,
         )
 
     @_copy_docs_from_op_execution_context
     def get_output_metadata(
-        self, output_name: str, mapping_key: Optional[str] = None
+        self,
+        output_name: str,
+        mapping_key: Optional[str] = None,
     ) -> Optional[Mapping[str, Any]]:
-        return self.op_execution_context.get_output_metadata(
-            output_name=output_name, mapping_key=mapping_key
+        return self._step_execution_context.get_output_metadata(
+            output_name=output_name,
+            mapping_key=mapping_key,
         )
 
     #### asset check related

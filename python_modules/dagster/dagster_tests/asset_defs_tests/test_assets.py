@@ -25,6 +25,7 @@ from dagster import (
     Out,
     Output,
     ResourceDefinition,
+    _check as check,
     build_asset_context,
     define_asset_job,
     fs_io_manager,
@@ -46,6 +47,7 @@ from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_IO_MANAGER_
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -53,6 +55,7 @@ from dagster._core.errors import (
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
 )
+from dagster._core.event_api import EventRecordsFilter
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
@@ -2414,3 +2417,123 @@ def test_asset_dep_backcompat() -> None:
 
     @asset(deps=AssetKey("oops"))  # type: ignore # good job type checker
     def _(): ...
+
+
+def test_unpartitioned_asset_metadata():
+    @asset
+    def unpartitioned_asset(context: AssetExecutionContext) -> None:
+        context.add_asset_metadata(metadata={"asset_unpartitioned": "yay"})
+        context.add_output_metadata(metadata={"output_unpartitioned": "yay"})
+
+        context.add_asset_metadata(
+            asset_key="unpartitioned_asset", metadata={"asset_key_specified": "yay"}
+        )
+        context.add_output_metadata(
+            output_name=context.assets_def.get_output_name_for_asset_key(context.assets_def.key),
+            metadata={"output_name_specified": "yay"},
+        )
+
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(metadata={"wont_work": "yay"}, partition_key="nonce")
+
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(metadata={"wont_work": "yay"}, asset_key="nonce")
+
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_output_metadata(metadata={"wont_work": "yay"}, output_name="nonce")
+
+    with instance_for_test() as instance:
+        result = materialize(assets=[unpartitioned_asset], instance=instance)
+        assert result.success
+
+        asset_materializations = result.asset_materializations_for_node("unpartitioned_asset")
+        assert len(asset_materializations) == 1
+        assert asset_materializations[0].metadata == {
+            "asset_unpartitioned": TextMetadataValue("yay"),
+            "output_unpartitioned": TextMetadataValue("yay"),
+            "asset_key_specified": TextMetadataValue("yay"),
+            "output_name_specified": TextMetadataValue("yay"),
+        }
+
+        output_log = instance.get_event_records(
+            event_records_filter=EventRecordsFilter(event_type=DagsterEventType.STEP_OUTPUT)
+        )[0]
+        assert check.not_none(
+            output_log.event_log_entry.dagster_event
+        ).step_output_data.metadata == {
+            "output_unpartitioned": TextMetadataValue("yay"),
+            "output_name_specified": TextMetadataValue("yay"),
+        }
+
+
+def test_unpartitioned_multiasset_metadata():
+    @multi_asset(specs=[AssetSpec("a"), AssetSpec("b")])
+    def compute(context: AssetExecutionContext):
+        # Won't work because no asset key
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(metadata={"wont_work": "yay"})
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(metadata={"wont_work": "yay"}, partition_key="nonce")
+
+        # Won't work because wrong asset key
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(metadata={"wont_work": "yay"}, asset_key="nonce")
+
+        # Won't work because no output name
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_output_metadata(metadata={"wont_work": "yay"})
+
+        # Won't work because wrong output name
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_output_metadata(metadata={"wont_work": "yay"}, output_name="nonce")
+
+        # Won't work because partition key
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(
+                metadata={"wont_work": "yay"}, asset_key="a", partition_key="nonce"
+            )
+
+        context.add_asset_metadata(asset_key="a", metadata={"asset_key_specified": "yay"})
+        context.add_asset_metadata(asset_key="b", metadata={"asset_key_specified": "yay"})
+        context.add_output_metadata(
+            output_name=context.assets_def.get_output_name_for_asset_key(AssetKey("a")),
+            metadata={"output_name_specified": "yay"},
+        )
+        context.add_asset_metadata(metadata={"additional_a_metadata": "yay"}, asset_key="a")
+
+        context.add_output_metadata(
+            output_name=context.assets_def.get_output_name_for_asset_key(AssetKey("a")),
+            metadata={"additional_a_output_metadata": "yay"},
+        )
+
+    with instance_for_test() as instance:
+        result = materialize(assets=[compute], instance=instance)
+        assert result.success
+
+        asset_materializations = result.asset_materializations_for_node("compute")
+        assert len(asset_materializations) == 2
+        a_mat = next(mat for mat in asset_materializations if mat.asset_key == AssetKey("a"))
+        assert set(a_mat.metadata.keys()) == {
+            "asset_key_specified",
+            "output_name_specified",
+            "additional_a_metadata",
+            "additional_a_output_metadata",
+        }
+        b_mat = next(mat for mat in asset_materializations if mat.asset_key == AssetKey("b"))
+        assert set(b_mat.metadata.keys()) == {"asset_key_specified"}
+
+        output_logs = instance.get_event_records(
+            event_records_filter=EventRecordsFilter(event_type=DagsterEventType.STEP_OUTPUT)
+        )
+        output_event = next(
+            check.not_none(log.event_log_entry.dagster_event).step_output_data.metadata
+            for log in output_logs
+            if check.not_none(
+                log.event_log_entry.dagster_event
+            ).step_output_data.step_output_handle.output_name
+            == "a"
+        )
+        assert set(output_event.keys()) == {
+            "output_name_specified",
+            "additional_a_output_metadata",
+        }
