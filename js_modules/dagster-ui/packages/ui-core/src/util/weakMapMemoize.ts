@@ -74,7 +74,7 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
     });
   }
 
-  return function memoizedFunction(this: any, ...args: any[]) {
+  return function memoizedFunction(...args: any[]) {
     let currentCache = cacheRoot;
     const path: any[] = [];
 
