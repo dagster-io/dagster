@@ -2,10 +2,7 @@
 title: Running multiple agents
 sidebar_position: 60
 sidebar_label: Multiple agents
-unlisted: true
 ---
-
-# Running multiple agents
 
 :::note
 This guide is applicable to Dagster+.
