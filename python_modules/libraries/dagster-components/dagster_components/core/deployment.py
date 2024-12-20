@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Final, Iterable, Tuple, Type
+from typing import Final, Iterable, Optional, Tuple, Type
 
 import tomli
 from dagster._core.errors import DagsterError
@@ -46,16 +46,25 @@ def _is_code_location_root(path: Path) -> bool:
 
 class CodeLocationProjectContext:
     @classmethod
-    def from_code_location_path(cls, path: Path, component_registry: "ComponentRegistry") -> Self:
+    def from_code_location_path(
+        cls,
+        path: Path,
+        component_registry: "ComponentRegistry",
+        components_folder: Optional[Path] = None,
+    ) -> Self:
         if not _is_code_location_root(path):
             raise DagsterError(
                 f"Path {path} is not a code location root. Must have a pyproject.toml with a [tool.dagster] section."
             )
 
+        name = os.path.basename(path)
+
         return cls(
             root_path=str(path),
-            name=os.path.basename(path),
+            name=name,
             component_registry=component_registry,
+            components_folder=components_folder
+            or path / name / _CODE_LOCATION_CUSTOM_COMPONENTS_DIR,
         )
 
     def __init__(
@@ -63,10 +72,12 @@ class CodeLocationProjectContext:
         root_path: str,
         name: str,
         component_registry: "ComponentRegistry",
+        components_folder: Path,
     ):
         self._root_path = root_path
         self._name = name
         self._component_registry = component_registry
+        self._components_folder = components_folder
 
     @property
     def component_types_root_path(self) -> str:
@@ -99,17 +110,11 @@ class CodeLocationProjectContext:
 
     @property
     def component_instances_root_path(self) -> str:
-        return os.path.join(self._root_path, self._name, _CODE_LOCATION_COMPONENT_INSTANCES_DIR)
+        return str(self._components_folder)
 
     @property
     def component_instances(self) -> Iterable[str]:
-        return sorted(
-            os.listdir(
-                os.path.join(self._root_path, self._name, _CODE_LOCATION_COMPONENT_INSTANCES_DIR)
-            )
-        )
+        return sorted(os.listdir(self.component_instances_root_path))
 
     def has_component_instance(self, name: str) -> bool:
-        return os.path.exists(
-            os.path.join(self._root_path, self._name, _CODE_LOCATION_COMPONENT_INSTANCES_DIR, name)
-        )
+        return os.path.exists(os.path.join(self.component_instances_root_path, name))

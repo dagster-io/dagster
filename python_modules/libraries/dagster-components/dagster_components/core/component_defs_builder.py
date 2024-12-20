@@ -129,6 +129,7 @@ def build_component_defs(
     code_location_root: Path,
     resources: Optional[Mapping[str, object]] = None,
     registry: Optional["ComponentRegistry"] = None,
+    components_folder: Optional[Path] = None,
 ) -> "Definitions":
     """Build a Definitions object for all the component instances in a given code location.
 
@@ -139,7 +140,9 @@ def build_component_defs(
     from dagster._core.definitions.definitions_class import Definitions
 
     context = CodeLocationProjectContext.from_code_location_path(
-        code_location_root, registry or ComponentRegistry.from_entry_point_discovery()
+        code_location_root,
+        registry or ComponentRegistry.from_entry_point_discovery(),
+        components_folder=components_folder,
     )
 
     all_defs: List[Definitions] = []
