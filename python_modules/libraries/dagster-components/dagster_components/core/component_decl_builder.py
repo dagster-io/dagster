@@ -47,4 +47,4 @@ def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
         if component:
             subs.append(component)
 
-    return ComponentFolder(path=path, sub_decls=subs) if subs else None
+    return ComponentFolder(path=path, sub_decls=subs)

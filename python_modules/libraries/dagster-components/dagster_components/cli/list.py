@@ -8,6 +8,7 @@ import click
 from dagster_components.core.component import ComponentMetadata, ComponentRegistry
 from dagster_components.core.deployment import (
     CodeLocationProjectContext,
+    find_enclosing_code_location_root_path,
     is_inside_code_location_project,
 )
 from dagster_components.utils import CLI_BUILTIN_COMPONENT_LIB_KEY
@@ -31,8 +32,8 @@ def list_component_types_command(ctx: click.Context) -> None:
         )
         sys.exit(1)
 
-    context = CodeLocationProjectContext.from_path(
-        Path.cwd(),
+    context = CodeLocationProjectContext.from_code_location_path(
+        find_enclosing_code_location_root_path(Path.cwd()),
         ComponentRegistry.from_entry_point_discovery(builtin_component_lib=builtin_component_lib),
     )
     output: Dict[str, Any] = {}
