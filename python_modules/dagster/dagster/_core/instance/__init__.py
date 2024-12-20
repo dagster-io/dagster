@@ -491,13 +491,6 @@ class DagsterInstance(DynamicPartitionsStore):
                 " run worker will be marked as failed, but will not be resumed.",
             )
 
-        if self.run_retries_enabled:
-            check.invariant(
-                self.event_log_storage.supports_event_consumer_queries(),
-                "Run retries are enabled, but the configured event log storage does not support"
-                " them. Consider switching to Postgres or Mysql.",
-            )
-
         # Used for batched event handling
         self._event_buffer: Dict[str, List[EventLogEntry]] = defaultdict(list)
 
@@ -830,6 +823,9 @@ class DagsterInstance(DynamicPartitionsStore):
         if self._settings and settings_key in self._settings:
             return self._settings.get(settings_key)
         return {}
+
+    def get_backfill_settings(self) -> Mapping[str, Any]:
+        return self.get_settings("backfills")
 
     def get_scheduler_settings(self) -> Mapping[str, Any]:
         return self.get_settings("schedules")

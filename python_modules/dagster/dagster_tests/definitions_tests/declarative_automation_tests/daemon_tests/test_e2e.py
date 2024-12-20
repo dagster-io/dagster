@@ -176,15 +176,20 @@ def _execute_ticks(
         )
     )
 
+    backfill_daemon_futures = {}
     list(
         execute_backfill_iteration(
             context,
             get_default_daemon_logger("BackfillDaemon"),
+            threadpool_executor=threadpool_executor,
+            backfill_futures=backfill_daemon_futures,
+            debug_crash_flags=debug_crash_flags or {},
         )
     )
 
     wait_for_futures(asset_daemon_futures)
     wait_for_futures(sensor_daemon_futures)
+    wait_for_futures(backfill_daemon_futures)
 
 
 def _get_current_state(context: WorkspaceRequestContext) -> Mapping[str, InstigatorState]:

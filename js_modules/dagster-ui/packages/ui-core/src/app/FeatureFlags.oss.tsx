@@ -7,6 +7,7 @@ export enum FeatureFlag {
   flagAssetSelectionSyntax = 'flagAssetSelectionSyntax',
   flagRunSelectionSyntax = 'flagRunSelectionSyntax',
   flagAssetSelectionWorker = 'flagAssetSelectionWorker',
+  flagOpSelectionSyntax = 'flagOpSelectionSyntax',
 
   // Flags for tests
   __TestFlagDefaultNone = '__TestFlagDefaultNone',

@@ -416,6 +416,19 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             run_id, cursor, of_type, limit, ascending
         )
 
+    def get_logs_for_all_runs_by_log_id(
+        self,
+        after_cursor: int = -1,
+        dagster_event_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None,
+        limit: Optional[int] = None,
+    ) -> Mapping[int, "EventLogEntry"]:
+        return self._storage.event_log_storage.get_logs_for_all_runs_by_log_id(
+            after_cursor=after_cursor, dagster_event_type=dagster_event_type, limit=limit
+        )
+
+    def get_maximum_record_id(self) -> Optional[int]:
+        return self._storage.event_log_storage.get_maximum_record_id()
+
     def get_stats_for_run(self, run_id: str) -> "DagsterRunStatsSnapshot":
         return self._storage.event_log_storage.get_stats_for_run(run_id)
 

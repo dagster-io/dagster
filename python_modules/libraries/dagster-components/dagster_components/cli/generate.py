@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 import click
 from pydantic import TypeAdapter
@@ -23,14 +23,12 @@ def generate_cli() -> None:
 @click.argument("component_type", type=str)
 @click.argument("component_name", type=str)
 @click.option("--json-params", type=str, default=None)
-@click.argument("extra_args", nargs=-1, type=str)
 @click.pass_context
 def generate_component_command(
     ctx: click.Context,
     component_type: str,
     component_name: str,
     json_params: Optional[str],
-    extra_args: Tuple[str, ...],
 ) -> None:
     builtin_component_lib = ctx.obj.get(CLI_BUILTIN_COMPONENT_LIB_KEY, False)
     if not is_inside_code_location_project(Path.cwd()):
@@ -52,18 +50,11 @@ def generate_component_command(
         sys.exit(1)
 
     component_type_cls = context.get_component_type(component_type)
-    generate_params_schema = component_type_cls.generate_params_schema
-    generate_params_cli = getattr(generate_params_schema, "cli", None)
-    if generate_params_schema is None:
-        generate_params = None
-    elif json_params is not None:
+    if json_params:
+        generate_params_schema = component_type_cls.generate_params_schema
         generate_params = TypeAdapter(generate_params_schema).validate_json(json_params)
-    elif generate_params_cli is not None:
-        inner_ctx = click.Context(generate_params_cli)
-        generate_params_cli.parse_args(inner_ctx, list(extra_args))
-        generate_params = inner_ctx.invoke(generate_params_schema.cli, **inner_ctx.params)
     else:
-        generate_params = None
+        generate_params = {}
 
     generate_component_instance(
         context.component_instances_root_path,

@@ -1,8 +1,9 @@
+import json
 import os
 import subprocess
 import textwrap
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Mapping, Optional
 
 import click
 
@@ -148,8 +149,7 @@ def generate_component_instance(
     root_path: Path,
     name: str,
     component_type: str,
-    json_params: Optional[str],
-    extra_args: Tuple[str, ...],
+    generate_params: Optional[Mapping[str, Any]],
     dg_context: "DgContext",
 ) -> None:
     component_instance_root_path = root_path / name
@@ -160,8 +160,7 @@ def generate_component_instance(
         "component",
         component_type,
         name,
-        *(["--json-params", json_params] if json_params else []),
-        *(["--", *extra_args] if extra_args else []),
+        *(["--json-params", json.dumps(generate_params)] if generate_params else []),
     )
     execute_code_location_command(
         Path(component_instance_root_path),

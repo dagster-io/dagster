@@ -102,6 +102,10 @@ After:
 | `DAGSTER_CLOUD_DEPLOYMENT_NAME` | The name of the Dagster+ deployment. <br/><br/>  **Example:** `prod`. |
 | `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` | `1` if the deployment is a [branch deployment](/dagster-plus/features/ci-cd/branch-deployments/index.md). |
 
+#### Line breaks and lists in tables
+
+[Use HTML](https://www.markdownguide.org/hacks/#table-formatting) to add line breaks and lists to tables.
+
 ### Whitespace via `{" "}`
 
 Forcing empty space using the `{" "}` interpolation is not supported, and must be removed.

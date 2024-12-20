@@ -170,9 +170,9 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
   const executionParamsList = useMemo(
     () =>
       scheduleExecutionData && scheduleSelector
-        ? buildExecutionParamsListSchedule(scheduleExecutionData, scheduleSelector)
+        ? buildExecutionParamsListSchedule(scheduleExecutionData, scheduleSelector, jobName)
         : [],
-    [scheduleSelector, scheduleExecutionData],
+    [scheduleSelector, scheduleExecutionData, jobName],
   );
 
   const canLaunchAll = useMemo(() => {

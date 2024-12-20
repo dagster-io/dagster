@@ -22,6 +22,7 @@ from typing import (
     TypeVar,
 )
 
+import click
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
@@ -47,6 +48,10 @@ class Component(ABC):
     name: ClassVar[Optional[str]] = None
     params_schema: ClassVar = None
     generate_params_schema: ClassVar = None
+
+    @classmethod
+    def get_rendering_scope(cls) -> Mapping[str, Any]:
+        return {}
 
     @classmethod
     def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None: ...
@@ -85,6 +90,16 @@ def _clean_docstring(docstring: str) -> str:
     else:
         rest = textwrap.dedent("\n".join(lines[1:]))
         return f"{first_line}\n{rest}"
+
+
+def _get_click_cli_help(command: click.Command) -> str:
+    with click.Context(command) as ctx:
+        formatter = click.formatting.HelpFormatter()
+        param_records = [
+            p.get_help_record(ctx) for p in command.get_params(ctx) if p.name != "help"
+        ]
+        formatter.write_dl([pr for pr in param_records if pr])
+        return formatter.getvalue()
 
 
 class ComponentInternalMetadata(TypedDict):
@@ -221,6 +236,12 @@ class ComponentLoadContext:
             check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
 
         return self.decl_node.path
+
+    def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
+        return dataclasses.replace(
+            self,
+            templated_value_resolver=self.templated_value_resolver.with_context(**rendering_scope),
+        )
 
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl_node)
