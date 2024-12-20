@@ -349,11 +349,7 @@ class DagsterObjectsList:
                     else new_asset
                 )
             elif isinstance(dagster_def, SourceAsset):
-                return_list.append(
-                    dagster_def.with_attributes(
-                        group_name=group_name if group_name else dagster_def.group_name
-                    )
-                )
+                return_list.append(dagster_def.with_attributes(group_name=group_name))
             elif isinstance(dagster_def, AssetSpec):
                 return_list.append(
                     _spec_mapper_disallow_group_override(group_name, automation_condition)(
