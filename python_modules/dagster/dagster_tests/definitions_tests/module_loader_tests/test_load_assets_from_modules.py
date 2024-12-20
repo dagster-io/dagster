@@ -14,6 +14,7 @@ from dagster import (
     load_assets_from_package_module,
     load_assets_from_package_name,
 )
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
@@ -87,7 +88,7 @@ def get_source_asset_with_key(
 
 
 def test_load_assets_from_package_name():
-    from dagster_tests.asset_defs_tests import asset_package
+    from dagster_tests.definitions_tests.module_loader_tests import asset_package
 
     assets_defs = load_assets_from_package_name(asset_package.__name__)
     assert len(assets_defs) == 11
@@ -101,9 +102,18 @@ def test_load_assets_from_package_name():
 
     assert assets_1 == assets_2
 
+    assets_3 = load_assets_from_package_name(asset_package.__name__, include_specs=True)
+    assert len(assets_3) == 13
+
+    assert next(
+        iter(
+            a for a in assets_3 if isinstance(a, AssetSpec) and a.key == AssetKey("top_level_spec")
+        )
+    )
+
 
 def test_load_assets_from_package_module():
-    from dagster_tests.asset_defs_tests import asset_package
+    from dagster_tests.definitions_tests.module_loader_tests import asset_package
 
     assets_1 = load_assets_from_package_module(asset_package)
     assert len(assets_1) == 11
@@ -117,10 +127,19 @@ def test_load_assets_from_package_module():
 
     assert assets_1 == assets_2
 
+    assets_3 = load_assets_from_package_name(asset_package.__name__, include_specs=True)
+    assert len(assets_3) == 13
+
+    assert next(
+        iter(
+            a for a in assets_3 if isinstance(a, AssetSpec) and a.key == AssetKey("top_level_spec")
+        )
+    )
+
 
 def test_load_assets_from_modules(monkeypatch):
-    from dagster_tests.asset_defs_tests import asset_package
-    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
+    from dagster_tests.definitions_tests.module_loader_tests import asset_package
+    from dagster_tests.definitions_tests.module_loader_tests.asset_package import module_with_assets
 
     collection_1 = load_assets_from_modules([asset_package, module_with_assets])
 
@@ -141,12 +160,22 @@ def test_load_assets_from_modules(monkeypatch):
         m.setattr(asset_package, "little_richard_dup", little_richard, raising=False)
         with pytest.raises(
             DagsterInvalidDefinitionError,
-            match=re.escape(
-                "Asset key AssetKey(['little_richard']) is defined multiple times. "
-                "Definitions found in modules: dagster_tests.asset_defs_tests.asset_package."
-            ),
+            match=re.escape("Asset key little_richard is defined multiple times."),
         ):
             load_assets_from_modules([asset_package, module_with_assets])
+
+    # Create an AssetsDefinition with an identical spec to that in the module
+    with monkeypatch.context() as m:
+
+        @asset
+        def top_level_spec():
+            pass
+
+        m.setattr(asset_package, "top_level_spec_same_assets_def", top_level_spec, raising=False)
+        with pytest.raises(
+            DagsterInvalidDefinitionError,
+        ):
+            load_assets_from_modules([asset_package, module_with_assets], include_specs=True)
 
 
 @asset(group_name="my_group")
@@ -156,17 +185,27 @@ def asset_in_current_module():
 
 source_asset_in_current_module = SourceAsset(AssetKey("source_asset_in_current_module"))
 
+spec_in_current_module = AssetSpec("spec_in_current_module")
+
 
 def test_load_assets_from_current_module():
     assets = load_assets_from_current_module()
     assets = [get_unique_asset_identifier(asset) for asset in assets]
-    assert assets == ["asset_in_current_module", AssetKey("source_asset_in_current_module")]
+    assert set(assets) == {"asset_in_current_module", AssetKey("source_asset_in_current_module")}
     assert len(assets) == 2
+    assets = load_assets_from_current_module(include_specs=True)
+    assets = [get_unique_asset_identifier(asset) for asset in assets]
+    assert len(assets) == 3
+    assert set(assets) == {
+        "asset_in_current_module",
+        AssetKey("source_asset_in_current_module"),
+        AssetKey("spec_in_current_module"),
+    }
 
 
 def test_load_assets_from_modules_with_group_name():
-    from dagster_tests.asset_defs_tests import asset_package
-    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
+    from dagster_tests.definitions_tests.module_loader_tests import asset_package
+    from dagster_tests.definitions_tests.module_loader_tests.asset_package import module_with_assets
 
     assets = load_assets_from_modules(
         [asset_package, module_with_assets], group_name="my_cool_group"
@@ -179,15 +218,16 @@ def test_load_assets_from_modules_with_group_name():
 
 def test_respect_existing_groups():
     assets = load_assets_from_current_module()
-    assert assets[0].group_names_by_key.get(AssetKey("asset_in_current_module")) == "my_group"  # pyright: ignore[reportAttributeAccessIssue]
+    assets_def = next(iter(a for a in assets if isinstance(a, AssetsDefinition)))
+    assert assets_def.group_names_by_key.get(AssetKey("asset_in_current_module")) == "my_group"
 
     with pytest.raises(DagsterInvalidDefinitionError):
         load_assets_from_current_module(group_name="yay")
 
 
 def test_load_assets_with_freshness_policy():
-    from dagster_tests.asset_defs_tests import asset_package
-    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
+    from dagster_tests.definitions_tests.module_loader_tests import asset_package
+    from dagster_tests.definitions_tests.module_loader_tests.asset_package import module_with_assets
 
     assets = load_assets_from_modules(
         [asset_package, module_with_assets],
@@ -202,8 +242,8 @@ def test_load_assets_with_freshness_policy():
 
 
 def test_load_assets_with_auto_materialize_policy():
-    from dagster_tests.asset_defs_tests import asset_package
-    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
+    from dagster_tests.definitions_tests.module_loader_tests import asset_package
+    from dagster_tests.definitions_tests.module_loader_tests.asset_package import module_with_assets
 
     assets = load_assets_from_modules(
         [asset_package, module_with_assets], auto_materialize_policy=AutoMaterializePolicy.eager()
@@ -225,8 +265,8 @@ def test_load_assets_with_auto_materialize_policy():
     ],
 )
 def test_prefix(prefix):
-    from dagster_tests.asset_defs_tests import asset_package
-    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
+    from dagster_tests.definitions_tests.module_loader_tests import asset_package
+    from dagster_tests.definitions_tests.module_loader_tests.asset_package import module_with_assets
 
     assets = load_assets_from_modules([asset_package, module_with_assets], key_prefix=prefix)
     assert_assets_have_prefix(prefix, assets)  # pyright: ignore[reportArgumentType]
@@ -236,7 +276,7 @@ def test_prefix(prefix):
 
 
 def _load_assets_from_module_with_assets(**kwargs):
-    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
+    from dagster_tests.definitions_tests.module_loader_tests.asset_package import module_with_assets
 
     return load_assets_from_modules([module_with_assets], **kwargs)
 
@@ -246,7 +286,7 @@ def _load_assets_from_module_with_assets(**kwargs):
     [
         _load_assets_from_module_with_assets,
         lambda **kwargs: load_assets_from_package_name(
-            "dagster_tests.asset_defs_tests.asset_package", **kwargs
+            "dagster_tests.definitions_tests.module_loader_tests.asset_package", **kwargs
         ),
     ],
 )
@@ -270,7 +310,9 @@ def test_source_key_prefix(load_fn):
     assert get_assets_def_with_key(
         assets_with_prefix_sources, AssetKey(["foo", "my_cool_prefix", "chuck_berry"])
     ).dependency_keys == {
+        # source prefix
         AssetKey(["bar", "cooler_prefix", "elvis_presley"]),
+        # loadable prefix
         AssetKey(["foo", "my_cool_prefix", "miles_davis"]),
     }
 
@@ -297,7 +339,7 @@ def test_source_key_prefix(load_fn):
 )
 def test_load_assets_cacheable(load_fn, prefix):
     """Tests the load-from-module and load-from-package-name functinos with cacheable assets."""
-    from dagster_tests.asset_defs_tests import asset_package_with_cacheable
+    from dagster_tests.definitions_tests.module_loader_tests import asset_package_with_cacheable
 
     assets_defs = load_fn(asset_package_with_cacheable)
     assert len(assets_defs) == 3

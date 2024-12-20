@@ -65,9 +65,15 @@ def generate_deployment_command(path: Path) -> None:
         " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
     ),
 )
+@click.option(
+    "--skip-venv",
+    is_flag=True,
+    default=False,
+    help="Do not create a virtual environment for the code location.",
+)
 @click.pass_context
 def generate_code_location_command(
-    cli_context: click.Context, name: str, use_editable_dagster: Optional[str]
+    cli_context: click.Context, name: str, use_editable_dagster: Optional[str], skip_venv: bool
 ) -> None:
     """Generate a Dagster code location file structure and a uv-managed virtual environment scoped
     to the code location.
@@ -117,7 +123,7 @@ def generate_code_location_command(
     else:
         editable_dagster_root = None
 
-    generate_code_location(code_location_path, editable_dagster_root)
+    generate_code_location(code_location_path, dg_context, editable_dagster_root, skip_venv)
 
 
 @generate_cli.command(name="component-type", cls=DgClickCommand)
