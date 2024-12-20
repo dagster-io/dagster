@@ -1,5 +1,6 @@
 import os
 import subprocess
+from pathlib import Path
 from typing import Generator
 
 import pytest
@@ -31,11 +32,15 @@ def container_client(credentials: ClientSecretCredential) -> Generator[Container
     ).get_container_client("mycontainer")
 
 
+@pytest.mark.parametrize(
+    "dagster_yaml", ["secret-credential.yaml", "default-credential.yaml"], indirect=True
+)
 def test_compute_log_manager(
     dagster_dev: subprocess.Popen,
     container_client: ContainerClient,
     prefix_env: str,
     credentials: ClientSecretCredential,
+    dagster_yaml: Path,
 ) -> None:
     subprocess.run(
         ["dagster", "asset", "materialize", "--select", "my_asset", "-m", "azure_test_proj.defs"],
