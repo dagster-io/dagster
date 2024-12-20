@@ -43,6 +43,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         container (str): The container (or ADLS2 filesystem) to which to log.
         secret_credential (Optional[dict]): Secret credential for the storage account. This should be
             a dictionary with keys `client_id`, `client_secret`, and `tenant_id`.
+        access_key_or_sas_token (Optional[str]): Access key or SAS token for the storage account.
         default_azure_credential (Optional[dict]): Use and configure DefaultAzureCredential.
             Cannot be used with sas token or secret key config.
         local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
@@ -87,6 +88,21 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             local_dir: "/tmp/cool"
             upload_interval: 30
 
+    Using an Azure Blob Storage account with an access key:
+
+    .. code-block:: YAML
+
+        compute_logs:
+          module: dagster_azure.blob.compute_log_manager
+          class: AzureBlobComputeLogManager
+            config:
+            storage_account: my-storage-account
+            container: my-container
+            access_key_or_sas_token: my-access-key
+            prefix: "dagster-test-"
+            local_dir: "/tmp/cool"
+            upload_interval: 30
+
     """
 
     def __init__(
@@ -99,6 +115,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         prefix="dagster",
         upload_interval=None,
         default_azure_credential=None,
+        access_key_or_sas_token: Optional[str] = None,
         show_url_only=True,
     ):
         self._show_url_only = check.bool_param(show_url_only, "show_url_only")
@@ -108,6 +125,9 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         self._default_azure_credential = check.opt_dict_param(
             default_azure_credential, "default_azure_credential"
         )
+        self._access_key_or_sas_token = check.opt_str_param(
+            access_key_or_sas_token, "access_key_or_sas_token"
+        )
         check.opt_dict_param(secret_credential, "secret_credential")
         check.opt_dict_param(default_azure_credential, "default_azure_credential")
 
@@ -115,6 +135,8 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             self._blob_client = create_blob_client(
                 storage_account, ClientSecretCredential(**secret_credential)
             )
+        elif self._access_key_or_sas_token:
+            self._blob_client = create_blob_client(storage_account, self._access_key_or_sas_token)
         else:
             credential = DefaultAzureCredential(**self._default_azure_credential)
             self._blob_client = create_blob_client(storage_account, credential)
@@ -140,6 +162,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         return {
             "storage_account": StringSource,
             "container": StringSource,
+            "access_key_or_sas_token": Field(Noneable(StringSource), is_required=False),
             "secret_credential": Field(
                 Noneable(
                     Shape(
