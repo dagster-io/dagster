@@ -35,12 +35,7 @@ Here’s an overview of the main concepts we’ll be using:
 ## Prerequisites
 
 :::note
-  This guide is an extension of the{" "}
-  <a href="/guides/dagster/transitioning-data-pipelines-from-development-to-production">
-    Transitioning data pipelines from development to production
-  </a>{" "}
-  guide, illustrating a workflow for staging deployments. We’ll use the examples
-  from this guide to build a workflow atop Dagster+’s branch deployment feature.
+  This guide is an extension of the <a href="/guides/dagster/transitioning-data-pipelines-from-development-to-production"> Transitioning data pipelines from development to production </a> guide, illustrating a workflow for staging deployments. We’ll use the examples from this guide to build a workflow atop Dagster+’s branch deployment feature.
 :::
 
 To complete the steps in this guide, you'll need:
