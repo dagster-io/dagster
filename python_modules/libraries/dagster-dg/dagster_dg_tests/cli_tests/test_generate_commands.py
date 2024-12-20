@@ -120,6 +120,12 @@ def test_generate_code_location_editable_dagster_success(mode: str, monkeypatch)
                 "path": f"{dagster_git_repo_dir}/python_modules/libraries/dagster-components",
                 "editable": True,
             }
+            # Check for presence of one random package with no component to ensure we are
+            # preemptively adding all packages
+            assert toml["tool"]["uv"]["sources"]["dagstermill"] == {
+                "path": f"{dagster_git_repo_dir}/python_modules/libraries/dagstermill",
+                "editable": True,
+            }
 
 
 def test_generate_code_location_skip_venv_success() -> None:

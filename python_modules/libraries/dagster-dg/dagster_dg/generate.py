@@ -1,8 +1,7 @@
 import json
 import os
-import textwrap
 from pathlib import Path
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Sequence
 
 import click
 
@@ -74,17 +73,27 @@ def get_pyproject_toml_dev_dependencies(use_editable_dagster: bool) -> str:
     )
 
 
-def get_pyproject_toml_uv_sources(editable_dagster_root: str) -> str:
-    return textwrap.dedent(f"""
-        [tool.uv.sources]
-        dagster = {{ path = "{editable_dagster_root}/python_modules/dagster", editable = true }}
-        dagster-graphql = {{ path = "{editable_dagster_root}/python_modules/dagster-graphql", editable = true }}
-        dagster-pipes = {{ path = "{editable_dagster_root}/python_modules/dagster-pipes", editable = true }}
-        dagster-webserver = {{ path = "{editable_dagster_root}/python_modules/dagster-webserver", editable = true }}
-        dagster-components = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-components", editable = true }}
-        dagster-embedded-elt = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-embedded-elt", editable = true }}
-        dagster-dbt = {{ path = "{editable_dagster_root}/python_modules/libraries/dagster-dbt", editable = true }}
-    """)
+def get_pyproject_toml_uv_sources(editable_dagster_root: Path) -> str:
+    lib_lines = [
+        f'{path.name} = {{ path = "{path}", editable = true }}'
+        for path in _gather_dagster_packages(editable_dagster_root)
+    ]
+    return "\n".join(
+        [
+            "[tool.uv.sources]",
+            *lib_lines,
+        ]
+    )
+
+
+def _gather_dagster_packages(editable_dagster_root: Path) -> Sequence[Path]:
+    return [
+        p.parent
+        for p in (
+            *editable_dagster_root.glob("python_modules/dagster*/setup.py"),
+            *editable_dagster_root.glob("python_modules/libraries/dagster*/setup.py"),
+        )
+    ]
 
 
 def generate_code_location(
@@ -100,7 +109,7 @@ def generate_code_location(
         use_editable_dagster=bool(editable_dagster_root)
     )
     uv_sources = (
-        get_pyproject_toml_uv_sources(editable_dagster_root) if editable_dagster_root else ""
+        get_pyproject_toml_uv_sources(Path(editable_dagster_root)) if editable_dagster_root else ""
     )
 
     generate_subtree(
