@@ -16,7 +16,7 @@ from typing_extensions import Self
 def isolated_example_deployment_foo(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     with runner.isolated_filesystem():
-        runner.invoke("generate", "deployment", "foo")
+        runner.invoke("deployment", "generate", "foo")
         with pushd("foo"):
             yield
 
@@ -30,8 +30,8 @@ def isolated_example_code_location_bar(
     if in_deployment:
         with isolated_example_deployment_foo(runner):
             runner.invoke(
-                "generate",
                 "code-location",
+                "generate",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
                 *(["--skip-venv"] if skip_venv else []),
@@ -42,8 +42,8 @@ def isolated_example_code_location_bar(
     else:
         with runner.isolated_filesystem():
             runner.invoke(
-                "generate",
                 "code-location",
+                "generate",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
                 *(["--skip-venv"] if skip_venv else []),
