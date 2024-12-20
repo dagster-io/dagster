@@ -179,8 +179,10 @@ export const InputDiv = styled.div`
   ${SelectionAutoCompleteInputCSS}
 `;
 
+// Z-index: 21 to beat out Dialog's z-index: 20
 const GlobalHintStyles = createGlobalStyle`
   .CodeMirror-hints {
+    z-index: 21;
     background: ${Colors.popoverBackground()};
     border: none;
     border-radius: 4px;
