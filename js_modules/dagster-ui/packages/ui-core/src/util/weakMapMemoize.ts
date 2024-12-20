@@ -115,7 +115,7 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
     }
 
     // Compute the result
-    const result = fn.apply(this, args);
+    const result = fn(...args);
 
     // Cache the result
     currentCache.result = result;

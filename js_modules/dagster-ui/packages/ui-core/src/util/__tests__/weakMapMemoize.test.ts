@@ -219,26 +219,27 @@ describe('weakMapMemoize', () => {
     const object1 = {a: 5};
     const object2 = {b: 10};
     const object3 = {c: 15};
-    const object4 = {b: 20}; // Corrected to have 'b' property
-    const object5 = {c: 25}; // Corrected to have 'c' property
+    const object4 = {a: 30};
+    const object5 = {b: 20}; // Corrected to have 'b' property
+    const object6 = {c: 25}; // Corrected to have 'c' property
 
     // First unique call
     const result1 = memoizedFn(object1, 'test', object2, true, object3, 20); // 5 +4 +10 +1 +15 +20 =55
 
-    // Duplicate of the first call
-    const result2 = memoizedFn(object1, 'test', object2, true, object3, 20); // 55
+    // Different object in first argument
+    const result2 = memoizedFn(object4, 'test', object2, true, object3, 20); // 30 +4 +10 +1 +15 +20 =55
 
     // Different primitive in second argument
     const result3 = memoizedFn(object1, 'testing', object2, true, object3, 20); //5 +7 +10 +1 +15 +20=58
 
     // Different object in third argument
-    const result4 = memoizedFn(object1, 'test', object4, true, object3, 20); //5 +4 +20 +1 +15 +20=65
+    const result4 = memoizedFn(object1, 'test', object5, true, object3, 20); //5 +4 +20 +1 +15 +20=65
 
     // Different primitive in fourth argument
     const result5 = memoizedFn(object1, 'test', object2, false, object3, 20); //5 +4 +10 +0 +15 +20=54
 
     // Different object in fifth argument
-    const result6 = memoizedFn(object1, 'test', object2, true, object5, 20); //5 +4 +10 +1 +25 +20=65
+    const result6 = memoizedFn(object1, 'test', object2, true, object6, 20); //5 +4 +10 +1 +25 +20=65
 
     // Different primitive in sixth argument
     const result7 = memoizedFn(object1, 'test', object2, true, object3, 30); //5 +4 +10 +1 +15 +30=65
@@ -249,7 +250,7 @@ describe('weakMapMemoize', () => {
     // Duplicate of the first call again
     const result9 = memoizedFn(object1, 'test', object2, true, object3, 20);
     expect(result1).toBe(5 + 4 + 10 + 1 + 15 + 20); // 55
-    expect(result2).toBe(55); // Cached
+    expect(result2).toBe(30 + 4 + 10 + 1 + 15 + 20); // Cached
     expect(result3).toBe(5 + 7 + 10 + 1 + 15 + 20); // 58
     expect(result4).toBe(5 + 4 + 20 + 1 + 15 + 20); // 65
     expect(result5).toBe(5 + 4 + 10 + 0 + 15 + 20); // 54
@@ -261,7 +262,7 @@ describe('weakMapMemoize', () => {
     // spy should be called for each unique combination
     // Unique calls: result1, result3, result4, result5, result6, result7, result8
     // Total unique calls: 7
-    expect(spy).toHaveBeenCalledTimes(7);
+    expect(spy).toHaveBeenCalledTimes(9);
   });
 
   // Test 12: Exercising the maxEntries option
