@@ -189,7 +189,7 @@ class DagsterPowerBITranslator:
 
     def copy_with_context(self, context: PowerBIWorkspaceData):
         kwargs = self.get_init_kwargs_from_instance()
-        if kwargs.get("context"):
+        if kwargs["context"]:
             raise DagsterInvariantViolationError(
                 f"The context already exist on this translator instance {self}. "
                 "Cannot create a new translator instance with new context."
