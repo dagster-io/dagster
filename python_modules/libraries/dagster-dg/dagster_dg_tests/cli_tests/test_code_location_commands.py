@@ -19,10 +19,8 @@ from dagster_dg_tests.utils import (
 
 
 def test_code_location_generate_inside_deployment_success() -> None:
-    # Don't use the test component lib because it is not present in published dagster-components,
-    # which this test is currently accessing since we are not doing an editable install.
     with (
-        ProxyRunner.test(use_test_component_lib=False) as runner,
+        ProxyRunner.test() as runner,
         isolated_example_deployment_foo(runner),
     ):
         result = runner.invoke("code-location", "generate", "bar")
@@ -46,14 +44,12 @@ def test_code_location_generate_inside_deployment_success() -> None:
 
         # Check cache was populated
         with pushd("code_locations/bar"):
-            result = runner.invoke("--verbose", "component-type", "list")
+            result = runner.invoke("component-type", "list", "--verbose")
             assert "CACHE [hit]" in result.output
 
 
 def test_code_location_generate_outside_deployment_success() -> None:
-    # Don't use the test component lib because it is not present in published dagster-components,
-    # which this test is currently accessing since we are not doing an editable install.
-    with ProxyRunner.test(use_test_component_lib=False) as runner, runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("code-location", "generate", "bar")
         assert_runner_result(result)
         assert Path("bar").exists()
