@@ -33,7 +33,7 @@ def test_cache_invalidation_uv_lock():
         assert "CACHE [miss]" in result.output
         assert "CACHE [write]" in result.output
 
-        subprocess.run(["uv", "add", "dagster-components[dbt]"], check=True)
+        subprocess.run(["uv", "add", "dagster-components[dbt]", "dagster-dbt"], check=True)
 
         result = runner.invoke("list", "component-types")
         assert_runner_result(result)
