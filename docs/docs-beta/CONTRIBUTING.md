@@ -26,14 +26,7 @@ Before:
 After:
 
 ```
-<ThemedImage
-  alt="Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"
-  style={{width:'100%', height: 'auto'}}
-  sources={{
-    light: '/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png',
-    dark: '/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png',
-  }}
-/>
+![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png)
 ```
 
 ### Notes
