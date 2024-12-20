@@ -26,6 +26,32 @@ function isObject(value: any): value is object {
 }
 
 /**
+ * Recursively deletes parent nodes if their childCount reaches zero.
+ * @param cacheNode - The cache node to start deletion from.
+ */
+function recursivelyDeleteParent(cacheNode: CacheNode) {
+  if (cacheNode.parent && cacheNode.parentKey !== undefined) {
+    const parent = cacheNode.parent;
+    const parentKey = cacheNode.parentKey;
+
+    // Remove the current cacheNode from its parent
+    if (isObject(parentKey)) {
+      parent.weakMap.delete(parentKey);
+    } else {
+      parent.map.delete(parentKey);
+    }
+
+    // Decrement the parent's child count
+    parent.childCount--;
+
+    // If the parent's childCount reaches zero and it's not the root, recurse
+    if (parent.childCount === 0 && parent.parent) {
+      recursivelyDeleteParent(parent);
+    }
+  }
+}
+
+/**
  * Memoizes a function using nested Maps and WeakMaps based on the arguments.
  * Optionally limits the number of cached entries using an LRU cache.
  * Handles both primitive and object arguments efficiently.
@@ -49,23 +75,13 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
   if (maxEntries) {
     lruCache = new LRU<any, CacheNode>({
       max: maxEntries,
-      dispose: (key, cacheNode) => {
-        // Remove the cached entry
+      dispose: (_key, cacheNode) => {
+        // Remove the cached result
         delete cacheNode.result;
 
-        // If there are no entries in this node then lets remove it.
+        // If there are no child nodes, proceed to remove this node from its parent
         if (cacheNode.childCount === 0 && cacheNode.parent && cacheNode.parentKey !== undefined) {
-          const parent = cacheNode.parent;
-
-          // Decrement the parent's child count
-          parent.childCount--;
-          const parentKey = cacheNode.parentKey;
-
-          if (isObject(parentKey)) {
-            parent.weakMap.delete(parentKey);
-          } else {
-            parent.map.delete(parentKey);
-          }
+          recursivelyDeleteParent(cacheNode);
         }
       },
       noDisposeOnSet: false, // Ensure dispose is called on eviction
@@ -131,7 +147,7 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
 
     // If LRU cache is enabled, manage the cache entries
     if (lruCache && !currentCache.lruKey) {
-      const cacheEntryKey: any[] = path.slice(); // Clone the path to ensure uniqueness
+      const cacheEntryKey = Symbol();
       currentCache.lruKey = cacheEntryKey; // Associate the cache node with the LRU key
       lruCache.set(cacheEntryKey, currentCache);
     }

@@ -248,4 +248,80 @@ describe('weakMapMemoize', () => {
     expect(memoizedFn(1, 2)).toBe(3);
     expect(spy).toHaveBeenCalledTimes(6);
   });
+
+  // Test 14: Evicting a cache node without children deletes its result
+  it('should delete the result of an evicted cache node without children', () => {
+    const spy = jest.fn((a: number, b: number) => a + b);
+    const memoizedFn = weakMapMemoize(spy, {maxEntries: 2});
+
+    expect(memoizedFn(1, 1)).toBe(2);
+    expect(memoizedFn(2, 2)).toBe(4);
+    expect(spy).toHaveBeenCalledTimes(2); // Two unique calls
+
+    // This should evict the least recently used entry (1,1)
+    expect(memoizedFn(3, 3)).toBe(6);
+    expect(spy).toHaveBeenCalledTimes(3); // New call for (3,3)
+
+    // Accessing (1,1) again should trigger a new function call since it was evicted, and evict (2, 2)
+    expect(memoizedFn(1, 1)).toBe(2);
+    expect(spy).toHaveBeenCalledTimes(4); // New call for (1,1)
+
+    // evicts 3,3
+    expect(memoizedFn(2, 2)).toBe(4);
+    expect(spy).toHaveBeenCalledTimes(5);
+
+    expect(memoizedFn(3, 3)).toBe(6);
+    expect(spy).toHaveBeenCalledTimes(6);
+  });
+
+  // Test 15: Evicting a cache node with children deletes only its result, children remain cached
+  it('should delete only the result of an evicted cache node with children and keep children cached', () => {
+    const spy = jest.fn((a: number, b: string, c?: number) => a + b.length + (c ?? 0));
+    const memoizedFn = weakMapMemoize(spy, {maxEntries: 3});
+
+    // Creating cache nodes:
+    // (1, 'a')
+    // (1, 'a', 10)
+    // (2, 'b', 30)
+
+    expect(memoizedFn(1, 'a')).toBe(1 + 1);
+    expect(memoizedFn(1, 'a', 10)).toBe(1 + 1 + 10);
+    expect(memoizedFn(2, 'b', 30)).toBe(2 + 1 + 30);
+    expect(spy).toHaveBeenCalledTimes(3); // Three unique calls
+
+    // At this point, maxEntries is 3:
+    // Cache contains:
+    // (1, 'a'), (1, 'a', 10), (2, 'b', 30)
+
+    // Adding a new entry should evict the least recently used, which is (1, 'a')
+    expect(memoizedFn(1, 'c', 40)).toBe(1 + 1 + 40);
+    expect(spy).toHaveBeenCalledTimes(4);
+
+    // Now, cache contains:
+    // (1, 'a', 10), (2, 'b', 30), (1, 'c', 40)
+    expect(memoizedFn(1, 'a', 10)).toBe(1 + 1 + 10);
+    expect(spy).toHaveBeenCalledTimes(4); // no new call
+
+    // Now, cache contains:
+    // (2, 'b', 30), (1, 'c', 40), (1, 'a', 10)
+    // Evicting (2, 'b', 30)
+    expect(memoizedFn(4, 'd', 50)).toBe(4 + 1 + 50);
+    expect(spy).toHaveBeenCalledTimes(5);
+
+    // Now, cache contains:
+    // (1, 'c', 40), (1, 'a', 10), (4, 'd', 50)
+
+    // Accessing (1, 'a', 10) again should trigger a new call since it was evicted and evict (2, b, 30)
+    expect(memoizedFn(2, 'b', 30)).toBe(2 + 1 + 30);
+    expect(spy).toHaveBeenCalledTimes(6);
+
+    // Now, cache contains:
+    // (1, 'a', 10), (4, 'd', 50), (2, 'b', 30)
+
+    expect(memoizedFn(1, 'a', 10)).toBe(12);
+    expect(memoizedFn(4, 'd', 50)).toBe(55);
+    expect(memoizedFn(2, 'b', 30)).toBe(33);
+
+    expect(spy).toHaveBeenCalledTimes(6);
+  });
 });
