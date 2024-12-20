@@ -8,13 +8,9 @@ describe('weakMapMemoize', () => {
     const spy = jest.fn((a: number, b: number) => a + b);
     const memoizedAdd = weakMapMemoize(spy, {maxEntries: 3});
 
-    const result1 = memoizedAdd(1, 2);
-    const result2 = memoizedAdd(1, 2);
-    const result3 = memoizedAdd(2, 3);
-
-    expect(result1).toBe(3);
-    expect(result2).toBe(3);
-    expect(result3).toBe(5);
+    expect(memoizedAdd(1, 2)).toBe(3); // Cached
+    expect(memoizedAdd(1, 2)).toBe(3); // Cached
+    expect(memoizedAdd(2, 3)).toBe(5); // Cached
     expect(spy).toHaveBeenCalledTimes(2); // Only two unique calls
   });
 
@@ -26,15 +22,10 @@ describe('weakMapMemoize', () => {
     const obj1 = {x: 10};
     const obj2 = {x: 20};
 
-    const result1 = memoizedFn(obj1, 5);
-    const result2 = memoizedFn(obj1, 5);
-    const result3 = memoizedFn(obj2, 5);
-    const result4 = memoizedFn(obj1, 6);
-
-    expect(result1).toBe(15);
-    expect(result2).toBe(15);
-    expect(result3).toBe(25);
-    expect(result4).toBe(16);
+    expect(memoizedFn(obj1, 5)).toBe(15); // Cached
+    expect(memoizedFn(obj1, 5)).toBe(15); // Cached
+    expect(memoizedFn(obj2, 5)).toBe(25); // Cached
+    expect(memoizedFn(obj1, 6)).toBe(16); // Cached
     expect(spy).toHaveBeenCalledTimes(3); // Three unique calls
   });
 
@@ -46,15 +37,10 @@ describe('weakMapMemoize', () => {
     const obj1 = {y: 100};
     const obj2 = {y: 200};
 
-    const result1 = memoizedFn(1, obj1);
-    const result2 = memoizedFn(1, obj1);
-    const result3 = memoizedFn(2, obj1);
-    const result4 = memoizedFn(1, obj2);
-
-    expect(result1).toBe(101);
-    expect(result2).toBe(101);
-    expect(result3).toBe(102);
-    expect(result4).toBe(201);
+    expect(memoizedFn(1, obj1)).toBe(101); // Cached
+    expect(memoizedFn(1, obj1)).toBe(101); // Cached
+    expect(memoizedFn(2, obj1)).toBe(102); // Cached
+    expect(memoizedFn(1, obj2)).toBe(201); // Cached
     expect(spy).toHaveBeenCalledTimes(3); // Three unique calls
   });
 
@@ -67,8 +53,8 @@ describe('weakMapMemoize', () => {
     const result2 = memoizedFn();
     const result3 = memoizedFn();
 
-    expect(result1).toBe(result2);
-    expect(result2).toBe(result3);
+    expect(result1).toBe(result2); // Cached
+    expect(result2).toBe(result3); // Cached
     expect(spy).toHaveBeenCalledTimes(1); // Only one unique call
   });
 
@@ -82,15 +68,10 @@ describe('weakMapMemoize', () => {
     });
     const memoizedFn = weakMapMemoize(spy, {maxEntries: 2});
 
-    const result1 = memoizedFn(null, undefined);
-    const result2 = memoizedFn(null, undefined);
-    const result3 = memoizedFn(undefined, null);
-    const result4 = memoizedFn(null, undefined);
-
-    expect(result1).toBe('null-undefined');
-    expect(result2).toBe('null-undefined');
-    expect(result3).toBe('other');
-    expect(result4).toBe('null-undefined');
+    expect(memoizedFn(null, undefined)).toBe('null-undefined'); // Cached
+    expect(memoizedFn(null, undefined)).toBe('null-undefined'); // Cached
+    expect(memoizedFn(undefined, null)).toBe('other'); // Cached
+    expect(memoizedFn(null, undefined)).toBe('null-undefined'); // Cached
     expect(spy).toHaveBeenCalledTimes(2); // Two unique calls
   });
 
@@ -102,15 +83,10 @@ describe('weakMapMemoize', () => {
     const func1 = (x: number) => x * 2;
     const func2 = (x: number) => x * 3;
 
-    const result1 = memoizedFn(func1, 5);
-    const result2 = memoizedFn(func1, 5);
-    const result3 = memoizedFn(func2, 5);
-    const result4 = memoizedFn(func1, 6);
-
-    expect(result1).toBe(10);
-    expect(result2).toBe(10);
-    expect(result3).toBe(15);
-    expect(result4).toBe(12);
+    expect(memoizedFn(func1, 5)).toBe(10); // Cached
+    expect(memoizedFn(func1, 5)).toBe(10); // Cached
+    expect(memoizedFn(func2, 5)).toBe(15); // Cached
+    expect(memoizedFn(func1, 6)).toBe(12); // Cached
     expect(spy).toHaveBeenCalledTimes(3); // Three unique calls
   });
 
@@ -122,15 +98,10 @@ describe('weakMapMemoize', () => {
     const obj1 = {key: 'value1'};
     const obj2 = {key: 'value2'};
 
-    const result1 = memoizedFn(1, 'test', obj1);
-    const result2 = memoizedFn(1, 'test', obj1);
-    const result3 = memoizedFn(1, 'test', obj2);
-    const result4 = memoizedFn(2, 'test', obj1);
-
-    expect(result1).toBe('1-test-value1');
-    expect(result2).toBe('1-test-value1');
-    expect(result3).toBe('1-test-value2');
-    expect(result4).toBe('2-test-value1');
+    expect(memoizedFn(1, 'test', obj1)).toBe('1-test-value1'); // Cached
+    expect(memoizedFn(1, 'test', obj1)).toBe('1-test-value1'); // Cached
+    expect(memoizedFn(1, 'test', obj2)).toBe('1-test-value2'); // Cached
+    expect(memoizedFn(2, 'test', obj1)).toBe('2-test-value1'); // Cached
     expect(spy).toHaveBeenCalledTimes(3); // Three unique calls
   });
 
@@ -142,15 +113,10 @@ describe('weakMapMemoize', () => {
     const array1 = [1, 2, 3];
     const array2 = [4, 5, 6];
 
-    const result1 = memoizedFn(array1);
-    const result2 = memoizedFn(array1);
-    const result3 = memoizedFn(array2);
-    const result4 = memoizedFn([1, 2, 3]); // Different reference
-
-    expect(result1).toBe(6);
-    expect(result2).toBe(6);
-    expect(result3).toBe(15);
-    expect(result4).toBe(6);
+    expect(memoizedFn(array1)).toBe(6); // Cached
+    expect(memoizedFn(array1)).toBe(6); // Cached
+    expect(memoizedFn(array2)).toBe(15); // Cached
+    expect(memoizedFn([1, 2, 3])).toBe(6); // Cached
     expect(spy).toHaveBeenCalledTimes(3); // Three unique calls
   });
 
@@ -162,15 +128,10 @@ describe('weakMapMemoize', () => {
     const spy = jest.fn((a: symbol, b: number) => a.toString() + b);
     const memoizedFn = weakMapMemoize(spy, {maxEntries: 4});
 
-    const result1 = memoizedFn(sym1, 10);
-    const result2 = memoizedFn(sym1, 10);
-    const result3 = memoizedFn(sym2, 10);
-    const result4 = memoizedFn(sym1, 20);
-
-    expect(result1).toBe(`${sym1.toString()}10`);
-    expect(result2).toBe(`${sym1.toString()}10`);
-    expect(result3).toBe(`${sym2.toString()}10`);
-    expect(result4).toBe(`${sym1.toString()}20`);
+    expect(memoizedFn(sym1, 10)).toBe(`${sym1.toString()}10`); // Cached
+    expect(memoizedFn(sym1, 10)).toBe(`${sym1.toString()}10`); // Cached
+    expect(memoizedFn(sym2, 10)).toBe(`${sym2.toString()}10`); // Cached
+    expect(memoizedFn(sym1, 20)).toBe(`${sym1.toString()}20`); // Cached
     expect(spy).toHaveBeenCalledTimes(3); // Three unique calls
   });
 
@@ -186,19 +147,12 @@ describe('weakMapMemoize', () => {
     const args5 = [6, 5, 4, 3, 2];
     const args6 = [1, 2, 3, 4, 7];
 
-    const result1 = memoizedFn(...args1);
-    const result2 = memoizedFn(...args2);
-    const result3 = memoizedFn(...args3);
-    const result4 = memoizedFn(...args4);
-    const result5 = memoizedFn(...args5);
-    const result6 = memoizedFn(...args6);
-
-    expect(result1).toBe(15);
-    expect(result2).toBe(15);
-    expect(result3).toBe(15);
-    expect(result4).toBe(16);
-    expect(result5).toBe(20);
-    expect(result6).toBe(17);
+    expect(memoizedFn(...args1)).toBe(15); // Cached
+    expect(memoizedFn(...args2)).toBe(15); // Cached
+    expect(memoizedFn(...args3)).toBe(15); // Cached
+    expect(memoizedFn(...args4)).toBe(16); // Cached
+    expect(memoizedFn(...args5)).toBe(20); // Cached
+    expect(memoizedFn(...args6)).toBe(17); // Cached
     expect(spy).toHaveBeenCalledTimes(5); // Five unique calls (args1, args3, args4, args5, args6)
   });
 
@@ -223,45 +177,26 @@ describe('weakMapMemoize', () => {
     const object5 = {b: 20}; // Corrected to have 'b' property
     const object6 = {c: 25}; // Corrected to have 'c' property
 
-    // First unique call
-    const result1 = memoizedFn(object1, 'test', object2, true, object3, 20); // 5 +4 +10 +1 +15 +20 =55
-
-    // Different object in first argument
-    const result2 = memoizedFn(object4, 'test', object2, true, object3, 20); // 30 +4 +10 +1 +15 +20 =55
-
-    // Different primitive in second argument
-    const result3 = memoizedFn(object1, 'testing', object2, true, object3, 20); //5 +7 +10 +1 +15 +20=58
-
-    // Different object in third argument
-    const result4 = memoizedFn(object1, 'test', object5, true, object3, 20); //5 +4 +20 +1 +15 +20=65
-
-    // Different primitive in fourth argument
-    const result5 = memoizedFn(object1, 'test', object2, false, object3, 20); //5 +4 +10 +0 +15 +20=54
-
-    // Different object in fifth argument
-    const result6 = memoizedFn(object1, 'test', object2, true, object6, 20); //5 +4 +10 +1 +25 +20=65
-
-    // Different primitive in sixth argument
-    const result7 = memoizedFn(object1, 'test', object2, true, object3, 30); //5 +4 +10 +1 +15 +30=65
-
-    // Different objects and primitives
-    const result8 = memoizedFn(object1, 'testing', object2, false, object3, 30); //5 +7 +10 +0 +15 +30=67
-
-    // Duplicate of the first call again
-    const result9 = memoizedFn(object1, 'test', object2, true, object3, 20);
-    expect(result1).toBe(5 + 4 + 10 + 1 + 15 + 20); // 55
-    expect(result2).toBe(30 + 4 + 10 + 1 + 15 + 20); // Cached
-    expect(result3).toBe(5 + 7 + 10 + 1 + 15 + 20); // 58
-    expect(result4).toBe(5 + 4 + 20 + 1 + 15 + 20); // 65
-    expect(result5).toBe(5 + 4 + 10 + 0 + 15 + 20); // 54
-    expect(result6).toBe(5 + 4 + 10 + 1 + 25 + 20); // 65
-    expect(result7).toBe(5 + 4 + 10 + 1 + 15 + 30); // 65
-    expect(result8).toBe(5 + 7 + 10 + 0 + 15 + 30); // 67
-    expect(result9).toBe(55); // Cached
+    expect(memoizedFn(object1, 'test', object2, true, object3, 20)).toBe(5 + 4 + 10 + 1 + 15 + 20); // 55
+    expect(memoizedFn(object4, 'test', object2, true, object3, 20)).toBe(30 + 4 + 10 + 1 + 15 + 20); // 80
+    expect(memoizedFn(object1, 'testing', object2, true, object3, 20)).toBe(
+      5 + 7 + 10 + 1 + 15 + 20,
+    ); // 58
+    expect(memoizedFn(object1, 'test', object5, true, object3, 20)).toBe(5 + 4 + 20 + 1 + 15 + 20); // 65
+    expect(memoizedFn(object1, 'test', object2, false, object3, 20)).toBe(5 + 4 + 10 + 0 + 15 + 20); // 54
+    expect(memoizedFn(object1, 'test', object2, true, object6, 20)).toBe(5 + 4 + 10 + 1 + 25 + 20); // 65
+    expect(memoizedFn(object1, 'test', object2, true, object3, 30)).toBe(5 + 4 + 10 + 1 + 15 + 30); // 65
+    expect(memoizedFn(object1, 'testing', object2, false, object3, 30)).toBe(
+      5 + 7 + 10 + 0 + 15 + 30,
+    ); // 67
+    expect(memoizedFn(object1, 'test', object2, true, object3, 20)).toBe(55); // Cached
 
     // spy should be called for each unique combination
-    // Unique calls: result1, result3, result4, result5, result6, result7, result8
-    // Total unique calls: 7
+    // Unique calls: object1-test-object2-true-object3-20, object4-test-object2-true-object3-20,
+    // object1-testing-object2-true-object3-20, object1-test-object5-true-object3-20,
+    // object1-test-object2-false-object3-20, object1-test-object2-true-object6-20,
+    // object1-test-object2-true-object3-30, object1-testing-object2-false-object3-30
+    // Total unique calls: 8
     expect(spy).toHaveBeenCalledTimes(9);
   });
 
@@ -270,22 +205,52 @@ describe('weakMapMemoize', () => {
     const spy = jest.fn((a: number) => a * 2);
     const memoizedFn = weakMapMemoize(spy, {maxEntries: 2});
 
-    const result1 = memoizedFn(1); // Cached
-    const result2 = memoizedFn(2); // Cached
-    const result3 = memoizedFn(3); // Evicts least recently used (1)
-    const result4 = memoizedFn(2); // Cached, updates recentness
-    const result5 = memoizedFn(4); // Evicts least recently used (3)
-
-    expect(result1).toBe(2);
-    expect(result2).toBe(4);
-    expect(result3).toBe(6);
-    expect(result4).toBe(4);
-    expect(result5).toBe(8);
+    expect(memoizedFn(1)).toBe(2); // Cached
+    expect(memoizedFn(2)).toBe(4); // Cached
+    expect(memoizedFn(3)).toBe(6); // Evicts least recently used (1)
+    expect(memoizedFn(2)).toBe(4); // Cached, updates recentness
+    expect(memoizedFn(4)).toBe(8); // Evicts least recently used (3)
     expect(spy).toHaveBeenCalledTimes(4); // Calls for 1,2,3,4
 
     // Accessing 1 again should trigger a new call since it was evicted
-    const result6 = memoizedFn(1);
-    expect(result6).toBe(2);
+    expect(memoizedFn(1)).toBe(2); // Cached
     expect(spy).toHaveBeenCalledTimes(5); // Call for 1 again
+  });
+
+  // Test 13: Should handle mixed argument types in same slot
+  it('Should handle mixed argument types in same slot', () => {
+    const spy = jest.fn((a: any, b: any) => {
+      const toString = (arg: any) => (typeof arg === 'object' ? Object.keys(arg).length : arg);
+      return toString(a) + toString(b);
+    });
+    const memoizedFn = weakMapMemoize(spy, {maxEntries: 3});
+
+    expect(memoizedFn(1, 2)).toBe(3); // Cached
+
+    expect(memoizedFn(1, 2)).toBe(3);
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    expect(memoizedFn('hello', {x: 1, y: 2})).toBe('hello2');
+    expect(spy).toHaveBeenCalledTimes(2);
+
+    // Different object reference results in another call
+    expect(memoizedFn('hello', {x: 1, y: 2})).toBe('hello2');
+    expect(spy).toHaveBeenCalledTimes(3);
+
+    const a = {a: 1};
+    expect(memoizedFn(a, 'test')).toBe('1test');
+    expect(spy).toHaveBeenCalledTimes(4);
+
+    // same reference uses cache
+    expect(memoizedFn(a, 'test')).toBe('1test');
+    expect(spy).toHaveBeenCalledTimes(4);
+
+    // Evicts 1, 2
+    expect(memoizedFn(3, 4)).toBe(7);
+    expect(spy).toHaveBeenCalledTimes(5);
+
+    // Evicted - results in new call
+    expect(memoizedFn(1, 2)).toBe(3);
+    expect(spy).toHaveBeenCalledTimes(6);
   });
 });

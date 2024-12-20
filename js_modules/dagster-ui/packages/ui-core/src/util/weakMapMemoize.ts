@@ -1,3 +1,5 @@
+// src/utils/weakMapMemoize.ts
+
 import LRU from 'lru-cache';
 
 type AnyFunction = (...args: any[]) => any;
@@ -10,6 +12,8 @@ interface CacheNode {
   map: Map<any, CacheNode>;
   weakMap: WeakMap<object, CacheNode>;
   result?: any;
+  parent?: CacheNode;
+  parentKey?: any;
   lruKey?: any; // Reference to the key in the LRU cache
 }
 
@@ -40,37 +44,31 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
   };
 
   // Initialize LRU Cache if maxEntries is specified
-  let lruCache: LRU<any, any> | null = null;
+  let lruCache: LRU<any, CacheNode> | null = null;
 
   if (maxEntries) {
-    lruCache = new LRU<any, any>({
+    lruCache = new LRU<any, CacheNode>({
       max: maxEntries,
-      dispose: (key, _value) => {
-        // When an entry is evicted from the LRU cache,
-        // traverse the cache tree and remove the cached result
-        const keyPath = key as any[];
-        let currentCache: CacheNode | undefined = cacheRoot;
+      dispose: (key, cacheNode) => {
+        // When an entry is evicted from the LRU cache, remove it from its parent
+        if (cacheNode.parent && cacheNode.parentKey !== undefined) {
+          const parent = cacheNode.parent;
+          const parentKey = cacheNode.parentKey;
 
-        for (let i = 0; i < keyPath.length; i++) {
-          const arg = keyPath[i];
-          const isArgObject = isObject(arg);
-
-          if (isArgObject) {
-            currentCache = currentCache.weakMap.get(arg);
+          if (isObject(parentKey)) {
+            parent.weakMap.delete(parentKey);
           } else {
-            currentCache = currentCache.map.get(arg);
+            parent.map.delete(parentKey);
           }
 
-          if (!currentCache) {
-            // The cache node has already been removed
-            return;
-          }
+          // Remove references to help garbage collection
+          delete cacheNode.parent;
+          delete cacheNode.parentKey;
+          delete cacheNode.result;
+          delete cacheNode.lruKey;
         }
-
-        // Remove the cached result
-        delete currentCache.result;
-        delete currentCache.lruKey;
       },
+      noDisposeOnSet: false, // Ensure dispose is called on eviction
     });
   }
 
@@ -83,26 +81,33 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
       path.push(arg);
       const isArgObject = isObject(arg);
 
-      // Determine the appropriate cache level
+      let nextCacheNode: CacheNode | undefined;
+
       if (isArgObject) {
         if (!currentCache.weakMap.has(arg)) {
           const newCacheNode: CacheNode = {
             map: new Map(),
             weakMap: new WeakMap(),
+            parent: currentCache,
+            parentKey: arg,
           };
           currentCache.weakMap.set(arg, newCacheNode);
         }
-        currentCache = currentCache.weakMap.get(arg)!;
+        nextCacheNode = currentCache.weakMap.get(arg);
       } else {
         if (!currentCache.map.has(arg)) {
           const newCacheNode: CacheNode = {
             map: new Map(),
             weakMap: new WeakMap(),
+            parent: currentCache,
+            parentKey: arg,
           };
           currentCache.map.set(arg, newCacheNode);
         }
-        currentCache = currentCache.map.get(arg)!;
+        nextCacheNode = currentCache.map.get(arg);
       }
+
+      currentCache = nextCacheNode!;
     }
 
     // After traversing all arguments, check if the result is cached
@@ -122,7 +127,7 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
 
     // If LRU cache is enabled, manage the cache entries
     if (lruCache) {
-      const cacheEntryKey: any[] = path.slice(); // Store the whole path so that we can use it in the dispose call to clear the cache
+      const cacheEntryKey: any[] = path.slice(); // Clone the path to ensure uniqueness
       currentCache.lruKey = cacheEntryKey; // Associate the cache node with the LRU key
 
       lruCache.set(cacheEntryKey, currentCache);
