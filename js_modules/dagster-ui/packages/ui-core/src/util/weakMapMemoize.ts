@@ -13,6 +13,7 @@ interface CacheNode {
   parent?: CacheNode;
   parentKey?: any;
   lruKey?: any; // Reference to the key in the LRU cache
+  childCount: number; // Number of child nodes
 }
 
 /**
@@ -39,6 +40,7 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
   const cacheRoot: CacheNode = {
     map: new Map(),
     weakMap: new WeakMap(),
+    childCount: 0,
   };
 
   // Initialize LRU Cache if maxEntries is specified
@@ -48,9 +50,15 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
     lruCache = new LRU<any, CacheNode>({
       max: maxEntries,
       dispose: (key, cacheNode) => {
-        // When an entry is evicted from the LRU cache, remove it from its parent
-        if (cacheNode.parent && cacheNode.parentKey !== undefined) {
+        // Remove the cached entry
+        delete cacheNode.result;
+
+        // If there are no entries in this node then lets remove it.
+        if (cacheNode.childCount === 0 && cacheNode.parent && cacheNode.parentKey !== undefined) {
           const parent = cacheNode.parent;
+
+          // Decrement the parent's child count
+          parent.childCount--;
           const parentKey = cacheNode.parentKey;
 
           if (isObject(parentKey)) {
@@ -82,8 +90,10 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
             weakMap: new WeakMap(),
             parent: currentCache,
             parentKey: arg,
+            childCount: 0,
           };
           currentCache.weakMap.set(arg, newCacheNode);
+          currentCache.childCount++;
         }
         nextCacheNode = currentCache.weakMap.get(arg);
       } else {
@@ -93,8 +103,10 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
             weakMap: new WeakMap(),
             parent: currentCache,
             parentKey: arg,
+            childCount: 0,
           };
           currentCache.map.set(arg, newCacheNode);
+          currentCache.childCount++;
         }
         nextCacheNode = currentCache.map.get(arg);
       }
@@ -118,10 +130,9 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
     currentCache.result = result;
 
     // If LRU cache is enabled, manage the cache entries
-    if (lruCache) {
+    if (lruCache && !currentCache.lruKey) {
       const cacheEntryKey: any[] = path.slice(); // Clone the path to ensure uniqueness
       currentCache.lruKey = cacheEntryKey; // Associate the cache node with the LRU key
-
       lruCache.set(cacheEntryKey, currentCache);
     }
 

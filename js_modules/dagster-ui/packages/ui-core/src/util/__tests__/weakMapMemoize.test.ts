@@ -174,8 +174,8 @@ describe('weakMapMemoize', () => {
     const object2 = {b: 10};
     const object3 = {c: 15};
     const object4 = {a: 30};
-    const object5 = {b: 20}; // Corrected to have 'b' property
-    const object6 = {c: 25}; // Corrected to have 'c' property
+    const object5 = {b: 20};
+    const object6 = {c: 25};
 
     expect(memoizedFn(object1, 'test', object2, true, object3, 20)).toBe(5 + 4 + 10 + 1 + 15 + 20); // 55
     expect(memoizedFn(object4, 'test', object2, true, object3, 20)).toBe(30 + 4 + 10 + 1 + 15 + 20); // 80
