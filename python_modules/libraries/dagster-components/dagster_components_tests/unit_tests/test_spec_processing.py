@@ -1,7 +1,8 @@
 import pytest
-from dagster import AssetKey, AssetSpec, Definitions
+from dagster import AssetKey, AssetSpec, AutomationCondition, Definitions
 from dagster_components.core.dsl_schema import (
     AssetAttributes,
+    AssetAttributesModel,
     MergeAttributes,
     ReplaceAttributes,
     TemplatedValueResolver,
@@ -23,7 +24,11 @@ defs = Definitions(
 
 
 def test_replace_attributes() -> None:
-    op = ReplaceAttributes(operation="replace", target="group:g2", tags={"newtag": "newval"})
+    op = ReplaceAttributes(
+        operation="replace",
+        target="group:g2",
+        attributes=AssetAttributesModel(tags={"newtag": "newval"}),
+    )
 
     newdefs = op.apply(defs, TemplatedValueResolver.default())
     asset_graph = newdefs.get_asset_graph()
@@ -33,7 +38,11 @@ def test_replace_attributes() -> None:
 
 
 def test_merge_attributes() -> None:
-    op = MergeAttributes(operation="merge", target="group:g2", tags={"newtag": "newval"})
+    op = MergeAttributes(
+        operation="merge",
+        target="group:g2",
+        attributes=AssetAttributesModel(tags={"newtag": "newval"}),
+    )
 
     newdefs = op.apply(defs, TemplatedValueResolver.default())
     asset_graph = newdefs.get_asset_graph()
@@ -43,7 +52,9 @@ def test_merge_attributes() -> None:
 
 
 def test_render_attributes_asset_context() -> None:
-    op = MergeAttributes(tags={"group_name_tag": "group__{{ asset.group_name }}"})
+    op = MergeAttributes(
+        attributes=AssetAttributesModel(tags={"group_name_tag": "group__{{ asset.group_name }}"})
+    )
 
     newdefs = op.apply(defs, TemplatedValueResolver.default().with_context(foo="theval"))
     asset_graph = newdefs.get_asset_graph()
@@ -54,33 +65,68 @@ def test_render_attributes_asset_context() -> None:
 
 def test_render_attributes_custom_context() -> None:
     op = ReplaceAttributes(
-        operation="replace", target="group:g2", tags={"a": "{{ foo }}", "b": "prefix_{{ foo }}"}
+        operation="replace",
+        target="group:g2",
+        attributes=AssetAttributesModel(
+            tags={"a": "{{ foo }}", "b": "prefix_{{ foo }}"},
+            metadata="{{ metadata }}",
+            automation_condition="{{ custom_cron('@daily') }}",
+        ),
     )
 
-    newdefs = op.apply(defs, TemplatedValueResolver.default().with_context(foo="theval"))
+    def _custom_cron(s):
+        return AutomationCondition.cron_tick_passed(s) & ~AutomationCondition.in_progress()
+
+    metadata = {"a": 1, "b": "str", "d": 1.23}
+    newdefs = op.apply(
+        defs,
+        TemplatedValueResolver.default().with_context(
+            foo="theval", metadata=metadata, custom_cron=_custom_cron
+        ),
+    )
     asset_graph = newdefs.get_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {}
-    assert asset_graph.get(AssetKey("b")).tags == {"a": "theval", "b": "prefix_theval"}
-    assert asset_graph.get(AssetKey("c")).tags == {"a": "theval", "b": "prefix_theval"}
+    assert asset_graph.get(AssetKey("a")).metadata == {}
+    assert asset_graph.get(AssetKey("a")).automation_condition is None
+
+    for k in ["b", "c"]:
+        node = asset_graph.get(AssetKey(k))
+        assert node.tags == {"a": "theval", "b": "prefix_theval"}
+        assert node.metadata == metadata
+        assert node.automation_condition == _custom_cron("@daily")
 
 
 @pytest.mark.parametrize(
     "python,expected",
     [
         # default to merge and a * target
-        ({"tags": {"a": "b"}}, MergeAttributes(target="*", tags={"a": "b"})),
         (
-            {"operation": "replace", "tags": {"a": "b"}},
-            ReplaceAttributes(operation="replace", target="*", tags={"a": "b"}),
+            {"attributes": {"tags": {"a": "b"}}},
+            MergeAttributes(target="*", attributes=AssetAttributesModel(tags={"a": "b"})),
+        ),
+        (
+            {"operation": "replace", "attributes": {"tags": {"a": "b"}}},
+            ReplaceAttributes(
+                operation="replace",
+                target="*",
+                attributes=AssetAttributesModel(tags={"a": "b"}),
+            ),
         ),
         # explicit target
         (
-            {"tags": {"a": "b"}, "target": "group:g2"},
-            MergeAttributes(target="group:g2", tags={"a": "b"}),
+            {"attributes": {"tags": {"a": "b"}}, "target": "group:g2"},
+            MergeAttributes(
+                target="group:g2",
+                attributes=AssetAttributesModel(tags={"a": "b"}),
+            ),
         ),
         (
-            {"operation": "replace", "tags": {"a": "b"}, "target": "group:g2"},
-            ReplaceAttributes(operation="replace", target="group:g2", tags={"a": "b"}),
+            {"operation": "replace", "attributes": {"tags": {"a": "b"}}, "target": "group:g2"},
+            ReplaceAttributes(
+                operation="replace",
+                target="group:g2",
+                attributes=AssetAttributesModel(tags={"a": "b"}),
+            ),
         ),
     ],
 )

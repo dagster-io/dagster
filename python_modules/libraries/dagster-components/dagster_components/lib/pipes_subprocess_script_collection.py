@@ -1,51 +1,24 @@
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Mapping, Sequence
 
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from dagster._utils.warnings import suppress_dagster_warnings
 from pydantic import BaseModel
 
 from dagster_components.core.component import Component, ComponentLoadContext, component
-from dagster_components.core.dsl_schema import AutomationConditionModel
+from dagster_components.core.dsl_schema import AssetAttributesModel
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 
-class AssetSpecModel(BaseModel):
-    key: str
-    deps: Sequence[str] = []
-    description: Optional[str] = None
-    metadata: Mapping[str, Any] = {}
-    group_name: Optional[str] = None
-    skippable: bool = False
-    code_version: Optional[str] = None
-    owners: Sequence[str] = []
-    tags: Mapping[str, str] = {}
-    automation_condition: Optional[AutomationConditionModel] = None
-
-    @suppress_dagster_warnings
-    def to_asset_spec(self) -> AssetSpec:
-        return AssetSpec(
-            **{
-                **self.__dict__,
-                "key": AssetKey.from_user_string(self.key),
-                "automation_condition": self.automation_condition.to_automation_condition()
-                if self.automation_condition
-                else None,
-            },
-        )
-
-
 class PipesSubprocessScriptParams(BaseModel):
     path: str
-    assets: Sequence[AssetSpecModel]
+    assets: Sequence[AssetAttributesModel]
 
 
 class PipesSubprocessScriptCollectionParams(BaseModel):
@@ -78,11 +51,14 @@ class PipesSubprocessScriptCollection(Component):
             script_path = context.path / script.path
             if not script_path.exists():
                 raise FileNotFoundError(f"Script {script_path} does not exist")
-            path_specs[script_path] = [spec.to_asset_spec() for spec in script.assets]
+            path_specs[script_path] = [
+                AssetSpec(**asset.get_resolved_attributes(context.templated_value_resolver))
+                for asset in script.assets
+            ]
 
         return cls(dirpath=context.path, path_specs=path_specs)
 
-    def build_defs(self, load_context: "ComponentLoadContext") -> "Definitions":
+    def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions
 
         return Definitions(

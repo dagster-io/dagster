@@ -20,21 +20,34 @@ class OpSpecBaseModel(BaseModel):
     tags: Optional[Dict[str, str]] = None
 
 
-class AutomationConditionModel(BaseModel):
-    type: str
-    params: Mapping[str, Any] = {}
+class AssetAttributesModel(BaseModel):
+    key: Optional[str] = None
+    deps: Sequence[str] = []
+    description: Optional[str] = None
+    metadata: Union[str, Mapping[str, Any]] = {}
+    group_name: Optional[str] = None
+    skippable: bool = False
+    code_version: Optional[str] = None
+    owners: Sequence[str] = []
+    tags: Union[str, Mapping[str, str]] = {}
+    automation_condition: Optional[Union[str, AutomationCondition]] = RenderingScope(
+        Field(None), required_scope={"automation_condition"}
+    )
 
-    def to_automation_condition(self) -> AutomationCondition:
-        return getattr(AutomationCondition, self.type)(**self.params)
+    class Config:
+        # required for AutomationCondition
+        arbitrary_types_allowed = True
+
+    def get_resolved_attributes(self, value_resolver: TemplatedValueResolver) -> Mapping[str, Any]:
+        return value_resolver.resolve(self.model_dump(exclude_unset=True))
 
 
 class AssetSpecProcessor(ABC, BaseModel):
     target: str = "*"
-    description: Optional[str] = None
-    metadata: Optional[Mapping[str, Any]] = None
-    group_name: Optional[str] = None
-    tags: Optional[Mapping[str, str]] = None
-    automation_condition: Optional[AutomationConditionModel] = None
+    attributes: AssetAttributesModel
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def _apply_to_spec(self, spec: AssetSpec, attributes: Mapping[str, Any]) -> AssetSpec: ...
 
@@ -48,10 +61,9 @@ class AssetSpecProcessor(ABC, BaseModel):
             return spec
 
         # add the original spec to the context and resolve values
-        attributes = value_resolver.with_context(asset=spec).resolve(
-            self.model_dump(exclude={"target", "operation"}, exclude_unset=True)
+        return self._apply_to_spec(
+            spec, self.attributes.get_resolved_attributes(value_resolver.with_context(asset=spec))
         )
-        return self._apply_to_spec(spec, attributes)
 
     def apply(self, defs: Definitions, value_resolver: TemplatedValueResolver) -> Definitions:
         target_selection = AssetSelection.from_string(self.target, include_sources=True)
