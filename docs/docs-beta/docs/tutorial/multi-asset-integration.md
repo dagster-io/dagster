@@ -11,7 +11,6 @@ In the context of Dagster, decorators are helpful because they often wrap some f
 
 In this guide, you'll learn how to develop a multi-asset integration for a hypothetical replication tool.
 
----
 
 ## Prerequisites
 
