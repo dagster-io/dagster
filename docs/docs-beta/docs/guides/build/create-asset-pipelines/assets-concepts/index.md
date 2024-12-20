@@ -3,6 +3,7 @@ title: "Assets concepts"
 sidebar_position: 20
 ---
 
-import DocCardList from '@theme/DocCardList';
 
-<DocCardList />
+## Assets and ops
+
+Assets and ops are two different concepts in Dagster. For more information, see "[Ops vs assets](/guides/build/ops-jobs/ops-vs-assets)".
