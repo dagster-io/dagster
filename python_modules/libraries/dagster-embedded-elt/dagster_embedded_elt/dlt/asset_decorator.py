@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Mapping, Optional, Sequence
 
 from dagster import (
     AssetsDefinition,
@@ -67,6 +67,7 @@ def dlt_assets(
     group_name: Optional[str] = None,
     dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Asset Factory for using data load tool (dlt).
 
@@ -76,6 +77,8 @@ def dlt_assets(
         name (Optional[str], optional): The name of the op.
         group_name (Optional[str], optional): The name of the asset group.
         dagster_dlt_translator (DagsterDltTranslator, optional): Customization object for defining asset parameters from dlt resources.
+        partitions_def (Optional[PartitionsDefinition]): Optional partitions definition.
+        op_tags (Optional[Mapping[str, Any]]): The tags for this asset.
 
     Examples:
         Loading Hubspot data to Snowflake with an auto materialize policy using the dlt verified source:
@@ -142,6 +145,7 @@ def dlt_assets(
         group_name=group_name,
         can_subset=True,
         partitions_def=partitions_def,
+        op_tags=op_tags,
         specs=build_dlt_asset_specs(
             dlt_source=dlt_source,
             dlt_pipeline=dlt_pipeline,
