@@ -122,7 +122,7 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
 
     // If LRU cache is enabled, manage the cache entries
     if (lruCache) {
-      const cacheEntryKey: any[] = path.slice(); // Clone the path to ensure uniqueness
+      const cacheEntryKey: any[] = path.slice(); // Store the whole path so that we can use it in the dispose call to clear the cache
       currentCache.lruKey = cacheEntryKey; // Associate the cache node with the LRU key
 
       lruCache.set(cacheEntryKey, currentCache);
