@@ -199,7 +199,7 @@ class MyCustomTranslatorWithInvalidAttribute(DagsterPowerBITranslator):
 def test_custom_translator_with_invalid_attribute(workspace_data: PowerBIWorkspaceData) -> None:
     with pytest.raises(
         KeyError,
-        match="Could not find `__init__ param",
+        match="Could not find `__init__` param",
     ):
         MyCustomTranslatorWithInvalidAttribute(my_param="test").copy_with_context(
             context=workspace_data
