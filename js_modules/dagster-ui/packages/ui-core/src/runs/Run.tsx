@@ -105,7 +105,7 @@ export const Run = memo((props: RunProps) => {
       <LogsProvider key={runId} runId={runId}>
         {(logs) => (
           <>
-            <OnLogsLoaded dependency={logsDependency} />
+            <OnLogsLoaded dependency={logsDependency} logs={logs} />
             <RunMetadataProvider logs={logs}>
               {(metadata) => (
                 <RunWithData
@@ -128,10 +128,18 @@ export const Run = memo((props: RunProps) => {
   );
 });
 
-const OnLogsLoaded = ({dependency}: {dependency: ReturnType<typeof useTraceDependency>}) => {
+const OnLogsLoaded = ({
+  dependency,
+  logs,
+}: {
+  dependency: ReturnType<typeof useTraceDependency>;
+  logs: LogsProviderLogs;
+}) => {
   useLayoutEffect(() => {
-    dependency.completeDependency(CompletionType.SUCCESS);
-  }, [dependency]);
+    if (!logs.loading) {
+      dependency.completeDependency(CompletionType.SUCCESS);
+    }
+  }, [dependency, logs]);
   return null;
 };
 
