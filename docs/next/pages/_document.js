@@ -38,9 +38,9 @@ export default class MyDocument extends Document {
             <co-pilot copilot_id="dagster">
               <div
                 slot="fab"
-                className="bg-lavender text-gray-700 px-24 py-2 rounded-full flex flex-row items-center"
+                className="bg-lavender text-gray-700 px-24 py-2 rounded-full flex flex-row items-center font-sans gap-2"
               >
-                <div className="pt-1 pr-1">
+                <div className="pt-1">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
