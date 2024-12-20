@@ -207,7 +207,7 @@ class DagsterPowerBITranslator:
 
     @property
     def workspace_data(self) -> PowerBIWorkspaceData:
-        return self._context
+        return check.not_none(self._context)
 
     def get_asset_spec(self, data: PowerBIContentData) -> AssetSpec:
         if data.content_type == PowerBIContentType.DASHBOARD:
