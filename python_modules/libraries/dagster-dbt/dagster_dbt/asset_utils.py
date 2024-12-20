@@ -25,6 +25,7 @@ from dagster import (
     AssetOut,
     AssetsDefinition,
     AssetSelection,
+    AssetSpec,
     AutoMaterializePolicy,
     AutomationCondition,
     DagsterInvalidDefinitionError,
@@ -807,12 +808,9 @@ def build_dbt_multi_asset_args(
                 project=project,
             )
 
-        outs[output_name] = AssetOut(
+        spec = AssetSpec(
             key=asset_key,
-            dagster_type=Nothing,
-            io_manager_key=io_manager_key,
             description=dagster_dbt_translator.get_description(dbt_resource_props),
-            is_required=False,
             metadata=metadata,
             owners=dagster_dbt_translator.get_owners(
                 {
@@ -831,6 +829,14 @@ def build_dbt_multi_asset_args(
             automation_condition=dagster_dbt_translator.get_automation_condition(
                 dbt_resource_props
             ),
+            partitions_def=dagster_dbt_translator.get_partitions_def(dbt_resource_props),
+        )
+
+        outs[output_name] = AssetOut.from_spec(
+            spec=spec,
+            dagster_type=Nothing,
+            is_required=False,
+            io_manager_key=io_manager_key,
         )
 
         test_unique_ids = [

@@ -228,7 +228,7 @@ class AssetOut:
             key=key,
             tags={**additional_tags, **self.tags} if self.tags else additional_tags,
             deps=[*self._spec.deps, *deps],
-            partitions_def=partitions_def,
+            partitions_def=partitions_def if partitions_def is not None else ...,
         )
 
     @public
