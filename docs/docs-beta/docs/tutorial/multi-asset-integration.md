@@ -3,7 +3,6 @@ title: Creating a multi-asset integration
 description: Create a decorator based multi-asset integration
 ---
 
-# Create a multi-asset integration
 
 When working in the Dagster ecosystem, you may have noticed that decorators are frequently used. For example, assets, jobs, and ops use decorators. If you have a service that produces many assets, it's possible to define it as a multi-asset decorator-offering a consistent and intuitive developer experience to existing Dagster APIs.
 
