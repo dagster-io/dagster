@@ -34,6 +34,7 @@ from dagster._core.pipes.utils import (
     extract_message_or_forward_to_stdout,
     open_pipes_session,
 )
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster_pipes import (
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
     DAGSTER_PIPES_MESSAGES_ENV_VAR,
@@ -379,7 +380,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
             context (Union[OpExecutionContext, AssetExecutionContext]):
                 The execution context.
             image (Optional[str]):
-                The image to set the first container in the pod spec to use.
+                The image to set the first container in the pod spec to use. If the Dagster run has the `dagster/image` tag set, it will be used as the default when running one container in the pod.
             command (Optional[Union[str, Sequence[str]]]):
                 The command to set the first container in the pod spec to use.
             namespace (Optional[str]):
@@ -424,6 +425,10 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
         ) as pipes_session:
             namespace = namespace or _detect_current_namespace(self.kubeconfig_file) or "default"
             pod_name = get_pod_name(context.run_id, context.op.name)
+
+            if not base_pod_spec or len(base_pod_spec.get("containers", [])) == 1:
+                image = image or context.dagster_run.tags.get(DOCKER_IMAGE_TAG)
+
             pod_body = build_pod_body(
                 pod_name=pod_name,
                 image=image,
