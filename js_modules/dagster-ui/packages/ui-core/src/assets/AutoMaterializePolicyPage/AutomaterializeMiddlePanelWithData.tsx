@@ -174,7 +174,7 @@ export const AutomaterializeMiddlePanelWithData = ({
           {flagLegacyRunsPage ? (
             <AutomaterializeRunsTable runIds={selectedEvaluation.runIds} />
           ) : runsFilter ? (
-            <RunsFeedTableWithFilters filter={runsFilter} includeRunsFromBackfills={false}/>
+            <RunsFeedTableWithFilters filter={runsFilter} includeRunsFromBackfills={false} />
           ) : (
             <Box padding={{vertical: 12}}>
               <NonIdealState

@@ -240,7 +240,11 @@ export const RunsFeedTableWithFilters = ({
   RunsFeedTableProps,
   'actionBarComponents' | 'belowActionBarComponents' | 'emptyState' | 'hideTags' | 'scroll'
 >) => {
-  const {entries, paginationProps, queryResult} = useRunsFeedEntries(filter, 'all', includeRunsFromBackfills);
+  const {entries, paginationProps, queryResult} = useRunsFeedEntries(
+    filter,
+    'all',
+    includeRunsFromBackfills,
+  );
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   function content() {

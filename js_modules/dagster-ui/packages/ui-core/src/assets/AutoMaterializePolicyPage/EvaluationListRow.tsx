@@ -108,7 +108,7 @@ const EvaluationRunInfo = ({runIds, timestamp}: EvaluationRunInfoProps) => {
             }
           />
           <div style={{flex: 1, overflowY: 'auto'}}>
-            <RunsFeedTableWithFilters filter={{runIds}} includeRunsFromBackfills={true}/>
+            <RunsFeedTableWithFilters filter={{runIds}} includeRunsFromBackfills={true} />
           </div>
           <DialogFooter topBorder>
             <Button onClick={() => setIsOpen(false)}>Done</Button>
