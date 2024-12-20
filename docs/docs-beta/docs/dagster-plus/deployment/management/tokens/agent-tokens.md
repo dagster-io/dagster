@@ -4,24 +4,23 @@ sidebar_position: 200
 unlisted: true
 ---
 
-import ThemedImage from '@theme/ThemedImage';
-
-# Managing user and agent tokens in Dagster+
+# Managing agent tokens in Dagster+
 
 :::note
 This guide is applicable to Dagster+.
 :::
 
-In this guide, we'll walk you through creating and revoking user and agent tokens in Dagster+.
+In this guide, we'll walk you through creating and revoking agent tokens in Dagster+.
 
 ## Managing agent tokens
 :::note
-To manage agent tokens, you need to be an{" "}
-<a href="/dagster-plus/account/managing-users">Organization Admin</a> in
+{/* /dagster-plus/account/managing-users */}
+To manage agent tokens, you need to be an [Organization Admin](/todo.md) in
 Dagster+.
 :::
 
-Agent tokens are used to authenticate [Hybrid agents](/dagster-plus/deployment/agents) with the Dagster+ Agents API.
+{/* /dagster-plus/deployment/agents */}
+Agent tokens are used to authenticate [Hybrid agents](/todo.md) with the Dagster+ Agents API.
 
 ### Creating agent tokens
 
@@ -53,30 +52,3 @@ To revoke a token:
 3. Click the **Tokens** tab.
 4. Click **Edit** next to the agent token you'd like to change.
 5. Click **Revoke** in the bottom left of the permissions dialog. When prompted, confirm to proceed with revoking the token.
-
-## Managing user tokens
-
-1. Sign in to your Dagster+ account.
-2. Click the **user menu (your icon) > Organization Settings**.
-3. Click the **Tokens** tab.
-4. Click **+ Create user token**.
-
-After the token is created:
-
-- **To edit a token's description**, click the **pencil icon**.
-- **To view a token**, click **Reveal token**. Clicking on the token value will copy it to the clipboard.
-- **To revoke a token**, click **Revoke**.
-
-To manage tokens for another user, select the user from the **Manage tokens for** dropdown:
-
-<ThemedImage
-  style={{width:'100%', height: 'auto'}}
-  sources={{
-    light: '/images/dagster-cloud/user-token-management/manage-user-tokens-for.png',
-    dark: '/images/dagster-cloud/user-token-management/manage-user-tokens-for.png',
-  }}
-/>
-
-:::note
-**Organization Admin** permissions are required to manage another user's tokens.
-:::
