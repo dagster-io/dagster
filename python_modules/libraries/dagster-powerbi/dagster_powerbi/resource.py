@@ -28,6 +28,7 @@ from dagster_powerbi.translator import (
     PowerBIContentData,
     PowerBIContentType,
     PowerBITagSet,
+    PowerBITranslatorData,
     PowerBIWorkspaceData,
 )
 
@@ -437,7 +438,7 @@ class PowerBIWorkspaceDefsLoader(StateBackedDefinitionsLoader[PowerBIWorkspaceDa
             )
 
     def defs_from_state(self, state: PowerBIWorkspaceData) -> Definitions:
-        translator = self.translator_cls(context=state)
+        translator = self.translator_cls()
 
         all_external_data = [
             *state.dashboards_by_id.values(),
@@ -445,7 +446,14 @@ class PowerBIWorkspaceDefsLoader(StateBackedDefinitionsLoader[PowerBIWorkspaceDa
             *state.semantic_models_by_id.values(),
         ]
         all_external_asset_specs = [
-            translator.get_asset_spec(content) for content in all_external_data
+            translator.get_asset_spec(
+                PowerBITranslatorData(
+                    content_type=content.content_type,
+                    properties=content.properties,
+                    workspace_data=state,
+                )
+            )
+            for content in all_external_data
         ]
 
         return Definitions(assets=[*all_external_asset_specs])
