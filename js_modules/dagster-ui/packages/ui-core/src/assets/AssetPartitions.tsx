@@ -282,6 +282,7 @@ export const AssetPartitions = ({
                     value={searchValues[idx] || ''}
                     onChange={(e) => updateSearchValue(idx, e.target.value)}
                     placeholder="Filter by name…"
+                    data-testId={testId(`search-${idx}`)}
                   />
                 </Box>
                 <div>
