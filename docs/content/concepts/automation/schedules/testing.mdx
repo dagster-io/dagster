@@ -34,7 +34,36 @@ Using the UI, you can manually trigger test evaluations of a schedule and view t
 
 5. After selecting an evaluation time, click the **Continue** button.
 
-A window containing the evaluation result will display after the test completes. If the preview was successful, then for each produced run request, you can view the run config and tags produced by that run request by clicking the **{}** button in the Actions column. Click the **Launch all & commit tick result** on the bottom right to launch all the run requests.
+6. A window containing the evaluation result will display after the test completes.
+
+    <!-- ![Results page after evaluating the schedule in the Dagster UI](/images/concepts/partitions-schedules-sensors/schedules/testing-result-page.png) -->
+
+   <Image
+   alt="Results page after evaluating the schedule in the Dagster UI"
+   src="/images/concepts/automation/schedules/testing-result-page.png"
+   width={2638}
+   height={1388}
+   />
+
+If the preview was successful, then for each produced run request, you can view the run config and tags produced by that run request by clicking the **{}** button in the Actions column. <!-- ![Actions page in the Dagster UI](/images/concepts/partitions-schedules-sensors/schedules/testing-actions-page.png) -->
+
+<Image
+alt="Actions page in the Dagster UI"
+src="/images/concepts/automation/schedules/testing-actions-page.png"
+width={2638}
+height={1388}
+/>
+
+7. Click the **Launch all & commit tick result** on the bottom right to launch all the run requests. It will launch the runs and link to the /runs page filtered to the IDs of the runs that launched.
+
+    <!-- ![Runs page after launching all runs in the Dagster UI](/images/concepts/partitions-schedules-sensors/schedules/testing-launched-runs-page.png) -->
+
+   <Image
+   alt="Runs page after launching all runs"
+   src="/images/concepts/automation/schedules/testing-launched-runs-page.png"
+   width={2638}
+   height={1388}
+   />
 
 ---
 
