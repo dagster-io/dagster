@@ -46,4 +46,4 @@ class DefinitionsComponent(Component):
     def generate_files(
         cls, request: ComponentGenerateRequest, params: DefinitionsGenerateParams
     ) -> None:
-        return super().generate_files(request, params)
+        raise NotImplementedError("Not implemented")
