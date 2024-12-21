@@ -1,7 +1,6 @@
 ---
-title: "Schedule cron-based pipelines"
-sidebar_label: "Schedules"
-sidebar_position: 100
+title: "Automate jobs with schedules"
+sidebar_position: 10
 ---
 
 Schedules enable automated execution of jobs at specified intervals. These intervals can range from common frequencies like hourly, daily, or weekly, to more intricate patterns defined using cron expressions.
@@ -11,7 +10,7 @@ Schedules enable automated execution of jobs at specified intervals. These inter
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
+- Familiarity with [Assets](/guides/build/create-asset-pipelines/assets-concepts/index.mdx
 - Familiarity with [Ops and Jobs](/guides/build/ops-jobs/index.md)
 </details>
 
@@ -41,7 +40,7 @@ If using partitions and jobs, you can create a schedule using the partition with
 <Tabs>
 <TabItem value="assets" label="Assets">
 
-If you have a [partitioned asset](/guides/build/create-a-pipeline/partitioning) and job:
+If you have a [partitioned asset](/guides/build/create-asset-pipelines/partitioning) and job:
 
 <CodeExample filePath="guides/automation/schedule-with-partition.py" language="python" />
 

@@ -1,7 +1,6 @@
 ---
-title: Creating event-based pipelines with sensors
-sidebar_label: Event triggers
-sidebar_position: 200
+title: Create event-based pipelines with sensors
+sidebar_position: 30
 ---
 
 Sensors enable you to trigger Dagster runs in response to events from external systems. They run at regular intervals, either triggering a run or explaining why a run was skipped. For example, you can trigger a run when a new file is added to an Amazon S3 bucket or when a database row is updated.
@@ -15,7 +14,7 @@ An alternative to polling with sensors is to push events to Dagster using the [D
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
+- Familiarity with [Assets](/guides/build/create-asset-pipelines/assets-concepts/index.mdx
 - Familiarity with [Ops and Jobs](/guides/build/ops-jobs)
 </details>
 

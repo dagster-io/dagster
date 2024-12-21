@@ -7,7 +7,7 @@ Dagster+ is a managed orchestration platform built on top of Dagster's open sour
 
 Dagster+ is built to be the most performant, reliable, and cost effective way for data engineering teams to run Dagster in production. Dagster+ is also great for students, researchers, or individuals who want to explore Dagster with minimal overhead.
 
-Dagster+ comes in two flavors: a fully [Serverless](/dagster-plus/deployment/deployment-types/serverless) offering and a [Hybrid](/dagster-plus/deployment/deployment-types/hybrid) offering. In both cases, Dagster+ does the hard work of managing your data orchestration control plane. Compared to a [Dagster open source deployment](/guides/), Dagster+ manages:
+Dagster+ comes in two flavors: a fully [Serverless](/dagster-plus/deployment/deployment-types/serverless) offering and a [Hybrid](/dagster-plus/deployment/deployment-types/hybrid) offering. In both cases, Dagster+ does the hard work of managing your data orchestration control plane. Compared to a [Dagster open source deployment](guides/deploy/index.md), Dagster+ manages:
 
 - Dagster's web UI at https://dagster.plus
 - Metadata stores for data cataloging and cost insights
