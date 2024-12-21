@@ -405,28 +405,35 @@ def test_cross_location_checks() -> None:
             assert len(runs[0].asset_selection or []) == 0
 
 
-def test_default_condition() -> None:
+def test_global_condition() -> None:
     time = datetime.datetime(2024, 8, 16, 4)
     with (
-        get_workspace_request_context(["default_condition"]) as context,
+        get_workspace_request_context(["global_condition"]) as context,
         get_threadpool_executor() as executor,
     ):
         with freeze_time(time):
             _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
 
-            # eager asset materializes
+            # nothing happening yet, as parent hasn't updated
             runs = _get_runs_for_latest_ticks(context)
-            assert len(runs) == 1
-            assert runs[0].asset_selection == {AssetKey("eager_asset")}
+            assert len(runs) == 0
+
+            context.instance.report_runless_asset_event(
+                AssetMaterialization(asset_key=AssetKey("default"))
+            )
 
         time += datetime.timedelta(seconds=60)
         with freeze_time(time):
             _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
 
-            # passed a cron tick, so cron asset materializes
+            # parent updated, all three kicked off in a single run
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
-            assert runs[0].asset_selection == {AssetKey("every_5_minutes_asset")}
+            assert runs[0].asset_selection == {
+                AssetKey("g1_rootA"),
+                AssetKey("g1_rootB"),
+                AssetKey("g1_child"),
+            }
 
 
 def test_non_subsettable_check() -> None:
