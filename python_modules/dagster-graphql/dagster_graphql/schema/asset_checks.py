@@ -7,8 +7,11 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionSnapshot,
+)
 from dagster._core.definitions.remote_asset_graph import RemoteAssetCheckNode
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.asset_check_execution_record import (
@@ -17,7 +20,9 @@ from dagster._core.storage.asset_check_execution_record import (
 )
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializePolicy
+from dagster_graphql.schema.automation_condition import GrapheneAutomationCondition
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneError
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
@@ -134,6 +139,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
     canExecuteIndividually = graphene.NonNull(GrapheneAssetCheckCanExecuteIndividually)
     blocking = graphene.NonNull(graphene.Boolean)
     additionalAssetKeys = non_null_list(GrapheneAssetKey)
+    automationCondition = graphene.Field(GrapheneAutomationCondition)
 
     class Meta:
         name = "AssetCheck"
@@ -185,6 +191,22 @@ class GrapheneAssetCheck(graphene.ObjectType):
             for asset_key in self._asset_check.additional_asset_keys
         ]
 
+    def resolve_automationCondition(
+        self, _graphene_info: ResolveInfo
+    ) -> Optional[GrapheneAutoMaterializePolicy]:
+        automation_condition = (
+            self._asset_check.automation_condition_snapshot
+            or self._asset_check.automation_condition
+        )
+        if automation_condition:
+            return GrapheneAutomationCondition(
+                # we only store one of automation_condition or automation_condition_snapshot
+                automation_condition
+                if isinstance(automation_condition, AutomationConditionSnapshot)
+                else automation_condition.get_snapshot()
+            )
+        return None
+
 
 class GrapheneAssetChecks(graphene.ObjectType):
     checks = non_null_list(GrapheneAssetCheck)
@@ -234,14 +256,3 @@ class GrapheneAssetChecksOrError(graphene.Union):
             GrapheneAssetCheckNeedsAgentUpgradeError,
         )
         name = "AssetChecksOrError"
-
-
-class GrapheneAssetCheckHandle(graphene.ObjectType):
-    name = graphene.NonNull(graphene.String)
-    assetKey = graphene.NonNull(GrapheneAssetKey)
-
-    class Meta:
-        name = "AssetCheckhandle"
-
-    def __init__(self, handle: AssetCheckKey):
-        super().__init__(name=handle.name, assetKey=GrapheneAssetKey(path=handle.asset_key.path))

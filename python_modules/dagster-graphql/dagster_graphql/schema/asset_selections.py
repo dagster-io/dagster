@@ -7,7 +7,7 @@ from dagster._core.remote_representation.handle import RepositoryHandle
 
 from dagster_graphql.implementation.fetch_assets import get_asset
 from dagster_graphql.implementation.utils import capture_error
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
