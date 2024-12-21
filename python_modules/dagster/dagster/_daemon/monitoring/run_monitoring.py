@@ -26,16 +26,17 @@ RESUME_RUN_LOG_MESSAGE = "Launching a new run worker to resume run"
 
 
 def monitor_starting_run(
-    instance: DagsterInstance, run_record: RunRecord, logger: logging.Logger
+    instance: DagsterInstance, workspace: BaseWorkspaceRequestContext, run_record: RunRecord, logger: logging.Logger
 ) -> None:
     run = run_record.dagster_run
     check.invariant(run.status == DagsterRunStatus.STARTING)
     run_stats = instance.get_run_stats(run.run_id)
-
     launch_time = check.not_none(
         run_stats.launch_time, "Run in status STARTING doesn't have a launch time."
     )
-    if time.time() - launch_time >= instance.run_monitoring_start_timeout_seconds:
+
+    num_prev_attempts = count_resume_run_attempts(instance, run.run_id)
+    if time.time() - launch_time >= instance.run_monitoring_start_timeout_seconds * (num_prev_attempts + 1):
         msg = (
             "Run timed out due to taking longer than"
             f" {instance.run_monitoring_start_timeout_seconds} seconds to start."
@@ -46,12 +47,26 @@ def monitor_starting_run(
             debug_info = instance.run_launcher.get_run_worker_debug_info(run)
         except Exception:
             logger.exception("Failure fetching debug info for failed run worker")
-
         if debug_info:
-            msg = msg + f"\n{debug_info}"
+            msg += f"\n{debug_info}"
 
+        if instance.run_monitoring_max_resume_run_attempts > 0:
+            if num_prev_attempts < instance.run_monitoring_max_resume_run_attempts:
+                msg += f" Resuming run {run.run_id} with a new worker."
+                logger.info(msg)
+                instance.report_engine_event(msg, run)
+                instance.resume_run(
+                    run.run_id,
+                    workspace,
+                    num_prev_attempts + 1,
+                )
+                return
+            else:
+                msg += (
+                    f" Marking run {run.run_id} as failed, because it has surpassed the configured maximum"
+                    f" attempts to resume the run: {instance.run_monitoring_max_resume_run_attempts}."
+                )
         logger.info(msg)
-
         instance.report_run_failed(
             run, msg, JobFailureData(error=None, failure_reason=RunFailureReason.START_TIMEOUT)
         )
@@ -188,7 +203,7 @@ def execute_run_monitoring_iteration(
                 instance.run_monitoring_start_timeout_seconds > 0
                 and run_record.dagster_run.status == DagsterRunStatus.STARTING
             ):
-                monitor_starting_run(instance, run_record, logger)
+                monitor_starting_run(instance, workspace, run_record, logger)
             elif run_record.dagster_run.status == DagsterRunStatus.STARTED:
                 monitor_started_run(instance, workspace, run_record, logger)
             elif (

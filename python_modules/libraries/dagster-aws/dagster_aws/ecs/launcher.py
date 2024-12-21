@@ -4,7 +4,7 @@ import os
 import uuid
 import warnings
 from collections import namedtuple
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Type
 
 import boto3
 from botocore.exceptions import ClientError
@@ -25,12 +25,13 @@ from dagster._core.instance import T_DagsterInstance
 from dagster._core.launcher.base import (
     CheckRunHealthResult,
     LaunchRunContext,
+    ResumeRunContext,
     RunLauncher,
     WorkerStatus,
 )
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import RUN_WORKER_ID_TAG
-from dagster._grpc.types import ExecuteRunArgs
+from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.backoff import backoff
@@ -444,7 +445,17 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def _run_task(self, **run_task_kwargs):
         return run_ecs_task(self.ecs, run_task_kwargs)
 
+    @property
+    def supports_resume_run(self) -> bool:
+        return True
+    
+    def resume_run(self, context: ResumeRunContext) -> None:
+        self._launch_run(context, ResumeRunArgs)
+
     def launch_run(self, context: LaunchRunContext) -> None:
+        self._launch_run(context, ExecuteRunArgs)
+
+    def _launch_run(self, context: LaunchRunContext | ResumeRunContext, arg_type: Type[ExecuteRunArgs | ResumeRunArgs]) -> None:
         """Launch a run in an ECS task."""
         run = context.dagster_run
         container_context = EcsContainerContext.create_for_run(run, self)
@@ -462,7 +473,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         stripped_repository_origin = repository_origin._replace(container_context={})
         stripped_job_origin = job_origin._replace(repository_origin=stripped_repository_origin)
 
-        args = ExecuteRunArgs(
+        args = arg_type(
             job_origin=stripped_job_origin,
             run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
