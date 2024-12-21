@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentGenerateRequest, ComponentLoadContext, component
+from dagster_components.generate import generate_component_yaml
 
 
 class DefinitionsGenerateParams(BaseModel):
@@ -43,7 +44,21 @@ class DefinitionsComponent(Component):
         return load_definitions_from_module(module)
 
     @classmethod
-    def generate_files(
-        cls, request: ComponentGenerateRequest, params: DefinitionsGenerateParams
-    ) -> None:
-        raise NotImplementedError("Not implemented")
+    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None:
+        generate_params = (
+            params if isinstance(params, DefinitionsGenerateParams) else DefinitionsGenerateParams()
+        )
+
+        with pushd(str(request.component_instance_root_path)):
+            Path(
+                generate_params.definitions_path
+                if generate_params.definitions_path
+                else "definitions.py"
+            ).touch(exist_ok=True)
+
+        generate_component_yaml(
+            request,
+            {"definitions_path": generate_params.definitions_path}
+            if generate_params.definitions_path
+            else {},
+        )
