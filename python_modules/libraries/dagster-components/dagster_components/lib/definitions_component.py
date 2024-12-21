@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 
 from dagster._core.definitions.definitions_class import Definitions
@@ -6,7 +7,6 @@ from dagster._core.definitions.module_loaders.load_defs_from_module import (
 )
 from dagster._seven import import_module_from_path
 from dagster._utils import pushd
-from path import Path
 from pydantic import BaseModel
 from typing_extensions import Self
 
