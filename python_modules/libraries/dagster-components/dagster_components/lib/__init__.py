@@ -20,3 +20,4 @@ from dagster_components.lib.definitions_object_component import (
 from dagster_components.lib.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollection as PipesSubprocessScriptCollection,
 )
+from dagster_components.lib.uv_run_component import UnRunComponent as UnRunComponent
