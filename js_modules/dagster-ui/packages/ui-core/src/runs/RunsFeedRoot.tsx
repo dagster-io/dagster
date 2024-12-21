@@ -22,6 +22,7 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {RunsFeedView} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {Loading} from '../ui/Loading';
 
@@ -36,33 +37,17 @@ const filters: RunFilterTokenType[] = [
   'status',
 ];
 
-export function useIncludeRunsFromBackfillsOption() {
-  const [value, setValue] = useQueryPersistedState<boolean>({
-    queryKey: 'show_runs_within_backfills',
-    defaults: {show_runs_within_backfills: false},
-  });
-
-  return {
-    value,
-    setValue,
-    element: (
-      <Checkbox
-        label={<span>Show runs within backfills</span>}
-        checked={value}
-        onChange={() => {
-          setValue(!value);
-        }}
-      />
-    ),
-  };
-}
 export const RunsFeedRoot = () => {
   useTrackPageView();
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
+  const [view, setView] = useQueryPersistedState<RunsFeedView>({
+    queryKey: 'view',
+    defaults: {view: RunsFeedView.ROOTS},
+  });
 
-  const currentTab = useSelectedRunsFeedTab(filterTokens);
+  const currentTab = useSelectedRunsFeedTab(filterTokens, view);
   const staticStatusTags = currentTab !== 'all';
 
   const [statusTokens, nonStatusTokens] = partition(
@@ -104,16 +89,12 @@ export const RunsFeedRoot = () => {
     enabledFilters: filters,
   });
 
-  const includeRunsFromBackfills = useIncludeRunsFromBackfillsOption();
-  const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(
-    filter,
-    includeRunsFromBackfills.value,
-  );
+  const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(filter, view);
 
   const {entries, paginationProps, queryResult, scheduledQueryResult} = useRunsFeedEntries(
     filter,
     currentTab,
-    includeRunsFromBackfills.value,
+    view,
   );
   const refreshState = useQueryRefreshAtInterval(
     currentTab === 'scheduled' ? scheduledQueryResult : queryResult,
@@ -126,7 +107,15 @@ export const RunsFeedRoot = () => {
   const actionBarComponents = (
     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
       {button}
-      {includeRunsFromBackfills.element}
+
+      <Checkbox
+        label={<span>Show runs within backfills</span>}
+        checked={currentTab === 'queued' || view === RunsFeedView.RUNS}
+        disabled={currentTab === 'queued' || currentTab === 'backfills'}
+        onChange={() => {
+          setView(view === RunsFeedView.RUNS ? RunsFeedView.ROOTS : RunsFeedView.RUNS);
+        }}
+      />
     </Box>
   );
 

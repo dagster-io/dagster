@@ -22,7 +22,7 @@ import {
 } from './types/RunsFeedTableEntryFragment.types';
 import {useRunsFeedEntries} from './useRunsFeedEntries';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {RunsFilter} from '../graphql/types';
+import {RunsFeedView, RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
@@ -238,7 +238,11 @@ export const RunsFeedTableWithFilters = ({
   RunsFeedTableProps,
   'actionBarComponents' | 'belowActionBarComponents' | 'emptyState' | 'hideTags' | 'scroll'
 >) => {
-  const {entries, paginationProps, queryResult} = useRunsFeedEntries(filter, 'all', true);
+  const {entries, paginationProps, queryResult} = useRunsFeedEntries(
+    filter,
+    'all',
+    RunsFeedView.RUNS,
+  );
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   function content() {

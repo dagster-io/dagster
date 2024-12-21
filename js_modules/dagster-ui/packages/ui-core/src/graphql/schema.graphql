@@ -3312,10 +3312,10 @@ type Query {
   runsFeedOrError(
     limit: Int!
     cursor: String
+    view: RunsFeedView!
     filter: RunsFilter
-    includeRunsFromBackfills: Boolean
   ): RunsFeedConnectionOrError!
-  runsFeedCountOrError(filter: RunsFilter, includeRunsFromBackfills: Boolean): RunsFeedCountOrError!
+  runsFeedCountOrError(view: RunsFeedView!, filter: RunsFilter): RunsFeedCountOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!
@@ -3488,6 +3488,12 @@ type RunsFeedConnection {
   results: [RunsFeedEntry!]!
   cursor: String!
   hasMore: Boolean!
+}
+
+enum RunsFeedView {
+  ROOTS
+  RUNS
+  BACKFILLS
 }
 
 union RunsFeedCountOrError = RunsFeedCount | PythonError
