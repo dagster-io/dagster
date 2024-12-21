@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import datetime
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -394,7 +395,7 @@ class AssetMaterialization(
         asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-        partition: Optional[str] = None,
+        partition: Optional[Union[str, datetime.date, datetime.datetime]] = None,
         tags: Optional[Mapping[str, str]] = None,
     ):
         from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
@@ -413,7 +414,9 @@ class AssetMaterialization(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
-        partition = check.opt_str_param(partition, "partition")
+        partition = check.opt_inst_param(partition, "partition", (str, datetime.date, datetime.datetime))
+        if isinstance(partition, (datetime.date, datetime.datetime)):
+            partition = partition.isoformat()
 
         if not isinstance(partition, MultiPartitionKey):
             # When event log records are unpacked from storage, cast the partition key as a
