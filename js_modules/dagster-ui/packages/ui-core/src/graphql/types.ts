@@ -601,6 +601,11 @@ export type AssetSelection = {
   assetsOrError: AssetsOrError;
 };
 
+export type AssetWipeInProgress = {
+  __typename: 'AssetWipeInProgress';
+  workToken: Scalars['String']['output'];
+};
+
 export type AssetWipeMutationResult =
   | AssetNotFoundError
   | AssetWipeSuccess
@@ -721,6 +726,36 @@ export enum BackfillPolicyType {
   MULTI_RUN = 'MULTI_RUN',
   SINGLE_RUN = 'SINGLE_RUN',
 }
+
+export type BackgroundAssetWipeFailed = {
+  __typename: 'BackgroundAssetWipeFailed';
+  failedAt: Scalars['Float']['output'];
+  message: Scalars['String']['output'];
+  startedAt: Scalars['Float']['output'];
+};
+
+export type BackgroundAssetWipeInProgress = {
+  __typename: 'BackgroundAssetWipeInProgress';
+  startedAt: Scalars['Float']['output'];
+};
+
+export type BackgroundAssetWipeMutationResult =
+  | AssetNotFoundError
+  | AssetWipeInProgress
+  | PythonError
+  | UnauthorizedError
+  | UnsupportedOperationError;
+
+export type BackgroundAssetWipeStatus =
+  | BackgroundAssetWipeFailed
+  | BackgroundAssetWipeInProgress
+  | BackgroundAssetWipeSuccess;
+
+export type BackgroundAssetWipeSuccess = {
+  __typename: 'BackgroundAssetWipeSuccess';
+  completedAt: Scalars['Float']['output'];
+  startedAt: Scalars['Float']['output'];
+};
 
 export type BoolMetadataEntry = MetadataEntry & {
   __typename: 'BoolMetadataEntry';
@@ -2619,6 +2654,7 @@ export type MultiPartitionStatuses = {
 export type Mutation = {
   __typename: 'Mutation';
   addDynamicPartition: AddDynamicPartitionResult;
+  backgroundWipeAssets: BackgroundAssetWipeMutationResult;
   cancelPartitionBackfill: CancelBackfillResult;
   deleteConcurrencyLimit: Scalars['Boolean']['output'];
   deleteDynamicPartitions: DeleteDynamicPartitionsResult;
@@ -2661,6 +2697,10 @@ export type MutationAddDynamicPartitionArgs = {
   partitionKey: Scalars['String']['input'];
   partitionsDefName: Scalars['String']['input'];
   repositorySelector: RepositorySelector;
+};
+
+export type MutationBackgroundWipeAssetsArgs = {
+  assetPartitionRanges: Array<PartitionsByAssetSelector>;
 };
 
 export type MutationCancelPartitionBackfillArgs = {
@@ -3750,6 +3790,7 @@ export type Query = {
   autoMaterializeAssetEvaluationsOrError: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
   autoMaterializeEvaluationsForEvaluationId: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
   autoMaterializeTicks: Array<InstigationTick>;
+  backgroundAssetWipeStatus: BackgroundAssetWipeStatus;
   canBulkTerminate: Scalars['Boolean']['output'];
   capturedLogs: CapturedLogs;
   capturedLogsMetadata: CapturedLogsMetadata;
@@ -3879,6 +3920,10 @@ export type QueryAutoMaterializeTicksArgs = {
   dayRange?: InputMaybe<Scalars['Int']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   statuses?: InputMaybe<Array<InstigationTickStatus>>;
+};
+
+export type QueryBackgroundAssetWipeStatusArgs = {
+  workToken: Scalars['String']['input'];
 };
 
 export type QueryCapturedLogsArgs = {
@@ -6877,6 +6922,19 @@ export const buildAssetSelection = (
   };
 };
 
+export const buildAssetWipeInProgress = (
+  overrides?: Partial<AssetWipeInProgress>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetWipeInProgress'} & AssetWipeInProgress => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetWipeInProgress');
+  return {
+    __typename: 'AssetWipeInProgress',
+    workToken:
+      overrides && overrides.hasOwnProperty('workToken') ? overrides.workToken! : 'quaerat',
+  };
+};
+
 export const buildAssetWipeSuccess = (
   overrides?: Partial<AssetWipeSuccess>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -7113,6 +7171,46 @@ export const buildBackfillPolicy = (
       overrides && overrides.hasOwnProperty('policyType')
         ? overrides.policyType!
         : BackfillPolicyType.MULTI_RUN,
+  };
+};
+
+export const buildBackgroundAssetWipeFailed = (
+  overrides?: Partial<BackgroundAssetWipeFailed>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'BackgroundAssetWipeFailed'} & BackgroundAssetWipeFailed => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('BackgroundAssetWipeFailed');
+  return {
+    __typename: 'BackgroundAssetWipeFailed',
+    failedAt: overrides && overrides.hasOwnProperty('failedAt') ? overrides.failedAt! : 2.87,
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'dicta',
+    startedAt: overrides && overrides.hasOwnProperty('startedAt') ? overrides.startedAt! : 4.27,
+  };
+};
+
+export const buildBackgroundAssetWipeInProgress = (
+  overrides?: Partial<BackgroundAssetWipeInProgress>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'BackgroundAssetWipeInProgress'} & BackgroundAssetWipeInProgress => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('BackgroundAssetWipeInProgress');
+  return {
+    __typename: 'BackgroundAssetWipeInProgress',
+    startedAt: overrides && overrides.hasOwnProperty('startedAt') ? overrides.startedAt! : 0.47,
+  };
+};
+
+export const buildBackgroundAssetWipeSuccess = (
+  overrides?: Partial<BackgroundAssetWipeSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'BackgroundAssetWipeSuccess'} & BackgroundAssetWipeSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('BackgroundAssetWipeSuccess');
+  return {
+    __typename: 'BackgroundAssetWipeSuccess',
+    completedAt:
+      overrides && overrides.hasOwnProperty('completedAt') ? overrides.completedAt! : 3.54,
+    startedAt: overrides && overrides.hasOwnProperty('startedAt') ? overrides.startedAt! : 8.55,
   };
 };
 
@@ -10235,6 +10333,12 @@ export const buildMutation = (
         : relationshipsToOmit.has('AddDynamicPartitionSuccess')
           ? ({} as AddDynamicPartitionSuccess)
           : buildAddDynamicPartitionSuccess({}, relationshipsToOmit),
+    backgroundWipeAssets:
+      overrides && overrides.hasOwnProperty('backgroundWipeAssets')
+        ? overrides.backgroundWipeAssets!
+        : relationshipsToOmit.has('AssetNotFoundError')
+          ? ({} as AssetNotFoundError)
+          : buildAssetNotFoundError({}, relationshipsToOmit),
     cancelPartitionBackfill:
       overrides && overrides.hasOwnProperty('cancelPartitionBackfill')
         ? overrides.cancelPartitionBackfill!
@@ -12152,6 +12256,12 @@ export const buildQuery = (
       overrides && overrides.hasOwnProperty('autoMaterializeTicks')
         ? overrides.autoMaterializeTicks!
         : [],
+    backgroundAssetWipeStatus:
+      overrides && overrides.hasOwnProperty('backgroundAssetWipeStatus')
+        ? overrides.backgroundAssetWipeStatus!
+        : relationshipsToOmit.has('BackgroundAssetWipeFailed')
+          ? ({} as BackgroundAssetWipeFailed)
+          : buildBackgroundAssetWipeFailed({}, relationshipsToOmit),
     canBulkTerminate:
       overrides && overrides.hasOwnProperty('canBulkTerminate')
         ? overrides.canBulkTerminate!
