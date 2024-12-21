@@ -19,10 +19,12 @@ def get_materialization(
     raise Exception(f"Materialization for asset key {asset_key} not found in result")
 
 
-def remove_first_line(multi_string):
-    lines = multi_string.split("\n")
-    lines_without_first = lines[1:]
-    return "\n".join(lines_without_first)
+def text_metadata(materialization: AssetMaterialization, key: str) -> str:
+    assert key in materialization.metadata
+    metadata_value = materialization.metadata[key]
+    assert isinstance(metadata_value, TextMetadataValue)
+    assert metadata_value.value is not None
+    return metadata_value.value
 
 
 def test_definitions_component_with_default_file() -> None:
@@ -34,9 +36,5 @@ def test_definitions_component_with_default_file() -> None:
     mat_events = result.get_asset_materialization_events()
     assert len(mat_events) == 1
     materialization = get_materialization(result, "an_asset")
-
-    assert isinstance(materialization.metadata["foo"], TextMetadataValue)
-    assert materialization.metadata["foo"].value == "bar"
-
-    assert isinstance(materialization.metadata["cowsay"], TextMetadataValue)
-    assert "hello world" in (materialization.metadata["cowsay"].value or "")
+    assert text_metadata(materialization, "foo") == "bar"
+    assert "hello world" in text_metadata(materialization, "cowsay")
