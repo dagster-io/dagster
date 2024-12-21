@@ -474,7 +474,7 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
     # job has finished.
     def _get_log_path(self, params: PipesParams) -> Optional[str]:
         if self.log_path is None:
-            cluster_driver_log_root = params["extras"].get("cluster_driver_log_root")
+            cluster_driver_log_root = params.get("extras", {}).get("cluster_driver_log_root")
             if cluster_driver_log_root is None:
                 return None
             try:
