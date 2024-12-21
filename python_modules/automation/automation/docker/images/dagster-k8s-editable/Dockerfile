@@ -12,4 +12,5 @@ RUN python -m uv pip install \
     -e dagster-postgres \
     -e dagster-k8s \
     -e dagster-aws \
-    -e dagster-webserver
+    -e dagster-webserver \
+    grpcio==1.57.0 # workaround for reported memmory leak issues with later versions of grpc
