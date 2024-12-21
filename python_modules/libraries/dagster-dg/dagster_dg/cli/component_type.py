@@ -5,6 +5,7 @@ from typing import Any, Mapping
 
 import click
 
+from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.context import (
     CodeLocationDirectoryContext,
     DgContext,
@@ -26,14 +27,14 @@ def component_type_group():
 
 @component_type_group.command(name="generate", cls=DgClickCommand)
 @click.argument("name", type=str)
-@click.pass_context
-def component_type_generate_command(cli_context: click.Context, name: str) -> None:
+@dg_global_options
+def component_type_generate_command(name: str, **global_options: object) -> None:
     """Generate a scaffold of a custom Dagster component type.
 
     This command must be run inside a Dagster code location directory. The component type scaffold
     will be generated in submodule `<code_location_name>.lib.<name>`.
     """
-    dg_context = DgContext.from_cli_context(cli_context)
+    dg_context = DgContext.from_cli_global_options(global_options)
     if not is_inside_code_location_directory(Path.cwd()):
         click.echo(
             click.style(
@@ -60,16 +61,16 @@ def component_type_generate_command(cli_context: click.Context, name: str) -> No
 @click.option("--description", is_flag=True, default=False)
 @click.option("--generate-params-schema", is_flag=True, default=False)
 @click.option("--component-params-schema", is_flag=True, default=False)
-@click.pass_context
+@dg_global_options
 def component_type_info_command(
-    cli_context: click.Context,
     component_type: str,
     description: bool,
     generate_params_schema: bool,
     component_params_schema: bool,
+    **global_options: object,
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
-    dg_context = DgContext.from_cli_context(cli_context)
+    dg_context = DgContext.from_cli_global_options(global_options)
     if not is_inside_code_location_directory(Path.cwd()):
         click.echo(
             click.style(
@@ -136,10 +137,10 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
 
 
 @component_type_group.command(name="list", cls=DgClickCommand)
-@click.pass_context
-def component_type_list(cli_context: click.Context) -> None:
+@dg_global_options
+def component_type_list(**global_options: object) -> None:
     """List registered Dagster components in the current code location environment."""
-    dg_context = DgContext.from_cli_context(cli_context)
+    dg_context = DgContext.from_cli_global_options(global_options)
     if not is_inside_code_location_directory(Path.cwd()):
         click.echo(
             click.style(

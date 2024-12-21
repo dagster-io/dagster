@@ -4,9 +4,8 @@ import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, Iterable, Optional, Tuple
+from typing import Final, Iterable, Mapping, Optional, Tuple
 
-import click
 import tomli
 from typing_extensions import Self
 
@@ -80,20 +79,30 @@ _CODE_LOCATION_COMPONENT_INSTANCES_DIR: Final = "components"
 @dataclass
 class DgContext:
     config: DgConfig
-    cache: Optional[DgCache] = None
+    _cache: Optional[DgCache] = None
 
     @classmethod
-    def from_cli_context(cls, cli_context: click.Context) -> Self:
-        return cls.from_config(config=DgConfig.from_cli_context(cli_context))
+    def from_cli_global_options(cls, global_options: Mapping[str, object]) -> Self:
+        return cls.from_config(config=DgConfig.from_cli_global_options(global_options))
 
     @classmethod
     def from_config(cls, config: DgConfig) -> Self:
         cache = None if config.disable_cache else DgCache.from_config(config)
-        return cls(config=config, cache=cache)
+        return cls(config=config, _cache=cache)
 
     @classmethod
     def default(cls) -> Self:
         return cls.from_config(DgConfig.default())
+
+    @property
+    def cache(self) -> DgCache:
+        if not self._cache:
+            raise DgError("Cache is disabled")
+        return self._cache
+
+    @property
+    def has_cache(self) -> bool:
+        return self._cache is not None
 
 
 @dataclass
@@ -146,17 +155,16 @@ def ensure_uv_lock(root_path: Path) -> None:
 def fetch_component_registry(path: Path, dg_context: DgContext) -> RemoteComponentRegistry:
     root_path = resolve_code_location_root_directory(path)
 
-    cache = dg_context.cache
-    if cache:
+    if dg_context.has_cache:
         cache_key = make_cache_key(root_path, "component_registry_data")
 
-    raw_registry_data = cache.get(cache_key) if cache else None
+    raw_registry_data = dg_context.cache.get(cache_key) if dg_context.has_cache else None
     if not raw_registry_data:
         raw_registry_data = execute_code_location_command(
             root_path, ["list", "component-types"], dg_context
         )
-        if cache:
-            cache.set(cache_key, raw_registry_data)
+        if dg_context.has_cache:
+            dg_context.cache.set(cache_key, raw_registry_data)
 
     registry_data = json.loads(raw_registry_data)
     return RemoteComponentRegistry.from_dict(registry_data)

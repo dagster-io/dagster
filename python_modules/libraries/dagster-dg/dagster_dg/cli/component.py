@@ -1,11 +1,18 @@
 import sys
 from pathlib import Path
-from typing import Any, Mapping, Optional
+from typing import Any, List, Mapping, Optional
 
 import click
 from click.core import ParameterSource
 
+from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.component import RemoteComponentType
+from dagster_dg.config import (
+    DgConfig,
+    get_config_from_cli_context,
+    has_config_on_cli_context,
+    set_config_on_cli_context,
+)
 from dagster_dg.context import (
     CodeLocationDirectoryContext,
     DgContext,
@@ -16,6 +23,7 @@ from dagster_dg.utils import (
     DgClickCommand,
     DgClickGroup,
     json_schema_property_to_click_option,
+    not_none,
     parse_json_option,
 )
 
@@ -48,14 +56,17 @@ class ComponentGenerateGroup(DgClickGroup):
             self._define_commands(cli_context)
         return super().get_command(cli_context, cmd_name)
 
-    def list_commands(self, cli_context):
+    def list_commands(self, cli_context: click.Context) -> List[str]:
         if not self._commands_defined:
             self._define_commands(cli_context)
         return super().list_commands(cli_context)
 
     def _define_commands(self, cli_context: click.Context) -> None:
         """Dynamically define a command for each registered component type."""
-        app_context = DgContext.from_cli_context(cli_context)
+        if not has_config_on_cli_context(cli_context):
+            cli_context.invoke(not_none(self.callback), **cli_context.params)
+        config = get_config_from_cli_context(cli_context)
+        dg_context = DgContext.from_config(config)
 
         if not is_inside_code_location_directory(Path.cwd()):
             click.echo(
@@ -65,21 +76,51 @@ class ComponentGenerateGroup(DgClickGroup):
             )
             sys.exit(1)
 
-        context = CodeLocationDirectoryContext.from_path(Path.cwd(), app_context)
+        context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
         for key, component_type in context.iter_component_types():
             command = _create_component_generate_subcommand(key, component_type)
             self.add_command(command)
 
 
-@component_group.group(name="generate", cls=ComponentGenerateGroup)
-def component_generate_group() -> None:
+# We have to override the usual Click processing of `--help` here. The issue is
+# that click will process this option before processing anything else, but because we are
+# dynamically generating subcommands based on the content of other options, the output of --help
+# actually depends on these other options. So we opt out of Click's short-circuiting
+# behavior of `--help` by setting `help_option_names=[]`, ensuring that we can process the other
+# options first and generate the correct subcommands. We then add a custom `--help` option that
+# gets invoked inside the callback.
+@component_group.group(
+    name="generate",
+    cls=ComponentGenerateGroup,
+    invoke_without_command=True,
+    context_settings={"help_option_names": []},
+)
+@click.option("-h", "--help", "help_", is_flag=True, help="Show this message and exit.")
+@dg_global_options
+@click.pass_context
+def component_generate_group(context: click.Context, help_: bool, **global_options: object) -> None:
     """Generate a scaffold of a Dagster component."""
+    # Click attempts to resolve subcommands BEFORE it invokes this callback.
+    # Therefore we need to manually invoke this callback during subcommand generation to make sure
+    # it runs first. It will be invoked again later by Click. We make it idempotent to deal with
+    # that.
+    if not has_config_on_cli_context(context):
+        set_config_on_cli_context(context, DgConfig.from_cli_global_options(global_options))
+    if help_:
+        click.echo(context.get_help())
+        context.exit(0)
 
 
 def _create_component_generate_subcommand(
     component_key: str, component_type: RemoteComponentType
 ) -> DgClickCommand:
-    @click.command(name=component_key, cls=DgClickCommand)
+    # We need to "reset" the help option names to the default ones because we inherit the parent
+    # value of context settings from the parent group, which has been customized.
+    @click.command(
+        name=component_key,
+        cls=DgClickCommand,
+        context_settings={"help_option_names": ["-h", "--help"]},
+    )
     @click.argument("component_name", type=str)
     @click.option(
         "--json-params",
@@ -88,6 +129,7 @@ def _create_component_generate_subcommand(
         help="JSON string of component parameters.",
         callback=parse_json_option,
     )
+    @dg_global_options
     @click.pass_context
     def generate_component_command(
         cli_context: click.Context,
@@ -112,7 +154,8 @@ def _create_component_generate_subcommand(
 
         It is an error to pass both --json-params and key-value pairs as options.
         """
-        dg_context = DgContext.from_cli_context(cli_context)
+        config = get_config_from_cli_context(cli_context)
+        dg_context = DgContext.from_config(config)
         if not is_inside_code_location_directory(Path.cwd()):
             click.echo(
                 click.style(
@@ -185,10 +228,10 @@ def _create_component_generate_subcommand(
 
 
 @component_group.command(name="list", cls=DgClickCommand)
-@click.pass_context
-def component_list_command(cli_context: click.Context) -> None:
+@dg_global_options
+def component_list_command(**global_options: object) -> None:
     """List Dagster component instances defined in the current code location."""
-    dg_context = DgContext.from_cli_context(cli_context)
+    dg_context = DgContext.from_cli_global_options(global_options)
     if not is_inside_code_location_directory(Path.cwd()):
         click.echo(
             click.style(
