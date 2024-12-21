@@ -1,0 +1,12 @@
+type: dagster_components.uv_run
+
+params:
+  op:
+    name: the_step
+    tags:
+      tag1: value1
+      tag2: value2
+
+  assets:
+    - key: an_asset
+      description: "A description"

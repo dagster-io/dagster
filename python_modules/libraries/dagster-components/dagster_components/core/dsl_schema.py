@@ -24,8 +24,7 @@ class OpSpecBaseModel(BaseModel):
     tags: Optional[Dict[str, str]] = None
 
 
-class AssetAttributesModel(RenderedModel):
-    key: Optional[str] = None
+class AssetModelBase(RenderedModel):
     deps: Sequence[str] = []
     description: Optional[str] = None
     metadata: Annotated[
@@ -41,6 +40,18 @@ class AssetAttributesModel(RenderedModel):
     automation_condition: Annotated[
         Optional[str], RenderingMetadata(output_type=Optional[AutomationCondition])
     ] = None
+
+
+class AssetAttributesModel(AssetModelBase):
+    key: Optional[str] = None
+
+
+class AssetSpecModel(AssetModelBase):
+    key: str
+
+    def render_spec(self, value_resolver: TemplatedValueResolver) -> AssetSpec:
+        attributes = self.render_properties(value_resolver)
+        return AssetSpec(**attributes)
 
 
 class AssetSpecProcessor(ABC, BaseModel):

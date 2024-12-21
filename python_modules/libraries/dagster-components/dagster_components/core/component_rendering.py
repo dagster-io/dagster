@@ -86,7 +86,9 @@ class RenderedModel(BaseModel):
 
         # validate that the rendered properties match the output type
         for k, v in rendered_properties.items():
-            annotation = self.__annotations__[k]
+            annotation = self.model_fields[k].annotation
+            if annotation is None:
+                raise Exception(f"Annotation missing for field {k}")
             expected_type = _get_expected_type(annotation)
             if expected_type is not None:
                 # hook into pydantic's type validation to handle complicated stuff like Optional[Mapping[str, int]]
