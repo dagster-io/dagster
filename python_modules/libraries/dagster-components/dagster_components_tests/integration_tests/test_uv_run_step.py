@@ -31,6 +31,9 @@ def test_definitions_component_with_default_file() -> None:
     defs = load_test_component_defs("native_steps/uv_run_hello_world")
     assert {spec.key for spec in defs.get_all_asset_specs()} == {AssetKey("an_asset")}
 
+    assets_def = defs.get_asset_graph().assets_def_for_key(AssetKey("an_asset"))
+    assert assets_def.op.name == "the_step"
+
     result = defs.get_implicit_global_asset_job_def().execute_in_process()
     assert result.success
     mat_events = result.get_asset_materialization_events()
