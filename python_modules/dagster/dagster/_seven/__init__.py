@@ -47,6 +47,21 @@ def import_module_from_path(module_name: str, path_to_file: str) -> ModuleType:
     return module
 
 
+def import_uncached_module_from_path(module_name: str, path_to_file: str) -> ModuleType:
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(module_name, path_to_file)
+    if spec is None:
+        raise Exception(
+            f"Can not import module {module_name} from path {path_to_file}, unable to load spec."
+        )
+
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader
+    spec.loader.exec_module(module)
+    return module
+
+
 time_fn = time.perf_counter
 
 
