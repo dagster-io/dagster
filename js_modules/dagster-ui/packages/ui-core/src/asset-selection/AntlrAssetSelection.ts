@@ -9,6 +9,7 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AntlrAssetSelectionVisitor} from './AntlrAssetSelectionVisitor';
 import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 import {AssetSelectionLexer} from './generated/AssetSelectionLexer';
 import {AssetSelectionParser} from './generated/AssetSelectionParser';
 import {featureEnabled} from '../app/Flags';
@@ -65,17 +66,17 @@ export const parseAssetSelectionQuery = (
   }
 };
 
-export const filterAssetSelectionByQuery = (
-  all_assets: AssetGraphQueryItem[],
-  query: string,
-): AssetSelectionQueryResult => {
-  if (featureEnabled(FeatureFlag.flagAssetSelectionSyntax)) {
-    const result = parseAssetSelectionQuery(all_assets, query);
-    if (result instanceof Error) {
-      // fall back to old behavior
-      return filterByQuery(all_assets, query);
+export const filterAssetSelectionByQuery = weakMapMemoize(
+  (all_assets: AssetGraphQueryItem[], query: string): AssetSelectionQueryResult => {
+    if (featureEnabled(FeatureFlag.flagAssetSelectionSyntax)) {
+      const result = parseAssetSelectionQuery(all_assets, query);
+      if (result instanceof Error) {
+        // fall back to old behavior
+        return filterByQuery(all_assets, query);
+      }
+      return result;
     }
-    return result;
-  }
-  return filterByQuery(all_assets, query);
-};
+    return filterByQuery(all_assets, query);
+  },
+  {maxEntries: 20},
+);

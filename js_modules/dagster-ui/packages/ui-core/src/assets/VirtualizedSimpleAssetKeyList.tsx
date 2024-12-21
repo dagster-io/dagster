@@ -13,7 +13,7 @@ export const VirtualizedSimpleAssetKeyList = ({
   style,
 }: {
   assetKeys: AssetKeyInput[];
-  style: CSSProperties;
+  style?: CSSProperties;
 }) => {
   const parentRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({

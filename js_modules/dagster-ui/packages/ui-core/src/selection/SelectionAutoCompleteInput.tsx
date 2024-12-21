@@ -179,8 +179,10 @@ export const InputDiv = styled.div`
   ${SelectionAutoCompleteInputCSS}
 `;
 
+// Z-index: 21 to beat out Dialog's z-index: 20
 const GlobalHintStyles = createGlobalStyle`
   .CodeMirror-hints {
+    z-index: 21;
     background: ${Colors.popoverBackground()};
     border: none;
     border-radius: 4px;
@@ -201,12 +203,14 @@ const GlobalHintStyles = createGlobalStyle`
 function showHint(instance: Editor, hint: HintFunction) {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      instance.showHint({
-        hint,
-        completeSingle: false,
-        moveOnOverlap: true,
-        updateOnCursorActivity: true,
-      });
+      if (instance.getWrapperElement().contains(document.activeElement)) {
+        instance.showHint({
+          hint,
+          completeSingle: false,
+          moveOnOverlap: true,
+          updateOnCursorActivity: true,
+        });
+      }
     });
   });
 }
