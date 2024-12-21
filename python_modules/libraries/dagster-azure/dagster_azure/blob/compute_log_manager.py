@@ -35,26 +35,8 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
 
     This is also compatible with Azure Data Lake Storage.
 
-    Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``
-    such as the following:
-
-    .. code-block:: YAML
-
-        compute_logs:
-          module: dagster_azure.blob.compute_log_manager
-          class: AzureBlobComputeLogManager
-          config:
-            storage_account: my-storage-account
-            container: my-container
-            secret_credential:
-              client_id: my-client-id
-              client_secret: my-client-secret
-              tenant_id: my-tenant-id
-            default_azure_credential:
-              exclude_environment_credential: true
-            prefix: "dagster-test-"
-            local_dir: "/tmp/cool"
-            upload_interval: 30
+    Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``. Examples provided below
+    will show how to configure with various credentialing schemes.
 
     Args:
         storage_account (str): The storage account name to which to log.
@@ -69,6 +51,42 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         upload_interval: (Optional[int]): Interval in seconds to upload partial log files blob storage. By default, will only upload when the capture is complete.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
+
+    Examples:
+    Using an Azure Blob Storage account with an [AzureSecretCredential](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.clientsecretcredential?view=azure-python):
+
+    .. code-block:: YAML
+
+        compute_logs:
+          module: dagster_azure.blob.compute_log_manager
+          class: AzureBlobComputeLogManager
+          config:
+            storage_account: my-storage-account
+            container: my-container
+            secret_credential:
+              client_id: my-client-id
+              client_secret: my-client-secret
+              tenant_id: my-tenant-id
+            prefix: "dagster-test-"
+            local_dir: "/tmp/cool"
+            upload_interval: 30
+
+    Using an Azure Blob Storage account with a [DefaultAzureCredential](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.defaultazurecredential?view=azure-python):
+
+    .. code-block:: YAML
+
+        compute_logs:
+          module: dagster_azure.blob.compute_log_manager
+          class: AzureBlobComputeLogManager
+          config:
+            storage_account: my-storage-account
+            container: my-container
+            default_azure_credential:
+              exclude_environment_credential: false
+            prefix: "dagster-test-"
+            local_dir: "/tmp/cool"
+            upload_interval: 30
+
     """
 
     def __init__(

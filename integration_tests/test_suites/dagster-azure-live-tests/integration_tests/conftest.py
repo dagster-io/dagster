@@ -9,6 +9,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Generator, List
 
+import psutil
 import pytest
 import requests
 from dagster._core.test_utils import environ
@@ -27,12 +28,29 @@ def _dagster_is_ready(port: int) -> bool:
         return False
 
 
+def path_to_dagster_yamls() -> Path:
+    return Path(__file__).parent / "dagster-yamls"
+
+
+@pytest.fixture(name="dagster_yaml")
+def dagster_yaml_path(request) -> Generator[Path, None, None]:
+    additional_env_vars = {}
+    if request.param == "default-credential.yaml":
+        additional_env_vars = {
+            "AZURE_CLIENT_ID": os.environ["TEST_AZURE_CLIENT_ID"],
+            "AZURE_CLIENT_SECRET": os.environ["TEST_AZURE_CLIENT_SECRET"],
+            "AZURE_TENANT_ID": os.environ["TEST_AZURE_TENANT_ID"],
+        }
+    with environ(additional_env_vars):
+        yield path_to_dagster_yamls() / request.param
+
+
 @pytest.fixture(name="dagster_home")
-def setup_dagster_home() -> Generator[str, None, None]:
+def setup_dagster_home(dagster_yaml: Path) -> Generator[str, None, None]:
     """Instantiate a temporary directory to serve as the DAGSTER_HOME."""
     with TemporaryDirectory() as tmpdir:
         # Copy over dagster.yaml
-        shutil.copy2(integration_test_dir() / "dagster.yaml", tmpdir)
+        shutil.copy2(dagster_yaml, Path(tmpdir) / "dagster.yaml")
         with environ({"DAGSTER_HOME": tmpdir}):
             yield tmpdir
 
@@ -75,4 +93,5 @@ def stand_up_dagster(
         assert dagster_ready, "Dagster did not start within 30 seconds..."
         yield process
     finally:
-        os.killpg(process.pid, signal.SIGKILL)
+        if psutil.Process(process.pid).is_running():
+            os.killpg(process.pid, signal.SIGKILL)
