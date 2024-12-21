@@ -14,6 +14,9 @@ if _has_dagster_embedded_elt:
 from dagster_components.lib.definitions_component import (
     DefinitionsComponent as DefinitionsComponent,
 )
+from dagster_components.lib.definitions_object_component import (
+    DefinitionsObjectComponent as DefinitionsObjectComponent,
+)
 from dagster_components.lib.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollection as PipesSubprocessScriptCollection,
 )

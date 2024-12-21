@@ -1,0 +1,4 @@
+type: dagster_components.definitions_object
+
+params:
+  definitions_path: explicit_defs_file.py
