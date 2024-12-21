@@ -127,6 +127,8 @@ In the example, a <PyObject object="RunRequest"/> is requested for each file dur
 
 Run keys allow you to write sensor evaluation functions that declaratively describe what runs should exist, and helps you avoid the need for more complex logic that manages state. However, when dealing with high-volume external events, some state-tracking optimizations might be necessary.
 
+NOTE: when a sensor evaluation yields multiple <PyObject object="RunRequest"/> objects with the same `run_key`, Dagster will execute all of them. The `run_key` will not be used to deduplicate or skip <PyObject object="RunRequest"/> objects within the same sensor evaluation.
+
 ### Sensor optimizations using cursors
 
 When writing a sensor that deals with high-volume events, it might not be feasible to yield a <PyObject object="RunRequest"/> during every sensor evaluation. For example, you may have an `s3` storage bucket that contains thousands of files.
