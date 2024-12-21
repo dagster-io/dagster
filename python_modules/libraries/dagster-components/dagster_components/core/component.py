@@ -31,7 +31,7 @@ from dagster._utils import pushd, snakecase
 from pydantic import TypeAdapter
 from typing_extensions import Self
 
-from dagster_components.core.component_rendering import TemplatedValueResolver, preprocess_value
+from dagster_components.core.component_rendering import TemplatedValueResolver
 
 
 class ComponentDeclNode: ...
@@ -254,8 +254,8 @@ class ComponentLoadContext:
 
     def load_params(self, params_schema: Type[T]) -> T:
         with pushd(str(self.path)):
-            preprocessed_params = preprocess_value(
-                self.templated_value_resolver, self._raw_params(), params_schema
+            preprocessed_params = self.templated_value_resolver.resolve_params(
+                self._raw_params(), params_schema
             )
             return TypeAdapter(params_schema).validate_python(preprocessed_params)
 

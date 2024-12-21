@@ -120,7 +120,7 @@ class DbtProjectComponent(Component):
 
         defs = Definitions(assets=[_fn])
         for transform in self.asset_processors:
-            defs = transform.apply(defs)
+            defs = transform.apply(defs, context.templated_value_resolver)
         return defs
 
     @classmethod

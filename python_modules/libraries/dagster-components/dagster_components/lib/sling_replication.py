@@ -60,7 +60,7 @@ class SlingReplicationComponent(Component):
 
         defs = Definitions(assets=[_fn], resources={"sling": self.resource})
         for transform in self.asset_processors:
-            defs = transform.apply(defs)
+            defs = transform.apply(defs, context.templated_value_resolver)
         return defs
 
     @classmethod
