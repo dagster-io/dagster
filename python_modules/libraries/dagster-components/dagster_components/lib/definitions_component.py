@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentGenerateRequest, ComponentLoadContext, component
+from dagster_components.core.component import get_python_module_name
 from dagster_components.generate import generate_component_yaml
 
 
@@ -39,7 +40,10 @@ class DefinitionsComponent(Component):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         with pushd(str(context.path)):
-            module = import_uncached_module_from_path("definitions", str(self.definitions_path))
+            module = import_uncached_module_from_path(
+                get_python_module_name(context, self.definitions_path.stem),
+                str(self.definitions_path),
+            )
 
         return load_definitions_from_module(module)
 

@@ -6,7 +6,7 @@ from typing import Generator
 
 import pytest
 from dagster import AssetKey
-from dagster_components.core.component_decl_builder import ComponentFileModel
+from dagster_components.core.component_decl_builder import ComponentFileModel, ComponentInstanceKey
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
     build_components_from_component_folder,
@@ -53,6 +53,7 @@ def test_python_params(dbt_path: Path) -> None:
                 "op": {"name": "some_op", "tags": {"tag1": "value"}},
             },
         ),
+        key=ComponentInstanceKey(parts=["dbt_project"]),
     )
     component = DbtProjectComponent.load(context=script_load_context(decl_node))
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS

@@ -75,17 +75,17 @@ class CodeLocationProjectContext:
         components_folder: Path,
     ):
         self._root_path = root_path
-        self._name = name
+        self.name = name
         self._component_registry = component_registry
         self._components_folder = components_folder
 
     @property
     def component_types_root_path(self) -> str:
-        return os.path.join(self._root_path, self._name, _CODE_LOCATION_CUSTOM_COMPONENTS_DIR)
+        return os.path.join(self._root_path, self.name, _CODE_LOCATION_CUSTOM_COMPONENTS_DIR)
 
     @property
     def component_types_root_module(self) -> str:
-        return f"{self._name}.{_CODE_LOCATION_CUSTOM_COMPONENTS_DIR}"
+        return f"{self.name}.{_CODE_LOCATION_CUSTOM_COMPONENTS_DIR}"
 
     @property
     def component_registry(self) -> "ComponentRegistry":

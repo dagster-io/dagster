@@ -9,6 +9,7 @@ from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_components.core.component import (
     Component,
+    ComponentInstanceKey,
     ComponentLoadContext,
     ComponentRegistry,
     TemplatedValueResolver,
@@ -84,18 +85,19 @@ def component_type_from_yaml_decl(
 def build_components_from_component_folder(
     context: ComponentLoadContext, path: Path
 ) -> Sequence[Component]:
-    component_folder = path_to_decl_node(path)
+    component_folder = path_to_decl_node(path, ComponentInstanceKey.root())
     assert isinstance(component_folder, ComponentFolder)
     return load_components_from_context(context.for_decl_node(component_folder))
 
 
 def build_defs_from_component_path(
+    code_location_name: str,
     path: Path,
     registry: ComponentRegistry,
     resources: Mapping[str, object],
 ) -> "Definitions":
     """Build a definitions object from a folder within the components hierarchy."""
-    decl_node = path_to_decl_node(path=path)
+    decl_node = path_to_decl_node(path=path, current_key=ComponentInstanceKey.root())
     if not decl_node:
         raise Exception(f"No component found at path {path}")
 
@@ -104,6 +106,7 @@ def build_defs_from_component_path(
         registry=registry,
         decl_node=decl_node,
         templated_value_resolver=TemplatedValueResolver.default(),
+        code_location_name=code_location_name,
     )
     components = load_components_from_context(context)
     return defs_from_components(resources=resources, context=context, components=components)
@@ -149,6 +152,7 @@ def build_component_defs(
     for component in context.component_instances:
         component_path = Path(context.get_component_instance_path(component))
         defs = build_defs_from_component_path(
+            code_location_name=context.name,
             path=component_path,
             registry=context.component_registry,
             resources=resources or {},

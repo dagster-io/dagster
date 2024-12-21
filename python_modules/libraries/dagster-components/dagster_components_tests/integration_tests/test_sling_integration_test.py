@@ -11,6 +11,7 @@ from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.env import environ
+from dagster_components.core.component import ComponentInstanceKey
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
@@ -23,6 +24,7 @@ from dagster_components_tests.utils import assert_assets, get_asset_keys, script
 
 STUB_LOCATION_PATH = Path(__file__).parent.parent / "stub_code_locations" / "sling_location"
 COMPONENT_RELPATH = "components/ingest"
+COMPONENT_INSTANCE_KEY = ComponentInstanceKey(parts=["ingest"])
 
 
 def _update_yaml(path: Path, fn) -> None:
@@ -72,6 +74,7 @@ def test_python_params(sling_path: Path) -> None:
             type="sling_replication",
             params={"sling": {}},
         ),
+        key=COMPONENT_INSTANCE_KEY,
     )
     context = script_load_context(decl_node)
     component = SlingReplicationComponent.load(context)
@@ -93,6 +96,7 @@ def test_python_params_op_name(sling_path: Path) -> None:
             type="sling_replication",
             params={"sling": {}, "op": {"name": "my_op"}},
         ),
+        key=COMPONENT_INSTANCE_KEY,
     )
     context = script_load_context(decl_node)
     component = SlingReplicationComponent.load(context=context)
@@ -114,6 +118,7 @@ def test_python_params_op_tags(sling_path: Path) -> None:
             type="sling_replication",
             params={"sling": {}, "op": {"tags": {"tag1": "value1"}}},
         ),
+        key=COMPONENT_INSTANCE_KEY,
     )
     context = script_load_context(decl_node)
     component = SlingReplicationComponent.load(context=context)
@@ -150,6 +155,7 @@ def test_sling_subclass() -> None:
             type="debug_sling_replication",
             params={"sling": {}},
         ),
+        key=COMPONENT_INSTANCE_KEY,
     )
     component_inst = DebugSlingReplicationComponent.load(
         context=script_load_context(decl_node),
