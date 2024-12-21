@@ -9,6 +9,7 @@ from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_components.core.component import (
     Component,
+    ComponentKey,
     ComponentLoadContext,
     ComponentTypeRegistry,
     TemplatedValueResolver,
@@ -17,6 +18,7 @@ from dagster_components.core.component import (
 )
 from dagster_components.core.component_decl_builder import (
     ComponentFolder,
+    PythonComponentDecl,
     YamlComponentDecl,
     path_to_decl_node,
 )
@@ -44,6 +46,8 @@ def load_components_from_context(context: ComponentLoadContext) -> Sequence[Comp
         component_type = component_type_from_yaml_decl(context.registry, context.decl_node)
         context = context.with_rendering_scope(component_type.get_rendering_scope())
         return [component_type.load(context)]
+    elif isinstance(context.decl_node, PythonComponentDecl):
+        return [context.decl_node.component_declaration(context)]
     elif isinstance(context.decl_node, ComponentFolder):
         components = []
         for sub_decl in context.decl_node.sub_decls:
@@ -84,18 +88,27 @@ def component_type_from_yaml_decl(
 def build_components_from_component_folder(
     context: ComponentLoadContext, path: Path
 ) -> Sequence[Component]:
-    component_folder = path_to_decl_node(path)
+    component_folder = path_to_decl_node(
+        path=path,
+        current_key=ComponentKey.root(),
+        code_location_name=context.code_location_name,
+    )
     assert isinstance(component_folder, ComponentFolder)
     return load_components_from_context(context.for_decl_node(component_folder))
 
 
 def build_defs_from_component_path(
+    code_location_name: str,
     path: Path,
     registry: ComponentTypeRegistry,
     resources: Mapping[str, object],
 ) -> "Definitions":
     """Build a definitions object from a folder within the components hierarchy."""
-    decl_node = path_to_decl_node(path=path)
+    decl_node = path_to_decl_node(
+        path=path,
+        current_key=ComponentKey.root(),
+        code_location_name=code_location_name,
+    )
     if not decl_node:
         raise Exception(f"No component found at path {path}")
 
@@ -104,6 +117,7 @@ def build_defs_from_component_path(
         registry=registry,
         decl_node=decl_node,
         templated_value_resolver=TemplatedValueResolver.default(),
+        code_location_name=code_location_name,
     )
     components = load_components_from_context(context)
     return defs_from_components(resources=resources, context=context, components=components)
@@ -149,6 +163,7 @@ def build_component_defs(
     for component in context.component_instances:
         component_path = Path(context.get_component_instance_path(component))
         defs = build_defs_from_component_path(
+            code_location_name=context.name,
             path=component_path,
             registry=context.component_registry,
             resources=resources or {},

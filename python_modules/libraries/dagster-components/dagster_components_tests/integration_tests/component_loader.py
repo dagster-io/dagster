@@ -16,6 +16,7 @@ from dagster_components.core.deployment import CodeLocationProjectContext
 def load_test_component_defs(name: str) -> Definitions:
     context = load_test_component_project_context()
     return build_defs_from_component_path(
+        code_location_name=context.name,
         path=Path(__file__).parent / "components" / name,
         registry=context.component_registry,
         resources={},

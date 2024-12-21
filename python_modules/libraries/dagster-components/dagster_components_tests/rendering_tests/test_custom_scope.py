@@ -11,6 +11,7 @@ def test_custom_scope() -> None:
         path=Path(__file__).parent / "custom_scope_component",
         registry=registry(),
         resources={},
+        code_location_name="custom_scope",
     )
 
     assets = list(defs.assets or [])

@@ -7,6 +7,7 @@ import sys
 import textwrap
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 from types import ModuleType
 from typing import (
@@ -14,6 +15,7 @@ from typing import (
     ClassVar,
     Dict,
     Iterable,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -25,8 +27,9 @@ from typing import (
 import click
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.utils import is_valid_name
 from dagster._core.errors import DagsterError
-from dagster._record import record
+from dagster._record import IHaveNew, record, record_custom
 from dagster._utils import pushd, snakecase
 from pydantic import TypeAdapter
 from typing_extensions import Self
@@ -35,6 +38,40 @@ from dagster_components.core.component_rendering import TemplatedValueResolver
 
 
 class ComponentDeclNode: ...
+
+
+@record_custom
+class ComponentKey(IHaveNew):
+    """Uniquely identifies a component instance within a component hierarchy. Parts
+    typically correspond to the folder structure of the component hierarchy.
+    """
+
+    def __new__(cls, parts: Iterable[str]):
+        for part in parts:
+            if not is_valid_name(part):
+                check.param_invariant(False, "parts", f"Invalid key part {part}")
+
+        return super().__new__(cls, parts=parts)
+
+    parts: List[str]
+
+    @staticmethod
+    def root() -> "ComponentKey":
+        return ComponentKey(parts=[])
+
+    def child(self, part: str) -> "ComponentKey":
+        return ComponentKey(parts=self.parts + [part])
+
+    @property
+    def dot_path(self) -> str:
+        return ".".join(self.parts)
+
+
+@record
+class ComponentInstanceDeclNode(ComponentDeclNode):
+    key: ComponentKey
+    path: Path
+    component_type: str
 
 
 @record
@@ -213,6 +250,7 @@ class ComponentLoadContext:
     registry: ComponentTypeRegistry
     decl_node: Optional[ComponentDeclNode]
     templated_value_resolver: TemplatedValueResolver
+    code_location_name: str
 
     @staticmethod
     def for_test(
@@ -220,22 +258,33 @@ class ComponentLoadContext:
         resources: Optional[Mapping[str, object]] = None,
         registry: Optional[ComponentTypeRegistry] = None,
         decl_node: Optional[ComponentDeclNode] = None,
+        code_location_name: Optional[str] = None,
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
             resources=resources or {},
             registry=registry or ComponentTypeRegistry.empty(),
             decl_node=decl_node,
             templated_value_resolver=TemplatedValueResolver.default(),
+            code_location_name=code_location_name or "test",
         )
+
+    @cached_property
+    def instance_decl_node(self) -> ComponentInstanceDeclNode:
+        if not isinstance(self.decl_node, ComponentInstanceDeclNode):
+            check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
+        return self.decl_node
 
     @property
     def path(self) -> Path:
-        from dagster_components.core.component_decl_builder import YamlComponentDecl
+        return self.instance_decl_node.path
 
-        if not isinstance(self.decl_node, YamlComponentDecl):
-            check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
+    @property
+    def component_key(self) -> ComponentKey:
+        return self.instance_decl_node.key
 
-        return self.decl_node.path
+    @property
+    def component_type(self) -> str:
+        return self.instance_decl_node.component_type
 
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
         return dataclasses.replace(
@@ -259,6 +308,17 @@ class ComponentLoadContext:
                 self._raw_params(), params_schema
             )
             return TypeAdapter(params_schema).validate_python(preprocessed_params)
+
+
+def get_python_module_name(context: ComponentLoadContext, subkey: str) -> str:
+    """Utility function to generate a unique name for a Python module that is being dynamically
+    loaded for a particular component instance.
+    """
+    return (
+        f"__dagster_code_location__.{context.code_location_name}."
+        f"__component_instance__.{context.component_key.dot_path}."
+        f"__{context.component_type}__.{subkey}"
+    )
 
 
 COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"
