@@ -1,0 +1,8 @@
+type: dagster_components.uv_run
+
+params:
+  op:
+    name: the_step # probably should infer from script name
+
+  assets:
+    - key: an_asset
