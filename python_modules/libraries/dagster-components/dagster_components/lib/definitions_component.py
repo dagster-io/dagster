@@ -38,7 +38,7 @@ class DefinitionsComponent(Component):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         with pushd(str(context.path)):
-            module = import_module_from_path("definitions", self.definitions_path)
+            module = import_module_from_path("definitions", str(self.definitions_path))
 
         return load_definitions_from_module(module)
 
