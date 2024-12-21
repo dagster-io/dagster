@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 from datetime import datetime
-from functools import cached_property, total_ordering
-from heapq import heapify, heappop, heappush
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -11,13 +10,11 @@ from typing import (
     Generic,
     Iterable,
     Iterator,
-    List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Set,
-    Tuple,
     TypeVar,
     Union,
     cast,
@@ -754,67 +751,6 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
         return result
 
-    def bfs_filter_asset_partitions(
-        self,
-        dynamic_partitions_store: DynamicPartitionsStore,
-        condition_fn: Callable[
-            [Iterable[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]],
-            Tuple[bool, str],
-        ],
-        initial_asset_partitions: Iterable[AssetKeyPartitionKey],
-        evaluation_time: datetime,
-    ) -> Tuple[
-        AbstractSet[AssetKeyPartitionKey],
-        Sequence[Tuple[Iterable[AssetKeyPartitionKey], str]],
-    ]:
-        """Returns asset partitions within the graph that satisfy supplied criteria.
-
-        - Are >= initial_asset_partitions
-        - Match the condition_fn
-        - Any of their ancestors >= initial_asset_partitions match the condition_fn
-
-        Also returns a list of tuples, where each tuple is a candidated_unit (list of
-        AssetKeyPartitionKeys that must be materialized together - ie multi_asset) that do not
-        satisfy the criteria and the reason they were filtered out.
-
-        The condition_fn should return a tuple of a boolean indicating whether the asset partition meets
-        the condition and a string explaining why it does not meet the condition, if applicable.
-
-        Visits parents before children.
-
-        When asset partitions are part of the same execution set (non-subsettable multi-asset),
-        they're provided all at once to the condition_fn.
-        """
-        all_nodes = set(initial_asset_partitions)
-
-        # invariant: we never consider an asset partition before considering its ancestors
-        queue = ToposortedPriorityQueue(self, all_nodes, include_full_execution_set=True)
-
-        result: Set[AssetKeyPartitionKey] = set()
-        failed_reasons: List[Tuple[Iterable[AssetKeyPartitionKey], str]] = []
-
-        while len(queue) > 0:
-            candidates_unit = queue.dequeue()
-
-            meets_condition, fail_reason = condition_fn(candidates_unit, result)
-            if meets_condition:
-                result.update(candidates_unit)
-
-                for candidate in candidates_unit:
-                    for child in self.get_children_partitions(
-                        dynamic_partitions_store,
-                        evaluation_time,
-                        candidate.asset_key,
-                        candidate.partition_key,
-                    ):
-                        if child not in all_nodes:
-                            queue.enqueue(child)
-                            all_nodes.add(child)
-            else:
-                failed_reasons.append((candidates_unit, fail_reason))
-
-        return result, failed_reasons
-
     def split_entity_keys_by_repository(
         self, keys: AbstractSet[EntityKey]
     ) -> Sequence[AbstractSet[EntityKey]]:
@@ -854,80 +790,3 @@ def sort_key_for_asset_partition(
         # sort non-self dependencies from newest to oldest, as newer partitions are more relevant
         # than older ones
         return -1 * partition_timestamp
-
-
-class ToposortedPriorityQueue:
-    """Queue that returns parents before their children."""
-
-    @total_ordering
-    class QueueItem(NamedTuple):
-        level: int
-        partition_sort_key: Optional[float]
-        asset_partitions: Iterable[AssetKeyPartitionKey]
-
-        def __eq__(self, other: object) -> bool:
-            if isinstance(other, ToposortedPriorityQueue.QueueItem):
-                return (
-                    self.level == other.level
-                    and self.partition_sort_key == other.partition_sort_key
-                )
-            return False
-
-        def __lt__(self, other: object) -> bool:
-            if isinstance(other, ToposortedPriorityQueue.QueueItem):
-                return self.level < other.level or (
-                    self.level == other.level
-                    and self.partition_sort_key is not None
-                    and other.partition_sort_key is not None
-                    and self.partition_sort_key < other.partition_sort_key
-                )
-            raise TypeError()
-
-    def __init__(
-        self,
-        asset_graph: BaseAssetGraph,
-        items: Iterable[AssetKeyPartitionKey],
-        include_full_execution_set: bool,
-    ):
-        self._asset_graph = asset_graph
-        self._include_full_execution_set = include_full_execution_set
-
-        self._toposort_level_by_asset_key = {
-            asset_key: i
-            for i, asset_keys in enumerate(asset_graph.toposorted_asset_keys_by_level)
-            for asset_key in asset_keys
-        }
-        self._heap = [self._queue_item(asset_partition) for asset_partition in items]
-        heapify(self._heap)
-
-    def enqueue(self, asset_partition: AssetKeyPartitionKey) -> None:
-        heappush(self._heap, self._queue_item(asset_partition))
-
-    def dequeue(self) -> Iterable[AssetKeyPartitionKey]:
-        # For multi-assets, will include all required multi-asset keys if
-        # include_full_execution_set is set to True, or a list of size 1 with just the passed in
-        # asset key if it was not.
-        return heappop(self._heap).asset_partitions
-
-    def _queue_item(
-        self, asset_partition: AssetKeyPartitionKey
-    ) -> "ToposortedPriorityQueue.QueueItem":
-        asset_key = asset_partition.asset_key
-
-        if self._include_full_execution_set:
-            execution_set_keys = self._asset_graph.get(asset_key).execution_set_asset_keys
-        else:
-            execution_set_keys = {asset_key}
-
-        level = max(
-            self._toposort_level_by_asset_key[asset_key] for asset_key in execution_set_keys
-        )
-
-        return ToposortedPriorityQueue.QueueItem(
-            level,
-            sort_key_for_asset_partition(self._asset_graph, asset_partition),
-            [AssetKeyPartitionKey(ak, asset_partition.partition_key) for ak in execution_set_keys],
-        )
-
-    def __len__(self) -> int:
-        return len(self._heap)
