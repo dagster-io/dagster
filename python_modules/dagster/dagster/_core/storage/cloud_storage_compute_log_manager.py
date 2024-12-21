@@ -83,6 +83,7 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
         with self.local_manager.open_log_stream(log_key, io_type) as f:
             yield f
         self._on_capture_complete(log_key)
+        self.local_manager.delete_logs(log_key=log_key)
 
     def _on_capture_complete(self, log_key: Sequence[str]):
         self.upload_to_cloud_storage(log_key, ComputeIOType.STDOUT)
