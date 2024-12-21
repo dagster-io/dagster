@@ -10,5 +10,5 @@ class UnRunComponent(NativeStepComponent):
     def execute(self, context: AssetExecutionContext):
         # Do the thing
         client = PipesSubprocessClient()
-        invocation = client.run(context=context, command=["uv", "run", "step.py"])
+        invocation = client.run(context=context, command=["uv", "run", str(self.script_path)])
         return invocation.get_results()

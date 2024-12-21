@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from pathlib import Path
 from typing import Any, Optional, Sequence
 
 from dagster import multi_asset
@@ -7,6 +8,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_embedded_elt.sling.resources import AssetExecutionContext
 from pydantic import BaseModel
+import scrapbook
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
@@ -33,9 +35,12 @@ class NativeStepComponentSchema(BaseModel):
 class NativeStepComponent(Component):
     params_schema = NativeStepComponentSchema
 
-    def __init__(self, op: OpSpecBaseModel, assets: Optional[Sequence[AssetSpecBaseModel]]):
+    def __init__(
+        self, op: OpSpecBaseModel, assets: Optional[Sequence[AssetSpecBaseModel]], script_path: Path
+    ):
         self.op = op
         self.assets = assets or []
+        self.script_path = script_path
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         @multi_asset(
@@ -52,7 +57,9 @@ class NativeStepComponent(Component):
         # all paths should be resolved relative to the directory we're in
         loaded_params = context.load_params(cls.params_schema)
 
-        return cls(op=loaded_params.op, assets=loaded_params.assets)
+        return cls(
+            op=loaded_params.op, assets=loaded_params.assets, script_path=context.path / "step.py"
+        )
 
     @classmethod
     def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None:

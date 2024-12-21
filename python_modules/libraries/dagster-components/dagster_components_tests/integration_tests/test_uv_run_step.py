@@ -1,9 +1,11 @@
+from pathlib import Path
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.events import StepMaterializationData
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
+from dagster._utils import pushd
 from dagster_components_tests.integration_tests.component_loader import load_test_component_defs
 
 
@@ -34,7 +36,8 @@ def test_definitions_component_with_default_file() -> None:
     assets_def = defs.get_asset_graph().assets_def_for_key(AssetKey("an_asset"))
     assert assets_def.op.name == "the_step"
 
-    result = defs.get_implicit_global_asset_job_def().execute_in_process()
+    with pushd(str(Path(__file__).parent)):
+        result = defs.get_implicit_global_asset_job_def().execute_in_process()
     assert result.success
     mat_events = result.get_asset_materialization_events()
     assert len(mat_events) == 1
