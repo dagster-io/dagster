@@ -270,7 +270,7 @@ class K8sStepHandler(StepHandler):
         container_context = self._get_container_context(step_handler_context)
 
         job_config = container_context.get_k8s_job_config(
-            self._executor_image, step_handler_context.instance.run_launcher
+            self._executor_image, cast(K8sRunLauncher, step_handler_context.instance.run_launcher)
         )
 
         args = step_handler_context.execute_step_args.get_command_args(

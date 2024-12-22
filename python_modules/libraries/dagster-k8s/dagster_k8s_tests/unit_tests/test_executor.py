@@ -24,7 +24,7 @@ from dagster._grpc.types import ExecuteStepArgs
 from dagster._utils.hosted_user_process import remote_job_from_recon_job
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import _K8S_EXECUTOR_CONFIG_SCHEMA, K8sStepHandler, k8s_job_executor
-from dagster_k8s.job import UserDefinedDagsterK8sConfig
+from dagster_k8s.job import DagsterK8sJobConfig, UserDefinedDagsterK8sConfig
 
 
 @job(
@@ -689,6 +689,7 @@ def test_per_step_k8s_config(k8s_run_launcher_instance, python_origin_with_conta
             container_context=container_context_config
         )
     )
+    foo_step_image = "mock_image:foo_tag"
 
     # Verifies that k8s config for step pods is pulled from the container context and
     # executor-level per_step_k8s_config, and that per_step_k8s_config precedes step_k8s_config
@@ -706,6 +707,7 @@ def test_per_step_k8s_config(k8s_run_launcher_instance, python_origin_with_conta
                 "foo": {  # injected only for "foo" step
                     "container_config": {
                         "resources": FOURTH_RESOURCES_TAGS,
+                        "image": foo_step_image,
                     }
                 }
             },
@@ -725,7 +727,8 @@ def test_per_step_k8s_config(k8s_run_launcher_instance, python_origin_with_conta
         executor=executor,
     )
 
-    container_context = executor._step_handler._get_container_context(  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    step_handler: K8sStepHandler = executor._step_handler  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    container_context = step_handler._get_container_context(  # noqa: SLF001
         step_handler_context
     )
 
@@ -734,3 +737,12 @@ def test_per_step_k8s_config(k8s_run_launcher_instance, python_origin_with_conta
     assert raw_k8s_config.container_config["resources"] == FOURTH_RESOURCES_TAGS
     assert raw_k8s_config.container_config["working_dir"] == "MY_WORKING_DIR"
     assert raw_k8s_config.container_config["volume_mounts"] == OTHER_VOLUME_MOUNTS_TAGS
+    assert raw_k8s_config.container_config["image"] == foo_step_image
+
+    # ensure launch step respects modified container context
+    with mock.patch("dagster_k8s.executor.construct_dagster_k8s_job") as contruct_job_mock:
+        next(step_handler.launch_step(step_handler_context))
+
+    contruct_job_mock.assert_called_once()
+    dispatched_job_config: DagsterK8sJobConfig = contruct_job_mock.call_args.kwargs["job_config"]
+    assert dispatched_job_config.job_image == foo_step_image

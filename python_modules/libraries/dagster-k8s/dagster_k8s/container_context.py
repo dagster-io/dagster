@@ -554,9 +554,22 @@ class K8sContainerContext(
             ),
         )
 
-    def get_k8s_job_config(self, job_image, run_launcher) -> DagsterK8sJobConfig:
+    def get_k8s_job_config(
+        self, job_image: Optional[str], run_launcher: "K8sRunLauncher"
+    ) -> DagsterK8sJobConfig:
+        """Job Images resolved in the following order of priority:
+        - container_context run config image
+        - :param: job_image
+        - :param: run_launcher job_image.
+        """
+        image = run_launcher.job_image
+        if job_image:
+            image = job_image
+        container_image = self.run_k8s_config.container_config.get("image")
+        if container_image:
+            image = container_image
         return DagsterK8sJobConfig(
-            job_image=job_image if job_image else run_launcher.job_image,
+            job_image=image,
             dagster_home=run_launcher.dagster_home,
             instance_config_map=run_launcher.instance_config_map,
             postgres_password_secret=run_launcher.postgres_password_secret,
