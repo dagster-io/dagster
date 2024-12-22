@@ -468,7 +468,7 @@ class DagsterKubernetesClient:
             try:
                 job = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace)
             except kubernetes.client.rest.ApiException as e:
-                if e.reason == "Not Found":
+                if e.status == 404:
                     return None
                 else:
                     raise
@@ -518,14 +518,14 @@ class DagsterKubernetesClient:
                 for error in errors:
                     if not (
                         isinstance(error, kubernetes.client.rest.ApiException)
-                        and error.reason == "Not Found"
+                        and error.status == 404
                     ):
                         raise error
                 raise errors[0]
 
             return True
         except kubernetes.client.rest.ApiException as e:
-            if e.reason == "Not Found":
+            if e.status == 404:
                 return False
             raise e
 
