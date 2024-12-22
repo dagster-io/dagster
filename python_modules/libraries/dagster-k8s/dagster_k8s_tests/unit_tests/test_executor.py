@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 from unittest import mock
 
 import pytest
@@ -240,41 +241,13 @@ def _get_executor(instance, job_def, executor_config=None):
     )
 
 
-def _step_handler_context(job_def, dagster_run, instance, executor, known_state=None):
-    execution_plan = create_execution_plan(job_def, known_state=known_state)
-    log_manager = create_context_free_log_manager(instance, dagster_run)
-
-    plan_context = PlanOrchestrationContext(
-        plan_data=PlanData(
-            job=job_def,
-            dagster_run=dagster_run,
-            instance=instance,
-            execution_plan=execution_plan,
-            raise_on_error=True,
-            retry_mode=RetryMode.DISABLED,
-        ),
-        log_manager=log_manager,
-        executor=executor,
-        output_capture=None,
-    )
-
-    execute_step_args = ExecuteStepArgs(
-        reconstructable(bar).get_python_origin(),
-        dagster_run.run_id,
-        ["foo"],
-        print_serialized_events=False,
-    )
-
-    return StepHandlerContext(
-        instance=instance,
-        plan_context=plan_context,
-        steps=execution_plan.steps,  # pyright: ignore[reportArgumentType]
-        execute_step_args=execute_step_args,
-    )
-
-
-def _step_handler_context_with_step(
-    job_def, dagster_run, instance, executor, steps, known_state=None
+def _step_handler_context(
+    job_def,
+    dagster_run,
+    instance,
+    executor,
+    step: str = "foo",
+    known_state: Optional[KnownExecutionState] = None,
 ):
     execution_plan = create_execution_plan(job_def, known_state=known_state)
     log_manager = create_context_free_log_manager(instance, dagster_run)
@@ -296,7 +269,8 @@ def _step_handler_context_with_step(
     execute_step_args = ExecuteStepArgs(
         reconstructable(bar).get_python_origin(),
         dagster_run.run_id,
-        steps,
+        # note that k8s_job_executor can only execute one step at a time.
+        [step],
         print_serialized_events=False,
     )
 
@@ -829,12 +803,12 @@ def test_per_step_k8s_config_dynamic_job(k8s_run_launcher_instance: DagsterInsta
     )
     dynamic_step = "3"
     dyn_known_state = result.output_for_node("dyn_sink")[dynamic_step]
-    step_handler_context = _step_handler_context_with_step(
+    step_handler_context = _step_handler_context(
         recon_job,
         result.dagster_run,
         k8s_run_launcher_instance,
         executor,
-        [f"dyn_sink[{dynamic_step}]"],
+        step=f"dyn_sink[{dynamic_step}]",
         known_state=dyn_known_state,
     )
     container_context = executor._step_handler._get_container_context(  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
