@@ -18,7 +18,7 @@ from dagster_dg.utils import camelcase, execute_code_location_command, generate_
 # ########################
 
 
-def generate_deployment(path: Path) -> None:
+def generate_deployment(path: Path, dg_context: DgContext) -> None:
     click.echo(f"Creating a Dagster deployment at {path}.")
 
     generate_subtree(
