@@ -18,6 +18,7 @@ from dagster_components.core.component import (
 )
 from dagster_components.core.component_decl_builder import (
     ComponentFolder,
+    PythonComponentDecl,
     YamlComponentDecl,
     path_to_decl_node,
 )
@@ -45,6 +46,8 @@ def load_components_from_context(context: ComponentLoadContext) -> Sequence[Comp
         component_type = component_type_from_yaml_decl(context.registry, context.decl_node)
         context = context.with_rendering_scope(component_type.get_rendering_scope())
         return [component_type.load(context)]
+    elif isinstance(context.decl_node, PythonComponentDecl):
+        return [context.decl_node.component_declaration(context)]
     elif isinstance(context.decl_node, ComponentFolder):
         components = []
         for sub_decl in context.decl_node.sub_decls:
@@ -85,7 +88,11 @@ def component_type_from_yaml_decl(
 def build_components_from_component_folder(
     context: ComponentLoadContext, path: Path
 ) -> Sequence[Component]:
-    component_folder = path_to_decl_node(path, ComponentInstanceKey.root())
+    component_folder = path_to_decl_node(
+        path=path,
+        current_key=ComponentInstanceKey.root(),
+        code_location_name=context.code_location_name,
+    )
     assert isinstance(component_folder, ComponentFolder)
     return load_components_from_context(context.for_decl_node(component_folder))
 
@@ -97,7 +104,11 @@ def build_defs_from_component_path(
     resources: Mapping[str, object],
 ) -> "Definitions":
     """Build a definitions object from a folder within the components hierarchy."""
-    decl_node = path_to_decl_node(path=path, current_key=ComponentInstanceKey.root())
+    decl_node = path_to_decl_node(
+        path=path,
+        current_key=ComponentInstanceKey.root(),
+        code_location_name=code_location_name,
+    )
     if not decl_node:
         raise Exception(f"No component found at path {path}")
 

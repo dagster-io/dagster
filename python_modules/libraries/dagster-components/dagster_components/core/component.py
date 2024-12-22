@@ -11,7 +11,6 @@ from functools import cached_property
 from pathlib import Path
 from types import ModuleType
 from typing import (
-    TYPE_CHECKING,
     Any,
     ClassVar,
     Dict,
@@ -37,11 +36,42 @@ from typing_extensions import Self
 
 from dagster_components.core.component_rendering import TemplatedValueResolver, preprocess_value
 
-if TYPE_CHECKING:
-    from dagster_components.core.component_decl_builder import YamlComponentDecl
-
 
 class ComponentDeclNode: ...
+
+
+@record_custom
+class ComponentInstanceKey(IHaveNew):
+    """Uniquely identifies a component instance within a component hierarchy. Parts
+    typically correspond to the folder structure of the component hierarchy.
+    """
+
+    def __new__(cls, parts: Iterable[str]):
+        for part in parts:
+            if not is_valid_name(part):
+                check.param_invariant(False, "parts", f"Invalid key part {part}")
+
+        return super().__new__(cls, parts=parts)
+
+    parts: List[str]
+
+    @staticmethod
+    def root() -> "ComponentInstanceKey":
+        return ComponentInstanceKey(parts=[])
+
+    def child(self, part: str) -> "ComponentInstanceKey":
+        return ComponentInstanceKey(parts=self.parts + [part])
+
+    @property
+    def dot_path(self) -> str:
+        return ".".join(self.parts)
+
+
+@record
+class ComponentInstanceDeclNode(ComponentDeclNode):
+    key: ComponentInstanceKey
+    path: Path
+    component_type: str
 
 
 @record
@@ -213,33 +243,6 @@ def get_registered_components_in_module(module: ModuleType) -> Iterable[Type[Com
 T = TypeVar("T")
 
 
-@record_custom
-class ComponentInstanceKey(IHaveNew):
-    """Uniquely identifies a component instance within a component hierarchy. Parts
-    typically correspond to the folder structure of the component hierarchy.
-    """
-
-    def __new__(cls, parts: Iterable[str]):
-        for part in parts:
-            if not is_valid_name(part):
-                check.param_invariant(False, "parts", f"Invalid key part {part}")
-
-        return super().__new__(cls, parts=parts)
-
-    parts: List[str]
-
-    @staticmethod
-    def root() -> "ComponentInstanceKey":
-        return ComponentInstanceKey(parts=[])
-
-    def child(self, part: str) -> "ComponentInstanceKey":
-        return ComponentInstanceKey(parts=self.parts + [part])
-
-    @property
-    def dot_path(self) -> str:
-        return ".".join(self.parts)
-
-
 @dataclass
 class ComponentLoadContext:
     resources: Mapping[str, object]
@@ -265,24 +268,22 @@ class ComponentLoadContext:
         )
 
     @cached_property
-    def yaml_decl_node(self) -> "YamlComponentDecl":
-        from dagster_components.core.component_decl_builder import YamlComponentDecl
-
-        if not isinstance(self.decl_node, YamlComponentDecl):
+    def instance_decl_node(self) -> ComponentInstanceDeclNode:
+        if not isinstance(self.decl_node, ComponentInstanceDeclNode):
             check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
         return self.decl_node
 
     @property
     def path(self) -> Path:
-        return self.yaml_decl_node.path
+        return self.instance_decl_node.path
 
     @property
     def component_instance_key(self) -> ComponentInstanceKey:
-        return self.yaml_decl_node.key
+        return self.instance_decl_node.key
 
     @property
     def component_type(self) -> str:
-        return self.yaml_decl_node.component_file_model.type
+        return self.instance_decl_node.component_type
 
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
         return dataclasses.replace(
