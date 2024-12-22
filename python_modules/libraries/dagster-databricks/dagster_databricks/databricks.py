@@ -182,11 +182,8 @@ class WorkspaceClientFactory:
         azure_tenant_id: Optional[str] = None,
     ):
         """Ensure that all required credentials are provided for the given auth type."""
-        if (
-            oauth_client_id
-            and not oauth_client_secret
-            or oauth_client_secret
-            and not oauth_client_id
+        if (oauth_client_id and not oauth_client_secret) or (
+            oauth_client_secret and not oauth_client_id
         ):
             raise ValueError(
                 "If using databricks service principal oauth credentials, both oauth_client_id and"

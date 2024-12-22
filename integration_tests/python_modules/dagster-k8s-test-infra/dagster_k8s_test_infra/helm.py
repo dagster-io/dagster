@@ -583,8 +583,7 @@ def _helm_chart_helper(
         if (
             dagster_user_deployments_values.get("enabled")
             and dagster_user_deployments_values.get("enableSubchart")
-            or release_name == "dagster"
-        ):
+        ) or release_name == "dagster":
             # Wait for user code deployments to be ready
             print("Waiting for user code deployments")
             pods = api_client.core_api.list_namespaced_pod(namespace=namespace)

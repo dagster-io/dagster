@@ -732,7 +732,7 @@ def grpc_command(
         raise click.UsageError(
             "You must pass a valid --port/-p on Windows: --socket/-s not supported."
         )
-    if not (port or socket and not (port and socket)):
+    if not (port or (socket and not (port and socket))):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
     setup_interrupt_handlers()
@@ -871,7 +871,7 @@ def grpc_health_check_command(
         raise click.UsageError(
             "You must pass a valid --port/-p on Windows: --socket/-s not supported."
         )
-    if not (port or socket and not (port and socket)):
+    if not (port or (socket and not (port and socket))):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
     client = DagsterGrpcClient(port=port, socket=socket, host=host, use_ssl=use_ssl)

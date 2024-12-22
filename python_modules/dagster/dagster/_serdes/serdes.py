@@ -1050,9 +1050,9 @@ class _LazySerializationWrapper(dict):
     """
 
     __slots__ = [
+        "_descent_path",
         "_obj",
         "_whitelist_map",
-        "_descent_path",
     ]
 
     def __init__(

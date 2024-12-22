@@ -173,19 +173,19 @@ class ScheduleEvaluationContext:
     """
 
     __slots__ = [
-        "_instance_ref",
-        "_scheduled_execution_time",
+        "_cm_scope_entered",
         "_exit_stack",
         "_instance",
+        "_instance_ref",
         "_log_key",
         "_logger",
+        "_repository_def",
         "_repository_name",
         "_resource_defs",
-        "_schedule_name",
-        "_resources_cm",
         "_resources",
-        "_cm_scope_entered",
-        "_repository_def",
+        "_resources_cm",
+        "_schedule_name",
+        "_scheduled_execution_time",
     ]
 
     def __init__(
