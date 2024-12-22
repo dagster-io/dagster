@@ -425,7 +425,7 @@ def run_pyright(
         try:
             json_result = json.loads(result.stdout)
         except json.JSONDecodeError:
-            output = result.stdout == "" and result.stderr or result.stdout
+            output = (result.stdout == "" and result.stderr) or result.stdout
             raise Exception(f"Pyright output was not valid JSON. Output was:\n\n{output}")
     return {
         "returncode": result.returncode,

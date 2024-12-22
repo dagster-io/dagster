@@ -119,7 +119,7 @@ extend-exclude = [
 line-length = 100
 
 # Fail if Ruff is not running this version.
-required-version = "0.5.5"
+required-version = "0.8.4"
 
 [tool.ruff.lint]
 

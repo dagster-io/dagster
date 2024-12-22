@@ -5,4 +5,4 @@ from dagster_github.version import __version__
 
 DagsterLibraryRegistry.register("dagster-github", __version__)
 
-__all__ = ["github_resource", "GithubResource"]
+__all__ = ["GithubResource", "github_resource"]
