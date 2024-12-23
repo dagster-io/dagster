@@ -252,7 +252,7 @@ agent_queues:
 
 ### agent_queues properties
 
-These settings specify the queue(s) the agent will obtain requests from. See [Routing requests to specific agents](deployment/deployment-types/hybrid/multiple).
+These settings specify the queue(s) the agent will obtain requests from. See [Routing requests to specific agents](/dagster-plus/deployment/deployment-types/hybrid/multiple).
 
 | Property | Description |
 |----------|-------------|
