@@ -9,7 +9,6 @@ from dagster import (
     DagsterInvariantViolationError,
     Field as DagsterField,
 )
-from dagster._annotations import experimental
 from dagster._config import StringSource
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
@@ -339,7 +338,6 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
 
 @dagster_maintained_io_manager
 @io_manager(config_schema={"base_dir": DagsterField(StringSource, is_required=True)})
-@experimental
 def custom_path_fs_io_manager(
     init_context: InitResourceContext,
 ) -> CustomPathPickledObjectFilesystemIOManager:
