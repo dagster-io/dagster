@@ -41,8 +41,8 @@ class ComponentDeclNode: ...
 
 
 @record_custom
-class ComponentInstanceKey(IHaveNew):
-    """Uniquely identifies a component instance within a component hierarchy. Parts
+class ComponentKey(IHaveNew):
+    """Uniquely identifies a component within a component hierarchy. Parts
     typically correspond to the folder structure of the component hierarchy.
     """
 
@@ -56,11 +56,11 @@ class ComponentInstanceKey(IHaveNew):
     parts: List[str]
 
     @staticmethod
-    def root() -> "ComponentInstanceKey":
-        return ComponentInstanceKey(parts=[])
+    def root() -> "ComponentKey":
+        return ComponentKey(parts=[])
 
-    def child(self, part: str) -> "ComponentInstanceKey":
-        return ComponentInstanceKey(parts=self.parts + [part])
+    def child(self, part: str) -> "ComponentKey":
+        return ComponentKey(parts=self.parts + [part])
 
     @property
     def dot_path(self) -> str:
@@ -69,7 +69,7 @@ class ComponentInstanceKey(IHaveNew):
 
 @record
 class ComponentInstanceDeclNode(ComponentDeclNode):
-    key: ComponentInstanceKey
+    key: ComponentKey
     path: Path
     component_type: str
 
@@ -278,7 +278,7 @@ class ComponentLoadContext:
         return self.instance_decl_node.path
 
     @property
-    def component_instance_key(self) -> ComponentInstanceKey:
+    def component_key(self) -> ComponentKey:
         return self.instance_decl_node.key
 
     @property
@@ -315,7 +315,7 @@ def get_python_module_name(context: ComponentLoadContext, subkey: str) -> str:
     """
     return (
         f"__dagster_code_location__.{context.code_location_name}."
-        f"__component_instance__.{context.component_instance_key.dot_path}."
+        f"__component__.{context.component_key.dot_path}."
         f"__{context.component_type}__.{subkey}"
     )
 

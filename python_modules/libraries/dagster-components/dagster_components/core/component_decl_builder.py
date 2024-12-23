@@ -11,7 +11,7 @@ from dagster_components.core.component import (
     Component,
     ComponentDeclNode,
     ComponentInstanceDeclNode,
-    ComponentInstanceKey,
+    ComponentKey,
     ComponentLoadContext,
     get_component_name,
 )
@@ -40,7 +40,7 @@ class ComponentFolder(ComponentDeclNode):
 
 
 def path_to_decl_node(
-    path: Path, current_key: ComponentInstanceKey, code_location_name: str
+    path: Path, current_key: ComponentKey, code_location_name: str
 ) -> Optional[ComponentDeclNode]:
     # right now, we only support two types of components, both of which are folders
     # if the folder contains a component.yaml file, it's a component instance
