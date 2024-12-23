@@ -110,7 +110,7 @@ locations:
 
 Refer to the following guides for more info about environment variables:
 
-- [Dagster+ environment variables and secrets](/dagster-plus/management/environment-variables)
+- [Dagster+ environment variables and secrets](/dagster-plus/deployment/management/environment-variables/)
 - [Using environment variables and secrets in Dagster code](/guides/deploy/secrets)
 
 ---
@@ -252,7 +252,7 @@ agent_queues:
 
 ### agent_queues properties
 
-These settings specify the queue(s) the agent will obtain requests from. See [Routing requests to specific agents](deployment/deployment-types/hybrid/multiple#routing-requests-to-specific-agents).
+These settings specify the queue(s) the agent will obtain requests from. See [Routing requests to specific agents](deployment/deployment-types/hybrid/multiple).
 
 | Property | Description |
 |----------|-------------|
