@@ -6,15 +6,8 @@ from typing import Any, Callable, Dict, Iterable, Mapping, Sequence, Set, Tuple,
 import requests
 from airflow.models import BaseOperator
 
-try:
-    # Attempt to import the Context type from Airflow 2
-    from airflow.utils.context import Context
-except ImportError:
-    # Fallback for Airflow 1: Use a generic dictionary type as a substitute
-    Context = Dict[str, Any]  # Define Context as a dictionary
-
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
-from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator
+from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator, Context
 
 
 class BaseProxyTaskToDagsterOperator(BaseDagsterAssetsOperator):
