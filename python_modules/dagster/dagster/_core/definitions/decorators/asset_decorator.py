@@ -3,6 +3,7 @@ from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, over
 
 import dagster._check as check
 from dagster._annotations import (
+    beta_param,
     experimental_param,
     hidden_param,
     only_allow_hidden_params_in_kwargs,
@@ -119,9 +120,9 @@ def _validate_hidden_non_argument_dep_param(
     return non_argument_deps
 
 
-@experimental_param(param="resource_defs")
-@experimental_param(param="io_manager_def")
-@experimental_param(param="backfill_policy")
+@beta_param(param="resource_defs")
+@beta_param(param="io_manager_def")
+@beta_param(param="backfill_policy")
 @hidden_param(
     param="non_argument_deps",
     breaking_version="2.0.0",
