@@ -271,8 +271,8 @@ def test_failure_when_asset_failures_tag_set(
     af_instance.wait_for_run_completion(dag_id=dag_id, run_id=run_id)
     assert af_instance.get_run_state(dag_id=dag_id, run_id=run_id) == "failed"
 
-    dg_instance = DagsterInstance.get()
-    # There should be a single run launched from the task, and it should be failed.
-    runs = dg_instance.get_runs(filters=RunsFilter(tags={DAG_RUN_ID_TAG_KEY: run_id}))
-    assert len(runs) == 1
-    assert next(iter(runs)).status == DagsterRunStatus.FAILURE
+    with DagsterInstance.get() as dg_instance:
+        # There should be a single run launched from the task, and it should be failed.
+        runs = dg_instance.get_runs(filters=RunsFilter(tags={DAG_RUN_ID_TAG_KEY: run_id}))
+        assert len(runs) == 1
+        assert next(iter(runs)).status == DagsterRunStatus.FAILURE

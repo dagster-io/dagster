@@ -51,7 +51,7 @@ with DAG(
     start_date=get_current_datetime_midnight(),
     # We pause this dag upon creation to avoid running it immediately
     is_paused_upon_creation=False,
-) as minute_dag:
+) as another_minute_dag:
     PythonOperator(task_id="my_task", python_callable=print_hello)
 
 
