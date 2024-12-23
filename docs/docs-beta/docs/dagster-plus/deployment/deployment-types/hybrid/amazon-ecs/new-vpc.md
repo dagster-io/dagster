@@ -3,8 +3,6 @@ title: New VPC setup
 sidebar_position: 100
 ---
 
-# Creating an Amazon Elastic Container Service agent in a new VPC
-
 :::note
 This guide is applicable to Dagster+.
 :::
@@ -72,7 +70,7 @@ After the stack is installed, you'll be prompted to configure it. In the ECS wiz
 
 - **Dagster+ Organization**: Enter the name of your Dagster+ organization.
 - **Dagster+ Deployment**: Enter the name of the Dagster+ deployment you want to use. Leave this field empty if the agent will only serve Branch deployments.
-- **Enable Branch Deployments**: Whether to have this agent serve your ephemeral [Branch deployments](/dagster-plus/features/ci-cd/branch-deployments/index). Only a single agent should have this setting enabled.
+- **Enable Branch Deployments**: Whether to have this agent serve your ephemeral [Branch deployments](/dagster-plus/features/ci-cd/branch-deployments). Only a single agent should have this setting enabled.
 - **Agent Token**: Paste the agent token you generated in [Step 1](#step-1-generate-a-dagster-agent-token).
 
 The page should look similar to the following image. In this example, our organization name is `hooli` and our deployment is `prod`:
@@ -89,8 +87,8 @@ After you've finished configuring the stack in AWS, you can view the agent in Da
 
 Now that you've got your agent running, what's next?
 
-- **If you're getting Dagster+ set up**, the next step is to [add a code location](/dagster-plus/deployment/code-locations/index) using the agent.
+- **If you're getting Dagster+ set up**, the next step is to [add a code location](/dagster-plus/deployment/code-locations) using the agent.
 
-- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/dagster-plus/deployment/code-locations/index) guide for more info.
+- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/dagster-plus/deployment/code-locations) guide for more info.
 
 If you need to upgrade your ECS agent's CloudFormation template, refer to the [upgrade guide](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/upgrading-cloudformation) for more info.
