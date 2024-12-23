@@ -13,7 +13,7 @@ from dagster._time import get_current_datetime
 
 from dagster_airlift.core.serialization.serialized_data import DagInfo, TaskInfo
 
-TERMINAL_STATES = {"success", "failed", "skipped", "up_for_retry", "up_for_reschedule"}
+TERMINAL_STATES = {"success", "failed", "canceled"}
 # This limits the number of task ids that we attempt to query from airflow's task instance rest API at a given time.
 # Airflow's batch task instance retrieval rest API doesn't have a limit parameter, but we query a single run at a time, meaning we should be getting
 # a single task instance per task id.
