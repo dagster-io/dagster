@@ -121,7 +121,8 @@ export const AutomaterializeMiddlePanelWithData = ({
   const runsFilter: RunsFilter | null = useMemo(
     () =>
       selectedEvaluation?.runIds.length
-        ? selectedEvaluation.runIds.length === 1 && selectedEvaluation.runIds[0]?.length === backfillIdLength
+        ? selectedEvaluation.runIds.length === 1 &&
+          selectedEvaluation.runIds[0]?.length === backfillIdLength
           ? {tags: [{key: 'dagster/backfill', value: selectedEvaluation.runIds[0]}]}
           : {runIds: selectedEvaluation.runIds}
         : null,
