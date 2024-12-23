@@ -13,7 +13,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, public
+from dagster._annotations import confirmed_deprecated, confirmed_deprecated_param, public
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.events import (
     AssetKey,
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
 RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="metadata",
     breaking_version="2.0",
     additional_warn_text="Use `definition_metadata` instead.",
@@ -222,7 +222,9 @@ class OutputContext:
 
         return self._run_id
 
-    @deprecated(breaking_version="2.0.0", additional_warn_text="Use definition_metadata instead")
+    @confirmed_deprecated(
+        breaking_version="2.0.0", additional_warn_text="Use definition_metadata instead"
+    )
     @public
     @property
     def metadata(self) -> Optional[ArbitraryMetadataMapping]:
@@ -824,7 +826,7 @@ def get_output_context(
     )
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="metadata",
     breaking_version="2.0",
     additional_warn_text="Use `definition_metadata` instead.",

@@ -2,7 +2,7 @@ import datetime
 from typing import AbstractSet, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._annotations import deprecated
+from dagster._annotations import confirmed_deprecated
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import whitelist_for_serdes
@@ -21,7 +21,7 @@ class FreshnessMinutes(NamedTuple):
     lag_minutes: float
 
 
-@deprecated(
+@confirmed_deprecated(
     breaking_version="1.10.0",
     additional_warn_text="For monitoring freshness, use freshness checks instead. If using lazy "
     "auto-materialize, use AutomationCondition.cron() and AutomationCondition.any_downstream_conditions().",

@@ -9,7 +9,7 @@ from typing import Optional
 import click
 
 import dagster._check as check
-from dagster._annotations import deprecated
+from dagster._annotations import confirmed_deprecated
 from dagster._cli.job import apply_click_params
 from dagster._cli.utils import get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import (
@@ -95,7 +95,7 @@ def dev_command_options(f):
     show_default=True,
     required=False,
 )
-@deprecated(
+@confirmed_deprecated(
     breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
 )
 def dev_command(

@@ -16,7 +16,7 @@ from typing import (
 from typing_extensions import Final
 
 from dagster import _check as check
-from dagster._annotations import beta, deprecated
+from dagster._annotations import beta, confirmed_deprecated
 from dagster._core.loader import LoadingContext
 from dagster._utils.cached_method import cached_method
 
@@ -170,7 +170,9 @@ class DataProvenance(
         )
 
     @property
-    @deprecated(breaking_version="2.0", additional_warn_text="Use `input_data_versions` instead.")
+    @confirmed_deprecated(
+        breaking_version="2.0", additional_warn_text="Use `input_data_versions` instead."
+    )
     def input_logical_versions(self) -> Mapping["AssetKey", DataVersion]:
         return self.input_data_versions
 

@@ -7,7 +7,7 @@ from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
-from dagster._annotations import deprecated, public
+from dagster._annotations import confirmed_deprecated, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_key import (
@@ -143,7 +143,7 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
-    @deprecated(
+    @confirmed_deprecated(
         breaking_version="2.0",
         additional_warn_text="Use AssetSelection.assets instead.",
     )
@@ -151,7 +151,7 @@ class AssetSelection(ABC):
         """Returns a selection that includes assets with any of the provided keys and all asset
         checks that target them.
 
-        Deprecated: use AssetSelection.assets instead.
+        deprecated_confirmed: use AssetSelection.assets instead.
 
         Examples:
             .. code-block:: python
@@ -401,7 +401,9 @@ class AssetSelection(ABC):
         return MaterializableAssetSelection(child=self)
 
     @public
-    @deprecated(breaking_version="2.0", additional_warn_text="Use AssetSelection.roots instead.")
+    @confirmed_deprecated(
+        breaking_version="2.0", additional_warn_text="Use AssetSelection.roots instead."
+    )
     def sources(self) -> "RootsAssetSelection":
         """Given an asset selection, returns a new asset selection that contains all of the root
         assets within the original asset selection. Includes the asset checks targeting the returned assets.

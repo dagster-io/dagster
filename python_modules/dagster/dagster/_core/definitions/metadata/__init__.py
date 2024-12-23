@@ -5,7 +5,7 @@ from typing import Any, Dict, Generic, List, Mapping, NamedTuple, Optional, Sequ
 from typing_extensions import TypeAlias, TypeVar
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated, deprecated_param
+from dagster._annotations import PublicAttr, confirmed_deprecated, confirmed_deprecated_param
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.metadata.metadata_set import (
     NamespacedMetadataSet as NamespacedMetadataSet,
@@ -204,11 +204,11 @@ T_MetadataValue = TypeVar("T_MetadataValue", bound=MetadataValue, covariant=True
 # NOTE: MetadataEntry is no longer accessible via the public API-- all metadata APIs use metadata
 # dicts. This clas shas only been preserved to adhere strictly to our backcompat guarantees. It is
 # still instantiated in the above `MetadataFieldSerializer` but that can easily be changed.
-@deprecated(
+@confirmed_deprecated(
     breaking_version="2.0",
     additional_warn_text="Please use a dict with `MetadataValue` values instead.",
 )
-@deprecated_param(
+@confirmed_deprecated_param(
     param="entry_data", breaking_version="2.0", additional_warn_text="Use `value` instead."
 )
 @whitelist_for_serdes(storage_name="EventMetadataEntry")

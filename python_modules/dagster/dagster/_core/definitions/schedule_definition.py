@@ -24,7 +24,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, public
+from dagster._annotations import confirmed_deprecated, confirmed_deprecated_param, public
 from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
@@ -480,7 +480,7 @@ def validate_and_get_schedule_resource_dict(
     return {k: resources.original_resource_dict.get(k) for k in required_resource_keys}
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="environment_vars",
     breaking_version="2.0",
     additional_warn_text=(
@@ -891,7 +891,7 @@ class ScheduleDefinition(IHasInternalInit):
         return self._cron_schedule  # type: ignore
 
     @public
-    @deprecated(
+    @confirmed_deprecated(
         breaking_version="2.0",
         additional_warn_text="Setting this property no longer has any effect.",
     )

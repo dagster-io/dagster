@@ -16,7 +16,7 @@ from typing import (
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import beta, deprecated, public
+from dagster._annotations import beta, confirmed_deprecated, public
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -320,10 +320,10 @@ def _canonicalize_specs_to_assets_defs(
     return result
 
 
-@deprecated(
+@confirmed_deprecated(
     breaking_version="2.0",
     additional_warn_text=(
-        "Instantiations can be removed. Since it's behavior is now the default, this class is now a"
+        "Instantiations can be removed. Since its behavior is now the default, this class is now a"
         " no-op."
     ),
 )

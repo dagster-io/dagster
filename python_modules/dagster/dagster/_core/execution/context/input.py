@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Iterable, Iterator, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, public
+from dagster._annotations import confirmed_deprecated, confirmed_deprecated_param, public
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, MetadataValue
 from dagster._core.definitions.partition import PartitionsSubset
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from dagster._core.types.dagster_type import DagsterType
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="metadata",
     breaking_version="2.0",
     additional_warn_text="Use `definition_metadata` instead.",
@@ -179,7 +179,9 @@ class InputContext:
         """The config attached to the input that we're loading."""
         return self._config
 
-    @deprecated(breaking_version="2.0.0", additional_warn_text="Use definition_metadata instead")
+    @confirmed_deprecated(
+        breaking_version="2.0.0", additional_warn_text="Use definition_metadata instead"
+    )
     @public
     @property
     def metadata(self) -> Optional[ArbitraryMetadataMapping]:
@@ -534,7 +536,7 @@ class InputContext:
         return result
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="metadata",
     breaking_version="2.0",
     additional_warn_text="Use `definition_metadata` instead.",

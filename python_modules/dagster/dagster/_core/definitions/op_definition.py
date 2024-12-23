@@ -16,7 +16,7 @@ from typing import (
 from typing_extensions import TypeAlias, get_args, get_origin
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, public
+from dagster._annotations import confirmed_deprecated, confirmed_deprecated_param, public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.definition_config_schema import (
@@ -56,7 +56,7 @@ if TYPE_CHECKING:
 OpComputeFunction: TypeAlias = Callable[..., Any]
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead."
 )
 class OpDefinition(NodeDefinition, IHasInternalInit):
@@ -257,7 +257,9 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         return frozenset(self._required_resource_keys)
 
     @public
-    @deprecated(breaking_version="2.0", additional_warn_text="Use `code_version` instead.")
+    @confirmed_deprecated(
+        breaking_version="2.0", additional_warn_text="Use `code_version` instead."
+    )
     @property
     def version(self) -> Optional[str]:
         """str: Version of the code encapsulated by the op. If set, this is used as a

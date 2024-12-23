@@ -22,7 +22,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import deprecated
+from dagster._annotations import confirmed_deprecated
 from dagster._core.definitions.logger_definition import LoggerDefinition, logger
 from dagster._core.utils import coerce_valid_log_level
 
@@ -245,7 +245,7 @@ def get_structlog_json_formatter() -> structlog.stdlib.ProcessorFormatter:
     )
 
 
-@deprecated(
+@confirmed_deprecated(
     breaking_version="2.0",
     subject="loggers.dagit",
     emit_runtime_warning=False,
