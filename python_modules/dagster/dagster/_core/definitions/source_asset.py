@@ -13,7 +13,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated, experimental_param, public
+from dagster._annotations import PublicAttr, deprecated, deprecated_param, public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.data_version import (
@@ -167,7 +167,7 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
     return DecoratedOpFunction(fn)
 
 
-@experimental_param(param="freshness_policy")
+@deprecated_param(param="freshness_policy")
 @deprecated(
     breaking_version="2.0.0",
     additional_warn_text="Use AssetSpec instead. If using the SourceAsset io_manager_key property, "
