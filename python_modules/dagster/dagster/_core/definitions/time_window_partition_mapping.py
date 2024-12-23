@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import List, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental_param
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.partition import (
     AllPartitionsSubset,
     PartitionsDefinition,
@@ -21,7 +21,6 @@ from dagster._time import add_absolute_time
 
 
 @whitelist_for_serdes
-@experimental_param(param="allow_nonexistent_upstream_partitions")
 class TimeWindowPartitionMapping(
     PartitionMapping,
     NamedTuple(
