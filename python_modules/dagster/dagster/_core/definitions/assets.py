@@ -23,7 +23,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import experimental_param, public
+from dagster._annotations import beta_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_graph_computation import AssetGraphComputation
@@ -119,7 +119,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     _specs_by_key: Mapping[AssetKey, AssetSpec]
     _computation: Optional[AssetGraphComputation]
 
-    @experimental_param(param="execution_type")
+    @beta_param(param="execution_type")
     def __init__(
         self,
         *,
