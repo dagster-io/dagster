@@ -62,9 +62,18 @@ interface WorkspaceState {
   setHidden: SetVisibleOrHiddenFn;
 }
 
-export const WorkspaceContext = React.createContext<WorkspaceState>(
-  new Error('WorkspaceContext should never be uninitialized') as any,
-);
+export const WorkspaceContext = React.createContext<WorkspaceState>({
+  allRepos: [],
+  visibleRepos: [],
+  data: {},
+  refetch: () => Promise.reject<any>(),
+  toggleVisible: () => {},
+  loading: false,
+  locationEntries: [],
+  locationStatuses: {},
+  setVisible: () => {},
+  setHidden: () => {},
+});
 
 interface BaseLocationParams {
   localCacheIdPrefix?: string;

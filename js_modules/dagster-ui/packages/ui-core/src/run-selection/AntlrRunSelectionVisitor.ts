@@ -160,6 +160,12 @@ export class AntlrRunSelectionVisitor
 
   visitStatusAttributeExpr(ctx: StatusAttributeExprContext) {
     const state: string = getValue(ctx.value()).toLowerCase();
-    return new Set([...this.all_runs].filter((i) => i.metadata?.state === state));
+    return new Set(
+      [...this.all_runs].filter(
+        (i) => i.metadata?.state === state || (state === NO_STATE && !i.metadata?.state),
+      ),
+    );
   }
 }
+
+export const NO_STATE = 'none';

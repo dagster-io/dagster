@@ -15,6 +15,7 @@ import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled from 'styled-components';
 
 import {
@@ -48,6 +49,7 @@ import {
   interestingQueriesFor,
 } from './GanttChartLayout';
 import {GanttChartModeControl} from './GanttChartModeControl';
+import {GanttChartSelectionInput} from './GanttChartSelectionInput';
 import {GanttChartTimescale} from './GanttChartTimescale';
 import {GanttStatusPanel} from './GanttStatusPanel';
 import {OptionsContainer, OptionsSpacer} from './VizComponents';
@@ -55,6 +57,7 @@ import {ZoomSlider} from './ZoomSlider';
 import {RunGraphQueryItem} from './toGraphQueryItems';
 import {useGanttChartMode} from './useGanttChartMode';
 import {AppContext} from '../app/AppContext';
+import {featureEnabled} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {withMiddleTruncation} from '../app/Util';
 import {WebSocketContext} from '../app/WebSocketProvider';
@@ -411,14 +414,22 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
           </WebsocketWarning>
         ) : null}
         <FilterInputsBackgroundBox flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-          <GraphQueryInput
-            items={props.graph}
-            value={props.selection.query}
-            placeholder="Type a step subset"
-            onChange={props.onUpdateQuery}
-            presets={presets}
-            className={selection.keys.length > 0 ? 'has-step' : ''}
-          />
+          {featureEnabled(FeatureFlag.flagRunSelectionSyntax) ? (
+            <GanttChartSelectionInput
+              items={props.graph}
+              value={props.selection.query}
+              onChange={props.onUpdateQuery}
+            />
+          ) : (
+            <GraphQueryInput
+              items={props.graph}
+              value={props.selection.query}
+              placeholder="Type a step subset"
+              onChange={props.onUpdateQuery}
+              presets={presets}
+              className={selection.keys.length > 0 ? 'has-step' : ''}
+            />
+          )}
           <Checkbox
             checked={options.hideUnselectedSteps}
             label="Hide unselected steps"
