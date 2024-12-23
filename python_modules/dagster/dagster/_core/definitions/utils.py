@@ -387,7 +387,9 @@ def get_default_automation_condition_sensor_selection(
         # Use AssetSelection.all if the default sensor is the only sensor - otherwise
         # enumerate the assets that are not already included in some other
         # non-default sensor
-        default_sensor_asset_selection = AssetSelection.all(include_sources=has_auto_observe_keys)
+        default_sensor_asset_selection = AssetSelection.all(
+            include_external_assets=has_auto_observe_keys
+        )
 
         # if there are any asset checks, include checks in the selection
         if any(isinstance(k, AssetCheckKey) for k in default_sensor_keys):

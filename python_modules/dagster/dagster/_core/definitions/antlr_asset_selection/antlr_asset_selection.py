@@ -20,8 +20,8 @@ class AntlrInputErrorListener(ErrorListener):
 
 
 class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
-    def __init__(self, include_sources: bool):
-        self.include_sources = include_sources
+    def __init__(self, include_external_assets: bool):
+        self.include_external_assets = include_external_assets
 
     def visitStart(self, ctx: AssetSelectionParser.StartContext):
         return self.visit(ctx.expr())
@@ -53,7 +53,7 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
 
     def visitNotExpression(self, ctx: AssetSelectionParser.NotExpressionContext):
         selection: AssetSelection = self.visit(ctx.expr())
-        return AssetSelection.all(include_sources=self.include_sources) - selection
+        return AssetSelection.all(include_external_assets=self.include_external_assets) - selection
 
     def visitAndExpression(self, ctx: AssetSelectionParser.AndExpressionContext):
         left: AssetSelection = self.visit(ctx.expr(0))
@@ -66,7 +66,7 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
         return left | right
 
     def visitAllExpression(self, ctx: AssetSelectionParser.AllExpressionContext):
-        return AssetSelection.all(include_sources=self.include_sources)
+        return AssetSelection.all(include_external_assets=self.include_external_assets)
 
     def visitAttributeExpression(self, ctx: AssetSelectionParser.AttributeExpressionContext):
         return self.visit(ctx.attributeExpr())
@@ -108,7 +108,7 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
     def visitTagAttributeExpr(self, ctx: AssetSelectionParser.TagAttributeExprContext):
         key = self.visit(ctx.value(0))
         value = self.visit(ctx.value(1)) if ctx.EQUAL() else ""
-        return AssetSelection.tag(key, value, include_sources=self.include_sources)
+        return AssetSelection.tag(key, value, include_external_assets=self.include_external_assets)
 
     def visitOwnerAttributeExpr(self, ctx: AssetSelectionParser.OwnerAttributeExprContext):
         owner = self.visit(ctx.value())
@@ -116,11 +116,13 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
 
     def visitGroupAttributeExpr(self, ctx: AssetSelectionParser.GroupAttributeExprContext):
         group = self.visit(ctx.value())
-        return AssetSelection.groups(group, include_sources=self.include_sources)
+        return AssetSelection.groups(group, include_external_assets=self.include_external_assets)
 
     def visitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         kind = self.visit(ctx.value())
-        return AssetSelection.tag(f"{KIND_PREFIX}{kind}", "", include_sources=self.include_sources)
+        return AssetSelection.tag(
+            f"{KIND_PREFIX}{kind}", "", include_external_assets=self.include_external_assets
+        )
 
     def visitCodeLocationAttributeExpr(
         self, ctx: AssetSelectionParser.CodeLocationAttributeExprContext
@@ -136,7 +138,7 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
 
 
 class AntlrAssetSelectionParser:
-    def __init__(self, selection_str: str, include_sources: bool = False):
+    def __init__(self, selection_str: str, include_external_assets: bool = False):
         lexer = AssetSelectionLexer(InputStream(selection_str))
         lexer.removeErrorListeners()  # Remove the default listener that just writes to the console
         lexer.addErrorListener(AntlrInputErrorListener())
@@ -149,7 +151,9 @@ class AntlrAssetSelectionParser:
 
         self._tree = parser.start()
         self._tree_str = self._tree.toStringTree(recog=parser)
-        self._asset_selection = AntlrAssetSelectionVisitor(include_sources).visit(self._tree)
+        self._asset_selection = AntlrAssetSelectionVisitor(include_external_assets).visit(
+            self._tree
+        )
 
     @property
     def tree_str(self) -> str:
