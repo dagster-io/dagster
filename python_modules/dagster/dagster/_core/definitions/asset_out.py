@@ -1,12 +1,7 @@
 from typing import Any, Mapping, Optional, Sequence, Type, Union
 
 import dagster._check as check
-from dagster._annotations import (
-    experimental_param,
-    hidden_param,
-    only_allow_hidden_params_in_kwargs,
-    public,
-)
+from dagster._annotations import hidden_param, only_allow_hidden_params_in_kwargs, public
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -35,7 +30,6 @@ from dagster._utils.warnings import disable_dagster_warnings
 EMPTY_ASSET_KEY_SENTINEL = AssetKey([])
 
 
-@experimental_param(param="tags")
 @hidden_param(
     param="freshness_policy",
     breaking_version="1.10.0",
