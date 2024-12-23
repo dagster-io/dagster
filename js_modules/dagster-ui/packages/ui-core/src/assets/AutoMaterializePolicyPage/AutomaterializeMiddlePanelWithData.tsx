@@ -117,10 +117,11 @@ export const AutomaterializeMiddlePanelWithData = ({
   // backfill was requested. If DA is updated to request multiple backfills in a single evaluation,
   // or emit a combination of runs and backfills in a single evaluation, this logic will need to
   // be updated.
+  const backfillIdLength = 8;
   const runsFilter: RunsFilter | null = useMemo(
     () =>
       selectedEvaluation?.runIds.length
-        ? selectedEvaluation.runIds.length === 1 && selectedEvaluation.runIds[0]?.length === 8
+        ? selectedEvaluation.runIds.length === 1 && selectedEvaluation.runIds[0]?.length === backfillIdLength
           ? {tags: [{key: 'dagster/backfill', value: selectedEvaluation.runIds[0]}]}
           : {runIds: selectedEvaluation.runIds}
         : null,
