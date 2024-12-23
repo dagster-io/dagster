@@ -20,7 +20,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental, public
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -616,7 +616,6 @@ class BaseMultiPartitionMapping(ABC):
         return result
 
 
-@experimental
 @whitelist_for_serdes
 class MultiToSingleDimensionPartitionMapping(
     BaseMultiPartitionMapping,
@@ -705,7 +704,6 @@ class DimensionPartitionMapping(
         )
 
 
-@experimental
 @whitelist_for_serdes
 class MultiPartitionMapping(
     BaseMultiPartitionMapping,
