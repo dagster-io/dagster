@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Generic, Mapping, Optional, Sequence
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import beta, public
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import (
@@ -632,7 +632,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         ).with_label("on_missing")
 
     @public
-    @experimental
+    @beta
     @staticmethod
     def any_downstream_conditions() -> "BuiltinAutomationCondition":
         """Returns an AutomationCondition which represents the union of all distinct downstream conditions."""
