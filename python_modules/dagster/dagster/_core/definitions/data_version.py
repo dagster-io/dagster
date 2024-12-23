@@ -16,7 +16,7 @@ from typing import (
 from typing_extensions import Final
 
 from dagster import _check as check
-from dagster._annotations import deprecated, experimental
+from dagster._annotations import beta, deprecated
 from dagster._core.loader import LoadingContext
 from dagster._utils.cached_method import cached_method
 
@@ -63,7 +63,7 @@ class DataVersion(
         )
 
 
-@experimental
+@beta
 class DataVersionsByPartition(
     NamedTuple(
         "_DataVersionsByPartition", [("data_versions_by_partition", Mapping[str, DataVersion])]
