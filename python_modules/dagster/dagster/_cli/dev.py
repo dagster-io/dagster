@@ -13,7 +13,7 @@ import click
 import yaml
 
 from dagster import _check as check
-from dagster._annotations import deprecated
+from dagster._annotations import confirmed_deprecated
 from dagster._cli.utils import ClickArgValue, get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import get_workspace_load_target, workspace_options
 from dagster._core.instance import DagsterInstance
@@ -89,7 +89,7 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     required=False,
     default=False,
 )
-@deprecated(
+@confirmed_deprecated(
     breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
 )
 def dev_command(

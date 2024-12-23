@@ -1151,4 +1151,9 @@ def only_allow_hidden_params_in_kwargs(annotatable: Annotatable, kwargs: Mapping
         )
 
 
-beta_param = experimental_param  # PLACEHOLDER
+# placeholder
+beta_param = experimental_param
+
+# placeholder
+confirmed_deprecated = deprecated
+confirmed_deprecated_param = deprecated_param

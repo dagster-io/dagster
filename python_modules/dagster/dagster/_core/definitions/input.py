@@ -4,7 +4,7 @@ from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated_param, superseded
+from dagster._annotations import PublicAttr, confirmed_deprecated_param, superseded
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.inference import InferredInputProps
 from dagster._core.definitions.metadata import (
@@ -330,7 +330,7 @@ class FanInInputPointer(
         )
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="dagster_type",
     breaking_version="2.0",
     additional_warn_text="Any defined `dagster_type` should come from the upstream op `Output`.",

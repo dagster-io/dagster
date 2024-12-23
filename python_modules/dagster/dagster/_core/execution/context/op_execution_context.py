@@ -3,7 +3,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import deprecated, public
+from dagster._annotations import confirmed_deprecated, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
@@ -304,7 +304,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             dynamic_partitions_store=self.instance,
         )
 
-    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
+    @confirmed_deprecated(
+        breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead."
+    )
     @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
@@ -613,7 +615,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         else:
             return key
 
-    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key` instead.")
+    @confirmed_deprecated(
+        breaking_version="2.0", additional_warn_text="Use `partition_key` instead."
+    )
     @public
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         """Returns the asset partition key for the given output.
@@ -671,7 +675,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.asset_partition_key_for_output(output_name)
 
-    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_time_window` instead.")
+    @confirmed_deprecated(
+        breaking_version="2.0", additional_warn_text="Use `partition_time_window` instead."
+    )
     @public
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
         """The time window for the partitions of the output asset.
@@ -747,7 +753,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
 
-    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
+    @confirmed_deprecated(
+        breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead."
+    )
     @public
     def asset_partition_key_range_for_output(
         self, output_name: str = "result"
@@ -1005,7 +1013,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         return result
 
-    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_keys` instead.")
+    @confirmed_deprecated(
+        breaking_version="2.0", additional_warn_text="Use `partition_keys` instead."
+    )
     @public
     def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
         """Returns a list of the partition keys for the given output.

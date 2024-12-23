@@ -4,7 +4,13 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, cast  # 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, beta_param, deprecated, deprecated_param, public
+from dagster._annotations import (
+    PublicAttr,
+    beta_param,
+    confirmed_deprecated_param,
+    deprecated,
+    public,
+)
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.data_version import (
@@ -160,7 +166,7 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
 
 @beta_param(param="resource_defs")
 @beta_param(param="io_manager_def")
-@deprecated_param(param="freshness_policy", breaking_version="1.11.0")
+@confirmed_deprecated_param(param="freshness_policy", breaking_version="1.11.0")
 @deprecated(
     breaking_version="2.0.0",
     additional_warn_text="Use AssetSpec instead. If using the SourceAsset io_manager_key property, "

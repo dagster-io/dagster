@@ -5,7 +5,7 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
-from dagster._annotations import deprecated_param, public, superseded
+from dagster._annotations import confirmed_deprecated_param, public, superseded
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
@@ -150,7 +150,7 @@ class MultiAssetSensorContextCursor:
         return json.dumps(self._cursor_component_by_asset_key)
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="last_completion_time",
     breaking_version="2.0",
     additional_warn_text="Use `last_tick_completion_time` instead.",

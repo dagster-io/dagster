@@ -5,7 +5,7 @@ from itertools import groupby
 from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param
+from dagster._annotations import confirmed_deprecated_param, deprecated
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -239,7 +239,7 @@ class UnresolvedAssetJobDefinition(
         )
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="partitions_def",
     breaking_version="2.0.0",
     additional_warn_text="Partitioning is inferred from the selected assets, so setting this is redundant.",

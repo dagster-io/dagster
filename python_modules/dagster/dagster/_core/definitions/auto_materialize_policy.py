@@ -3,7 +3,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import deprecated, public
+from dagster._annotations import confirmed_deprecated, public
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
     UnpackContext,
@@ -59,7 +59,7 @@ class AutoMaterializePolicyType(Enum):
     old_fields={"time_window_partition_scope_minutes": 1e-6},
     serializer=AutoMaterializePolicySerializer,
 )
-@deprecated(breaking_version="1.10.0")
+@confirmed_deprecated(breaking_version="1.10.0")
 class AutoMaterializePolicy(
     NamedTuple(
         "_AutoMaterializePolicy",
@@ -196,7 +196,7 @@ class AutoMaterializePolicy(
 
     @public
     @staticmethod
-    @deprecated(
+    @confirmed_deprecated(
         breaking_version="1.10.0",
         additional_warn_text="Use `AutomationCondition.eager()` instead.",
     )
@@ -228,12 +228,12 @@ class AutoMaterializePolicy(
 
     @public
     @staticmethod
-    @deprecated(
+    @confirmed_deprecated(
         breaking_version="1.10.0",
         additional_warn_text="Use `AutomationCondition.any_downstream_conditions()` instead.",
     )
     def lazy(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
-        """(Deprecated) Constructs a lazy AutoMaterializePolicy.
+        """(deprecated_confirmed) Constructs a lazy AutoMaterializePolicy.
 
         Args:
             max_materializations_per_minute (Optional[int]): The maximum number of
