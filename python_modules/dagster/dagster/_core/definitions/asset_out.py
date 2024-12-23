@@ -35,7 +35,6 @@ from dagster._utils.warnings import disable_dagster_warnings
 EMPTY_ASSET_KEY_SENTINEL = AssetKey([])
 
 
-@experimental_param(param="owners")
 @experimental_param(param="tags")
 @hidden_param(
     param="freshness_policy",
