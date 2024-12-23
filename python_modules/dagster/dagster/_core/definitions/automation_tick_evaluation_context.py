@@ -286,6 +286,9 @@ def build_run_requests(
     run_tags: Optional[Mapping[str, str]],
     emit_backfills: bool,
 ) -> Sequence[RunRequest]:
+    """For a single asset in a given tick, the asset will only be part of a run or a backfill, not both.
+    If the asset is targetd by a backfill, there will only be one backfill that targets the asset.
+    """
     if emit_backfills:
         backfill_run_request, entity_subsets = _build_backfill_request(
             entity_subsets, asset_graph, run_tags
