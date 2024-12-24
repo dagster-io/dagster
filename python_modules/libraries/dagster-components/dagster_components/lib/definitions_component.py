@@ -10,7 +10,12 @@ from dagster._utils import pushd
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from dagster_components import Component, ComponentGenerateRequest, ComponentLoadContext, component
+from dagster_components import (
+    Component,
+    ComponentGenerateRequest,
+    ComponentLoadContext,
+    component_type,
+)
 from dagster_components.generate import generate_component_yaml
 
 
@@ -22,7 +27,7 @@ class DefinitionsParamSchema(BaseModel):
     definitions_path: Optional[str] = None
 
 
-@component(name="definitions")
+@component_type(name="definitions")
 class DefinitionsComponent(Component):
     def __init__(self, definitions_path: Path):
         self.definitions_path = definitions_path

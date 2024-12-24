@@ -15,7 +15,7 @@ from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import (
     ComponentGenerateRequest,
     TemplatedValueResolver,
-    component,
+    component_type,
 )
 from dagster_components.core.component_rendering import RenderingScope
 from dagster_components.core.dsl_schema import AssetAttributes, AssetSpecProcessor, OpSpecBaseModel
@@ -70,7 +70,7 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
         )
 
 
-@component(name="dbt_project")
+@component_type(name="dbt_project")
 class DbtProjectComponent(Component):
     params_schema = DbtProjectParams
     generate_params_schema = DbtGenerateParams

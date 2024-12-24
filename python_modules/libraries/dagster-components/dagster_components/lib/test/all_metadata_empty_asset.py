@@ -5,7 +5,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from typing_extensions import Self
 
-from dagster_components import Component, ComponentLoadContext, component
+from dagster_components import Component, ComponentLoadContext, component_type
 from dagster_components.core.component import ComponentGenerateRequest
 from dagster_components.core.component_decl_builder import YamlComponentDecl
 from dagster_components.generate import generate_component_yaml
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from dagster_components.core.component import ComponentDeclNode
 
 
-@component(name="all_metadata_empty_asset")
+@component_type(name="all_metadata_empty_asset")
 class AllMetadataEmptyAsset(Component):
     @classmethod
     def from_decl_node(

@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component import ComponentGenerateRequest, component
+from dagster_components.core.component import ComponentGenerateRequest, component_type
 from dagster_components.core.dsl_schema import AssetAttributes, AssetSpecProcessor, OpSpecBaseModel
 from dagster_components.generate import generate_component_yaml
 
@@ -23,7 +23,7 @@ class SlingReplicationParams(BaseModel):
     asset_attributes: Optional[AssetAttributes] = None
 
 
-@component(name="sling_replication")
+@component_type(name="sling_replication")
 class SlingReplicationComponent(Component):
     params_schema = SlingReplicationParams
 

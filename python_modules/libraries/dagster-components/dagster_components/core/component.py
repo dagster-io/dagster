@@ -263,11 +263,17 @@ class ComponentLoadContext:
 COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"
 
 
-def component(
-    cls: Optional[Type[Component]] = None,
-    *,
-    name: Optional[str] = None,
-) -> Any:
+def component_type(cls: Optional[Type[Component]] = None, *, name: Optional[str] = None) -> Any:
+    """Decorator for registering a component type. You must annotate a component
+    type with this decorator in order for it to be inspectable and loaded by tools.
+
+    Args:
+        cls (Optional[Type[Component]]): The target of the decorator: the component class
+            to register. The class must inherit from Component.
+        name (Optional[str]): The name to register the component type under. If not
+            provided, the name will be the snake-cased version of the class name. The
+            name is used as a key in operations like scaffolding and loading.
+    """
     if cls is None:
 
         def wrapper(actual_cls: Type[Component]) -> Type[Component]:

@@ -11,7 +11,7 @@ from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster._utils.warnings import suppress_dagster_warnings
 from pydantic import BaseModel
 
-from dagster_components.core.component import Component, ComponentLoadContext, component
+from dagster_components.core.component import Component, ComponentLoadContext, component_type
 from dagster_components.core.dsl_schema import AutomationConditionModel
 
 if TYPE_CHECKING:
@@ -52,7 +52,7 @@ class PipesSubprocessScriptCollectionParams(BaseModel):
     scripts: Sequence[PipesSubprocessScriptParams]
 
 
-@component(name="pipes_subprocess_script_collection")
+@component_type(name="pipes_subprocess_script_collection")
 class PipesSubprocessScriptCollection(Component):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
 
