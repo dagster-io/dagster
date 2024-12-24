@@ -61,7 +61,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "dagsterUserDeployments.postgresql.secretName" $ }}
-                  key: postgresql-password
+                  key: {{ include "dagsterUserDeployments.postgresql.secretPasswordKey" $ }}
             {{- $includeConfigInLaunchedRuns := $deployment.includeConfigInLaunchedRuns | default (dict "enabled" true) }}
             {{- if $includeConfigInLaunchedRuns.enabled }}
             {{- if $deployment.dagsterApiGrpcArgs }}
