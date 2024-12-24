@@ -148,7 +148,7 @@ class ComponentTypeRegistry:
             `dagster_components*`. Only one built-in  component library can be loaded at a time.
             Defaults to `dagster_components`, the standard set of published component types.
         """
-        components: Dict[str, Type[Component]] = {}
+        component_types: Dict[str, Type[Component]] = {}
         for entry_point in get_entry_points_from_python_environment(COMPONENTS_ENTRY_POINT_GROUP):
             # Skip built-in entry points that are not the specified builtin component library.
             if (
@@ -163,44 +163,44 @@ class ComponentTypeRegistry:
                     f"Invalid entry point {entry_point.name} in group {COMPONENTS_ENTRY_POINT_GROUP}. "
                     f"Value expected to be a module, got {root_module}."
                 )
-            for component in get_registered_components_in_module(root_module):
-                key = f"{entry_point.name}.{get_component_name(component)}"
-                components[key] = component
+            for component_type in get_registered_component_types_in_module(root_module):
+                key = f"{entry_point.name}.{get_component_type_name(component_type)}"
+                component_types[key] = component_type
 
-        return cls(components)
+        return cls(component_types)
 
-    def __init__(self, components: Dict[str, Type[Component]]):
-        self._components: Dict[str, Type[Component]] = copy.copy(components)
+    def __init__(self, component_types: Dict[str, Type[Component]]):
+        self._component_types: Dict[str, Type[Component]] = copy.copy(component_types)
 
     @staticmethod
     def empty() -> "ComponentTypeRegistry":
         return ComponentTypeRegistry({})
 
-    def register(self, name: str, component: Type[Component]) -> None:
-        if name in self._components:
+    def register(self, name: str, component_type: Type[Component]) -> None:
+        if name in self._component_types:
             raise DagsterError(f"There is an existing component registered under {name}")
-        self._components[name] = component
+        self._component_types[name] = component_type
 
     def has(self, name: str) -> bool:
-        return name in self._components
+        return name in self._component_types
 
     def get(self, name: str) -> Type[Component]:
-        return self._components[name]
+        return self._component_types[name]
 
     def keys(self) -> Iterable[str]:
-        return self._components.keys()
+        return self._component_types.keys()
 
     def __repr__(self) -> str:
-        return f"<ComponentRegistry {list(self._components.keys())}>"
+        return f"<ComponentRegistry {list(self._component_types.keys())}>"
 
 
-def get_registered_components_in_module(module: ModuleType) -> Iterable[Type[Component]]:
+def get_registered_component_types_in_module(module: ModuleType) -> Iterable[Type[Component]]:
     from dagster._core.definitions.module_loaders.load_assets_from_modules import (
         find_subclasses_in_module,
     )
 
     for component in find_subclasses_in_module(module, (Component,)):
-        if is_registered_component(component):
+        if is_registered_component_type(component):
             yield component
 
 
@@ -294,13 +294,13 @@ def component_type(cls: Optional[Type[Component]] = None, *, name: Optional[str]
         return cls
 
 
-def is_registered_component(cls: Type) -> bool:
+def is_registered_component_type(cls: Type) -> bool:
     return hasattr(cls, COMPONENT_REGISTRY_KEY_ATTR)
 
 
-def get_component_name(component_type: Type[Component]) -> str:
+def get_component_type_name(component_type: Type[Component]) -> str:
     check.param_invariant(
-        is_registered_component(component_type),
+        is_registered_component_type(component_type),
         "component_type",
         "Expected a registered component. Use @component to register a component.",
     )
