@@ -1,7 +1,7 @@
 from typing import Any, Mapping
 
 from dagster import AssetSpec, AutomationCondition, Definitions
-from dagster_components import Component, ComponentLoadContext, component
+from dagster_components import Component, ComponentLoadContext, component_type
 from pydantic import BaseModel
 
 
@@ -17,7 +17,7 @@ class CustomScopeParams(BaseModel):
     attributes: Mapping[str, Any]
 
 
-@component(name="custom_scope_component")
+@component_type(name="custom_scope_component")
 class HasCustomScope(Component):
     params_schema = CustomScopeParams
 

@@ -3,7 +3,7 @@ from dagster_components.core.component import (
     ComponentGenerateRequest as ComponentGenerateRequest,
     ComponentLoadContext as ComponentLoadContext,
     ComponentRegistry as ComponentRegistry,
-    component as component,
+    component_type as component_type,
 )
 from dagster_components.core.component_defs_builder import (
     build_component_defs as build_component_defs,

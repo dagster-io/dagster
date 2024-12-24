@@ -1,9 +1,9 @@
-from dagster_components import Component, component
+from dagster_components import Component, component_type
 from dagster_components.core.component import get_component_name, is_registered_component
 
 
 def test_registered_component_with_default_name() -> None:
-    @component
+    @component_type
     class RegisteredComponent(Component): ...
 
     assert is_registered_component(RegisteredComponent)
@@ -11,7 +11,7 @@ def test_registered_component_with_default_name() -> None:
 
 
 def test_registered_component_with_default_name_and_parens() -> None:
-    @component()
+    @component_type()
     class RegisteredComponent(Component): ...
 
     assert is_registered_component(RegisteredComponent)
@@ -19,7 +19,7 @@ def test_registered_component_with_default_name_and_parens() -> None:
 
 
 def test_registered_component_with_explicit_kwarg_name() -> None:
-    @component(name="explicit_name")
+    @component_type(name="explicit_name")
     class RegisteredComponent(Component): ...
 
     assert is_registered_component(RegisteredComponent)
