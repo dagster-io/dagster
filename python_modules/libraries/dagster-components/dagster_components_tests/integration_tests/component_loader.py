@@ -2,7 +2,10 @@ import importlib
 from pathlib import Path
 
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_components.core.component import ComponentRegistry, get_registered_components_in_module
+from dagster_components.core.component import (
+    ComponentTypeRegistry,
+    get_registered_components_in_module,
+)
 from dagster_components.core.component_defs_builder import (
     build_defs_from_component_path,
     get_component_name,
@@ -31,6 +34,6 @@ def load_test_component_project_context() -> CodeLocationProjectContext:
     return CodeLocationProjectContext(
         root_path=str(Path(__file__).parent),
         name="test",
-        component_registry=ComponentRegistry(components),
+        component_registry=ComponentTypeRegistry(components),
         components_folder=Path(__file__).parent / "components",
     )
