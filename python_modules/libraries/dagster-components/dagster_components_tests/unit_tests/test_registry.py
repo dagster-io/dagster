@@ -55,8 +55,8 @@ def _find_repo_root():
 
 def _generate_test_component_source(number: int) -> str:
     return textwrap.dedent(f"""
-    from dagster_components import Component, component
-    @component(name="test_component_{number}")
+    from dagster_components import Component, component_type
+    @component_type(name="test_component_{number}")
     class TestComponent{number}(Component):
         pass
     """)
