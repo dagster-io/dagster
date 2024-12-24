@@ -5,7 +5,7 @@ from typing import Optional
 import click
 from pydantic import TypeAdapter
 
-from dagster_components import ComponentRegistry
+from dagster_components import ComponentTypeRegistry
 from dagster_components.core.deployment import (
     CodeLocationProjectContext,
     find_enclosing_code_location_root_path,
@@ -42,7 +42,9 @@ def generate_component_command(
 
     context = CodeLocationProjectContext.from_code_location_path(
         find_enclosing_code_location_root_path(Path.cwd()),
-        ComponentRegistry.from_entry_point_discovery(builtin_component_lib=builtin_component_lib),
+        ComponentTypeRegistry.from_entry_point_discovery(
+            builtin_component_lib=builtin_component_lib
+        ),
     )
     if not context.has_component_type(component_type):
         click.echo(

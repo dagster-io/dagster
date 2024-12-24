@@ -26,9 +26,9 @@ def _temp_venv(install_args: Sequence[str]) -> Iterator[Path]:
 
 
 COMPONENT_PRINT_SCRIPT = """
-from dagster_components import ComponentRegistry
+from dagster_components import ComponentTypeRegistry
 
-registry = ComponentRegistry.from_entry_point_discovery()
+registry = ComponentTypeRegistry.from_entry_point_discovery()
 for component_name in list(registry.keys()):
     print(component_name)
 """

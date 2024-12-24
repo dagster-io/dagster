@@ -10,12 +10,12 @@ from dagster_components.core.component import (
     Component,
     ComponentDeclNode,
     ComponentLoadContext,
-    ComponentRegistry,
+    ComponentTypeRegistry,
 )
 
 
-def registry() -> ComponentRegistry:
-    return ComponentRegistry.from_entry_point_discovery()
+def registry() -> ComponentTypeRegistry:
+    return ComponentTypeRegistry.from_entry_point_discovery()
 
 
 def script_load_context(decl_node: Optional[ComponentDeclNode] = None) -> ComponentLoadContext:

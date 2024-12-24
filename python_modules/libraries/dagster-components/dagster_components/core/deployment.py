@@ -6,7 +6,7 @@ import tomli
 from dagster._core.errors import DagsterError
 from typing_extensions import Self
 
-from dagster_components.core.component import Component, ComponentRegistry
+from dagster_components.core.component import Component, ComponentTypeRegistry
 
 # Code location
 _CODE_LOCATION_CUSTOM_COMPONENTS_DIR: Final = "lib"
@@ -49,7 +49,7 @@ class CodeLocationProjectContext:
     def from_code_location_path(
         cls,
         path: Path,
-        component_registry: "ComponentRegistry",
+        component_registry: "ComponentTypeRegistry",
         components_folder: Optional[Path] = None,
     ) -> Self:
         if not _is_code_location_root(path):
@@ -71,7 +71,7 @@ class CodeLocationProjectContext:
         self,
         root_path: str,
         name: str,
-        component_registry: "ComponentRegistry",
+        component_registry: "ComponentTypeRegistry",
         components_folder: Path,
     ):
         self._root_path = root_path
@@ -88,7 +88,7 @@ class CodeLocationProjectContext:
         return f"{self._name}.{_CODE_LOCATION_CUSTOM_COMPONENTS_DIR}"
 
     @property
-    def component_registry(self) -> "ComponentRegistry":
+    def component_registry(self) -> "ComponentTypeRegistry":
         return self._component_registry
 
     def has_component_type(self, name: str) -> bool:
