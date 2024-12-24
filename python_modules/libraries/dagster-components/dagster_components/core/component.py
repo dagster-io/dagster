@@ -66,7 +66,7 @@ class Component(ABC):
     def load(cls, context: "ComponentLoadContext") -> Self: ...
 
     @classmethod
-    def get_metadata(cls) -> "ComponentInternalMetadata":
+    def get_metadata(cls) -> "ComponentTypeInternalMetadata":
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
 
@@ -104,14 +104,14 @@ def _get_click_cli_help(command: click.Command) -> str:
         return formatter.getvalue()
 
 
-class ComponentInternalMetadata(TypedDict):
+class ComponentTypeInternalMetadata(TypedDict):
     summary: Optional[str]
     description: Optional[str]
     generate_params_schema: Optional[Any]  # json schema
     component_params_schema: Optional[Any]  # json schema
 
 
-class ComponentMetadata(ComponentInternalMetadata):
+class ComponentTypeMetadata(ComponentTypeInternalMetadata):
     name: str
     package: str
 

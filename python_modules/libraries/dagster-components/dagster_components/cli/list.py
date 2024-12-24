@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 import click
 
-from dagster_components.core.component import ComponentMetadata, ComponentTypeRegistry
+from dagster_components.core.component import ComponentTypeMetadata, ComponentTypeRegistry
 from dagster_components.core.deployment import (
     CodeLocationProjectContext,
     find_enclosing_code_location_root_path,
@@ -41,7 +41,7 @@ def list_component_types_command(ctx: click.Context) -> None:
     output: Dict[str, Any] = {}
     for key, component_type in context.list_component_types():
         package, name = key.rsplit(".", 1)
-        output[key] = ComponentMetadata(
+        output[key] = ComponentTypeMetadata(
             name=name,
             package=package,
             **component_type.get_metadata(),
