@@ -1058,6 +1058,10 @@
                     "title": "Postgresqlsecretname",
                     "type": "string"
                 },
+                "postgresqlSecretPasswordKey": {
+                    "title": "Postgresqlsecretpasswordkey",
+                    "type": "string"
+                },
                 "dagsterHome": {
                     "title": "Dagsterhome",
                     "type": "string"
