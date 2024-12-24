@@ -194,3 +194,12 @@ class Container(BaseModel):
         "extra": "allow",
         "json_schema_extra": {"$ref": create_definition_ref("io.k8s.api.core.v1.Container")},
     }
+
+
+class DeploymentStrategy(BaseModel):
+    model_config = {
+        "extra": "allow",
+        "json_schema_extra": {
+            "$ref": create_definition_ref("io.k8s.api.apps.v1.DeploymentStrategy")
+        },
+    }
