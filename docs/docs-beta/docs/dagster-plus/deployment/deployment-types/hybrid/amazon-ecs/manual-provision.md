@@ -11,8 +11,6 @@ In this guide, you'll manually set up and deploy an Amazon Elastic Container Ser
 
 This method of setting up an Amazon ECS agent is a good option if you're comfortable with infrastructure management and want to fully define your agent.
 
----
-
 ## Prerequisites
 
 To complete the steps in this guide, you'll need:
@@ -29,8 +27,6 @@ To complete the steps in this guide, you'll need:
 
 - **Familiarity with infrastructure management and tooling.**
 
----
-
 ## Step 1: Generate a Dagster+ agent token
 
 In this step, you'll generate a token for the Dagster+ agent. The Dagster+ agent will use this to authenticate to the agent API.
@@ -42,8 +38,6 @@ In this step, you'll generate a token for the Dagster+ agent. The Dagster+ agent
 5. After the token has been created, click **Reveal token**.
 
 Keep the token somewhere handy - you'll need it to complete the setup.
-
----
 
 ## Step 2: Create ECS IAM roles
 
@@ -119,8 +113,6 @@ To successfully run your ECS agent, you'll need to have the following IAM roles 
 }
 ```
 
----
-
 ## Step 3: Create an ECS service
 
 1. Create an ECS service to run the agent. You can do this [in the Amazon ECS console](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/create-service-console-v2.html) or [via the CreateService API](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html).
@@ -133,8 +125,6 @@ To successfully run your ECS agent, you'll need to have the following IAM roles 
    - Echoing it to a file in your task definition's command **before starting the agent**
 
    Refer to the [ECS configuration reference](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/configuration-reference#per-deployment-configuration) for more info about the required fields.
-
----
 
 ## Next steps
 

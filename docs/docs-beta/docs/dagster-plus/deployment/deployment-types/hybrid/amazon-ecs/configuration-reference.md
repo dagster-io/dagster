@@ -9,8 +9,6 @@ This guide is applicable to Dagster+.
 
 This reference describes the various configuration options Dagster+ currently supports for [Amazon ECS agents](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs).
 
----
-
 ## Per-location configuration
 
 When [adding a code location](/dagster-plus/deployment/code-locations) to Dagster+ with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location.
@@ -113,8 +111,6 @@ Refer to the following guides for more info about environment variables:
 - [Dagster+ environment variables and secrets](/dagster-plus/deployment/management/environment-variables/)
 - [Using environment variables and secrets in Dagster code](/guides/deploy/secrets)
 
----
-
 ## Per-job configuration: Resource limits
 
 You can use job tags to customize the CPU and memory of every run for that job:
@@ -139,8 +135,6 @@ def my_job():
 [Fargate tasks only support certain combinations of CPU and memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)
 
 If the `ecs/cpu` or `ecs/memory` tags are set, they will override any defaults set on the code location or the deployment.
-
----
 
 ## Per-deployment configuration
 

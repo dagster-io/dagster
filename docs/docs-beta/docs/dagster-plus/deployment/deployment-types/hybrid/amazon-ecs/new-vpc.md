@@ -13,8 +13,6 @@ Our CloudFormation template allows you to quickly spin up the ECS agent stack. T
 
 **For info about deploying an ECS agent in an existing VPC**, check out the [ECS agents in existing VPCs guide](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/existing-vpc).
 
----
-
 ## Prerequisites
 
 To complete the steps in this guide, you'll need:
@@ -37,8 +35,6 @@ To complete the steps in this guide, you'll need:
     - Create one using the [first run wizard](https://console.aws.amazon.com/ecs/home#/firstRun), or
     - Create the IAM role using the [AWS CLI](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using-service-linked-roles.html#create-service-linked-role)
 
----
-
 ## Step 1: Generate a Dagster+ agent token
 
 In this step, you'll generate a token for the Dagster+ agent. The Dagster+ agent will use this to authenticate to the agent API.
@@ -50,7 +46,6 @@ In this step, you'll generate a token for the Dagster+ agent. The Dagster+ agent
 5. After the token has been created, click **Reveal token**.
 
 Keep the token somewhere handy - you'll need it to complete the setup.
----
 
 ## Step 2: Install the CloudFormation stack in AWS
 
@@ -61,8 +56,6 @@ Click the **Launch Stack** button to install the CloudFormation stack in your AW
 **Note**: Creating the CloudFormation stack may take a few minutes. Refresh the [AWS console **Stacks** page](https://console.aws.amazon.com/cloudformation/home#/stacks) to check the status.
 
 If the installation fails, verify that your AWS account [meets the requirements listed above](#prerequisites).
-
----
 
 ## Step 3: Configure the agent
 
@@ -80,8 +73,6 @@ The page should look similar to the following image. In this example, our organi
 After you've finished configuring the stack in AWS, you can view the agent in Dagster+. To do so, navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
 
 ![Instance Status](/images/dagster-cloud/agents/dagster-cloud-instance-status.png)
-
----
 
 ## Next steps
 

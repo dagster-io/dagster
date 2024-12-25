@@ -13,8 +13,6 @@ Our CloudFormation template allows you to quickly spin up the ECS agent stack in
 
 **For info about deploying an ECS agent in a new VPC**, check out the [ECS agents in new VPCs guide](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/new-vpc).
 
----
-
 ## Prerequisites
 
 To complete the steps in this guide, you'll need:
@@ -30,8 +28,6 @@ To complete the steps in this guide, you'll need:
     - **Enabled `enableDnsHostnames` and `enableDnsSupport` DNS attributes**. Refer to the [AWS DNS attributes documentation](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-dns.html#vpc-dns-support) for more info.
   - **Optional**: An existing ECS cluster with a [Fargate or EC2 capacity provider](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cluster-capacity-providers.html). The CloudFormation template will create a cluster for you if one isn't specified.
 
----
-
 ## Step 1: Generate a Dagster+ agent token
 
 In this step, you'll generate a token for the Dagster+ agent. The Dagster+ agent will use this to authenticate to the agent API.
@@ -43,7 +39,6 @@ In this step, you'll generate a token for the Dagster+ agent. The Dagster+ agent
 5. After the token has been created, click **Reveal token**.
 
 Keep the token somewhere handy - you'll need it to complete the setup.
----
 
 ## Step 2: Install the CloudFormation stack in AWS
 
@@ -52,8 +47,6 @@ Click the **Launch Stack** button to install the CloudFormation stack in your AW
 [<img src="https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png"/>](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent.yaml)
 
 **Note**: Creating the CloudFormation stack may take a few minutes. Refresh the [AWS console **Stacks** page](https://console.aws.amazon.com/cloudformation/home#/stacks) to check the status.
-
----
 
 ## Step 3: Configure the agent
 
@@ -75,8 +68,6 @@ The page should look similar to the following image. In this example, our organi
 After you've finished configuring the stack in AWS, you can view the agent in Dagster+. To do so, navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
 
 ![Instance Status](/images/dagster-cloud/agents/dagster-cloud-instance-status.png)
-
----
 
 ## Next steps
 
