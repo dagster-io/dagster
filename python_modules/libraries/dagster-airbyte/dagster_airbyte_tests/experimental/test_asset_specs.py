@@ -77,11 +77,11 @@ def test_cached_load_spec_single_resource(
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
         )
 
-        # load asset specs a first time
+        # load asset specs, calls are made
         workspace.load_asset_specs()
         assert len(fetch_workspace_data_api_mocks.calls) == 4
 
-        # load asset specs a first time, no additional calls are made
+        # load asset specs another time, no additional calls are made
         workspace.load_asset_specs()
         assert len(fetch_workspace_data_api_mocks.calls) == 4
 
