@@ -237,8 +237,19 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         self._download_urls[blob_key] = url
         return url
 
+    def uri_or_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
+        if not self.is_capture_complete(log_key):
+            return None
+
+        return self._blob_key(log_key, io_type)
+
+    def shell_command_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
+        blob_key = self._blob_key(log_key, io_type)
+        return f"az storage blob download --account-name {self._storage_account} --container-name {self._container} --name ${blob_key}"
+
     @contextmanager
     def capture_logs(self, log_key: Sequence[str]) -> Iterator[CapturedLogContext]:
+        STORAGE_BLOB_DOWNLOAD_SHELL_CMD="az storage blob download --account-name mlarosesandboxlogs --container-name dagster-logs --name"
         with super().capture_logs(log_key) as local_context:
             if not self._show_url_only:
                 yield local_context
@@ -249,7 +260,13 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
                 out_url = f"{azure_base_url}/{out_key}"
                 err_url = f"{azure_base_url}/{err_key}"
                 yield CapturedLogContext(
-                    local_context.log_key, external_stdout_url=out_url, external_stderr_url=err_url
+                    local_context.log_key,
+                    external_stdout_url=out_url,
+                    external_stderr_url=err_url,
+                    stdout_uri_or_path=out_key,
+                    stderr_uri_or_path=err_key,
+                    stdout_shell_cmd=self.shell_command_for_type(log_key, ComputeIOType.STDOUT),
+                    stderr_shell_cmd=self.shell_command_for_type(log_key, ComputeIOType.STDERR),
                 )
 
     def _request_user_delegation_key(
