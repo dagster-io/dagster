@@ -922,15 +922,19 @@
     "children": [
       {
         "title": "Airbyte",
-        "path": "/integrations/airbyte",
+        "path": "/integrations/airbyte/airbyte",
         "children": [
           {
             "title": "Airbyte & Dagster",
-            "path": "/integrations/airbyte"
+            "path": "/integrations/airbyte/airbyte"
           },
           {
             "title": "Airbyte Cloud & Dagster",
-            "path": "/integrations/airbyte-cloud"
+            "path": "/integrations/airbyte/airbyte-cloud"
+          },
+          {
+            "title": "Airbyte Cloud & Dagster (Legacy)",
+            "path": "/integrations/airbyte/airbyte-cloud-legacy"
           }
         ]
       },
