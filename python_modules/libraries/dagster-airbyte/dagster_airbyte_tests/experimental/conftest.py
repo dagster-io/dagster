@@ -14,6 +14,8 @@ TEST_WORKSPACE_ID = "some_workspace_id"
 TEST_CLIENT_ID = "some_client_id"
 TEST_CLIENT_SECRET = "some_client_secret"
 
+TEST_ANOTHER_WORKSPACE_ID = "some_other_workspace_id"
+
 TEST_ACCESS_TOKEN = "some_access_token"
 
 # Taken from the examples in the Airbyte REST API documentation
