@@ -992,6 +992,17 @@ class AirbyteCloudClient(DagsterModel):
             base_url=self.rest_api_base_url,
         )
 
+    def start_sync_job(self, connection_id: str) -> Mapping[str, Any]:
+        return self._make_request(
+            method="POST",
+            endpoint="jobs",
+            base_url=self.rest_api_base_url,
+            data={
+                "connectionId": connection_id,
+                "jobType": "sync",
+            },
+        )
+
 
 @experimental
 class AirbyteCloudWorkspace(ConfigurableResource):

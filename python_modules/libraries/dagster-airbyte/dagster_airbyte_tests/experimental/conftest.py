@@ -144,7 +144,7 @@ SAMPLE_CONNECTION_DETAILS = {
 }
 
 
-# Taken from Airbyte API documentation
+# Taken from Airbyte REST API documentation
 # https://reference.airbyte.com/reference/getdestination
 SAMPLE_DESTINATION_DETAILS = {
     "destinationId": TEST_DESTINATION_ID,
@@ -159,6 +159,17 @@ SAMPLE_DESTINATION_DETAILS = {
         "database": TEST_DESTINATION_DATABASE,
         "schema": TEST_DESTINATION_SCHEMA,
     },
+}
+
+
+# Taken from Airbyte REST API documentation
+# https://reference.airbyte.com/reference/getjob
+SAMPLE_JOB_RESPONSE = {
+    "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "status": "running",
+    "jobType": "sync",
+    "startTime": "2023-03-25T01:30:50Z",
+    "connectionId": TEST_CONNECTION_ID,
 }
 
 
@@ -201,3 +212,18 @@ def fetch_workspace_data_api_mocks_fixture(
         status=200,
     )
     yield base_api_mocks
+
+
+@pytest.fixture(
+    name="all_api_mocks",
+)
+def all_api_mocks_fixture(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    fetch_workspace_data_api_mocks.add(
+        method=responses.POST,
+        url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs",
+        json=SAMPLE_JOB_RESPONSE,
+        status=200,
+    )
+    yield fetch_workspace_data_api_mocks
