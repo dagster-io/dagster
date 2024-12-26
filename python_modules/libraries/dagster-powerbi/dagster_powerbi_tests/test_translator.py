@@ -18,8 +18,7 @@ def test_translator_dashboard_spec(workspace_data: PowerBIWorkspaceData) -> None
     translator = DagsterPowerBITranslator()
     asset_spec = translator.get_asset_spec(
         PowerBITranslatorData(
-            content_type=dashboard.content_type,
-            properties=dashboard.properties,
+            content_data=dashboard,
             workspace_data=workspace_data,
         )
     )
@@ -46,8 +45,7 @@ def test_translator_report_spec(workspace_data: PowerBIWorkspaceData) -> None:
     translator = DagsterPowerBITranslator()
     asset_spec = translator.get_asset_spec(
         PowerBITranslatorData(
-            content_type=report.content_type,
-            properties=report.properties,
+            content_data=report,
             workspace_data=workspace_data,
         )
     )
@@ -75,8 +73,7 @@ def test_translator_semantic_model(workspace_data: PowerBIWorkspaceData) -> None
     translator = DagsterPowerBITranslator()
     asset_spec = translator.get_asset_spec(
         PowerBITranslatorData(
-            content_type=semantic_model.content_type,
-            properties=semantic_model.properties,
+            content_data=semantic_model,
             workspace_data=workspace_data,
         )
     )
@@ -116,8 +113,7 @@ def test_translator_semantic_model_many_tables(second_workspace_data: PowerBIWor
     translator = DagsterPowerBITranslator()
     asset_spec = translator.get_asset_spec(
         PowerBITranslatorData(
-            content_type=semantic_model.content_type,
-            properties=semantic_model.properties,
+            content_data=semantic_model,
             workspace_data=second_workspace_data,
         )
     )
@@ -147,11 +143,10 @@ def test_translator_semantic_model_many_tables(second_workspace_data: PowerBIWor
 
 class MyCustomTranslator(DagsterPowerBITranslator):
     def get_asset_spec(self, data: PowerBIContentData) -> AssetSpec:
-        default_spec = super().get_asset_spec(data)
+        default_spec = super().get_asset_spec(data)  # type: ignore
         return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("prefix"),
-            metadata={**default_spec.metadata, "custom": "metadata"},
-        )
+        ).merge_attributes(metadata={"custom": "metadata"})
 
 
 def test_translator_custom_metadata(workspace_data: PowerBIWorkspaceData) -> None:
@@ -159,9 +154,8 @@ def test_translator_custom_metadata(workspace_data: PowerBIWorkspaceData) -> Non
 
     translator = MyCustomTranslator()
     asset_spec = translator.get_asset_spec(
-        PowerBITranslatorData(
-            content_type=dashboard.content_type,
-            properties=dashboard.properties,
+        PowerBITranslatorData(  # type: ignore
+            content_data=dashboard,
             workspace_data=workspace_data,
         )
     )
@@ -191,8 +185,7 @@ def test_translator_report_spec_no_dataset(workspace_data: PowerBIWorkspaceData)
     translator = DagsterPowerBITranslator()
     asset_spec = translator.get_asset_spec(
         PowerBITranslatorData(
-            content_type=report_no_dataset.content_type,
-            properties=report_no_dataset.properties,
+            content_data=report_no_dataset,
             workspace_data=workspace_data,
         )
     )

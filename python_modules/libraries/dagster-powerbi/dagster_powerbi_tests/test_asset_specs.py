@@ -6,6 +6,7 @@ import responses
 from dagster import materialize
 from dagster._config.field_utils import EnvVar
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -24,6 +25,7 @@ from dagster._utils.test.definitions import lazy_definitions
 from dagster_powerbi import PowerBIWorkspace
 from dagster_powerbi.assets import build_semantic_model_refresh_asset_definition
 from dagster_powerbi.resource import BASE_API_URL, PowerBIToken, load_powerbi_asset_specs
+from dagster_powerbi.translator import DagsterPowerBITranslator, PowerBIContentData
 
 from dagster_powerbi_tests.conftest import SAMPLE_SEMANTIC_MODEL
 
@@ -80,6 +82,31 @@ def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id:
         asset for asset in all_assets if asset.key.path[0] == "semantic_model"
     )
     assert semantic_model_asset.key.path == ["semantic_model", "Sales_Returns_Sample_v201912"]
+
+
+class MyCustomTranslator(DagsterPowerBITranslator):
+    def get_asset_spec(self, data: PowerBIContentData) -> AssetSpec:
+        default_spec = super().get_asset_spec(data)  # type: ignore
+        return default_spec.replace_attributes(
+            key=default_spec.key.with_prefix("prefix"),
+        ).merge_attributes(metadata={"custom": "metadata"})
+
+
+def test_translator_custom_metadata(workspace_data_api_mocks: None, workspace_id: str) -> None:
+    fake_token = uuid.uuid4().hex
+    resource = PowerBIWorkspace(
+        credentials=PowerBIToken(api_token=fake_token),
+        workspace_id=workspace_id,
+    )
+    all_asset_specs = load_powerbi_asset_specs(
+        workspace=resource, dagster_powerbi_translator=MyCustomTranslator, use_workspace_scan=False
+    )
+    asset_spec = next(spec for spec in all_asset_specs)
+
+    assert "custom" in asset_spec.metadata
+    assert asset_spec.metadata["custom"] == "metadata"
+    assert asset_spec.key.path == ["prefix", "dashboard", "Sales_Returns_Sample_v201912"]
+    assert "dagster/kind/powerbi" in asset_spec.tags
 
 
 @lazy_definitions

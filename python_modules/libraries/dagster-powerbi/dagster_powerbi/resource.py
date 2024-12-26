@@ -448,8 +448,7 @@ class PowerBIWorkspaceDefsLoader(StateBackedDefinitionsLoader[PowerBIWorkspaceDa
         all_external_asset_specs = [
             translator.get_asset_spec(
                 PowerBITranslatorData(
-                    content_type=content.content_type,
-                    properties=content.properties,
+                    content_data=content,
                     workspace_data=state,
                 )
             )
