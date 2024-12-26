@@ -40,7 +40,7 @@ To load Airbyte Cloud assets into the Dagster asset graph, you must first constr
 
 Dagster can automatically load all connection tables from your Airbyte Cloud workspace as asset specs. Call the <PyObject module="dagster_airbyte" method="load_airbyte_cloud_asset_specs" /> function, which returns list of <PyObject object="AssetSpec" />s representing your Airbyte Cloud assets. You can then include these asset specs in your <PyObject object="Definitions" /> object:
 
-```python file=/integrations/airbyte-cloud/representing_airbyte_cloud_assets.py
+```python file=/integrations/airbyte_cloud/representing_airbyte_cloud_assets.py
 from dagster_airbyte import AirbyteCloudWorkspace, load_airbyte_cloud_asset_specs
 
 import dagster as dg
@@ -60,7 +60,7 @@ defs = dg.Definitions(assets=airbyte_cloud_specs)
 
 You can use Dagster to sync Airbyte Cloud connections and materialize Airbyte Cloud connection tables. You can use the <PyObject module="dagster_airbyte" method="build_airbyte_assets_definitions" /> factory to create all assets definitions for your Airbyte Cloud workspace.
 
-```python file=/integrations/airbyte-cloud/sync_and_materialize_airbyte_cloud_assets.py
+```python file=/integrations/airbyte_cloud/sync_and_materialize_airbyte_cloud_assets.py
 from dagster_airbyte import AirbyteCloudWorkspace, build_airbyte_assets_definitions
 
 import dagster as dg
@@ -83,7 +83,7 @@ defs = dg.Definitions(
 
 If you want to customize the sync of your connections, you can use the <PyObject module="dagster_airbyte" method="airbyte_assets" /> decorator to do so. This allows you to execute custom code before and after the call to the Airbyte Cloud sync.
 
-```python file=/integrations/airbyte-cloud/customize_airbyte_cloud_asset_defs.py
+```python file=/integrations/airbyte_cloud/customize_airbyte_cloud_asset_defs.py
 from dagster_airbyte import AirbyteCloudWorkspace, airbyte_assets
 
 import dagster as dg
@@ -119,7 +119,7 @@ defs = dg.Definitions(
 
 By default, Dagster will generate asset specs for each Airbyte Cloud asset and populate default metadata. You can further customize asset properties by passing an instance of the custom <PyObject module="dagster_airbyte" object="DagsterAirbyteTranslator" /> to the <PyObject module="dagster_airbyte" method="load_airbyte_cloud_asset_specs" /> function.
 
-```python file=/integrations/airbyte-cloud/customize_airbyte_cloud_translator_asset_spec.py
+```python file=/integrations/airbyte_cloud/customize_airbyte_cloud_translator_asset_spec.py
 from dagster_airbyte import (
     AirbyteCloudWorkspace,
     AirbyteConnectionTableProps,
@@ -163,7 +163,7 @@ You can pass an instance of the custom <PyObject module="dagster_airbyte" object
 
 Definitions from multiple Airbyte Cloud workspaces can be combined by instantiating multiple <PyObject module="dagster_airbyte" object="AirbyteCloudWorkspace" /> resources and merging their specs. This lets you view all your Airbyte Cloud assets in a single asset graph:
 
-```python file=/integrations/airbyte-cloud/multiple_airbyte_cloud_workspaces.py
+```python file=/integrations/airbyte_cloud/multiple_airbyte_cloud_workspaces.py
 from dagster_airbyte import AirbyteCloudWorkspace, load_airbyte_cloud_asset_specs
 
 import dagster as dg
