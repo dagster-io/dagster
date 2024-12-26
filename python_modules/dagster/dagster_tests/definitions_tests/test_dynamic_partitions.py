@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Callable, Optional, Sequence
 
+import dagster as dg
 import pytest
 from dagster import (
     AssetExecutionContext,
@@ -13,6 +14,11 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.partition import DynamicPartitionsDefinition, Partition
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+)
 from dagster._core.test_utils import instance_for_test
 
 
@@ -204,3 +210,80 @@ def test_has_partition_key():
         assert partitions_def.has_partition_key("apple", dynamic_partitions_store=instance)
         assert partitions_def.has_partition_key("banana", dynamic_partitions_store=instance)
         assert not partitions_def.has_partition_key("peach", dynamic_partitions_store=instance)
+
+
+def test_dynamic_outputs_dynamic_partitions():
+    """Test the interoperability of dagster's dynamic output system with the dynamic partitioning system."""
+    partitions = ["apple", "banana", "cantaloupe"]
+    values_per_partition = {
+        "apple": 1,
+        "banana": 2,
+        "cantaloupe": 3,
+    }
+
+    partitions_def = DynamicPartitionsDefinition(name="fruits")
+
+    @dg.op(out=dg.DynamicOut())
+    def fan_out(context: dg.OpExecutionContext):
+        for partition_key in context.partition_keys:
+            yield dg.DynamicOutput(values_per_partition[partition_key], mapping_key=partition_key)
+
+    @dg.op
+    def process_fruit_val(context, val: int):
+        return val + 1
+
+    @dg.op(out=dg.Out(dagster_type=dg.Nothing))
+    def collect_fruit_vals(context, vals):
+        assert vals == [2, 3, 4]
+
+    @dg.graph_asset(partitions_def=partitions_def, backfill_policy=dg.BackfillPolicy.single_run())
+    def doubly_dynamic_asset():
+        vals = fan_out().map(process_fruit_val)
+        return collect_fruit_vals(vals.collect())
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions(dg._check.not_none(partitions_def.name), partitions)  # noqa: SLF001
+
+        result = materialize(
+            [doubly_dynamic_asset],
+            instance=instance,
+            tags={
+                ASSET_PARTITION_RANGE_START_TAG: "apple",
+                ASSET_PARTITION_RANGE_END_TAG: "cantaloupe",
+            },
+        )
+
+        assert result.success
+        assert result._output_capture == {  # noqa: SLF001
+            StepOutputHandle(
+                step_key="doubly_dynamic_asset.fan_out", output_name="result", mapping_key="apple"
+            ): 1,
+            StepOutputHandle(
+                step_key="doubly_dynamic_asset.fan_out", output_name="result", mapping_key="banana"
+            ): 2,
+            StepOutputHandle(
+                step_key="doubly_dynamic_asset.fan_out",
+                output_name="result",
+                mapping_key="cantaloupe",
+            ): 3,
+            StepOutputHandle(
+                step_key="doubly_dynamic_asset.process_fruit_val[apple]",
+                output_name="result",
+                mapping_key=None,
+            ): 2,
+            StepOutputHandle(
+                step_key="doubly_dynamic_asset.process_fruit_val[banana]",
+                output_name="result",
+                mapping_key=None,
+            ): 3,
+            StepOutputHandle(
+                step_key="doubly_dynamic_asset.process_fruit_val[cantaloupe]",
+                output_name="result",
+                mapping_key=None,
+            ): 4,
+            StepOutputHandle(
+                step_key="doubly_dynamic_asset.collect_fruit_vals",
+                output_name="result",
+                mapping_key=None,
+            ): None,
+        }
