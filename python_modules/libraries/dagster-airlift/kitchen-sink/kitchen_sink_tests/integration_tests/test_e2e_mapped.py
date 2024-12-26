@@ -4,6 +4,8 @@ from typing import List
 
 import pytest
 from dagster import AssetKey, DagsterInstance, DagsterRunStatus
+from dagster._core.definitions import materialize
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import RunsFilter
@@ -276,3 +278,22 @@ def test_failure_when_asset_failures_tag_set(
         runs = dg_instance.get_runs(filters=RunsFilter(tags={DAG_RUN_ID_TAG_KEY: run_id}))
         assert len(runs) == 1
         assert next(iter(runs)).status == DagsterRunStatus.FAILURE
+
+
+def test_respect_airflow_retries(
+    airflow_instance: None,
+    dagster_dev: None,
+    dagster_home: str,
+) -> None:
+    """Airflow doesn't actually have dag-level retries; only task-level retries. This test just ensures that we handle task-level retries gracefully."""
+    from kitchen_sink.dagster_defs.mapped_defs import materialize_dags
+
+    af_instance = local_airflow_instance()
+
+    dagster_instance = DagsterInstance.get()
+    result = materialize(
+        assets=[materialize_dags],
+        instance=dagster_instance,
+        selection=AssetSelection.keys([af_instance.name, "dag", "unmapped__dag_with_retries"]),
+    )
+    assert result.success

@@ -1,15 +1,17 @@
 from datetime import timedelta
 
-from dagster import Definitions, asset, define_asset_job
+from dagster import Definitions, asset, define_asset_job, multi_asset
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._time import get_current_datetime_midnight
 from dagster_airlift.core import (
     assets_with_dag_mappings,
     assets_with_task_mappings,
     build_defs_from_airflow_instance,
     dag_defs,
+    load_airflow_dag_asset_specs,
     task_defs,
 )
 from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
@@ -76,6 +78,7 @@ def migrated_daily_interval_dag__partitioned() -> None:
 def build_mapped_defs() -> Definitions:
     return build_defs_from_airflow_instance(
         airflow_instance=local_airflow_instance(),
+        dag_selector_fn=lambda dag: not dag.dag_id.startswith("unmapped"),
         defs=Definitions.merge(
             dag_defs(
                 "print_dag",
@@ -164,4 +167,22 @@ def build_mapped_defs() -> Definitions:
     )
 
 
-defs = build_mapped_defs()
+unmapped_specs = load_airflow_dag_asset_specs(
+    airflow_instance=local_airflow_instance(),
+    dag_selector_fn=lambda dag: dag.dag_id.startswith("unmapped"),
+)
+
+
+@multi_asset(specs=unmapped_specs)
+def materialize_dags(context: AssetExecutionContext):
+    for spec in unmapped_specs:
+        af_instance = local_airflow_instance()
+        dag_id = spec.metadata["Dag ID"]
+        dag_run_id = af_instance.trigger_dag(dag_id=dag_id)
+        af_instance.wait_for_run_completion(dag_id=dag_id, run_id=dag_run_id)
+        state = af_instance.get_run_state(dag_id=dag_id, run_id=dag_run_id)
+        if state != "success":
+            raise Exception(f"Failed to materialize {dag_id} with state {state}")
+
+
+defs = Definitions.merge(build_mapped_defs(), Definitions([materialize_dags]))
