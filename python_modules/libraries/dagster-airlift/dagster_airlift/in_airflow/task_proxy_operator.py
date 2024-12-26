@@ -4,11 +4,10 @@ import os
 from typing import Any, Callable, Dict, Iterable, Mapping, Sequence, Set, Tuple, Type
 
 import requests
-from airflow.models.operator import BaseOperator
-from airflow.utils.context import Context
+from airflow.models import BaseOperator
 
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
-from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator
+from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator, Context
 
 
 class BaseProxyTaskToDagsterOperator(BaseDagsterAssetsOperator):

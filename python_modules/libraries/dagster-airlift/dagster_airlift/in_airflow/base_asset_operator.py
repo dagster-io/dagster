@@ -6,8 +6,7 @@ from datetime import datetime
 from typing import Any, Dict, Iterable, Mapping, Sequence, Tuple
 
 import requests
-from airflow.models.operator import BaseOperator
-from airflow.utils.context import Context
+from airflow.models import BaseOperator
 from requests import Response
 
 from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY, TASK_ID_TAG_KEY
@@ -28,6 +27,11 @@ logger = logging.getLogger(__name__)
 
 # A job in dagster is uniquely defined by (location_name, repository_name, job_name).
 DagsterJobIdentifier = Tuple[str, str, str]
+
+# Airflow context type. Instead of using a strongly typed `Context` from Airflow 2.x,
+# it is defined as a generic mapping for compatibility with Airflow 1.x
+Context = Mapping[str, Any]
+
 IMPLICIT_ASSET_JOB_PREFIX = "__ASSET_JOB"
 
 DEFAULT_DAGSTER_RUN_STATUS_POLL_INTERVAL = 1
