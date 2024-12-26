@@ -3,7 +3,9 @@ from datetime import datetime
 from typing import Optional
 from unittest import mock
 
+import pytest
 import responses
+from dagster import Failure
 from dagster_airbyte import AirbyteCloudWorkspace
 from dagster_airbyte.resources import (
     AIRBYTE_CONFIGURATION_API_BASE,
@@ -11,16 +13,22 @@ from dagster_airbyte.resources import (
     AIRBYTE_REST_API_BASE,
     AIRBYTE_REST_API_VERSION,
 )
+from dagster_airbyte.translator import AirbyteJobStatusType
+from dagster_airbyte.types import AirbyteOutput
 
 from dagster_airbyte_tests.experimental.conftest import (
+    SAMPLE_CONNECTION_DETAILS,
     TEST_ACCESS_TOKEN,
     TEST_CLIENT_ID,
     TEST_CLIENT_SECRET,
     TEST_CONNECTION_ID,
     TEST_DESTINATION_ID,
     TEST_JOB_ID,
+    TEST_UNRECOGNIZED_AIRBYTE_JOB_STATUS_TYPE,
     TEST_WORKSPACE_ID,
+    get_job_details_sample,
 )
+from dagster_airbyte_tests.experimental.utils import optional_pytest_raise
 
 
 def assert_token_call_and_split_calls(calls: responses.CallList):
@@ -36,11 +44,18 @@ def assert_token_call_and_split_calls(calls: responses.CallList):
     return calls[1:]
 
 
-def assert_rest_api_call(call: responses.Call, endpoint: str, object_id: Optional[str] = None):
+def assert_rest_api_call(
+    call: responses.Call,
+    endpoint: str,
+    object_id: Optional[str] = None,
+    method: Optional[str] = None,
+):
     rest_api_url = call.request.url.split("?")[0]
     assert rest_api_url == f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/{endpoint}"
     if object_id:
         assert object_id in call.request.body.decode()
+    if method:
+        assert method == call.request.method
     assert call.request.headers["Authorization"] == f"Bearer {TEST_ACCESS_TOKEN}"
 
 
@@ -144,3 +159,209 @@ def test_basic_resource_request(
     assert_rest_api_call(call=api_calls[3], endpoint="jobs", object_id=TEST_CONNECTION_ID)
     assert_rest_api_call(call=api_calls[4], endpoint=f"jobs/{TEST_JOB_ID}")
     assert_rest_api_call(call=api_calls[5], endpoint=f"jobs/{TEST_JOB_ID}")
+
+
+@pytest.mark.parametrize(
+    "status, error_expected, exception_message",
+    [
+        (AirbyteJobStatusType.SUCCEEDED, False, None),
+        (AirbyteJobStatusType.CANCELLED, True, "Job was cancelled"),
+        (AirbyteJobStatusType.ERROR, True, "Job failed"),
+        (AirbyteJobStatusType.FAILED, True, "Job failed"),
+        (TEST_UNRECOGNIZED_AIRBYTE_JOB_STATUS_TYPE, True, "unexpected state"),
+    ],
+    ids=[
+        "job_status_succeeded",
+        "job_status_cancelled",
+        "job_status_error",
+        "job_status_failed",
+        "job_status_unrecognized",
+    ],
+)
+def test_airbyte_sync_and_poll_client_job_status(
+    status: str,
+    error_expected: bool,
+    exception_message: str,
+    base_api_mocks: responses.RequestsMock,
+) -> None:
+    resource = AirbyteCloudWorkspace(
+        workspace_id=TEST_WORKSPACE_ID,
+        client_id=TEST_CLIENT_ID,
+        client_secret=TEST_CLIENT_SECRET,
+    )
+    client = resource.get_client()
+
+    test_job_endpoint = f"jobs/{TEST_JOB_ID}"
+    test_job_api_url = f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/{test_job_endpoint}"
+
+    # Create mock responses to mock full sync and poll behavior to test statuses, used only in this test
+    base_api_mocks.add(
+        method=responses.POST,
+        url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs",
+        json=get_job_details_sample(status=AirbyteJobStatusType.PENDING),
+        status=200,
+    )
+    base_api_mocks.add(
+        method=responses.GET,
+        url=test_job_api_url,
+        json=get_job_details_sample(status=status),
+        status=200,
+    )
+    base_api_mocks.add(
+        method=responses.POST,
+        url=f"{AIRBYTE_CONFIGURATION_API_BASE}/{AIRBYTE_CONFIGURATION_API_VERSION}/connections/get",
+        json=SAMPLE_CONNECTION_DETAILS,
+        status=200,
+    )
+
+    with optional_pytest_raise(
+        error_expected=error_expected, exception_cls=Failure, exception_message=exception_message
+    ):
+        result = client.sync_and_poll(
+            connection_id=TEST_CONNECTION_ID, poll_interval=0, cancel_on_termination=False
+        )
+
+    if not error_expected:
+        assert result == AirbyteOutput(
+            job_details=get_job_details_sample(AirbyteJobStatusType.SUCCEEDED),
+            connection_details=SAMPLE_CONNECTION_DETAILS,
+        )
+
+
+@pytest.mark.parametrize(
+    "n_polls, error_expected",
+    [
+        (0, False),
+        (0, True),
+        (4, False),
+        (4, True),
+        (30, False),
+    ],
+    ids=[
+        "sync_short_success",
+        "sync_short_failure",
+        "sync_medium_success",
+        "sync_medium_failure",
+        "sync_long_success",
+    ],
+)
+def test_airbyte_sync_and_poll_client_poll_process(
+    n_polls: int, error_expected: bool, base_api_mocks: responses.RequestsMock
+):
+    resource = AirbyteCloudWorkspace(
+        workspace_id=TEST_WORKSPACE_ID,
+        client_id=TEST_CLIENT_ID,
+        client_secret=TEST_CLIENT_SECRET,
+    )
+    client = resource.get_client()
+
+    # Create mock responses to mock full sync and poll behavior, used only in this test
+    def _mock_interaction():
+        # initial state
+        base_api_mocks.add(
+            method=responses.POST,
+            url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs",
+            json=get_job_details_sample(status=AirbyteJobStatusType.PENDING),
+            status=200,
+        )
+        base_api_mocks.add(
+            method=responses.POST,
+            url=f"{AIRBYTE_CONFIGURATION_API_BASE}/{AIRBYTE_CONFIGURATION_API_VERSION}/connections/get",
+            json=SAMPLE_CONNECTION_DETAILS,
+            status=200,
+        )
+        # n polls before updating
+        for _ in range(n_polls):
+            base_api_mocks.add(
+                method=responses.GET,
+                url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs/{TEST_JOB_ID}",
+                json=get_job_details_sample(status=AirbyteJobStatusType.RUNNING),
+                status=200,
+            )
+        # final state will be updated
+        base_api_mocks.add(
+            method=responses.GET,
+            url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs/{TEST_JOB_ID}",
+            json=get_job_details_sample(
+                status=AirbyteJobStatusType.SUCCEEDED
+                if not error_expected
+                else AirbyteJobStatusType.FAILED
+            ),
+            status=200,
+        )
+        return client.sync_and_poll(connection_id=TEST_CONNECTION_ID, poll_interval=0.1)
+
+    with optional_pytest_raise(
+        error_expected=error_expected, exception_cls=Failure, exception_message="Job failed"
+    ):
+        result = _mock_interaction()
+
+    if not error_expected:
+        assert result == AirbyteOutput(
+            job_details=get_job_details_sample(AirbyteJobStatusType.SUCCEEDED),
+            connection_details=SAMPLE_CONNECTION_DETAILS,
+        )
+
+
+@pytest.mark.parametrize(
+    "cancel_on_termination, last_call_method",
+    [
+        (True, responses.DELETE),
+        (False, responses.GET),
+    ],
+    ids=[
+        "cancel_on_termination_true",
+        "cancel_on_termination_false",
+    ],
+)
+def test_airbyte_sync_and_poll_client_cancel_on_termination(
+    cancel_on_termination: bool, last_call_method: str, base_api_mocks: responses.RequestsMock
+) -> None:
+    resource = AirbyteCloudWorkspace(
+        workspace_id=TEST_WORKSPACE_ID,
+        client_id=TEST_CLIENT_ID,
+        client_secret=TEST_CLIENT_SECRET,
+    )
+    client = resource.get_client()
+
+    test_job_endpoint = f"jobs/{TEST_JOB_ID}"
+    test_job_api_url = f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/{test_job_endpoint}"
+
+    # Create mock responses to mock full sync and poll behavior to test statuses, used only in this test
+    base_api_mocks.add(
+        method=responses.POST,
+        url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs",
+        json=get_job_details_sample(status=AirbyteJobStatusType.PENDING),
+        status=200,
+    )
+    base_api_mocks.add(
+        method=responses.GET,
+        url=test_job_api_url,
+        json=get_job_details_sample(status=TEST_UNRECOGNIZED_AIRBYTE_JOB_STATUS_TYPE),
+        status=200,
+    )
+    base_api_mocks.add(
+        method=responses.POST,
+        url=f"{AIRBYTE_CONFIGURATION_API_BASE}/{AIRBYTE_CONFIGURATION_API_VERSION}/connections/get",
+        json=SAMPLE_CONNECTION_DETAILS,
+        status=200,
+    )
+
+    if cancel_on_termination:
+        base_api_mocks.add(
+            method=responses.DELETE,
+            url=test_job_api_url,
+            status=200,
+            json=get_job_details_sample(status=AirbyteJobStatusType.CANCELLED),
+        )
+
+    with pytest.raises(Failure, match="unexpected state"):
+        client.sync_and_poll(
+            connection_id=TEST_CONNECTION_ID,
+            poll_interval=0,
+            cancel_on_termination=cancel_on_termination,
+        )
+
+    assert_rest_api_call(
+        call=base_api_mocks.calls[-1], endpoint=test_job_endpoint, method=last_call_method
+    )

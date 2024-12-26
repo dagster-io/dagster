@@ -1,4 +1,4 @@
-from typing import Iterator
+from typing import Any, Iterator, Mapping
 
 import pytest
 import responses
@@ -8,7 +8,7 @@ from dagster_airbyte.resources import (
     AIRBYTE_REST_API_BASE,
     AIRBYTE_REST_API_VERSION,
 )
-from dagster_airbyte.translator import AirbyteConnectionTableProps
+from dagster_airbyte.translator import AirbyteConnectionTableProps, AirbyteJobStatusType
 
 TEST_WORKSPACE_ID = "some_workspace_id"
 TEST_CLIENT_ID = "some_client_id"
@@ -28,6 +28,8 @@ TEST_STREAM_NAME = "test_stream"
 TEST_SELECTED = True
 TEST_JSON_SCHEMA = {}
 TEST_JOB_ID = 12345
+
+TEST_UNRECOGNIZED_AIRBYTE_JOB_STATUS_TYPE = "unrecognized"
 
 TEST_AIRBYTE_CONNECTION_TABLE_PROPS = AirbyteConnectionTableProps(
     table_name=f"{TEST_STREAM_PREFIX}{TEST_STREAM_NAME}",
@@ -165,13 +167,17 @@ SAMPLE_DESTINATION_DETAILS = {
 
 # Taken from Airbyte REST API documentation
 # https://reference.airbyte.com/reference/getjob
-SAMPLE_JOB_RESPONSE = {
-    "jobId": TEST_JOB_ID,
-    "status": "running",
-    "jobType": "sync",
-    "startTime": "2023-03-25T01:30:50Z",
-    "connectionId": TEST_CONNECTION_ID,
-}
+def get_job_details_sample(status: str) -> Mapping[str, Any]:
+    return {
+        "jobId": TEST_JOB_ID,
+        "status": status,
+        "jobType": "sync",
+        "startTime": "2023-03-25T01:30:50Z",
+        "connectionId": TEST_CONNECTION_ID,
+    }
+
+
+SAMPLE_JOB_RESPONSE_RUNNING = get_job_details_sample(status=AirbyteJobStatusType.RUNNING)
 
 
 @pytest.fixture(
@@ -224,19 +230,19 @@ def all_api_mocks_fixture(
     fetch_workspace_data_api_mocks.add(
         method=responses.POST,
         url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs",
-        json=SAMPLE_JOB_RESPONSE,
+        json=SAMPLE_JOB_RESPONSE_RUNNING,
         status=200,
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.GET,
         url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs/{TEST_JOB_ID}",
-        json=SAMPLE_JOB_RESPONSE,
+        json=SAMPLE_JOB_RESPONSE_RUNNING,
         status=200,
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.DELETE,
         url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs/{TEST_JOB_ID}",
-        json=SAMPLE_JOB_RESPONSE,
+        json=SAMPLE_JOB_RESPONSE_RUNNING,
         status=200,
     )
     yield fetch_workspace_data_api_mocks
