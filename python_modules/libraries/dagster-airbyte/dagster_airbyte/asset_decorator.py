@@ -97,6 +97,8 @@ def airbyte_assets(
                 resources={"airbyte": airbyte_workspace},
             )
     """
+    dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
+
     return multi_asset(
         name=name,
         group_name=group_name,
@@ -104,7 +106,7 @@ def airbyte_assets(
         specs=[
             spec
             for spec in workspace.load_asset_specs(
-                dagster_airbyte_translator=dagster_airbyte_translator or DagsterAirbyteTranslator()
+                dagster_airbyte_translator=dagster_airbyte_translator
             )
             if AirbyteMetadataSet.extract(spec.metadata).connection_id == connection_id
         ],
