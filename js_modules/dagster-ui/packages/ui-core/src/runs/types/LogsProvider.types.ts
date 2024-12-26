@@ -1654,6 +1654,10 @@ export type PipelineRunLogsSubscription = {
               pid: number | null;
               externalStdoutUrl: string | null;
               externalStderrUrl: string | null;
+              stdoutUriOrPath: string | null;
+              stderrUriOrPath: string | null;
+              stdoutShellCmd: string | null;
+              stderrShellCmd: string | null;
               eventType: Types.DagsterEventType | null;
               externalUrl: string | null;
             }
@@ -4996,6 +5000,10 @@ export type RunLogsSubscriptionSuccessFragment = {
         pid: number | null;
         externalStdoutUrl: string | null;
         externalStderrUrl: string | null;
+        stdoutUriOrPath: string | null;
+        stderrUriOrPath: string | null;
+        stdoutShellCmd: string | null;
+        stderrShellCmd: string | null;
         eventType: Types.DagsterEventType | null;
         externalUrl: string | null;
       }
@@ -8347,6 +8355,10 @@ export type RunLogsQuery = {
               pid: number | null;
               externalStdoutUrl: string | null;
               externalStderrUrl: string | null;
+              stdoutUriOrPath: string | null;
+              stderrUriOrPath: string | null;
+              stdoutShellCmd: string | null;
+              stderrShellCmd: string | null;
               eventType: Types.DagsterEventType | null;
               externalUrl: string | null;
             }
@@ -10084,6 +10096,6 @@ export type RunLogsQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const PipelineRunLogsSubscriptionVersion = 'def2c2dc20d6b8640de7f4104ea03a58c8721cb5a632282f8e2d7489ab205280';
+export const PipelineRunLogsSubscriptionVersion = 'e2c0d006ce476a1059e591582520e88b431f413fc99401c6eafbb3844a7abe93';
 
-export const RunLogsQueryVersion = '0f1a38047ec63b668879f68aff67dc13d7a2b241c2f506d0109968897e01f385';
+export const RunLogsQueryVersion = 'c5ce527d5df7e8771f351f4d50fb06614c39696833f9dd02a4f7a3832bd60dac';

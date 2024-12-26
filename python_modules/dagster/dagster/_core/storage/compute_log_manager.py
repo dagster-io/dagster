@@ -26,6 +26,10 @@ class CapturedLogContext(
             ("external_url", Optional[str]),
             ("external_stdout_url", Optional[str]),
             ("external_stderr_url", Optional[str]),
+            ("stdout_uri_or_path", Optional[str]),
+            ("stderr_uri_or_path", Optional[str]),
+            ("stdout_shell_cmd", Optional[str]),
+            ("stderr_shell_cmd", Optional[str]),
         ],
     )
 ):
@@ -40,6 +44,10 @@ class CapturedLogContext(
         external_stdout_url: Optional[str] = None,
         external_stderr_url: Optional[str] = None,
         external_url: Optional[str] = None,
+        stdout_uri_or_path: Optional[str] = None,
+        stderr_uri_or_path: Optional[str] = None,
+        stdout_shell_cmd: Optional[str] = None,
+        stderr_shell_cmd: Optional[str] = None,
     ):
         if external_url and (external_stdout_url or external_stderr_url):
             check.failed(
@@ -53,6 +61,10 @@ class CapturedLogContext(
             external_stdout_url=external_stdout_url,
             external_stderr_url=external_stderr_url,
             external_url=external_url,
+            stdout_uri_or_path=stdout_uri_or_path,
+            stderr_uri_or_path=stderr_uri_or_path,
+            stdout_shell_cmd=stdout_shell_cmd,
+            stderr_shell_cmd=stderr_shell_cmd,
         )
 
 
@@ -89,6 +101,10 @@ class CapturedLogMetadata(
             ("stderr_location", Optional[str]),
             ("stdout_download_url", Optional[str]),
             ("stderr_download_url", Optional[str]),
+            ("stdout_uri_or_path", Optional[str]),
+            ("stderr_uri_or_path", Optional[str]),
+            ("stdout_shell_cmd", Optional[str]),
+            ("stderr_shell_cmd", Optional[str]),
         ],
     )
 ):
@@ -102,6 +118,10 @@ class CapturedLogMetadata(
         stderr_location: Optional[str] = None,
         stdout_download_url: Optional[str] = None,
         stderr_download_url: Optional[str] = None,
+        stdout_uri_or_path: Optional[str] = None,
+        stderr_uri_or_path: Optional[str] = None,
+        stdout_shell_cmd: Optional[str] = None,
+        stderr_shell_cmd: Optional[str] = None,
     ):
         return super(CapturedLogMetadata, cls).__new__(
             cls,
@@ -109,6 +129,10 @@ class CapturedLogMetadata(
             stderr_location=stderr_location,
             stdout_download_url=stdout_download_url,
             stderr_download_url=stderr_download_url,
+            stdout_download_uri=stdout_uri_or_path,
+            stderr_download_uri=stderr_uri_or_path,
+            stdout_shell_cmd=stdout_shell_cmd,
+            stderr_shell_cmd=stderr_shell_cmd,
         )
 
 

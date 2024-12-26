@@ -1,4 +1,4 @@
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Tooltip, UnstyledButton} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {RawLogContent} from './RawLogContent';
@@ -14,7 +14,9 @@ import {
   CapturedLogsSubscriptionVariables,
 } from './types/CapturedLogPanel.types';
 import {AppContext} from '../app/AppContext';
+import {showSharedToaster} from '../app/DomUtils';
 import {WebSocketContext} from '../app/WebSocketProvider';
+import {useCopyToClipboard} from '../app/browser';
 
 interface CapturedLogProps {
   logKey: string[];
@@ -33,28 +35,85 @@ export const CapturedOrExternalLogPanel = React.memo(
       (props.visibleIOType === 'stdout'
         ? logCaptureInfo.externalStdoutUrl
         : logCaptureInfo.externalStderrUrl);
-    if (externalUrl) {
+    const uriOrPath =
+      logCaptureInfo &&
+      (props.visibleIOType === 'stdout'
+        ? logCaptureInfo.stdoutUriOrPath
+        : logCaptureInfo.stderrUriOrPath);
+    const shellCmd =
+      logCaptureInfo &&
+      (props.visibleIOType === 'stdout'
+        ? logCaptureInfo.stdoutShellCmd
+        : logCaptureInfo.stderrShellCmd);
+
+    const copy = useCopyToClipboard();
+    const onClickFn = async (key: string, value: string | undefined) => {
+      if (!value) {
+        return;
+      }
+      copy(value);
+      await showSharedToaster({
+        intent: 'success',
+        icon: 'done',
+        message: `${key} string copied!`,
+      });
+    };
+    const onClickExternalUri = async () => onClickFn('log artefact URI', uriOrPath);
+    const onClickShellCmd = async () => onClickFn('shell command', shellCmd);
+
+    if (externalUrl || uriOrPath || shellCmd) {
       return (
         <Box
-          flex={{direction: 'row', alignItems: 'center', justifyContent: 'center', gap: 1}}
+          flex={{direction: 'column', alignItems: 'center', justifyContent: 'center', gap: 1}}
           background={Colors.tooltipBackground()}
           style={{color: Colors.tooltipText(), flex: 1, minHeight: 0}}
         >
-          View logs at
-          <a
-            href={externalUrl}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              color: Colors.tooltipText(),
-              textDecoration: 'underline',
-              marginLeft: 4,
-              marginRight: 4,
-            }}
-          >
-            {externalUrl}
-          </a>
-          <Icon name="open_in_new" color={Colors.tooltipText()} size={20} style={{marginTop: 2}} />
+          {externalUrl ? (
+            <div>
+              View logs at
+              <a
+                href={externalUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  color: Colors.tooltipText(),
+                  textDecoration: 'underline',
+                  marginLeft: 4,
+                  marginRight: 4,
+                }}
+              >
+                {externalUrl}
+              </a>
+              <Icon
+                name="open_in_new"
+                color={Colors.tooltipText()}
+                size={20}
+                style={{marginTop: 2}}
+              />
+            </div>
+          ) : undefined}
+
+          {uriOrPath ? (
+            <div>
+              Logs artefact URI:
+              <Tooltip content="Click to copy log artefact URI" placement="top" display="block">
+                <UnstyledButton onClick={onClickExternalUri}>{uriOrPath}</UnstyledButton>
+              </Tooltip>
+            </div>
+          ) : undefined}
+
+          {shellCmd ? (
+            <div>
+              Shell command to download logs:
+              <Tooltip
+                content="Click to copy shell command to download logs"
+                placement="top"
+                display="block"
+              >
+                <UnstyledButton onClick={onClickShellCmd}>{shellCmd}</UnstyledButton>
+              </Tooltip>
+            </div>
+          ) : undefined}
         </Box>
       );
     }

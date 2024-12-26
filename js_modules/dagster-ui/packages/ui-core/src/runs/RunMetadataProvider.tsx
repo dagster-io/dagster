@@ -73,6 +73,10 @@ export interface ILogCaptureInfo {
   pid?: string;
   externalStdoutUrl?: string;
   externalStderrUrl?: string;
+  stdoutUriOrPath?: string;
+  stderrUriOrPath?: string;
+  stdoutShellCmd?: string;
+  stderrShellCmd?: string;
 }
 
 export interface IRunMetadataDict {
@@ -277,6 +281,10 @@ export function extractMetadataFromLogs(
         pid: String(log.pid),
         externalStdoutUrl: log.externalStdoutUrl || undefined,
         externalStderrUrl: log.externalStderrUrl || undefined,
+        stdoutUriOrPath: log.stdoutUriOrPath || undefined,
+        stderrUriOrPath: log.stderrUriOrPath || undefined,
+        stdoutShellCmd: log.stdoutShellCmd || undefined,
+        stderrShellCmd: log.stderrShellCmd || undefined,
       };
     }
 
@@ -454,6 +462,10 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
       pid
       externalStdoutUrl
       externalStderrUrl
+      stdoutUriOrPath
+      stderrUriOrPath
+      stdoutShellCmd
+      stderrShellCmd
     }
   }
 

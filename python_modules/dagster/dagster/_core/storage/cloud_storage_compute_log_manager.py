@@ -49,6 +49,16 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
         """Calculates a download url given a log key and compute io type."""
 
     @abstractmethod
+    def uri_or_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType) -> Optional[str]:
+        """Calculates a download uri given a log key and compute io type."""
+        return None
+
+    @abstractmethod
+    def shell_command_for_type(self, log_key: Sequence[str], io_type: ComputeIOType) -> Optional[str]:
+        """Returns a shell command to download logs for a given log key and compute io type."""
+        return None
+
+    @abstractmethod
     def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType) -> str:
         """Returns a display path given a log key and compute io type."""
 
@@ -127,6 +137,10 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
             stderr_location=self.display_path_for_type(log_key, ComputeIOType.STDERR),
             stdout_download_url=self.download_url_for_type(log_key, ComputeIOType.STDOUT),
             stderr_download_url=self.download_url_for_type(log_key, ComputeIOType.STDERR),
+            stdout_uri_or_path=self.uri_or_path_for_type(log_key, ComputeIOType.STDOUT),
+            stderr_uri_or_path=self.uri_or_path_for_type(log_key, ComputeIOType.STDERR),
+            stdout_shell_cmd=self.shell_command_for_type(log_key, ComputeIOType.STDOUT),
+            stderr_shell_cmd=self.shell_command_for_type(log_key, ComputeIOType.STDERR),
         )
 
     def on_progress(self, log_key):

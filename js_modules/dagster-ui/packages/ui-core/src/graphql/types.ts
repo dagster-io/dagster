@@ -2432,6 +2432,10 @@ export type LogsCapturedEvent = MessageEvent & {
   pid: Maybe<Scalars['Int']['output']>;
   runId: Scalars['String']['output'];
   solidHandleID: Maybe<Scalars['String']['output']>;
+  stderrShellCmd: Maybe<Scalars['String']['output']>;
+  stderrUriOrPath: Maybe<Scalars['String']['output']>;
+  stdoutShellCmd: Maybe<Scalars['String']['output']>;
+  stdoutUriOrPath: Maybe<Scalars['String']['output']>;
   stepKey: Maybe<Scalars['String']['output']>;
   stepKeys: Maybe<Array<Scalars['String']['output']>>;
   timestamp: Scalars['String']['output'];
@@ -9820,6 +9824,18 @@ export const buildLogsCapturedEvent = (
       overrides && overrides.hasOwnProperty('solidHandleID')
         ? overrides.solidHandleID!
         : 'assumenda',
+    stderrShellCmd:
+      overrides && overrides.hasOwnProperty('stderrShellCmd') ? overrides.stderrShellCmd! : 'non',
+    stderrUriOrPath:
+      overrides && overrides.hasOwnProperty('stderrUriOrPath')
+        ? overrides.stderrUriOrPath!
+        : 'amet',
+    stdoutShellCmd:
+      overrides && overrides.hasOwnProperty('stdoutShellCmd') ? overrides.stdoutShellCmd! : 'eos',
+    stdoutUriOrPath:
+      overrides && overrides.hasOwnProperty('stdoutUriOrPath')
+        ? overrides.stdoutUriOrPath!
+        : 'recusandae',
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'quia',
     stepKeys: overrides && overrides.hasOwnProperty('stepKeys') ? overrides.stepKeys! : [],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'et',
