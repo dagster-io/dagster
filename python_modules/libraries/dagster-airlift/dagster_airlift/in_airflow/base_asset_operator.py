@@ -11,6 +11,7 @@ from airflow.utils.context import Context
 from requests import Response
 
 from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY, TASK_ID_TAG_KEY
+from dagster_airlift.in_airflow.dagster_run_utils import DagsterRunResult
 from dagster_airlift.in_airflow.gql_queries import (
     ASSET_NODES_QUERY,
     RUNS_QUERY,
@@ -140,16 +141,16 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
         launch_data = self.get_valid_graphql_response(response, "launchPipelineExecution")
         return launch_data["run"]["id"]
 
-    def get_dagster_run_status(
+    def get_dagster_run_obj(
         self, session: requests.Session, dagster_url: str, run_id: str
-    ) -> str:
+    ) -> Mapping[str, Any]:
         response = session.post(
             f"{dagster_url}/graphql",
             json={"query": RUNS_QUERY, "variables": {"runId": run_id}},
             # Timeout in seconds
             timeout=3,
         )
-        return self.get_valid_graphql_response(response, "runOrError")["status"]
+        return self.get_valid_graphql_response(response, "runOrError")
 
     def get_attribute_from_airflow_context(self, context: Context, attribute: str) -> Any:
         if attribute not in context or context[attribute] is None:
@@ -214,20 +215,54 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
             context,
             session,
             dagster_url,
-            _build_dagster_run_execution_params(
+            build_dagster_run_execution_params(
                 tags,
                 job_identifier,
                 asset_key_paths=asset_key_paths,
             ),
         )
         logger.info("Waiting for dagster run completion...")
-        while status := self.get_dagster_run_status(session, dagster_url, run_id):
+        self.wait_for_run_and_retries_to_complete(
+            session=session, dagster_url=dagster_url, run_id=run_id
+        )
+        logger.info("All runs completed successfully.")
+        return None
+
+    def wait_for_run_to_complete(
+        self, session: requests.Session, dagster_url: str, run_id: str
+    ) -> DagsterRunResult:
+        while response := self.get_dagster_run_obj(session, dagster_url, run_id):
+            status = response["status"]
             if status in ["SUCCESS", "FAILURE", "CANCELED"]:
                 break
             time.sleep(self.dagster_run_status_poll_interval)
-        if status != "SUCCESS":
-            raise Exception(f"Dagster run {run_id} did not complete successfully.")
-        logger.info("All runs completed successfully.")
+        tags = {tag["key"]: tag["value"] for tag in response["tags"]}
+        return DagsterRunResult(status=response["status"], tags=tags)
+
+    def wait_for_run_and_retries_to_complete(
+        self, session: requests.Session, dagster_url: str, run_id: str
+    ) -> None:
+        run_id_to_check = run_id
+        while True:
+            result = self.wait_for_run_to_complete(
+                session=session, dagster_url=dagster_url, run_id=run_id_to_check
+            )
+            if result.succeeded:
+                break
+            logger.info(f"Run {run_id_to_check} completed with status '{result.status}'.")
+            if result.run_will_automatically_retry and result.retried_run_id:
+                logger.info(
+                    f"Run {run_id_to_check} retried in run {result.retried_run_id}. Waiting for completion..."
+                )
+                run_id_to_check = result.retried_run_id
+                continue
+            elif result.run_will_automatically_retry:
+                logger.info(
+                    f"Run {run_id_to_check} failed, but is configured to automatically retry. Waiting for retried run to be created..."
+                )
+                continue
+            else:
+                raise Exception(f"Run {run_id_to_check} failed, and is not expected to retry.")
         return None
 
     def execute(self, context: Context) -> Any:
@@ -260,7 +295,7 @@ def _get_implicit_job_identifier(asset_node: Mapping[str, Any]) -> DagsterJobIde
     return (location_name, repository_name, job_name)
 
 
-def _build_dagster_run_execution_params(
+def build_dagster_run_execution_params(
     tags: Mapping[str, Any],
     job_identifier: DagsterJobIdentifier,
     asset_key_paths: Sequence[Sequence[str]],
@@ -284,3 +319,7 @@ def _build_dagster_run_execution_params(
 
 def _is_asset_node_executable(asset_node: Mapping[str, Any]) -> bool:
     return bool(asset_node["jobs"])
+
+
+def _build_runs_filter_param(tags: Mapping[str, Any]) -> Mapping[str, Any]:
+    return {"tags": [{"key": key, "value": value} for key, value in tags.items()]}
