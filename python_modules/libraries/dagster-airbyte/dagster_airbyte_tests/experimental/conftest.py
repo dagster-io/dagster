@@ -273,12 +273,12 @@ def all_api_mocks_fixture(
 @pytest.fixture(name="airbyte_cloud_sync_and_poll")
 def sync_and_poll_fixture():
     with patch("dagster_airbyte.resources.AirbyteCloudClient.sync_and_poll") as mocked_function:
-        # Airbyte output where all sync'd tables match the workspace data that was used to create the assets def
+        # Airbyte output where all synced tables match the workspace data that was used to create the assets def
         expected_airbyte_output = AirbyteOutput(
             connection_details=SAMPLE_CONNECTION_DETAILS,
             job_details=get_job_details_sample(status=AirbyteJobStatusType.SUCCEEDED),
         )
-        # Airbyte output where a table is missing and an unexpected table is sync'd,
+        # Airbyte output where a table is missing and an unexpected table is synced,
         # compared to the workspace data that was used to create the assets def
         unexpected_airbyte_output = AirbyteOutput(
             connection_details=UNEXPECTED_SAMPLE_CONNECTION_DETAILS,

@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import responses
 from dagster import AssetExecutionContext, AssetKey, EnvVar, Failure, materialize
+from dagster._core.events import DagsterEventType
 from dagster._core.test_utils import environ
 from dagster_airbyte import AirbyteCloudWorkspace, airbyte_assets
 from dagster_airbyte.resources import (
@@ -404,7 +405,7 @@ def test_fivetran_airbyte_cloud_sync_and_poll_materialization_method(
         asset_materializations = [
             event
             for event in result.events_for_node(cleaned_connection_id)
-            if event.event_type_value == "ASSET_MATERIALIZATION"
+            if event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION
         ]
         assert len(asset_materializations) == 2
         materialized_asset_keys = {
@@ -424,7 +425,7 @@ def test_fivetran_airbyte_cloud_sync_and_poll_materialization_method(
         asset_materializations = [
             event
             for event in result.events_for_node(cleaned_connection_id)
-            if event.event_type_value == "ASSET_MATERIALIZATION"
+            if event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION
         ]
         assert len(asset_materializations) == 2
         materialized_asset_keys = {
