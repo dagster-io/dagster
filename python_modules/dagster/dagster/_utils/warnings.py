@@ -15,7 +15,7 @@ _warnings_on = ContextVar("_warnings_on", default=True)
 # ########################
 
 
-class PreviewWarning(FutureWarning):
+class PreviewWarning(Warning):
     pass
 
 
