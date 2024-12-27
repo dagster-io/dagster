@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.partition import PartitionsDefinition
+    from dagster._core.definitions.partition_key_range import PartitionKeyRange
     from dagster._core.instance import DagsterInstance
     from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus
     from dagster._core.storage.dagster_run import RunRecord
@@ -194,6 +195,20 @@ class AssetGraphView(LoadingContext):
         partitions_def = self._get_partitions_def(key)
         value = partitions_def.empty_subset() if partitions_def else False
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+
+    def get_entity_subset_in_range(
+        self, asset_key: AssetKey, partition_key_range: "PartitionKeyRange"
+    ) -> EntitySubset[AssetKey]:
+        partitions_def = check.not_none(
+            self._get_partitions_def(asset_key), "Must have partitions def"
+        )
+        partition_subset_in_range = partitions_def.get_subset_in_range(
+            partition_key_range=partition_key_range,
+            dynamic_partitions_store=self._queryer,
+        )
+        return EntitySubset(
+            self, key=asset_key, value=_ValidatedEntitySubsetValue(partition_subset_in_range)
+        )
 
     def get_entity_subset_from_asset_graph_subset(
         self, asset_graph_subset: AssetGraphSubset, key: AssetKey

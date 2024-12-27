@@ -171,6 +171,17 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         partition_keys = self.get_partition_keys(current_time, dynamic_partitions_store)
         return partition_keys[0] if partition_keys else None
 
+    def get_subset_in_range(
+        self,
+        partition_key_range: PartitionKeyRange,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> "PartitionsSubset":
+        return self.empty_subset().with_partition_key_range(
+            partitions_def=self,
+            partition_key_range=partition_key_range,
+            dynamic_partitions_store=dynamic_partitions_store,
+        )
+
     def get_partition_keys_in_range(
         self,
         partition_key_range: PartitionKeyRange,
