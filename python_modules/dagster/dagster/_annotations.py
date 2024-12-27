@@ -113,7 +113,6 @@ def preview(
 
     Args:
         additional_warn_text (Optional[str]): Additional text to display after the preview warning.
-            Typically, this should suggest a newer API.
         subject (Optional[str]): The subject of the preview warning. Defaults to a string
             representation of the decorated object. This is useful when marking usage of
             a preview API inside an otherwise non-preview function, so
