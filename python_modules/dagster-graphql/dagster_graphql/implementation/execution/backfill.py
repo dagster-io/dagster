@@ -114,11 +114,14 @@ def create_and_launch_partition_backfill(
     partitions_by_assets = backfill_params.get("partitionsByAssets")
 
     if (
-        asset_selection or backfill_params.get("selector") or backfill_params.get("partitionNames")
+        asset_selection
+        or backfill_params.get("selector")
+        or backfill_params.get("partitionNames")
+        or backfill_params.get("allPartitions")
     ) and partitions_by_assets:
         raise DagsterInvariantViolationError(
             "partitionsByAssets cannot be used together with assetSelection, selector, or"
-            " partitionNames"
+            " partitionNames or if allPartitions is True"
         )
 
     tags = {t["key"]: t["value"] for t in backfill_params.get("tags", [])}

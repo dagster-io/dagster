@@ -3179,6 +3179,8 @@ class DagsterInstance(DynamicPartitionsStore):
     ) -> str:
         """Launch a set of partition backfill runs.
 
+        Either partition_names must not be None or all_partitions must be True but not both.
+
         Args:
             asset_graph (BaseAssetGraph): The asset graph for the backfill.
             asset_selection (Optional[Sequence[AssetKey]]): List of asset keys to backfill.
@@ -3205,11 +3207,11 @@ class DagsterInstance(DynamicPartitionsStore):
         dynamic_partitions_store = CachingDynamicPartitionsLoader(self)
 
         if (
-            asset_selection is not None or partition_names is not None
+            asset_selection is not None or partition_names is not None or all_partitions
         ) and partitions_by_assets is not None:
             raise DagsterInvariantViolationError(
                 "partitions_by_assets cannot be used together with asset_selection or"
-                " partition_names"
+                " partition_names or if all_partitions is True"
             )
 
         if asset_selection is not None:
