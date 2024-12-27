@@ -133,4 +133,4 @@ followed by a bash code snippet for `dagster dev`
 
 ## Next steps
 
-- Continue this tutorial by [creating and materializing assets](/tutorial/etl-tutorial/02-create-and-materialize-assets)
+- Continue this tutorial by [creating and materializing assets](/tutorial/etl-tutorial/create-and-materialize-assets)

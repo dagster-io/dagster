@@ -5,7 +5,6 @@ last_update:
   author: Alex Noonan
 ---
 
-# Create and materialize assets
 
 In the first step of the tutorial, you created your Dagster project with the raw data files. In this step, you will:
 - Create your initial Definitions object
@@ -15,7 +14,7 @@ In the first step of the tutorial, you created your Dagster project with the raw
 
 ## 1. Create a Definitions object
 
-In Dagster, the [Definitions](/api/definitions) object is where you define and organize various components within your project, such as assets and resources.
+In Dagster, the [Definitions API docs](/todo) object is where you define and organize various components within your project, such as assets and resources.
 
 Open the `definitions.py` file in the `etl_tutorial` directory and copy the following code into it:
 
@@ -105,4 +104,4 @@ To materialize your assets:
 
 ## Next steps
 
-- Continue this tutorial with your with your [asset dependencies](/tutorial/etl-tutorial/03-creating-a-downstream-asset)
+- Continue this tutorial with your with your [asset dependencies](/tutorial/etl-tutorial/creating-a-downstream-asset)

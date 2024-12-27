@@ -5,8 +5,6 @@ last_update:
   author: Alex Noonan
 ---
 
-# Asset Dependencies
-
 Now that we have the raw data loaded into DuckDB, we need to create a [downstream asset](/guides/build/assets-concepts/asset-dependencies) that combines the upstream assets together. In this step, you will:
 
 - Create a downstream asset
@@ -43,4 +41,4 @@ Your Definitions object should now look like this:
 
 ## Next steps
 
-- Continue this tutorial with [create and materialize a partitioned asset](/tutorial/etl-tutorial/05-ensuring-data-quality-with-asset-checks)
+- Continue this tutorial with [create and materialize a partitioned asset](/tutorial/etl-tutorial/ensuring-data-quality-with-asset-checks)

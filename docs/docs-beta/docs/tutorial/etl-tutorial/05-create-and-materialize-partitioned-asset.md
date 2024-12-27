@@ -6,8 +6,6 @@ last_update:
   author: Alex Noonan
 ---
 
-# Partitions
-
 [Partitions](/guides/create-a-pipeline/partitioning) are a core abstraction in Dagster, they are how you manage large datasets, process incremental updates, and improve pipeline performance. In Dagster you can partition assets the following ways:
 
 1. Time-based: Split data by time periods (e.g., daily, monthly)
@@ -177,4 +175,4 @@ To materialize these assets :
 
 ## Next Steps
 
-Now that we have the main assets in our ETL pipeline, its time to add [automation to our pipeline](/tutorial/etl-tutorial/06-automating-your-pipeline)
+Now that we have the main assets in our ETL pipeline, its time to add [automation to our pipeline](/tutorial/etl-tutorial/automating-your-pipeline)

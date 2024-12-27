@@ -5,8 +5,6 @@ last_update:
   author: Alex Noonan
 ---
 
-# Automation
-
 There are several ways to automate pipelines and assets [in Dagster](/guides/automate). 
 
 In this step you will:
@@ -54,4 +52,4 @@ Additionally if you navigate to the runs tab you will see that materializations 
 
 ## Next steps
 
-- Continue this tutorial with adding a [sensor based asset](/tutorial/etl-tutorial/07-creating-a-sensor-asset)
+- Continue this tutorial with adding a [sensor based asset](/tutorial/etl-tutorial/creating-a-sensor-asset)
