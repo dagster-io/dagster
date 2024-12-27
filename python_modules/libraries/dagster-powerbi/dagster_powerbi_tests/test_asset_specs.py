@@ -99,7 +99,9 @@ def test_translator_custom_metadata(workspace_data_api_mocks: None, workspace_id
         workspace_id=workspace_id,
     )
     all_asset_specs = load_powerbi_asset_specs(
-        workspace=resource, dagster_powerbi_translator=MyCustomTranslator, use_workspace_scan=False
+        workspace=resource,
+        dagster_powerbi_translator=MyCustomTranslator(),
+        use_workspace_scan=False,
     )
     asset_spec = next(spec for spec in all_asset_specs)
 
