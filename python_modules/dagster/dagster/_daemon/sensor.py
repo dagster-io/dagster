@@ -274,12 +274,16 @@ class SensorLaunchContext(AbstractContextManager):
                 exception_value, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
             ):
                 try:
-                    raise DagsterSensorDaemonError(
+                    raise DagsterUserCodeUnreachableError(
                         f"Unable to reach the user code server for sensor {self._remote_sensor.name}."
                         " Sensor will resume execution once the server is available."
                     ) from exception_value
                 except:
-                    error_data = DaemonErrorCapture.on_exception(sys.exc_info())
+                    error_data = DaemonErrorCapture.process_exception(
+                        sys.exc_info(),
+                        logger=self.logger,
+                        log_message="Sensor tick caught an error",
+                    )
                     self.update_state(
                         TickStatus.FAILURE,
                         error=error_data,
@@ -287,7 +291,11 @@ class SensorLaunchContext(AbstractContextManager):
                         failure_count=self._tick.failure_count,
                     )
             else:
-                error_data = DaemonErrorCapture.on_exception(sys.exc_info())
+                error_data = DaemonErrorCapture.process_exception(
+                    sys.exc_info(),
+                    logger=self.logger,
+                    log_message="Sensor tick caught an error",
+                )
                 self.update_state(
                     TickStatus.FAILURE, error=error_data, failure_count=self._tick.failure_count + 1
                 )
@@ -338,7 +346,7 @@ def execute_sensor_iteration_loop(
                 sensor_tick_futures=sensor_tick_futures,
             )
         except Exception:
-            error_info = DaemonErrorCapture.on_exception(
+            error_info = DaemonErrorCapture.process_exception(
                 exc_info=sys.exc_info(),
                 logger=logger,
                 log_message="SensorDaemon caught an error",
@@ -601,7 +609,7 @@ def _process_tick_generator(
                 )
 
     except Exception:
-        error_info = DaemonErrorCapture.on_exception(
+        error_info = DaemonErrorCapture.process_exception(
             exc_info=sys.exc_info(),
             logger=logger,
             log_message=f"Sensor daemon caught an error for sensor {remote_sensor.name}",
@@ -707,7 +715,7 @@ def _submit_run_request(
         instance.submit_run(run.run_id, workspace_process_context.create_request_context())
         logger.info(f"Completed launch of run {run.run_id} for {remote_sensor.name}")
     except Exception:
-        error_info = DaemonErrorCapture.on_exception(
+        error_info = DaemonErrorCapture.process_exception(
             exc_info=sys.exc_info(),
             logger=logger,
             log_message=f"Run {run.run_id} created successfully but failed to launch",
@@ -940,7 +948,7 @@ def _handle_run_reactions(
     for run_reaction in dagster_run_reactions:
         origin_run_id = check.not_none(run_reaction.dagster_run).run_id
         if run_reaction.error:
-            context.logger.error(
+            context.logger.warning(
                 f"Got a reaction request for run {origin_run_id} but execution errorred:"
                 f" {run_reaction.error}"
             )
