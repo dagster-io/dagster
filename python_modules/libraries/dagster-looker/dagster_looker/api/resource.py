@@ -20,6 +20,7 @@ from pydantic import Field
 
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
+    LookerApiTranslatorStructureData,
     LookerInstanceData,
     LookerStructureData,
     LookerStructureType,
@@ -177,7 +178,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
 
     def defs_from_state(self, state: Mapping[str, Any]) -> Definitions:
         looker_instance_data = LookerInstanceData.from_state(self.looker_resource.get_sdk(), state)
-        translator = self.translator_cls(looker_instance_data)
+        translator = self.translator_cls()
         return self._build_defs_from_looker_instance_data(looker_instance_data, translator)
 
     def _build_defs_from_looker_instance_data(
@@ -187,20 +188,26 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     ) -> Definitions:
         explores = [
             dagster_looker_translator.get_asset_spec(
-                LookerStructureData(
-                    structure_type=LookerStructureType.EXPLORE,
-                    data=lookml_explore,
-                    base_url=self.looker_resource.base_url,
-                ),
+                LookerApiTranslatorStructureData(
+                    structure_data=LookerStructureData(
+                        structure_type=LookerStructureType.EXPLORE,
+                        data=lookml_explore,
+                        base_url=self.looker_resource.base_url,
+                    ),
+                    instance_data=looker_instance_data,
+                )
             )
             for lookml_explore in looker_instance_data.explores_by_id.values()
         ]
         views = [
             dagster_looker_translator.get_asset_spec(
-                LookerStructureData(
-                    structure_type=LookerStructureType.DASHBOARD,
-                    data=looker_dashboard,
-                    base_url=self.looker_resource.base_url,
+                LookerApiTranslatorStructureData(
+                    structure_data=LookerStructureData(
+                        structure_type=LookerStructureType.DASHBOARD,
+                        data=looker_dashboard,
+                        base_url=self.looker_resource.base_url,
+                    ),
+                    instance_data=looker_instance_data,
                 )
             )
             for looker_dashboard in looker_instance_data.dashboards_by_id.values()
