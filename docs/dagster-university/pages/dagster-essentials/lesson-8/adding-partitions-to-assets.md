@@ -63,7 +63,7 @@ To add the partition to the asset:
    @asset(
        partitions_def=monthly_partition
    )
-   def taxi_trips_file(context) -> None:
+   def taxi_trips_file(context: AssetExecutionContext) -> None:
        partition_date_str = context.partition_key
    ```
 
@@ -73,7 +73,7 @@ To add the partition to the asset:
    @asset(
        partitions_def=monthly_partition
    )
-   def taxi_trips_file(context) -> None:
+   def taxi_trips_file(context: AssetExecutionContext) -> None:
        partition_date_str = context.partition_key
        month_to_fetch = partition_date_str[:-3]
    ```
@@ -86,7 +86,7 @@ from ..partitions import monthly_partition
 @asset(
     partitions_def=monthly_partition
 )
-def taxi_trips_file(context) -> None:
+def taxi_trips_file(context: AssetExecutionContext) -> None:
   """
       The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
   """

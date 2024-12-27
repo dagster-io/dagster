@@ -12,7 +12,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
-import {PipelineReference} from '../../pipelines/PipelineReference';
+import {PipelineReference, PipelineTag} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
 import {CreatedByTagCell} from '../../runs/CreatedByTag';
 import {getBackfillPath} from '../../runs/RunsFeedUtils';
@@ -118,7 +118,7 @@ export const BackfillRowContent = ({
       </td>
       {showBackfillTarget ? (
         <td style={{width: '20%'}}>
-          <BackfillTarget backfill={backfill} repoAddress={repoAddress} />
+          <BackfillTarget backfill={backfill} repoAddress={repoAddress} useTags={false} />
         </td>
       ) : null}
       <td style={{width: allPartitions ? 300 : 140}}>
@@ -146,9 +146,11 @@ export const BackfillRowContent = ({
 export const BackfillTarget = ({
   backfill,
   repoAddress,
+  useTags,
 }: {
   backfill: Pick<BackfillTableFragment, 'assetSelection' | 'partitionSet' | 'partitionSetName'>;
   repoAddress: RepoAddress | null;
+  useTags: boolean;
 }) => {
   const repo = useRepository(repoAddress);
   const {assetSelection, partitionSet, partitionSetName} = backfill;
@@ -160,22 +162,30 @@ export const BackfillTarget = ({
       return null;
     }
     if (partitionSet && repo) {
+      const link = workspacePipelinePath({
+        repoName: partitionSet.repositoryOrigin.repositoryName,
+        repoLocation: partitionSet.repositoryOrigin.repositoryLocationName,
+        pipelineName: partitionSet.pipelineName,
+        isJob: isThisThingAJob(repo, partitionSet.pipelineName),
+        path: `/partitions?partitionSet=${encodeURIComponent(partitionSet.name)}`,
+      });
+      if (useTags) {
+        return (
+          <Tag icon="partition_set">
+            <Link to={link}>{partitionSet.name}</Link>
+          </Tag>
+        );
+      }
       return (
-        <Link
-          style={{fontWeight: 500}}
-          to={workspacePipelinePath({
-            repoName: partitionSet.repositoryOrigin.repositoryName,
-            repoLocation: partitionSet.repositoryOrigin.repositoryLocationName,
-            pipelineName: partitionSet.pipelineName,
-            isJob: isThisThingAJob(repo, partitionSet.pipelineName),
-            path: `/partitions?partitionSet=${encodeURIComponent(partitionSet.name)}`,
-          })}
-        >
+        <Link style={{fontWeight: 500}} to={link}>
           {partitionSet.name}
         </Link>
       );
     }
     if (partitionSetName) {
+      if (useTags) {
+        return <Tag icon="partition_set">{partitionSetName}</Tag>;
+      }
       return <span style={{fontWeight: 500}}>{partitionSetName}</span>;
     }
     return null;
@@ -193,10 +203,28 @@ export const BackfillTarget = ({
 
   const buildPipelineOrAssets = () => {
     if (assetSelection?.length) {
-      return <AssetKeyTagCollection assetKeys={assetSelection} dialogTitle="Assets in backfill" />;
+      return (
+        <AssetKeyTagCollection
+          assetKeys={assetSelection}
+          dialogTitle="Assets in backfill"
+          useTags={useTags}
+          maxRows={2}
+        />
+      );
     }
     if (partitionSet && repo) {
-      return (
+      return useTags ? (
+        <PipelineTag
+          showIcon
+          size="small"
+          pipelineName={partitionSet.pipelineName}
+          pipelineHrefContext={{
+            name: partitionSet.repositoryOrigin.repositoryName,
+            location: partitionSet.repositoryOrigin.repositoryLocationName,
+          }}
+          isJob={isThisThingAJob(repo, partitionSet.pipelineName)}
+        />
+      ) : (
         <PipelineReference
           showIcon
           size="small"
@@ -215,11 +243,11 @@ export const BackfillTarget = ({
   const repoLink = buildRepoLink();
   const pipelineOrAssets = buildPipelineOrAssets();
   return (
-    <Box flex={{direction: 'column', gap: 8}}>
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'start'}}>
       {buildHeader()}
       {(pipelineOrAssets || repoLink) && (
         <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-          {repoLink}
+          {repoLink && useTags ? <Tag>{repoLink}</Tag> : repoLink}
           {pipelineOrAssets}
         </Box>
       )}
@@ -238,7 +266,7 @@ const BackfillRequestedRange = ({
 }) => {
   const {partitionNames, numPartitions} = backfill;
 
-  if (numPartitions === null) {
+  if (numPartitions === null || numPartitions === 0) {
     return <span />;
   }
 

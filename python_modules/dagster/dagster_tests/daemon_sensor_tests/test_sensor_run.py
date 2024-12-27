@@ -1477,9 +1477,10 @@ def test_launch_once(caplog, executor, instance, workspace_context, remote_repo)
         second=59,
     )
 
-    with freeze_time(freeze_datetime), patch.object(
-        DagsterInstance, "get_ticks", wraps=instance.get_ticks
-    ) as mock_get_ticks:
+    with (
+        freeze_time(freeze_datetime),
+        patch.object(DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
+    ):
         sensor = remote_repo.get_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
@@ -1518,9 +1519,10 @@ def test_launch_once(caplog, executor, instance, workspace_context, remote_repo)
 
     # run again (after 30 seconds), to ensure that the run key maintains idempotence
     freeze_datetime = freeze_datetime + relativedelta(seconds=30)
-    with freeze_time(freeze_datetime), patch.object(
-        DagsterInstance, "get_ticks", wraps=instance.get_ticks
-    ) as mock_get_ticks:
+    with (
+        freeze_time(freeze_datetime),
+        patch.object(DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
+    ):
         evaluate_sensors(workspace_context, executor)
         # did not need to get ticks on this call, as the preivous tick evaluated successfully
         assert mock_get_ticks.call_count == 0
@@ -1555,9 +1557,10 @@ def test_launch_once(caplog, executor, instance, workspace_context, remote_repo)
 
         # Sensor loop still executes
     freeze_datetime = freeze_datetime + relativedelta(seconds=30)
-    with freeze_time(freeze_datetime), patch.object(
-        DagsterInstance, "get_ticks", wraps=instance.get_ticks
-    ) as mock_get_ticks:
+    with (
+        freeze_time(freeze_datetime),
+        patch.object(DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
+    ):
         evaluate_sensors(workspace_context, executor)
         # did not need to get ticks on this call either
         assert mock_get_ticks.call_count == 0
@@ -2597,7 +2600,7 @@ def test_status_in_code_sensor(executor, instance):
     ) as workspace_context:
         remote_repo = next(
             iter(workspace_context.create_request_context().get_code_location_entries().values())
-        ).code_location.get_repository("the_status_in_code_repo")
+        ).code_location.get_repository("the_status_in_code_repo")  # pyright: ignore[reportOptionalMemberAccess]
 
         with freeze_time(freeze_datetime):
             running_sensor = remote_repo.get_sensor("always_running_sensor")
@@ -2855,11 +2858,11 @@ def test_repository_namespacing(executor):
                 full_workspace_context.create_request_context().get_code_location_entries().values()
             )
         ).code_location
-        repo = full_location.get_repository("the_repo")
-        other_repo = full_location.get_repository("the_other_repo")
+        repo = full_location.get_repository("the_repo")  # pyright: ignore[reportOptionalMemberAccess]
+        other_repo = full_location.get_repository("the_other_repo")  # pyright: ignore[reportOptionalMemberAccess]
 
         # stop always on sensor
-        status_in_code_repo = full_location.get_repository("the_status_in_code_repo")
+        status_in_code_repo = full_location.get_repository("the_status_in_code_repo")  # pyright: ignore[reportOptionalMemberAccess]
         running_sensor = status_in_code_repo.get_sensor("always_running_sensor")
         instance.stop_sensor(
             running_sensor.get_remote_origin_id(), running_sensor.selector_id, running_sensor
@@ -2903,12 +2906,6 @@ def test_repository_namespacing(executor):
             assert instance.get_runs_count() == 2  # still 2
             ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
             assert len(ticks) == 2
-
-
-def test_settings():
-    settings = {"use_threads": True, "num_workers": 4}
-    with instance_for_test(overrides={"sensors": settings}) as thread_inst:
-        assert thread_inst.get_settings("sensors") == settings
 
 
 @pytest.mark.parametrize("sensor_name", ["logging_sensor", "multi_asset_logging_sensor"])

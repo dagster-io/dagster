@@ -43,7 +43,6 @@ from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_run_iterator
 from dagster._core.snap import DependencyStructureIndex
@@ -266,14 +265,14 @@ def test_source_asset():
             pass
 
         def load_input(self, context):
-            assert context.resource_config["a"] == 7
+            assert context.resource_config["a"] == 7  # pyright: ignore[reportOptionalSubscript]
             assert context.resources.subresource == 9
-            assert context.upstream_output.resources.subresource == 9
-            assert context.upstream_output.asset_key == AssetKey("source1")
-            assert context.upstream_output.definition_metadata["a"] == "b"
-            assert context.upstream_output.resource_config["a"] == 7
-            assert context.upstream_output.log is not None
-            context.upstream_output.log.info("hullo")
+            assert context.upstream_output.resources.subresource == 9  # pyright: ignore[reportOptionalMemberAccess]
+            assert context.upstream_output.asset_key == AssetKey("source1")  # pyright: ignore[reportOptionalMemberAccess]
+            assert context.upstream_output.definition_metadata["a"] == "b"  # pyright: ignore[reportOptionalMemberAccess]
+            assert context.upstream_output.resource_config["a"] == 7  # pyright: ignore[reportOptionalSubscript,reportOptionalMemberAccess]
+            assert context.upstream_output.log is not None  # pyright: ignore[reportOptionalMemberAccess]
+            context.upstream_output.log.info("hullo")  # pyright: ignore[reportOptionalMemberAccess]
             assert context.asset_key == AssetKey("source1")
             return 5
 
@@ -1042,7 +1041,7 @@ def test_asset_in_nested_graph():
 
     @graph(out={"o1": GraphOut(), "o3": GraphOut()})
     def thing():
-        o1, o2 = inside_thing()
+        o1, o2 = inside_thing()  # pyright: ignore[reportGeneralTypeIssues]
         o3 = get_transformed_string(o2)
         return (o1, o3)
 
@@ -1089,13 +1088,13 @@ def test_twice_nested_graph():
 
     @graph(out={"n1": GraphOut(), "n2": GraphOut(), "unused": GraphOut()})
     def middle_thing():
-        n1, unused_output = innermost_thing()
+        n1, unused_output = innermost_thing()  # pyright: ignore[reportGeneralTypeIssues]
         n2 = get_string()
         return {"n1": n1, "n2": n2, "unused": unused_output}
 
     @graph(out={"n1": GraphOut(), "n2": GraphOut(), "unused": GraphOut()})
     def outer_thing(foo_asset):
-        n1, output, unused_output = middle_thing()
+        n1, output, unused_output = middle_thing()  # pyright: ignore[reportGeneralTypeIssues]
         n2 = transformer(output)
         unused_output = combiner(unused_output, transformer(foo_asset))
         return {"n1": n1, "n2": n2, "unused": unused_output}
@@ -1257,7 +1256,7 @@ def test_connected_subset():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,
+            key=lambda event: event.asset_key,  # type: ignore
         )
 
         assert len(materialization_events) == 3
@@ -1276,7 +1275,7 @@ def test_subset_of_asset_job():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,
+            key=lambda event: event.asset_key,  # type: ignore
         )
         assert len(materialization_events) == 3
         assert materialization_events[0].asset_key == AssetKey("bar")
@@ -1299,7 +1298,7 @@ def test_subset_of_assets_job():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,
+            key=lambda event: event.asset_key,  # type: ignore
         )
         assert len(materialization_events) == 3
         assert materialization_events[0].asset_key == AssetKey("bar")
@@ -1525,7 +1524,7 @@ def test_multi_subset():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,
+            key=lambda event: event.asset_key,  # type: ignore
         )
 
         assert len(materialization_events) == 2
@@ -1543,7 +1542,7 @@ def test_multi_all():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,
+            key=lambda event: event.asset_key,  # type: ignore
         )
 
         assert len(materialization_events) == 3
@@ -1655,7 +1654,7 @@ def test_graph_output_is_input_within_graph():
         },
     )
     def complicated_graph():
-        one, two = nested()
+        one, two = nested()  # pyright: ignore[reportGeneralTypeIssues]
         return one, two, transform(two)
 
     defs = Definitions(
@@ -1855,7 +1854,7 @@ def test_transitive_resource_deps_provided():
 @ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 @ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_transitive_io_manager_dep_not_provided():
-    @io_manager(required_resource_keys={"foo"})
+    @io_manager(required_resource_keys={"foo"})  # pyright: ignore[reportArgumentType]
     def the_manager():
         pass
 
@@ -2362,7 +2361,15 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
     all_assets = _get_assets_defs(use_multi=use_multi, allow_subset=use_multi)
     # apply prefixes
     for prefix in reversed(prefixes or []):
-        all_assets, _ = prefix_assets(all_assets, prefix, [], None)
+        all_assets = [
+            assets_def.with_attributes(
+                asset_key_replacements={
+                    k: k.with_prefix(prefix)
+                    for k in set(assets_def.keys_by_input_name.values()) | set(assets_def.keys)
+                },
+            )
+            for assets_def in all_assets
+        ]
 
     defs = Definitions(
         # for these, if we have multi assets, we'll always allow them to be subset
@@ -2380,7 +2387,7 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
     with instance_for_test() as instance:
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
-            record.event_log_entry.dagster_event.event_specific_data.asset_key
+            record.event_log_entry.dagster_event.event_specific_data.asset_key  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
             for record in instance.get_records_for_run(
                 run_id=result.run_id,
                 of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
@@ -2879,7 +2886,7 @@ def test_partial_dependency_on_upstream_multi_asset():
             self.values: Dict[AssetKey, int] = {}
 
         def handle_output(self, context: OutputContext, obj: object):
-            self.values[context.asset_key] = obj
+            self.values[context.asset_key] = obj  # pyright: ignore[reportArgumentType]
 
         def load_input(self, context: InputContext) -> object:
             return self.values[context.asset_key]

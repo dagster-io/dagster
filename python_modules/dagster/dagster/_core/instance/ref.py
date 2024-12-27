@@ -451,6 +451,7 @@ class InstanceRef(
             "run_retries",
             "code_servers",
             "retention",
+            "backfills",
             "sensors",
             "schedules",
             "nux",
@@ -483,7 +484,7 @@ class InstanceRef(
                 return v
             return ConfigurableClassData(*v)
 
-        return InstanceRef(**{k: value_for_ref_item(k, v) for k, v in instance_ref_dict.items()})
+        return InstanceRef(**{k: value_for_ref_item(k, v) for k, v in instance_ref_dict.items()})  # pyright: ignore[reportArgumentType]
 
     @property
     def local_artifact_storage(self) -> "LocalArtifactStorage":

@@ -202,16 +202,16 @@ def test_statement_timeouts(hostname):
         # ensure migration error is not raised by being up to date
         instance.upgrade()
 
-        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._run_storage.connect() as conn:  # noqa: SLF001
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):  # pyright: ignore[reportAttributeAccessIssue]
+            with instance._run_storage.connect() as conn:  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
                 conn.execute(db.text("select pg_sleep(1)")).fetchone()
 
-        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._event_storage._connect() as conn:  # noqa: SLF001
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):  # pyright: ignore[reportAttributeAccessIssue]
+            with instance._event_storage._connect() as conn:  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
                 conn.execute(db.text("select pg_sleep(1)")).fetchone()
 
-        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._schedule_storage.connect() as conn:  # noqa: SLF001
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):  # pyright: ignore[reportAttributeAccessIssue]
+            with instance._schedule_storage.connect() as conn:  # noqa: SLF001  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                 conn.execute(db.text("select pg_sleep(1)")).fetchone()
 
 
@@ -223,13 +223,13 @@ def test_skip_autocreate(hostname, conn_string):
     with instance_for_test(
         overrides=yaml.safe_load(skip_autocreate_pg_config(hostname))
     ) as instance:
-        with pytest.raises(db.exc.ProgrammingError):
+        with pytest.raises(db.exc.ProgrammingError):  # pyright: ignore[reportAttributeAccessIssue]
             instance.get_runs()
 
-        with pytest.raises(db.exc.ProgrammingError):
+        with pytest.raises(db.exc.ProgrammingError):  # pyright: ignore[reportAttributeAccessIssue]
             instance.all_asset_keys()
 
-        with pytest.raises(db.exc.ProgrammingError):
+        with pytest.raises(db.exc.ProgrammingError):  # pyright: ignore[reportAttributeAccessIssue]
             instance.all_instigator_state()
 
     with instance_for_test(overrides=yaml.safe_load(full_pg_config(hostname))) as instance:
@@ -248,9 +248,9 @@ def test_specify_pg_params(hostname):
     ) as instance:
         postgres_url = f"postgresql://test:test@{hostname}:5432/test?application_name=myapp&connect_timeout=10&options=-c%20synchronous_commit%3Doff"
 
-        assert instance._event_storage.postgres_url == postgres_url  # noqa: SLF001
-        assert instance._run_storage.postgres_url == postgres_url  # noqa: SLF001
-        assert instance._schedule_storage.postgres_url == postgres_url  # noqa: SLF001
+        assert instance._event_storage.postgres_url == postgres_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+        assert instance._run_storage.postgres_url == postgres_url  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+        assert instance._schedule_storage.postgres_url == postgres_url  # noqa: SLF001  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_conn_str():
@@ -269,8 +269,8 @@ def test_conn_str():
     )
     assert conn_str == f"postgresql://{url_wo_scheme}"
     parsed = urlparse(conn_str)
-    assert unquote(parsed.username) == username
-    assert unquote(parsed.password) == password
+    assert unquote(parsed.username) == username  # pyright: ignore[reportArgumentType]
+    assert unquote(parsed.password) == password  # pyright: ignore[reportArgumentType]
     assert parsed.hostname == hostname
     assert parsed.scheme == "postgresql"
 
@@ -285,8 +285,8 @@ def test_conn_str():
 
     assert conn_str == f"postgresql+dialect://{url_wo_scheme}"
     parsed = urlparse(conn_str)
-    assert unquote(parsed.username) == username
-    assert unquote(parsed.password) == password
+    assert unquote(parsed.username) == username  # pyright: ignore[reportArgumentType]
+    assert unquote(parsed.password) == password  # pyright: ignore[reportArgumentType]
     assert parsed.hostname == hostname
     assert parsed.scheme == custom_scheme
 

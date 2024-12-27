@@ -15,12 +15,19 @@ from dagster._core.remote_representation import (
     RepositorySnap,
 )
 from dagster._core.remote_representation.external import RemoteRepository
-from dagster._core.remote_representation.external_data import JobDataSnap
+from dagster._core.remote_representation.external_data import (
+    DISABLE_FAST_EXTRACT_ENV_VAR,
+    JobDataSnap,
+    JobRefSnap,
+    extract_serialized_job_snap_from_serialized_job_data_snap,
+)
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes.serdes import deserialize_value
+from dagster._serdes.serdes import deserialize_value, get_storage_fields
+from dagster._serdes.utils import hash_str
+from dagster._utils.env import environ
 
 from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
@@ -82,7 +89,7 @@ def giant_job():
         do_something()
 
 
-@repository
+@repository  # pyright: ignore[reportArgumentType]
 def giant_repo():
     return {
         "jobs": {
@@ -121,8 +128,9 @@ def test_giant_external_repository_streaming_grpc():
             assert repository_snap.name == "giant_repo"
 
 
-def test_defer_snapshots(instance: DagsterInstance):
-    with get_bar_repo_code_location(instance) as code_location:
+@pytest.mark.parametrize("env", [{}, {DISABLE_FAST_EXTRACT_ENV_VAR: "true"}])
+def test_defer_snapshots(instance: DagsterInstance, env):
+    with get_bar_repo_code_location(instance) as code_location, environ(env):
         repo_origin = RemoteRepositoryOrigin(
             code_location.origin,
             "bar_repo",
@@ -135,16 +143,27 @@ def test_defer_snapshots(instance: DagsterInstance):
 
         _state = {}
 
-        def _ref_to_data(ref):
+        def _ref_to_data(ref: JobRefSnap):
             _state["cnt"] = _state.get("cnt", 0) + 1
             reply = code_location.client.external_job(
                 repo_origin,
                 ref.name,
             )
-            return deserialize_value(reply.serialized_job_data, JobDataSnap)
+            assert reply.serialized_job_data, reply.serialized_error
+            assert (
+                hash_str(
+                    extract_serialized_job_snap_from_serialized_job_data_snap(
+                        reply.serialized_job_data
+                    )
+                )
+                == ref.snapshot_id
+            ), ref.name
+
+            job_data_snap = deserialize_value(reply.serialized_job_data, JobDataSnap)
+            return job_data_snap
 
         repository_snap = deserialize_value(ser_repo_data, RepositorySnap)
-        assert repository_snap.job_refs and len(repository_snap.job_refs) == 6
+        assert repository_snap.job_refs and len(repository_snap.job_refs) == 7
         assert repository_snap.job_datas is None
 
         repo = RemoteRepository(
@@ -154,7 +173,7 @@ def test_defer_snapshots(instance: DagsterInstance):
             ref_to_data_fn=_ref_to_data,
         )
         jobs = repo.get_all_jobs()
-        assert len(jobs) == 6
+        assert len(jobs) == 7
         assert _state.get("cnt", 0) == 0
 
         job = jobs[0]
@@ -177,6 +196,15 @@ def test_defer_snapshots(instance: DagsterInstance):
         assert _state.get("cnt", 0) == 1
 
         # refetching job should share fetched data
-        job = repo.get_all_jobs()[0]
-        _ = job.job_snapshot
-        assert _state.get("cnt", 0) == 1
+        expected = 1  # from job[0] access
+        for job in repo.get_all_jobs():
+            _ = job.job_snapshot
+            assert _state.get("cnt", 0) == expected
+            expected += 1
+
+
+def test_job_data_snap_layout():
+    # defend against assumptions made in
+
+    # must remain last position
+    assert get_storage_fields(JobDataSnap)[-1] == "pipeline_snapshot"

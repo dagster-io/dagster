@@ -96,7 +96,7 @@ def test_docker_monitoring(aws_env):
         find_local_test_image(docker_image)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "ops": {
                 "multiply_the_word_slow": {
@@ -139,21 +139,21 @@ def test_docker_monitoring(aws_env):
 
                     start_time = time.time()
                     while time.time() - start_time < 60:
-                        run = instance.get_run_by_id(run.run_id)
-                        if run.status == DagsterRunStatus.STARTED:
+                        run = instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
+                        if run.status == DagsterRunStatus.STARTED:  # pyright: ignore[reportOptionalMemberAccess]
                             break
-                        assert run.status == DagsterRunStatus.STARTING
+                        assert run.status == DagsterRunStatus.STARTING  # pyright: ignore[reportOptionalMemberAccess]
                         time.sleep(1)
 
                     time.sleep(3)
 
-                    instance.run_launcher._get_container(  # noqa: SLF001
-                        instance.get_run_by_id(run.run_id)
+                    instance.run_launcher._get_container(  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+                        instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
                     ).stop()
 
                     # daemon resumes the run
-                    poll_for_finished_run(instance, run.run_id, timeout=300)
-                    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
+                    poll_for_finished_run(instance, run.run_id, timeout=300)  # pyright: ignore[reportOptionalMemberAccess]
+                    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
 
 
 @pytest.fixture
@@ -183,7 +183,7 @@ def test_docker_monitoring_run_out_of_attempts(aws_env):
         find_local_test_image(docker_image)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "ops": {
                 "multiply_the_word_slow": {
@@ -230,17 +230,17 @@ def test_docker_monitoring_run_out_of_attempts(aws_env):
 
                     start_time = time.time()
                     while time.time() - start_time < 60:
-                        run = instance.get_run_by_id(run.run_id)
-                        if run.status == DagsterRunStatus.STARTED:
+                        run = instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
+                        if run.status == DagsterRunStatus.STARTED:  # pyright: ignore[reportOptionalMemberAccess]
                             break
-                        assert run.status == DagsterRunStatus.STARTING
+                        assert run.status == DagsterRunStatus.STARTING  # pyright: ignore[reportOptionalMemberAccess]
                         time.sleep(1)
 
                     time.sleep(3)
 
-                    instance.run_launcher._get_container(  # noqa: SLF001
-                        instance.get_run_by_id(run.run_id)
+                    instance.run_launcher._get_container(  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+                        instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
                     ).stop(timeout=0)
 
-                    poll_for_finished_run(instance, run.run_id, timeout=60)
-                    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.FAILURE
+                    poll_for_finished_run(instance, run.run_id, timeout=60)  # pyright: ignore[reportOptionalMemberAccess]
+                    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.FAILURE  # pyright: ignore[reportOptionalMemberAccess]

@@ -496,7 +496,7 @@ def _bulk_action_filters_from_run_filters(filters: RunsFilter) -> BulkActionsFil
         _bulk_action_statuses_from_run_statuses(filters.statuses) if filters.statuses else None
     )
     backfill_ids = None
-    if filters.tags and filters.tags.get(BACKFILL_ID_TAG) is not None:
+    if filters.tags.get(BACKFILL_ID_TAG) is not None:
         backfill_ids = filters.tags[BACKFILL_ID_TAG]
         if isinstance(backfill_ids, str):
             backfill_ids = [backfill_ids]
@@ -609,12 +609,18 @@ def get_runs_feed_entries(
     else:
         backfills = []
 
-    runs = [
-        GrapheneRun(run)
-        for run in instance.get_run_records(
-            limit=fetch_limit, cursor=runs_feed_cursor.run_cursor, filters=run_filters
-        )
-    ]
+    # if we are not showing runs within backfills and the backfill_id filter is set, we know
+    # there will be no results, so we can skip fetching runs
+    should_fetch_runs = not (exclude_subruns and run_filters.tags.get(BACKFILL_ID_TAG) is not None)
+    if should_fetch_runs:
+        runs = [
+            GrapheneRun(run)
+            for run in instance.get_run_records(
+                limit=fetch_limit, cursor=runs_feed_cursor.run_cursor, filters=run_filters
+            )
+        ]
+    else:
+        runs = []
 
     # if we fetched limit+1 of either runs or backfills, we know there must be more results
     # to fetch on the next call since we will return limit results for this call. Additionally,

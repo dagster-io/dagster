@@ -63,14 +63,12 @@ MAX_TITLE_LENGTH = 100
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_key import AssetKey
     from dagster._core.definitions.asset_selection import AssetSelection
-    from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.declarative_automation.automation_condition import (
         AutomationCondition,
     )
     from dagster._core.definitions.sensor_definition import SensorDefinition
-    from dagster._core.definitions.source_asset import SourceAsset
     from dagster._core.remote_representation.external import RemoteSensor
 
 
@@ -322,32 +320,28 @@ def dedupe_object_refs(objects: Optional[Iterable[T]]) -> Sequence[T]:
     return list({id(obj): obj for obj in objects}.values()) if objects is not None else []
 
 
-def add_default_automation_condition_sensor(
+def get_default_automation_condition_sensor(
     sensors: Sequence["SensorDefinition"],
-    assets: Iterable[Union["AssetsDefinition", "SourceAsset"]],
-    asset_checks: Iterable["AssetsDefinition"],
-) -> Sequence["SensorDefinition"]:
+    asset_graph: "BaseAssetGraph",
+) -> Optional["SensorDefinition"]:
     """Given a list of existing sensors, adds an AutomationConditionSensorDefinition with name
     `default_automation_condition_sensor` that targets all assets/asset_checks that have an
     automation_condition and are not targeted by an existing AutomationConditionSensorDefinition
     if any such untargeted assets/asset_checks exist.
     """
-    from dagster._core.definitions.asset_graph import AssetGraph
     from dagster._core.definitions.automation_condition_sensor_definition import (
         DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
         AutomationConditionSensorDefinition,
     )
 
     with disable_dagster_warnings():
-        asset_graph = AssetGraph.from_assets([*assets, *asset_checks])
         sensor_selection = get_default_automation_condition_sensor_selection(sensors, asset_graph)
         if sensor_selection:
-            default_sensor = AutomationConditionSensorDefinition(
+            return AutomationConditionSensorDefinition(
                 DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME, target=sensor_selection
             )
-            sensors = [*sensors, default_sensor]
 
-    return sensors
+    return None
 
 
 def get_default_automation_condition_sensor_selection(

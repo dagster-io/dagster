@@ -6,6 +6,7 @@ for that.
 
 import inspect
 import json
+import os
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import Enum
@@ -102,7 +103,11 @@ from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.utils import is_valid_email
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
+from dagster._serdes.serdes import (
+    FieldSerializer,
+    get_prefix_for_a_serialized,
+    is_whitelisted_for_serdes_object,
+)
 from dagster._time import datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.warnings import suppress_dagster_warnings
@@ -388,10 +393,13 @@ class PresetSnap(IHaveNew):
         )
 
 
+_JOB_SNAP_STORAGE_FIELD = "pipeline_snapshot"
+
+
 @whitelist_for_serdes(
     storage_name="ExternalPipelineData",
     storage_field_names={
-        "job": "pipeline_snapshot",
+        "job": _JOB_SNAP_STORAGE_FIELD,
         "parent_job": "parent_pipeline_snapshot",
     },
     # There was a period during which `JobDefinition` was a newer subclass of the legacy
@@ -835,21 +843,21 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
         if self.cron_schedule is not None:
             return TimeWindowPartitionsDefinition(
                 cron_schedule=self.cron_schedule,
-                start=datetime_from_timestamp(self.start, tz=self.timezone),
+                start=datetime_from_timestamp(self.start, tz=self.timezone),  # pyright: ignore[reportArgumentType]
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
-                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),
+                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),  # pyright: ignore[reportArgumentType]
             )
         else:
             # backcompat case
             return TimeWindowPartitionsDefinition(
                 schedule_type=self.schedule_type,
-                start=datetime_from_timestamp(self.start, tz=self.timezone),
+                start=datetime_from_timestamp(self.start, tz=self.timezone),  # pyright: ignore[reportArgumentType]
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
-                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),
+                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),  # pyright: ignore[reportArgumentType]
                 minute_offset=self.minute_offset,
                 hour_offset=self.hour_offset,
                 day_offset=self.day_offset,
@@ -1859,3 +1867,44 @@ def resolve_automation_condition_args(
     else:
         # for non-serializable conditions, only include the snapshot
         return None, automation_condition.get_snapshot()
+
+
+def _extract_fast(serialized_job_data: str):
+    target_key = f'"{_JOB_SNAP_STORAGE_FIELD}": '
+    target_substr = target_key + get_prefix_for_a_serialized(JobSnap)
+    # look for key: type
+    idx = serialized_job_data.find(target_substr)
+    check.invariant(idx > 0)
+    # slice starting after key:
+    start_idx = idx + len(target_key)
+
+    # trim outer object }
+    # assumption that pipeline_snapshot is last field under test in test_job_data_snap_layout
+    serialized_job_snap = serialized_job_data[start_idx:-1]
+    check.invariant(serialized_job_snap[0] == "{" and serialized_job_snap[-1] == "}")
+
+    return serialized_job_snap
+
+
+def _extract_safe(serialized_job_data: str):
+    # Intentionally use json directly instead of serdes to avoid losing information if the current process
+    # is older than the source process.
+    return json.dumps(json.loads(serialized_job_data)[_JOB_SNAP_STORAGE_FIELD])
+
+
+DISABLE_FAST_EXTRACT_ENV_VAR = "DAGSTER_DISABLE_JOB_SNAP_FAST_EXTRACT"
+
+
+def extract_serialized_job_snap_from_serialized_job_data_snap(serialized_job_data_snap: str):
+    # utility used by DagsterCloudAgent to extract JobSnap out of JobDataSnap
+    # efficiently and safely
+    if not serialized_job_data_snap.startswith(get_prefix_for_a_serialized(JobDataSnap)):
+        raise Exception("Passed in string does not meet expectations for a serialized JobDataSnap")
+
+    if not os.getenv(DISABLE_FAST_EXTRACT_ENV_VAR):
+        try:
+            return _extract_fast(serialized_job_data_snap)
+        except Exception:
+            pass
+
+    return _extract_safe(serialized_job_data_snap)

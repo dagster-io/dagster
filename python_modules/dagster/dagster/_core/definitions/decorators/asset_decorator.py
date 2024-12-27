@@ -40,7 +40,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
     DecoratorAssetsDefinitionBuilder,
     DecoratorAssetsDefinitionBuilderArgs,
-    build_named_ins,
+    build_and_validate_named_ins,
     build_named_outs,
     create_check_specs_by_output_name,
     validate_and_assign_output_names_to_check_specs,
@@ -911,7 +911,7 @@ def graph_asset_no_defaults(
     kinds: Optional[AbstractSet[str]],
 ) -> AssetsDefinition:
     ins = ins or {}
-    named_ins = build_named_ins(compose_fn, ins or {}, set())
+    named_ins = build_and_validate_named_ins(compose_fn, ins or {}, set())
     out_asset_key, _asset_name = resolve_asset_key_and_name_for_decorator(
         key=key,
         key_prefix=key_prefix,
@@ -1030,7 +1030,7 @@ def graph_multi_asset(
             if asset_in.partition_mapping
         }
 
-        named_ins = build_named_ins(fn, ins or {}, set())
+        named_ins = build_and_validate_named_ins(fn, ins or {}, set())
         keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in named_ins.items()
         }
@@ -1096,6 +1096,12 @@ def graph_multi_asset(
             if isinstance(out, AssetOut) and out.tags is not None
         }
 
+        owners_by_output_name = {
+            output_name: out.owners
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.owners is not None
+        }
+
         return AssetsDefinition.from_graph(
             op_graph,
             keys_by_input_name=keys_by_input_name,
@@ -1115,6 +1121,7 @@ def graph_multi_asset(
             check_specs=check_specs,
             code_versions_by_output_name=code_versions_by_output_name,
             tags_by_output_name=tags_by_output_name,
+            owners_by_output_name=owners_by_output_name,
         )
 
     return inner

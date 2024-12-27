@@ -4,7 +4,6 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
-from dagster._annotations import deprecated
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.events import AssetKey
@@ -248,7 +247,6 @@ def asset_sensor(
     return inner
 
 
-@deprecated(breaking_version="2.0.0", additional_warn_text="use `AutomationConditions` instead")
 def multi_asset_sensor(
     monitored_assets: Union[Sequence[AssetKey], AssetSelection],
     *,

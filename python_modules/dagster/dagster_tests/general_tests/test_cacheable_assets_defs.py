@@ -1,3 +1,5 @@
+from typing import List, Sequence, Union, cast
+
 import dagster._check as check
 import pytest
 from dagster import (
@@ -12,10 +14,17 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.automation_condition_sensor_definition import (
+    DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
+)
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.definitions.resource_definition import resource
@@ -142,7 +151,9 @@ def test_resolve_wrong_data():
         recon_repo.get_definition()
 
 
-def define_uncacheable_and_resource_dependent_cacheable_assets():
+def define_uncacheable_and_resource_dependent_cacheable_assets() -> (
+    Sequence[Union[CacheableAssetsDefinition, AssetsDefinition]]
+):
     class ResourceDependentCacheableAsset(CacheableAssetsDefinition):
         def __init__(self):
             super().__init__("res_midstream")
@@ -286,7 +297,7 @@ def test_group_cached_assets():
     )
 
 
-def test_multiple_wrapped_cached_assets():
+def test_multiple_wrapped_cached_assets() -> None:
     """Test that multiple wrappers (with_attributes, with_resources) work properly on cacheable assets."""
 
     @resource
@@ -295,9 +306,7 @@ def test_multiple_wrapped_cached_assets():
 
     my_cacheable_assets_with_group_and_asset = [
         x.with_attributes(
-            output_asset_key_replacements={
-                AssetKey("res_downstream"): AssetKey("res_downstream_too")
-            }
+            asset_key_replacements={AssetKey("res_downstream"): AssetKey("res_downstream_too")}
         )
         for x in with_resources(
             [
@@ -324,14 +333,58 @@ def test_multiple_wrapped_cached_assets():
         assert isinstance(repo.get_job("all_asset_job"), JobDefinition)
 
         my_cool_group_sel = AssetSelection.groups("my_cool_group")
+        cacheable_resource_asset = cast(
+            CacheableAssetsDefinition, my_cacheable_assets_with_group_and_asset[0]
+        )
+        resolved_defs = list(
+            cacheable_resource_asset.build_definitions(
+                cacheable_resource_asset.compute_cacheable_data()
+            )
+        )
         assert (
             len(
                 my_cool_group_sel.resolve(
-                    my_cacheable_assets_with_group_and_asset[0].build_definitions(
-                        my_cacheable_assets_with_group_and_asset[0].compute_cacheable_data()
-                    )
-                    + my_cacheable_assets_with_group_and_asset[1:]
+                    resolved_defs
+                    + cast(List[AssetsDefinition], my_cacheable_assets_with_group_and_asset[1:])
                 )
             )
             == 1
         )
+
+
+def test_automation_condition_sensor_definition() -> None:
+    class AutomationConditionCacheableAsset(CacheableAssetsDefinition):
+        def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
+            return [AssetsDefinitionCacheableData(group_name="cacheable")]
+
+        def build_definitions(self, data) -> Sequence[AssetsDefinition]:
+            @asset(
+                name=self.unique_id,
+                automation_condition=AutomationCondition.eager() if self.unique_id == "x" else None,
+                group_name=data[0].group_name,
+            )
+            def _asset() -> None: ...
+
+            return [_asset]
+
+    # will have a default automation condition sensor
+    with scoped_definitions_load_context():
+        defs = Definitions(assets=[AutomationConditionCacheableAsset("x")])
+        default_sensor = defs.get_sensor_def(DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME)
+        assert default_sensor.asset_selection == AssetSelection.all()
+        assert len(defs.get_repository_def().sensor_defs) == 1
+
+    with scoped_definitions_load_context():
+        # will not have a default automation condition sensor
+        defs = Definitions(assets=[AutomationConditionCacheableAsset("y")])
+        assert len(defs.get_repository_def().sensor_defs) == 0
+
+    with scoped_definitions_load_context():
+
+        @repository
+        def repo() -> Sequence:
+            return [AutomationConditionCacheableAsset("x")]
+
+        assert isinstance(repo, RepositoryDefinition)
+        assert len(repo.sensor_defs) == 1
+        assert repo.sensor_defs[0].name == DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME

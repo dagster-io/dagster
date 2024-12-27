@@ -447,9 +447,10 @@ def core_dagster_event_sequence_for_step(
     else:
         yield DagsterEvent.step_start_event(step_context)
 
-    with time_execution_scope() as timer_result, enter_execution_context(
-        step_context
-    ) as compute_context:
+    with (
+        time_execution_scope() as timer_result,
+        enter_execution_context(step_context) as compute_context,
+    ):
         inputs = {}
 
         if step_context.is_sda_step:
@@ -563,7 +564,8 @@ def _get_output_asset_events(
     step_context: StepExecutionContext,
     execution_type: AssetExecutionType,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation]]:
-    all_metadata = {**output.metadata, **io_manager_metadata}
+    # Metadata scoped to all events for this asset.
+    key_scoped_metadata = {**output.metadata, **io_manager_metadata}
 
     # Clear any cached record associated with this asset, since we are about to generate a new
     # materialization.
@@ -622,9 +624,21 @@ def _get_output_asset_events(
     else:
         check.failed(f"Unexpected asset execution type {execution_type}")
 
+    unpartitioned_asset_metadata = step_context.get_asset_metadata(asset_key=asset_key)
+    all_unpartitioned_asset_metadata = {
+        **key_scoped_metadata,
+        **(unpartitioned_asset_metadata or {}),
+    }
     if asset_partitions:
         for partition in asset_partitions:
             with disable_dagster_warnings():
+                partition_scoped_metadata = step_context.get_asset_metadata(
+                    asset_key=asset_key, partition_key=partition
+                )
+                all_metadata_for_partitioned_event = {
+                    **all_unpartitioned_asset_metadata,
+                    **(partition_scoped_metadata or {}),
+                }
                 all_tags.update(
                     get_tags_from_multi_partition_key(partition)
                     if isinstance(partition, MultiPartitionKey)
@@ -634,12 +648,14 @@ def _get_output_asset_events(
                 yield event_class(
                     asset_key=asset_key,
                     partition=partition,
-                    metadata=all_metadata,
+                    metadata=all_metadata_for_partitioned_event,
                     tags=all_tags,
                 )
     else:
         with disable_dagster_warnings():
-            yield event_class(asset_key=asset_key, metadata=all_metadata, tags=all_tags)
+            yield event_class(
+                asset_key=asset_key, metadata=all_unpartitioned_asset_metadata, tags=all_tags
+            )
 
 
 def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:

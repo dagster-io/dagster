@@ -165,6 +165,10 @@ dagsterWebserver:
 
   # Configure initContainer resources separately from main container
   initContainerResources: {}
+
+  # Enable the check-db-ready initContainer
+  checkDbReadyInitContainer: true
+
   # Override the default K8s scheduler
   # schedulerName: ~
 
@@ -216,7 +220,7 @@ computeLogManager:
   #   azureBlobComputeLogManager:
   #     storageAccount: ~
   #     container: ~
-  #     secretKey: ~
+  #     secretCredential: ~
   #     defaultAzureCredential: ~
   #     localDir: ~
   #     prefix: ~
@@ -689,6 +693,8 @@ runLauncher:
       #     memory: 128Mi
       resources: {}
 
+      # Enable the check-db-ready initContainer
+      checkDbReadyInitContainer: true
       # Override the default K8s scheduler
       # schedulerName: ~
 
@@ -761,6 +767,7 @@ postgresql:
 
   # Used by init container to check that db is running. (Even if enabled:false)
   image:
+    registry: "docker.io"
     repository: "library/postgres"
     tag: "14.6"
     pullPolicy: IfNotPresent
@@ -885,6 +892,8 @@ flower:
   podSecurityContext: {}
   securityContext: {}
 
+  # Enable the check-db-ready initContainer
+  checkDbReadyInitContainer: true
   # Override the default K8s scheduler
   # schedulerName: ~
 
@@ -1219,6 +1228,8 @@ dagsterDaemon:
 
   # Configure initContainer resources separately from main container
   initContainerResources: {}
+  # Enable the check-db-ready initContainer
+  checkDbReadyInitContainer: true
   # Override the default K8s scheduler
   # schedulerName: ~
 

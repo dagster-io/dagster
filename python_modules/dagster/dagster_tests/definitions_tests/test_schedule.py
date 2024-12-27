@@ -2,9 +2,16 @@ import warnings
 from datetime import datetime
 
 import pytest
-from dagster import DagsterInvalidDefinitionError, ScheduleDefinition, build_schedule_context, graph
-from dagster._core.definitions.decorators.op_decorator import op
+from dagster import (
+    DagsterInvalidDefinitionError,
+    ScheduleDefinition,
+    build_schedule_context,
+    graph,
+    job,
+    op,
+)
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.definitions.run_request import RunRequest
 
@@ -157,11 +164,36 @@ def test_tag_transfer_to_run_request():
 
     # If no defined execution function, tags should be transferred to the run request (backcompat)
     assert (
-        tags_and_no_exec_fn_schedule.evaluate_tick(context_with_time).run_requests[0].tags["foo"]
+        tags_and_no_exec_fn_schedule.evaluate_tick(context_with_time).run_requests[0].tags["foo"]  # pyright: ignore[reportOptionalSubscript]
         == "bar"
     )
 
     # If an execution function is defined, tags should not be transferred to the run request
     assert (
-        "foo" not in tags_and_exec_fn_schedule.evaluate_tick(context_with_time).run_requests[0].tags
+        "foo" not in tags_and_exec_fn_schedule.evaluate_tick(context_with_time).run_requests[0].tags  # pyright: ignore[reportOptionalSubscript]
     )
+
+
+def test_with_updated_job():
+    @op
+    def my_op():
+        pass
+
+    @job
+    def my_job_1():
+        my_op()
+
+    @job
+    def my_job_2():
+        my_op()
+
+    my_schedule_1 = ScheduleDefinition(
+        job=my_job_1, cron_schedule="@daily", tags={"foo": "bar"}, metadata={"baz": "qux"}
+    )
+
+    my_schedule_2 = my_schedule_1.with_updated_job(my_job_2)
+
+    assert my_schedule_2.job.name == "my_job_2"
+    assert my_schedule_2.cron_schedule == "@daily"
+    assert my_schedule_2.tags == {"foo": "bar"}
+    assert my_schedule_2.metadata == {"baz": MetadataValue.text("qux")}

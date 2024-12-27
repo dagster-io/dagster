@@ -18,6 +18,7 @@ import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {isNodeOffscreen} from '../graph/common';
 import {AssetKeyInput} from '../graphql/types';
+import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
 
 export type AssetNodeLineageGraphProps = {
   assetKey: AssetKeyInput;
@@ -30,6 +31,7 @@ export const AssetNodeLineageGraph = ({
   assetGraphData,
   params,
 }: AssetNodeLineageGraphProps) => {
+  const openInNewTab = useOpenInNewTab();
   const assetGraphId = toGraphId(assetKey);
 
   const {allGroups, groupedAssets} = useMemo(() => {
@@ -60,7 +62,7 @@ export const AssetNodeLineageGraph = ({
       lineageDepth: 1,
     });
     if (e.metaKey) {
-      window.open(document.location.host + path);
+      openInNewTab(path);
     } else {
       history.push(path);
     }

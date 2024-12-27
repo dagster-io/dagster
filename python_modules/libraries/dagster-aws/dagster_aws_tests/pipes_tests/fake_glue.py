@@ -46,6 +46,10 @@ class LocalGlueMockClient:
 
         self._job_runs: Dict[str, SimulatedJobRun] = {}  # mapping of JobRunId to SimulatedJobRun
 
+    @property
+    def meta(self):
+        return self.glue_client.meta
+
     def get_job_run(self, JobName: str, RunId: str):
         # get original response
         response = self.glue_client.get_job_run(JobName=JobName, RunId=RunId)

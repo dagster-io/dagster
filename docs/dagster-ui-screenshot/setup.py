@@ -15,7 +15,6 @@ setup(
     license="Apache-2.0",
     description="Utility for taking automated screenshots from the Dagster UI",
     classifiers=[
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",

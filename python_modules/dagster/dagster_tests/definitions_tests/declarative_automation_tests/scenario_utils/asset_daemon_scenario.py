@@ -212,6 +212,7 @@ class AssetDaemonScenarioState(ScenarioState):
                     threadpool_executor=self.threadpool_executor,
                     amp_tick_futures=amp_tick_futures,
                     debug_crash_flags={},
+                    submit_threadpool_executor=None,
                 )
             )
 

@@ -16,6 +16,7 @@ from dagster import (
     InputContext,
     IOManager,
     IOManagerDefinition,
+    MaterializeResult,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
@@ -35,9 +36,13 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.materialize import materialize_to_memory
+from dagster._core.definitions.metadata.metadata_value import IntMetadataValue, TextMetadataValue
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.event_api import EventRecordsFilter
+from dagster._core.events import DagsterEventType
+from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -58,6 +63,7 @@ def error_on_warning():
 
 def get_upstream_partitions_for_partition_range(
     downstream_assets_def: AssetsDefinition,
+    downstream_asset_key: AssetKey,
     upstream_partitions_def: PartitionsDefinition,
     upstream_asset_key: AssetKey,
     downstream_partition_key_range: Optional[PartitionKeyRange],
@@ -66,7 +72,7 @@ def get_upstream_partitions_for_partition_range(
         check.failed("upstream asset is not partitioned")
 
     downstream_partition_mapping = downstream_assets_def.infer_partition_mapping(
-        upstream_asset_key, upstream_partitions_def
+        downstream_asset_key, upstream_asset_key, upstream_partitions_def
     )
     downstream_partitions_def = downstream_assets_def.partitions_def
     downstream_partitions_subset = (
@@ -92,6 +98,7 @@ def get_upstream_partitions_for_partition_range(
 
 def get_downstream_partitions_for_partition_range(
     downstream_assets_def: AssetsDefinition,
+    downstream_asset_key: AssetKey,
     upstream_assets_def: AssetsDefinition,
     upstream_asset_key: AssetKey,
     upstream_partition_key_range: PartitionKeyRange,
@@ -103,7 +110,7 @@ def get_downstream_partitions_for_partition_range(
         check.failed("upstream asset is not partitioned")
 
     downstream_partition_mapping = downstream_assets_def.infer_partition_mapping(
-        upstream_asset_key, upstream_assets_def.partitions_def
+        downstream_asset_key, upstream_asset_key, upstream_assets_def.partitions_def
     )
     upstream_partitions_def = upstream_assets_def.partitions_def
     upstream_partitions_subset = upstream_partitions_def.empty_subset().with_partition_keys(
@@ -136,13 +143,15 @@ def test_assets_with_same_partitioning():
 
     assert get_upstream_partitions_for_partition_range(
         downstream_asset,
-        upstream_asset.partitions_def,
+        downstream_asset.key,
+        upstream_asset.partitions_def,  # pyright: ignore[reportArgumentType]
         AssetKey("upstream_asset"),
         PartitionKeyRange("a", "c"),
     ) == PartitionKeyRange("a", "c")
 
     assert get_downstream_partitions_for_partition_range(
         downstream_asset,
+        downstream_asset.key,
         upstream_asset,
         AssetKey("upstream_asset"),
         PartitionKeyRange("a", "c"),
@@ -427,20 +436,23 @@ def test_multi_assets_with_same_partitioning():
 
     assert get_upstream_partitions_for_partition_range(
         downstream_asset_1,
-        upstream_asset.partitions_def,
+        downstream_asset_1.key,
+        upstream_asset.partitions_def,  # pyright: ignore[reportArgumentType]
         AssetKey("upstream_asset_1"),
         PartitionKeyRange("a", "c"),
     ) == PartitionKeyRange("a", "c")
 
     assert get_upstream_partitions_for_partition_range(
         downstream_asset_2,
-        upstream_asset.partitions_def,
+        downstream_asset_2.key,
+        upstream_asset.partitions_def,  # pyright: ignore[reportArgumentType]
         AssetKey("upstream_asset_2"),
         PartitionKeyRange("a", "c"),
     ) == PartitionKeyRange("a", "c")
 
     assert get_downstream_partitions_for_partition_range(
         downstream_asset_1,
+        downstream_asset_1.key,
         upstream_asset,
         AssetKey("upstream_asset_1"),
         PartitionKeyRange("a", "c"),
@@ -448,6 +460,7 @@ def test_multi_assets_with_same_partitioning():
 
     assert get_downstream_partitions_for_partition_range(
         downstream_asset_2,
+        downstream_asset_2.key,
         upstream_asset,
         AssetKey("upstream_asset_2"),
         PartitionKeyRange("a", "c"),
@@ -488,6 +501,84 @@ def test_single_partitioned_multi_asset_job():
         ],
         exclude_fields=["tags"],
     )
+
+
+def test_multi_asset_with_different_partitions_defs():
+    partitions_def1 = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    partitions_def2 = StaticPartitionsDefinition(["1", "2", "3"])
+
+    @multi_asset(
+        specs=[
+            AssetSpec("my_asset_1", partitions_def=partitions_def1),
+            AssetSpec("my_asset_2", partitions_def=partitions_def2),
+        ],
+        can_subset=True,
+    )
+    def my_assets(context):
+        assert context.partition_key == "b"
+        assert context.partition_keys == ["b"]
+        for asset_key in context.selected_asset_keys:
+            yield MaterializeResult(asset_key=asset_key)
+
+    result = materialize(assets=[my_assets], partition_key="b", selection=["my_asset_1"])
+    assert result.success
+
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("my_assets"),
+        [
+            AssetMaterialization(asset_key=AssetKey(["my_asset_1"]), partition="b"),
+        ],
+        exclude_fields=["tags"],
+    )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Selected assets must have the same partitions definitions, but the selected assets ",
+    ):
+        materialize(assets=[my_assets], partition_key="b")
+
+
+def test_multi_asset_with_different_partitions_defs_partition_key_range():
+    partitions_def1 = DailyPartitionsDefinition(start_date="2020-01-01")
+    partitions_def2 = StaticPartitionsDefinition(["1", "2", "3"])
+
+    @multi_asset(
+        specs=[
+            AssetSpec("my_asset_1", partitions_def=partitions_def1),
+            AssetSpec("my_asset_2", partitions_def=partitions_def2),
+        ],
+        can_subset=True,
+    )
+    def my_assets(context):
+        assert context.partition_keys == ["2020-01-01", "2020-01-02", "2020-01-03"]
+        assert context.partition_key_range == PartitionKeyRange("2020-01-01", "2020-01-03")
+        assert context.partition_time_window == TimeWindow(
+            partitions_def1.time_window_for_partition_key("2020-01-01").start,
+            partitions_def1.time_window_for_partition_key("2020-01-03").end,
+        )
+        for asset_key in context.selected_asset_keys:
+            yield MaterializeResult(asset_key=asset_key)
+
+    result = materialize(
+        assets=[my_assets],
+        selection=["my_asset_1"],
+        tags={
+            ASSET_PARTITION_RANGE_START_TAG: "2020-01-01",
+            ASSET_PARTITION_RANGE_END_TAG: "2020-01-03",
+        },
+    )
+    assert result.success
+
+    materializations = result.asset_materializations_for_node("my_assets")
+    assert len(materializations) == 3
+    assert {
+        (materialization.asset_key, materialization.partition)
+        for materialization in materializations
+    } == {
+        (AssetKey(["my_asset_1"]), "2020-01-01"),
+        (AssetKey(["my_asset_1"]), "2020-01-02"),
+        (AssetKey(["my_asset_1"]), "2020-01-03"),
+    }
 
 
 def test_two_partitioned_multi_assets_job():
@@ -600,11 +691,11 @@ def test_mismatched_job_partitioned_config_with_asset_partitions():
         )
 
 
-def test_partition_range_single_run():
+def test_partition_range_single_run() -> None:
     partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
 
     @asset(partitions_def=partitions_def)
-    def upstream_asset(context) -> None:
+    def upstream_asset(context: AssetExecutionContext) -> None:
         key_range = PartitionKeyRange(start="2020-01-01", end="2020-01-03")
         assert context.has_partition_key_range
         assert context.partition_key_range == key_range
@@ -613,6 +704,10 @@ def test_partition_range_single_run():
             partitions_def.time_window_for_partition_key(key_range.end).end,
         )
         assert context.partition_keys == partitions_def.get_partition_keys_in_range(key_range)
+        context.add_asset_metadata(metadata={"asset_unpartitioned": "yay"})
+        context.add_output_metadata(metadata={"output_unpartitioned": "yay"})
+        for i, key in enumerate(context.partition_keys):
+            context.add_asset_metadata(partition_key=key, metadata={"index": i})
 
     @asset(partitions_def=partitions_def, deps=["upstream_asset"])
     def downstream_asset(context: AssetExecutionContext) -> None:
@@ -622,6 +717,7 @@ def test_partition_range_single_run():
         assert context.partition_key_range == PartitionKeyRange(
             start="2020-01-01", end="2020-01-03"
         )
+        context.add_output_metadata(metadata={"unscoped": "yay"})
 
     the_job = define_asset_job("job").resolve(
         asset_graph=AssetGraph.from_assets([upstream_asset, downstream_asset])
@@ -634,14 +730,27 @@ def test_partition_range_single_run():
         }
     )
 
-    assert {
-        materialization.partition
-        for materialization in result.asset_materializations_for_node("upstream_asset")
-    } == {"2020-01-01", "2020-01-02", "2020-01-03"}
-    assert {
-        materialization.partition
-        for materialization in result.asset_materializations_for_node("downstream_asset")
-    } == {"2020-01-01", "2020-01-02", "2020-01-03"}
+    upstream_assets = result.asset_materializations_for_node("upstream_asset")
+    downstream_assets = result.asset_materializations_for_node("downstream_asset")
+    assert {materialization.partition for materialization in upstream_assets} == {
+        "2020-01-01",
+        "2020-01-02",
+        "2020-01-03",
+    }
+    assert {materialization.partition for materialization in downstream_assets} == {
+        "2020-01-01",
+        "2020-01-02",
+        "2020-01-03",
+    }
+
+    for i, mat in enumerate(upstream_assets):
+        assert mat.metadata == {
+            "asset_unpartitioned": TextMetadataValue("yay"),
+            "output_unpartitioned": TextMetadataValue("yay"),
+            "index": IntMetadataValue(i),
+        }
+    for mat in downstream_assets:
+        assert mat.metadata == {"unscoped": TextMetadataValue("yay")}
 
 
 def test_multipartition_range_single_run():
@@ -759,7 +868,7 @@ def test_error_on_nonexistent_upstream_partition():
     with freeze_time(create_datetime(2020, 1, 2, 10, 0)):
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="invalid partition keys",
+            match="depends on invalid partitions",
         ):
             materialize(
                 [downstream_asset, upstream_asset.to_source_asset()],
@@ -786,7 +895,7 @@ def test_asset_spec_partitions_def():
 
     with pytest.raises(
         CheckError,
-        match="AssetSpec for asset1 has partitions_def which is different than the partitions_def provided to AssetsDefinition.",
+        match="which is different than the partitions_def provided to AssetsDefinition",
     ):
 
         @multi_asset(
@@ -796,8 +905,8 @@ def test_asset_spec_partitions_def():
         def assets3(): ...
 
     with pytest.raises(
-        CheckError,
-        match="All AssetSpecs must have the same partitions_def, but asset1 and asset2 have different partitions_defs.",
+        DagsterInvalidDefinitionError,
+        match="If different AssetSpecs have different partitions_defs, can_subset must be True",
     ):
 
         @multi_asset(
@@ -807,3 +916,87 @@ def test_asset_spec_partitions_def():
             ],
         )
         def assets4(): ...
+
+    with pytest.raises(
+        CheckError,
+        match="If partitions_def is provided, then either all specs must have that PartitionsDefinition or none",
+    ):
+
+        @multi_asset(
+            specs=[
+                AssetSpec("asset1", partitions_def=partitions_def),
+                AssetSpec("asset2"),
+            ],
+            partitions_def=partitions_def,
+        )
+        def assets5(): ...
+
+
+def test_partitioned_asset_metadata():
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+    def partitioned_asset(context: AssetExecutionContext) -> None:
+        context.add_asset_metadata(metadata={"asset_unpartitioned": "yay"})
+        context.add_output_metadata(metadata={"output_unpartitioned": "yay"})
+
+        context.add_asset_metadata(
+            asset_key="partitioned_asset", metadata={"asset_key_specified": "yay"}
+        )
+        context.add_output_metadata(
+            output_name=context.assets_def.get_output_name_for_asset_key(context.assets_def.key),
+            metadata={"output_name_specified": "yay"},
+        )
+
+        for key in context.partition_keys:
+            context.add_asset_metadata(partition_key=key, metadata={f"partition_key_{key}": "yay"})
+
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(metadata={"wont_work": "yay"}, partition_key="nonce")
+
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(metadata={"wont_work": "yay"}, asset_key="nonce")
+
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_output_metadata(metadata={"wont_work": "yay"}, output_name="nonce")
+
+        # partition key is valid but not currently being targeted.
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(
+                metadata={"wont_work": "yay"}, asset_key="partitioned_asset", partition_key="c"
+            )
+
+    with instance_for_test() as instance:
+        result = materialize(
+            assets=[partitioned_asset],
+            instance=instance,
+            tags={ASSET_PARTITION_RANGE_START_TAG: "a", ASSET_PARTITION_RANGE_END_TAG: "b"},
+        )
+        assert result.success
+
+        asset_materializations = result.asset_materializations_for_node("partitioned_asset")
+        assert len(asset_materializations) == 2
+        a_mat = next(mat for mat in asset_materializations if mat.partition == "a")
+        b_mat = next(mat for mat in asset_materializations if mat.partition == "b")
+        assert a_mat.metadata == {
+            "asset_unpartitioned": TextMetadataValue("yay"),
+            "output_unpartitioned": TextMetadataValue("yay"),
+            "asset_key_specified": TextMetadataValue("yay"),
+            "output_name_specified": TextMetadataValue("yay"),
+            "partition_key_a": TextMetadataValue("yay"),
+        }
+        assert b_mat.metadata == {
+            "asset_unpartitioned": TextMetadataValue("yay"),
+            "output_unpartitioned": TextMetadataValue("yay"),
+            "asset_key_specified": TextMetadataValue("yay"),
+            "output_name_specified": TextMetadataValue("yay"),
+            "partition_key_b": TextMetadataValue("yay"),
+        }
+
+        output_log = instance.event_log_storage.get_event_records(
+            event_records_filter=EventRecordsFilter(event_type=DagsterEventType.STEP_OUTPUT)
+        )[0]
+        assert check.not_none(
+            output_log.event_log_entry.dagster_event
+        ).step_output_data.metadata == {
+            "output_unpartitioned": TextMetadataValue("yay"),
+            "output_name_specified": TextMetadataValue("yay"),
+        }

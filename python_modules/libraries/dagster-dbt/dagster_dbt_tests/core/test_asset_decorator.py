@@ -691,6 +691,17 @@ def test_with_code_version_replacements(test_jaffle_shop_manifest: Dict[str, Any
         assert code_version == expected_code_version
 
 
+def test_all_assets_have_a_distinct_code_version(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest,
+        dagster_dbt_translator=DagsterDbtTranslator(),
+    )
+    def my_dbt_assets(): ...
+
+    code_versions = list(my_dbt_assets.code_versions_by_key.values())
+    assert len(code_versions) == len(set(code_versions))
+
+
 def test_with_freshness_policy_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     expected_freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
 
@@ -776,6 +787,35 @@ def test_with_automation_condition_replacements(test_jaffle_shop_manifest: Dict[
         assert (
             expected_specs_by_key[asset_key].automation_condition == expected_automation_condition
         )
+
+
+def test_with_varying_partitions_defs(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+    daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
+    override_keys = {AssetKey("customers"), AssetKey("orders")}
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_partitions_def(
+            self, dbt_resource_props: Mapping[str, Any]
+        ) -> Optional[PartitionsDefinition]:
+            asset_key = super().get_asset_key(dbt_resource_props)
+            if asset_key in override_keys:
+                return daily_partitions
+            else:
+                return None
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
+    )
+    def my_dbt_assets(): ...
+
+    assert set(my_dbt_assets.keys) > override_keys
+
+    for spec in my_dbt_assets.specs:
+        partitions_def = spec.partitions_def
+        if spec.key in override_keys:
+            assert partitions_def == daily_partitions, spec.key
+        else:
+            assert partitions_def is None, spec.key
 
 
 def test_dbt_meta_auto_materialize_policy(test_meta_config_manifest: Dict[str, Any]) -> None:

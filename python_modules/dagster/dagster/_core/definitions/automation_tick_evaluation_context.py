@@ -197,19 +197,6 @@ _PartitionsDefKeyMapping = Dict[
 ]
 
 
-def _get_mapping_from_asset_partitions(
-    asset_partitions: AbstractSet[AssetKeyPartitionKey], asset_graph: BaseAssetGraph
-) -> _PartitionsDefKeyMapping:
-    mapping: _PartitionsDefKeyMapping = defaultdict(set)
-
-    for asset_partition in asset_partitions:
-        mapping[
-            asset_graph.get(asset_partition.asset_key).partitions_def, asset_partition.partition_key
-        ].add(asset_partition.asset_key)
-
-    return mapping
-
-
 def _get_mapping_from_entity_subsets(
     entity_subsets: Iterable[EntitySubset], asset_graph: BaseAssetGraph
 ) -> _PartitionsDefKeyMapping:
@@ -234,18 +221,6 @@ def _get_mapping_from_entity_subsets(
             mapping[partitions_def, None].add(key)
 
     return mapping
-
-
-def build_run_requests_from_asset_partitions(
-    asset_partitions: AbstractSet[AssetKeyPartitionKey],
-    asset_graph: BaseAssetGraph,
-    run_tags: Optional[Mapping[str, str]],
-) -> Sequence[RunRequest]:
-    return _build_run_requests_from_partitions_def_mapping(
-        _get_mapping_from_asset_partitions(asset_partitions, asset_graph),
-        asset_graph,
-        run_tags,
-    )
 
 
 def _build_backfill_request(
@@ -373,9 +348,7 @@ def build_run_requests_with_backfill_policies(
     asset_graph: BaseAssetGraph,
     dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Sequence[RunRequest]:
-    """If all assets have backfill policies, we should respect them and materialize them according
-    to their backfill policies.
-    """
+    """Build run requests for a selection of asset partitions based on the associated BackfillPolicies."""
     run_requests = []
 
     asset_partition_keys: Mapping[AssetKey, Set[str]] = {
@@ -403,17 +376,34 @@ def build_run_requests_with_backfill_policies(
         partition_keys,
         backfill_policy,
     ), asset_keys in assets_to_reconcile_by_partitions_def_partition_keys_backfill_policy.items():
+        asset_check_keys = asset_graph.get_check_keys_for_assets(asset_keys)
         if partitions_def is None and partition_keys is not None:
             check.failed("Partition key provided for unpartitioned asset")
-        if partitions_def is not None and partition_keys is None:
+        elif partitions_def is not None and partition_keys is None:
             check.failed("Partition key missing for partitioned asset")
-        if partitions_def is None and partition_keys is None:
+        elif partitions_def is None and partition_keys is None:
             # non partitioned assets will be backfilled in a single run
-            run_requests.append(RunRequest(asset_selection=list(asset_keys), tags={}))
+            run_requests.append(
+                RunRequest(
+                    asset_selection=list(asset_keys),
+                    asset_check_keys=list(asset_check_keys),
+                    tags={},
+                )
+            )
+        elif backfill_policy is None:
+            # just use the normal single-partition behavior
+            entity_keys = cast(Set[EntityKey], asset_keys)
+            mapping: _PartitionsDefKeyMapping = {
+                (partitions_def, pk): entity_keys for pk in (partition_keys or [None])
+            }
+            run_requests.extend(
+                _build_run_requests_from_partitions_def_mapping(mapping, asset_graph, run_tags={})
+            )
         else:
             run_requests.extend(
                 _build_run_requests_with_backfill_policy(
                     list(asset_keys),
+                    list(asset_check_keys),
                     check.not_none(backfill_policy),
                     check.not_none(partition_keys),
                     check.not_none(partitions_def),
@@ -426,6 +416,7 @@ def build_run_requests_with_backfill_policies(
 
 def _build_run_requests_with_backfill_policy(
     asset_keys: Sequence[AssetKey],
+    asset_check_keys: Sequence[AssetCheckKey],
     backfill_policy: BackfillPolicy,
     partition_keys: FrozenSet[str],
     partitions_def: PartitionsDefinition,
@@ -444,6 +435,7 @@ def _build_run_requests_with_backfill_policy(
             run_requests.append(
                 _build_run_request_for_partition_key_range(
                     asset_keys=list(asset_keys),
+                    asset_check_keys=list(asset_check_keys),
                     partition_range_start=partition_key_range.start,
                     partition_range_end=partition_key_range.end,
                     run_tags=tags,
@@ -453,6 +445,7 @@ def _build_run_requests_with_backfill_policy(
             run_requests.extend(
                 _build_run_requests_for_partition_key_range(
                     asset_keys=list(asset_keys),
+                    asset_check_keys=list(asset_check_keys),
                     partitions_def=partitions_def,
                     partition_key_range=partition_key_range,
                     max_partitions_per_run=check.int_param(
@@ -467,6 +460,7 @@ def _build_run_requests_with_backfill_policy(
 
 def _build_run_requests_for_partition_key_range(
     asset_keys: Sequence[AssetKey],
+    asset_check_keys: Sequence[AssetCheckKey],
     partitions_def: PartitionsDefinition,
     partition_key_range: PartitionKeyRange,
     max_partitions_per_run: int,
@@ -492,7 +486,11 @@ def _build_run_requests_for_partition_key_range(
         partition_chunk_end_key = partition_keys[partition_chunk_end_index]
         run_requests.append(
             _build_run_request_for_partition_key_range(
-                asset_keys, partition_chunk_start_key, partition_chunk_end_key, run_tags
+                asset_keys,
+                asset_check_keys,
+                partition_chunk_start_key,
+                partition_chunk_end_key,
+                run_tags,
             )
         )
         partition_chunk_start_index = partition_chunk_end_index + 1
@@ -501,6 +499,7 @@ def _build_run_requests_for_partition_key_range(
 
 def _build_run_request_for_partition_key_range(
     asset_keys: Sequence[AssetKey],
+    asset_check_keys: Sequence[AssetCheckKey],
     partition_range_start: str,
     partition_range_end: str,
     run_tags: Dict[str, str],
@@ -512,4 +511,9 @@ def _build_run_request_for_partition_key_range(
         ASSET_PARTITION_RANGE_END_TAG: partition_range_end,
     }
     partition_key = partition_range_start if partition_range_start == partition_range_end else None
-    return RunRequest(asset_selection=asset_keys, partition_key=partition_key, tags=tags)
+    return RunRequest(
+        asset_selection=asset_keys,
+        partition_key=partition_key,
+        tags=tags,
+        asset_check_keys=asset_check_keys,
+    )

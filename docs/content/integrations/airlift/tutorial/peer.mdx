@@ -13,7 +13,7 @@ uv pip install 'dagster-airlift[core]' dagster-webserver dagster
 
 Next, create a `Definitions` object using `build_defs_from_airflow_instance`. You can use the empty `tutorial_example/dagster_defs/definitions.py` file as a starting point:
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/peer.py
+```python file=../../airlift-migration-tutorial/tutorial_example/dagster_defs/stages/peer.py
 from dagster_airlift.core import (
     AirflowBasicAuthBackend,
     AirflowInstance,
@@ -41,7 +41,7 @@ This function creates:
 Let's set up some environment variables, and then point Dagster to see the asset created from our Airflow DAG:
 
 ```bash
-# Set up environment variables to point to the examples/tutorial-example directory on your machine
+# Set up environment variables to point to the airlift-migration-tutorial directory on your machine
 export TUTORIAL_EXAMPLE_DIR=$(pwd)
 export TUTORIAL_DBT_PROJECT_DIR="$TUTORIAL_EXAMPLE_DIR/tutorial_example/shared/dbt"
 export AIRFLOW_HOME="$TUTORIAL_EXAMPLE_DIR/.airflow_home"
@@ -94,7 +94,7 @@ Asset checks can both act as useful _user acceptance tests_ to ensure that any m
 
 For example, we're going to add an asset check to ensure that the final `customers` CSV output exists, and has a nonzero number of rows.
 
-```python file=../../experimental/dagster-airlift/examples/tutorial-example/tutorial_example/dagster_defs/stages/peer_with_check.py
+```python file=../../airlift-migration-tutorial/tutorial_example/dagster_defs/stages/peer_with_check.py
 import os
 from pathlib import Path
 

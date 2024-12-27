@@ -48,13 +48,13 @@ def scaffold(notebook_name=None, kernel=None):
         raise res.exception
     assert res.exit_code == 0
 
-    yield os.path.abspath(notebook_name)
+    yield os.path.abspath(notebook_name)  # pyright: ignore[reportArgumentType]
 
-    if os.path.exists(notebook_name):
-        os.unlink(notebook_name)
+    if os.path.exists(notebook_name):  # pyright: ignore[reportArgumentType]
+        os.unlink(notebook_name)  # pyright: ignore[reportArgumentType]
 
-    if os.path.exists(notebook_name + ".ipynb"):
-        os.unlink(notebook_name + ".ipynb")
+    if os.path.exists(notebook_name + ".ipynb"):  # pyright: ignore[reportOptionalOperand]
+        os.unlink(notebook_name + ".ipynb")  # pyright: ignore[reportOptionalOperand]
 
 
 def test_scaffold():

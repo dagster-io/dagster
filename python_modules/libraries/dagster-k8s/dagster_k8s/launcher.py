@@ -313,6 +313,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         self._launch_k8s_job_with_args(job_name, args, run)
 
+    def _get_resume_attempt_number(self, run: DagsterRun) -> Optional[int]:
+        if not self.supports_run_worker_crash_recovery:
+            return None
+        return self._instance.count_resume_run_attempts(run.run_id)
+
     def terminate(self, run_id):
         check.str_param(run_id, "run_id")
         run = self._instance.get_run_by_id(run_id)
@@ -325,7 +330,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         container_context = self.get_container_context_for_run(run)
 
         job_name = get_job_name_from_run_id(
-            run_id, resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id)
+            run_id, resume_attempt_number=self._get_resume_attempt_number(run)
         )
 
         try:
@@ -367,12 +372,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self, run: DagsterRun, include_container_logs: Optional[bool] = True
     ) -> Optional[str]:
         container_context = self.get_container_context_for_run(run)
-        if self.supports_run_worker_crash_recovery:
-            resume_attempt_number = self._instance.count_resume_run_attempts(run.run_id)
-        else:
-            resume_attempt_number = None
 
-        job_name = get_job_name_from_run_id(run.run_id, resume_attempt_number=resume_attempt_number)
+        job_name = get_job_name_from_run_id(
+            run.run_id, resume_attempt_number=self._get_resume_attempt_number(run)
+        )
         namespace = container_context.namespace
         pod_names = self._api_client.get_pod_names_in_job(job_name, namespace=namespace)
         full_msg = ""
@@ -397,7 +400,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         else:
-            job_debug_info = self._api_client.get_job_debug_info(job_name, namespace=namespace)
+            job_debug_info = self._api_client.get_job_debug_info(job_name, namespace=namespace)  # pyright: ignore[reportArgumentType]
             full_msg = (
                 full_msg
                 + "\n\n"
@@ -411,15 +414,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def check_run_worker_health(self, run: DagsterRun):
         container_context = self.get_container_context_for_run(run)
 
-        if self.supports_run_worker_crash_recovery:
-            resume_attempt_number = self._instance.count_resume_run_attempts(run.run_id)
-        else:
-            resume_attempt_number = None
-
-        job_name = get_job_name_from_run_id(run.run_id, resume_attempt_number=resume_attempt_number)
+        job_name = get_job_name_from_run_id(
+            run.run_id, resume_attempt_number=self._get_resume_attempt_number(run)
+        )
         try:
             status = self._api_client.get_job_status(
-                namespace=container_context.namespace,
+                namespace=container_context.namespace,  # pyright: ignore[reportArgumentType]
                 job_name=job_name,
             )
         except Exception:

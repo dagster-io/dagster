@@ -12,7 +12,7 @@ export const DAGSTER_FLAGS_KEY = 'DAGSTER_FLAGS';
 type FeatureFlagMap = Partial<Record<FeatureFlag, boolean>>;
 
 /**
- * In-memory cache for feature flags.
+ * In-memory cache for feature flags, excludes default values.
  */
 let currentFeatureFlags: FeatureFlagMap = {};
 
@@ -28,7 +28,7 @@ const initializeFeatureFlags = () => {
     flags.forEach((flag: FeatureFlag) => {
       migratedFlags[flag] = true;
     });
-    setFeatureFlagsInternal(migratedFlags, false); // Prevent broadcasting during migration
+    setFeatureFlagsInternal(migratedFlags);
     flags = migratedFlags;
   }
 
@@ -37,16 +37,15 @@ const initializeFeatureFlags = () => {
 
 /**
  * Internal function to set feature flags without broadcasting.
- * Used during initialization and migration.
+ * Used during initialization and migration and by web-workers.
  */
-const setFeatureFlagsInternal = (flags: FeatureFlagMap, broadcast: boolean = true) => {
+export const setFeatureFlagsInternal = (flags: FeatureFlagMap) => {
   if (typeof flags !== 'object' || Array.isArray(flags)) {
     throw new Error('flags must be an object mapping FeatureFlag to boolean values');
   }
   currentFeatureFlags = flags;
-  localStorage.setItem(DAGSTER_FLAGS_KEY, JSON.stringify(flags));
-  if (broadcast) {
-    featureFlagsChannel.postMessage('updated');
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(DAGSTER_FLAGS_KEY, JSON.stringify(flags));
   }
 };
 
@@ -56,14 +55,12 @@ const featureFlagsChannel = new BroadcastChannel('feature-flags');
 // Initialize feature flags on module load
 initializeFeatureFlags();
 
-/**
- * Function to retrieve the current feature flags from the in-memory cache.
- */
-export const getFeatureFlags = (): FeatureFlagMap => {
-  return {
-    ...DEFAULT_FEATURE_FLAG_VALUES,
-    ...currentFeatureFlags,
-  };
+export const getFeatureFlagsWithoutDefaultValues = (): FeatureFlagMap => {
+  return currentFeatureFlags;
+};
+
+export const getFeatureFlagDefaults = (): FeatureFlagMap => {
+  return DEFAULT_FEATURE_FLAG_VALUES;
 };
 
 /**
@@ -130,4 +127,5 @@ export const useFeatureFlags = (): Readonly<Record<FeatureFlag, boolean>> => {
  */
 export const setFeatureFlags = (flags: FeatureFlagMap) => {
   setFeatureFlagsInternal(flags);
+  featureFlagsChannel.postMessage('updated');
 };

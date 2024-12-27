@@ -36,4 +36,4 @@ def test_unserializable_metadata():
 
     obj = SomeObject()
 
-    assert AssetCheckSpec(asset="foo", name="check1", metadata={"foo": obj}).metadata["foo"] == obj
+    assert AssetCheckSpec(asset="foo", name="check1", metadata={"foo": obj}).metadata["foo"] == obj  # pyright: ignore[reportOptionalSubscript]

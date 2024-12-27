@@ -210,16 +210,16 @@ def test_invalid_instance():
         assert len(result.all_events) == 1
         assert result.all_events[0].is_failure
         assert (
-            result.all_events[0].job_failure_data.error.cls_name
+            result.all_events[0].job_failure_data.error.cls_name  # pyright: ignore[reportOptionalMemberAccess]
             == "DagsterUnmetExecutorRequirementsError"
         )
-        assert "non-ephemeral instance" in result.all_events[0].job_failure_data.error.message
+        assert "non-ephemeral instance" in result.all_events[0].job_failure_data.error.message  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_no_handle():
     with pytest.raises(CheckError, match='Param "job" is not a ReconstructableJob.'):
         execute_job(
-            define_diamond_job(),
+            define_diamond_job(),  # pyright: ignore[reportArgumentType]
             instance=DagsterInstance.ephemeral(),
             raise_on_error=False,
         )
@@ -380,13 +380,13 @@ def test_failure_multiprocessing():
             assert not result.success
             failure_data = result.failure_data_for_node("throw")
             assert failure_data
-            assert failure_data.error.cls_name == "Failure"
+            assert failure_data.error.cls_name == "Failure"  # pyright: ignore[reportOptionalMemberAccess]
 
             # hard coded
-            assert failure_data.user_failure_data.label == "intentional-failure"
+            assert failure_data.user_failure_data.label == "intentional-failure"  # pyright: ignore[reportOptionalMemberAccess]
             # from Failure
-            assert failure_data.user_failure_data.description == "it Failure"
-            assert failure_data.user_failure_data.metadata["label"] == MetadataValue.text("text")
+            assert failure_data.user_failure_data.description == "it Failure"  # pyright: ignore[reportOptionalMemberAccess]
+            assert failure_data.user_failure_data.metadata["label"] == MetadataValue.text("text")  # pyright: ignore[reportOptionalMemberAccess]
 
 
 @op
@@ -413,7 +413,7 @@ def test_crash_multiprocessing():
             assert not result.success
             failure_data = result.failure_data_for_node("sys_exit")
             assert failure_data
-            assert failure_data.error.cls_name == "ChildProcessCrashException"
+            assert failure_data.error.cls_name == "ChildProcessCrashException"  # pyright: ignore[reportOptionalMemberAccess]
 
             assert failure_data.user_failure_data is None
 
@@ -428,7 +428,7 @@ def test_crash_multiprocessing():
             )
             log_data = instance.compute_log_manager.get_log_data(log_key)
 
-            assert "Crashy output to stdout" in log_data.stdout.decode("utf-8")
+            assert "Crashy output to stdout" in log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
 
             # The argument to sys.exit won't (reliably) make it to the compute logs for stderr b/c the
             # LocalComputeLogManger is in-process -- documenting this behavior here though we may want to
@@ -463,7 +463,7 @@ def test_crash_hard_multiprocessing():
             assert not result.success
             failure_data = result.failure_data_for_node("segfault_op")
             assert failure_data
-            assert failure_data.error.cls_name == "ChildProcessCrashException"
+            assert failure_data.error.cls_name == "ChildProcessCrashException"  # pyright: ignore[reportOptionalMemberAccess]
 
             assert failure_data.user_failure_data is None
 

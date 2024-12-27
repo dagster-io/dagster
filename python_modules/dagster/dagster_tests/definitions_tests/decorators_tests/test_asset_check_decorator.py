@@ -28,6 +28,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidSubsetError,
@@ -82,7 +83,7 @@ def test_asset_check_decorator_name() -> None:
 
 
 def test_asset_check_decorator_docstring_description() -> None:
-    @asset_check(asset="asset1")
+    @asset_check(asset="asset1")  # pyright: ignore[reportArgumentType]
     def check1():
         """Docstring."""
         pass
@@ -94,7 +95,7 @@ def test_asset_check_decorator_docstring_description() -> None:
 
 
 def test_asset_check_decorator_parameter_description() -> None:
-    @asset_check(asset="asset1", description="parameter")
+    @asset_check(asset="asset1", description="parameter")  # pyright: ignore[reportArgumentType]
     def check1():
         """Docstring."""
 
@@ -118,18 +119,104 @@ def test_asset_check_with_prefix() -> None:
     assert spec.asset_key == AssetKey(["prefix", "asset1"])
 
 
-def test_asset_check_input_with_prefix() -> None:
-    @asset(key_prefix="prefix")
-    def asset1() -> None: ...
+def test_asset_check_input() -> None:
+    @asset
+    def asset1() -> int:
+        return 5
 
     @asset_check(asset=asset1)
-    def my_check(asset1) -> AssetCheckResult:
-        return AssetCheckResult(passed=True)
+    def my_check1(asset1: int) -> AssetCheckResult:
+        return AssetCheckResult(passed=asset1 == 5)
+
+    @asset_check(asset=asset1)
+    def my_check2(random_name: int) -> AssetCheckResult:
+        return AssetCheckResult(passed=random_name == 5)
+
+    @asset_check(asset=asset1)
+    def my_check3(context, random_name: int) -> AssetCheckResult:
+        return AssetCheckResult(passed=random_name == 5)
+
+    @asset_check(asset=asset1)
+    def my_check4(context, asset1: int) -> AssetCheckResult:
+        return AssetCheckResult(passed=asset1 == 5)
+
+    result = execute_assets_and_checks(
+        assets=[asset1], asset_checks=[my_check1, my_check2, my_check3, my_check4]
+    )
+
+    assert result.success
+    assert len(result.get_asset_check_evaluations()) == 4
+    assert all(check.passed for check in result.get_asset_check_evaluations())
+
+
+def test_asset_check_additional_ins() -> None:
+    @asset
+    def asset1() -> int:
+        return 5
+
+    @asset
+    def asset2() -> int:
+        return 4
+
+    @asset_check(asset=asset1, additional_ins={"asset2": AssetIn(key=asset2.key)})
+    def my_check(asset1: int, asset2: int) -> AssetCheckResult:
+        return AssetCheckResult(passed=asset1 == 5 and asset2 == 4)
+
+    @asset_check(asset=asset1, additional_ins={"asset2": AssetIn(key=asset2.key)})
+    def my_check2(asset2: int) -> AssetCheckResult:
+        return AssetCheckResult(passed=asset2 == 4)
+
+    @asset_check(asset=asset1, additional_ins={"asset2": AssetIn(key=asset2.key)})
+    def my_check3(context, asset2: int) -> AssetCheckResult:
+        return AssetCheckResult(passed=asset2 == 4)
+
+    # Error bc asset2 is in additional_ins but not in the function signature
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @asset_check(asset=asset1, additional_ins={"asset2": AssetIn(key=asset2.key)})
+        def my_check4():
+            return AssetCheckResult(passed=True)
+
+    # Error bc asset1 is in both additional_ins and the function signature
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @asset_check(asset=asset1, additional_ins={"asset1": AssetIn(key=asset1.key)})
+        def my_check5(asset1: int) -> AssetCheckResult:
+            return AssetCheckResult(passed=asset1 == 5)
+
+    # Error bc asset2 is in the function signature but not additional_ins
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @asset_check(asset=asset1, additional_ins={"asset2": AssetIn(key=asset2.key)})
+        def my_check6(asset1: int) -> AssetCheckResult:
+            return AssetCheckResult(passed=asset1 == 5)
+
+    result = execute_assets_and_checks(
+        assets=[asset1, asset2], asset_checks=[my_check, my_check2, my_check3]
+    )
+
+    assert result.success
+    assert len(result.get_asset_check_evaluations()) == 3
+    assert all(check.passed for check in result.get_asset_check_evaluations())
+
+
+def test_asset_check_input_with_prefix() -> None:
+    @asset(key_prefix="prefix")
+    def asset1() -> int:
+        return 5
+
+    @asset_check(asset=asset1)
+    def my_check(unrelated_name: int) -> AssetCheckResult:
+        return AssetCheckResult(passed=unrelated_name == 5)
 
     spec = my_check.get_spec_for_check_key(
         AssetCheckKey(AssetKey(["prefix", "asset1"]), "my_check")
     )
     assert spec.asset_key == AssetKey(["prefix", "asset1"])
+
+    result = execute_assets_and_checks(assets=[asset1], asset_checks=[my_check])
+    assert result.success
+    assert len(result.get_asset_check_evaluations()) == 1
 
 
 def test_execute_asset_and_check() -> None:
@@ -862,6 +949,26 @@ def test_direct_invocation_with_context() -> None:
     assert result.passed
 
 
+def test_direct_invocation_with_input() -> None:
+    @asset_check(asset="asset1")
+    def check1(asset1) -> AssetCheckResult:
+        return AssetCheckResult(passed=True)
+
+    result = check1(5)
+    assert isinstance(result, AssetCheckResult)
+    assert result.passed
+
+
+def test_direct_invocation_with_context_and_input() -> None:
+    @asset_check(asset="asset1")
+    def check1(context, asset1) -> AssetCheckResult:
+        return AssetCheckResult(passed=True)
+
+    result = check1(build_op_context(), 5)
+    assert isinstance(result, AssetCheckResult)
+    assert result.passed
+
+
 def test_multi_check_direct_invocation() -> None:
     @multi_asset_check(
         specs=[
@@ -881,3 +988,210 @@ def test_multi_check_direct_invocation() -> None:
     assert results[0].passed
     assert not results[1].passed
     assert results[2].passed
+
+
+def test_direct_invocation_with_inputs() -> None:
+    @asset
+    def asset1() -> int:
+        return 4
+
+    @asset
+    def asset2() -> int:
+        return 5
+
+    @multi_asset_check(
+        specs=[
+            AssetCheckSpec("check1", asset=asset1),
+            AssetCheckSpec("check2", asset=asset2),
+        ]
+    )
+    def multi_check(asset1: int, asset2: int) -> Iterable[AssetCheckResult]:
+        yield AssetCheckResult(passed=asset1 == 4, asset_key="asset1", check_name="check1")
+        yield AssetCheckResult(passed=asset2 == 5, asset_key="asset2", check_name="check2")
+
+    result = list(multi_check(4, 5))  # type: ignore
+    assert len(result) == 2
+    assert all(isinstance(r, AssetCheckResult) for r in result)
+    assert all(r.passed for r in result)
+
+
+def test_direct_invocation_remapped_inputs() -> None:
+    @asset
+    def asset1() -> int:
+        return 4
+
+    @asset
+    def asset2() -> int:
+        return 5
+
+    @multi_asset_check(
+        specs=[
+            AssetCheckSpec("check1", asset=asset1),
+            AssetCheckSpec("check2", asset=asset2),
+        ],
+        ins={"remapped": asset1.key},
+    )
+    def multi_check(remapped: int, asset2: int) -> Iterable[AssetCheckResult]:
+        yield AssetCheckResult(passed=remapped == 4, asset_key="asset1", check_name="check1")
+        yield AssetCheckResult(passed=asset2 == 5, asset_key="asset2", check_name="check2")
+
+    result = list(multi_check(4, 5))  # type: ignore
+    assert len(result) == 2
+    assert all(isinstance(r, AssetCheckResult) for r in result)
+    assert all(r.passed for r in result)
+
+
+def test_multi_check_asset_with_inferred_inputs() -> None:
+    """Test automatic inference of asset inputs in a multi-check."""
+
+    @asset
+    def asset1() -> int:
+        return 4
+
+    @asset
+    def asset2() -> int:
+        return 5
+
+    @multi_asset_check(
+        specs=[
+            AssetCheckSpec("check1", asset=asset1),
+            AssetCheckSpec("check2", asset=asset2),
+        ]
+    )
+    def multi_check(asset1: int, asset2: int) -> Iterable[AssetCheckResult]:
+        yield AssetCheckResult(passed=asset1 == 4, asset_key="asset1", check_name="check1")
+        yield AssetCheckResult(passed=asset2 == 5, asset_key="asset2", check_name="check2")
+
+    result = execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[multi_check])
+    assert result.success
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 2
+    assert all(check_eval.passed for check_eval in check_evals)
+
+
+def test_multi_check_input_remapping() -> None:
+    """Test remapping an asset input to a different name in a multi-check."""
+
+    @asset
+    def asset1() -> int:
+        return 4
+
+    @asset
+    def asset2() -> int:
+        return 5
+
+    @multi_asset_check(
+        specs=[
+            AssetCheckSpec("check1", asset=asset1),
+            AssetCheckSpec("check2", asset=asset2),
+        ],
+        ins={"remapped": asset1.key},
+    )
+    def multi_check(remapped: int, asset2: int) -> Iterable[AssetCheckResult]:
+        yield AssetCheckResult(passed=remapped == 4, asset_key="asset1", check_name="check1")
+        yield AssetCheckResult(passed=asset2 == 5, asset_key="asset2", check_name="check2")
+
+    result = execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[multi_check])
+    assert result.success
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 2
+    assert all(check_eval.passed for check_eval in check_evals)
+
+
+def test_multi_check_input_remapping_with_context() -> None:
+    """Test remapping an asset input to a different name in a multi-check."""
+
+    @asset
+    def asset1() -> int:
+        return 4
+
+    @asset
+    def asset2() -> int:
+        return 5
+
+    @multi_asset_check(
+        specs=[
+            AssetCheckSpec("check1", asset=asset1),
+            AssetCheckSpec("check2", asset=asset2),
+        ],
+        ins={"remapped": asset1.key},
+    )
+    def multi_check(context, remapped: int, asset2: int) -> Iterable[AssetCheckResult]:
+        assert isinstance(context, AssetCheckExecutionContext)
+        yield AssetCheckResult(passed=remapped == 4, asset_key="asset1", check_name="check1")
+        yield AssetCheckResult(passed=asset2 == 5, asset_key="asset2", check_name="check2")
+
+    result = execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[multi_check])
+    assert result.success
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 2
+    assert all(check_eval.passed for check_eval in check_evals)
+
+
+def test_input_manager_overrides_multi_asset_check_decorator() -> None:
+    """Test overriding input manager key for a particular asset in a multi-check, ensure that it is correctly mapped."""
+
+    @asset
+    def asset1() -> int:
+        return 4
+
+    @asset
+    def asset2() -> int:
+        return 5
+
+    @multi_asset_check(
+        specs=[
+            AssetCheckSpec("check1", asset=asset1),
+            AssetCheckSpec("check2", asset=asset2),
+        ],
+        ins={"asset1": AssetIn(key="asset1", input_manager_key="override_manager")},
+    )
+    def my_check(asset1: int, asset2: int) -> Iterable[AssetCheckResult]:
+        yield AssetCheckResult(passed=asset1 == 4, asset_key="asset1", check_name="check1")
+        yield AssetCheckResult(passed=asset2 == 5, asset_key="asset2", check_name="check2")
+
+    called = []
+
+    class MyIOManager(IOManager):
+        def load_input(self, context) -> int:
+            called.append(context.asset_key)
+            return 4
+
+        def handle_output(self, context, obj) -> None:
+            raise NotImplementedError()
+
+    result = execute_assets_and_checks(
+        assets=[asset1, asset2],
+        asset_checks=[my_check],
+        resources={"override_manager": MyIOManager()},
+    )
+
+    assert result.success
+    assert called == [AssetKey("asset1")]
+    assert all(check_eval.passed for check_eval in result.get_asset_check_evaluations())
+
+
+def test_nonsense_input_name() -> None:
+    """Test a nonsensical input name in a multi-check."""
+
+    @asset
+    def asset1() -> int:
+        return 4
+
+    @asset
+    def asset2() -> int:
+        return 5
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @multi_asset_check(
+            specs=[
+                AssetCheckSpec("check1", asset=asset1),
+                AssetCheckSpec("check2", asset=asset2),
+            ],
+        )
+        def my_check(nonsense: int, asset2: int):
+            pass

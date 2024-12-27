@@ -153,13 +153,13 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
             automation_condition=source_asset.automation_condition,
             deps=[],
             owners=[],
+            partitions_def=source_asset.partitions_def,
         )
 
         return AssetsDefinition(
             specs=[spec],
             keys_by_output_name=keys_by_output_name,
             node_def=node_def,
-            partitions_def=source_asset.partitions_def,
             # We don't pass the `io_manager_def` because it will already be present in
             # `resource_defs` (it is added during `SourceAsset` initialization).
             resource_defs=source_asset.resource_defs,
@@ -183,21 +183,18 @@ def create_unexecutable_external_asset_from_assets_def(
             for key in assets_def.keys:
                 orig_spec = assets_def.get_asset_spec(key)
                 specs.append(
-                    orig_spec._replace(
-                        metadata={
-                            **(orig_spec.metadata or {}),
-                            **(
-                                {
-                                    SYSTEM_METADATA_KEY_IO_MANAGER_KEY: assets_def.get_io_manager_key_for_asset_key(
-                                        key
-                                    )
-                                }
-                                if assets_def.has_output_for_asset_key(key)
-                                else {}
-                            ),
-                        },
+                    orig_spec.merge_attributes(
+                        metadata=(
+                            {
+                                SYSTEM_METADATA_KEY_IO_MANAGER_KEY: assets_def.get_io_manager_key_for_asset_key(
+                                    key
+                                )
+                            }
+                            if assets_def.has_output_for_asset_key(key)
+                            else {}
+                        ),
+                    ).replace_attributes(
                         automation_condition=None,
-                        freshness_policy=None,
                     )
                 )
             return AssetsDefinition(

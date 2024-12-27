@@ -237,11 +237,11 @@ def test_custom_unsupported_partition_mapping():
 
             partition_keys = list(downstream_partitions_subset.get_partition_keys())
             return UpstreamPartitionsResult(
-                upstream_partitions_def.empty_subset().with_partition_key_range(
+                partitions_subset=upstream_partitions_def.empty_subset().with_partition_key_range(
                     upstream_partitions_def,
                     PartitionKeyRange(str(max(1, int(partition_keys[0]) - 1)), partition_keys[-1]),
                 ),
-                [],
+                required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
             )
 
         def get_downstream_partitions_for_partitions(
@@ -708,10 +708,10 @@ def test_required_assets_and_checks_by_key_check_decorator(
     @asset
     def asset0(): ...
 
-    @asset_check(asset=asset0)
+    @asset_check(asset=asset0)  # pyright: ignore[reportArgumentType]
     def check0(): ...
 
-    @asset_check(
+    @asset_check(  # pyright: ignore[reportArgumentType]
         asset=asset0,
         blocking=True,
         automation_condition=AutomationCondition.cron_tick_passed("*/15 * * * *"),
@@ -748,10 +748,10 @@ def test_toposort(
     @asset(deps=[A])
     def B(): ...
 
-    @asset_check(asset=A)
+    @asset_check(asset=A)  # pyright: ignore[reportArgumentType]
     def Ac(): ...
 
-    @asset_check(asset=B)
+    @asset_check(asset=B)  # pyright: ignore[reportArgumentType]
     def Bc(): ...
 
     asset_graph = asset_graph_from_assets([A, B, Ac, Bc])
@@ -773,7 +773,7 @@ def test_required_assets_and_checks_by_key_asset_decorator(
     @asset(check_specs=[foo_check, bar_check])
     def asset0(): ...
 
-    @asset_check(asset=asset0)
+    @asset_check(asset=asset0)  # pyright: ignore[reportArgumentType]
     def check0(): ...
 
     asset_graph = asset_graph_from_assets([asset0, check0])
@@ -960,7 +960,7 @@ def test_serdes() -> None:
     @asset
     def a(): ...
 
-    @asset_check(asset=a)
+    @asset_check(asset=a)  # pyright: ignore[reportArgumentType]
     def c(): ...
 
     @repository

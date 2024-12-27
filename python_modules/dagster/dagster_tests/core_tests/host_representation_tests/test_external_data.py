@@ -1343,4 +1343,4 @@ def test_back_compat_team_owners():
     }
 
     asset_node_snap = unpack_value(packed_1_7_7_external_asset)
-    assert asset_node_snap.owners == ["team:foo", "hi@me.com"]
+    assert asset_node_snap.owners == ["team:foo", "hi@me.com"]  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]

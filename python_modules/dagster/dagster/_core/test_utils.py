@@ -90,6 +90,7 @@ def assert_namedtuple_lists_equal(
     t2_list: Sequence[T_NamedTuple],
     exclude_fields: Optional[Sequence[str]] = None,
 ) -> None:
+    assert len(t1_list) == len(t2_list)
     for t1, t2 in zip(t1_list, t2_list):
         assert_namedtuples_equal(t1, t2, exclude_fields)
 
@@ -761,10 +762,11 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
         else datetime.datetime.fromtimestamp(new_now, datetime.timezone.utc)
     )
 
-    with unittest.mock.patch(
-        "dagster._time._mockable_get_current_datetime", return_value=new_dt
-    ), unittest.mock.patch(
-        "dagster._time._mockable_get_current_timestamp", return_value=new_dt.timestamp()
+    with (
+        unittest.mock.patch("dagster._time._mockable_get_current_datetime", return_value=new_dt),
+        unittest.mock.patch(
+            "dagster._time._mockable_get_current_timestamp", return_value=new_dt.timestamp()
+        ),
     ):
         yield
 

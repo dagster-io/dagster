@@ -131,10 +131,10 @@ def test_non_record_param():
     assert MyModel2(some_class=SomeClass())
 
     with pytest.raises(check.CheckError):
-        MyModel2(some_class=OtherClass())  # wrong class
+        MyModel2(some_class=OtherClass())  # wrong class  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(check.CheckError):
-        MyModel2(some_class=SomeClass)  # forgot ()
+        MyModel2(some_class=SomeClass)  # forgot ()  # pyright: ignore[reportArgumentType]
 
 
 def test_cached_method() -> None:
@@ -194,8 +194,8 @@ def test_forward_ref_with_new() -> None:
         def __new__(cls, partner=None, child=None):
             return super().__new__(
                 cls,
-                partner=partner,
-                child=child,
+                partner=partner,  # pyright: ignore[reportCallIssue]
+                child=child,  # pyright: ignore[reportCallIssue]
             )
 
     class Child: ...
@@ -364,7 +364,7 @@ def test_sentinel():
 def test_build_args_and_assign(fields, defaults, expected):
     # tests / documents shared utility fn
     # don't hesitate to delete this upon refactor
-    assert build_args_and_assignment_strs(fields, defaults) == expected
+    assert build_args_and_assignment_strs(fields, defaults, kw_only=True) == expected
 
 
 @record
@@ -469,7 +469,7 @@ def test_lazy_import():
     with pytest.raises(
         check.CheckError, match="Expected <class 'dagster._core.test_utils.TestType'>"
     ):
-        AnnotatedModel(foos=[1, 2, 3])
+        AnnotatedModel(foos=[1, 2, 3])  # pyright: ignore[reportArgumentType]
 
     def _out_of_scope():
         from dagster._core.test_utils import TestType
@@ -533,7 +533,7 @@ def test_make_hashable():
         stuff: Sequence[Any]
 
         def __hash__(self):
-            return hash_collection(self)
+            return hash_collection(self)  # pyright: ignore[reportArgumentType]
 
     y = Yep(stuff=[1, 2, 3])
     assert hash(y)
@@ -830,3 +830,58 @@ def test_replace() -> None:
 def test_defensive_checks_running():
     # make sure we have enabled defensive checks in test, ideally as broadly as possible
     assert os.getenv("DAGSTER_RECORD_DEFENSIVE_CHECKS") == "true"
+
+
+def test_allow_posargs():
+    @record(kw_only=False)
+    class Foo:
+        a: int
+
+    assert Foo(2)
+
+    @record(kw_only=False)
+    class Bar:
+        a: int
+        b: int
+        c: int = 4
+
+    assert Bar(1, 2)
+
+    with pytest.raises(CheckError):
+
+        @record(kw_only=False)
+        class Baz:
+            a: int = 4
+            b: int  # type: ignore # good job type checker
+
+
+def test_posargs_inherit():
+    @record(kw_only=False)
+    class Parent:
+        name: str
+
+    @record(kw_only=False)
+    class Child(Parent):
+        parent: Parent
+
+    p = Parent("Alex")
+    assert p
+    c = Child("Lyra", p)
+    assert c
+
+    # test kw_only not being aligned
+    with pytest.raises(CheckError):
+
+        @record
+        class Bad(Parent):
+            other: str
+
+    with pytest.raises(CheckError):
+
+        @record
+        class A:
+            a: int
+
+        @record(kw_only=False)
+        class B(A):
+            b: int

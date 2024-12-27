@@ -1,0 +1,17 @@
+from dagster import Definitions
+from dagster_components import (
+    Component,
+    ComponentRegistry,
+    ComponentLoadContext,
+    component,
+)
+
+@component(name="{{ name }}")
+class {{ component_type_class_name }}(Component):
+
+    @classmethod
+    def generate_files(cls) -> None:
+        ...
+
+    def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
+        ...

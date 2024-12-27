@@ -48,9 +48,30 @@ describe('toGraphQueryItems', () => {
         inputs: [],
         name: 'a',
         outputs: [{dependedBy: [{solid: {name: 'b[1]'}}, {solid: {name: 'b[?]'}}]}],
+        metadata: {
+          attempts: [],
+          markers: [],
+          state: 'succeeded',
+          transitions: [],
+        },
       },
-      {inputs: [{dependsOn: [{solid: {name: 'a'}}]}], name: 'b[1]', outputs: []},
-      {inputs: [{dependsOn: [{solid: {name: 'a'}}]}], name: 'b[?]', outputs: []},
+      {
+        inputs: [{dependsOn: [{solid: {name: 'a'}}]}],
+        name: 'b[1]',
+        outputs: [],
+        metadata: {
+          attempts: [],
+          markers: [],
+          state: 'succeeded',
+          transitions: [],
+        },
+      },
+      {
+        inputs: [{dependsOn: [{solid: {name: 'a'}}]}],
+        name: 'b[?]',
+        outputs: [],
+        metadata: undefined,
+      },
     ]);
   });
 
@@ -129,6 +150,12 @@ describe('toGraphQueryItems', () => {
             ],
           },
         ],
+        metadata: {
+          attempts: [],
+          markers: [],
+          state: 'succeeded',
+          transitions: [],
+        },
       },
       {
         inputs: [
@@ -154,6 +181,12 @@ describe('toGraphQueryItems', () => {
             ],
           },
         ],
+        metadata: {
+          attempts: [],
+          markers: [],
+          state: 'succeeded',
+          transitions: [],
+        },
       },
       {
         inputs: [
@@ -169,6 +202,12 @@ describe('toGraphQueryItems', () => {
         ],
         name: 'b[2]',
         outputs: [],
+        metadata: {
+          attempts: [],
+          markers: [],
+          state: 'succeeded',
+          transitions: [],
+        },
       },
       {
         inputs: [
@@ -194,6 +233,7 @@ describe('toGraphQueryItems', () => {
             ],
           },
         ],
+        metadata: undefined,
       },
       {
         inputs: [
@@ -209,6 +249,12 @@ describe('toGraphQueryItems', () => {
         ],
         name: 'c[1]',
         outputs: [],
+        metadata: {
+          attempts: [],
+          markers: [],
+          state: 'succeeded',
+          transitions: [],
+        },
       },
       {
         inputs: [
@@ -224,6 +270,7 @@ describe('toGraphQueryItems', () => {
         ],
         name: 'c[?]',
         outputs: [],
+        metadata: undefined,
       },
     ]);
   });

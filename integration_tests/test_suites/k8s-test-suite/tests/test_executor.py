@@ -51,8 +51,8 @@ def test_k8s_run_launcher_default(
     webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -79,7 +79,7 @@ def test_k8s_run_launcher_volume_mounts(
     webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -109,8 +109,8 @@ def test_k8s_executor_get_config_from_run_launcher(
 ):
     # Verify that if you do not specify executor config it is delegated by the run launcher
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {"config": {"job_image": dagster_docker_image}},
         },
@@ -134,8 +134,8 @@ def test_k8s_executor_combine_configs(
     # from run launcher config and executor config. Also includes each executor secret
     # twice to verify that duplicates within the combined config are acceptable
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -242,8 +242,8 @@ def test_k8s_run_launcher_image_from_origin(
     check.invariant(not celery_pod_names)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -280,7 +280,7 @@ def test_k8s_run_launcher_terminate(
     job_name = "slow_job_k8s"
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -344,7 +344,7 @@ def test_k8s_executor_resource_requirements(
     check.invariant(not celery_pod_names)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -382,7 +382,7 @@ def test_execute_on_k8s_retry_job(
     webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {

@@ -201,6 +201,14 @@ def camelcase(string: str) -> str:
     )
 
 
+def snakecase(string: str) -> str:
+    # Add an underscore before capital letters and lower the case
+    string = re.sub(r"(?<!^)(?=[A-Z])", "_", string).lower()
+    # Replace any non-alphanumeric characters with underscores
+    string = re.sub(r"[^a-z0-9_]", "_", string)
+    return string
+
+
 def ensure_single_item(ddict: Mapping[T, U]) -> Tuple[T, U]:
     check.mapping_param(ddict, "ddict")
     check.param_invariant(len(ddict) == 1, "ddict", "Expected dict with single item")
@@ -836,3 +844,13 @@ def run_with_concurrent_update_guard(
             return
         update_fn(**kwargs)
         return
+
+
+def return_as_list(func: Callable[..., Iterable[T]]) -> Callable[..., List[T]]:
+    """A decorator that returns a list from the output of a function."""
+
+    @functools.wraps(func)
+    def inner(*args, **kwargs):
+        return list(func(*args, **kwargs))
+
+    return inner

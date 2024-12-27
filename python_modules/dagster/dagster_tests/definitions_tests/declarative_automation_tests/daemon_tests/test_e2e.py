@@ -14,6 +14,8 @@ from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.execution.backfill import PartitionBackfill
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.remote_representation.external import RemoteSensor
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.scheduler.instigation import (
@@ -113,20 +115,15 @@ def get_workspace_request_context(
 
 
 @contextmanager
-def get_grpc_workspace_request_context(filename: str):
-    with instance_for_test(
-        overrides={
-            "run_launcher": {
-                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                "class": "SyncInMemoryRunLauncher",
-            },
-        }
+def get_grpc_workspace_request_context(filename: str, instance_ref: Optional[InstanceRef] = None):
+    with (
+        DagsterInstance.from_ref(instance_ref) if instance_ref else instance_for_test()
     ) as instance:
         with GrpcServerProcess(
             instance_ref=instance.get_ref(),
             loadable_target_origin=get_loadable_target_origin(filename),
             max_workers=4,
-            wait_on_exit=False,
+            wait_on_exit=True,
         ) as server_process:
             target = GrpcServerTarget(
                 host="localhost",
@@ -148,7 +145,10 @@ def get_threadpool_executor():
 
 
 def _execute_ticks(
-    context: WorkspaceProcessContext, threadpool_executor: InheritContextThreadPoolExecutor
+    context: WorkspaceProcessContext,
+    threadpool_executor: InheritContextThreadPoolExecutor,
+    submit_threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None,
+    debug_crash_flags=None,
 ) -> None:
     """Evaluates a single tick for all automation condition sensors across the workspace.
     Evaluates an iteration of both the AssetDaemon and the SensorDaemon as either can handle
@@ -160,7 +160,8 @@ def _execute_ticks(
             context,
             threadpool_executor=threadpool_executor,
             amp_tick_futures=asset_daemon_futures,
-            debug_crash_flags={},
+            debug_crash_flags=debug_crash_flags or {},
+            submit_threadpool_executor=submit_threadpool_executor,
         )
     )
 
@@ -175,15 +176,20 @@ def _execute_ticks(
         )
     )
 
+    backfill_daemon_futures = {}
     list(
         execute_backfill_iteration(
             context,
             get_default_daemon_logger("BackfillDaemon"),
+            threadpool_executor=threadpool_executor,
+            backfill_futures=backfill_daemon_futures,
+            debug_crash_flags=debug_crash_flags or {},
         )
     )
 
     wait_for_futures(asset_daemon_futures)
     wait_for_futures(sensor_daemon_futures)
+    wait_for_futures(backfill_daemon_futures)
 
 
 def _get_current_state(context: WorkspaceRequestContext) -> Mapping[str, InstigatorState]:
@@ -259,14 +265,15 @@ def _get_backfills_for_latest_ticks(
 
 def test_checks_and_assets_in_same_run() -> None:
     time = get_current_datetime()
-    with get_workspace_request_context(
-        ["check_after_parent_updated"]
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_workspace_request_context(["check_after_parent_updated"]) as context,
+        get_threadpool_executor() as executor,
+    ):
         assert _get_latest_evaluation_ids(context) == {0}
         assert _get_runs_for_latest_ticks(context) == []
 
         with freeze_time(time):
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
 
             # nothing happening yet, as parent hasn't updated
             assert _get_latest_evaluation_ids(context) == {1}
@@ -279,7 +286,7 @@ def test_checks_and_assets_in_same_run() -> None:
                 AssetMaterialization(asset_key=AssetKey("processed_files"))
             )
 
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
 
             # should just request the check
             assert _get_latest_evaluation_ids(context) == {2}
@@ -298,7 +305,7 @@ def test_checks_and_assets_in_same_run() -> None:
                 AssetMaterialization(asset_key=AssetKey("raw_files"))
             )
 
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
 
             # should create a single run request targeting both the downstream asset
             # and the associated check
@@ -314,14 +321,17 @@ def test_checks_and_assets_in_same_run() -> None:
 
 def test_cross_location_checks() -> None:
     time = get_current_datetime()
-    with get_workspace_request_context(
-        ["check_on_other_location", "check_after_parent_updated"]
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_workspace_request_context(
+            ["check_on_other_location", "check_after_parent_updated"]
+        ) as context,
+        get_threadpool_executor() as executor,
+    ):
         assert _get_latest_evaluation_ids(context) == {0}
         assert _get_runs_for_latest_ticks(context) == []
 
         with freeze_time(time):
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
 
             # nothing happening yet, as parent hasn't updated
             assert _get_latest_evaluation_ids(context) == {1, 2}
@@ -334,7 +344,7 @@ def test_cross_location_checks() -> None:
                 AssetMaterialization(asset_key=AssetKey("processed_files"))
             )
 
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
 
             # should request both checks on processed_files, but one of the checks
             # is in a different code location, so two separate runs should be created
@@ -359,7 +369,7 @@ def test_cross_location_checks() -> None:
                 AssetMaterialization(asset_key=AssetKey("raw_files"))
             )
 
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
 
             # should create a single run request targeting both the downstream asset
             # and the associated check -- the check in the other location cannot
@@ -375,7 +385,7 @@ def test_cross_location_checks() -> None:
 
         time += datetime.timedelta(seconds=30)
         with freeze_time(time):
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
 
             # now, after processed_files gets materialized, the no_nulls check
             # can be executed (and row_count also gets executed again because
@@ -397,11 +407,12 @@ def test_cross_location_checks() -> None:
 
 def test_default_condition() -> None:
     time = datetime.datetime(2024, 8, 16, 4)
-    with get_workspace_request_context(
-        ["default_condition"]
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_workspace_request_context(["default_condition"]) as context,
+        get_threadpool_executor() as executor,
+    ):
         with freeze_time(time):
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
 
             # eager asset materializes
             runs = _get_runs_for_latest_ticks(context)
@@ -410,7 +421,7 @@ def test_default_condition() -> None:
 
         time += datetime.timedelta(seconds=60)
         with freeze_time(time):
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
 
             # passed a cron tick, so cron asset materializes
             runs = _get_runs_for_latest_ticks(context)
@@ -419,12 +430,14 @@ def test_default_condition() -> None:
 
 
 def test_non_subsettable_check() -> None:
-    with get_workspace_request_context(
-        ["check_not_subsettable"]
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_grpc_workspace_request_context("check_not_subsettable") as context,
+        get_threadpool_executor() as executor,
+        InheritContextThreadPoolExecutor(max_workers=5) as submit_executor,
+    ):
         time = datetime.datetime(2024, 8, 17, 1, 35)
         with freeze_time(time):
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor, submit_executor)  # pyright: ignore[reportArgumentType]
 
             # eager asset materializes
             runs = _get_runs_for_latest_ticks(context)
@@ -473,15 +486,16 @@ def _get_subsets_by_key(
 
 @pytest.mark.parametrize("location", ["backfill_simple_user_code", "backfill_simple_non_user_code"])
 def test_backfill_creation_simple(location: str) -> None:
-    with get_workspace_request_context(
-        [location]
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_workspace_request_context([location]) as context,
+        get_threadpool_executor() as executor,
+    ):
         asset_graph = context.create_request_context().asset_graph
 
         # all start off missing, should be requested
         time = get_current_datetime()
         with freeze_time(time):
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
             backfills = _get_backfills_for_latest_ticks(context)
             assert len(backfills) == 1
             subsets_by_key = _get_subsets_by_key(backfills[0], asset_graph)
@@ -506,7 +520,7 @@ def test_backfill_creation_simple(location: str) -> None:
         time += datetime.timedelta(seconds=30)
         with freeze_time(time):
             # second tick, don't kick off again
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
             backfills = _get_backfills_for_latest_ticks(context)
             assert len(backfills) == 0
             # still don't create runs
@@ -515,9 +529,10 @@ def test_backfill_creation_simple(location: str) -> None:
 
 
 def test_backfill_with_runs_and_checks() -> None:
-    with get_grpc_workspace_request_context(
-        "backfill_with_runs_and_checks"
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_grpc_workspace_request_context("backfill_with_runs_and_checks") as context,
+        get_threadpool_executor() as executor,
+    ):
         asset_graph = context.create_request_context().asset_graph
 
         # report materializations for 2/3 of the partitions, resulting in only one
@@ -528,7 +543,7 @@ def test_backfill_with_runs_and_checks() -> None:
         # all start off missing, should be requested
         time = get_current_datetime()
         with freeze_time(time):
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
             # create a backfill for the part of the graph that has multiple partitions
             # required
             backfills = _get_backfills_for_latest_ticks(context)
@@ -567,7 +582,7 @@ def test_backfill_with_runs_and_checks() -> None:
         time += datetime.timedelta(seconds=30)
         with freeze_time(time):
             # second tick, don't kick off again
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
 
             backfills = _get_backfills_for_latest_ticks(context)
             assert len(backfills) == 0
@@ -576,14 +591,17 @@ def test_backfill_with_runs_and_checks() -> None:
 
 
 def test_toggle_user_code() -> None:
-    with instance_for_test(
-        overrides={
-            "run_launcher": {
-                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                "class": "SyncInMemoryRunLauncher",
-            },
-        }
-    ) as instance, get_threadpool_executor() as executor:
+    with (
+        instance_for_test(
+            overrides={
+                "run_launcher": {
+                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
+                    "class": "SyncInMemoryRunLauncher",
+                },
+            }
+        ) as instance,
+        get_threadpool_executor() as executor,
+    ):
         user_code_target = InProcessTestWorkspaceLoadTarget(
             [get_code_location_origin("simple_user_code", location_name="simple")]
         )
@@ -606,7 +624,7 @@ def test_toggle_user_code() -> None:
                 time += datetime.timedelta(seconds=35)
                 with freeze_time(time):
                     # first tick, nothing happened
-                    _execute_ticks(context, executor)
+                    _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
                     runs = _get_runs_for_latest_ticks(context)
                     assert len(runs) == 0
 
@@ -614,54 +632,56 @@ def test_toggle_user_code() -> None:
                 with freeze_time(time):
                     # second tick, root gets updated
                     instance.report_runless_asset_event(AssetMaterialization("root"))
-                    _execute_ticks(context, executor)
+                    _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
                     runs = _get_runs_for_latest_ticks(context)
                     assert runs[0].asset_selection == {AssetKey("downstream")}
 
                 time += datetime.timedelta(seconds=35)
                 with freeze_time(time):
                     # third tick, don't kick off again
-                    _execute_ticks(context, executor)
+                    _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
                     runs = _get_runs_for_latest_ticks(context)
                     assert len(runs) == 0
 
 
 def test_custom_condition() -> None:
-    with get_grpc_workspace_request_context(
-        "custom_condition"
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_grpc_workspace_request_context("custom_condition") as context,
+        get_threadpool_executor() as executor,
+    ):
         time = datetime.datetime(2024, 8, 16, 1, 35)
 
         # custom condition only materializes on the 5th tick
         for _ in range(4):
             with freeze_time(time):
-                _execute_ticks(context, executor)
+                _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
                 runs = _get_runs_for_latest_ticks(context)
                 assert len(runs) == 0
             time += datetime.timedelta(minutes=1)
 
         with freeze_time(time):
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
 
         time += datetime.timedelta(minutes=1)
         with freeze_time(time):
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 0
 
 
 def test_500_eager_assets_user_code(capsys) -> None:
-    with get_grpc_workspace_request_context(
-        "500_eager_assets"
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_grpc_workspace_request_context("500_eager_assets") as context,
+        get_threadpool_executor() as executor,
+    ):
         freeze_dt = datetime.datetime(2024, 8, 16, 1, 35)
 
         for _ in range(2):
             clock_time = time.time()
             with freeze_time(freeze_dt):
-                _execute_ticks(context, executor)
+                _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
                 runs = _get_runs_for_latest_ticks(context)
                 assert len(runs) == 0
             duration = time.time() - clock_time
@@ -679,10 +699,13 @@ def test_500_eager_assets_user_code(capsys) -> None:
 
 
 def test_fail_if_not_use_sensors(capsys) -> None:
-    with get_workspace_request_context(
-        ["simple_user_code"], overrides={"auto_materialize": {"use_sensors": False}}
-    ) as context, get_threadpool_executor() as executor:
-        _execute_ticks(context, executor)
+    with (
+        get_workspace_request_context(
+            ["simple_user_code"], overrides={"auto_materialize": {"use_sensors": False}}
+        ) as context,
+        get_threadpool_executor() as executor,
+    ):
+        _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
         latest_ticks = _get_latest_ticks(context.create_request_context())
         assert len(latest_ticks) == 1
         # no failure
@@ -694,36 +717,38 @@ def test_fail_if_not_use_sensors(capsys) -> None:
 
 
 def test_simple_old_code_server() -> None:
-    with get_grpc_workspace_request_context(
-        "old_code_server_simulation"
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_grpc_workspace_request_context("old_code_server_simulation") as context,
+        get_threadpool_executor() as executor,
+    ):
         time = datetime.datetime(2024, 8, 16, 1, 35)
         with freeze_time(time):
             # initial evaluation
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
 
 
 def test_observable_source_asset() -> None:
-    with get_grpc_workspace_request_context(
-        "hourly_observable"
-    ) as context, get_threadpool_executor() as executor:
+    with (
+        get_grpc_workspace_request_context("hourly_observable") as context,
+        get_threadpool_executor() as executor,
+    ):
         time = datetime.datetime(2024, 8, 16, 1, 35)
         with freeze_time(time):
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 0
 
         time += datetime.timedelta(hours=1)
         with freeze_time(time):
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
             assert runs[0].asset_selection == {AssetKey("obs"), AssetKey("mat")}
 
         time += datetime.timedelta(minutes=1)
         with freeze_time(time):
-            _execute_ticks(context, executor)
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 0

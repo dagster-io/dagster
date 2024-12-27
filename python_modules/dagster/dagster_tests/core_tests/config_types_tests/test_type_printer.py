@@ -9,10 +9,11 @@ from dagster._config import (
 
 def assert_inner_types(parent_type, *dagster_types):
     config_type = resolve_to_config_type(parent_type)
-    config_schema_snapshot = config_type.get_schema_snapshot()
+    config_schema_snapshot = config_type.get_schema_snapshot()  # pyright: ignore[reportAttributeAccessIssue]
 
     all_type_keys = get_recursive_type_keys(
-        snap_from_config_type(config_type), config_schema_snapshot
+        snap_from_config_type(config_type),  # pyright: ignore[reportArgumentType]
+        config_schema_snapshot,
     )
 
     assert set(all_type_keys) == set(

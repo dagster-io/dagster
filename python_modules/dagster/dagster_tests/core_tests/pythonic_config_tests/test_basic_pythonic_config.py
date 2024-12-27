@@ -112,8 +112,8 @@ def test_struct_config():
     assert DecoratedOpFunction(a_struct_config_op).has_config_arg()
 
     # test fields are inferred correctly
-    assert a_struct_config_op.config_schema.config_type.kind == ConfigTypeKind.STRICT_SHAPE
-    assert list(a_struct_config_op.config_schema.config_type.fields.keys()) == [
+    assert a_struct_config_op.config_schema.config_type.kind == ConfigTypeKind.STRICT_SHAPE  # pyright: ignore[reportOptionalMemberAccess]
+    assert list(a_struct_config_op.config_schema.config_type.fields.keys()) == [  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         "a_string",
         "an_int",
     ]
@@ -289,8 +289,8 @@ def test_nested_struct_config():
     assert DecoratedOpFunction(a_struct_config_op).has_config_arg()
 
     # test fields are inferred correctly
-    assert a_struct_config_op.config_schema.config_type.kind == ConfigTypeKind.STRICT_SHAPE
-    assert list(a_struct_config_op.config_schema.config_type.fields.keys()) == [
+    assert a_struct_config_op.config_schema.config_type.kind == ConfigTypeKind.STRICT_SHAPE  # pyright: ignore[reportOptionalMemberAccess]
+    assert list(a_struct_config_op.config_schema.config_type.fields.keys()) == [  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         "a_nested_value",
         "a_bool",
     ]
@@ -707,7 +707,7 @@ def test_structured_run_config_optional() -> None:
     class ANewConfigOpConfig(Config):
         a_string: Optional[str]
         an_int: Optional[int] = None
-        a_float: float = PyField(None)
+        a_float: float = PyField(None)  # type: ignore
 
     executed = {}
 
@@ -805,7 +805,7 @@ def test_structured_run_config_assets():
 
 def test_structured_run_config_assets_optional() -> None:
     class AnAssetConfig(Config):
-        a_string: str = PyField(None)
+        a_string: str = PyField(None)  # type: ignore
         an_int: Optional[int] = None
 
     executed = {}

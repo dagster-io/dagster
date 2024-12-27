@@ -15,6 +15,8 @@ EXAMPLES_TO_IGNORE = [
     "docs_snippets",
     "experimental",
     "use_case_repository",
+    "airlift-mwaa-example",
+    "starlift-demo",
     "pyproject.toml",
     "README.md",
     "temp_pins.txt",
@@ -35,6 +37,8 @@ AVAILABLE_EXAMPLES = [
     "feature_graph_backed_assets",
     "getting_started_etl_tutorial",
     "project_analytics",
+    "project_atproto_dashboard",
+    "project_dagster_modal_pipes",
     "project_dagster_university_start",
     "project_du_dbt_starter",
     "project_fully_featured",
@@ -44,12 +48,13 @@ AVAILABLE_EXAMPLES = [
     "quickstart_snowflake",
     "tutorial",
     "tutorial_notebook_assets",
-    "with_airflow",
     "with_great_expectations",
     "with_openai",
     "with_pyspark",
     "with_pyspark_emr",
     "with_wandb",
+    "airlift-federation-tutorial",
+    "airlift-migration-tutorial",
 ]
 
 

@@ -6,10 +6,10 @@ from dagster_polars.types import DataFramePartitions, LazyFramePartitions
 from dagster_polars.version import __version__
 
 __all__ = [
-    "PolarsParquetIOManager",
     "BasePolarsUPathIOManager",
     "DataFramePartitions",
     "LazyFramePartitions",
+    "PolarsParquetIOManager",
     "__version__",
 ]
 

@@ -9,10 +9,11 @@ import {
   MiddleTruncate,
   Tag,
 } from '@dagster-io/ui-components';
+import useResizeObserver from '@react-hook/resize-observer';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {
   assetDetailsPathForAssetCheck,
   assetDetailsPathForKey,
@@ -22,6 +23,14 @@ import {AssetKey} from '../assets/types';
 import {TagActionsPopover} from '../ui/TagActions';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../ui/formatters';
+
+const sortItemAssetKey = (a: AssetKey, b: AssetKey) => {
+  return displayNameForAssetKey(a).localeCompare(displayNameForAssetKey(b));
+};
+
+const sortItemAssetCheck = (a: Check, b: Check) => {
+  return labelForAssetCheck(a).localeCompare(labelForAssetCheck(b));
+};
 
 const renderItemAssetKey = (assetKey: AssetKey) => (
   <Link to={assetDetailsPathForKey(assetKey)} style={{display: 'block', width: '100%'}}>
@@ -72,84 +81,192 @@ interface AssetKeyTagCollectionProps {
   assetKeys: AssetKey[] | null;
   dialogTitle?: string;
   useTags?: boolean;
+  maxRows?: number;
+}
+
+/** This hook returns a containerRef and a moreLabelRef. It expects you to populate
+ * containerRef with children, with the last child being a "More" button. When your
+ * container renders, children will be hidden until the container is not overflowing
+ * its maxHeight.
+ *
+ * This hook waits for an animation frame but forces layout so you can't see it "trying"
+ * different numbers of tags. To avoid seeing tags wrap while waiting for an animation
+ * frame, place an `overflow: hidden` on the container.
+ */
+export function useAdjustChildVisibilityToFill(moreLabelFn: (count: number) => string | null) {
+  const containerRef = React.createRef<HTMLDivElement>();
+  const moreLabelRef = React.createRef<HTMLDivElement>();
+  const evaluatingRef = React.useRef(false);
+
+  const evaluate = React.useCallback(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const children = Array.from(container.children) as HTMLElement[];
+    if (children.length < 2) {
+      return; // single item or no items, no need for fanciness
+    }
+
+    const tagsEls = children.slice(0, -1);
+    const moreEl = children.pop()!;
+
+    const apply = () => {
+      const moreLabel = moreLabelFn(count);
+      if (moreLabelRef.current && moreLabelRef.current.textContent !== moreLabel) {
+        moreLabelRef.current.textContent = moreLabel;
+      }
+      moreEl.style.display = moreLabel !== null ? 'initial' : 'none';
+      tagsEls.forEach((c, idx) => (c.style.display = idx < count ? 'initial' : 'none'));
+    };
+
+    evaluatingRef.current = true;
+
+    let count = 0;
+    apply();
+
+    while (true) {
+      if (container.scrollHeight > container.offsetHeight && count > 0) {
+        count--;
+        apply();
+        break;
+      } else if (count < tagsEls.length) {
+        count++;
+        apply();
+      } else {
+        break;
+      }
+    }
+
+    evaluatingRef.current = false;
+  }, [moreLabelFn, moreLabelRef, containerRef]);
+
+  useResizeObserver(containerRef, () => {
+    if (!evaluatingRef.current) {
+      evaluate();
+    }
+  });
+
+  React.useEffect(() => {
+    window.requestAnimationFrame(evaluate);
+  }, [evaluate]);
+
+  return {containerRef, moreLabelRef};
 }
 
 export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionProps) => {
-  const {assetKeys, useTags, dialogTitle = 'Assets in run'} = props;
-  const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, assetKeys, renderItemAssetKey);
+  const {assetKeys, useTags, maxRows, dialogTitle = 'Assets in run'} = props;
 
-  if (!assetKeys || !assetKeys.length) {
+  const count = assetKeys?.length ?? 0;
+  const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
+
+  const {sortedAssetKeys, slicedSortedAssetKeys} = React.useMemo(() => {
+    const sortedAssetKeys = assetKeys?.slice().sort(sortItemAssetKey) ?? [];
+    return {
+      sortedAssetKeys,
+      slicedSortedAssetKeys: sortedAssetKeys?.slice(0, rendered) ?? [],
+    };
+  }, [assetKeys, rendered]);
+
+  const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, sortedAssetKeys, renderItemAssetKey);
+
+  const moreLabelFn = React.useCallback(
+    (displayed: number) =>
+      displayed === 0
+        ? `${numberFormatter.format(count)} assets`
+        : count - displayed > 0
+          ? `${numberFormatter.format(count - displayed)} more`
+          : null,
+    [count],
+  );
+
+  const {containerRef, moreLabelRef} = useAdjustChildVisibilityToFill(moreLabelFn);
+
+  if (!count) {
     return null;
   }
 
-  if (assetKeys.length === 1) {
-    // Outer span ensures the popover target is in the right place if the
-    // parent is a flexbox.
-    const assetKey = assetKeys[0]!;
-    return (
-      <TagActionsPopover
-        childrenMiddleTruncate
-        data={{key: '', value: ''}}
-        actions={[
-          {
-            label: 'View asset',
-            to: assetDetailsPathForKey(assetKey),
-          },
-          {
-            label: 'View lineage',
-            to: assetDetailsPathForKey(assetKey, {
-              view: 'lineage',
-              lineageScope: 'downstream',
-            }),
-          },
-        ]}
-      >
-        {useTags ? (
-          <Tag intent="none" interactive icon="asset">
-            <MiddleTruncate text={displayNameForAssetKey(assetKey)} />
-          </Tag>
-        ) : (
-          <Link to={assetDetailsPathForKey(assetKey)}>
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-              <Icon color={Colors.accentGray()} name="asset" size={16} />
-              <MiddleTruncate text={displayNameForAssetKey(assetKey)} />
-            </Box>
-          </Link>
-        )}
-      </TagActionsPopover>
-    );
-  }
-
   return (
-    <span style={useTags ? {} : {marginBottom: -4}}>
-      <TagActionsPopover
-        data={{key: '', value: ''}}
-        actions={[
-          {
-            label: 'View list',
-            onClick: () => setShowMore(true),
-          },
-          {
-            label: 'View lineage',
-            to: globalAssetGraphPathForAssetsAndDescendants(assetKeys),
-          },
-        ]}
-      >
-        {useTags ? (
-          <Tag intent="none" icon="asset">
-            {numberFormatter.format(assetKeys.length)} assets
-          </Tag>
-        ) : (
-          <ButtonLink onClick={() => setShowMore(true)} underline="hover">
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}>
-              <Icon color={Colors.accentGray()} name="asset" size={16} />
-              {`${numberFormatter.format(assetKeys.length)} assets`}
-            </Box>
-          </ButtonLink>
-        )}
-      </TagActionsPopover>
-      {dialog}
-    </span>
+    <Box
+      ref={maxRows ? containerRef : null}
+      flex={{gap: 4, alignItems: 'end', wrap: 'wrap'}}
+      style={{
+        minWidth: 0,
+        maxWidth: '100%',
+        maxHeight: maxRows ? maxRows * 30 : undefined,
+        overflow: 'hidden',
+      }}
+    >
+      {slicedSortedAssetKeys.map((assetKey) => (
+        // Outer span ensures the popover target is in the right place if the
+        // parent is a flexbox.
+        <TagActionsPopover
+          key={tokenForAssetKey(assetKey)}
+          childrenMiddleTruncate
+          data={{key: '', value: ''}}
+          actions={[
+            {
+              label: 'View asset',
+              to: assetDetailsPathForKey(assetKey),
+            },
+            {
+              label: 'View lineage',
+              to: assetDetailsPathForKey(assetKey, {
+                view: 'lineage',
+                lineageScope: 'downstream',
+              }),
+            },
+          ]}
+        >
+          {useTags ? (
+            <Tag intent="none" interactive icon="asset">
+              <MiddleTruncate text={displayNameForAssetKey(assetKey)} />
+            </Tag>
+          ) : (
+            <Link to={assetDetailsPathForKey(assetKey)}>
+              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                <Icon color={Colors.accentGray()} name="asset" size={16} />
+                <MiddleTruncate text={displayNameForAssetKey(assetKey)} />
+              </Box>
+            </Link>
+          )}
+        </TagActionsPopover>
+      ))}
+      {rendered !== 1 && (
+        <span style={useTags ? {} : {marginBottom: -4}}>
+          <TagActionsPopover
+            data={{key: '', value: ''}}
+            actions={[
+              {
+                label: 'View list',
+                onClick: () => setShowMore(true),
+              },
+              {
+                label: 'View lineage',
+                to: globalAssetGraphPathForAssetsAndDescendants(sortedAssetKeys),
+              },
+            ]}
+          >
+            {useTags ? (
+              <Tag intent="none" icon="asset">
+                <span ref={moreLabelRef}>{moreLabelFn(0)}</span>
+              </Tag>
+            ) : (
+              <ButtonLink onClick={() => setShowMore(true)} underline="hover">
+                <Box
+                  flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}
+                >
+                  <Icon color={Colors.accentGray()} name="asset" size={16} />
+                  <span ref={moreLabelRef}>{moreLabelFn(0)}</span>
+                </Box>
+              </ButtonLink>
+            )}
+          </TagActionsPopover>
+          {dialog}
+        </span>
+      )}
+    </Box>
   );
 });
 
@@ -159,67 +276,106 @@ interface AssetCheckTagCollectionProps {
   assetChecks: Check[] | null;
   dialogTitle?: string;
   useTags?: boolean;
+  maxRows?: number;
 }
 
 export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectionProps) => {
-  const {assetChecks, useTags, dialogTitle = 'Asset checks in run'} = props;
-  const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, assetChecks, renderItemAssetCheck);
+  const {assetChecks, maxRows, useTags, dialogTitle = 'Asset checks in run'} = props;
 
-  if (!assetChecks || !assetChecks.length) {
+  const count = assetChecks?.length ?? 0;
+  const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
+
+  const {sortedAssetChecks, slicedSortedAssetChecks} = React.useMemo(() => {
+    const sortedAssetChecks = assetChecks?.slice().sort(sortItemAssetCheck) ?? [];
+    return {
+      sortedAssetChecks,
+      slicedSortedAssetChecks: sortedAssetChecks?.slice(0, rendered) ?? [],
+    };
+  }, [assetChecks, rendered]);
+
+  const {setShowMore, dialog} = useShowMoreDialog(
+    dialogTitle,
+    sortedAssetChecks,
+    renderItemAssetCheck,
+  );
+
+  const moreLabelFn = React.useCallback(
+    (displayed: number) =>
+      displayed === 0
+        ? `${numberFormatter.format(count)} checks`
+        : count - displayed > 0
+          ? `${numberFormatter.format(count - displayed)} more`
+          : null,
+    [count],
+  );
+
+  const {containerRef, moreLabelRef} = useAdjustChildVisibilityToFill(moreLabelFn);
+
+  if (!count) {
     return null;
   }
 
-  if (assetChecks.length === 1) {
-    // Outer span ensures the popover target is in the right place if the
-    // parent is a flexbox.
-    const check = assetChecks[0]!;
-    return (
-      <TagActionsPopover
-        data={{key: '', value: ''}}
-        actions={[{label: 'View asset check', to: assetDetailsPathForAssetCheck(check)}]}
-        childrenMiddleTruncate
-      >
-        {useTags ? (
-          <Tag intent="none" interactive icon="asset_check">
-            <MiddleTruncate text={labelForAssetCheck(check)} />
-          </Tag>
-        ) : (
-          <Link to={assetDetailsPathForAssetCheck(check)}>
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-              <Icon color={Colors.accentGray()} name="asset_check" size={16} />
-              <MiddleTruncate text={labelForAssetCheck(check)} />
-            </Box>
-          </Link>
-        )}
-      </TagActionsPopover>
-    );
-  }
-
   return (
-    <>
-      <TagActionsPopover
-        data={{key: '', value: ''}}
-        actions={[
-          {
-            label: 'View list',
-            onClick: () => setShowMore(true),
-          },
-        ]}
-      >
-        {useTags ? (
-          <Tag intent="none" icon="asset_check">
-            {numberFormatter.format(assetChecks.length)} asset checks
-          </Tag>
-        ) : (
-          <ButtonLink onClick={() => setShowMore(true)} underline="hover">
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}>
-              <Icon color={Colors.accentGray()} name="asset_check" size={16} />
-              {`${numberFormatter.format(assetChecks.length)} asset checks`}
-            </Box>
-          </ButtonLink>
-        )}
-      </TagActionsPopover>
-      {dialog}
-    </>
+    <Box
+      ref={maxRows ? containerRef : null}
+      flex={{gap: 4, alignItems: 'end', wrap: 'wrap'}}
+      style={{
+        minWidth: 0,
+        maxWidth: '100%',
+        maxHeight: maxRows ? maxRows * 30 : undefined,
+        overflow: 'hidden',
+      }}
+    >
+      {slicedSortedAssetChecks.map((check) => (
+        <TagActionsPopover
+          key={`${check.name}-${tokenForAssetKey(check.assetKey)}`}
+          data={{key: '', value: ''}}
+          actions={[{label: 'View asset check', to: assetDetailsPathForAssetCheck(check)}]}
+          childrenMiddleTruncate
+        >
+          {useTags ? (
+            <Tag intent="none" interactive icon="asset_check">
+              <MiddleTruncate text={labelForAssetCheck(check)} />
+            </Tag>
+          ) : (
+            <Link to={assetDetailsPathForAssetCheck(check)}>
+              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                <Icon color={Colors.accentGray()} name="asset_check" size={16} />
+                <MiddleTruncate text={labelForAssetCheck(check)} />
+              </Box>
+            </Link>
+          )}
+        </TagActionsPopover>
+      ))}
+      {rendered !== 1 && (
+        <span style={useTags ? {} : {marginBottom: -4}}>
+          <TagActionsPopover
+            data={{key: '', value: ''}}
+            actions={[
+              {
+                label: 'View list',
+                onClick: () => setShowMore(true),
+              },
+            ]}
+          >
+            {useTags ? (
+              <Tag intent="none" icon="asset_check">
+                <span ref={moreLabelRef}>{moreLabelFn(0)}</span>
+              </Tag>
+            ) : (
+              <ButtonLink onClick={() => setShowMore(true)} underline="hover">
+                <Box
+                  flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}
+                >
+                  <Icon color={Colors.accentGray()} name="asset_check" size={16} />
+                  <span ref={moreLabelRef}>{moreLabelFn(0)}</span>
+                </Box>
+              </ButtonLink>
+            )}
+          </TagActionsPopover>
+          {dialog}
+        </span>
+      )}
+    </Box>
   );
 });

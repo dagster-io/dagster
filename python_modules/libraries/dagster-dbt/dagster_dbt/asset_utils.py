@@ -25,6 +25,7 @@ from dagster import (
     AssetOut,
     AssetsDefinition,
     AssetSelection,
+    AssetSpec,
     AutoMaterializePolicy,
     AutomationCondition,
     DagsterInvalidDefinitionError,
@@ -573,7 +574,7 @@ def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sq
         or f"dbt {dbt_resource_props['resource_type']} {dbt_resource_props['name']}",
     ]
     if display_raw_sql:
-        description_sections.append(f"#### Raw SQL:\n```\n{code_block}\n```")
+        description_sections.append(f"#### Raw SQL:\n```sql\n{code_block}\n```")
     return "\n\n".join(filter(None, description_sections))
 
 
@@ -613,12 +614,12 @@ def default_asset_check_fn(
     )
 
 
-def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> str:
-    return hashlib.sha1(
-        (dbt_resource_props.get("raw_sql") or dbt_resource_props.get("raw_code", "")).encode(
-            "utf-8"
-        )
-    ).hexdigest()
+def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+    code: Optional[str] = dbt_resource_props.get("raw_sql") or dbt_resource_props.get("raw_code")
+    if code:
+        return hashlib.sha1(code.encode("utf-8")).hexdigest()
+
+    return dbt_resource_props.get("checksum", {}).get("checksum")
 
 
 def _attach_sql_model_code_reference(
@@ -807,12 +808,9 @@ def build_dbt_multi_asset_args(
                 project=project,
             )
 
-        outs[output_name] = AssetOut(
+        spec = AssetSpec(
             key=asset_key,
-            dagster_type=Nothing,
-            io_manager_key=io_manager_key,
             description=dagster_dbt_translator.get_description(dbt_resource_props),
-            is_required=False,
             metadata=metadata,
             owners=dagster_dbt_translator.get_owners(
                 {
@@ -831,6 +829,14 @@ def build_dbt_multi_asset_args(
             automation_condition=dagster_dbt_translator.get_automation_condition(
                 dbt_resource_props
             ),
+            partitions_def=dagster_dbt_translator.get_partitions_def(dbt_resource_props),
+        )
+
+        outs[output_name] = AssetOut.from_spec(
+            spec=spec,
+            dagster_type=Nothing,
+            is_required=False,
+            io_manager_key=io_manager_key,
         )
 
         test_unique_ids = [

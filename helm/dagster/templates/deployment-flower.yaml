@@ -36,12 +36,14 @@ spec:
       securityContext:
       {{- toYaml .Values.flower.podSecurityContext | nindent 8 }}
       initContainers:
+        {{- if .Values.flower.checkDbReadyInitContainer }}
         - name: check-db-ready
-          image: "{{- $.Values.postgresql.image.repository -}}:{{- $.Values.postgresql.image.tag -}}"
+          image: {{ include "dagster.externalPostgresImage.name" $.Values.postgresql.image | quote }}
           imagePullPolicy: "{{- $.Values.postgresql.image.pullPolicy -}}"
           command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" . | squote }}]
           securityContext:
             {{- toYaml .Values.flower.securityContext | nindent 12 }}
+        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:

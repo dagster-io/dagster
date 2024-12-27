@@ -1,0 +1,21 @@
+type: dagster_components.pipes_subprocess_script_collection
+
+params:
+  scripts:
+    - path: script_one.py
+      assets:
+        - key: a
+          automation_condition:
+            type: eager
+        - key: b
+          automation_condition:
+            type: on_cron
+            params:
+              cron_schedule: "@daily"
+          deps: [up1, up2]
+    - path: script_two.py
+      assets:
+        - key: c
+    - path: subdir/script_three.py
+      assets:
+        - key: override_key

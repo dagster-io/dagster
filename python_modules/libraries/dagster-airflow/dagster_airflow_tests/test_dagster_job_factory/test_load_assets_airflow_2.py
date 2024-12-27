@@ -47,7 +47,7 @@ def test_load_assets_from_airflow_dag():
         asset_dag = dag_bag.get_dag(dag_id="asset_dag")
 
         assets = load_assets_from_airflow_dag(
-            dag=asset_dag,
+            dag=asset_dag,  # pyright: ignore[reportArgumentType]
             task_ids_by_asset_key={
                 AssetKey("foo_asset"): {"foo"},
                 AssetKey("biz_asset"): {"biz"},
@@ -60,7 +60,7 @@ def test_load_assets_from_airflow_dag():
         )
         other_dag = dag_bag.get_dag(dag_id="other_dag")
         other_assets = load_assets_from_airflow_dag(
-            dag=other_dag,
+            dag=other_dag,  # pyright: ignore[reportArgumentType]
         )
 
         resources = None

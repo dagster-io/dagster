@@ -110,7 +110,7 @@ class ValidationContext(ContextData):
 
 
 class TraversalContext(ContextData):
-    __slots__ = ["_config_type", "_traversal_type", "_all_config_types"]
+    __slots__ = ["_all_config_types", "_config_type", "_traversal_type"]
 
     def __init__(
         self,

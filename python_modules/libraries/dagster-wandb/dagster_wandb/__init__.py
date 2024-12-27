@@ -9,11 +9,11 @@ from dagster_wandb.version import __version__
 DagsterLibraryRegistry.register("dagster-wandb", __version__)
 
 __all__ = [
-    "WandbArtifactsIOManagerError",
     "SerializationModule",
-    "wandb_resource",
-    "wandb_artifacts_io_manager",
     "WandbArtifactConfiguration",
+    "WandbArtifactsIOManagerError",
     "run_launch_agent",
     "run_launch_job",
+    "wandb_artifacts_io_manager",
+    "wandb_resource",
 ]

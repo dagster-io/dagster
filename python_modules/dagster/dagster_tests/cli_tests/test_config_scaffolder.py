@@ -34,15 +34,15 @@ def test_basic_ops_config(snapshot):
 
     env_config_type = job_def.run_config_schema.config_type
 
-    assert env_config_type.fields["ops"].is_required
-    ops_config_type = env_config_type.fields["ops"].config_type
+    assert env_config_type.fields["ops"].is_required  # pyright: ignore[reportAttributeAccessIssue]
+    ops_config_type = env_config_type.fields["ops"].config_type  # pyright: ignore[reportAttributeAccessIssue]
     assert ops_config_type.fields["required_field_op"].is_required
     required_op_config_type = ops_config_type.fields["required_field_op"].config_type
     assert required_op_config_type.fields["config"].is_required
 
-    assert set(env_config_type.fields["loggers"].config_type.fields.keys()) == set(["console"])
+    assert set(env_config_type.fields["loggers"].config_type.fields.keys()) == set(["console"])  # pyright: ignore[reportAttributeAccessIssue]
 
-    console_logger_config_type = env_config_type.fields["loggers"].config_type.fields["console"]
+    console_logger_config_type = env_config_type.fields["loggers"].config_type.fields["console"]  # pyright: ignore[reportAttributeAccessIssue]
 
     assert set(console_logger_config_type.config_type.fields.keys()) == set(["config"])
 

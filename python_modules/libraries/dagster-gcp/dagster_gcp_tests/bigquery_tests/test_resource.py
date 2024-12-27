@@ -136,7 +136,7 @@ def test_pythonic_resource_authenticate_via_env():
 def test_fetch_last_updated_timestamps_no_table():
     with pytest.raises(CheckError):
         fetch_last_updated_timestamps(
-            client={},
+            client={},  # pyright: ignore[reportArgumentType]
             dataset_id="foo",
             table_ids=[],
         )
@@ -181,4 +181,4 @@ def test_fetch_last_updated_timestamps():
         assert observation.tags["dagster/data_version"] == "foo"
         assert observation.metadata["freshness_timestamp"] is not None
         assert isinstance(observation.metadata["freshness_timestamp"], FloatMetadataValue)
-        assert start_timestamp < observation.metadata["freshness_timestamp"].value
+        assert start_timestamp < observation.metadata["freshness_timestamp"].value  # pyright: ignore[reportOperatorIssue]

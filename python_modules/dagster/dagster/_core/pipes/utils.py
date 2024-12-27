@@ -134,10 +134,18 @@ class PipesFileMessageReader(PipesMessageReader):
     Args:
         path (str): The path of the file to which messages will be written. The file will be deleted
             on close of the pipes session.
+        include_stdio_in_messages (bool): Whether to include stdout/stderr logs in the messages produced by the message writer in the external process.
+        cleanup_file (bool): Whether to delete the file on close of the pipes session.
     """
 
-    def __init__(self, path: str):
+    def __init__(
+        self, path: str, include_stdio_in_messages: bool = False, cleanup_file: bool = True
+    ):
         self._path = check.str_param(path, "path")
+        self._include_stdio_in_messages = check.bool_param(
+            include_stdio_in_messages, "include_stdio_in_messages"
+        )
+        self._cleanup_file = cleanup_file
 
     def on_launched(self, params: PipesLaunchedData) -> None:
         self.launched_payload = params
@@ -167,12 +175,15 @@ class PipesFileMessageReader(PipesMessageReader):
                 daemon=True,
             )
             thread.start()
-            yield {PipesDefaultMessageWriter.FILE_PATH_KEY: self._path}
+            yield {
+                PipesDefaultMessageWriter.FILE_PATH_KEY: self._path,
+                PipesDefaultMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY: self._include_stdio_in_messages,
+            }
         finally:
             is_session_closed.set()
             if thread:
                 thread.join()
-            if os.path.exists(self._path):
+            if os.path.exists(self._path) and self._cleanup_file:
                 os.remove(self._path)
 
     def _reader_thread(self, handler: "PipesMessageHandler", is_resource_complete: Event) -> None:
@@ -194,6 +205,11 @@ class PipesFileMessageReader(PipesMessageReader):
 class PipesTempFileMessageReader(PipesMessageReader):
     """Message reader that reads messages by tailing an automatically-generated temporary file."""
 
+    def __init__(self, include_stdio_in_messages: bool = False):
+        self._include_stdio_in_messages = check.bool_param(
+            include_stdio_in_messages, "include_stdio_in_messages"
+        )
+
     @contextmanager
     def read_messages(
         self,
@@ -211,7 +227,8 @@ class PipesTempFileMessageReader(PipesMessageReader):
         """
         with tempfile.TemporaryDirectory() as tempdir:
             with PipesFileMessageReader(
-                os.path.join(tempdir, _MESSAGE_READER_FILENAME)
+                os.path.join(tempdir, _MESSAGE_READER_FILENAME),
+                include_stdio_in_messages=self._include_stdio_in_messages,
             ).read_messages(handler) as params:
                 yield params
 
@@ -756,9 +773,10 @@ def open_pipes_session(
     context_data = build_external_execution_context_data(context, extras)
     message_handler = PipesMessageHandler(context, message_reader)
     try:
-        with context_injector.inject_context(
-            context_data
-        ) as ci_params, message_handler.handle_messages() as mr_params:
+        with (
+            context_injector.inject_context(context_data) as ci_params,
+            message_handler.handle_messages() as mr_params,
+        ):
             yield PipesSession(
                 context_data=context_data,
                 message_handler=message_handler,

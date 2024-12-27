@@ -836,9 +836,10 @@ def test_launching_custom_task_definition(ecs, instance_cm, run, workspace, job,
         print(instance.run_launcher)  # noqa: T201
 
     # The task definition doesn't include the container name
-    with pytest.raises(CheckError), instance_cm(
-        {"task_definition": family, "container_name": "does not exist"}
-    ) as instance:
+    with (
+        pytest.raises(CheckError),
+        instance_cm({"task_definition": family, "container_name": "does not exist"}) as instance,
+    ):
         print(instance.run_launcher)  # noqa: T201
 
     # You can provide a family or a task definition ARN
@@ -880,7 +881,7 @@ def test_eventual_consistency(ecs, instance, workspace, run, monkeypatch):
 
     retries = 0
     original_describe_tasks = instance.run_launcher.ecs.describe_tasks
-    original_backoff_retries = dagster_aws.ecs.tasks.BACKOFF_RETRIES
+    original_backoff_retries = dagster_aws.ecs.tasks.BACKOFF_RETRIES  # pyright: ignore[reportAttributeAccessIssue]
 
     def describe_tasks(*_args, **_kwargs):
         nonlocal retries
@@ -893,12 +894,12 @@ def test_eventual_consistency(ecs, instance, workspace, run, monkeypatch):
 
     with pytest.raises(EcsEventualConsistencyTimeout):
         monkeypatch.setattr(instance.run_launcher.ecs, "describe_tasks", describe_tasks)
-        monkeypatch.setattr(dagster_aws.ecs.tasks, "BACKOFF_RETRIES", 0)
+        monkeypatch.setattr(dagster_aws.ecs.tasks, "BACKOFF_RETRIES", 0)  # pyright: ignore[reportAttributeAccessIssue]
         instance.launch_run(run.run_id, workspace)
 
     # Reset the mock
     retries = 0
-    monkeypatch.setattr(dagster_aws.ecs.tasks, "BACKOFF_RETRIES", original_backoff_retries)
+    monkeypatch.setattr(dagster_aws.ecs.tasks, "BACKOFF_RETRIES", original_backoff_retries)  # pyright: ignore[reportAttributeAccessIssue]
     instance.launch_run(run.run_id, workspace)
 
     tasks = ecs.list_tasks()["taskArns"]
@@ -1325,7 +1326,7 @@ def test_overrides_too_long(
                 fn_name="foo",
             ),
             container_image="test:latest",
-            container_context=large_container_context,
+            container_context=large_container_context,  # pyright: ignore[reportArgumentType]
         ),
     )
 

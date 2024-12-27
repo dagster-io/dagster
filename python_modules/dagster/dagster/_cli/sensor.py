@@ -204,13 +204,13 @@ def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
                         instance.start_sensor(sensor)
                     print_fn(f"Started all sensors for repository {repository_name}")
                 except DagsterInvariantViolationError as ex:
-                    raise click.UsageError(ex)
+                    raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
             else:
                 try:
                     sensor = repo.get_sensor(sensor_name)
                     instance.start_sensor(sensor)
                 except DagsterInvariantViolationError as ex:
-                    raise click.UsageError(ex)
+                    raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
 
                 print_fn(f"Started sensor {sensor_name}")
 
@@ -237,7 +237,7 @@ def execute_stop_command(sensor_name, cli_args, print_fn):
                     sensor,
                 )
             except DagsterInvariantViolationError as ex:
-                raise click.UsageError(ex)
+                raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
 
             print_fn(f"Stopped sensor {sensor_name}")
 
@@ -319,7 +319,7 @@ def execute_preview_command(
                     )
 
             except DagsterInvariantViolationError as ex:
-                raise click.UsageError(ex)
+                raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
 
 
 @sensor_cli.command(name="cursor", help="Set the cursor value for an existing sensor.")
@@ -374,12 +374,12 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
                 instance.update_instigator_state(
                     job_state.with_data(
                         SensorInstigatorData(
-                            last_tick_timestamp=job_state.instigator_data.last_tick_timestamp,
-                            last_run_key=job_state.instigator_data.last_run_key,
+                            last_tick_timestamp=job_state.instigator_data.last_tick_timestamp,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+                            last_run_key=job_state.instigator_data.last_run_key,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                             min_interval=sensor.min_interval_seconds,
                             cursor=cursor_value,
-                            last_tick_start_timestamp=job_state.instigator_data.last_tick_start_timestamp,
-                            last_sensor_start_timestamp=job_state.instigator_data.last_sensor_start_timestamp,
+                            last_tick_start_timestamp=job_state.instigator_data.last_tick_start_timestamp,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+                            last_sensor_start_timestamp=job_state.instigator_data.last_sensor_start_timestamp,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
                             sensor_type=sensor.sensor_type,
                         ),
                     )

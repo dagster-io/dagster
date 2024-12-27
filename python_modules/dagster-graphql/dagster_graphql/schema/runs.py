@@ -11,6 +11,7 @@ from graphene.types.generic import GenericScalar
 
 from dagster_graphql.implementation.fetch_runs import get_run_ids, get_runs, get_runs_count
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
+from dagster_graphql.schema.backfill import pipeline_execution_error_types
 from dagster_graphql.schema.errors import (
     GrapheneInvalidPipelineRunsFilterError,
     GraphenePythonError,
@@ -73,17 +74,28 @@ launch_pipeline_run_result_types = (GrapheneLaunchRunSuccess,)
 
 class GrapheneLaunchRunResult(graphene.Union):
     class Meta:
-        from dagster_graphql.schema.backfill import pipeline_execution_error_types
-
         types = launch_pipeline_run_result_types + pipeline_execution_error_types
 
         name = "LaunchRunResult"
 
 
+class GrapheneLaunchMultipleRunsResult(graphene.ObjectType):
+    """Contains results from multiple pipeline launches."""
+
+    launchMultipleRunsResult = non_null_list(GrapheneLaunchRunResult)
+
+    class Meta:
+        name = "LaunchMultipleRunsResult"
+
+
+class GrapheneLaunchMultipleRunsResultOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneLaunchMultipleRunsResult, GraphenePythonError)
+        name = "LaunchMultipleRunsResultOrError"
+
+
 class GrapheneLaunchRunReexecutionResult(graphene.Union):
     class Meta:
-        from dagster_graphql.schema.backfill import pipeline_execution_error_types
-
         types = launch_pipeline_run_result_types + pipeline_execution_error_types
 
         name = "LaunchRunReexecutionResult"
@@ -213,6 +225,7 @@ def parse_run_config_input(
 
 types = [
     GrapheneLaunchRunResult,
+    GrapheneLaunchMultipleRunsResult,
     GrapheneLaunchRunReexecutionResult,
     GrapheneLaunchPipelineRunSuccess,
     GrapheneLaunchRunSuccess,

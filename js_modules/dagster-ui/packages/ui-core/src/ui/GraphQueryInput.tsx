@@ -73,7 +73,7 @@ interface SuggestionItem {
  * number of immediate input or output connections and randomly highlighting
  * either the ++solid or solid++ or solid+* syntax.
  */
-const placeholderTextForItems = (base: string, items: GraphQueryItem[]) => {
+export const placeholderTextForItems = (base: string, items: GraphQueryItem[]) => {
   const seed = items.length % 3;
 
   let placeholder = base;

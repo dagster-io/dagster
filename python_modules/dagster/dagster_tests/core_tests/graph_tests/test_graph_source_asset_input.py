@@ -23,7 +23,7 @@ def make_io_manager(asset: Union[SourceAsset, AssetSpec], input_value=5, expecte
             self.loaded_input = True
             assert context.asset_key == asset.key
             for key, value in expected_metadata.items():
-                assert context.upstream_output.definition_metadata[key] == value
+                assert context.upstream_output.definition_metadata[key] == value  # pyright: ignore[reportOptionalMemberAccess]
             return input_value
 
     return MyIOManager()

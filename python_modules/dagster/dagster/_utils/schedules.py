@@ -53,11 +53,20 @@ def _is_simple_cron(
 def is_valid_cron_string(cron_string: str) -> bool:
     if not CroniterShim.is_valid(cron_string):
         return False
+
     # Croniter < 1.4 returns 2 items
     # Croniter >= 1.4 returns 3 items
     expanded, *_ = CroniterShim.expand(cron_string)
+
     # dagster only recognizes cron strings that resolve to 5 parts (e.g. not seconds resolution)
-    return len(expanded) == 5
+    if len(expanded) != 5:
+        return False
+
+    if len(expanded[3]) == 1 and expanded[3][0] == 2:  # February
+        if len(expanded[2]) == 1 and expanded[2][0] in {30, 31}:  # 30th or 31st of February
+            return False
+
+    return True
 
 
 def is_valid_cron_schedule(cron_schedule: Union[str, Sequence[str]]) -> bool:
@@ -657,7 +666,7 @@ def cron_string_iterator(
         if (
             all(is_numeric[0:3])
             and all(is_wildcard[3:])
-            and cron_parts[2][0] <= MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL
+            and cron_parts[2][0] <= MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL  # pyright: ignore[reportOperatorIssue]
         ):  # monthly
             known_schedule_type = ScheduleType.MONTHLY
         elif all(is_numeric[0:2]) and is_numeric[4] and all(is_wildcard[2:4]):  # weekly
@@ -692,10 +701,10 @@ def cron_string_iterator(
             yield start_datetime
         else:
             next_date = _find_schedule_time(
-                expected_minutes,
-                expected_hour,
-                expected_day,
-                expected_day_of_week,
+                expected_minutes,  # pyright: ignore[reportArgumentType]
+                expected_hour,  # pyright: ignore[reportArgumentType]
+                expected_day,  # pyright: ignore[reportArgumentType]
+                expected_day_of_week,  # pyright: ignore[reportArgumentType]
                 known_schedule_type,
                 start_datetime,
                 ascending=not ascending,  # Going in the reverse direction
@@ -704,10 +713,10 @@ def cron_string_iterator(
             check.invariant(start_offset <= 0)
             for _ in range(-start_offset):
                 next_date = _find_schedule_time(
-                    expected_minutes,
-                    expected_hour,
-                    expected_day,
-                    expected_day_of_week,
+                    expected_minutes,  # pyright: ignore[reportArgumentType]
+                    expected_hour,  # pyright: ignore[reportArgumentType]
+                    expected_day,  # pyright: ignore[reportArgumentType]
+                    expected_day_of_week,  # pyright: ignore[reportArgumentType]
                     known_schedule_type,
                     next_date,
                     ascending=not ascending,  # Going in the reverse direction
@@ -716,10 +725,10 @@ def cron_string_iterator(
 
         while True:
             next_date = _find_schedule_time(
-                expected_minutes,
-                expected_hour,
-                expected_day,
-                expected_day_of_week,
+                expected_minutes,  # pyright: ignore[reportArgumentType]
+                expected_hour,  # pyright: ignore[reportArgumentType]
+                expected_day,  # pyright: ignore[reportArgumentType]
+                expected_day_of_week,  # pyright: ignore[reportArgumentType]
                 known_schedule_type,
                 next_date,
                 ascending=ascending,

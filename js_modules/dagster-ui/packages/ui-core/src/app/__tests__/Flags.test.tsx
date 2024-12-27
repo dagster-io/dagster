@@ -36,22 +36,26 @@ describe('Feature Flags with In-Memory Cache and BroadcastChannel', () => {
 
   it('should migrate old array format to new object format', () => {
     jest.isolateModules(() => {
-      const oldFlags = [FeatureFlag.__TestFlagDefaultTrue];
+      const flag = 'test_flag' as any;
+      const oldFlags = [flag];
       mockGetJSONForKey.mockReturnValue(oldFlags);
 
-      const {getFeatureFlags} = require('../Flags');
+      const {getFeatureFlagsWithoutDefaultValues, getFeatureFlagDefaults} = require('../Flags');
 
-      expect(getFeatureFlags()[FeatureFlag.__TestFlagDefaultTrue]).toBe(true);
-      expect(localStorage.getItem('DAGSTER_FLAGS')).toBe(
-        JSON.stringify({[FeatureFlag.__TestFlagDefaultTrue]: true}),
-      );
-      expect(Array.isArray(getFeatureFlags())).toBe(false);
+      expect(getFeatureFlagDefaults()[flag]).toBe(undefined);
+      expect(getFeatureFlagsWithoutDefaultValues()[flag]).toBe(true);
+
+      expect(localStorage.getItem('DAGSTER_FLAGS')).toBe(JSON.stringify({[flag]: true}));
     });
   });
 
   it('should return default value for unset flags', () => {
     jest.isolateModules(() => {
-      const {featureEnabled, getFeatureFlags} = require('../Flags');
+      const {
+        featureEnabled,
+        getFeatureFlagsWithoutDefaultValues,
+        getFeatureFlagDefaults,
+      } = require('../Flags');
 
       const isEnabled = featureEnabled(FeatureFlag.__TestFlagDefaultTrue);
       expect(isEnabled).toBe(true);
@@ -59,9 +63,19 @@ describe('Feature Flags with In-Memory Cache and BroadcastChannel', () => {
       const isEnabled2 = featureEnabled(FeatureFlag.__TestFlagDefaultFalse);
       expect(isEnabled2).toBe(false);
 
-      expect(getFeatureFlags()[FeatureFlag.__TestFlagDefaultFalse]).toBe(false);
-      expect(getFeatureFlags()[FeatureFlag.__TestFlagDefaultTrue]).toBe(true);
-      expect(getFeatureFlags()[FeatureFlag.__TestFlagDefaultNone]).toBe(undefined);
+      expect(getFeatureFlagDefaults()[FeatureFlag.__TestFlagDefaultFalse]).toBe(false);
+      expect(getFeatureFlagDefaults()[FeatureFlag.__TestFlagDefaultTrue]).toBe(true);
+      expect(getFeatureFlagDefaults()[FeatureFlag.__TestFlagDefaultNone]).toBe(undefined);
+
+      expect(getFeatureFlagsWithoutDefaultValues()[FeatureFlag.__TestFlagDefaultFalse]).toBe(
+        undefined,
+      );
+      expect(getFeatureFlagsWithoutDefaultValues()[FeatureFlag.__TestFlagDefaultTrue]).toBe(
+        undefined,
+      );
+      expect(getFeatureFlagsWithoutDefaultValues()[FeatureFlag.__TestFlagDefaultNone]).toBe(
+        undefined,
+      );
     });
   });
 
@@ -116,7 +130,12 @@ describe('Feature Flags with In-Memory Cache and BroadcastChannel', () => {
 
   it('should update in-memory cache without reading localStorage on each access', () => {
     jest.isolateModules(() => {
-      const {featureEnabled, setFeatureFlags, getFeatureFlags} = require('../Flags');
+      const {
+        featureEnabled,
+        setFeatureFlags,
+        getFeatureFlagsWithoutDefaultValues,
+        getFeatureFlagDefaults,
+      } = require('../Flags');
       expect(mockGetJSONForKey).toHaveBeenCalledTimes(1);
 
       expect(featureEnabled(FeatureFlag.__TestFlagDefaultNone)).toBe(false);
@@ -126,7 +145,10 @@ describe('Feature Flags with In-Memory Cache and BroadcastChannel', () => {
         mockBroadcastChannel.postMessage('updated');
       });
 
-      expect(getFeatureFlags()[FeatureFlag.__TestFlagDefaultNone]).toBe(true);
+      expect(getFeatureFlagsWithoutDefaultValues()[FeatureFlag.__TestFlagDefaultNone]).toBe(true);
+
+      expect(getFeatureFlagDefaults()[FeatureFlag.__TestFlagDefaultNone]).toBe(undefined);
+
       expect(featureEnabled(FeatureFlag.__TestFlagDefaultNone)).toBe(true);
       expect(mockGetJSONForKey).toHaveBeenCalledTimes(1); // Still only 1, from initialization
     });

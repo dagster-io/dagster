@@ -104,7 +104,7 @@ def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_p
 
         final_json = get_sample_connector_response(data=final_data)
         if schema_prefix:
-            final_json["data"]["config"]["schema_prefix"] = schema_prefix
+            final_json["data"]["config"]["schema_prefix"] = schema_prefix  # pyright: ignore[reportOptionalSubscript,reportArgumentType,reportIndexIssue]
         # final state will be updated
         rsps.add(rsps.GET, api_prefix, json=final_json)
 
@@ -141,7 +141,8 @@ def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_p
             ]
             assert len(asset_materializations) == 4 if infer_missing_tables else 3
             found_asset_keys = set(
-                mat.event_specific_data.materialization.asset_key for mat in asset_materializations
+                mat.event_specific_data.materialization.asset_key  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+                for mat in asset_materializations
             )
             if schema_prefix:
                 assert found_asset_keys == {

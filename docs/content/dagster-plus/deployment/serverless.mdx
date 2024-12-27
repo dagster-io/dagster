@@ -57,7 +57,7 @@ When you create a new Dagster+ organization, you'll be prompted to choose Server
 - The repo will need to allow the [Workflow permission](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository) for `Read and write permissions`. Workflow permissions settings can be found in GitHub's `Settings` > `Actions` > `General` > `Workflow permissions`. In GitHub Enterprise, these permissions [are controlled at the Organization level](https://github.com/orgs/community/discussions/57244).
 
 - An initial commit will need to be able to be merged directly to the repo's `main` branch to automatically add the GitHub Actions workflow files. If [branch protection rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#about-branch-protection-rules) require changes be done through a pull request, it will prevent the automatic setup completing.
-  - You can temporarily disable the branch protection rules and then re-enable them after the automatic setup completes. Alternatively, you can manually set up the GitHub Actions workflows. You can use our ­­[dagster-cloud-serverless-quickstart​​​­ r​​​epo](https://github.com/dagster-io/dagster-cloud-serverless-quickstart) as a template and its [README](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/README.md) as a guide​​.
+  - You can temporarily disable the branch protection rules and then re-enable them after the automatic setup completes.
 
 </Note>
 
@@ -164,7 +164,7 @@ if __name__ == "__main__":
 
 ### Using a different Python version
 
-The default version of Python for Serverless deployments is Python 3.9. Versions 3.10 through 3.12 are also supported. You can specify the version you want by updating your GitHub workflow or using the `--python-version` command line argument:
+Python versions 3.9 through 3.12 are all supported for Serverless deployments. You can specify the version you want by updating your GitHub workflow or using the `--python-version` command line argument:
 
 - **With GitHub**: Change the `python_version` parameter for the `build_deploy_python_executable` job in your `.github/workflows` files. For example:
 
@@ -175,7 +175,7 @@ The default version of Python for Serverless deployments is Python 3.9. Versions
     with:
       dagster_cloud_file: "$GITHUB_WORKSPACE/project-repo/dagster_cloud.yaml"
       build_output_dir: "$GITHUB_WORKSPACE/build"
-      python_version: "3.9" # Change this value to the desired Python version
+      python_version: "3.10" # Change this value to the desired Python version
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   ```
@@ -183,14 +183,14 @@ The default version of Python for Serverless deployments is Python 3.9. Versions
 - **With the CLI**: Add the `--python-version` CLI argument to the deploy command to specify the registry path to the desired base image:
 
   ```shell
-  dagster-cloud serverless deploy-python-executable --location-name=my_location --python-version=3.9
+  dagster-cloud serverless deploy-python-executable --location-name=my_location --python-version=3.10
   ```
 
 ### Using a different base image or using native dependencies
 
 Dagster+ runs your code on a Docker image that we build as follows:
 
-1. The standard Python "slim" [Docker image](https://hub.docker.com/\_/python), such as `python:3.9-slim` is used as the base.
+1. The standard Python "slim" [Docker image](https://hub.docker.com/\_/python), such as `python:3.10-slim` is used as the base.
 2. The `dagster-cloud[serverless]` module installed in the image.
 
 As far as possible, add all dependencies by including the corresponding native Python bindings in your `setup.py`. When that is not possible, you can build and upload a custom base image that will be used to run your Python code.
@@ -370,7 +370,7 @@ Serverless code will make requests from one of the following IP addresses. You m
 54.71.18.84
 ```
 
-**Note**: Additional IP addresses may be added over time. This list was last updated on **January 31, 2024.**
+**Note**: Additional IP addresses may be added over time. This list was last updated on **October 24, 2024.**
 
 ---
 

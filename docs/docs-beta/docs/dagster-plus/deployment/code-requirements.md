@@ -1,7 +1,7 @@
 ---
 title: 'Dagster+ code requirements'
-displayed_sidebar: 'dagsterPlus'
 sidebar_label: "Code requirements"
+sidebar_position: 10
 ---
 
 Your Dagster project must meet a few requirements to run in Dagster+.
@@ -33,7 +33,7 @@ To work with Dagster+, your Dagster code:
 
 ## Hybrid deployment requirements
 
-If you're using [Hybrid Deployment](/dagster-plus/deployment/hybrid), there are a few additional requirements.
+If you're using [Hybrid Deployment](/dagster-plus/deployment/deployment-types/hybrid), there are a few additional requirements.
 
 - **If using an Amazon Elastic Container Service (ECS), Kubernetes, or Docker agent**, your code must be packaged into a Docker image and pushed to a registry your agent can access. Dagster+ doesn't need access to your image - the agent only needs to be able to pull it.
 

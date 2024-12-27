@@ -58,6 +58,21 @@ module.exports = {
       },
     ],
     'no-alert': 'error',
+    'no-restricted-properties': [
+      'error',
+      {
+        object: 'window',
+        property: 'open',
+        message: 'Please use the `useOpenInNewTab` hook instead.',
+      },
+    ],
+    'no-restricted-globals': [
+      'error',
+      {
+        name: 'open',
+        message: 'Please use the `useOpenInNewTab` hook instead.',
+      },
+    ],
     'no-unused-vars': 'off', // or "@typescript-eslint/no-unused-vars": "off",
     'unused-imports/no-unused-imports': 'error',
     'unused-imports/no-unused-vars': [

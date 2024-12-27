@@ -8,7 +8,7 @@ import {
   Mono,
   Spinner,
 } from '@dagster-io/ui-components';
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -22,6 +22,7 @@ import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {titleForRun} from './RunUtils';
 import {useComputeLogFileKeyForSelection} from './useComputeLogFileKeyForSelection';
 import {DagsterEventType} from '../graphql/types';
+import {flattenOneLevel} from '../util/flattenOneLevel';
 
 export function useStepLogs({runId, stepKeys}: {runId?: string; stepKeys?: string[]}) {
   const [showingLogs, setShowingLogs] = React.useState<{runId: string; stepKeys: string[]} | null>(
@@ -113,9 +114,12 @@ export const StepLogsModalContent = ({
   const [logType, setComputeLogType] = useState<LogType>(LogType.structured);
   const [computeLogUrl, setComputeLogUrl] = React.useState<string | null>(null);
 
-  const firstLogForStep = logs.allNodes.find(
+  const flatLogs = useMemo(() => flattenOneLevel(logs.allNodeChunks), [logs]);
+
+  const firstLogForStep = flatLogs.find(
     (l) => l.eventType === DagsterEventType.STEP_START && l.stepKey && stepKeys.includes(l.stepKey),
   );
+
   const firstLogForStepTime = firstLogForStep ? Number(firstLogForStep.timestamp) : 0;
 
   const [filter, setFilter] = useState<LogFilter>({

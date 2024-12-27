@@ -1,4 +1,14 @@
-from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
@@ -9,7 +19,10 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
+from dagster._core.storage.asset_check_execution_record import (
+    AssetCheckExecutionRecord,
+    AssetCheckExecutionRecordStatus,
+)
 from dagster._core.storage.base_storage import DagsterStorage
 from dagster._core.storage.event_log.base import (
     AssetCheckSummaryRecord,
@@ -385,7 +398,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage._instance  # noqa: SLF001
 
     def index_connection(self):
-        return self._storage.event_log_storage.index_connection()
+        return self._storage.event_log_storage.index_connection()  # pyright: ignore[reportAttributeAccessIssue]
 
     def register_instance(self, instance: "DagsterInstance") -> None:
         if not self._storage.has_instance:
@@ -402,6 +415,19 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage.event_log_storage.get_logs_for_run(
             run_id, cursor, of_type, limit, ascending
         )
+
+    def get_logs_for_all_runs_by_log_id(
+        self,
+        after_cursor: int = -1,
+        dagster_event_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None,
+        limit: Optional[int] = None,
+    ) -> Mapping[int, "EventLogEntry"]:
+        return self._storage.event_log_storage.get_logs_for_all_runs_by_log_id(
+            after_cursor=after_cursor, dagster_event_type=dagster_event_type, limit=limit
+        )
+
+    def get_maximum_record_id(self) -> Optional[int]:
+        return self._storage.event_log_storage.get_maximum_record_id()
 
     def get_stats_for_run(self, run_id: str) -> "DagsterRunStatsSnapshot":
         return self._storage.event_log_storage.get_stats_for_run(run_id)
@@ -687,11 +713,13 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         check_key: "AssetCheckKey",
         limit: int,
         cursor: Optional[int] = None,
+        status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         return self._storage.event_log_storage.get_asset_check_execution_history(
             check_key=check_key,
             limit=limit,
             cursor=cursor,
+            status=status,
         )
 
     def get_latest_asset_check_execution_by_key(

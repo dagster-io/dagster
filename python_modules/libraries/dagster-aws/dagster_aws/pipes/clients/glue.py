@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
-from dagster import PipesClient
+from dagster import MetadataValue, PipesClient
 from dagster._annotations import experimental, public
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -21,7 +22,7 @@ from dagster_aws.pipes.message_readers import PipesCloudWatchLogReader, PipesClo
 
 if TYPE_CHECKING:
     from mypy_boto3_glue.client import GlueClient
-    from mypy_boto3_glue.type_defs import StartJobRunRequestRequestTypeDef
+    from mypy_boto3_glue.type_defs import GetJobRunResponseTypeDef, StartJobRunRequestRequestTypeDef
 
 
 @experimental
@@ -93,6 +94,8 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
 
             params["Arguments"].update(pipes_args)  # pyright: ignore (reportAttributeAccessIssue)
 
+            # Note: AWS Glue doesn't have a concept of Tags so we can't inject Dagster tags from session.default_remote_invocation_info
+
             try:
                 run_id = self._client.start_job_run(**params)["JobRunId"]
 
@@ -106,7 +109,6 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                 raise
 
             response = self._client.get_job_run(JobName=job_name, RunId=run_id)
-            log_group = response["JobRun"]["LogGroupName"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
             context.log.info(f"Started AWS Glue job {job_name} run: {run_id}")
 
             try:
@@ -116,7 +118,8 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                     self._terminate_job_run(context=context, job_name=job_name, run_id=run_id)
                 raise
 
-            if status := response["JobRun"]["JobRunState"] != "SUCCEEDED":
+            status = response["JobRun"]["JobRunState"]  # pyright: ignore (reportOptionalSubscript)
+            if status != "SUCCEEDED":
                 raise RuntimeError(
                     f"Glue job {job_name} run {run_id} completed with status {status} :\n{response['JobRun'].get('ErrorMessage')}"
                 )
@@ -125,24 +128,34 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
 
             # Glue is dumping both stdout and stderr to the same log group called */output
             if isinstance(self._message_reader, PipesCloudWatchMessageReader):
-                session.report_launched(
-                    {
-                        "extras": {"log_group": f"{log_group}/output", "log_stream": run_id},
-                    }
-                )
-            if isinstance(self._message_reader, PipesCloudWatchMessageReader):
-                self._message_reader.add_log_reader(
-                    PipesCloudWatchLogReader(
-                        client=self._message_reader.client,
-                        log_group=f"{log_group}/output",
-                        log_stream=run_id,
-                        start_time=int(session.created_at.timestamp() * 1000),
-                    ),
-                )
+                log_group = response.get("JobRun", {}).get("LogGroupName")
 
-        return PipesClientCompletedInvocation(session)
+                if log_group is None:
+                    context.log.warning(
+                        f"CloudWatch logging is not enabled for Glue job {job_name}. Messages and logs will not be available."
+                    )
+                else:
+                    session.report_launched(
+                        {
+                            "extras": {"log_group": f"{log_group}/output", "log_stream": run_id},
+                        }
+                    )
+                    self._message_reader.add_log_reader(
+                        PipesCloudWatchLogReader(
+                            client=self._message_reader.client,
+                            log_group=f"{log_group}/output",
+                            log_stream=run_id,
+                            start_time=int(session.created_at.timestamp() * 1000),
+                        ),
+                    )
 
-    def _wait_for_job_run_completion(self, job_name: str, run_id: str) -> Dict[str, Any]:
+        return PipesClientCompletedInvocation(
+            session, metadata=self._extract_dagster_metadata(response)
+        )
+
+    def _wait_for_job_run_completion(
+        self, job_name: str, run_id: str
+    ) -> "GetJobRunResponseTypeDef":
         while True:
             response = self._client.get_job_run(JobName=job_name, RunId=run_id)
             # https://docs.aws.amazon.com/glue/latest/dg/job-run-statuses.html
@@ -153,8 +166,26 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                 "TIMEOUT",
                 "ERROR",
             ]:
-                return response  # pyright: ignore (reportReturnType)
+                return response
             time.sleep(5)
+
+    def _extract_dagster_metadata(self, response: "GetJobRunResponseTypeDef") -> RawMetadataMapping:
+        job_run = response["JobRun"]
+
+        metadata: RawMetadataMapping = {}
+
+        if job_run_id := job_run.get("Id"):
+            metadata["AWS Glue Job Run ID"] = job_run_id
+
+        if job_name := job_run.get("JobName"):
+            metadata["AWS Glue Job Name"] = job_name
+
+        if job_run_id is not None and job_name is not None:
+            metadata["AWS Glue Job Run URL"] = MetadataValue.url(
+                f"https://{self._client.meta.region_name}.console.aws.amazon.com/gluestudio/home?region={self._client.meta.region_name}#/job/{job_name}/run/{job_run_id}"
+            )
+
+        return metadata
 
     def _terminate_job_run(
         self, context: Union[OpExecutionContext, AssetExecutionContext], job_name: str, run_id: str

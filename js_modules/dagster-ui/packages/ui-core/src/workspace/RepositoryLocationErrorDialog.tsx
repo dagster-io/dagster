@@ -9,7 +9,7 @@ interface Props {
   error: PythonErrorFragment | {message: string} | null;
   reloading: boolean;
   onDismiss: () => void;
-  onTryReload: () => void;
+  onTryReload?: () => void;
 }
 
 export const RepositoryLocationErrorDialog = (props: Props) => {
@@ -27,9 +27,11 @@ export const RepositoryLocationErrorDialog = (props: Props) => {
         <ErrorContents location={location} error={error} />
       </DialogBody>
       <DialogFooter>
-        <Button onClick={onTryReload} loading={reloading} intent="primary">
-          Reload again
-        </Button>
+        {onTryReload && (
+          <Button onClick={onTryReload} loading={reloading} intent="primary">
+            Reload again
+          </Button>
+        )}
         <Button onClick={onDismiss}>Dismiss</Button>
       </DialogFooter>
     </Dialog>
@@ -50,9 +52,11 @@ export const RepositoryLocationNonBlockingErrorDialog = (props: Props) => {
         <ErrorContents location={location} error={error} />
       </DialogBody>
       <DialogFooter>
-        <Button onClick={onTryReload} loading={reloading} intent="primary">
-          Reload
-        </Button>
+        {onTryReload && (
+          <Button onClick={onTryReload} loading={reloading} intent="primary">
+            Reload
+          </Button>
+        )}
         <Button onClick={onDismiss}>Close</Button>
       </DialogFooter>
     </Dialog>

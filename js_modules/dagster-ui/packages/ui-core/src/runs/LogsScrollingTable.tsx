@@ -1,4 +1,4 @@
-import {Box, Colors, NonIdealState, Row} from '@dagster-io/ui-components';
+import {Box, Colors, NonIdealState, Row, SpinnerWithText} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useEffect, useRef} from 'react';
 import styled from 'styled-components';
@@ -81,12 +81,10 @@ export const LogsScrollingTable = (props: Props) => {
   }, [totalHeight, virtualizer]);
 
   const content = () => {
-    if (logs.loading) {
+    if (logs.allNodeChunks.length === 0 && logs.loading) {
       return (
-        <Box margin={{top: 32}}>
-          <ListEmptyState>
-            <NonIdealState icon="spinner" title="Fetching logs..." />
-          </ListEmptyState>
+        <Box margin={{top: 32}} flex={{direction: 'column', alignItems: 'center'}}>
+          <SpinnerWithText label="Loading run logs…" />
         </Box>
       );
     }

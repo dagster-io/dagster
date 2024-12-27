@@ -1,5 +1,6 @@
 import json
 import logging
+import sys
 import threading
 import traceback
 from contextlib import ExitStack
@@ -10,6 +11,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogManager
 from dagster._core.utils import coerce_valid_log_level
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import create_console_logger
 
 
@@ -66,7 +68,12 @@ class CapturedLogHandler(logging.Handler):
         if exc_info:
             record_dict["exc_info"] = "".join(traceback.format_exception(*exc_info))
 
-        self._write_stream.write(_seven.json.dumps(record_dict) + "\n")
+        try:
+            self._write_stream.write(_seven.json.dumps(record_dict) + "\n")
+        except Exception:
+            sys.stderr.write(
+                f"Exception writing to logger event stream: {serializable_error_info_from_exc_info(sys.exc_info())}\n"
+            )
 
 
 class InstigationLogger(logging.Logger):
@@ -107,18 +114,30 @@ class InstigationLogger(logging.Logger):
             and self._instance
             and isinstance(self._instance.compute_log_manager, ComputeLogManager)
         ):
-            write_stream = self._exit_stack.enter_context(
-                self._instance.compute_log_manager.open_log_stream(
-                    self._log_key, ComputeIOType.STDERR
+            try:
+                write_stream = self._exit_stack.enter_context(
+                    self._instance.compute_log_manager.open_log_stream(
+                        self._log_key, ComputeIOType.STDERR
+                    )
                 )
-            )
+            except Exception:
+                sys.stderr.write(
+                    f"Exception initializing logger write stream: {serializable_error_info_from_exc_info(sys.exc_info())}\n"
+                )
+                write_stream = None
+
             if write_stream:
                 self._capture_handler = CapturedLogHandler(write_stream)
                 self.addHandler(self._capture_handler)
         return self
 
     def __exit__(self, _exception_type, _exception_value, _traceback):
-        self._exit_stack.close()
+        try:
+            self._exit_stack.close()
+        except Exception:
+            sys.stderr.write(
+                f"Exception closing logger write stream: {serializable_error_info_from_exc_info(sys.exc_info())}\n"
+            )
 
     def _annotate_record(self, record: logging.LogRecord) -> logging.LogRecord:
         if self._repository_name and self._instigator_name:

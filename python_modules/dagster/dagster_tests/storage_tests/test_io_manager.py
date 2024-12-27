@@ -58,7 +58,7 @@ def test_io_manager_with_config():
 
     class MyIOManager(IOManager):
         def load_input(self, context):
-            assert context.upstream_output.config["some_config"] == "some_value"
+            assert context.upstream_output.config["some_config"] == "some_value"  # pyright: ignore[reportOptionalMemberAccess]
             return 1
 
         def handle_output(self, context, obj):
@@ -193,7 +193,7 @@ def test_fs_io_manager_reexecution():
             assert re_result.success
             loaded_input_events = re_result.filter_events(lambda evt: evt.is_loaded_input)
             assert len(loaded_input_events) == 1
-            assert loaded_input_events[0].event_specific_data.upstream_step_key == "op_a"
+            assert loaded_input_events[0].event_specific_data.upstream_step_key == "op_a"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
             assert [
                 evt.step_key for evt in re_result.filter_events(lambda evt: evt.is_step_success)
             ] == ["op_b"]
@@ -402,7 +402,7 @@ def test_step_subset_with_custom_paths():
         )
         assert len(step_materialization_events) == 1
         assert os.path.join(tmpdir_path, test_metadata_dict["op_b"]["path"]) == (
-            step_materialization_events[0].event_specific_data.materialization.metadata["path"].path
+            step_materialization_events[0].event_specific_data.materialization.metadata["path"].path  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         )
 
         # test reexecution via backfills (not via re-execution apis)
@@ -431,7 +431,7 @@ def test_multi_materialization():
             yield AssetMaterialization(asset_key="yield_two")
 
         def load_input(self, context):
-            keys = tuple(context.upstream_output.get_identifier())
+            keys = tuple(context.upstream_output.get_identifier())  # pyright: ignore[reportOptionalMemberAccess]
             return self.values[keys]
 
         def has_asset(self, context):
@@ -480,7 +480,7 @@ def test_different_io_managers():
     assert my_job.execute_in_process().success
 
 
-@io_manager
+@io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
 def my_io_manager():
     pass
 
@@ -533,7 +533,7 @@ def test_fan_in_skip():
 
 
 def test_configured():
-    @io_manager(
+    @io_manager(  # pyright: ignore[reportArgumentType]
         config_schema={"base_dir": str},
         description="abc",
         output_config_schema={"path": str},
@@ -691,7 +691,7 @@ def test_error_boundary_with_gen():
     step_failure = next(
         event for event in result.all_events if event.event_type_value == "STEP_FAILURE"
     )
-    assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
+    assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_handle_output_exception_raised():
@@ -718,7 +718,7 @@ def test_handle_output_exception_raised():
     step_failure = next(
         event for event in result.all_node_events if event.event_type_value == "STEP_FAILURE"
     )
-    assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
+    assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_output_identifier_dynamic_memoization():
@@ -746,7 +746,7 @@ def test_asset_key():
     class MyIOManager(IOManager):
         def load_input(self, context):
             assert context.asset_key == before.key
-            assert context.upstream_output.asset_key == before.key
+            assert context.upstream_output.asset_key == before.key  # pyright: ignore[reportOptionalMemberAccess]
             return 1
 
         def handle_output(self, context, obj):
@@ -799,7 +799,7 @@ def test_context_logging_user_events():
             context.log_event(AssetMaterialization(asset_key="second"))
 
         def load_input(self, context):
-            keys = tuple(context.upstream_output.get_identifier())
+            keys = tuple(context.upstream_output.get_identifier())  # pyright: ignore[reportOptionalMemberAccess]
             return self.values[keys]
 
     @op
@@ -834,10 +834,10 @@ def test_context_logging_user_events():
         assert log.user_message == "foo bar"
 
         first = relevant_event_logs[0]
-        assert first.dagster_event.event_specific_data.materialization.label == "first"
+        assert first.dagster_event.event_specific_data.materialization.label == "first"  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
 
         second = relevant_event_logs[1]
-        assert second.dagster_event.event_specific_data.materialization.label == "second"
+        assert second.dagster_event.event_specific_data.materialization.label == "second"  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
 
         assert second.timestamp - first.timestamp >= 1
         assert log.timestamp - first.timestamp >= 1
@@ -859,7 +859,7 @@ def test_context_logging_metadata():
                 yield materialization
 
             def load_input(self, context):
-                keys = tuple(context.upstream_output.get_identifier())
+                keys = tuple(context.upstream_output.get_identifier())  # pyright: ignore[reportOptionalMemberAccess]
                 return self.values[keys]
 
         @asset
@@ -872,18 +872,18 @@ def test_context_logging_metadata():
     assert result.success
 
     output_event = result.all_node_events[4]
-    metadata = output_event.event_specific_data.metadata
+    metadata = output_event.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     # Ensure that ordering is preserved among yields and calls to log
     assert set(metadata.keys()) == {"foo", "baz", "bar"}
 
     materialization_event = result.all_node_events[2]
-    metadata = materialization_event.event_specific_data.materialization.metadata
+    metadata = materialization_event.event_specific_data.materialization.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
     assert len(metadata) == 3
     assert set(metadata.keys()) == {"foo", "baz", "bar"}
 
     implicit_materialization_event = result.all_node_events[3]
-    metadata = implicit_materialization_event.event_specific_data.materialization.metadata
+    metadata = implicit_materialization_event.event_specific_data.materialization.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     assert len(metadata) == 3
     assert set(metadata.keys()) == {"foo", "baz", "bar"}
 
@@ -924,7 +924,7 @@ def test_context_logging_metadata_add_output_metadata_called_twice():
     handled_output_event = next(
         event for event in result.all_node_events if event.event_type_value == "HANDLED_OUTPUT"
     )
-    assert set(handled_output_event.event_specific_data.metadata.keys()) == {
+    assert set(handled_output_event.event_specific_data.metadata.keys()) == {  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         "foo",
         "bar",
     }
@@ -942,7 +942,7 @@ def test_metadata_dynamic_outputs():
             yield {"handle_output": "I come from handle_output"}
 
         def load_input(self, context):
-            keys = tuple(context.upstream_output.get_identifier())
+            keys = tuple(context.upstream_output.get_identifier())  # pyright: ignore[reportOptionalMemberAccess]
             return self.values[keys]
 
     @op(out=DynamicOut())

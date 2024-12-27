@@ -15,7 +15,6 @@ from dagster import (
     asset,
 )
 from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.tags import (
@@ -37,7 +36,7 @@ from dagster_tests.core_tests.execution_tests.test_asset_backfill import (
 )
 
 
-def test_asset_backfill_not_all_asset_have_backfill_policy():
+def test_asset_backfill_not_all_asset_have_backfill_policy() -> None:
     @asset(backfill_policy=None)
     def unpartitioned_upstream_of_partitioned():
         return 1
@@ -45,6 +44,7 @@ def test_asset_backfill_not_all_asset_have_backfill_policy():
     @asset(
         partitions_def=DailyPartitionsDefinition("2023-01-01"),
         backfill_policy=BackfillPolicy.single_run(),
+        deps=[unpartitioned_upstream_of_partitioned],
     )
     def upstream_daily_partitioned_asset():
         return 1
@@ -69,19 +69,35 @@ def test_asset_backfill_not_all_asset_have_backfill_policy():
         backfill_start_timestamp=get_current_timestamp(),
     )
 
-    with pytest.raises(
-        DagsterBackfillFailedError,
-        match=(
-            "Either all assets must have backfill policies or none of them must have backfill"
-            " policies"
-        ),
-    ):
-        execute_asset_backfill_iteration_consume_generator(
-            backfill_id="test_backfill_id",
-            asset_backfill_data=backfill_data,
-            asset_graph=asset_graph,
-            instance=DagsterInstance.ephemeral(),
-        )
+    instance = DagsterInstance.ephemeral()
+    _, materialized, failed = run_backfill_to_completion(
+        asset_graph,
+        assets_by_repo_name,
+        backfill_data=backfill_data,
+        fail_asset_partitions=set(),
+        instance=instance,
+    )
+
+    assert len(failed) == 0
+    assert {akpk.asset_key for akpk in materialized} == {
+        unpartitioned_upstream_of_partitioned.key,
+        upstream_daily_partitioned_asset.key,
+    }
+
+    runs = instance.get_runs(ascending=True)
+
+    # separate runs for the assets (different partitions_def / backfill policy)
+    assert len(runs) == 2
+
+    unpartitioned = runs[0]
+    assert unpartitioned.tags == {"dagster/backfill": "backfillid_x"}
+
+    partitioned = runs[1]
+    assert partitioned.tags.keys() == {
+        "dagster/asset_partition_range_end",
+        "dagster/asset_partition_range_start",
+        "dagster/backfill",
+    }
 
 
 def test_asset_backfill_parent_and_children_have_different_backfill_policy():
@@ -182,8 +198,8 @@ def test_asset_backfill_parent_and_children_have_same_backfill_policy():
             # single run request for partitioned asset, both parent and the children somce they share same
             # partitions def and backfill policy
             assert run_request.partition_key is None
-            assert upstream_daily_partitioned_asset.key in run_request.asset_selection
-            assert downstream_daily_partitioned_asset.key in run_request.asset_selection
+            assert upstream_daily_partitioned_asset.key in run_request.asset_selection  # pyright: ignore[reportOperatorIssue]
+            assert downstream_daily_partitioned_asset.key in run_request.asset_selection  # pyright: ignore[reportOperatorIssue]
             assert run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-01-01"
             assert (
                 run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG)
@@ -251,9 +267,9 @@ def test_asset_backfill_parent_and_children_have_same_backfill_policy_but_third_
     assert len(result.run_requests) == 2
 
     for run_request in result.run_requests:
-        if upstream_daily_partitioned_asset.key in run_request.asset_selection:
-            assert downstream_daily_partitioned_asset.key in run_request.asset_selection
-            assert has_different_backfill_policy.key not in run_request.asset_selection
+        if upstream_daily_partitioned_asset.key in run_request.asset_selection:  # pyright: ignore[reportOperatorIssue]
+            assert downstream_daily_partitioned_asset.key in run_request.asset_selection  # pyright: ignore[reportOperatorIssue]
+            assert has_different_backfill_policy.key not in run_request.asset_selection  # pyright: ignore[reportOperatorIssue]
 
 
 def test_asset_backfill_return_single_run_request_for_non_partitioned():
@@ -445,21 +461,21 @@ def test_asset_backfill_status_count_with_backfill_policies():
     counts = completed_backfill_data.get_backfill_status_per_asset_key(asset_graph)
 
     assert counts[0].asset_key == unpartitioned_upstream_of_partitioned.key
-    assert counts[0].backfill_status == AssetBackfillStatus.MATERIALIZED
+    assert counts[0].backfill_status == AssetBackfillStatus.MATERIALIZED  # pyright: ignore[reportAttributeAccessIssue]
 
     assert counts[1].asset_key == upstream_daily_partitioned_asset.key
     assert (
-        counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]
+        counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]  # pyright: ignore[reportAttributeAccessIssue]
         == num_of_daily_partitions
     )
-    assert counts[1].num_targeted_partitions == num_of_daily_partitions
+    assert counts[1].num_targeted_partitions == num_of_daily_partitions  # pyright: ignore[reportAttributeAccessIssue]
 
     assert counts[2].asset_key == downstream_weekly_partitioned_asset.key
     assert (
-        counts[2].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]
+        counts[2].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]  # pyright: ignore[reportAttributeAccessIssue]
         == num_of_weekly_partitions
     )
-    assert counts[2].num_targeted_partitions == num_of_weekly_partitions
+    assert counts[2].num_targeted_partitions == num_of_weekly_partitions  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_backfill_run_contains_more_than_one_asset():
@@ -528,39 +544,39 @@ def test_backfill_run_contains_more_than_one_asset():
 
     assert counts[0].asset_key == upstream_a.key
     assert (
-        counts[0].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]
+        counts[0].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]  # pyright: ignore[reportAttributeAccessIssue]
         == upstream_num_of_partitions
     )
-    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
-    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
-    assert counts[0].num_targeted_partitions == upstream_num_of_partitions
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[0].num_targeted_partitions == upstream_num_of_partitions  # pyright: ignore[reportAttributeAccessIssue]
 
     assert counts[1].asset_key == upstream_b.key
     assert (
-        counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]
+        counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]  # pyright: ignore[reportAttributeAccessIssue]
         == upstream_num_of_partitions
     )
-    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
-    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
-    assert counts[1].num_targeted_partitions == upstream_num_of_partitions
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[1].num_targeted_partitions == upstream_num_of_partitions  # pyright: ignore[reportAttributeAccessIssue]
 
     assert counts[2].asset_key == downstream_a.key
     assert (
-        counts[2].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]
+        counts[2].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]  # pyright: ignore[reportAttributeAccessIssue]
         == downstream_num_of_partitions
     )
-    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
-    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
-    assert counts[2].num_targeted_partitions == downstream_num_of_partitions
+    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[2].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[2].num_targeted_partitions == downstream_num_of_partitions  # pyright: ignore[reportAttributeAccessIssue]
 
     assert counts[3].asset_key == downstream_b.key
     assert (
-        counts[3].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]
+        counts[3].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED]  # pyright: ignore[reportAttributeAccessIssue]
         == downstream_num_of_partitions
     )
-    assert counts[3].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
-    assert counts[3].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
-    assert counts[3].num_targeted_partitions == downstream_num_of_partitions
+    assert counts[3].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[3].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[3].num_targeted_partitions == downstream_num_of_partitions  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_dynamic_partitions_multi_run_backfill_policy():
@@ -699,9 +715,9 @@ def test_assets_backfill_with_partition_mapping(same_partitions):
     assert len(result.run_requests) == 1
 
     if same_partitions:
-        assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}
+        assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}  # pyright: ignore[reportArgumentType]
     else:
-        assert set(result.run_requests[0].asset_selection) == {upstream_a.key}
+        assert set(result.run_requests[0].asset_selection) == {upstream_a.key}  # pyright: ignore[reportArgumentType]
 
     assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-03-01"
     assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-03-03"
@@ -771,18 +787,18 @@ def test_assets_backfill_with_partition_mapping_run_to_complete(same_partitions)
 
     counts = completed_backfill_data.get_backfill_status_per_asset_key(asset_graph)
     assert counts[0].asset_key == upstream_a.key
-    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 3
-    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
-    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 3  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[0].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0  # pyright: ignore[reportAttributeAccessIssue]
 
     assert counts[1].asset_key == downstream_b.key
     assert (
-        counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 3
+        counts[1].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 3  # pyright: ignore[reportAttributeAccessIssue]
         if same_partitions
         else 6
     )
-    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
-    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0  # pyright: ignore[reportAttributeAccessIssue]
+    assert counts[1].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_assets_backfill_with_partition_mapping_without_backfill_policy():
@@ -838,9 +854,9 @@ def test_assets_backfill_with_partition_mapping_without_backfill_policy():
     for run_request in result.run_requests:
         # b should not be materialized in the same run as a
         if run_request.partition_key == "2023-03-02":
-            assert set(run_request.asset_selection) == {upstream_a.key}
+            assert set(run_request.asset_selection) == {upstream_a.key}  # pyright: ignore[reportArgumentType]
         elif run_request.partition_key == "2023-03-03":
-            assert set(run_request.asset_selection) == {upstream_a.key}
+            assert set(run_request.asset_selection) == {upstream_a.key}  # pyright: ignore[reportArgumentType]
         else:
             # should only have the above 2 partitions
             assert False
@@ -959,7 +975,7 @@ def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_
 
     for run_request in result.run_requests:
         # there is no parallel runs for downstream_b before upstream_a's targeted partitions are materialized
-        assert set(run_request.asset_selection) == {upstream_a.key}
+        assert set(run_request.asset_selection) == {upstream_a.key}  # pyright: ignore[reportArgumentType]
 
 
 def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy():
@@ -1021,7 +1037,7 @@ def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy(
         )
 
     assert len(result.run_requests) == 1
-    assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}
+    assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}  # pyright: ignore[reportArgumentType]
     assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-03-02"
     assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-03-09"
 

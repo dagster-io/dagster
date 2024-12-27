@@ -237,9 +237,10 @@ class K8sStepHandler(StepHandler):
         user_defined_k8s_config = get_user_defined_k8s_config(
             step_handler_context.step_tags[step_key]
         )
-
+        step_context = step_handler_context.get_step_context(step_key)
+        op_name = step_context.step.op_name
         per_op_override = UserDefinedDagsterK8sConfig.from_dict(
-            self._per_step_k8s_config.get(step_key, {})
+            self._per_step_k8s_config.get(op_name, {})
         )
 
         return context.merge(K8sContainerContext(run_k8s_config=user_defined_k8s_config)).merge(
@@ -332,7 +333,7 @@ class K8sStepHandler(StepHandler):
         container_context = self._get_container_context(step_handler_context)
 
         status = self._api_client.get_job_status(
-            namespace=container_context.namespace,
+            namespace=container_context.namespace,  # pyright: ignore[reportArgumentType]
             job_name=job_name,
         )
         if not status:

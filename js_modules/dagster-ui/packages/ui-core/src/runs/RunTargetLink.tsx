@@ -5,13 +5,14 @@ import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollecti
 import {assetKeysForRun} from './RunUtils';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {PipelineReference} from '../pipelines/PipelineReference';
+import {PipelineReference, PipelineTag} from '../pipelines/PipelineReference';
 import {RepoAddress} from '../workspace/types';
 
 export const RunTargetLink = ({
   run,
   isJob,
   repoAddress,
+  useTags,
 }: {
   isJob: boolean;
   run: Pick<
@@ -19,12 +20,35 @@ export const RunTargetLink = ({
     'pipelineName' | 'assetSelection' | 'stepKeysToExecute' | 'assetCheckSelection'
   >;
   repoAddress: RepoAddress | null;
+  useTags: boolean;
 }) => {
-  return isHiddenAssetGroupJob(run.pipelineName) ? (
-    <Box flex={{gap: 16, alignItems: 'end', wrap: 'wrap'}} style={{minWidth: 0, maxWidth: '100%'}}>
-      <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} />
-      <AssetCheckTagCollection assetChecks={run.assetCheckSelection} />
-    </Box>
+  const assetKeys = React.useMemo(() => {
+    return isHiddenAssetGroupJob(run.pipelineName) ? assetKeysForRun(run) : null;
+  }, [run]);
+
+  if (assetKeys) {
+    return (
+      <Box flex={{direction: 'column', gap: 4}}>
+        <AssetKeyTagCollection
+          assetKeys={assetKeys}
+          useTags={useTags}
+          maxRows={run.assetCheckSelection?.length ? 1 : 2}
+        />
+        <AssetCheckTagCollection
+          assetChecks={run.assetCheckSelection}
+          useTags={useTags}
+          maxRows={assetKeys?.length ? 1 : 2}
+        />
+      </Box>
+    );
+  }
+  return useTags ? (
+    <PipelineTag
+      isJob={isJob}
+      showIcon
+      pipelineName={run.pipelineName}
+      pipelineHrefContext={repoAddress || 'repo-unknown'}
+    />
   ) : (
     <PipelineReference
       isJob={isJob}

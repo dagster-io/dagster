@@ -43,6 +43,7 @@
 -e python_modules/libraries/dagster-celery-docker/
 -e python_modules/libraries/dagster-celery-k8s/
 -e python_modules/libraries/dagster-census/
+-e python_modules/libraries/dagster-components
 -e python_modules/libraries/dagster-dask[yarn,pbs,kube,test]
 -e python_modules/libraries/dagster-databricks/
 -e python_modules/libraries/dagster-datadog/
@@ -51,6 +52,7 @@
 -e python_modules/libraries/dagster-deltalake/
 -e python_modules/libraries/dagster-deltalake-pandas/
 -e python_modules/libraries/dagster-deltalake-polars/
+-e python_modules/libraries/dagster-dg/
 -e python_modules/libraries/dagster-docker/
 -e python_modules/libraries/dagster-duckdb/
 -e python_modules/libraries/dagster-duckdb-pandas/
@@ -105,7 +107,7 @@ wordcloud  # (quickstart-*)
 apache-airflow>2.7
 pendulum<3
 types-sqlalchemy==1.4.53.34
-
+fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 
 ### EXAMPLES
 
@@ -127,17 +129,18 @@ types-sqlalchemy==1.4.53.34
 # -e examples/quickstart_gcp  # (analyzed but not installed)
 # -e examples/quickstart_snowflake  # (analyzed but not installed)
 -e examples/tutorial_notebook_assets
--e examples/with_airflow
 -e examples/with_great_expectations
 -e examples/with_openai
 -e examples/with_pyspark
 -e examples/with_wandb
 -e examples/experimental/dagster-blueprints
--e examples/experimental/dagster-airlift[mwaa,dbt,test] # (includes airflow dependencies)
+-e python_modules/libraries/dagster-airlift[mwaa,dbt,test] # (includes airflow dependencies)
 -e examples/experimental/dagster-dlift
--e examples/experimental/dagster-airlift/examples/dbt-example
--e examples/experimental/dagster-airlift/examples/kitchen-sink
+-e examples/starlift-demo
+-e python_modules/libraries/dagster-airlift/kitchen-sink
 -e examples/experimental/dagster-dlift/kitchen-sink
--e examples/experimental/dagster-airlift/examples/perf-harness
--e examples/experimental/dagster-airlift/examples/tutorial-example
+-e python_modules/libraries/dagster-airlift/perf-harness
+-e examples/airlift-migration-tutorial
 -e examples/use_case_repository[dev]
+-e examples/project_atproto_dashboard
+-e examples/project_dagster_modal_pipes

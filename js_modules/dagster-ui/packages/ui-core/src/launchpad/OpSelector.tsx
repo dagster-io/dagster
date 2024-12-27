@@ -7,6 +7,7 @@ import {OpSelectorQuery, OpSelectorQueryVariables} from './types/OpSelector.type
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {ShortcutHandler} from '../app/ShortcutHandler';
+import {filterOpSelectionByQuery} from '../op-selection/AntlrOpSelection';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
@@ -85,7 +86,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
   const opsFetchError =
     (data?.pipelineOrError.__typename !== 'Pipeline' && data?.pipelineOrError.message) || null;
 
-  const queryResultOps = filterByQuery(ops, query).all;
+  const queryResultOps = filterOpSelectionByQuery(ops, query).all;
   const invalidOpSelection = !loading && queryResultOps.length === 0;
 
   const errorMessage = invalidOpSelection

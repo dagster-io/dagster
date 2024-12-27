@@ -192,6 +192,7 @@ class AssetKey(IHaveNew):
 
 CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]
 CoercibleToAssetKeyPrefix = Union[str, Sequence[str]]
+CoercibleToAssetKeySubset = Union[str, Sequence[str]]
 
 
 def check_opt_coercible_to_asset_key_prefix_param(
@@ -254,6 +255,12 @@ class AssetCheckKey(NamedTuple):
 
     def to_db_string(self) -> str:
         return seven.json.dumps({"asset_key": self.asset_key.to_string(), "check_name": self.name})
+
+    def with_asset_key_prefix(self, prefix: CoercibleToAssetKeyPrefix) -> "AssetCheckKey":
+        return AssetCheckKey(self.asset_key.with_prefix(prefix), self.name)
+
+    def replace_asset_key(self, asset_key: AssetKey) -> "AssetCheckKey":
+        return AssetCheckKey(asset_key, self.name)
 
 
 EntityKey = Union[AssetKey, AssetCheckKey]

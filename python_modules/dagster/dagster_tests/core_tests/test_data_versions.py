@@ -8,7 +8,7 @@ def test_data_version_construction():
     assert ver.value == "foo"
 
     with pytest.raises(ParameterCheckError):
-        DataVersion(100)
+        DataVersion(100)  # pyright: ignore[reportArgumentType]
 
 
 def test_data_version_equality():

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Mapping, Optional, Sequence
 
 from dagster import (
     AssetsDefinition,
@@ -67,6 +67,7 @@ def dlt_assets(
     group_name: Optional[str] = None,
     dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Asset Factory for using data load tool (dlt).
 
@@ -75,14 +76,19 @@ def dlt_assets(
         dlt_pipeline (Pipeline): The dlt Pipeline defining the destination parameters.
         name (Optional[str], optional): The name of the op.
         group_name (Optional[str], optional): The name of the asset group.
-        dagster_dlt_translator (DltDagsterTranslator, optional): Customization object for defining asset parameters from dlt resources.
+        dagster_dlt_translator (DagsterDltTranslator, optional): Customization object for defining asset parameters from dlt resources.
+        partitions_def (Optional[PartitionsDefinition]): Optional partitions definition.
+        op_tags (Optional[Mapping[str, Any]]): The tags for the underlying op.
 
     Examples:
         Loading Hubspot data to Snowflake with an auto materialize policy using the dlt verified source:
 
         .. code-block:: python
 
-            class HubspotDltDagsterTranslator(DltDagsterTranslator):
+            from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+
+
+            class HubspotDagsterDltTranslator(DagsterDltTranslator):
                 @public
                 def get_auto_materialize_policy(self, resource: DltResource) -> Optional[AutoMaterializePolicy]:
                     return AutoMaterializePolicy.eager().with_rules(
@@ -100,14 +106,17 @@ def dlt_assets(
                 ),
                 name="hubspot",
                 group_name="hubspot",
-                dagster_dlt_translator=HubspotDltDagsterTranslator(),
+                dagster_dlt_translator=HubspotDagsterDltTranslator(),
             )
-            def hubspot_assets(context: AssetExecutionContext, dlt: DltDagsterResource):
+            def hubspot_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
                 yield from dlt.run(context=context)
 
         Loading Github issues to snowflake:
 
         .. code-block:: python
+
+            from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
+
 
             @dlt_assets(
                 dlt_source=github_reactions(
@@ -122,7 +131,7 @@ def dlt_assets(
                 name="github",
                 group_name="github",
             )
-            def github_reactions_dagster_assets(context: AssetExecutionContext, dlt: DltDagsterResource):
+            def github_reactions_dagster_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
                 yield from dlt.run(context=context)
 
     """
@@ -136,6 +145,7 @@ def dlt_assets(
         group_name=group_name,
         can_subset=True,
         partitions_def=partitions_def,
+        op_tags=op_tags,
         specs=build_dlt_asset_specs(
             dlt_source=dlt_source,
             dlt_pipeline=dlt_pipeline,

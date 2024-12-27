@@ -19,6 +19,40 @@ def _get_family_hash(name):
     return f"{name[:55]}_{name_hash}"
 
 
+class RetryableEcsException(Exception): ...
+
+
+def run_ecs_task(ecs, run_task_kwargs) -> Mapping[str, Any]:
+    response = ecs.run_task(**run_task_kwargs)
+
+    tasks = response["tasks"]
+
+    if not tasks:
+        failures = response["failures"]
+        failure_messages = []
+        for failure in failures:
+            arn = failure.get("arn")
+            reason = failure.get("reason")
+            detail = failure.get("detail")
+
+            failure_message = (
+                "Task"
+                + (f" {arn}" if arn else "")
+                + " failed."
+                + (f" Failure reason: {reason}" if reason else "")
+                + (f" Failure details: {detail}" if detail else "")
+            )
+            failure_messages.append(failure_message)
+
+        failure_message = "\n".join(failure_messages) if failure_messages else "Task failed."
+
+        if "Capacity is unavailable at this time" in failure_message:
+            raise RetryableEcsException(failure_message)
+
+        raise Exception(failure_message)
+    return tasks[0]
+
+
 def get_task_definition_family(
     prefix: str,
     job_origin: RemoteJobOrigin,

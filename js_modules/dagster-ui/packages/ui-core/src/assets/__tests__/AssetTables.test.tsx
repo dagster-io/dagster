@@ -32,6 +32,20 @@ const MOCKS = [
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
 
+jest.mock('shared/asset-selection/useAssetSelectionInput', () => {
+  return {
+    useAssetSelectionInput: (assets: any) => {
+      return {
+        filterInput: <div />,
+        fetchResult: {loading: false},
+        filtered: assets,
+        assetSelection: '',
+        setAssetSelection: () => {},
+      };
+    },
+  };
+});
+
 describe('AssetTable', () => {
   beforeAll(() => {
     mockViewportClientRect();

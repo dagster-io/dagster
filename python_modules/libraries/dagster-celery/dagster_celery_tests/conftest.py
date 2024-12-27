@@ -92,7 +92,7 @@ def dagster_docker_image():
                 f"Found existing image tagged {docker_image}, skipping image build. To rebuild, first run: "
                 f"docker rmi {docker_image}"
             )
-        except docker.errors.ImageNotFound:
+        except docker.errors.ImageNotFound:  # pyright: ignore[reportAttributeAccessIssue]
             build_and_tag_test_image(docker_image)
 
     return docker_image

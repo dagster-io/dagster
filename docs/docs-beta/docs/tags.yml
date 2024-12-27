@@ -1,0 +1,36 @@
+community-supported:
+  label: 'community-supported'
+  permalink: '/integrations/community-supported'
+  description: 'Community-supported integrations.'
+dagster-supported:
+  label: 'dagster-supported'
+  permalink: '/integrations/dagster-supported'
+  description: 'Dagster-supported integrations.'
+etl:
+  label: 'ETL'
+  permalink: '/integrations/etl'
+  description: 'ETL integrations.'
+storage:
+  label: 'storage'
+  permalink: '/integrations/storage'
+  description: 'Storage integrations.'
+compute:
+  label: 'compute'
+  permalink: '/integrations/compute'
+  description: 'Compute integrations.'
+bi:
+  label: 'BI'
+  permalink: '/integrations/bi'
+  description: 'BI integrations.'
+monitoring:
+  label: 'monitoring'
+  permalink: '/integrations/monitoring'
+  description: 'Monitoring integrations.'
+alerting:
+  label: 'alerting'
+  permalink: '/integrations/alerting'
+  description: 'Alerting integrations.'
+metadata:
+  label: 'metadata'
+  permalink: '/integrations/metadata'
+  description: 'Metadata integrations.'

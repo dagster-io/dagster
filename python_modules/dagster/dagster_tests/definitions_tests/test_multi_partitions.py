@@ -123,7 +123,7 @@ def test_tags_multi_dimensional_partitions():
         asset2_records = instance.fetch_materializations(asset2.key, limit=1000).records
         materializations = sorted(
             [*asset1_records, *asset2_records],
-            key=lambda x: x.event_log_entry.dagster_event.asset_key,
+            key=lambda x: x.event_log_entry.dagster_event.asset_key,  # type: ignore
         )
         assert len(materializations) == 2
 
@@ -357,7 +357,7 @@ def test_keys_with_dimension_value_with_dynamic():
     )
 
     with instance_for_test() as instance:
-        instance.add_dynamic_partitions(dynamic_partitions_def.name, ["a", "b", "c", "d"])
+        instance.add_dynamic_partitions(dynamic_partitions_def.name, ["a", "b", "c", "d"])  # pyright: ignore[reportArgumentType]
 
         assert multipartitions_def.get_multipartition_keys_with_dimension_value(
             dimension_name="dynamic",

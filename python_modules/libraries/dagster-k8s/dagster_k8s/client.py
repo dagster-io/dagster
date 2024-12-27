@@ -96,7 +96,9 @@ WHITELISTED_TRANSIENT_K8S_STATUS_CODES = [
 class PatchedApiClient(ApiClient):
     # Forked from ApiClient implementation to pass configuration object down into created model
     # objects, avoiding lock contention issues. See https://github.com/kubernetes-client/python/issues/2284
-    def __deserialize_model(self, data, klass):
+    # Intentionally circumventing private name mangling
+    # (https://docs.python.org/3/reference/expressions.html#private-name-mangling) of the __deserialize_model method on ApiClient
+    def _ApiClient__deserialize_model(self, data, klass):
         """Deserializes list or dict to model.
 
         :param data: dict, list.
@@ -115,14 +117,14 @@ class PatchedApiClient(ApiClient):
             for attr, attr_type in six.iteritems(klass.openapi_types):
                 if klass.attribute_map[attr] in data:
                     value = data[klass.attribute_map[attr]]
-                    kwargs[attr] = self.__deserialize(value, attr_type)
+                    kwargs[attr] = self._ApiClient__deserialize(value, attr_type)
 
         instance = klass(**kwargs)
 
         if hasattr(instance, "get_real_child_model"):
             klass_name = instance.get_real_child_model(data)
             if klass_name:
-                instance = self.__deserialize(data, klass_name)
+                instance = self._ApiClient__deserialize(data, klass_name)
         return instance
 
 
@@ -466,7 +468,7 @@ class DagsterKubernetesClient:
             try:
                 job = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace)
             except kubernetes.client.rest.ApiException as e:
-                if e.reason == "Not Found":
+                if e.status == 404:
                     return None
                 else:
                     raise
@@ -516,14 +518,14 @@ class DagsterKubernetesClient:
                 for error in errors:
                     if not (
                         isinstance(error, kubernetes.client.rest.ApiException)
-                        and error.reason == "Not Found"
+                        and error.status == 404
                     ):
                         raise error
                 raise errors[0]
 
             return True
         except kubernetes.client.rest.ApiException as e:
-            if e.reason == "Not Found":
+            if e.status == 404:
                 return False
             raise e
 
@@ -671,7 +673,6 @@ class DagsterKubernetesClient:
             # State checks below, see:
             # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstate-v1-core
             state = container_status.state
-
             if state.running is not None:
                 if wait_for_state == WaitForPodState.Ready:
                     # ready is boolean field of container status
@@ -682,6 +683,11 @@ class DagsterKubernetesClient:
                         continue
                     else:
                         ready_containers.add(container_status.name)
+                        if container_status.name in initcontainers:
+                            self.logger(
+                                f'Init container "{container_status.name}" is ready, waiting for non-init containers...'
+                            )
+                            continue
                         if initcontainers.issubset(exited_containers | ready_containers):
                             self.logger(f'Pod "{pod_name}" is ready, done waiting')
                             break

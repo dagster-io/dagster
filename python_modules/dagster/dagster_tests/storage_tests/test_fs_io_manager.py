@@ -71,19 +71,19 @@ def test_fs_io_manager():
         assert len(handled_output_events) == 2
 
         filepath_a = os.path.join(tmpdir_path, result.run_id, "op_a", "result")
-        metadata = handled_output_events[0].event_specific_data.metadata
+        metadata = handled_output_events[0].event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         assert metadata["path"] == MetadataValue.path(filepath_a)
         assert os.path.isfile(filepath_a)
         with open(filepath_a, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 
         loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.all_events))
-        metadata = loaded_input_events[0].event_specific_data.metadata
+        metadata = loaded_input_events[0].event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         assert len(loaded_input_events) == 1
-        assert loaded_input_events[0].event_specific_data.upstream_step_key == "op_a"
+        assert loaded_input_events[0].event_specific_data.upstream_step_key == "op_a"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
         filepath_b = os.path.join(tmpdir_path, result.run_id, "op_b", "result")
-        metadata = handled_output_events[1].event_specific_data.metadata
+        metadata = handled_output_events[1].event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         assert metadata["path"] == MetadataValue.path(filepath_b)
         assert os.path.isfile(filepath_b)
         with open(filepath_b, "rb") as read_obj:
@@ -203,7 +203,7 @@ def test_fs_io_manager_handles_assets():
         io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
         job_def = get_assets_job(io_manager_def)
 
-        result = job_def.execute_in_process()
+        result = job_def.execute_in_process()  # pyright: ignore[reportOptionalMemberAccess]
         assert result.success
 
         handled_output_events = list(
@@ -218,7 +218,7 @@ def test_fs_io_manager_handles_assets():
 
         loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.all_node_events))
         assert len(loaded_input_events) == 1
-        assert loaded_input_events[0].event_specific_data.upstream_step_key.endswith("asset1")
+        assert loaded_input_events[0].event_specific_data.upstream_step_key.endswith("asset1")  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
         filepath_b = os.path.join(tmpdir_path, "four", "five", "asset2")
         assert os.path.isfile(filepath_b)
@@ -234,7 +234,7 @@ def test_fs_io_manager_partitioned():
             partitions_def=DailyPartitionsDefinition(start_date="2020-02-01"),
         )
 
-        result = job_def.execute_in_process(partition_key="2020-05-03")
+        result = job_def.execute_in_process(partition_key="2020-05-03")  # pyright: ignore[reportOptionalMemberAccess]
         assert result.success
 
         handled_output_events = list(
@@ -249,7 +249,7 @@ def test_fs_io_manager_partitioned():
 
         loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.all_node_events))
         assert len(loaded_input_events) == 1
-        assert loaded_input_events[0].event_specific_data.upstream_step_key.endswith("asset1")
+        assert loaded_input_events[0].event_specific_data.upstream_step_key.endswith("asset1")  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
         filepath_b = os.path.join(tmpdir_path, "four", "five", "asset2", "2020-05-03")
         assert os.path.isfile(filepath_b)
@@ -270,7 +270,10 @@ def test_fs_io_manager_partitioned_no_partitions():
                 current_time: Optional[datetime] = None,
                 dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
             ) -> UpstreamPartitionsResult:
-                return UpstreamPartitionsResult(upstream_partitions_def.empty_subset(), [])
+                return UpstreamPartitionsResult(
+                    partitions_subset=upstream_partitions_def.empty_subset(),
+                    required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
+                )
 
             def get_downstream_partitions_for_partitions(
                 self,
@@ -386,7 +389,7 @@ def test_fs_io_manager_partitioned_graph_backed_asset():
 
         loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.all_node_events))
         assert len(loaded_input_events) == 3
-        assert loaded_input_events[0].event_specific_data.upstream_step_key.endswith("one")
+        assert loaded_input_events[0].event_specific_data.upstream_step_key.endswith("one")  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
         filepath_b = os.path.join(tmpdir_path, "four", "A")
         assert os.path.isfile(filepath_b)
@@ -485,7 +488,7 @@ def test_fs_io_manager_none_value_no_metadata():
             filter(lambda evt: evt.is_handled_output, result.all_node_events)
         )
         assert len(handled_output_events) == 1
-        metadata = handled_output_events[0].event_specific_data.metadata
+        metadata = handled_output_events[0].event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         assert "path" not in metadata
 
 

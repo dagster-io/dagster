@@ -101,6 +101,7 @@ import dagster_reversed from '../icon-svgs/dagster_reversed.svg';
 import dagster_solid from '../icon-svgs/dagster_solid.svg';
 import dagsterlabs from '../icon-svgs/dagsterlabs.svg';
 import dash from '../icon-svgs/dash.svg';
+import data_object from '../icon-svgs/data_object.svg';
 import data_reliability from '../icon-svgs/data_reliability.svg';
 import data_type from '../icon-svgs/data_type.svg';
 import database from '../icon-svgs/database.svg';
@@ -268,6 +269,7 @@ import password from '../icon-svgs/password.svg';
 import pause from '../icon-svgs/pause.svg';
 import people from '../icon-svgs/people.svg';
 import plots from '../icon-svgs/plots.svg';
+import preview_tick from '../icon-svgs/preview_tick.svg';
 import priority_1 from '../icon-svgs/priority_1.svg';
 import priority_2 from '../icon-svgs/priority_2.svg';
 import priority_3 from '../icon-svgs/priority_3.svg';
@@ -502,6 +504,7 @@ export const Icons = {
   dash,
   data_reliability,
   data_type,
+  data_object,
   database,
   datatype_array,
   datatype_bool,
@@ -664,6 +667,7 @@ export const Icons = {
   pause,
   people,
   plots,
+  preview_tick,
   priority_1,
   priority_2,
   priority_3,

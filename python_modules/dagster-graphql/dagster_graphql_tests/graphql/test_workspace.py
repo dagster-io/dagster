@@ -11,7 +11,7 @@ from dagster._core.test_utils import environ
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load import location_origins_from_yaml_paths
 from dagster.version import __version__ as dagster_version
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, main_repo_location_name
 from dagster_graphql.version import __version__ as dagster_graphql_version
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
@@ -145,7 +145,7 @@ class TestLoadWorkspace(BaseTestSuite):
         with mock.patch(
             "dagster._core.workspace.load_target.location_origins_from_yaml_paths",
         ) as origins_mock:
-            original_origins.append(
+            original_origins.append(  # pyright: ignore[reportAttributeAccessIssue]
                 ManagedGrpcPythonEnvCodeLocationOrigin(
                     location_name="error_location",
                     loadable_target_origin=LoadableTargetOrigin(
@@ -228,7 +228,7 @@ class TestLoadWorkspace(BaseTestSuite):
             "dagster._core.workspace.load_target.location_origins_from_yaml_paths",
         ) as origins_mock:
             # Add an error origin
-            original_origins.append(
+            original_origins.append(  # pyright: ignore[reportAttributeAccessIssue]
                 ManagedGrpcPythonEnvCodeLocationOrigin(
                     location_name="error_location",
                     loadable_target_origin=LoadableTargetOrigin(
@@ -273,7 +273,7 @@ class TestLoadWorkspace(BaseTestSuite):
         with mock.patch(
             "dagster._core.workspace.load_target.location_origins_from_yaml_paths",
         ) as origins_mock:
-            original_origins.append(
+            original_origins.append(  # pyright: ignore[reportAttributeAccessIssue]
                 ManagedGrpcPythonEnvCodeLocationOrigin(
                     location_name="error_location",
                     loadable_target_origin=LoadableTargetOrigin(
@@ -329,7 +329,9 @@ class TestLoadWorkspace(BaseTestSuite):
             )
 
     def test_workspace_entry_by_name(self, graphql_context) -> None:
-        result = execute_dagster_graphql(graphql_context, LOCATION_ENTRY_QUERY, {"name": "test"})
+        result = execute_dagster_graphql(
+            graphql_context, LOCATION_ENTRY_QUERY, {"name": main_repo_location_name()}
+        )
         assert result
         assert result.data["workspaceLocationEntryOrError"]
         assert (
@@ -352,7 +354,7 @@ class TestLoadWorkspace(BaseTestSuite):
             mock_fetch.side_effect = Exception("boom")
 
             result = execute_dagster_graphql(
-                graphql_context, LOCATION_ENTRY_QUERY, {"name": "test"}
+                graphql_context, LOCATION_ENTRY_QUERY, {"name": main_repo_location_name()}
             )
             assert result
             assert result.data["workspaceLocationEntryOrError"]

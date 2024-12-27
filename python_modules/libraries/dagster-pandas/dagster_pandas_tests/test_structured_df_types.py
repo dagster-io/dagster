@@ -90,14 +90,14 @@ def test_failing_type_eval_column():
 
     result = basic_graph.execute_in_process(raise_on_error=False)
     output = next(item for item in result.all_node_events if item.is_successful_output)
-    output_data = output.event_specific_data.type_check_data
-    output_metadata = output_data.metadata
+    output_data = output.event_specific_data.type_check_data  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    output_metadata = output_data.metadata  # pyright: ignore[reportOptionalMemberAccess]
     assert len(output_metadata) == 1
-    column_const_data = output_metadata["columns-constraint-metadata"].data
+    column_const_data = output_metadata["columns-constraint-metadata"].data  # pyright: ignore[reportAttributeAccessIssue]
     assert column_const_data["expected"] == {
         "foo": {
-            "in_range_validation_fn": in_range_validator.__doc__.strip(),
-            "dtype_in_set_validation_fn": dtype_is_num_validator.__doc__.strip(),
+            "in_range_validation_fn": in_range_validator.__doc__.strip(),  # pyright: ignore[reportOptionalMemberAccess]
+            "dtype_in_set_validation_fn": dtype_is_num_validator.__doc__.strip(),  # pyright: ignore[reportOptionalMemberAccess]
         }
     }
     assert column_const_data["offending"] == {
@@ -132,13 +132,13 @@ def test_failing_type_eval_aggregate():
 
     result = basic_graph.execute_in_process(raise_on_error=False)
     output = next(item for item in result.all_node_events if item.is_successful_output)
-    output_data = output.event_specific_data.type_check_data
-    output_metadata = output_data.metadata
+    output_data = output.event_specific_data.type_check_data  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    output_metadata = output_data.metadata  # pyright: ignore[reportOptionalMemberAccess]
     assert len(output_metadata) == 1
     column_const = output_metadata["column-aggregates-constraint-metadata"]
-    column_const_data = column_const.data
+    column_const_data = column_const.data  # pyright: ignore[reportAttributeAccessIssue]
     assert column_const_data["expected"] == {
-        "bar": {"all_unique_validator": all_unique_validator.__doc__.strip()}
+        "bar": {"all_unique_validator": all_unique_validator.__doc__.strip()}  # pyright: ignore[reportOptionalMemberAccess]
     }
     assert column_const_data["offending"] == {"bar": {"all_unique_validator": "a violation"}}
     assert column_const_data["actual"] == {"bar": {"all_unique_validator": [10.0]}}
@@ -165,10 +165,10 @@ def test_failing_type_eval_dataframe():
 
     result = basic_graph.execute_in_process(raise_on_error=False)
     output = next(item for item in result.all_node_events if item.is_successful_output)
-    output_data = output.event_specific_data.type_check_data
-    output_metadata = output_data.metadata
+    output_data = output.event_specific_data.type_check_data  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    output_metadata = output_data.metadata  # pyright: ignore[reportOptionalMemberAccess]
     assert len(output_metadata) == 1
-    column_const_data = output_metadata["dataframe-constraint-metadata"].data
+    column_const_data = output_metadata["dataframe-constraint-metadata"].data  # pyright: ignore[reportAttributeAccessIssue]
     assert column_const_data["expected"] == ["foo", "bar"]
     assert column_const_data["actual"] == {"extra_columns": ["baz"], "missing_columns": ["bar"]}
 
@@ -194,21 +194,21 @@ def test_failing_type_eval_multi_error():
 
     result = basic_graph.execute_in_process(raise_on_error=False)
     output = next(item for item in result.all_node_events if item.is_successful_output)
-    output_data = output.event_specific_data.type_check_data
-    output_metadata = output_data.metadata
+    output_data = output.event_specific_data.type_check_data  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    output_metadata = output_data.metadata  # pyright: ignore[reportOptionalMemberAccess]
     assert len(output_metadata) == 3
     agg_data = output_metadata["column-aggregates-constraint-metadata"]
-    agg_metadata = agg_data.data
+    agg_metadata = agg_data.data  # pyright: ignore[reportAttributeAccessIssue]
     assert agg_metadata["expected"] == {
-        "bar": {"all_unique_validator": all_unique_validator.__doc__.strip()}
+        "bar": {"all_unique_validator": all_unique_validator.__doc__.strip()}  # pyright: ignore[reportOptionalMemberAccess]
     }
     assert agg_metadata["offending"] == {"bar": {"all_unique_validator": "a violation"}}
     assert agg_metadata["actual"] == {"bar": {"all_unique_validator": [10.0]}}
-    column_const_data = output_metadata["columns-constraint-metadata"].data
+    column_const_data = output_metadata["columns-constraint-metadata"].data  # pyright: ignore[reportAttributeAccessIssue]
     assert column_const_data["expected"] == {
         "foo": {
-            "in_range_validation_fn": in_range_validator.__doc__.strip(),
-            "dtype_in_set_validation_fn": dtype_is_num_validator.__doc__.strip(),
+            "in_range_validation_fn": in_range_validator.__doc__.strip(),  # pyright: ignore[reportOptionalMemberAccess]
+            "dtype_in_set_validation_fn": dtype_is_num_validator.__doc__.strip(),  # pyright: ignore[reportOptionalMemberAccess]
         }
     }
     assert column_const_data["offending"] == {
@@ -221,6 +221,6 @@ def test_failing_type_eval_multi_error():
         "foo": {"dtype_in_set_validation_fn": ["a"], "in_range_validation_fn": ["a", 7]}
     }
 
-    df_metadata = output_metadata["dataframe-constraint-metadata"].data
+    df_metadata = output_metadata["dataframe-constraint-metadata"].data  # pyright: ignore[reportAttributeAccessIssue]
     assert df_metadata["expected"] == ["foo", "bar"]
     assert df_metadata["actual"] == {"extra_columns": ["baz"], "missing_columns": []}

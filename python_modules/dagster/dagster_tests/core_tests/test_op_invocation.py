@@ -98,7 +98,7 @@ def test_op_invocation_lifecycle():
         pass
 
     # Verify dispose was called on the instance
-    assert context.instance.run_storage._held_conn.closed  # noqa
+    assert context.instance.run_storage._held_conn.closed  # noqa  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_op_invocation_context_arg():
@@ -1303,8 +1303,10 @@ def test_partition_range_asset_invocation():
 
     @asset(partitions_def=partitions_def)
     def foo(context: AssetExecutionContext):
-        keys = partitions_def.get_partition_keys_in_range(context.partition_key_range)
-        return {k: True for k in keys}
+        keys1 = partitions_def.get_partition_keys_in_range(context.partition_key_range)
+        keys2 = context.partition_keys
+        assert keys1 == keys2
+        return {k: True for k in keys1}
 
     context = build_asset_context(
         partition_key_range=PartitionKeyRange("2023-01-01", "2023-01-02"),
@@ -1355,8 +1357,8 @@ def test_async_assets_with_shared_context():
 
     async def main():
         return await asyncio.gather(
-            async_asset_one(ctx),
-            async_asset_two(ctx),
+            async_asset_one(ctx),  # type: ignore
+            async_asset_two(ctx),  # type: ignore
         )
 
     with pytest.raises(
@@ -1442,15 +1444,15 @@ def test_context_bound_state_async():
 
     ctx = build_asset_context()
 
-    result = asyncio.run(async_asset(ctx))
+    result = asyncio.run(async_asset(ctx))  # pyright: ignore[reportArgumentType]
     assert result == "one"
-    assert_context_unbound(ctx)
-    assert_execution_properties_exist(ctx)
+    assert_context_unbound(ctx)  # pyright: ignore[reportArgumentType]
+    assert_execution_properties_exist(ctx)  # pyright: ignore[reportArgumentType]
 
-    result = asyncio.run(async_asset(ctx))
+    result = asyncio.run(async_asset(ctx))  # pyright: ignore[reportArgumentType]
     assert result == "one"
-    assert_context_unbound(ctx)
-    assert_execution_properties_exist(ctx)
+    assert_context_unbound(ctx)  # pyright: ignore[reportArgumentType]
+    assert_execution_properties_exist(ctx)  # pyright: ignore[reportArgumentType]
 
 
 def test_context_bound_state_async_generator():
@@ -1495,7 +1497,7 @@ def test_bound_state_with_error_assets():
     with pytest.raises(Failure):
         throws_error(ctx)
 
-    assert_context_unbound(ctx)
+    assert_context_unbound(ctx)  # pyright: ignore[reportArgumentType]
 
     @asset
     def no_error(context):
@@ -1536,16 +1538,16 @@ def test_context_bound_state_with_error_generator():
 def test_context_bound_state_with_error_async():
     @asset
     async def async_asset(context):
-        assert_context_bound(ctx)
+        assert_context_bound(ctx)  # pyright: ignore[reportArgumentType]
         await asyncio.sleep(0.01)
         raise Failure("something bad happened!")
 
     ctx = build_asset_context()
 
     with pytest.raises(Failure):
-        asyncio.run(async_asset(ctx))
+        asyncio.run(async_asset(ctx))  # pyright: ignore[reportArgumentType]
 
-    assert_context_unbound(ctx)
+    assert_context_unbound(ctx)  # pyright: ignore[reportArgumentType]
 
 
 def test_context_bound_state_with_error_async_generator():
