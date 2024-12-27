@@ -37,6 +37,31 @@ def preview_warning(
 
 
 # ########################
+# ##### BETA
+# ########################
+
+
+class BetaWarning(FutureWarning):
+    pass
+
+
+def beta_warning(
+    subject: str,
+    additional_warn_text: Optional[str] = None,
+    stacklevel: int = 3,
+):
+    if not _warnings_on.get():
+        return
+
+    warnings.warn(
+        f"{subject} is in beta stage - the feature is still being tested and may change."
+        + ((" " + additional_warn_text) if additional_warn_text else ""),
+        category=BetaWarning,
+        stacklevel=stacklevel,
+    )
+
+
+# ########################
 # ##### SUPERSEDED
 # ########################
 
