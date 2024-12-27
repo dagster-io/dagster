@@ -222,6 +222,7 @@ computeLogManager:
   #     container: ~
   #     secretCredential: ~
   #     defaultAzureCredential: ~
+  #     accessKeyOrSasToken: ~
   #     localDir: ~
   #     prefix: ~
   #     uploadInterval: ~
