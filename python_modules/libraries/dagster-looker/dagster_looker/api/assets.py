@@ -1,4 +1,4 @@
-from typing import Sequence, Type, cast
+from typing import Optional, Sequence, cast
 
 from dagster import AssetExecutionContext, AssetsDefinition, Failure, multi_asset
 from dagster._annotations import experimental
@@ -18,7 +18,7 @@ from dagster_looker.api.resource import LookerResource
 def build_looker_pdt_assets_definitions(
     resource_key: str,
     request_start_pdt_builds: Sequence[RequestStartPdtBuild],
-    dagster_looker_translator: Type[DagsterLookerApiTranslator] = DagsterLookerApiTranslator,
+    dagster_looker_translator: Optional[DagsterLookerApiTranslator] = None,
 ) -> Sequence[AssetsDefinition]:
     """Returns the AssetsDefinitions of the executable assets for the given the list of refreshable PDTs.
 
@@ -27,13 +27,14 @@ def build_looker_pdt_assets_definitions(
         request_start_pdt_builds (Optional[Sequence[RequestStartPdtBuild]]): A list of requests to start PDT builds.
             See https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py
             for documentation on all available fields.
-        dagster_looker_translator (Optional[DagsterLookerApiTranslator]): The translator to
-            use to convert Looker structures into assets. Defaults to DagsterLookerApiTranslator.
+        dagster_looker_translator (Optional[DagsterLookerApiTranslator]): The translator to use
+            to convert Looker structures into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterLookerApiTranslator`.
 
     Returns:
         AssetsDefinition: The AssetsDefinitions of the executable assets for the given the list of refreshable PDTs.
     """
-    translator = dagster_looker_translator()
+    translator = dagster_looker_translator or DagsterLookerApiTranslator()
     result = []
     for request_start_pdt_build in request_start_pdt_builds:
 

@@ -205,7 +205,7 @@ def test_custom_asset_specs(
     all_assets = (
         asset
         for asset in Definitions(
-            assets=[*load_looker_asset_specs(looker_resource, CustomDagsterLookerApiTranslator)],
+            assets=[*load_looker_asset_specs(looker_resource, CustomDagsterLookerApiTranslator())],
         )
         .get_asset_graph()
         .assets_defs
