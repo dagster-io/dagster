@@ -64,7 +64,7 @@ PUBLIC: Final[str] = "public"
 PublicAttr: TypeAlias = Annotated[T, PUBLIC]
 
 # ########################
-# ##### Preview
+# ##### PREVIEW
 # ########################
 
 

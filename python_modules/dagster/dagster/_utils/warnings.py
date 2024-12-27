@@ -11,7 +11,7 @@ T = TypeVar("T")
 _warnings_on = ContextVar("_warnings_on", default=True)
 
 # ########################
-# ##### SUPERSEDED
+# ##### PREVIEW
 # ########################
 
 
