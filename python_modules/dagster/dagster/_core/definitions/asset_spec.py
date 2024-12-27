@@ -177,6 +177,7 @@ class AssetSpec(
         **kwargs,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
+        from dagster._core.definitions.metadata.metadata_set import validate_metadata_values
 
         only_allow_hidden_params_in_kwargs(AssetSpec, kwargs)
 
@@ -199,12 +200,15 @@ class AssetSpec(
         }
         validate_kind_tags(kind_tags)
 
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        validate_metadata_values(metadata)
+
         return super().__new__(
             cls,
             key=key,
             deps=asset_deps,
             description=check.opt_str_param(description, "description"),
-            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
+            metadata=metadata,
             skippable=check.bool_param(skippable, "skippable"),
             group_name=check.opt_str_param(group_name, "group_name"),
             code_version=check.opt_str_param(code_version, "code_version"),
