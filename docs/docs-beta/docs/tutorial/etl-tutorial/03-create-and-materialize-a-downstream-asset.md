@@ -7,7 +7,7 @@ last_update:
 
 # Asset Dependencies
 
-Now that we have the raw data loaded into DuckDB, we need to create a [downstream asset](guides/asset-dependencies.md) that combines the upstream assets together. In this step, you will:
+Now that we have the raw data loaded into DuckDB, we need to create a [downstream asset](guides/build/asset-concepts/asset-dependencies) that combines the upstream assets together. In this step, you will:
 
 - Create a downstream asset
 - Materialize that asset

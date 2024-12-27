@@ -9,7 +9,7 @@ last_update:
 
 Data Quality is critical in data pipelines. Much like in a factory producing cars, inspecting parts after they complete certain steps ensures that defects are caught before the car is completely assembled. 
 
-In Dagster, you define [asset checks](guides/asset-checks.md) in a similar way that you would define an Asset. In this step you will:
+In Dagster, you define [asset checks](guides/build/test/asset-checks) in a similar way that you would define an Asset. In this step you will:
 
 - Define an asset check
 - Execute that asset check in the UI
