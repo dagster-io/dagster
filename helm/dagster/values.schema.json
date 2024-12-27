@@ -3180,9 +3180,6 @@
                 "enabled": {
                     "const": true,
                     "default": true,
-                    "enum": [
-                        true
-                    ],
                     "title": "Enabled",
                     "type": "boolean"
                 },
