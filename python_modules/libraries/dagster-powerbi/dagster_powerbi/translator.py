@@ -1,7 +1,7 @@
 import re
 import urllib.parse
 from enum import Enum
-from typing import Any, Dict, List, Literal, NamedTuple, Optional, Sequence
+from typing import Any, Dict, List, Literal, Optional, Sequence
 
 from dagster import (
     UrlMetadataValue,
