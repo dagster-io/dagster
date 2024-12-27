@@ -112,10 +112,6 @@ class SigmaFilter(IHaveNew):
     ):
         validate_folder_path_input(workbook_folders, "workbook_folders")
         validate_folder_path_input(workbooks, "workbooks")
-        check.invariant(
-            not (workbook_folders and workbooks),
-            "Only one of workbook_folders or workbooks can be provided",
-        )
 
         return super().__new__(
             cls,
@@ -604,23 +600,22 @@ class SigmaOrganization(ConfigurableResource):
     async def _fetch_workbooks_and_filter(self, sigma_filter: SigmaFilter) -> List[Dict[str, Any]]:
         raw_workbooks = await self._fetch_workbooks()
         workbooks_to_fetch = []
-        if sigma_filter.workbook_folders:
+        if sigma_filter.workbook_folders or sigma_filter.workbooks:
             workbook_filter_strings = [
-                "/".join(folder).lower() for folder in sigma_filter.workbook_folders
+                "/".join(folder).lower() for folder in sigma_filter.workbook_folders or []
             ]
-            for workbook in raw_workbooks:
-                workbook_path = str(workbook["path"]).lower()
-                if any(
-                    workbook_path.startswith(folder_str) for folder_str in workbook_filter_strings
-                ):
-                    workbooks_to_fetch.append(workbook)
-        elif sigma_filter.workbooks:
-            workbook_strings = ["/".join(folder).lower() for folder in sigma_filter.workbooks]
+            workbook_strings = ["/".join(folder).lower() for folder in sigma_filter.workbooks or []]
             for workbook in raw_workbooks:
                 workbook_path_and_name = (
-                    f"{str(workbook['path']).lower()}/{str(workbook['name']).lower()}"
+                    f"{str(workbook['path']).lower()}/{workbook['name'].lower()}"
                 )
-                if workbook_path_and_name in workbook_strings:
+                if (
+                    any(
+                        workbook_path_and_name.startswith(folder_str)
+                        for folder_str in workbook_filter_strings
+                    )
+                    or workbook_path_and_name in workbook_strings
+                ):
                     workbooks_to_fetch.append(workbook)
         else:
             workbooks_to_fetch = raw_workbooks

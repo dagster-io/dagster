@@ -95,7 +95,7 @@ def test_model_organization_data(sigma_auth_token: str, sigma_sample_data: None)
     assert data.datasets[0].inputs == {"TESTDB.JAFFLE_SHOP.STG_ORDERS"}
 
 
-@pytest.mark.parametrize("filter_type", ["workbook_folders", "workbook_names"])
+@pytest.mark.parametrize("filter_type", ["workbook_folders", "workbook_names", "both"])
 @responses.activate
 def test_model_organization_data_filter(
     sigma_auth_token: str, sigma_sample_data: None, filter_type: str
@@ -109,21 +109,25 @@ def test_model_organization_data_filter(
         client_secret=fake_client_secret,
     )
 
+    non_matching_filter = (
+        {"workbook_folders": [("My Documents", "Test Folder")]}
+        if filter_type == "workbook_folders"
+        else {"workbooks": [("My Documents", "Test Folder", "Sample Workbook")]}
+    )
+    matching_filter = (
+        {"workbook_folders": [("My Documents", "My Subfolder")]}
+        if filter_type == "workbook_folders"
+        else {"workbooks": [("My Documents", "My Subfolder", "Sample Workbook")]}
+    )
+
     with mock.patch.object(
         SigmaOrganization,
         "_fetch_pages_for_workbook",
         wraps=resource._fetch_pages_for_workbook,  # noqa: SLF001
     ) as mock_fetch_pages:
-        sigma_filter = (
-            SigmaFilter(
-                workbook_folders=[("My Documents", "Test Folder")],
-            )
-            if filter_type == "workbook_folders"
-            else SigmaFilter(workbooks=[("My Documents", "Test Folder", "Sample Workbook")])
-        )
         data = asyncio.run(
             resource.build_organization_data(
-                sigma_filter=sigma_filter,
+                sigma_filter=SigmaFilter(**non_matching_filter, include_unused_datasets=True),
                 fetch_column_data=True,
             )
         )
@@ -133,19 +137,9 @@ def test_model_organization_data_filter(
         # We don't fetch the workbooks, so we shouldn't have made any calls
         assert len(mock_fetch_pages.mock_calls) == 0
 
-        sigma_filter = (
-            SigmaFilter(
-                workbook_folders=[("My Documents", "Test Folder")], include_unused_datasets=False
-            )
-            if filter_type == "workbook_folders"
-            else SigmaFilter(
-                workbooks=[("My Documents", "Test Folder", "Sample Workbook")],
-                include_unused_datasets=False,
-            )
-        )
         data = asyncio.run(
             resource.build_organization_data(
-                sigma_filter=sigma_filter,
+                sigma_filter=SigmaFilter(**non_matching_filter, include_unused_datasets=False),
                 fetch_column_data=True,
             )
         )
@@ -155,20 +149,9 @@ def test_model_organization_data_filter(
         # We still don't fetch the workbooks, so we shouldn't have made any calls
         assert len(mock_fetch_pages.mock_calls) == 0
 
-        sigma_filter = (
-            SigmaFilter(
-                workbook_folders=[("My Documents", "My Subfolder")],
-                include_unused_datasets=False,
-            )
-            if filter_type == "workbook_folders"
-            else SigmaFilter(
-                workbooks=[("My Documents", "My Subfolder", "Sample Workbook")],
-                include_unused_datasets=False,
-            )
-        )
         data = asyncio.run(
             resource.build_organization_data(
-                sigma_filter=sigma_filter,
+                sigma_filter=SigmaFilter(**matching_filter, include_unused_datasets=False),
                 fetch_column_data=True,
             )
         )
@@ -184,7 +167,9 @@ def test_model_organization_data_filter(
 
         data = asyncio.run(
             resource.build_organization_data(
-                sigma_filter=SigmaFilter(workbook_folders=[("My Documents",)]),
+                sigma_filter=SigmaFilter(
+                    workbook_folders=[("My Documents",)], workbooks=[("Does", "Not", "Exist")]
+                ),
                 fetch_column_data=True,
             )
         )
